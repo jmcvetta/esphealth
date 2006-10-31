@@ -12,6 +12,7 @@ for l in locals:
 
 ###############################
 def getLogging(appname,debug=0):
+    
     appname = TOPDIR+ LOCALSITE +'/logs/'+appname
     debug=debug
     today=datetime.datetime.now().strftime('%Y%m%d')
