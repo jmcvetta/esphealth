@@ -1,1 +1,19 @@
 * text=auto !eol
+ESP/sendMsgs/bcdc.jar -text
+ESP/sendMsgs/org/openuri/www/Bcdc_elr.class -text
+ESP/sendMsgs/org/openuri/www/Bcdc_elrLocator.class -text
+ESP/sendMsgs/org/openuri/www/Bcdc_elrSoap.class -text
+ESP/sendMsgs/org/openuri/www/Bcdc_elrSoapStub.class -text
+ESP/templates/arrow.GIF -text
+ESP/templates/default-bg-reverse.gif -text
+ESP/templates/default-bg.gif -text
+ESP/templates/django-logo-negative.png -text
+ESP/templates/django-logo-positive.png -text
+ESP/templates/espheader.gif -text
+ESP/templates/espheader.png -text
+ESP/templates/espheader150.gif -text
+ESP/templates/espheader2.png -text
+ESP/templates/esplogo.gif -text
+ESP/templates/nav-bg-grabber.gif -text
+ESP/templates/nav-bg-reverse.gif -text
+ESP/templates/nav-bg.gif -text

@@ -1,0 +1,207 @@
+{% extends "espbase.html" %}
+
+{% block content %}
+
+<h2><a href="javascript:history.go(-1)">Back to Case listing</a></h2>
+<br>
+{% if cobject %}
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+
+
+
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+<tr><td colspan = "8" align = "center" bgcolor="white">
+<font size="+1" color="#800000">Suspected Condition: {{ cobject.getCondition.ruleName }}</font></td></tr>
+
+ <tr class="{% cycle row1,row2 as rowcolors %}">
+ <th>CaseID</th>
+ <th>Patient Name, MRN</th><th>Workflow State</th><th>Comments</th>
+<th>Last Updated</th><th>Created Date</th><th>Case Definition</th><th>Query ID</th></tr>
+
+ <tr class="{% cycle rowcolors %}">
+  <td>{{ caseid }}</td>
+  <td>{{ cobject.showPatient }}</td> 
+ <td>{{ cobject.get_caseWorkflow_display }}</td>
+ <td> {{ cobject.caseComments }}</td>
+ <td> {{ cobject.caseLastUpDate }}
+ <td>{{ cobject.casecreatedDate }}
+ <td><a href="{{SITEROOT}}/rules/{{ cobject.caseRule.id }}/">{{ cobject.caseRule.ruleName }}</a></td>
+ <td>{{ cobject.caseQueryID }}</td></tr>  
+</table>
+
+<br><br>
+
+<hr size="6"  width="75%" align="center">
+<br>
+{% if encounters %}
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+<td colspan = "7" align = "left" bgcolor="white">
+<font color="#800000"><b>Encounter data</b></font></td></tr>
+
+ <tr class="{% cycle row1,row2 as rowcolors %}">
+ <th>Pertinent to Condition</th>
+ <th>Date</th>
+ <th>ICD9 Codes</td>
+ <th>Site</td>
+ <th>Pregnancy</th>
+ <th>Temperature</th>
+ <th>Clinician</th>
+</tr>
+
+  {% for e in encounters %}
+
+<tr class="{% cycle rowcolors %}">
+<td align="right"> {%ifnotequal e.iscaserelated 0 %} <img src="/images/arrow.GIF" border="0"> {% endifnotequal %}</td>
+<td>{{ e.EncEncounter_Date }} </td>
+
+<td>
+ {% for oneicd in e.geticd9s %}
+    {% ifequal oneicd.0 0 %} {{ oneicd.1}} {% endifequal %}
+    {% ifequal oneicd.0 1 %} <font color="red"><b>{{ oneicd.1 }}</b></font> {% endifequal %}
+    <br>
+  {% endfor %}
+  
+  </td>
+
+<td>{{ e.EncEncounter_SiteName }}</td>
+<td>{{ e.ENCPregnancy_Status }}</td>
+<td> {{ e.ENCTemperature }} </td>
+<td><a href="{{SITEROOT}}/pcps/{{ e.EncEncounter_Provider.id }}/"> {{e.getcliname}}</a></td>
+</tr>
+  {% endfor %}
+</table">
+{% endif %}
+
+<br>
+<br>
+
+
+{% if labs %}
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+
+<td colspan = "9" align = "left" bgcolor="white"><font  color="#800000"><b>Laboratory Results</b></font></td></tr>
+ <tr class="{% cycle row1,row2 as rowcolors %}">
+<th>Pertinent to Condition</th>
+<th>Date Ordered</th>
+<th>CPT</th>
+<th>Component</th>
+<th>Test Results</th>
+<th>Abnormal Flag</th>
+<th>Normal Range</th>
+<th>Comment</th>
+<th>Clinician</th>
+</tr>
+
+  {% for lab in labs %}
+
+<tr class="{% cycle rowcolors %}">
+ <td align="right"> {%ifequal lab.iscaserelated 1 %} <img src="/images/arrow.GIF" border="0"> {% endifequal %} </td>
+ <td>{{ lab.LxOrderDate }}</td>
+ <td>{%ifequal lab.iscaserelated 1 %} <font color="red"><b>{{ lab.getCPT }}</b>
+     {% else %}{{ lab.getCPT }} {% endifequal %}</td>
+ <td>{{lab.LxComponentName}}</td>
+ <td>{{ lab.LxTest_results }}</td>
+ <td>{{ lab.LxNormalAbnormal_Flag }} </td>
+ <td>{{ lab.LxReference_Low}}  -  {{ lab.LxReference_High}}</td>
+ <td>{% if lab.LxComment %}
+   <a href="{{SITEROOT}}/lx/{{ lab.id }}/"> {{lab.getPartNote}}...</a> {% endif %}</td>
+   
+ <td><a href="{{SITEROOT}}/pcps/{{ lab.LxOrdering_Provider.id }}/">{{ lab.getcliname }}</a></td>
+</tr>
+  {% endfor %}
+</table >
+{% endif %}
+
+<br>
+<br>
+{% if prescriptions %}
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+
+<td colspan = "9" align = "left" bgcolor="white">
+<font color="#800000"><b>Prescription data</b></font></td></tr>
+ <tr class="{% cycle row1,row2 as rowcolors %}">
+<th>Pertinent to Condition</th>
+<th>Date Ordered</th>
+<th>NDC</th>
+<th>Name</th>
+<th>Description</th>
+<th>Dose</th>
+<th>Frequency</th>
+<th>Quantity</th>
+<th>Clinician</th>
+</tr>
+
+  {% for rx in prescriptions %}
+
+<tr class="{% cycle rowcolors %}">
+<td align="right"> {%ifequal rx.iscaserelated 1 %} <img src="/images/arrow.GIF" border="0"> {% endifequal %} </td>
+<td>{{ rx.RxOrderDate }}</td>
+
+<td>{%ifequal rx.iscaserelated 1 %} <font color="red"><b>{{rx.getNDC }}</b>
+     {% else %}{{ rx.getNDC }} {% endifequal %}</td>
+
+<td>{{rx.RxDrugDirect}}</td>
+<td>{{ rx.RxDrugName }}</td>
+<td>{{ rx.RxDose }}</td>
+<td>{{ rx.RxFrequency }}
+<td>{{ rx.RxQuantity }}</td>
+<td><a href="{{SITEROOT}}/pcps/{{ rx.RxPrescriber }}/">{{ rx.getcliname }}</a></td>
+</tr>
+
+  {% endfor %}
+</table >
+{% endif %}
+
+{% else %}
+    <p>No case is available.</p>
+{% endif %}
+
+
+<br><br>
+
+<hr size="6"  width="75%" align="center">
+<br>
+
+
+{% if wf %}
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+<tr class="{% cycle rowcolors %}">
+<td colspan = "5" align = "center" bgcolor="white">
+<font size="+1" color="#800000">Case Workflow History & Update</font></td></tr>
+ <tr><th>Edit Comment Link</th><th>Date</th><th>Workflow State</th><th>Changed By</th><th>Comment</th></tr>
+     {% for w in wf %}
+
+   <tr class="{% cycle row1,row2 %}" valign="center"><td valign=middle align="center">
+        <font size="+1"><a href="{{SITEROOT}}/workflows/{{ w.id }}/">{{ w.id }}</a></font></td>
+      <td valign=middle> {{ w.workflowDate }}</td>
+      <td valign=middle> {{ w.workflowState}}</td>
+      <td valign=middle> {{ w.workflowChangedBy}}</td>
+      <td valign=middle> {{w.workflowComment}}</td>
+   </tr>
+
+     {% endfor %}
+ </table>
+{% endif %}
+<br>
+
+<form action="{{SITEROOT}}/cases/{{ cobject.id }}/updatewf/" method="post">
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+ <tr bgcolor="#800000">
+ <td  valign="middle">
+ 
+<SELECT NAME="NewWorkflow">
+{% for thiswf in wfstate %}
+{% ifnotequal cobject.caseWorkflow thiswf.0 %} <OPTION value={{thiswf.0}}> {{thiswf.1}}</OPTION> {% endifnotequal %}
+{% endfor %}
+</SELECT>
+   </td><td valign="middle">
+     <textarea name="Comment" rows=4 cols=50 > </textarea>
+   <td  valign="middle"><input type="submit" name="submit" value="Update workflow, add comment" >
+   </td></tr>
+ </table>
+</form>
+
+{% endblock %}
+

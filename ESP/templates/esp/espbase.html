@@ -1,0 +1,64 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-us" xml:lang="en-us">
+
+<title>Electronic Support for Public Health</title>
+<link rel="stylesheet" type="text/css" href="{{SITEROOT}}/images/css/base.css" />
+
+</head>
+<body>
+
+
+
+<table width="100%">
+<tr ><td colspan="2" >
+<img src="{{SITEROOT}}/images/espheader2.png" border="0"> 
+</td></tr>
+ 
+<tr >
+<td width="90" >
+    <div id="sidebar">
+        {% block sidebar %}
+        <p><p>
+
+        <table cellpadding="1" border=2 bordercolor = white>
+            <tr class="{% cycle row2,row1 as rowcolors %}"><td><a href="{{SITEROOT}}/">ESP Home</a></td></tr>
+            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/admin/">Administration</a></td></tr>
+            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/">ALL Cases</a></td></tr>
+            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/AR///">Cases Awaiting Review</a></td></tr>
+            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/UR///">Cases Under Review</a></td></tr>
+            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/Q///">Cases Queued</a></td></tr> 
+            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/S///">Cases Sent</a></td></tr>
+            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/FP///">Cases: DO NOT send</a></td></tr>
+            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/utilities/">Utilities</a></td></tr>
+            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/help/">Help, documentation</a></td></tr>
+            <tr class="{% cycle rowcolors %}"><td>{% if not request.user or request.user.is_anonymous %}Anonymous User</td></tr>
+            {% else %}Current user is {{request.user.get_full_name}}<p>
+			<form action="{{SITEROOT}}/logout/" method="post">
+			<input type="Submit" value="Logout" />
+			</form></td></tr>
+			{% endif %} 
+
+
+        </table>
+        {% endblock %}
+    </div>
+</td><td>
+    <div id="content">
+        {% block content %} content goes here - overide in your template please {% endblock %}
+    </div>
+    
+</td>
+<tr>
+<td colspan=2>
+     <div id="footer">
+        {% block footer %}
+<p>
+&copy; 2006 ross lazarus (ross dot lazarus at gmail dot com) from whom source code licensed under the equitable protection of the <a href="http://www.gnu.org/licenses/lgpl.html">LGPL</a> is freely available<br>
+This <a href="http://python.org">python</a> application relies on the <a href="http://www.djangoproject.com"><img src="{{SITEROOT}}/images/django-logo-negative.png" width="60" height="30" border="0"></a> framework and the <a href="http://mysql.com">MySQL</a> RDBMS </p>
+{% endblock %}
+    </div>
+</td></tr>
+</table>  
+
+</body>
+</html>

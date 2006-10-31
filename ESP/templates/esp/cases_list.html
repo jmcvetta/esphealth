@@ -1,0 +1,106 @@
+
+{% extends "espbase.html" %}
+
+{% block content %}
+
+<table border="0" width="100%">
+<tr>
+<td></td>
+<td align=right>
+<form action="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/" method="post">
+<table cellspacing="10" cellpadding="3" border="1" width="50%">
+<tr><td colspan = "8" align = "center" bgcolor="lightyellow"><font size="+1" color="#800000"><b>Search Cases</b></font></td></tr>
+ <tr class="{% cycle row1,row2 as rowcolors %}">
+ <th>Patient Name</th>
+ <th>Patient MRN</th>
+ <th></th>
+ </tr>
+
+ <tr class="{% cycle rowcolors %}">
+ <td><input type="text" name="PatientName" size="25" value={{ pname }} >
+ </td>
+ 
+ <td><input type="text" name="MRN" size="20" value={{ mrn }} ></td>
+  <td valign="middle"><input type="submit" name="submit" value="Search Cases" ></td>
+ </tr>
+
+ </table>
+</form>
+</td></tr>
+</table>
+
+{% if is_paginated %}
+  <p>Page {{page}} of {{pages}}.</p>
+  <p>
+    {% if has_previous %}
+      <a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/{{orderby}}/?page={{first_page}}">&lt;&lt;first</a> | 
+      <a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/{{orderby}}/?page={{previous}}">&lt;previous page</a> | 
+    {% endif %}
+    {% if has_next %}
+      <a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/{{orderby}}/?page={{next}}">next page &gt;</a> | 
+      <a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/{{orderby}}/?page={{last_page}}">last &gt;&gt;</a>
+    {% endif %}
+  </p>
+{% endif %}
+
+
+
+{% if object_list %}
+<div class="section">
+  <h2> {{ casenum }} Cases Found</h2>
+  <br> (click on a case Identifier to see the case details)
+</div>
+<br>
+<table border=1 cellspacing = "2" cellpadding = "3">
+<tr>
+  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortid/">Case ID</a></th>
+  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortrule/">Suspected Condition</a></th>
+  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortwf/">Workflow State</a></th>
+  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortname/">Name</a></th>
+  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortmrn/">MRN</a></th>
+  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortaddr/">Patient Address<a></th>
+</tr>
+
+    {% for case in object_list %}
+
+
+   <tr class="{% cycle row1,row2 %}">
+      <td>{{case.id}}: <a href="{{SITEROOT}}/cases/{{ case.id }}/F/">Full View</a>&nbsp;&nbsp;&nbsp;
+                       <a href="{{SITEROOT}}/cases/{{ case.id }}/R/">Restrict View</a>
+      </td>
+      <td> {{ case.getCondition.ruleName }}</td>
+      <td> {{ case.get_caseWorkflow_display }}</td>
+      <td> {{ case.getPatient.DemogLast_Name}}, {{ case.getPatient.DemogFirst_Name}}</td>
+      <td> {{case.getPatient.DemogMedical_Record_Number}}</td>
+      <td>  {{case.getAddress }}</td>
+      </tr>
+
+    {% endfor %}
+    </table>
+{% else %}
+     <p>
+     {% if wf %}<h1>No cases are currently in the requested workstate: {{wf_display}} </h1> 
+     {% else %} <h1>No cases to show</h1>
+     {% endif %}
+    
+
+{% endif %}
+
+{% if is_paginated %}
+
+
+<div class="section">
+  <p>page {{page}} of {{pages}}.</p>
+  <p>
+    {% if has_previous %}
+      <a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/{{orderby}}/?page={{first_page}}">&lt;&lt;first</a> | 
+      <a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/{{orderby}}/?page={{previous}}">&lt;previous page</a> | 
+    {% endif %}
+    {% if has_next %}
+      <a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/{{orderby}}/?page={{next}}">next page &gt;</a> | 
+      <a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/{{orderby}}/?page={{last_page}}">last &gt;&gt;</a>
+    {% endif %}
+  </p>
+</div>
+{% endif %}
+{% endblock%}

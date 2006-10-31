@@ -1,0 +1,87 @@
+{% extends "espbase.html" %}
+
+{% block content %}
+
+<h2><a href="javascript:history.go(-1)">Go Back</a></h2>
+<center>
+<h2><font color="#800000">Condition-Loinc Map</font></h2>
+</center>
+<br>
+
+{% if msg %}
+     <br><br>
+     <center>
+     <h3><font color="blue"> {{msg}}</font></h3>
+      </center> 
+{% endif %}
+
+
+
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="{{SITEROOT}}/preload/conditionloinc/update/" method="post">
+<center>
+<input type="submit" name="submit" value="Save into a file" >
+</center>
+<br>
+<table cellspacing="10" cellpadding="3" border="1" width="95%">
+<tr class="{% cycle row1,row2 as rowcolors %}">
+  <th>Id</th>
+  <th>Rule</th>
+  <th>Loinc</th>
+  <th>SNOMED - Positive</th>
+  <th>SNOMED - Negative</th>
+  <th>SNOMED - Indeterminate</th>
+  <th>Used in definition?</th>
+  <th>Used in HL7? </th>
+</tr>
+ {% for mapobj in maps %} 
+     <tr class="{% cycle rowcolors %}">
+      <td width="10%"> {{ mapobj.id }}<input type="hidden" name="ID_{{ mapobj.id }}" value={{ mapobj.id }}></td>
+      <td width="18%"> 
+	     <SELECT name="RULE_{{ mapobj.id }}">
+        {% for thisr in rules %}
+           {% ifequal mapobj.CondiRule.ruleName thisr.ruleName %} <OPTION value={{thisr.ruleName}} SELECTED> {{thisr.ruleName}}</OPTION> {% endifequal %}
+           {% ifnotequal mapobj.CondiRule.ruleName thisr.ruleName %} <OPTION value={{thisr.ruleName}}> {{thisr.ruleName}}</OPTION> {% endifnotequal %}
+         {% endfor %}
+         </SELECT>
+      </td>
+      <td width="15%"> <input type="text" name="LOINC_{{ mapobj.id }}" size="15" value={{ mapobj.CondiLOINC}}> </td>
+      <td width="15%"> <input type="text" name="SNMDPOSI_{{ mapobj.id }}" size="15" value={{ mapobj.CondiSNMDPosi}}> </td>
+      <td width="15%"> <input type="text" name="SNMDNEGA_{{ mapobj.id }}" size="15" value={{ mapobj.CondiSNMDNega}}> </td>
+      <td width="15%"> <input type="text" name="SNMDINDE_{{ mapobj.id }}" size="15" value={{ mapobj.CondiSNMDInde}}> </td>
+      <td width="5%"> <input type="text" name="DEFINE_{{ mapobj.id }}" size="15" value={{mapobj.CondiDefine}} ></td>
+      <td width="5%"> <input type="text" name="SEND_{{ mapobj.id }}" size="15" value={{mapobj.CondiSend}} ></td>
+      </tr>
+
+    {% endfor %}
+ {% for i in newrec %}
+     <tr  class="{% cycle rowcolors %}">
+      <td width="10%"> Add New <input type="hidden" name="ID_NEW{{ i }}" value="NEW{{i}}"></td>
+      <td width="18%">
+       <SELECT name="RULE_NEW{{ i }}">
+        {% for thisr in rules %}
+           <OPTION value={{thisr.ruleName}}> {{thisr.ruleName}}</OPTION> 
+         {% endfor %}
+       </SELECT>
+      </td>
+      <td width="15%"> <input type="text" name="LOINC_NEW{{i}}" size="15" > </td>
+      <td width="15%"> <input type="text" name="SNMDPOSI_NEW{{i}}" size="15" > </td>
+      <td width="15%"> <input type="text" name="SNMDNEGA_NEW{{i}}" size="15" > </td>
+      <td width="15%"> <input type="text" name="SNMDINDE_NEW{{i}}" size="15" > </td>
+      <td width="5%"> <input type="text" name="DEFINE_NEW{{ i}}" size="15" value='1'></td>
+      <td width="5%"> <input type="text" name="SEND_NEW{{ i}}" size="15" value='1'></td>
+      </tr>
+
+    {% endfor %}
+  
+</table>
+<br>
+<center>
+<input type="submit" name="submit" value="Save into a file" >
+</center>
+</form>
+
+
+{% endblock %}

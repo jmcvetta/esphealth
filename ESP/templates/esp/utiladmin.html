@@ -1,0 +1,19 @@
+{% extends "espbase.html" %}
+
+{% block content %}
+
+<h2><a href="javascript:history.go(-1)">Go Back</a></h2>
+<center>
+<h2><font color="#800000">Utilities For Administrator</font></h2>
+</center>
+<br>
+
+<table cellpadding="0" border=0 bordercolor = white width="100%">
+   <tr class="{% cycle row2,row1 as rowcolors %}"><td><a href="{{SITEROOT}}/preload/cptloincmap/">preLoad CPT-Loinc Map</a></td></tr>
+   <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/preload/conditionloinc/">preLoad Condition-Loinc Map</a></td></tr>
+   <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/preload/conditionndc/">preLoad Condition-Ndc Map</a></td></tr>
+   <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/preload/conditionicd9/">preLoad Condition-ICD9 Map</a></td></tr>
+   <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/preload/config/">preLoad Config</a></td></tr>
+   <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/preload/rule/">preLoad Rule</a></td></tr>
+</table>
+{% endblock %}

@@ -1,0 +1,3 @@
+2	Gonorrhea	HL7	MADPH				
+1	Chlamydia	HL7	MADPH				
+	PID	HL7	MADPH				
