@@ -6,15 +6,17 @@
 # the folder containing the ESP directory
 
 import datetime,random,csv,sys,os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-os.environ['PYTHONPATH'] = '\home\rerla\mydjango\ESP'
+#os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+#os.environ['PYTHONPATH'] = '\home\rerla\mydjango\ESP'
 import django
 import os
-from esp.models import *
-from ESP.settings import HOMEDIR
+from ESP.esp.models import *
+from ESP.settings import TOPDIR
+import localconfig
 
-incomdir = os.path.join(HOMEDIR,'ESP/incoming/')
-today = datetime.datetime.now().strftime('%m%d%y')
+incomdir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','incomingData/')
+today = datetime.datetime.now().strftime('%Y%m%d')
+
 
 try:
     import psyco
