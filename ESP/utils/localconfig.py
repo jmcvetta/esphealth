@@ -12,8 +12,11 @@ for l in locals:
 
 ###############################
 def getLogging(appname,debug=0):
-    
-    appname = TOPDIR+ LOCALSITE +'/logs/'+appname
+    logdir = os.path.join(TOPDIR+LOCALSITE+'/', 'logs/')
+    if not os.path.isdir(logdir):
+        os.mkdir(logdir)
+        
+    appname = logdir+appname
     debug=debug
     today=datetime.datetime.now().strftime('%Y%m%d')
     if debug:

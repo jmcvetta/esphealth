@@ -62,8 +62,10 @@ def generateHL7(hl7dir,cases):
 ################################
 ################################
 if __name__ == "__main__":
-    hl7dir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','queuedHL7Msgs/')
   
+    hl7dir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','queuedHL7Msgs/')
+    if not os.path.isdir(hl7dir):
+        os.mkdir(hl7dir)
     #check queued cases with status 'IN QUEUE FOR MESSAGING' in db and generate HL7 message
     cases = Case.objects.filter(caseWorkflow__iexact='Q')
     if len(cases)>0:
@@ -85,5 +87,8 @@ if __name__ == "__main__":
 
         #move processed file to processed folder
         procdir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','processedHL7Msgs/')
+        if not os.path.isdir(procdir):
+            os.mkdir(procdir)
+
         shutil.move(f, procdir)
   
