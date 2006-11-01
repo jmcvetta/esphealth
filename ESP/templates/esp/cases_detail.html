@@ -170,7 +170,7 @@
 <tr class="{% cycle rowcolors %}">
 <td colspan = "5" align = "center" bgcolor="white">
 <font size="+1" color="#800000">Case Workflow History & Update</font></td></tr>
- <tr><th>Edit Comment Link</th><th>Date</th><th>Workflow State</th><th>Changed By</th><th>Comment</th></tr>
+ <tr><th>Edit Comment Link</th><th>Last Updated</th><th>Workflow State</th><th>Changed By</th><th>Comment</th></tr>
      {% for w in wf %}
 
    <tr class="{% cycle row1,row2 %}" valign="center"><td valign=middle align="center">
@@ -178,7 +178,7 @@
       <td valign=middle> {{ w.workflowDate }}</td>
       <td valign=middle> {{ w.workflowState}}</td>
       <td valign=middle> {{ w.workflowChangedBy}}</td>
-      <td valign=middle> {{w.workflowComment}}</td>
+      <td valign=middle><pre> {{w.workflowComment}}</pre></td>
    </tr>
 
      {% endfor %}
