@@ -694,6 +694,6 @@ def updateWorkflowComment(request,object_id):
         wf.save()
     else:
         print 'No change in workflow comment - not saved'
-    return HttpResponseRedirect("%s/cases/%s/" % (SITEROOT,caseid))
+    return HttpResponseRedirect("%s/cases/%s/F" % (SITEROOT,caseid))
 
 
