@@ -170,7 +170,7 @@ def casesearch(request, wf="*", cfilter="*", mrnfilter="*",orderby="sortid"):
     if cfilter and cfilter <> '*':
         ##name search is wildcard search with case insensetive (sql:like '%')
         cfilter = cfilter.upper()
-        objs = Case.objects.filter(caseDemog__DemogName__istartswith=cfilter)
+        objs = Case.objects.filter(caseDemog__DemogLast_Name__istartswith=cfilter)
     if mrnfilter and mrnfilter <> '*':
         ##MRN search needs exactly matching (=)
         objs = objs.filter(caseDemog__DemogMedical_Record_Number__exact=mrnfilter)
@@ -186,7 +186,7 @@ def casesearch(request, wf="*", cfilter="*", mrnfilter="*",orderby="sortid"):
     elif orderby == 'sortrule':
         objs =objs.select_related().order_by('caseRuleID','esp_demog.DemogLast_Name', 'esp_demog.DemogFirst_Name')
     elif orderby == 'sortwf':
-        objs =objs.select_related().order_by('caseWorkflow','esp_demog.DemogName')
+        objs =objs.select_related().order_by('caseWorkflow','esp_demog.DemogLast_Name')
     elif orderby=='sortname':
         objs = objs.select_related().order_by('esp_demog.DemogLast_Name', 'esp_demog.DemogFirst_Name')
     elif orderby == 'sortmrn':
@@ -248,7 +248,7 @@ def caseNameSearch(request, snfilter=""):
     """search cases by Patient Name 
     """
     ##retrieve filtered objects 
-    objs = Case.objects.filter(caseDemog__DemogName__startswith=cfilter)
+    objs = Case.objects.filter(caseDemog__DemogLast_Name__startswith=cfilter)
     objs =objs.order_by('caseLastUpDate')
     postdest = '%s/cases/snsearch/' % SITEROOT   
     if objs.count()>0:
