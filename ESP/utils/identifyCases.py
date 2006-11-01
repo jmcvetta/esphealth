@@ -292,11 +292,6 @@ if __name__ == "__main__":
                 lxids = str(lid)[1:-1]
                 rxids = str(rid)[1:-1]
             
-##            if getEncduration(c, eid) > 28:
-##                #new case
-##                logging.info('New Enc for existing case-%s: CaseID%s, DemogID%s\n' % (condition,c.id,pid))
-##                makeNewCase(pid)
-            
                 if getLxduration(c, lid) > 28:
                     #new case
                     logging.info('New Lx for existing case -%s: CaseID%s, DemogID%s\n' % (cond,c.id,pid))
