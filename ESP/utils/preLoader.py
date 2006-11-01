@@ -135,14 +135,19 @@ def load2rule(table):
   
     for items  in lines:
         id, name,fmt, dest,hl7name,hl7c,hl7ctype,note = (x.strip() for x in items)
-        
+        if not name: continue
+        rl=''
         if id:
-            try:
-                rl = Rule.objects.filter(id__exact=id)[0]
-            except:
+            rl = Rule.objects.filter(id__exact=id)
+            if rl:
+                rl=rl[0]
+
+        if not rl:
+            r = Rule.objects.filter(ruleName__iexact=name)
+            if r:   
+                rl=r[0]
+            else:
                 rl = Rule()
-        else:
-            rl = Rule()
 
         rl.ruleName = name
         rl.ruleMsgFormat = fmt
