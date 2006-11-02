@@ -1,4 +1,8 @@
 # message handle
+import os,sys
+sys.path.insert(0, '/home/ESP/')
+os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+
 
 import django, datetime
 from ESP.utils import hl7XML
@@ -6,7 +10,6 @@ from ESP.esp.models import *
 from django.db.models import Q
 import ESP.utils.localconfig as localconfig
 from ESP.settings import TOPDIR
-import os,sys
 import shutil
 import traceback,logging
 
@@ -63,7 +66,7 @@ def generateHL7(hl7dir,cases):
 ################################
 if __name__ == "__main__":
   
-    hl7dir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','queuedHL7Msgs/')
+    hl7dir = os.path.join(TOPDIR,localconfig.LOCALSITE,'queuedHL7Msgs/')
     if not os.path.isdir(hl7dir):
         os.mkdir(hl7dir)
     #check queued cases with status 'IN QUEUE FOR MESSAGING' in db and generate HL7 message
@@ -77,16 +80,22 @@ if __name__ == "__main__":
     for f in files:
         
         f = hl7dir + '/%s' % f
-        javacmd="sendMsg.bat %s" % f
-        logging.info("Runs java command: %s" % javacmd)
+        #javacmd="/home/ESP/ESP/sendMsgs/sendMsg.bat %s" % f
+
+        javacmd="/usr/java/jdk1.5.0_09/bin/javac -classpath .:/home/ESP/axis-1_4/activation.jar:/usr/local/axis-1_4/lib/axis.jar:/usr/local/axis-1_4/lib/commons-logging-1.0.4.jar:/usr/local/axis-1_4/lib/commons-discovery-0.2.jar:/usr/local/axis-1_4/lib/jaxrpc.jar:/usr/local/axis-1_4/lib/wsdl4j-1.5.1.jar:/usr/local/axis-1_4/lib/saaj.jar:/usr/local/axis-1_4/lib/axis-ant.jar:/usr/local/axis-1_4/lib/log4j-1.2.8.jar:/home/ESP/axis-1_4/mail.jar:/home/ESP/ESP/sendMsgs/bcdc.jar sendMsg.java"
+
+        javacmd1 = "/usr/java/jdk1.5.0_09/bin/java -classpath .:/home/ESP/axis-1_4/activation.jar:/usr/local/axis-1_4/lib/axis.jar:/usr/local/axis-1_4/lib/commons-logging-1.0.4.jar:/usr/local/axis-1_4/lib/commons-discovery-0.2.jar:/usr/local/axis-1_4/lib/jaxrpc.jar:/usr/local/axis-1_4/lib/wsdl4j-1.5.1.jar:/usr/local/axis-1_4/lib/saaj.jar:/usr/local/axis-1_4/lib/axis-ant.jar:/usr/local/axis-1_4/lib/log4j-1.2.8.jar:/home/ESP/axis-1_4/mail.jar:/home/ESP/ESP/sendMsgs/bcdc.jar sendMsg %s" % f
+        
+        logging.info("Runs java command: %s" % javacmd1)
         try:
             os.system(javacmd)
+            os.system(javacmd1)
         except:
             logging.error('Run java Exception' )
             traceback.print_exc()
 
         #move processed file to processed folder
-        procdir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','processedHL7Msgs/')
+        procdir = os.path.join(TOPDIR,localconfig.LOCALSITE,'processedHL7Msgs/')
         if not os.path.isdir(procdir):
             os.mkdir(procdir)
 
