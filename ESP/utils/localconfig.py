@@ -1,5 +1,4 @@
 import os
-import logging
 from ESP.settings import TOPDIR
 import datetime,logging
 from ESP.esp.models import config
@@ -12,7 +11,7 @@ for l in locals:
 
 ###############################
 def getLogging(appname,debug=0):
-    logdir = os.path.join(TOPDIR+LOCALSITE+'/', 'logs/')
+    logdir = os.path.join(TOPDIR,LOCALSITE, 'logs/')
     if not os.path.isdir(logdir):
         os.mkdir(logdir)
         

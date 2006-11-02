@@ -15,6 +15,10 @@
 #
 
 import os, sys, django, datetime
+sys.path.insert(0, '/home/ESP/')
+os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+
+
 from ESP.esp.models import *
 from django.db.models import Q
 import localconfig
@@ -86,6 +90,7 @@ def findcaseByLx(condition):
 def findcaseByIcd9(condition, lxs):
     recl=[]
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiDefine=True)
+    encl=[]
     if condicd9s:
         encl = getrelatedEnc(condition, condicd9s)
     if not encl:
@@ -283,7 +288,7 @@ if __name__ == "__main__":
             else:#this patient is in the esp_case table
                 logging.info('This patient has old case - %s, DemogID%s' % (cond,pid)) 
                 cases.order_by('id')
-                c = cases[-1]
+                c = cases[len(cases)-1]
                 lid,rid,eid = pids[pid][:3]
                 eid.sort()
                 lid.sort()

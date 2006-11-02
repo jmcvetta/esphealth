@@ -1,3 +1,7 @@
+import os,sys
+sys.path.insert(0, '/home/ESP/')
+os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+
 import django, datetime
 from ESP.esp.models import *
 from django.db.models import Q
@@ -5,7 +9,6 @@ from ESP.settings import TOPDIR
 import localconfig 
 
 import string
-import os
 import shutil
 import StringIO
 import traceback
@@ -62,7 +65,12 @@ def parseProvider(incomdir, filename):
 ################################
 def parseDemog(incomdir, filename):
     l = getlines(incomdir+'/%s' % filename)
+    n=1
     for items in l:
+        if n % 1000 == 0:
+            logging.info('%s records done' % n)
+        n += 1
+                                
         try:
             pid,mrn,lname,fname,mname,addr1,addr2,city,state,zip,cty,phonearea,phone,ext,dob,gender,race,lang,ssn,phy,mari,religion,alias,mom,death=items
         except:
@@ -112,8 +120,12 @@ def parseDemog(incomdir, filename):
 ################################
 def parseEnc(incomdir, filename):
     l = getlines(incomdir+'/%s' % filename)
+    n=1
     for items in l:
-      
+        if n % 1000 == 0:
+            logging.info('%s Enc records done' % n)
+        n += 1
+                              
         try:
             pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,icd9=items
         except:
@@ -197,7 +209,12 @@ def parseLxOrd(incomdir, filename):
 ################################
 def parseLxRes(incomdir,filename):
     l = getlines(incomdir+'/%s' % filename)
+    n=1
     for items in l:
+        if n % 1000 == 0:
+            logging.info('%s Lx records done' % n)
+        n += 1
+                                
         try:
             pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,comp,compname,res,normalf,refl,refh,refu,status,note,accessnum,impre = items
         except:
@@ -261,7 +278,12 @@ def parseLxRes(incomdir,filename):
 ################################
 def parseRx(incomdir,filename):
     l = getlines(incomdir+'/%s' % filename)
+    n=1
     for items in l:
+        if n % 1000 == 0:
+            logging.info('%s Rx records done' % n)
+        n += 1
+                                
         try:
             pid,mrn,orderid,phy, orderd,status, meddirect,ndc,med,qua,ref,sdate,edate=items
             route=''
@@ -349,7 +371,7 @@ def movefile(incomdir, f):
     year = '20'+mmddyy[-2:]
     mon = mmddyy[:2]
 
-    curdir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/', 'processedData/%s/' % year)
+    curdir = os.path.join(TOPDIR,localconfig.LOCALSITE, 'processedData/%s/' % year)
     if not os.path.isdir(curdir):
         os.mkdir(curdir)
 
@@ -370,24 +392,24 @@ if __name__ == "__main__":
         startt = datetime.datetime.now()
        
         ##get incoming files    
-        #incomdir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','incomingData/')
-        incomdir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','realData/real_20061023/')
+        incomdir = os.path.join(TOPDIR, localconfig.LOCALSITE,'incomingData/')
+        #incomdir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','realData/real_20061023/')
         from validator import getfilesByDay,validateOneday
         days = getfilesByDay(incomdir)
         parsedays = []
-        for oneday in days:
-            err = validateOneday(incomdir,oneday)
+#        for oneday in days:
+#            err = validateOneday(incomdir,oneday)
         
-            if err: #not OK
-                logging.error("Valitator - Files for day %s not OK, reject to process\n" % oneday)
-            else: #OK
-                logging.info("Validator - Files for day %s OK\n" % oneday)
-                parsedays.append(oneday)
+#            if err: #not OK
+#                logging.error("Valitator - Files for day %s not OK, reject to process\n" % oneday)
+#            else: #OK
+#                logging.info("Validator - Files for day %s OK\n" % oneday)
+#                parsedays.append(oneday)
             
 
         ##start to parse by days
         logging.info('Validating is done, start to parse and sotre data\n')
-        for oneday in parsedays:
+        for oneday in days: #parsedays:
                 logging.info("Parser - parse day %s\n" % oneday)
                 provf = 'epicpro.esp.'+oneday
                 parseProvider(incomdir, provf)
