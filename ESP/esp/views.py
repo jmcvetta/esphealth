@@ -488,7 +488,7 @@ def preloadupdate(request,table='cptloincmap'):
             print request.POST[k]
             dbids.append(string.split(k,'_')[1])
     #print dbids
-    datadir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','preLoaderData/')
+    datadir = os.path.join(TOPDIR,localconfig.LOCALSITE,'preLoaderData/')
     if table == 'cptloincmap':
         f = open(datadir+'esp_cptloincmap.txt','w')
         for dbid in dbids:
@@ -694,6 +694,7 @@ def updateWorkflowComment(request,object_id):
         wf.save()
     else:
         print 'No change in workflow comment - not saved'
-    return HttpResponseRedirect("%s/cases/%s/F" % (SITEROOT,caseid))
+        
+    return HttpResponseRedirect("%s/cases/%s/F/" % (SITEROOT,caseid))
 
 
