@@ -1,13 +1,11 @@
-import  os
-##os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-##os.environ['PYTHONPATH'] = 'C:\django\ESP'
+import os,sys
+sys.path.insert(0, '/home/ESP/')
+os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 import datetime
 from ESP.settings import TOPDIR
 import localconfig 
 
 import string,re
-import sys
-#import shutil
 import StringIO
 import traceback
 import logging
@@ -25,9 +23,10 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
         return (errors, returnd)
     
     for l in lines[:-1]:
-        if not string.strip(l): continue
-        
         linenum=lines.index(l)+1
+        l=string.strip(l)
+        if not l: continue
+        
         fnum=len(re.findall("\^",l))
         if int(delimiternum) != fnum:
             msg ='Valitator - %s: wrong number of delimiter, should be %s, in file=%s\n=========LINE%s: %s\n' % (fname,delimiternum,fnum,linenum,l)
@@ -35,6 +34,9 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
             logging.error(msg)
           
         items = l.split('^')
+        if items == ['']* (int(delimiternum)+1):
+            continue
+        
         for r in required:
             if not string.strip(items[r]):
                 col = r+1
@@ -157,7 +159,7 @@ if __name__ == "__main__":
         startt = datetime.datetime.now()
        
         ##get incoming files
-        incomdir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','realData/real_20061026/')
+        incomdir = os.path.join(TOPDIR,localconfig.LOCALSITE,'incomingData/')
         days = getfilesByDay(incomdir)
   
         for oneday in days:
