@@ -160,10 +160,10 @@ class config(models.Model):
     configLastChanged = models.DateField('Configuration last changed',auto_now=True,)
 
     def __str__(self):
-        return self.instName 
+        return self.institution_name 
 
     class Admin:
-       pass
+       list_display=('institution_name','instComments')
         
  
     
@@ -275,7 +275,7 @@ class Demog(models.Model):
     DemogZip = models.CharField('Zip',maxlength=20,blank=True)
     DemogCountry = models.CharField('Country',maxlength=20,blank=True)
     DemogAreaCode = models.CharField('Home Phone Area Code',maxlength=20,blank=True)
-    DemogTel = models.CharField('Home Phone Number',maxlength=20,blank=True)
+    DemogTel = models.CharField('Home Phone Number',maxlength=50,blank=True)
     DemogExt = models.CharField('Home Phone Extension',maxlength=20,blank=True)
     DemogDate_of_Birth = models.CharField('Date of Birth',maxlength=20,blank=True)
     DemogGender = models.CharField('Gender',maxlength=20,blank=True)
@@ -383,8 +383,8 @@ class Rx(models.Model):
     RxProvider = models.ForeignKey(Provider,blank=True,null=True)      
     RxOrderDate = models.CharField('Order Date',maxlength=20,blank=True)
     RxStatus = models.CharField('Order Status',maxlength=20,blank=True)
-    RxDrugName = models.CharField('Name of Drug',maxlength=2000,blank=True)
-    RxDrugDirect = models.CharField('Drug directions',maxlength=2000,blank=True)
+    RxDrugName = models.TextField('Name of Drug',maxlength=2000,blank=True)
+    RxDrugDirect = models.TextField('Drug directions',maxlength=2000,blank=True)
     RxNational_Drug_Code = models.CharField('National Drug Code',maxlength=20,blank=True)
     RxDose = models.CharField('Dose',maxlength=20,blank=True)
     RxFrequency = models.CharField('Frequency',maxlength=20,blank=True)
@@ -449,7 +449,7 @@ class Lx(models.Model):
     LxReference_Unit = models.CharField('Reference Unit',maxlength=20,blank=True)
     LxTest_status = models.CharField('Test status',maxlength=20,blank=True)
     LxComment = models.TextField('Comments', blank=True, null=True,)
-    LxImpression = models.CharField('Impression for Imaging only',maxlength=2000,blank=True)
+    LxImpression = models.TextField('Impression for Imaging only',maxlength=2000,blank=True)
     LxLoinc = models.CharField('LOINC code',maxlength=20,blank=True)
    
     def getCPT(self):
@@ -511,7 +511,7 @@ class Enc(models.Model):
     EncEncounter_ClosedDate = models.CharField('Encounter Closed Date',maxlength=20,blank=True) 
     EncEncounter_Provider = models.ForeignKey(Provider,blank=True,null=True) 
     EncEncounter_Site = models.CharField('Encounter Site',maxlength=20,blank=True)
-    EncEncounter_SiteName = models.CharField('Encounter Site Name',maxlength=50,blank=True)
+    EncEncounter_SiteName = models.CharField('Encounter Site Name',maxlength=100,blank=True)
     EncEvent_Type = models.CharField('Event Type',maxlength=20,blank=True)
     EncPregnancy_Status = models.CharField('Pregnancy Status',maxlength=20,blank=True)
     EncEDC = models.CharField('Expected date of confinement',maxlength=20,blank=True) 
