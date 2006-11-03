@@ -73,23 +73,26 @@ if __name__ == "__main__":
     cases = Case.objects.filter(caseWorkflow__iexact='Q')
     if len(cases)>0:
         generateHL7(hl7dir,cases)
-  #  sys.exit(1) 
 
     #send all HL7 messages under HL7Msgs folder
     files=os.listdir(hl7dir)
+    if len(files):
+        (javadir, javaclass) = localconfig.getJavaInfo()
+        javacmd="%s -classpath %s sendMsg.java" % (os.path.join(javadir, 'javac'), javaclass)
+        try:
+            os.system(javacmd)
+        except:
+            logging.error('Compile java Exception' )
+            traceback.print_exc()
+                                                                
     for f in files:
         
         f = hl7dir + '/%s' % f
         #javacmd="/home/ESP/ESP/sendMsgs/sendMsg.bat %s" % f
-
-        javacmd="/usr/java/jdk1.5.0_09/bin/javac -classpath .:/home/ESP/axis-1_4/activation.jar:/usr/local/axis-1_4/lib/axis.jar:/usr/local/axis-1_4/lib/commons-logging-1.0.4.jar:/usr/local/axis-1_4/lib/commons-discovery-0.2.jar:/usr/local/axis-1_4/lib/jaxrpc.jar:/usr/local/axis-1_4/lib/wsdl4j-1.5.1.jar:/usr/local/axis-1_4/lib/saaj.jar:/usr/local/axis-1_4/lib/axis-ant.jar:/usr/local/axis-1_4/lib/log4j-1.2.8.jar:/home/ESP/axis-1_4/mail.jar:/home/ESP/ESP/sendMsgs/bcdc.jar sendMsg.java"
-
-        javacmd1 = "/usr/java/jdk1.5.0_09/bin/java -classpath .:/home/ESP/axis-1_4/activation.jar:/usr/local/axis-1_4/lib/axis.jar:/usr/local/axis-1_4/lib/commons-logging-1.0.4.jar:/usr/local/axis-1_4/lib/commons-discovery-0.2.jar:/usr/local/axis-1_4/lib/jaxrpc.jar:/usr/local/axis-1_4/lib/wsdl4j-1.5.1.jar:/usr/local/axis-1_4/lib/saaj.jar:/usr/local/axis-1_4/lib/axis-ant.jar:/usr/local/axis-1_4/lib/log4j-1.2.8.jar:/home/ESP/axis-1_4/mail.jar:/home/ESP/ESP/sendMsgs/bcdc.jar sendMsg %s" % f
-        
-        logging.info("Runs java command: %s" % javacmd1)
+        javaruncmd = "%s -classpath %s sendMsg %s" % (os.path.join(javadir, 'java'), javaclass, f)
+        logging.info("Runs java command: %s" % javaruncmd)
         try:
-            os.system(javacmd)
-            os.system(javacmd1)
+            os.system(javaruncmd)
         except:
             logging.error('Run java Exception' )
             traceback.print_exc()
