@@ -34,6 +34,7 @@ def getlines(fname):
 ################################
 def parseProvider(incomdir, filename):
     l = getlines(incomdir+'/%s' % filename)
+    provdict={}
     for items in l:
         try:
             phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone = items
@@ -59,12 +60,15 @@ def parseProvider(incomdir, filename):
         prov.provTelAreacode=phonearea
         prov.provTel=phone
         prov.save()
+        provdict[phy] = prov
     if l:
         movefile(incomdir, filename)
-        
+    return provdict
+
 ################################
 def parseDemog(incomdir, filename):
     l = getlines(incomdir+'/%s' % filename)
+    demogdict={}
     n=1
     for items in l:
         if n % 1000 == 0:
@@ -80,6 +84,7 @@ def parseDemog(incomdir, filename):
             demog = Demog(DemogPatient_Identifier=pid)
         else: #update record
             demog = pdb[0]
+
         if phone:
             phone = string.replace(phone, '-','')
         if not cty:
@@ -113,12 +118,14 @@ def parseDemog(incomdir, filename):
         if prov:
             demog.DemogProvider=prov[0]
         demog.save()
-
+        demogdict[pid]=demog
+        
     if l:
         movefile(incomdir, filename)
-        
+    return demogdict
+
 ################################
-def parseEnc(incomdir, filename):
+def parseEnc(incomdir, filename,demogdict,provdict):
     l = getlines(incomdir+'/%s' % filename)
     n=1
     for items in l:
@@ -130,9 +137,11 @@ def parseEnc(incomdir, filename):
             pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,icd9=items
         except:
             logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
-
-        patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]           
-        if not patient:
+        try:    
+            patient = demogdict[pid]    
+#        patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
+        except:
+        #if not patient:
             logging.warning('Parser In ENC: NO patient found: %s\n' % str(items))
             continue
             
@@ -156,58 +165,23 @@ def parseEnc(incomdir, filename):
         enc.EncCPT_codes=cpt
         enc.EncICD9_Codes=icd9
            
-        prov=Provider.objects.filter(provCode__exact=phy)
-        if prov:
-            enc.EncEncounter_Provider=prov[0]
+        #prov=Provider.objects.filter(provCode__exact=phy)
+        #prov = provdb.filter(provCode=phy)[0]
+        try:
+            prov =provdict[phy]
+            enc.EncEncounter_Provider=prov
+        except:
+            pass
+
 
         enc.save()
     if l:
         movefile(incomdir, filename)    
         
-
-################################
-def parseLxOrd(incomdir, filename):
-    l = getlines(incomdir+'/%s' % filename)
-    for items in l:
-        try:
-            pid,mrn,orderid,cpt,modi,accessnum,orderd,ordertp,phy = items
-        except:
-            logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
-            continue
-                   
-        if not string.strip(orderid):
-             orderid = today ##since when passing HL7 msg, this is required
-        try:            
-             patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
-        except:
-             logging.warning('Parser In LXORD: NO patient found: %s\n' % str(items))
-             continue
-        if not orderid: orderid = today 
-
-        lxdb =Lx.objects.filter(LxOrder_Id_Num__exact=orderid,LxPatient__DemogPatient_Identifier__exact=pid)
-
-        if not lxdb: #new record
-           lx = Lx(LxPatient=patient,LxOrder_Id_Num=orderid)
-        else: #update record
-           lx = lxdb[0]
-                   
-        lx.LxMedical_Record_Number =mrn
-        lx.LxTest_Code_CPT=cpt
-        lx.LxTest_Code_CPT_mod =modi
-        lx.LxHVMA_Internal_Accession_number=accessnum
-        lx.LxOrderDate=orderd
-        lx.LxOrderType=ordertp
-        prov=Provider.objects.filter(provCode__exact=phy)
-        if prov:
-            lx.LxOrdering_Provider=prov[0]
-
-        lx.save()
-    if l:
-        movefile(incomdir, filename)
                 
            
 ################################
-def parseLxRes(incomdir,filename):
+def parseLxRes(incomdir,filename,demogdict, provdict):
     l = getlines(incomdir+'/%s' % filename)
     n=1
     for items in l:
@@ -226,8 +200,9 @@ def parseLxRes(incomdir,filename):
                 continue
 
                 
-        try:            
-            patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
+        try:
+            patient = demogdict[pid]
+            #patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
         except:
             logging.warning('Parser In LXRES: NO patient found: %s\n' % str(items))
             continue
@@ -265,9 +240,14 @@ def parseLxRes(incomdir,filename):
         if c:
             lx.LxLoinc=(c[0].Loinc).strip()
 
-        prov=Provider.objects.filter(provCode__exact=phy)         
-        if prov:
-            lx.LxOrdering_Provider=prov[0]
+        #prov=Provider.objects.filter(provCode__exact=phy)         
+        #if prov:
+        try:
+            prov=provdict[phy]
+            lx.LxOrdering_Provider=prov
+        except:
+            pass
+        
         lx.save()
         
     if l:
@@ -276,7 +256,7 @@ def parseLxRes(incomdir,filename):
 
            
 ################################
-def parseRx(incomdir,filename):
+def parseRx(incomdir,filename,demogdict,provdict):
     l = getlines(incomdir+'/%s' % filename)
     n=1
     for items in l:
@@ -290,8 +270,9 @@ def parseRx(incomdir,filename):
         except:
             pid,mrn,orderid,phy, orderd,status, meddirect,ndc,med,qua,ref,sdate,edate,route=items
            
-        try:            
-            patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
+        try:
+            patient=demogdict[pid]
+            #patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
         except:
             logging.warning('Parser In RX: NO patient found: %s\n' % str(items))
             continue
@@ -320,24 +301,31 @@ def parseRx(incomdir,filename):
         rx.RxFrequency='N/A'
         rx.RxStartDate=sdate
         rx.RxEndDate=edate
-        prov=Provider.objects.filter(provCode__exact=phy)
-        if prov:
-            rx.RxProvider=prov[0]
+
+        #prov=Provider.objects.filter(provCode__exact=phy)
+        #if prov:
+        try:
+            prov=provdict[phy]
+            rx.RxProvider=prov
+        except:
+            pass
+
         rx.save()
     if l:
         movefile(incomdir, filename)   
 
 
 ################################
-def parseImm(incomdir, filename):
+def parseImm(incomdir, filename,demogdict):
     
     l = getlines(incomdir+'/%s' % filename)
     for items in l:
  
         pid, immtp, immname,immd,immdose,manf,lot,recid = items
         
-        try:            
-            patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
+        try:
+            patient = demogdict[pid]
+            #patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
         except:
             logging.warning('Parser In IMM: NO patient found: %s\n' % str(items))
             continue
@@ -397,14 +385,14 @@ if __name__ == "__main__":
         from validator import getfilesByDay,validateOneday
         days = getfilesByDay(incomdir)
         parsedays = []
-#        for oneday in days:
-#            err = validateOneday(incomdir,oneday)
+        for oneday in days:
+            err = validateOneday(incomdir,oneday)
         
-#            if err: #not OK
-#                logging.error("Valitator - Files for day %s not OK, reject to process\n" % oneday)
-#            else: #OK
-#                logging.info("Validator - Files for day %s OK\n" % oneday)
-#                parsedays.append(oneday)
+            if err: #not OK
+                logging.error("Valitator - Files for day %s not OK, reject to process\n" % oneday)
+            else: #OK
+                logging.info("Validator - Files for day %s OK\n" % oneday)
+                parsedays.append(oneday)
             
 
         ##start to parse by days
@@ -412,28 +400,25 @@ if __name__ == "__main__":
         for oneday in days: #parsedays:
                 logging.info("Parser - parse day %s\n" % oneday)
                 provf = 'epicpro.esp.'+oneday
-                parseProvider(incomdir, provf)
-                #movefile(incomdir, provf) 
+                provdict = parseProvider(incomdir, provf)
 
                 demogf =  'epicmem.esp.'+oneday 
-                parseDemog(incomdir, demogf)
-                #movefile(incomdir, demogf)
+                demogdict = parseDemog(incomdir, demogf)
 
                 visf =  'epicvis.esp.'+oneday      
-                parseEnc(incomdir , visf)
-               # movefile(incomdir, visf)
+                parseEnc(incomdir , visf,demogdict,provdict)
+
        
                 medf = 'epicmed.esp.'+oneday
-                parseRx(incomdir , medf)
-              #  movefile(incomdir, medf)
+                parseRx(incomdir , medf,demogdict,provdict)
         
                 lxresf = 'epicres.esp.'+oneday
-                parseLxRes(incomdir,lxresf)
-              #  movefile(incomdir, lxresf)
+                parseLxRes(incomdir,lxresf, demogdict,provdict)
+
                 
                 immf = 'epicimm.esp.'+oneday  
-                parseImm(incomdir , immf)
-               # movefile(incomdir, immf)
+                parseImm(incomdir , immf, demogdict)
+
         logging.info('Start: %s\n' %  startt)
         logging.info('End:   %s\n' % datetime.datetime.now())
     except:
