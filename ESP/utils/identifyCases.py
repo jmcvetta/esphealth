@@ -98,15 +98,13 @@ def findcaseByLx(condition):
 
 ###############################
 def findcaseByIcd9(condition, lxs):
-    recl=[]
+
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiDefine=True)
     encl=[]
     if condicd9s:
         encl = getrelatedEnc(condition, condicd9s)
-    if not encl:
-        return recl
     
-    return recl
+    return encl
 
 
 #################################
@@ -231,7 +229,7 @@ def getLxduration(casedb, curlid):
 
 
 ################################
-def checkLxEncDuration(before=-21, after=61):
+def checkLxEncDuration(before=-31, after=31):
     """For PID only: ICD9 codes within 21 days prior the positive lab resutl or in the subsequent 60 days follosing positive lab result
     """
     logging.info('PID: for LX only: %s' % str(pids))
@@ -241,9 +239,10 @@ def checkLxEncDuration(before=-21, after=61):
         lxidl = pids[pid][0]
         encidl = pids[pid][2]
         for lxid in lxidl:
+            print lxid
             for encid in encidl:
-                curlx = Lx.objects.filter(id__in=lxid)[0]
-                curenc = Enc.objects.filter(id__in=encid)[0]
+                curlx = Lx.objects.filter(id__in=[lxid])[0]
+                curenc = Enc.objects.filter(id__in=[encid])[0]
                 if curlx.LxDate_of_result and curenc.EncEncounter_Date:
                     curdur = datetime.date(int(curenc.EncEncounter_Date[:4]),int(curenc.EncEncounter_Date[4:6]),int(curenc.EncEncounter_Date[6:8]))- datetime.date(int(curlx.LxDate_of_result[:4]),int(curlx.LxDate_of_result[4:6]),int(curlx.LxDate_of_result[6:8]))
                     numdays = curdur.days
@@ -286,11 +285,12 @@ if __name__ == "__main__":
             ##need check ICD9 also
             if recordl:
                 record_icd9l = findcaseByIcd9(cond,recordl)
+                print  record_icd9l
                 if not record_icd9l: #not a PID case
                     pids={}
                 else:
                     buildCaseData(record_icd9l,2)
-                    checkLxEncDuration(before=-22, after=61)
+                    checkLxEncDuration(before=-31, after=31)
                    
         if not pids: #no case found
             logging.info('No cases of %s found' % cond)
