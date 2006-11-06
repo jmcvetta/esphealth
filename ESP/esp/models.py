@@ -56,21 +56,21 @@ class ndc(models.Model):
     LISTING_SEQ_NO	LBLCODE	PRODCODE	STRENGTH	UNIT	RX_OTC	FIRM_SEQ_NO	TRADENAME
     eeesh this is horrible - there may be asterisks indicating an optional zero
     and there is no obvious way to fix this..."""
-    ndcLbl = models.CharField('NDC Label Code (leading zeros are meaningless)', maxlength=10,)
-    ndcProd = models.CharField('NDC Product Code', maxlength=5,)
-    ndcTrade = models.CharField('NDC Trade Name', maxlength=50,)
+    ndcLbl = models.CharField('NDC Label Code (leading zeros are meaningless)', maxlength=10,db_index=True)
+    ndcProd = models.CharField('NDC Product Code', maxlength=5,db_index=True)
+    ndcTrade = models.CharField('NDC Trade Name', maxlength=200,)
     
     def __str__(self):
         return '%s %s %s' % (self.ndcLbl,self.ndcProd,self.ndcTrade)
         
     class Admin:
         list_display = ('ndcLbl', 'ndcProd','ndcTrade')
-        search_fields = ('ndcProd')
+        search_fields = ('ndcProd','ndcLbl')
    
 class cpt(models.Model):
     """cpt codes I found at www.tricare.osd.mil/tai/downloads/cpt_codes.xls
     """
-    cptCode = models.CharField('CPT Code', maxlength=10,)
+    cptCode = models.CharField('CPT Code', maxlength=10,db_index=True)
     cptLong = models.TextField('Long name', maxlength=500,)
     cptShort = models.CharField('Short name', maxlength=60,)
     cptLastedit = models.DateTimeField('Last edited',editable=False,auto_now=True)
@@ -170,7 +170,7 @@ class config(models.Model):
 class Rule(models.Model):
     """case definition rule with destination and format 
     """
-    ruleName = models.CharField('Rule Name', maxlength=100,)
+    ruleName = models.CharField('Rule Name', maxlength=100,db_index=True)
     ruleSQL = models.TextField('', blank=True, null=True)
     ruleComments = models.TextField('Comments', blank=True, null=True)
     ruleVerDate = models.DateTimeField('Last Edited date',auto_now=True)
@@ -234,20 +234,20 @@ class Format(models.Model):
         ordering = ('formatVerDate', 'formatName')
 
 class Provider(models.Model):
-    provCode= models.CharField('Physician code',maxlength=20,blank=True)
+    provCode= models.CharField('Physician code',maxlength=20,blank=True,db_index=True)
     provLast_Name = models.CharField('Last Name',maxlength=70,blank=True)
     provFirst_Name = models.CharField('First Name',maxlength=50,blank=True)
     provMiddle_Initial = models.CharField('Middle_Initial',maxlength=20,blank=True)
     provTitle = models.CharField('Title',maxlength=20,blank=True)
     provPrimary_Dept_Id = models.CharField('Primary Department Id',maxlength=20,blank=True)
-    provPrimary_Dept = models.CharField('Primary Department',maxlength=100,blank=True)
+    provPrimary_Dept = models.CharField('Primary Department',maxlength=200,blank=True)
     provPrimary_Dept_Address_1 = models.CharField('Primary Department Address 1',maxlength=100,blank=True)
     provPrimary_Dept_Address_2 = models.CharField('Primary Department Address 2',maxlength=20,blank=True)
     provPrimary_Dept_City = models.CharField('Primary Department City',maxlength=20,blank=True)
     provPrimary_Dept_State = models.CharField('Primary Department State',maxlength=20,blank=True)
     provPrimary_Dept_Zip = models.CharField('Primary Department Zip',maxlength=20,blank=True)
     provTelAreacode = models.CharField('Primary Department Phone Areacode',maxlength=20,blank=True)
-    provTel = models.CharField('Primary Department Phone Number',maxlength=20,blank=True)
+    provTel = models.CharField('Primary Department Phone Number',maxlength=50,blank=True)
 
     def __str__(self):
         return "%s %s %s %s" % (self.provCode,self.provPrimary_Dept,self.provPrimary_Dept_Address_1,self.provPrimary_Dept_Address_2)
@@ -262,21 +262,21 @@ class Provider(models.Model):
 
 
 class Demog(models.Model):
-    DemogPatient_Identifier = models.CharField('Patient Identifier',maxlength=20,blank=True)
-    DemogMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True)
+    DemogPatient_Identifier = models.CharField('Patient Identifier',maxlength=20,blank=True,db_index=True)
+    DemogMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,db_index=True,blank=True)
     DemogLast_Name = models.CharField('Last_Name',maxlength=199,blank=True)
     DemogFirst_Name = models.CharField('First_Name',maxlength=199,blank=True)
     DemogMiddle_Initial = models.CharField('Middle_Initial',maxlength=199,blank=True)
     DemogSuffix = models.CharField('Suffix',maxlength=199,blank=True)
-    DemogAddress1 = models.CharField('Address1',maxlength=100,blank=True)
+    DemogAddress1 = models.CharField('Address1',maxlength=200,blank=True)
     DemogAddress2 = models.CharField('Address2',maxlength=100,blank=True)
-    DemogCity = models.CharField('City',maxlength=20,blank=True)
+    DemogCity = models.CharField('City',maxlength=50,blank=True)
     DemogState = models.CharField('State',maxlength=20,blank=True)
     DemogZip = models.CharField('Zip',maxlength=20,blank=True)
     DemogCountry = models.CharField('Country',maxlength=20,blank=True)
     DemogAreaCode = models.CharField('Home Phone Area Code',maxlength=20,blank=True)
-    DemogTel = models.CharField('Home Phone Number',maxlength=50,blank=True)
-    DemogExt = models.CharField('Home Phone Extension',maxlength=20,blank=True)
+    DemogTel = models.CharField('Home Phone Number',maxlength=100,blank=True)
+    DemogExt = models.CharField('Home Phone Extension',maxlength=50,blank=True)
     DemogDate_of_Birth = models.CharField('Date of Birth',maxlength=20,blank=True)
     DemogGender = models.CharField('Gender',maxlength=20,blank=True)
     DemogRace = models.CharField('Race',maxlength=20,blank=True)
@@ -285,7 +285,7 @@ class Demog(models.Model):
     DemogProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True,null=True)
     DemogMaritalStat = models.CharField('Marital Status',maxlength=20,blank=True)
     DemogReligion = models.CharField('Religion',maxlength=20,blank=True)
-    DemogAliases = models.CharField('Aliases',maxlength=200,blank=True)
+    DemogAliases = models.CharField('Aliases',maxlength=250,blank=True)
     DemogMotherMRN = models.CharField('Mother Medical Record Number',maxlength=20,blank=True)
     DemogDeath_Date = models.CharField('Date of death',maxlength=200,blank=True)
     DemogDeath_Indicator = models.CharField('Death_Indicator',maxlength=30,blank=True)
@@ -303,20 +303,20 @@ class Case(models.Model):
     """casePID can't be a foreign key or we get complaints that the pointed to model doesn't
     yet exist
     """
-    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID")
+    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
     caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
-    caseWorkflow = models.CharField('Workflow State', maxlength=20,choices=WORKFLOW_STATES, blank=True, )
+    caseWorkflow = models.CharField('Workflow State', maxlength=20,choices=WORKFLOW_STATES, blank=True,db_index=True )
     caseComments = models.TextField('Comments', blank=True, null=True)
     caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
     casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
     caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID")
     caseQueryID = models.CharField('External Query which generated this case',maxlength=20, blank=True, null=True)
-    caseMsgFormat = models.CharField('Case Message Format', maxlength=10, choices=FORMAT_TYPES, blank=True, null=True)
-    caseMsgDest = models.CharField('Destination for formatted messages', maxlength=10, choices=DEST_TYPES, blank=True, null=True)
-    caseEncID = models.CharField('A list of ESP_ENC IDs',maxlength=100,  blank=True, null=True)
-    caseLxID = models.CharField('A list of ESP_Lx IDs',maxlength=100,  blank=True, null=True)
-    caseRxID = models.CharField('A list of ESP_Rx IDs',maxlength=100,  blank=True, null=True)
-    caseICD9 = models.TextField('A list of related ICD9',maxlength=300,  blank=True, null=True)
+    caseMsgFormat = models.CharField('Case Message Format', maxlength=20, choices=FORMAT_TYPES, blank=True, null=True)
+    caseMsgDest = models.CharField('Destination for formatted messages', maxlength=120, choices=DEST_TYPES, blank=True, null=True)
+    caseEncID = models.TextField('A list of ESP_ENC IDs',maxlength=500,  blank=True, null=True)
+    caseLxID = models.TextField('A list of ESP_Lx IDs',maxlength=500,  blank=True, null=True)
+    caseRxID = models.TextField('A list of ESP_Rx IDs',maxlength=500,  blank=True, null=True)
+    caseICD9 = models.TextField('A list of related ICD9',maxlength=500,  blank=True, null=True)
 
 
     def __str__(self):
@@ -378,19 +378,19 @@ class CaseWorkflow(models.Model):
 
 class Rx(models.Model):
     RxPatient = models.ForeignKey(Demog) 
-    RxMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True)
+    RxMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True,db_index=True)
     RxOrder_Id_Num = models.CharField('Order Id #',maxlength=20,blank=True)
     RxProvider = models.ForeignKey(Provider,blank=True,null=True)      
     RxOrderDate = models.CharField('Order Date',maxlength=20,blank=True)
     RxStatus = models.CharField('Order Status',maxlength=20,blank=True)
-    RxDrugName = models.TextField('Name of Drug',maxlength=2000,blank=True)
-    RxDrugDirect = models.TextField('Drug directions',maxlength=2000,blank=True)
+    RxDrugName = models.TextField('Name of Drug',maxlength=3000,blank=True)
+    RxDrugDesc = models.TextField('Drug description',maxlength=3000,blank=True)
     RxNational_Drug_Code = models.CharField('National Drug Code',maxlength=20,blank=True)
-    RxDose = models.CharField('Dose',maxlength=20,blank=True)
-    RxFrequency = models.CharField('Frequency',maxlength=20,blank=True)
-    RxQuantity = models.CharField('Quantity',maxlength=20,blank=True)
-    RxRefills = models.CharField('Refills',maxlength=20,blank=True)
-    RxRoute = models.CharField('Routes',maxlength=100,blank=True)
+    RxDose = models.CharField('Dose',maxlength=200,blank=True)
+    RxFrequency = models.CharField('Frequency',maxlength=200,blank=True)
+    RxQuantity = models.CharField('Quantity',maxlength=200,blank=True)
+    RxRefills = models.CharField('Refills',maxlength=200,blank=True)
+    RxRoute = models.CharField('Routes',maxlength=200,blank=True)
     RxStartDate = models.CharField('Start Date',maxlength=20,blank=True)
     RxEndDate = models.CharField('End Date',maxlength=20,blank=True)
     
@@ -399,12 +399,16 @@ class Rx(models.Model):
         """
         lbl = self.RxNational_Drug_Code[:6]
         prd = self.RxNational_Drug_Code[6:]
-        try:
-            n = ndc.objects.get(ndcLbl__exact=lbl,ndcProd__exact=prd)
-            s = n.ndcTrade
+        # hack ! TODO fixme
+        lbl = '0%s' % self.RxNational_Drug_Code[:5] # add a leading zero
+        prd = self.RxNational_Drug_Code[5:-2] # ignore last 2 digits
+	try:
+            #n = ndc.objects.get(ndcLbl__exact=lbl,ndcProd__exact=prd)
+            n = ndc.objects.filter(ndcLbl=lbl,ndcProd=prd)
+            s = '%s=%s' % (self.RxNational_Drug_Code,n[0].ndcTrade)
         except:
             if self.RxNational_Drug_Code:
-                s = 'NDC code=%s: not found' % self.RxNational_Drug_Code
+                s = 'NDC code=%s: not found (tried lbl=%s prod=%s)' % (self.RxNational_Drug_Code,lbl,prd)
             else:
                 s=''
         return s
@@ -431,7 +435,7 @@ class Rx(models.Model):
 
 class Lx(models.Model):
     LxPatient = models.ForeignKey(Demog) 
-    LxMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True)
+    LxMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True,db_index=True)
     LxOrder_Id_Num = models.CharField('Order Id #',maxlength=20,blank=True)
     LxTest_Code_CPT = models.CharField('Test Code (CPT)',maxlength=20,blank=True)
     LxTest_Code_CPT_mod = models.CharField('Test Code (CPT) Modifier',maxlength=20,blank=True)
@@ -441,13 +445,13 @@ class Lx(models.Model):
     LxDate_of_result =models.CharField('Date of result',maxlength=20,blank=True)  
     LxHVMA_Internal_Accession_number = models.CharField('HVMA Internal Accession number',maxlength=20,blank=True)
     LxComponent = models.CharField('Component',maxlength=20,blank=True)
-    LxComponentName = models.CharField('Component Name',maxlength=100,blank=True)
-    LxTest_results = models.CharField('Test results',maxlength=200,blank=True)
+    LxComponentName = models.CharField('Component Name',maxlength=200,blank=True)
+    LxTest_results = models.TextField('Test results',maxlength=2000,blank=True)
     LxNormalAbnormal_Flag = models.CharField('Normal/Abnormal Flag',maxlength=20,blank=True)
-    LxReference_Low = models.CharField('Reference Low',maxlength=20,blank=True)
-    LxReference_High = models.CharField('Reference High',maxlength=20,blank=True)
-    LxReference_Unit = models.CharField('Reference Unit',maxlength=20,blank=True)
-    LxTest_status = models.CharField('Test status',maxlength=20,blank=True)
+    LxReference_Low = models.CharField('Reference Low',maxlength=100,blank=True)
+    LxReference_High = models.CharField('Reference High',maxlength=100,blank=True)
+    LxReference_Unit = models.CharField('Reference Unit',maxlength=100,blank=True)
+    LxTest_status = models.CharField('Test status',maxlength=50,blank=True)
     LxComment = models.TextField('Comments', blank=True, null=True,)
     LxImpression = models.TextField('Impression for Imaging only',maxlength=2000,blank=True)
     LxLoinc = models.CharField('LOINC code',maxlength=20,blank=True)
@@ -490,7 +494,7 @@ class Lx(models.Model):
         pass
 
 class Lxo(models.Model):
-    LxoPatient_Identifier = models.CharField('Patient Identifier',maxlength=20,blank=True)
+    LxoPatient_Identifier = models.CharField('Patient Identifier',maxlength=20,blank=True,db_index=True)
     LxoMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True)
     LxoOrder_Id_Num = models.CharField('Order Id #',maxlength=20,blank=True)
     LxoTest_ordered = models.CharField('Test ordered',maxlength=20,blank=True)
@@ -504,7 +508,7 @@ class Lxo(models.Model):
 
 class Enc(models.Model):
     EncPatient = models.ForeignKey(Demog) 
-    EncMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True)
+    EncMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True,db_index=True)
     EncEncounter_ID = models.CharField('Encounter ID',maxlength=20,blank=True)
     EncEncounter_Date = models.CharField('Encounter Date',maxlength=20,blank=True)
     EncEncounter_Status = models.CharField('Encounter Status',maxlength=20,blank=True)
@@ -579,8 +583,8 @@ class Immunization(models.Model):
     ImmName = models.CharField('Immunization Name',maxlength=200,blank=True)
     ImmDate = models.CharField('Immunization Date Given',maxlength=20,blank=True)
     ImmDose = models.CharField('Immunization Dose',maxlength=100,blank=True)
-    ImmManuf =models.CharField('Manufacturer',maxlength=50,blank=True)
-    ImmLot = models.CharField('Lot Number',maxlength=50,blank=True)
+    ImmManuf =models.CharField('Manufacturer',maxlength=100,blank=True)
+    ImmLot = models.TextField('Lot Number',maxlength=500,blank=True)
     ImmVisDate = models.CharField('Date of Visit',maxlength=20,blank=True)
     ImmRecId = models.CharField('Immunization Record Id',maxlength=200,blank=True)
     
@@ -598,7 +602,7 @@ class ConditionIcd9(models.Model):
     CondiRule = models.ForeignKey(Rule)
     CondiICD9 = models.TextField('ICD-9 Codes',blank=True)
     CondiDefine = models.BooleanField('Icd9 used in definition or not', blank=True)
-    CondiSend = models.BooleanField('Icd9 need to be send or not', blank=True)
+    CondiSend = models.BooleanField('Icd9 needs to be sent or not', blank=True)
 
     def __str__(self):
         return '%s %s' % (self.CondiRule,self.CondiICD9)
@@ -611,7 +615,7 @@ class ConditionLOINC(models.Model):
     CondiRule = models.ForeignKey(Rule)
     CondiLOINC = models.TextField('LOINC Codes',blank=True)
     CondiDefine = models.BooleanField('Loinc used in definition or not', blank=True)
-    CondiSend = models.BooleanField('Loinc need to be send or not', blank=True)
+    CondiSend = models.BooleanField('Loinc needs to be sent or not', blank=True)
     CondiSNMDPosi = models.TextField('SNOMED Positive Codes',blank=True)
     CondiSNMDNega = models.TextField('SNOMED Negative Codes',blank=True)
     CondiSNMDInde = models.TextField('SNOMED Indeterminate Codes',blank=True)
@@ -635,7 +639,7 @@ class CPTLOINCMap(models.Model):
     class Admin:
         list_display = ('CPT', 'CPTCompt')
         search_fields = ('CPT')
-    
+
 class ConditionNdc(models.Model):
     CondiRule = models.ForeignKey(Rule)
     CondiNdc = models.TextField('NDC Codes',blank=True)
@@ -648,3 +652,19 @@ class ConditionNdc(models.Model):
     class Admin:
         list_display = ('CondiRule', 'CondiNdc')
         search_fields = ('CondiNdc')
+
+    
+class ConditionDrugName(models.Model):
+    CondiRule = models.ForeignKey(Rule)
+    CondiDrugName = models.TextField('string to look for',blank=True)
+    CondiDefine = models.BooleanField('Used in case definition or not', blank=True)
+    CondiSend = models.BooleanField('Must be sent or not', blank=True)
+
+    def __str__(self):
+        return '%s %s' % (self.CondiRule,self.CondiDrugName)
+        
+    class Admin:
+        list_display = ('CondiRule', 'CondiDrugName')
+        search_fields = ('CondiDrugName')
+
+

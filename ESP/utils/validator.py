@@ -19,7 +19,7 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
     try:
         lines= file(incomdir+fname).readlines()
     except:
-        logging.error('Valitator - Can not read file:%s%s\n' % (incomdir,fname))
+        logging.error('Validator - Can not read file:%s%s\n' % (incomdir,fname))
         return (errors, returnd)
     
     for l in lines[:-1]:
@@ -29,7 +29,7 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
         
         fnum=len(re.findall("\^",l))
         if int(delimiternum) != fnum:
-            msg ='Valitator - %s: wrong number of delimiter, should be %s, in file=%s\n=========LINE%s: %s\n' % (fname,delimiternum,fnum,linenum,l)
+            msg ='Validator - %s: wrong number of delimiter, should be %s, in file=%s\n=========LINE%s: %s\n' % (fname,delimiternum,fnum,linenum,l)
             errors = 1
             logging.error(msg)
           
@@ -40,14 +40,14 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
         for r in required:
             if not string.strip(items[r]):
                 col = r+1
-                msg = 'Valitator - %s, LINE%s: Empty for Required filed in column %s\n' % (fname,linenum, col )
+                msg = 'Validator - %s, LINE%s: Empty for Required filed in column %s\n' % (fname,linenum, col )
                 errors = 1
                 logging.error(msg)
         for n in needidcolumn:
             returnd.setdefault(n,[]).append(items[n])
         for d in datecolumn:
             if items[d] and len(items[d])!=8 or re.search('\D', items[d]):
-                msg = 'Valitator - %s: wrong Date format: %s\n=========LINE%s: %s\n'  % (fname,items[d],linenum, l)
+                msg = 'Validator - %s: wrong Date format: %s\n=========LINE%s: %s\n'  % (fname,items[d],linenum, l)
                 errors = 1
                 logging.error(msg)
                
@@ -63,13 +63,13 @@ def checkID(pids, provids, vispids,visprovids,demogf,providerf,visf):
     errors = 0
     for i in vispids:
         if i not in pids:
-            msg = 'Valitator - %s: Patient %s not in mem file: %s\n' % (visf,i,demogf)            
+            msg = 'Validator - %s: Patient %s not in mem file: %s\n' % (visf,i,demogf)            
             if msg not in msgs: msgs.append(msg)
 
    
     for i in visprovids:
         if i and i not in provids:
-            msg = 'Valitator - %s: Provider %s not in prov file: %s\n' % (visf,i,providerf)
+            msg = 'Validator - %s: Provider %s not in prov file: %s\n' % (visf,i,providerf)
             if msg not in msgs: msgs.append(msg)
             
     for m in msgs:
@@ -84,7 +84,7 @@ def validateOneday(incomdir, oneday):
     finalerr=0
     #patient
     demogf = 'epicmem.esp.'+oneday
-    logging.info('Valitator - Process %s' % demogf)
+    logging.info('Validator - Process %s' % demogf)
     (err,tempd) = validateOnefile(incomdir,demogf,24,[0],datecolumn=[14],required=[0,1])
     pids = tempd[0]
     if err:
@@ -92,7 +92,7 @@ def validateOneday(incomdir, oneday):
         
     #provider
     providerf = 'epicpro.esp.'+oneday
-    logging.info('Valitator -Process %s' % providerf)
+    logging.info('Validator -Process %s' % providerf)
     err,tempd = validateOnefile(incomdir,providerf,13,[0],required=[0] )
     provids= tempd[0]
     if err:
@@ -100,7 +100,7 @@ def validateOneday(incomdir, oneday):
         
     #encounter
     visf = 'epicvis.esp.'+oneday
-    logging.info('Valitator -Process %s' % visf)
+    logging.info('Validator -Process %s' % visf)
     err,tempd = validateOnefile(incomdir,visf,13,[0,6], datecolumn=[3,5,10],required=[0,1])
     if tempd:
        err2 = checkID(pids, provids, tempd[0],tempd[6],demogf,providerf,visf)
@@ -108,7 +108,7 @@ def validateOneday(incomdir, oneday):
         finalerr = 1
     #lxres
     lxresf = 'epicres.esp.'+oneday
-    logging.info('Valitator - Process %s' % lxresf)
+    logging.info('Validator - Process %s' % lxresf)
     err, tempd = validateOnefile(incomdir,lxresf,18,[0,5],datecolumn=[3,4],required=[0,1])
     if tempd:
         err2 = checkID(pids, provids, tempd[0],tempd[5],demogf,providerf,lxresf)
@@ -117,7 +117,7 @@ def validateOneday(incomdir, oneday):
 
     #med
     medf = 'epicmed.esp.'+oneday
-    logging.info('Valitator - Process %s' % medf)
+    logging.info('Validator - Process %s' % medf)
     err,tempd = validateOnefile(incomdir,medf,13,[0,3],datecolumn=[4,11,12],required=[0,1])
     if tempd:
        err2 = checkID(pids, provids, tempd[0],tempd[3],demogf,providerf,medf)
@@ -125,12 +125,12 @@ def validateOneday(incomdir, oneday):
         finalerr = 1
     #imm
     mmf = 'epicimm.esp.'+oneday
-    logging.info('Valitator - Process %s' % mmf)
+    logging.info('Validator - Process %s' % mmf)
     err,tempd = validateOnefile(incomdir,mmf,7,[0],datecolumn=[3])
-    #if tempd:
-    #    err2 = checkID(pids, provids, tempd[0],[],demogf,providerf,mmf)
-    #if err or err2:
-    #    finalerr = 1
+    if tempd:
+        err2 = checkID(pids, provids, tempd[0],[],demogf,providerf,mmf)
+    if err or err2:
+        finalerr = 1
     return finalerr
 
 ################################

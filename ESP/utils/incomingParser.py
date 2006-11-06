@@ -131,7 +131,7 @@ def parseEnc(incomdir, filename,demogdict,provdict):
     l = getlines(incomdir+'/%s' % filename)
     n=1
     for items in l:
-        if n % 1000 == 0:
+        if n % 2000 == 0:
             logging.info('%s Enc records done' % n)
         n += 1
                               
@@ -187,7 +187,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
     l = getlines(incomdir+'/%s' % filename)
     n=1
     for items in l:
-        if n % 1000 == 0:
+        if n % 2000 == 0:
             logging.info('%s Lx records done' % n)
         n += 1
                                 
@@ -262,15 +262,15 @@ def parseRx(incomdir,filename,demogdict,provdict):
     l = getlines(incomdir+'/%s' % filename)
     n=1
     for items in l:
-        if n % 1000 == 0:
+        if n % 2000 == 0:
             logging.info('%s Rx records done' % n)
         n += 1
                                 
         try:
-            pid,mrn,orderid,phy, orderd,status, meddirect,ndc,med,qua,ref,sdate,edate  = [x.strip() for x in items]
+            pid,mrn,orderid,phy, orderd,status, med,ndc,meddesc,qua,ref,sdate,edate  = [x.strip() for x in items]
             route=''
         except:
-            pid,mrn,orderid,phy, orderd,status, meddirect,ndc,med,qua,ref,sdate,edate,route  = [x.strip() for x in items]
+            pid,mrn,orderid,phy, orderd,status, med,ndc,meddesc,qua,ref,sdate,edate,route  = [x.strip() for x in items]
             
            
         try:
@@ -291,7 +291,7 @@ def parseRx(incomdir,filename,demogdict,provdict):
         rx.RxMedical_Record_Number=mrn
         rx.RxOrderDate=orderd
         rx.RxStatus=status
-        rx.RxDrugDirect=meddirect
+        rx.RxDrugDesc=meddesc
         rx.RxDrugName=med
         rx.RxNational_Drug_Code=ndc
         #if not qua: #dose
@@ -388,19 +388,19 @@ if __name__ == "__main__":
         from validator import getfilesByDay,validateOneday
         days = getfilesByDay(incomdir)
         parsedays = []
-#        for oneday in days:
-#            err = validateOneday(incomdir,oneday)
+        for oneday in days:
+            err = validateOneday(incomdir,oneday)
         
-#            if err: #not OK
-#                logging.error("Valitator - Files for day %s not OK, reject to process\n" % oneday)
-#            else: #OK
-#                logging.info("Validator - Files for day %s OK\n" % oneday)
-#                parsedays.append(oneday)
+            if err: #not OK
+                logging.error("Valitator - Files for day %s not OK, reject to process\n" % oneday)
+            else: #OK
+                logging.info("Validator - Files for day %s OK\n" % oneday)
+                parsedays.append(oneday)
             
 
         ##start to parse by days
         logging.info('Validating is done, start to parse and sotre data\n')
-        for oneday in days: #parsedays:
+        for oneday in parsedays:
                 logging.info("Parser - parse day %s\n" % oneday)
                 provf = 'epicpro.esp.'+oneday
                 provdict = parseProvider(incomdir, provf)
