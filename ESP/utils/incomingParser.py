@@ -37,7 +37,8 @@ def parseProvider(incomdir, filename):
     provdict={}
     for items in l:
         try:
-            phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone = items
+            phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone  = [x.strip() for x in items]
+            #phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone = items
         except:
             logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
         prov=Provider.objects.filter(provCode__exact=phy)
@@ -76,7 +77,8 @@ def parseDemog(incomdir, filename):
         n += 1
                                 
         try:
-            pid,mrn,lname,fname,mname,addr1,addr2,city,state,zip,cty,phonearea,phone,ext,dob,gender,race,lang,ssn,phy,mari,religion,alias,mom,death=items
+            pid,mrn,lname,fname,mname,addr1,addr2,city,state,zip,cty,phonearea,phone,ext,dob,gender,race,lang,ssn,phy,mari,religion,alias,mom,death  = [x.strip() for x in items]
+            
         except:
             logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
         pdb = Demog.objects.filter(DemogPatient_Identifier__exact=pid)
@@ -134,7 +136,7 @@ def parseEnc(incomdir, filename,demogdict,provdict):
         n += 1
                               
         try:
-            pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,icd9=items
+            pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,icd9  = [x.strip() for x in items]
         except:
             logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
         try:    
@@ -190,10 +192,10 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
         n += 1
                                 
         try:
-            pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,comp,compname,res,normalf,refl,refh,refu,status,note,accessnum,impre = items
+            pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,comp,compname,res,normalf,refl,refh,refu,status,note,accessnum,impre  = [x.strip() for x in items]
         except:
             try:
-                pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,note,access,impre = items
+                pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,note,access,impre  = [x.strip() for x in items]
                 comp=compname=res=normalf=refl=refh=refu=status=''
             except:
                 logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
@@ -265,10 +267,11 @@ def parseRx(incomdir,filename,demogdict,provdict):
         n += 1
                                 
         try:
-            pid,mrn,orderid,phy, orderd,status, meddirect,ndc,med,qua,ref,sdate,edate=items
+            pid,mrn,orderid,phy, orderd,status, meddirect,ndc,med,qua,ref,sdate,edate  = [x.strip() for x in items]
             route=''
         except:
-            pid,mrn,orderid,phy, orderd,status, meddirect,ndc,med,qua,ref,sdate,edate,route=items
+            pid,mrn,orderid,phy, orderd,status, meddirect,ndc,med,qua,ref,sdate,edate,route  = [x.strip() for x in items]
+            
            
         try:
             patient=demogdict[pid]
@@ -321,7 +324,7 @@ def parseImm(incomdir, filename,demogdict):
     l = getlines(incomdir+'/%s' % filename)
     for items in l:
  
-        pid, immtp, immname,immd,immdose,manf,lot,recid = items
+        pid, immtp, immname,immd,immdose,manf,lot,recid  = [x.strip() for x in items]
         
         try:
             patient = demogdict[pid]
@@ -381,18 +384,18 @@ if __name__ == "__main__":
        
         ##get incoming files    
         incomdir = os.path.join(TOPDIR, localconfig.LOCALSITE,'incomingData/')
-        #incomdir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','realData/real_20061023/')
+
         from validator import getfilesByDay,validateOneday
         days = getfilesByDay(incomdir)
         parsedays = []
-        for oneday in days:
-            err = validateOneday(incomdir,oneday)
+#        for oneday in days:
+#            err = validateOneday(incomdir,oneday)
         
-            if err: #not OK
-                logging.error("Valitator - Files for day %s not OK, reject to process\n" % oneday)
-            else: #OK
-                logging.info("Validator - Files for day %s OK\n" % oneday)
-                parsedays.append(oneday)
+#            if err: #not OK
+#                logging.error("Valitator - Files for day %s not OK, reject to process\n" % oneday)
+#            else: #OK
+#                logging.info("Validator - Files for day %s OK\n" % oneday)
+#                parsedays.append(oneday)
             
 
         ##start to parse by days

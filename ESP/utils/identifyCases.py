@@ -1,5 +1,8 @@
-# prototype ESP case finder
-# selects patients with any of icd9_list and any one of lx_list
+# prototype ESP case maker
+# run after new data inserted
+#
+# writes new case and AR workflow records for all newly identified cases in the database
+# selects patients with any of icd9s on the case definition icd list and any one of lx_list
 # To save time, remembers all of the associated lx records, rx records, enc records
 # and (for hl7 construction) remembers the icd9_list icd9 codes from each encounter
 # (tuples of those codes from each encounter in the
@@ -12,6 +15,8 @@
 # Each condition not only has criteria, but also elements which should be
 # supplied as part of any notification. Prescriptions are particularly
 # important to see if the case was appropriately treated
+#
+# Most of the logic is amazingly simple when using the django ORM
 #
 
 import os, sys, django, datetime
@@ -30,6 +35,8 @@ logging = localconfig.getLogging('identifyCases.py v0.1', debug=0)
 
 #################################
 def makeNewCase(condition, pid):
+    """ create a new case record
+    """ 
     wf = 'AR'
     p = Demog.objects.get(id__exact=pid)
     ##encounter
@@ -51,7 +58,10 @@ def makeNewCase(condition, pid):
     
     ##Create a new record
     rule = Rule.objects.filter(ruleName__icontains=condition)[0]
-    c = Case(caseWorkflow=wf,caseDemog=p,caseComments='',caseRule=rule, caseEncID=encidstr, caseLxID=lxidstr,caseRxID=rxidstr,caseICD9=icd9str)
+    priors = Case.objects.filter(caseDemog = pid,caseRule=rule)
+    
+    c = Case(caseWorkflow=wf,caseDemog=p,caseComments='',caseRule=rule, 
+      caseEncID=encidstr, caseLxID=lxidstr,caseRxID=rxidstr,caseICD9=icd9str)
     
     if p.DemogProvider:
         c.caseProvider=p.DemogProvider
@@ -63,7 +73,7 @@ def makeNewCase(condition, pid):
 
 ################################
 def getRelatedLx(condition):
-    """based on case definition to get all Lat tests with positive results
+    """based on case definition to get all Lab tests with positive results
     """
     
     defines = ConditionLOINC.objects.filter(CondiRule__ruleName__icontains=condition,CondiDefine=True)
@@ -83,7 +93,7 @@ def findcaseByLx(condition):
     
     recl = [(l.LxPatient.id,int(l.id)) for l in lxs]  
     logging.info('Found %s for LX: (patientId, Lxid) -%s' % (condition, str(recl)) )
-    
+   
     return recl
 
 ###############################
@@ -117,12 +127,27 @@ def getRelatedIcd9(condition, encids):
     return icd9str
  
 
+
 ################################
-def getrelatedRx(condition):
- 
-    ndcs = ConditionNdc.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
-    rxs = Rx.objects.filter(RxPatient__id__in=pids.keys(),RxNational_Drug_Code__in=map(lambda x:x.CondiNdc, ndcs))
-    recl = [(r.RxPatient.id,int(r.id)) for r in rxs]
+# TODO fix me ! There's something wierd about the ndc codes we get from hvma
+# appear to have last 2 digit fill leaving only 9 digits
+# I've adjusted preLoader to futz, right padding with 0 as needed
+def getrelatedRx(condition,condndcs):
+    """snarf all prescriptions to be sent for this condition
+    the Django ORM makes this ridiculously easy
+    it's slower than direct sql but that's of no importance here 
+    for the ESP model.
+    """
+    # a list of the codes we should send
+    # rxs = Rx.objects.filter(RxPatient__id__in=pids.keys(),RxNational_Drug_Code__in=map(lambda x:x.CondiNdc, ndcs))
+    sendndcs = [x.CondiNdc for x in condndcs] # cleaned up - replaced * and spaces in preloader
+    sendndcs.sort()
+    rxs = Rx.objects.filter(RxPatient__id__in=pids.keys()) # all rx for this patient
+    recl = [(r.RxPatient.id,int(r.id)) for r in rxs if str(r.RxNational_Drug_Code)[:9] in sendndcs]
+    # kludge for bogus last 2 chars in hvma ndc codes
+    if len(recl) > 0:
+       logging.info('####GOT one!!')
+    logging.info('Cond: %s. Looking for sendndcs=%s. matched rxs = %s from patient rxs=%s' % (condition,sendndcs,recl,rxs))
     return recl
     
 
@@ -268,11 +293,12 @@ if __name__ == "__main__":
                     checkLxEncDuration(before=-22, after=61)
                    
         if not pids: #no case found
-            logging.info('No %s found' % cond)
+            logging.info('No cases of %s found' % cond)
             continue
         
         ### store rxids,encids for this condition
-        recl = getrelatedRx(cond)
+        condndcs = ConditionNdc.objects.filter(CondiRule__ruleName__icontains=cond,CondiSend=True)
+        recl = getrelatedRx(cond,condndcs)
         buildCaseData(recl,1)
         
         condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=cond,CondiSend=True)

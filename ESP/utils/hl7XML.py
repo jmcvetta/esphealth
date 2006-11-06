@@ -756,12 +756,19 @@ class hl7Batch:
         if addressType <> None:
             self.addSimple(outer,addressType,'XAD.7')
         return outer
+
+
                  
     def makeContact(self, email, tac, tel, ext, outerElement):
         """xtn4,6,7 and 8
         pass the right values in the segcontents dict!
         """
         outer = None
+        if email==None: email=''
+        if tac == None: tac = ''
+        if tel == None: tel = ''
+        if ext == None: ext=''
+        (email,tac,tel,ext) = (email.strip(),tac.strip(),tel.strip(),ext.strip())
         s = '%s%s%s%s' % (email,tac,tel,ext)
         if len(s) > 0: # something there...
             outer = self.casesDoc.createElement(outerElement)

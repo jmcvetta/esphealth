@@ -13,6 +13,8 @@ from ESP.utils import localconfig
 import string,csv
 import traceback
 import StringIO
+from django.db import connection
+cursor = connection.cursor()
 
 logging = localconfig.getLogging('preLoader.py v0.1', debug=0)
 datadir = os.path.join(TOPDIR,localconfig.LOCALSITE, 'preLoaderData/')
@@ -29,8 +31,11 @@ def getlines(fname):
  
 ################################
 def load2cptloincmap(table):
+#    cursor.execute("delete from esp_cptloincmap")
+#    cursor.execute("alter table esp_cptloincmap AUTO_INCREMENT=1") # make sure we start id=1 again!
+
     lines = getlines(datadir+table+'.txt')
-   
+      
     for l in lines:
         id, cpt,cmpt,loinc = [x.strip() for x in l]
         if id:
@@ -52,14 +57,66 @@ def load2cptloincmap(table):
 
 
 ################################
-def load2ndc(table):
+def load2DrugNames(table):
+    """ an attempt to text match drugs on generic names
+    to try to avoid the vagaries and complexities of matching exaxt ndc's which
+    is a fool's errand
+    """	
+#    cursor.execute("delete from esp_conditiondrugname")
+#    cursor.execute("alter table esp_conditiondrugname AUTO_INCREMENT=1") # make sure we start id=1 again!
     lines = getlines(datadir+table+'.txt')
-    
+    n = 0
     for l in lines:
-        id, rulename, ndc,define,send = [x.strip() for x in l]
-        
+	n += 1
+	if len(l) > 2:
+        	drugname,rulename = l[:2]
+	if len(l) >= 3:
+		id = l[2] 
+        r = Rule.objects.filter(ruleName__iexact=rulename)
+        if len(r) > 0:
+		r = r[0]
+	else:
+		logging.warning('Rule %s NOT found while reading cond drugnames %s' % (rulename,table))
+        if id.strip():
+            try:
+                cl = ConditionDrugName.objects.filter(id__exact=id)[0]
+            except:
+                cl = ConditionDrugName()
+        else:
+            c = ConditionDrugName.objects.filter(CondiRule__ruleName__iexact=rulename,CondiDrugName__iexact=drugname)
+            if not c:
+                cl = ConditionDrugName()
+            else:
+                cl = c[0]
+        cl.CondiRule=r
+        cl.CondiDrugName=drugname
+        cl.CondiDefine='0'
+        cl.CondiSend='1'
+        cl.save()
+
+
+################################
+def load2ndc(table):
+    ndclen = 9 # really 11 but we ignore the pack size last 2 digits
+#    cursor.execute("delete from esp_conditionndc")
+#    cursor.execute("alter table esp_conditionndc AUTO_INCREMENT=1") # make sure we start id=1 again!
+    lines = getlines(datadir+table+'.txt')
+    n = 0
+    for l in lines:
+	n += 1
+        id, rulename, rawndc,define,send = [x.strip() for x in l]
         r = Rule.objects.filter(ruleName__iexact=rulename)[0]
-        #ndc = '0'+string.replace(ndc,'-','')
+	ttab = string.maketrans(' -*','000')
+        ndc = string.translate(rawndc,ttab,'-') # translate and get rid of crap
+        l = len(ndc) # pad to ndclen or remove leading zero
+        if l < ndclen:
+           ndc = '%s%s' % (ndc,'0'*(ndclen-l)) # right pad to 9
+        elif l == ndclen+1: # ? leading zero
+            if ndc[0] == '0':
+              ndc = ndc[1:]
+        elif l > ndclen:
+            logging.warning('Bah. ndc code %s at line %d is not massagable into 9 meaningful digits' % (ndc,n))
+                        
         if string.strip(id):
             try:
                 cl = ConditionNdc.objects.filter(id__exact=id)[0]
@@ -80,6 +137,8 @@ def load2ndc(table):
 
 ################################
 def load2icd9(table):
+#    cursor.execute("delete from esp_conditionicd9")
+#    cursor.execute("alter table esp_conditionicd9 AUTO_INCREMENT=1") # make sure we start id=1 again!
     lines = getlines(datadir+table+'.txt')
     for l in lines:
         id, rulename, icd,define,send = [x.strip() for x in l]
@@ -104,6 +163,8 @@ def load2icd9(table):
         
 ################################
 def load2loinc(table):
+#    cursor.execute("delete from esp_conditionloinc")
+#    cursor.execute("alter table esp_conditionloinc AUTO_INCREMENT=1") # make sure we start id=1 again!
     lines = getlines(datadir+table+'.txt')
     for l in lines:
         id, rulename, loinc,snmdposi,snmdnega,snmdinde,define,send = [x.strip() for x in l]
@@ -120,6 +181,7 @@ def load2loinc(table):
                 cl = ConditionLOINC()
             else:
                 cl = c[0]
+        
         cl.CondiRule=r
         cl.CondiLOINC=loinc
         cl.CondiDefine=define
@@ -130,8 +192,11 @@ def load2loinc(table):
         cl.save()
 
 
+
 ################################
 def load2rule(table):
+#    cursor.execute("delete from esp_rule")
+#    cursor.execute("alter table esp_rule AUTO_INCREMENT=1") # make sure we start id=1 again!
     lines = getlines(datadir+table+'.txt')
   
     for items  in lines:
@@ -158,9 +223,12 @@ def load2rule(table):
         rl.ruleHL7CodeType = hl7ctype
         rl.ruleComments = note
         rl.save()
+        print 'added',name
         
 ################################
 def  load2config(table):
+#    cursor.execute("delete from esp_config")
+#    cursor.execute("alter table esp_config AUTO_INCREMENT=1") # make sure we start id=1 again!
     lines = getlines(datadir+table+'.txt')
     #print lines
   
@@ -210,6 +278,8 @@ def  load2config(table):
 def makecpt():
     """found these at www.tricare.osd.mil/tai/downloads/cpt_codes.xls
     """
+    cursor.execute("delete from esp_cpt")
+    cursor.execute("alter table esp_cpt AUTO_INCREMENT=1") # make sure we start id=1 again!
     reader = csv.reader(open('cpt_codes.csv','rb'),dialect='excel')
     header = reader.next()
     now = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -228,6 +298,8 @@ def makecpt():
 ###################################
 def makeicd9():
     """ found these codes somewhere or other..."""
+    cursor.execute("delete from esp_icd9")
+    cursor.execute("alter table esp_icd9 AUTO_INCREMENT=1") # make sure we start id=1 again!
     codes = []
     n = 1
     from ESPicd9 import icd
@@ -245,6 +317,8 @@ def makeicd9():
 ###################################
 def makendc():
     """ found these codes somewhere http://www.fda.gov/cder/ndc/"""
+    cursor.execute("delete from esp_ndc")
+    cursor.execute("alter table esp_ndc AUTO_INCREMENT=1") # make sure we start id=1 again!
     f = file('ndc_codes.txt','r')
     foo = f.next() # lose header
     n = 1
@@ -254,6 +328,8 @@ def makendc():
         n += 1
         lbl = line[8:14]
         prod = line[15:19]
+        lbl = lbl.replace('*','0')
+        prod = prod.replace('*','0')
         trade = line[44:].strip()
         newn = ndc(ndcLbl=lbl.capitalize(),ndcProd=prod.capitalize(),ndcTrade=trade.capitalize())
         newn.save()
@@ -306,5 +382,7 @@ if __name__ == "__main__":
         load2cptloincmap(table)
         table = 'esp_config'
         load2config(table)
+        table = 'esp_cond_drugname'
+        load2DrugNames(table)
         
     
