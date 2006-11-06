@@ -77,10 +77,11 @@ if __name__ == "__main__":
     #send all HL7 messages under HL7Msgs folder
     files=os.listdir(hl7dir)
     if len(files):
-        (javadir, javaclass) = localconfig.getJavaInfo()
-        javacmd="%s -classpath %s sendMsg.java" % (os.path.join(javadir, 'javac'), javaclass)
+        (javadir, javaclass,sendMsgcls) = localconfig.getJavaInfo()
+        javacmd="%s -classpath %s %s.java" % (os.path.join(javadir, 'javac'), javaclass,sendMsgcls)
         try:
             os.system(javacmd)
+            print javacmd
         except:
             logging.error('Compile java Exception' )
             traceback.print_exc()
@@ -89,7 +90,7 @@ if __name__ == "__main__":
         
         f = hl7dir + '/%s' % f
         #javacmd="/home/ESP/ESP/sendMsgs/sendMsg.bat %s" % f
-        javaruncmd = "%s -classpath %s sendMsg %s" % (os.path.join(javadir, 'java'), javaclass, f)
+        javaruncmd = "%s -classpath %s %s %s" % (os.path.join(javadir, 'java'), javaclass, sendMsgcls, f)
         logging.info("Runs java command: %s" % javaruncmd)
         try:
             os.system(javaruncmd)
