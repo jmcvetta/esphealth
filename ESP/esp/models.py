@@ -550,7 +550,8 @@ class Enc(models.Model):
     
     def iscaserelated(self):
         
-        c = Case.objects.filter(caseDemog__id__exact=self.EncPatient.id)
+        c = Case.objects.filter(caseEncID__contains=self.id,caseDemog__id__exact=self.EncPatient.id)
+
         try:
             l=[string.strip(x) for x in string.split(c[0].caseEncID, ',')]
             indx = l.index('%s' % self.id)
@@ -656,8 +657,8 @@ class ConditionNdc(models.Model):
     
 class ConditionDrugName(models.Model):
     CondiRule = models.ForeignKey(Rule)
-    CondiDrugName = models.TextField('string to look for',blank=True)
-    CondiDrugRoute = models.TextField('string to look for',blank=True)
+    CondiDrugName = models.TextField('Drug Name',blank=True)
+    CondiDrugRoute = models.TextField('Drug Route',blank=True)
     CondiDefine = models.BooleanField('Used in case definition or not', blank=True)
     CondiSend = models.BooleanField('Must be sent or not', blank=True)
 
