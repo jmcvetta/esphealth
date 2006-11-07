@@ -130,7 +130,7 @@ def getRelatedIcd9(condition, encids):
 # TODO fix me ! There's something wierd about the ndc codes we get from hvma
 # appear to have last 2 digit fill leaving only 9 digits
 # I've adjusted preLoader to futz, right padding with 0 as needed
-def getrelatedRx(condition,condndcs):
+def getrelatedRx(condition):
     """snarf all prescriptions to be sent for this condition
     the Django ORM makes this ridiculously easy
     it's slower than direct sql but that's of no importance here 
@@ -138,14 +138,21 @@ def getrelatedRx(condition,condndcs):
     """
     # a list of the codes we should send
     # rxs = Rx.objects.filter(RxPatient__id__in=pids.keys(),RxNational_Drug_Code__in=map(lambda x:x.CondiNdc, ndcs))
-    sendndcs = [x.CondiNdc for x in condndcs] # cleaned up - replaced * and spaces in preloader
-    sendndcs.sort()
-    rxs = Rx.objects.filter(RxPatient__id__in=pids.keys()) # all rx for this patient
-    recl = [(r.RxPatient.id,int(r.id)) for r in rxs if str(r.RxNational_Drug_Code)[:9] in sendndcs]
+    #sendndcs = [x.CondiNdc for x in condndcs] # cleaned up - replaced * and spaces in preloader
+    #sendndcs.sort()
+    #rxs = Rx.objects.filter(RxPatient__id__in=pids.keys()) # all rx for this patient
+    #recl = [(r.RxPatient.id,int(r.id)) for r in rxs if str(r.RxNational_Drug_Code)[:9] in sendndcs]
+    recl=[]
+    drugmaps = ConditionDrugName.objects.filter(CondiRule__ruleName__icontains=cond,CondiSend=True)
+    for onedrug in drugmaps:
+        rxs = Rx.objects.filter(RxPatient__id__in=pids.keys(), RxDrugName__icontains=onedrug.CondiDrugName, RxRoute__icontains=onedrug.CondiDrugRoute)
+        if rxs:
+            recl = recl + [(r.RxPatient.id,int(r.id)) for r in rxs ]
+
     # kludge for bogus last 2 chars in hvma ndc codes
     if len(recl) > 0:
-       logging.info('####GOT one!!')
-    logging.info('Cond: %s. Looking for sendndcs=%s. matched rxs = %s from patient rxs=%s' % (condition,sendndcs,recl,rxs))
+       logging.info('####GOT Rx one!!')
+    logging.info('Rx Cond: %s. matched rxs = %s from patient rxs=%s' % (condition,recl,rxs))
     return recl
     
 
@@ -297,8 +304,8 @@ if __name__ == "__main__":
             continue
         
         ### store rxids,encids for this condition
-        condndcs = ConditionNdc.objects.filter(CondiRule__ruleName__icontains=cond,CondiSend=True)
-        recl = getrelatedRx(cond,condndcs)
+        #condndcs = ConditionNdc.objects.filter(CondiRule__ruleName__icontains=cond,CondiSend=True)
+        recl = getrelatedRx(cond)
         buildCaseData(recl,1)
         
         condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=cond,CondiSend=True)
