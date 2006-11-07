@@ -657,14 +657,15 @@ class ConditionNdc(models.Model):
 class ConditionDrugName(models.Model):
     CondiRule = models.ForeignKey(Rule)
     CondiDrugName = models.TextField('string to look for',blank=True)
+    CondiDrugRoute = models.TextField('string to look for',blank=True)
     CondiDefine = models.BooleanField('Used in case definition or not', blank=True)
     CondiSend = models.BooleanField('Must be sent or not', blank=True)
 
     def __str__(self):
-        return '%s %s' % (self.CondiRule,self.CondiDrugName)
+        return '%s %s %s' % (self.CondiRule,self.CondiDrugName, self.CondiDrugRoute)
         
     class Admin:
-        list_display = ('CondiRule', 'CondiDrugName')
+        list_display = ('CondiRule', 'CondiDrugName','CondiDrugRoute')
         search_fields = ('CondiDrugName')
 
 
