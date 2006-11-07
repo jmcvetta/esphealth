@@ -543,14 +543,15 @@ class hl7Batch:
             orcs.appendChild(obr)
             
             # now add the obx records needed to describe dose, frequency and duration
-            rxDur='NA'
+            rxDur='N/A'
             if rxRec.RxStartDate and rxRec.RxEndDate:
                 rxDur =datetime.date(int(rxRec.RxEndDate[:4]),int(rxRec.RxEndDate[4:6]), int(rxRec.RxEndDate[6:8]))  - datetime.date(int(rxRec.RxStartDate[:4]),int(rxRec.RxStartDate[4:6]), int(rxRec.RxStartDate[6:8]))
+                rxDur = rxDur.days
                        
            
             rxTS = rxRec.RxOrderDate
             #<OBX.5>NDC_Number; Drug Name; Dose; Frequency; Duration</OBX.5>
-            drugstr = '%s;%s;%s;%s;%s' % (rxRec.RxNational_Drug_Code, rxRec.RxDrugName,rxRec.RxDose,rxRec.RxFrequency,rxDur)
+            drugstr = '%s;%s;%s;%s;%s day(s)' % (rxRec.RxNational_Drug_Code, rxRec.RxDrugName,rxRec.RxDose,rxRec.RxFrequency,rxDur)
             obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'ST')],obx3=[('CE.4','NA-56')],
                                obx5=[('', drugstr)])
 
