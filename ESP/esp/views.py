@@ -1,3 +1,4 @@
+
 """
 May 26 added site root for all contexts
 May 1
@@ -442,6 +443,12 @@ def preloadview(request,table='cptloincmap'):
         rules = Rule.objects.all()
         rules.order_by('ruleName')
         returnurl = 'esp/conditionndcmap.html'
+    elif table == 'conditiondrugname':
+        maps = ConditionDrugName.objects.all()
+        maps =maps.select_related().order_by('esp_rule.ruleName', 'CondiDrugName')
+        rules = Rule.objects.all()
+        rules.order_by('ruleName')
+        returnurl = 'esp/conditiondrugnamemap.html'
     elif table == 'conditionicd9':
         maps = ConditionIcd9.objects.all()
         maps =maps.select_related().order_by('esp_rule.ruleName', 'CondiICD9')
@@ -550,6 +557,26 @@ def preloadupdate(request,table='cptloincmap'):
         f.close()
         msg = 'Data have been save to ' + datadir+'esp_conditionndc.txt'  
         returnurl = 'esp/conditionndcmap.html'
+    elif table == 'conditiondrugname':
+        fname = 'esp_conditiondrugname.txt'
+        f = open(os.path.join(datadir,fname),'w')
+        res = []
+        for dbid in dbids:
+            rule = request.POST['RULE_%s'% dbid]
+            drugname = request.POST['NDC_%s'% dbid]
+            route = request.POST['ROUTE_%s'% dbid]
+            cldefine = request.POST['DEFINE_%s'% dbid]
+            clsend = request.POST['SEND_%s'% dbid]
+            if string.find(dbid, 'NEW')!=-1: #new records
+                dbid = ''
+            if drugname:
+                res.append('%s\t%s\t%s\t%s\t%s\t%s' % (dbid,rule,drugname,route,cldefine,clsend))
+	res.sort(key=lambda x: x.split('\t')[1:3]) # sort nicely on rule, drugname
+        res.append('')
+        f.write('\n'.join(res))
+        f.close()
+        msg = 'Data have been save to ' + datadir+fname  
+        returnurl = 'esp/conditiondrugnamemap.html'
 
     elif table == 'rule':
         f = open(datadir+'esp_rule.txt','w')
