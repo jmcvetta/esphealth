@@ -67,38 +67,34 @@ def load2DrugNames(table):
     lines = getlines(datadir+table+'.txt')
     n = 0
     for l in lines:
+        id, rulename, drugname,route, define,send =  [x.strip() for x in l]
+        print id, rulename, drugname,route, define,send
+        r = Rule.objects.filter(ruleName__iexact=rulename)[0]
+        
 	n += 1
-	if len(l) > 2:
-        	drugname,rulename = l[:2]
-	if len(l) >= 3:
-		id = l[2] 
-        r = Rule.objects.filter(ruleName__iexact=rulename)
-        if len(r) > 0:
-		r = r[0]
-	else:
-		logging.warning('Rule %s NOT found while reading cond drugnames %s' % (rulename,table))
         if id.strip():
             try:
                 cl = ConditionDrugName.objects.filter(id__exact=id)[0]
             except:
                 cl = ConditionDrugName()
         else:
-            c = ConditionDrugName.objects.filter(CondiRule__ruleName__iexact=rulename,CondiDrugName__iexact=drugname)
+            c = ConditionDrugName.objects.filter(CondiRule__ruleName__iexact=rulename,CondiDrugName__iexact=drugname,CondiDrugRoute__iexact=route)
             if not c:
                 cl = ConditionDrugName()
             else:
                 cl = c[0]
         cl.CondiRule=r
         cl.CondiDrugName=drugname
-        cl.CondiDefine='0'
-        cl.CondiSend='1'
+        cl.CondiDrugRoute = route
+        cl.CondiDefine=define
+        cl.CondiSend=send
         cl.save()
 
 
 ################################
 def load2ndc(table):
     ndclen = 9 # really 11 but we ignore the pack size last 2 digits
-#    cursor.execute("delete from esp_conditionndc")
+    cursor.execute("delete from esp_conditionndc")
 #    cursor.execute("alter table esp_conditionndc AUTO_INCREMENT=1") # make sure we start id=1 again!
     lines = getlines(datadir+table+'.txt')
     n = 0
@@ -358,6 +354,8 @@ if __name__ == "__main__":
                 load2config(table)
             elif table == 'esp_rule':
                 load2rule(table)
+            elif table == 'esp_conditiondrugname':
+                load2DrugNames(table)
             else:
                 msg = 'Unknown table - %s\n' % table
                 logging.info(msg)
@@ -382,7 +380,7 @@ if __name__ == "__main__":
         load2cptloincmap(table)
         table = 'esp_config'
         load2config(table)
-        table = 'esp_cond_drugname'
+        table = 'esp_conditiondrugname'
         load2DrugNames(table)
         
     
