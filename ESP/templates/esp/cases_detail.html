@@ -53,7 +53,8 @@
   {% for e in encounters %}
 
 <tr class="{% cycle rowcolors %}">
-<td align="right"> {%ifnotequal e.iscaserelated 0 %} <img src="/images/arrow.GIF" border="0"> {% endifnotequal %}</td>
+<td align="right">
+{%ifnotequal e.iscaserelated 0 %} <img src="{{SITEROOT}}/images/arrow.GIF" border="0"> {% endifnotequal %}</td>
 <td>{{ e.EncEncounter_Date }} </td>
 
 <td>
@@ -97,7 +98,7 @@
   {% for lab in labs %}
 
 <tr class="{% cycle rowcolors %}">
- <td align="right"> {%ifequal lab.iscaserelated 1 %} <img src="/images/arrow.GIF" border="0"> {% endifequal %} </td>
+ <td align="right"> {%ifequal lab.iscaserelated 1 %} <img src="{{SITEROOT}}/images/arrow.GIF" border="0"> {% endifequal %} </td>
  <td>{{ lab.LxOrderDate }}</td>
  <td>{%ifequal lab.iscaserelated 1 %} <font color="red"><b>{{ lab.getCPT }}</b>
      {% else %}{{ lab.getCPT }} {% endifequal %}</td>
@@ -137,7 +138,7 @@
   {% for rx in prescriptions %}
 
 <tr class="{% cycle rowcolors %}">
-<td align="right"> {%ifequal rx.iscaserelated 1 %} <img src="/images/arrow.GIF" border="0"> {% endifequal %} </td>
+<td align="right"> {%ifequal rx.iscaserelated 1 %} <img src="{{SITEROOT}}/images/arrow.GIF" border="0"> {% endifequal %} </td>
 <td>{{ rx.RxOrderDate }}</td>
 
 <td>{%ifequal rx.iscaserelated 1 %} <font color="red"><b>{{rx.getNDC }}</b>
