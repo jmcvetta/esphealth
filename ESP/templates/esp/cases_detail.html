@@ -59,10 +59,18 @@
 
 <td>
  {% for oneicd in e.geticd9s %}
-    {% ifequal oneicd.0 0 %} {{ oneicd.1}} {% endifequal %}
-    {% ifequal oneicd.0 1 %} <font color="red"><b>{{ oneicd.1 }}</b></font> {% endifequal %}
+   {%if not caseicd9l%}
+      {{ oneicd.0 }}{{ oneicd.1 }}
+   {%endif%}
+   {% for onerec in caseicd9l %}
+      {% ifequal  e.id  onerec.0 %} 
+          {%ifequal oneicd.0 onerec.1%} <font color="red"><b>{{ oneicd.0 }}{{ oneicd.1 }}</b></font> 
+	  {%else %} {{ oneicd.0 }}{{ oneicd.1 }} {%endifequal%}
+      {%endifequal%}
+    
+    {% endfor %}
     <br>
-  {% endfor %}
+   {% endfor %}
   
   </td>
 
@@ -140,11 +148,10 @@
 <tr class="{% cycle rowcolors %}">
 <td align="right"> {%ifequal rx.iscaserelated 1 %} <img src="{{SITEROOT}}/images/arrow.GIF" border="0"> {% endifequal %} </td>
 <td>{{ rx.RxOrderDate }}</td>
+<td>{{rx.getNDC}}</td>
+<td>{%ifequal rx.iscaserelated 1 %} <font color="red"><b>{{rx.RxDrugName }}</b>
+     {% else %}{{ rx.RxDrugName }} {% endifequal %}</td>
 
-<td>{%ifequal rx.iscaserelated 1 %} <font color="red"><b>{{rx.getNDC }}</b>
-     {% else %}{{ rx.getNDC }} {% endifequal %}</td>
-
-<td>{{rx.RxDrugName}}</td>
 <td>{{ rx.RxDrugDesc }}</td>
 <td>{{ rx.RxRoute }}</td>
 <td>{{ rx.RxDose }}</td>

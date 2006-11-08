@@ -530,22 +530,23 @@ class Enc(models.Model):
         ##icd9_codes are separeted by ' '
         ilist = self.EncICD9_Codes.split(' ')
         if len(ilist) > 0:
-            icd9l = self.iscaserelated()
+            #icd9l = self.iscaserelated()
             s=[]
             for i in ilist:
                 ilong = icd9.objects.filter(icd9Code__exact=i)
                 if ilong:
-                    ilong = ilong[0].icd9Long # not sure why, but > 1 being found!
+                    ilong = '='+ilong[0].icd9Long # not sure why, but > 1 being found!
                 else:
                     ilong=''
-                if icd9l!= 0 and i in icd9l:
-                    s.append((1,'%s=%s' %(i,ilong)))
-                elif i:
-                    s.append((0, '%s=%s' %(i,ilong)))
+             #   if icd9l!= 0 and i in icd9l:
+              #      s.append((1,'%s=%s' %(i,ilong)))
+
+                if i:
+                    s.append((i,ilong))
                 else:
-                    s.append((0, ''))
+                    s.append(('', ''))
         else:
-            s = [(0, 'No icd9 codes found')]
+            s = [('', 'No icd9 codes found')]
         return s
     
     def iscaserelated(self):

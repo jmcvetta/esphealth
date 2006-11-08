@@ -347,6 +347,18 @@ def casedetail(request, object_id,restrict='F'):
     encs=[]
     labs=[]
     rxs=[]
+
+    ##to get related icd9 code
+    icdstr = c.caseICD9
+    encstr = c.caseEncID
+    caseicd9l=[]
+    if encstr and icdstr:
+        encl = encstr.split(',')
+        icd9l_oneenc = icdstr.split(',')
+        for i in range(len(encl)):
+            for oneicd9 in icd9l_oneenc[i].split():
+                caseicd9l.append((int(encl[i]),oneicd9))
+            
     if restrict == 'F': ##full view
 
         encs = Enc.objects.filter(EncPatient__id__exact=pid)
@@ -371,6 +383,7 @@ def casedetail(request, object_id,restrict='F'):
              "wf":wf,
              "caseid":object_id,
              'encounters':encs,
+             'caseicd9l':caseicd9l,
              'pid' : pid,
              'labs':labs,
              'prescriptions':rxs,
