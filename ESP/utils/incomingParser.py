@@ -30,12 +30,38 @@ def getlines(fname):
     logging.info('Parser Process %s: %s records\n' % (fname, len(returnl)))
     return returnl
 
+###############################
+def yieldlines(fname):
+    """iterator to return delim split lines"""
+    delim = '^'
+    try:
+        f = open(fname)
+    except:
+        logging.error('Can not read file:%s\n' % fname)
+        return 
+    returnl = []
+    for line in f:
+        try:
+            returnl = line.split(delim)
+            yield returnl
+        except:
+            logging.error('Split ERROR for %s:%s\n' % (fname,line))
+            return 
+        
+    return 
+
+
 
 ################################
 def parseProvider(incomdir, filename):
-    l = getlines(incomdir+'/%s' % filename)
+#    l = getlines(incomdir+'/%s' % filename)
+
     provdict={}
-    for items in l:
+    lines = yieldlines(incomdir+'/%s' % filename)
+    for items in lines:
+        if not items or items[0]=='CONTROL TOTALS':
+            continue
+        
         try:
             phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone  = [x.strip() for x in items]
             #phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone = items
@@ -62,16 +88,21 @@ def parseProvider(incomdir, filename):
         prov.provTel=phone
         prov.save()
         provdict[phy] = prov
-    if l:
-        movefile(incomdir, filename)
+
+    movefile(incomdir, filename)
     return provdict
 
 ################################
 def parseDemog(incomdir, filename):
-    l = getlines(incomdir+'/%s' % filename)
+#    l = getlines(incomdir+'/%s' % filename)
+
     demogdict={}
     n=1
-    for items in l:
+    lines = yieldlines(incomdir+'/%s' % filename)
+    for items in lines:
+        if not items or items[0]=='CONTROL TOTALS':
+            continue
+
         if n % 1000 == 0:
             logging.info('%s records done' % n)
         n += 1
@@ -122,15 +153,19 @@ def parseDemog(incomdir, filename):
         demog.save()
         demogdict[pid]=demog
         
-    if l:
-        movefile(incomdir, filename)
+
+    movefile(incomdir, filename)
     return demogdict
 
 ################################
 def parseEnc(incomdir, filename,demogdict,provdict):
-    l = getlines(incomdir+'/%s' % filename)
+   # l = getlines(incomdir+'/%s' % filename)
     n=1
-    for items in l:
+    lines = yieldlines(incomdir+'/%s' % filename)
+    for items in lines:
+        if not items or items[0]=='CONTROL TOTALS':
+            continue
+
         if n % 2000 == 0:
             logging.info('%s Enc records done' % n)
         n += 1
@@ -177,16 +212,21 @@ def parseEnc(incomdir, filename,demogdict,provdict):
 
 
         enc.save()
-    if l:
-        movefile(incomdir, filename)    
+
+    movefile(incomdir, filename)    
         
                 
            
 ################################
 def parseLxRes(incomdir,filename,demogdict, provdict):
-    l = getlines(incomdir+'/%s' % filename)
+#    l = getlines(incomdir+'/%s' % filename)
     n=1
-    for items in l:
+
+    lines = yieldlines(incomdir+'/%s' % filename)
+    for items in lines:
+        if not items or items[0]=='CONTROL TOTALS':
+            continue
+
         if n % 2000 == 0:
             logging.info('%s Lx records done' % n)
         n += 1
@@ -252,16 +292,21 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
         
         lx.save()
         
-    if l:
-        movefile(incomdir, filename)   
+
+    movefile(incomdir, filename)   
 
 
            
 ################################
 def parseRx(incomdir,filename,demogdict,provdict):
-    l = getlines(incomdir+'/%s' % filename)
+#    l = getlines(incomdir+'/%s' % filename)
+
     n=1
-    for items in l:
+    lines = yieldlines(incomdir+'/%s' % filename)
+    for items in lines:
+        if not items or items[0]=='CONTROL TOTALS':
+            continue
+                
         if n % 2000 == 0:
             logging.info('%s Rx records done' % n)
         n += 1
@@ -314,16 +359,18 @@ def parseRx(incomdir,filename,demogdict,provdict):
             pass
 
         rx.save()
-    if l:
-        movefile(incomdir, filename)   
+    movefile(incomdir, filename)   
 
 
 ################################
 def parseImm(incomdir, filename,demogdict):
     
-    l = getlines(incomdir+'/%s' % filename)
-    for items in l:
- 
+    #l = getlines(incomdir+'/%s' % filename)
+    lines = yieldlines(incomdir+'/%s' % filename)
+    for items in lines:
+        if not items or items[0]=='CONTROL TOTALS':
+            continue
+                    
         pid, immtp, immname,immd,immdose,manf,lot,recid  = [x.strip() for x in items]
         
         try:
@@ -350,8 +397,7 @@ def parseImm(incomdir, filename,demogdict):
         except:
             logging.error('Parser In IMM: error when save: %s\n' % (str(items)))
 
-    if l:
-        movefile(incomdir, filename)   
+    movefile(incomdir, filename)   
     
 ################################
 def movefile(incomdir, f):
@@ -388,19 +434,19 @@ if __name__ == "__main__":
         from validator import getfilesByDay,validateOneday
         days = getfilesByDay(incomdir)
         parsedays = []
-        for oneday in days:
-            err = validateOneday(incomdir,oneday)
+#        for oneday in days:
+#            err = validateOneday(incomdir,oneday)
         
-            if err: #not OK
-                logging.error("Valitator - Files for day %s not OK, reject to process\n" % oneday)
-            else: #OK
-                logging.info("Validator - Files for day %s OK\n" % oneday)
-                parsedays.append(oneday)
+#            if err: #not OK
+#                logging.error("Valitator - Files for day %s not OK, reject to process\n" % oneday)
+#            else: #OK
+#                logging.info("Validator - Files for day %s OK\n" % oneday)
+#                parsedays.append(oneday)
             
 
         ##start to parse by days
         logging.info('Validating is done, start to parse and sotre data\n')
-        for oneday in parsedays:
+        for oneday in days: #parsedays:
                 logging.info("Parser - parse day %s\n" % oneday)
                 provf = 'epicpro.esp.'+oneday
                 provdict = parseProvider(incomdir, provf)
