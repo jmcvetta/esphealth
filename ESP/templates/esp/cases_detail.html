@@ -54,23 +54,28 @@
 
 <tr class="{% cycle rowcolors %}">
 <td align="right">
-{%ifnotequal e.iscaserelated 0 %} <img src="{{SITEROOT}}/images/arrow.GIF" border="0"> {% endifnotequal %}</td>
+ {% for onerec in colorencl%}
+     {%ifequal onerec.0 e.id %} 
+       {%ifequal onerec.1 1 %}
+          <img src="{{SITEROOT}}/images/arrow.GIF" border="0"> 
+       {% endifequal %}
+      {% endifequal %}
+ {% endfor %}
+</td>
+
 <td>{{ e.EncEncounter_Date }} </td>
 
 <td>
- {% for oneicd in e.geticd9s %}
-   {%if not caseicd9l%}
-      {{ oneicd.0 }}{{ oneicd.1 }}
-   {%endif%}
-   {% for onerec in caseicd9l %}
-      {% ifequal  e.id  onerec.0 %} 
-          {%ifequal oneicd.0 onerec.1%} <font color="red"><b>{{ oneicd.0 }}{{ oneicd.1 }}</b></font> 
-	  {%else %} {{ oneicd.0 }}{{ oneicd.1 }} {%endifequal%}
-      {%endifequal%}
-    
-    {% endfor %}
+ {% for onerec in coloricd9l %}
+     {% ifequal  e.id  onerec.0 %}
+        {%ifequal onerec.2 1 %}
+           <font color="red"><b>{{onerec.1}}</b></font>
+         {%else%}
+	       {{onerec.1}}
+         {% endifequal %}
+     {%endifequal%}
     <br>
-   {% endfor %}
+ {% endfor %}
   
   </td>
 
@@ -106,10 +111,31 @@
   {% for lab in labs %}
 
 <tr class="{% cycle rowcolors %}">
- <td align="right"> {%ifequal lab.iscaserelated 1 %} <img src="{{SITEROOT}}/images/arrow.GIF" border="0"> {% endifequal %} </td>
+<td align="right">
+ {% for onerec in colorlxl%}
+     {%ifequal onerec.0 lab.id %}
+       {%ifequal onerec.1 1 %}
+          <img src="{{SITEROOT}}/images/arrow.GIF" border="0">
+       {% endifequal %}
+      {% endifequal %}
+ {% endfor %}
+</td>
+
+
  <td>{{ lab.LxOrderDate }}</td>
- <td>{%ifequal lab.iscaserelated 1 %} <font color="red"><b>{{ lab.getCPT }}</b>
-     {% else %}{{ lab.getCPT }} {% endifequal %}</td>
+ <td>
+{% for onerec in colorlxl%}
+     {%ifequal onerec.0 lab.id %}
+       {%ifequal onerec.1 1 %}
+           <font color="red"><b>{{ lab.getCPT }}</b></font>
+       {%else%}
+            {{ lab.getCPT }}
+       {% endifequal %}
+      {% endifequal %}
+ {% endfor %}
+
+
+ </td>
  <td>{{lab.LxComponentName}}</td>
  <td>{{ lab.LxTest_results }}</td>
  <td>{{ lab.LxNormalAbnormal_Flag }} </td>
@@ -143,14 +169,37 @@
 <th>Clinician</th>
 </tr>
 
-  {% for rx in prescriptions %}
+ 
+
+{% for rx in prescriptions %}
 
 <tr class="{% cycle rowcolors %}">
-<td align="right"> {%ifequal rx.iscaserelated 1 %} <img src="{{SITEROOT}}/images/arrow.GIF" border="0"> {% endifequal %} </td>
+<td align="right">
+ {% for onerec in colorrxl%}
+     {%ifequal onerec.0 rx.id %}
+       {%ifequal onerec.1 1 %}
+          <img src="{{SITEROOT}}/images/arrow.GIF" border="0">
+       {% endifequal %}
+      {% endifequal %}
+ {% endfor %}
+</td>
+
+
 <td>{{ rx.RxOrderDate }}</td>
 <td>{{rx.getNDC}}</td>
-<td>{%ifequal rx.iscaserelated 1 %} <font color="red"><b>{{rx.RxDrugName }}</b>
-     {% else %}{{ rx.RxDrugName }} {% endifequal %}</td>
+
+<td>
+ {% for onerec in colorrxl%}
+     {%ifequal onerec.0 rx.id %}
+        {%ifequal onerec.1 1 %}
+            <font color="red"><b>{{  rx.RxDrugName }}</b></font>
+        {%else%}
+             {{  rx.RxDrugName }}
+        {% endifequal %}
+     {% endifequal %}
+ {% endfor %}
+</td>
+
 
 <td>{{ rx.RxDrugDesc }}</td>
 <td>{{ rx.RxRoute }}</td>
