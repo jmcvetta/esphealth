@@ -104,7 +104,7 @@ def parseDemog(incomdir, filename):
             continue
 
         if n % 1000 == 0:
-            logging.info('%s records done' % n)
+            logging.info('%s Demog records done' % n)
         n += 1
                                 
         try:
@@ -434,14 +434,14 @@ if __name__ == "__main__":
         from validator import getfilesByDay,validateOneday
         days = getfilesByDay(incomdir)
         parsedays = []
-#        for oneday in days:
-#            err = validateOneday(incomdir,oneday)
+        for oneday in days:
+            err = validateOneday(incomdir,oneday)
         
-#            if err: #not OK
-#                logging.error("Valitator - Files for day %s not OK, reject to process\n" % oneday)
-#            else: #OK
-#                logging.info("Validator - Files for day %s OK\n" % oneday)
-#                parsedays.append(oneday)
+            if err: #not OK
+                logging.error("Valitator - Files for day %s not OK, reject to process\n" % oneday)
+            else: #OK
+                logging.info("Validator - Files for day %s OK\n" % oneday)
+                parsedays.append(oneday)
             
 
         ##start to parse by days
