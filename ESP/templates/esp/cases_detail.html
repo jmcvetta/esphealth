@@ -1,5 +1,7 @@
 {% extends "espbase.html" %}
 
+{% load esplib %}
+
 {% block content %}
 
 <h2><a href="javascript:history.go(-1)">Back to Case listing</a></h2>
@@ -35,6 +37,7 @@
 
 <hr size="6"  width="75%" align="center">
 <br>
+
 {% if encounters %}
 <table cellspacing="1" cellpadding="0" border="1" width="900">
 <td colspan = "7" align = "left" bgcolor="white">
@@ -53,38 +56,35 @@
   {% for e in encounters %}
 
 <tr class="{% cycle rowcolors %}">
-<td align="right">
- {% for onerec in colorencl%}
-     {%ifequal onerec.0 e.id %} 
-       {%ifequal onerec.1 1 %}
-          <img src="{{SITEROOT}}/images/arrow.GIF" border="0"> 
-       {% endifequal %}
-      {% endifequal %}
- {% endfor %}
-</td>
+
+  {% colorcurrow %}{{cobject.caseEncID}}:{{e.id}}{%endcolorcurrow%}
+  <td align="right">
+    {% ifequal "RED"  currowcolor%}
+       <img src="{{SITEROOT}}/images/arrow.GIF" border="0">
+    {% endifequal %}
+   </td>
 
 <td>{{ e.EncEncounter_Date }} </td>
 
-<td>
- {% for onerec in coloricd9l %}
-     {% ifequal  e.id  onerec.0 %}
-        {%ifequal onerec.2 1 %}
-           <font color="red"><b>{{onerec.1}}</b></font>
+ <td>
+   {% for onerec in e.geticd9s %}
+         {%coloricd%}{{cobject.id}},{{e.id }},{{onerec.0}}{%endcoloricd%}
+         {% ifequal "RED"  curicdcolor%}
+            <font color="red"><b>{{onerec.0}}{{onerec.1}}</b></font>
          {%else%}
-	       {{onerec.1}}
+            {{onerec.0}}{{onerec.1}}
          {% endifequal %}
-     {%endifequal%}
-    <br>
- {% endfor %}
-  
-  </td>
+   {% endfor %}   
+ </td>
 
 <td>{{ e.EncEncounter_SiteName }}</td>
 <td>{{ e.ENCPregnancy_Status }}</td>
 <td> {{ e.ENCTemperature }} </td>
 <td><a href="{{SITEROOT}}/pcps/{{ e.EncEncounter_Provider.id }}/"> {{e.getcliname}}</a></td>
 </tr>
+
   {% endfor %}
+
 </table">
 {% endif %}
 
@@ -111,31 +111,22 @@
   {% for lab in labs %}
 
 <tr class="{% cycle rowcolors %}">
-<td align="right">
- {% for onerec in colorlxl%}
-     {%ifequal onerec.0 lab.id %}
-       {%ifequal onerec.1 1 %}
-          <img src="{{SITEROOT}}/images/arrow.GIF" border="0">
-       {% endifequal %}
-      {% endifequal %}
- {% endfor %}
-</td>
-
+  {% colorcurrow %}{{cobject.caseLxID}}:{{lab.id}}{%endcolorcurrow%}
+  <td align="right">
+    {% ifequal "RED"  currowcolor%}
+       <img src="{{SITEROOT}}/images/arrow.GIF" border="0">
+    {% endifequal %}
+   </td>
 
  <td>{{ lab.LxOrderDate }}</td>
  <td>
-{% for onerec in colorlxl%}
-     {%ifequal onerec.0 lab.id %}
-       {%ifequal onerec.1 1 %}
-           <font color="red"><b>{{ lab.getCPT }}</b></font>
-       {%else%}
-            {{ lab.getCPT }}
-       {% endifequal %}
-      {% endifequal %}
- {% endfor %}
-
-
+   {% ifequal "RED"  currowcolor%}
+      <font color="red"><b>{{lab.getCPT }}</b></font>
+   {%else%}
+      {{lab.getCPT }}
+   {% endifequal %}
  </td>
+
  <td>{{lab.LxComponentName}}</td>
  <td>{{ lab.LxTest_results }}</td>
  <td>{{ lab.LxNormalAbnormal_Flag }} </td>
@@ -168,36 +159,26 @@
 <th>Quantity</th>
 <th>Clinician</th>
 </tr>
-
  
-
 {% for rx in prescriptions %}
 
 <tr class="{% cycle rowcolors %}">
-<td align="right">
- {% for onerec in colorrxl%}
-     {%ifequal onerec.0 rx.id %}
-       {%ifequal onerec.1 1 %}
-          <img src="{{SITEROOT}}/images/arrow.GIF" border="0">
-       {% endifequal %}
-      {% endifequal %}
- {% endfor %}
-</td>
-
+  {% colorcurrow %}{{cobject.caseRxID}}:{{rx.id}}{%endcolorcurrow%}
+  <td align="right">
+    {% ifequal "RED"  currowcolor%}
+       <img src="{{SITEROOT}}/images/arrow.GIF" border="0">
+    {% endifequal %}
+   </td>
 
 <td>{{ rx.RxOrderDate }}</td>
 <td>{{rx.getNDC}}</td>
 
 <td>
- {% for onerec in colorrxl%}
-     {%ifequal onerec.0 rx.id %}
-        {%ifequal onerec.1 1 %}
-            <font color="red"><b>{{  rx.RxDrugName }}</b></font>
-        {%else%}
-             {{  rx.RxDrugName }}
-        {% endifequal %}
-     {% endifequal %}
- {% endfor %}
+   {% ifequal "RED"  currowcolor%}
+      <font color="red"><b>{{ rx.RxDrugName }}</b></font>
+   {%else%}
+       {{ rx.RxDrugName }}
+   {% endifequal %}
 </td>
 
 

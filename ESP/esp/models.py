@@ -530,7 +530,6 @@ class Enc(models.Model):
         ##icd9_codes are separeted by ' '
         ilist = self.EncICD9_Codes.split(' ')
         if len(ilist) > 0:
-            #icd9l = self.iscaserelated()
             s=[]
             for i in ilist:
                 ilong = icd9.objects.filter(icd9Code__exact=i)
@@ -549,6 +548,7 @@ class Enc(models.Model):
             s = [('', 'No icd9 codes found')]
         return s
     
+
     def iscaserelated(self):
         
         c = Case.objects.filter(caseEncID__contains=self.id,caseDemog__id__exact=self.EncPatient.id)

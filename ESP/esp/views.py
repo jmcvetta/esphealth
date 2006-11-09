@@ -348,69 +348,20 @@ def casedetail(request, object_id,restrict='F'):
     labs=[]
     rxs=[]
 
-    ##to get related icd9 code
-    icdstr = c.caseICD9
-    encstr = c.caseEncID
-    lxstr = c.caseLxID
-    rxstr = c.caseRxID
-    caseencidl=[]
-    caselxidl=[]
-    caserxidl=[]
-    if encstr:
-        encs = Enc.objects.extra(where=['id IN (%s)' % encstr])
-        caseencidl=[x.id for x in encs]
-    if lxstr:
-        labs = Lx.objects.extra(where=['id IN (%s)' % lxstr])
-        caselxidl=[x.id for x in labs]
-    if rxstr:
-        rxs = Rx.objects.extra(where=['id IN (%s)' % rxstr])
-        caserxidl=[x.id for x in rxs]
-        
-    caseicd9l=[]
-    if encstr and icdstr:
-        icd9l_oneenc = icdstr.split(',')
-        for i in range(len(caseencidl)):
-            for oneicd9 in icd9l_oneenc[i].split():
-                caseicd9l.append((caseencidl[i],oneicd9))
-    enccolorl=[]
-    lxcolorl=[]
-    rxcolorl=[]
-    icd9colorl=[]
     if restrict == 'F': ##full view
         encs = Enc.objects.filter(EncPatient__id__exact=pid)
         labs = Lx.objects.filter(LxPatient__id__exact=pid)
         rxs = Rx.objects.filter(RxPatient__id__exact=pid)
-        for id in [x.id for x in encs]:
-            if id not in caseencidl:
-                enccolorl.append((id,0))
-            else:
-                enccolorl.append((id,1))
-            tempenc = Enc.objects.filter(id=id)[0]
-            for oneicd9, i9str in getI9(tempenc):
-                if (id,oneicd9) not in caseicd9l:
-                    icd9colorl.append((id,i9str,0))
-                else:
-                    icd9colorl.append((id,i9str,1))
-        for id in [x.id for x in labs]:
-            if id not in caselxidl:
-                lxcolorl.append((id,0))
-            else:
-                lxcolorl.append((id,1))
-        for id in [x.id for x in rxs]:
-            if id not in caserxidl:
-                rxcolorl.append((id,0))
-            else:
-                rxcolorl.append((id,1))
     else: #restrict view
-        enccolorl=[(id,1) for id in caseencidl]
-        lxcolorl =[(id,1) for id in caselxidl]
-        rxcolorl=[(id,1) for id in caserxidl]
-        for oneenc in encs:
-            for oneicd9, i9str in getI9(oneenc):
-                if (oneenc.id,oneicd9) not in caseicd9l:
-                    icd9colorl.append((oneenc.id,i9str,0))
-                else:
-                    icd9colorl.append((oneenc.id,i9str,1))
+        encstr = c.caseEncID
+        lxstr = c.caseLxID
+        rxstr = c.caseRxID
+        if encstr:
+            encs = Enc.objects.extra(where=['id IN (%s)' % encstr])
+        if lxstr:
+            labs = Lx.objects.extra(where=['id IN (%s)' % lxstr])
+        if rxstr:
+            rxs = Rx.objects.extra(where=['id IN (%s)' % rxstr])
                                         
     print 'got %d encs, %d lx, %d rx' % (len(encs),len(labs),len(rxs))
     print ` WORKFLOW_STATES`
@@ -419,10 +370,6 @@ def casedetail(request, object_id,restrict='F'):
              "wf":wf,
              "caseid":object_id,
              'encounters':encs,
-             'coloricd9l':icd9colorl,
-             'colorencl':enccolorl,
-             'colorlxl':lxcolorl,
-             'colorrxl':rxcolorl,
              'pid' : pid,
              'labs':labs,
              'prescriptions':rxs,
