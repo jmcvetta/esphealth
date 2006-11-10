@@ -446,7 +446,7 @@ if __name__ == "__main__":
 
         ##start to parse by days
         logging.info('Validating is done, start to parse and sotre data\n')
-        for oneday in days: #parsedays:
+        for oneday in parsedays:
                 logging.info("Parser - parse day %s\n" % oneday)
                 provf = 'epicpro.esp.'+oneday
                 provdict = parseProvider(incomdir, provf)
