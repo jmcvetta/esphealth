@@ -67,6 +67,7 @@ def parseProvider(incomdir, filename):
             #phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone = items
         except:
             logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            continue
         prov=Provider.objects.filter(provCode__exact=phy)
         if prov: #update
             prov=prov[0]
@@ -112,6 +113,7 @@ def parseDemog(incomdir, filename):
             
         except:
             logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            continue
         pdb = Demog.objects.filter(DemogPatient_Identifier__exact=pid)
         if not pdb: #new record
             demog = Demog(DemogPatient_Identifier=pid)
@@ -174,6 +176,8 @@ def parseEnc(incomdir, filename,demogdict,provdict):
             pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,icd9  = [x.strip() for x in items]
         except:
             logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            continue
+            
         try:    
             patient = demogdict[pid]    
 #        patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
