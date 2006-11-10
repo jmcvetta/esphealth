@@ -185,7 +185,7 @@ def casesearch(request, wf="*", cfilter="*", mrnfilter="*",orderby="sortid"):
     if not orderby or orderby =='sortid':
         objs =objs.order_by('id')
     elif orderby == 'sortrule':
-        objs =objs.select_related().order_by('caseRuleID','esp_demog.DemogLast_Name', 'esp_demog.DemogFirst_Name')
+        objs =objs.select_related().order_by('esp_rule.ruleName','esp_demog.DemogLast_Name', 'esp_demog.DemogFirst_Name')
     elif orderby == 'sortwf':
         objs =objs.select_related().order_by('caseWorkflow','esp_demog.DemogLast_Name')
     elif orderby=='sortname':

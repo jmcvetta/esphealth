@@ -53,12 +53,36 @@
 <br>
 <table border=1 cellspacing = "2" cellpadding = "3">
 <tr>
-  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortid/">Case ID</a></th>
-  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortrule/">Suspected Condition</a></th>
-  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortwf/">Workflow State</a></th>
-  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortname/">Name</a></th>
-  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortmrn/">MRN</a></th>
-  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortaddr/">Patient Address<a></th>
+  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortid/">
+      {% ifequal orderby "sortid" %} <font color="#800000"><b>Case ID</b></font>
+      {%else%} Case ID
+      {%endifequal%}
+      </a></th>
+  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortrule/">
+      {% ifequal orderby "sortrule" %} <font color="#800000"><b>Suspected Condition</b></font>
+      {%else%}Suspected Condition
+      {%endifequal%}
+      </a></th>
+  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortwf/">
+      {% ifequal orderby "sortwf" %} <font color="#800000"><b>Workflow State</b></font>
+      {%else%}Workflow State
+      {%endifequal%}
+      </a></th>
+  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortname/">
+      {% ifequal orderby "sortname" %} <font color="#800000"><b>Name</b></font>
+      {%else%}Name
+      {%endifequal%}
+      </a></th>
+  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortmrn/">
+      {% ifequal orderby "sortmrn" %} <font color="#800000"><b>MRN</b></font>
+      {%else%}MRN
+      {%endifequal%}
+       </a></th>
+  <th><a href="{{SITEROOT}}/cases/search/{{wf}}/{{pname}}/{{mrn}}/sortaddr/">
+       {% ifequal orderby "sortaddr" %} <font color="#800000"><b>Patient Address</b></font>
+      {%else%}Patient Address
+      {%endifequal%}
+      <a></th>
 </tr>
 
     {% for case in object_list %}
