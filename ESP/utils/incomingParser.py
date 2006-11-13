@@ -64,10 +64,18 @@ def parseProvider(incomdir, filename):
         
         try:
             phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone  = [x.strip() for x in items]
-            #phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone = items
         except:
             logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
             continue
+        if not fname:
+            fname = 'Unknown'
+        if not lname:
+            lanme = 'Unknown'
+        if phone:
+            phone = string.replace(phone, '-','')
+        if not phonearea: #fake one
+            phonearea='999'
+            
         prov=Provider.objects.filter(provCode__exact=phy)
         if prov: #update
             prov=prov[0]
@@ -119,7 +127,14 @@ def parseDemog(incomdir, filename):
             demog = Demog(DemogPatient_Identifier=pid)
         else: #update record
             demog = pdb[0]
-
+        
+        #fake sone
+        if not fname:
+            fname = 'Unknown'
+        if not lname:
+            lanme = 'Unknown'
+        if not phonearea: #fake one
+            phonearea='999'
         if phone:
             phone = string.replace(phone, '-','')
         if not cty:
