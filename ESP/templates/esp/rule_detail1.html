@@ -5,12 +5,40 @@
 
 {% block content %}
 
-<h2>Identification Page for Case - {{ rule.ruleName }}</h2>
+<h2><a href="javascript:history.go(-1)">Go Back</a></h2>
+
+<center>
+<h2><font color="#800000">Identification Page for {{ rule.ruleName }}</font></h2>
+</center>
+<br>
+
+
+
 <p>
 <block>
-<font size=+2>
-<pre>{{rule.ruleSQL}}</pre>
-</font>
+<br>
+<font size=+1>
+{{rule.gethtml_rulenote.0 }}
+</font><br>
+
+
+<table cellspacing="10" cellpadding="3" border="1" width="95%">
+
+<tr class="{% cycle row1,row2 as rowcolors %}">
+   {% for oneheader in rule.gethtml_rulenote.1 %}
+        <th> {{oneheader}}</th>
+   {% endfor %}
+</tr>
+
+{% for onedef in rule.gethtml_rulenote.2 %}
+   <tr class="{% cycle row1,row2 as rowcolors %}">
+      {% for oneitem in onedef %}
+         <td width="10%"> {{oneitem}}</td>
+      {% endfor %}
+   </tr>
+{% endfor %}
+
+</table>
 </block>
 {% endblock %}
 
