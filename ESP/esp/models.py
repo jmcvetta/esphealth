@@ -183,6 +183,23 @@ class Rule(models.Model):
     ruleHL7CodeType = models.CharField('Code for HL7 code type', maxlength=10, blank=True, null=True)
 
 
+    def gethtml_rulenote(self):
+        """generate a list to rule note display
+        """
+
+        data=[]
+        lines = self.ruleComments.split('\\n')
+
+        for oneline in lines:
+            if lines.index(oneline)==0:
+                note=oneline
+                continue
+            items = oneline.split('|')
+            if lines.index(oneline)==1: header=items
+            else:
+                data.append(items)
+        return (note,header,data)
+    
     def __str__(self):
         return self.ruleName 
         #return '%d %s %s' % \
