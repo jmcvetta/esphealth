@@ -26,9 +26,11 @@ last logged in, who's logged in
 
 from django.template import Context, loader, Template
 from ESP.esp.models import *
+from ESP.esp.forms import RegistrationForm 
 from django.http import HttpResponse,HttpResponseRedirect
 from django.shortcuts import render_to_response,get_object_or_404
 from django.core.paginator import ObjectPaginator, InvalidPage
+from django.core.mail import send_mail
 
 import os
 import string
@@ -39,20 +41,27 @@ import ESP.utils.localconfig as localconfig
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.forms import PasswordResetForm, PasswordChangeForm
 from django import forms
-from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.contrib.sites.models import Site
-from django.contrib.auth import REDIRECT_FIELD_NAME
-import datetime
+from django.contrib.auth import REDIRECT_FIELD_NAME,SESSION_KEY, authenticate
+import datetime,random,sha
 
-LOGIN_URL = '%s/accounts/login/' % SITEROOT
 
+LOGIN_URL = '%s/login/' % SITEROOT
+REDIRECT_FIELD_NAME = 'next'
+
+
+############################
 def login(request):
     "Displays the login form and handles the login action."
     manipulator = AuthenticationForm(request)
     redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
+
+    
     if request.POST:
-        errors = manipulator.get_validation_errors(request.POST)
+        new_data = request.POST.copy()
+        errors = manipulator.get_validation_errors(new_data)
+        
         if not errors:
             # Light security check -- make sure redirect_to isn't garbage.
             if not redirect_to or '://' in redirect_to or ' ' in redirect_to:
@@ -72,6 +81,7 @@ def login(request):
         'SITEROOT': SITEROOT,
     }, context_instance=RequestContext(request))
 
+
 def rosslogout(request):
     try:
         request.user = None
@@ -89,10 +99,11 @@ def logout(request, next_page=SITEROOT):
     try:
         del request.session[SESSION_KEY]
     except KeyError:
-        return render_to_response('registration/logged_out.html', {'title': 'Logged out'}, context_instance=RequestContext(request))
+        return render_to_response('registration/login.html', {'title': 'Logged out'}, context_instance=RequestContext(request))
     else:
         # Redirect to this page until the session has been cleared.
         return HttpResponseRedirect(next_page or request.path)
+
 
 def logout_then_login(request, login_url=LOGIN_URL):
     "Logs out the user if he is logged in. Then redirects to the log-in page."
@@ -137,7 +148,9 @@ def password_change_done(request):
     return render_to_response('registration/password_change_done.html', context_instance=RequestContext(request))
 
 
-    
+
+###################################
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def index(request):
     """
     core index page
@@ -148,7 +161,7 @@ def index(request):
     
 
 #################################
-#@user_passes_test(lambda u: not u.is_anonymous() , login_url='%s/accounts/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def casesearch(request, wf="*", cfilter="*", mrnfilter="*",orderby="sortid"):
     """search cases by Patient Name or MRN
     """
@@ -229,8 +242,10 @@ def casesearch(request, wf="*", cfilter="*", mrnfilter="*",orderby="sortid"):
             }
     else:
         cinfo={
+            "request": request,
             "is_search": True,
             "pname": cfilter,
+            "postdest": postdest,
             "mrn":mrnfilter,
             "wf": wf,
             "orderby": orderby,
@@ -244,7 +259,7 @@ def casesearch(request, wf="*", cfilter="*", mrnfilter="*",orderby="sortid"):
     return render_to_response('esp/cases_list.html',c)
     
 
-
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def caseNameSearch(request, snfilter=""):
     """search cases by Patient Name 
     """
@@ -277,6 +292,7 @@ def caseNameSearch(request, snfilter=""):
             }
     else:
         cinfo={
+            "request": request,
             "is_search": True,
             "pname": cfilter,
             "mrn":mrnfilter,
@@ -290,6 +306,8 @@ def caseNameSearch(request, snfilter=""):
     c = Context(cinfo)
     return render_to_response('esp/cases_list.html',c)
 
+
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def caseMRNSearch(request, mrnfilter=""):
     """search cases by Patient Name 
     """
@@ -322,6 +340,7 @@ def caseMRNSearch(request, mrnfilter=""):
             }
     else:
         cinfo={
+            "request": request,
             "is_search": True,
             "mrn":mrnfilter,
             "casenum": 0,
@@ -335,7 +354,7 @@ def caseMRNSearch(request, mrnfilter=""):
 
 
 ###############################
-#@user_passes_test(lambda u: not u.is_anonymous() , login_url='%s/accounts/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def casedetail(request, object_id,restrict='F'):
 
     """detailed case view with workflow history
@@ -396,7 +415,9 @@ def getI9(oneenc):
                                                     
     return returnl
 
-#@user_passes_test(lambda u: not u.is_anonymous() , login_url='%s/accounts/login/' % SITEROOT)
+
+#######################################
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def pcpdetail(request, object_id):
     """detailed case view with workflow history
     """
@@ -409,7 +430,8 @@ def pcpdetail(request, object_id):
     return render_to_response('esp/pcp_detail.html',con)
 
 
-
+#######################################
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def lxdetail(request, object_id):
     """detailed Lab result  view for a given lab order
     """
@@ -422,7 +444,9 @@ def lxdetail(request, object_id):
     return render_to_response('esp/lx_detail.html',con)
 
 
-#@user_passes_test(lambda u: not u.is_anonymous() , login_url='%s/accounts/login/' % SITEROOT)
+
+#######################################
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def ruledetail(request, 
 object_id):
     """rule detail
@@ -437,8 +461,8 @@ object_id):
     return render_to_response('esp/rule_detail1.html',con)
 
 
-
-#################################
+#######################################
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def preloadview(request,table='cptloincmap'):
     rules=[]
     newrec=10
@@ -492,7 +516,8 @@ def preloadview(request,table='cptloincmap'):
     return render_to_response(returnurl,con)
 
 
-################################
+#######################################
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def showutil(request):
     cinfo = {"request":request,
              "SITEROOT":SITEROOT,
@@ -501,7 +526,8 @@ def showutil(request):
     return render_to_response('esp/utiladmin.html',c)
 
 
-################################
+#######################################
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def preloadupdate(request,table='cptloincmap'):
 
     dbids = []
@@ -682,7 +708,9 @@ def showhelp(request, topic=None):
     c = Context(cinfo)
     return render_to_response('esp/help.html',c)
 
-#@user_passes_test(lambda u: not u.is_anonymous() , login_url='%s/accounts/login/' % SITEROOT)
+
+#######################################
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def updateWorkflow(request,object_id):
     """update case workflow state
     write a new workflow state history record
@@ -706,7 +734,9 @@ def updateWorkflow(request,object_id):
 
     return HttpResponseRedirect("%s/cases/%s/F/" % (SITEROOT,object_id))
 
-#@user_passes_test(lambda u: not u.is_anonymous() , login_url='%s/accounts/login/' % SITEROOT)
+
+#######################################
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def wfdetail(request, object_id):
     """detailed workflow view
     """
@@ -720,7 +750,9 @@ def wfdetail(request, object_id):
     c = Context(cinfo)
     return render_to_response('esp/workflow_detail.html',c)
 
-#@user_passes_test(lambda u: not u.is_anonymous() , login_url='%s/accounts/login/' % SITEROOT)
+
+#######################################
+@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
 def updateWorkflowComment(request,object_id):
     """update caseworkflow comment only
     workflowComment = meta.TextField('Comments',blank=True)

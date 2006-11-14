@@ -21,21 +21,24 @@
         <p><p>
 
         <table cellpadding="1" border=2 bordercolor = white>
-            <tr class="{% cycle row2,row1 as rowcolors %}"><td><a href="{{SITEROOT}}/">ESP Home</a></td></tr>
-            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/admin/">Administration</a></td></tr>
-            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/">ALL Cases</a></td></tr>
-            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/AR///">Cases Awaiting Review</a></td></tr>
-            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/UR///">Cases Under Review</a></td></tr>
-            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/Q///">Cases Queued</a></td></tr> 
-            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/S///">Cases Sent</a></td></tr>
-            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/FP///">Cases: DO NOT send</a></td></tr>
-            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/utilities/">Utilities</a></td></tr>
-            <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/help/">Help, documentation</a></td></tr>
-            <tr class="{% cycle rowcolors %}"><td>{% if not request.user or request.user.is_anonymous %}Anonymous User</td></tr>
+	    <tr class="{% cycle row2,row1 as rowcolors %}"><td>{% if not request.user or not request.user.is_authenticated %}AnonymousUser</td></tr>
+              <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/login/">ESP Login</a></td></tr>
+
+            
             {% else %}Current user is {{request.user.get_full_name}}<p>
-			<form action="{{SITEROOT}}/logout/" method="post">
-			<input type="Submit" value="Logout" />
-			</form></td></tr>
+                        <form action="{{SITEROOT}}/logout/" method="post">
+                        <input type="Submit" value="Logout" />
+                        </form></td></tr>
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/">ESP Home</a></td></tr>
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/admin/">Administration</a></td></tr>
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/">ALL Cases</a></td></tr>
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/AR///">Cases Awaiting Review</a></td></tr>
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/UR///">Cases Under Review</a></td></tr>
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/Q///">Cases Queued</a></td></tr> 
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/S///">Cases Sent</a></td></tr>
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/FP///">Cases: DO NOT send</a></td></tr>
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/utilities/">Utilities</a></td></tr>
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/help/">Help, documentation</a></td></tr>
 			{% endif %} 
 
 
