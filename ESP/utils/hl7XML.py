@@ -728,10 +728,10 @@ class hl7Batch:
         if is clinician, need XCN rather than XPN (!) with different sequence numbers...
         """
         lastName = lastName.strip()
-        if not lastName: lastName='N/A'
+        if not lastName: lastName='Unknown'
 
         firstName =firstName.strip()
-        if not firstName: firstName='N/A'
+        if not firstName: firstName='Unknown'
         
         outer = self.casesDoc.createElement(outerElement)
         if not isClinician:
