@@ -113,6 +113,7 @@ def redirect_to_login(next, login_url=LOGIN_URL):
     "Redirects the user to the login page, passing the given 'next' page"
     return HttpResponseRedirect('%s?%s=%s' % (login_url, REDIRECT_FIELD_NAME, next))
 
+#####################
 def password_reset(request, is_admin_site=False):
     new_data, errors = {}, {}
     form = PasswordResetForm()
@@ -131,6 +132,8 @@ def password_reset(request, is_admin_site=False):
 def password_reset_done(request):
     return render_to_response('registration/password_reset_done.html', context_instance=RequestContext(request))
 
+
+#####################
 def password_change(request):
     new_data, errors = {}, {}
     form = PasswordChangeForm(request.user)
@@ -139,18 +142,16 @@ def password_change(request):
         errors = form.get_validation_errors(new_data)
         if not errors:
             form.save(new_data)
-            return HttpResponseRedirect('%sdone/' % request.path)
-    return render_to_response('registration/password_change_form.html', {'form': forms.FormWrapper(form, new_data, errors)},
+            return render_to_response('registration/password_change_done.html', Context({'request':request,'SITEROOT': SITEROOT,}))
+        
+    return render_to_response('registration/password_change_form.html', {'form': forms.FormWrapper(form, new_data, errors), 'SITEROOT': SITEROOT, 'request':request},
         context_instance=RequestContext(request))
 password_change = login_required(password_change)
-
-def password_change_done(request):
-    return render_to_response('registration/password_change_done.html', context_instance=RequestContext(request))
 
 
 
 ###################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
 def index(request):
     """
     core index page
@@ -161,7 +162,7 @@ def index(request):
     
 
 #################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
 def casesearch(request, wf="*", cfilter="*", mrnfilter="*",orderby="sortid"):
     """search cases by Patient Name or MRN
     """
@@ -259,7 +260,7 @@ def casesearch(request, wf="*", cfilter="*", mrnfilter="*",orderby="sortid"):
     return render_to_response('esp/cases_list.html',c)
     
 
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
 def caseNameSearch(request, snfilter=""):
     """search cases by Patient Name 
     """
@@ -307,7 +308,7 @@ def caseNameSearch(request, snfilter=""):
     return render_to_response('esp/cases_list.html',c)
 
 
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
 def caseMRNSearch(request, mrnfilter=""):
     """search cases by Patient Name 
     """
@@ -354,7 +355,7 @@ def caseMRNSearch(request, mrnfilter=""):
 
 
 ###############################
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
 def casedetail(request, object_id,restrict='F'):
 
     """detailed case view with workflow history
@@ -417,7 +418,7 @@ def getI9(oneenc):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
 def pcpdetail(request, object_id):
     """detailed case view with workflow history
     """
@@ -431,7 +432,7 @@ def pcpdetail(request, object_id):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
 def lxdetail(request, object_id):
     """detailed Lab result  view for a given lab order
     """
@@ -446,9 +447,8 @@ def lxdetail(request, object_id):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
-def ruledetail(request, 
-object_id):
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+def ruledetail(request, object_id):
     """rule detail
     """
     r = Rule.objects.get(id__exact=object_id)
@@ -462,8 +462,11 @@ object_id):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL)
 def preloadview(request,table='cptloincmap'):
+    if not request.user.is_superuser:
+        return HttpResponse("You do not have permission to see this page")
+    
     rules=[]
     newrec=10
     if table == 'cptloincmap':
@@ -517,8 +520,11 @@ def preloadview(request,table='cptloincmap'):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
 def showutil(request):
+    if not request.user.is_superuser:
+        return HttpResponse("You do not have permission to see this page")
+            
     cinfo = {"request":request,
              "SITEROOT":SITEROOT,
              }
@@ -527,9 +533,11 @@ def showutil(request):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
 def preloadupdate(request,table='cptloincmap'):
-
+    if not request.user.is_superuser:
+        return HttpResponse("You do not have permission to see this page")
+            
     dbids = []
     for k in request.POST.keys():
         if string.find(k, 'ID_')!=-1:
@@ -710,7 +718,7 @@ def showhelp(request, topic=None):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL)
 def updateWorkflow(request,object_id):
     """update case workflow state
     write a new workflow state history record
@@ -736,7 +744,7 @@ def updateWorkflow(request,object_id):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
 def wfdetail(request, object_id):
     """detailed workflow view
     """
@@ -752,7 +760,7 @@ def wfdetail(request, object_id):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url='%s/login/' % SITEROOT)
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
 def updateWorkflowComment(request,object_id):
     """update caseworkflow comment only
     workflowComment = meta.TextField('Comments',blank=True)
