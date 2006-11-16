@@ -59,9 +59,8 @@ public class sendMsg{
     public static void main(String args[]) throws Exception {
 
         String filename = args[0];
-        System.err.println("In JAVA, Sending file: " + filename);
         String response = publishHl7Msg(filename);
-        System.err.println("In JAVA, Remote Server Response: " +response);
+        System.out.println("In JAVA, Sending " + filename +"=Remote Server Response: " +response);
         System.exit(0);
 
     }
