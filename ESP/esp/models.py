@@ -689,23 +689,15 @@ class ConditionDrugName(models.Model):
         search_fields = ('CondiDrugName')
 
 
-class UserProfile(models.Model):
-    user = models.OneToOneField(User)
-    activation_key = models.CharField(maxlength=40)
-    phone_numer = models.PhoneNumberField()
-
-    def __str__(self):
-        return '%s %s %s' % (user, activation_key,phone_numer)
-    class Admin:
-        list_display = ('user', 'activation_key','phone_numer')
-        search_fields =('user')
         
 class DataFile(models.Model):
     filename = models.CharField('Raw data file name',maxlength=50,blank=True)
-    datedownloaded = models.DateTimeField()
+    datedownloaded = models.DateTimeField('Date loaded',editable=False,auto_now=True)
 
+ 
     def __str__(self):
         return '%s %s' % (filename,datedownloaded)
+
     class Admin:
         list_display = ('filename', 'datedownloaded')
         search_fields =('filename')
