@@ -11,9 +11,7 @@ import org.apache.axis.client.*;
 
 public class sendMsg{
 
-
-
-	private static Logger log = Logger.getLogger("sendMsg");
+    private static Logger log = Logger.getLogger("sendMsg");
 
 
     public static void setAuth(Remote r, String user, String pw) {
@@ -64,7 +62,6 @@ public class sendMsg{
         System.err.println("In JAVA, Sending file: " + filename);
         String response = publishHl7Msg(filename);
         System.err.println("In JAVA, Remote Server Response: " +response);
-
         System.exit(0);
 
     }
