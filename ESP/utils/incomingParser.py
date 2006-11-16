@@ -423,6 +423,12 @@ def movefile(incomdir, f):
     """file name format shold be ***.esp.MMDDYY
     YYYYMMDD_prov.txt
     """
+    ##save the filename in DB
+    dataf = DataFile()
+    dataf.filename=f
+    dataf.save()
+    
+    ##move file to processed directory
     mmddyy = f[-6:]
     year = '20'+mmddyy[-2:]
     mon = mmddyy[:2]
