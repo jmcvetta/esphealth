@@ -17,7 +17,9 @@ import traceback,logging
 today=datetime.datetime.now().strftime('%Y%m%d')
 
 ########For logging
-logging = localconfig.getLogging('messageHandler.py v0.1', debug=0)
+logging = localconfig.getLogging('messageHandler.py_v0.1', debug=0)
+logfile = os.path.join(TOPDIR,localconfig.LOCALSITE, 'logs/messageHandler_java_%s.log' % today)
+
 ##############
 
 
@@ -81,27 +83,25 @@ if __name__ == "__main__":
         javacmd="%s -classpath %s %s.java" % (os.path.join(javadir, 'javac'), javaclass,sendMsgcls)
         try:
             os.system(javacmd)
-            print javacmd
         except:
-            logging.error('Compile java Exception' )
-            traceback.print_exc()
+            logging.error('Compile java Exception: %s' %javacmd )
+            sys.exit(1)
                                                                 
     for f in files:
         
         f = hl7dir + '/%s' % f
         #javacmd="/home/ESP/ESP/sendMsgs/sendMsg.bat %s" % f
-        javaruncmd = "%s -classpath %s %s %s" % (os.path.join(javadir, 'java'), javaclass, sendMsgcls, f)
+        javaruncmd = "%s -classpath %s %s %s >> %s" % (os.path.join(javadir, 'java'), javaclass, sendMsgcls, f,logfile )
         logging.info("Runs java command: %s" % javaruncmd)
         try:
             os.system(javaruncmd)
         except:
             logging.error('Run java Exception' )
-            traceback.print_exc()
+            continue
 
         #move processed file to processed folder
         procdir = os.path.join(TOPDIR,localconfig.LOCALSITE,'processedHL7Msgs/')
         if not os.path.isdir(procdir):
             os.mkdir(procdir)
-
         shutil.move(f, procdir)
   
