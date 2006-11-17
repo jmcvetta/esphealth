@@ -16,7 +16,7 @@ import traceback
 today=datetime.datetime.now().strftime('%Y%m%d')
 
 ########For logging
-logging = localconfig.getLogging('incomingParser.py v0.1', debug=0)
+logging = localconfig.getLogging('incomingParser.py_v0.1', debug=0)
 
 
 ###############################

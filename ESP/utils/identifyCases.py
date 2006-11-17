@@ -31,7 +31,7 @@ import logging
 
 
 ###For logging
-logging = localconfig.getLogging('identifyCases.py v0.1', debug=0)
+logging = localconfig.getLogging('identifyCases.py_v0.1', debug=0)
 
 #################################
 def makeNewCase(condition, pid):

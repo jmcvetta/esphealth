@@ -16,7 +16,7 @@ import StringIO
 from django.db import connection
 cursor = connection.cursor()
 
-logging = localconfig.getLogging('preLoader.py v0.1', debug=0)
+logging = localconfig.getLogging('preLoader.py_v0.1', debug=0)
 datadir = os.path.join(TOPDIR,localconfig.LOCALSITE, 'preLoaderData/')
 
 
@@ -194,7 +194,7 @@ def load2rule(table):
 #    cursor.execute("delete from esp_rule")
 #    cursor.execute("alter table esp_rule AUTO_INCREMENT=1") # make sure we start id=1 again!
     lines = getlines(datadir+table+'.txt')
-  
+    
     for items  in lines:
         id, name,fmt, dest,hl7name,hl7c,hl7ctype,note = (x.strip() for x in items)
         if not name: continue
