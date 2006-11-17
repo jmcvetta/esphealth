@@ -249,7 +249,8 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
         if n % 2000 == 0:
             logging.info('%s Lx records done' % n)
         n += 1
-                                
+
+
         try:
             pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,comp,compname,res,normalf,refl,refh,refu,status,note,accessnum,impre  = [x.strip() for x in items]
         except:
@@ -260,7 +261,10 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
                 logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
                 continue
 
-                
+        ##This is to double check if ESP identifies all cases
+        if compname.upper().find('CHLAMYDIA')!=-1 or note.upper().find('CHLAMYDIA')!=-1:
+            logging.info("CHLAMYDIA LX: %s\n"  % str(items))
+            
         try:
             patient = demogdict[pid]
             #patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
@@ -300,7 +304,10 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
         c = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt=comp)
         if c:
             lx.LxLoinc=(c[0].Loinc).strip()
-
+        elif compname:
+            if compname.upper().find('CHLAMYDIA')!=-1: ##log new CPT code which is not in esp_cptloincmap
+                logging.error('NEW CHLAMYDIA CPT code: %s' % str(items))
+                
         #prov=Provider.objects.filter(provCode__exact=phy)         
         #if prov:
         try:
