@@ -6,16 +6,16 @@
 # the folder containing the ESP directory
 
 import datetime,random,csv,sys,os
-#os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-#os.environ['PYTHONPATH'] = '\home\rerla\mydjango\ESP'
+#os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+#os.environ['PYTHONPATH'] = '/home/ESP'
 import django
-import os
+import os,sys
 from ESP.esp.models import *
 from ESP.settings import TOPDIR
-import localconfig
+from ESP.utils import localconfig
 
 incomdir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','incomingData/')
-today = datetime.datetime.now().strftime('%Y%m%d')
+today = datetime.datetime.now().strftime('%y%m%d')
 
 
 try:
@@ -29,9 +29,9 @@ snames = ['Bazfar','Barfoo','Hoobaz','Sotbar','Farbaz','Zotbaz','Smith','Jones',
 psnames = ['Spock','Kruskal','Platt','Klompas','Lazarus','Who','Nick','Livingston','Doolittle','Casey','Finlay']
 sites = ['Brookline Ave','West Roxbury','Matapan','Sydney','Kansas']
 
-remakendc = 0
-remakeicd = 0
-remakecpt = 0
+remakendc = 1
+remakeicd = 1
+remakecpt = 1
 
 
 WORKFLOW_STATES = (
@@ -263,7 +263,7 @@ def fakepcps(n=100):
     provTelAreacode = models.CharField('Primary Department Phone Areacode',maxlength=20,blank=True)
     provTel = models.CharField('Primary Department Phone Number',maxlength=20,blank=True)    
     """
-    fakepcps = []
+    fakepcp = []
     fh = open(incomdir + 'epicpro.esp.'+ today, 'w')
     for i in range(n):
         if random.random() > 0.5:
@@ -279,11 +279,11 @@ def fakepcps(n=100):
         pid = '%s_%s_%d' % (sname[:3],fname[:3],i)
         p = "%s^%s^%s^^MD^^%s^^^^^^^\n" % (pid,sname,fname,d)
         fh.write(p)
-        fakepcps.append(pid)
+        fakepcp.append(pid)
     fh.write('CONTROL TOTALS^epicpro^^^346^8/9/06 15:10^8/9/06 15:10^0h0m1s\n')
     fh.close()
  
-    return fakepcps
+    return fakepcp
 
 ##################################
 def makecpt():
@@ -390,10 +390,10 @@ def cleanup():
 
 if __name__ == "__main__":
 
-   # cleanup()
+    cleanup()
+    sys.exit()
 
-
-   # ndcs = ['%s%s' % (x.ndcLbl,x.ndcProd) for x in ndc.objects.filter(ndcTrade__istartswith='azithromycin 1 g')]
+    # ndcs = ['%s%s' % (x.ndcLbl,x.ndcProd) for x in ndc.objects.filter(ndcTrade__istartswith='azithromycin 1 g')]
     ndcs = ['%s%s' % (x.ndcLbl,x.ndcProd) for x in ndc.objects.filter(ndcTrade__istartswith='Darvon')]
    
 
