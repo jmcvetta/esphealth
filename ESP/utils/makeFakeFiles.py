@@ -6,16 +6,19 @@
 # the folder containing the ESP directory
 
 import datetime,random,csv,sys,os
-#os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
-#os.environ['PYTHONPATH'] = '/home/ESP'
+# for esphealth testing sys.path.append('/home/ESPnew')
+sys.path.append('/home/ESPnew')
+os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 import django
 import os,sys
 from ESP.esp.models import *
 from ESP.settings import TOPDIR
 from ESP.utils import localconfig
 
-incomdir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','incomingData/')
-today = datetime.datetime.now().strftime('%y%m%d')
+incomdir = os.path.join(TOPDIR,localconfig.LOCALSITE,'incomingData/')
+today = datetime.datetime.now().strftime('%y%m%d') # carla/hvma is giving 2 digit years!
+print 'today=%s' % today
+
 
 
 try:
@@ -29,9 +32,9 @@ snames = ['Bazfar','Barfoo','Hoobaz','Sotbar','Farbaz','Zotbaz','Smith','Jones',
 psnames = ['Spock','Kruskal','Platt','Klompas','Lazarus','Who','Nick','Livingston','Doolittle','Casey','Finlay']
 sites = ['Brookline Ave','West Roxbury','Matapan','Sydney','Kansas']
 
-remakendc = 1
-remakeicd = 1
-remakecpt = 1
+remakendc = 0
+remakeicd = 0
+remakecpt = 0
 
 
 WORKFLOW_STATES = (
@@ -92,7 +95,6 @@ def fakename():
 
 #################################
 def fakeDemogs(n=100,wf = 1,pcps=[],icds=[],cpts=[],ndcs=[]):
-#def fakepids(n=100,wf = 1,pcps=[],icds=[],cpts=[],ndcs=[]):
     """create a fake person for testing
     and a fake case - note need to hook these up
     """
@@ -263,7 +265,7 @@ def fakepcps(n=100):
     provTelAreacode = models.CharField('Primary Department Phone Areacode',maxlength=20,blank=True)
     provTel = models.CharField('Primary Department Phone Number',maxlength=20,blank=True)    
     """
-    fakepcp = []
+    pcps = []
     fh = open(incomdir + 'epicpro.esp.'+ today, 'w')
     for i in range(n):
         if random.random() > 0.5:
@@ -279,11 +281,11 @@ def fakepcps(n=100):
         pid = '%s_%s_%d' % (sname[:3],fname[:3],i)
         p = "%s^%s^%s^^MD^^%s^^^^^^^\n" % (pid,sname,fname,d)
         fh.write(p)
-        fakepcp.append(pid)
+        pcps.append(pid)
     fh.write('CONTROL TOTALS^epicpro^^^346^8/9/06 15:10^8/9/06 15:10^0h0m1s\n')
     fh.close()
  
-    return fakepcp
+    return pcps
 
 ##################################
 def makecpt():
@@ -365,7 +367,6 @@ def cleanup():
     sqlist.append('delete from esp_rx;')
     sqlist.append('delete from esp_pid;')
 
-    sqlist.append('delete from esp_rule;')
     if remakendc:
         sqlist.append('delete from esp_ndc;')    
     if remakeicd:
@@ -391,7 +392,6 @@ def cleanup():
 if __name__ == "__main__":
 
     cleanup()
-    sys.exit()
 
     # ndcs = ['%s%s' % (x.ndcLbl,x.ndcProd) for x in ndc.objects.filter(ndcTrade__istartswith='azithromycin 1 g')]
     ndcs = ['%s%s' % (x.ndcLbl,x.ndcProd) for x in ndc.objects.filter(ndcTrade__istartswith='Darvon')]
@@ -412,19 +412,10 @@ if __name__ == "__main__":
     cpts = [x.cptCode for x in cpt.objects.filter(cptCode__exact='87491')]
     print 'got %d cpts to play with' % (len(cpts))
 
-    pcps = fakepcps(10) # make 10 pcps
+    pcps = fakepcps(100) # make 10 pcps
     fakeDemogs(20,1,pcps,icds,cpts,ndcs)
 
-    
-#    r = Rule(ruleName='Chlamydia',ruleSQL='Chlamydia rules',ruleMsgFormat='HL7',ruleMsgDest='MaDPH',
-#             ruleHL7Code='603.9',ruleHL7Name='Chlamydia',ruleHL7CodeType='I9')
-#    r.save()
-#    r = Rule(ruleName='LatentTB',ruleSQL='Latent TB rules',ruleMsgFormat='HL7',ruleMsgDest='MaDPH',
-#             ruleHL7Code='023.9',ruleHL7Name='LatentTB',ruleHL7CodeType='I9')
-#    r.save()
-
-   # fakeDemogs(20,2,pcps,icds,cpts,ndcs)
-   # fakeDemogs(20,3,pcps,icds,cpts,ndcs)
-   # fakeDemogs(20,4,pcps,icds,cpts,ndcs)
-   # fakeDemogs(100000,None,pcps,icds,cpts,ndcs)
-
+    fakeDemogs(20,2,pcps,icds,cpts,ndcs)
+    fakeDemogs(20,3,pcps,icds,cpts,ndcs)
+    fakeDemogs(20,4,pcps,icds,cpts,ndcs)
+    fakeDemogs(10000,None,pcps,icds,cpts,ndcs)

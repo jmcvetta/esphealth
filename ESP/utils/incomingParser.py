@@ -1,5 +1,6 @@
 import os,sys
 sys.path.insert(0, '/home/ESP/')
+# for esphealth.org sys.path.insert(0, '/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 import django, datetime
@@ -31,24 +32,29 @@ def getlines(fname):
     return returnl
 
 ###############################
-def yieldlines(fname):
-    """iterator to return delim split lines"""
-    delim = '^'
-    try:
-        f = open(fname)
-    except:
-        logging.error('Can not read file:%s\n' % fname)
-        return 
-    returnl = []
-    for line in f:
-        try:
-            returnl = line.split(delim)
-            yield returnl
-        except:
-            logging.error('Split ERROR for %s:%s\n' % (fname,line))
-            return 
+
+class splitfile(file):
+    """ extend file class to return delim split lines
+    ross lazarus nov 21 2006
+    """
+
+    def __init__(self,fname,delim='^'):
+        self.delim=delim
+        self.fname = fname
+        self.n = 0
+        file.__init__(self,fname,'r')
         
-    return 
+    def next(self):
+        """ override file.next()
+        """
+        r = []
+        while len(r) < 2: # want a line with the delim
+            r = file.next(self).split(self.delim) # use original file.next!
+            self.n += 1
+            if self.n % 10000 == 0:
+                logging.info('At line %d in file %s' % (self.n,self.fname))
+        r = [x.strip() for x in r]
+        return r
 
 
 
@@ -57,13 +63,14 @@ def parseProvider(incomdir, filename):
 #    l = getlines(incomdir+'/%s' % filename)
 
     provdict={}
-    lines = yieldlines(incomdir+'/%s' % filename)
-    for items in lines:
+    fname = os.path.join(incomdir,'%s' % filename)
+    f = splitfile(fname,'^')
+    for items in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue
         
         try:
-            phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone  = [x.strip() for x in items]
+            phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone  = items #[x.strip() for x in items]
         except:
             logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
             continue
@@ -80,8 +87,7 @@ def parseProvider(incomdir, filename):
         if prov: #update
             prov=prov[0]
         else: #new record
-            prov=Provider(provCode = phy) 
-            
+            prov=Provider(provCode = phy)             
         prov.provLast_Name=lname
         prov.provFirst_Name=fname
         prov.provMiddle_Initial =mname
@@ -103,31 +109,26 @@ def parseProvider(incomdir, filename):
 
 ################################
 def parseDemog(incomdir, filename):
+    """
+    """
 #    l = getlines(incomdir+'/%s' % filename)
 
     demogdict={}
-    n=1
-    lines = yieldlines(incomdir+'/%s' % filename)
-    for items in lines:
+    fname = os.path.join(incomdir,'%s' % filename)
+    f = splitfile(fname,'^')
+    for items in f:
         if not items or items[0]=='CONTROL TOTALS':
-            continue
-
-        if n % 1000 == 0:
-            logging.info('%s Demog records done' % n)
-        n += 1
-                                
+            continue                                
         try:
-            pid,mrn,lname,fname,mname,addr1,addr2,city,state,zip,cty,phonearea,phone,ext,dob,gender,race,lang,ssn,phy,mari,religion,alias,mom,death  = [x.strip() for x in items]
-            
+            pid,mrn,lname,fname,mname,addr1,addr2,city,state,zip,cty,phonearea,phone,ext,dob,gender,race,lang,ssn,phy,mari,religion,alias,mom,death  = items #[x.strip() for x in items]            
         except:
-            logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            logging.error('Parser %s: wrong size - %s' % (filename,str(items))) # 25 needed
             continue
         pdb = Demog.objects.filter(DemogPatient_Identifier__exact=pid)
         if not pdb: #new record
             demog = Demog(DemogPatient_Identifier=pid)
         else: #update record
-            demog = pdb[0]
-        
+            demog = pdb[0]        
         #fake sone
         if not fname:
             fname = 'Unknown'
@@ -138,8 +139,7 @@ def parseDemog(incomdir, filename):
         if phone:
             phone = string.replace(phone, '-','')
         if not cty:
-            cty='USA'
-            
+            cty='USA'                
         demog.DemogMedical_Record_Number=mrn
         demog.DemogLast_Name=lname
         demog.DemogFirst_Name=fname
@@ -176,19 +176,15 @@ def parseDemog(incomdir, filename):
 
 ################################
 def parseEnc(incomdir, filename,demogdict,provdict):
-   # l = getlines(incomdir+'/%s' % filename)
-    n=1
-    lines = yieldlines(incomdir+'/%s' % filename)
-    for items in lines:
+    """
+    """
+    fname = os.path.join(incomdir,'%s' % filename)
+    f = splitfile(fname,'^')
+    for items in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue
-
-        if n % 2000 == 0:
-            logging.info('%s Enc records done' % n)
-        n += 1
-                              
         try:
-            pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,icd9  = [x.strip() for x in items]
+            pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,icd9  = items #[x.strip() for x in items]
         except:
             logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
             continue
@@ -205,8 +201,7 @@ def parseEnc(incomdir, filename,demogdict,provdict):
         if not encdb: #new record
             enc = Enc(EncPatient=patient,EncEncounter_ID=encid)
         else: #update record
-            enc = encdb[0]    
-           
+            enc = encdb[0]                   
         enc.EncMedical_Record_Number=mrn
         enc.EncEncounter_Date=encd  
         enc.EncEncounter_Status=close
@@ -220,7 +215,7 @@ def parseEnc(incomdir, filename,demogdict,provdict):
         enc.EncTemperature=temp
         enc.EncCPT_codes=cpt
         enc.EncICD9_Codes=icd9
-           
+               
         #prov=Provider.objects.filter(provCode__exact=phy)
         #prov = provdb.filter(provCode=phy)[0]
         try:
@@ -238,24 +233,18 @@ def parseEnc(incomdir, filename,demogdict,provdict):
            
 ################################
 def parseLxRes(incomdir,filename,demogdict, provdict):
-#    l = getlines(incomdir+'/%s' % filename)
-    n=1
-
-    lines = yieldlines(incomdir+'/%s' % filename)
-    for items in lines:
+    """
+    """
+    fname = os.path.join(incomdir,'%s' % filename)
+    f = splitfile(fname,'^')
+    for items in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue
-
-        if n % 2000 == 0:
-            logging.info('%s Lx records done' % n)
-        n += 1
-
-
         try:
-            pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,comp,compname,res,normalf,refl,refh,refu,status,note,accessnum,impre  = [x.strip() for x in items]
+            pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,comp,compname,res,normalf,refl,refh,refu,status,note,accessnum,impre  = items #[x.strip() for x in items]
         except:
             try:
-                pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,note,access,impre  = [x.strip() for x in items]
+                pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,note,access,impre  = items #[x.strip() for x in items]
                 comp=compname=res=normalf=refl=refh=refu=status=''
             except:
                 logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
@@ -275,8 +264,10 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
           
         #always create a new record, since no good way to identify unique tuple
 
-        if not string.strip(orderid): orderid = today  ##since when passing HL7 msg, this is required
-        if not string.strip(resd): resd =today
+        if not string.strip(orderid):
+            orderid = today  ##since when passing HL7 msg, this is required
+        if not string.strip(resd):
+            resd =today
            
         lx = Lx(LxPatient=patient,LxOrder_Id_Num=orderid)
 
@@ -293,7 +284,8 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
         lx.LxReference_Low=refl
         lx.LxReference_High=refh
 
-        if not refu: refu = 'N/A'          
+        if not refu:
+            refu = 'N/A'          
 
         lx.LxReference_Unit=refu
         lx.LxTest_status=status
@@ -327,21 +319,16 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
 def parseRx(incomdir,filename,demogdict,provdict):
 #    l = getlines(incomdir+'/%s' % filename)
 
-    n=1
-    lines = yieldlines(incomdir+'/%s' % filename)
-    for items in lines:
+    fname = os.path.join(incomdir,'%s' % filename)
+    f = splitfile(fname,'^')
+    for items in f:
         if not items or items[0]=='CONTROL TOTALS':
-            continue
-                
-        if n % 2000 == 0:
-            logging.info('%s Rx records done' % n)
-        n += 1
-                                
-        try:
-            pid,mrn,orderid,phy, orderd,status, med,ndc,meddesc,qua,ref,sdate,edate  = [x.strip() for x in items]
+            continue                                
+        if len(items) == 13:
+            pid,mrn,orderid,phy, orderd,status, med,ndc,meddesc,qua,ref,sdate,edate  = items #[x.strip() for x in items]
             route=''
-        except:
-            pid,mrn,orderid,phy, orderd,status, med,ndc,meddesc,qua,ref,sdate,edate,route  = [x.strip() for x in items]
+        else:
+            pid,mrn,orderid,phy, orderd,status, med,ndc,meddesc,qua,ref,sdate,edate,route  = items #[x.strip() for x in items]
             
            
         try:
@@ -391,13 +378,13 @@ def parseRx(incomdir,filename,demogdict,provdict):
 ################################
 def parseImm(incomdir, filename,demogdict):
     
-    #l = getlines(incomdir+'/%s' % filename)
-    lines = yieldlines(incomdir+'/%s' % filename)
-    for items in lines:
+    fname = os.path.join(incomdir,'%s' % filename)
+    f = splitfile(fname,'^')
+    for items in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue
                     
-        pid, immtp, immname,immd,immdose,manf,lot,recid  = [x.strip() for x in items]
+        pid, immtp, immname,immd,immdose,manf,lot,recid  = items #[x.strip() for x in items]
         
         try:
             patient = demogdict[pid]
@@ -467,17 +454,16 @@ if __name__ == "__main__":
         days = getfilesByDay(incomdir)
         parsedays = []
         for oneday in days:
-            err = validateOneday(incomdir,oneday)
-        
+            err = 0 #validateOneday(incomdir,oneday)
             if err: #not OK
-                logging.error("Valitator - Files for day %s not OK, reject to process\n" % oneday)
+                logging.error("Validator - Files for day %s not OK, rejected - not  processed\n" % oneday)
             else: #OK
                 logging.info("Validator - Files for day %s OK\n" % oneday)
                 parsedays.append(oneday)
             
 
         ##start to parse by days
-        logging.info('Validating is done, start to parse and sotre data\n')
+        logging.info('Validating is done, start to parse and store data\n')
         for oneday in parsedays:
                 logging.info("Parser - parse day %s\n" % oneday)
                 provf = 'epicpro.esp.'+oneday
