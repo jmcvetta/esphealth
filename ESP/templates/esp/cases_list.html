@@ -83,6 +83,8 @@
       {%else%}Patient Address
       {%endifequal%}
       <a></th>
+  <th>Previously notified case(s)
+       </th>
 </tr>
 
     {% for case in object_list %}
@@ -97,7 +99,12 @@
       <td> {{ case.getPatient.DemogLast_Name}}, {{ case.getPatient.DemogFirst_Name}}</td>
       <td> {{case.getPatient.DemogMedical_Record_Number}}</td>
       <td>  {{case.getAddress }}</td>
-      </tr>
+      <td> {% for othercid in case.getPrevcases %}
+                <a href="{{SITEROOT}}/cases/{{ othercid }}/F/">Case {{ othercid }}</a>,&nbsp;
+           {% endfor %}
+
+          </td> 
+     </tr>
 
     {% endfor %}
     </table>

@@ -336,6 +336,7 @@ class Case(models.Model):
     caseRxID = models.TextField('A list of ESP_Rx IDs',maxlength=500,  blank=True, null=True)
     caseICD9 = models.TextField('A list of related ICD9',maxlength=500,  blank=True, null=True)
 
+    
 
     def __str__(self):
         p = self.showPatient()# self.pID
@@ -374,7 +375,15 @@ class Case(models.Model):
         if p.DemogAddress1:
             s = '%s %s<br>%s, %s, %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
         return s
-    
+
+    def getPrevcases(self):
+        othercases = Case.objects.filter(caseDemog__id__exact=self.caseDemog.id, caseRule__id__exact=self.caseRule.id, id__lt=self.id)
+        returnstr=[]
+        for c in othercases:
+            returnstr.append(c.id)
+        return returnstr
+
+###################################
 class CaseWorkflow(models.Model):
     workflowCaseID = models.ForeignKey(Case)
     workflowDate = models.DateTimeField('Activated',auto_now=True)
