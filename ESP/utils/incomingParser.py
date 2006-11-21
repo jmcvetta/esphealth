@@ -228,7 +228,59 @@ def parseEnc(incomdir, filename,demogdict,provdict):
         enc.save()
 
     movefile(incomdir, filename)    
+
+
+################################
+def parseLxOrd(incomdir,filename,demogdict, provdict):
+    
+    fname = os.path.join(incomdir,'%s' % filename)
+    f = splitfile(fname,'^')
+    for items in f:
+        if not items or items[0]=='CONTROL TOTALS':
+            continue
+
+        try:
+            pid,mrn,orderid,cpt,modi,accessnum,orderd, ordertp, phy = items
+
+        except:
+            logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            continue
+
+            
+        try:
+            patient = demogdict[pid]
+        except:
+            logging.warning('Parser In LXORD: NO patient found: %s\n' % str(items))
+            continue
+
         
+        #always create a new record, since no good way to identify unique tuple
+        if not string.strip(orderid): orderid = today  ##since when passing HL7 msg, this is required
+        
+        lx = Lx(LxPatient=patient,LxOrder_Id_Num=orderid)
+        lx.LxMedical_Record_Number =mrn
+        lx.LxTest_Code_CPT=cpt
+        lx.LxTest_Code_CPT_mod =modi
+        lx.LxHVMA_Internal_Accession_number=accessnum
+        lx.LxOrderDate=orderd
+        lx.LxOrderType=ordertp
+
+        
+        #get loinc
+        c = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt='')
+        if c:
+            lx.LxLoinc=(c[0].Loinc).strip()
+
+        try:
+            prov=provdict[phy]
+            lx.LxOrdering_Provider=prov
+        except:
+            pass
+                
+        lx.save()
+                
+    movefile(incomdir, filename)
+                                                                                                                                                                                                                                                                                                                                            
                 
            
 ################################
@@ -437,7 +489,7 @@ def movefile(incomdir, f):
 
     try:
         shutil.move(incomdir+'/%s' % f, subdir)
-        logging.info('Parser Moving file %s from %s to %s' % (f, incomdir, subdir))
+        logging.info('Moving file %s from %s to %s\n' % (f, incomdir, subdir))
     except:
         logging.warning('Parser No this file: %s' % f)
     
@@ -453,8 +505,9 @@ if __name__ == "__main__":
         from validator import getfilesByDay,validateOneday
         days = getfilesByDay(incomdir)
         parsedays = []
+
         for oneday in days:
-            err = 0 #validateOneday(incomdir,oneday)
+            err = validateOneday(incomdir,oneday)
             if err: #not OK
                 logging.error("Validator - Files for day %s not OK, rejected - not  processed\n" % oneday)
             else: #OK
@@ -465,26 +518,29 @@ if __name__ == "__main__":
         ##start to parse by days
         logging.info('Validating is done, start to parse and store data\n')
         for oneday in parsedays:
-                logging.info("Parser - parse day %s\n" % oneday)
-                provf = 'epicpro.esp.'+oneday
-                provdict = parseProvider(incomdir, provf)
+            logging.info("Parser - parse day %s\n" % oneday)
+            provf = 'epicpro.esp.'+oneday
+            provdict = parseProvider(incomdir, provf)
 
-                demogf =  'epicmem.esp.'+oneday 
-                demogdict = parseDemog(incomdir, demogf)
-
-                visf =  'epicvis.esp.'+oneday      
-                parseEnc(incomdir , visf,demogdict,provdict)
+            demogf =  'epicmem.esp.'+oneday 
+            demogdict = parseDemog(incomdir, demogf)
+            
+            visf =  'epicvis.esp.'+oneday      
+            parseEnc(incomdir , visf,demogdict,provdict)
 
        
-                medf = 'epicmed.esp.'+oneday
-                parseRx(incomdir , medf,demogdict,provdict)
+            medf = 'epicmed.esp.'+oneday
+            parseRx(incomdir , medf,demogdict,provdict)
         
-                lxresf = 'epicres.esp.'+oneday
-                parseLxRes(incomdir,lxresf, demogdict,provdict)
+            lxordf = 'epicord.esp.'+oneday
+            parseLxOrd(incomdir,lxordf, demogdict,provdict)
+                                
+            lxresf = 'epicres.esp.'+oneday
+            parseLxRes(incomdir,lxresf, demogdict,provdict)
 
                 
-                immf = 'epicimm.esp.'+oneday  
-                parseImm(incomdir , immf, demogdict)
+            immf = 'epicimm.esp.'+oneday  
+            parseImm(incomdir , immf, demogdict)
 
         logging.info('Start: %s\n' %  startt)
         logging.info('End:   %s\n' % datetime.datetime.now())
