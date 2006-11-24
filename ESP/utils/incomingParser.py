@@ -516,7 +516,7 @@ if __name__ == "__main__":
             
 
         ##start to parse by days
-        logging.info('Validating is done, start to parse and store data\n')
+        logging.info('Validating is done, start to parse and store data for days %s\n' % str(parsedays))
         for oneday in parsedays:
             logging.info("Parser - parse day %s\n" % oneday)
             provf = 'epicpro.esp.'+oneday
