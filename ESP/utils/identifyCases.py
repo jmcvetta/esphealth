@@ -65,6 +65,7 @@ def makeNewCase(condition, pid):
     
     if p.DemogProvider:
         c.caseProvider=p.DemogProvider
+
     c.save()
     logging.info('Creating %s: NEWCASE%s' % (condition,c.id))
     now = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -329,23 +330,39 @@ if __name__ == "__main__":
                 encids = str(eid)[1:-1]
                 lxids = str(lid)[1:-1]
                 rxids = str(rid)[1:-1]
-            
-                if getLxduration(c, lid) > 28:
-                    #new case
-                    logging.info('New Lx for existing case -%s: CaseID%s, DemogID%s\n' % (cond,c.id,pid))
-                    makeNewCase(cond, pid)
-                else:##still old case
-                    icd9str=getRelatedIcd9(cond, eid)
-                    #check if case has been sent or not
-                    if c.caseWorkflow =='S':
-                        ##do nothing
+                icd9str=getRelatedIcd9(cond, eid)
+
+                if c.caseWorkflow =='S':
+                    if encids ==c.caseEncID and lxids==c.caseLxID and rxids ==c.caseRxID: ##nothing to update
                         pass
-                    else: ##update case
-                        logging.info('Update unsend case - %s: CaseID%s' % (cond,c.id))
-                        c.caseEncID=encids
-                        c.caseLxID=lxids
-                        c.caseICD9=icd9str
-                        c.caseRxID=rxids
-                        c.save()
+                    else: #has new enc/Lx/Rx records
+                        logging.info('Make new case for already sended case - %s: oldCaseID%s' % (cond,c.id))
+                        makeNewCase(cond, pid)
+                else:
+                    logging.info('Update unsend case - %s: CaseID%s' % (cond,c.id))
+                    c.caseEncID=encids
+                    c.caseLxID=lxids
+                    c.caseICD9=icd9str
+                    c.caseRxID=rxids
+                    c.save()
+                                                                                                                                            
+            
+                #if getLxduration(c, lid) > 28:
+                    #new case
+                #    logging.info('New Lx for existing case -%s: CaseID%s, DemogID%s\n' % (cond,c.id,pid))
+                #    makeNewCase(cond, pid)
+                #else:##still old case
+                #    icd9str=getRelatedIcd9(cond, eid)
+                    #check if case has been sent or not
+                #    if c.caseWorkflow =='S':
+                        ##do nothing
+                #        pass
+                #    else: ##update case
+                #        logging.info('Update unsend case - %s: CaseID%s' % (cond,c.id))
+                #        c.caseEncID=encids
+                #        c.caseLxID=lxids
+                #        c.caseICD9=icd9str
+                #        c.caseRxID=rxids
+                #        c.save()
             
             

@@ -705,7 +705,7 @@ class DataFile(models.Model):
 
  
     def __str__(self):
-        return '%s %s' % (filename,datedownloaded)
+        return '%s %s' % (self.filename,self.datedownloaded)
 
     class Admin:
         list_display = ('filename', 'datedownloaded')
