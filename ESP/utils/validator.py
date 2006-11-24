@@ -11,21 +11,44 @@ import traceback
 import logging
 
 
+###############################
 
+class splitfile(file):
+    """ extend file class to return delim split lines
+    ross lazarus nov 21 2006
+    """
+
+    def __init__(self,fname):
+        self.fname = fname
+        self.n = 0
+        file.__init__(self,fname,'r')
+        
+    def next(self):
+        """ override file.next()
+        """
+        r = []
+        while len(r) < 2: # want a line with the delim
+            r = file.next(self)
+            self.n += 1
+            if self.n % 10000 == 0:
+                logging.info('At line %d in file %s' % (self.n,self.fname))
+        return (r,self.n)
+
+                                                                                                                            
 ################################
 def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],required=[]):
     returnd={}
     errors=0
+    fname = os.path.join(incomdir,'%s' % fname)
     try:
-        lines= file(incomdir+fname).readlines()
+        f = splitfile(fname)
     except:
-        logging.error('Validator - Can not read file:%s%s\n' % (incomdir,fname))
+        logging.error('Validator - Can not read file:%s\n' % (fname))
         return (errors, returnd)
-    
-    for l in lines[:-1]:
-        linenum=lines.index(l)+1
-        l=string.strip(l)
-        if not l: continue
+                    
+    for (l,linenum) in f:
+        if not string.strip(l) or l.find('CONTROL TOTALS')>-1:
+            continue
         
         fnum=len(re.findall("\^",l))
         if int(delimiternum) != fnum:
@@ -106,6 +129,16 @@ def validateOneday(incomdir, oneday):
        err2 = checkID(pids, provids, tempd[0],tempd[6],demogf,providerf,visf)
     if err or err2:
         finalerr = 1
+
+    #lxord
+    lxordf = 'epicord.esp.'+oneday
+    logging.info('Validator - Process %s' % lxordf)
+    err, tempd = validateOnefile(incomdir,lxordf,8,[0,8],datecolumn=[6],required=[0,1])
+    if tempd:
+        err2 = checkID(pids, provids, tempd[0],tempd[8],demogf,providerf,lxordf)
+    if err or err2:
+        finalerr = 1
+                                        
     #lxres
     lxresf = 'epicres.esp.'+oneday
     logging.info('Validator - Process %s' % lxresf)
@@ -154,7 +187,7 @@ def getfilesByDay(incomdir):
 ################################
 ################################
 if __name__ == "__main__":
-    logging = localconfig.getLogging('validator.py v0.1', debug=0)
+    logging = localconfig.getLogging('validator.py_v0.1', debug=0)
     try: 
         startt = datetime.datetime.now()
        
