@@ -47,7 +47,8 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
         return (errors, returnd)
                     
     for (l,linenum) in f:
-        if not string.strip(l) or l.find('CONTROL TOTALS')>-1:
+        l = l.strip()
+        if not l or l.find('CONTROL TOTALS')>-1:
             continue
         
         fnum=len(re.findall("\^",l))
@@ -67,7 +68,7 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
                 errors = 1
                 logging.error(msg)
         for n in needidcolumn:
-            returnd.setdefault(n,[]).append(items[n])
+            returnd.setdefault(n,[]).append(items[n].strip())
         for d in datecolumn:
             if items[d] and len(items[d])!=8 or re.search('\D', items[d]):
                 msg = 'Validator - %s: wrong Date format: %s\n=========LINE%s: %s\n'  % (fname,items[d],linenum, l)
@@ -124,7 +125,7 @@ def validateOneday(incomdir, oneday):
     #encounter
     visf = 'epicvis.esp.'+oneday
     logging.info('Validator -Process %s' % visf)
-    err,tempd = validateOnefile(incomdir,visf,13,[0,6], datecolumn=[3,5,10],required=[0,1])
+    err,tempd = validateOnefile(incomdir,visf,19,[0,6], datecolumn=[3,5,10],required=[0,1])
     if tempd:
        err2 = checkID(pids, provids, tempd[0],tempd[6],demogf,providerf,visf)
     if err or err2:
@@ -147,6 +148,8 @@ def validateOneday(incomdir, oneday):
         err2 = checkID(pids, provids, tempd[0],tempd[5],demogf,providerf,lxresf)
     if err or err2:
         finalerr = 1
+
+
 
     #med
     medf = 'epicmed.esp.'+oneday
@@ -187,7 +190,7 @@ def getfilesByDay(incomdir):
 ################################
 ################################
 if __name__ == "__main__":
-    logging = localconfig.getLogging('validator.py_v0.1', debug=0)
+    logging = localconfig.getLogging('validator.py_v0.3', debug=0)
     try: 
         startt = datetime.datetime.now()
        

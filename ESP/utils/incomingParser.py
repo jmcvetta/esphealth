@@ -8,6 +8,7 @@ from ESP.esp.models import *
 from django.db.models import Q
 from ESP.settings import TOPDIR
 import localconfig 
+from validator import getfilesByDay,validateOneday
 
 import string
 import shutil
@@ -184,7 +185,7 @@ def parseEnc(incomdir, filename,demogdict,provdict):
         if not items or items[0]=='CONTROL TOTALS':
             continue
         try:
-            pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,icd9  = items #[x.strip() for x in items]
+            pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,icd9  = items #[x.strip() for x in items]
         except:
             logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
             continue
@@ -488,32 +489,41 @@ def movefile(incomdir, f):
         os.mkdir(subdir)
 
     try:
-        shutil.move(incomdir+'/%s' % f, subdir)
         logging.info('Moving file %s from %s to %s\n' % (f, incomdir, subdir))
+        shutil.move(incomdir+'/%s' % f, subdir)
     except:
         logging.warning('Parser No this file: %s' % f)
+
+
+
+################################
+def doValidation(incomdir):
+    incomdir = os.path.join(TOPDIR, localconfig.LOCALSITE,'incomingData/')
+
+    from validator import getfilesByDay,validateOneday
+    days = getfilesByDay(incomdir)
+    parsedays = []
     
+    for oneday in days:
+        err = validateOneday(incomdir,oneday)
+        if err: #not OK
+            logging.error("Validator - Files for day %s not OK, rejected - not  processed\n" % oneday)
+        else: #OK
+            logging.info("Validator - Files for day %s OK\n" % oneday)
+            parsedays.append(oneday)
+    return parsedays
+
 ################################
 ################################
 if __name__ == "__main__":
     try: 
         startt = datetime.datetime.now()
        
-        ##get incoming files    
+        ##get incoming files and do validations
         incomdir = os.path.join(TOPDIR, localconfig.LOCALSITE,'incomingData/')
-
-        from validator import getfilesByDay,validateOneday
         days = getfilesByDay(incomdir)
-        parsedays = []
-
-        for oneday in days:
-            err = validateOneday(incomdir,oneday)
-            if err: #not OK
-                logging.error("Validator - Files for day %s not OK, rejected - not  processed\n" % oneday)
-            else: #OK
-                logging.info("Validator - Files for day %s OK\n" % oneday)
-                parsedays.append(oneday)
-            
+        parsedays = days
+        #parsedays = doValidation(incomdir,days)
 
         ##start to parse by days
         logging.info('Validating is done, start to parse and store data for days %s\n' % str(parsedays))
