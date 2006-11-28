@@ -179,16 +179,22 @@ class hl7Batch:
         """
         section = self.casesDoc.createElement("PID")
         self.addSimple(section,'1','PID.1')
+
+        ##PID.3
         pid3 = self.casesDoc.createElement('PID.3')        
-        worklist = [('CX.1',demog.DemogMedical_Record_Number),('CX.5',demog.DemogSSN)]
-        for (ename,val) in worklist:
+        worklist = [('MR',demog.DemogMedical_Record_Number),('SS',demog.DemogSSN)]
+        for (cxtype,val) in worklist:
             if val:
-                self.addSimple(pid3,val,ename)
-        e = self.casesDoc.createElement('CX.6')
-    
-        self.addSimple(e, pcp.provPrimary_Dept,'HD.2')        
-        pid3.appendChild(e)                        
-        section.appendChild(pid3)
+                pid3 = self.casesDoc.createElement('PID.3')
+                self.addSimple(pid3,val,'CX.1')
+                self.addSimple(pid3,cxtype,'CX.5')
+                if cxtype=='SS':
+                    e = self.casesDoc.createElement('CX.6')
+                    self.addSimple(e, pcp.provPrimary_Dept,'HD.2')        
+                    pid3.appendChild(e)                        
+                section.appendChild(pid3)
+
+        ##PID.5
         outerElement='PID.5'
         isClinician = 0
         patname = self.makeName(demog.DemogFirst_Name, demog.DemogLast_Name, demog.DemogMiddle_Initial, demog.DemogSuffix, outerElement, isClinician)
@@ -527,7 +533,7 @@ class hl7Batch:
             obr15.appendChild(sps)
             obr.appendChild(obr15)
         
-            obr16 =self.makeName(firstName=rxRec.RxProvider.provFirst_Name, lastName=rxRec.RxProvider.provFirst_Name, middleInit=rxRec.RxProvider.provMiddle_Initial, suffix='',outerElement ='OBR.16',isClinician=1)
+            obr16 =self.makeName(firstName=rxRec.RxProvider.provFirst_Name, lastName=rxRec.RxProvider.provLast_Name, middleInit=rxRec.RxProvider.provMiddle_Initial, suffix='',outerElement ='OBR.16',isClinician=1)
             obr.appendChild(obr16)
 
             if rxRec.RxStatus: status= 'F'
