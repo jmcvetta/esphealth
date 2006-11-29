@@ -188,7 +188,7 @@ class hl7Batch:
                 pid3 = self.casesDoc.createElement('PID.3')
                 self.addSimple(pid3,val,'CX.1')
                 self.addSimple(pid3,cxtype,'CX.5')
-                if cxtype=='SS':
+                if cxtype=='MR':
                     e = self.casesDoc.createElement('CX.6')
                     self.addSimple(e, pcp.provPrimary_Dept,'HD.2')        
                     pid3.appendChild(e)                        
