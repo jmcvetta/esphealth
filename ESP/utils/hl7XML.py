@@ -541,11 +541,11 @@ class hl7Batch:
             self.addSimple(obr,status,'OBR.25') # result status
 
            
-            obr29 = self.casesDoc.createElement('OBR.29') # rxid goes in here as the "parent"
-            eip = self.casesDoc.createElement('EIP.2')
-            self.addSimple(eip,rxRec.RxOrder_Id_Num,'EI.1')
-            obr29.appendChild(eip)
-            obr.appendChild(obr29)
+            #obr29 = self.casesDoc.createElement('OBR.29') # rxid goes in here as the "parent"
+            #eip = self.casesDoc.createElement('EIP.2')
+            #self.addSimple(eip,rxRec.RxOrder_Id_Num,'EI.1')
+            #obr29.appendChild(eip)
+            #obr.appendChild(obr29)
             
             orcs.appendChild(obr)
             
