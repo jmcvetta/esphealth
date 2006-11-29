@@ -20,6 +20,8 @@ today=datetime.datetime.now().strftime('%Y%m%d')
 ########For logging
 logging = localconfig.getLogging('incomingParser.py_v0.1', debug=0)
 
+##store the new CPT code for Chlamydia
+chlamydia =[]
 
 ###############################
 def getlines(fname):
@@ -242,14 +244,16 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
 
         try:
             pid,mrn,orderid,cpt,modi,accessnum,orderd, ordertp, phy = items
-
         except:
             logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
             continue
 
             
         try:
-            patient = demogdict[pid]
+            if demogdict:
+                patient = demogdict[pid]
+            else:
+                patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
         except:
             logging.warning('Parser In LXORD: NO patient found: %s\n' % str(items))
             continue
@@ -273,7 +277,10 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
             lx.LxLoinc=(c[0].Loinc).strip()
 
         try:
-            prov=provdict[phy]
+            if provdict:
+                prov=provdict[phy]
+            else:
+                prov=Provider.objects.filter(provCode__exact=phy)[0]
             lx.LxOrdering_Provider=prov
         except:
             pass
@@ -304,12 +311,14 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
                 continue
 
         ##This is to double check if ESP identifies all cases
-        if compname.upper().find('CHLAMYDIA')!=-1 or note.upper().find('CHLAMYDIA')!=-1:
-            logging.info("CHLAMYDIA LX: %s\n"  % str(items))
+        #if compname.upper().find('CHLAMYDIA')!=-1 or note.upper().find('CHLAMYDIA')!=-1:
+        #    logging.info("CHLAMYDIA LX: %s\n"  % str(items))
             
         try:
-            patient = demogdict[pid]
-            #patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
+            if demogdict:
+                patient = demogdict[pid]
+            else:
+                patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
         except:
             logging.warning('Parser In LXRES: NO patient found: %s\n' % str(items))
             continue
@@ -350,20 +359,21 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
         if c:
             lx.LxLoinc=(c[0].Loinc).strip()
         elif compname:
-            if compname.upper().find('CHLAMYDIA')!=-1: ##log new CPT code which is not in esp_cptloincmap
-                logging.error('NEW CHLAMYDIA CPT code: %s' % str(items))
+            if compname.upper().find('CHLAMYDIA')!=-1 and (cpt,comp) not in chlamydia: ##log new CPT code which is not in esp_cptloincmap
+                chlamydia.append((cpt,comp))
                 
-        #prov=Provider.objects.filter(provCode__exact=phy)         
-        #if prov:
+
         try:
-            prov=provdict[phy]
+            if provdict:
+                prov=provdict[phy]
+            else:
+                prov=Provider.objects.filter(provCode__exact=phy)[0]
             lx.LxOrdering_Provider=prov
         except:
             pass
         
         lx.save()
         
-
     movefile(incomdir, filename)   
 
 
@@ -377,12 +387,16 @@ def parseRx(incomdir,filename,demogdict,provdict):
     for items in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue                                
-        if len(items) == 13:
-            pid,mrn,orderid,phy, orderd,status, med,ndc,meddesc,qua,ref,sdate,edate  = items #[x.strip() for x in items]
-            route=''
-        else:
-            pid,mrn,orderid,phy, orderd,status, med,ndc,meddesc,qua,ref,sdate,edate,route  = items #[x.strip() for x in items]
-            
+        try:
+            if len(items) == 13:
+                pid,mrn,orderid,phy, orderd,status, med,ndc,meddesc,qua,ref,sdate,edate  = items #[x.strip() for x in items]
+                route=''
+            else:
+                pid,mrn,orderid,phy, orderd,status, med,ndc,meddesc,qua,ref,sdate,edate,route  = items #[x.strip() for x in items]
+        except:
+            logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            continue
+                         
            
         try:
             patient=demogdict[pid]
@@ -436,12 +450,17 @@ def parseImm(incomdir, filename,demogdict):
     for items in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue
-                    
-        pid, immtp, immname,immd,immdose,manf,lot,recid  = items #[x.strip() for x in items]
-        
         try:
-            patient = demogdict[pid]
-            #patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
+            pid, immtp, immname,immd,immdose,manf,lot,recid  = items #[x.strip() for x in items]
+        except:
+            logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            continue
+                                    
+        try:
+            if demogdict:
+                patient = demogdict[pid]
+            else:
+                patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
         except:
             logging.warning('Parser In IMM: NO patient found: %s\n' % str(items))
             continue
@@ -522,12 +541,11 @@ if __name__ == "__main__":
         ##get incoming files and do validations
         incomdir = os.path.join(TOPDIR, localconfig.LOCALSITE,'incomingData/')
         days = getfilesByDay(incomdir)
-        parsedays = days
-        #parsedays = doValidation(incomdir,days)
-
+        parsedays = doValidation(incomdir,days)
+        logging.info('Validating is done. Parsed days are %s\n' % str(parsedays))
         ##start to parse by days
-        logging.info('Validating is done, start to parse and store data for days %s\n' % str(parsedays))
-        for oneday in parsedays:
+        ##always load files no matter it passed validator or not
+        for oneday in days:
             logging.info("Parser - parse day %s\n" % oneday)
             provf = 'epicpro.esp.'+oneday
             provdict = parseProvider(incomdir, provf)
@@ -538,20 +556,20 @@ if __name__ == "__main__":
             visf =  'epicvis.esp.'+oneday      
             parseEnc(incomdir , visf,demogdict,provdict)
 
-       
             medf = 'epicmed.esp.'+oneday
             parseRx(incomdir , medf,demogdict,provdict)
-        
+
             lxordf = 'epicord.esp.'+oneday
             parseLxOrd(incomdir,lxordf, demogdict,provdict)
-                                
+
             lxresf = 'epicres.esp.'+oneday
             parseLxRes(incomdir,lxresf, demogdict,provdict)
-
-                
+      
             immf = 'epicimm.esp.'+oneday  
             parseImm(incomdir , immf, demogdict)
 
+        logging.warning('New Chlamydia CPT code: %s\n' % str(chlamydia))
+        
         logging.info('Start: %s\n' %  startt)
         logging.info('End:   %s\n' % datetime.datetime.now())
     except:
