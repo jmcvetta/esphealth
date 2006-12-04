@@ -29,6 +29,7 @@ logfile = os.path.join(TOPDIR,localconfig.LOCALSITE, 'logs/messageHandler_java_%
 def generateHL7(hl7dir,cases):
     logging.info('Total cases: %s\n' % len(cases))
     testDoc = hl7XML.hl7Batch(institutionName=localconfig.LOCALSITE, nmessages=len(cases))
+    today1=datetime.datetime.now().strftime('%Y%m%d%H%M')
     for case in cases:
         demog = Demog.objects.filter(id__exact=case.caseDemog.id)[0]
         pcp = Provider.objects.filter(id__exact=case.caseProvider.id)[0]
@@ -53,10 +54,10 @@ def generateHL7(hl7dir,cases):
 
         #update caseworkflow         
         case.caseWorkflow = 'S'
+        case.caseSendDate=datetime.datetime.now()
         case.save()
         
     # Print our newly created XML
-    today1=datetime.datetime.now().strftime('%Y%m%d%H%M')
     s = testDoc.renderBatch()
     f = file(hl7dir + '/hl7_%s.hl7' % today1,'w')
     f.write(s)
