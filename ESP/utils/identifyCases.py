@@ -79,7 +79,7 @@ def getRelatedLx(condition):
     
     defines = ConditionLOINC.objects.filter(CondiRule__ruleName__icontains=condition,CondiDefine=True)
     loincs = map(lambda x:x.CondiLOINC, defines)
-    logging.info('Condition-%s: LxLoinc: %s' % (condition, str(loincs))) 
+#    logging.info('Condition-%s: LxLoinc: %s' % (condition, str(loincs))) 
     lxs = Lx.objects.filter(
                Q(LxLoinc__in=loincs),
                Q(LxTest_results__istartswith='positiv') | Q(LxTest_results__istartswith='detect') | Q(LxNormalAbnormal_Flag__istartswith='Y')
@@ -93,7 +93,7 @@ def findcaseByLx(condition):
     lxs = getRelatedLx(condition)
     
     recl = [(l.LxPatient.id,int(l.id)) for l in lxs]  
-    logging.info('Found %s for LX: (patientId, Lxid) -%s' % (condition, str(recl)) )
+ #   logging.info('Found %s for LX: (patientId, Lxid) -%s' % (condition, str(recl)) )
    
     return recl
 
@@ -151,9 +151,9 @@ def getrelatedRx(condition):
             recl = recl + [(r.RxPatient.id,int(r.id)) for r in rxs ]
 
     # kludge for bogus last 2 chars in hvma ndc codes
-    if len(recl) > 0:
-       logging.info('####GOT Rx one!!')
-    logging.info('Rx Cond: %s. matched rxs = %s from patient rxs=%s' % (condition,recl,rxs))
+  #  if len(recl) > 0:
+  #     logging.info('####GOT Rx one!!')
+  #  logging.info('Rx Cond: %s. matched rxs = %s from patient rxs=%s' % (condition,recl,rxs))
     return recl
     
 
@@ -240,14 +240,13 @@ def getLxduration(casedb, curlid):
 def checkLxEncDuration(before=-31, after=31):
     """For PID only: ICD9 codes within 21 days prior the positive lab resutl or in the subsequent 60 days follosing positive lab result
     """
-    logging.info('PID: for LX only: %s' % str(pids))
+   # logging.info('PID: for LX only: %s' % str(pids))
     removepid = []
     for pid in pids.keys():
         pidyes=0
         lxidl = pids[pid][0]
         encidl = pids[pid][2]
         for lxid in lxidl:
-            print lxid
             for encid in encidl:
                 curlx = Lx.objects.filter(id__in=[lxid])[0]
                 curenc = Enc.objects.filter(id__in=[encid])[0]
@@ -265,8 +264,16 @@ def checkLxEncDuration(before=-31, after=31):
 
     for p in removepid:
         pids.pop(p)
-    logging.info('PID: for LX and ICD9: %s' % str(pids))
+    #logging.info('PID: for LX and ICD9: %s' % str(pids))
 
+###################################
+def isHVMAPatient(pid):
+    p = Demog.objects.get(id__exact=pid)
+    if p.DemogMedical_Record_Number.find('HVMA') ==-1:
+        #non HVMA patine
+        return 0
+    else:
+        return 1
     
 ################################
 ################################
@@ -293,7 +300,6 @@ if __name__ == "__main__":
             ##need check ICD9 also
             if recordl:
                 record_icd9l = findcaseByIcd9(cond,recordl)
-                print  record_icd9l
                 if not record_icd9l: #not a PID case
                     pids={}
                 else:
@@ -315,6 +321,9 @@ if __name__ == "__main__":
         
         ### get all cases: pids
         for pid in pids.keys():    
+            if not isHVMAPatient(pid):
+                continue
+            
             cases = Case.objects.filter(caseDemog__id__exact=pid,caseRule__ruleName__icontains=cond)
             if not cases: ##a new case
                 logging.info('NewCase - %s: DemogID-%s' % (cond,pid))
