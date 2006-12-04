@@ -160,7 +160,97 @@ def index(request):
     return render_to_response('esp/index.html',c)
 
     
+#################################
+#@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+def casesent(request, orderby="sortid"):
+    """A report for sent cases
+    """
+    
+    objs = Case.objects.filter(caseSendDate__isnull=False)
+#    objs=[]
+    returnlist=[]
+    for c in objs:
+        encs=[]
+        labs=[]
+        rxs=[]
 
+        #lab
+        orderdate=resultdate=''
+        testname=''
+        lxstr = c.caseLxID
+        if lxstr:
+            labs = Lx.objects.extra(where=['id IN (%s)' % lxstr])
+            labs = labs.order_by('-LxOrder_Id_Num')
+            orderdate=labs[0].LxOrderDate
+            resultdate=labs[0].LxDate_of_result
+            testname=labs[0].LxComponentName
+        #Rx
+        drugstr=''
+        rxstr = c.caseRxID
+        if rxstr:
+            rxs = Rx.objects.extra(where=['id IN (%s)' % rxstr])
+            for rxRec in rxs:
+                rxDur='N/A'
+                if rxRec.RxStartDate and rxRec.RxEndDate:
+                    rxDur =datetime.date(int(rxRec.RxEndDate[:4]),int(rxRec.RxEndDate[4:6]), int(rxRec.RxEndDate[6:8]))  - datetime.date(int(rxRec.RxStartDate[:4]),int(rxRec.RxStartDate[4:6]), int(rxRec.RxStartDate[6:8]))
+                    rxDur = rxDur.days
+                drugstr = drugstr+'<br>' + '%s;%s;%s;%s;%s day(s)' % (rxRec.RxNational_Drug_Code, rxRec.RxDrugName,rxRec.RxDose,rxRec.RxFrequency,rxDur)
+
+        #ICD9
+        i9str=''
+        i9l = c.caseICD9.split(',')
+        finali9l=[]
+        for i in i9l:
+            finali9l=finali9l+i.split()
+        for oneicd9 in finali9l:
+            oneicd9=oneicd9.strip()
+            if oneicd9:
+                i9str=i9str + '<br>'+ getI9_onecode(oneicd9)
+
+        #preg
+        encdb = Enc.objects.filter(EncPatient__id__exact=c.caseDemog.id, EncPregnancy_Status='Y')
+        if encdb:
+            pregstr = 'Y'
+        else:
+            pregstr ='N/A'
+            
+        onerow = [c.id, c.caseRule.ruleName, c.caseDemog.DemogLast_Name+','+c.caseDemog.DemogFirst_Name,c.caseDemog.DemogMedical_Record_Number,pregstr, c.caseDemog.DemogDate_of_Birth, testname,orderdate,resultdate,c.caseSendDate,drugstr,i9str]
+        returnlist.append(onerow)
+
+    
+    ##Sort options
+    if not orderby or orderby =='sortid':
+        returnlist.sort(key=lambda x:x[0])
+    elif orderby == 'sortrule':
+        returnlist.sort(key=lambda x:[x[1],x[2]])
+    elif orderby=='sortname':
+        returnlist.sort(key=lambda x:x[2])
+    elif orderby == 'sortmrn':
+        returnlist.sort(key=lambda x:x[3])
+    elif orderby=='sortpreg':
+        returnlist.sort(key=lambda x:[x[4],x[2]])
+    elif orderby=='sortsendate':
+        returnlist.sort(key=lambda x:[x[9],x[2]])
+    elif orderby=='sortresdate':
+        returnlist.sort(key=lambda x:[x[8],x[2]])
+    elif orderby=='sortorderdate':
+        returnlist.sort(key=lambda x:[x[7],x[2]])
+    elif orderby=='sortdob':
+        returnlist.sort(key=lambda x:x[5])
+                
+
+    ####    
+    cinfo = {
+            "request": request,
+            "object_list": returnlist,
+            "orderby": orderby,
+            "casenum": len(returnlist),
+            'SITEROOT':SITEROOT,
+                    }
+    
+    c = Context(cinfo)
+    return render_to_response('esp/case_sentlist.html',c)
+                    
 #################################
 @user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
 def casesearch(request, wf="*", cfilter="*", mrnfilter="*",orderby="sortid"):
@@ -405,17 +495,21 @@ def casedetail(request, object_id,restrict='F'):
 def getI9(oneenc):
     returnl=[]
     for oneicd9 in oneenc.EncICD9_Codes.split(' '):
-        ilong = icd9.objects.filter(icd9Code__exact=oneicd9)
-        if ilong:
-            ilong = ilong[0].icd9Long # not sure why, but > 1 being found!
-        else:
-            ilong=''
-                                
-        i9str = '%s=%s' % (oneicd9,ilong)
+        i9str=getI9_onecode(oneicd9)
         returnl.append((oneicd9,i9str))
                                                     
     return returnl
 
+###################################
+def getI9_onecode(oneicd9):
+    ilong = icd9.objects.filter(icd9Code__exact=oneicd9)
+    if ilong:
+        ilong = ilong[0].icd9Long # not sure why, but > 1 being found!
+    else:
+        ilong=''
+        
+    i9str = '%s=%s' % (oneicd9,ilong)
+    return i9str
 
 #######################################
 @user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )

@@ -40,6 +40,8 @@
              <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/Q///">Cases Queued</a></td></tr> 
              <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/S///">Cases Sent</a></td></tr>
              <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/FP///">Cases: DO NOT send</a></td></tr>
+	     <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/sent/">Report of sent cases</a></td></tr>
+
               {% if request.user.is_superuser %}
                    <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/admin/">Administration</a></td></tr> 
                   <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/utilities/">Utilities</a></td></tr>

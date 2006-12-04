@@ -1,0 +1,100 @@
+
+{% extends "espbase.html" %}
+
+{% block content %}
+
+
+{% if object_list %}
+<center>
+<div class="section">
+  <h2> Report for  {{ casenum }} Sent Cases</h2>
+</div>
+<cemter>
+<br>
+<table border=1 cellspacing = "2" cellpadding = "3">
+<tr>
+  <th><a href="{{SITEROOT}}/cases/sent/sortid/">
+      {% ifequal orderby "sortid" %} <font color="#800000"><b>Case ID</b></font>
+      {%else%} Case ID
+      {%endifequal%}
+      </a></th>
+  <th><a href="{{SITEROOT}}/cases/sent/sortrule/">
+      {% ifequal orderby "sortrule" %} <font color="#800000"><b>Condition</b></font>
+      {%else%}Condition
+      {%endifequal%}
+      </a></th>
+  <th><a href="{{SITEROOT}}/cases/sent/sortname/">
+      {% ifequal orderby "sortname" %} <font color="#800000"><b>Patient Name</b></font>
+      {%else%}Patient Name
+      {%endifequal%}
+      </a></th>
+  <th><a href="{{SITEROOT}}/cases/sent/sortmrn/">
+      {% ifequal orderby "sortmrn" %} <font color="#800000"><b>MRN</b></font>
+      {%else%}MRN
+      {%endifequal%}
+       </a></th>
+  <th><a href="{{SITEROOT}}/cases/sent/sortpreg/">
+      {% ifequal orderby "sortpreg" %} <font color="#800000"><b>Pregnancy status</b></font>
+      {%else%}Pregnancy status
+      {%endifequal%}
+       </a></th>
+  <th><a href="{{SITEROOT}}/cases/sent/sortdob/">
+      {% ifequal orderby "sortdob" %} <font color="#800000"><b>D.O.B</b></font>
+      {%else%}D.O.B
+      {%endifequal%}
+       </a></th>
+  <th>
+      TestName
+  </th>
+  <th><a href="{{SITEROOT}}/cases/sent/sortorderdate/">
+      {% ifequal orderby "sortorderdate" %} <font color="#800000"><b>Test Order Date</b></font>
+      {%else%}Test Order Date
+      {%endifequal%}
+       </a></th>
+  <th><a href="{{SITEROOT}}/cases/sent/sortresdate/">
+      {% ifequal orderby "sortresdate" %} <font color="#800000"><b>Test Result Date</b></font>
+      {%else%}Test Result Date
+      {%endifequal%}
+       </a></th>
+  <th><a href="{{SITEROOT}}/cases/sent/sortsendate/">
+      {% ifequal orderby "sortsendate" %} <font color="#800000"><b>Date sent to DPH</b></font>
+      {%else%}Date sent to DPH
+      {%endifequal%}
+       </a></th>
+  <th>
+      Medication Prescribed 
+  </th>
+  <th>
+      Symptoms
+  </th>
+
+</tr>
+
+    {% for case in object_list %}
+
+
+   <tr class="{% cycle row1,row2 %}">
+      <td>{{case.0}}</td>
+      <td>{{case.1}}</td> 
+      <td>{{case.2}}</td>
+      <td>{{case.3}}</td>      
+      <td>{{case.4}}</td>
+      <td>{{case.5}}</td>
+      <td>{{case.6}}</td>
+      <td>{{case.7}}</td>
+      <td>{{case.8}}</td>
+      <td>{{case.9}}</td>
+      <td>{{case.10}}</td>
+      <td>{{case.11}}</td>
+
+     </tr>
+
+    {% endfor %}
+    </table>
+{% else %}
+     <p>
+     <h1>No cases to show</h1>
+      </p>
+</div>
+{% endif %}
+{% endblock%}
