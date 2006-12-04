@@ -46,6 +46,7 @@ class splitfile(file):
         self.fname = fname
         self.n = 0
         file.__init__(self,fname,'r')
+
         
     def next(self):
         """ override file.next()
@@ -297,6 +298,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
     """
     fname = os.path.join(incomdir,'%s' % filename)
     f = splitfile(fname,'^')
+
     for items in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue
@@ -330,7 +332,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
             orderid = today  ##since when passing HL7 msg, this is required
         if not string.strip(resd):
             resd =today
-           
+
         lx = Lx(LxPatient=patient,LxOrder_Id_Num=orderid)
 
         lx.LxMedical_Record_Number =mrn
@@ -373,7 +375,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
             pass
         
         lx.save()
-        
+
     movefile(incomdir, filename)   
 
 
@@ -517,7 +519,6 @@ def movefile(incomdir, f):
 
 ################################
 def doValidation(incomdir):
-    incomdir = os.path.join(TOPDIR, localconfig.LOCALSITE,'incomingData/')
 
     from validator import getfilesByDay,validateOneday
     days = getfilesByDay(incomdir)
@@ -541,8 +542,9 @@ if __name__ == "__main__":
         ##get incoming files and do validations
         incomdir = os.path.join(TOPDIR, localconfig.LOCALSITE,'incomingData/')
         days = getfilesByDay(incomdir)
-        parsedays = doValidation(incomdir,days)
+        parsedays = doValidation(incomdir)
         logging.info('Validating is done. Parsed days are %s\n' % str(parsedays))
+
         ##start to parse by days
         ##always load files no matter it passed validator or not
         for oneday in days:
