@@ -327,7 +327,7 @@ class Case(models.Model):
     caseComments = models.TextField('Comments', blank=True, null=True)
     caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
     casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
-    caseSendDate = models.DateTimeField('Date sent')
+    caseSendDate = models.DateTimeField('Date sent', null=True)
     caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID")
     caseQueryID = models.CharField('External Query which generated this case',maxlength=20, blank=True, null=True)
     caseMsgFormat = models.CharField('Case Message Format', maxlength=20, choices=FORMAT_TYPES, blank=True, null=True)
