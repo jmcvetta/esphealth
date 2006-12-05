@@ -8,9 +8,8 @@ from ESP.esp.models import *
 from django.db.models import Q
 from ESP.settings import TOPDIR
 import localconfig 
-from validator import getfilesByDay,validateOneday
 
-import string
+import string,re
 import shutil
 import StringIO
 import traceback
@@ -18,7 +17,7 @@ import traceback
 today=datetime.datetime.now().strftime('%Y%m%d')
 
 ########For logging
-logging = localconfig.getLogging('incomingParser.py_v0.1', debug=0)
+iplogging= localconfig.getLogging('incomingParser.py_XX', debug=0)
 
 ##store the new CPT code for Chlamydia
 chlamydia =[]
@@ -28,10 +27,10 @@ def getlines(fname):
     try:
         lines = file(fname).readlines()
     except:
-        logging.error('Can not read file:%s\n' % fname)
+        iplogging.error('Can not read file:%s\n' % fname)
         return []
     returnl = [x.split('^') for x in lines[:-1] if len(x.split('^')) > 1]
-    logging.info('Parser Process %s: %s records\n' % (fname, len(returnl)))
+    iplogging.info('Parser Process %s: %s records\n' % (fname, len(returnl)))
     return returnl
 
 ###############################
@@ -41,24 +40,30 @@ class splitfile(file):
     ross lazarus nov 21 2006
     """
 
-    def __init__(self,fname,delim='^'):
+    def __init__(self,fname,delim='^',validate=False):
         self.delim=delim
         self.fname = fname
         self.n = 0
+        self.valid = validate
         file.__init__(self,fname,'r')
-
+        
         
     def next(self):
         """ override file.next()
         """
         r = []
         while len(r) < 2: # want a line with the delim
-            r = file.next(self).split(self.delim) # use original file.next!
+            if self.valid:
+                r = file.next(self)
+            else:
+                r = file.next(self).split(self.delim) # use original file.next!
+                r = [x.strip() for x in r]
+                
             self.n += 1
             if self.n % 10000 == 0:
-                logging.info('At line %d in file %s' % (self.n,self.fname))
-        r = [x.strip() for x in r]
-        return r
+                iplogging.info('At line %d in file %s' % (self.n,self.fname))
+
+        return (r,self.n)
 
 
 
@@ -69,14 +74,14 @@ def parseProvider(incomdir, filename):
     provdict={}
     fname = os.path.join(incomdir,'%s' % filename)
     f = splitfile(fname,'^')
-    for items in f:
+    for items, linenum in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue
         
         try:
             phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone  = items #[x.strip() for x in items]
         except:
-            logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            iplogging.error('Parser %s: wrong size - %s' % (filename,str(items)))
             continue
         if not fname:
             fname = 'Unknown'
@@ -84,8 +89,8 @@ def parseProvider(incomdir, filename):
             lanme = 'Unknown'
         if phone:
             phone = string.replace(phone, '-','')
-        if not phonearea: #fake one
-            phonearea='999'
+        #if not phonearea: #fake one
+        #    phonearea='999'
             
         prov=Provider.objects.filter(provCode__exact=phy)
         if prov: #update
@@ -120,13 +125,13 @@ def parseDemog(incomdir, filename):
     demogdict={}
     fname = os.path.join(incomdir,'%s' % filename)
     f = splitfile(fname,'^')
-    for items in f:
+    for items, linenum in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue                                
         try:
             pid,mrn,lname,fname,mname,addr1,addr2,city,state,zip,cty,phonearea,phone,ext,dob,gender,race,lang,ssn,phy,mari,religion,alias,mom,death  = items #[x.strip() for x in items]            
         except:
-            logging.error('Parser %s: wrong size - %s' % (filename,str(items))) # 25 needed
+            iplogging.error('Parser %s: wrong size - %s' % (filename,str(items))) # 25 needed
             continue
         pdb = Demog.objects.filter(DemogPatient_Identifier__exact=pid)
         if not pdb: #new record
@@ -138,8 +143,8 @@ def parseDemog(incomdir, filename):
             fname = 'Unknown'
         if not lname:
             lanme = 'Unknown'
-        if not phonearea: #fake one
-            phonearea='999'
+        #if not phonearea: #fake one
+        #    phonearea='999'
         if phone:
             phone = string.replace(phone, '-','')
         if not cty:
@@ -184,13 +189,13 @@ def parseEnc(incomdir, filename,demogdict,provdict):
     """
     fname = os.path.join(incomdir,'%s' % filename)
     f = splitfile(fname,'^')
-    for items in f:
+    for items, linenum in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue
         try:
             pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,icd9  = items #[x.strip() for x in items]
         except:
-            logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            iplogging.error('Parser %s: wrong size - %s' % (filename,str(items)))
             continue
             
         try:    
@@ -198,7 +203,7 @@ def parseEnc(incomdir, filename,demogdict,provdict):
 #        patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
         except:
         #if not patient:
-            logging.warning('Parser In ENC: NO patient found: %s\n' % str(items))
+            iplogging.warning('Parser In ENC: NO patient found: %s\n' % str(items))
             continue
             
         encdb = Enc.objects.filter(EncPatient__DemogPatient_Identifier__exact=pid,EncEncounter_ID__exact=encid)
@@ -239,14 +244,14 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
     
     fname = os.path.join(incomdir,'%s' % filename)
     f = splitfile(fname,'^')
-    for items in f:
+    for items, linenum in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue
 
         try:
             pid,mrn,orderid,cpt,modi,accessnum,orderd, ordertp, phy = items
         except:
-            logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            iplogging.error('Parser %s: wrong size - %s' % (filename,str(items)))
             continue
 
             
@@ -256,7 +261,7 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
             else:
                 patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
         except:
-            logging.warning('Parser In LXORD: NO patient found: %s\n' % str(items))
+            iplogging.warning('Parser In LXORD: NO patient found: %s\n' % str(items))
             continue
 
         
@@ -299,7 +304,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
     fname = os.path.join(incomdir,'%s' % filename)
     f = splitfile(fname,'^')
 
-    for items in f:
+    for items, linenum in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue
         try:
@@ -309,12 +314,12 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
                 pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,note,access,impre  = items #[x.strip() for x in items]
                 comp=compname=res=normalf=refl=refh=refu=status=''
             except:
-                logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+                iplogging.error('Parser %s: wrong size - %s' % (filename,str(items)))
                 continue
 
         ##This is to double check if ESP identifies all cases
         #if compname.upper().find('CHLAMYDIA')!=-1 or note.upper().find('CHLAMYDIA')!=-1:
-        #    logging.info("CHLAMYDIA LX: %s\n"  % str(items))
+        #    iplogging.info("CHLAMYDIA LX: %s\n"  % str(items))
             
         try:
             if demogdict:
@@ -322,7 +327,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
             else:
                 patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
         except:
-            logging.warning('Parser In LXRES: NO patient found: %s\n' % str(items))
+            iplogging.warning('Parser In LXRES: NO patient found: %s\n' % str(items))
             continue
             
           
@@ -386,7 +391,7 @@ def parseRx(incomdir,filename,demogdict,provdict):
 
     fname = os.path.join(incomdir,'%s' % filename)
     f = splitfile(fname,'^')
-    for items in f:
+    for items, linenum in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue                                
         try:
@@ -396,7 +401,7 @@ def parseRx(incomdir,filename,demogdict,provdict):
             else:
                 pid,mrn,orderid,phy, orderd,status, med,ndc,meddesc,qua,ref,sdate,edate,route  = items #[x.strip() for x in items]
         except:
-            logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            iplogging.error('Parser %s: wrong size - %s' % (filename,str(items)))
             continue
                          
            
@@ -404,7 +409,7 @@ def parseRx(incomdir,filename,demogdict,provdict):
             patient=demogdict[pid]
             #patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
         except:
-            logging.warning('Parser In RX: NO patient found: %s\n' % str(items))
+            iplogging.warning('Parser In RX: NO patient found: %s\n' % str(items))
             continue
 
                       
@@ -449,13 +454,13 @@ def parseImm(incomdir, filename,demogdict):
     
     fname = os.path.join(incomdir,'%s' % filename)
     f = splitfile(fname,'^')
-    for items in f:
+    for items, linenum in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue
         try:
             pid, immtp, immname,immd,immdose,manf,lot,recid  = items #[x.strip() for x in items]
         except:
-            logging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            iplogging.error('Parser %s: wrong size - %s' % (filename,str(items)))
             continue
                                     
         try:
@@ -464,7 +469,7 @@ def parseImm(incomdir, filename,demogdict):
             else:
                 patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
         except:
-            logging.warning('Parser In IMM: NO patient found: %s\n' % str(items))
+            iplogging.warning('Parser In IMM: NO patient found: %s\n' % str(items))
             continue
 
         imm = Immunization.objects.filter(ImmPatient__DemogPatient_Identifier__exact=pid,ImmRecId=recid)
@@ -482,7 +487,7 @@ def parseImm(incomdir, filename,demogdict):
         try:
             imm.save()
         except:
-            logging.error('Parser In IMM: error when save: %s\n' % (str(items)))
+            iplogging.error('Parser In IMM: error when save: %s\n' % (str(items)))
 
     movefile(incomdir, filename)   
     
@@ -510,26 +515,156 @@ def movefile(incomdir, f):
         os.mkdir(subdir)
 
     try:
-        logging.info('Moving file %s from %s to %s\n' % (f, incomdir, subdir))
+        iplogging.info('Moving file %s from %s to %s\n' % (f, incomdir, subdir))
         shutil.move(incomdir+'/%s' % f, subdir)
     except:
-        logging.warning('Parser No this file: %s' % f)
-
+        iplogging.warning('Parser No this file: %s' % f)
 
 
 ################################
-def doValidation(incomdir):
-
-    from validator import getfilesByDay,validateOneday
-    days = getfilesByDay(incomdir)
-    parsedays = []
+def getfilesByDay(incomdir):
+    files=os.listdir(incomdir)
+    files.sort()
+    dayfiles={}
+    for f in files:
+        if dayfiles.has_key(f[-6:]):
+            dayfiles[f[-6:]].append(f)
+        else:
+            dayfiles[f[-6:]] = [f]
+            
+    days = dayfiles.keys()
+    days.sort()
     
+    return days
+
+################################
+def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],required=[],returnids=[],checkids=[]):
+    returnd={}
+    errors=0
+    fname = os.path.join(incomdir,'%s' % fname)
+    try:
+        f = splitfile(fname,'^',validate=True)
+    except:
+        iplogging.error('Validator - Can not read file:%s\n' % (fname))
+        return (errors, returnd)
+
+    for (l,linenum) in f:
+        l = l.strip()
+        if not l or l.find('CONTROL TOTALS')>-1:
+            continue
+        
+        fnum=len(re.findall("\^",l))
+
+        #check delimit number
+        if int(delimiternum) != fnum:
+            msg ='Validator - %s: wrong number of delimiter, should be %s, in file=%s\n=========LINE%s: %s\n' % (fname,delimiternum,fnum,linenum,l)
+            errors = 1
+            iplogging.error(msg)
+            
+        items = l.split('^')
+        if items == ['']* (int(delimiternum)+1):
+            continue
+        
+        #check required fileds
+        for r in required:
+            if not string.strip(items[r]):
+                col = r+1
+                msg = 'Validator - %s, LINE%s: Empty for Required filed in column %s\n' % (fname,linenum, col )
+                errors = 1
+                iplogging.error(msg)
+                
+                
+        ##check ID
+        if checkids and needidcolumn and items[needidcolumn[0]].strip() not in checkids[0]:
+            msg = """Validator - %s: LINE%s-Patient %s not in mem file\n""" % (fname, linenum, items[needidcolumn[0]])
+            iplogging.error(msg)
+            errors=1
+        if checkids and len(needidcolumn)==2 and items[needidcolumn[1]].strip() not in checkids[1]:
+            msg = """Validator - %s: LINE%s-Provider %s not in provider file\n""" % (fname, linenum, items[needidcolumn[1]])
+            iplogging.error(msg)
+            errors=1
+
+        #check returnd    
+        for n in returnids:
+            returnd.setdefault(0,[]).append(items[n].strip())
+
+        #check date
+        for d in datecolumn:
+            if items[d] and len(items[d])!=8 or re.search('\D', items[d]):
+                msg = 'Validator - %s: wrong Date format: %s\n=========LINE%s: %s\n'  % (fname,items[d],linenum, l)
+                errors = 1
+                iplogging.error(msg)
+                
+    return  (errors,returnd)                                                                                                                                                                                                                                                                                                                                                      
+################################
+def validateOneday(incomdir, oneday):
+    """validate one day files
+    """
+
+    finalerr=0
+    #patient
+    demogf = 'epicmem.esp.'+oneday
+    iplogging.info('Validator - Process %s' % demogf)
+    (err,tempd) = validateOnefile(incomdir,demogf,24,[0],datecolumn=[14],required=[0,1],returnids=[0])
+    pids = tempd[0]
+    if err:
+        finalerr = 1
+        
+    #provider
+    providerf = 'epicpro.esp.'+oneday
+    iplogging.info('Validator -Process %s' % providerf)
+    err,tempd = validateOnefile(incomdir,providerf,13,[0],required=[0],returnids=[0] )
+    provids= tempd[0]
+    if err:
+        finalerr = 1
+        
+    #encounter
+    visf = 'epicvis.esp.'+oneday
+    iplogging.info('Validator -Process %s' % visf)
+    err,tempd = validateOnefile(incomdir,visf,19,[0,6], datecolumn=[3,5,10],required=[0,1],checkids=[pids,provids])
+    if err:
+        finalerr = 1
+        
+    #lxord
+    lxordf = 'epicord.esp.'+oneday
+    iplogging.info('Validator - Process %s' % lxordf)
+    err, tempd = validateOnefile(incomdir,lxordf,8,[0,8],datecolumn=[6],required=[0,1],checkids=[pids,provids])
+    if err:
+        finalerr = 1
+
+    #lxres
+    lxresf = 'epicres.esp.'+oneday
+    iplogging.info('Validator - Process %s' % lxresf)
+    err, tempd = validateOnefile(incomdir,lxresf,18,[0,5],datecolumn=[3,4],required=[0,1],checkids=[pids,provids])
+    if err :
+        finalerr = 1
+
+    #med
+    medf = 'epicmed.esp.'+oneday
+    iplogging.info('Validator - Process %s' % medf)
+    err,tempd = validateOnefile(incomdir,medf,13,[0,3],datecolumn=[4,11,12],required=[0,1],checkids=[pids,provids])
+    if err:
+        finalerr = 1
+
+    #imm
+    mmf = 'epicimm.esp.'+oneday
+    iplogging.info('Validator - Process %s' % mmf)
+    err,tempd = validateOnefile(incomdir,mmf,7,[0],datecolumn=[3],checkids=[pids,provids])
+    if err :
+        finalerr = 1
+    return finalerr
+                                                                                      
+    
+################################
+def doValidation(incomdir,days):
+
+    parsedays = []
     for oneday in days:
         err = validateOneday(incomdir,oneday)
         if err: #not OK
-            logging.error("Validator - Files for day %s not OK, rejected - not  processed\n" % oneday)
+            iplogging.error("Validator - Files for day %s not OK, rejected - not  processed\n" % oneday)
         else: #OK
-            logging.info("Validator - Files for day %s OK\n" % oneday)
+            iplogging.info("Validator - Files for day %s OK\n" % oneday)
             parsedays.append(oneday)
     return parsedays
 
@@ -542,13 +677,13 @@ if __name__ == "__main__":
         ##get incoming files and do validations
         incomdir = os.path.join(TOPDIR, localconfig.LOCALSITE,'incomingData/')
         days = getfilesByDay(incomdir)
-        parsedays = doValidation(incomdir)
-        logging.info('Validating is done. Parsed days are %s\n' % str(parsedays))
+        parsedays = doValidation(incomdir,days)
+        iplogging.info('Validating is done. Days are: %s;  Parsed days are %s\n' % (str(days),str(parsedays)))
 
         ##start to parse by days
         ##always load files no matter it passed validator or not
         for oneday in days:
-            logging.info("Parser - parse day %s\n" % oneday)
+            iplogging.info("Parser - parse day %s\n" % oneday)
             provf = 'epicpro.esp.'+oneday
             provdict = parseProvider(incomdir, provf)
 
@@ -570,13 +705,13 @@ if __name__ == "__main__":
             immf = 'epicimm.esp.'+oneday  
             parseImm(incomdir , immf, demogdict)
 
-        logging.warning('New Chlamydia CPT code: %s\n' % str(chlamydia))
+        iplogging.warning('New Chlamydia CPT code: %s\n' % str(chlamydia))
         
-        logging.info('Start: %s\n' %  startt)
-        logging.info('End:   %s\n' % datetime.datetime.now())
+        iplogging.info('Start: %s\n' %  startt)
+        iplogging.info('End:   %s\n' % datetime.datetime.now())
     except:
         fp = StringIO.StringIO()
         traceback.print_exc(file=fp)
         message = fp.getvalue()
-        logging.info(message+'\n')
-    logging.shutdown() 
+        iplogging.info(message+'\n')
+    iplogging.shutdown() 
