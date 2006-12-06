@@ -266,6 +266,9 @@ class Provider(models.Model):
     provPrimary_Dept_Zip = models.CharField('Primary Department Zip',maxlength=20,blank=True)
     provTelAreacode = models.CharField('Primary Department Phone Areacode',maxlength=20,blank=True)
     provTel = models.CharField('Primary Department Phone Number',maxlength=50,blank=True)
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+         
 
     def __str__(self):
         return "%s %s %s %s" % (self.provCode,self.provPrimary_Dept,self.provPrimary_Dept_Address_1,self.provPrimary_Dept_Address_2)
@@ -308,7 +311,9 @@ class Demog(models.Model):
     DemogDeath_Date = models.CharField('Date of death',maxlength=200,blank=True)
     DemogDeath_Indicator = models.CharField('Death_Indicator',maxlength=30,blank=True)
     DemogOccupation = models.CharField('Occupation',maxlength=199,blank=True)
-
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+            
 
     def __str__(self):
         return "PID%s,%s, %s,%s, %s" % (self.DemogPatient_Identifier,self.DemogMedical_Record_Number,self.DemogLast_Name,self.DemogFirst_Name, self.DemogAddress1)
@@ -421,7 +426,9 @@ class Rx(models.Model):
     RxRoute = models.CharField('Routes',maxlength=200,blank=True)
     RxStartDate = models.CharField('Start Date',maxlength=20,blank=True)
     RxEndDate = models.CharField('End Date',maxlength=20,blank=True)
-    
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+            
     def getNDC(self):
         """translate CPT code
         """
@@ -483,7 +490,9 @@ class Lx(models.Model):
     LxComment = models.TextField('Comments', blank=True, null=True,)
     LxImpression = models.TextField('Impression for Imaging only',maxlength=2000,blank=True)
     LxLoinc = models.CharField('LOINC code',maxlength=20,blank=True)
-   
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+            
     def getCPT(self):
         """translate CPT code
         """
@@ -551,7 +560,9 @@ class Enc(models.Model):
     EncCPT_codes = models.CharField('CPT codes',maxlength=200,blank=True)
     EncICD9_Codes = models.TextField('ICD-9 Codes',blank=True)
     EncICD9_Qualifier = models.CharField('ICD-9 Qualifier',maxlength=200,blank=True)
-
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+            
     def geticd9s(self):
         """translate icd9s in comma separated value
         """
@@ -617,7 +628,9 @@ class Immunization(models.Model):
     ImmLot = models.TextField('Lot Number',maxlength=500,blank=True)
     ImmVisDate = models.CharField('Date of Visit',maxlength=20,blank=True)
     ImmRecId = models.CharField('Immunization Record Id',maxlength=200,blank=True)
-    
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+            
 
     def __str__(self):
 
