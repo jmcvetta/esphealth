@@ -161,13 +161,16 @@ def index(request):
 
     
 #################################
-#@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
-def casesent(request, orderby="sortid"):
+@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+def casesent(request, orderby="sortid",download=''):
     """A report for sent cases
     """
-    
+    if not download :
+        linebreak='<br>'
+    else:
+        linebreak='; '
+        
     objs = Case.objects.filter(caseSendDate__isnull=False)
-#    objs=[]
     returnlist=[]
     for c in objs:
         encs=[]
@@ -177,6 +180,7 @@ def casesent(request, orderby="sortid"):
         #lab
         orderdate=resultdate=''
         testname=''
+        sitename=''
         lxstr = c.caseLxID
         if lxstr:
             labs = Lx.objects.extra(where=['id IN (%s)' % lxstr])
@@ -184,20 +188,27 @@ def casesent(request, orderby="sortid"):
             orderdate=labs[0].LxOrderDate
             resultdate=labs[0].LxDate_of_result
             testname=labs[0].LxComponentName
+            relprov = Provider.objects.filter(id=labs[0].LxOrdering_Provider.id)[0]
+            sitename = relprov.provPrimary_Dept
         #Rx
-        drugstr=''
+        drugstrl=[]
         rxstr = c.caseRxID
         if rxstr:
             rxs = Rx.objects.extra(where=['id IN (%s)' % rxstr])
             for rxRec in rxs:
                 rxDur='N/A'
-                if rxRec.RxStartDate and rxRec.RxEndDate:
-                    rxDur =datetime.date(int(rxRec.RxEndDate[:4]),int(rxRec.RxEndDate[4:6]), int(rxRec.RxEndDate[6:8]))  - datetime.date(int(rxRec.RxStartDate[:4]),int(rxRec.RxStartDate[4:6]), int(rxRec.RxStartDate[6:8]))
+                if rxRec.RxStartDate and not rxRec.RxEndDate:
+                    rxDur ='1'
+                elif rxRec.RxStartDate and rxRec.RxEndDate:
+                    rxDur =datetime.date(int(rxRec.RxEndDate[:4]),int(rxRec.RxEndDate[4:6]), int(rxRec.RxEndDate[6:8]))- datetime.date(int(rxRec.RxStartDate[:4]),int(rxRec.RxStartDate[4:6]), int(rxRec.RxStartDate[6:8]))
                     rxDur = rxDur.days
-                drugstr = drugstr+'<br>' + '%s;%s;%s;%s;%s day(s)' % (rxRec.RxNational_Drug_Code, rxRec.RxDrugName,rxRec.RxDose,rxRec.RxFrequency,rxDur)
+                    if '%s' % rxDur=='0':
+                        rxDur=1
+                drugstrl.append('%s;%s;%s;%s;%s day(s)' % (rxRec.RxNational_Drug_Code, rxRec.RxDrugName,rxRec.RxDose,rxRec.RxFrequency,rxDur))
+            drugstr = (linebreak).join(drugstrl)
 
         #ICD9
-        i9str=''
+        i9strl=[]
         i9l = c.caseICD9.split(',')
         finali9l=[]
         for i in i9l:
@@ -205,7 +216,9 @@ def casesent(request, orderby="sortid"):
         for oneicd9 in finali9l:
             oneicd9=oneicd9.strip()
             if oneicd9:
-                i9str=i9str + '<br>'+ getI9_onecode(oneicd9)
+                i9strl.append(getI9_onecode(oneicd9))
+        i9str=(linebreak).join(i9strl)
+
 
         #preg
         encdb = Enc.objects.filter(EncPatient__id__exact=c.caseDemog.id, EncPregnancy_Status='Y')
@@ -214,12 +227,14 @@ def casesent(request, orderby="sortid"):
         else:
             pregstr ='N/A'
             
-        onerow = [c.id, c.caseRule.ruleName, c.caseDemog.DemogLast_Name+','+c.caseDemog.DemogFirst_Name,c.caseDemog.DemogMedical_Record_Number,pregstr, c.caseDemog.DemogDate_of_Birth, testname,orderdate,resultdate,c.caseSendDate,drugstr,i9str]
+        onerow = ['%s' % c.id, c.caseRule.ruleName, c.caseDemog.DemogLast_Name+','+c.caseDemog.DemogFirst_Name,'%s' % c.caseDemog.DemogMedical_Record_Number,pregstr, c.caseDemog.DemogDate_of_Birth, sitename, testname,orderdate,resultdate,c.caseSendDate.strftime("%Y%m%d"),drugstr,i9str]
         returnlist.append(onerow)
 
     
     ##Sort options
-    if not orderby or orderby =='sortid':
+    if not orderby: orderby ='sortid'
+
+    if orderby=='sortid':
         returnlist.sort(key=lambda x:x[0])
     elif orderby == 'sortrule':
         returnlist.sort(key=lambda x:[x[1],x[2]])
@@ -230,17 +245,29 @@ def casesent(request, orderby="sortid"):
     elif orderby=='sortpreg':
         returnlist.sort(key=lambda x:[x[4],x[2]])
     elif orderby=='sortsendate':
-        returnlist.sort(key=lambda x:[x[9],x[2]])
+        returnlist.sort(key=lambda x:[x[10],x[2]])
     elif orderby=='sortresdate':
-        returnlist.sort(key=lambda x:[x[8],x[2]])
+        returnlist.sort(key=lambda x:[x[9],x[2]])
     elif orderby=='sortorderdate':
-        returnlist.sort(key=lambda x:[x[7],x[2]])
+        returnlist.sort(key=lambda x:[x[8],x[2]])
     elif orderby=='sortdob':
         returnlist.sort(key=lambda x:x[5])
-                
+    elif orderby=='sortsite':
+        returnlist.sort(key=lambda x:[x[6],x[2]])
+        
 
-    ####    
-    cinfo = {
+    if download:
+        response = HttpResponse(mimetype='application/vnd.ms-excel')
+        report_filename ='CaseArchive_%s' % datetime.datetime.now().strftime("%Y%m%d")
+        response['Content-Disposition'] = 'attachment; filename="%s"' % report_filename
+        
+        headerl=['Case ID','Condition','Patient Name','MRN','Pregnancy status','D.O.B','SiteName', 'TestName','Test Order Date','Test Result Date','Date sent to DPH','Medication Prescribed','Symptoms']
+        returnlist.insert(0,headerl)
+        report  ='\n'.join(map(lambda x:'\t'.join(x), returnlist))
+        response.write(report)
+        return response
+    else:
+        cinfo = {
             "request": request,
             "object_list": returnlist,
             "orderby": orderby,
@@ -248,8 +275,8 @@ def casesent(request, orderby="sortid"):
             'SITEROOT':SITEROOT,
                     }
     
-    c = Context(cinfo)
-    return render_to_response('esp/case_sentlist.html',c)
+        c = Context(cinfo)
+        return render_to_response('esp/case_sentlist.html',c)
                     
 #################################
 @user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
