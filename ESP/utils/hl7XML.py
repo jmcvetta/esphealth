@@ -551,9 +551,13 @@ class hl7Batch:
             
             # now add the obx records needed to describe dose, frequency and duration
             rxDur='N/A'
-            if rxRec.RxStartDate and rxRec.RxEndDate:
+            if rxRec.RxStartDate and not rxRec.RxEndDate:
+                rxDur ='1'
+            elif rxRec.RxStartDate and rxRec.RxEndDate:
                 rxDur =datetime.date(int(rxRec.RxEndDate[:4]),int(rxRec.RxEndDate[4:6]), int(rxRec.RxEndDate[6:8]))  - datetime.date(int(rxRec.RxStartDate[:4]),int(rxRec.RxStartDate[4:6]), int(rxRec.RxStartDate[6:8]))
                 rxDur = rxDur.days
+                if '%s' % rxDur=='0':
+                    rxDur=1
                        
            
             rxTS = rxRec.RxOrderDate
