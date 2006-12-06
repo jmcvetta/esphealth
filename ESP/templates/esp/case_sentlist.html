@@ -9,8 +9,14 @@
 <div class="section">
   <h2> Report for  {{ casenum }} Sent Cases</h2>
 </div>
-<cemter>
 <br>
+<form action="{{SITEROOT}}/cases/sent/{{orderby}}/download/" method="post">
+<input type="submit" name="submit" value="Download to Excel" >
+</form>
+
+</center>
+<br>
+
 <table border=1 cellspacing = "2" cellpadding = "3">
 <tr>
   <th><a href="{{SITEROOT}}/cases/sent/sortid/">
@@ -43,6 +49,11 @@
       {%else%}D.O.B
       {%endifequal%}
        </a></th>
+  <th><a href="{{SITEROOT}}/cases/sent/sortsite/">
+      {% ifequal orderby "sortsite" %} <font color="#800000"><b>SiteName</b></font>
+      {%else%}SiteName
+       {%endifequal%}
+      </a></th>
   <th>
       TestName
   </th>
@@ -86,6 +97,7 @@
       <td>{{case.9}}</td>
       <td>{{case.10}}</td>
       <td>{{case.11}}</td>
+      <td>{{case.12}}</td>
 
      </tr>
 
