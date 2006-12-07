@@ -555,10 +555,7 @@ class hl7Batch:
                 rxDur ='1'
             elif rxRec.RxStartDate and rxRec.RxEndDate:
                 rxDur =datetime.date(int(rxRec.RxEndDate[:4]),int(rxRec.RxEndDate[4:6]), int(rxRec.RxEndDate[6:8]))  - datetime.date(int(rxRec.RxStartDate[:4]),int(rxRec.RxStartDate[4:6]), int(rxRec.RxStartDate[6:8]))
-                rxDur = rxDur.days
-                if '%s' % rxDur=='0':
-                    rxDur=1
-                       
+                rxDur = rxDur.days+1
            
             rxTS = rxRec.RxOrderDate
             #<OBX.5>NDC_Number; Drug Name; Dose; Frequency; Duration</OBX.5>

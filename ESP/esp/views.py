@@ -201,9 +201,8 @@ def casesent(request, orderby="sortid",download=''):
                     rxDur ='1'
                 elif rxRec.RxStartDate and rxRec.RxEndDate:
                     rxDur =datetime.date(int(rxRec.RxEndDate[:4]),int(rxRec.RxEndDate[4:6]), int(rxRec.RxEndDate[6:8]))- datetime.date(int(rxRec.RxStartDate[:4]),int(rxRec.RxStartDate[4:6]), int(rxRec.RxStartDate[6:8]))
-                    rxDur = rxDur.days
-                    if '%s' % rxDur=='0':
-                        rxDur=1
+                    rxDur = rxDur.days +1
+
                 drugstrl.append('%s;%s;%s;%s;%s day(s)' % (rxRec.RxNational_Drug_Code, rxRec.RxDrugName,rxRec.RxDose,rxRec.RxFrequency,rxDur))
             drugstr = (linebreak).join(drugstrl)
 
