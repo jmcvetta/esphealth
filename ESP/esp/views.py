@@ -61,22 +61,28 @@ def login(request):
     if request.POST:
         new_data = request.POST.copy()
         errors = manipulator.get_validation_errors(new_data)
-        
+    
         if not errors:
+            user = authenticate(username='john', password='secret')
             # Light security check -- make sure redirect_to isn't garbage.
             if not redirect_to or '://' in redirect_to or ' ' in redirect_to:
                 redirect_to = SITEROOT
             else:
                 redirect_to = '%s/%s' % (SITEROOT,redirect_to)
+                
             request.session[SESSION_KEY] = manipulator.get_user_id()
+            from django.contrib.auth import login
+            login(request, manipulator.get_user())
             request.session.delete_test_cookie()
+
             return HttpResponseRedirect(redirect_to)
     else:
         errors = {}
     request.session.set_test_cookie()
+
     return render_to_response('registration/login.html', {
         'form': forms.FormWrapper(manipulator, request.POST, errors),
-        REDIRECT_FIELD_NAME: redirect_to,
+        REDIRECT_FIELD_NAME: '',
         'site_name': Site.objects.get_current().name,
         'SITEROOT': SITEROOT,
     }, context_instance=RequestContext(request))
