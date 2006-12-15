@@ -182,7 +182,7 @@ class hl7Batch:
 
         ##PID.3
         pid3 = self.casesDoc.createElement('PID.3')        
-        worklist = [('MR',demog.DemogMedical_Record_Number),('SS',demog.DemogSSN)]
+        worklist = [('MR',demog.DemogMedical_Record_Number),('SS',demog.DemogSSN[-4:])]
         for (cxtype,val) in worklist:
             if val:
                 pid3 = self.casesDoc.createElement('PID.3')
