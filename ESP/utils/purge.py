@@ -18,6 +18,10 @@
 #
 # Most of the logic is amazingly simple when using the django ORM
 #
+#
+
+
+# Purge.py: delete non-case related records which are older than 90 days.
 
 import os, sys, django, datetime
 sys.path.insert(0, '/home/ESP/')
@@ -25,16 +29,21 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
 from ESP.esp.models import *
+from ESP.settings import DATABASE_HOST,DATABASE_USER,DATABASE_PASSWORD,DATABASE_NAME
 from django.db.models import Q
 import localconfig
+import MySQLdb
 
 
+espdb = MySQLdb.Connect(DATABASE_HOST,DATABASE_USER,DATABASE_PASSWORD,DATABASE_NAME)
+cur = espdb.cursor()
 
 ###For logging
 pglogging = localconfig.getLogging('purge.py_v0.1', debug=0)
 
 ###################
-def delprov(pids): 
+def delprov(pids):
+    
     patients = Demog.objects.filter(id__in=pids)
     pcps = [i.values()[0] for i in patients.values('DemogProvider').distinct()]
 
@@ -56,16 +65,67 @@ def delprov(pids):
 
 
 ###################################
-def doDelete(removel):
+def doDelete(table, idcolumn):
+    """
+    if using
+       d = Demog.objects.filter(lastUpDate__lte=prevdate).exclude(id__in=pids)
+       d.delete()
+    it takes a long time. So change to use for loop to delete one by one. 
     
-    prevdate = datetime.datetime.now()-datetime.timedelta(90)
-   # prevdate = datetime.datetime.now()
-    pglogging.info('Deleted data before %s' % prevdate)
-    for i in removel:
-        if i.lastUpDate<prevdate:
-            i.delete()
-                    
+    """
 
+    sql = """delete from %s
+             where lastupdate < DATE_SUB(CURDATE(),INTERVAL 90 DAY)
+                      and %s not in (select caseDemog_id from esp_case);
+          """ % (table, idcolumn)
+    cur.execute(sql)
+    pglogging.info('Done on Deleteing %s:%s' % (table, datetime.datetime.now()))
+
+
+    #prevdate = datetime.datetime.now()-datetime.timedelta(90)
+    #pglogging.info('Deleted data before %s' % prevdate)
+    #for i in removel:
+     #   if i.lastUpDate<prevdate:
+      #      i.delete()
+
+                    
+####################################
+def doDelbyAPI():
+    pids = map(lambda x:x.caseDemog_id, Case.objects.all())
+
+    ##delete demog
+    d = Demog.objects.exclude(id__in=pids)
+    doDelete(d)
+    # d = Demog.objects.filter(lastUpDate__lte=prevdate).exclude(id__in=pids)
+
+    ##no need to delete provider
+    #delprov(pids)
+    #pglogging.info('Done on Deleteing provider:%s' % datetime.datetime.now())
+
+    ##delete from Lx
+    l=Lx.objects.exclude(LxPatient__id__in=pids)
+    doDelete(l)
+    pglogging.info('Done on Deleteing Lx:%s' % datetime.datetime.now())
+
+    ##delete from Rx
+    r=Rx.objects.exclude(RxPatient__id__in=pids)
+    doDelete(r)
+    pglogging.info('Done on Deleteing Rx:%s' % datetime.datetime.now())
+
+    #delete from enc
+    enc = Enc.objects.exclude(EncPatient__id__in=pids)
+    doDelete(enc)
+    pglogging.info('Done on Deleteing Enc:%s' % datetime.datetime.now())
+
+    #delete from immiunization:
+    imm = Immunization.objects.exclude(ImmPatient__id__in=pids)
+    doDelete(imm)
+    pglogging.info('Done on Deleteing Imm:%s' % datetime.datetime.now())
+
+    ###
+    pglogging.info('Done on Deleteing:%s' % datetime.datetime.now())
+
+                                                    
 
 ################################
 ################################
@@ -75,42 +135,15 @@ if __name__ == "__main__":
     pglogging.info('\nStart on Deleteing:%s' % datetime.datetime.now())
     pids = map(lambda x:x.caseDemog_id, Case.objects.all())
     
-    ##delete from demog
-    d = Demog.objects.exclude(id__in=pids)
-    doDelete(d)
-   # d = Demog.objects.filter(lastUpDate__lte=prevdate).exclude(id__in=pids)
-    pglogging.info('Done on Deleteing demog:%s' % datetime.datetime.now())
+    doDelete('esp_demog', 'id')
+    doDelete('esp_lx', 'LxPatient_id')
+    doDelete('esp_rx', 'RxPatient_id')
+    doDelete('esp_enc', 'EncPatient_id')
+    doDelete('esp_immunization', 'ImmPatient_id')
+    cur.execute('commit')
     
-
-    ##delete from provider
-    delprov(pids)
-    pglogging.info('Done on Deleteing provider:%s' % datetime.datetime.now())
-    
-    
-    ##delete from Lx
-    l=Lx.objects.exclude(LxPatient__id__in=pids)
-    doDelete(l)
-    pglogging.info('Done on Deleteing Lx:%s' % datetime.datetime.now())
-    
-
-    ##delete from Rx 
-    r=Rx.objects.exclude(RxPatient__id__in=pids)
-    doDelete(r)
-    pglogging.info('Done on Deleteing Rx:%s' % datetime.datetime.now())
-    
-
-    #delete from enc
-    enc = Enc.objects.exclude(EncPatient__id__in=pids)
-    doDelete(enc)
-    pglogging.info('Done on Deleteing Enc:%s' % datetime.datetime.now())
-    
-
-    #delete from immiunization:
-    imm = Immunization.objects.exclude(ImmPatient__id__in=pids)
-    doDelete(imm)
-    pglogging.info('Done on Deleteing Imm:%s' % datetime.datetime.now())
-    
-    ###
+    ##
     pglogging.info('Done on Deleteing:%s' % datetime.datetime.now())
         
     pglogging.shutdown()
+    espdb.close()
