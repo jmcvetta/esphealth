@@ -17,7 +17,7 @@ import traceback
 today=datetime.datetime.now().strftime('%Y%m%d')
 
 ########For logging
-iplogging= localconfig.getLogging('incomingParser.py_XX', debug=0)
+iplogging= localconfig.getLogging('incomingParser.py_v0.1', debug=0)
 
 ##store the new CPT code for Chlamydia
 chlamydia =[]

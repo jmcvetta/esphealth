@@ -27,11 +27,11 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 from ESP.esp.models import *
 from django.db.models import Q
 import localconfig
-import logging
+
 
 
 ###For logging
-logging = localconfig.getLogging('identifyCases.py_v0.1', debug=0)
+iclogging = localconfig.getLogging('identifyCases.py_v0.1', debug=0)
 
 #################################
 def makeNewCase(condition, pid):
@@ -67,7 +67,7 @@ def makeNewCase(condition, pid):
         c.caseProvider=p.DemogProvider
 
     c.save()
-    logging.info('Creating %s: NEWCASE%s' % (condition,c.id))
+    iclogging.info('Creating %s: NEWCASE%s' % (condition,c.id))
     now = datetime.datetime.now().strftime("%Y-%m-%d")
     wfr = CaseWorkflow(workflowCaseID=c,workflowDate=now,workflowState=wf)
     wfr.save()
@@ -79,7 +79,7 @@ def getRelatedLx(condition):
     
     defines = ConditionLOINC.objects.filter(CondiRule__ruleName__icontains=condition,CondiDefine=True)
     loincs = map(lambda x:x.CondiLOINC, defines)
-#    logging.info('Condition-%s: LxLoinc: %s' % (condition, str(loincs))) 
+#    iclogging.info('Condition-%s: LxLoinc: %s' % (condition, str(loincs))) 
     lxs = Lx.objects.filter(
                Q(LxLoinc__in=loincs),
                Q(LxTest_results__istartswith='positiv') | Q(LxTest_results__istartswith='detect') | Q(LxNormalAbnormal_Flag__istartswith='Y')
@@ -93,7 +93,7 @@ def findcaseByLx(condition):
     lxs = getRelatedLx(condition)
     
     recl = [(l.LxPatient.id,int(l.id)) for l in lxs]  
- #   logging.info('Found %s for LX: (patientId, Lxid) -%s' % (condition, str(recl)) )
+ #   iclogging.info('Found %s for LX: (patientId, Lxid) -%s' % (condition, str(recl)) )
    
     return recl
 
@@ -152,8 +152,8 @@ def getrelatedRx(condition):
 
     # kludge for bogus last 2 chars in hvma ndc codes
   #  if len(recl) > 0:
-  #     logging.info('####GOT Rx one!!')
-  #  logging.info('Rx Cond: %s. matched rxs = %s from patient rxs=%s' % (condition,recl,rxs))
+  #     iclogging.info('####GOT Rx one!!')
+  #  iclogging.info('Rx Cond: %s. matched rxs = %s from patient rxs=%s' % (condition,recl,rxs))
     return recl
     
 
@@ -240,7 +240,7 @@ def getLxduration(casedb, curlid):
 def checkLxEncDuration(before=-31, after=31):
     """For PID only: ICD9 codes within 21 days prior the positive lab resutl or in the subsequent 60 days follosing positive lab result
     """
-   # logging.info('PID: for LX only: %s' % str(pids))
+   # iclogging.info('PID: for LX only: %s' % str(pids))
     removepid = []
     for pid in pids.keys():
         pidyes=0
@@ -264,7 +264,7 @@ def checkLxEncDuration(before=-31, after=31):
 
     for p in removepid:
         pids.pop(p)
-    #logging.info('PID: for LX and ICD9: %s' % str(pids))
+    #iclogging.info('PID: for LX and ICD9: %s' % str(pids))
 
 ###################################
 def isHVMAPatient(pid):
@@ -280,12 +280,12 @@ def isHVMAPatient(pid):
 if __name__ == "__main__":
     ##based on case definition
     ###filter Lab results
-    logging.info('==================\n')
+    iclogging.info('==================\n')
     conditions = Rule.objects.all()
     for c in conditions:
         cond = c.ruleName
         
-        logging.info('\n\nStart to inentify case %s' % cond)
+        iclogging.info('\n\nStart to inentify case %s' % cond)
 
         ###pids: store case info
         ##pids = {pid: ([esp_lx.id, ..],[esp_rx.id, ..],[esp_enc.id, ..]), 
@@ -307,7 +307,7 @@ if __name__ == "__main__":
                     checkLxEncDuration(before=-31, after=31)
                    
         if not pids: #no case found
-            logging.info('No cases of %s found' % cond)
+            iclogging.info('No cases of %s found' % cond)
             continue
         
         ### store rxids,encids for this condition
@@ -326,10 +326,10 @@ if __name__ == "__main__":
             
             cases = Case.objects.filter(caseDemog__id__exact=pid,caseRule__ruleName__icontains=cond)
             if not cases: ##a new case
-                logging.info('NewCase - %s: DemogID-%s' % (cond,pid))
+                iclogging.info('NewCase - %s: DemogID-%s' % (cond,pid))
                 makeNewCase(cond, pid)
             else:#this patient is in the esp_case table
-                logging.info('This patient has old case - %s, DemogID%s' % (cond,pid)) 
+                iclogging.info('This patient has old case - %s, DemogID%s' % (cond,pid)) 
                 cases.order_by('id')
                 c = cases[len(cases)-1]
                 lid,rid,eid = pids[pid][:3]
@@ -345,10 +345,10 @@ if __name__ == "__main__":
                     if encids ==c.caseEncID and lxids==c.caseLxID and rxids ==c.caseRxID: ##nothing to update
                         pass
                     else: #has new enc/Lx/Rx records
-                        logging.info('Make new case for already sended case - %s: oldCaseID%s' % (cond,c.id))
+                        iclogging.info('Make new case for already sended case - %s: oldCaseID%s' % (cond,c.id))
                         makeNewCase(cond, pid)
                 else:
-                    logging.info('Update unsend case - %s: CaseID%s' % (cond,c.id))
+                    iclogging.info('Update unsend case - %s: CaseID%s' % (cond,c.id))
                     c.caseEncID=encids
                     c.caseLxID=lxids
                     c.caseICD9=icd9str
@@ -358,7 +358,7 @@ if __name__ == "__main__":
             
                 #if getLxduration(c, lid) > 28:
                     #new case
-                #    logging.info('New Lx for existing case -%s: CaseID%s, DemogID%s\n' % (cond,c.id,pid))
+                #    iclogging.info('New Lx for existing case -%s: CaseID%s, DemogID%s\n' % (cond,c.id,pid))
                 #    makeNewCase(cond, pid)
                 #else:##still old case
                 #    icd9str=getRelatedIcd9(cond, eid)
@@ -367,7 +367,7 @@ if __name__ == "__main__":
                         ##do nothing
                 #        pass
                 #    else: ##update case
-                #        logging.info('Update unsend case - %s: CaseID%s' % (cond,c.id))
+                #        iclogging.info('Update unsend case - %s: CaseID%s' % (cond,c.id))
                 #        c.caseEncID=encids
                 #        c.caseLxID=lxids
                 #        c.caseICD9=icd9str
@@ -375,3 +375,4 @@ if __name__ == "__main__":
                 #        c.save()
             
             
+    iclogging.shutdown()
