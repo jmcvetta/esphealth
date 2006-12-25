@@ -1,6 +1,10 @@
+# incoming parser
+# uses a generator for large file processing
+# of delimited files
+
 import os,sys
 sys.path.insert(0, '/home/ESP/')
-# for esphealth.org sys.path.insert(0, '/home/ESP/')
+# for esphealth.org sys.path.insert(0, '/home/ESPNew/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 import django, datetime
@@ -9,21 +13,27 @@ from django.db.models import Q
 from ESP.settings import TOPDIR
 import localconfig 
 
-import string,re
+import string,re,copy
 import shutil
 import StringIO
 import traceback
 
+VERSION = '0.2'
+DO_VALIDATE = 1 # set to zero to avoid the validation step
+REJECT_INVALID = 0 # don't process if any errors - usually are missing provider so ignore
+
 today=datetime.datetime.now().strftime('%Y%m%d')
 
 ########For logging
-iplogging= localconfig.getLogging('incomingParser.py_v0.1', debug=0)
+iplogging= localconfig.getLogging('incomingParser.py_%s' % VERSION, debug=0)
 
 ##store the new CPT code for Chlamydia
 chlamydia =[]
 
 ###############################
 def getlines(fname):
+    """uses ram - not a great idea for million line files
+    """
     try:
         lines = file(fname).readlines()
     except:
@@ -35,46 +45,40 @@ def getlines(fname):
 
 ###############################
 
-class splitfile(file):
-    """ extend file class to return delim split lines
+def splitfile(fname=None,delim='^',validate=False):
+    """ generator to return delim split lines
     ross lazarus nov 21 2006
     """
-
-    def __init__(self,fname,delim='^',validate=False):
-        self.delim=delim
-        self.fname = fname
-        self.n = 0
-        self.valid = validate
-        file.__init__(self,fname,'r')
-        
-        
-    def next(self):
-        """ override file.next()
-        """
-        r = []
-        while len(r) < 2: # want a line with the delim
-            if self.valid:
-                r = file.next(self)
-            else:
-                r = file.next(self).split(self.delim) # use original file.next!
-                r = [x.strip() for x in r]
-                
-            self.n += 1
-            if self.n % 10000 == 0:
-                iplogging.info('At line %d in file %s' % (self.n,self.fname))
-
-        return (r,self.n)
-
+    f = file(fname,'r')
+    r = []
+    more = 1
+    n = 0
+    while more:
+       try:
+          r = f.next()
+          n += 1
+       except:
+          more = 0
+          raise StopIteration
+       if not validate: # when validating, we just want the line - otherwise split
+          ll = r.split(delim) 
+          r = [x.strip() for x in ll]
+          n += 1
+          if n % 1000000 == 0:
+             iplogging.info('At line %d in file %s' % (n,fname))
+       if validate or r > 2: # ignore lines without delimiters if not validation phase
+           yield (r, n)
 
 
 ################################
 def parseProvider(incomdir, filename):
-#    l = getlines(incomdir+'/%s' % filename)
+    """
+    """
 
     provdict={}
     fname = os.path.join(incomdir,'%s' % filename)
     f = splitfile(fname,'^')
-    for items, linenum in f:
+    for (items,line) in f:
         if not items or items[0]=='CONTROL TOTALS':
             continue
         
@@ -86,7 +90,7 @@ def parseProvider(incomdir, filename):
         if not fname:
             fname = 'Unknown'
         if not lname:
-            lanme = 'Unknown'
+            lname = 'Unknown'
         if phone:
             phone = string.replace(phone, '-','')
         #if not phonearea: #fake one
@@ -120,18 +124,15 @@ def parseProvider(incomdir, filename):
 def parseDemog(incomdir, filename):
     """
     """
-#    l = getlines(incomdir+'/%s' % filename)
-
     demogdict={}
     fname = os.path.join(incomdir,'%s' % filename)
-    f = splitfile(fname,'^')
-    for items, linenum in f:
+    for (items, linenum) in splitfile(fname,'^'):
         if not items or items[0]=='CONTROL TOTALS':
             continue                                
         try:
             pid,mrn,lname,fname,mname,addr1,addr2,city,state,zip,cty,phonearea,phone,ext,dob,gender,race,lang,ssn,phy,mari,religion,alias,mom,death  = items #[x.strip() for x in items]            
         except:
-            iplogging.error('Parser %s: wrong size - %s' % (filename,str(items))) # 25 needed
+            iplogging.error('Parser %s: wrong size - %s at line# %d' % (filename,str(items),linenum)) # 25 needed
             continue
         pdb = Demog.objects.filter(DemogPatient_Identifier__exact=pid)
         if not pdb: #new record
@@ -142,7 +143,7 @@ def parseDemog(incomdir, filename):
         if not fname:
             fname = 'Unknown'
         if not lname:
-            lanme = 'Unknown'
+            lname = 'Unknown'
         #if not phonearea: #fake one
         #    phonearea='999'
         if phone:
@@ -188,8 +189,8 @@ def parseEnc(incomdir, filename,demogdict,provdict):
     """
     """
     fname = os.path.join(incomdir,'%s' % filename)
-    f = splitfile(fname,'^')
-    for items, linenum in f:
+    for (items, linenum) in splitfile(fname,'^'):
+
         if not items or items[0]=='CONTROL TOTALS':
             continue
         try:
@@ -200,9 +201,7 @@ def parseEnc(incomdir, filename,demogdict,provdict):
             
         try:    
             patient = demogdict[pid]    
-#        patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
         except:
-        #if not patient:
             iplogging.warning('Parser In ENC: NO patient found: %s\n' % str(items))
             continue
             
@@ -225,8 +224,7 @@ def parseEnc(incomdir, filename,demogdict,provdict):
         enc.EncCPT_codes=cpt
         enc.EncICD9_Codes=icd9
                
-        #prov=Provider.objects.filter(provCode__exact=phy)
-        #prov = provdb.filter(provCode=phy)[0]
+
         try:
             prov =provdict[phy]
             enc.EncEncounter_Provider=prov
@@ -243,8 +241,7 @@ def parseEnc(incomdir, filename,demogdict,provdict):
 def parseLxOrd(incomdir,filename,demogdict, provdict):
     
     fname = os.path.join(incomdir,'%s' % filename)
-    f = splitfile(fname,'^')
-    for items, linenum in f:
+    for (items, linenum) in splitfile(fname,'^'):
         if not items or items[0]=='CONTROL TOTALS':
             continue
 
@@ -302,9 +299,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
     """
     """
     fname = os.path.join(incomdir,'%s' % filename)
-    f = splitfile(fname,'^')
-
-    for items, linenum in f:
+    for (items, linenum) in splitfile(fname,'^'):
         if not items or items[0]=='CONTROL TOTALS':
             continue
         try:
@@ -387,11 +382,9 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
            
 ################################
 def parseRx(incomdir,filename,demogdict,provdict):
-#    l = getlines(incomdir+'/%s' % filename)
 
     fname = os.path.join(incomdir,'%s' % filename)
-    f = splitfile(fname,'^')
-    for items, linenum in f:
+    for (items, linenum) in splitfile(fname,'^'):
         if not items or items[0]=='CONTROL TOTALS':
             continue                                
         try:
@@ -453,8 +446,7 @@ def parseRx(incomdir,filename,demogdict,provdict):
 def parseImm(incomdir, filename,demogdict):
     
     fname = os.path.join(incomdir,'%s' % filename)
-    f = splitfile(fname,'^')
-    for items, linenum in f:
+    for (items, linenum) in splitfile(fname,'^'):
         if not items or items[0]=='CONTROL TOTALS':
             continue
         try:
@@ -493,7 +485,7 @@ def parseImm(incomdir, filename,demogdict):
     
 ################################
 def movefile(incomdir, f):
-    """file name format shold be ***.esp.MMDDYY
+    """file name format shoUld be ***.esp.MMDDYY
     YYYYMMDD_prov.txt
     """
     ##save the filename in DB
@@ -543,12 +535,12 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
     errors=0
     fname = os.path.join(incomdir,'%s' % fname)
     try:
-        f = splitfile(fname,'^',validate=True)
+        f = file(fname,'r')
+        f.close()
     except:
         iplogging.error('Validator - Can not read file:%s\n' % (fname))
         return (errors, returnd)
-
-    for (l,linenum) in f:
+    for (l, linenum) in splitfile(fname,'^',True):
         l = l.strip()
         if not l or l.find('CONTROL TOTALS')>-1:
             continue
@@ -576,11 +568,11 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
                 
         ##check ID
         if checkids and needidcolumn and items[needidcolumn[0]].strip() not in checkids[0]:
-            msg = """Validator - %s: LINE%s-Patient %s not in mem file\n""" % (fname, linenum, items[needidcolumn[0]])
+            msg = """Validator - %s: LINE%s-Patient =%s= not in mem file\n""" % (fname, linenum, items[needidcolumn[0]])
             iplogging.error(msg)
             errors=1
         if checkids and len(needidcolumn)==2 and items[needidcolumn[1]].strip() not in checkids[1]:
-            msg = """Validator - %s: LINE%s-Provider %s not in provider file\n""" % (fname, linenum, items[needidcolumn[1]])
+            msg = """Validator - %s: LINE%s-Provider =%s= not in provider file\n""" % (fname, linenum, items[needidcolumn[1]])
             iplogging.error(msg)
             errors=1
 
@@ -594,8 +586,10 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
                 msg = 'Validator - %s: wrong Date format: %s\n=========LINE%s: %s\n'  % (fname,items[d],linenum, l)
                 errors = 1
                 iplogging.error(msg)
-                
+
     return  (errors,returnd)                                                                                                                                                                                                                                                                                                                                                      
+
+
 ################################
 def validateOneday(incomdir, oneday):
     """validate one day files
@@ -661,7 +655,7 @@ def doValidation(incomdir,days):
     parsedays = []
     for oneday in days:
         err = validateOneday(incomdir,oneday)
-        if err: #not OK
+        if REJECT_INVALID and err: #not OK
             iplogging.error("Validator - Files for day %s not OK, rejected - not  processed\n" % oneday)
         else: #OK
             iplogging.info("Validator - Files for day %s OK\n" % oneday)
@@ -677,8 +671,12 @@ if __name__ == "__main__":
         ##get incoming files and do validations
         incomdir = os.path.join(TOPDIR, localconfig.LOCALSITE,'incomingData/')
         days = getfilesByDay(incomdir)
-        parsedays = doValidation(incomdir,days)
+        if DO_VALIDATE:
+                parsedays = doValidation(incomdir,days)
+        else:
+                parsedays = copy.copy(days)
         iplogging.info('Validating is done. Days are: %s;  Parsed days are %s\n' % (str(days),str(parsedays)))
+
 
         ##start to parse by days
         ##always load files no matter it passed validator or not
@@ -714,4 +712,5 @@ if __name__ == "__main__":
         traceback.print_exc(file=fp)
         message = fp.getvalue()
         iplogging.info(message+'\n')
-    iplogging.shutdown() 
+    iplogging.shutdown()
+    
