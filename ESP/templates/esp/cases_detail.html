@@ -187,7 +187,7 @@
 <td>{{ rx.RxDose }}</td>
 <td>{{ rx.RxFrequency }}
 <td>{{ rx.RxQuantity }}</td>
-<td><a href="{{SITEROOT}}/pcps/{{ rx.RxPrescriber }}/">{{ rx.getcliname }}</a></td>
+<td><a href="{{SITEROOT}}/pcps/{{ rx.RxProvider.id }}/">{{ rx.getcliname }}</a></td>
 </tr>
 
   {% endfor %}
