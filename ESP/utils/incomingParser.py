@@ -50,7 +50,6 @@ def splitfile(fname=None,delim='^',validate=False):
     """ generator to return delim split lines
     ross lazarus nov 21 2006
     """
-<<<<<<< incomingParser.py
     f = file(fname,'r')
     r = []
     more = 1
