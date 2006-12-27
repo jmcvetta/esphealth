@@ -22,6 +22,7 @@ VERSION = '0.2'
 DO_VALIDATE = 1 # set to zero to avoid the validation step
 REJECT_INVALID = 0 # don't process if any errors - usually are missing provider so ignore
 
+
 today=datetime.datetime.now().strftime('%Y%m%d')
 
 ########For logging
@@ -49,6 +50,7 @@ def splitfile(fname=None,delim='^',validate=False):
     """ generator to return delim split lines
     ross lazarus nov 21 2006
     """
+<<<<<<< incomingParser.py
     f = file(fname,'r')
     r = []
     more = 1
@@ -56,19 +58,21 @@ def splitfile(fname=None,delim='^',validate=False):
     while more:
        try:
           r = f.next()
-          n += 1
        except:
           more = 0
           raise StopIteration
-       if not validate: # when validating, we just want the line - otherwise split
-          ll = r.split(delim) 
+       n += 1
+       
+       if not validate:
+          ll = r.split(delim) # use original file.next!
           r = [x.strip() for x in ll]
-          n += 1
-          if n % 1000000 == 0:
-             iplogging.info('At line %d in file %s' % (n,fname))
-       if validate or r > 2: # ignore lines without delimiters if not validation phase
-           yield (r, n)
 
+       if n % 1000000 == 0:
+           iplogging.info('At line %d in file %s' % (n,fname))
+
+       if validate or len(r) > 2: # ignore lines without delimiters if not validation phase
+           yield (r, n)
+                      
 
 ################################
 def parseProvider(incomdir, filename):
@@ -447,6 +451,7 @@ def parseImm(incomdir, filename,demogdict):
     
     fname = os.path.join(incomdir,'%s' % filename)
     for (items, linenum) in splitfile(fname,'^'):
+
         if not items or items[0]=='CONTROL TOTALS':
             continue
         try:
@@ -531,15 +536,14 @@ def getfilesByDay(incomdir):
 
 ################################
 def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],required=[],returnids=[],checkids=[]):
+    
     returnd={}
     errors=0
     fname = os.path.join(incomdir,'%s' % fname)
-    try:
-        f = file(fname,'r')
-        f.close()
-    except:
+    if not os.path.exists(fname):
         iplogging.error('Validator - Can not read file:%s\n' % (fname))
         return (errors, returnd)
+
     for (l, linenum) in splitfile(fname,'^',True):
         l = l.strip()
         if not l or l.find('CONTROL TOTALS')>-1:
@@ -566,19 +570,24 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
                 iplogging.error(msg)
                 
                 
-        ##check ID
-        if checkids and needidcolumn and items[needidcolumn[0]].strip() not in checkids[0]:
+        ##check patientID
+        curpatientId = items[needidcolumn[0]].strip()
+        if checkids and needidcolumn and not checkids[0].has_key(curpatientId): #checkids[0]={PatiendID:None, PatientID:None...}
             msg = """Validator - %s: LINE%s-Patient =%s= not in mem file\n""" % (fname, linenum, items[needidcolumn[0]])
             iplogging.error(msg)
             errors=1
-        if checkids and len(needidcolumn)==2 and items[needidcolumn[1]].strip() not in checkids[1]:
-            msg = """Validator - %s: LINE%s-Provider =%s= not in provider file\n""" % (fname, linenum, items[needidcolumn[1]])
-            iplogging.error(msg)
-            errors=1
+            
+        ##check providerID
+        if checkids and len(needidcolumn)==2:
+            curproviderId = items[needidcolumn[1]].strip()
+            if not checkids[1].has_key(curproviderId): #checkids[1]={ProviderID:None, ProviderID:None...}
+                msg = """Validator - %s: LINE%s-Provider =%s= not in provider file\n""" % (fname, linenum, items[needidcolumn[1]])
+                iplogging.error(msg)
+                errors=1
 
-        #check returnd    
+        #build return dictionary for patientID and providerID    
         for n in returnids:
-            returnd.setdefault(0,[]).append(items[n].strip())
+            returnd[items[n].strip()]=None
 
         #check date
         for d in datecolumn:
@@ -600,7 +609,7 @@ def validateOneday(incomdir, oneday):
     demogf = 'epicmem.esp.'+oneday
     iplogging.info('Validator - Process %s' % demogf)
     (err,tempd) = validateOnefile(incomdir,demogf,24,[0],datecolumn=[14],required=[0,1],returnids=[0])
-    pids = tempd[0]
+    pids = tempd
     if err:
         finalerr = 1
         
@@ -608,7 +617,7 @@ def validateOneday(incomdir, oneday):
     providerf = 'epicpro.esp.'+oneday
     iplogging.info('Validator -Process %s' % providerf)
     err,tempd = validateOnefile(incomdir,providerf,13,[0],required=[0],returnids=[0] )
-    provids= tempd[0]
+    provids= tempd
     if err:
         finalerr = 1
         
@@ -672,9 +681,9 @@ if __name__ == "__main__":
         incomdir = os.path.join(TOPDIR, localconfig.LOCALSITE,'incomingData/')
         days = getfilesByDay(incomdir)
         if DO_VALIDATE:
-                parsedays = doValidation(incomdir,days)
-        else:
-                parsedays = copy.copy(days)
+            parsedays = doValidation(incomdir,days)
+	else:
+            parsedays = copy.copy(days)
         iplogging.info('Validating is done. Days are: %s;  Parsed days are %s\n' % (str(days),str(parsedays)))
 
 
