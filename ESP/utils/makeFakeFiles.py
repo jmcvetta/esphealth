@@ -7,7 +7,7 @@
 
 import datetime,random,csv,sys,os
 # for esphealth testing sys.path.append('/home/ESPnew')
-sys.path.append('/home/ESPnew')
+sys.path.append('/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 import django
 import os,sys
@@ -16,7 +16,7 @@ from ESP.settings import TOPDIR
 from ESP.utils import localconfig
 
 incomdir = os.path.join(TOPDIR,localconfig.LOCALSITE,'incomingData/')
-today = datetime.datetime.now().strftime('%y%m%d') # carla/hvma is giving 2 digit years!
+today = datetime.datetime.now().strftime('%m%d%y') # carla/hvma is giving 2 digit years!
 print 'today=%s' % today
 
 
@@ -27,53 +27,95 @@ try:
 except:
     print 'no psyco :-('
 
+
 fnames = ['Bill','Mary','Jim','Donna','Patricia','Susan','Robert','Barry','Bazza','Deena','Kylie','Shane'] # for testing
 snames = ['Bazfar','Barfoo','Hoobaz','Sotbar','Farbaz','Zotbaz','Smith','Jones','Fitz','Wong','Wright','Ngyin']
 psnames = ['Spock','Kruskal','Platt','Klompas','Lazarus','Who','Nick','Livingston','Doolittle','Casey','Finlay']
 sites = ['Brookline Ave','West Roxbury','Matapan','Sydney','Kansas']
+city = [('PEABODY','01960'), ('DEDHAM','02026'),('Lincoln','02865'),('Boston','02215')]
+races=['ALASKAN','ASIAN','BLACK','CAUCASIAN', 'HISPANIC','INDIAN','NAT AMERICAN','NATIVE HAWAI','OTHER']
+routes=['ORAL','INHALATION','INTRAVENOUS']
 
-remakendc = 0
-remakeicd = 0
-remakecpt = 0
 
 
-WORKFLOW_STATES = (
-    ('AR','AWAITING REVIEW'),
-    ('UR','UNDER REVIEW'),
-    ('Q','IN QUEUE FOR MESSAGING'),
-    ('FP','FALSE POSITIVE - DO NOT PROCESS'),
-    ('S','SENT TO DESTINATION'),
-    )
+###rebuild esp_cpt,esp_dnc, esp_icd9 tables
+REMAKECODE = 1
 
-def getawf(x):
-    if x >= len(WORKFLOW_STATES):
-        x = random.randint(0,2)
-    return WORKFLOW_STATES[x][0]
-
-def fakeCase(p=None,wfn=1,rule=1,pcps=[]):
+###################################
+##################################
+def makecpt():
+    """found these at www.tricare.osd.mil/tai/downloads/cpt_codes.xls
     """
-    caseWorkflow = meta.CharField('Workflow State', maxlength=20,choices=WORKFLOW_STATES, blank=True, )
-    caseComments = meta.TextField('Comments', blank=True, null=True)
-    caseLastUp
-    = meta.DateTimeField('Last Updated date',auto_now=True)
-    casecreatedDate = meta.DateTimeField('Date Created', auto_now_add=True)
-    caseRuleID = meta.CharField('Rule which generated this case',maxlength=20,  blank=True, null=True)
-    caseQueryID = meta.CharField('External Query which generated this case',maxlength=20, blank=True, null=True)
-    caseMsgFormat = meta.CharField('Case Message Format', maxlength=10, choices=FORMAT_TYPES, blank=True, null=True)
-    caseMsgDest = meta.CharField('Destination for formatted messages', maxlength=10, choices=DEST_TYPES, blank=True, null=True)
-    """
-    r = Rule.objects.filter(ruleName__exact='Chlamydia')[0]
-    pcp = random.choice(pcps)
-    if wfn <> None:
-        wf = getawf(wfn)
-        created = datetime.date(random.randint(2004,2006),random.randint(1,12),random.randint(1,28))
-        c = Case(caseWorkflow=wf,caseDemog=p,caseComments='Faked',casecreatedDate=created,caseRule=r,caseProviderid=pcp)
+    reader = csv.reader(open(settings.CODEDIR+'/utils/cpt_codes.csv','rb'),dialect='excel')
+    header = reader.next()
+    now = datetime.datetime.now().strftime("%Y-%m-%d")
+    i = 0
+    for ll in reader: # here be dragons. lots of "" at the 4th pos - but some other subtle crap too...
+        code,long,short = ll[:3] # good thing it doesn't really matter..
+        i += 1
+        if i % 1000 == 0:
+            print i,'cpt done'
+        long = long.replace('"','')
+        short = short.replace('"','')
+        c = cpt(cptCode=code,cptLong=long.capitalize(),cptShort=short.capitalize(),cptLastedit=now)
         c.save()
-        now = datetime.datetime.now().strftime("%Y-%m-%d")
-        s = 'Comments made here are visible whenever the case is viewed. Changes to workflow state can have new comments'
-        wfr = CaseWorkflow(workflowCaseID=c,workflowDate=now,workflowState=wf,workflowChangedBy='DataFaker (tm)',workflowComment=s)
-        wfr.save()
 
+###################################
+def makeicd9():
+    """ found these codes somewhere or other..."""
+    codes = []
+    n = 1
+    from ESPicd9 import icd
+    for line in icd.split('\n'):
+        if n % 10000 == 0:
+            print n,'icd done'
+        n += 1
+        line = line.replace("'",'')
+        code,trans = line.split('\t')
+        code = '%s.%s' % (code[:3],code[3:]) # make all 3 digit decimals
+        c = icd9(icd9Code=code,icd9Long=trans.capitalize())
+        c.save()
+
+###################################
+def makendc():
+    """ found these codes somewhere http://www.fda.gov/cder/ndc/"""
+    f = file(settings.CODEDIR+'/utils/ndc_codes.txt','r')
+    foo = f.next() # lose header
+    n = 1
+    for line in f:
+        if n % 10000 == 0:
+            print n,'ndc done'
+        n += 1
+        lbl = line[8:14]
+        prod = line[15:19]
+        trade = line[44:].strip()
+        newn = ndc(ndcLbl=lbl.capitalize(),ndcProd=prod.capitalize(),ndcTrade=trade.capitalize())
+        newn.save()
+        
+###################################
+def remakeCodes():
+    """
+    """
+    from django.db import connection
+    cursor = connection.cursor()
+    sqlist = ['delete from esp_ndc;']
+    sqlist.append('delete from esp_icd9;')
+    sqlist.append('delete from esp_cpt;')
+    sqlist.append('commit;')
+    for sql in sqlist:
+        print sql
+        try:
+            cursor.execute(sql)
+        except:
+            print 'Error executing %s' % sql
+            
+    makendc()
+    makeicd9()
+    makecpt()
+
+
+###################################
+###################################
 def fakename():
     """
     """
@@ -93,8 +135,9 @@ def fakename():
         sname = snames[sn1]
     return fname,sname
 
+
 #################################
-def fakeDemogs(n=100,wf = 1,pcps=[],icds=[],cpts=[],ndcs=[]):
+def fakeDemogs(n=100,pcps=[],icds=[],cpts=[],ndcs=[]):
     """create a fake person for testing
     and a fake case - note need to hook these up
     """
@@ -107,7 +150,7 @@ def fakeDemogs(n=100,wf = 1,pcps=[],icds=[],cpts=[],ndcs=[]):
         if i % 100 == 0:
             print i
         ssn = '%03d-%02d-%04d' % (random.randint(1,999),random.randint(1,99),random.randint(1,9999))
-        mrn = '%09d' % random.randint(1,999999999)
+        mrn = 'HVMA-FAKED%09d' % random.randint(1,999999999)
         recid = '%09d' % random.randint(1,999999999)
         fname,sname=fakename()
         dob = '%04d%02d%02d' % (random.randint(1900,2005),random.randint(1,12),random.randint(1,28))
@@ -116,36 +159,41 @@ def fakeDemogs(n=100,wf = 1,pcps=[],icds=[],cpts=[],ndcs=[]):
             gender = 'F'
         pcp = random.choice(pcps)
         pname = '%s, %s' % (sname, fname)
-
-        p = "%s^%s^%s^%s^^^^^^^^617^155-5555^^%s^%s^^^%s^%s^^^Aliases^^\n" % (recid,mrn,sname,fname,dob,gender,ssn,pcp)
+        ct,zip = random.choice(city)
+        race=random.choice(races)
+        p = "%s^%s^%s^%s^^Patient Address 1^^%s^MA^%s^USA^617^1556555^^%s^%s^%s^^%s^%s^^^Aliases^^\n" % (recid,mrn,sname,fname,ct, zip, dob,gender,race, ssn,pcp)
         fh.write(p)   
 
 
         fakeimm(fh=immfh,pid=recid)
-        #if wf <> 0:
-        #    fakeCase(p=p,wfn=wf,rule=1, pcps=pcps)
 
         for e in range(random.randint(3,6)):
-
             fakeenc(fh=encfh, pid = recid, mrn = mrn, icds = icds, cpts = cpts, pcps=pcps)
 
         for e in range(random.randint(1,6)):
             fakerx(fh=rxfh,pid =recid, mrn=mrn, ndcs=ndcs, pcps=pcps)
+
         for e in range(random.randint(1,6)):
             fakelx(fh=lxresfh,pid = recid, mrn=mrn, cpts=cpts, pcps=pcps)
         
 
-    ##close incoming files        
+    ##close incoming files
+    lxordfh = open(incomdir + 'epicord.esp.'+ today, 'w')
+    lxordfh.write("CONTROL TOTALS^epicord^06/01/2006^07/31/2006^553^8/15/06 09:52^8/15/06 09:52^0h0m17s")
+    lxordfh.close()
+
     fh.write("CONTROL TOTALS^epicmem^07/01/2006^07/31/2006^12889^8/9/06 15:10^8/9/06 15:10^0h0m12s\n")
     fh.close()
+    
     encfh.write("CONTROL TOTALS^epicvis^06/01/2006^07/31/2006^20059^8/9/06 14:59^8/9/06 15:00^0h0m34s")
     encfh.close()
-   # lxordfh.write("CONTROL TOTALS^epicord^06/01/2006^07/31/2006^553^8/15/06 09:52^8/15/06 09:52^0h0m17s")
-   # lxordfh.close()
+
     lxresfh.write("CONTROL TOTALS^epicres^06/01/2006^07/31/2006^73413^8/15/06 09:52^8/15/06 09:52^0h0m17s")
     lxresfh.close()
+
     rxfh.write("CONTROL TOTALS^epicmed^06/01/2006^07/31/2006^272^8/15/06 09:52^8/15/06 09:52^0h0m17s")
     rxfh.close()
+
     immfh.write("CONTROL TOTALS^epicmed^06/01/2006^07/31/2006^272^8/15/06 09:52^8/15/06 09:52^0h0m17s")
     immfh.close()
     
@@ -169,10 +217,12 @@ def fakerx(fh=None,pid = 1, mrn=2, ndcs = [], pcps=[]):
     RxQuantity = models.CharField('Quantity',maxlength=20,blank=True)
     RxRefills = models.CharField('Refills',maxlength=20,blank=True)
     """
-    d = '%04d%02d%02d' % (random.choice([2003,2004,2005,2006]),random.randint(1,12),random.randint(1,30))
-    n = random.choice(ndcs)
+    d = '%04d%02d%02d' % (random.choice([2003,2004,2005,2006]),random.randint(1,12),random.randint(1,28))
+    orderid = random.randint(100,100000)
+    ncode, drugname = random.choice(ndcs)
     pcp = random.choice(pcps)
-    r="%s^%s^^%s^%s^^^%s^^^0^^^ORAL\n" %(pid,mrn,pcp,d,n)
+    route= random.choice(routes)
+    r="%s^%s^%s^%s^%s^^%s^%s^^^0^^^%s\n" %(pid,mrn,orderid,pcp,d,drugname,ncode,route)
     fh.write(r)
 
 
@@ -196,9 +246,8 @@ def fakelx(fh=None,pid = 1, mrn=2, cpts = [], pcps=[]):
     LxHVMA_Internal_Accession_number = models.CharField('HVMA Internal Accession number',maxlength=20,blank=True)
     """
 
-    d = '%04d%02d%02d' % (random.randint(2005,2006),random.randint(1,12),random.randint(1,30))
-   
-    
+    d = '%04d%02d%02d' % (random.randint(2005,2006),random.randint(1,12),random.randint(1,28))
+    orderid = random.randint(1000,100000)
     cpt = random.choice(cpts)
     pcp = random.choice(pcps)
     r = 'positive nucleic acid amplification on cervical probe'
@@ -213,8 +262,9 @@ def fakelx(fh=None,pid = 1, mrn=2, cpts = [], pcps=[]):
         
     #ord = "%s^%s^^%s^^^%s^1^%s\n" % (pid,mrn,cpt,d, pcp)
     #ordfh.write(ord)
-    res = "%s^%s^^%s^^%s^1^%s^%s^^%s^%s^^^^^^^\n" % (pid,mrn,d,pcp,cpt,compt,r,f)
+    res = "%s^%s^%s^%s^^%s^1^%s^%s^^%s^%s^^^^^^^\n" % (pid,mrn,orderid,d,pcp,cpt,compt,r,f)
     fh.write(res)
+
     
 
 ####################################
@@ -235,7 +285,7 @@ def fakeenc(fh=None, pid = 1,mrn=2,icds = [], cpts=[], pcps=[]):
     EncICD9_Qualifier = models.CharField('ICD-9 Qualifier',maxlength=200,blank=True)
     """
     
-    d = '%04d%02d%02d' % (random.randint(2005,2006),random.randint(1,12),random.randint(1,30))
+    d = '%04d%02d%02d' % (random.randint(2005,2006),random.randint(1,12),random.randint(1,28))
     # need to avoid multiples of the same icd code because of use of icd9.get in view method
     # ross august 10 2006
     #icd = ','.join([random.choice(icds) for x in range(random.randint(1,3))])
@@ -244,10 +294,11 @@ def fakeenc(fh=None, pid = 1,mrn=2,icds = [], cpts=[], pcps=[]):
     cpt = ','.join([random.choice(cpts) for x in range(random.randint(2,6))])
     pcp = random.choice(pcps)
     s = random.choice(sites)
-    e = "%s^%s^%s^%s^^^%s^^%s^APPT^^^%s^%s\n" % (pid,mrn,'%08d' % (random.randint(1,9999999)),d,pcp,s,cpt,icd )
+    e = "%s^%s^%s^%s^Y^^%s^^%s^APPT^^^%s^^^^^^^%s\n" % (pid,mrn,'%08d' % (random.randint(1,9999999)),d,pcp,s,cpt,icd )
     fh.write(e)
- 
 
+ 
+###################################
 def fakepcps(n=100):
     """create a fake pcp for testing
     provCode= models.CharField('Physician code',maxlength=20,blank=True)
@@ -279,7 +330,8 @@ def fakepcps(n=100):
         sname = psnames[sn1]
         d = random.choice(sites)
         pid = '%s_%s_%d' % (sname[:3],fname[:3],i)
-        p = "%s^%s^%s^^MD^^%s^^^^^^^\n" % (pid,sname,fname,d)
+        ct,zip = random.choice(city)
+        p = "%s^%s^%s^^MD^^%s^Address 1^^%s^MA^%s^617^1234567\n" % (pid,sname,fname,d,ct,zip)
         fh.write(p)
         pcps.append(pid)
     fh.write('CONTROL TOTALS^epicpro^^^346^8/9/06 15:10^8/9/06 15:10^0h0m1s\n')
@@ -287,135 +339,47 @@ def fakepcps(n=100):
  
     return pcps
 
-##################################
-def makecpt():
-    """found these at www.tricare.osd.mil/tai/downloads/cpt_codes.xls
-    """
-    reader = csv.reader(open('cpt_codes.csv','rb'),dialect='excel')
-    header = reader.next()
-    now = datetime.datetime.now().strftime("%Y-%m-%d")
-    i = 0
-    for ll in reader: # here be dragons. lots of "" at the 4th pos - but some other subtle crap too...
-        code,long,short = ll[:3] # good thing it doesn't really matter..
-        i += 1
-        if i % 10000 == 0:
-            print i,'cpt done'
-        long = long.replace('"','')
-        short = short.replace('"','')
-        c = cpt(cptCode=code,cptLong=long.capitalize(),cptShort=short.capitalize(),cptLastedit=now)
-        c.save()
-        
-def makeicd9():
-    """ found these codes somewhere or other..."""
-    codes = []
-    n = 1
-    from ESPicd9 import icd
-    for line in icd.split('\n'):
-        if n % 10000 == 0:
-            print n,'icd done'
-        n += 1
-        line = line.replace("'",'')
-        code,trans = line.split('\t')
-        code = '%s.%s' % (code[:3],code[3:]) # make all 3 digit decimals
-        c = icd9(icd9Code=code,icd9Long=trans.capitalize())
-        c.save()
-        
-def makendc():
-    """ found these codes somewhere http://www.fda.gov/cder/ndc/"""
-    f = file('ndc_codes.txt','r')
-    foo = f.next() # lose header
-    n = 1
-    for line in f:
-        if n % 10000 == 0:
-            print n,'ndc done'
-        n += 1
-        lbl = line[8:14]
-        prod = line[15:19]
-        trade = line[44:].strip()        
-        newn = ndc(ndcLbl=lbl.capitalize(),ndcProd=prod.capitalize(),ndcTrade=trade.capitalize())
-        newn.save()
 
-def remakeCodes():
-    """
-    """
-    from django.db import connection
-    cursor = connection.cursor()
-    sqlist = ['delete from esp_ndc;']
-    sqlist.append('delete from esp_icd9;')
-    sqlist.append('delete from esp_cpt;')
-    sqlist.append('commit;')
-    for sql in sqlist:
-        print sql
-        try:
-            cursor.execute(sql)
-        except:
-            print 'Error executing %s' % sql
-
-    makendc()
-    makeicd9()
-    makecpt()
-
+###################################
 def cleanup():
     from django.db import connection
     cursor = connection.cursor()
     sqlist = ['delete from esp_case;']
     sqlist.append('delete from esp_caseworkflow;')
     sqlist.append('delete from esp_pcp;')
-    sqlist.append('delete from esp_demog;')  ##Xuanlin
+    sqlist.append('delete from esp_demog;') 
     sqlist.append('delete from esp_enc;')
     sqlist.append('delete from  esp_lx;')
     sqlist.append('delete from esp_rx;')
-    sqlist.append('delete from esp_pid;')
-
-    if remakendc:
-        sqlist.append('delete from esp_ndc;')    
-    if remakeicd:
-        sqlist.append('delete from esp_icd;')    
-    if remakecpt:
-        sqlist.append('delete from esp_cpt;')    
-
-    sqlist.append('commit;')
-    for sql in sqlist:
-        print sql
-        try:
-            cursor.execute(sql)
-        except:
-            print 'Error executing %s' % sql
-    if remakendc:
-        makendc()    
-    if remakeicd:
-        makeicd9()  
-    if remakecpt:
-        makecpt()   
+    sqlist.append('delete from esp_immunization;')
 
 
+###################################
+###################################
 if __name__ == "__main__":
 
+    if REMAKECODE:
+        remakeCodes()
+
+    ##cleanup data table first
     cleanup()
-
-    # ndcs = ['%s%s' % (x.ndcLbl,x.ndcProd) for x in ndc.objects.filter(ndcTrade__istartswith='azithromycin 1 g')]
-    ndcs = ['%s%s' % (x.ndcLbl,x.ndcProd) for x in ndc.objects.filter(ndcTrade__istartswith='Darvon')]
-   
-
+    
+    ndcs = [('%s%s' % (x.ndcLbl,x.ndcProd),x.ndcTrade) for x in ndc.objects.filter(ndcTrade__istartswith='Levofloxacin')]
+    ndcs += [('%s%s'% (x.ndcLbl,x.ndcProd),x.ndcTrade) for x in ndc.objects.filter(ndcTrade__istartswith='Amoxicillin')]
+    ndcs += [('%s%s'% (x.ndcLbl,x.ndcProd),x.ndcTrade) for x in ndc.objects.filter(ndcTrade__istartswith='Ciprofloxacin')]
     print 'got %d ndcs to play with' % (len(ndcs))
     
 
-    icds = [x.icd9Code for x in icd9.objects.extra(where=['icd9Code IN (079.88,099.5,09953)'])]
+    icds = [x.icd9Code for x in icd9.objects.extra(where=['icd9Code IN (788.7,099.40,616.10,789.07,789.09,099.56,614.0,614.2,614.3,614.5)'])]
     icds += [x.icd9Code for x in icd9.objects.filter(icd9Long__istartswith='Chlamydia')]
-
+    icds += [x.icd9Code for x in icd9.objects.filter(icd9Long__istartswith='Gonorrhea')]
     print 'got %d icds to play with' % (len(icds))
-
+            
     cpts = [x.cptCode for x in cpt.objects.filter(cptLong__contains='chlamydia')]
- 
     cpts = [x.cptCode for x in cpt.objects.filter(cptLong__contains='ex')]
-    cpts += [x.cptCode for x in cpt.objects.filter(cptLong__contains='re')]
-    cpts = [x.cptCode for x in cpt.objects.filter(cptCode__exact='87491')]
+    cpts += [x.cptCode for x in cpt.objects.filter(cptLong__contains='GC ')]
+    cpts = [x.cptCode for x in cpt.objects.filter(cptCode__in=['87491','87492','87591','86631','87800','87178'])]
     print 'got %d cpts to play with' % (len(cpts))
-
-    pcps = fakepcps(100) # make 10 pcps
-    fakeDemogs(20,1,pcps,icds,cpts,ndcs)
-
-    fakeDemogs(20,2,pcps,icds,cpts,ndcs)
-    fakeDemogs(20,3,pcps,icds,cpts,ndcs)
-    fakeDemogs(20,4,pcps,icds,cpts,ndcs)
-    fakeDemogs(10000,None,pcps,icds,cpts,ndcs)
+                   
+    pcps = fakepcps(50) # make 50 pcps
+    fakeDemogs(100,pcps,icds,cpts,ndcs)
