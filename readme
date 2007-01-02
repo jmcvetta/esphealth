@@ -1,0 +1,10 @@
+This is code for the ESP project
+
+preLoader contains a whole bunch of stuff needed in tables for the case finder and for 
+other aspects of configuration
+
+ESP contains the main Django codebase
+
+axis-1_4 contains patches needed for apache axis to work as the transport for connecting 
+to the MA DPH Electronic Laboratory Reporting System and is probably irrelevant unless 
+that's who you're sending messages to
