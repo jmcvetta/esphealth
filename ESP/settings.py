@@ -16,21 +16,17 @@ MANAGERS = ADMINS
 #CACHE_BACKEND = "locmem:///"
 #CACHE_MIDDLEWARE_SECONDS = 600
 #CACHE_MIDDLEWARE_KEY_PREFIX = ''
-usesqlite=0
+usesqlite=1
 
 if usesqlite:
     DATABASE_ENGINE = 'sqlite3' # 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
     DATABASE_NAME = 'ESPsqlite'             # Or path to database file if using sqlite3.
-    DATABASE_USER = 'rossSQL'             # Not used with sqlite3.
-    DATABASE_PASSWORD = 'SQLross'         # Not used with sqlite3.
-    DATABASE_HOST = '127.0.0.1'             # Set to empty string for localhost. Not used with sqlite3.
-    DATABASE_PORT = 3306             # Set to empty string for default. Not used with sqlite3.
 else:
     DATABASE_ENGINE = 'mysql' # 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
     DATABASE_NAME = 'esp'             # Or path to database file if using sqlite3.
-    DATABASE_USER = 'ESP'             # Not used with sqlite3.
-    DATABASE_PASSWORD = '3spuser2006'         # Not used with sqlite3.
-    DATABASE_HOST = '127.0.0.1'             # Set to empty string for localhost. Not used with sqlite3.
+    DATABASE_USER = 'foo'             # Not used with sqlite3.
+    DATABASE_PASSWORD = 'bar'         # Not used with sqlite3.
+    DATABASE_HOST = '127.0.0.1'       # Set to empty string for localhost. Not used with sqlite3.
     DATABASE_PORT = 3306             # Set to empty string for default. Not used with sqlite3.
 
 # Local time zone for this installation. All choices can be found here:
@@ -58,7 +54,7 @@ MEDIA_URL = '/media'
 ADMIN_MEDIA_PREFIX = '/ESP/media/' 
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'lo(g8i)a(g%&(4-*9@w#w2u#wfq(tjf5o+f4#6q7mg(k%9h%j5'
+SECRET_KEY = 'foobarfoobar'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
