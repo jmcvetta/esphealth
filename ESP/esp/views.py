@@ -508,6 +508,7 @@ def casedetail(request, object_id,restrict='F'):
     print 'got %d encs, %d lx, %d rx' % (len(encs),len(labs),len(rxs))
     print ` WORKFLOW_STATES`
     cinfo = {"request":request,
+             "restrict":restrict,
              "cobject":c,
              "wf":wf,
              "caseid":object_id,

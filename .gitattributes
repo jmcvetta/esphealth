@@ -19,4 +19,7 @@ ESP/templates/nav-bg-reverse.gif -text
 ESP/templates/nav-bg.gif -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
+docs/ELR[!!-~]EMR[!!-~]Query[!!-~]Specification[!!-~]v1.0.doc -text
+docs/ESPSpecificationsAug3_2006.doc -text
+docs/FINAL[!!-~]ELR[!!-~]231[!!-~]Implementation[!!-~]Guide_052104.pdf -text svneol=unset#unset
 /readme -text

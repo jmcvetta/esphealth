@@ -187,6 +187,32 @@ def parseDemog(incomdir, filename):
     movefile(incomdir, filename)
     return demogdict
 
+
+###################################
+###################################
+def convertWgHg(wghg,unit,factor,factor2):
+    """convert wghg (weight or height) from lbs to KG or from feet to cm
+    assume weight/height always includes the unit 'lbs' or '\''
+    """
+    
+    import re
+    wghg =wghg.upper().strip()
+    lbft_list=[i.strip() for i in wghg.split(unit) if i]
+    lbft=lbft_list[0]
+    if not lbft:
+        lbft='0'
+        
+    if len(lbft_list)>1:
+        p=re.compile('[A-Z"]')
+        ozinch=[i.strip() for i in p.split(lbft_list[1]) if i][0]
+    else:
+        ozinch='0'
+        
+    new_wghg=(float(lbft.strip())*factor+float(ozinch.strip()))*factor2
+    #if '%.2f' % weight=='0.00':
+    #    print w
+    return '%.2f' % new_wghg
+                                                                                
 ################################
 def parseEnc(incomdir, filename,demogdict,provdict):
     """
@@ -197,7 +223,7 @@ def parseEnc(incomdir, filename,demogdict,provdict):
         if not items or items[0]=='CONTROL TOTALS':
             continue
         try:
-            pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,icd9  = items #[x.strip() for x in items]
+            pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,weight,height,bpsys,bpdias,o2stat,peakflow,icd9  = items #[x.strip() for x in items]
         except:
             iplogging.error('Parser %s: wrong size - %s' % (filename,str(items)))
             continue
@@ -226,8 +252,36 @@ def parseEnc(incomdir, filename,demogdict,provdict):
         enc.EncTemperature=temp
         enc.EncCPT_codes=cpt
         enc.EncICD9_Codes=icd9
-               
+        if weight:
+            try:
+                enc.EncWeight= '%s kg' % convertWgHg(weight,'LBS',16,0.02835)
+            except:
+                enc.EncWeight= weight
+                iplogging.error('Parser %s: Convert weight : %s for Patient %s' % (filename,weight,mrn))
+        if height:
+            try:
+                enc.EncHeight= convertWgHg(height,'\'',12,2.54)
+            except:
+                enc.EncHeight= height
+                iplogging.error('Parser %s: Convert height : %s for Patient %s' % (filename,height,mrn))
+            
+        enc.EncBPSys=bpsys
+        enc.EncBPDias=bpdias
+        if o2stat:
+            try:
+                enc.EncO2stat=int(o2stat)
+            except:
+                enc.EncO2stat=o2stat
+                iplogging.error('Parser %s: NonInt O2stat: %s for Patient %s' % (filename,o2stat,mrn))
 
+        if peakflow:
+            try:
+                enc.EncPeakFlow =int(peakflow)
+            except:
+                enc.EncPeakFlow =peakflow
+                iplogging.error('Parser %s: NonInt PeakFlow: %s for Patient %s' % (filename,peakflow,mrn))
+
+            
         try:
             prov =provdict[phy]
             enc.EncEncounter_Provider=prov
@@ -576,22 +630,33 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
             iplogging.error(msg)
             errors=1
             
-        ##check providerID
-        if checkids and len(needidcolumn)==2:
-            curproviderId = items[needidcolumn[1]].strip()
-            if not checkids[1].has_key(curproviderId): #checkids[1]={ProviderID:None, ProviderID:None...}
-                msg = """Validator - %s: LINE%s-Provider =%s= not in provider file\n""" % (fname, linenum, items[needidcolumn[1]])
-                iplogging.error(msg)
-                errors=1
 
-        #build return dictionary for patientID and providerID    
+        ##check providerID 
+        if checkids and len(needidcolumn)==2:
+            try: # bail if line is too short
+                curproviderId = items[needidcolumn[1]].strip()
+                if not checkids[1].has_key(curproviderId): #checkids[1]={ProviderID:None, ProviderID:None...}
+                   msg = """Validator - %s: LINE%s-Provider =%s= not in provider file\n""" % (fname, linenum, items[needidcolumn[1]])
+                   iplogging.error(msg)
+                   errors=1
+            except:
+                   msg = """Validator - %s: LINE%s- not enough fields to check Provider\n""" % (fname, linenum)
+                   iplogging.error(msg)
+                   errors=1
+
+        #build return dictionary for patientID and providerID
         for n in returnids:
             returnd[items[n].strip()]=None
 
         #check date
-        for d in datecolumn:
+        try: # if line is b0rked, need to bail
+          for d in datecolumn:               
             if items[d] and len(items[d])!=8 or re.search('\D', items[d]):
                 msg = 'Validator - %s: wrong Date format: %s\n=========LINE%s: %s\n'  % (fname,items[d],linenum, l)
+                errors = 1
+                iplogging.error(msg)
+        except:
+                msg = 'Validator - %s: Insufficient fields to check date formats:\n=========LINE%s: %s\n'  % (fname,linenum, l)            
                 errors = 1
                 iplogging.error(msg)
 

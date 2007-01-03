@@ -560,6 +560,12 @@ class Enc(models.Model):
     EncCPT_codes = models.CharField('CPT codes',maxlength=200,blank=True)
     EncICD9_Codes = models.TextField('ICD-9 Codes',blank=True)
     EncICD9_Qualifier = models.CharField('ICD-9 Qualifier',maxlength=200,blank=True)
+    EncWeight = models.CharField('Weight (kg)',maxlength=200,blank=True)
+    EncHeight = models.CharField('Height (cm)',maxlength=200,blank=True)
+    EncBPSys = models.CharField('BP Systolic',maxlength=100,blank=True)
+    EncBPDias = models.CharField('BP Diastolic',maxlength=100,blank=True)
+    EncO2stat = models.CharField('O2 Stat',maxlength=50,blank=True)
+    EncPeakFlow = models.CharField('Peak Flow',maxlength=50,blank=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
             
