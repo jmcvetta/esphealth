@@ -1,3 +1,4 @@
+
 ##preLoader is to load some data into ESP_conditionNDC table, ESP_conditionLOINC, ESP_CPTLOINCMAP table
 ##
 import os,sys
@@ -8,95 +9,202 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 import django, datetime
 from ESP.esp.models import *
 from django.db.models import Q
-from ESP.settings import TOPDIR
-from ESP.utils import localconfig 
+from ESP.settings import TOPDIR,LOCALSITE, USESQLITE,getLogging,EMAILSENDER
 import string,csv
 import traceback
 import StringIO
-from django.db import connection
-cursor = connection.cursor()
+import smtplib
 
-logging = localconfig.getLogging('preLoader.py_v0.1', debug=0)
-datadir = os.path.join(TOPDIR,localconfig.LOCALSITE, 'preLoaderData/')
+
+logging=''
+datadir = os.path.join(TOPDIR,LOCALSITE, 'preLoaderData/')
 
 
 ###############################
 def getlines(fname):
-    logging.info('Process %s\n' % fname)
-    lines = file(fname).readlines()
+
+    try:
+        lines = file(fname).readlines()
+    except:
+        if logging:
+            logging.error('Can not read file:%s\n' % fname)
+        return []
+            
    # print file,len(lines)
     returnl = [x.split('\t') for x in lines if len(x.split('\t')) >= 1]
+
     return returnl
 
+
+
+###################################
+###################################
+def sendoutemail(towho=['rexua@channing.harvard.edu','rerla@channing.harvard.edu'],msg=''):
+    ##send email
+    sender=EMAILSENDER
+    
+    subject='ESP management: preLoader'
+    headers = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (sender, ','.join(towho), subject)
+    
+    message = headers + 'on %s\n%s\n' % (datetime.datetime.now(),msg)
+    mailServer = smtplib.SMTP('localhost')
+    mailServer.sendmail(sender, towho, message)
+    mailServer.quit()
+                                 
  
 ################################
-def load2cptloincmap(table):
-#    cursor.execute("delete from esp_cptloincmap")
-#    cursor.execute("alter table esp_cptloincmap AUTO_INCREMENT=1") # make sure we start id=1 again!
+def load2cptloincmap(table,lines, cursor):
+    if logging:
+        logging.info('Load CPTLOINC Map')
 
-    lines = getlines(datadir+table+'.txt')
-      
+    cursor.execute("delete from esp_cptloincmap")
+
+    if logging:
+        logging.info('Total %s CPT_Loinc_map records in file' % len(lines))
+
+    indx=1
     for l in lines:
         id, cpt,cmpt,loinc = [x.strip() for x in l]
-        if id:
-            try:
-                cl = CPTLOINCMap.objects.filter(id__exact=id)[0]
-            except:
-                cl = CPTLOINCMap()
-        else:
-            c = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt=cmpt,Loinc=loinc)
-            if not c:
-                cl = CPTLOINCMap()
-            else:
-                continue
-            
+        cl = CPTLOINCMap(id=indx)
         cl.CPT = cpt
         cl.CPTCompt=cmpt
         cl.Loinc=loinc
         cl.save()
+        indx+=1
+    if logging:
+        logging.info('Done on saving into esp_cptloincmap table.')
+    
 
+###################################
+def addNewcptloincmap(cursor):
+    
+    cursor.execute("""select distinct LxTest_Code_CPT,LxComponent from esp_lx where LxLoinc =''""")
+    cptcmpt_list = cursor.fetchall()
+    if cptcmpt_list:
+        cptcmpt_dic = dict(map(lambda x:(x, None), cptcmpt_list))
+    else:
+        cptcmpt_dic ={}
+
+    cptmap = CPTLOINCMap.objects.all()
+    indx=1
+    for onecptmap in cptmap:
+        cpt =onecptmap.CPT
+        cmpt=onecptmap.CPTCompt
+        loinc = onecptmap.Loinc
+        if cptcmpt_dic.has_key(('%s' % cpt,'%s'%cmpt)):
+            if logging:
+                logging.info('%s of %s: Adding new loinc-%s for (CPT, COMPT)=(%s,%s)' % (indx, len(cptmap), loinc, cpt,cmpt))
+            ##add into Lx table
+            a=Lx.objects.filter(LxTest_Code_CPT=cpt,LxComponent=cmpt)
+            for onelx in a:##need update loinc
+                onelx.LxLoinc=loinc
+                onelx.save()
+        indx+=1
+    if logging:
+        logging.info('Done on Adding new loinc to esp_lx table')
+    
+###################################
+def correctcptloincmap_lx(table, cursor):
+    if logging:
+        logging.info('Correct CPTLOINC Map in esp_lx table')
+
+    curcases=Case.objects.all()
+    caselx=[]
+    for onecase in curcases:
+        newlx_list = [i for i in onecase.caseLxID.split(',') if i.strip()]
+        caselx =caselx+newlx_list
+    caselxid_dict = dict(map(lambda x:(x,0), caselx))
+    
+
+    cursor.execute("""select id, LxTest_Code_CPT,LxComponent,Lxloinc from esp_lx where LxLoinc !=''""")
+    cptcmpt_list = cursor.fetchall()
+    cptmap = CPTLOINCMap.objects.all()
+    for id,cpt,comp,loinc in cptcmpt_list:
+        temp = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt=comp)
+        if caselxid_dict.has_key('%s' % id):
+            ##is a case, do nothing
+            continue
+        
+        if temp and temp[0].Loinc == loinc:
+            pass
+        elif temp and temp[0].Loinc != loinc:
+            thislx = Lx.objects.filter(id=id)[0]
+            thislx.LxLoinc=temp[0].Loinc
+            thislx.save()
+            if logging:
+                logging.info('CPT=%s, Comp=%s, CorrectLoinc=%s, LxLoinc=%s, Lxid=%s' % (cpt,comp,temp[0].Loinc,loinc,id))
+        elif not temp:
+            if logging:
+                logging.info('CPT=%s, Comp=%s, CorrectLoinc=None, LxLoinc=%s, Lxid=%s' % (cpt,comp,loinc,id))
+            thislx = Lx.objects.filter(id=id)[0]
+            thislx.LxLoinc=''
+            thislx.save()
+
+                    
+################################
+def correctcptloincmap(table):
+    logging.info('Correct CPTLoinc map')
+    curcases=Case.objects.all()
+    caselx=[]
+    for onecase in curcases:
+        newlx_list = [i for i in onecase.caseLxID.split(',') if i.strip()]
+        caselx =caselx+newlx_list
+        
+    logging.info('Total Case Lx=%s' % len(caselx))
+
+    lines = getlines(datadir+table+'.txt')
+    logging.info('Total %s CPT_Loinc_map records' % len(lines))
+    disclx={}
+    indx=1
+    for l in lines:
+        id, cpt,cmpt,loinc = [x.strip() for x in l]
+        if indx%10==0:
+            logging.info('Processed %s of %s maps' % (indx, len(lines)))
+        indx=indx+1
+
+        ##update Lx table
+        a=Lx.objects.filter(LxTest_Code_CPT=cpt,LxComponent=cmpt)
+        lx = a.exclude(id__in=caselx)
+        for onelx in lx:##need update loinc
+            if onelx.LxLoinc!=loinc:
+                disclx[onelx.id]=(loinc,onelx.LxLoinc)
+                logging.info('LOINC update,ID=%s: %s-->%s'  % (onelx.id,onelx.LxLoinc,loinc))
+                onelx.LxLoinc=loinc
+                onelx.save()
+
+  #  logging.info('DisLOINC:%s' % str(disclx))
+
+                                                                                                                                                                                
 
 ################################
-def load2DrugNames(table):
+def load2DrugNames(table,lines,cursor):
     """ an attempt to text match drugs on generic names
     to try to avoid the vagaries and complexities of matching exaxt ndc's which
     is a fool's errand
     """	
-#    cursor.execute("delete from esp_conditiondrugname")
-#    cursor.execute("alter table esp_conditiondrugname AUTO_INCREMENT=1") # make sure we start id=1 again!
-    lines = getlines(datadir+table+'.txt')
+    cursor.execute("delete from esp_conditiondrugname")
+    #cursor.execute("alter table esp_conditiondrugname AUTO_INCREMENT=1") # make sure we start id=1 again!
+
     n = 0
     for l in lines:
         id, rulename, drugname,route, define,send =  [x.strip() for x in l]
-        print id, rulename, drugname,route, define,send
         r = Rule.objects.filter(ruleName__iexact=rulename)[0]
-        
-	n += 1
-        if id.strip():
-            try:
-                cl = ConditionDrugName.objects.filter(id__exact=id)[0]
-            except:
-                cl = ConditionDrugName()
-        else:
-            c = ConditionDrugName.objects.filter(CondiRule__ruleName__iexact=rulename,CondiDrugName__iexact=drugname,CondiDrugRoute__iexact=route)
-            if not c:
-                cl = ConditionDrugName()
-            else:
-                cl = c[0]
+        n += 1
+        cl = ConditionDrugName(id=n)
         cl.CondiRule=r
         cl.CondiDrugName=drugname
         cl.CondiDrugRoute = route
         cl.CondiDefine=define
         cl.CondiSend=send
         cl.save()
-
+    if logging:
+        logging.info('Done on loading to esp_conditiondrugname')
 
 ################################
-def load2ndc(table):
+def load2ndc(table,lines,cursor):
     ndclen = 9 # really 11 but we ignore the pack size last 2 digits
     cursor.execute("delete from esp_conditionndc")
-#    cursor.execute("alter table esp_conditionndc AUTO_INCREMENT=1") # make sure we start id=1 again!
-    lines = getlines(datadir+table+'.txt')
+
     n = 0
     for l in lines:
 	n += 1
@@ -111,19 +219,11 @@ def load2ndc(table):
             if ndc[0] == '0':
               ndc = ndc[1:]
         elif l > ndclen:
-            logging.warning('Bah. ndc code %s at line %d is not massagable into 9 meaningful digits' % (ndc,n))
+            if logging:
+                logging.warning('Bah. ndc code %s at line %d is not massagable into 9 meaningful digits' % (ndc,n))
                         
-        if string.strip(id):
-            try:
-                cl = ConditionNdc.objects.filter(id__exact=id)[0]
-            except:
-                cl = ConditionNdc()
-        else:
-            c = ConditionNdc.objects.filter(CondiRule__ruleName__iexact=rulename,CondiNdc=ndc)
-            if not c:
-                cl = ConditionNdc()
-            else:
-                cl = c[0]
+        cl = ConditionNdc(id=n)
+
         cl.CondiRule=r
         cl.CondiNdc=ndc
         cl.CondiDefine=define
@@ -132,24 +232,16 @@ def load2ndc(table):
 
 
 ################################
-def load2icd9(table):
-#    cursor.execute("delete from esp_conditionicd9")
-#    cursor.execute("alter table esp_conditionicd9 AUTO_INCREMENT=1") # make sure we start id=1 again!
-    lines = getlines(datadir+table+'.txt')
+def load2icd9(table,lines, cursor):
+    cursor.execute("delete from esp_conditionicd9")
+
+    n=0
     for l in lines:
         id, rulename, icd,define,send = [x.strip() for x in l]
         r = Rule.objects.filter(ruleName__iexact=rulename)[0]
-        if string.strip(id):
-            try:
-                cl = ConditionIcd9.objects.filter(id__exact=id)[0]
-            except:
-                cl = ConditionIcd9()
-        else:
-            c = ConditionIcd9.objects.filter(CondiRule__ruleName__iexact=rulename,CondiICD9=icd)
-            if not c:
-                cl = ConditionIcd9()
-            else:
-                cl = c[0]
+        n+=1
+        cl = ConditionIcd9(id=n)
+
         cl.CondiRule=r
         cl.CondiICD9=icd
         cl.CondiDefine=define
@@ -158,28 +250,24 @@ def load2icd9(table):
 
         
 ################################
-def load2loinc(table):
-#    cursor.execute("delete from esp_conditionloinc")
-#    cursor.execute("alter table esp_conditionloinc AUTO_INCREMENT=1") # make sure we start id=1 again!
-    lines = getlines(datadir+table+'.txt')
-    for l in lines:
-        id, rulename, loinc,snmdposi,snmdnega,snmdinde,define,send = [x.strip() for x in l]
+def load2loinc(table,lines,cursor):
+    cursor.execute("delete from esp_conditionloinc")
 
-        r = Rule.objects.filter(ruleName__iexact=rulename)[0]
-        if string.strip(id):
-            try:
-                cl = ConditionLOINC.objects.filter(id__exact=id)[0]
-            except:
-                cl = ConditionLOINC()
-        else:
-            c = ConditionLOINC.objects.filter(CondiRule__ruleName__iexact=rulename,CondiLOINC=loinc)
-            if not c:
-                cl = ConditionLOINC()
-            else:
-                cl = c[0]
+    n=0
+    for l in lines:
+        id, rulename, loinc,ope,value,snmdposi,snmdnega,snmdinde,define,send = [x.strip() for x in l]
+
+        if loinc.strip()=='':
+            continue
         
+        r = Rule.objects.filter(ruleName__iexact=rulename)[0]
+        n+=1
+        cl = ConditionLOINC(id=n)
+
         cl.CondiRule=r
         cl.CondiLOINC=loinc
+        cl.CondiOperator=ope
+        cl.CondiValue=value
         cl.CondiDefine=define
         cl.CondiSend=send
         cl.CondiSNMDPosi=snmdposi
@@ -190,53 +278,48 @@ def load2loinc(table):
 
 
 ################################
-def load2rule(table):
-#    cursor.execute("delete from esp_rule")
-#    cursor.execute("alter table esp_rule AUTO_INCREMENT=1") # make sure we start id=1 again!
-    lines = getlines(datadir+table+'.txt')
-    
-    for items  in lines:
-        id, name,fmt, dest,hl7name,hl7c,hl7ctype,note = (x.strip() for x in items)
-        if not name: continue
-        rl=''
-        if id:
-            rl = Rule.objects.filter(id__exact=id)
-            if rl:
-                rl=rl[0]
+def load2rule(table,lines):
 
-        if not rl:
-            r = Rule.objects.filter(ruleName__iexact=name)
-            if r:   
+    lines.sort()
+    for items  in lines:
+        id, name,initstatus,inprod, fmt, dest,hl7name,hl7c,hl7ctype,note = [x.strip() for x in items]
+        if not name: continue
+
+        r = Rule.objects.filter(ruleName__iexact=name)
+        if r:
+            rl=r[0]
+        elif id:
+            r = Rule.objects.filter(id=id)
+            if r:
                 rl=r[0]
             else:
-                rl = Rule()
-
+                rl = Rule(id=id)
+        else:
+            rl = Rule()
+            
         rl.ruleName = name
+        rl.ruleInitCaseStatus=initstatus
+        rl.ruleinProd = inprod
         rl.ruleMsgFormat = fmt
         rl.ruleMsgDest = dest
         rl.ruleHL7Name = hl7name
         rl.ruleHL7Code = hl7c
         rl.ruleHL7CodeType = hl7ctype
         rl.ruleComments = note
+#        rl.ruleExcludeCode=excludstr
         rl.save()
-        print 'added',name
+        print 'Added Rule - %s, InProduction=%s' % (name,inprod)
+    print 'Total rules: %s ' % len(Rule.objects.all())
         
 ################################
-def  load2config(table):
-#    cursor.execute("delete from esp_config")
-#    cursor.execute("alter table esp_config AUTO_INCREMENT=1") # make sure we start id=1 again!
-    lines = getlines(datadir+table+'.txt')
-    #print lines
-  
+def  load2config(table,lines,cursor):
+    cursor.execute("delete from esp_config", ())
+
+    indx=0
     for items  in lines:
         (id, t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25) = [x.strip() for x in items]
-        if id:
-            try:
-                cf = config.objects.filter(id__exact=id)[0]
-            except:
-                cf = config()
-        else:
-            cf = config()
+        indx+=1
+        cf = config(id=indx)
         
         cf.appName = t1
         cf.FacilityID=t2
@@ -271,7 +354,7 @@ def  load2config(table):
 ###################################
 ###################################
 #################################
-def makecpt():
+def makecpt(cursor):
     """found these at www.tricare.osd.mil/tai/downloads/cpt_codes.xls
     """
     cursor.execute("delete from esp_cpt")
@@ -292,7 +375,7 @@ def makecpt():
 
 
 ###################################
-def makeicd9():
+def makeicd9(cursor):
     """ found these codes somewhere or other..."""
     cursor.execute("delete from esp_icd9")
     cursor.execute("alter table esp_icd9 AUTO_INCREMENT=1") # make sure we start id=1 again!
@@ -311,7 +394,7 @@ def makeicd9():
 
 
 ###################################
-def makendc():
+def makendc(cursor):
     """ found these codes somewhere http://www.fda.gov/cder/ndc/"""
     cursor.execute("delete from esp_ndc")
     cursor.execute("alter table esp_ndc AUTO_INCREMENT=1") # make sure we start id=1 again!
@@ -335,27 +418,44 @@ def makendc():
 ################################
 if __name__ == "__main__":
     startt = datetime.datetime.now()
+    logging = getLogging('preLoader.py_v0.1', debug=0)
+
+    from django.db import connection
+    cursor = connection.cursor()
+
+    
     if len(sys.argv) > 1:
         try:
             table = sys.argv[1]
             if table == 'remake':
-                makendc()
-                makeicd9() 
-                makecpt()
+                makendc(cursor)
+                makeicd9(cursor) 
+                makecpt(cursor)
             elif table == 'esp_conditionndc':
-                load2ndc(table)
+                load2ndc(table,getlines(datadir+table+'.txt'), cursor)
             elif table == 'esp_conditionicd9':
-                load2icd9(table)
+                load2icd9(table,getlines(datadir+table+'.txt'), cursor)
             elif table == 'esp_conditionloinc':
-                load2loinc(table)
+                load2loinc(table,getlines(datadir+table+'.txt'), cursor)
             elif table == 'esp_cptloincmap':
-                load2cptloincmap(table)
+                if 1:
+                    if len(sys.argv)==3 and sys.argv[2]=='CORRECT':
+                        correctcptloincmap(table)
+                    elif len(sys.argv)==2:
+                        load2cptloincmap(table, getlines(datadir+table+'.txt'), cursor)
+                        addNewcptloincmap(cursor)
+                        correctcptloincmap_lx(table,cursor)
+
+                    sendoutemail(towho=['rexua@channing.harvard.edu'],msg='Successfully running preLoader.py for CPTLOINCMap;')
+                #except:
+                #    sendoutemail(towho=['rexua@channing.harvard.edu'],msg='ERROR when running preLoader.py for CPTLOINCMap;')
+                    
             elif table =='esp_config':
-                load2config(table)
+                load2config(table,getlines(datadir+table+'.txt'), cursor)
             elif table == 'esp_rule':
-                load2rule(table)
+                load2rule(table, getlines(datadir+table+'.txt'))
             elif table == 'esp_conditiondrugname':
-                load2DrugNames(table)
+                load2DrugNames(table,getlines(datadir+table+'.txt'), cursor)
             else:
                 msg = 'Unknown table - %s\n' % table
                 logging.info(msg)
@@ -369,18 +469,20 @@ if __name__ == "__main__":
             logging.info(message+'\n')
     else:
         table = 'esp_rule'
-        load2rule(table)  
+        load2rule(table, getlines(datadir+table+'.txt'))  
         table = 'esp_conditionndc'
-        load2ndc(table)
+        load2ndc(table,getlines(datadir+table+'.txt'), cursor)
         table = 'esp_conditionicd9'
-        load2icd9(table)
+        load2icd9(table,getlines(datadir+table+'.txt'), cursor)
         table = 'esp_conditionloinc'
-        load2loinc(table)
+        load2loinc(table,getlines(datadir+table+'.txt'), cursor)
         table = 'esp_cptloincmap'
-        load2cptloincmap(table)
+        load2cptloincmap(table, getlines(datadir+table+'.txt'), cursor)
+        addNewcptloincmap(cursor)
+        correctcptloincmap_lx(table,cursor)
         table = 'esp_config'
-        load2config(table)
+        load2config(table,getlines(datadir+table+'.txt'),cursor)
         table = 'esp_conditiondrugname'
-        load2DrugNames(table)
+        load2DrugNames(table,getlines(datadir+table+'.txt'), cursor)
         
     

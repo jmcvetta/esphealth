@@ -39,8 +39,8 @@
       <td width="25%"> 
 	     <SELECT name="RULE_{{ mapobj.id }}">
         {% for thisr in rules %}
-           {% ifequal mapobj.CondiRule.ruleName thisr.ruleName %} <OPTION value={{thisr.ruleName}} SELECTED> {{thisr.ruleName}}</OPTION> {% endifequal %}
-           {% ifnotequal mapobj.CondiRule.ruleName thisr.ruleName %} <OPTION value={{thisr.ruleName}}> {{thisr.ruleName}}</OPTION> {% endifnotequal %}
+           {% ifequal mapobj.CondiRule.ruleName thisr.ruleName %} <OPTION value="{{thisr.ruleName}}" SELECTED> {{thisr.ruleName}}</OPTION> {% endifequal %}
+           {% ifnotequal mapobj.CondiRule.ruleName thisr.ruleName %} <OPTION value="{{thisr.ruleName}}"> {{thisr.ruleName}}</OPTION> {% endifnotequal %}
          {% endfor %}
          </SELECT>
       </td>
@@ -56,7 +56,7 @@
       <td width="25%">
        <SELECT name="RULE_NEW{{ i }}">
         {% for thisr in rules %}
-           <OPTION value={{thisr.ruleName}}> {{thisr.ruleName}}</OPTION> 
+           <OPTION value="{{thisr.ruleName}}"> {{thisr.ruleName}}</OPTION> 
          {% endfor %}
        </SELECT>
       </td>

@@ -24,7 +24,7 @@
 	    <tr class="{% cycle row2,row1 as rowcolors %}">
                  {% if not request.user or not request.user.is_authenticated %}<td>AnonymousUser</td></tr>
                   <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/login/">ESP Login</a></td></tr>
-                  <tr class="{% cycle rowcolors %}"><td><a href="mailto:esptest&#64;esphealth.org">Request a new account</a></td></tr>
+                  <tr class="{% cycle rowcolors %}"><td><a href="mailto:ross.lazarus&#64;channing.harvard.edu">Request a new account</a></td></tr>
                   {% else %}
                       <td>Current user is {{request.user.get_full_name}}
                         <p><form action="{{SITEROOT}}/logout/" method="post">
@@ -35,14 +35,14 @@
 
              <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/">ESP Home</a></td></tr>
              <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/">ALL Cases</a></td></tr>
-             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/AR///">Cases Awaiting Review</a></td></tr>
-             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/UR///">Cases Under Review</a></td></tr>
-             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/Q///">Cases Queued</a></td></tr> 
-             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/S///">Cases Sent</a></td></tr>
-             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/FP///">Cases: DO NOT send</a></td></tr>
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/1/AR////">Cases Awaiting Review</a></td></tr>
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/1/UR////">Cases Under Review</a></td></tr>
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/1/Q////">Cases Queued</a></td></tr> 
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/1/S////">Cases Sent</a></td></tr>
+             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/1/FP////">Cases: DO NOT send</a></td></tr>
 	     <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/sent/">Case Report Archive</a></td></tr>
 
-              {% if request.user.is_superuser %}
+              {% if request.user.is_staff %}
                    <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/admin/">Administration</a></td></tr> 
                   <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/utilities/">Utilities</a></td></tr>
                {% endif %}

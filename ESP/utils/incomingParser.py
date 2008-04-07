@@ -7,29 +7,49 @@ sys.path.insert(0, '/home/ESP/')
 # for esphealth.org sys.path.insert(0, '/home/ESPNew/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
-import django, datetime
+import django, datetime,time
 from ESP.esp.models import *
 from django.db.models import Q
-from ESP.settings import TOPDIR
-import localconfig 
+from ESP.settings import *
+from django.db import connection
+cursor = connection.cursor()
+
 
 import string,re,copy
 import shutil
 import StringIO
 import traceback
+import smtplib
 
 VERSION = '0.2'
 DO_VALIDATE = 1 # set to zero to avoid the validation step
-REJECT_INVALID = 0 # don't process if any errors - usually are missing provider so ignore
+REJECT_INVALID = 1 # don't process if any errors - usually are missing provider so ignore
 
 
 today=datetime.datetime.now().strftime('%Y%m%d')
 
+DBTIMESTR = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+FILEBASE='epic' ##'epic' or 'test'
+
 ########For logging
-iplogging= localconfig.getLogging('incomingParser.py_%s' % VERSION, debug=0)
+iplogging= getLogging('incomingParser.py_%s' % VERSION, debug=0)
 
 ##store the new CPT code for Chlamydia
-chlamydia =[]
+alertcode =[]
+
+
+###############################
+hasEnc=1
+hasMem=1
+hasProv=1
+hasOrd=1
+hasRes=1
+hasMed=1
+hasImm=1
+hasPrb=0
+hasSoc=0
+hasAll=0
+
 
 ###############################
 def getlines(fname):
@@ -64,7 +84,8 @@ def splitfile(fname=None,delim='^',validate=False):
        
        if not validate:
           ll = r.split(delim) # use original file.next!
-          r = [x.strip() for x in ll]
+          r=[re.sub("'", "''", x.strip()) for x in ll]
+
 
        if n % 1000000 == 0:
            iplogging.info('At line %d in file %s' % (n,fname))
@@ -72,7 +93,21 @@ def splitfile(fname=None,delim='^',validate=False):
        if validate or len(r) > 2: # ignore lines without delimiters if not validation phase
            yield (r, n)
                       
-
+###################################
+def runSql(stmt,values=None):
+    try:
+        if not values:
+            cursor.execute(stmt)
+        else:
+            cursor.execute(stmt,values)
+    except:
+        errmsg = "ERROR: %s; VALUES == %s\n" % (stmt,str(values))
+        iplogging.error(errmsg)
+        #cursor.execute("rollback;")
+       # sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg='SQL loading errors when running incomingParse.py;\n%s' % errmsg)
+        
+    #    sys.exit(1)
+        
 ################################
 def parseProvider(incomdir, filename):
     """
@@ -83,6 +118,7 @@ def parseProvider(incomdir, filename):
     f = splitfile(fname,'^')
     for (items,line) in f:
         if not items or items[0]=='CONTROL TOTALS':
+            filelines = line
             continue
         
         try:
@@ -95,32 +131,42 @@ def parseProvider(incomdir, filename):
         if not lname:
             lname = 'Unknown'
         if phone:
-            phone = string.replace(phone, '-','')
-        #if not phonearea: #fake one
-        #    phonearea='999'
-            
-        prov=Provider.objects.filter(provCode__exact=phy)
-        if prov: #update
-            prov=prov[0]
-        else: #new record
-            prov=Provider(provCode = phy)             
-        prov.provLast_Name=lname
-        prov.provFirst_Name=fname
-        prov.provMiddle_Initial =mname
-        prov.provTitle=title
-        prov.provPrimary_Dept_Id =depid
-        prov.provPrimary_Dept=depname
-        prov.provPrimary_Dept_Address_1=addr1
-        prov.provPrimary_Dept_Address_2=addr2
-        prov.provPrimary_Dept_City=city
-        prov.provPrimary_Dept_State=state
-        prov.provPrimary_Dept_Zip=zip
-        prov.provTelAreacode=phonearea
-        prov.provTel=phone
-        prov.save()
-        provdict[phy] = prov
+            phone = re.sub('\D', '', phone)
 
-    movefile(incomdir, filename)
+        provid = searchId('select id from esp_provider where provCode=%s', (phy,))
+        if provid: ##need update
+            prov_str = """update esp_provider set
+                            provCode=%s,
+                            provLast_Name=%s,
+                            provFirst_Name=%s,
+                            provMiddle_Initial =%s,
+                            provTitle=%s,
+                            provPrimary_Dept_Id=%s,
+                            provPrimary_Dept=%s,
+                            provPrimary_Dept_Address_1=%s,
+                            provPrimary_Dept_Address_2=%s,
+                            provPrimary_Dept_City=%s,
+                            provPrimary_Dept_State=%s,
+                            provPrimary_Dept_Zip=%s,
+                            provTelAreacode=%s,
+                            provTel=%s,
+                            lastUpDate=%s
+                            where id =%s
+                       """
+            values = (phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone, DBTIMESTR, provid)
+            runSql(prov_str,values)
+        elif not provid: #new record
+            prov_str = """insert into esp_provider
+            (provCode,provLast_Name,provFirst_Name,provMiddle_Initial,provTitle, provPrimary_Dept_Id,provPrimary_Dept,provPrimary_Dept_Address_1,provPrimary_Dept_Address_2,provPrimary_Dept_City,provPrimary_Dept_State,provPrimary_Dept_Zip,provTelAreacode,provTel,lastUpDate,createdDate)
+            values (%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s)
+                       """
+            values = (phy,lname,fname,mname,title,depid,depname,addr1,addr2,city,state,zip,phonearea,phone, DBTIMESTR,DBTIMESTR)
+            runSql(prov_str,values)
+            provid = cursor.lastrowid
+
+        provdict[phy]=provid    
+        
+    movefile(incomdir, filename,filelines)
     return provdict
 
 ################################
@@ -131,17 +177,15 @@ def parseDemog(incomdir, filename):
     fname = os.path.join(incomdir,'%s' % filename)
     for (items, linenum) in splitfile(fname,'^'):
         if not items or items[0]=='CONTROL TOTALS':
+            filelines = linenum
             continue                                
         try:
             pid,mrn,lname,fname,mname,addr1,addr2,city,state,zip,cty,phonearea,phone,ext,dob,gender,race,lang,ssn,phy,mari,religion,alias,mom,death  = items #[x.strip() for x in items]            
         except:
             iplogging.error('Parser %s: wrong size - %s at line# %d' % (filename,str(items),linenum)) # 25 needed
             continue
-        pdb = Demog.objects.filter(DemogPatient_Identifier__exact=pid)
-        if not pdb: #new record
-            demog = Demog(DemogPatient_Identifier=pid)
-        else: #update record
-            demog = pdb[0]        
+
+        
         #fake sone
         if not fname:
             fname = 'Unknown'
@@ -150,44 +194,74 @@ def parseDemog(incomdir, filename):
         #if not phonearea: #fake one
         #    phonearea='999'
         if phone:
-            phone = string.replace(phone, '-','')
+            phone = re.sub('\D', '', phone)
+
         if not cty:
             cty='USA'                
-        demog.DemogMedical_Record_Number=mrn
-        demog.DemogLast_Name=lname
-        demog.DemogFirst_Name=fname
-        demog.DemogMiddle_Initial=mname
-        demog.DemogAddress1=addr1
-        demog.DemogAddress2=addr2
-        demog.DemogCity=city
-        demog.DemogState=state
-        demog.DemogZip=zip
-        demog.DemogCountry=cty
-        demog.DemogAreaCode=phonearea
-        demog.DemogTel=phone
-        demog.DemogExt=ext
-        demog.DemogDate_of_Birth=dob
-        demog.DemogGender=gender
-        demog.DemogRace=race
-        demog.DemogHome_Language =lang
-        demog.DemogSSN=ssn
-        demog.DemogMaritalStat=mari
-        demog.DemogReligion =religion
-        demog.DemogAliases=alias
-        demog.DemogMotherMRN=mom
-        demog.DemogDeath_Date=death
+        providerid = searchId('select id from esp_provider where provCode=%s', (phy,))
 
-        prov=Provider.objects.filter(provCode__exact=phy)        
-        if prov:
-            demog.DemogProvider=prov[0]
-        demog.save()
-        demogdict[pid]=demog
+        if not providerid:
+            providerid='NULL'
+
+        demogid = searchId('select id from esp_demog where DemogPatient_Identifier=%s', (pid,))
+        if demogid: #update
+            demog_str= """update esp_demog
+            set DemogPatient_Identifier=%s,
+                DemogMedical_Record_Number=%s,
+                DemogLast_Name=%s,
+                DemogFirst_Name=%s,
+                DemogMiddle_Initial=%s,
+                DemogAddress1=%s,
+                DemogAddress2=%s,
+                DemogCity=%s,
+                DemogState=%s,
+                DemogZip=%s,
+                DemogCountry=%s,
+                DemogAreaCode=%s,
+                DemogTel=%s,
+                DemogExt=%s,
+                DemogDate_of_Birth=%s,
+                DemogGender=%s,
+                DemogRace=%s,
+                DemogHome_Language =%s,
+                DemogSSN=%s,
+                DemogMaritalStat=%s,
+                DemogReligion =%s,
+                DemogAliases=%s,
+                DemogMotherMRN=%s,
+                DemogDeath_Date=%s,
+                DemogProvider_id=%s,
+                lastUpDate=%s
+                where id =%s
+            """
+            values = (pid, mrn,lname,fname,mname,addr1,addr2,city,state,zip,cty,phonearea,phone,ext,dob,gender,race,lang,ssn,mari,religion,alias,mom,death,providerid,DBTIMESTR,demogid)
+            runSql(demog_str,values)
+        else:
+            demog_str= """insert into esp_demog
+             (DemogPatient_Identifier,DemogMedical_Record_Number,DemogLast_Name,DemogFirst_Name,DemogMiddle_Initial,DemogAddress1,DemogAddress2,DemogCity,DemogState,DemogZip,DemogCountry,DemogAreaCode,DemogTel,DemogExt,DemogDate_of_Birth,DemogGender,DemogRace,DemogHome_Language ,DemogSSN,DemogMaritalStat,DemogReligion ,DemogAliases,DemogMotherMRN,DemogDeath_Date,DemogProvider_id,lastUpDate,createdDate)
+                         values (%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s)
+                       """
+            values = (pid, mrn,lname,fname,mname,addr1,addr2,city,state,zip,cty,phonearea,phone,ext,dob,gender,race,lang,ssn,mari,religion,alias,mom,death,providerid,DBTIMESTR,DBTIMESTR)
+            runSql(demog_str,values)
+            demogid = cursor.lastrowid
+#        demogid = updateDB('esp_demog',demog_str,values, demogid)
+        
+        demogdict[pid]=demogid
         
 
-    movefile(incomdir, filename)
+    movefile(incomdir, filename,filelines)
     return demogdict
 
-
+###################################
+def searchId(stmt, values ):
+#    stmt = """select id from %s where %s """ % (table, whereclause)
+    runSql(stmt,values)
+    res = cursor.fetchall()
+    if res:
+        return res[0][0]
+    else:
+        return None
+                    
 ###################################
 ###################################
 def convertWgHg(wghg,unit,factor,factor2):
@@ -212,7 +286,10 @@ def convertWgHg(wghg,unit,factor,factor2):
     #if '%.2f' % weight=='0.00':
     #    print w
     return '%.2f' % new_wghg
-                                                                                
+
+
+
+################################
 ################################
 def parseEnc(incomdir, filename,demogdict,provdict):
     """
@@ -221,85 +298,140 @@ def parseEnc(incomdir, filename,demogdict,provdict):
     for (items, linenum) in splitfile(fname,'^'):
 
         if not items or items[0]=='CONTROL TOTALS':
+            filelines = linenum
             continue
         try:
             pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,weight,height,bpsys,bpdias,o2stat,peakflow,icd9  = items #[x.strip() for x in items]
         except:
             iplogging.error('Parser %s: wrong size - %s' % (filename,str(items)))
             continue
-            
+
+        if edc:
+            pregstatus='Y'
+        else:
+            pregstatus=''
+                        
         try:    
-            patient = demogdict[pid]    
+            demogid = demogdict[pid]    
         except:
             iplogging.warning('Parser In ENC: NO patient found: %s\n' % str(items))
             continue
-            
-        encdb = Enc.objects.filter(EncPatient__DemogPatient_Identifier__exact=pid,EncEncounter_ID__exact=encid)
-        if not encdb: #new record
-            enc = Enc(EncPatient=patient,EncEncounter_ID=encid)
-        else: #update record
-            enc = encdb[0]                   
-        enc.EncMedical_Record_Number=mrn
-        enc.EncEncounter_Date=encd  
-        enc.EncEncounter_Status=close
-        enc.EncEncounter_ClosedDate=closed
-        enc.EncEncounter_Site =deptid
-        enc.EncEncounter_SiteName=dept
-        enc.EncEvent_Type=enctp           
-        enc.EncEDC=edc
-        if edc:
-            enc.EncPregnancy_Status='Y'
-        enc.EncTemperature=temp
-        enc.EncCPT_codes=cpt
-        enc.EncICD9_Codes=icd9
+
         if weight:
             try:
-                enc.EncWeight= '%s kg' % convertWgHg(weight,'LBS',16,0.02835)
+                weight= '%s kg' % convertWgHg(weight,'LBS',16,0.02835)
             except:
-                enc.EncWeight= weight
                 iplogging.error('Parser %s: Convert weight : %s for Patient %s' % (filename,weight,mrn))
         if height:
             try:
-                enc.EncHeight= convertWgHg(height,'\'',12,2.54)
+                height= convertWgHg(height,'\'',12,2.54)
             except:
-                enc.EncHeight= height
                 iplogging.error('Parser %s: Convert height : %s for Patient %s' % (filename,height,mrn))
             
-        enc.EncBPSys=bpsys
-        enc.EncBPDias=bpdias
         if o2stat:
             try:
-                enc.EncO2stat=int(o2stat)
+                o2stat=int(o2stat)
             except:
-                enc.EncO2stat=o2stat
                 iplogging.error('Parser %s: NonInt O2stat: %s for Patient %s' % (filename,o2stat,mrn))
 
         if peakflow:
             try:
-                enc.EncPeakFlow =int(peakflow)
+                peakflow =int(peakflow)
             except:
-                enc.EncPeakFlow =peakflow
                 iplogging.error('Parser %s: NonInt PeakFlow: %s for Patient %s' % (filename,peakflow,mrn))
-
             
         try:
-            prov =provdict[phy]
-            enc.EncEncounter_Provider=prov
+            provid =provdict[phy]
         except:
-            pass
+            provid = 'NULL'
+
+        espencid = searchId('select id from esp_enc where EncPatient_id=%s and EncEncounter_ID=%s', (demogid, encid))
+        if espencid: #Update
+            enc_str = """update esp_enc set
+            EncEncounter_ID=%s,
+            EncPatient_id=%s,
+            EncMedical_Record_Number=%s,
+            EncEncounter_Date=%s,
+            EncEncounter_Status=%s,
+            EncEncounter_ClosedDate=%s,
+            EncEncounter_Site =%s,
+            EncEncounter_SiteName=%s,
+            EncEvent_Type=%s,
+            EncTemperature=%s,
+            EncCPT_codes=%s,
+            EncICD9_Codes=%s,
+            EncWeight=%s,
+            EncHeight=%s,
+            EncBPSys=%s,
+            EncBPDias=%s,
+            EncO2stat=%s,
+            EncPeakFlow=%s,
+            EncEncounter_Provider_id=%s
+            """
+            if edc: ##if need upate existing record and new edc is null, then do not update the old edc
+                 enc_str = enc_str + """,
+                                     EncEDC=%s,
+                                     EncPregnancy_Status=%s,
+                                     lastUpDate=%s
+                                     where id =%s
+                                     """
+                 values = (encid,demogid,mrn,encd,close,closed,deptid,dept,enctp,temp,cpt,icd9,weight,height,bpsys,bpdias,o2stat,peakflow,provid,edc, pregstatus, DBTIMESTR,espencid)
+            elif not edc:
+                enc_str = enc_str + """,
+                lastUpDate=%s
+                where id =%s
+                """
+                values = (encid,demogid,mrn,encd,close,closed,deptid,dept,enctp,temp,cpt,icd9,weight,height,bpsys,bpdias,o2stat,peakflow,provid,DBTIMESTR,espencid)
+
+        else: #new
+            enc_str = """insert into esp_enc
+            (EncEncounter_ID,EncPatient_id,EncMedical_Record_Number,EncEncounter_Date,EncEncounter_Status,EncEncounter_ClosedDate,EncEncounter_Site,EncEncounter_SiteName,EncEvent_Type,EncTemperature,EncCPT_codes,EncICD9_Codes,EncWeight,EncHeight,EncBPSys,EncBPDias,EncO2stat,EncPeakFlow,EncEncounter_Provider_id,EncEDC,EncPregnancy_Status,lastUpDate,createdDate)
+            values (%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s)
+            """
+            values = (encid,demogid,mrn,encd,close,closed,deptid,dept,enctp,temp,cpt,icd9,weight,height,bpsys,bpdias,o2stat,peakflow,provid,edc, pregstatus,DBTIMESTR,DBTIMESTR)
+
+        runSql(enc_str,values)
+                        
 
 
-        enc.save()
+#        espencid = updateDB('esp_enc',enc_str,values, espencid)
 
-    movefile(incomdir, filename)    
+    movefile(incomdir, filename,filelines)    
 
 
+###################################
+###################################
+def updateDB(table,setclause,values, id):
+    if not id: ##new record
+        if USESQLITE==1:
+            stmt ="""insert into %s set %s,  lastUpDate=datetime('now'), createdDate=datetime('now')""" % (table,setclause)
+        else:
+            stmt ="""insert into %s set %s,  lastUpDate=sysdate(), createdDate=sysdate()""" % (table,setclause)
+        runSql(stmt,values)
+        id = cursor.lastrowid
+    else: #update
+        if USESQLITE==1:
+            stmt ="""update %s set %s,lastUpDate=datetime('now') """ % (table,setclause)
+        else:
+            stmt ="""update %s set %s,lastUpDate=sysdate() """ % (table,setclause)
+        stmt = stmt + "where id =%s"
+        runSql(stmt,values+(id,))
+
+    if USESQLITE!=1:
+        cursor.execute("commit;")
+    
+    return id
+
+
+                                                        
+################################
 ################################
 def parseLxOrd(incomdir,filename,demogdict, provdict):
     
     fname = os.path.join(incomdir,'%s' % filename)
     for (items, linenum) in splitfile(fname,'^'):
         if not items or items[0]=='CONTROL TOTALS':
+            filelines = linenum
             continue
 
         try:
@@ -311,9 +443,11 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
             
         try:
             if demogdict:
-                patient = demogdict[pid]
+                demogid = demogdict[pid]
             else:
-                patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
+                demogid = searchId('select id from esp_demog where DemogPatient_Identifier=%s', (pid,))
+                
+                #demogid = searchId('esp_demog',"DemogPatient_Identifier='%s'" % pid) 
         except:
             iplogging.warning('Parser In LXORD: NO patient found: %s\n' % str(items))
             continue
@@ -321,33 +455,53 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
         
         #always create a new record, since no good way to identify unique tuple
         if not string.strip(orderid): orderid = today  ##since when passing HL7 msg, this is required
-        
-        lx = Lx(LxPatient=patient,LxOrder_Id_Num=orderid)
-        lx.LxMedical_Record_Number =mrn
-        lx.LxTest_Code_CPT=cpt
-        lx.LxTest_Code_CPT_mod =modi
-        lx.LxHVMA_Internal_Accession_number=accessnum
-        lx.LxOrderDate=orderd
-        lx.LxOrderType=ordertp
 
-        
         #get loinc
         c = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt='')
         if c:
-            lx.LxLoinc=(c[0].Loinc).strip()
-
+            lxloinc = (c[0].Loinc).strip()
+        else:
+            lxloinc=''
+            
         try:
             if provdict:
-                prov=provdict[phy]
+                provid=provdict[phy]
             else:
-                prov=Provider.objects.filter(provCode__exact=phy)[0]
-            lx.LxOrdering_Provider=prov
+                provid = searchId('select id from esp_provider where provCode=%s', (phy,))
+                
+                #provid= searchId('esp_provider',"provCode__exact='%s'" % phy)
+
         except:
-            pass
+            provid = 'NULL'
+
+
+        lxid = searchId('select id from esp_lx where LxPatient_id=%s and LxMedical_Record_Number=%s and LxOrder_Id_Num=%s and LxHVMA_Internal_Accession_number=%s and LxTest_Code_CPT=%s and LxOrderDate=%s and LxOrderType=%s', (demogid,mrn,orderid,accessnum,cpt,orderd,ordertp))
+        if lxid: #update
+            lx_str = """update esp_lx set
+             LxPatient_id=%s,
+             LxMedical_Record_Number =%s,
+             LxTest_Code_CPT=%s,
+             LxTest_Code_CPT_mod =%s,
+             LxHVMA_Internal_Accession_number=%s,
+             LxOrderDate=%s,
+             LxOrderType=%s,
+             LxOrder_Id_Num=%s,
+             LxLoinc=%s,
+             LxOrdering_Provider_id=%s,
+             lastUpDate=%s
+             where id =%s
+             """
+            values = (demogid,mrn,cpt,modi,accessnum,orderd,ordertp,orderid,lxloinc,provid,DBTIMESTR,lxid)
+        else:  #new
+            lx_str = """insert into esp_lx
+            (LxPatient_id,LxMedical_Record_Number,LxTest_Code_CPT,LxTest_Code_CPT_mod,LxHVMA_Internal_Accession_number,LxOrderDate,LxOrderType,LxOrder_Id_Num,LxLoinc,LxOrdering_Provider_id,lastUpDate,createdDate)
+             values (%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s)
+            """
+            values = (demogid,mrn,cpt,modi,accessnum,orderd,ordertp,orderid,lxloinc,provid,DBTIMESTR,DBTIMESTR)
+
+        runSql(lx_str,values)
                 
-        lx.save()
-                
-    movefile(incomdir, filename)
+    movefile(incomdir, filename,filelines)
                                                                                                                                                                                                                                                                                                                                             
                 
            
@@ -355,9 +509,21 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
 def parseLxRes(incomdir,filename,demogdict, provdict):
     """
     """
+    ##get all exclude code list
+    exclude_l=[]
+    rules = Rule.objects.all()
+    for i in rules:
+        if i.ruleExcludeCode:
+            exclist=eval(i.ruleExcludeCode)
+            exclude_l=exclude_l+exclist
+    excdict = dict(map(lambda x:((x[0],x[1]), 1), exclude_l))
+
+        
     fname = os.path.join(incomdir,'%s' % filename)
     for (items, linenum) in splitfile(fname,'^'):
+
         if not items or items[0]=='CONTROL TOTALS':
+            filelines = linenum
             continue
         try:
             pid,mrn,orderid,orderd,resd,phy,ordertp,cpt,comp,compname,res,normalf,refl,refh,refu,status,note,accessnum,impre  = items #[x.strip() for x in items]
@@ -369,73 +535,113 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
                 iplogging.error('Parser %s: wrong size - %s' % (filename,str(items)))
                 continue
 
-        ##This is to double check if ESP identifies all cases
-        #if compname.upper().find('CHLAMYDIA')!=-1 or note.upper().find('CHLAMYDIA')!=-1:
-        #    iplogging.info("CHLAMYDIA LX: %s\n"  % str(items))
-            
         try:
             if demogdict:
-                patient = demogdict[pid]
+                demogid = demogdict[pid]
             else:
-                patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
+                demogid = searchId('select id from esp_demog where DemogPatient_Identifier=%s', (pid,))
+#                demogid = searchId('esp_demog',"DemogPatient_Identifier='%s'" % pid)
         except:
             iplogging.warning('Parser In LXRES: NO patient found: %s\n' % str(items))
             continue
-            
-          
-        #always create a new record, since no good way to identify unique tuple
 
         if not string.strip(orderid):
             orderid = today  ##since when passing HL7 msg, this is required
         if not string.strip(resd):
             resd =today
-
-        lx = Lx(LxPatient=patient,LxOrder_Id_Num=orderid)
-
-        lx.LxMedical_Record_Number =mrn
-        lx.LxTest_Code_CPT=cpt
-        lx.LxHVMA_Internal_Accession_number=accessnum
-        lx.LxOrderDate=orderd
-        lx.LxOrderType=ordertp     
-        lx.LxDate_of_result=resd
-        lx.LxComponent=comp
-        lx.LxComponentName=compname
-        lx.LxTest_results=res
-        lx.LxNormalAbnormal_Flag=normalf
-        lx.LxReference_Low=refl
-        lx.LxReference_High=refh
+                                        
 
         if not refu:
             refu = 'N/A'          
-
-        lx.LxReference_Unit=refu
-        lx.LxTest_status=status
-        lx.LxComment=note
-        lx.LxImpression=impre
-
+            
         #get loinc
         c = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt=comp)
+        lxloinc=''
         if c:
-            lx.LxLoinc=(c[0].Loinc).strip()
+            lxloinc=(c[0].Loinc).strip()
         elif compname:
-            if compname.upper().find('CHLAMYDIA')!=-1 and (cpt,comp) not in chlamydia: ##log new CPT code which is not in esp_cptloincmap
-                chlamydia.append((cpt,comp))
-                
+            if codeSearch(compname)  and not excdict.has_key(('%s' % cpt,'%s' % comp)) and (cpt,comp,compname.upper()) not in alertcode: ##log new CPT code which is not in esp_cptloincmap
+                alertcode.append((cpt,comp,compname.upper()))
+
+        ##if need to insert into labcomponent table
+        if compname:
+            newLabcompoent(compname, cpt, comp)
 
         try:
             if provdict:
-                prov=provdict[phy]
+                provid=provdict[phy]
             else:
-                prov=Provider.objects.filter(provCode__exact=phy)[0]
-            lx.LxOrdering_Provider=prov
+                provid = searchId('select id from esp_provider where provCode=%s', (phy,))
+                
+                #provid= searchId('esp_provider',"provCode__exact='%s'" % phy)
+
         except:
-            pass
+            provid = 'NULL'
+
+        lxid = searchId('select id from esp_lx where LxPatient_id=%s and LxMedical_Record_Number=%s and LxOrder_Id_Num=%s and LxHVMA_Internal_Accession_number=%s and LxTest_Code_CPT=%s and LxComponent=%s and LxComponentName=%s and LxTest_results=%s and LxOrderDate=%s and LxOrderType=%s and LxDate_of_result=%s', (demogid,mrn,orderid,accessnum,cpt,comp,compname,res,orderd,ordertp,resd))
+        if lxid: #update
+            lx_str = """update esp_lx set
+             LxPatient_id=%s,
+             LxOrder_Id_Num=%s,
+             LxMedical_Record_Number =%s,
+             LxTest_Code_CPT=%s,
+             LxHVMA_Internal_Accession_number=%s,
+             LxOrderDate=%s,
+             LxOrderType=%s,
+             LxDate_of_result=%s,
+             LxComponent=%s,
+             LxComponentName=%s,
+             LxTest_results=%s,
+             LxNormalAbnormal_Flag=%s,
+             LxReference_Low=%s,
+             LxReference_High=%s,
+             LxReference_Unit=%s,
+             LxTest_status=%s,
+             LxComment=%s,
+             LxImpression=%s,
+             LxLoinc=%s,
+             LxOrdering_Provider_id=%s,
+             lastUpDate=%s
+             where id =%s
+             """
+            values=(demogid,orderid,mrn,cpt,accessnum,orderd,ordertp,resd,comp,compname,res,normalf,refl,refh,refu,status,note,impre,lxloinc,provid, DBTIMESTR,lxid)
+        else: #new
+            lx_str = """insert into esp_lx
+            (LxPatient_id,LxOrder_Id_Num,LxMedical_Record_Number,LxTest_Code_CPT,LxHVMA_Internal_Accession_number,LxOrderDate,LxOrderType,LxDate_of_result,LxComponent,LxComponentName,LxTest_results,LxNormalAbnormal_Flag,LxReference_Low,LxReference_High,LxReference_Unit,LxTest_status,LxComment,LxImpression,LxLoinc,LxOrdering_Provider_id,lastUpDate,createdDate)
+            values (%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s)
+            """
+            values=(demogid,orderid,mrn,cpt,accessnum,orderd,ordertp,resd,comp,compname,res,normalf,refl,refh,refu,status, note,impre,lxloinc,provid, DBTIMESTR,DBTIMESTR)
         
-        lx.save()
+        runSql(lx_str,values)
+        #lxid = updateDB('esp_lx',lx_str,values,lxid)
 
-    movefile(incomdir, filename)   
+                 
+
+    movefile(incomdir, filename,filelines)   
 
 
+###################################
+def newLabcompoent(compname, cpt, comp):
+    labc = LabComponent.objects.filter(componentName__iexact=compname, CPT__iexact=cpt,CPTCompt__iexact=comp)
+    if not labc: ##need insert
+        labc = LabComponent(componentName=string.upper(compname))
+        labc.CPT=cpt
+        labc.CPTCompt = comp
+        labc.save()
+
+                                                                                    
+###################################
+def codeSearch(compname):
+                    
+    searchstr = ['CHLAM','TRACH', 'GC','GON','HEP','HBV','ALT','SGPT','AST','SGOT','AMINOTRANS','BILI', 'HAV','HCV','RIBA']
+    notsearch = ['CAST', 'FASTING','YEAST','URINE','URO']
+    for i in searchstr:
+        if compname.upper().find(i)!=-1:
+            for n in notsearch:
+                if compname.upper().find(n)!=-1:
+                    return 0
+            return 1
+    return 0
            
 ################################
 def parseRx(incomdir,filename,demogdict,provdict):
@@ -443,6 +649,7 @@ def parseRx(incomdir,filename,demogdict,provdict):
     fname = os.path.join(incomdir,'%s' % filename)
     for (items, linenum) in splitfile(fname,'^'):
         if not items or items[0]=='CONTROL TOTALS':
+            filelines = linenum
             continue                                
         try:
             if len(items) == 13:
@@ -456,47 +663,58 @@ def parseRx(incomdir,filename,demogdict,provdict):
                          
            
         try:
-            patient=demogdict[pid]
-            #patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
+            demogid = demogdict[pid]
         except:
             iplogging.warning('Parser In RX: NO patient found: %s\n' % str(items))
             continue
 
-                      
-        rxdb =Rx.objects.filter(RxOrder_Id_Num__exact=orderid,RxPatient__DemogPatient_Identifier__exact=pid)
         if not string.strip(orderid): orderid = today  ##since when passing HL7 msg, this is required
-        if not rxdb: #new record
-            rx = Rx(RxPatient=patient,RxOrder_Id_Num=orderid)
-        else: #update record
-            rx = rxdb[0]
-               
-        rx.RxMedical_Record_Number=mrn
-        rx.RxOrderDate=orderd
-        rx.RxStatus=status
-        rx.RxDrugDesc=meddesc
-        rx.RxDrugName=med
-        rx.RxNational_Drug_Code=ndc
-        #if not qua: #dose
-        #    qua='NA'
-        rx.RxQuantity=qua
-        rx.RxRefills=ref
-        if not route: route='N/A'
-        rx.RxRoute=route
-        rx.RxDose = 'N/A'
-        rx.RxFrequency='N/A'
-        rx.RxStartDate=sdate
-        rx.RxEndDate=edate
 
-        #prov=Provider.objects.filter(provCode__exact=phy)
-        #if prov:
         try:
-            prov=provdict[phy]
-            rx.RxProvider=prov
+            if provdict:
+                provid=provdict[phy]
+            else:
+                provid = searchId('select id from esp_provider where provCode=%s', (phy,))
+                
+#                provid= searchId('esp_provider',"provCode__exact='%s'" % phy)
         except:
-            pass
+            provid = 'NULL'
+                                                                    
+        if not route: route='N/A'       
 
-        rx.save()
-    movefile(incomdir, filename)   
+        rxid = searchId('select id from esp_rx where RxPatient_id=%s and RxOrder_Id_Num=%s', (demogid, orderid))
+        if rxid: ##update
+            rx_str=""" update esp_rx set
+             RxPatient_id=%s,
+             RxOrder_Id_Num=%s,
+             RxMedical_Record_Number=%s,
+             RxOrderDate=%s,
+             RxStatus=%s,
+             RxDrugDesc=%s,
+             RxDrugName=%s,
+             RxNational_Drug_Code=%s,
+             RxQuantity=%s,
+             RxRefills=%s,
+             RxRoute=%s,
+             RxDose = 'N/A',
+             RxFrequency='N/A',
+             RxStartDate=%s,
+             RxEndDate=%s,
+             RxProvider_id=%s,
+             lastUpDate=%s
+             where id =%s
+             """
+            values = (demogid, orderid,mrn,orderd,status,meddesc,med,ndc,qua,ref,route,sdate,edate,provid,DBTIMESTR,rxid)
+        else: #new
+            rx_str=""" insert into esp_rx
+             (RxPatient_id,RxOrder_Id_Num,RxMedical_Record_Number,RxOrderDate,RxStatus,RxDrugDesc,RxDrugName,RxNational_Drug_Code,RxQuantity,RxRefills,RxRoute,RxDose,RxFrequency,RxStartDate,RxEndDate,RxProvider_id,lastUpDate,createdDate)
+             values (%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s)
+            """
+            values = (demogid, orderid,mrn,orderd,status,meddesc,med,ndc,qua,ref,route,'N/A','N/A',sdate,edate,provid,DBTIMESTR,DBTIMESTR)
+        runSql(rx_str,values)
+
+#        rxid = updateDB('esp_rx',rx_str,values,rxid)
+    movefile(incomdir, filename,filelines)   
 
 
 ################################
@@ -506,6 +724,7 @@ def parseImm(incomdir, filename,demogdict):
     for (items, linenum) in splitfile(fname,'^'):
 
         if not items or items[0]=='CONTROL TOTALS':
+            filelines = linenum
             continue
         try:
             pid, immtp, immname,immd,immdose,manf,lot,recid  = items #[x.strip() for x in items]
@@ -514,61 +733,171 @@ def parseImm(incomdir, filename,demogdict):
             continue
                                     
         try:
-            if demogdict:
-                patient = demogdict[pid]
-            else:
-                patient = Demog.objects.filter(DemogPatient_Identifier__exact=pid)[0]
+            demogid = demogdict[pid]
         except:
-            iplogging.warning('Parser In IMM: NO patient found: %s\n' % str(items))
+            iplogging.warning('Parser In Imm: NO patient found: %s\n' % str(items))
             continue
 
-        imm = Immunization.objects.filter(ImmPatient__DemogPatient_Identifier__exact=pid,ImmRecId=recid)
-        if not imm:
-            imm = Immunization(ImmPatient=patient,ImmRecId=recid)
-        else:
-            imm = imm[0]
-        imm.ImmType=immtp
-        imm.ImmName =immname
-        imm.ImmDate =immd
-        imm.ImmDose=immdose
-        imm.ImmManuf=manf
-        imm.ImmLot=lot
-       # imm.ImmVisDate=vdate
-        try:
-            imm.save()
-        except:
-            iplogging.error('Parser In IMM: error when save: %s\n' % (str(items)))
 
-    movefile(incomdir, filename)   
-    
+        immid = searchId('select id from esp_immunization where ImmPatient_id=%s and ImmRecId=%s', (demogid, recid))
+        if immid:  #update
+            imm_str = """ update  esp_immunization set
+            ImmPatient_id=%s,
+            ImmRecId=%s,
+            ImmType=%s,
+            ImmName =%s,
+            ImmDate =%s,
+            ImmDose=%s,
+            ImmManuf=%s,
+            ImmLot=%s,
+            lastUpDate=%s
+            where id =%s
+            """
+            values = (demogid, recid,immtp,immname,immd,immdose,manf,lot,DBTIMESTR,immid)
+        else: #new
+            imm_str = """insert into esp_immunization
+            (ImmPatient_id,ImmRecId,ImmType,ImmName,ImmDate,ImmDose,ImmManuf,ImmLot,lastUpDate,createdDate)
+            values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """
+            values = (demogid, recid,immtp,immname,immd,immdose,manf,lot,DBTIMESTR,DBTIMESTR)
+
+        runSql(imm_str,values)
+#        try:
+#            immid = searchId('select id from esp_immunization where ImmPatient_id=%s and ImmRecId=%s', (demogid, recid))
+#            immid = updateDB('esp_immunization',imm_str,values,immid)
+#        except:
+#            iplogging.error('Parser In IMM: error when save: %s\n' % (str(items)))
+
+    movefile(incomdir, filename,filelines)   
+
+###################################
+def parseSoc(incomdir, filename,demogdict):
+
+    fname = os.path.join(incomdir,'%s' % filename)
+    for (items, linenum) in splitfile(fname,'^'):
+        
+        if not items or items[0]=='CONTROL TOTALS':
+            filelines = linenum
+            continue
+        try:
+            pid, mrn,smoke,drink  = items #[x.strip() for x in items]
+        except:
+            iplogging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            continue
+
+        try:
+            demogid = demogdict[pid]
+        except:
+            iplogging.warning('Parser In SocialHistory: NO patient found: %s\n' % str(items))
+            continue
+
+
+        ##always new record
+        soc_str = """insert into esp_socialhistory
+                  (SocPatient_id, SocMRN, SocTobUse,SocAlcoUse,lastUpDate,createdDate)
+                  values (%s,%s,%s,%s,%s,%s)
+        """
+        values = (demogid, mrn,smoke,drink,DBTIMESTR,DBTIMESTR)
+
+        runSql(soc_str,values)
+                
+        
+###################################
+def parsePrb(incomdir, filename,demogdict):
+
+    fname = os.path.join(incomdir,'%s' % filename)
+    for (items, linenum) in splitfile(fname,'^'):
+        
+        if not items or items[0]=='CONTROL TOTALS':
+            filelines = linenum
+            continue
+        try:
+            pid, mrn,probid, datenoted,icd9, status, note  = items #[x.strip() for x in items]
+        except:
+            iplogging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            continue
+        
+        try:
+            demogid = demogdict[pid]
+        except:
+            iplogging.warning('Parser In ProblemList: NO patient found: %s\n' % str(items))
+            continue
+        
+        ##always new record
+        prb_str = """insert into esp_problems
+        (PrbPatient_id, PrbMRN, PrbID,PrbDateNoted,PrbICD9Code,PrbStatus,PrbNote,lastUpDate,createdDate)
+        values (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """
+        values = (demogid, mrn,probid, datenoted,icd9, status, note,DBTIMESTR,DBTIMESTR)
+        runSql(prb_str,values)
+                                
+
+###################################
+def parseAll(incomdir, filename,demogdict):
+
+    fname = os.path.join(incomdir,'%s' % filename)
+    for (items, linenum) in splitfile(fname,'^'):
+        
+        if not items or items[0]=='CONTROL TOTALS':
+            filelines = linenum
+            continue
+        try:
+            pid, mrn,probid, datenoted,allgid, allgname,status, desc,dateentered  = items #[x.strip() for x in items]
+        except:
+            iplogging.error('Parser %s: wrong size - %s' % (filename,str(items)))
+            continue
+
+        try:
+            demogid = demogdict[pid]
+        except:
+            iplogging.warning('Parser In Allergies: NO patient found: %s\n' % str(items))
+            continue
+
+        ##always new record
+        all_str = """insert into esp_allergies
+        (AllPatient_id, AllMRN, AllPrbID,AllDateNoted,AllCode,AllName,AllStatus,AllDesc,AllDateEntered,lastUpDate,createdDate)
+        values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """
+        values = (demogid, mrn,probid, datenoted,allgid, allgname,status, desc,dateentered,DBTIMESTR,DBTIMESTR)
+        runSql(all_str,values)
+
+                                                                                                                                                    
+                                                                                                                    
 ################################
-def movefile(incomdir, f):
+def movefile(incomdir, f, linenum):
     """file name format shoUld be ***.esp.MMDDYY
     YYYYMMDD_prov.txt
     """
     ##save the filename in DB
     dataf = DataFile()
     dataf.filename=f
+    dataf.numrecords = linenum-1
     dataf.save()
     
     ##move file to processed directory
-    mmddyy = f[-6:]
-    year = '20'+mmddyy[-2:]
+    mmddyy =f[f.find('esp.')+4:]
+    if len(mmddyy)==6:
+        year = '20'+mmddyy[-2:]
+    elif mmddyy.find('_')!= -1: #monthly or weekly update
+        year = mmddyy[-6:-2]
+    else:
+        year = mmddyy[-4:]
+        
     mon = mmddyy[:2]
 
-    curdir = os.path.join(TOPDIR,localconfig.LOCALSITE, 'processedData/%s/' % year)
+    curdir = os.path.join(TOPDIR,LOCALSITE, 'processedData/%s/' % year)
     if not os.path.isdir(curdir):
-        os.mkdir(curdir)
+        os.makedirs(curdir)
 
     subdir = os.path.join(curdir, 'MONTH_%s/' % mon)
     if not os.path.isdir(subdir):
-        os.mkdir(subdir)
+        os.makedirs(subdir)
 
-    try:
-        iplogging.info('Moving file %s from %s to %s\n' % (f, incomdir, subdir))
-        shutil.move(incomdir+'/%s' % f, subdir)
-    except:
-        iplogging.warning('Parser No this file: %s' % f)
+    #try:
+    iplogging.info('Moving file %s from %s to %s\n' % (f, incomdir, subdir))
+    shutil.move(incomdir+'/%s' % f, subdir)
+    #except:
+    #    iplogging.warning('Parser No this file: %s' % f)
 
 
 ################################
@@ -576,16 +905,28 @@ def getfilesByDay(incomdir):
     files=os.listdir(incomdir)
     files.sort()
     dayfiles={}
+    returndays=[]
+    ##filename shoule be: epic***.esp.MMDDYY or epic***.esp.MMDDYYYY
     for f in files:
-        if dayfiles.has_key(f[-6:]):
-            dayfiles[f[-6:]].append(f)
-        else:
-            dayfiles[f[-6:]] = [f]
+        if f.lower().find('test')!=-1 and FILEBASE!='test': ##test file
+            iplogging.info('Ignoring test file %s' % f)
+            continue
             
-    days = dayfiles.keys()
-    days.sort()
-    
-    return days
+        mmddyy =f[f.find('esp.')+4:]
+        if len(mmddyy)==6: ##DDMMYY
+            newdate='20'+mmddyy[-2:]+mmddyy[:4]
+        elif mmddyy.find('_')!= -1: #monthly or weekly update, formart is epic***.esp.MMDDYYYY_m or epic***.esp.MMDDYYYY_w
+            newdate=mmddyy[-6:-2]+mmddyy[:4]
+        else:
+            newdate=mmddyy[-4:]+mmddyy[:4]
+
+            
+        if (newdate,mmddyy) not in returndays:
+            returndays.append((newdate,mmddyy))
+
+    returndays.sort(key=lambda x:x[0])
+    return returndays
+
 
 ################################
 def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],required=[],returnids=[],checkids=[]):
@@ -594,11 +935,16 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
     errors=0
     fname = os.path.join(incomdir,'%s' % fname)
     if not os.path.exists(fname):
-        iplogging.error('Validator - Can not read file:%s\n' % (fname))
-        return (errors, returnd)
+        iplogging.error('Validator - Non-exsiting file:%s\n' % (fname))
+        return (1, returnd)
 
+    hascontrolline=0
     for (l, linenum) in splitfile(fname,'^',True):
         l = l.strip()
+
+        if l.find('CONTROL TOTALS')>-1:
+            hascontrolline=1
+                            
         if not l or l.find('CONTROL TOTALS')>-1:
             continue
         
@@ -609,6 +955,7 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
             msg ='Validator - %s: wrong number of delimiter, should be %s, in file=%s\n=========LINE%s: %s\n' % (fname,delimiternum,fnum,linenum,l)
             errors = 1
             iplogging.error(msg)
+
             
         items = l.split('^')
         if items == ['']* (int(delimiternum)+1):
@@ -616,7 +963,7 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
         
         #check required fileds
         for r in required:
-            if not string.strip(items[r]):
+            if len(items)>= r+1 and not string.strip(items[r]):
                 col = r+1
                 msg = 'Validator - %s, LINE%s: Empty for Required filed in column %s\n' % (fname,linenum, col )
                 errors = 1
@@ -638,7 +985,8 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
                 if not checkids[1].has_key(curproviderId): #checkids[1]={ProviderID:None, ProviderID:None...}
                    msg = """Validator - %s: LINE%s-Provider =%s= not in provider file\n""" % (fname, linenum, items[needidcolumn[1]])
                    iplogging.error(msg)
-                   errors=1
+                   if items[needidcolumn[1]]: ###ignore missing provider
+                       errors=1
             except:
                    msg = """Validator - %s: LINE%s- not enough fields to check Provider\n""" % (fname, linenum)
                    iplogging.error(msg)
@@ -660,6 +1008,13 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
                 errors = 1
                 iplogging.error(msg)
 
+
+    if not hascontrolline:
+        msg = 'Validator - %s: There is no control line\n'
+        errors = 1
+        iplogging.error(msg)
+                                        
+
     return  (errors,returnd)                                                                                                                                                                                                                                                                                                                                                      
 
 
@@ -669,56 +1024,92 @@ def validateOneday(incomdir, oneday):
     """
 
     finalerr=0
+    pids={}
     #patient
-    demogf = 'epicmem.esp.'+oneday
-    iplogging.info('Validator - Process %s' % demogf)
-    (err,tempd) = validateOnefile(incomdir,demogf,24,[0],datecolumn=[14],required=[0,1],returnids=[0])
-    pids = tempd
-    if err:
-        finalerr = 1
+    if hasMem:
+        demogf = FILEBASE+'mem.esp.'+oneday
+        iplogging.info('Validator - Process %s' % demogf)
+        (err,tempd) = validateOnefile(incomdir,demogf,24,[0],datecolumn=[14],required=[0,1],returnids=[0])
+        pids = tempd
+        if err:
+            finalerr = 1
         
     #provider
-    providerf = 'epicpro.esp.'+oneday
-    iplogging.info('Validator -Process %s' % providerf)
-    err,tempd = validateOnefile(incomdir,providerf,13,[0],required=[0],returnids=[0] )
-    provids= tempd
-    if err:
-        finalerr = 1
+    if hasProv:
+        providerf = FILEBASE+'pro.esp.'+oneday
+        iplogging.info('Validator -Process %s' % providerf)
+        err,tempd = validateOnefile(incomdir,providerf,13,[0],required=[0],returnids=[0] )
+        provids= tempd
+        if err:
+            finalerr = 1
+
+                            
+
         
     #encounter
-    visf = 'epicvis.esp.'+oneday
-    iplogging.info('Validator -Process %s' % visf)
-    err,tempd = validateOnefile(incomdir,visf,19,[0,6], datecolumn=[3,5,10],required=[0,1],checkids=[pids,provids])
-    if err:
-        finalerr = 1
+    if hasEnc:
+        visf = FILEBASE+'vis.esp.'+oneday
+        iplogging.info('Validator -Process %s' % visf)
+        err,tempd = validateOnefile(incomdir,visf,19,[0,6], datecolumn=[3,5,10],required=[0,1],checkids=[pids,provids])
+        if err:
+            finalerr = 1
         
     #lxord
-    lxordf = 'epicord.esp.'+oneday
-    iplogging.info('Validator - Process %s' % lxordf)
-    err, tempd = validateOnefile(incomdir,lxordf,8,[0,8],datecolumn=[6],required=[0,1],checkids=[pids,provids])
-    if err:
-        finalerr = 1
+    if hasOrd:
+        lxordf = FILEBASE+'ord.esp.'+oneday
+        iplogging.info('Validator - Process %s' % lxordf)
+        err, tempd = validateOnefile(incomdir,lxordf,8,[0,8],datecolumn=[6],required=[0,1],checkids=[pids,provids])
+        if err:
+            finalerr = 1
 
     #lxres
-    lxresf = 'epicres.esp.'+oneday
-    iplogging.info('Validator - Process %s' % lxresf)
-    err, tempd = validateOnefile(incomdir,lxresf,18,[0,5],datecolumn=[3,4],required=[0,1],checkids=[pids,provids])
-    if err :
-        finalerr = 1
+    if hasRes:
+        lxresf = FILEBASE+'res.esp.'+oneday
+        iplogging.info('Validator - Process %s' % lxresf)
+        err, tempd = validateOnefile(incomdir,lxresf,18,[0,5],datecolumn=[3,4],required=[0,1],checkids=[pids,provids])
+        if err :
+            finalerr = 1
 
     #med
-    medf = 'epicmed.esp.'+oneday
-    iplogging.info('Validator - Process %s' % medf)
-    err,tempd = validateOnefile(incomdir,medf,13,[0,3],datecolumn=[4,11,12],required=[0,1],checkids=[pids,provids])
-    if err:
-        finalerr = 1
+    if hasMed:
+        medf = FILEBASE+'med.esp.'+oneday
+        iplogging.info('Validator - Process %s' % medf)
+        err,tempd = validateOnefile(incomdir,medf,13,[0,3],datecolumn=[4,11,12],required=[0,1],checkids=[pids,provids])
+        if err:
+            finalerr = 1
 
     #imm
-    mmf = 'epicimm.esp.'+oneday
-    iplogging.info('Validator - Process %s' % mmf)
-    err,tempd = validateOnefile(incomdir,mmf,7,[0],datecolumn=[3],checkids=[pids,provids])
-    if err :
-        finalerr = 1
+    if hasImm:
+        mmf = FILEBASE+'imm.esp.'+oneday
+        iplogging.info('Validator - Process %s' % mmf)
+        err,tempd = validateOnefile(incomdir,mmf,7,[0],datecolumn=[3],checkids=[pids,provids])
+        if err :
+            finalerr = 1
+
+    #prb
+    if hasPrb:
+        prbf = FILEBASE+'prb.esp.'+oneday
+        iplogging.info('Validator - Process %s' % prbf)
+        err,tempd = validateOnefile(incomdir,prbf,6,[0],datecolumn=[3],required=[0,1],checkids=[pids])
+        if err :
+            finalerr = 1
+    #soc
+    if hasSoc:
+        socf = FILEBASE+'soc.esp.'+oneday
+        iplogging.info('Validator - Process %s' % socf)
+        err,tempd = validateOnefile(incomdir,socf,3,[0],datecolumn=[],required=[0,1],checkids=[pids])
+        if err :
+            finalerr = 1
+
+    ##Allergics
+    if hasAll:
+        allf = FILEBASE+'all.esp.'+oneday
+        iplogging.info('Validator - Process %s' % allf)
+        err,tempd = validateOnefile(incomdir,allf,8,[0],datecolumn=[3],required=[0,1],checkids=[pids])
+        if err :
+            finalerr = 1
+                                
+                                                
     return finalerr
                                                                                       
     
@@ -726,60 +1117,154 @@ def validateOneday(incomdir, oneday):
 def doValidation(incomdir,days):
 
     parsedays = []
+    errordays=[]
     for oneday in days:
         err = validateOneday(incomdir,oneday)
+
+        if err:
+            errordays.append(oneday)
+                
         if REJECT_INVALID and err: #not OK
             iplogging.error("Validator - Files for day %s not OK, rejected - not  processed\n" % oneday)
+        elif err and not REJECT_INVALID:
+            iplogging.info("Validator - Files for day %s NOT OK, but still process\n" % oneday)
+            parsedays.append(oneday)
         else: #OK
             iplogging.info("Validator - Files for day %s OK\n" % oneday)
             parsedays.append(oneday)
+
+    if errordays: 
+        sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg='Found validation errors when running incomingParse.py; Error days are:%s; Please go to log file for detail;' % (str(errordays)))
+        
     return parsedays
 
+
+###################################
+###################################
+def sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],msg=''):
+    ##send email
+    sender=EMAILSENDER
+
+    subject='ESP management'
+    headers = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (sender, ','.join(towho), subject)
+    
+    message = headers + 'on %s\n%s\n' % (datetime.datetime.now(),msg)
+    mailServer = smtplib.SMTP('localhost')
+    mailServer.sendmail(sender, towho, message)
+    mailServer.quit()
+                                                                
+
+
+###################################
+###################################
+def updateLoinc_lx():
+    iplogging.info('Start to update cptloinc map in esp_cptloincmap table and esp_lx table')
+    from ESP.utils.preLoader import load2cptloincmap, addNewcptloincmap, correctcptloincmap_lx
+    from ESP.utils.preLoader import getlines as preloadgetlines
+
+    preloadf = os.path.join(TOPDIR,LOCALSITE, 'preLoaderData','esp_cptloincmap.txt')
+    filetime= time.localtime(os.path.getmtime(preloadf))
+    file_lastmodtime = datetime.datetime(filetime[0],filetime[1],filetime[2])
+    cursor.execute("""select max(lastupdate) from esp_demog""")
+    dbtime = cursor.fetchall()[0][0]
+    if dbtime<file_lastmodtime:
+        iplogging.info('Need do updating cptloinc map in esp_cptloincmap & esp_lx tables')
+        table='esp_cptloincmap'
+        load2cptloincmap(table, preloadgetlines(preloadf), cursor)
+        addNewcptloincmap(cursor)
+        correctcptloincmap_lx(table,cursor)
+        iplogging.info('Done on updating esp_lx table')
+    else:
+        iplogging.info('No need updating cptloinc map in esp_cptloincmap & esp_lx tables')
+            
 ################################
 ################################
 if __name__ == "__main__":
     try: 
+        
         startt = datetime.datetime.now()
+        ###try to update esp_lx
+        updateLoinc_lx()
+
+        if len(sys.argv)>1: ##has argument
+            ##sys.argv[1] = 'MEM_PROV_RES_ORD_MED_ENC_IMM'
+            filelist = string.split(sys.argv[1],'_')
+            
+            if 'MEM' not in filelist:
+                hasMem=0
+            if 'PROV' not in filelist:
+                hasProv=0
+            if 'RES' not in filelist:
+                hasRes=0
+            if 'ORD' not in filelist:
+                hasOrd=0
+            if 'MED' not in filelist:
+                hasMed=0
+            if 'ENC' not in filelist:
+                hasEnc=0
+            if 'IMM' not in filelist:
+                hasImm=0
+                                
        
         ##get incoming files and do validations
-        incomdir = os.path.join(TOPDIR, localconfig.LOCALSITE,'incomingData/')
-        days = getfilesByDay(incomdir)
+        incomdir = os.path.join(TOPDIR, LOCALSITE,'incomingData/')
+        days= getfilesByDay(incomdir)  #days are sorted list
+        iplogging.info('Days are: %s; \n' % str(days))
+        
         if DO_VALIDATE:
-            parsedays = doValidation(incomdir,days)
+            parsedays = doValidation(incomdir,map(lambda x:x[1],days))
 	else:
-            parsedays = copy.copy(days)
-        iplogging.info('Validating is done. Days are: %s;  Parsed days are %s\n' % (str(days),str(parsedays)))
-
+            parsedays = copy.copy(map(lambda x:x[1],days))
+        iplogging.info('Validating is done. Parsed days are %s\n' % str(parsedays))
 
         ##start to parse by days
         ##always load files no matter it passed validator or not
-        for oneday in days:
+        for oneday in parsedays:
             iplogging.info("Parser - parse day %s\n" % oneday)
-            provf = 'epicpro.esp.'+oneday
+            provf = FILEBASE+'pro.esp.'+oneday
             provdict = parseProvider(incomdir, provf)
 
-            demogf =  'epicmem.esp.'+oneday 
+            demogf =  FILEBASE+'mem.esp.'+oneday 
             demogdict = parseDemog(incomdir, demogf)
-            
-            visf =  'epicvis.esp.'+oneday      
-            parseEnc(incomdir , visf,demogdict,provdict)
 
-            medf = 'epicmed.esp.'+oneday
-            parseRx(incomdir , medf,demogdict,provdict)
+            if hasEnc:
+                visf =  FILEBASE+'vis.esp.'+oneday      
+                parseEnc(incomdir , visf,demogdict,provdict)
 
-            lxordf = 'epicord.esp.'+oneday
-            parseLxOrd(incomdir,lxordf, demogdict,provdict)
+            if hasMed:
+                medf = FILEBASE+'med.esp.'+oneday
+                parseRx(incomdir , medf,demogdict,provdict)
+            if hasOrd:
+                lxordf = FILEBASE+'ord.esp.'+oneday
+                parseLxOrd(incomdir,lxordf, demogdict,provdict)
 
-            lxresf = 'epicres.esp.'+oneday
-            parseLxRes(incomdir,lxresf, demogdict,provdict)
-      
-            immf = 'epicimm.esp.'+oneday  
-            parseImm(incomdir , immf, demogdict)
+            if hasRes:
+                lxresf = FILEBASE+'res.esp.'+oneday
+                parseLxRes(incomdir,lxresf, demogdict,provdict)
 
-        iplogging.warning('New Chlamydia CPT code: %s\n' % str(chlamydia))
+            if hasImm:
+                immf = FILEBASE+'imm.esp.'+oneday  
+                parseImm(incomdir , immf, demogdict)
+
+            if hasPrb:
+                prbf = FILEBASE+'prb.esp.'+ oneday
+                parsePrb(incomdir , prbf, demogdict)
+            if hasSoc:
+                socf = FILEBASE+'soc.esp.'+ oneday
+                parseSoc(incomdir , socf, demogdict)
+
+            if hasAll:
+                socf = FILEBASE+'all.esp.'+ oneday
+                parseAll(incomdir , socf, demogdict)
+                                                
+        ##send email
+        iplogging.warning('New CPT/COMPT code: %s\n' % str(alertcode))
+        if alertcode:
+            sendoutemail(towho=['MKLOMPAS@PARTNERS.ORG','Julie_Dunn@harvardpilgrim.org', 'rexua@channing.harvard.edu','rerla@channing.harvard.edu'],msg='New (CPT,COMPT,ComponentName): %s' % str(alertcode))
         
         iplogging.info('Start: %s\n' %  startt)
         iplogging.info('End:   %s\n' % datetime.datetime.now())
+        
     except:
         fp = StringIO.StringIO()
         traceback.print_exc(file=fp)

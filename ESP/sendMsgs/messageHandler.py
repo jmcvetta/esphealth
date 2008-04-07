@@ -11,7 +11,7 @@ from django.db.models import Q
 import ESP.utils.localconfig as localconfig
 from ESP.settings import TOPDIR
 import shutil
-import traceback,logging
+import traceback
 
 ###
 today=datetime.datetime.now().strftime('%Y%m%d')
@@ -28,8 +28,24 @@ logfile = os.path.join(TOPDIR,localconfig.LOCALSITE, 'logs/messageHandler_java_%
 ################################
 def generateHL7(hl7dir,cases):
     logging.info('Total cases: %s\n' % len(cases))
+    batchsize=30
+    indx_e = 0
+    for i in range(len(cases)/batchsize):
+        indx_s = min(i*batchsize, len(cases))
+        indx_e = min((i+1)*batchsize, len(cases))
+        templist = cases[indx_s:indx_e]
+        generateOneBatch(hl7dir,templist)
+
+    #get reset of cases
+    if indx_e < len(cases):
+        templist = cases[indx_e:]
+        generateOneBatch(hl7dir,templist)
+        
+
+###################################
+def generateOneBatch(hl7dir,cases):
     testDoc = hl7XML.hl7Batch(institutionName=localconfig.LOCALSITE, nmessages=len(cases))
-    today1=datetime.datetime.now().strftime('%Y%m%d%H%M')
+    today1=datetime.datetime.now().strftime('%Y%m%d%H%M%S')
     for case in cases:
         demog = Demog.objects.filter(id__exact=case.caseDemog.id)[0]
         pcp = Provider.objects.filter(id__exact=case.caseProvider.id)[0]
@@ -77,17 +93,21 @@ if __name__ == "__main__":
     if len(cases)>0:
         generateHL7(hl7dir,cases)
 
+
     #send all HL7 messages under HL7Msgs folder
     files=os.listdir(hl7dir)
     if len(files):
         (javadir, javaclass,sendMsgcls) = localconfig.getJavaInfo()
         javacmd="%s -classpath %s %s.java" % (os.path.join(javadir, 'javac'), javaclass,sendMsgcls)
+
         try:
-            os.system(javacmd)
+            fin,fout = os.popen4(javacmd)
+            result = fout.read()
         except:
             logging.error('Compile java Exception: %s' %javacmd )
             sys.exit(1)
-                                                                
+
+    
     for f in files:
         
         f = hl7dir + '/%s' % f
@@ -95,14 +115,20 @@ if __name__ == "__main__":
         javaruncmd = "%s -classpath %s %s %s >> %s" % (os.path.join(javadir, 'java'), javaclass, sendMsgcls, f,logfile )
         logging.info("Runs java command: %s" % javaruncmd)
         try:
-            os.system(javaruncmd)
+            fin,fout = os.popen4(javaruncmd)
+            result = fout.read()
+            if string.upper(result).find('ERROR')!=-1: ##error
+                logging.error('Error when sending HL7: %s' % result)
+            else:
+                #move processed file to processed folder
+                procdir = os.path.join(TOPDIR,localconfig.LOCALSITE,'processedHL7Msgs/')
+                if not os.path.isdir(procdir):
+                    os.mkdir(procdir)
+                shutil.move(f, procdir)
+                
         except:
             logging.error('Run java Exception' )
             continue
 
-        #move processed file to processed folder
-        procdir = os.path.join(TOPDIR,localconfig.LOCALSITE,'processedHL7Msgs/')
-        if not os.path.isdir(procdir):
-            os.mkdir(procdir)
-        shutil.move(f, procdir)
+
   

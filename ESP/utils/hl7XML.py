@@ -2,27 +2,31 @@
 # for ESP
 # ross lazarus me fecit August 4 2006
 # It's not pretty, but it seems to work
-# hl7 is truly a pain
+# hl7 is truly a pain to work with
+# this is completely specific to the MaDPH ELR
+# based somewhat on the cdc ELR specification but
+# in xml
+# with an enigma wrapped in a riddle - the cases
+# are wrapped in xml but transmitted as cdata inside
+# a batch header
+# go figure
+# there are some small abstractions here, but the code
+# is hardly reusable
+# not really worth generalising imho since we hope we never
+# have to write this cruft again.
+# hl7 is a braindead way to get an ontology and data moved around
+# there are so many arbitrary decisions that have to be catered to
+# and the data types are all stupid codes instead of helpful codes 
 # python dom makes it tolerable but, it's horrible complex
 # very unpleasant way to express prescription details
 # imposed by cost of asking vendor to change anything !! :)
 # ours is but to do or die I guess.
 
 from ESP.esp.models import *
-##from django.contrib.auth.decorators import login_required, user_passes_test
-##from ESP.settings import SITEROOT
-##
-##from django.contrib.auth.forms import AuthenticationForm
-##from django.contrib.auth.forms import PasswordResetForm, PasswordChangeForm
-##from django import forms
-##from django.contrib.auth.models import SESSION_KEY
-##from django.contrib.sites.models import Site
+
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from xml.dom.minidom import Document
 import time,datetime,random
-
-
-
 
 
 def isoTime(t=None):
@@ -56,6 +60,16 @@ class hl7Batch:
         so we're going to have to create a separate document with all the cases and render it as
         a text string to enclose in a cdata section...
         """
+        self.racedir = {'CAUCASIAN':'W',
+           'BLACK':'B',
+           'OTHER':'O',
+           'HISPANIC': 'W',
+           'INDIAN':'I',
+           'ASIAN':'A',
+           'NAT AMERICAN':'I',
+           'NATIVE HAWAI':'P',
+           'ALASKAN':'I',
+           '': 'U'}
         self.nmessages = nmessages
         self.config = config.objects.filter(institution_name__exact=institutionName)[0]
         self.timestamp = isoTime() # will return time now
@@ -97,7 +111,7 @@ class hl7Batch:
 
     
     ####################################
-    def addCase(self,demog=None,pcp=None,rule=None, rx=[],lx = [], ex=[],icd9=[]):
+    def addCase(self,demog=None,pcp=None,rule=None, rx=[],lx = [], ex=[],icd9=[],casenote='',caseid=''):
         """Workhorse - maps cases into an xml document containing hl7
         should pass a mapping dict for each case here
         the obx records are all the case details so
@@ -148,28 +162,94 @@ class hl7Batch:
             lxobjs = Lx.objects.filter(id__in=lx).order_by('LxOrder_Id_Num')
         orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
         orus.appendChild(orcs)
-        self.addCaseOBR(rule=rule,icd9=icd9,orcs=orcs)
+        self.addCaseOBR(rule=rule,icd9=icd9,orcs=orcs,gender=demog.DemogGender)
 
         if rxobjs:
             rx=rxobjs[0]
         else:
             rx = None
-        self.addCaseOBX(demog=demog, orcs=orcs,icd9=icd9,lx=lxobjs[0],rx=rx,encs=ex,rule=rule)
+
+        if len(lxobjs):
+            lx =lxobjs[0]
+        else:
+            lx = None
+                        
+        self.addCaseOBX(demog=demog, orcs=orcs,icd9=icd9,lx=lx,rx=rx,encs=ex,rule=rule,casenote=casenote,caseid=caseid)
+
 
         totallxs =list(lxobjs)
+
         ##need check if any Gonorrhea test for Chlamydia
-        from identifyCases import getRelatedLx
         if string.upper(rule.ruleName)=='CHLAMYDIA':
-            genorlxs = getRelatedLx('GONORRHEA')
+            genorlxs =self.getOtherLxs('GONORRHEA',demog,lx)
             totallxs = totallxs + list(genorlxs)
         elif string.upper(rule.ruleName)=='GONORRHEA':
-            genorlxs = getRelatedLx('CHLAMYDIA')
+            genorlxs =self.getOtherLxs('CHLAMYDIA',demog,lx)
             totallxs = totallxs + list(genorlxs)
-        self.addLXOBX(lxRecList=totallxs, orus=orus)
+        
+        cleanlxids = self.removeDuplicateLx(totallxs)
+        totallxs = Lx.objects.filter(id__in=cleanlxids).order_by('LxOrder_Id_Num')
+        self.addLXOBX(lxRecList=totallxs, orus=orus,condition=rule)
+        
         self.addRXOBX(rxRecList=rxobjs, orus=orus) # do same for dr
+        return [i.id for i in totallxs]
 
- 
+    ###################################
+    ###################################
+    def removeDuplicateLx(self, lxobjs):
+        """we have a nasty problem with data reloaded as we built the system
+        and when the data feed is broken
+        """
+        lxdict={}
+        for lxobj in lxobjs:
+            lxkey = (lxobj.LxOrder_Id_Num, lxobj.LxTest_Code_CPT,lxobj.LxComponent,lxobj.LxOrderDate,lxobj.LxTest_results,lxobj.LxDate_of_result)
+            if not lxdict.has_key(lxkey):
+                lxdict[lxkey]=lxobj.id
+                
+        return lxdict.values() # list of unique lx ids
+                                                                                
+    ###################################
+    def getOtherLxs(self, cond,demog,lxids):
+        returnlxs=[]
+        thiscases = Case.objects.filter(caseDemog=demog,caseRule__ruleName__icontains=cond)
+        curLxids = [c.caseLxID for c in thiscases]
+        if not curLxids:
+            return returnlxs
 
+        
+        curLxidlist = ','.join(curLxids).split(',')
+        try:
+            baselxs = Lx.objects.filter(id__in=lxids).order_by('LxDate_of_result')
+            ####get lastest Lx record
+            maxrec=baselxs[len(baselxs)-1].LxDate_of_result
+            baselxs = Lx.objects.filter(id__in=lxids).order_by('LxOrderDate')
+            minrec=baselxs[0].LxOrderDate
+        except:
+            return  Lx.objects.filter(id__in=curLxidlist)
+        
+        if maxrec and minrec:
+            try:
+                maxdate = datetime.date(int(maxrec[:4]),int(maxrec[4:6]),int(maxrec[6:8]))+datetime.timedelta(30)
+                mindate = datetime.date(int(minrec[:4]),int(minrec[4:6]),int(minrec[6:8]))-datetime.timedelta(30)
+                
+                for onelid in curLxidlist:
+                    print onelid
+                    onelx = Lx.objects.get(id=onelid)
+                    thisd = onelx.LxDate_of_result
+                    if thisd:
+                        thisd = datetime.date(int(thisd[:4]),int(thisd[4:6]),int(thisd[6:8]))
+                        
+                    if not thisd or (thisd>=mindate and thisd<=maxdate):
+                        returnlxs.append(onelx)
+
+                return returnlxs
+            except:
+                pass
+
+        return  Lx.objects.filter(id__in=curLxidlist)
+
+        
+        
     ############################################
     ############################################
     def makePID(self, demog=None, pcp=None, ):
@@ -205,18 +285,9 @@ class hl7Batch:
         if demog.DemogGender:
             self.addSimple(section,demog.DemogGender,'PID.8')
 
-        racedir = {'CAUCASIAN':'W',
-                   'BLACK':'B',
-                   'OTHER':'O',
-                   'HISPANIC': 'W',
-                   'INDIAN':'I',
-                   'ASIAN':'A',
-                   'NAT AMERICAN':'I',
-                   'NATIVE HAWAI':'P',
-                   'ALASKAN':'I',
-                   '': 'U'}
+
         try:
-            race = racedir[string.upper(demog.DemogRace)]
+            race = self.racedir[string.upper(demog.DemogRace)]
         except:
             race=''
         if race:
@@ -315,7 +386,7 @@ class hl7Batch:
 
     
     ##################################################
-    def addCaseOBR(self, rule=None,icd9=[],orcs=None):
+    def addCaseOBR(self, rule=None,icd9=[],orcs=None,gender=''):
         """
             </OBR.31> is used to name the notifiable condition"""
         obr = self.casesDoc.createElement('OBR')
@@ -325,6 +396,24 @@ class hl7Batch:
         self.addSimple(obr4,'Additional Patient Demographics','CE.2')
         obr.appendChild(obr4)
 
+        fakeicd9={'PID':'614.9',
+                  'CHLAMYDIA':{'F':'099.53','M':'099.41','U':'099.41', '':'099.41'},
+                  'GONORRHEA':'098.0',
+                  'ACUTE HEPATITIS A':'070.10',
+                  'ACUTE HEPATITIS B':'070.30'
+                  }
+        
+        if not icd9 and string.upper(rule.ruleName) in fakeicd9.keys():
+            gender = string.upper(gender)
+            icd9values = fakeicd9[string.upper(rule.ruleName)]
+            if type(icd9values)==type(''): ##a string
+                icd9=[icd9values]
+            else:
+                try:
+                    icd9=[icd9values[gender]]
+                except: ##all other gender
+                    icd9 = ['099.41']
+                    
         for i in icd9:
             obr31 = self.casesDoc.createElement('OBR.31') 
             self.addSimple(obr31,i,'CE.1')   
@@ -340,28 +429,36 @@ class hl7Batch:
         dur =datetime.date(int(day2[:4]),int(day2[4:6]), int(day2[6:8]))-datetime.date(int(day1[:4]),int(day1[4:6]), int(day1[6:8]))
         return dur.days
 
+
+    ###################################
+    def getPregnancyStatus(self, caseid):
+        ##Email on 8/22/2007: Report patient as being pregnant if pregnancy flag active anytime between (test order date) and (test result date + 30 days inclusive).
+        obx5='261665006' ##unknown
+        edc=None
+        (preg, edc) = Case.objects.filter(id__exact = caseid)[0].getPregnant()
+        if preg =='':
+            return (obx5, edc)
+        else:
+            obx5='77386006'
+            return (obx5, edc)
+
+
     
     #############################################
-    def addCaseOBX(self, demog=None, orcs=None,icd9=None,lx=None, rx=None,encs=[],rule=None):
+    def addCaseOBX(self, demog=None, orcs=None,icd9=None,lx=None, rx=None,encs=[],rule=None,casenote='',caseid=''):
         """
         """
         indx=1
         c=time.strftime('%Y%m%d',time.localtime())
         dob=demog.DemogDate_of_Birth
         dur = self.getDurtion(dob,c)
-        obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'NM')],obx3=[('CE.4','21612-7')],obx5=[('',int(dur/365))])
+        obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'NM')],obx3=[('CE.4','21612-7')],obx5=[('',int(dur/365))],nte=casenote)
         orcs.appendChild(obx)
         indx += 1
 
         ##pregnancy status
-        encdb = Enc.objects.filter(EncPatient__id__exact=demog.id, EncPregnancy_Status='Y')
-        if encdb:
-            obx5='77386006'
-            edc = encdb[0].EncEDC
-            edc = edc.replace('/','')
-        else:
-            obx5='261665006' ##unknown
-            edc=None
+        (obx5, edc) = self.getPregnancyStatus(caseid)
+                                            
         obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'CE')],obx3=[('CE.4','11449-6'),('CE.5','PREGNANCY STATUS')],obx5=[('CE.4',obx5)])
         orcs.appendChild(obx)
         indx += 1
@@ -374,8 +471,9 @@ class hl7Batch:
             indx += 1
             orcs.appendChild(obx)
             pregdur =datetime.date(int(edc[:4]),int(edc[4:6]), int(edc[6:8]))-datetime.date(int(c[:4]),int(c[4:6]), int(c[6:8]))
+            pregweeks = 40 - int(pregdur.days/7)
             obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'NM')],obx3=[('CE.4','NA-12')],
-                                obx5=[('',int(pregdur.days/7))])
+                                obx5=[('',pregweeks)])
             
             indx += 1
             orcs.appendChild(obx)
@@ -403,7 +501,9 @@ class hl7Batch:
             orcs.appendChild(obx)
 
         ##Symptoms
-        lxresd=lx.LxDate_of_result
+        lxresd=None
+        if lx:
+            lxresd=lx.LxDate_of_result
         sym='373067005' #NO
         temperature=0
         for encid in encs:
@@ -412,7 +512,10 @@ class hl7Batch:
                 temperature = float(enc.EncTemperature)
             except:
                 temperature=0
-            dur = self.getDurtion(lxresd,enc.EncEncounter_Date)
+            if lxresd:
+                dur = self.getDurtion(lxresd,enc.EncEncounter_Date)
+            else:
+                dur = 0
             if abs(dur)<15 or temperature>100.4:
                 sym='373066001' #YES
                 break
@@ -431,21 +534,16 @@ class hl7Batch:
                 indx += 1
                 orcs.appendChild(obx)
                 
-        ##icd9
-        ##for PID only
-##        for i in icd9:
-##            obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'ST')],obx3=[('CE.4','NA-13')], obx5=[('',i)])
-##
-##            indx += 1
-##            orcs.appendChild(obx)
-
-
    ##############################################                
-    def addLXOBX(self,lxRecList=[],orus=None):
+    def addLXOBX(self,lxRecList=[],orus=None,condition=None):
         if not lxRecList: return
        
         n=1
         for lxRec in lxRecList:
+            needsend =ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc,CondiRule=condition)[0].CondiSend
+            if needsend==0: ##no need send
+                continue
+            
             orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
             orus.appendChild(orcs)
             orc = self.makeORC(lxRec.LxOrdering_Provider)
@@ -467,7 +565,7 @@ class hl7Batch:
             
             obr7 = self.casesDoc.createElement('OBR.7')
             obr.appendChild(obr7)
-            self.addSimple(obr7,lxRec.LxOrderDate,'TS.1') # rx date
+            self.addSimple(obr7,lxRec.LxOrderDate,'TS.1') # lx date
     
             obr15 = self.casesDoc.createElement('OBR.15') # noise - unknown specimen source. Eeessh
             sps = self.casesDoc.createElement('SPS.1')
@@ -486,15 +584,59 @@ class hl7Batch:
             lxTS = lxRec.LxOrderDate
             lxRange = 'Low:' + lxRec.LxReference_Low+' - High: '+lxRec.LxReference_High
 
-            snomed=ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc)[0].CondiSNMDPosi
-            obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'CE')],obx3=[('CE.4',lxRec.LxLoinc),('CE.6','L')],
-                               obx5=[('CE.4',snomed)],  obx7=[('',lxRange)],obx14=[('TS.1',lxTS)])
+
+            #snomed=ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc)[0].CondiSNMDPosi
+            snomed=self.getSNOMED(lxRec,condition)
+
+            if snomed=='': ##like ALT/AST
+                #ALT/AST much be number
+                obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'NM')],obx3=[('CE.4',lxRec.LxLoinc),('CE.6','L')],
+                                   obx5=[('',lxRec.LxTest_results.split()[0])], obx7=[('',lxRange)],obx14=[('TS.1',lxTS)], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
+            else:
+                obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'CE')],obx3=[('CE.4',lxRec.LxLoinc),('CE.6','L')],
+                               obx5=[('CE.4',snomed)],  obx7=[('',lxRange)],obx14=[('TS.1',lxTS)], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
         
             
             orcs.appendChild(obx1)
           
 
+    ##################################
+    def getSNOMED(self, lxRec,condition):
+        snomedposi =ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc,CondiRule=condition)[0].CondiSNMDPosi
+        snomednega = ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc,CondiRule=condition)[0].CondiSNMDNega
+        snomedinter = ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc,CondiRule=condition)[0].CondiSNMDInde
+        
+        if snomedposi=='' and snomednega=='': ##like ALT/AST
+            return ''
 
+        loinc_posires_map = {'5009-6':160,
+                             '16934-2':100,
+                             '34704-7':50}
+        
+        if lxRec.LxLoinc in loinc_posires_map.keys():###('5009-6','16934-2'):
+            try:
+                if float(lxRec.LxTest_results) <loinc_posires_map[lxRec.LxLoinc]:
+                    return snomednega
+                else:
+                    return snomedposi
+            except:
+                if string.find(lxRec.LxTest_results, '>')!=-1:
+                    return snomedposi
+                else:
+                    return snomednega
+        
+        if snomednega=='' and snomedinter=='':
+            return snomedposi
+        
+        testsult = string.upper(lxRec.LxTest_results)[:5]
+        if testsult in ('BORDE'): ###BORDERLINE, use SNOMED for equivocal
+            return snomedinter
+        elif testsult not in ('REACT','POSIT','DETEC'): ##USE negative
+            return snomednega
+        else:
+            return snomedposi
+                                                        
+        
     ##############################################                
     def addRXOBX(self,rxRecList=[],orus=None):
         """
@@ -539,13 +681,6 @@ class hl7Batch:
             if rxRec.RxStatus: status= 'F'
             else: status = 'P'
             self.addSimple(obr,status,'OBR.25') # result status
-
-           
-            #obr29 = self.casesDoc.createElement('OBR.29') # rxid goes in here as the "parent"
-            #eip = self.casesDoc.createElement('EIP.2')
-            #self.addSimple(eip,rxRec.RxOrder_Id_Num,'EI.1')
-            #obr29.appendChild(eip)
-            #obr.appendChild(obr29)
             
             orcs.appendChild(obr)
             
@@ -568,25 +703,32 @@ class hl7Batch:
 
 
     ###########################################
-    def makeOBX(self, obx1=[],obx2=[],obx3=[],obx5=[],obx6=[],obx7=[],obx11=[('','')],obx14=[]):
+    def makeOBX(self, obx1=[],obx2=[],obx3=[],obx5=[],obx6=[],obx7=[],obx11=[('','')],obx14=[],obx15=[],nte=''):
+        """observation segment constructor
+        """
         obx = self.casesDoc.createElement('ORU_R01.OBXNTE_SUPPGRP')
         p = self.casesDoc.createElement('OBX')
         
-        for (OuterTag, obxl) in [('OBX.1',obx1),('OBX.2',obx2),('OBX.3',obx3), ('OBX.5',obx5),('OBX.6',obx6),('OBX.7',obx7),('OBX.11',obx11),('OBX.14',obx14)]:
+        for (OuterTag, obxl) in [('OBX.1',obx1),('OBX.2',obx2),('OBX.3',obx3), ('OBX.5',obx5),('OBX.6',obx6),('OBX.7',obx7),('OBX.11',obx11),('OBX.14',obx14),('OBX.15',obx15)]:
             if len(obxl)==1 and obxl[0][0]=='':
                 if string.strip('%s' % obxl[0][1]):
                     self.addSimple(p,obxl[0][1],OuterTag)
             elif len(obxl)>0:
                 tempobx=None
                 for tag,v in obxl:
-                    if not tempobx and v:
+                    if not tempobx and '%s' % v  !='':
                         tempobx = self.casesDoc.createElement(OuterTag)
-                    if v:
+                    if '%s' % v !='':
                         self.addSimple(tempobx,v,tag)          
                 if tempobx:
                     p.appendChild(tempobx)
 
         obx.appendChild(p)
+        if nte:
+            n = self.casesDoc.createElement('NTE')
+            self.addSimple(n,  nte,'NTE.3')
+            obx.appendChild(n)
+            
         return obx
        
             
@@ -673,7 +815,7 @@ class hl7Batch:
         """ Version for cases - must add to self.casesDoc
         abstracted out to add a single child element to an existing element
         """
-        if not txt:
+        if txt =='':
             return
         
         tt = self.casesDoc.createTextNode('%s' % txt) 
@@ -731,7 +873,7 @@ class hl7Batch:
     ####################################
     ####################################
     def makeName(self, firstName, lastName, middleInit, suffix, outerElement, isClinician):
-        """reusable componenet = xpn1-4 pass the field names
+        """reusable component = xpn1-4 pass the field names
         from the right record!
         if is clinician, need XCN rather than XPN (!) with different sequence numbers...
         """
@@ -759,7 +901,7 @@ class hl7Batch:
                  
 
     def makeAddress(self, address, addressOther, city, state, zip, country ,outerElement, addressType):
-        """reusable componenet = xad.1-7 pass the field names
+        """reusable component = xad.1-7 pass the field names
         from the right record!
         """
         outer = self.casesDoc.createElement(outerElement)
@@ -827,7 +969,7 @@ def test():
         rx.remove('')
         lx.remove('')
         
-        testDoc.addCase(demog=demog,pcp=pcp,rule=rule, lx=lx, rx=rx,ex=ex,icd9=caseicd9)
+        testDoc.addCase(demog=demog,pcp=pcp,rule=rule, lx=lx, rx=rx,ex=ex,icd9=caseicd9,caseid = case.id)
 
        
     # Print our newly created XML
@@ -837,6 +979,9 @@ def test():
     f.close()
     print s
 
+
+###################################
+###################################
 if __name__ == "__main__":
     test()
         

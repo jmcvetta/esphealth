@@ -12,11 +12,14 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 import django
 import os,sys
 from ESP.esp.models import *
-from ESP.settings import TOPDIR
-from ESP.utils import localconfig
+from ESP.settings import TOPDIR,LOCALSITE
 
-incomdir = os.path.join(TOPDIR,localconfig.LOCALSITE,'incomingData/')
-today = datetime.datetime.now().strftime('%m%d%y') # carla/hvma is giving 2 digit years!
+incomdir = os.path.join(TOPDIR,LOCALSITE,'incomingData/')
+if not os.path.isdir(incomdir):
+    os.makedirs(incomdir)
+            
+
+today = datetime.datetime.now().strftime('%m%d%Y')
 print 'today=%s' % today
 
 
@@ -37,81 +40,6 @@ races=['ALASKAN','ASIAN','BLACK','CAUCASIAN', 'HISPANIC','INDIAN','NAT AMERICAN'
 routes=['ORAL','INHALATION','INTRAVENOUS']
 
 
-
-###rebuild esp_cpt,esp_dnc, esp_icd9 tables
-REMAKECODE = 1
-
-###################################
-##################################
-def makecpt():
-    """found these at www.tricare.osd.mil/tai/downloads/cpt_codes.xls
-    """
-    reader = csv.reader(open(settings.CODEDIR+'/utils/cpt_codes.csv','rb'),dialect='excel')
-    header = reader.next()
-    now = datetime.datetime.now().strftime("%Y-%m-%d")
-    i = 0
-    for ll in reader: # here be dragons. lots of "" at the 4th pos - but some other subtle crap too...
-        code,long,short = ll[:3] # good thing it doesn't really matter..
-        i += 1
-        if i % 1000 == 0:
-            print i,'cpt done'
-        long = long.replace('"','')
-        short = short.replace('"','')
-        c = cpt(cptCode=code,cptLong=long.capitalize(),cptShort=short.capitalize(),cptLastedit=now)
-        c.save()
-
-###################################
-def makeicd9():
-    """ found these codes somewhere or other..."""
-    codes = []
-    n = 1
-    from ESPicd9 import icd
-    for line in icd.split('\n'):
-        if n % 10000 == 0:
-            print n,'icd done'
-        n += 1
-        line = line.replace("'",'')
-        code,trans = line.split('\t')
-        code = '%s.%s' % (code[:3],code[3:]) # make all 3 digit decimals
-        c = icd9(icd9Code=code,icd9Long=trans.capitalize())
-        c.save()
-
-###################################
-def makendc():
-    """ found these codes somewhere http://www.fda.gov/cder/ndc/"""
-    f = file(settings.CODEDIR+'/utils/ndc_codes.txt','r')
-    foo = f.next() # lose header
-    n = 1
-    for line in f:
-        if n % 10000 == 0:
-            print n,'ndc done'
-        n += 1
-        lbl = line[8:14]
-        prod = line[15:19]
-        trade = line[44:].strip()
-        newn = ndc(ndcLbl=lbl.capitalize(),ndcProd=prod.capitalize(),ndcTrade=trade.capitalize())
-        newn.save()
-        
-###################################
-def remakeCodes():
-    """
-    """
-    from django.db import connection
-    cursor = connection.cursor()
-    sqlist = ['delete from esp_ndc;']
-    sqlist.append('delete from esp_icd9;')
-    sqlist.append('delete from esp_cpt;')
-    sqlist.append('commit;')
-    for sql in sqlist:
-        print sql
-        try:
-            cursor.execute(sql)
-        except:
-            print 'Error executing %s' % sql
-            
-    makendc()
-    makeicd9()
-    makecpt()
 
 
 ###################################
@@ -358,8 +286,6 @@ def cleanup():
 ###################################
 if __name__ == "__main__":
 
-    if REMAKECODE:
-        remakeCodes()
 
     ##cleanup data table first
     cleanup()

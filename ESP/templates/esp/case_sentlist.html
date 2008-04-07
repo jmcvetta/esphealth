@@ -39,6 +39,11 @@
       {%else%}MRN
       {%endifequal%}
        </a></th>
+    <th><a href="{{SITEROOT}}/cases/sent/sortgender/">
+      {% ifequal orderby "sortgender" %} <font color="#800000"><b>Gender</b></font>
+      {%else%}Gender
+      {%endifequal%}
+       </a></th>
   <th><a href="{{SITEROOT}}/cases/sent/sortpreg/">
       {% ifequal orderby "sortpreg" %} <font color="#800000"><b>Pregnancy status</b></font>
       {%else%}Pregnancy status
@@ -88,7 +93,7 @@
       <td>{{case.0}}</td>
       <td>{{case.1}}</td> 
       <td>{{case.2}}</td>
-      <td>{{case.3}}</td>      
+      <td>{{case.3}}</td>
       <td>{{case.4}}</td>
       <td>{{case.5}}</td>
       <td>{{case.6}}</td>
@@ -98,7 +103,7 @@
       <td>{{case.10}}</td>
       <td>{{case.11}}</td>
       <td>{{case.12}}</td>
-
+      <td>{{case.13}}</td>
      </tr>
 
     {% endfor %}

@@ -21,6 +21,7 @@ Updated August 9 to remove now unecessary hl7 message segment stuff.
 from django.db import models
 from django.contrib.auth.models import User 
 import string
+import datetime
 
 FORMAT_TYPES = (
     ('Text','Plain text representation'),
@@ -31,7 +32,7 @@ FORMAT_TYPES = (
 
 
 
-WORKFLOW_STATES = (('AR','AWAITING REVIEW'),('UR','UNDER REVIEW'),('RM', 'REVIEW By MD'),('FP','FALSE POSITIVE - DO NOT PROCESS'),('Q','IN QUEUE FOR MESSAGING'),    ('S','SENT TO DESTINATION'))
+WORKFLOW_STATES = [('AR','AWAITING REVIEW'),('UR','UNDER REVIEW'),('RM', 'REVIEW By MD'),('FP','FALSE POSITIVE - DO NOT PROCESS'),('Q','CONFIRMED CASE, TRANSMIT TO HEALTH DEPARTMENT'), ('S','TRANSMITTED TO HEALTH DEPARTMENT')]
 
 DEST_TYPES = (
     ('TextFile','Text file on the filesystem - path'),
@@ -182,7 +183,10 @@ class Rule(models.Model):
     ruleHL7Code = models.CharField('Code for HL7 messages with cases', maxlength=10, blank=True, null=True)
     ruleHL7Name = models.CharField('Condition name for HL7 messages with cases', maxlength=30, blank=True, null=True)
     ruleHL7CodeType = models.CharField('Code for HL7 code type', maxlength=10, blank=True, null=True)
-
+    ruleExcludeCode = models.TextField('The exclusion list of (CPT, COMPT) when alerting', blank=True, null=True)
+    ruleinProd = models.BooleanField('this rule is in production or not', blank=True)
+    ruleInitCaseStatus  =models.CharField('Initial Case status', maxlength=20,choices=WORKFLOW_STATES, blank=True)
+    
 
     def gethtml_rulenote(self):
         """generate a list to rule note display
@@ -253,19 +257,19 @@ class Format(models.Model):
 
 class Provider(models.Model):
     provCode= models.CharField('Physician code',maxlength=20,blank=True,db_index=True)
-    provLast_Name = models.CharField('Last Name',maxlength=70,blank=True)
-    provFirst_Name = models.CharField('First Name',maxlength=50,blank=True)
-    provMiddle_Initial = models.CharField('Middle_Initial',maxlength=20,blank=True)
-    provTitle = models.CharField('Title',maxlength=20,blank=True)
-    provPrimary_Dept_Id = models.CharField('Primary Department Id',maxlength=20,blank=True)
-    provPrimary_Dept = models.CharField('Primary Department',maxlength=200,blank=True)
-    provPrimary_Dept_Address_1 = models.CharField('Primary Department Address 1',maxlength=100,blank=True)
-    provPrimary_Dept_Address_2 = models.CharField('Primary Department Address 2',maxlength=20,blank=True)
-    provPrimary_Dept_City = models.CharField('Primary Department City',maxlength=20,blank=True)
-    provPrimary_Dept_State = models.CharField('Primary Department State',maxlength=20,blank=True)
-    provPrimary_Dept_Zip = models.CharField('Primary Department Zip',maxlength=20,blank=True)
-    provTelAreacode = models.CharField('Primary Department Phone Areacode',maxlength=20,blank=True)
-    provTel = models.CharField('Primary Department Phone Number',maxlength=50,blank=True)
+    provLast_Name = models.CharField('Last Name',maxlength=70,blank=True,null=True)
+    provFirst_Name = models.CharField('First Name',maxlength=50,blank=True,null=True)
+    provMiddle_Initial = models.CharField('Middle_Initial',maxlength=20,blank=True,null=True)
+    provTitle = models.CharField('Title',maxlength=20,blank=True,null=True)
+    provPrimary_Dept_Id = models.CharField('Primary Department Id',maxlength=20,blank=True,null=True)
+    provPrimary_Dept = models.CharField('Primary Department',maxlength=200,blank=True,null=True)
+    provPrimary_Dept_Address_1 = models.CharField('Primary Department Address 1',maxlength=100,blank=True,null=True)
+    provPrimary_Dept_Address_2 = models.CharField('Primary Department Address 2',maxlength=20,blank=True,null=True)
+    provPrimary_Dept_City = models.CharField('Primary Department City',maxlength=20,blank=True,null=True)
+    provPrimary_Dept_State = models.CharField('Primary Department State',maxlength=20,blank=True,null=True)
+    provPrimary_Dept_Zip = models.CharField('Primary Department Zip',maxlength=20,blank=True,null=True)
+    provTelAreacode = models.CharField('Primary Department Phone Areacode',maxlength=20,blank=True,null=True)
+    provTel = models.CharField('Primary Department Phone Number',maxlength=50,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
          
@@ -285,32 +289,32 @@ class Provider(models.Model):
 class Demog(models.Model):
     DemogPatient_Identifier = models.CharField('Patient Identifier',maxlength=20,blank=True,db_index=True)
     DemogMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,db_index=True,blank=True)
-    DemogLast_Name = models.CharField('Last_Name',maxlength=199,blank=True)
-    DemogFirst_Name = models.CharField('First_Name',maxlength=199,blank=True)
-    DemogMiddle_Initial = models.CharField('Middle_Initial',maxlength=199,blank=True)
-    DemogSuffix = models.CharField('Suffix',maxlength=199,blank=True)
-    DemogAddress1 = models.CharField('Address1',maxlength=200,blank=True)
-    DemogAddress2 = models.CharField('Address2',maxlength=100,blank=True)
-    DemogCity = models.CharField('City',maxlength=50,blank=True)
-    DemogState = models.CharField('State',maxlength=20,blank=True)
-    DemogZip = models.CharField('Zip',maxlength=20,blank=True)
-    DemogCountry = models.CharField('Country',maxlength=20,blank=True)
-    DemogAreaCode = models.CharField('Home Phone Area Code',maxlength=20,blank=True)
-    DemogTel = models.CharField('Home Phone Number',maxlength=100,blank=True)
-    DemogExt = models.CharField('Home Phone Extension',maxlength=50,blank=True)
-    DemogDate_of_Birth = models.CharField('Date of Birth',maxlength=20,blank=True)
-    DemogGender = models.CharField('Gender',maxlength=20,blank=True)
-    DemogRace = models.CharField('Race',maxlength=20,blank=True)
-    DemogHome_Language = models.CharField('Home Language',maxlength=20,blank=True)
-    DemogSSN = models.CharField('SSN',maxlength=20,blank=True)
+    DemogLast_Name = models.CharField('Last_Name',maxlength=199,blank=True,null=True)
+    DemogFirst_Name = models.CharField('First_Name',maxlength=199,blank=True,null=True)
+    DemogMiddle_Initial = models.CharField('Middle_Initial',maxlength=199,blank=True,null=True)
+    DemogSuffix = models.CharField('Suffix',maxlength=199,blank=True,null=True)
+    DemogAddress1 = models.CharField('Address1',maxlength=200,blank=True,null=True)
+    DemogAddress2 = models.CharField('Address2',maxlength=100,blank=True,null=True)
+    DemogCity = models.CharField('City',maxlength=50,blank=True,null=True)
+    DemogState = models.CharField('State',maxlength=20,blank=True,null=True)
+    DemogZip = models.CharField('Zip',maxlength=20,blank=True,null=True)
+    DemogCountry = models.CharField('Country',maxlength=20,blank=True,null=True)
+    DemogAreaCode = models.CharField('Home Phone Area Code',maxlength=20,blank=True,null=True)
+    DemogTel = models.CharField('Home Phone Number',maxlength=100,blank=True,null=True)
+    DemogExt = models.CharField('Home Phone Extension',maxlength=50,blank=True,null=True)
+    DemogDate_of_Birth = models.CharField('Date of Birth',maxlength=20,blank=True,null=True)
+    DemogGender = models.CharField('Gender',maxlength=20,blank=True,null=True)
+    DemogRace = models.CharField('Race',maxlength=20,blank=True,null=True)
+    DemogHome_Language = models.CharField('Home Language',maxlength=20,blank=True,null=True)
+    DemogSSN = models.CharField('SSN',maxlength=20,blank=True,null=True)
     DemogProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True,null=True)
-    DemogMaritalStat = models.CharField('Marital Status',maxlength=20,blank=True)
-    DemogReligion = models.CharField('Religion',maxlength=20,blank=True)
-    DemogAliases = models.CharField('Aliases',maxlength=250,blank=True)
-    DemogMotherMRN = models.CharField('Mother Medical Record Number',maxlength=20,blank=True)
-    DemogDeath_Date = models.CharField('Date of death',maxlength=200,blank=True)
-    DemogDeath_Indicator = models.CharField('Death_Indicator',maxlength=30,blank=True)
-    DemogOccupation = models.CharField('Occupation',maxlength=199,blank=True)
+    DemogMaritalStat = models.CharField('Marital Status',maxlength=20,blank=True,null=True)
+    DemogReligion = models.CharField('Religion',maxlength=20,blank=True,null=True)
+    DemogAliases = models.CharField('Aliases',maxlength=250,blank=True,null=True)
+    DemogMotherMRN = models.CharField('Mother Medical Record Number',maxlength=20,blank=True,null=True)
+    DemogDeath_Date = models.CharField('Date of death',maxlength=200,blank=True,null=True)
+    DemogDeath_Indicator = models.CharField('Death_Indicator',maxlength=30,blank=True,null=True)
+    DemogOccupation = models.CharField('Occupation',maxlength=199,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
             
@@ -322,6 +326,150 @@ class Demog(models.Model):
         list_display = ('DemogFirst_Name', 'DemogLast_Name', 'DemogMedical_Record_Number','DemogDate_of_Birth')
         search_fields = ('DemogLast_Name')
 
+    def getAge(self):
+        dob = self.DemogDate_of_Birth
+        if not dob:
+            return 'No DOB'
+        
+        try:
+            yy = int(dob[:4])
+            mm = int(dob[4:6])
+            dd = int(dob[6:])
+        except:
+            age = 'Error'
+            return age
+
+        cury = int(datetime.datetime.now().strftime("%Y"))
+        curm = int(datetime.datetime.now().strftime("%m"))
+        curd = int(datetime.datetime.now().strftime("%d"))
+        age = cury-yy
+        if (curm==mm and curd<dd) or (curm<mm):
+            age = age-1
+        if age==0 and cury==yy:
+            age = '%s' % (curm-mm) + ' Months'
+        elif age==0:
+            age = '%s' % (12-mm+curm) + ' Months'
+        return age
+
+
+
+
+###################################
+class TestCase(models.Model):
+
+    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
+    caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
+    caseWorkflow = models.CharField('Workflow State', maxlength=20,choices=WORKFLOW_STATES, blank=True,db_index=True )
+    caseComments = models.TextField('Comments', blank=True, null=True)
+    caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
+    casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
+    caseSendDate = models.DateTimeField('Date sent', null=True)
+    caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID")
+    caseQueryID = models.CharField('External Query which generated this case',maxlength=20, blank=True, null=True)
+    caseMsgFormat = models.CharField('Case Message Format', maxlength=20, choices=FORMAT_TYPES, blank=True, null=True)
+    caseMsgDest = models.CharField('Destination for formatted messages', maxlength=120, choices=DEST_TYPES, blank=True, null=True)
+    caseEncID = models.TextField('A list of ESP_ENC IDs',maxlength=500,  blank=True, null=True)
+    caseLxID = models.TextField('A list of ESP_Lx IDs',maxlength=500,  blank=True, null=True)
+    caseRxID = models.TextField('A list of ESP_Rx IDs',maxlength=500,  blank=True, null=True)
+    caseICD9 = models.TextField('A list of related ICD9',maxlength=500,  blank=True, null=True)
+    
+    
+    
+    def __str__(self):
+        p = self.showPatient()# self.pID
+        s = 'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
+        return s
+    
+    class Admin:
+        list_filter = ('caseWorkflow','caseQueryID','caseMsgFormat','caseProvider')
+        ordering = ('caseLastUpDate', 'casecreatedDate')
+        list_display = ('caseProvider','caseWorkflow','caseComments','caseLastUpDate','caseQueryID','caseMsgFormat')
+        
+    def showPatient(self): 
+        p = self.getPatient()
+        s = '%s,&nbsp;%s&nbsp;&nbsp;%s<br>%s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial, p.DemogMedical_Record_Number )
+        return s
+    
+    def getPatient(self): 
+        p = Demog.objects.get(id__exact = self.caseDemog.id)
+        return p
+
+    def getPregnant(self):
+        p=self.getPatient()
+        encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
+        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
+        if encdb and lxs:
+            lx = lxs[0]
+            lxorderd = lx.LxOrderDate
+            lxresd=lx.LxDate_of_result
+            lxresd = datetime.date(int(lxresd[:4]),int(lxresd[4:6]),int(lxresd[6:8]))+datetime.timedelta(30)
+            lxresd = lxresd.strftime('%Y%m%d')
+            for oneenc in encdb:
+                encdate = oneenc.EncEncounter_Date
+                edcdate = oneenc.EncEDC.replace('/','')
+                if edcdate:
+                    edcdate = datetime.date(int(edcdate[:4]),int(edcdate[4:6]), int(edcdate[6:8]))
+                    dur1 =edcdate-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
+                    dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
+                    if dur1.days>=0 or dur2.days>=0:
+                        return ('Pregnant', oneenc.EncEDC.replace('/',''))
+                
+        elif encdb and not lxs:
+            return ('Pregnant', encdb[0].EncEDC.replace('/',''))
+
+        return ('',None)
+
+
+    def getcaseLastUpDate(self):
+        s = '%s' % self.caseLastUpDate
+        return s[:11]
+    
+    def getLxOrderdate(self):
+        
+        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
+        orderdate=''
+        for l in lxs:
+            orderdate =orderdate+'<br>%s' % l.LxOrderDate
+        return orderdate
+
+
+    def getLxProviderSite(self):
+        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
+        sites=[]
+        for l in lxs:
+            relprov = Provider.objects.filter(id=l.LxOrdering_Provider.id)[0]
+            sitename = relprov.provPrimary_Dept
+            if sitename and sitename not in sites:
+                sites.append(sitename)
+        returnstr=''
+        for loc in sites:
+            returnstr =returnstr+'%s;<br>' % loc
+        return returnstr
+        
+    def getWorkflows(self): # return a list of workflow states for history
+        wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
+        return wIter
+    
+    def getCondition(self):
+        cond = Rule.objects.get(id__exact=self.caseRule.id)
+        return cond
+    
+    def getAddress(self):
+        p = self.getPatient()
+        s=''
+        if p.DemogAddress1:
+            s = '%s %s<br>%s, %s, %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
+        return s
+    
+    def getPrevcases(self):
+        othercases = TestCase.objects.filter(caseDemog__id__exact=self.caseDemog.id, caseRule__id__exact=self.caseRule.id, id__lt=self.id)
+        returnstr=[]
+        for c in othercases:
+            returnstr.append(c.id)
+        return returnstr
+                                                                                                                                                                    
+                                                                                                                                                                                                                    
+###################################                             
 class Case(models.Model):
     """casePID can't be a foreign key or we get complaints that the pointed to model doesn't
     yet exist
@@ -336,7 +484,7 @@ class Case(models.Model):
     caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID")
     caseQueryID = models.CharField('External Query which generated this case',maxlength=20, blank=True, null=True)
     caseMsgFormat = models.CharField('Case Message Format', maxlength=20, choices=FORMAT_TYPES, blank=True, null=True)
-    caseMsgDest = models.CharField('Destination for formatted messages', maxlength=120, choices=DEST_TYPES, blank=True, null=True)
+    caseMsgDest = models.CharField('Destination for formatted messages', maxlength=120, choices=DEST_TYPES, blank=True,null=True)
     caseEncID = models.TextField('A list of ESP_ENC IDs',maxlength=500,  blank=True, null=True)
     caseLxID = models.TextField('A list of ESP_Lx IDs',maxlength=500,  blank=True, null=True)
     caseRxID = models.TextField('A list of ESP_Rx IDs',maxlength=500,  blank=True, null=True)
@@ -355,18 +503,80 @@ class Case(models.Model):
         ordering = ('caseLastUpDate', 'casecreatedDate')
         list_display = ('caseProvider','caseWorkflow','caseComments','caseLastUpDate','caseQueryID','caseMsgFormat')
  
-    def showPatient(self): # doesn't work
+    def showPatient(self): 
         p = self.getPatient()
         #  s = '%s, %s: %s MRN=%s' % (p.PIDLast_Name, p.PIDFirst_Name, p.PIDFacility1, p.PIDMedical_Record_Number1 )
 
-        s = '%s %s: %s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMedical_Record_Number )
+        s = '%s,&nbsp;%s &nbsp;&nbsp;%s<br>%s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial,p.DemogMedical_Record_Number )
 
         return s
 
     def getPatient(self): # doesn't work
         p = Demog.objects.get(id__exact = self.caseDemog.id)        
-        return p    
+        return p
 
+
+    def getPregnant(self):
+        p=self.getPatient()
+        encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
+        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
+        if encdb and lxs:
+            lx = lxs[0]
+            lxorderd = lx.LxOrderDate
+            lxresd=lx.LxDate_of_result
+            lxresd = datetime.date(int(lxresd[:4]),int(lxresd[4:6]),int(lxresd[6:8]))+datetime.timedelta(30)
+            lxresd = lxresd.strftime('%Y%m%d')
+            for oneenc in encdb:
+                encdate = oneenc.EncEncounter_Date
+                edcdate = oneenc.EncEDC.replace('/','')
+                if edcdate:
+                    edcdate = datetime.date(int(edcdate[:4]),int(edcdate[4:6]), int(edcdate[6:8]))
+                    dur1 =edcdate-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
+                    dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
+                    if dur1.days>=0 or dur2.days>=0:
+                        return ('Pregnant', oneenc.EncEDC.replace('/',''))
+                                                                    
+#            for oneenc in encdb:
+#                encdate = oneencdb.EncEncounter_Date
+#                dur1 =datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
+#                dur2 = datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8])) - datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))
+#                if dur1.days>=0 and dur2.days>=0:
+#                    return ('Pregnant', oneenc.EncEDC.replace('/',''))
+        elif encdb and not lxs:
+            return ('Pregnant', encdb[0].EncEDC.replace('/',''))
+
+        return ('',None)
+                                                                                                                                
+
+
+    def getcaseLastUpDate(self):
+        s = '%s' % self.caseLastUpDate
+        return s[:11]
+    
+    def getLxOrderdate(self):
+
+        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
+        orderdate=''
+        for l in lxs:
+            orderdate =orderdate+'<br>%s' % l.LxOrderDate
+        return orderdate
+
+    def getLxProviderSite(self):
+        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
+        sites=[]
+        for l in lxs:
+            relprov = Provider.objects.filter(id=l.LxOrdering_Provider.id)[0]
+            sitename = relprov.provPrimary_Dept
+            if sitename and sitename not in sites:
+                sites.append(sitename)
+
+        returnstr=''
+        for loc in sites:
+            returnstr =returnstr+'%s;<br>' % loc
+        return returnstr
+                                                                                                 
+
+    
     def getWorkflows(self): # return a list of workflow states for history
         wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
         return wIter
@@ -395,8 +605,8 @@ class CaseWorkflow(models.Model):
     workflowDate = models.DateTimeField('Activated',auto_now=True)
     workflowState = models.CharField('Workflow State',choices=WORKFLOW_STATES,core=True,maxlength=20 )
     workflowChangedBy = models.CharField('Changed By', maxlength=30)
-    workflowComment = models.TextField('Comments',blank=True)
- 
+    workflowComment = models.TextField('Comments',blank=True,null=True)
+    
     def __str__(self):
         return '%s %s %s' % (self.workflowCaseID, self.workflowDate, self.workflowState)
 
@@ -412,20 +622,20 @@ class CaseWorkflow(models.Model):
 class Rx(models.Model):
     RxPatient = models.ForeignKey(Demog) 
     RxMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True,db_index=True)
-    RxOrder_Id_Num = models.CharField('Order Id #',maxlength=20,blank=True)
+    RxOrder_Id_Num = models.CharField('Order Id #',maxlength=20,blank=True,null=True)
     RxProvider = models.ForeignKey(Provider,blank=True,null=True)      
-    RxOrderDate = models.CharField('Order Date',maxlength=20,blank=True)
-    RxStatus = models.CharField('Order Status',maxlength=20,blank=True)
-    RxDrugName = models.TextField('Name of Drug',maxlength=3000,blank=True)
-    RxDrugDesc = models.TextField('Drug description',maxlength=3000,blank=True)
-    RxNational_Drug_Code = models.CharField('National Drug Code',maxlength=20,blank=True)
-    RxDose = models.CharField('Dose',maxlength=200,blank=True)
-    RxFrequency = models.CharField('Frequency',maxlength=200,blank=True)
-    RxQuantity = models.CharField('Quantity',maxlength=200,blank=True)
-    RxRefills = models.CharField('Refills',maxlength=200,blank=True)
-    RxRoute = models.CharField('Routes',maxlength=200,blank=True)
-    RxStartDate = models.CharField('Start Date',maxlength=20,blank=True)
-    RxEndDate = models.CharField('End Date',maxlength=20,blank=True)
+    RxOrderDate = models.CharField('Order Date',maxlength=20,blank=True,null=True)
+    RxStatus = models.CharField('Order Status',maxlength=20,blank=True,null=True)
+    RxDrugName = models.TextField('Name of Drug',maxlength=3000,blank=True,null=True)
+    RxDrugDesc = models.TextField('Drug description',maxlength=3000,blank=True,null=True)
+    RxNational_Drug_Code = models.CharField('National Drug Code',maxlength=20,blank=True,null=True)
+    RxDose = models.CharField('Dose',maxlength=200,blank=True,null=True)
+    RxFrequency = models.CharField('Frequency',maxlength=200,blank=True,null=True)
+    RxQuantity = models.CharField('Quantity',maxlength=200,blank=True,null=True)
+    RxRefills = models.CharField('Refills',maxlength=200,blank=True,null=True)
+    RxRoute = models.CharField('Routes',maxlength=200,blank=True,null=True)
+    RxStartDate = models.CharField('Start Date',maxlength=20,blank=True,null=True)
+    RxEndDate = models.CharField('End Date',maxlength=20,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
             
@@ -468,28 +678,36 @@ class Rx(models.Model):
     class Admin:
         pass
 
+class LabComponent(models.Model):
+    componentName = models.CharField('Component Name', maxlength=250,db_index=True)
+    CPT = models.CharField('CPT Codes',maxlength=30, blank=True,null=True,db_index=True)
+    CPTCompt = models.CharField('Compoment Codes',maxlength=30, blank=True,null=True,db_index=True)
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+        
+                  
 class Lx(models.Model):
     LxPatient = models.ForeignKey(Demog) 
-    LxMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True,db_index=True)
-    LxOrder_Id_Num = models.CharField('Order Id #',maxlength=20,blank=True)
-    LxTest_Code_CPT = models.CharField('Test Code (CPT)',maxlength=20,blank=True)
-    LxTest_Code_CPT_mod = models.CharField('Test Code (CPT) Modifier',maxlength=20,blank=True)
-    LxOrderDate = models.CharField('Order Date',maxlength=20,blank=True)
-    LxOrderType = models.CharField('Order Type',maxlength=10,blank=True)   
+    LxMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True,null=True,db_index=True)
+    LxOrder_Id_Num = models.CharField('Order Id #',maxlength=20,blank=True,null=True)
+    LxTest_Code_CPT = models.CharField('Test Code (CPT)',maxlength=20,blank=True,null=True,db_index=True)
+    LxTest_Code_CPT_mod = models.CharField('Test Code (CPT) Modifier',maxlength=20,blank=True,null=True)
+    LxOrderDate = models.CharField('Order Date',maxlength=20,blank=True,null=True)
+    LxOrderType = models.CharField('Order Type',maxlength=10,blank=True,null=True)   
     LxOrdering_Provider = models.ForeignKey(Provider,blank=True,null=True) 
-    LxDate_of_result =models.CharField('Date of result',maxlength=20,blank=True)  
-    LxHVMA_Internal_Accession_number = models.CharField('HVMA Internal Accession number',maxlength=20,blank=True)
-    LxComponent = models.CharField('Component',maxlength=20,blank=True)
-    LxComponentName = models.CharField('Component Name',maxlength=200,blank=True)
-    LxTest_results = models.TextField('Test results',maxlength=2000,blank=True)
-    LxNormalAbnormal_Flag = models.CharField('Normal/Abnormal Flag',maxlength=20,blank=True)
-    LxReference_Low = models.CharField('Reference Low',maxlength=100,blank=True)
-    LxReference_High = models.CharField('Reference High',maxlength=100,blank=True)
-    LxReference_Unit = models.CharField('Reference Unit',maxlength=100,blank=True)
-    LxTest_status = models.CharField('Test status',maxlength=50,blank=True)
+    LxDate_of_result =models.CharField('Date of result',maxlength=20,blank=True,null=True)  
+    LxHVMA_Internal_Accession_number = models.CharField('HVMA Internal Accession number',maxlength=50,blank=True,null=True)
+    LxComponent = models.CharField('Component',maxlength=20,blank=True,null=True,db_index=True)
+    LxComponentName = models.CharField('Component Name',maxlength=200,blank=True,null=True, db_index=True)
+    LxTest_results = models.TextField('Test results',maxlength=2000,blank=True,null=True,db_index=True)
+    LxNormalAbnormal_Flag = models.CharField('Normal/Abnormal Flag',maxlength=20,blank=True,null=True,db_index=True)
+    LxReference_Low = models.CharField('Reference Low',maxlength=100,blank=True,null=True)
+    LxReference_High = models.CharField('Reference High',maxlength=100,blank=True,null=True)
+    LxReference_Unit = models.CharField('Reference Unit',maxlength=100,blank=True,null=True)
+    LxTest_status = models.CharField('Test status',maxlength=50,blank=True,null=True)
     LxComment = models.TextField('Comments', blank=True, null=True,)
-    LxImpression = models.TextField('Impression for Imaging only',maxlength=2000,blank=True)
-    LxLoinc = models.CharField('LOINC code',maxlength=20,blank=True)
+    LxImpression = models.TextField('Impression for Imaging only',maxlength=2000,blank=True,null=True)
+    LxLoinc = models.CharField('LOINC code',maxlength=20,blank=True,null=True,db_index=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
             
@@ -531,11 +749,11 @@ class Lx(models.Model):
         pass
 
 class Lxo(models.Model):
-    LxoPatient_Identifier = models.CharField('Patient Identifier',maxlength=20,blank=True,db_index=True)
-    LxoMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True)
-    LxoOrder_Id_Num = models.CharField('Order Id #',maxlength=20,blank=True)
-    LxoTest_ordered = models.CharField('Test ordered',maxlength=20,blank=True)
-    LxoHVMA_accession_number = models.CharField('HVMA accession number',maxlength=20,blank=True)
+    LxoPatient_Identifier = models.CharField('Patient Identifier',maxlength=20,blank=True,null=True,db_index=True)
+    LxoMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True,null=True)
+    LxoOrder_Id_Num = models.CharField('Order Id #',maxlength=20,blank=True,null=True)
+    LxoTest_ordered = models.CharField('Test ordered',maxlength=20,blank=True,null=True)
+    LxoHVMA_accession_number = models.CharField('HVMA accession number',maxlength=20,blank=True,null=True)
 
     def __str__(self):
         return "%s %s %s %s" % (self.LxoPatient_Identifier,self.LxoMedical_Record_Number,self.LxoOrder_Id_Num,self.LxoTest_ordered)
@@ -545,27 +763,27 @@ class Lxo(models.Model):
 
 class Enc(models.Model):
     EncPatient = models.ForeignKey(Demog) 
-    EncMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True,db_index=True)
-    EncEncounter_ID = models.CharField('Encounter ID',maxlength=20,blank=True)
-    EncEncounter_Date = models.CharField('Encounter Date',maxlength=20,blank=True)
-    EncEncounter_Status = models.CharField('Encounter Status',maxlength=20,blank=True)
-    EncEncounter_ClosedDate = models.CharField('Encounter Closed Date',maxlength=20,blank=True) 
+    EncMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True,null=True,db_index=True)
+    EncEncounter_ID = models.CharField('Encounter ID',maxlength=20,blank=True,null=True)
+    EncEncounter_Date = models.CharField('Encounter Date',maxlength=20,blank=True,null=True)
+    EncEncounter_Status = models.CharField('Encounter Status',maxlength=20,blank=True,null=True)
+    EncEncounter_ClosedDate = models.CharField('Encounter Closed Date',maxlength=20,blank=True,null=True) 
     EncEncounter_Provider = models.ForeignKey(Provider,blank=True,null=True) 
-    EncEncounter_Site = models.CharField('Encounter Site',maxlength=20,blank=True)
-    EncEncounter_SiteName = models.CharField('Encounter Site Name',maxlength=100,blank=True)
-    EncEvent_Type = models.CharField('Event Type',maxlength=20,blank=True)
-    EncPregnancy_Status = models.CharField('Pregnancy Status',maxlength=20,blank=True)
-    EncEDC = models.CharField('Expected date of confinement',maxlength=20,blank=True) 
-    EncTemperature = models.CharField('Temperature',maxlength=20,blank=True)
-    EncCPT_codes = models.CharField('CPT codes',maxlength=200,blank=True)
-    EncICD9_Codes = models.TextField('ICD-9 Codes',blank=True)
-    EncICD9_Qualifier = models.CharField('ICD-9 Qualifier',maxlength=200,blank=True)
-    EncWeight = models.CharField('Weight (kg)',maxlength=200,blank=True)
-    EncHeight = models.CharField('Height (cm)',maxlength=200,blank=True)
-    EncBPSys = models.CharField('BP Systolic',maxlength=100,blank=True)
-    EncBPDias = models.CharField('BP Diastolic',maxlength=100,blank=True)
-    EncO2stat = models.CharField('O2 Stat',maxlength=50,blank=True)
-    EncPeakFlow = models.CharField('Peak Flow',maxlength=50,blank=True)
+    EncEncounter_Site = models.CharField('Encounter Site',maxlength=20,blank=True,null=True)
+    EncEncounter_SiteName = models.CharField('Encounter Site Name',maxlength=100,blank=True,null=True)
+    EncEvent_Type = models.CharField('Event Type',maxlength=20,blank=True,null=True)
+    EncPregnancy_Status = models.CharField('Pregnancy Status',maxlength=20,blank=True,null=True)
+    EncEDC = models.CharField('Expected date of confinement',maxlength=20,blank=True,null=True) 
+    EncTemperature = models.CharField('Temperature',maxlength=20,blank=True,null=True)
+    EncCPT_codes = models.CharField('CPT codes',maxlength=200,blank=True,null=True)
+    EncICD9_Codes = models.TextField('ICD-9 Codes',blank=True,null=True)
+    EncICD9_Qualifier = models.CharField('ICD-9 Qualifier',maxlength=200,blank=True,null=True)
+    EncWeight = models.CharField('Weight (kg)',maxlength=200,blank=True,null=True)
+    EncHeight = models.CharField('Height (cm)',maxlength=200,blank=True,null=True)
+    EncBPSys = models.CharField('BP Systolic',maxlength=100,blank=True,null=True)
+    EncBPDias = models.CharField('BP Diastolic',maxlength=100,blank=True,null=True)
+    EncO2stat = models.CharField('O2 Stat',maxlength=50,blank=True,null=True)
+    EncPeakFlow = models.CharField('Peak Flow',maxlength=50,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
             
@@ -626,14 +844,14 @@ class Enc(models.Model):
 
 class Immunization(models.Model):
     ImmPatient = models.ForeignKey(Demog) 
-    ImmType = models.CharField('Immunization Type',maxlength=20,blank=True)
-    ImmName = models.CharField('Immunization Name',maxlength=200,blank=True)
-    ImmDate = models.CharField('Immunization Date Given',maxlength=20,blank=True)
-    ImmDose = models.CharField('Immunization Dose',maxlength=100,blank=True)
-    ImmManuf =models.CharField('Manufacturer',maxlength=100,blank=True)
-    ImmLot = models.TextField('Lot Number',maxlength=500,blank=True)
-    ImmVisDate = models.CharField('Date of Visit',maxlength=20,blank=True)
-    ImmRecId = models.CharField('Immunization Record Id',maxlength=200,blank=True)
+    ImmType = models.CharField('Immunization Type',maxlength=20,blank=True,null=True)
+    ImmName = models.CharField('Immunization Name',maxlength=200,blank=True,null=True)
+    ImmDate = models.CharField('Immunization Date Given',maxlength=20,blank=True,null=True)
+    ImmDose = models.CharField('Immunization Dose',maxlength=100,blank=True,null=True)
+    ImmManuf =models.CharField('Manufacturer',maxlength=100,blank=True,null=True)
+    ImmLot = models.TextField('Lot Number',maxlength=500,blank=True,null=True)
+    ImmVisDate = models.CharField('Date of Visit',maxlength=20,blank=True,null=True)
+    ImmRecId = models.CharField('Immunization Record Id',maxlength=200,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
             
@@ -647,11 +865,76 @@ class Immunization(models.Model):
         pass
 
 
+
+class SocialHistory(models.Model):
+    SocPatient = models.ForeignKey(Demog)
+    SocMRN = models.CharField('Medical Record Number',maxlength=25,blank=True,null=True,db_index=True)
+    SocTobUse = models.CharField('Tobacco use',maxlength=200,blank=True,null=True)
+    SocAlcoUse = models.CharField('Alcohol use',maxlength=200,blank=True,null=True)
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+
+
+    def __str__(self):
+        
+        return "%s %s" % (self.SocPatient.DemogPatient_Identifier,self.SocMRN)
+    
+    
+    class Admin:
+        pass
+
+
+
+class Allergies(models.Model):
+    AllPatient = models.ForeignKey(Demog)
+    AllMRN = models.CharField('Medical Record Number',maxlength=25,blank=True,null=True,db_index=True)
+    AllPrbID = models.CharField('Problem Id #',maxlength=25,blank=True,null=True)
+    AllDateNoted = models.CharField('Date Noted',maxlength=20,blank=True,null=True)
+    AllCode = models.CharField('Allergy ID (Code)',maxlength=200,blank=True,null=True)
+    AllName = models.CharField('Allergy Name',maxlength=255,blank=True,null=True)
+    AllStatus = models.CharField('Allergy status',maxlength=50,blank=True,null=True)
+    AllDesc = models.TextField('Allergy Description',maxlength=2000,blank=True,null=True)
+    AllDateEntered = models.CharField('Date Entered',maxlength=20,blank=True,null=True)
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+
+
+    def __str__(self):
+        
+        return "%s %s %s" % (self.AllPatient.DemogPatient_Identifier,self.AllMRN,self.AllPrbID)
+
+
+    class Admin:
+        pass
+
+
+
+class Problems(models.Model):
+    PrbPatient = models.ForeignKey(Demog)
+    PrbMRN = models.CharField('Medical Record Number',maxlength=25,blank=True,null=True,db_index=True)
+    PrbID = models.CharField('Problem Id #',maxlength=25,blank=True,null=True)
+    PrbDateNoted = models.CharField('Date Noted',maxlength=20,blank=True,null=True)
+    PrbICD9Code = models.CharField('Problem ICD9 Code)',maxlength=200,blank=True,null=True)
+    PrbStatus = models.CharField('Problem status',maxlength=50,blank=True,null=True)
+    PrbNote = models.TextField('Comments', blank=True, null=True,)
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+
+
+    def __str__(self):
+        
+        return "%s %s %s" % (self.PrbPatient.DemogPatient_Identifier,self.PrbMRN,self.PrbID)
+    
+    
+    class Admin:
+        pass
+                                                                
+                                            
 class ConditionIcd9(models.Model):
     CondiRule = models.ForeignKey(Rule)
-    CondiICD9 = models.TextField('ICD-9 Codes',blank=True)
-    CondiDefine = models.BooleanField('Icd9 used in definition or not', blank=True)
-    CondiSend = models.BooleanField('Icd9 needs to be sent or not', blank=True)
+    CondiICD9 = models.TextField('ICD-9 Codes',blank=True,null=True)
+    CondiDefine = models.BooleanField('Icd9 used in definition or not', blank=True,null=True)
+    CondiSend = models.BooleanField('Icd9 needs to be sent or not', blank=True,null=True)
 
     def __str__(self):
         return '%s %s' % (self.CondiRule,self.CondiICD9)
@@ -662,38 +945,50 @@ class ConditionIcd9(models.Model):
 
 class ConditionLOINC(models.Model):
     CondiRule = models.ForeignKey(Rule)
-    CondiLOINC = models.TextField('LOINC Codes',blank=True)
-    CondiDefine = models.BooleanField('Loinc used in definition or not', blank=True)
-    CondiSend = models.BooleanField('Loinc needs to be sent or not', blank=True)
-    CondiSNMDPosi = models.TextField('SNOMED Positive Codes',blank=True)
-    CondiSNMDNega = models.TextField('SNOMED Negative Codes',blank=True)
-    CondiSNMDInde = models.TextField('SNOMED Indeterminate Codes',blank=True)
+    CondiLOINC = models.TextField('LOINC Codes',blank=True,null=True)
+    CondiDefine = models.BooleanField('Loinc used in definition or not', blank=True,null=True)
+    CondiSend = models.BooleanField('Loinc needs to be sent or not', blank=True,null=True)
+    CondiSNMDPosi = models.TextField('SNOMED Positive Codes',blank=True,null=True)
+    CondiSNMDNega = models.TextField('SNOMED Negative Codes',blank=True,null=True)
+    CondiSNMDInde = models.TextField('SNOMED Indeterminate Codes',blank=True,null=True)
+    CondiOperator=models.TextField('Condition Operation',blank=True,null=True)
+    CondiValue = models.TextField('Condition value',blank=True,null=True)
     
-
     def __str__(self):
-        return '%s %s' % (self.CondiRule,self.CondiLOINC)
+        return '%s %s= %s %s' % (self.CondiRule,self.CondiLOINC,self.CondiOperator,self.CondiValue)
         
     class Admin:
         list_display = ('CondiRule', 'CondiLOINC')
         search_fields = ('CondiLOINC')
 
 class CPTLOINCMap(models.Model):
-    CPT = models.TextField('CPT Codes',blank=True)
-    CPTCompt = models.TextField('Compoment Codes',blank=True)
-    Loinc = models.TextField('Loinc Codes',blank=True)
+    CPT = models.TextField('CPT Codes',blank=True,null=True)
+    CPTCompt = models.TextField('Compoment Codes',blank=True,null=True)
+    Loinc = models.TextField('Loinc Codes',blank=True,null=True)
 
     def __str__(self):
         return '%s %s' % (self.CPT,self.CPTCompt)
-        
+
+    
     class Admin:
         list_display = ('CPT', 'CPTCompt')
         search_fields = ('CPT')
 
+    def getComptName(self):
+        res = LabComponent.objects.filter(CPT=self.CPT,CPTCompt=self.CPTCompt)
+        if res:
+            comptnames = map(lambda x:[len(x.componentName), x.componentName], res)
+            comptnames.sort()
+            #Klompas, Michael: If you think that's too clunky then include the longest name for each test.
+            return comptnames[-1][1]
+        else:
+            return ''
+        
 class ConditionNdc(models.Model):
     CondiRule = models.ForeignKey(Rule)
-    CondiNdc = models.TextField('NDC Codes',blank=True)
-    CondiDefine = models.BooleanField('Ndc used in definition or not', blank=True)
-    CondiSend = models.BooleanField('Ndc need to be send or not', blank=True)
+    CondiNdc = models.TextField('NDC Codes',blank=True,null=True)
+    CondiDefine = models.BooleanField('Ndc used in definition or not', blank=True,null=True)
+    CondiSend = models.BooleanField('Ndc need to be send or not', blank=True,null=True)
 
     def __str__(self):
         return '%s %s' % (self.CondiRule,self.CondiNdc)
@@ -705,10 +1000,10 @@ class ConditionNdc(models.Model):
     
 class ConditionDrugName(models.Model):
     CondiRule = models.ForeignKey(Rule)
-    CondiDrugName = models.TextField('Drug Name',blank=True)
-    CondiDrugRoute = models.TextField('Drug Route',blank=True)
-    CondiDefine = models.BooleanField('Used in case definition or not', blank=True)
-    CondiSend = models.BooleanField('Must be sent or not', blank=True)
+    CondiDrugName = models.TextField('Drug Name',blank=True,null=True)
+    CondiDrugRoute = models.TextField('Drug Route',blank=True,null=True)
+    CondiDefine = models.BooleanField('Used in case definition or not', blank=True,null=True)
+    CondiSend = models.BooleanField('Must be sent or not', blank=True,null=True)
 
     def __str__(self):
         return '%s %s %s' % (self.CondiRule,self.CondiDrugName, self.CondiDrugRoute)
@@ -720,14 +1015,40 @@ class ConditionDrugName(models.Model):
 
         
 class DataFile(models.Model):
-    filename = models.CharField('Raw data file name',maxlength=50,blank=True)
-    datedownloaded = models.DateTimeField('Date loaded',editable=False,auto_now=True)
+    filename = models.CharField('Raw data file name',maxlength=50,blank=True,null=True)
+    numrecords = models.CharField('Number of Records in a file',maxlength=50,blank=True,null=True) 
+    datedownloaded = models.DateTimeField('Date loaded',editable=False,auto_now_add=True)
 
  
     def __str__(self):
         return '%s %s' % (self.filename,self.datedownloaded)
 
     class Admin:
-        list_display = ('filename', 'datedownloaded')
+        list_display = ('filename', 'numrecords', 'datedownloaded')
         search_fields =('filename')
+                                
+
+###################################
+class HL7File(models.Model):
+    filename = models.CharField('hl7 file name',maxlength=100,blank=True,null=True)
+    case = models.ForeignKey(Case,verbose_name="Case ID",db_index=True)
+    demogMRN = models.CharField('Medical Record Number',maxlength=50,db_index=True,blank=True,null=True)
+    hl7encID = models.TextField('A list of ESP_ENC IDs in hl7', maxlength=500,  blank=True, null=True)
+    hl7lxID = models.TextField('A list of ESP_Lx IDs in hl7', maxlength=500,  blank=True, null=True)
+    hl7rxID = models.TextField('A list of ESP_Rx IDs in hl7', maxlength=500,  blank=True, null=True)
+    hl7ICD9 = models.TextField('A list of related ICD9 in hl7', maxlength=500,  blank=True, null=True)
+    hl7reportlxID=models.TextField('A list of report Lx IDs in hl7', maxlength=500,  blank=True, null=True)
+    hl7specdate = models.TextField('A list of order date of report Lx in hl7', maxlength=500,  blank=True, null=True)
+    hl7trmtDT = models.TextField('the order date of minium Rx', maxlength=500,  blank=True, null=True)
+    hl7comment = models.TextField('note in NTE segment',  maxlength=500,  blank=True, null=True)
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+          
+    def __str__(self):
+        return '%s %s' % (self.filename,self.datedownloaded)
+
+    class Admin:
+        list_display = ('filename', 'case','demogMRN')
+        search_fields =('filename', 'case')
+
                                 

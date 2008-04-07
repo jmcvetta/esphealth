@@ -29,9 +29,8 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
 from ESP.esp.models import *
-from ESP.settings import DATABASE_HOST,DATABASE_USER,DATABASE_PASSWORD,DATABASE_NAME
+from ESP.settings import DATABASE_HOST,DATABASE_USER,DATABASE_PASSWORD,DATABASE_NAME,getLogging
 from django.db.models import Q
-import localconfig
 import MySQLdb
 
 
@@ -39,7 +38,7 @@ espdb = MySQLdb.Connect(DATABASE_HOST,DATABASE_USER,DATABASE_PASSWORD,DATABASE_N
 cur = espdb.cursor()
 
 ###For logging
-pglogging = localconfig.getLogging('purge.py_v0.1', debug=0)
+pglogging = getLogging('purge.py_v0.1', debug=0)
 
 ###################
 def delprov(pids):
