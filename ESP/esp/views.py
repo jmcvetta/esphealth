@@ -497,7 +497,7 @@ def casematch(request,  download=''):
         returnlist= eval(request.POST['filedata'])
         indx=1
         for onerow in returnlist:
-            (lname,fname,gender,dob,totalnum, exactrec, totalrec,dphstatus,dhpdate) = onerow
+            (lname,fname,gender,dob,totalnum, exactrec, totalrec,dphstatus,dhpdate,indx) = onerow
             for i in exactrec:
                 report.append(['Patient%s' % indx, dphstatus,dhpdate,i[0],i[1],i[2],i[3],'Exact Match'])
             for i in totalrec:

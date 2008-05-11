@@ -372,6 +372,7 @@ class TestCase(models.Model):
     caseLxID = models.TextField('A list of ESP_Lx IDs',maxlength=500,  blank=True, null=True)
     caseRxID = models.TextField('A list of ESP_Rx IDs',maxlength=500,  blank=True, null=True)
     caseICD9 = models.TextField('A list of related ICD9',maxlength=500,  blank=True, null=True)
+    caseImmDate = models.DateTimeField('Immunization Date', null=True)
     
     
     
@@ -489,7 +490,7 @@ class Case(models.Model):
     caseLxID = models.TextField('A list of ESP_Lx IDs',maxlength=500,  blank=True, null=True)
     caseRxID = models.TextField('A list of ESP_Rx IDs',maxlength=500,  blank=True, null=True)
     caseICD9 = models.TextField('A list of related ICD9',maxlength=500,  blank=True, null=True)
-
+    caseImmDate = models.DateTimeField('Immunization Date', null=True)
     
 
     def __str__(self):
@@ -678,6 +679,9 @@ class Rx(models.Model):
     class Admin:
         pass
 
+
+
+
 class LabComponent(models.Model):
     componentName = models.CharField('Component Name', maxlength=250,db_index=True)
     CPT = models.CharField('CPT Codes',maxlength=30, blank=True,null=True,db_index=True)
@@ -761,6 +765,8 @@ class Lxo(models.Model):
     class Admin:
         pass
 
+
+###################################
 class Enc(models.Model):
     EncPatient = models.ForeignKey(Demog) 
     EncMedical_Record_Number = models.CharField('Medical Record Number',maxlength=20,blank=True,null=True,db_index=True)
@@ -840,6 +846,24 @@ class Enc(models.Model):
 
 
 
+###################################
+class icd9Fact(models.Model):
+    icd9Enc = models.ForeignKey(Enc)
+    icd9Code = models.CharField('ICD9 codes',maxlength=200,blank=True,null=True)
+    icd9Patient = models.ForeignKey(Demog)
+    icd9EncDate = models.CharField('Encounter Date',maxlength=20,blank=True,null=True)
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+                                    
+    def __str__(self):
+
+        return "%s %s %s" % (self.icd9Patient.id,self.icd9Enc.id, self.icd9EncDate)
+
+
+    class Admin:
+        pass
+
+                                
 
 
 class Immunization(models.Model):
@@ -866,6 +890,32 @@ class Immunization(models.Model):
 
 
 
+#########################
+class VAERSadditions(models.Model):
+    VAERPatient = models.ForeignKey(Demog)
+    patientDiedDate = models.CharField('Patient died Date if any',maxlength=20,blank=True,null=True)
+    illness = models.CharField('Life Threatening Illness',maxlength=100,blank=True,null=True)
+    reqvisit =models.CharField('Required Emergency room/visit',maxlength=100,blank=True,null=True)
+    reqhospdays = models.TextField('Required Hospitalization Days',maxlength=100,blank=True,null=True)
+    reshosp = models.CharField('Resulted in prolongation of hospitalization',maxlength=200,blank=True,null=True)
+    resdisa = models.CharField('Resulted in permanent disability',maxlength=200,blank=True,null=True)
+    recovered = models.CharField('Patient Recovered',maxlength=100,blank=True,null=True)
+    birthweight = models.CharField('Birth Weight',maxlength=100,blank=True,null=True)
+    numsiblings = models.CharField('Number of brothers and sisters',maxlength=50,blank=True,null=True)
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+    
+
+    def __str__(self):
+        
+        return "%s" % (self.VAERPatient.DemogPatient_Identifier)
+
+
+    class Admin:
+        pass
+                                                            
+
+###################################
 class SocialHistory(models.Model):
     SocPatient = models.ForeignKey(Demog)
     SocMRN = models.CharField('Medical Record Number',maxlength=25,blank=True,null=True,db_index=True)
@@ -1052,3 +1102,4 @@ class HL7File(models.Model):
         search_fields =('filename', 'case')
 
                                 
+    

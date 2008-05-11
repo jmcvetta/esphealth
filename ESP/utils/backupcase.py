@@ -1,7 +1,7 @@
 
 import os, sys, django, datetime
-print sys.argv[0]
 sys.path.insert(0, '/home/ESP/')
+
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
@@ -10,8 +10,8 @@ from django.db.models import Q
 from ESP.settings import TOPDIR,LOCALSITE,getLogging
 
 outputdir =  os.path.join(TOPDIR,LOCALSITE, 'logs/')
-casefile ='case_backup.txt'
-wffile = 'casewf_backup.txt'
+casefile ='case_backup_new2.txt'
+wffile = 'casewf_backup_new2.txt'
 iclogging = getLogging('backupcase.py_v0.1', debug=0)
 
 ###################################

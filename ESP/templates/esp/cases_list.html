@@ -28,7 +28,7 @@
  <SELECT name="RULE">
    {% ifequal rulefilter "0" %}<OPTION value="0" SELECTED>All</OPTION> {% endifequal %}
    {% ifnotequal rulefilter "0" %}<OPTION value="0" >All</OPTION> {% endifnotequal %}
-   
+
    {% for thisr in rules %}
       {%isselectedrule%}{{rulefilter}},{{thisr.id}}{%endisselectedrule%}
        {% if selectedrule %}<OPTION value="{{thisr.id}}" SELECTED>{{thisr.ruleName}}</OPTION> 

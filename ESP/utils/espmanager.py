@@ -153,7 +153,7 @@ def hl7handler():
     if len(cases)>0:
         generateHL7(hl7dir,cases)
 
-#    sys.exit(1)
+
 
     #send all HL7 messages under HL7Msgs folder
     files=os.listdir(hl7dir)

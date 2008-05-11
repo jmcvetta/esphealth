@@ -1,5 +1,9 @@
 
 import MySQLdb,sys,os,glob,time,datetime
+sys.path.insert(0, '/home/ESP/')
+os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+
+from ESP.esp.models import *
 
 try:
     import psyco
@@ -7,15 +11,20 @@ try:
 except:
     print 'no psyco :-('
 
+                    
 nvalsperinsert = 10000 # this speeds things up..
 
-debug = 1
+debug = 0
 esp = MySQLdb.Connect('localhost','ESP','3spuser2006')
 cursor = esp.cursor()
 dictcursor = esp.cursor(MySQLdb.cursors.DictCursor)
-icdfact = 'esp.icd9Fact'
-icd9table = 'esp.esp_icd9'
+icdfact = 'esp.esp_icd9fact'
 
+
+DBTIMESTR = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+
+###################################
 def makeICD9Fact():
     """ version with the actual code rather than a foreign key
     """
@@ -23,14 +32,11 @@ def makeICD9Fact():
     varss = """id int unsigned auto_increment, icd9 varchar(10),
     encId int unsigned not null, demogId int unsigned not null, encDate char(10), index icdindex 
 (icd9), index dateindex (encDate), primary key (id)"""
-    iinsert = "id,icd9,encId,demogId,encDate"
-    insertsql = '''insert into esp.icd9Fact (%s) values (%%s,%%s,%%s,%%s,%%s)''' % iinsert
-    sql = 'drop table if exists %s' % icdFact
-    cursor.execute(sql)
-    sql = 'create table %s (%s)' % (icdFact,varss)
-    cursor.execute(sql)
-    sql = 'select * from esp.esp_icd9'
-    cursor.execute(sql)
+
+    iinsert = "id,icd9Code,icd9Enc_Id,icd9Patient_Id,icd9encDate, lastUpDate,createdDate"
+    insertsql = '''insert into esp.esp_icd9fact (%s) values (%%s,%%s,%%s,%%s,%%s, %%s, %%s)''' % iinsert
+
+
     nrows = 0
     insertme = []
     offset = 0
@@ -54,7 +60,7 @@ def makeICD9Fact():
                 else:
                     edate = "?"
             for icd in clist:
-                newrec = (None,icd,eid,epid,edate)
+                newrec = (None,icd,eid,epid,edate, DBTIMESTR,DBTIMESTR)
                 insertme.append(newrec)
         if len(insertme) >= nvalsperinsert:
             cursor.executemany(insertsql,insertme)

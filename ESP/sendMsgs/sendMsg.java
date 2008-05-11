@@ -35,9 +35,22 @@ public class sendMsg{
 
             if (elr_port == null)
                return "SOAP Fault";
-
-
-            setAuth(elr_port, user, pw);
+	    
+	    //read first line of the file
+	    //try {
+	    //	BufferedReader in = new BufferedReader(new FileReader(filename));
+	    //	String str;
+	    //	while ((str = in.readLine()) != null) {
+	    //    process(str);
+	    //}
+	    //in.close();
+	    //} catch (IOException e) {
+	    
+	    //FileInputStream fstream = new FileInputStream(filename);
+	    //DataInputStream in = new DataInputStream(fstream);
+	    //System.out.println (in.readLine());
+            
+	    setAuth(elr_port, user, pw);
             response = elr_port.send_hl7_2X_xml_stream_batch(new DataHandler(new FileDataSource(filename)));
 
        }

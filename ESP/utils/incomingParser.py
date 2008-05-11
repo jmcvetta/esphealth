@@ -13,7 +13,7 @@ from django.db.models import Q
 from ESP.settings import *
 from django.db import connection
 cursor = connection.cursor()
-
+import utils
 
 import string,re,copy
 import shutil
@@ -117,6 +117,7 @@ def parseProvider(incomdir, filename):
     fname = os.path.join(incomdir,'%s' % filename)
     f = splitfile(fname,'^')
     for (items,line) in f:
+
         if not items or items[0]=='CONTROL TOTALS':
             filelines = line
             continue
@@ -288,7 +289,48 @@ def convertWgHg(wghg,unit,factor,factor2):
     return '%.2f' % new_wghg
 
 
+###################################
+###################################
+def getEDC(espencid,edc,pregstatus,encdate):
+    period = 300
+    enc = Enc.objects.filter(id=espencid)[0]
+    if edc=='' and enc.EncEDC =='':
+        return (edc,pregstatus)
+    elif edc=='' and enc.EncEDC !='':
+        if utils.getPeriod(encdate, enc.EncEDC)>period:
+            iplogging.info("EDCFile is Null: espId=%s, EncID=%s, Encdate=%s, edcDB=%s*edcfile=%s-->%s" % (enc.id,enc.EncEncounter_ID, enc.EncEncounter_Date, enc.EncEDC, edc,edc) )
+            
+            return (edc, pregstatus)
+        else:
+            return (enc.EncEDC, 'Y')
+    elif edc!='' and enc.EncEDC=='':
+        if utils.getPeriod(encdate, edc)<=period:
+            return (edc, pregstatus)
+        else:
+            iplogging.info("EDCDB is Null: espId=%s, EncID=%s, Encdate=%s, edcDB=%s*edcfile=%s-->%s" % (enc.id,enc.EncEncounter_ID, enc.EncEncounter_Date, enc.EncEDC, edc,enc.EncEDC) )
+            return (enc.EncEDC, '')
+    elif edc!='' and enc.EncEDC!='':
+        if  enc.EncEDC!=edc:
+            if utils.getPeriod(encdate, edc)>period and  utils.getPeriod(encdate, enc.EncEDC)>period:
+                newedc=''
+                newst = ''
+            elif  utils.getPeriod(encdate, edc)<=period and utils.getPeriod(encdate, enc.EncEDC)>period:
+                newedc = edc
+                newst=pregstatus
+            elif utils.getPeriod(encdate, edc)>period and utils.getPeriod(encdate, enc.EncEDC)<=period:
+                newedc =enc.EncEDC
+                newst='Y'
+            elif utils.getPeriod(encdate, edc)<=period and utils.getPeriod(encdate, enc.EncEDC)<=period:
+                newedc =edc
+                newst=pregstatus
+                
+            iplogging.info("DIFF: espId=%s, EncID=%s, Encdate=%s, edcDB=%s*edcfile=%s-->%s" % (enc.id,enc.EncEncounter_ID, enc.EncEncounter_Date, enc.EncEDC, edc,newedc) )
+            return (newedc,newst)
 
+    return (edc, pregstatus)
+
+        
+        
 ################################
 ################################
 def parseEnc(incomdir, filename,demogdict,provdict):
@@ -347,6 +389,8 @@ def parseEnc(incomdir, filename,demogdict,provdict):
 
         espencid = searchId('select id from esp_enc where EncPatient_id=%s and EncEncounter_ID=%s', (demogid, encid))
         if espencid: #Update
+            ##
+            (edc, pregstatus) = getEDC(espencid,edc, pregstatus, encd)
             enc_str = """update esp_enc set
             EncEncounter_ID=%s,
             EncPatient_id=%s,
@@ -366,23 +410,14 @@ def parseEnc(incomdir, filename,demogdict,provdict):
             EncBPDias=%s,
             EncO2stat=%s,
             EncPeakFlow=%s,
-            EncEncounter_Provider_id=%s
+            EncEncounter_Provider_id=%s,
+            EncEDC=%s,
+            EncPregnancy_Status=%s,
+            lastUpDate=%s
+            where id =%s
             """
-            if edc: ##if need upate existing record and new edc is null, then do not update the old edc
-                 enc_str = enc_str + """,
-                                     EncEDC=%s,
-                                     EncPregnancy_Status=%s,
-                                     lastUpDate=%s
-                                     where id =%s
-                                     """
-                 values = (encid,demogid,mrn,encd,close,closed,deptid,dept,enctp,temp,cpt,icd9,weight,height,bpsys,bpdias,o2stat,peakflow,provid,edc, pregstatus, DBTIMESTR,espencid)
-            elif not edc:
-                enc_str = enc_str + """,
-                lastUpDate=%s
-                where id =%s
-                """
-                values = (encid,demogid,mrn,encd,close,closed,deptid,dept,enctp,temp,cpt,icd9,weight,height,bpsys,bpdias,o2stat,peakflow,provid,DBTIMESTR,espencid)
-
+            values = (encid,demogid,mrn,encd,close,closed,deptid,dept,enctp,temp,cpt,icd9,weight,height,bpsys,bpdias,o2stat,peakflow,provid,edc, pregstatus, DBTIMESTR,espencid)
+            runSql(enc_str,values)
         else: #new
             enc_str = """insert into esp_enc
             (EncEncounter_ID,EncPatient_id,EncMedical_Record_Number,EncEncounter_Date,EncEncounter_Status,EncEncounter_ClosedDate,EncEncounter_Site,EncEncounter_SiteName,EncEvent_Type,EncTemperature,EncCPT_codes,EncICD9_Codes,EncWeight,EncHeight,EncBPSys,EncBPDias,EncO2stat,EncPeakFlow,EncEncounter_Provider_id,EncEDC,EncPregnancy_Status,lastUpDate,createdDate)
@@ -390,13 +425,32 @@ def parseEnc(incomdir, filename,demogdict,provdict):
             """
             values = (encid,demogid,mrn,encd,close,closed,deptid,dept,enctp,temp,cpt,icd9,weight,height,bpsys,bpdias,o2stat,peakflow,provid,edc, pregstatus,DBTIMESTR,DBTIMESTR)
 
-        runSql(enc_str,values)
-                        
+            runSql(enc_str,values)
+            espencid = cursor.lastrowid
 
+        
+        #updateIcd9Fact(espencid, demogid, encd, icd9)
 
 #        espencid = updateDB('esp_enc',enc_str,values, espencid)
 
     movefile(incomdir, filename,filelines)    
+
+###################################
+###################################
+def updateIcd9Fact(espencid, demogid, encdate, icd9):
+    clist = icd9.split()
+    
+    for onec in clist:
+        icd9factid = searchId("""select id from esp_icd9fact where icd9Patient_Id=%s and icd9Enc_Id=%s and icd9Code=%s""", (demogid, espencid,onec))
+        if icd9factid: ##already exists
+            pass
+        else: ##new one
+            newrec = (onec,espencid,demogid,encdate, DBTIMESTR,DBTIMESTR)
+            insertsql = """insert into esp.esp_icd9fact (icd9Code,icd9Enc_Id,icd9Patient_Id,icd9encDate, lastUpDate,createdDate)
+                   values (%s,%s,%s,%s, %s, %s)
+                """
+            runSql(insertsql, newrec)
+
 
 
 ###################################
@@ -1134,25 +1188,11 @@ def doValidation(incomdir,days):
             parsedays.append(oneday)
 
     if errordays: 
-        sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg='Found validation errors when running incomingParse.py; Error days are:%s; Please go to log file for detail;' % (str(errordays)))
+        utils.sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg='Found validation errors when running incomingParse.py; Error days are:%s; Please go to log file for detail;' % (str(errordays)))
         
     return parsedays
 
 
-###################################
-###################################
-def sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],msg=''):
-    ##send email
-    sender=EMAILSENDER
-
-    subject='ESP management'
-    headers = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (sender, ','.join(towho), subject)
-    
-    message = headers + 'on %s\n%s\n' % (datetime.datetime.now(),msg)
-    mailServer = smtplib.SMTP('localhost')
-    mailServer.sendmail(sender, towho, message)
-    mailServer.quit()
-                                                                
 
 
 ###################################
@@ -1260,7 +1300,7 @@ if __name__ == "__main__":
         ##send email
         iplogging.warning('New CPT/COMPT code: %s\n' % str(alertcode))
         if alertcode:
-            sendoutemail(towho=['MKLOMPAS@PARTNERS.ORG','Julie_Dunn@harvardpilgrim.org', 'rexua@channing.harvard.edu','rerla@channing.harvard.edu'],msg='New (CPT,COMPT,ComponentName): %s' % str(alertcode))
+            utils.sendoutemail(towho=['MKLOMPAS@PARTNERS.ORG','Julie_Dunn@harvardpilgrim.org', 'rexua@channing.harvard.edu','rerla@channing.harvard.edu'],msg='New (CPT,COMPT,ComponentName): %s' % str(alertcode))
         
         iplogging.info('Start: %s\n' %  startt)
         iplogging.info('End:   %s\n' % datetime.datetime.now())
