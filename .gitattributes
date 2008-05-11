@@ -6,11 +6,17 @@ ESP/sendMsgs/org/openuri/www/Bcdc_elr.class -text
 ESP/sendMsgs/org/openuri/www/Bcdc_elrLocator.class -text
 ESP/sendMsgs/org/openuri/www/Bcdc_elrSoap.class -text
 ESP/sendMsgs/org/openuri/www/Bcdc_elrSoapStub.class -text
+ESP/templates/404.html -text
+ESP/templates/admin/login.html -text
 ESP/templates/arrow.GIF -text
 ESP/templates/default-bg-reverse.gif -text
 ESP/templates/default-bg.gif -text
 ESP/templates/django-logo-negative.png -text
 ESP/templates/django-logo-positive.png -text
+ESP/templates/esp/casedefine.html -text
+ESP/templates/esp/casedefine_detail.html -text
+ESP/templates/esp/matchupload.html -text
+ESP/templates/esp/rule_excludlist.html -text
 ESP/templates/espheader.gif -text
 ESP/templates/espheader.png -text
 ESP/templates/espheader150.gif -text
