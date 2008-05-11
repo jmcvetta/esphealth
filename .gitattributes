@@ -26,15 +26,10 @@ ESP/templates/nav-bg-grabber.gif -text
 ESP/templates/nav-bg-reverse.gif -text
 ESP/templates/nav-bg.gif -text
 ESP/utils/LOINCDB.TXT -text
-ESP/utils/backupcase.py -text
-ESP/utils/fixPregEDC.py -text
-ESP/utils/getfilelines.py -text
 ESP/utils/hl7_to_etl.py -text
-ESP/utils/insert_labcomponent.py -text
 ESP/utils/makeESPdm.py -text
 ESP/utils/northadams.py -text
 ESP/utils/parsehl7.py -text
-ESP/utils/removeDupLx.py -text
 ESP/utils/utils.py -text
 ESP/utils/vaers_hl7.py -text
 axis-1_4/activation.jar -text
