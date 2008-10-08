@@ -26,6 +26,8 @@ We need
 5) a new immunization record for each RXA in any VXU message
 
 """
+import datetime
+todaystr = datetime.datetime.now().strftime('%m%d%Y')
 
 sdelim = '|'
 sfdelim = '^'
@@ -60,12 +62,16 @@ etlnames = ['pcp','pid','allergies','enc',
 # this defines the output file names
 #outfilenames = ['esp_pcp','esp_demog','esp_enc','esp_allergy',
 #            'esp_lx','esp_lx','esp_imm','esp_prob','esp_rx']
-
-outfilenames = ['epicpro.esp.04152008','epicmem.esp.04152008',
-                'epicall.esp.04152008','epicvis.esp.04152008',
-                'epicord.esp.04152008','epicres.esp.04152008','epicimm.esp.04152008',
-                'epicprb.esp.04152008',
-                'epicmed.esp.04152008']
+outfiledir = '/home/ESP/NORTH_ADAMS/incomingData/'
+outfilenames = ['%s/epicpro.esp.%s' % (outfiledir,todaystr),
+                '%s/epicmem.esp.%s' % (outfiledir,todaystr),
+                '%s/epicall.esp.%s' % (outfiledir,todaystr),
+                '%s/epicvis.esp.%s' % (outfiledir,todaystr),
+                '%s/epicord.esp.%s' % (outfiledir,todaystr),
+                '%s/epicres.esp.%s' % (outfiledir,todaystr),
+                '%s/epicimm.esp.%s' % (outfiledir,todaystr),
+                '%s/epicprb.esp.%s' % (outfiledir,todaystr),
+                '%s/epicmed.esp.%s' % (outfiledir,todaystr)]
 
 ## the following lists control the way output ETL records are written
 ## each output file has a lookup list of element names from

@@ -6,7 +6,7 @@ sys.path.insert(0, '/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
-
+import utils
 from ESP.esp.models import *
 
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -35,19 +35,19 @@ def getOnestr(delimiter, templ):
 ####obr_dict ={obrseq: (total_OBXseq, [list of Universal IDs], subid, addition_value_dict), ...}
 obr_dict = {1: (10,['','CDC VAERS-1 (FDA) Report'],'', {5:'',6:'',7:isoTime()}),
             2: (6, ['30955-9','All vaccines given on date listed in #10','LN'],'', {}),
-            3: (12,['30961-7','Any other vaccinations within 4 weeks prior to the date listed in #10','LN'],'',{}),
-            4: (3, ['30967-4','Was adverse event reported previously','LN'],'',{}),
-            5: (1, ['30968-2','Adverse event following prior vaccination in patient','LN'],'',{}),
-            6: (4, ['35286-4','Adverse event following prior vaccination in Sibling','LN'],'1',{}),
-            7: (1, ['35286-4','Adverse event following prior vaccination in Sibling','LN'],'2',{}),
-            8: (2, ['','For children 5 and under',''],'', {}),
-            9: (4, ['','Only for reports submitted by manufacturer/immunization project',''],'',{}),
+            3: (8,['30961-7','Any other vaccinations within 4 weeks prior to the date listed in #10','LN'],'',{}),
+#            4: (3, ['30967-4','Was adverse event reported previously','LN'],'',{}),
+#            5: (1, ['30968-2','Adverse event following prior vaccination in patient','LN'],'',{}),
+#            6: (4, ['35286-4','Adverse event following prior vaccination in Sibling','LN'],'1',{}),
+#            7: (1, ['35286-4','Adverse event following prior vaccination in Sibling','LN'],'2',{}),
+#             8: (2, ['','For children 5 and under',''],'', {}),
+#            9: (4, ['','Only for reports submitted by manufacturer/immunization project',''],'',{}),
             }
 
 
 ####obx_dict = {(obrseq, obxseq): [datatype, [list of observationID], subid], ...}
 obx_dict = {(1,1):  ['NM',['21612-7', 'Reported Patient Age', 'LN'],''],
-            (1,2):  ['TS',['30947-6', 'Date form compelted', 'LN'],''],
+            (1,2):  ['TS',['30947-6', 'Date form completed', 'LN'],''],
             (1,3):  ['FT',['30948-4', 'Vaccination adverse events and treatment, if any','LN'],'1'],
             (1,4):  ['CE',['30949-2','Vaccination adverse event outcome','LN'],'1'],
             (1,5):  ['CE',['30949-2','Vaccination adverse event outcome','LN'],'1'],
@@ -73,31 +73,31 @@ obx_dict = {(1,1):  ['NM',['21612-7', 'Reported Patient Age', 'LN'],''],
             (3,6):  ['NM',['30955-9&30960-9','Number of previous doses','LN'],'1'],
             (3,7):  ['TS',['30961-7&31035-9','date given','LN'],'1'],
             (3,8):  ['CE',['30962-5','Vaccinated at','LN'],''],
-            (3,9):  ['CE',['30963-3','Vaccine purchased with','LN'], ''],
-            (3,10): ['FT',['30964-1','Other medications','LN'],''],
-            (3,11): ['FT',['30965-8','Illness at time of vaccination (specify)','LN'],''],
-            (3,12): ['FT',['30966-6','Pre-existing physician diagnosed allergies, birth defects, medical conditions','LN'],''],
+           # (3,9):  ['CE',['30963-3','Vaccine purchased with','LN'], ''],
+           # (3,10): ['FT',['30964-1','Other medications','LN'],''],
+           # (3,11): ['FT',['30965-8','Illness at time of vaccination (specify)','LN'],''],
+           # (3,12): ['FT',['30966-6','Pre-existing physician diagnosed allergies, birth defects, medical conditions','LN'],''],
 
-            (4,1): ['CE', ['30967-4','Was adverse event reported previously','LN'], ''],
-            (4,2): ['CE', ['30967-4','Was adverse event reported previously','LN'], ''],
-            (4,3): ['CE', ['30967-4','Was adverse event reported previously','LN'], ''],
+            #(4,1): ['CE', ['30967-4','Was adverse event reported previously','LN'], ''],
+            #(4,2): ['CE', ['30967-4','Was adverse event reported previously','LN'], ''],
+            #(4,3): ['CE', ['30967-4','Was adverse event reported previously','LN'], ''],
 
-            (5,1): ['FT',['30968-2&30971-6','Adverse event','LN'],''],
+            #(5,1): ['FT',['30968-2&30971-6','Adverse event','LN'],''],
 
-            (6,1): ['FT',['35286-4&30971-6','Adverse event','LN'],''],
-            (6,2): ['NM',['35286-4&30972-4','Onset age','LN'],''],
-            (6,3): ['CE',['35286-4&30956-7','Vaccine Type','LN'],''],
-            (6,4): ['NM',['35286-4&30973-2','Dose number in series','LN'],''],
+            #(6,1): ['FT',['35286-4&30971-6','Adverse event','LN'],''],
+            #(6,2): ['NM',['35286-4&30972-4','Onset age','LN'],''],
+            #(6,3): ['CE',['35286-4&30956-7','Vaccine Type','LN'],''],
+            #(6,4): ['NM',['35286-4&30973-2','Dose number in series','LN'],''],
 
-            (7,1): ['FT', ['35286-4&30971-6','Adverse event','LN'],''],
+            #(7,1): ['FT', ['35286-4&30971-6','Adverse event','LN'],''],
 
-            (8,1): ['NM',['8339-4','Body weight at birth','LN'],''],
-            (8,2): ['NM',['30974-0','Number of brothers and sisters','LN'],''],
+            #(8,1): ['NM',['8339-4','Body weight at birth','LN'],''],
+            #(8,2): ['NM',['30974-0','Number of brothers and sisters','LN'],''],
 
-            (9,1): ['ST',['30975-7','Mfr./Imm. Proj. report no.','LN'],''],
-            (9,2): ['TS',['30976-5','Date received by manufacturer/immunization project','LN'],''],
-            (9,3): ['CE',['30977-3','15 day report','LN'],''],
-            (9,4): ['CE',['30978-1','Report type','LN'],''],
+            #(9,1): ['ST',['30975-7','Mfr./Imm. Proj. report no.','LN'],''],
+            #(9,2): ['TS',['30976-5','Date received by manufacturer/immunization project','LN'],''],
+            #(9,3): ['CE',['30977-3','15 day report','LN'],''],
+            #(9,4): ['CE',['30978-1','Report type','LN'],''],
 
             }
 
@@ -112,7 +112,7 @@ class onehl7:
     the batch by the renderBatch method
     """
     
-    def __init__(self, demogid, institutionName='HVMA'):
+    def __init__(self, onecase, institutionName='HVMA'):
 
         self.encoding = '^~\&'
         self.recvfacility = 'VAERS PROCESSOR'
@@ -122,8 +122,10 @@ class onehl7:
         self.applicationTp = 'AL'
         self.msgTp = 'ORU^R01'
         self.sendfacility = institutionName
-        self.demog = Demog.objects.filter(id=demogid)[0]
-
+	self.case = onecase
+        self.demog = Demog.objects.filter(id=self.case.caseDemog_id)[0]
+	encs = Enc.objects.extra(where=['id IN (%s)' %  self.case.caseEncID]).order_by('EncEncounter_Date')
+	self.eventdatetime ='%s1200' % encs[0].EncEncounter_Date	 
 
     ###################################    
     def build_seg(self, temp_d):
@@ -240,21 +242,41 @@ class onehl7:
         age = self.demog.getAge()
         if type(age) != type(2):
             unit = getOnestr('^',['mo', 'month', 'ANSI'])
-            value = age.split()[0]
+            agevalue = age.split()[0]
         else:
             unit = ''
-            value = age
+            agevalue = age
+
+	##temperature
+	import re
+	p = re.compile('\s+')
+	temperature_str =p.sub(' ', self.case.caseComments)
+
+	#for oneenc in encs:
+	#    temperature_str =temperature_str+'%s,' % oneenc.EncTemperature
+
+	##add value to 6,8,9
+	##number of days for hospitalized
+	hosp_days = 0
+	dayunit = getOnestr('^',['d', 'day', 'ANSI'])
+
+	##date of vaccine
+	imms = Immunization.objects.extra(where=['id IN (%s)' %  self.case.caseImmID])
+	vacdate = str(imms[0].ImmDate)
+
+	##event data and time=case created date
+	#eventdatetime =  self.case.casecreatedDate.strftime('%Y%m%d%H%M')
 
         ##key = the sequence of OBX
-        data_dict={1: (age, unit),
-                   2: (isoTime(),''),
-                   3: ('',''),
+        data_dict={1: ('%.2i' % int(agevalue), unit),
+		   2: (isoTime(),''),
+                   3: (temperature_str,''),
                    4: ('',''),
                    5: ('',''),
-                   6: ('',''),
-                   7: ('',''),
-                   8: ('',''),
-                   9: ('',''),
+                   6: ('%.2i' % hosp_days,dayunit),
+		   7: ('',''),
+                   8: (vacdate,''),
+		   9: (self.eventdatetime,''),
                    10:('',''),
                    }
 
@@ -262,34 +284,60 @@ class onehl7:
 
     ###################################
     def buildOBX_data_2(self):
-        data_dict={1: ('', ''),
-                   2: ('',''),
-                   3: ('',''),
-                   4: ('',''),
-                   5: ('',''),
-                   6: ('',''),
-                   }
+
+        ##Imm recs
+        imms = Immunization.objects.extra(where=['id IN (%s)' %  self.case.caseImmID])
+	data_dict={}
+        obxseq_l = range(1, 6*len(imms), 6)
+	for indx in range(len(imms)):
+            imm = imms[indx]
+	    setid_start = obxseq_l[indx]
+	    data_dict[setid_start] = (imm.ImmName,'')
+            data_dict[setid_start+1] = (imm.ImmManuf,'')
+	    data_dict[setid_start+2] = (imm.ImmLot,'')
+	    data_dict[setid_start+3] = ('','')
+	    data_dict[setid_start+4] = ('','')
+
+	    temp = Immunization.objects.filter(ImmPatient__id = self.demog.id,
+					       ImmName__icontains=imm.ImmName, ImmDate__lt=imm.ImmDate)
+	    num_prevdose='%.2i' % len(temp)
+	    data_dict[setid_start+5] = (num_prevdose,'')
         
         return data_dict
+
             
     ###################################
     def buildOBX_data_3(self):
-        data_dict={1: ('', ''),
-                   2: ('',''),
-                   3: ('',''),
-                   4: ('',''),
-                   5: ('',''),
-                   6: ('',''),
-                   7: ('',''),
-                   8: ('',''),
-                   9: ('',''),
-                   10:('',''),
-                   11:('',''),
-                   12:('',''),
-                   
-                   }
+        ##get all other vaccines within 4 weeks before the event date
 
-        return data_dict
+        ##get all imms form this demog
+	start_date=utils.getAnotherdate(self.eventdatetime,dayrange=-29)
+	end_date = utils.getAnotherdate(self.eventdatetime,dayrange=0)
+	hosp = self.case.caseProvider.provPrimary_Dept
+	data_dict={}
+	setid_start=1
+	imms = Immunization.objects.filter(ImmPatient__id = self.demog.id)
+	for imm in imms:
+	    if imm.ImmDate=='':
+		continue    
+	    immdate = utils.getAnotherdate(imm.ImmDate,0)
+	    if immdate and immdate>=start_date and immdate<=end_date:
+		data_dict[setid_start] = (imm.ImmName,'')
+		data_dict[setid_start+1] = (imm.ImmManuf,'')
+		data_dict[setid_start+2] = (imm.ImmLot,'')
+		data_dict[setid_start+3] = ('','')
+		data_dict[setid_start+4] = ('','')
+		temp = Immunization.objects.filter(ImmPatient__id = self.demog.id,
+						   ImmName__icontains=imm.ImmName, ImmDate__lt=imm.ImmDate)
+
+		num_prevdose='%.2i' % len(temp)
+		data_dict[setid_start+5] = (num_prevdose,'')
+		data_dict[setid_start+6] = (imm.ImmDate,'')
+		data_dict[setid_start+7] = (hosp,'')
+		setid_start=setid_start+1+7
+		
+	return data_dict
+
 
     ###################################
     def buildOBX_data_4(self):
@@ -301,7 +349,7 @@ class onehl7:
 
     ###################################
     def buildOBX_data_5(self):
-        data_dict={1: ('None', ''),
+        data_dict={1: ('',''),
                    }
         return data_dict
             
@@ -341,11 +389,22 @@ class onehl7:
     ###################################
     def makeOBXs(self, obrseq, totalobxseq, data_dict):
         returnseg=''
-        for obxseq in range(1,totalobxseq+1,1):
-            (datatp, obsIDl,subid) = obx_dict[(obrseq, obxseq)]
-            (value, unit) = data_dict[obxseq]
-            obx = self.makeOBX(obxseq=obxseq,datatp=datatp,obsID=getOnestr('^',obsIDl),subid=subid, value=value,unit=unit)
-            returnseg =returnseg+obx
+	
+        repeats_seq = len(data_dict)/totalobxseq
+
+
+        for i in range(1, repeats_seq +1,1):
+            for obxseq in range(1,totalobxseq+1,1):
+                (datatp, obsIDl,subid) = obx_dict[(obrseq, obxseq)]
+                realindx = totalobxseq*(i-1)+obxseq
+
+                (value, unit) = data_dict[realindx]
+		if int(obrseq) in (2,3):
+		    subid = i
+        
+                obx = self.makeOBX(obxseq=realindx,datatp=datatp,obsID=getOnestr('^',obsIDl),subid=subid, 
+value=value,unit=unit)
+                returnseg =returnseg+obx
         return returnseg
 
         
@@ -355,47 +414,53 @@ def test():
     """test! used during development
     Won't work now as I've cut over to using django records
     """
-    testDoc = onehl7(10)
-    msh = testDoc.makeMSH()
-    pid =  testDoc.makePID()
-    finalstr = msh +pid
-    ##we do not have patient parents info and Immunization info, so there is no NK1 seqment
+    immcases = TestCase.objects.filter(caseImmID__isnull=False)
+    for onecase in immcases:
+        
+        testDoc = onehl7(onecase)  ##1946 is esp_demog.id
+	msh = testDoc.makeMSH()
+	pid =  testDoc.makePID()
+	finalstr = msh +pid
+	##we do not have patient parents info and Immunization info, so there is no NK1 seqment
 
-    ##ORC = Provider who orders vaccination 
+        ##ORC = Provider who orders vaccination 
 
-    ##OBR
-    obxdata = {1: testDoc.buildOBX_data_1(),
+        ##OBR
+	obxdata = {1: testDoc.buildOBX_data_1(),
                2: testDoc.buildOBX_data_2(),
                3: testDoc.buildOBX_data_3(),
-               4: testDoc.buildOBX_data_4(),
-               5: testDoc.buildOBX_data_5(),
-               6: testDoc.buildOBX_data_6(),
-               7: testDoc.buildOBX_data_7(),
-               9: testDoc.buildOBX_data_9()}
+             #  4: testDoc.buildOBX_data_4(),
+             #  5: testDoc.buildOBX_data_5(),
+             #  6: testDoc.buildOBX_data_6(),
+             #  7: testDoc.buildOBX_data_7(),
+             #  9: testDoc.buildOBX_data_9()
+		   }
 
-    ##Age
-    age = testDoc.demog.getAge()
-    try:
-        if int(age)>5:
-            pass
-        else:
-            obxdata[8] = testDoc.buildOBX_data_8()
+        ##Age
+	age = testDoc.demog.getAge()
+#	try:
+#	    if int(age)>5:
+#	        pass
+#	    else:
+#	        obxdata[8] = testDoc.buildOBX_data_8()
 
-    except:
-        obxdata[8] = testDoc.buildOBX_data_8()
+#	except:
+#	    obxdata[8] = testDoc.buildOBX_data_8()
 
-    for obrseq in obxdata.keys():
-        print obrseq
-        obr = testDoc.makeOBR(obrseq)
-        finalstr = finalstr +obr
-        obxs = testDoc.makeOBXs(obrseq, obr_dict[int(obrseq)][0], obxdata[obrseq])
-        finalstr = finalstr +obxs
+        for obrseq in obxdata.keys():
+	    if not obxdata[obrseq]:
+                continue
+	    obr = testDoc.makeOBR(obrseq)
+	    finalstr = finalstr +obr
+	    
+	    obxs = testDoc.makeOBXs(obrseq, obr_dict[int(obrseq)][0], obxdata[obrseq])
+	    finalstr = finalstr +obxs
     
-    # Print our newly created XML
-    f = file('VARES_hl7Sample.hl7','w')
-    f.write(finalstr)
-    print finalstr
-    f.close()
+	# Print our newly created XML
+	f = file('VARES_hl7Sample_case%s.hl7' % onecase.id,'w')
+	f.write(finalstr)
+	print finalstr
+	f.close()
     
 
 

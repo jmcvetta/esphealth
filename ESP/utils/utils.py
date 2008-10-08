@@ -14,6 +14,22 @@ import traceback
 import smtplib
 import datetime
 
+
+
+filenlist = ['epicmem.esp.','epicpro.esp.','epicvis.esp.','epicord.esp.','epicres.esp.','epicmed.esp.','epicimm.esp.']
+FILEBASE='epic' ##'epic' or 'test'
+
+###################################
+###################################
+def getAnotherdate(date1, dayrange):
+    try:
+        return datetime.date(int(date1[:4]),int(date1[4:6]),int(date1[6:8]))+datetime.timedelta(dayrange)
+    except:
+        print 'Error when get another date: date1=%s,range=%s' % (date1,dayrange)
+
+    return ''
+
+                    
 ###################################
 ###################################
 def sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],msg='',subject='ESP management'):
@@ -39,3 +55,30 @@ def getPeriod(date1,date2):
     
 
         
+################################
+def getfilesByDay(files):
+
+    files.sort()
+    dayfiles={}
+    returndays=[]
+    ##filename shoule be: epic***.esp.MMDDYY or epic***.esp.MMDDYYYY
+    for f in files:
+        if f.lower().find('test')!=-1 and FILEBASE!='test': ##test file
+            continue
+        
+        mmddyy =f[f.find('esp.')+4:]
+        if len(mmddyy)==6: ##DDMMYY
+            newdate='20'+mmddyy[-2:]+mmddyy[:4]
+        elif mmddyy.find('_')!= -1: #monthly or weekly update, formart is epic***.esp.MMDDYYYY_m or epic***.esp.MMDDYYYY_w
+            newdate=mmddyy[-6:-2]+mmddyy[:4]
+        else:
+            newdate=mmddyy[-4:]+mmddyy[:4]
+
+            
+        if (newdate,mmddyy) not in returndays:
+            returndays.append((newdate,mmddyy))
+
+    returndays.sort(key=lambda x:x[0])
+    return returndays
+
+                                                                        

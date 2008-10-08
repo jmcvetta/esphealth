@@ -427,13 +427,17 @@ def casedefine_detail(request, cpt="",component=""):
 def casematch(request,  download=''):
     from django.db import connection
     cursor = connection.cursor()
-    
+
     returnlist = []
     try:
         file = request.FILES['upfile']
         filedata =file['content'].split('\n')[1:]  ##assume the first line is header
         indx=1
+
+
+        ##go through incoming data
         for onedemog in filedata:
+            
             if onedemog.strip()=='':
                 continue
             items = onedemog.strip().split('\t')
@@ -446,21 +450,22 @@ def casematch(request,  download=''):
                 dob=''
                 dphstatus=''
                 dphdate=''
-#            exactobjs = Demog.objects.filter(DemogLast_Name__iexact=lname,DemogFirst_Name__iexact=fname,DemogGender__iexact=gender)
-#            if exactobjs:
-#                exactobjs = exactobjs.select_related().order_by('esp_demog.DemogLast_Name', 'esp_demog.DemogFirst_Name','esp_demog.DemogGender')
-            cursor.execute("""select id, DemogLast_Name, DemogFirst_Name, DemogGender, DemogDate_of_Birth
+
+            fname = string.replace(fname, "'", '')
+            lname = string.replace(lname, "'", '')
+
+            cursor.execute("""select id, REPLACE(DemogLast_Name, "'", ""), REPLACE(DemogFirst_Name, "'", ""), DemogGender, DemogDate_of_Birth
                               from esp_demog
-                              where upper(DemogLast_Name)=%s and upper(DemogFirst_Name)=%s and upper(DemogGender)=%s
+                              where upper(REPLACE(DemogLast_Name, "'", ""))=%s and upper(REPLACE(DemogFirst_Name, "'", ""))=%s and upper(DemogGender)=%s
                               order by DemogDate_of_Birth """, (string.upper(lname),string.upper(fname),string.upper(gender)))
             exactobjs = cursor.fetchall()
             if exactobjs:
                 exactids = map(lambda x:'%s' % x[0], exactobjs)
                 exactobjs = map(lambda x:x[1:], exactobjs)
 
-            stmt = """select DemogLast_Name, DemogFirst_Name, DemogGender, DemogDate_of_Birth
+            stmt = """select REPLACE(DemogLast_Name, "'", ""), REPLACE(DemogFirst_Name, "'", ""), DemogGender, DemogDate_of_Birth
                                       from esp_demog
-                                      where upper(DemogLast_Name) like '%s%s' and upper(DemogFirst_Name) like '%s%s' and upper(DemogGender)='%s' """ % (string.upper(lname[:3]),'%%', string.upper(fname[:2]),'%%', string.upper(gender))
+                                      where upper(REPLACE(DemogLast_Name, "'", "")) like '%s%s' and upper(REPLACE(DemogLast_Name, "'", "")) like '%s%s' and upper(DemogGender)='%s' """ % (string.upper(lname[:3]),'%%', string.upper(fname[:2]),'%%', string.upper(gender))
             if exactobjs:
                 stmt = stmt + " and id not in (%s) " % ','.join(exactids)
 
@@ -473,13 +478,6 @@ def casematch(request,  download=''):
             thisd = [lname,fname,gender,dob,len(exactobjs)+len(res), exactobjs, res, dphstatus,dphdate,indx]
                 
 
- #           objs = Demog.objects.filter(DemogLast_Name__istartswith=lname[:3],DemogFirst_Name__istartswith=fname[:2],DemogGender__icontains=gender)
- #           objs = objs.exclude(DemogLast_Name__iexact=lname,DemogFirst_Name__iexact=fname,DemogGender__iexact=gender)
-            
-#            if objs:
-#                objs = objs.select_related().order_by('esp_demog.DemogLast_Name', 'esp_demog.DemogFirst_Name','esp_demog.DemogGender')
-
- #           thisd=[lname,fname,gender,dob,len(objs)+len(exactobjs),exactobjs,objs]
             returnlist.append(thisd)
             indx+=1
     except:
@@ -499,9 +497,9 @@ def casematch(request,  download=''):
         for onerow in returnlist:
             (lname,fname,gender,dob,totalnum, exactrec, totalrec,dphstatus,dhpdate,indx) = onerow
             for i in exactrec:
-                report.append(['Patient%s' % indx, dphstatus,dhpdate,i[0],i[1],i[2],i[3],'Exact Match'])
+                report.append(['Patient%s' % indx, dphstatus,dhpdate,'%s' % i[0],'%s' % i[1],'%s'%i[2],'%s'%i[3],'Exact Match'])
             for i in totalrec:
-                report.append(['Patient%s' %indx, dphstatus,dhpdate,i[0],i[1],i[2],i[3],''])
+                report.append(['Patient%s' %indx, dphstatus,dhpdate,'%s'%i[0],'%s'%i[1],'%s'%i[2],'%s'%i[3],''])
             if int(totalnum)==0:
                 report.append(['Patient%s' %indx,dphstatus,dhpdate,'','','','',''])
             indx+=1
@@ -510,8 +508,10 @@ def casematch(request,  download=''):
         return response
                                                     
     else:
+        
         if len(returnlist)>0:
             cinfo = {
+
                 "request": request,
                 "filedata": returnlist,
                 'SITEROOT':SITEROOT,
@@ -524,10 +524,58 @@ def casematch(request,  download=''):
                 }
         c = Context(cinfo)
         return render_to_response('esp/matchupload.html',c)
-    
+
+
+
+#################################
+def getDownloaddata(objs):
+    ##return a list of data ['Case ID','Condition','Patient Name','MRN','D.O.B','Gender','EDC','TestName','Test Order Date','Test Result Date','TestResult','ICD9']
+    returnlist = []
+    for c in objs:
+        encs=[]
+        labs=[]
+        rxs=[]
+        
+        #lab
+        orderdate=resultdate=''
+        testname=''
+        sitename=''
+        lxstr = c.caseLxID
+        if lxstr:
+            labs = Lx.objects.extra(where=['id IN (%s)' % lxstr])
+            labs = labs.order_by('LxOrder_Id_Num')
+            orderdate = '; '.join([i.LxOrderDate for i in labs])
+            resultdate='; '.join([i.LxDate_of_result for i in labs])
+            testname='; '.join([i.LxComponentName for i in labs])
+            testresult = '; '.join([i.LxTest_results for i in labs])
+            
+            
+            
+        #ICD9
+        linebreak='; '
+        i9strl=[]
+        i9l = c.caseICD9.split(',')
+        finali9l=[]
+        for i in i9l:
+            finali9l=finali9l+i.split()
+        for oneicd9 in finali9l:
+            oneicd9=oneicd9.strip()
+            if oneicd9:
+                i9strl.append(getI9_onecode(oneicd9))
+        i9str=(linebreak).join(i9strl)
+        
+        
+        #preg
+        (msg, edc) = c.getPregnant()
+        if not edc:
+            edc = ''
+        onerow = ['%s' % c.id, c.caseRule.ruleName, c.caseDemog.DemogLast_Name+','+c.caseDemog.DemogFirst_Name,'%s' % c.caseDemog.DemogMedical_Record_Number,c.caseDemog.DemogDate_of_Birth, c.caseDemog.DemogGender,edc, testname,orderdate,resultdate,testresult ,i9str]
+        returnlist.append(onerow)
+    return returnlist
+
 #################################
 @user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
-def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilter="0", orderby="sortid"):
+def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilter="0", orderby="sortid",download=''):
     """search cases by Patient Name or MRN
     """
     datecol = 'LastUpdated'
@@ -613,7 +661,19 @@ def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilte
         
     postdest = '%s/cases/search/%s/%s/%s/%s/%s/' % (SITEROOT,wf,cfilter,mrnfilter,rulefilter,orderby)
     #print 'using postdest=%s, rulefilter=%sDDD' % (postdest,rulefilter)
-    if len(objs)>0:
+    if download:
+        response = HttpResponse(mimetype='application/vnd.ms-excel')
+        report_filename ='TestCases_%s' % datetime.datetime.now().strftime("%Y%m%d")
+        response['Content-Disposition'] = 'attachment; filename="%s"' % report_filename
+        
+        
+        returnlist = getDownloaddata(objs)
+        headerl=['Case ID','Condition','Patient Name','MRN','D.O.B','Gender','EDC','TestName','Test Order Date','Test Result Date','TestResult','ICD9']
+        returnlist.insert(0,headerl)
+        report  ='\n'.join(map(lambda x:'\t'.join(x), returnlist))
+        response.write(report)
+        return response
+    elif len(objs)>0:
         paginate_by = 10
         paginator = ObjectPaginator(objs, paginate_by)
         page = int(request.GET.get('page', 0))
@@ -822,12 +882,14 @@ def preloadrulexclud(request,update=0):
                 cpt = request.POST['CPT_%s'% dbid].strip()
                 cmpt = request.POST['CMPT_%s'% dbid].strip()
                 if cpt or cmpt:
-                    save_l.append((cpt,cmpt))
+                    if (cpt,cmpt)not in save_l:
+                        save_l.append((cpt,cmpt))
         for dbid in range(newrec):
             cpt = request.POST['CPT_NEW%s'% dbid].strip()
             cmpt = request.POST['CMPT_NEW%s'% dbid].strip()
             if cpt or cmpt:
-                save_l.append((cpt,cmpt))
+                if (cpt,cmpt)not in save_l:
+                    save_l.append((cpt,cmpt))
         thisr.ruleExcludeCode = '%s' % save_l
         thisr.save()
         msg = "<br>The exclusion list for %s has been saved to Database!<br>" % thisr.ruleName
@@ -1123,12 +1185,17 @@ def preloadupdate(request,table='cptloincmap'):
             hl7name = request.POST['HL7NAME_%s'% dbid]
             hl7code = request.POST['HL7CODE_%s'% dbid]
             hl7type = request.POST['HL7TYPE_%s'% dbid]
+
            # excludl = request.POST['EXCLUDE_%s'% dbid]
             note = string.strip(request.POST['NOTE_%s'% dbid])
             if string.find(dbid, 'NEW')!=-1: #new records
                 dbid = ''
+                excludl = ''
+            else:
+                thisr = Rule.objects.filter(id = dbid)[0]
+                excludl = thisr.ruleExcludeCode
             if name:
-                temp= '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (dbid,name,initstatus, inprod,msgfmt,msgdest,hl7name,hl7code,hl7type,note)
+                temp= '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (dbid,name,initstatus, inprod,msgfmt,msgdest,hl7name,hl7code,hl7type,note,excludl)
                 lines.append(temp.split('\t'))
                 f.write('%s\n' % temp)
         f.close()

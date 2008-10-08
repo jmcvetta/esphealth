@@ -282,7 +282,7 @@ def load2rule(table,lines):
 
     lines.sort()
     for items  in lines:
-        id, name,initstatus,inprod, fmt, dest,hl7name,hl7c,hl7ctype,note = [x.strip() for x in items]
+        id, name,initstatus,inprod, fmt, dest,hl7name,hl7c,hl7ctype,note,excludstr = [x.strip() for x in items]
         if not name: continue
 
         r = Rule.objects.filter(ruleName__iexact=name)
@@ -306,7 +306,7 @@ def load2rule(table,lines):
         rl.ruleHL7Code = hl7c
         rl.ruleHL7CodeType = hl7ctype
         rl.ruleComments = note
-#        rl.ruleExcludeCode=excludstr
+        rl.ruleExcludeCode=excludstr
         rl.save()
         print 'Added Rule - %s, InProduction=%s' % (name,inprod)
     print 'Total rules: %s ' % len(Rule.objects.all())

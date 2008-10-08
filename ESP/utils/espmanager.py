@@ -7,6 +7,7 @@ import django, datetime
 from ESP.esp.models import *
 from ESP.settings import TOPDIR,CODEDIR,LOCALSITE,FTPUSER,FTPPWD,FTPSERVER,EMAILSENDER,getLogging,getJavaInfo
 from ESP.utils import hl7XML
+import ESP.utils.utils as utils
 
 import string
 import shutil
@@ -209,9 +210,26 @@ def doFTP():
     #remote site directory
     ftp.cwd('ESPFiles')
     filenames = ftp.nlst()
+
+    downloadfiles = []
+    curdays = utils.getfilesByDay(filenames)
+    missdays=[]
+    for oneday in map(lambda x:x[1],curdays):
+        for onef in utils.filenlist:
+            onef = onef+oneday
+            if onef not in filenames:
+                missdays.append(oneday)
+                break
+                                                        
     for eachfile in filenames:
+        error=0
+        for oneday in missdays:
+            if eachfile.find(oneday) <> -1:
+                error=1
+                break
+                                            
         #check eachfile if this has been downloaded or not
-        if (eachfile.find('.esp.') <> -1) and not DataFile.objects.filter(filename__exact=eachfile) and (eachfile <> 'Processed'):
+        if error==0 and (eachfile.find('.esp.') <> -1) and not DataFile.objects.filter(filename__exact=eachfile) and (eachfile <> 'Processed'):
             ##not downloaded yet
             newfiles.append(eachfile)
             ftp.retrbinary('RETR ' + eachfile, open(eachfile, 'wb').write)
@@ -255,7 +273,7 @@ if __name__ == "__main__":
         ##
         checkPrev5days()
 
-        #newfiles=[]
+#        newfiles=[]
         newfiles=doFTP()
         if newfiles:
             ##1. parse data

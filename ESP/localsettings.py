@@ -1,17 +1,17 @@
 USESQLITE=0
 RUNFAKEDATA=0
 SITEROOT='/ESP'
-LOCALSITE='Prototype'
+LOCALSITE='HVMA' #Prototype' #'HVMA'
 
-MYSQL_DB_USER = 'yourespuser'
-MYSQL_DB_PASSWORD = 'youresppassword'
+MYSQL_DB_USER = 'ESP'
+MYSQL_DB_PASSWORD = '3spuser2006'
 
-SQLITE_DB_USER = 'espsqlite'
-SQLITE_DB_PASSWORD = 'sqliteesp'
+SQLITE_DB_USER = 'rossSQL'
+SQLITE_DB_PASSWORD = 'SQLross'
 
-FTPUSER = 'ftpuser'
-FTPPWD = 'ftppass'
-FTPSERVER = 'ftp.yoursite.org'
+FTPUSER = 'HEALTHONE\\rlazarus'
+FTPPWD = 'Welcome07'
+FTPSERVER = 'n2ftp001.hvma.org'
 
 
-EMAILSENDER='espuser@esp.yoursite.org'
+EMAILSENDER='espuser@lkenpesp.healthone.org'

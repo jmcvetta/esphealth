@@ -1,4 +1,5 @@
 """
+#For NORTH Adams
 # mostly generic functions driven by
 # Lots'0'configuration data (TM)
 # moved to a configuration file
@@ -33,7 +34,7 @@ We need
 import sys, os, datetime, time, logging
 from northadams import * # that's where all our configuration lives
 import utils
-
+import shutil
 import string
 
 prog = os.path.split(sys.argv[0])[-1]
@@ -156,7 +157,12 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
             
             try:
                 if string.find(string.upper(ename), 'DATE')!=-1: ##it is a data field
-                    e = lrow[eoffset][esubfield][:8]
+                    if len(lrow[eoffset][esubfield])==6:
+                        e = lrow[eoffset][esubfield][:6]+'01'
+                        logging.warning('Modify Date Field %s (%d:%d) in %s' % (ename,eoffset,esubfield,lrow))
+                        
+                    else:
+                        e = lrow[eoffset][esubfield][:8]
                 else:
                     e = lrow[eoffset][esubfield]
 
@@ -367,6 +373,11 @@ def writeMDicts(mclasses={}):
 
 
 ###################################
+def movefile(f, fromdir, todir):
+    shutil.move(fromdir+'/%s' % f, todir)
+    logging.info('Moving file %s from %s to %s\n' % (f, fromdir, todir))
+
+###################################
 def parseMessages(mlist=[],grammars={},incominghl7f=None):
     """test the grammar driven parser
     expects a list of individual messages,
@@ -404,14 +415,15 @@ if __name__ == "__main__":
     logging.info('##########Processing started at %s' % timenow())
 
     hlfiles=os.listdir('/home/ESP/NORTH_ADAMS/incomingHL7/')
-
+    incomdir = '/home/ESP/NORTH_ADAMS/incomingHL7/'
+    todir = '/home/ESP/NORTH_ADAMS/archivedHL7/'
     for f in hlfiles:
         print 'PROCESS %s' % f
-        tm = makeTests('/home/ESP/NORTH_ADAMS/incomingHL7/'+f)
+        tm = makeTests(incomdir+f)
         grammars = makeGrammars()
         mclasses = parseMessages(mlist=tm,grammars=grammars,incominghl7f = f)
         writeMDicts(mclasses=mclasses)
-
+        movefile(f, incomdir, todir)
 
     for x in dict(map(lambda x:(x,None), outfilenames)).keys():
         xh  =file(x,'a+')

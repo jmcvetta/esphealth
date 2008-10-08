@@ -40,14 +40,22 @@
 
  </td>
  <td valign="middle"><input type="submit" name="submit" value="Search Cases" ></td>
-
-
  </tr>
 
- </table>
 </form>
-</td></tr>
 </table>
+</td>
+</tr>
+</table>
+{% ifequal inprod "0" %}
+<br>
+<p>
+<center>
+    <form action="{{SITEROOT}}/cases/search/{{inprod}}/{{wf}}/{{pname}}/{{mrn}}/{{rulefilter}}/{{orderby}}/download/" method="post">
+       <input type="submit" name="submit" value="Download to Excel" >
+    </form>
+</center>
+{% endifequal %}
 
 {% if is_paginated %}
   <p>Page {{page}} of {{pages}}.</p>

@@ -3,23 +3,24 @@
 # of delimited files
 
 import os,sys
-sys.path.insert(0, '/home/ESP/')
+sys.path.insert(0, '/home/ESP/ESP')
 # for esphealth.org sys.path.insert(0, '/home/ESPNew/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 import django, datetime,time
-from ESP.esp.models import *
+from esp.models import *
 from django.db.models import Q
-from ESP.settings import *
+from settings import *
 from django.db import connection
 cursor = connection.cursor()
-import utils
+import utils.utils as utils
 
 import string,re,copy
 import shutil
 import StringIO
 import traceback
 import smtplib
+
 
 VERSION = '0.2'
 DO_VALIDATE = 1 # set to zero to avoid the validation step
@@ -429,7 +430,7 @@ def parseEnc(incomdir, filename,demogdict,provdict):
             espencid = cursor.lastrowid
 
         
-        #updateIcd9Fact(espencid, demogid, encd, icd9)
+        updateIcd9Fact(espencid, demogid, encd, icd9)
 
 #        espencid = updateDB('esp_enc',enc_str,values, espencid)
 
@@ -988,9 +989,6 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
     returnd={}
     errors=0
     fname = os.path.join(incomdir,'%s' % fname)
-    if not os.path.exists(fname):
-        iplogging.error('Validator - Non-exsiting file:%s\n' % (fname))
-        return (1, returnd)
 
     hascontrolline=0
     for (l, linenum) in splitfile(fname,'^',True):
@@ -1076,6 +1074,13 @@ def validateOnefile(incomdir, fname,delimiternum,needidcolumn,datecolumn=[],requ
 def validateOneday(incomdir, oneday):
     """validate one day files
     """
+    for i in utils.filenlist:
+        fname = i+oneday
+        fname = os.path.join(incomdir,'%s' % fname)
+        if not os.path.exists(fname):
+            iplogging.error('Validator - Non-exsiting file:%s\n' % (fname))
+            return 1
+                                                
 
     finalerr=0
     pids={}
@@ -1187,8 +1192,10 @@ def doValidation(incomdir,days):
             iplogging.info("Validator - Files for day %s OK\n" % oneday)
             parsedays.append(oneday)
 
-    if errordays: 
-        utils.sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg='Found validation errors when running incomingParse.py; Error days are:%s; Please go to log file for detail;' % (str(errordays)))
+    if errordays:
+        msg = 'Found validation errors when running incomingParse.py; Error days are:%s; Please go to log file for detail;' % (str(errordays))
+#        print msg
+        utils.sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg=msg)
         
     return parsedays
 
@@ -1207,7 +1214,7 @@ def updateLoinc_lx():
     file_lastmodtime = datetime.datetime(filetime[0],filetime[1],filetime[2])
     cursor.execute("""select max(lastupdate) from esp_demog""")
     dbtime = cursor.fetchall()[0][0]
-    if dbtime<file_lastmodtime:
+    if dbtime and dbtime<file_lastmodtime:
         iplogging.info('Need do updating cptloinc map in esp_cptloincmap & esp_lx tables')
         table='esp_cptloincmap'
         load2cptloincmap(table, preloadgetlines(preloadf), cursor)
@@ -1248,7 +1255,8 @@ if __name__ == "__main__":
        
         ##get incoming files and do validations
         incomdir = os.path.join(TOPDIR, LOCALSITE,'incomingData/')
-        days= getfilesByDay(incomdir)  #days are sorted list
+        allf = os.listdir(incomdir)
+        days= utils.getfilesByDay(allf)  #days are sorted list
         iplogging.info('Days are: %s; \n' % str(days))
         
         if DO_VALIDATE:

@@ -24,7 +24,6 @@ sys.path.insert(0, '/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
-
 from ESP.esp.models import *
 from django.db.models import Q
 from ESP.settings import *
@@ -239,7 +238,19 @@ def getRelatedEncids(onedemogid,condicd9s,mindate, maxdate):
     icd9List=[]
     distincticd9List=[]
     returnicd9str = ''
-    ruleicd9s = map(lambda x:x.CondiICD9.strip(), condicd9s)
+
+#    r = Rule.objects.filter(id=condicd9s[0].CondiRule_id)
+#    if rand r[0].ruleName== 'Syphilis':  ###need modify
+    if  condicd9s and Rule.objects.filter(id=condicd9s[0].CondiRule_id)[0].ruleName== 'Syphilis':  ###need modify
+        tmp = map(lambda x:x.CondiICD9.strip(), condicd9s)
+        ruleicd9s=[]
+        for i in tmp:
+            for j in range(10):
+                ruleicd9s.append('%s%s' % (i,j))
+        for i in tmp:
+            ruleicd9s.append('%s' % i[:-1])
+    else:        
+        ruleicd9s = map(lambda x:x.CondiICD9.strip(), condicd9s)
     encs = Enc.objects.filter(EncPatient__id =onedemogid).order_by('EncEncounter_Date')
     for enc in encs:
         icd9str=''
@@ -843,8 +854,8 @@ def cal_bilirubin(demogid,caselxids, dayrange=22):
     ##bilirubin total
     stmt1 = """select id,LxTest_results
     from esp_lx
-    where lxpatient_id=%s and LxLoinc='33899-6' and (LxTest_results>1.5 or LxTest_results like '%%>%%');
-    """ % demogid
+    where lxpatient_id=%s and LxLoinc='33899-6' and (LxTest_results>1.5 or LxTest_results like '%s>%s');
+    """ % (demogid, '%%','%%')
     
     stmt2 = """select l1.LxOrderDate, l1.id, l2.id
         from esp_lx l1,  esp_lx l2
@@ -852,8 +863,12 @@ def cal_bilirubin(demogid,caselxids, dayrange=22):
         and l1.LxOrderDate=l2.LxOrderDate and (l1.LxTest_results+l2.LxTest_results)>1.5
         """ % (demogid,demogid)
     for stmt in [stmt1, stmt2]:
-    
-        cursor.execute(stmt)
+        try:
+            cursor.execute(stmt)
+        except:
+            print stmt
+            sys.exit(1)
+            
         res = cursor.fetchall()
         if res:
             for i in res:
@@ -991,7 +1006,24 @@ def processHepBPreg(condition):
             pass
             
             
-                            
+###################################
+def Hepc_posi(cond, onecrit, caselxid, onedemogid, dayrange=29):
+
+    patient = Demog.objects.get(id__exact=onedemogid)
+
+    crit_lxs =Lx.objects.filter(Q(LxPatient__id=onedemogid),
+                                Q(LxLoinc__in=onecrit))
+    if crit_lxs:
+        defines = ConditionLOINC.objects.filter(Q(CondiRule__ruleName__icontains=cond),
+                                                Q(CondiLOINC__in=onecrit))
+        returnlx = getRelatedLx(cond,defines=defines,demog=patient)
+        for posi_lx in returnlx:
+            if getLxduration(caselxid, posi_lx.id) <dayrange:
+                return (1, [posi_lx.id])
+        return (0, [])
+    else:
+        return (1,[])
+                                                                   
             
 ###################################
 ###################################
@@ -1015,13 +1047,29 @@ def processAcuteHepC(condition):
             ##a),b): no ICD9 070.54 before
             if haspriorEnc(caselxids[0],'070.54',-3650):
                 continue
-            
+            if haspriorEnc(caselxids[0],'070.70',-3650):
+                continue
+                            
             ##need check 7)22314-9 and 8)31204-1 are negative
             isnegaA = isNegative(onedemogid,'22314-9',caselxids, dayrange=29)
             isnegaB = isNegative(onedemogid,'31204-1',caselxids, dayrange=29)
 
+            ###need check 9) 16933-4 is non-reactive
+            isnegaC = isNegative(onedemogid,'16933-4',caselxids, dayrange=29, negvalues=['NON-REAC', 'NEG', 'NON- REAC'])
+
+                                    
             ##
-            if isnegaA and isnegaB:
+    
+            if isnegaA and (isnegaB or  isnegaC):
+                isposi4,critlxid4=Hepc_posi(condition, ['MDPH-144'], caselxids[0], onedemogid, dayrange=29)
+                isposi5,critlxid6=Hepc_posi(condition, ['5199-5'], caselxids[0], onedemogid, dayrange=29)
+                isposi6,critlxid6=Hepc_posi(condition, ['6422-0','34704-7','10676-5','38180-6','5012-0','11259-9','20416-4'], caselxids[0], onedemogid, dayrange=29)
+
+                if isposi4 and isposi5 and isposi6: ##meet case requirement
+                    pass
+                else:
+                    continue
+                
                 if not haspriorLx(caselxids[0],condition,loinc=['16128-1'],dayrange=-3650) or haspriorLx(caselxids[0],condition,loinc=['5199-5'],dayrange=-3650) or not haspriorLx(caselxids[0],condition, loinc=['6422-0','34704-7','10676-5','38180-6','5012-0','11259-9','20416-4'],dayrange=-3650): ##no prior positive result for #3 or #5 or #6 ever
                       
                     relatedencids,relatedicd9str = getEncids4dayrange(onedemogid, caselxids, condicd9s,condition, afterday=14,beforeday=-14)
@@ -1137,8 +1185,168 @@ def processTB(condition):
                 makeNewCase(condition, onedemogid,relatedlxids,relatedrxids,relatedencids,relatedicd9str)
         
 
+###################################
+###################################
+def processSyphilis(cond):
+    final_dict={}
+    #1) ICD-9 code 090-097
+    condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=cond,CondiDefine=True)
+    ruleicd9s = map(lambda x:x.CondiICD9.strip(), condicd9s)
+    demog_dict={}
+    for oneicd9 in ruleicd9s:
+        res = icd9Fact.objects.filter(icd9Code__icontains=oneicd9)
+        for onerec in res:
+            encpid = onerec.icd9Patient_id
+            onevalue = (onerec.icd9Enc_id, onerec.icd9Code,onerec.icd9EncDate) 
+            if demog_dict.has_key(encpid) and onevalue not in demog_dict[encpid]:
+                demog_dict[encpid].append(onevalue)
+            else:
+                demog_dict[encpid]=[onevalue]
+
+    stmt = """ select distinct esp_demog.id,esp_rx.id, RxStartDate, RxDrugName, RxQuantity, RxDrugDesc
+               from esp_rx, esp_demog
+               where esp_rx.RxPatient_id=esp_demog.id
+               and esp_demog.id in %s
+               and upper(RxDrugName) like '%s%s%s'
+               """
+    if len(demog_dict.keys())>1:
+        icd9demogids = str(tuple(map(lambda x: int(x), demog_dict.keys())))
+    elif len(demog_dict.keys())==1:
+        icd9demogids = '(%s)' % int(demog_dict.keys()[0])
+    else:
+        icd9demogids=''
+        
+    for m,temp in [  ("CEFTRIAXONE%%1G", ""),  ("CEFTRIAXONE%%2G", ""), ("1G%%CEFTRIAXONE", ""), ("2G%%CEFTRIAXONE", ""), ("DOXYCYCLINE", " and  RxQuantity>13"), ("PENICILLIN G", ""), ("PEN G", "")]:
+        if icd9demogids=='':
+            break
+        
+        if not temp:
+            cursor.execute(stmt % (icd9demogids, m, '%%', '%%'))
+        else:
+            newstmt = stmt % (icd9demogids,m, '%%', '%%') + temp
+            cursor.execute(newstmt)
+            
+        res = cursor.fetchall()
+
+        for onerow in res:
+            (rxpid, rxid,rxdate,rxname,quan, rxdesc) = onerow
+            if not demog_dict.has_key(rxpid):
+                continue
+            ###icd9 code is in (090 - 097)
+            for encid, icd9,encorderdate in demog_dict[rxpid]:
+                if utils.getPeriod(encorderdate,rxdate)< 15:
+                    if final_dict.has_key(rxpid):
+                        if encid not in final_dict[rxpid][0]:
+                            final_dict[rxpid][0].append(encid)
+                        if rxid not in final_dict[rxpid][1]:    
+                            final_dict[rxpid][1].append(rxid)
+                        if icd9 not in final_dict[rxpid][2]:
+                            final_dict[rxpid][2].append(icd9)
+                    else:
+                        final_dict[rxpid] = [[encid], [rxid], [icd9]]
 
 
+    casedemogids = getCasedemogids(cond)
+    for rxpid in final_dict.keys():
+        (encids,rxids,icd9s) = final_dict[rxpid]
+        if rxpid in casedemogids:  #only report once in life time
+            ##update case
+            continue
+       
+        icd9str = ','.join(icd9s)
+        rpr_lxs = Lx.objects.filter(Q(LxPatient__id=rxpid),
+                                    Q(LxLoinc__in=['20507-0']))
+        recordl = sortLx(rpr_lxs)
+        recl = map(lambda x:x[1], recordl)
+        recl.sort()
+
+        makeNewCase(cond, rxpid,recl,rxids, encids,icd9str)
+
+
+
+    ###
+    syphilis_2(cond)
+    updatingSyphilis(cond)
+
+###################################
+####Update cases
+def updatingSyphilis(cond):
+
+    rule = Rule.objects.filter(ruleName__icontains=cond)[0]
+    
+    if rule.ruleinProd:
+        curcases=Case.objects.filter(caseRule__ruleName__icontains=cond)
+    else:
+        curcases=TestCase.objects.filter(caseRule__ruleName__icontains=cond)
+
+
+    curc = curcases.filter(caseWorkflow__exact='S')
+
+    for c in curc:
+
+        rpr_lxs = Lx.objects.filter(Q(LxPatient__id=c.caseDemog_id),
+                                    Q(LxLoinc__in=['20507-0']))
+        lxindb = c.caseLxID.split(',')
+        if rpr_lxs and lxindb:
+            lxdb = Lx.objects.filter(id__in=lxindb).order_by('LxDate_of_result')
+            maxrec=lxdb[len(lxdb)-1].LxDate_of_result
+            newlx = filterOldLxs(rpr_lxs, cutoffd = datetime.date(int(maxrec[:4]),int(maxrec[4:6]),int(maxrec[6:8])) )
+        elif rpr_lxs:
+            newlx = rpr_lxs
+        else:
+            newlx=None
+
+        if newlx:
+            newids = [i.id for i in newlx]
+            note = 'CaseID-%s: Already sent. Set to re-send due to new Lx tests. ' % c.id 
+            c.caseWorkflow='Q'
+            finallxids = ','.join(dict(map(lambda x: ('%s' % x, None), lxindb+newids)).keys())
+            c.caseLxID=finallxids
+            c.save()
+            iclogging.info('\n\nUpdate case: %s' % c.id)
+            updateCaseWF(c,note = note)
+        
+
+                                
+    
+###################################    
+def syphilis_2(cond):
+    condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=cond,CondiSend=True)
+    drugmaps = ConditionDrugName.objects.filter(CondiRule__ruleName__icontains=cond,CondiSend=True)
+            
+    ###process Syphilis 2nd criteria
+    casedemogids = getCasedemogids(cond)
+
+    defines = ConditionLOINC.objects.filter(Q(CondiRule__ruleName__icontains=cond),
+                                            Q(CondiLOINC__in=['11597-2','34147-9']))
+    returnlx = getRelatedLx(cond,defines=defines)
+    demog_lx = buildCaseData(sortLx(returnlx))
+    for onedemogid in demog_lx.keys():
+        if onedemogid in casedemogids:  #only report once in life time
+            continue
+        
+        relatedlxids=[]
+        rpr_lxs = Lx.objects.filter(Q(LxPatient__id=onedemogid),
+                                Q(LxLoinc__in=['20507-0']) ,
+                                Q(LxTest_results__contains='1:'))
+        for onerpr in rpr_lxs:
+            denominator = string.split(onerpr.LxTest_results, ':')[1].strip()
+            if int(denominator)>=8:
+                ##it is a case
+                relatedlxids.append(onerpr.id)
+
+        if len(relatedlxids)>0: ##it is a case
+            relatedlxids =relatedlxids+demog_lx[onedemogid]
+            #1. get related Enc
+            relatedencids,relatedicd9str = getEncids4dayrange(onedemogid,relatedlxids,condicd9s,cond,afterday=29,beforeday=-29)
+             
+            #2. get related Rx
+            relatedrxids = getRxids4dayrange(onedemogid,relatedlxids,drugmaps, cond,afterday=29,beforeday=-29)
+            makeNewCase(cond,onedemogid,relatedlxids, relatedrxids,relatedencids,relatedicd9str)
+
+    
+
+            
 ###################################
 ###################################
 def getPids4Drugs(define_drugmaps, exclude_dict={}):
@@ -1178,21 +1386,39 @@ def getPids4Drugs(define_drugmaps, exclude_dict={}):
                                                                                                                             
 ###################################
 #################################
-def isNegative(onedemogid,oneloinc,caselxids, dayrange=29):
+def isNegative(onedemogid,oneloinc,caselxids, dayrange=29,  negvalues=None):
     """check if this demog have negative lx for a given loinc withion a certain period
     """
-    ##see if any positive one
-    posi_lxs = Lx.objects.filter(Q(LxPatient__id=onedemogid),
+    relatedlxs = []
+    if negvalues:
+        for i in negvalues:
+            neg_lxs = Lx.objects.filter(Q(LxPatient__id=onedemogid),
+                                        Q(LxLoinc__in=[oneloinc]),
+                                        Q(LxTest_results__istartswith='%s' % i))
+            if neg_lxs:
+                relatedlxs = relatedlxs+ list(neg_lxs)
+
+    else:
+                                                
+        ##see if any positive one
+        posi_lxs = Lx.objects.filter(Q(LxPatient__id=onedemogid),
                             Q(LxLoinc__in=[oneloinc]),
                             Q(LxTest_results__istartswith='REACTI'))
 
+        relatedlxs=relatedlxs+list(posi_lxs)
+
     posil=[]
-    if posi_lxs:
+    if relatedlxs:
         for caselxid in caselxids:
-            for posi_lx in posi_lxs:
+            for posi_lx in relatedlxs:
                 if int(caselxid)!=int(posi_lx.id) and getLxduration(caselxid, posi_lx.id) <dayrange:
                     posil.append(posi_lx)
-    if posil:
+
+    if negvalues and posil:
+        return 1
+    elif negvalues:
+        return 0
+    elif not negvalues and posil:
         return 0
     else:
         return 1
@@ -1212,6 +1438,7 @@ if __name__ == "__main__":
     for c in conditions:
         cond = c.ruleName
         iclogging.info('process %s\n' % cond)
+
         if string.upper(cond) in ('ACUTE HEPATITIS A'):
             processAcuteHepA(cond)
         elif string.upper(cond) in ('ACUTE HEPATITIS B'):
@@ -1225,7 +1452,10 @@ if __name__ == "__main__":
                         
         elif string.upper(cond) in ('ACTIVE TUBERCULOSIS'):
             processTB(cond)
-                        
+        elif string.upper(cond) in ('SYPHILIS'):
+            processSyphilis(cond)
+        elif  string.upper(cond) in ('VAERS FEVER', 'FEBRILE SEIZURE'):
+            pass
         else: #other conditions
             processoneCondition(cond)
 
