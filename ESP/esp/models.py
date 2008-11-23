@@ -1,4 +1,10 @@
 """
+Updated ross sept 20 2008 for the new 1.0 django release
+fixtures, moved all admin stuff out to admin.py using makeNewadmin.py script over
+models.py to generate everything, moved all __str__ to __unicode__ and changed all
+returned strings to unicode
+
+
 Updated april 22 for the magic removal branch.
 Ouch.
 
@@ -23,6 +29,7 @@ from django.contrib.auth.models import User
 import string
 import datetime
 
+
 FORMAT_TYPES = (
     ('Text','Plain text representation'),
     ('XML','eXtended Markup Language format'),
@@ -46,12 +53,9 @@ class icd9(models.Model):
     icd9Code = models.CharField('ICD9 Code', max_length=10,)
     icd9Long = models.CharField('Name', max_length=50,)
 
-    def __str__(self):
-        return '%s %s' % (self.icd9Code,self.icd9Code)
+    def __unicode__(self):
+        return u'%s %s' % (self.icd9Code,self.icd9Code)
         
-    class Admin:
-        list_display = ('icd9Code', 'icd9Long')
-        search_fields = ('icd9Code')
    
 class ndc(models.Model):
     """ndc codes from http://www.fda.gov/cder/ndc/
@@ -62,12 +66,9 @@ class ndc(models.Model):
     ndcProd = models.CharField('NDC Product Code', max_length=5,db_index=True)
     ndcTrade = models.CharField('NDC Trade Name', max_length=200,)
     
-    def __str__(self):
-        return '%s %s %s' % (self.ndcLbl,self.ndcProd,self.ndcTrade)
+    def __unicode__(self):
+        return u'%s %s %s' % (self.ndcLbl,self.ndcProd,self.ndcTrade)
         
-    class Admin:
-        list_display = ('ndcLbl', 'ndcProd','ndcTrade')
-        search_fields = ('ndcProd','ndcLbl')
    
 class cpt(models.Model):
     """cpt codes I found at www.tricare.osd.mil/tai/downloads/cpt_codes.xls
@@ -77,19 +78,17 @@ class cpt(models.Model):
     cptShort = models.CharField('Short name', max_length=60,)
     cptLastedit = models.DateTimeField('Last edited',editable=False,auto_now=True)
 
-    def __str__(self):
-        return '%s %s' % (self.cptCode,self.cptShort)
+    def __unicode__(self):
+        return u'%s %s' % (self.cptCode,self.cptShort)
         
-    class Admin:
-        list_display = ('cptCode', 'cptLong','cptShort')
-        search_fields = ('cptLong')
+
 
 
 RECODEFILE_TYPES = (
-    ('Encounters','Daily encounter records - ICD9, demographics...'),
-    ('Labs','Lab Orders and Lab Results - LOINC, CPT'),
-    ('Rx', 'Prescription data - NDC'),
-    ('PCP', 'Primary Care Physicians'),
+    (u'Encounters',u'Daily encounter records - ICD9, demographics...'),
+    (u'Labs',u'Lab Orders and Lab Results - LOINC, CPT'),
+    (u'Rx', u'Prescription data - NDC'),
+    (u'PCP', u'Primary Care Physicians'),
     )
 
 
@@ -105,12 +104,9 @@ class recode(models.Model):
     recodeUseMe = models.BooleanField('Use This Definition',)
     recodeCreated = models.DateField('Record created',auto_now_add=True,)
 
-    def __str__(self):
-        return '%s %s %s %s' % (self.recodeFile,self.recodeField,self.recodeIn,self.recodeOut)
+    def __unicode__(self):
+        return u'%s %s %s %s' % (self.recodeFile,self.recodeField,self.recodeIn,self.recodeOut)
         
-    class Admin:
-        list_display = ('recodeFile', 'recodeField','recodeIn','recodeOut')
-        search_fields = ('recodeIn')
 
 
 class helpdb(models.Model):
@@ -119,12 +115,10 @@ class helpdb(models.Model):
     helpTopic = models.CharField('Help Topic', max_length=100,)
     helpText = models.TextField('Help Text', blank=True, null=True)
 
-    def __str__(self):
-        return self.helpTopic 
+    def __unicode__(self):
+        return u'%s' % self.helpTopic 
         
-    class Admin:
-        list_display = ('helpTopic', 'helpText')
-        search_fields = ('helpTopic')
+
 
 class config(models.Model):
     """local config data - will take a while to accumulate
@@ -161,12 +155,10 @@ class config(models.Model):
     configCreated = models.DateField('Configuration created',auto_now_add=True,)
     configLastChanged = models.DateField('Configuration last changed',auto_now=True,)
 
-    def __str__(self):
-        return self.institution_name 
+    def  __unicode__(self):
+        return u'%s' % self.institution_name 
 
-    class Admin:
-       list_display=('institution_name','instComments')
-        
+ 
  
     
 class Rule(models.Model):
@@ -205,19 +197,10 @@ class Rule(models.Model):
                 data.append(items)
         return (note,header,data)
     
-    def __str__(self):
-        return self.ruleName 
-        #return '%d %s %s' % \
-            #(self.id,self.ruleName,self.ruleSQL)
+    def  __unicode__(self):
+        return u'%s' % self.ruleName 
 
-    class Admin:
-        ordering = ('ruleVerDate', 'ruleName')
-        list_display = ('ruleName', 'ruleComments','ruleVerDate')
-        search_fields = ('ruleName')
-        
-        
-
-
+ 
 class Dest(models.Model):
     """message destination for rules
     """
@@ -229,12 +212,10 @@ class Dest(models.Model):
     destcreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
  
 
-    def __str__(self):
-        return '%s %s %s' % \
+    def  __unicode__(self):
+        return u'%s %s %s' % \
             (self.destName,self.destType,self.destValue)
 
-    class Admin:
-        ordering = ('destVerDate', 'destName')
 
 
 
@@ -249,11 +230,9 @@ class Format(models.Model):
     formatcreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
  
 
-    def __str__(self):
-        return self.formatName 
+    def  __unicode__(self):
+        return u'%s' % self.formatName 
 
-    class Admin:
-        ordering = ('formatVerDate', 'formatName')
 
 class Provider(models.Model):
     provCode= models.CharField('Physician code',max_length=20,blank=True,db_index=True)
@@ -274,15 +253,12 @@ class Provider(models.Model):
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
          
 
-    def __str__(self):
-        return "%s %s %s %s" % (self.provCode,self.provPrimary_Dept,self.provPrimary_Dept_Address_1,self.provPrimary_Dept_Address_2)
+    def  __unicode__(self):
+        return u"%s %s %s %s" % (self.provCode,self.provPrimary_Dept,self.provPrimary_Dept_Address_1,self.provPrimary_Dept_Address_2)
 
     def getcliname(self):
-        return '%s, %s' % (self.provLast_Name,self.provFirst_Name)
+        return u'%s, %s' % (self.provLast_Name,self.provFirst_Name)
     
-    class Admin:
-        list_display = ('provLast_Name', 'provFirst_Name','provPrimary_Dept')
-        search_fields = ('provLast_Name')
 
 
 
@@ -319,17 +295,14 @@ class Demog(models.Model):
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
             
 
-    def __str__(self):
-        return "PID%s,%s, %s,%s, %s" % (self.DemogPatient_Identifier,self.DemogMedical_Record_Number,self.DemogLast_Name,self.DemogFirst_Name, self.DemogAddress1)
+    def  __unicode__(self):
+        return u"PID%s,%s, %s,%s, %s" % (self.DemogPatient_Identifier,self.DemogMedical_Record_Number,self.DemogLast_Name,self.DemogFirst_Name, self.DemogAddress1)
 
-    class Admin:
-        list_display = ('DemogFirst_Name', 'DemogLast_Name', 'DemogMedical_Record_Number','DemogDate_of_Birth')
-        search_fields = ('DemogLast_Name')
 
     def getAge(self):
         dob = self.DemogDate_of_Birth
         if not dob:
-            return 'No DOB'
+            return u'No DOB'
         
         try:
             yy = int(dob[:4])
@@ -346,9 +319,9 @@ class Demog(models.Model):
         if (curm==mm and curd<dd) or (curm<mm):
             age = age-1
         if age==0 and cury==yy:
-            age = '%s' % (curm-mm) + ' Months'
+            age = u'%s' % (curm-mm) + ' Months'
         elif age==0:
-            age = '%s' % (12-mm+curm) + ' Months'
+            age = u'%s' % (12-mm+curm) + ' Months'
         return age
 
 
@@ -375,19 +348,15 @@ class TestCase(models.Model):
     caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
     
     
-    def __str__(self):
+    def  __unicode__(self):
         p = self.showPatient()# self.pID
-        s = 'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
+        s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
         return s
     
-    class Admin:
-        list_filter = ('caseWorkflow','caseQueryID','caseMsgFormat','caseProvider')
-        ordering = ('caseLastUpDate', 'casecreatedDate')
-        list_display = ('caseProvider','caseWorkflow','caseComments','caseLastUpDate','caseQueryID','caseMsgFormat')
         
     def showPatient(self): 
         p = self.getPatient()
-        s = '%s,&nbsp;%s&nbsp;&nbsp;%s<br>%s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial, p.DemogMedical_Record_Number )
+        s = u'%s %s %s %s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial, p.DemogMedical_Record_Number)
         return s
     
     def getPatient(self): 
@@ -412,25 +381,25 @@ class TestCase(models.Model):
                     dur1 =edcdate-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
                     dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
                     if dur1.days>=0 or dur2.days>=0:
-                        return ('Pregnant', oneenc.EncEDC.replace('/',''))
+                        return (u'Pregnant', oneenc.EncEDC.replace('/',''))
                 
         elif encdb and not lxs:
-            return ('Pregnant', encdb[0].EncEDC.replace('/',''))
+            return (u'Pregnant', encdb[0].EncEDC.replace('/',''))
 
-        return ('',None)
+        return (u'',None)
 
 
     def getcaseLastUpDate(self):
-        s = '%s' % self.caseLastUpDate
+        s = u'%s' % self.caseLastUpDate
         return s[:11]
     
     def getLxOrderdate(self):
         
         lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
-        orderdate=''
+        orderdate=[]
         for l in lxs:
-            orderdate =orderdate+'<br>%s' % l.LxOrderDate
-        return orderdate
+            orderdate.append(u' %s' % l.LxOrderDate)
+        return u''.join(orderdate)
 
 
     def getLxProviderSite(self):
@@ -441,10 +410,10 @@ class TestCase(models.Model):
             sitename = relprov.provPrimary_Dept
             if sitename and sitename not in sites:
                 sites.append(sitename)
-        returnstr=''
+        res = []
         for loc in sites:
-            returnstr =returnstr+'%s;<br>' % loc
-        return returnstr
+            res.append(u'%s ' % loc)
+        return u''.join(res)
         
     def getWorkflows(self): # return a list of workflow states for history
         wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
@@ -458,7 +427,7 @@ class TestCase(models.Model):
         p = self.getPatient()
         s=''
         if p.DemogAddress1:
-            s = '%s %s<br>%s, %s, %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
+            s = u'%s %s %s %s %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
         return s
     
     def getPrevcases(self):
@@ -492,22 +461,18 @@ class Case(models.Model):
     caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
     
 
-    def __str__(self):
+    def  __unicode__(self):
         p = self.showPatient()# self.pID
-        s = 'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
+        s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
         
         return s
     
-    class Admin:
-        list_filter = ('caseWorkflow','caseQueryID','caseMsgFormat','caseProvider')
-        ordering = ('caseLastUpDate', 'casecreatedDate')
-        list_display = ('caseProvider','caseWorkflow','caseComments','caseLastUpDate','caseQueryID','caseMsgFormat')
  
     def showPatient(self): 
         p = self.getPatient()
         #  s = '%s, %s: %s MRN=%s' % (p.PIDLast_Name, p.PIDFirst_Name, p.PIDFacility1, p.PIDMedical_Record_Number1 )
 
-        s = '%s,&nbsp;%s &nbsp;&nbsp;%s<br>%s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial,p.DemogMedical_Record_Number )
+        s = u'%s %s %s %s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial,p.DemogMedical_Record_Number )
 
         return s
 
@@ -534,7 +499,7 @@ class Case(models.Model):
                     dur1 =edcdate-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
                     dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
                     if dur1.days>=0 or dur2.days>=0:
-                        return ('Pregnant', oneenc.EncEDC.replace('/',''))
+                        return (u'Pregnant', oneenc.EncEDC.replace('/',''))
                                                                     
 #            for oneenc in encdb:
 #                encdate = oneencdb.EncEncounter_Date
@@ -543,14 +508,14 @@ class Case(models.Model):
 #                if dur1.days>=0 and dur2.days>=0:
 #                    return ('Pregnant', oneenc.EncEDC.replace('/',''))
         elif encdb and not lxs:
-            return ('Pregnant', encdb[0].EncEDC.replace('/',''))
+            return (u'Pregnant', encdb[0].EncEDC.replace('/',''))
 
-        return ('',None)
+        return (u'',None)
                                                                                                                                 
 
 
     def getcaseLastUpDate(self):
-        s = '%s' % self.caseLastUpDate
+        s = u'%s' % self.caseLastUpDate
         return s[:11]
     
     def getLxOrderdate(self):
@@ -558,8 +523,8 @@ class Case(models.Model):
         lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
         orderdate=''
         for l in lxs:
-            orderdate =orderdate+'<br>%s' % l.LxOrderDate
-        return orderdate
+            orderdate =orderdate+' %s' % l.LxOrderDate
+        return unicode(orderdate)
 
     def getLxProviderSite(self):
         lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
@@ -572,8 +537,8 @@ class Case(models.Model):
 
         returnstr=''
         for loc in sites:
-            returnstr =returnstr+'%s;<br>' % loc
-        return returnstr
+            returnstr =returnstr+'%s ' % loc
+        return unicode(returnstr)
                                                                                                  
 
     
@@ -589,7 +554,7 @@ class Case(models.Model):
         p = self.getPatient()
         s=''
         if p.DemogAddress1:
-            s = '%s %s<br>%s, %s, %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
+            s = u'%s %s %s, %s, %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
         return s
 
     def getPrevcases(self):
@@ -597,26 +562,18 @@ class Case(models.Model):
         returnstr=[]
         for c in othercases:
             returnstr.append(c.id)
-        return returnstr
+        return unicode(returnstr)
 
 ###################################
 class CaseWorkflow(models.Model):
     workflowCaseID = models.ForeignKey(Case)
     workflowDate = models.DateTimeField('Activated',auto_now=True)
-    workflowState = models.CharField('Workflow State',choices=WORKFLOW_STATES,core=True,max_length=20 )
+    workflowState = models.CharField('Workflow State',choices=WORKFLOW_STATES,max_length=20 )
     workflowChangedBy = models.CharField('Changed By', max_length=30)
     workflowComment = models.TextField('Comments',blank=True,null=True)
     
-    def __str__(self):
-        return '%s %s %s' % (self.workflowCaseID, self.workflowDate, self.workflowState)
-
-    class Admin:
-        list_filter = ('workflowState','workflowChangedBy',)
-        list_display = ('workflowDate','workflowState','workflowChangedBy','workflowComment',)
-        search_fields = ('workflowComment',)
-        ordering = ('workflowDate',)
-
-# generated by makeCarlamodels.py
+    def  __unicode__(self):
+        return u'%s %s %s' % (self.workflowCaseID, self.workflowDate, self.workflowState)
 
 
 class Rx(models.Model):
@@ -656,7 +613,7 @@ class Rx(models.Model):
                 s = 'NDC code=%s: not found (tried lbl=%s prod=%s)' % (self.RxNational_Drug_Code,lbl,prd)
             else:
                 s=''
-        return s
+        return unicode(s)
 
     def iscaserelated(self):
         
@@ -667,18 +624,13 @@ class Rx(models.Model):
         else:
             return 0
         
-    def __str__(self):
+    def  __unicode__(self):
 
-        return "%s %s %s %s" % (self.RxPatient.DemogPatient_Identifier,self.RxMedical_Record_Number,self.getNDC(),self.RxProvider.provCode)
+        return u"%s %s %s %s" % (self.RxPatient.DemogPatient_Identifier,self.RxMedical_Record_Number,self.getNDC(),self.RxProvider.provCode)
 
 
     def getcliname(self):
         return self.RxProvider.getcliname()      
-
-    class Admin:
-        pass
-
-
 
 
 class LabComponent(models.Model):
@@ -725,7 +677,7 @@ class Lx(models.Model):
                 s = "CPT code=%s: not found" % self.LxTest_Code_CPT
             else:
                 s=''
-        return s
+        return unicode(s)
 
  
     def iscaserelated(self):
@@ -743,13 +695,10 @@ class Lx(models.Model):
     def getPartNote(self):
         return self.LxComment[:10]
     
-    def __str__(self):
+    def  __unicode__(self):
 
-        return "%s %s %s %s" % (self.LxPatient.DemogPatient_Identifier,self.getCPT(),self.LxOrder_Id_Num,self.LxOrderDate)
+        return u"%s %s %s %s" % (self.LxPatient.DemogPatient_Identifier,self.getCPT(),self.LxOrder_Id_Num,self.LxOrderDate)
 
-
-    class Admin:
-        pass
 
 class Lxo(models.Model):
     LxoPatient_Identifier = models.CharField('Patient Identifier',max_length=20,blank=True,null=True,db_index=True)
@@ -758,11 +707,9 @@ class Lxo(models.Model):
     LxoTest_ordered = models.CharField('Test ordered',max_length=20,blank=True,null=True)
     LxoHVMA_accession_number = models.CharField('HVMA accession number',max_length=20,blank=True,null=True)
 
-    def __str__(self):
-        return "%s %s %s %s" % (self.LxoPatient_Identifier,self.LxoMedical_Record_Number,self.LxoOrder_Id_Num,self.LxoTest_ordered)
+    def  __unicode__(self):
+        return u"%s %s %s %s" % (self.LxoPatient_Identifier,self.LxoMedical_Record_Number,self.LxoOrder_Id_Num,self.LxoTest_ordered)
 
-    class Admin:
-        pass
 
 
 ###################################
@@ -814,7 +761,7 @@ class Enc(models.Model):
                     s.append(('', ''))
         else:
             s = [('', 'No icd9 codes found')]
-        return s
+        return unicode(s)
     
 
     def iscaserelated(self):
@@ -826,7 +773,7 @@ class Enc(models.Model):
             indx = l.index('%s' % self.id)
             icd9s = string.split(c[0].caseICD9,',')[indx]
             icd9l = string.split(icd9s)
-            return icd9l
+            return unicode(icd9l)
         except:
             return 0
         
@@ -834,14 +781,9 @@ class Enc(models.Model):
     def getcliname(self):
         return self.EncEncounter_Provider.getcliname()       
 
-    def __str__(self):
+    def  __unicode__(self):
 
-        return "%s %s %s %s" % (self.EncPatient.id,self.geticd9s(), self.EncMedical_Record_Number,self.EncEncounter_Date)
-
-
-    class Admin:
-        list_display = ('EncPatient', 'EncEncounter_Date','EncMedical_Record_Number')
-        search_fields = ('EncMedical_Record_Number')
+        return u"%s %s %s %s" % (self.EncPatient.id,self.geticd9s(), self.EncMedical_Record_Number,self.EncEncounter_Date)
 
 
 
@@ -854,15 +796,11 @@ class icd9Fact(models.Model):
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
                                     
-    def __str__(self):
+    def  __unicode__(self):
 
-        return "%s %s %s" % (self.icd9Patient.id,self.icd9Enc.id, self.icd9EncDate)
+        return u"%s %s %s" % (self.icd9Patient.id,self.icd9Enc.id, self.icd9EncDate)
 
-
-    class Admin:
-        pass
-
-                                
+                               
 
 
 class Immunization(models.Model):
@@ -879,13 +817,10 @@ class Immunization(models.Model):
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
             
 
-    def __str__(self):
+    def  __unicode__(self):
 
-        return "%s %s %s" % (self.ImmPatient.DemogPatient_Identifier,self.ImmName,self.ImmRecId)
+        return u"%s %s %s" % (self.ImmPatient.DemogPatient_Identifier,self.ImmName,self.ImmRecId)
 
-
-    class Admin:
-        pass
 
 
 
@@ -905,13 +840,11 @@ class VAERSadditions(models.Model):
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
     
 
-    def __str__(self):
+    def  __unicode__(self):
         
-        return "%s" % (self.VAERPatient.DemogPatient_Identifier)
+        return u"%s" % (self.VAERPatient.DemogPatient_Identifier)
 
 
-    class Admin:
-        pass
                                                             
 
 ###################################
@@ -924,14 +857,10 @@ class SocialHistory(models.Model):
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
 
 
-    def __str__(self):
+    def  __unicode__(self):
         
-        return "%s %s" % (self.SocPatient.DemogPatient_Identifier,self.SocMRN)
+        return u"%s %s" % (self.SocPatient.DemogPatient_Identifier,self.SocMRN)
     
-    
-    class Admin:
-        pass
-
 
 
 class Allergies(models.Model):
@@ -948,14 +877,9 @@ class Allergies(models.Model):
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
 
 
-    def __str__(self):
+    def  __unicode__(self):
         
-        return "%s %s %s" % (self.AllPatient.DemogPatient_Identifier,self.AllMRN,self.AllPrbID)
-
-
-    class Admin:
-        pass
-
+        return u"%s %s %s" % (self.AllPatient.DemogPatient_Identifier,self.AllMRN,self.AllPrbID)
 
 
 class Problems(models.Model):
@@ -970,14 +894,11 @@ class Problems(models.Model):
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
 
 
-    def __str__(self):
+    def  __unicode__(self):
         
-        return "%s %s %s" % (self.PrbPatient.DemogPatient_Identifier,self.PrbMRN,self.PrbID)
+        return u"%s %s %s" % (self.PrbPatient.DemogPatient_Identifier,self.PrbMRN,self.PrbID)
     
-    
-    class Admin:
-        pass
-                                                                
+                                              
                                             
 class ConditionIcd9(models.Model):
     CondiRule = models.ForeignKey(Rule)
@@ -985,12 +906,8 @@ class ConditionIcd9(models.Model):
     CondiDefine = models.BooleanField('Icd9 used in definition or not', blank=True,null=True)
     CondiSend = models.BooleanField('Icd9 needs to be sent or not', blank=True,null=True)
 
-    def __str__(self):
-        return '%s %s' % (self.CondiRule,self.CondiICD9)
-        
-    class Admin:
-        list_display = ('CondiRule', 'CondiICD9')
-        search_fields = ('CondiICD9')
+    def  __unicode__(self):
+        return u'%s %s' % (self.CondiRule,self.CondiICD9)
 
 class ConditionLOINC(models.Model):
     CondiRule = models.ForeignKey(Rule)
@@ -1003,25 +920,18 @@ class ConditionLOINC(models.Model):
     CondiOperator=models.TextField('Condition Operation',blank=True,null=True)
     CondiValue = models.TextField('Condition value',blank=True,null=True)
     
-    def __str__(self):
-        return '%s %s= %s %s' % (self.CondiRule,self.CondiLOINC,self.CondiOperator,self.CondiValue)
+    def  __unicode__(self):
+        return u'%s %s= %s %s' % (self.CondiRule,self.CondiLOINC,self.CondiOperator,self.CondiValue)
         
-    class Admin:
-        list_display = ('CondiRule', 'CondiLOINC')
-        search_fields = ('CondiLOINC')
+
 
 class CPTLOINCMap(models.Model):
     CPT = models.TextField('CPT Codes',blank=True,null=True)
     CPTCompt = models.TextField('Compoment Codes',blank=True,null=True)
     Loinc = models.TextField('Loinc Codes',blank=True,null=True)
 
-    def __str__(self):
-        return '%s %s' % (self.CPT,self.CPTCompt)
-
-    
-    class Admin:
-        list_display = ('CPT', 'CPTCompt')
-        search_fields = ('CPT')
+    def  __unicode__(self):
+        return u'%s %s' % (self.CPT,self.CPTCompt)
 
     def getComptName(self):
         res = LabComponent.objects.filter(CPT=self.CPT,CPTCompt=self.CPTCompt)
@@ -1029,9 +939,9 @@ class CPTLOINCMap(models.Model):
             comptnames = map(lambda x:[len(x.componentName), x.componentName], res)
             comptnames.sort()
             #Klompas, Michael: If you think that's too clunky then include the longest name for each test.
-            return comptnames[-1][1]
+            return unicode(comptnames[-1][1])
         else:
-            return ''
+            return u''
         
 class ConditionNdc(models.Model):
     CondiRule = models.ForeignKey(Rule)
@@ -1039,14 +949,10 @@ class ConditionNdc(models.Model):
     CondiDefine = models.BooleanField('Ndc used in definition or not', blank=True,null=True)
     CondiSend = models.BooleanField('Ndc need to be send or not', blank=True,null=True)
 
-    def __str__(self):
-        return '%s %s' % (self.CondiRule,self.CondiNdc)
+    def  __unicode__(self):
+        return u'%s %s' % (self.CondiRule,self.CondiNdc)
         
-    class Admin:
-        list_display = ('CondiRule', 'CondiNdc')
-        search_fields = ('CondiNdc')
-
-    
+ 
 class ConditionDrugName(models.Model):
     CondiRule = models.ForeignKey(Rule)
     CondiDrugName = models.TextField('Drug Name',blank=True,null=True)
@@ -1054,13 +960,8 @@ class ConditionDrugName(models.Model):
     CondiDefine = models.BooleanField('Used in case definition or not', blank=True,null=True)
     CondiSend = models.BooleanField('Must be sent or not', blank=True,null=True)
 
-    def __str__(self):
-        return '%s %s %s' % (self.CondiRule,self.CondiDrugName, self.CondiDrugRoute)
-        
-    class Admin:
-        list_display = ('CondiRule', 'CondiDrugName','CondiDrugRoute')
-        search_fields = ('CondiDrugName')
-
+    def  __unicode__(self):
+        return u'%s %s %s' % (self.CondiRule,self.CondiDrugName, self.CondiDrugRoute)
 
         
 class DataFile(models.Model):
@@ -1069,13 +970,9 @@ class DataFile(models.Model):
     datedownloaded = models.DateTimeField('Date loaded',editable=False,auto_now_add=True)
 
  
-    def __str__(self):
-        return '%s %s' % (self.filename,self.datedownloaded)
+    def  __unicode__(self):
+        return u'%s %s' % (self.filename,self.datedownloaded)
 
-    class Admin:
-        list_display = ('filename', 'numrecords', 'datedownloaded')
-        search_fields =('filename')
-                                
 
 ###################################
 class HL7File(models.Model):
@@ -1093,12 +990,8 @@ class HL7File(models.Model):
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
           
-    def __str__(self):
-        return '%s %s' % (self.filename,self.datedownloaded)
-
-    class Admin:
-        list_display = ('filename', 'case','demogMRN')
-        search_fields =('filename', 'case')
+    def  __unicode__(self):
+        return u'%s %s' % (self.filename,self.datedownloaded)
 
                                 
-    
+ 

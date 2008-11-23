@@ -448,9 +448,8 @@ def updateIcd9Fact(espencid, demogid, encdate, icd9):
         else: ##new one
             newrec = (onec,espencid,demogid,encdate, DBTIMESTR,DBTIMESTR)
             insertsql = """insert into esp.esp_icd9fact (icd9Code,icd9Enc_Id,icd9Patient_Id,icd9encDate, lastUpDate,createdDate)
-                   values (%s,%s,%s,%s, %s, %s)
-                """
-            runSql(insertsql, newrec)
+                   values (%s,%s,%s,%s, %s, %s)""" 
+            runSql(insertsql,newrec)
 
 
 
@@ -1214,6 +1213,10 @@ def updateLoinc_lx():
     file_lastmodtime = datetime.datetime(filetime[0],filetime[1],filetime[2])
     cursor.execute("""select max(lastupdate) from esp_demog""")
     dbtime = cursor.fetchall()[0][0]
+    print '##got dbtime=%s, type=%s' % (dbtime,type(dbtime))
+    if type(dbtime) == type(unicode('x')): # sqlite returns a unicode str
+           dbd = str(dbtime).split(' ')[0].split('-') # sqlite returns '2008-08-03 06:13:22'
+           dbtime = datetime.datetime(int(dbd[0]),int(dbd[1]),int(dbd[2]))
     if dbtime and dbtime<file_lastmodtime:
         iplogging.info('Need do updating cptloinc map in esp_cptloincmap & esp_lx tables')
         table='esp_cptloincmap'

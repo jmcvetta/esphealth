@@ -1,4 +1,5 @@
 from django.conf.urls.defaults import *
+from django.contrib import admin
 import sys
 sys.path.insert(0, '/home/ESP/')
 from ESP.settings import CODEDIR
@@ -42,10 +43,8 @@ urlpatterns = patterns('',
     (r'^workflows/(?P<object_id>\d+)/updatewfComment/$', 'ESP.esp.views.updateWorkflowComment'),
     (r'^help/(?P<topic>\w+)/$','ESP.esp.views.showhelp'),
     (r'^help/$','ESP.esp.views.showhelp'),
-    (r'^admin$', include('django.contrib.admin.urls')),
-    (r'^admin/$', include('django.contrib.admin.urls')),
-    (r'^admin/', include('django.contrib.admin.urls')),
-    (r'^login/$', 'ESP.esp.views.login'),
+    (r'^admin/(.*)', admin.site.root),
+    (r'^login/$', 'ESP.esp.views.esplogin'),
     (r'^pswdchange/$', 'ESP.esp.views.password_change'),
     (r'^logout/$', 'ESP.esp.views.logout'),
 
@@ -90,10 +89,8 @@ urlpatterns = patterns('',
     (r'^ESP/workflows/(?P<object_id>\d+)/updatewfComment/$', 'ESP.esp.views.updateWorkflowComment'),
     (r'^ESP/help/(?P<topic>\w+)/$','ESP.esp.views.showhelp'),
     (r'^ESP/help/$','ESP.esp.views.showhelp'),
-    (r'^ESP/admin$', include('django.contrib.admin.urls')),
-    (r'^ESP/admin/$', include('django.contrib.admin.urls')),
-    (r'^ESP/admin/', include('django.contrib.admin.urls')),
-    (r'^ESP/login/$', 'ESP.esp.views.login'),
+    (r'^ESP/admin/(.*)', admin.site.root),
+    (r'^ESP/login/$', 'ESP.esp.views.esplogin'),
     (r'^ESP/pswdchange/$', 'ESP.esp.views.password_change'),
     (r'^ESP/logout/$', 'ESP.esp.views.logout'),
 )

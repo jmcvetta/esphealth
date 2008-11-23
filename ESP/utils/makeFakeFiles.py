@@ -78,7 +78,7 @@ def fakeDemogs(n=100,pcps=[],icds=[],cpts=[],ndcs=[]):
         if i % 100 == 0:
             print i
         ssn = '%03d-%02d-%04d' % (random.randint(1,999),random.randint(1,99),random.randint(1,9999))
-        mrn = 'HVMA-FAKED%09d' % random.randint(1,999999999)
+        mrn = 'ESPTEST-FAKED%09d' % random.randint(1,999999999)
         recid = '%09d' % random.randint(1,999999999)
         fname,sname=fakename()
         dob = '%04d%02d%02d' % (random.randint(1900,2005),random.randint(1,12),random.randint(1,28))

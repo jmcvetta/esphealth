@@ -1,6 +1,6 @@
 # Django settings for esp project.
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 #ENABLE_PSYCO = True
 import localsettings

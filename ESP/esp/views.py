@@ -31,7 +31,9 @@ from ESP.esp.models import *
 from ESP.esp.forms import RegistrationForm 
 from django.http import HttpResponse,HttpResponseRedirect
 from django.shortcuts import render_to_response,get_object_or_404
-from django.core.paginator import ObjectPaginator, InvalidPage
+from django.core.paginator import Paginator, InvalidPage
+# svn 1.0 alpha has changed ObjectPaginator to Paginator - rml august 2008
+#from django.core.paginator import ObjectPaginator, InvalidPage
 from django.core.mail import send_mail
 
 import string
@@ -39,9 +41,10 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from ESP.settings import SITEROOT,TOPDIR,LOCALSITE,CODEDIR
 #import ESP.utils.localconfig as localconfig
 
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import authenticate, login
+#from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.forms import PasswordResetForm, PasswordChangeForm
-from django import forms
+from django import forms,oldforms # TODO fixme!
 from django.template import RequestContext
 from django.contrib.sites.models import Site
 from django.contrib.auth import REDIRECT_FIELD_NAME,SESSION_KEY, authenticate
@@ -53,43 +56,69 @@ REDIRECT_FIELD_NAME = 'next'
 
 
 ############################
-def login(request):
+def esplogin(request):
     "Displays the login form and handles the login action."
-    manipulator = AuthenticationForm(request)
-    redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
-
-    
-    if request.POST:
-        new_data = request.POST.copy()
-        errors = manipulator.get_validation_errors(new_data)
-    
-        if not errors:
-            user = authenticate(username='john', password='secret')
-            # Light security check -- make sure redirect_to isn't garbage.
-            if not redirect_to or '://' in redirect_to or ' ' in redirect_to:
-                if SITEROOT:
-                    redirect_to = SITEROOT
-                else:
-                    redirect_to ='/'
-            else:
-                redirect_to = '%s/%s' % (SITEROOT,redirect_to)
-
-            request.session[SESSION_KEY] = manipulator.get_user_id()
-            from django.contrib.auth import login
-            login(request, manipulator.get_user())
-            request.session.delete_test_cookie()
-
-            return HttpResponseRedirect(redirect_to)
+    if not request.POST:
+       return render_to_response('registration/login.html', {
+          REDIRECT_FIELD_NAME: '',
+         'site_name': Site.objects.get_current().name,
+         'SITEROOT': SITEROOT, }, context_instance=RequestContext(request))
     else:
-        errors = {}
-    request.session.set_test_cookie()
+        username = request.POST['username']
+        password = request.POST['password']
+        redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
+        # Light security check -- make sure redirect_to isn't garbage.
+        if not redirect_to or '://' in redirect_to or ' ' in redirect_to:
+    	    if SITEROOT:
+                 redirect_to = SITEROOT
+            else:
+                 redirect_to ='/'
+        user = authenticate(username=username, password=password)
+        if user is not None:
+	    if user.is_active:
+                  login(request,user)
+                  return HttpResponseRedirect(redirect_to)
+            else: 
+                 return HttpResponseRedirect('/login')
+        else:
+            return HttpResponseRedirect('/login')
 
-    return render_to_response('registration/login.html', {
-        'form': forms.FormWrapper(manipulator, request.POST, errors),
-        REDIRECT_FIELD_NAME: '',
-        'site_name': Site.objects.get_current().name,
-        'SITEROOT': SITEROOT,
-    }, context_instance=RequestContext(request))
+
+    #manipulator = AuthenticationForm(request)
+    #redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
+
+    
+    #if request.POST:
+        #new_data = request.POST.copy()
+        #errors = manipulator.get_validation_errors(new_data)
+    
+        #if not errors:
+            #user = authenticate(username=request.username, password=request.password)
+            # Light security check -- make sure redirect_to isn't garbage.
+            #if not redirect_to or '://' in redirect_to or ' ' in redirect_to:
+            #    if SITEROOT:
+            #        redirect_to = SITEROOT
+            #    else:
+            #        redirect_to ='/'
+            #else:
+            #    redirect_to = '%s/%s' % (SITEROOT,redirect_to)
+
+            #request.session[SESSION_KEY] = manipulator.get_user_id()
+            #from django.contrib.auth import login
+            #login(request, manipulator.get_user())
+            #request.session.delete_test_cookie()
+
+            #return HttpResponseRedirect(redirect_to)
+    #else:
+        #errors = {}
+    #request.session.set_test_cookie()
+    # patch for 1.0 alpha svn - oldforms - TODO fix this for current forms library
+    #return render_to_response('registration/login.html', {
+    #    'form': oldforms.FormWrapper(manipulator, request.POST, errors),
+    #    REDIRECT_FIELD_NAME: '',
+    #    'site_name': Site.objects.get_current().name,
+    #    'SITEROOT': SITEROOT,
+    #}, context_instance=RequestContext(request))
 
 
 def rosslogout(request):
@@ -675,8 +704,9 @@ def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilte
         return response
     elif len(objs)>0:
         paginate_by = 10
-        paginator = ObjectPaginator(objs, paginate_by)
-        page = int(request.GET.get('page', 0))
+        paginator = Paginator(objs, paginate_by)
+        page = int(request.GET.get('page', 1))
+        thispage = paginator.page(page)
         cinfo = {
             "request": request,
             "is_search": True,
@@ -690,22 +720,22 @@ def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilte
             "datecol":datecol,
             "orderby": orderby,
             "wf_display":wf_display,
-            "object_list":paginator.get_page(page),
+            "object_list": thispage.object_list,
             "casenum": len(objs),
-            "is_paginated": paginator.pages > 1,
+            "is_paginated": paginator.num_pages > 1,
             "results_per_page": paginate_by,
-            "has_next": paginator.has_next_page(page),
-            "has_previous": paginator.has_previous_page(page),
-            "page": page + 1,
+            "has_next": thispage.has_next(),
+            "has_previous": thispage.has_previous(),
+            "page": page,
             "next": page + 1,
-            "previous": page - 1,
-            "pages": paginator.pages,
-            "first_page": 0,
-            "last_page": paginator.pages - 1,
+            "previous": max(page - 1,1),
+            "pages": paginator.num_pages,
+            "first_page": 1,
+            "last_page": max(paginator.num_pages,1),
             'SITEROOT':SITEROOT,
             }
     else:
-        cinfo={
+        cinfo= {
             "request": request,
             "is_search": True,
             "rules":rules,
@@ -718,7 +748,7 @@ def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilte
             "datecol":datecol,
             "orderby": orderby,
             "wf_display":wf_display,
-            "casenum": 0,
+            "casenum": None,
             "object_list": None,
             "is_paginated": False,
             'SITEROOT':SITEROOT,

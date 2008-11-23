@@ -82,35 +82,38 @@ def cleanup():
 
 
 ################################
-def my_syncdb_func():
+def my_syncdb_func(sender,**kwargs):
     """To load CPT/ICD9/NDC for displaying purpose on case detail page
     """
 
-    
-    preloadcmd='%s %s/preLoader.py' % (sys.executable,os.path.join(settings.CODEDIR,'utils'))
-    os.system(preloadcmd)
-    print  'PreLoad Done'
-    
-    if icd9.objects.count()>0 and cpt.objects.count()>0 and ndc.objects.count()>0:
-        print 'No need to load data into CPT/ICD9/NDC'
-    else: ##cleanup and reload again
-        cleanup()
-        makendc()
-        makeicd9()
-        makecpt()
+    if 'Lx' in dir(sender):
+        print 'syncdb signal for %s - installing initial data' % sender
+        preloadcmd='%s %s/preLoader.py' % (sys.executable,os.path.join(settings.CODEDIR,'utils'))
+        os.system(preloadcmd)
+        print  'PreLoad Done'
+        
+        if icd9.objects.count()>0 and cpt.objects.count()>0 and ndc.objects.count()>0:
+            print 'No need to load data into CPT/ICD9/NDC'
+        else: ##cleanup and reload again
+            cleanup()
+            makendc()
+            makeicd9()
+            makecpt()
 
-    ##run makefakefile
-    if settings.RUNFAKEDATA:
-        print 'Generate Faked data'
-        fakecmd='%s %s/makeFakeFiles.py' % (sys.executable,os.path.join(settings.CODEDIR,'utils'))
-        fin,fout = os.popen4(fakecmd)
-        result = fout.read()
-        if string.upper(result).find('ERROR') !=-1: ##error
-            print ('ERROR when running makeFakeFiles.py:%s' % result)
+        ##run makefakefile
+        if settings.RUNFAKEDATA:
+            print 'Generate Faked data'
+            fakecmd='%s %s/makeFakeFiles.py' % (sys.executable,os.path.join(settings.CODEDIR,'utils'))
+            fin,fout = os.popen4(fakecmd)
+            result = fout.read()
+            if string.upper(result).find('ERROR') !=-1: ##error
+                print ('ERROR when running makeFakeFiles.py:%s' % result)
+    else:
+        print 'syncdb signal for %s - no action' % sender
 
                                              
 
         
 
 ######################################
-dispatcher.connect(my_syncdb_func, sender=espmodel,signal=signals.post_syncdb) 
+signals.post_syncdb.connect(my_syncdb_func) 
