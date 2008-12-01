@@ -436,7 +436,7 @@ class TestCase(models.Model):
         othercases = TestCase.objects.filter(caseDemog__id__exact=self.caseDemog.id, caseRule__id__exact=self.caseRule.id, id__lt=self.id)
         returnstr=[]
         for c in othercases:
-            returnstr.append(c.id)
+            returnstr.append(unicode(c.id))
         return returnstr
                                                                                                                                                                     
                                                                                                                                                                                                                     
