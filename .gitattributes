@@ -1,4 +1,5 @@
 * text=auto !eol
+ESP/esp/admin.py -text
 ESP/localsettings.py -text
 ESP/management.py -text
 ESP/sendMsgs/bcdc.jar -text
