@@ -28,7 +28,7 @@ sys.path.insert(0, '/home/ESP/')
 
 from django.template import Context, loader, Template
 from ESP.esp.models import *
-from ESP.esp.forms import RegistrationForm 
+#from ESP.esp.forms import RegistrationForm 
 from django.http import HttpResponse,HttpResponseRedirect
 from django.shortcuts import render_to_response,get_object_or_404
 from django.core.paginator import Paginator, InvalidPage
@@ -44,7 +44,7 @@ from ESP.settings import SITEROOT,TOPDIR,LOCALSITE,CODEDIR
 from django.contrib.auth import authenticate, login
 #from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.forms import PasswordResetForm, PasswordChangeForm
-from django import forms,oldforms # TODO fixme!
+#from django import forms,oldforms # TODO fixme!
 from django.template import RequestContext
 from django.contrib.sites.models import Site
 from django.contrib.auth import REDIRECT_FIELD_NAME,SESSION_KEY, authenticate

@@ -366,7 +366,9 @@ class TestCase(models.Model):
     def getPregnant(self):
         p=self.getPatient()
         encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
-        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
+        lxs = None
+        if len(self.caseLxID.split(',')) > 0:
+		lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
         if encdb and lxs:
             lx = lxs[0]
             lxorderd = lx.LxOrderDate
@@ -484,7 +486,10 @@ class Case(models.Model):
     def getPregnant(self):
         p=self.getPatient()
         encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
-        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
+        lxs = None
+	lxi = self.caseLxID
+        if len(lxi) > 0:
+		lxs=Lx.objects.filter(id__in=lxi.split(','))
         if encdb and lxs:
             lx = lxs[0]
             lxorderd = lx.LxOrderDate

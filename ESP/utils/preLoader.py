@@ -116,10 +116,87 @@ def correctcptloincmap_lx(table, cursor):
     caselxid_dict = dict(map(lambda x:(x,0), caselx))
     
 
-    cursor.execute("""select id, LxTest_Code_CPT,LxComponent,Lxloinc from esp_lx where LxLoinc !=''""")
-    cptcmpt_list = cursor.fetchall()
+    #cursor.execute("""select id, LxTest_Code_CPT,LxComponent,Lxloinc from esp_lx where LxLoinc !=''""")
+    # this is nearly 2M records after 2 years at atrius out of 50M total 
+    #cptcmpt_list = cursor.fetchall()
+    # sadly this iterator still chews up all the ram
+    # TODO fix this to iterate through the cptmap loincs and filter on those?
+    # will decrease ram requirements at least?
+    # cptmap = CPTLOINCMap.objects.all()
+    n = 0
+    for acpt in CPTLOINCMap.objects.all().iterator():
+        thisCPT = acpt.CPT
+        thisCOMP = acpt.CPTCompt
+        thisLOINC = acpt.Loinc
+        for anLx in Lx.objects.filter(LxLoinc__iexact=thisLOINC).iterator(): # restricted loop
+            n += 1
+            if n % 100000 == 0:
+                if logging:
+                    logging.info('## correctcptloincmap_lx at %d' % n)
+            id = anLx.id
+            cpt = anLx.LxTest_Code_CPT
+            comp = anLx.LxComponent
+            loinc = anLx.LxLoinc
+            temp = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt=comp)
+            if caselxid_dict.has_key('%s' % id):
+                ##is a case, do nothing
+                continue
+            
+            if temp and temp[0].Loinc == loinc:
+                pass
+            elif temp and temp[0].Loinc != loinc:
+                thislx = Lx.objects.filter(id=id)[0]
+                thislx.LxLoinc=temp[0].Loinc
+                thislx.save()
+                if logging:
+                    logging.info('CPT=%s, Comp=%s, CorrectLoinc=%s, LxLoinc=%s, Lxid=%s' % (cpt,comp,temp[0].Loinc,loinc,id))
+            elif not temp:
+                if logging:
+                    logging.info('CPT=%s, Comp=%s, CorrectLoinc=None, LxLoinc=%s, Lxid=%s' % (cpt,comp,loinc,id))
+                thislx = Lx.objects.filter(id=id)[0]
+                thislx.LxLoinc=''
+                thislx.save()
+    if logging:
+        logging.info('## correctcptloincmap_lx scanned %d records' % n)
+
+
+#####################################
+def correctcptloincmap_lx(table, cursor):
+    if logging:
+        logging.info('## Correct CPTLOINC Map in esp_lx table')
+
+    curcases=Case.objects.all()
+    if logging:        
+        logging.info('# got all case objects')
+
+    caselx=[]
+    for onecase in curcases:
+        newlx_list = [i for i in onecase.caseLxID.split(',') if i.strip()]
+        caselx =caselx+newlx_list
+    caselxid_dict = dict(map(lambda x:(x,0), caselx))
+    if logging:        
+        logging.info('# created caselxid_dict of len %d' % len(caselxid_dict))
+    
+
     cptmap = CPTLOINCMap.objects.all()
-    for id,cpt,comp,loinc in cptcmpt_list:
+    if logging:        
+        logging.info('# created cptmap of len %d' % len(cptmap))
+
+    #cursor.execute("""select id, LxTest_Code_CPT,LxComponent,LxLoinc from esp_lx where LxLoinc !=''""")
+    # this is nearly 2M records after 2 years at atrius out of 50M total 
+    #cptcmpt_list = cursor.fetchall()
+    #for id,cpt,comp,loinc in cptcmpt_list:
+    n = 0
+    for anLx in Lx.objects.filter(LxLoinc__gt='').iterator():
+        n += 1
+	if (n) % 100000 == 0:
+	   print 'correctcptloincmap_lx at %d' % n
+        id = anLx.id
+        cpt = anLx.LxTest_Code_CPT
+        comp = anLx.LxComponent
+        loinc = anLx.LxLoinc
+
+
         temp = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt=comp)
         if caselxid_dict.has_key('%s' % id):
             ##is a case, do nothing
@@ -139,6 +216,90 @@ def correctcptloincmap_lx(table, cursor):
             thislx = Lx.objects.filter(id=id)[0]
             thislx.LxLoinc=''
             thislx.save()
+
+def small_ram_correctcptloincmap_lx(table, cursor):
+    """smaller ram - about half of that for the old version
+    """
+    if logging:
+        logging.info('## Correct CPTLOINC Map in esp_lx table')
+
+    curcases=Case.objects.all()
+    if logging:        
+        logging.info('# got all case objects')
+
+    caselx=[]
+    for onecase in curcases:
+        newlx_list = [i for i in onecase.caseLxID.split(',') if i.strip()]
+        caselx =caselx+newlx_list
+    caselxid_dict = dict(map(lambda x:(x,0), caselx))
+    if logging:        
+        logging.info('# created caselxid_dict of len %d' % len(caselxid_dict))
+    
+
+    #cursor.execute("""select id, LxTest_Code_CPT,LxComponent,Lxloinc from esp_lx where LxLoinc !=''""")
+    # this is nearly 2M records after 2 years at atrius out of 50M total 
+    #cptcmpt_list = cursor.fetchall()
+    # sadly this iterator still chews up all the ram
+    # TODO fix this to iterate through the cptmap loincs and filter on those?
+    # will decrease ram requirements at least?
+    cptmap = CPTLOINCMap.objects.all()
+    allLOINC = []
+    n = 0
+    for acpt in CPTLOINCMap.objects.all().iterator():
+        thisCPT = actp.CPT
+        thisCOMP = actp.CPTCompt
+        thisLOINC = actp.Loinc
+        allLOINC.append(thisLOINC) # use later to delete old loincs
+        for anLx in Lx.objects.filter(LxLoinc__iexact=thisLOINC).iterator(): # restricted loop
+            n += 1
+            if n % 100000 == 0:
+                if logging:
+                    logging.info('## correctcptloincmap_lx at %d' % n)
+            id = anLx.id
+            cpt = anLx.LxTest_Code_CPT
+            comp = anLx.LxComponent
+            loinc = anLx.Lxloinc
+            temp = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt=comp)
+            if caselxid_dict.has_key('%s' % id):
+                ##is a case, do nothing
+                continue
+            
+            if temp and temp[0].Loinc == loinc:
+                pass
+            elif temp and temp[0].Loinc != loinc:
+                thislx = Lx.objects.filter(id=id)[0]
+                thislx.LxLoinc=temp[0].Loinc
+                thislx.save()
+                if logging:
+                    logging.info('CPT=%s, Comp=%s, CorrectLoinc=%s, LxLoinc=%s, Lxid=%s' % (cpt,comp,temp[0].Loinc,loinc,id))
+            elif not temp:
+                if logging:
+                    logging.info('CPT=%s, Comp=%s, CorrectLoinc=None, LxLoinc=%s, Lxid=%s' % (cpt,comp,loinc,id))
+                thislx = Lx.objects.filter(id=id)[0]
+                thislx.LxLoinc=''
+                thislx.save()
+    allLOINC = list(set(allLOINC)) # remove dupes
+    if logging:
+        logging.info('## correctcptloincmap_lx scanned %d records - now looking for old loincs' % n)
+    n = 0
+    for anLx in Lx.objects.filter(not LxLoinc__in=allLOINC).iterator(): # restricted loop
+        n += 1
+        if n % 1000 == 0:
+            if logging:
+                logging.info('## correctcptloincmap_lx deleting old loincs at %d' % n)
+        id = anLx.id
+        cpt = anLx.LxTest_Code_CPT
+        comp = anLx.LxComponent
+        loinc = anLx.Lxloinc
+        if logging:
+            logging.info('CPT=%s, Comp=%s, CorrectLoinc=None, LxLoinc=%s, Lxid=%s' % (cpt,comp,loinc,id))
+        thislx = Lx.objects.filter(id=id)[0]
+        thislx.LxLoinc=''
+        thislx.save()
+    if logging:
+        logging.info('## correctcptloincmap_lx deleted old loincs from %d records' % n)
+
+
 
                     
 ################################

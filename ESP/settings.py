@@ -2,7 +2,6 @@
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
-#ENABLE_PSYCO = True
 import localsettings
 
 SITEROOT = localsettings.SITEROOT
@@ -79,9 +78,9 @@ SECRET_KEY = 'lo(g8i)a(g%&(4-*9@w#w2u#wfq(tjf5o+f4#6q7mg(k%9h%j5'
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.load_template_source',
     'django.template.loaders.app_directories.load_template_source',
-     'django.template.loaders.eggs.load_template_source',
 )
-
+#     'django.template.loaders.eggs.load_template_source',
+ 
 MIDDLEWARE_CLASSES = (
     #"django.middleware.cache.CacheMiddleware",
     "django.middleware.common.CommonMiddleware",

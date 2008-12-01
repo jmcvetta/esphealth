@@ -10,7 +10,7 @@ SQLITE_DB_USER = 'rossSQL'
 SQLITE_DB_PASSWORD = 'SQLross'
 
 FTPUSER = 'HEALTHONE\\rlazarus'
-FTPPWD = 'Welcome07'
+FTPPWD = 'Welcome00'
 FTPSERVER = 'n2ftp001.hvma.org'
 
 
