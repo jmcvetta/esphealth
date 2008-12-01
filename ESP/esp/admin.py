@@ -1,7 +1,7 @@
 
 
 #[Sat Sep 20 09:35:05 rossl@rosst61:~/py/informatics/django/ESP/esp ] $ python makeNewadmin.py models.py
-from esp.models import *
+from ESP.esp.models import *
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 

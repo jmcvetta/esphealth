@@ -11,7 +11,6 @@ urlpatterns = patterns('',
  ( r'^ESP', include( 'ESP.utils.esp_urls' ) ),
  ( r'^ESP/', include( 'ESP.utils.esp_urls' ) ),
  (r'^ESP/admin/(.*)', admin.site.root),
-# (r'^admin/', include('django.contrib.admin.urls')),
  (r'^admin/(.*)', admin.site.root),
  (r'^site_media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': '/home/ESP/ESP/templates'}),
 
