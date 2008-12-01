@@ -566,8 +566,8 @@ class Case(models.Model):
         othercases = Case.objects.filter(caseDemog__id__exact=self.caseDemog.id, caseRule__id__exact=self.caseRule.id, id__lt=self.id)
         returnstr=[]
         for c in othercases:
-            returnstr.append(c.id)
-        return unicode(returnstr)
+            returnstr.append(unicode(c.id))
+        return returnstr
 
 ###################################
 class CaseWorkflow(models.Model):
