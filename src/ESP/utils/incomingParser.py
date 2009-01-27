@@ -9,6 +9,7 @@ from ESP.settings import *
 from django.db import connection
 cursor = connection.cursor()
 import ESP.utils.utils as utils
+from ESP import settings
 
 import os
 import sys
@@ -19,6 +20,7 @@ import shutil
 import StringIO
 import traceback
 import smtplib
+import logging
 
 
 VERSION = '0.2'
@@ -30,6 +32,18 @@ today=datetime.datetime.now().strftime('%Y%m%d')
 
 DBTIMESTR = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 FILEBASE='epic' ##'epic' or 'test'
+
+
+#===============================================================================
+#
+#--- ~~~ Logging Setup ~~~
+#
+#-------------------------------------------------------------------------------
+log = logging.getLogger('incomingParser')
+log.level=settings.LOG_LEVEL
+logging.basicConfig(format=settings.LOG_FORMAT)
+
+
 
 ########For logging
 iplogging= getLogging('incomingParser.py_%s' % VERSION, debug=0)
@@ -574,7 +588,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
         
     fname = os.path.join(incomdir,'%s' % filename)
     for (items, linenum) in splitfile(fname,'^'):
-
+        log.debug('line %s: %s' % (linenum, items))
         if not items or items[0]=='CONTROL TOTALS':
             filelines = linenum
             continue
@@ -597,7 +611,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
         except:
             iplogging.warning('Parser In LXRES: NO patient found: %s\n' % str(items))
             continue
-
+        log.debug('demogid: %s' % demogid)
         if not string.strip(orderid):
             orderid = today  ##since when passing HL7 msg, this is required
         if not string.strip(resd):
@@ -630,9 +644,10 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
 
         except:
             provid = 'NULL'
-
+        log.debug('provid: %s' % provid)
         lxid = searchId('select id from esp_lx where LxPatient_id=%s and LxMedical_Record_Number=%s and LxOrder_Id_Num=%s and LxHVMA_Internal_Accession_number=%s and LxTest_Code_CPT=%s and LxComponent=%s and LxComponentName=%s and LxTest_results=%s and LxOrderDate=%s and LxOrderType=%s and LxDate_of_result=%s', (demogid,mrn,orderid,accessnum,cpt,comp,compname,res,orderd,ordertp,resd))
         if lxid: #update
+            log.debug('updating record')
             lx_str = """update esp_lx set
              LxPatient_id=%s,
              LxOrder_Id_Num=%s,
@@ -659,6 +674,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
              """
             values=(demogid,orderid,mrn,cpt,accessnum,orderd,ordertp,resd,comp,compname,res,normalf,refl,refh,refu,status,note,impre,lxloinc,provid, DBTIMESTR,lxid)
         else: #new
+            log.debug('inserting record')
             lx_str = """insert into esp_lx
             (LxPatient_id,LxOrder_Id_Num,LxMedical_Record_Number,LxTest_Code_CPT,LxHVMA_Internal_Accession_number,LxOrderDate,LxOrderType,LxDate_of_result,LxComponent,LxComponentName,LxTest_results,LxNormalAbnormal_Flag,LxReference_Low,LxReference_High,LxReference_Unit,LxTest_status,LxComment,LxImpression,LxLoinc,LxOrdering_Provider_id,lastUpDate,createdDate)
             values (%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s,%s, %s)

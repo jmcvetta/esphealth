@@ -9,7 +9,6 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 
-SITEROOT = localsettings.SITEROOT
 
 TOPDIR='/home/ESP'
 CODEDIR = os.path.join(TOPDIR, 'src', 'ESP')
@@ -26,16 +25,19 @@ MANAGERS = ADMINS
 
 #import localsettings
 
+SITEROOT = localsettings.SITEROOT
 LOCALSITE=localsettings.LOCALSITE
 RUNFAKEDATA=localsettings.RUNFAKEDATA
 FTPUSER = localsettings.FTPUSER
 FTPPWD = localsettings.FTPPWD
 FTPSERVER =localsettings.FTPSERVER
 EMAILSENDER=localsettings.EMAILSENDER
-
-
-
 USESQLITE=localsettings.USESQLITE
+LOG_FORMAT = localsettings.LOG_FORMAT
+LOG_LEVEL = localsettings.LOG_LEVEL
+
+
+
 if localsettings.USESQLITE:
     DATABASE_ENGINE = 'sqlite3' # 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
     DATABASE_NAME = CODEDIR + '/ESPsqlite'             # Or path to database file if using sqlite3.
