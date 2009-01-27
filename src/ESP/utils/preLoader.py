@@ -282,7 +282,8 @@ def small_ram_correctcptloincmap_lx(table, cursor):
     if logging:
         logging.info('## correctcptloincmap_lx scanned %d records - now looking for old loincs' % n)
     n = 0
-    for anLx in Lx.objects.filter(not LxLoinc__in=allLOINC).iterator(): # restricted loop
+    q_obj = Q(LxLoinc__in=allLOINC)
+    for anLx in Lx.objects.filter(~q_obj).iterator(): # restricted loop
         n += 1
         if n % 1000 == 0:
             if logging:
