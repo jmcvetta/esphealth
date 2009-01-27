@@ -1226,9 +1226,13 @@ def updateLoinc_lx():
     else:
         iplogging.info('No need updating cptloinc map in esp_cptloincmap & esp_lx tables')
             
-################################
-################################
-if __name__ == "__main__":
+            
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#--- ~~~ Main Logic ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def main():
     try: 
         
         startt = datetime.datetime.now()
@@ -1321,4 +1325,9 @@ if __name__ == "__main__":
         message = fp.getvalue()
         iplogging.info(message+'\n')
     iplogging.shutdown()
-    
+
+            
+if __name__ == "__main__":
+    main()
+
+
