@@ -1,4 +1,7 @@
 * text=auto !eol
+NORTH_ADAMS/NorthAdamsLocal-LOINCmapMay2008.redacted.xls -text
+NORTH_ADAMS/NorthAdamsLocal-LOINCmapMay2008.xls -text
+NORTH_ADAMS/loinc-code-map.transformation.ktr -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
 docs/ELR[!!-~]EMR[!!-~]Query[!!-~]Specification[!!-~]v1.0.doc -text
