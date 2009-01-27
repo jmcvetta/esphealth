@@ -21,6 +21,8 @@ import StringIO
 import traceback
 import smtplib
 import logging
+import exceptions
+import MySQLdb
 
 
 VERSION = '0.2'
@@ -109,14 +111,18 @@ def splitfile(fname=None,delim='^',validate=False):
                       
 ###################################
 def runSql(stmt,values=None):
+    log.debug('Running SQL query "%s" with values "%s".' % (stmt, values))
     try:
         if not values:
             cursor.execute(stmt)
         else:
             cursor.execute(stmt,values)
-    except:
+    except exceptions.BaseException, e: # FIXME: It is a bad idea to catch *all* exceptions
         errmsg = "ERROR: %s; VALUES == %s\n" % (stmt,str(values))
+        # Yeah, it's ugly the way I have two logging sytems running at once.
+        # That's something to clean up in the future.
         iplogging.error(errmsg)
+        log.error(e)
         #cursor.execute("rollback;")
        # sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg='SQL loading errors when running incomingParse.py;\n%s' % errmsg)
         
