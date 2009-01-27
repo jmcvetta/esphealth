@@ -576,9 +576,12 @@ def makendc(cursor):
         newn.save()
                                                                                                                                                                                                                                             
             
-################################
-################################
-if __name__ == "__main__":
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#--- ~~~ Main Logic ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+def main():
     startt = datetime.datetime.now()
     logging = getLogging('preLoader.py_v0.1', debug=0)
 
@@ -646,5 +649,9 @@ if __name__ == "__main__":
         load2config(table,getlines(datadir+table+'.txt'),cursor)
         table = 'esp_conditiondrugname'
         load2DrugNames(table,getlines(datadir+table+'.txt'), cursor)
-        
     
+
+if __name__ == "__main__":
+    main()
+    
+
