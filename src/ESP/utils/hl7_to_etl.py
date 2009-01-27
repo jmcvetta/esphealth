@@ -259,7 +259,12 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                             logging.critical('OBX %s for id %s encountered without a %s?' \
                                           % (rdict,id,LABRES_CODE))
                         elif obxattrcode == current_obxattrcode: # falsely split text!
-                            last = obxs[-1] # get result to be extended
+                            # FIXME: this should be handled in a better way
+                            try:
+                                last = obxs[-1] # get result to be extended
+                            except IndexError:
+                                logging.critical('invalid record, zero-length OBX: %s' % incominghl7f)
+                                continue
                             sofar = '%s; %s' % (last.get(LABRES_VALUE,''),
                                                 rdict.get(LABRES_VALUE,''))
                             last[LABRES_VALUE] = sofar
