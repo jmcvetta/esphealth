@@ -1,13 +1,18 @@
-# Django settings for esp project.
+'''
+                        Django settings for ESP project
+'''
+
+import localsettings
+import os.path
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
-import localsettings
+
 
 SITEROOT = localsettings.SITEROOT
 
 TOPDIR='/home/ESP'
-CODEDIR = '/home/ESP/ESP'
+CODEDIR = os.path.join(TOPDIR, 'src', 'ESP')
 
 ADMINS = (
     ('Ross Lazarus', 'ross.lazarus@gmail.com'),
