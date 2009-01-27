@@ -1,4 +1,5 @@
 import logging
+import sys
 
 
 USESQLITE=0
@@ -24,3 +25,5 @@ EMAILSENDER='espuser@lkenpesp.healthone.org'
 #-------------------------------------------------------------------------------
 LOG_FORMAT = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 LOG_LEVEL = logging.DEBUG
+#LOG_FILE = sys.stdout
+LOG_FILE = '/tmp/esp.log'

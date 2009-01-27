@@ -41,7 +41,7 @@ FILEBASE='epic' ##'epic' or 'test'
 #-------------------------------------------------------------------------------
 log = logging.getLogger('incomingParser')
 log.level=settings.LOG_LEVEL
-logging.basicConfig(format=settings.LOG_FORMAT)
+logging.basicConfig(format=settings.LOG_FORMAT, filename=settings.LOG_FILE)
 
 
 

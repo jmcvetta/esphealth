@@ -35,6 +35,7 @@ EMAILSENDER=localsettings.EMAILSENDER
 USESQLITE=localsettings.USESQLITE
 LOG_FORMAT = localsettings.LOG_FORMAT
 LOG_LEVEL = localsettings.LOG_LEVEL
+LOG_FILE = localsettings.LOG_FILE
 
 
 
