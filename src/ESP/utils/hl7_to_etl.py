@@ -120,7 +120,7 @@ def countSets(messages=[]):
             res[mtype].append(nsegs)
     rk = res.keys()
     rk.sort()
-    print '\nAnalysis of test messages of March 9'
+    #print '\nAnalysis of test messages of March 9' # Why was this here??
     for r in rk:
         rr = res[r]
         firstlen = rr[0]
@@ -264,7 +264,7 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                     if gtype == 'OBX':
                         obxattrcode = rdict.get(LABRES_CODE,None)
                         if not obxattrcode:
-                            log.critical('OBX enountered without %s for id %s: %s' % 
+                            log.critical('OBX encountered without %s for id: %s: %s' % 
                                 (LABRES_CODE,id,rdict))
                         elif obxattrcode == current_obxattrcode: # falsely split text!
                             # FIXME: this should be handled in a better way
@@ -307,8 +307,8 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                         
             else: # invalid segment or no PID/MSH found yet
                 if not id or not msh or not npi:
-                    log.critical('Message segment found before MSH, PV1 and PID in: %s: %s' 
-                        % (gtype, m))
+                    log.critical('Message segment found before MSH, PV1 and PID in: %s: %s: %s' 
+                        % (gtype, incominghl7f, m))
                 else:
                     if inobr:
                         ot = segdict.get('OBR')
@@ -369,14 +369,14 @@ def writeMDicts(mclasses={}):
     targets.sort()
     for t in targets:
         if t <> "msh":
-            print '###Message class = %s' % t
+            print '\tMessage class: %s' % t
             lookups = writer_lookups[t] # the output etl row
             writefile = writefiles[t] # and file
             iddict = mclasses[t]
             idk = iddict.keys()
             idk.sort()
             for k in idk:
-                print '#*** id =',k
+                print '\tid:',k
                 mlist = mclasses[t][k]
                 for m in mlist:
                     etl_Writer(rdict=m,lookups=lookups,outdest=writefile)
@@ -430,7 +430,7 @@ def main():
     incomdir = '/home/ESP/NORTH_ADAMS/incomingHL7/'
     todir = '/home/ESP/NORTH_ADAMS/archivedHL7/'
     for f in hlfiles:
-        print 'PROCESS %s' % f
+        print 'Processing: %s' % f
         tm = makeTests(incomdir+f)
         grammars = makeGrammars()
         mclasses = parseMessages(mlist=tm,grammars=grammars,incominghl7f = f)

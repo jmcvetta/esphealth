@@ -274,7 +274,7 @@ def makeTests(hl7file):
     # sudha sent the following 20 tests
     tm = []
     tl  = file(hl7file,'rb').read().split('\r')
-    print 'got %d rows' % len(tl)
+    print '\tRows: %d' % len(tl)
     message = []
     for row in tl:
         if len(row) > 2:
