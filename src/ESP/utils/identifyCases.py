@@ -1424,21 +1424,20 @@ def isNegative(onedemogid,oneloinc,caselxids, dayrange=29,  negvalues=None):
         return 1
 
     
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#--- ~~~ Main Logic ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-################################
-################################
-if __name__ == "__main__":
-
+def main():
     iclogging.info('==================\n')
-
     TestCase.objects.all().delete()
     iclogging.info('Delete all cases in Test cases\n')
-
     conditions = Rule.objects.all().order_by('ruleName')
     for c in conditions:
         cond = c.ruleName
         iclogging.info('process %s\n' % cond)
-
         if string.upper(cond) in ('ACUTE HEPATITIS A'):
             processAcuteHepA(cond)
         elif string.upper(cond) in ('ACUTE HEPATITIS B'):
@@ -1449,7 +1448,6 @@ if __name__ == "__main__":
             processChronicHepB(cond)
         elif string.upper(cond) in ('ACTIVE HEPATITIS B IN PREGNANCY'):
             processHepBPreg(cond)
-                        
         elif string.upper(cond) in ('ACTIVE TUBERCULOSIS'):
             processTB(cond)
         elif string.upper(cond) in ('SYPHILIS'):
@@ -1458,7 +1456,6 @@ if __name__ == "__main__":
             pass
         else: #other conditions
             processoneCondition(cond)
-
     ########
     iclogging.info('Start to check cases for updating')
     allcases = Case.objects.filter(casecreatedDate__gt=datetime.datetime.today()-datetime.timedelta(28))
@@ -1468,8 +1465,6 @@ if __name__ == "__main__":
         if indx%50==0:
             iclogging.info('Checked %s of %s cases' % (indx, len(allcases)))
         indx=indx+1
-
-
     ##send out email for daily summary
     k=case_dict.keys()
     k.sort()
@@ -1479,8 +1474,10 @@ if __name__ == "__main__":
         
     for i in k:
         msg = msg+ '%s:\t\t%s\n' % (i, case_dict[i])
-
     utils.sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],msg=msg, subject='ESP - Daily summary of all detected cases')
-
-    
     iclogging.shutdown()
+
+
+if __name__ == "__main__":
+    main()
+
