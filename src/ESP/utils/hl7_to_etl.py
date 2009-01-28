@@ -31,11 +31,19 @@ We need
 5) a new immunization record for each RXA in any VXU message
 
 """
-import sys, os, datetime, time, logging
-from northadams import * # that's where all our configuration lives
+import sys
+import os
+import datetime
+import time
 import utils
 import shutil
 import string
+import logging
+
+from ESP.utils.utils import log
+
+from northadams import * # that's where all our configuration lives
+
 
 prog = os.path.split(sys.argv[0])[-1]
 
@@ -219,7 +227,7 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                 pd1 = rdict # probably would need a list of these if they arrive
             elif gtype == 'PV1': # need the provider for rx messages eg
                 if id == None: ###No patient ID
-                    msg = 'In File %s: No PID info - %s' % (incominghl7f, row)
+                    msg = 'No Patient ID info in file "%s": %s' % (incominghl7f, row)
                     print msg
                     logging.critical(msg)
 #                    utils.sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg=msg,subject='ESP Northadams incoming HL7 parsing Error')
@@ -233,7 +241,7 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
 
                 npi = rdict.get('Attending_Provider_NPI',None)
                 if not npi:
-                    logging.critical('PV1 without an NPI! Cannot cope - %s' % row)
+                    logging.critical('PV1 without an NPI! Cannot cope -- File: "%s"; Row: %s' % (incominghl7f, row))
                     npi = 'UNKNOWN'
                 rdict[PCP_NPI] = npi # add some useful elements to all records
                 msh[PCP_NPI] = npi
@@ -256,14 +264,14 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                     if gtype == 'OBX':
                         obxattrcode = rdict.get(LABRES_CODE,None)
                         if not obxattrcode:
-                            logging.critical('OBX %s for id %s encountered without a %s?' \
-                                          % (rdict,id,LABRES_CODE))
+                            logging.critical('OBX enountered without %s for id %s: %s' % 
+                                (LABRES_CODE,id,rdict))
                         elif obxattrcode == current_obxattrcode: # falsely split text!
                             # FIXME: this should be handled in a better way
                             try:
                                 last = obxs[-1] # get result to be extended
                             except IndexError:
-                                logging.critical('invalid record, zero-length OBX: %s' % incominghl7f)
+                                logging.critical('Invalid record, zero-length OBX: %s' % incominghl7f)
                                 continue
                             sofar = '%s; %s' % (last.get(LABRES_VALUE,''),
                                                 rdict.get(LABRES_VALUE,''))
@@ -299,8 +307,8 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                         
             else: # invalid segment or no PID/MSH found yet
                 if not id or not msh or not npi:
-                    logging.critical('Message segment %s found before MSH, PV1 and PID in %s' \
-                                     % (gtype,m))
+                    logging.critical('Message segment found before MSH, PV1 and PID in %s: %s' 
+                        % (m, gtype))
                 else:
                     if inobr:
                         ot = segdict.get('OBR')
@@ -313,7 +321,7 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                         current_obr = None
                         obxs = []
                         thisattrcode = None
-                    s = '## Unexpected segment %s in %s message' % (gtype,mtype)
+                    s = 'Unexpected segment in %s message: %s' % (mtype,gtype)
                     logging.critical(s)
 
     if final_I9dict:
@@ -416,9 +424,12 @@ def parseMessages(mlist=[],grammars={},incominghl7f=None):
     return mclasses
 
 if __name__ == "__main__":
-    setLogging(appname=prog)
-    logging.info('##########Processing started at %s' % timenow())
+    main()
 
+
+def main():
+    setLogging(appname=prog)
+    logging.info('HL7 message processing started at %s' % timenow())
     hlfiles=os.listdir('/home/ESP/NORTH_ADAMS/incomingHL7/')
     incomdir = '/home/ESP/NORTH_ADAMS/incomingHL7/'
     todir = '/home/ESP/NORTH_ADAMS/archivedHL7/'
