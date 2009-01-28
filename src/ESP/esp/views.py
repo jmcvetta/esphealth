@@ -42,7 +42,7 @@ from ESP.settings import SITEROOT,TOPDIR,LOCALSITE,CODEDIR
 #import ESP.utils.localconfig as localconfig
 
 from django.contrib.auth import authenticate, login
-#from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.forms import PasswordResetForm, PasswordChangeForm
 #from django import forms,oldforms # TODO fixme!
 from django.template import RequestContext
@@ -59,10 +59,13 @@ REDIRECT_FIELD_NAME = 'next'
 def esplogin(request):
     "Displays the login form and handles the login action."
     if not request.POST:
-       return render_to_response('registration/login.html', {
-          REDIRECT_FIELD_NAME: '',
-         'site_name': Site.objects.get_current().name,
-         'SITEROOT': SITEROOT, }, context_instance=RequestContext(request))
+       return render_to_response('registration/login.html', 
+                                 {
+                                  REDIRECT_FIELD_NAME: '', 
+                                  'site_name': Site.objects.get_current().name, 
+                                  'SITEROOT': SITEROOT,  
+                                  'form': AuthenticationForm(),
+                                  }, context_instance=RequestContext(request))
     else:
         username = request.POST['username']
         password = request.POST['password']
