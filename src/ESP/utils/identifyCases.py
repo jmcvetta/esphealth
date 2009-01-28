@@ -1,111 +1,111 @@
-# prototype ESP case maker
-# run after new data inserted
-#
-# writes new case and AR workflow records for all newly identified cases in the database
-# selects patients with any of icd9s on the case definition icd list and any one of lx_list
-# To save time, remembers all of the associated lx records, rx records, enc records
-# and (for hl7 construction) remembers the icd9_list icd9 codes from each encounter
-# (tuples of those codes from each encounter in the
-# same order as the encounters)
-# this saves us having to do much work at display or message format time
-#
-# Likely that each condition will need a separate version of this logic
-# some patterns may be reuseable with any luck.
-#
-# Each condition not only has criteria, but also elements which should be
-# supplied as part of any notification. Prescriptions are particularly
-# important to see if the case was appropriately treated
-#
-# Most of the logic is amazingly simple when using the django ORM
-#
+''' 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-import os, sys, django, datetime
-sys.path.insert(0, '/home/ESP/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+                            Prototype ESP case maker
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-from ESP.esp.models import *
-from django.db.models import Q
-from ESP.settings import *
-from django.db import connection
-cursor = connection.cursor()
+Run after new data has been inserted.
 
+Writes new case and AR workflow records for all newly identified cases in the
+database selects patients with any of icd9s on the case definition icd list and
+any one of lx_list To save time, remembers all of the associated lx records, rx
+records, enc records and (for hl7 construction) remembers the icd9_list icd9
+codes from each encounter (tuples of those codes from each encounter in the
+same order as the encounters) this saves us having to do much work at display
+or message format time.
+
+Likely that each condition will need a separate version of this logic
+some patterns may be reuseable with any luck.
+
+Each condition not only has criteria, but also elements which should be
+supplied as part of any notification. Prescriptions are particularly important
+to see if the case was appropriately treated.
+
+Most of the logic is amazingly simple when using the django ORM.
+
+'''
+
+
+#
+# Do we really want this?  Better to do it the 'normal' way on command line.
+#
+#sys.path.insert(0, '/home/ESP/')
+#os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+
+
+import os
+import sys
+import datetime
 import utils
 import copy
+import optparse
+
+from django.db.models import Q
+from django.db import connection
+from django.core.mail import send_mail
+
+# FIXME: Get rid of wildcard imports
+from ESP.esp.models import *
+from ESP.settings import *
+from ESP.esp import models
+from ESP import settings
+from ESP.utils.utils import log
 
 
-###For logging
-iclogging = getLogging('identifyCases.py_v0.1', debug=0)
-
+cursor = connection.cursor()
 case_dict={}
 
-#################################
+
 def makeNewCase(cond, onedemogid,lxids,relatedrxids ,relatedencids,relatedicd9str):
-    """ create a new case record
+    """
+    Create a new case record
     """ 
-
-
     p = Demog.objects.get(id__exact=onedemogid)
-
     ##encounter
     encidstr = ','.join([str(i) for i in relatedencids])
-        
     ##lab result
     lxidstr = ','.join([str(i) for i in lxids])
-    
     ##Rx
     rxidstr = ','.join([str(i) for i in relatedrxids])
-    
     ##Create a new record
     rule = Rule.objects.filter(ruleName__icontains=cond)[0]
     wf = rule.ruleInitCaseStatus
     if not wf: wf = 'AR'
-    
     if rule.ruleinProd:
         c = Case(caseWorkflow=wf,caseDemog=p,caseComments='',caseRule=rule, 
                  caseEncID=encidstr, caseLxID=lxidstr,caseRxID=rxidstr,caseICD9=relatedicd9str)
     else:
         c = TestCase(caseWorkflow=wf,caseDemog=p,caseComments='',caseRule=rule,
                                   caseEncID=encidstr, caseLxID=lxidstr,caseRxID=rxidstr,caseICD9=relatedicd9str)
-        
     if p.DemogProvider:
         c.caseProvider=p.DemogProvider
-
     c.save()
-
-    
-                                
     if rule.ruleinProd:
         updateCaseWF(c,changedby='ESP Auto',note='Create New Case')
-        iclogging.info('NewCase-%s: DemogPID%s' % (cond,p.DemogPatient_Identifier))
-        ##need send email
+        log.info('NewCase-%s: DemogPID%s' % (cond,p.DemogPatient_Identifier))
+        # TODO: need send email
         if case_dict.has_key(cond):
             case_dict[cond]=case_dict[cond]+1
         else:
             case_dict[cond]=1
     else:
-        iclogging.info('New TestCase-%s: DemogPID%s' % (cond,p.DemogPatient_Identifier))
+        log.info('New TestCase-%s: DemogPID%s' % (cond,p.DemogPatient_Identifier))
         
 
-
-################################
-################################
 def getRelatedLx(condition,defines=[],demog=None):
     """based on case definition to get all Lab tests with positive results
     """
     #import time
     if not defines:
         defines = ConditionLOINC.objects.filter(CondiRule__ruleName__icontains=condition,CondiDefine=True)
-
     loincs = map(lambda x:x.CondiLOINC, defines)
-    
-
     if demog:
         lxs = Lx.objects.filter(Q(LxPatient=demog),
                                 Q(LxLoinc__in=loincs))
     else:
         lxs = Lx.objects.filter(Q(LxLoinc__in=loincs))
-
     returnl=[]
     for onedefine in defines:
         if string.upper(onedefine.CondiOperator) == 'CONTAIN':
@@ -120,22 +120,15 @@ def getRelatedLx(condition,defines=[],demog=None):
         else:
             lxs2 = lxs
         returnl = returnl+list(lxs2)
-        
-            
-    
     #ignore any lab result date *before* 05/2006 (See 3/1/2007 email)
     #if string.upper(condition) != 'ACUTE HEPATITIS A':
-
     lxs = filterOldLxs(returnl, cutoffd = datetime.date(2006,4,30) )
     lxs =Lx.objects.filter(id__in=[l.id for l in lxs])
     #else:
     #    lxs =Lx.objects.filter(id__in=[l.id for l in returnl])
-        
     return lxs
 
 
-###################################
-###################################
 def filterOldLxs(lxs, cutoffd = datetime.date(2006,4,30) ):
     returnlxs=[]
     for l in lxs:
@@ -144,27 +137,19 @@ def filterOldLxs(lxs, cutoffd = datetime.date(2006,4,30) ):
                 returnlxs.append(l)
         else:
             returnlxs.append(l)
-            
-            
     return returnlxs
 
 
 
-###################################
-###################################
 def sortLx(lxs):
     ##sort by Result date
     recl = [(l.LxPatient.id,int(l.id),l.LxDate_of_result) for l in lxs]
     recl.sort(key=lambda x:x[2]) ##sort by LxDate_of_result
     recl = map(lambda x:(x[0],x[1]), recl)
-
     #logstr = [(l.LxPatient.DemogPatient_Identifier,int(l.LxOrder_Id_Num)) for l in lxs]
-
     return recl
 
 
-################################              
-################################
 def buildCaseData(recl):
     returndict={}
     for pid,recid in recl:
@@ -172,13 +157,10 @@ def buildCaseData(recl):
             returndict[pid].append(recid)
         else:
             returndict[pid]=[recid]
-
     return returndict
 
     
-###################################
 def getEncids4dayrange(onedemogid, lxids, condicd9s, cond, afterday=14,beforeday=-14):
-
     ##Pertinent ICD9 codes should only be indicated & reported if they appear in the period from 14 days before test order date until 14 days after test result date
     maxdate=''
     mindate=''
@@ -189,7 +171,6 @@ def getEncids4dayrange(onedemogid, lxids, condicd9s, cond, afterday=14,beforeday
             maxrec=lxs[len(lxs)-1].LxDate_of_result
         except:
             maxrec = ''
-
         ##get min orderdate
         if string.upper(cond)=='PID':
             try:
@@ -202,20 +183,15 @@ def getEncids4dayrange(onedemogid, lxids, condicd9s, cond, afterday=14,beforeday
                 minrec=lxs[0].LxOrderDate
             except:
                 minrec = ''
-
         if maxrec and minrec:
             maxdate =getAnotherdate(maxrec,afterday)
             mindate =getAnotherdate(minrec,beforeday)
-            
     return getRelatedEncids(onedemogid,condicd9s,mindate, maxdate)
 
 
-###################################
-###################################
 def getRx_MinMaxDate(rxids,afterday,beforeday):
     maxdate=''
     mindate=''
-
     rxs = Rx.objects.filter(id__in=rxids).order_by('RxOrderDate')
     ##get lastest RX record = max resultdate
     try:
@@ -224,21 +200,17 @@ def getRx_MinMaxDate(rxids,afterday,beforeday):
     except:
         maxrec = ''
         minrec=''
-            
-
     if maxrec and minrec:
         maxdate =getAnotherdate(maxrec,afterday)
         mindate =getAnotherdate(minrec,beforeday)
     return (mindate,maxdate)
 
 
-###################################
 def getRelatedEncids(onedemogid,condicd9s,mindate, maxdate):                       
     returnl=[]
     icd9List=[]
     distincticd9List=[]
     returnicd9str = ''
-
 #    r = Rule.objects.filter(id=condicd9s[0].CondiRule_id)
 #    if rand r[0].ruleName== 'Syphilis':  ###need modify
     if  condicd9s and Rule.objects.filter(id=condicd9s[0].CondiRule_id)[0].ruleName== 'Syphilis':  ###need modify
@@ -258,7 +230,6 @@ def getRelatedEncids(onedemogid,condicd9s,mindate, maxdate):
         encdate = enc.EncEncounter_Date
         if encdate:
             encdate = datetime.date(int(encdate[:4]),int(encdate[4:6]),int(encdate[6:8]))
-        
         if not encdate or not maxdate or not mindate or (encdate>=mindate and encdate<=maxdate):
             ##Pertinent ICD9 codes should only be indicated & reported if they appear in the period from 14 days before test order date until 14 days after test result date
             icd9ids = string.split(enc.EncICD9_Codes, ' ')
@@ -268,27 +239,19 @@ def getRelatedEncids(onedemogid,condicd9s,mindate, maxdate):
                     icd9str = icd9str + ' ' +oneicd9
                     distincticd9List.append(oneicd9)
                     flag=1
-
             if flag==1:
                 returnl.append(int(enc.id))
                 icd9List.append(icd9str.strip())
-                
     if icd9List:
         ## use ',' to separate different encounter
         returnicd9str= ','.join(icd9List)
-
     return (returnl,returnicd9str)
 
                 
-###################################
-###################################
 def getRxids4dayrange(demogid,curlids,drugmaps, cond,afterday=14,beforeday=0,firstuseonly=0,exclude_dict={}):
-
     maxrec=''
     minrec=''
     returnl=[]
-
-        
     if string.upper(cond)=='PID' and curlids:
         encs = Enc.objects.filter(id__in=curlids).order_by('EncEncounter_Date')
         try:
@@ -307,21 +270,15 @@ def getRxids4dayrange(demogid,curlids,drugmaps, cond,afterday=14,beforeday=0,fir
             minrec=lxs[0].LxOrderDate
         except:
             pass
-                         
     if maxrec and minrec:
         maxdate = getAnotherdate(maxrec,afterday)
         mindate = getAnotherdate(minrec,beforeday)
-
     for onedrug in drugmaps:
-
          rxs = Rx.objects.filter(RxPatient__id=demogid, RxDrugName__icontains=onedrug.CondiDrugName, RxRoute__icontains=onedrug.CondiDrugRoute).order_by('RxOrderDate','RxOrder_Id_Num')
-
          if exclude_dict.has_key(onedrug.CondiDrugName):
              for excn in exclude_dict[onedrug.CondiDrugName]:
                  rxs=rxs.exclude(RxDrugName__icontains=excn)
              rxs =rxs.order_by('RxOrderDate','RxOrder_Id_Num')
-
-         
          if firstuseonly==1 and rxs:
              returnl.append(int(rxs[0].id))
          else:
@@ -333,18 +290,14 @@ def getRxids4dayrange(demogid,curlids,drugmaps, cond,afterday=14,beforeday=0,fir
                  if not rxdate or not curlids or not maxrec or not minrec or (rxdate>=mindate and rxdate<=maxdate):
                      if int(rx.id) not in returnl:
                          returnl.append(int(rx.id))
-
     returnl.sort()
     return returnl
 
-###################################
+
 def getLxids4dayrange(demogid,curlids,cond,afterday=30,beforeday=-30):
-    
     maxrec=''
     minrec=''
     returnl=[]
-
-
     try:
         lxs = Lx.objects.filter(id__in=curlids).order_by('LxDate_of_result')
         ##get lastest Lx record
@@ -353,20 +306,14 @@ def getLxids4dayrange(demogid,curlids,cond,afterday=30,beforeday=-30):
         minrec=lxs[0].LxOrderDate
     except:
         pass
-
     if maxrec and minrec:
         maxdate = getAnotherdate(maxrec,afterday)
         mindate = getAnotherdate(minrec,beforeday)
-                        
-                                                                                                                                        
     sends = ConditionLOINC.objects.filter(CondiRule__ruleName__icontains=cond,CondiSend=True)
     loincs = map(lambda x:x.CondiLOINC, sends)
-
     for oneloinc in loincs:
-    
         lxs = Lx.objects.filter(Q(LxPatient__id=demogid),
                                 Q(LxLoinc__in=[oneloinc]))
-
         #lxs = lxs.exclude(id__in =curlids)
         lxs = lxs.order_by('LxDate_of_result')
         if oneloinc in ('1742-6','1920-8','5009-6','16934-2'): ##ALT/AST
@@ -374,12 +321,10 @@ def getLxids4dayrange(demogid,curlids,cond,afterday=30,beforeday=-30):
                 lxs = map(lambda x:(float(x.LxTest_results), x), lxs)
             except:
                 lxs = map(lambda x:(x.LxTest_results, x), lxs)
-                
             lxs.sort()
             lxs = map(lambda x:x[1], lxs)
         lxs = list(lxs)
         lxs.reverse()  ##report all the following arising within 30 days of the order date for Hepatitis A IgM; if a single test was done multiple times then report the highest value or most positive value
-
         for lx in lxs:
             lxdate = lx.LxOrderDate
             lxdate = datetime.date(int(lxdate[:4]),int(lxdate[4:6]),int(lxdate[6:8]))
@@ -391,22 +336,18 @@ def getLxids4dayrange(demogid,curlids,cond,afterday=30,beforeday=-30):
                 if int(lx.id) not in returnl:
                     returnl.append(int(lx.id))
                     break
-                
     returnl.sort()
     return returnl
                                      
 
-###################################
-###################################
 def getAnotherdate(date1, dayrange):
     try:
         return datetime.date(int(date1[:4]),int(date1[4:6]),int(date1[6:8]))+datetime.timedelta(dayrange)
     except:
-        iclogging.error('Error when get another date: date1=%s,range=%s' % (date1,dayrange))
+        log.error('Error when get another date: date1=%s,range=%s' % (date1,dayrange))
         return ''
     
 
-###################################
 def getLxduration(lxid1, lxid2):
     lx1 = Lx.objects.filter(id=lxid1)[0]
     lx2 = Lx.objects.filter(id=lxid2)[0]
@@ -416,20 +357,16 @@ def getLxduration(lxid1, lxid2):
         return 0
 
     
-###################################
 def updateSentCase(onecase):
     ##get all sent cases <28 days
     ##if there is any new Rx, Enc record then need resend HL7 msg, but not create new case
     ##update caseworkflow history with new text notes with timedate stamp, what was added
     cond = Rule.objects.filter(id=onecase.caseRule.id)[0].ruleName
     pid = onecase.caseDemog.id
-
     newlx_list = [i for i in onecase.caseLxID.split(',') if i.strip()]
-        
     (iscase, relatedencids,relatedicd9str,relatedrxids) = getReportedRec(cond,pid,newlx_list)
     if not iscase:
         return
-                                
     note=''
     newencids = ','.join([str(i) for i in relatedencids])
     newrxids=','.join([str(i) for i in relatedrxids])
@@ -437,34 +374,26 @@ def updateSentCase(onecase):
         note=note+'Updated due to new ICD9:old=%s; new=%s; ' % ( onecase.caseICD9,relatedicd9str)
         onecase.caseICD9=relatedicd9str
         onecase.save()
-        
     if onecase.caseEncID != newencids:
         note = note+'Updated due to new Enc: old=%s; new=%s; ' % (onecase.caseEncID,newencids)
         onecase.caseEncID=newencids
         onecase.save()
-        
     if onecase.caseRxID != newrxids:
         note = note+'Updated due to reporting Rx logic changes: old=%s; new=%s; ' % (onecase.caseRxID,newrxids)
         onecase.caseRxID=newrxids
         onecase.save()
-        
     if note and onecase.caseWorkflow=='S':
         note = 'CaseID-%s: Already sent. Set to re-send; ' % onecase.id + note
         onecase.caseWorkflow='Q'
         onecase.save()
-
     if note:
-        iclogging.info('\n\nUpdate case: %s' % onecase.id)
+        log.info('\n\nUpdate case: %s' % onecase.id)
         updateCaseWF(onecase,note = note)
             
             
-            
-
-###################################
 def updateCaseWF(case,changedby='ESP Auto',note=''):
     #if note != 'Create New Case':  ##for Repair only
     #    return
-    
     now = datetime.datetime.now().strftime("%Y-%m-%d")
     wfr = CaseWorkflow(workflowCaseID=case,
                        workflowDate=now,
@@ -474,14 +403,11 @@ def updateCaseWF(case,changedby='ESP Auto',note=''):
     wfr.save()
 
 
-                
-###################################
 def getReportedRec(cond,demogid,lxids):
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=cond,CondiSend=True)
     drugmaps = ConditionDrugName.objects.filter(CondiRule__ruleName__icontains=cond,CondiSend=True)
     if string.upper(cond)=='PID':
         relatedencids,relatedicd9str = getEncids4dayrange(demogid,lxids, condicd9s, cond,afterday=28,beforeday=-28)
-
         if relatedencids: ##this is a PID case
             #2. get related Rx
             relatedrxids = getRxids4dayrange(demogid,relatedencids,drugmaps,cond,afterday=30,beforeday=-30)
@@ -497,15 +423,11 @@ def getReportedRec(cond,demogid,lxids):
 
         #2. get related Rx
         relatedrxids = getRxids4dayrange(demogid,lxids,drugmaps, cond,afterday=14,beforeday=-7)
-
     return (1, relatedencids,relatedicd9str,relatedrxids)
                                                                                                                                                             
 
-###################################
-###################################
 def divide2groups(relatedlxids,dayrange=28):
     groupids = []
-
     ##relatedlxids is a list of lxids which is sorted by result date
     for onel in relatedlxids:
         if not groupids:
@@ -517,30 +439,24 @@ def divide2groups(relatedlxids,dayrange=28):
                  groupids[-1].append(onel)
             else:
                 groupids.append([onel])
-
     return groupids
 
-###################################
-###################################
-def processoneCondition(cond):
 
+def processoneCondition(cond):
     ##recordl=[(l.LxPatient.id,int(l.id),..], sorted by date of result
     newlxs = getRelatedLx(cond)
     recordl = sortLx(newlxs)
     demog_lx = buildCaseData(recordl)
-    
     rule = Rule.objects.filter(ruleName__icontains=cond)[0]
     if rule.ruleinProd:
         condinProd=1
     else:
         condinProd=0
-        
     for onedemogid in demog_lx.keys():
         relatedlxids = demog_lx[onedemogid]
         lxidgroups =divide2groups(relatedlxids,dayrange=28)
         for onegroup in lxidgroups:
             incase=0
-
             if condinProd:
                 cases = Case.objects.filter(caseDemog__id__exact=onedemogid,caseRule__ruleName__icontains=cond)
             else:
@@ -559,9 +475,7 @@ def processoneCondition(cond):
                     lxids = lxidstr.split(',')
                     for onelid in lxids:
                         lx_caseid[int(onelid)]=caseid
-                        
                 flag=0
-
                 for onelid in onegroup:
                     if onelid in lx_caseid.keys(): ##already in the case
                         flag=1
@@ -570,7 +484,6 @@ def processoneCondition(cond):
                             c = Case.objects.filter(id=lx_caseid[onelid])[0]
                         else:
                             c = TestCase.objects.filter(id=lx_caseid[onelid])[0]
-                            
                         oldcaselxid = c.caseLxID
                         caselxid = [int(i) for i in c.caseLxID.split(',')]
                         caselxid.sort()
@@ -590,18 +503,15 @@ def processoneCondition(cond):
                                 c.caseICD9=relatedicd9str
                                 c.caseRxID=','.join([str(i) for i in relatedrxids])
                                 c.save()
-                                    
                                 if condinProd and c.caseWorkflow != 'AR':
                                     updateCaseWF(c,note = 'CaseID-%s:Updated due to new Lx:old=%s; new=%s; ' % (c.id, oldcaselxid, c.caseLxID))
-                                    
-                                iclogging.info('%s update: oldCaseID%s,DemogPID%s,NewLx%s' % (cond,c.id,c.caseDemog.DemogPatient_Identifier,c.caseLxID))                                                     
+                                log.info('%s update: oldCaseID%s,DemogPID%s,NewLx%s' % (cond,c.id,c.caseDemog.DemogPatient_Identifier,c.caseLxID))                                                     
                             if condinProd and c.caseWorkflow =='S' and (datetime.datetime.today()-c.casecreatedDate).days<28:
                                 ##need resend HL7 msg, but not create new case
                                 c.caseWorkflow ='Q'
                                 c.save()
                                 updateCaseWF(c,note = 'CaseID-%s: Already sent. Set to re-send due to new Lx:old=%s; new=%s; ' % (c.id, oldcaselxid,c.caseLxID))
                         break    
-                            
                 if flag==0:
                     (iscase, relatedencids,relatedicd9str,relatedrxids) = getReportedRec(cond,onedemogid,onegroup)
                     if not iscase:
@@ -611,9 +521,9 @@ def processoneCondition(cond):
 
 
 
-###################################
 def haspriorEnc(onelxid,icd9='',dayrange=-3650):
-    """if has prious Encounter
+    """
+    if has previous Encounter
     """
     onelx = Lx.objects.get(id=onelxid)
     if dayrange<=0:
@@ -632,7 +542,6 @@ def haspriorEnc(onelxid,icd9='',dayrange=-3650):
     return 0
 
                     
-###################################
 def haspriorLx(onelxid,cond, loinc=[],dayrange=-3650):
     onelx = Lx.objects.get(id=onelxid)
     if dayrange<=0:
@@ -641,13 +550,10 @@ def haspriorLx(onelxid,cond, loinc=[],dayrange=-3650):
     else:
         start_date=getAnotherdate(onelx.LxDate_of_result,0)
         end_date =getAnotherdate(onelx.LxDate_of_result,dayrange)
-        
-
     defines = ConditionLOINC.objects.filter(Q(CondiRule__ruleName__icontains=cond),
                                             Q(CondiLOINC__in=loinc))
     returnlx = getRelatedLx(cond,defines=defines,demog=onelx.LxPatient)
     lx = returnlx.exclude(id=onelx.id)
-    
     for l in lx:
         curdate = getAnotherdate(l.LxDate_of_result,0)
         if curdate>=start_date and curdate<=end_date:
@@ -656,7 +562,6 @@ def haspriorLx(onelxid,cond, loinc=[],dayrange=-3650):
 
 
 
-###################################
 def haspriorNegaLx(onelxid, negaloinc=[],dayrange=-365,negvalues=[]):
     onelx = Lx.objects.get(id=onelxid)
     if dayrange<=0:
@@ -668,7 +573,6 @@ def haspriorNegaLx(onelxid, negaloinc=[],dayrange=-365,negvalues=[]):
                 
     all_lxs = Lx.objects.filter(Q(LxPatient=onelx.LxPatient),
                                 Q(LxLoinc__in=negaloinc))
-
     nega_lxs=[]
     if negvalues:
         for onenegvalue in negvalues:
@@ -679,11 +583,8 @@ def haspriorNegaLx(onelxid, negaloinc=[],dayrange=-365,negvalues=[]):
             nega_lxs = all_lxs.exclude(id__in =map(lambda x:x.id, posi_lxs))
         elif all_lxs:
             nega_lxs = all_lxs
-            
-
     if not nega_lxs:
         return []
-
     returnl=[]
     for l in nega_lxs:
         curdate = getAnotherdate(l.LxOrderDate,0)
@@ -691,7 +592,7 @@ def haspriorNegaLx(onelxid, negaloinc=[],dayrange=-365,negvalues=[]):
             returnl.append(l.id)
     return returnl
    
-###################################
+
 def checkICD_ALTAST(demog_lx,altloinc=['1742-6','1920-8'],dayrange=15):
     """check (ICD9 or ALT or AST)
     """
@@ -704,7 +605,6 @@ def checkICD_ALTAST(demog_lx,altloinc=['1742-6','1920-8'],dayrange=15):
                 for onealtlx in altlx:
                     if getLxduration(onelx,onealtlx.id) <dayrange and not newcases.has_key(onedemogid):
                         newcases[onedemogid]=[onelx,onealtlx.id]
-
         ##check ICD9
         returnencs = getEnc4ICD9(onedemogid,cond)
         if returnencs:
@@ -716,7 +616,6 @@ def checkICD_ALTAST(demog_lx,altloinc=['1742-6','1920-8'],dayrange=15):
     return newcases
 
 
-###################################
 def isPositive_givenLx(cond,CondiLOINCids):
     defines = ConditionLOINC.objects.filter(Q(CondiRule__ruleName__icontains=cond),
                                             Q(CondiLOINC__in=CondiLOINCids))
@@ -729,8 +628,6 @@ def isPositive_givenLx(cond,CondiLOINCids):
     return demog_lx
                             
 
-    
-###################################
 def getEnc4ICD9(demogid,cond):
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=cond,CondiDefine=True)
     ruleicd9s = map(lambda x:x.CondiICD9.strip(), condicd9s)
@@ -749,7 +646,6 @@ def getEnc4ICD9(demogid,cond):
     return returnencs
 
             
-###################################    
 def getALTAST(demogid,cond,loinclist = ['1742-6','1920-8']):
     defines = ConditionLOINC.objects.filter(Q(CondiRule__ruleName__icontains=cond),
                                             Q(CondiLOINC__in=loinclist))
@@ -757,8 +653,6 @@ def getALTAST(demogid,cond,loinclist = ['1742-6','1920-8']):
     return returnlx
     
 
-
-###################################
 def getCasedemogids(condition):
     rule = Rule.objects.filter(ruleName__icontains=condition)[0]
     if rule.ruleinProd:
@@ -766,19 +660,14 @@ def getCasedemogids(condition):
     else:
         curcases=TestCase.objects.filter(caseRule__ruleName__icontains=condition)
     casedemogids = [c.caseDemog.id for c in curcases]
-
     return casedemogids
 
 
 
-###################################
-###################################
 def processAcuteHepA(condition):
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
-
     ##HepA definition a)
     demog_lx=isPositive_givenLx(condition,CondiLOINCids=['22314-9'])
-
     newcases = checkICD_ALTAST(demog_lx,dayrange=15)
     for onedemogid in  newcases.keys():
         caselxids =newcases[onedemogid]
@@ -788,11 +677,8 @@ def processAcuteHepA(condition):
         makeNewCase(condition, onedemogid,totallxids,[],relatedencids,relatedicd9str)
 
                                             
-###################################
-###################################
 def processAcuteHepB(condition):
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
-    
     ##HepB definition a) #4='31204-1'
     demog_lx=isPositive_givenLx(condition,CondiLOINCids=['31204-1'])
     newcases = checkICD_ALTAST(demog_lx)
@@ -800,8 +686,6 @@ def processAcuteHepB(condition):
         caselxids =newcases[onedemogid]
         relatedencids,relatedicd9str = getEncids4dayrange(onedemogid, caselxids, condicd9s,condition, afterday=14,beforeday=-14)
         makeNewCase(condition, onedemogid,caselxids,[],relatedencids,relatedicd9str)
-
-
     ###d)
     demog_lx=isPositive_givenLx(condition,CondiLOINCids=['5195-3'])
     for onedemogid in demog_lx.keys():
@@ -814,10 +698,6 @@ def processAcuteHepB(condition):
                       relatedencids,relatedicd9str = getEncids4dayrange(onedemogid, caselxids, condicd9s,condition, afterday=14,beforeday=-14)
                       totallxids =  caselxids+nonlx
                       makeNewCase(condition, onedemogid,totallxids,[],relatedencids,relatedicd9str)
-
-                                     
-        
-
     ##HepB definition b) and c)
     demog_lx=isPositive_givenLx(condition,CondiLOINCids=['5195-3','13126-8','5009-6','16934-2'])
     newcases = checkICD_ALTAST(demog_lx, dayrange=22)
@@ -829,12 +709,9 @@ def processAcuteHepB(condition):
             continue
         elif bili_id:
             caselxids = caselxids+[bili_id]
-
-
         templxs = Lx.objects.filter(id__in=caselxids).order_by('LxOrderDate')
         caselxids = map(lambda x:x.id, templxs)
 #        print 'caselxids=', `caselxids`
-        
         if not haspriorLx(caselxids[0],condition,loinc=['5195-3'],dayrange=-3650) or not haspriorLx(caselxids[0],condition, loinc=['13126-8','5009-6','16934-2'],dayrange=-3650): ##no prior positive result for #5 or #7
             if not haspriorEnc(caselxids[0],'070.32'): ## or not haspriorEnc(caselxids[0],'070.32',15) : ##no prior 070.32
                 
@@ -847,16 +724,12 @@ def processAcuteHepB(condition):
                     makeNewCase(condition, onedemogid,caselxids,[],relatedencids,relatedicd9str)
 
 
-###################################
 def cal_bilirubin(demogid,caselxids, dayrange=22):
-
-    
     ##bilirubin total
     stmt1 = """select id,LxTest_results
     from esp_lx
     where lxpatient_id=%s and LxLoinc='33899-6' and (LxTest_results>1.5 or LxTest_results like '%s>%s');
     """ % (demogid, '%%','%%')
-    
     stmt2 = """select l1.LxOrderDate, l1.id, l2.id
         from esp_lx l1,  esp_lx l2
         where l1.lxpatient_id=%s and l2.lxpatient_id=%s and l1.LxLoinc='29760-6' and l2.LxLoinc='14630-8'
@@ -868,13 +741,11 @@ def cal_bilirubin(demogid,caselxids, dayrange=22):
         except:
             print stmt
             sys.exit(1)
-            
         res = cursor.fetchall()
         if res:
             for i in res:
                 lxid = i[0]
                 testids = [int(id) for id in caselxids + [lxid]]
-            
                 stmt3= """select min(LxOrderDate),max(LxOrderDate)
                 from esp_lx
                 where id in %s
@@ -885,10 +756,7 @@ def cal_bilirubin(demogid,caselxids, dayrange=22):
                 dayrange= utils.getPeriod(res3[0][0],res3[0][1])
                 if dayrange<=21:
                     return lxid
-        
     return None
-            
-
 
 
 #    for l in loinc_l:
@@ -896,14 +764,9 @@ def cal_bilirubin(demogid,caselxids, dayrange=22):
 #                                Q(LxLoinc__in=list(l)))
 
 
-        
-    
-###################################
-###################################                
 def processChronicHepB(condition):
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
-     
-    rule = Rule.objects.filter(ruleName__icontains=cond)[0]
+    rule = Rule.objects.filter(ruleName__icontains=condition)[0]
     acutehepb = Rule.objects.filter(ruleName__icontains='ACUTE HEPATITIS B')[0]
    # returnencs = getEnc4ICD9('',condition)
    # if returnencs:
@@ -921,8 +784,6 @@ def processChronicHepB(condition):
   #          else: ##Chronic HepB
    #             relatedencids,relatedicd9str = getEncids4dayrange(onedemogid, [], condicd9s,condition, afterday=14,beforeday=-14)
    #             makeNewCase(condition, onedemogid,[],[],relatedencids+[enc.id],relatedicd9str)
-
-                                                                                        
     ##b) (#4='5195-3' or #5='13954-3' or #6='13126-8','16934-2','5009-6') positive and (#4/#5/#6)positive>6 months prior to the current positive result
     demog_lx=isPositive_givenLx(condition,CondiLOINCids=['5195-3','13954-3','13126-8','16934-2','5009-6'])
     for onedemogid in  demog_lx.keys():
@@ -945,27 +806,19 @@ def processChronicHepB(condition):
                     makeNewCase(condition, onedemogid,clxids+[caselxid],[],relatedencids,relatedicd9str)
                     break
         else: ##Chronic HepB
-
             relatedencids,relatedicd9str = getEncids4dayrange(onedemogid, caselxids, condicd9s,condition, afterday=14,beforeday=-14)
             makeNewCase(condition, onedemogid,caselxids,[],relatedencids,relatedicd9str)
 
-                                 
 
-###################################
-###################################            
 def processHepBPreg(condition):
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
-    
     demog_lx=isPositive_givenLx(condition,CondiLOINCids=['5195-3','13954-3','13126-8','16934-2','5009-6'])
-
     errs=[]
     for onedemogid in  demog_lx.keys():
         caselxids =demog_lx[onedemogid]
         encs = Enc.objects.filter(EncPatient__id =onedemogid, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
         if not encs:
             continue
-
-
         for  caselxid in caselxids:
             curdate = getAnotherdate(Lx.objects.filter(id=caselxid)[0].LxOrderDate,0)
             maxdate = getAnotherdate(Lx.objects.filter(id=caselxid)[0].LxOrderDate,29)
@@ -982,7 +835,6 @@ def processHepBPreg(condition):
                         break
                 except:
                     continue
-                    
             if thisenc.EncEDC:
                 minencdate = getAnotherdate(thisenc.EncEDC, -280)
                 maxencdate = getAnotherdate(thisenc.EncEDC, 0)
@@ -996,25 +848,27 @@ def processHepBPreg(condition):
                 if msg not in errs:
                     errs.append(msg)
                 continue 
-
     if errs:
         errstr = '\n'.join(errs)
-        iclogging.error('Error for  HepB with Pregnancy: %s' % errstr)
-        try:
-            utils.sendoutemail(towho=['rexua@channing.harvard.edu', 'rerla@channing.harvard.edu'],msg=errstr, subject='ESP ERROR - HepB with Pregnancy')
-        except:
-            pass
+        log.error('Error for  HepB with Pregnancy: %s' % errstr)
+        if options.send_mail:
+            send_mail(
+                subject = 'ESP ERROR - HepB with Pregnancy',
+                message = errstr, 
+                from_email = settings.EMAIL_SENDER,
+                recipient_list = ['rexua@channing.harvard.edu', 'rerla@channing.harvard.edu'],
+                fail_silently = True, # Do we want this?
+                )
             
             
-###################################
 def Hepc_posi(cond, onecrit, caselxid, onedemogid, dayrange=29):
 
-    patient = Demog.objects.get(id__exact=onedemogid)
+    patient = models.Demog.objects.get(id__exact=onedemogid)
 
     crit_lxs =Lx.objects.filter(Q(LxPatient__id=onedemogid),
                                 Q(LxLoinc__in=onecrit))
     if crit_lxs:
-        defines = ConditionLOINC.objects.filter(Q(CondiRule__ruleName__icontains=cond),
+        defines = models.ConditionLOINC.objects.filter(Q(CondiRule__ruleName__icontains=cond),
                                                 Q(CondiLOINC__in=onecrit))
         returnlx = getRelatedLx(cond,defines=defines,demog=patient)
         for posi_lx in returnlx:
@@ -1303,7 +1157,7 @@ def updatingSyphilis(cond):
             finallxids = ','.join(dict(map(lambda x: ('%s' % x, None), lxindb+newids)).keys())
             c.caseLxID=finallxids
             c.save()
-            iclogging.info('\n\nUpdate case: %s' % c.id)
+            log.info('\n\nUpdate case: %s' % c.id)
             updateCaseWF(c,note = note)
         
 
@@ -1431,13 +1285,17 @@ def isNegative(onedemogid,oneloinc,caselxids, dayrange=29,  negvalues=None):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 def main():
-    iclogging.info('==================\n')
+    parser = optparse.OptionParser()
+    parser.add_option('--mail', action='store_true', dest='send_mail',
+        default=False, help='Send email notifications')
+    (options, args) = parser.parse_args()
+    log.info('Running identifyCases with options: %s' % options)
+    log.debug('Deleting cases in Test cases\n')
     TestCase.objects.all().delete()
-    iclogging.info('Delete all cases in Test cases\n')
     conditions = Rule.objects.all().order_by('ruleName')
     for c in conditions:
         cond = c.ruleName
-        iclogging.info('process %s\n' % cond)
+        log.info('process %s\n' % cond) # TODO: better to log in the actual test methods than here
         if string.upper(cond) in ('ACUTE HEPATITIS A'):
             processAcuteHepA(cond)
         elif string.upper(cond) in ('ACUTE HEPATITIS B'):
@@ -1457,13 +1315,13 @@ def main():
         else: #other conditions
             processoneCondition(cond)
     ########
-    iclogging.info('Start to check cases for updating')
+    log.info('Start to check cases for updating')
     allcases = Case.objects.filter(casecreatedDate__gt=datetime.datetime.today()-datetime.timedelta(28))
     indx=1
     for onecase in allcases:
         updateSentCase(onecase)
         if indx%50==0:
-            iclogging.info('Checked %s of %s cases' % (indx, len(allcases)))
+            log.info('Checked %s of %s cases' % (indx, len(allcases)))
         indx=indx+1
     ##send out email for daily summary
     k=case_dict.keys()
@@ -1474,10 +1332,15 @@ def main():
         
     for i in k:
         msg = msg+ '%s:\t\t%s\n' % (i, case_dict[i])
-    utils.sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],msg=msg, subject='ESP - Daily summary of all detected cases')
-    iclogging.shutdown()
+    if options.send_mail:
+        send_mail(
+            subject = 'ESP - Daily summary of all detected cases',
+            message = msg, 
+            from_email = settings.EMAIL_SENDER,
+            recipient_list = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],
+            fail_silently = True, # Do we want this?
+            )
 
 
 if __name__ == "__main__":
     main()
-
