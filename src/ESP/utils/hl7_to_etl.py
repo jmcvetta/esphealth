@@ -129,6 +129,29 @@ def countSets(messages=[]):
         else:
             s = 'lens = %s' % (','.join(['%d' % x for x in res[r]]))
         print '%s: %s' % (r,s)
+        
+        
+def gApply(lrow=[],grammar=[]):
+    '''
+    Apply the right grammar to this row
+    '''
+    rowdict = {}
+    for ename,eoffset,esubfield in grammar:
+        try:
+            if string.find(string.upper(ename), 'DATE')!=-1: ##it is a data field
+                if len(lrow[eoffset][esubfield])==6:
+                    e = lrow[eoffset][esubfield][:6]+'01'
+                    log.warning('Modify Date Field %s (%d:%d) in %s' % (ename,eoffset,esubfield,lrow))
+                else:
+                    e = lrow[eoffset][esubfield][:8]
+            else:
+                e = lrow[eoffset][esubfield]
+        except:
+            e = None
+            log.warning('## Missing segment %s (%d:%d) in %s' % (ename,eoffset,esubfield,lrow))
+        rowdict[ename] = e
+    return rowdict
+
 
 def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
     """Generator function that takes a message split into rows,
@@ -157,28 +180,6 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
     TODO - replace all grammar names with constants
     """
 
-    def gApply(lrow=[],grammar=[]):
-        """ apply the right grammar to this row
-        """
-        rowdict = {}
-        for ename,eoffset,esubfield in grammar:
-            
-            try:
-                if string.find(string.upper(ename), 'DATE')!=-1: ##it is a data field
-                    if len(lrow[eoffset][esubfield])==6:
-                        e = lrow[eoffset][esubfield][:6]+'01'
-                        log.warning('Modify Date Field %s (%d:%d) in %s' % (ename,eoffset,esubfield,lrow))
-                        
-                    else:
-                        e = lrow[eoffset][esubfield][:8]
-                else:
-                    e = lrow[eoffset][esubfield]
-
-            except:
-                e = None
-                log.warning('## Missing segment %s (%d:%d) in %s' % (ename,eoffset,esubfield,lrow))
-            rowdict[ename] = e
-        return rowdict
 
 
     segdict = {}
