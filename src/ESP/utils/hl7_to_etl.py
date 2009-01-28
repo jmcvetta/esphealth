@@ -39,6 +39,7 @@ import utils
 import shutil
 import string
 import logging
+import pprint
 
 from ESP.utils.utils import log
 
@@ -89,9 +90,9 @@ def etl_Writer(rdict={},lookups=[],outdest=None):
             pid = rdict.get(PATIENT_ID,'UNKNOWN')
            # log.error('Missing element %s for %s %s in %s' % (x,pid,PATIENT_ID,rdict))
 
-    outrec = [x.replace(etldelim,'*') for x in outrec] # purge delims
+    outrec = [x.replace(ETL_DELIMITER,'*') for x in outrec] # purge delims
     if outrec:
-        outdest.write('%s\n' % etldelim.join(outrec))
+        outdest.write('%s\n' % ETL_DELIMITER.join(outrec))
 
 
 def countSets(messages=[]):
@@ -131,7 +132,7 @@ def countSets(messages=[]):
         print '%s: %s' % (r,s)
         
         
-def gApply(lrow=[],grammar=[]):
+def apply_grammar(lrow=[],grammar=[]):
     '''
     Apply the right grammar to this row
     '''
@@ -153,7 +154,7 @@ def gApply(lrow=[],grammar=[]):
     return rowdict
 
 
-def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
+def messageIterator(m=[],grammar_dict={},mtypedict=mtypedict,incominghl7f=None):
     """Generator function that takes a message split into rows,
     and yields the components of each message as a (target,(id,message)) tuple
     We have to make sure we have MSH and PID segments so message type and patient id
@@ -179,12 +180,20 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
 
     TODO - replace all grammar names with constants
     """
+    # Lexicon:
+    #    ADT: Administration, Discharge, & Transfer
+    #    MSH: Message Header
+    #    NPI: National Provider Identifier
+    #    OBR: Observation Request
+    #    OBX: Observation or Observation Fragment
+    #    PD1: Patient Additional Demographic
+    log.debug('grammars: %s' % pprint.pformat(grammar_dict))
     segdict = {}
-    msh = None
-    pid = None
-    npi = None
-    pd1 = None
-    id=None
+    msh = None # Message header
+    pid = None # Patient ID
+    npi = None # National Provider Identifier
+    pd1 = None # Patient Additional Demographic
+    id  = None # WTF: How is this different from pid?
     admitdatetime = 'UNKNOWN'
     mtype = None
     inobr = False # an OBR may be followed by a sequence of OBX
@@ -193,22 +202,26 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
     obxs = [] # for accumulating all the different test obx for each obr
     totalI9=''
     final_I9dict=None
-    for i,row in enumerate(m): # i=0 must be msh
-        lrow = row.strip().split(sdelim)
-        lrow = [x.strip().split(sfdelim) for x in lrow] # each element now a list
-        gtype = lrow[0][0].upper()
-        if gtype == 'OBX' and mtype == 'ADT':
-            gtype = 'ADTOBX' # hack - different structure :(
-        g = grammars.get(gtype,None)
-        if not g:
-            log.critical('Cannot find a grammar for segment type %s' % gtype)
+    for i, row in enumerate(m): # i=0 must be msh
+        # Convert a segment (row) into a list of fields.  Each field item is 
+        # itself expressed as a list, containing one or more subfields.
+        segment = row.strip().split(FIELD_DELIMITER)
+        segment = [x.strip().split(SUBFIELD_DELIMITER) for x in segment] # each element now a list
+        seg_type = segment[0][0].upper() # What kind of segment are we working with?
+        # ADTOBX has different structure
+        if seg_type == 'OBX' and mtype == 'ADT':
+            seg_type = 'ADTOBX' 
+        grammar = grammar_dict.get(seg_type,None)
+        if not grammar:
+            log.critical('Cannot find a grammar for segment type %s' % seg_type)
             continue
-        rdict = gApply(lrow,g) # g is the right grammar for gtype
-        if gtype == 'MSH': # set aside - we don't have id yet
+        rdict = apply_grammar(segment, grammar)
+        log.debug('rdict: %s' % pprint.pformat(rdict))
+        if seg_type == 'MSH': # set aside - we don't have id yet
             msh = rdict
             mtype = rdict[MESSAGE_TYPE]
             segdict = mtypedict.get(mtype,{}) # allowable segments for this messagetype
-        elif gtype == 'PID': # must be able to identify PID
+        elif seg_type == 'PID': # must be able to identify PID
             id = rdict.get(PATIENT_ID,None)
             if id == None:
                 log.critical('%s not found in PID segment of message %s' % (PATIENT_ID,row))
@@ -216,9 +229,9 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
             pid = rdict # for yielding after pv1
             msh[PATIENT_ID] = id
             pid[PATIENT_ID] = id
-        elif gtype == 'PD1':
+        elif seg_type == 'PD1':
             pd1 = rdict # probably would need a list of these if they arrive
-        elif gtype == 'PV1': # need the provider for rx messages eg
+        elif seg_type == 'PV1': # need the provider for rx messages eg
             if id == None: ###No patient ID
                 msg = 'No Patient ID info in file: "%s": %s' % (incominghl7f, row)
                 print msg
@@ -231,6 +244,7 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                 admdatetime = ''
             npi = rdict.get('Attending_Provider_NPI',None)
             if not npi:
+                # WTF: If we cannot cope, why do we continue iteration?
                 log.critical('PV1 without an NPI! Cannot cope -- File: "%s"; Row: %s' % (incominghl7f, row))
                 npi = 'UNKNOWN'
             rdict[PCP_NPI] = npi # add some useful elements to all records
@@ -244,13 +258,13 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
             yield ('pcp',(id,rdict)) # pcp
             #yield ('enc',(id,pid))
             # don't yield pc1 -
-        elif id and msh and npi and segdict.get(gtype,None): # is expected in this message type
+        elif id and msh and npi and segdict.get(seg_type,None): # is expected in this message type
             rdict[ADM_DATE_TIME] = admdatetime # for posterity
             rdict[PCP_NPI] = npi
             rdict[PATIENT_ID] = id
-            target = segdict.get(gtype) # where to push the message
+            target = segdict.get(seg_type) # where to push the message
             if inobr: # special - must output if not another obx
-                if gtype == 'OBX':
+                if seg_type == 'OBX':
                     obxattrcode = rdict.get(LABRES_CODE,None)
                     if not obxattrcode:
                         log.critical('OBX encountered without %s for id: %s: File %s: %s' % 
@@ -280,11 +294,11 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                     current_obr = None
                     obxs = []
                     thisattrcode = None
-            if gtype == 'OBR': # new obr or first
+            if seg_type == 'OBR': # new obr or first
                 inobr = True
                 current_obr = rdict # save for next time to output obr/obxs
-            elif gtype <> 'OBX': # some other legal segment - we took care if we were inobr
-                if gtype=='DG1':
+            elif seg_type <> 'OBX': # some other legal segment - we took care if we were inobr
+                if seg_type=='DG1':
                     if rdict['Coding_System']=='I9': ##ICD9
                         totalI9 = rdict['Diagnosis_Code']+','+totalI9
                         rdict['Visit_Number']=pid['Visit_Number']
@@ -295,7 +309,7 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
         else: # invalid segment or no PID/MSH found yet
             if not id or not msh or not npi:
                 log.critical('Message segment found before MSH, PV1 and PID in: %s: %s: %s' 
-                    % (gtype, incominghl7f, m))
+                    % (seg_type, incominghl7f, m))
             else:
                 if inobr:
                     ot = segdict.get('OBR')
@@ -308,7 +322,7 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                     current_obr = None
                     obxs = []
                     thisattrcode = None
-                s = 'Unexpected segment in: %s; Message: %s; File: %s' % (mtype, gtype, incominghl7f)
+                s = 'Unexpected segment in: %s; Message: %s; File: %s' % (mtype, seg_type, incominghl7f)
                 log.critical(s)
     if final_I9dict:
         final_I9dict['Diagnosis_Code']=totalI9
@@ -376,36 +390,39 @@ def movefile(f, fromdir, todir):
     log.info('Moving file %s from %s to %s\n' % (f, fromdir, todir))
 
 ###################################
-def parseMessages(mlist=[],grammars={},incominghl7f=None):
-    """test the grammar driven parser
-    expects a list of individual messages,
-    each of which is a list of segment lines
-    """
+def parseMessages(mlist=[],grammar_dict={},incominghl7f=None):
+    '''
+    Parses HL7 messages.
+    Expects a list of individual messages, each of which is a list of 
+    segment lines.
+    '''
     mclasses = {}
     for i,m in enumerate(mlist): # generator will yield message segments
-        messages = messageIterator(m=m,grammars=grammars,incominghl7f=incominghl7f)
+        messages = messageIterator(m=m,grammar_dict=grammar_dict,incominghl7f=incominghl7f)
         npi = None
-        for k,thing in messages: # each message has (id,rdict) or (id,(obr,[obx,..obx]))
-            if not mclasses.get(k,None):
-                mclasses[k] = {}
+        for kind, thing in messages: # each message has (id,rdict) or (id,(obr,[obx,..obx]))
+            log.debug('message kind: %s' % kind)
+            log.debug('message thing: %s' % pprint.pformat(thing))
+            if not mclasses.get(kind,None):
+                mclasses[kind] = {}
             id,message = thing # split out
-            if k <> 'msh': # don't want these now
-                if k == 'pid': # only want one of these for each unique patient -> demog
-                    if not mclasses[k].get(id,None): # not there yet
-                        mclasses[k][id] = [message,] # put message into this class
-                elif k == 'pcp': # one per provider
+            if kind <> 'msh': # don't want these now
+                if kind == 'pid': # only want one of these for each unique patient -> demog
+                    if not mclasses[kind].get(id,None): # not there yet
+                        mclasses[kind][id] = [message,] # put message into this class
+                elif kind == 'pcp': # one per provider
                     npi = message.get(PCP_NPI,None)
                     if not npi:
                         npi = message.get(FACILITY_NAME,None) # hack...
                     if not npi:
                         log.critical('PV1 without an NPI! Cannot cope - %s' % message)
                     else:
-                        if not mclasses[k].get(npi,None): # not there yet
-                            mclasses[k][npi] = [message,] # put message into this class
+                        if not mclasses[kind].get(npi,None): # not there yet
+                            mclasses[kind][npi] = [message,] # put message into this class
                 else:
-                    sofar = mclasses[k].get(id,[])
+                    sofar = mclasses[kind].get(id,[])
                     sofar.append(message)
-                    mclasses[k][id] = sofar # replace with update
+                    mclasses[kind][id] = sofar # replace with update
     return mclasses
 
 def main():
@@ -416,9 +433,9 @@ def main():
     todir = '/home/ESP/NORTH_ADAMS/archivedHL7/'
     for f in hlfiles:
         print 'Processing: %s' % f
-        tm = makeTests(incomdir+f)
-        grammars = makeGrammars()
-        mclasses = parseMessages(mlist=tm,grammars=grammars,incominghl7f = f)
+        mlist = split_hl7_message(incomdir+f)
+        grammar_dict = makeGrammars()
+        mclasses = parseMessages(mlist=mlist,grammar_dict=grammar_dict,incominghl7f = f)
         writeMDicts(mclasses=mclasses)
         movefile(f, incomdir, todir)
 

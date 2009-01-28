@@ -27,12 +27,15 @@ We need
 
 """
 import datetime
-todaystr = datetime.datetime.now().strftime('%m%d%Y')
 
-sdelim = '|'
-sfdelim = '^'
-etldelim = '^'
-msh = 'MSH'
+from ESP.utils.utils import log
+
+
+TODAY_STR = datetime.datetime.now().strftime('%m%d%Y')
+FIELD_DELIMITER = '|'
+SUBFIELD_DELIMITER = '^'
+ETL_DELIMITER = '^'
+msh = 'MSH' # FIXME: this should be capitalized, but there is a namespace conflict in hl7_to_etl.py
 OURSTATE = 'MA' # for pcp state if applicable
 OURCOUNTRY = 'USA' # for demog country if desired
 
@@ -63,15 +66,15 @@ etlnames = ['pcp','pid','allergies','enc',
 #outfilenames = ['esp_pcp','esp_demog','esp_enc','esp_allergy',
 #            'esp_lx','esp_lx','esp_imm','esp_prob','esp_rx']
 outfiledir = '/home/ESP/NORTH_ADAMS/incomingData/'
-outfilenames = ['%s/epicpro.esp.%s' % (outfiledir,todaystr),
-                '%s/epicmem.esp.%s' % (outfiledir,todaystr),
-                '%s/epicall.esp.%s' % (outfiledir,todaystr),
-                '%s/epicvis.esp.%s' % (outfiledir,todaystr),
-                '%s/epicord.esp.%s' % (outfiledir,todaystr),
-                '%s/epicres.esp.%s' % (outfiledir,todaystr),
-                '%s/epicimm.esp.%s' % (outfiledir,todaystr),
-                '%s/epicprb.esp.%s' % (outfiledir,todaystr),
-                '%s/epicmed.esp.%s' % (outfiledir,todaystr)]
+outfilenames = ['%s/epicpro.esp.%s' % (outfiledir,TODAY_STR),
+                '%s/epicmem.esp.%s' % (outfiledir,TODAY_STR),
+                '%s/epicall.esp.%s' % (outfiledir,TODAY_STR),
+                '%s/epicvis.esp.%s' % (outfiledir,TODAY_STR),
+                '%s/epicord.esp.%s' % (outfiledir,TODAY_STR),
+                '%s/epicres.esp.%s' % (outfiledir,TODAY_STR),
+                '%s/epicimm.esp.%s' % (outfiledir,TODAY_STR),
+                '%s/epicprb.esp.%s' % (outfiledir,TODAY_STR),
+                '%s/epicmed.esp.%s' % (outfiledir,TODAY_STR)]
 
 ## the following lists control the way output ETL records are written
 ## each output file has a lookup list of element names from
@@ -267,16 +270,18 @@ writer_lookups = dict(zip(etlnames,lookup_names))
 
 
 
-def makeTests(hl7file):
-    """split sudha's test messages into something to play with for testing
-    the parser code
-    """
+def split_hl7_message(hl7file):
+    '''
+    Splits an HL7 message file into a list of individual messages, each of
+    which is a list of segment lines.
+    '''
     # sudha sent the following 20 tests
     tm = []
     tl  = file(hl7file,'rb').read().split('\r')
     print '\tRows: %d' % len(tl)
     message = []
     for row in tl:
+        log.debug(row)
         if len(row) > 2:
             message.append(row)
         else: # can be multiple blanks
@@ -285,6 +290,7 @@ def makeTests(hl7file):
             message = [] # so next blank is ignored
     if len(message) > 1: # in case there's no blank line at eof
         tm.append(message)
+    log.debug(tm)
     return tm
 
 
