@@ -1,18 +1,37 @@
-import os,sys
-sys.path.insert(0, '/home/ESP/')
-# for esphealth.org sys.path.insert(0, '/home/ESPNew/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+'''
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-import django, datetime,time
-from ESP.esp.models import *
-from django.db.models import Q
-from ESP.settings import *
+                        Utility methods for ESP project
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+'''
 
 
+import os
+import sys
 import string
 import traceback
 import smtplib
 import datetime
+import time
+import logging
+
+from django.db.models import Q
+
+from ESP.esp import models
+from ESP import settings
+
+
+
+#===============================================================================
+#
+#--- ~~~ Logger ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+logging.basicConfig(format=settings.LOG_FORMAT, stream=settings.LOG_STREAM)
+log = logging.getLogger()
+log.level=settings.LOG_LEVEL
+#===============================================================================
 
 
 
@@ -32,9 +51,12 @@ def getAnotherdate(date1, dayrange):
                     
 ###################################
 ###################################
+# 
+# This can probably be deprecated and replaced with django.core.mail.send_mail()
+#
 def sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],msg='',subject='ESP management'):
     ##send email
-    sender=EMAILSENDER
+    sender = settings.EMAIL_SENDER
     
     headers = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (sender, ','.join(towho), subject)
     

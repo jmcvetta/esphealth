@@ -1,9 +1,21 @@
 '''
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
                         Django settings for ESP project
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 '''
 
+# Do we really need both settings.py and localsettings.py?  Not sure what
+# benefit we get from them.
+
+
+import sys
+import os
+import datetime
+import logging
 import localsettings
-import os.path
+
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -23,20 +35,14 @@ MANAGERS = ADMINS
 #CACHE_MIDDLEWARE_KEY_PREFIX = ''
 
 
-#import localsettings
-
 SITEROOT = localsettings.SITEROOT
 LOCALSITE=localsettings.LOCALSITE
 RUNFAKEDATA=localsettings.RUNFAKEDATA
 FTPUSER = localsettings.FTPUSER
 FTPPWD = localsettings.FTPPWD
 FTPSERVER =localsettings.FTPSERVER
-EMAILSENDER=localsettings.EMAILSENDER
+EMAIL_SENDER=localsettings.EMAIL_SENDER
 USESQLITE=localsettings.USESQLITE
-LOG_FORMAT = localsettings.LOG_FORMAT
-LOG_LEVEL = localsettings.LOG_LEVEL
-LOG_FILE = localsettings.LOG_FILE
-
 
 
 if localsettings.USESQLITE:
@@ -130,8 +136,6 @@ def getJavaInfo():
 
 ###############################
 def getLogging(appname,debug=0):
-    import os
-    import datetime,logging
     
     logdir = os.path.join(TOPDIR,LOCALSITE, 'logs/')
     if not os.path.isdir(logdir):
@@ -165,3 +169,13 @@ def getLogging(appname,debug=0):
 
                 
 
+
+#===============================================================================
+#
+#--- ~~~ Logging Configuration ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+LOG_FORMAT = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
+LOG_LEVEL = logging.DEBUG
+#LOG_STREAM = open('/tmp/esp.log', 'w')
+LOG_STREAM = sys.stdout

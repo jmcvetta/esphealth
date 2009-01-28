@@ -18,12 +18,4 @@ FTPPWD = 'Welcome00'
 FTPSERVER = 'n2ftp001.hvma.org'
 
 
-EMAILSENDER='espuser@lkenpesp.healthone.org'
-
-#===============================================================================
-#--- Logging
-#-------------------------------------------------------------------------------
-LOG_FORMAT = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
-LOG_LEVEL = logging.DEBUG
-#LOG_FILE = sys.stdout
-LOG_FILE = '/tmp/esp.log'
+EMAIL_SENDER='espuser@lkenpesp.healthone.org'
