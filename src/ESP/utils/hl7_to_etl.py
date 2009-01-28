@@ -264,8 +264,8 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                     if gtype == 'OBX':
                         obxattrcode = rdict.get(LABRES_CODE,None)
                         if not obxattrcode:
-                            log.critical('OBX encountered without %s for id: %s: %s' % 
-                                (LABRES_CODE,id,rdict))
+                            log.critical('OBX encountered without %s for id: %s: File %s: %s' % 
+                                (LABRES_CODE, id, incominghl7f, rdict))
                         elif obxattrcode == current_obxattrcode: # falsely split text!
                             # FIXME: this should be handled in a better way
                             try:
@@ -321,7 +321,7 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                         current_obr = None
                         obxs = []
                         thisattrcode = None
-                    s = 'Unexpected segment in: %s message: %s' % (mtype,gtype)
+                    s = 'Unexpected segment in: %s; Message: %s; File: %s' % (mtype, gtype, incominghl7f)
                     log.critical(s)
 
     if final_I9dict:
