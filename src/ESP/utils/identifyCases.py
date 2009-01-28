@@ -665,6 +665,7 @@ def getCasedemogids(condition):
 
 
 def processAcuteHepA(condition):
+    log.info('Looking for cases of Acute Hepetitis A.')
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
     ##HepA definition a)
     demog_lx=isPositive_givenLx(condition,CondiLOINCids=['22314-9'])
@@ -678,6 +679,7 @@ def processAcuteHepA(condition):
 
                                             
 def processAcuteHepB(condition):
+    log.info('Looking for cases of Acute Hepetitis B.')
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
     ##HepB definition a) #4='31204-1'
     demog_lx=isPositive_givenLx(condition,CondiLOINCids=['31204-1'])
@@ -1289,6 +1291,7 @@ def main():
     parser.add_option('--mail', action='store_true', dest='send_mail',
         default=False, help='Send email notifications')
     (options, args) = parser.parse_args()
+    global options # So we don't have to pass this as arg to all the existing functions
     log.info('Running identifyCases with options: %s' % options)
     log.debug('Deleting cases in Test cases\n')
     TestCase.objects.all().delete()
