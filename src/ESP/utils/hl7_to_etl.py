@@ -87,7 +87,7 @@ def etl_Writer(rdict={},lookups=[],outdest=None):
         else:
             outrec.append('') # should be there but missing
             pid = rdict.get(PATIENT_ID,'UNKNOWN')
-           # logging.error('Missing element %s for %s %s in %s' % (x,pid,PATIENT_ID,rdict))
+           # log.error('Missing element %s for %s %s in %s' % (x,pid,PATIENT_ID,rdict))
 
     outrec = [x.replace(etldelim,'*') for x in outrec] # purge delims
     if outrec:
@@ -167,7 +167,7 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                 if string.find(string.upper(ename), 'DATE')!=-1: ##it is a data field
                     if len(lrow[eoffset][esubfield])==6:
                         e = lrow[eoffset][esubfield][:6]+'01'
-                        logging.warning('Modify Date Field %s (%d:%d) in %s' % (ename,eoffset,esubfield,lrow))
+                        log.warning('Modify Date Field %s (%d:%d) in %s' % (ename,eoffset,esubfield,lrow))
                         
                     else:
                         e = lrow[eoffset][esubfield][:8]
@@ -176,7 +176,7 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
 
             except:
                 e = None
-                logging.warning('## Missing segment %s (%d:%d) in %s' % (ename,eoffset,esubfield,lrow))
+                log.warning('## Missing segment %s (%d:%d) in %s' % (ename,eoffset,esubfield,lrow))
             rowdict[ename] = e
         return rowdict
 
@@ -207,7 +207,7 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
         g = grammars.get(gtype,None)
 
         if not g:
-            logging.critical('Cannot find a grammar for segment type %s' % gtype)
+            log.critical('Cannot find a grammar for segment type %s' % gtype)
         else: # parse this segment with the grammar g
             rdict = gApply(lrow,g) # g is the right grammar for gtype
             if gtype == 'MSH': # set aside - we don't have id yet
@@ -217,7 +217,7 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
             elif gtype == 'PID': # must be able to identify PID
                 id = rdict.get(PATIENT_ID,None)
                 if id == None:
-                    logging.critical('%s not found in PID segment of message %s' % (PATIENT_ID,row))
+                    log.critical('%s not found in PID segment of message %s' % (PATIENT_ID,row))
                     # raise StopIteration
                 pid = rdict # for yielding after pv1
                 msh[PATIENT_ID] = id
@@ -227,21 +227,21 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                 pd1 = rdict # probably would need a list of these if they arrive
             elif gtype == 'PV1': # need the provider for rx messages eg
                 if id == None: ###No patient ID
-                    msg = 'No Patient ID info in file "%s": %s' % (incominghl7f, row)
+                    msg = 'No Patient ID info in file: "%s": %s' % (incominghl7f, row)
                     print msg
-                    logging.critical(msg)
+                    log.critical(msg)
 #                    utils.sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg=msg,subject='ESP Northadams incoming HL7 parsing Error')
                     raise StopIteration
                 
                     
                 admdatetime = rdict.get(ADM_DATE_TIME,None) # only place it's given
                 if not admdatetime: # needed for rx record eg
-                    logging.critical('PV1 without an %s Cannot cope - %s' % (ADM_DATE_TIME,row))
+                    log.critical('PV1 without an %s Cannot cope - %s' % (ADM_DATE_TIME,row))
                     admdatetime = ''
 
                 npi = rdict.get('Attending_Provider_NPI',None)
                 if not npi:
-                    logging.critical('PV1 without an NPI! Cannot cope -- File: "%s"; Row: %s' % (incominghl7f, row))
+                    log.critical('PV1 without an NPI! Cannot cope -- File: "%s"; Row: %s' % (incominghl7f, row))
                     npi = 'UNKNOWN'
                 rdict[PCP_NPI] = npi # add some useful elements to all records
                 msh[PCP_NPI] = npi
@@ -264,14 +264,14 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                     if gtype == 'OBX':
                         obxattrcode = rdict.get(LABRES_CODE,None)
                         if not obxattrcode:
-                            logging.critical('OBX enountered without %s for id %s: %s' % 
+                            log.critical('OBX enountered without %s for id %s: %s' % 
                                 (LABRES_CODE,id,rdict))
                         elif obxattrcode == current_obxattrcode: # falsely split text!
                             # FIXME: this should be handled in a better way
                             try:
                                 last = obxs[-1] # get result to be extended
                             except IndexError:
-                                logging.critical('Invalid record, zero-length OBX: %s' % incominghl7f)
+                                log.critical('Invalid record, zero-length OBX: %s' % incominghl7f)
                                 continue
                             sofar = '%s; %s' % (last.get(LABRES_VALUE,''),
                                                 rdict.get(LABRES_VALUE,''))
@@ -307,8 +307,8 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                         
             else: # invalid segment or no PID/MSH found yet
                 if not id or not msh or not npi:
-                    logging.critical('Message segment found before MSH, PV1 and PID in %s: %s' 
-                        % (m, gtype))
+                    log.critical('Message segment found before MSH, PV1 and PID in: %s: %s' 
+                        % (gtype, m))
                 else:
                     if inobr:
                         ot = segdict.get('OBR')
@@ -321,8 +321,8 @@ def messageIterator(m=[],grammars={},mtypedict=mtypedict,incominghl7f=None):
                         current_obr = None
                         obxs = []
                         thisattrcode = None
-                    s = 'Unexpected segment in %s message: %s' % (mtype,gtype)
-                    logging.critical(s)
+                    s = 'Unexpected segment in: %s message: %s' % (mtype,gtype)
+                    log.critical(s)
 
     if final_I9dict:
         final_I9dict['Diagnosis_Code']=totalI9
@@ -388,7 +388,7 @@ def writeMDicts(mclasses={}):
 ###################################
 def movefile(f, fromdir, todir):
     shutil.move(fromdir+'/%s' % f, todir)
-    logging.info('Moving file %s from %s to %s\n' % (f, fromdir, todir))
+    log.info('Moving file %s from %s to %s\n' % (f, fromdir, todir))
 
 ###################################
 def parseMessages(mlist=[],grammars={},incominghl7f=None):
@@ -413,7 +413,7 @@ def parseMessages(mlist=[],grammars={},incominghl7f=None):
                     if not npi:
                         npi = message.get(FACILITY_NAME,None) # hack...
                     if not npi:
-                        logging.critical('PV1 without an NPI! Cannot cope - %s' % message)
+                        log.critical('PV1 without an NPI! Cannot cope - %s' % message)
                     else:
                         if not mclasses[k].get(npi,None): # not there yet
                             mclasses[k][npi] = [message,] # put message into this class
@@ -423,13 +423,9 @@ def parseMessages(mlist=[],grammars={},incominghl7f=None):
                     mclasses[k][id] = sofar # replace with update
     return mclasses
 
-if __name__ == "__main__":
-    main()
-
-
 def main():
-    setLogging(appname=prog)
-    logging.info('HL7 message processing started at %s' % timenow())
+    #setLogging(appname=prog)
+    log.info('HL7 message processing started at %s' % timenow())
     hlfiles=os.listdir('/home/ESP/NORTH_ADAMS/incomingHL7/')
     incomdir = '/home/ESP/NORTH_ADAMS/incomingHL7/'
     todir = '/home/ESP/NORTH_ADAMS/archivedHL7/'
@@ -448,6 +444,10 @@ def main():
                                                
 
 
-    logging.info('##########Processing completed at %s' % timenow())
-    logging.shutdown()
+    log.info('##########Processing completed at %s' % timenow())
+
+
+if __name__ == "__main__":
+    main()
+
 
