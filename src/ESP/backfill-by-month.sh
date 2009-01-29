@@ -12,6 +12,10 @@ INCOMING_HL7=$ESP_HOME/NORTH_ADAMS/incomingHL7/
 INCOMING_DATA=$ESP_HOME/NORTH_ADAMS/incomingData/
 
 
+# Clean up any leftovers
+cd $INCOMING_HL7
+rm -f *
+
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
 echo '2008-4'
 echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
@@ -20,7 +24,7 @@ cp 2008-4* $INCOMING_HL7
 cd $ESP_SRC
 rm $INCOMING_DATA/*
 python utils/hl7_to_etl.py
-python utils/incomingParser.py
+python utils/incomingParser.py --all
 
 
 for year_month in 2008-{4..12}; do
@@ -32,5 +36,5 @@ for year_month in 2008-{4..12}; do
 	cd $ESP_SRC
 	rm $INCOMING_DATA/*
 	python utils/hl7_to_etl.py
-	python utils/incomingParser.py
+	python utils/incomingParser.py --all
 done
