@@ -42,6 +42,7 @@ import logging
 import pprint
 
 from ESP.utils.utils import log
+from ESP.utils import northadams
 
 from northadams import * # that's where all our configuration lives
 
@@ -132,29 +133,38 @@ def countSets(messages=[]):
         print '%s: %s' % (r,s)
         
         
-def apply_grammar(lrow=[],grammar=[]):
+def apply_grammar(seg_list, grammar):
     '''
-    Apply the right grammar to this row
+    Apply the grammar to segment, returning a dictionary expression
+    of said segment.
+    @type segment: List
+    @type grammar: List
+    @return: Dict
     '''
-    rowdict = {}
+    seg_dict = {}
     for ename,eoffset,esubfield in grammar:
         try:
             if string.find(string.upper(ename), 'DATE')!=-1: ##it is a data field
-                if len(lrow[eoffset][esubfield])==6:
-                    e = lrow[eoffset][esubfield][:6]+'01'
-                    log.warning('Modify Date Field %s (%d:%d) in %s' % (ename,eoffset,esubfield,lrow))
+                if len(seg_list[eoffset][esubfield])==6:
+                    e = seg_list[eoffset][esubfield][:6]+'01'
+                    log.warning('Modify Date Field %s (%d:%d) in %s' % (ename,eoffset,esubfield,seg_list))
                 else:
-                    e = lrow[eoffset][esubfield][:8]
+                    e = seg_list[eoffset][esubfield][:8]
             else:
-                e = lrow[eoffset][esubfield]
+                e = seg_list[eoffset][esubfield]
         except:
             e = None
-            log.warning('## Missing segment %s (%d:%d) in %s' % (ename,eoffset,esubfield,lrow))
-        rowdict[ename] = e
-    return rowdict
+            log.warning('## Missing segment %s (%d:%d) in %s' % (ename,eoffset,esubfield,seg_list))
+        seg_dict[ename] = e
+    return seg_dict
 
 
-def messageIterator(m=[],grammar_dict={},mtypedict=mtypedict,incominghl7f=None):
+def messageIterator(
+    m=[],
+    grammar_dict={},
+    msg_type_segments=northadams.msg_type_segments,
+    incominghl7f=None
+    ):
     """Generator function that takes a message split into rows,
     and yields the components of each message as a (target,(id,message)) tuple
     We have to make sure we have MSH and PID segments so message type and patient id
@@ -176,7 +186,7 @@ def messageIterator(m=[],grammar_dict={},mtypedict=mtypedict,incominghl7f=None):
     message. Add patient id, provider npi to all message rdicts
 
     In the message representation each segment is the dictionary set up by the grammar
-    stored in a list keyed by the segment dictionary key from mtypedict
+    stored in a list keyed by the segment dictionary key from msg_type_segments
 
     TODO - replace all grammar names with constants
     """
@@ -188,12 +198,12 @@ def messageIterator(m=[],grammar_dict={},mtypedict=mtypedict,incominghl7f=None):
     #    OBX: Observation or Observation Fragment
     #    PD1: Patient Additional Demographic
     log.debug('grammars: %s' % pprint.pformat(grammar_dict))
-    segdict = {}
-    msh = None # Message header
-    pid = None # Patient ID
+    allowed_segs = {}
+    msh_seg = {} # Message header segment
+    pid_seg = {} # Patient ID segment
     npi = None # National Provider Identifier
     pd1 = None # Patient Additional Demographic
-    id  = None # WTF: How is this different from pid?
+    pid_num  = None # WTF: How is this different from pid?
     admitdatetime = 'UNKNOWN'
     mtype = None
     inobr = False # an OBR may be followed by a sequence of OBX
@@ -202,12 +212,12 @@ def messageIterator(m=[],grammar_dict={},mtypedict=mtypedict,incominghl7f=None):
     obxs = [] # for accumulating all the different test obx for each obr
     totalI9=''
     final_I9dict=None
-    for i, row in enumerate(m): # i=0 must be msh
+    for row_num, row_txt in enumerate(m): # i=0 must be msh
         # Convert a segment (row) into a list of fields.  Each field item is 
         # itself expressed as a list, containing one or more subfields.
-        segment = row.strip().split(FIELD_DELIMITER)
-        segment = [x.strip().split(SUBFIELD_DELIMITER) for x in segment] # each element now a list
-        seg_type = segment[0][0].upper() # What kind of segment are we working with?
+        seg_list = row_txt.strip().split(FIELD_DELIMITER)
+        seg_list = [x.strip().split(SUBFIELD_DELIMITER) for x in seg_list] # each element now a list
+        seg_type = seg_list[0][0].upper() # What kind of segment are we working with?
         # ADTOBX has different structure
         if seg_type == 'OBX' and mtype == 'ADT':
             seg_type = 'ADTOBX' 
@@ -215,60 +225,62 @@ def messageIterator(m=[],grammar_dict={},mtypedict=mtypedict,incominghl7f=None):
         if not grammar:
             log.critical('Cannot find a grammar for segment type %s' % seg_type)
             continue
-        rdict = apply_grammar(segment, grammar)
-        log.debug('rdict: %s' % pprint.pformat(rdict))
+        segment = apply_grammar(seg_list, grammar) # Dictionary expression of this segment
+        log.debug('segment: %s' % pprint.pformat(segment))
         if seg_type == 'MSH': # set aside - we don't have id yet
-            msh = rdict
-            mtype = rdict[MESSAGE_TYPE]
-            segdict = mtypedict.get(mtype,{}) # allowable segments for this messagetype
+            msh_seg = segment
+            mtype = segment[MESSAGE_TYPE]
+            allowed_segs = msg_type_segments.get(mtype,{}) # allowable segments for this messagetype
         elif seg_type == 'PID': # must be able to identify PID
-            id = rdict.get(PATIENT_ID,None)
-            if id == None:
-                log.critical('%s not found in PID segment of message %s' % (PATIENT_ID,row))
+            pid_num = segment.get(PATIENT_ID,None)
+            log.debug('pid_num: %s' % pid_num)
+            if pid_num == None:
+                log.critical('%s not found in PID segment of message %s' % (PATIENT_ID,row_txt))
                 # raise StopIteration
-            pid = rdict # for yielding after pv1
-            msh[PATIENT_ID] = id
-            pid[PATIENT_ID] = id
+                continue # WTF: Is this appropriate?
+            pid_seg = segment # for yielding after pv1
+            msh_seg[PATIENT_ID] = pid_num
+            # pid[PATIENT_ID] = id # This is redundant
         elif seg_type == 'PD1':
-            pd1 = rdict # probably would need a list of these if they arrive
+            pd1 = segment # probably would need a list of these if they arrive -- JRM: why a list?
         elif seg_type == 'PV1': # need the provider for rx messages eg
-            if id == None: ###No patient ID
-                msg = 'No Patient ID info in file: "%s": %s' % (incominghl7f, row)
+            if pid_num == None: ###No patient ID
+                msg = 'No Patient ID info in file: "%s": %s' % (incominghl7f, row_txt)
                 print msg
                 log.critical(msg)
 #                    utils.sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg=msg,subject='ESP Northadams incoming HL7 parsing Error')
                 raise StopIteration
-            admdatetime = rdict.get(ADM_DATE_TIME,None) # only place it's given
+            admdatetime = segment.get(ADM_DATE_TIME,None) # only place it's given
             if not admdatetime: # needed for rx record eg
                 log.critical('PV1 without an %s Cannot cope - %s' % (ADM_DATE_TIME,row))
                 admdatetime = ''
-            npi = rdict.get('Attending_Provider_NPI',None)
+            npi = segment.get('Attending_Provider_NPI',None)
             if not npi:
                 # WTF: If we cannot cope, why do we continue iteration?
-                log.critical('PV1 without an NPI! Cannot cope -- File: "%s"; Row: %s' % (incominghl7f, row))
+                log.critical('PV1 without an NPI! Cannot cope -- File: "%s"; Row: %s' % (incominghl7f, row_txt))
                 npi = 'UNKNOWN'
-            rdict[PCP_NPI] = npi # add some useful elements to all records
-            msh[PCP_NPI] = npi
-            pid[PCP_NPI] = npi
-            pid[ADM_DATE_TIME] = admdatetime
-            pid['Visit_Number'] = rdict.get('Visit_Number', None)
+            segment[PCP_NPI] = npi # add some useful elements to all records
+            msh_seg[PCP_NPI] = npi
+            pid_seg[PCP_NPI] = npi
+            pid_seg[ADM_DATE_TIME] = admdatetime
+            pid_seg['Visit_Number'] = segment.get('Visit_Number', None)
 
-            yield ('msh',(id,msh)) # Now that we have the id, npi
-            yield ('pid',(id,pid)) # and the pid, add them to the pile
-            yield ('pcp',(id,rdict)) # pcp
-            #yield ('enc',(id,pid))
+            yield ('msh',(pid_num,msh_seg)) # Now that we have the id, npi
+            yield ('pid',(pid_num,pid_seg)) # and the pid, add them to the pile
+            yield ('pcp',(pid_num,segment)) # pcp
+            #yield ('enc',(pid_num,pid_seg))
             # don't yield pc1 -
-        elif id and msh and npi and segdict.get(seg_type,None): # is expected in this message type
-            rdict[ADM_DATE_TIME] = admdatetime # for posterity
-            rdict[PCP_NPI] = npi
-            rdict[PATIENT_ID] = id
-            target = segdict.get(seg_type) # where to push the message
+        elif pid_num and msh_seg and npi and allowed_segs.get(seg_type,None): # is expected in this message type
+            segment[ADM_DATE_TIME] = admdatetime # for posterity
+            segment[PCP_NPI] = npi
+            segment[PATIENT_ID] = pid_num
+            target = allowed_segs.get(seg_type) # where to push the message
             if inobr: # special - must output if not another obx
                 if seg_type == 'OBX':
-                    obxattrcode = rdict.get(LABRES_CODE,None)
+                    obxattrcode = segment.get(LABRES_CODE,None)
                     if not obxattrcode:
-                        log.critical('OBX encountered without %s for id: %s: File %s: %s' % 
-                            (LABRES_CODE, id, incominghl7f, rdict))
+                        log.critical('OBX encountered without %s for pid_num: %s: File %s: %s' % 
+                            (LABRES_CODE, pid_num, incominghl7f, segment))
                     elif obxattrcode == current_obxattrcode: # falsely split text!
                         # FIXME: this should be handled in a better way
                         try:
@@ -277,47 +289,47 @@ def messageIterator(m=[],grammar_dict={},mtypedict=mtypedict,incominghl7f=None):
                             log.critical('Invalid record, zero-length OBX: %s' % incominghl7f)
                             continue
                         sofar = '%s; %s' % (last.get(LABRES_VALUE,''),
-                                            rdict.get(LABRES_VALUE,''))
+                                            segment.get(LABRES_VALUE,''))
                         last[LABRES_VALUE] = sofar
                         obxs[-1] = last
                     else:
                         current_obxattrcode = obxattrcode
-                        obxs.append(rdict)
+                        obxs.append(segment)
                 else: # time to write - something other than another obx while inobr
-                    ot = segdict.get('OBR') # what's the target id for an OBR in this segment?
-                    yield(ot,(id,current_obr))
+                    ot = allowed_segs.get('OBR') # what's the target pid_num for an OBR in this segment?
+                    yield(ot,(pid_num,current_obr))
                     if len(obxs) > 0:
-                        ot = segdict.get('OBX')
+                        ot = allowed_segs.get('OBX')
                         for obx in obxs:
-                            yield (ot,(id,obx)) # special treatment for obxs
+                            yield (ot,(pid_num,obx)) # special treatment for obxs
                     inobr = False
                     current_obr = None
                     obxs = []
                     thisattrcode = None
             if seg_type == 'OBR': # new obr or first
                 inobr = True
-                current_obr = rdict # save for next time to output obr/obxs
+                current_obr = segment # save for next time to output obr/obxs
             elif seg_type <> 'OBX': # some other legal segment - we took care if we were inobr
                 if seg_type=='DG1':
-                    if rdict['Coding_System']=='I9': ##ICD9
-                        totalI9 = rdict['Diagnosis_Code']+','+totalI9
-                        rdict['Visit_Number']=pid['Visit_Number']
-                        final_I9dict = rdict
-                        #yield ('enc',(id,rdict))
+                    if segment['Coding_System']=='I9': ##ICD9
+                        totalI9 = segment['Diagnosis_Code']+','+totalI9
+                        segment['Visit_Number']=pid_seg['Visit_Number']
+                        final_I9dict = segment
+                        #yield ('enc',(pid_num,segment))
                 else:  ##other than 'DG1' type
-                    yield (target,(id,rdict))
+                    yield (target,(pid_num,segment))
         else: # invalid segment or no PID/MSH found yet
-            if not id or not msh or not npi:
+            if not pid_num or not msh_seg or not npi:
                 log.critical('Message segment found before MSH, PV1 and PID in: %s: %s: %s' 
                     % (seg_type, incominghl7f, m))
             else:
                 if inobr:
-                    ot = segdict.get('OBR')
-                    yield(ot,(id,current_obr))
+                    ot = allowed_segs.get('OBR')
+                    yield(ot,(pid_num,current_obr))
                     if len(obxs) > 0:
-                        ot = segdict.get('OBX')
+                        ot = allowed_segs.get('OBX')
                         for obx in obxs:
-                            yield (ot,(id,obx)) # special treatment for obxs
+                            yield (ot,(pid_num,obx)) # special treatment for obxs
                     inobr = False
                     current_obr = None
                     obxs = []
@@ -326,14 +338,14 @@ def messageIterator(m=[],grammar_dict={},mtypedict=mtypedict,incominghl7f=None):
                 log.critical(s)
     if final_I9dict:
         final_I9dict['Diagnosis_Code']=totalI9
-        yield ('enc',(id,final_I9dict))
+        yield ('enc',(pid_num,final_I9dict))
     if inobr: # we appear to have fallen off the end of the message so send now
-        ot = segdict.get('OBR')
-        yield(ot,(id,current_obr))
+        ot = allowed_segs.get('OBR')
+        yield(ot,(pid_num,current_obr))
         if len(obxs) > 0:
-            ot = segdict.get('OBX')
+            ot = allowed_segs.get('OBX')
             for obx in obxs:
-                yield (ot,(id,obx)) # special treatment for obxs
+                yield (ot,(pid_num,obx)) # special treatment for obxs
         inobr = False
         current_obr = None
         obxs = []

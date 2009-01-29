@@ -51,11 +51,13 @@ ADM_DATE_TIME = 'Admit_Date_and_Time'
 # this structure describes the permissible segments for each message type
 # and the names we're using for each list of instances
 # we use these to prepare the ETL files.
-mtypedict={'ADT':{'PV1':'pcp','ENC': 'enc', 'DG1':'enc','OBX':'vitals','AL1':'allergies','PD1':'extrademog'},
-           'ORU':{'PV1':'pcp','ENC': 'enc','OBR':'laborder','OBX':'labres'},
-           'VXU':{'PV1':'pcp','ENC': 'enc','RXA':'vaccinations'},
-           'PPR':{'PV1':'pcp','ENC': 'enc','PRB':'problems'},
-           'OMP':{'PV1':'pcp','ENC': 'enc','RXO':'rx'}}
+msg_type_segments = {
+    'ADT':{'PV1':'pcp','ENC': 'enc', 'DG1':'enc','OBX':'vitals','AL1':'allergies','PD1':'extrademog'},
+    'ORU':{'PV1':'pcp','ENC': 'enc','OBR':'laborder','OBX':'labres'},
+    'VXU':{'PV1':'pcp','ENC': 'enc','RXA':'vaccinations'},
+    'PPR':{'PV1':'pcp','ENC': 'enc','PRB':'problems'},
+    'OMP':{'PV1':'pcp','ENC': 'enc','RXO':'rx'}
+    }
 
 # this defines the output keys
 etlnames = ['pcp','pid','allergies','enc',
