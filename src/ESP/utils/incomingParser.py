@@ -14,6 +14,8 @@ import smtplib
 import logging
 import exceptions
 import MySQLdb
+import optparse
+import pprint
 
 import django, datetime,time
 from django.db.models import Q
@@ -958,12 +960,9 @@ def movefile(incomdir, f, linenum):
     subdir = os.path.join(curdir, 'MONTH_%s/' % mon)
     if not os.path.isdir(subdir):
         os.makedirs(subdir)
-
-    #try:
-    log.info('Moving file %s from %s to %s\n' % (f, incomdir, subdir))
-    shutil.move(incomdir+'/%s' % f, subdir)
-    #except:
-    #    log.warning('Parser No this file: %s' % f)
+    if options.move:
+	    log.info('Moving file %s from %s to %s\n' % (f, incomdir, subdir))
+	    shutil.move(incomdir+'/%s' % f, subdir)
 
 
 ################################
@@ -1206,7 +1205,8 @@ def doValidation(incomdir,days):
     if errordays:
         msg = 'Found validation errors when running incomingParse.py; Error days are:%s; Please go to log file for detail;' % (str(errordays))
 #        print msg
-        utils.sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg=msg)
+        if options.mail:
+            utils.sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg=msg)
         
     return parsedays
 
@@ -1246,32 +1246,28 @@ def updateLoinc_lx():
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def main():
+    parser = optparse.OptionParser()
+    parser.add_option('-n', '--no-move', action='store_false', dest='move', default=True,
+        help='Do not move files after processing')
+    parser.add_option('--mail', action='store_true', dest='mail', default=False,
+        help='Send notifications by email')
+    parser.add_option('-a', '--all', action='store_true', dest='all', default=False)
+    parser.add_option('--prov', action='store_true', dest='prov', default=False)
+    parser.add_option('--res', action='store_true', dest='res', default=False)
+    parser.add_option('--ord', action='store_true', dest='ord', default=False)
+    parser.add_option('--med', action='store_true', dest='med', default=False)
+    parser.add_option('--enc', action='store_true', dest='enc', default=False)
+    parser.add_option('--imm', action='store_true', dest='imm', default=False)
+    parser.add_option('--soc', action='store_true', dest='soc', default=False)
+    parser.add_option('--prb', action='store_true', dest='prb', default=False)
+    global options # So we don't need to explicitly pass to every function
+    (options, args) = parser.parse_args()
+    log.debug('options: %s' % options)
     try: 
         
         startt = datetime.datetime.now()
         ###try to update esp_lx
         updateLoinc_lx()
-
-        if len(sys.argv)>1: ##has argument
-            ##sys.argv[1] = 'MEM_PROV_RES_ORD_MED_ENC_IMM'
-            filelist = string.split(sys.argv[1],'_')
-            
-            if 'MEM' not in filelist:
-                hasMem=0
-            if 'PROV' not in filelist:
-                hasProv=0
-            if 'RES' not in filelist:
-                hasRes=0
-            if 'ORD' not in filelist:
-                hasOrd=0
-            if 'MED' not in filelist:
-                hasMed=0
-            if 'ENC' not in filelist:
-                hasEnc=0
-            if 'IMM' not in filelist:
-                hasImm=0
-                                
-       
         ##get incoming files and do validations
         incomdir = os.path.join(TOPDIR, LOCALSITE,'incomingData/')
         allf = os.listdir(incomdir)
@@ -1290,43 +1286,40 @@ def main():
             log.info("Parser - parse day %s\n" % oneday)
             provf = FILEBASE+'pro.esp.'+oneday
             provdict = parseProvider(incomdir, provf)
-
             demogf =  FILEBASE+'mem.esp.'+oneday 
             demogdict = parseDemog(incomdir, demogf)
-
-            if hasEnc:
+            if options.enc or options.all:
                 visf =  FILEBASE+'vis.esp.'+oneday      
                 parseEnc(incomdir , visf,demogdict,provdict)
-
-            if hasMed:
+            if options.med or options.all:
                 medf = FILEBASE+'med.esp.'+oneday
                 parseRx(incomdir , medf,demogdict,provdict)
-            if hasOrd:
+            if options.ord or options.all:
                 lxordf = FILEBASE+'ord.esp.'+oneday
                 parseLxOrd(incomdir,lxordf, demogdict,provdict)
-
-            if hasRes:
+            if options.res or options.all:
                 lxresf = FILEBASE+'res.esp.'+oneday
                 parseLxRes(incomdir,lxresf, demogdict,provdict)
-
-            if hasImm:
+            if options.imm or options.all:
                 immf = FILEBASE+'imm.esp.'+oneday  
                 parseImm(incomdir , immf, demogdict)
-
-            if hasPrb:
+            if options.prb or options.all:
                 prbf = FILEBASE+'prb.esp.'+ oneday
                 parsePrb(incomdir , prbf, demogdict)
-            if hasSoc:
+            if options.soc or options.all:
                 socf = FILEBASE+'soc.esp.'+ oneday
-                parseSoc(incomdir , socf, demogdict)
+                if os.path.exists(socf):
+                    parseSoc(incomdir , socf, demogdict)
+                else:
+                    log.info('No soc file; skipping.')
 
-            if hasAll:
-                socf = FILEBASE+'all.esp.'+ oneday
-                parseAll(incomdir , socf, demogdict)
+#            if hasAll:
+#                socf = FILEBASE+'all.esp.'+ oneday
+#                parseAll(incomdir , socf, demogdict)
                                                 
         ##send email
         log.warning('New CPT/COMPT code: %s\n' % str(alertcode))
-        if alertcode:
+        if alertcode and options.mail:
             utils.sendoutemail(towho=['MKLOMPAS@PARTNERS.ORG','Julie_Dunn@harvardpilgrim.org', 'rexua@channing.harvard.edu','rerla@channing.harvard.edu'],msg='New (CPT,COMPT,ComponentName): %s' % str(alertcode))
         
         log.info('Start: %s\n' %  startt)
@@ -1337,7 +1330,6 @@ def main():
         traceback.print_exc(file=fp)
         message = fp.getvalue()
         log.info(message+'\n')
-    log.shutdown()
 
             
 if __name__ == "__main__":
