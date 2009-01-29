@@ -9,7 +9,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 import django, datetime
 from ESP.esp.models import *
 from django.db.models import Q
-from ESP.settings import TOPDIR,LOCALSITE, USESQLITE,getLogging,EMAILSENDER
+from ESP.settings import TOPDIR,LOCALSITE, USESQLITE,getLogging,EMAIL_SENDER
 import string,csv
 import traceback
 import StringIO
@@ -41,7 +41,7 @@ def getlines(fname):
 ###################################
 def sendoutemail(towho=['rexua@channing.harvard.edu','rerla@channing.harvard.edu'],msg=''):
     ##send email
-    sender=EMAILSENDER
+    sender=EMAIL_SENDER
     
     subject='ESP management: preLoader'
     headers = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (sender, ','.join(towho), subject)
