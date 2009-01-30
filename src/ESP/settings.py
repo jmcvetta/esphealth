@@ -178,5 +178,5 @@ def getLogging(appname,debug=0):
 LOG_FORMAT = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 # BEWARE: If you set the log level to DEBUG, *copious* info will be logged!
 LOG_LEVEL = logging.DEBUG 
-LOG_STREAM = open('/tmp/esp.log', 'w')
+LOG_STREAM = open('/tmp/esp.log', 'a')
 #LOG_STREAM = sys.stdout
