@@ -696,6 +696,7 @@ def getCasedemogids(condition):
 def processAcuteHepA(condition):
     log.info('Looking for cases of Acute Hepetitis A.')
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
+    log.debug('condicd9s: %s' % condicd9s)
     ##HepA definition a)
     demog_lx=isPositive_givenLx(condition,CondiLOINCids=['22314-9'])
     newcases = checkICD_ALTAST(demog_lx,dayrange=15)
@@ -1318,20 +1319,19 @@ def main():
         default=False, help='Send email notifications')
     global options # So we don't have to pass this as arg to all the existing functions
     (options, args) = parser.parse_args()
-    log.info('Running identifyCases with options: %s' % options)
+    log.info('Running identifyCases')
+    log.debug('options: %s' % options)
     log.debug('Deleting cases in Test cases\n')
     TestCase.objects.all().delete()
     conditions = Rule.objects.all().order_by('ruleName')
     for c in conditions:
+        log.debug('cond: %s' % c)
         cond = c.ruleName
-        log.info('process %s\n' % cond) # TODO: better to log in the actual test methods than here
-
-        if TEST==1:
-            if string.find(string.upper(cond), 'ACUTE HEPATITIS B')>-1:
-                processAcuteHepB(cond)
-            else:
-                continue
-            
+        # TODO: better to log in the actual test methods than here, but maybe 
+        # that should wait until this code is merged back into trunk.
+        log.info('Checking for %s\n' % cond) 
+        if TEST and string.find(string.upper(cond), 'ACUTE HEPATITIS B')>-1:
+            processAcuteHepB(cond)
         if string.upper(cond) in ('ACUTE HEPATITIS A'):
             processAcuteHepA(cond)
         elif string.upper(cond) in ('ACUTE HEPATITIS B'):
@@ -1347,7 +1347,7 @@ def main():
         elif string.upper(cond) in ('SYPHILIS'):
             processSyphilis(cond)
         elif  string.upper(cond) in ('VAERS FEVER', 'FEBRILE SEIZURE'):
-            pass
+            pass # WTF: why do we skip this?
         else: #other conditions
             processoneCondition(cond)
     ########
