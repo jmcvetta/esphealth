@@ -402,7 +402,7 @@ class TestCase(models.Model):
         lxlist = self.caseLxID.split(',')
         orderdate=[]
         if len(lxlist) > 0:
-           lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
+           lxs=Lx.objects.filter(id__in=lxlist)
            for l in lxs:
               orderdate.append(u' %s' % l.LxOrderDate)
         return u''.join(orderdate)
@@ -527,13 +527,6 @@ class Case(models.Model):
         s = u'%s' % self.caseLastUpDate
         return s[:11]
     
-    def getLxOrderdate(self):
-
-        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
-        orderdate=''
-        for l in lxs:
-            orderdate =orderdate+' %s' % l.LxOrderDate
-        return unicode(orderdate)
 
     def getLxProviderSite(self):
         lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
