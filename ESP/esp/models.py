@@ -396,11 +396,15 @@ class TestCase(models.Model):
         return s[:11]
     
     def getLxOrderdate(self):
-        
-        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
+        """
+        """
+        # patched 30 jan to not barf if no LxIDs
+        lxlist = self.caseLxID.split(',')
         orderdate=[]
-        for l in lxs:
-            orderdate.append(u' %s' % l.LxOrderDate)
+        if len(lxlist) > 0:
+           lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
+           for l in lxs:
+              orderdate.append(u' %s' % l.LxOrderDate)
         return u''.join(orderdate)
 
 
