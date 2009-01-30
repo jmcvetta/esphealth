@@ -280,7 +280,7 @@ def split_hl7_message(hl7file):
     # sudha sent the following 20 tests
     tm = []
     tl  = file(hl7file,'rb').read().split('\r')
-    print '\tRows: %d' % len(tl)
+    log.debug('rows: %d' % len(tl))
     message = []
     for row in tl:
         log.debug(row)

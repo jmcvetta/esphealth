@@ -201,7 +201,7 @@ def messageIterator(
     allowed_segs = {}
     msh_seg = {} # Message header segment
     pid_seg = {} # Patient ID segment
-    npi = None # National Provider Identifier
+    npi = None # National Provider Identifier number
     pd1 = None # Patient Additional Demographic
     pid_num  = None # WTF: How is this different from pid?
     admitdatetime = 'UNKNOWN'
@@ -268,13 +268,15 @@ def messageIterator(
             yield ('msh',(pid_num,msh_seg)) # Now that we have the id, npi
             yield ('pid',(pid_num,pid_seg)) # and the pid, add them to the pile
             yield ('pcp',(pid_num,segment)) # pcp
-            #yield ('enc',(pid_num,pid_seg))
+            # yield ('enc',(pid_num,pid_seg)) # FIXME: THis was formerly commented out!!
             # don't yield pc1 -
         elif pid_num and msh_seg and npi and allowed_segs.get(seg_type,None): # is expected in this message type
             segment[ADM_DATE_TIME] = admdatetime # for posterity
             segment[PCP_NPI] = npi
             segment[PATIENT_ID] = pid_num
             target = allowed_segs.get(seg_type) # where to push the message
+            log.debug('target: %s' % target)
+            log.debug('segment: %s' % segment)
             if inobr: # special - must output if not another obx
                 if seg_type == 'OBX':
                     obxattrcode = segment.get(LABRES_CODE,None)
@@ -334,7 +336,7 @@ def messageIterator(
                     current_obr = None
                     obxs = []
                     thisattrcode = None
-                s = 'Unexpected segment in: %s; Message: %s; File: %s' % (mtype, seg_type, incominghl7f)
+                s = 'Unexpected segment; Mtype: %s; Seg_Type: %s; File: %s' % (mtype, seg_type, incominghl7f)
                 log.critical(s)
     if final_I9dict:
         final_I9dict['Diagnosis_Code']=totalI9
@@ -380,14 +382,14 @@ def writeMDicts(mclasses={}):
     targets.sort()
     for t in targets:
         if t <> "msh":
-            print '\tMessage class: %s' % t
+            log.debug('\tMessage class: %s' % t)
             lookups = writer_lookups[t] # the output etl row
             writefile = writefiles[t] # and file
             iddict = mclasses[t]
             idk = iddict.keys()
             idk.sort()
             for k in idk:
-                print '\tid:',k
+                log.debug('id: %s' % k)
                 mlist = mclasses[t][k]
                 for m in mlist:
                     etl_Writer(rdict=m,lookups=lookups,outdest=writefile)
