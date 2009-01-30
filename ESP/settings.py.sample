@@ -1,6 +1,8 @@
-# Django settings for esp project.
-
-DEBUG = True
+# Sample Django settings for esp project.
+# change these for your site
+# note the DEBUG setting is useful but very, very dangerous
+DEBUG = True # DO NOT leave this set for production!!
+# it exposes your entire site to anyone who can throw an error
 TEMPLATE_DEBUG = DEBUG
 import localsettings
 
@@ -8,11 +10,9 @@ SITEROOT = localsettings.SITEROOT
 
 TOPDIR='/home/ESP'
 CODEDIR = '/home/ESP/ESP'
-LOGIN_URL='/accounts/login'
 
-LOGIN_REDIRECT_URL='/ESP' 
 ADMINS = (
-    ('Ross Lazarus', 'ross.lazarus@gmail.com'),
+    ('root', 'admin@yoursite.com'),
 )
 
 MANAGERS = ADMINS
@@ -74,17 +74,15 @@ MEDIA_URL = '/media'
 ADMIN_MEDIA_PREFIX = '/ESP/media/' 
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'lo(g8i)a(g%&(4-*9@w#w2u#wfq(tjf5o+f4#6q7mg(k%9h%j5'
+SECRET_KEY = 'make this very very long and do not change it'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.load_template_source',
     'django.template.loaders.app_directories.load_template_source',
 )
-#     'django.template.loaders.eggs.load_template_source',
  
 MIDDLEWARE_CLASSES = (
-    #"django.middleware.cache.CacheMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
