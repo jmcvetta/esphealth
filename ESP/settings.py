@@ -8,7 +8,9 @@ SITEROOT = localsettings.SITEROOT
 
 TOPDIR='/home/ESP'
 CODEDIR = '/home/ESP/ESP'
+LOGIN_URL='/accounts/login'
 
+LOGIN_REDIRECT_URL='/ESP' 
 ADMINS = (
     ('Ross Lazarus', 'ross.lazarus@gmail.com'),
 )

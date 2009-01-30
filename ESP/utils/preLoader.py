@@ -280,13 +280,16 @@ def small_ram_correctcptloincmap_lx(table, cursor):
                 thislx.save()
     allLOINC = list(set(allLOINC)) # remove dupes
     if logging:
-        logging.info('## correctcptloincmap_lx scanned %d records - now looking for old loincs' % n)
+        logging.info('## smallramcorrectcptloincmap_lx scanned %d records - now looking for old loincs' % n)
     n = 0
-    for anLx in Lx.objects.filter(not LxLoinc__in=allLOINC).iterator(): # restricted loop
+    #lof = Lx.objects.filter(not LxLoinc__in=allLOINC).iterator() # restricted loop
+    # not is a keyword so this does not work - what's needed is exclude rather than filter?
+    lof = Lx.objects.exclude(LxLoinc__in=allLOINC).iterator() # restricted loop
+    for anLx in lof:
         n += 1
         if n % 1000 == 0:
             if logging:
-                logging.info('## correctcptloincmap_lx deleting old loincs at %d' % n)
+                logging.info('## smallramcorrectcptloincmap_lx deleting old loincs at %d' % n)
         id = anLx.id
         cpt = anLx.LxTest_Code_CPT
         comp = anLx.LxComponent
@@ -297,7 +300,7 @@ def small_ram_correctcptloincmap_lx(table, cursor):
         thislx.LxLoinc=''
         thislx.save()
     if logging:
-        logging.info('## correctcptloincmap_lx deleted old loincs from %d records' % n)
+        logging.info('## smallramcorrectcptloincmap_lx deleted old loincs from %d records' % n)
 
 
 

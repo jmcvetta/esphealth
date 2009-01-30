@@ -660,6 +660,12 @@ class hl7Batch:
             obr.appendChild(obr3)
             
             obr4 = self.casesDoc.createElement('OBR.4')
+
+
+            ########Added Jan,2009 to fix EMR Mappign question in order to
+            ########integrate with MAVEN system from Barrus, Stephen (DPH)
+            self.addSimple(obr4,'Additional Patient Demographics','CE.2')
+                        
             self.addSimple(obr4,'18776-5','CE.4') # treatment plan
             self.addSimple(obr4,'L','CE.6') # loinc code
             obr.appendChild(obr4)

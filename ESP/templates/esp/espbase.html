@@ -6,6 +6,7 @@
 
 </head>
 <body>
+<font color="maroon">(You are using lkenpesp2)</font>
 
 
 
@@ -23,11 +24,11 @@
         <table cellpadding="1" border=2 bordercolor = white>
 	    <tr class="{% cycle row2,row1 as rowcolors %}">
                  {% if not request.user or not request.user.is_authenticated %}<td>AnonymousUser</td></tr>
-                  <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/login/">ESP Login</a></td></tr>
+                  <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/accounts/login/">ESP Login</a></td></tr>
                   <tr class="{% cycle rowcolors %}"><td><a href="mailto:ross.lazarus&#64;channing.harvard.edu">Request a new account</a></td></tr>
                   {% else %}
                       <td>Current user is {{request.user.get_full_name}}
-                        <p><form action="{{SITEROOT}}/logout/" method="post">
+                        <p><form action="{{SITEROOT}}/accounts/logout/" method="post">
                         <input type="Submit" value="Logout" /></form>
                         </td></tr>
                       <tr class="{% cycle rowcolors %}"><td> <a href="{{SITEROOT}}/pswdchange/">Change My Password</a></td></tr>

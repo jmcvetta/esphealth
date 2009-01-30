@@ -41,22 +41,45 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from ESP.settings import SITEROOT,TOPDIR,LOCALSITE,CODEDIR
 #import ESP.utils.localconfig as localconfig
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, logout, login
 #from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.forms import PasswordResetForm, PasswordChangeForm
-#from django import forms,oldforms # TODO fixme!
+from django import forms# ,oldforms # TODO fixme!
 from django.template import RequestContext
 from django.contrib.sites.models import Site
 from django.contrib.auth import REDIRECT_FIELD_NAME,SESSION_KEY, authenticate
 import datetime,random,sha
 
 
-LOGIN_URL = '%s/login/' % SITEROOT
+LOGIN_URL = '%s/accounts/login/' % SITEROOT
 REDIRECT_FIELD_NAME = 'next'
 
 
-############################
 def esplogin(request):
+    username = request.POST['username']
+    password = request.POST['password']
+    user = authenticate(username=username, password=password)
+    redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
+    if not redirect_to or '://' in redirect_to or ' ' in redirect_to:
+	    if SITEROOT:
+                 redirect_to = SITEROOT
+            else:
+                 redirect_to ='/'
+    if user is not None:
+        if user.is_active:
+            login(request, user)
+            # Redirect to a success page.
+            return HttpResponseRedirect(redirect_to)
+        else:
+            return HttpResponseRedirect(LOGIN_URL)
+            # Return a 'disabled account' error message
+    else:
+        # Return an 'invalid login' error message.
+        return HttpResponseRedirect('/login')
+
+
+############################
+def oldesplogin(request):
     "Displays the login form and handles the login action."
     if not request.POST:
        return render_to_response('registration/login.html', {
@@ -84,64 +107,12 @@ def esplogin(request):
             return HttpResponseRedirect('/login')
 
 
-    #manipulator = AuthenticationForm(request)
-    #redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
-
-    
-    #if request.POST:
-        #new_data = request.POST.copy()
-        #errors = manipulator.get_validation_errors(new_data)
-    
-        #if not errors:
-            #user = authenticate(username=request.username, password=request.password)
-            # Light security check -- make sure redirect_to isn't garbage.
-            #if not redirect_to or '://' in redirect_to or ' ' in redirect_to:
-            #    if SITEROOT:
-            #        redirect_to = SITEROOT
-            #    else:
-            #        redirect_to ='/'
-            #else:
-            #    redirect_to = '%s/%s' % (SITEROOT,redirect_to)
-
-            #request.session[SESSION_KEY] = manipulator.get_user_id()
-            #from django.contrib.auth import login
-            #login(request, manipulator.get_user())
-            #request.session.delete_test_cookie()
-
-            #return HttpResponseRedirect(redirect_to)
-    #else:
-        #errors = {}
-    #request.session.set_test_cookie()
-    # patch for 1.0 alpha svn - oldforms - TODO fix this for current forms library
-    #return render_to_response('registration/login.html', {
-    #    'form': oldforms.FormWrapper(manipulator, request.POST, errors),
-    #    REDIRECT_FIELD_NAME: '',
-    #    'site_name': Site.objects.get_current().name,
-    #    'SITEROOT': SITEROOT,
-    #}, context_instance=RequestContext(request))
 
 
-def rosslogout(request):
-    try:
-        request.user = None
-        del request.user
-        del request.session
-        print 'request.user is None now'
-    except:
-        print "whoopsie on del request.session"
-    return HttpResponse("You are now logged out.")
-
-
-
-def logout(request, next_page=SITEROOT):
+def userlogout(request, next_page=SITEROOT):
     "Logs out the user and displays 'You are logged out' message."
-    try:
-        del request.session[SESSION_KEY]
-    except KeyError:
-        return render_to_response('registration/login.html', {'title': 'Logged out'}, context_instance=RequestContext(request))
-    else:
-        # Redirect to this page until the session has been cleared.
-        return HttpResponseRedirect(next_page or request.path)
+    logout(request)
+    return HttpResponseRedirect(next_page or request.path)
 
 
 def logout_then_login(request, login_url=LOGIN_URL):

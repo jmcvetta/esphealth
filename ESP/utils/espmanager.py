@@ -267,14 +267,15 @@ def checkPrev5days():
 ################################
 if __name__ == "__main__":
     startt = datetime.datetime.now()
-
-    ##get files by ftp
+    TEST=0    ##get files by ftp
     try:
         ##
-        checkPrev5days()
+        if TEST==1:
+             newfiles=[]
+        else:    
+            checkPrev5days()
+            newfiles=doFTP()
 
-#        newfiles=[]
-        newfiles=doFTP()
         if newfiles:
             ##1. parse data
             emlogging.info('Date-%s:new data = %s\n' % (today, str(newfiles)))
