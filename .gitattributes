@@ -8,7 +8,6 @@ NORTH_ADAMS/preLoaderData/esp_conditionloinc.txt -text
 NORTH_ADAMS/preLoaderData/esp_conditionndc.txt -text
 NORTH_ADAMS/preLoaderData/esp_config.txt -text
 NORTH_ADAMS/preLoaderData/esp_cptloincmap.txt -text
-NORTH_ADAMS/preLoaderData/esp_cptloincmap_original.txt -text
 NORTH_ADAMS/preLoaderData/esp_rule.txt -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
