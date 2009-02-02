@@ -28,9 +28,17 @@ from ESP import settings
 #--- ~~~ Logger ~~~
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-logging.basicConfig(format=settings.LOG_FORMAT, stream=settings.LOG_STREAM)
+logging.basicConfig(level=settings.LOG_LEVEL_FILE,
+    datefmt='%d-%b--%H:%M',
+    format=settings.LOG_FORMAT_FILE, 
+    filename=settings.LOG_FILE,
+    filemode='a',
+    )
+console = logging.StreamHandler()
+console.setLevel(settings.LOG_LEVEL_CONSOLE)
+console.setFormatter(logging.Formatter(settings.LOG_FORMAT_CONSOLE))
 log = logging.getLogger()
-log.level=settings.LOG_LEVEL
+log.addHandler(console)
 #===============================================================================
 
 
