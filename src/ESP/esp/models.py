@@ -367,8 +367,9 @@ class TestCase(models.Model):
         p=self.getPatient()
         encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
         lxs = None
-        if len(self.caseLxID.split(',')) > 0:
-		lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
+        lxlist = self.caseLxID.split(',')
+        if len(lxlist) > 0:
+		lxs=Lx.objects.filter(id__in=lxlist)
         if encdb and lxs:
             lx = lxs[0]
             lxorderd = lx.LxOrderDate
@@ -396,26 +397,36 @@ class TestCase(models.Model):
         return s[:11]
     
     def getLxOrderdate(self):
-        
-        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
+        """
+        """
+        # patched 30 jan to not barf if no LxIDs
+        lxlist = self.caseLxID.split(',')
         orderdate=[]
-        for l in lxs:
-            orderdate.append(u' %s' % l.LxOrderDate)
-        return u''.join(orderdate)
+        if len(lxlist) > 0:
+           lxs=Lx.objects.filter(id__in=lxlist)
+           for l in lxs:
+              orderdate.append(unicode(l.LxOrderDate))
+        return unicode(''.join(orderdate))
 
 
     def getLxProviderSite(self):
-        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
-        sites=[]
-        for l in lxs:
-            relprov = Provider.objects.filter(id=l.LxOrdering_Provider.id)[0]
-            sitename = relprov.provPrimary_Dept
-            if sitename and sitename not in sites:
-                sites.append(sitename)
+	'''
+	'''
+        # patched 30 jan to not barf if no LxIDs    
         res = []
-        for loc in sites:
-            res.append(u'%s ' % loc)
-        return u''.join(res)
+        lxlist = self.caseLxID.split(',')
+        if len(lxlist) > 0:
+           lxs=Lx.objects.filter(id__in=lxlist)
+           sites=[]
+           for l in lxs:
+               relprov = Provider.objects.filter(id=l.LxOrdering_Provider.id)[0]
+               sitename = relprov.provPrimary_Dept
+               if sitename and sitename not in sites:
+                  sites.append(sitename)
+           res = []
+           for loc in sites:
+              res.append('%s ' % loc)
+        return unicode(''.join(res))
         
     def getWorkflows(self): # return a list of workflow states for history
         wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
@@ -523,15 +534,8 @@ class Case(models.Model):
         s = u'%s' % self.caseLastUpDate
         return s[:11]
     
-    def getLxOrderdate(self):
 
-        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
-        orderdate=''
-        for l in lxs:
-            orderdate =orderdate+' %s' % l.LxOrderDate
-        return unicode(orderdate)
-
-    def getLxProviderSite(self):
+    def redundantgetLxProviderSite(self):
         lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
         sites=[]
         for l in lxs:
