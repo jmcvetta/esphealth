@@ -91,11 +91,18 @@ def makeNewCase(cond, onedemogid,lxids,relatedrxids ,relatedencids,relatedicd9st
         
 
 def getRelatedLx(condition,defines=[],demog=None):
-    """based on case definition to get all Lab tests with positive results
-    """
-    #import time
+    '''
+    based on case definition to get all Lab tests with positive results
+    @type condition: Str
+    @type defines: QuerySet (containing model.ConditionLOINC instances)
+    @type demog: models.Demog
+    '''
+    #
+    # This functionality should probably me moved to models.Condition
+    #
     if not defines:
         defines = ConditionLOINC.objects.filter(CondiRule__ruleName__icontains=condition,CondiDefine=True)
+        log.debug('defines from ConditionLOINC query: %s' % defines)
     loincs = map(lambda x:x.CondiLOINC, defines)
     if demog:
         lxs = Lx.objects.filter(Q(LxPatient=demog),
@@ -444,7 +451,10 @@ def divide2groups(relatedlxids,dayrange=28):
     return groupids
 
 
-def processoneCondition(cond):
+def detect_rule_only_condition(cond):
+    '''
+    Analyze database for conditions detectable from Rule object only
+    '''
     ##recordl=[(l.LxPatient.id,int(l.id),..], sorted by date of result
     newlxs = getRelatedLx(cond)
     recordl = sortLx(newlxs)
@@ -595,20 +605,20 @@ def haspriorNegaLx(onelxid, negaloinc=[],dayrange=-365,negvalues=[]):
     return returnl
    
 
-def checkICD_ALTAST(demog_lx,altloinc=['1742-6','1920-8'],dayrange=15):
+def checkICD_ALTAST(demog_lx, condition, altloinc=['1742-6','1920-8'], dayrange=15):
     """check (ICD9 or ALT or AST)
     """
     newcases={}
     for onedemogid in demog_lx.keys():
         relatedlxids = demog_lx[onedemogid]
-        altlx = getALTAST(onedemogid,cond,altloinc)
+        altlx = getALTAST(onedemogid,condition,altloinc)
         if altlx: ##2 or 3
             for onelx in relatedlxids: ##need within 14 days period
                 for onealtlx in altlx:
                     if getLxduration(onelx,onealtlx.id) <dayrange and not newcases.has_key(onedemogid):
                         newcases[onedemogid]=[onelx,onealtlx.id]
         ##check ICD9
-        returnencs = getEnc4ICD9(onedemogid,cond)
+        returnencs = getEnc4ICD9(onedemogid,condition)
         if returnencs:
             for onelxid in relatedlxids: ##need within 14 days period
                 onelx = Lx.objects.filter(id=onelxid)[0]
@@ -699,7 +709,7 @@ def processAcuteHepA(condition):
     log.debug('condicd9s: %s' % condicd9s)
     ##HepA definition a)
     demog_lx=isPositive_givenLx(condition,CondiLOINCids=['22314-9'])
-    newcases = checkICD_ALTAST(demog_lx,dayrange=15)
+    newcases = checkICD_ALTAST(demog_lx, condition, dayrange=15)
     for onedemogid in  newcases.keys():
         caselxids =newcases[onedemogid]
         relatedencids,relatedicd9str = getEncids4dayrange(onedemogid, caselxids, condicd9s,condition, afterday=14,beforeday=-14)
@@ -713,7 +723,7 @@ def processAcuteHepB(condition):
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
     ##HepB definition a) #4='31204-1'
     demog_lx=isPositive_givenLx(condition,CondiLOINCids=['31204-1'])
-    newcases = checkICD_ALTAST(demog_lx)
+    newcases = checkICD_ALTAST(demog_lx, condition)
     for onedemogid in  newcases.keys():
         caselxids =newcases[onedemogid]
         relatedencids,relatedicd9str = getEncids4dayrange(onedemogid, caselxids, condicd9s,condition, afterday=14,beforeday=-14)
@@ -732,7 +742,7 @@ def processAcuteHepB(condition):
                       makeNewCase(condition, onedemogid,totallxids,[],relatedencids,relatedicd9str)
     ##HepB definition b) and c)
     demog_lx=isPositive_givenLx(condition,CondiLOINCids=['5195-3','13126-8','5009-6','16934-2'])
-    newcases = checkICD_ALTAST(demog_lx, dayrange=22)
+    newcases = checkICD_ALTAST(demog_lx, condition, dayrange=22)
     for onedemogid in  newcases.keys():
         caselxids =newcases[onedemogid]
         ##check bilirubin
@@ -888,7 +898,7 @@ def processHepBPreg(condition):
                 subject = 'ESP ERROR - HepB with Pregnancy',
                 message = errstr, 
                 from_email = settings.EMAIL_SENDER,
-                recipient_list = ['rexua@channing.harvard.edu', 'rerla@channing.harvard.edu'],
+                recipient_list = settings.DEVELOPER_EMAIL_LIST,
                 fail_silently = True, # Do we want this?
                 )
             
@@ -1330,7 +1340,7 @@ def main():
         # TODO: better to log in the actual test methods than here, but maybe 
         # that should wait until this code is merged back into trunk.
         log.info('Checking for %s\n' % cond) 
-        if TEST and string.find(string.upper(cond), 'ACUTE HEPATITIS B')>-1:
+        if string.find(string.upper(cond), 'ACUTE HEPATITIS B')>-1:
             processAcuteHepB(cond)
         if string.upper(cond) in ('ACUTE HEPATITIS A'):
             processAcuteHepA(cond)
@@ -1349,7 +1359,7 @@ def main():
         elif  string.upper(cond) in ('VAERS FEVER', 'FEBRILE SEIZURE'):
             pass # WTF: why do we skip this?
         else: #other conditions
-            processoneCondition(cond)
+            detect_rule_only_condition(cond)
     ########
     log.info('Start to check cases for updating')
     allcases = Case.objects.filter(casecreatedDate__gt=datetime.datetime.today()-datetime.timedelta(28))
@@ -1369,7 +1379,7 @@ def main():
     for i in k:
         msg = msg+ '%s:\t\t%s\n' % (i, case_dict[i])
     if options.send_mail:
-        recipient_list = ['rexua@channing.harvard.edu', 'jason.mcvetta@channing.harvard.edu',]
+        recipient_list = settings.DEVELOPER_EMAIL_LIST
         if not TEST:
             recipient_list += ['MKLOMPAS@PARTNERS.ORG']
         send_mail(
