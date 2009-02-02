@@ -10,6 +10,7 @@ docs/FINAL[!!-~]ELR[!!-~]231[!!-~]Implementation[!!-~]Guide_052104.pdf -text svn
 /readme -text
 src/ESP/backfill-by-month.sh -text
 src/ESP/esp/admin.py -text
+src/ESP/kludge/north-adams-lab-result-kludge.py -text
 src/ESP/localsettings.py -text
 src/ESP/management.py -text
 src/ESP/sendMsgs/bcdc.jar -text
