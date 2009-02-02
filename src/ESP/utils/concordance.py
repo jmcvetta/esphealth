@@ -20,10 +20,12 @@ def string_lab_results(filter_q=None):
     as filter_q argument.
     @type filter_q: django.db.models.Q
     '''
+    log.debug('filter_q: %s' % filter_q)
     if filter_q:
         result_query = models.Lx.objects.filter(filter_q).values_list('LxTest_results').distinct()
     else:
         result_query = models.Lx.objects.values_list('LxTest_results').distinct()
+    log.debug('result_query: %s' % result_query)
     for result in result_query:
         result = result[0]
         try:
