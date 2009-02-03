@@ -59,7 +59,7 @@ class icd9(models.Model):
    
 class ndc(models.Model):
     """ndc codes from http://www.fda.gov/cder/ndc/
-    LISTING_SEQ_NO	LBLCODE	PRODCODE	STRENGTH	UNIT	RX_OTC	FIRM_SEQ_NO	TRADENAME
+    LISTING_SEQ_NO    LBLCODE    PRODCODE    STRENGTH    UNIT    RX_OTC    FIRM_SEQ_NO    TRADENAME
     eeesh this is horrible - there may be asterisks indicating an optional zero
     and there is no obvious way to fix this..."""
     ndcLbl = models.CharField('NDC Label Code (leading zeros are meaningless)', max_length=10,db_index=True)
@@ -369,7 +369,7 @@ class TestCase(models.Model):
         lxs = None
         lxlist = self.caseLxID.split(',')
         if len(lxlist) > 0:
-		lxs=Lx.objects.filter(id__in=lxlist)
+            lxs=Lx.objects.filter(id__in=lxlist)
         if encdb and lxs:
             lx = lxs[0]
             lxorderd = lx.LxOrderDate
@@ -410,8 +410,8 @@ class TestCase(models.Model):
 
 
     def getLxProviderSite(self):
-	'''
-	'''
+        '''
+        '''
         # patched 30 jan to not barf if no LxIDs    
         res = []
         lxlist = self.caseLxID.split(',')
@@ -498,9 +498,9 @@ class Case(models.Model):
         p=self.getPatient()
         encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
         lxs = None
-	lxi = self.caseLxID
+        lxi = self.caseLxID
         if len(lxi) > 0:
-		lxs=Lx.objects.filter(id__in=lxi.split(','))
+            lxs=Lx.objects.filter(id__in=lxi.split(','))
         if encdb and lxs:
             lx = lxs[0]
             lxorderd = lx.LxOrderDate
@@ -650,6 +650,17 @@ class LabComponent(models.Model):
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
         
                   
+class LxManager(models.Manager):
+    def result_strings(self, loinc):
+        '''
+        Returns a list of all result codes that have been seen so far for a 
+        given LOINC.
+        @type loinc: Str
+        @return: [Str, Str, ...]
+        '''
+        return [x[0] for x in self.get_query_set().values_list('LxTest_results').distinct()]
+
+
 class Lx(models.Model):
     LxPatient = models.ForeignKey(Demog) 
     LxMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,blank=True,null=True,db_index=True)
@@ -674,6 +685,8 @@ class Lx(models.Model):
     LxLoinc = models.CharField('LOINC code',max_length=20,blank=True,null=True,db_index=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+    # Use custom manager
+    objects = LxManager()
             
     def getCPT(self):
         """translate CPT code
@@ -687,12 +700,9 @@ class Lx(models.Model):
             else:
                 s=''
         return unicode(s)
-
  
     def iscaserelated(self):
-        
         c = Case.objects.filter(caseDemog__id__exact=self.LxPatient.id)
-   
         if '%s' % self.id in string.split(c[0].caseLxID, ','):
             return 1
         else:
@@ -705,9 +715,8 @@ class Lx(models.Model):
         return self.LxComment[:10]
     
     def  __unicode__(self):
-
         return u"%s %s %s %s" % (self.LxPatient.DemogPatient_Identifier,self.getCPT(),self.LxOrder_Id_Num,self.LxOrderDate)
-
+    
 
 class Lxo(models.Model):
     LxoPatient_Identifier = models.CharField('Patient Identifier',max_length=20,blank=True,null=True,db_index=True)
