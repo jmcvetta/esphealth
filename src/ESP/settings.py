@@ -126,7 +126,8 @@ INSTALLED_APPS = (
        'django.contrib.contenttypes',
        'django.contrib.sessions',
        'django.contrib.admin',
-        'ESP.esp',
+       'ESP.esp',
+       'ESP.core',
 )
 
 
@@ -184,5 +185,5 @@ LOG_FORMAT_CONSOLE = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(messag
 LOG_FORMAT_FILE = '%(asctime)s:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 LOG_FILE = '/tmp/esp.log'
 # BEWARE: If you set the log level to DEBUG, *copious* info will be logged!
-LOG_LEVEL_CONSOLE = logging.CRITICAL
-LOG_LEVEL_FILE = logging.DEBUG 
+LOG_LEVEL_CONSOLE = logging.INFO
+LOG_LEVEL_FILE = logging.INFO 

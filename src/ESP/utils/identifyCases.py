@@ -635,11 +635,11 @@ def checkICD_ALTAST(demog_lx, condition, altloinc=['1742-6','1920-8'], dayrange=
 
 
 def isPositive_givenLx(cond,CondiLOINCids):
-
+    '''
+    '''
     defines = ConditionLOINC.objects.filter(Q(CondiRule__ruleName__icontains=cond),
                                             Q(CondiLOINC__in=CondiLOINCids))
     newlxs = getRelatedLx(cond,defines=defines)
-
     ################### For (87517,7285)=5009-6 * Result field says .SEE BELOW..
     ###################Comment field has the result in the following format:.Result: 421 IU/ml (2.62 log IU/ml).
     ###################A positive result for us is >50 IU/ml.
@@ -648,28 +648,20 @@ def isPositive_givenLx(cond,CondiLOINCids):
         lxs = Lx.objects.filter(Q(LxLoinc='5009-6'),
                                 Q(LxTest_Code_CPT='87517'),
                                 Q(LxComponent='7285')).exclude(LxTest_results__icontains="Negative")
-
 #                                Q(LxTest_results__icontains='SEE BELOW'))
-
         for i in lxs:
             notes =string.upper(i.LxComment).split('NORMAL RANGE')
             if string.find(notes[0], '<')>-1:  ##normal result
                 pass
             else:  #positive result
                 newids.append(i.id)
-
-
     newlxs =Lx.objects.filter(id__in=newids)
     ###########################################################
-                                                                           
-
     casedemogids = getCasedemogids(cond)
     if casedemogids: ##only report the first time
         newlxs= newlxs.exclude(LxPatient__id__in=casedemogids)
     recordl= sortLx(newlxs) ##sort by date of result
     demog_lx = buildCaseData(recordl)
-
-
     return demog_lx
                             
 
@@ -943,8 +935,8 @@ def processAcuteHepC(condition):
     casedemogids = getCasedemogids(condition)
 
     ##HepC definition a),b):(1 0r 2) and [3)16128-1 or 5)'5199-5' positive] 
+    condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
     for oneloinc in ['16128-1','6422-0','34704-7','10676-5','38180-6','5012-0','11259-9','20416-4']:
-        condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
         demog_lx=isPositive_givenLx(condition,[oneloinc])
         newcases = checkICD_ALTAST(demog_lx,['1742-6'],dayrange=29)
         for onedemogid in  newcases.keys():

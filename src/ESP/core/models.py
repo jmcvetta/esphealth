@@ -16,24 +16,41 @@ from ESP.core import choices
 
 
 
-class BaseCreateUpdate(models.Model):
-    # Timestamps:
-    create_date = models.DateTimeField(auto_now_add=True)
-    update_date = models.DateTimeField(auto_now=True)
-    updated_by = models.CharField(max_length=50) # String repr of User
-    class Meta:
-        abstract = True
-
-
-class Provenance(BaseCreateUpdate):
+class Provenance(models.Model):
     '''
     The provenance of an item of data (i.e. where it came from)
     '''
-    source = models.CharField(max_length=255, blank=False)
+    source = models.CharField(max_length=255, blank=False) # E.g. a filename, 'web interface', 'db dump', etc
+    date = models.DateTimeField(db_index=True, auto_now=True) # Date data was updated in ESP system
+    # WTF: Should user really be blank=True?
+    user = models.CharField(max_length=100, blank=True) # User who did this update
+    class Meta:
+        ordering = ['date', ]
 
 
-class BaseProvenance(BaseCreateUpdate):
-    provenance = models.ForeignKey(Provenance)
+class BaseProvenance(models.Model):
+    '''
+    Abstract base class providing provenance and create/update logging fields.
+    '''
+    provenance = models.ManyToManyField(Provenance)
+    class Meta:
+        abstract = True
+    def latest_provenance(self):
+        '''
+        Return the most recent Provenance object for this model
+        '''
+        # FIXME: Does this work??
+        return self.provenance_set.order_by('date')[0]
+
+
+class BaseCreateUpdate(models.Model):
+    '''
+    Abstract base class providing Create/Update logging fields.
+    '''
+    # Maybe this is made redundant by BaseProvenance
+    create_date = models.DateTimeField(auto_now_add=True)
+    update_date = models.DateTimeField(auto_now=True)
+    updated_by = models.CharField(max_length=50) # String repr of User
     class Meta:
         abstract = True
 
@@ -79,69 +96,65 @@ class Cpt(models.Model):
     long_name = models.TextField('Long name', max_length=500,)
     last_edit = models.DateTimeField('Last edited',editable=False,auto_now=True)
 
-
  
 class Provider(BaseProvenance):
     '''
     A medical care provider
     '''
-    provCode= models.CharField('Physician code',max_length=20,blank=True,db_index=True)
-    provLast_Name = models.CharField('Last Name',max_length=70,blank=True,null=True)
-    provFirst_Name = models.CharField('First Name',max_length=50,blank=True,null=True)
-    provMiddle_Initial = models.CharField('Middle_Initial',max_length=20,blank=True,null=True)
-    provTitle = models.CharField('Title',max_length=20,blank=True,null=True)
-    provPrimary_Dept_Id = models.CharField('Primary Department Id',max_length=20,blank=True,null=True)
-    provPrimary_Dept = models.CharField('Primary Department',max_length=200,blank=True,null=True)
-    provPrimary_Dept_Address_1 = models.CharField('Primary Department Address 1',max_length=100,blank=True,null=True)
-    provPrimary_Dept_Address_2 = models.CharField('Primary Department Address 2',max_length=20,blank=True,null=True)
-    provPrimary_Dept_City = models.CharField('Primary Department City',max_length=20,blank=True,null=True)
-    provPrimary_Dept_State = models.CharField('Primary Department State',max_length=20,blank=True,null=True)
-    provPrimary_Dept_Zip = models.CharField('Primary Department Zip',max_length=20,blank=True,null=True)
-    provTelAreacode = models.CharField('Primary Department Phone Areacode',max_length=20,blank=True,null=True)
-    provTel = models.CharField('Primary Department Phone Number',max_length=50,blank=True,null=True)
-    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
-    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+    code = models.CharField('Physician code',max_length=20,blank=True,db_index=True)
+    last_name = models.CharField('Last Name',max_length=70,blank=True,null=True)
+    first_name = models.CharField('First Name',max_length=50,blank=True,null=True)
+    middle_initial = models.CharField('Middle_Initial',max_length=20,blank=True,null=True)
+    title = models.CharField('Title',max_length=20,blank=True,null=True)
+    primary_dept_id = models.CharField('Primary Department Id',max_length=20,blank=True,null=True)
+    primary_dept = models.CharField('Primary Department',max_length=200,blank=True,null=True)
+    primary_dept_address_1 = models.CharField('Primary Department Address 1',max_length=100,blank=True,null=True)
+    primary_dept_address_2 = models.CharField('Primary Department Address 2',max_length=20,blank=True,null=True)
+    primary_dept_city = models.CharField('Primary Department City',max_length=20,blank=True,null=True)
+    primary_dept_state = models.CharField('Primary Department State',max_length=20,blank=True,null=True)
+    primary_dept_zip = models.CharField('Primary Department Zip',max_length=20,blank=True,null=True)
+    tel_area_code = models.CharField('Primary Department Phone Areacode',max_length=20,blank=True,null=True)
+    telephone = models.CharField('Primary Department Phone Number',max_length=50,blank=True,null=True)
 
 
-class Patient(models.Model):
+class Patient(BaseProvenance):
     '''
     A patient
     '''
-    DemogPatient_Identifier = models.CharField('Patient Identifier',max_length=20,blank=True,db_index=True)
-    DemogMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,db_index=True,blank=True)
-    DemogLast_Name = models.CharField('Last_Name',max_length=199,blank=True,null=True)
-    DemogFirst_Name = models.CharField('First_Name',max_length=199,blank=True,null=True)
-    DemogMiddle_Initial = models.CharField('Middle_Initial',max_length=199,blank=True,null=True)
-    DemogSuffix = models.CharField('Suffix',max_length=199,blank=True,null=True)
-    DemogAddress1 = models.CharField('Address1',max_length=200,blank=True,null=True)
-    DemogAddress2 = models.CharField('Address2',max_length=100,blank=True,null=True)
-    DemogCity = models.CharField('City',max_length=50,blank=True,null=True)
-    DemogState = models.CharField('State',max_length=20,blank=True,null=True)
-    DemogZip = models.CharField('Zip',max_length=20,blank=True,null=True)
-    DemogCountry = models.CharField('Country',max_length=20,blank=True,null=True)
-    DemogAreaCode = models.CharField('Home Phone Area Code',max_length=20,blank=True,null=True)
-    DemogTel = models.CharField('Home Phone Number',max_length=100,blank=True,null=True)
-    DemogExt = models.CharField('Home Phone Extension',max_length=50,blank=True,null=True)
-    DemogDate_of_Birth = models.CharField('Date of Birth',max_length=20,blank=True,null=True)
-    DemogGender = models.CharField('Gender',max_length=20,blank=True,null=True)
-    DemogRace = models.CharField('Race',max_length=20,blank=True,null=True)
-    DemogHome_Language = models.CharField('Home Language',max_length=20,blank=True,null=True)
-    DemogSSN = models.CharField('SSN',max_length=20,blank=True,null=True)
-    DemogProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True,null=True)
-    DemogMaritalStat = models.CharField('Marital Status',max_length=20,blank=True,null=True)
-    DemogReligion = models.CharField('Religion',max_length=20,blank=True,null=True)
-    DemogAliases = models.CharField('Aliases',max_length=250,blank=True,null=True)
-    DemogMotherMRN = models.CharField('Mother Medical Record Number',max_length=20,blank=True,null=True)
-    DemogDeath_Date = models.CharField('Date of death',max_length=200,blank=True,null=True)
-    DemogDeath_Indicator = models.CharField('Death_Indicator',max_length=30,blank=True,null=True)
-    DemogOccupation = models.CharField('Occupation',max_length=199,blank=True,null=True)
-    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
-    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+    patient_identifier = models.CharField('Patient Identifier',max_length=20,blank=True,db_index=True)
+    medical_record_number = models.CharField('Medical Record Number',max_length=20,db_index=True,blank=True)
+    last_name = models.CharField('Last_Name',max_length=199,blank=True,null=True)
+    first_name = models.CharField('First_Name',max_length=199,blank=True,null=True)
+    middle_initial = models.CharField('Middle_Initial',max_length=199,blank=True,null=True)
+    suffix = models.CharField('Suffix',max_length=199,blank=True,null=True)
+    address1 = models.CharField('Address1',max_length=200,blank=True,null=True)
+    address2 = models.CharField('Address2',max_length=100,blank=True,null=True)
+    city = models.CharField('City',max_length=50,blank=True,null=True)
+    state = models.CharField('State',max_length=20,blank=True,null=True)
+    zip = models.CharField('Zip',max_length=20,blank=True,null=True)
+    country = models.CharField('Country',max_length=20,blank=True,null=True)
+    areacode = models.CharField('Home Phone Area Code',max_length=20,blank=True,null=True)
+    tel = models.CharField('Home Phone Number',max_length=100,blank=True,null=True)
+    ext = models.CharField('Home Phone Extension',max_length=50,blank=True,null=True)
+    date_of_birth = models.CharField('Date of Birth',max_length=20,blank=True,null=True)
+    gender = models.CharField('Gender',max_length=20,blank=True,null=True)
+    race = models.CharField('Race',max_length=20,blank=True,null=True)
+    home_language = models.CharField('Home Language',max_length=20,blank=True,null=True)
+    ssn = models.CharField('SSN',max_length=20,blank=True,null=True)
+    provider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True,null=True)
+    marital_stat = models.CharField('Marital Status',max_length=20,blank=True,null=True)
+    religion = models.CharField('Religion',max_length=20,blank=True,null=True)
+    aliases = models.CharField('Aliases',max_length=250,blank=True,null=True)
+    mother_mrn = models.CharField('Mother Medical Record Number',max_length=20,blank=True,null=True)
+    death_date = models.CharField('Date of death',max_length=200,blank=True,null=True)
+    death_indicator = models.CharField('Death_Indicator',max_length=30,blank=True,null=True)
+    occupation = models.CharField('Occupation',max_length=199,blank=True,null=True)
             
     def  __unicode__(self):
         pass
 
     def getAge(self):
+        # TODO: This should return a TimeDelta object or None if no DoB
         dob = self.DemogDate_of_Birth
         if not dob:
             return u'No DOB'
@@ -167,6 +180,17 @@ class Patient(models.Model):
         return age
 
 
+class LabResultStatus(models.Model):
+    '''
+    The status of a lab result.
+        This will contain some information that is redundant with LabResult, 
+        e.g. result_string.
+    '''
+    loinc = models.ForeignKey(Loinc, blank=False)
+    result_string = models.CharField(max_length=2000, blank=False)
+    status = models.CharField(max_length=1, choices=choices.LAB_RESULT_STATUS, blank=False)
+
+
 class LabResultManager(models.Manager):
     def result_strings(self, loinc):
         '''
@@ -176,16 +200,6 @@ class LabResultManager(models.Manager):
         @return: [Str, Str, ...]
         '''
         return [x[0] for x in self.get_query_set().values_list('LxTest_results').distinct()]
-
-class LabResultStatus(models.Model):
-    '''
-    The status of a lab result.
-    This will contain some information that is redundant with LabResult, 
-    e.g. result_string.
-    '''
-    loinc = models.ForeignKey(Loinc, blank=False)
-    result_string = models.CharField(max_length=2000, blank=False)
-    status = models.CharField(max_length=1, choices=choices.LAB_RESULT_STATUS, blank=False)
 
 
 class LabResult(models.Model):
@@ -252,90 +266,47 @@ class LabResult(models.Model):
         return u"%s %s %s %s" % (self.LxPatient.DemogPatient_Identifier,self.getCPT(),self.LxOrder_Id_Num,self.LxOrderDate)
     
 
-class Immunization(models.Model):
+class Immunization(BaseProvenance):
     patient = models.ForeignKey(Patient) 
-    ImmType = models.CharField('Immunization Type',max_length=20,blank=True,null=True)
-    ImmName = models.CharField('Immunization Name',max_length=200,blank=True,null=True)
-    ImmDate = models.CharField('Immunization Date Given',max_length=20,blank=True,null=True)
-    ImmDose = models.CharField('Immunization Dose',max_length=100,blank=True,null=True)
-    ImmManuf =models.CharField('Manufacturer',max_length=100,blank=True,null=True)
-    ImmLot = models.TextField('Lot Number',max_length=500,blank=True,null=True)
-    ImmVisDate = models.CharField('Date of Visit',max_length=20,blank=True,null=True)
-    ImmRecId = models.CharField('Immunization Record Id',max_length=200,blank=True,null=True)
-    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
-    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-            
+    type         = models.CharField('Immunization Type',max_length=20,blank=True,null=True)
+    name         = models.CharField('Immunization Name',max_length=200,blank=True,null=True)
+    date         = models.DateField('Immunization Date Given',max_length=20,blank=True,null=True)
+    dose         = models.CharField('Immunization Dose',max_length=100,blank=True,null=True)
+    manufacturer = models.CharField('Manufacturer',max_length=100,blank=True,null=True)
+    lot          = models.TextField('Lot Number',max_length=500,blank=True,null=True)
+    visit_date   = models.DateField('Date of Visit',max_length=20,blank=True,null=True)
+    record_id    = models.CharField('Immunization Record Id',max_length=200,blank=True,null=True)
     def  __unicode__(self):
-        return u"%s %s %s" % (self.ImmPatient.DemogPatient_Identifier,self.ImmName,self.ImmRecId)
+        return u"%s %s %s" % (self.patient, self.name, self.record_id)
 
 
-class Encounter(models.Model):
+class Encounter(BaseProvenance):
     patient = models.ForeignKey(Patient) 
-    EncMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,blank=True,null=True,db_index=True)
-    EncEncounter_ID = models.CharField('Encounter ID',max_length=20,blank=True,null=True)
-    EncEncounter_Date = models.CharField('Encounter Date',max_length=20,blank=True,null=True)
-    EncEncounter_Status = models.CharField('Encounter Status',max_length=20,blank=True,null=True)
-    EncEncounter_ClosedDate = models.CharField('Encounter Closed Date',max_length=20,blank=True,null=True) 
-    EncEncounter_Provider = models.ForeignKey(Provider,blank=True,null=True) 
-    EncEncounter_Site = models.CharField('Encounter Site',max_length=20,blank=True,null=True)
-    EncEncounter_SiteName = models.CharField('Encounter Site Name',max_length=100,blank=True,null=True)
-    EncEvent_Type = models.CharField('Event Type',max_length=20,blank=True,null=True)
-    EncPregnancy_Status = models.CharField('Pregnancy Status',max_length=20,blank=True,null=True)
-    EncEDC = models.CharField('Expected date of confinement',max_length=20,blank=True,null=True) 
-    EncTemperature = models.CharField('Temperature',max_length=20,blank=True,null=True)
-    EncCPT_codes = models.CharField('CPT codes',max_length=200,blank=True,null=True)
-    EncICD9_Codes = models.TextField('ICD-9 Codes',blank=True,null=True)
-    EncICD9_Qualifier = models.CharField('ICD-9 Qualifier',max_length=200,blank=True,null=True)
-    EncWeight = models.CharField('Weight (kg)',max_length=200,blank=True,null=True)
-    EncHeight = models.CharField('Height (cm)',max_length=200,blank=True,null=True)
-    EncBPSys = models.CharField('BP Systolic',max_length=100,blank=True,null=True)
-    EncBPDias = models.CharField('BP Diastolic',max_length=100,blank=True,null=True)
-    EncO2stat = models.CharField('O2 Stat',max_length=50,blank=True,null=True)
-    EncPeakFlow = models.CharField('Peak Flow',max_length=50,blank=True,null=True)
-    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
-    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-            
-    def geticd9s(self):
-        """translate icd9s in comma separated value
-        """
-        ##icd9_codes are separeted by ' '
-        ilist = self.EncICD9_Codes.split(' ')
-        if len(ilist) > 0:
-            s=[]
-            for i in ilist:
-                ilong = icd9.objects.filter(icd9Code__exact=i)
-                if ilong:
-                    ilong = '='+ilong[0].icd9Long # not sure why, but > 1 being found!
-                else:
-                    ilong=''
-             #   if icd9l!= 0 and i in icd9l:
-              #      s.append((1,'%s=%s' %(i,ilong)))
-                if i:
-                    s.append((i,ilong))
-                else:
-                    s.append(('', ''))
-        else:
-            s = [('', 'No icd9 codes found')]
-        return unicode(s)
-
-    def iscaserelated(self):
-        
-        c = Case.objects.filter(caseEncID__contains=self.id,caseDemog__id__exact=self.EncPatient.id)
-
-        try:
-            l=[string.strip(x) for x in string.split(c[0].caseEncID, ',')]
-            indx = l.index('%s' % self.id)
-            icd9s = string.split(c[0].caseICD9,',')[indx]
-            icd9l = string.split(icd9s)
-            return unicode(icd9l)
-        except:
-            return 0
-
-    def getcliname(self):
-        return self.EncEncounter_Provider.getcliname()       
-
+    provider = models.ForeignKey(Provider,blank=True,null=True) 
+    medical_record_number = models.CharField('Medical Record Number',max_length=20,blank=True,null=True,db_index=True)
+    external_id = models.CharField('Encounter External ID',max_length=20,blank=True,null=True)
+    date = models.CharField('Encounter Date',max_length=20,blank=True,null=True)
+    # WTF: What's the diff between site and site_name?
+    site = models.CharField('Encounter Site',max_length=20,blank=True,null=True)
+    site_name = models.CharField('Encounter Site Name',max_length=100,blank=True,null=True)
+    status = models.CharField('Encounter Status',max_length=20,blank=True,null=True)
+    closed_date = models.DateField('Encounter Closed Date',max_length=20,blank=True,null=True) 
+    event_type = models.CharField('Event Type',max_length=20,blank=True,null=True)
+    pregnancy_status = models.CharField('Pregnancy Status',max_length=20,blank=True,null=True)
+    edc = models.CharField('Expected Date of Confinement',max_length=20,blank=True,null=True) 
+    temperature = models.CharField('Temperature',max_length=20,blank=True,null=True)
+    cpt_codes = models.ForeignKey(Cpt, blank=True, null=True)
+    icd9_codes = models.ForeignKey(Icd9, blank=True, null=True)
+    # WTF: What is this qualifier?
+    icd9_qualifier = models.CharField('ICD-9 Qualifier',max_length=200,blank=True,null=True)
+    weight = models.CharField('Weight (kg)',max_length=200,blank=True,null=True)
+    height = models.CharField('Height (cm)',max_length=200,blank=True,null=True)
+    bpsys = models.FloatField('BP Systolic',max_length=100,blank=True,null=True)
+    bpdias = models.FloatField('BP Diastolic',max_length=100,blank=True,null=True)
+    o2stat = models.FloatField('O2 Stat',max_length=50,blank=True,null=True)
+    peakflow = models.FloatField('Peak Flow',max_length=50,blank=True,null=True)
     def  __unicode__(self):
-        return u"%s %s %s %s" % (self.EncPatient.id,self.geticd9s(), self.EncMedical_Record_Number,self.EncEncounter_Date)
+        return u"%s %s %s %s" % (self.patient.id, self.icd9_codes, self.medical_record_number,self.encounter_date)
 
 
 class Case(models.Model):
