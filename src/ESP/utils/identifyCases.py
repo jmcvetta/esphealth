@@ -28,7 +28,7 @@ Most of the logic is amazingly simple when using the django ORM.
 '''
 
 
-TEST = True # Send mail to ESP developers ONLY
+TEST = False # Send mail to ESP developers ONLY
 TEST_COND = 'CHLAMYDIA' # If TEST==True, only TEST_COND will be processed
 
 
@@ -699,6 +699,12 @@ def getALTAST(demogid,cond,loinclist = ['1742-6','1920-8']):
     
 
 def getCasedemogids(condition):
+    '''
+    Returns a list of Demog IDs for Cases of 'condition'
+    @param condition: Name of the condition
+    @type condition: Str
+    @return [Str, Str, ...]
+    '''
     rule = Rule.objects.filter(ruleName__icontains=condition)[0]
     if rule.ruleinProd:
         curcases=Case.objects.filter(caseRule__ruleName__icontains=condition)
