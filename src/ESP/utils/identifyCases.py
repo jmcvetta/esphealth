@@ -29,6 +29,7 @@ Most of the logic is amazingly simple when using the django ORM.
 
 
 TEST = True # Send mail to ESP developers ONLY
+TEST_COND = 'CHLAMYDIA' # If TEST==True, only TEST_COND will be processed
 
 
 import os
@@ -121,6 +122,9 @@ def getRelatedLx(condition,defines=[],demog=None):
             lxs2 = lxs.filter(Q(LxLoinc__exact=onedefine.CondiLOINC),
                              (Q(LxTest_results__gt=float(onedefine.CondiValue)) | Q(LxTest_results__contains='>'))
                               )
+        elif onedefine.CondiOperator == '=':
+            q_obj = Q(LxLoinc__exact=onedefine.CondiLOINC, LxTest_results__iexact=onedefine.CondiValue)
+            lxs2 = lxs.filter(q_obj)
         else:
             lxs2 = lxs
         returnl = returnl+list(lxs2)
@@ -455,10 +459,12 @@ def detect_rule_only_condition(cond):
     '''
     Analyze database for conditions detectable from Rule object only
     '''
+    log.debug('Using Rules to detect: %s' % cond)
     ##recordl=[(l.LxPatient.id,int(l.id),..], sorted by date of result
     newlxs = getRelatedLx(cond)
     recordl = sortLx(newlxs)
     demog_lx = buildCaseData(recordl)
+    # WTF: Why are we considering only the first Rule returned?
     rule = Rule.objects.filter(ruleName__icontains=cond)[0]
     if rule.ruleinProd:
         condinProd=1
@@ -1337,6 +1343,8 @@ def main():
     for c in conditions:
         log.debug('cond: %s' % c)
         cond = c.ruleName
+        if TEST and not (string.find(string.upper(cond), TEST_COND)>-1):
+            continue
         # TODO: better to log in the actual test methods than here, but maybe 
         # that should wait until this code is merged back into trunk.
         log.info('Checking for %s\n' % cond) 
