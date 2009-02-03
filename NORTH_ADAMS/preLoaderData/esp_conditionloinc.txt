@@ -17,3 +17,5 @@
 4	Acute Hepatitis A	1742-6	>	132				1	1
 9	Acute Hepatitis B	33899-6	>	1.5				1	1
 58	Acute Hepatitis A	1920-8	>	132				1	1
+101	Chlamydia	20993-2	=	Detected	10828004			1	1
+102	Gonorrhea	24111-7	=	Detected	10828004			1	1
