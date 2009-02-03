@@ -67,6 +67,9 @@ class CaseWorkflowOptions(admin.ModelAdmin):
     search_fieldsets = ('workflowComment',)
     ordering = ('workflowDate',)
 
+class RuleAdmin(admin.ModelAdmin):
+    list_display = ('ruleName',)
+
 admin.site.register(Case, CaseOptions)
 admin.site.register(SocialHistory)
 admin.site.register(Enc, EncOptions)
@@ -91,5 +94,5 @@ admin.site.register(icd9Fact)
 admin.site.register(Demog, DemogOptions)
 admin.site.register(CaseWorkflow, CaseWorkflowOptions)
 admin.site.register(VAERSadditions)
-
+admin.site.register(Rule, RuleAdmin)
 
