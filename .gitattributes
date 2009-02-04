@@ -16,12 +16,6 @@ docs/ESPSpecificationsAug3_2006.doc -text
 docs/FINAL[!!-~]ELR[!!-~]231[!!-~]Implementation[!!-~]Guide_052104.pdf -text svneol=unset#unset
 /readme -text
 src/ESP/backfill-by-month.sh -text
-src/ESP/core/__init__.py -text
-src/ESP/core/admin.py -text
-src/ESP/core/choices.py -text
-src/ESP/core/models.py -text
-src/ESP/core/tests.py -text
-src/ESP/core/views.py -text
 src/ESP/esp/admin.py -text
 src/ESP/kludge/north-adams-lab-result-kludge.py -text
 src/ESP/localsettings.py -text
