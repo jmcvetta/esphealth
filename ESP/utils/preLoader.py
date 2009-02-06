@@ -1,3 +1,7 @@
+# amazing wasste of time feb 09
+# ross spent about 10 days sorting out a change in django
+# now if you send '0' to a boolean field, it becomes true which is reasonable
+# but...
 
 ##preLoader is to load some data into ESP_conditionNDC table, ESP_conditionLOINC, ESP_CPTLOINCMAP table
 ##
@@ -18,7 +22,7 @@ import smtplib
 
 logging=''
 datadir = os.path.join(TOPDIR,LOCALSITE, 'preLoaderData/')
-
+print 'using ',datadir
 
 ###############################
 def getlines(fname):
@@ -30,7 +34,7 @@ def getlines(fname):
             logging.error('Can not read file:%s\n' % fname)
         return []
             
-   # print file,len(lines)
+    # print file,len(lines)
     returnl = [x.split('\t') for x in lines if len(x.split('\t')) >= 1]
 
     return returnl
@@ -358,8 +362,8 @@ def load2DrugNames(table,lines,cursor):
         cl.CondiRule=r
         cl.CondiDrugName=drugname
         cl.CondiDrugRoute = route
-        cl.CondiDefine=define
-        cl.CondiSend=send
+        cl.CondiDefine=(define == '1')
+        cl.CondiSend=(send == '1')
         cl.save()
     if logging:
         logging.info('Done on loading to esp_conditiondrugname')
@@ -390,8 +394,8 @@ def load2ndc(table,lines,cursor):
 
         cl.CondiRule=r
         cl.CondiNdc=ndc
-        cl.CondiDefine=define
-        cl.CondiSend=send
+        cl.CondiDefine=(define=='1')
+        cl.CondiSend=(send=='1')
         cl.save()
 
 
@@ -408,19 +412,19 @@ def load2icd9(table,lines, cursor):
 
         cl.CondiRule=r
         cl.CondiICD9=icd
-        cl.CondiDefine=define
-        cl.CondiSend=send
+        cl.CondiDefine=(define=='1')
+        cl.CondiSend=(send=='1')
         cl.save()
 
         
 ################################
 def load2loinc(table,lines,cursor):
-    cursor.execute("delete from esp_conditionloinc")
-
+    #cursor.execute("delete from esp_conditionloinc")
+    ConditionLOINC.objects.all().delete()
     n=0
     for l in lines:
         id, rulename, loinc,ope,value,snmdposi,snmdnega,snmdinde,define,send = [x.strip() for x in l]
-
+        print '##',id,rulename,loinc,define,send
         if loinc.strip()=='':
             continue
         
@@ -432,13 +436,13 @@ def load2loinc(table,lines,cursor):
         cl.CondiLOINC=loinc
         cl.CondiOperator=ope
         cl.CondiValue=value
-        cl.CondiDefine=define
-        cl.CondiSend=send
+        cl.CondiDefine=(define == '1')
+        cl.CondiSend=(send == '1')
         cl.CondiSNMDPosi=snmdposi
         cl.CondiSNMDNega=snmdnega
         cl.CondiSNMDInde=snmdinde
         cl.save()
-
+    print '## saved %d lines for load2loinc' % len(lines)
 
 
 ################################
@@ -586,7 +590,7 @@ if __name__ == "__main__":
 
     from django.db import connection
     cursor = connection.cursor()
-
+    cursor.execute('use espFeb09')
     
     if len(sys.argv) > 1:
         try:

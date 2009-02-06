@@ -116,8 +116,7 @@ def getRelatedLx(condition,defines=[],demog=None):
             lxs2 = lxs.filter(Q(LxLoinc__exact=onedefine.CondiLOINC), eval(querystr))
         elif string.upper(onedefine.CondiOperator) == '>':
             lxs2 = lxs.filter(Q(LxLoinc__exact=onedefine.CondiLOINC),
-                             (Q(LxTest_results__gt=float(onedefine.CondiValue)) | Q(LxTest_results__contains='>'))
-                              )
+                             Q(LxTest_results__gt=float(onedefine.CondiValue)))
         else:
             lxs2 = lxs
         returnl = returnl+list(lxs2)
@@ -131,7 +130,7 @@ def getRelatedLx(condition,defines=[],demog=None):
     lxs =Lx.objects.filter(id__in=[l.id for l in lxs])
     #else:
     #    lxs =Lx.objects.filter(id__in=[l.id for l in returnl])
-    #iclogging.info('getRelatedLx condition=%s, defines=%s,lxs=%s' % (condition,defines,lxs))    
+        
     return lxs
 
 
@@ -408,15 +407,10 @@ def getAnotherdate(date1, dayrange):
     
 
 ###################################
-def getLxduration(lxid1, lxid2, useorderdate=0):
+def getLxduration(lxid1, lxid2):
     lx1 = Lx.objects.filter(id=lxid1)[0]
     lx2 = Lx.objects.filter(id=lxid2)[0]
-    if useorderdate==1:
-        if lx1.LxOrderDate and lx2.LxOrderDate and lx1.LxDate_of_result and lx2.LxDate_of_result:
-            return min(utils.getPeriod(lx1.LxOrderDate,lx2.LxOrderDate),utils.getPeriod(lx1.LxDate_of_result,lx2.LxDate_of_result))
-        else:
-            return 0
-    elif lx1.LxDate_of_result and lx2.LxDate_of_result:
+    if lx1.LxDate_of_result and lx2.LxDate_of_result:
         return utils.getPeriod(lx1.LxDate_of_result,lx2.LxDate_of_result)
     else:
         return 0
@@ -529,8 +523,6 @@ def divide2groups(relatedlxids,dayrange=28):
 ###################################
 ###################################
 def processoneCondition(cond):
-    """ generic processing for a rule - nothing really special
-    """
 
     ##recordl=[(l.LxPatient.id,int(l.id),..], sorted by date of result
     newlxs = getRelatedLx(cond)
@@ -726,41 +718,14 @@ def checkICD_ALTAST(demog_lx,altloinc=['1742-6','1920-8'],dayrange=15):
 
 ###################################
 def isPositive_givenLx(cond,CondiLOINCids):
-
     defines = ConditionLOINC.objects.filter(Q(CondiRule__ruleName__icontains=cond),
                                             Q(CondiLOINC__in=CondiLOINCids))
     newlxs = getRelatedLx(cond,defines=defines)
-
-    ################### For (87517,7285)=5009-6 * Result field says .SEE BELOW..
-    ###################Comment field has the result in the following format:.Result: 421 IU/ml (2.62 log IU/ml).
-    ###################A positive result for us is >50 IU/ml.
-    newids = [l.id for l in newlxs]
-    if string.find(string.upper(cond), 'HEPATITIS B')>-1 and '5009-6' in CondiLOINCids:
-        lxs = Lx.objects.filter(Q(LxLoinc='5009-6'),
-                                Q(LxTest_Code_CPT='87517'),
-                                Q(LxComponent='7285')).exclude(LxTest_results__icontains="Negative")
-
-#                                Q(LxTest_results__icontains='SEE BELOW'))
-
-        for i in lxs:
-            notes =string.upper(i.LxComment).split('NORMAL RANGE')
-            if string.find(notes[0], '<')>-1:  ##normal result
-                pass
-            else:  #positive result
-                newids.append(i.id)
-
-
-    newlxs =Lx.objects.filter(id__in=newids)
-    ###########################################################
-                                                                           
-
     casedemogids = getCasedemogids(cond)
     if casedemogids: ##only report the first time
         newlxs= newlxs.exclude(LxPatient__id__in=casedemogids)
     recordl= sortLx(newlxs) ##sort by date of result
     demog_lx = buildCaseData(recordl)
-
-
     return demog_lx
                             
 
@@ -1052,9 +1017,8 @@ def Hepc_posi(cond, onecrit, caselxid, onedemogid, dayrange=29):
         defines = ConditionLOINC.objects.filter(Q(CondiRule__ruleName__icontains=cond),
                                                 Q(CondiLOINC__in=onecrit))
         returnlx = getRelatedLx(cond,defines=defines,demog=patient)
-
         for posi_lx in returnlx:
-            if getLxduration(caselxid, posi_lx.id,1) <dayrange:
+            if getLxduration(caselxid, posi_lx.id) <dayrange:
                 return (1, [posi_lx.id])
         return (0, [])
     else:
@@ -1067,10 +1031,11 @@ def processAcuteHepC(condition):
 
 
     casedemogids = getCasedemogids(condition)
-    iclogging.info('processAcHepC found %d casedemogids' % len(casedemogids))
+
     ##HepC definition a),b):(1 0r 2) and [3)16128-1 or 5)'5199-5' positive] 
-    for oneloinc in ['16128-1','6422-0','34704-7','10676-5','38180-6','5012-0','11259-9','20416-4']:
+    for oneloinc in ['16128-1','5199-5']:    ###,'6422-0','34704-7','10676-5','38180-6','5012-0','11259-9','20416-4']:
         condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
+            
         demog_lx=isPositive_givenLx(condition,[oneloinc])
         newcases = checkICD_ALTAST(demog_lx,['1742-6'],dayrange=29)
         for onedemogid in  newcases.keys():
@@ -1094,13 +1059,13 @@ def processAcuteHepC(condition):
 
                                     
             ##
-
+    
             if isnegaA and (isnegaB or  isnegaC):
                 isposi4,critlxid4=Hepc_posi(condition, ['MDPH-144'], caselxids[0], onedemogid, dayrange=29)
-                isposi5,critlxid5=Hepc_posi(condition, ['5199-5'], caselxids[0], onedemogid, dayrange=29)
+                isposi5,critlxid6=Hepc_posi(condition, ['5199-5'], caselxids[0], onedemogid, dayrange=29)
                 isposi6,critlxid6=Hepc_posi(condition, ['6422-0','34704-7','10676-5','38180-6','5012-0','11259-9','20416-4'], caselxids[0], onedemogid, dayrange=29)
-                
-                if (oneloinc=='16128-1' and isposi4 and isposi5 and isposi6) or (oneloinc!='16128-1' and isposi4 and isposi5): ##meet case requirement
+
+                if isposi4 and isposi5 and isposi6: ##meet case requirement
                     pass
                 else:
                     continue
@@ -1223,7 +1188,6 @@ def processTB(condition):
 ###################################
 ###################################
 def processSyphilis(cond):
-    iclogging.info('## processSyphilis')
     final_dict={}
     #1) ICD-9 code 090-097
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=cond,CondiDefine=True)
@@ -1257,9 +1221,9 @@ def processSyphilis(cond):
             break
         
         if not temp:
-            cursor.execute(stmt % (icd9demogids, '%%', m,  '%%'))
+            cursor.execute(stmt % (icd9demogids, m, '%%', '%%'))
         else:
-            newstmt = stmt % (icd9demogids, '%%',m, '%%') + temp
+            newstmt = stmt % (icd9demogids,m, '%%', '%%') + temp
             cursor.execute(newstmt)
             
         res = cursor.fetchall()
@@ -1465,7 +1429,6 @@ def isNegative(onedemogid,oneloinc,caselxids, dayrange=29,  negvalues=None):
 ################################
 if __name__ == "__main__":
 
-    TEST=0
     iclogging.info('==================\n')
 
     TestCase.objects.all().delete()
@@ -1476,12 +1439,6 @@ if __name__ == "__main__":
         cond = c.ruleName
         iclogging.info('process %s\n' % cond)
 
-        if TEST==1:
-            if string.find(string.upper(cond), 'ACUTE HEPATITIS B')>-1:
-                processAcuteHepB(cond)
-            else:
-                continue
-            
         if string.upper(cond) in ('ACUTE HEPATITIS A'):
             processAcuteHepA(cond)
         elif string.upper(cond) in ('ACUTE HEPATITIS B'):
@@ -1508,7 +1465,7 @@ if __name__ == "__main__":
     indx=1
     for onecase in allcases:
         updateSentCase(onecase)
-        if indx % 50==0:
+        if indx%50==0:
             iclogging.info('Checked %s of %s cases' % (indx, len(allcases)))
         indx=indx+1
 
@@ -1522,12 +1479,8 @@ if __name__ == "__main__":
         
     for i in k:
         msg = msg+ '%s:\t\t%s\n' % (i, case_dict[i])
-    if emailout:
-	    if TEST==1:
-        	print msg
-        	utils.sendoutemail(towho=['ross.lazarus@channing.harvard.edu'],msg=msg, subject='lkenpesp2 ESP - Daily summary of all detected cases')
-    	    else:    
-                utils.sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],msg=msg, subject='lkenpesp2 ESP - Daily summary of cases')
-     
+
+    utils.sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],msg=msg, subject='ESP - Daily summary of all detected cases')
+
     
     iclogging.shutdown()
