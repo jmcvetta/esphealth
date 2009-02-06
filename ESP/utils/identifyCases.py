@@ -131,7 +131,7 @@ def getRelatedLx(condition,defines=[],demog=None):
     lxs =Lx.objects.filter(id__in=[l.id for l in lxs])
     #else:
     #    lxs =Lx.objects.filter(id__in=[l.id for l in returnl])
-        
+    #iclogging.info('getRelatedLx condition=%s, defines=%s,lxs=%s' % (condition,defines,lxs))    
     return lxs
 
 
@@ -529,6 +529,8 @@ def divide2groups(relatedlxids,dayrange=28):
 ###################################
 ###################################
 def processoneCondition(cond):
+    """ generic processing for a rule - nothing really special
+    """
 
     ##recordl=[(l.LxPatient.id,int(l.id),..], sorted by date of result
     newlxs = getRelatedLx(cond)
@@ -1065,7 +1067,7 @@ def processAcuteHepC(condition):
 
 
     casedemogids = getCasedemogids(condition)
-
+    iclogging.info('processAcHepC found %d casedemogids' % len(casedemogids))
     ##HepC definition a),b):(1 0r 2) and [3)16128-1 or 5)'5199-5' positive] 
     for oneloinc in ['16128-1','6422-0','34704-7','10676-5','38180-6','5012-0','11259-9','20416-4']:
         condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
@@ -1221,6 +1223,7 @@ def processTB(condition):
 ###################################
 ###################################
 def processSyphilis(cond):
+    iclogging.info('## processSyphilis')
     final_dict={}
     #1) ICD-9 code 090-097
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=cond,CondiDefine=True)
@@ -1462,7 +1465,7 @@ def isNegative(onedemogid,oneloinc,caselxids, dayrange=29,  negvalues=None):
 ################################
 if __name__ == "__main__":
 
-    TEST=1
+    TEST=0
     iclogging.info('==================\n')
 
     TestCase.objects.all().delete()
@@ -1505,7 +1508,7 @@ if __name__ == "__main__":
     indx=1
     for onecase in allcases:
         updateSentCase(onecase)
-        if indx%50==0:
+        if indx % 50==0:
             iclogging.info('Checked %s of %s cases' % (indx, len(allcases)))
         indx=indx+1
 
@@ -1519,11 +1522,12 @@ if __name__ == "__main__":
         
     for i in k:
         msg = msg+ '%s:\t\t%s\n' % (i, case_dict[i])
-
-    if TEST==1:
-        utils.sendoutemail(towho=['ross.lazarus@channing.harvard.edu'],msg=msg, subject='lkenpesp2 new server Testing ESP - Daily summary of all detected cases')
-    else:    
-        utils.sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],msg=msg, subject='ESP - Daily summary of all detected cases')
+    if emailout:
+	    if TEST==1:
+        	print msg
+        	utils.sendoutemail(towho=['ross.lazarus@channing.harvard.edu'],msg=msg, subject='lkenpesp2 ESP - Daily summary of all detected cases')
+    	    else:    
+                utils.sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],msg=msg, subject='lkenpesp2 ESP - Daily summary of cases')
      
     
     iclogging.shutdown()
