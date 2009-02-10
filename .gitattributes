@@ -25,6 +25,7 @@ src/ESP/sendMsgs/org/openuri/www/Bcdc_elr.class -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elrLocator.class -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elrSoap.class -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elrSoapStub.class -text
+src/ESP/setup_esp_env.sh -text
 src/ESP/templates/404.html -text
 src/ESP/templates/admin/login.html -text
 src/ESP/templates/arrow.GIF -text
