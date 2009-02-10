@@ -356,8 +356,8 @@ def load2DrugNames(table,lines,cursor):
         cl.CondiRule=r
         cl.CondiDrugName=drugname
         cl.CondiDrugRoute = route
-        cl.CondiDefine=define
-        cl.CondiSend=send
+        cl.CondiDefine=(define=='1')
+        cl.CondiSend=(send == '1')
         cl.save()
     if logging:
         logging.info('Done on loading to esp_conditiondrugname')
@@ -388,8 +388,8 @@ def load2ndc(table,lines,cursor):
 
         cl.CondiRule=r
         cl.CondiNdc=ndc
-        cl.CondiDefine=define
-        cl.CondiSend=send
+        cl.CondiDefine=(define=='1')
+        cl.CondiSend=(send == '1')
         cl.save()
 
 
@@ -406,8 +406,8 @@ def load2icd9(table,lines, cursor):
 
         cl.CondiRule=r
         cl.CondiICD9=icd
-        cl.CondiDefine=define
-        cl.CondiSend=send
+        cl.CondiDefine=(define=='1')
+        cl.CondiSend=(send == '1')
         cl.save()
 
         
@@ -430,8 +430,8 @@ def load2loinc(table,lines,cursor):
         cl.CondiLOINC=loinc
         cl.CondiOperator=ope
         cl.CondiValue=value
-        cl.CondiDefine=define
-        cl.CondiSend=send
+        cl.CondiDefine=(define=='1')
+        cl.CondiSend=(send == '1')
         cl.CondiSNMDPosi=snmdposi
         cl.CondiSNMDNega=snmdnega
         cl.CondiSNMDInde=snmdinde
