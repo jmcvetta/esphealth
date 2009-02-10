@@ -28,6 +28,7 @@ ESP/templates/nav-bg-grabber.gif -text
 ESP/templates/nav-bg-reverse.gif -text
 ESP/templates/nav-bg.gif -text
 ESP/utils/LOINCDB.TXT -text
+ESP/utils/VAERSevents.py -text
 ESP/utils/hl7_to_etl.py -text
 ESP/utils/makeESPdm.py -text
 ESP/utils/northadams.py -text
