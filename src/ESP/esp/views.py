@@ -1441,6 +1441,7 @@ def updateWorkflowComment(request,object_id):
 def case_list(request):
     values = {}
     values['default_rp'] = settings.CASES_PER_PAGE
+    values['request'] = request # Should this really be necessary?
     return render_to_response('esp/case_list.html', values, context_instance=RequestContext(request))
 
 

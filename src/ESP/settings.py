@@ -109,7 +109,7 @@ MIDDLEWARE_CLASSES = (
     "django.middleware.gzip.GZipMiddleware",
 )
 
-ROOT_URLCONF = 'ESP.utils.urls'
+ROOT_URLCONF = 'ESP.urls'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates".
