@@ -43,10 +43,11 @@ def string_lab_results(filter_q=None):
 
 def main():
     concordance = {}
-    for loinc in models.CPTLOINCMap.objects.values_list('Loinc').distinct():
-        loinc = loinc[0]
+    for item in models.CPTLOINCMap.objects.values_list('Loinc', 'CPT').distinct():
+        loinc = item[0]
+        cpt = item[1]
         q_obj = Q(LxLoinc=loinc)
-        concordance[loinc] = [i for i in string_lab_results(q_obj)]
+        concordance[str(cpt)] = str([i for i in string_lab_results(q_obj)])
     pprint.pprint(concordance)
 
 
