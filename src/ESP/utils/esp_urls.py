@@ -1,4 +1,5 @@
-from django.conf.urls.defaults import *
+from django.conf.urls.defaults import patterns
+from django.conf.urls.defaults import url
 from django.contrib import admin
 import sys
 sys.path.insert(0, '/home/ESP/')
@@ -6,6 +7,8 @@ from ESP.settings import CODEDIR
 
 urlpatterns = patterns('',
     (r'^images/(?P<path>.*)$', 'django.views.static.serve', {'document_root': '%s/templates' % CODEDIR}),
+    (r'^css/(?P<path>.*)$', 'django.views.static.serve', {'document_root': '%s/templates/css' % CODEDIR}),
+    (r'^js/(?P<path>.*)$', 'django.views.static.serve', {'document_root': '%s/templates/js' % CODEDIR}),
     (r'^/index/$', 'ESP.esp.views.index'),
     (r'^$', 'ESP.esp.views.index'),
     (r'^/$', 'ESP.esp.views.index'),
@@ -35,7 +38,7 @@ urlpatterns = patterns('',
                        
     (r'^cases/(?P<object_id>\d+)/updatewf/(?P<newwf>\S*)/$', 'ESP.esp.views.updateWorkflow'),
     (r'^cases/(?P<object_id>\d+)/updatewf/$', 'ESP.esp.views.updateWorkflow'),
-    (r'^cases/(?P<inprod>\d+)/(?P<object_id>\d+)/(?P<restrict>\w*)/$', 'ESP.esp.views.casedetail'),
+    (r'^cases/(?P<inprod>\d+)/(?P<object_id>\d+)/(?P<restrict>\w*)/$', 'ESP.esp.views.old_casedetail'),
     (r'^pcps/(?P<object_id>\w+)/$', 'ESP.esp.views.pcpdetail'),
     (r'^lx/(?P<object_id>\w+)/$', 'ESP.esp.views.lxdetail'),                  
     (r'^rules/(?P<object_id>\w+)/$', 'ESP.esp.views.ruledetail'),
@@ -78,10 +81,10 @@ urlpatterns = patterns('',
     (r'^ESP/cases/search/(?P<inprod>\d+)/(?P<wf>\S*)/(?P<cfilter>\S*)/(?P<mrnfilter>\S*)/$', 'ESP.esp.views.casesearch'),
     (r'^ESP/cases/search/(?P<inprod>\d+)/(?P<wf>\S*)/(?P<cfilter>\S*)/$', 'ESP.esp.views.casesearch'),
     (r'^ESP/cases/search/(?P<inprod>\d+)/(?P<wf>\S*)/$', 'ESP.esp.views.casesearch'),
-
+    
     (r'^ESP/cases/(?P<object_id>\d+)/updatewf/(?P<newwf>\S*)/$', 'ESP.esp.views.updateWorkflow'),
     (r'^ESP/cases/(?P<object_id>\d+)/updatewf/$', 'ESP.esp.views.updateWorkflow'),
-    (r'^ESP/cases/(?P<inprod>\d+)/(?P<object_id>\d+)/(?P<restrict>\w*)/$', 'ESP.esp.views.casedetail'),
+    (r'^ESP/cases/(?P<inprod>\d+)/(?P<object_id>\d+)/(?P<restrict>\w*)/$', 'ESP.esp.views.old_casedetail'),
     (r'^ESP/pcps/(?P<object_id>\w+)/$', 'ESP.esp.views.pcpdetail'),
     (r'^ESP/lx/(?P<object_id>\w+)/$', 'ESP.esp.views.lxdetail'),
     (r'^ESP/rules/(?P<object_id>\w+)/$', 'ESP.esp.views.ruledetail'),
@@ -93,6 +96,15 @@ urlpatterns = patterns('',
     (r'^ESP/login/$', 'ESP.esp.views.esplogin'),
     (r'^ESP/pswdchange/$', 'ESP.esp.views.password_change'),
     (r'^ESP/logout/$', 'ESP.esp.views.logout'),
+    
+)
+
+urlpatterns += patterns('ESP.esp.views',
+    #
+    # New pages to display HIPAA-restricted case information
+    #
+    url(r'^new/cases/list', 'case_list'),
+    url(r'^new/cases/grid', 'json_case_grid', name='json_case_grid'),
 )
 
 

@@ -473,6 +473,52 @@ class Case(models.Model):
     caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
     caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
     
+    def getLxProviderSite(self):
+        '''
+        '''
+        # patched 30 jan to not barf if no LxIDs    
+        res = []
+        lxlist = self.caseLxID.split(',')
+        if len(lxlist) > 0:
+           lxs=Lx.objects.filter(id__in=lxlist)
+           sites=[]
+           for l in lxs:
+               relprov = Provider.objects.filter(id=l.LxOrdering_Provider.id)[0]
+               sitename = relprov.provPrimary_Dept
+               if sitename and sitename not in sites:
+                  sites.append(sitename)
+           res = []
+           for loc in sites:
+              res.append('%s ' % loc)
+        return unicode(''.join(res))
+        
+    
+    def latest_lx(self):
+        '''
+        Returns the latest lab test relevant to this case
+        '''
+        lab_result_ids = self.caseLxID.split(',')
+        if not lab_result_ids:
+            return None
+        lab_results = Lx.objects.filter(id__in=lab_result_ids).order_by('LxOrderDate').reverse()
+        return lab_results[0]
+        
+    def latest_lx_order_date(self):
+        '''
+        Return a datetime.date instance representing the date on which the 
+        latest lab test relevant to this case was ordered.
+        '''
+        s = self.latest_lx().LxOrderDate
+        year = int(s[0:4])
+        month = int(s[4:6])
+        day = int(s[6:8])
+        return datetime.date(year, month, day)
+    
+    def latest_lx_provider_site(self):
+        '''
+        Return the provider site for the latest lab test relevant to this case 
+        '''
+        return self.latest_lx().LxOrdering_Provider.provPrimary_Dept
 
     def  __unicode__(self):
         p = self.showPatient()# self.pID

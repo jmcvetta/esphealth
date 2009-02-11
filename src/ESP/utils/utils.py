@@ -112,3 +112,12 @@ def getfilesByDay(files):
     return returndays
 
                                                                         
+def date_from_order_date_str(s):
+    '''
+    Returns a datetime.date instance based on the string representation of a
+    date from LxOrderDate field.
+    '''
+    year = int(s[0:4])
+    month = int(s[4:6])
+    day = int(s[6:8])
+    return datetime.date(year, month, day)

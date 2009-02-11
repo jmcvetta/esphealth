@@ -1,4 +1,3 @@
-
 """
 May 26 added site root for all contexts
 May 1
@@ -23,32 +22,52 @@ overview (counts) of workflow states, changes by date etc onto home page
 last logged in, who's logged in
 
 """
-import os,sys
-sys.path.insert(0, '/home/ESP/')
-
-from django.template import Context, loader, Template
-from ESP.esp.models import *
-#from ESP.esp.forms import RegistrationForm 
-from django.http import HttpResponse,HttpResponseRedirect
-from django.shortcuts import render_to_response,get_object_or_404
-from django.core.paginator import Paginator, InvalidPage
-# svn 1.0 alpha has changed ObjectPaginator to Paginator - rml august 2008
-#from django.core.paginator import ObjectPaginator, InvalidPage
-from django.core.mail import send_mail
-
+import sys
+import os
 import string
-from django.contrib.auth.decorators import login_required, user_passes_test
-from ESP.settings import SITEROOT,TOPDIR,LOCALSITE,CODEDIR
-#import ESP.utils.localconfig as localconfig
+import datetime
+import random
+import sha
+import simplejson
 
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth.forms import PasswordResetForm, PasswordChangeForm
-#from django import forms,oldforms # TODO fixme!
+# WTF?
+#sys.path.insert(0, '/home/ESP/')
+
+from django.core import serializers
+from django.core.paginator import Paginator
+from django.core.paginator import InvalidPage
+from django.core.mail import send_mail
+from django.template import Context
+from django.template import loader
+from django.template import Template
 from django.template import RequestContext
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect
+from django.shortcuts import render_to_response
+from django.shortcuts import get_object_or_404
+from django.contrib.auth import authenticate
+from django.contrib.auth import login
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.contrib.auth import SESSION_KEY
+from django.contrib.auth import authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
 from django.contrib.sites.models import Site
-from django.contrib.auth import REDIRECT_FIELD_NAME,SESSION_KEY, authenticate
-import datetime,random,sha
+#from django import forms,oldforms # TODO fixme!
+
+from ESP.settings import SITEROOT
+from ESP.settings import TOPDIR
+from ESP.settings import LOCALSITE
+from ESP.settings import CODEDIR
+from ESP.settings import DATE_FORMAT
+from ESP import settings
+from ESP.esp.models import *
+from ESP.esp import models
+from ESP.utils.utils import log
+from ESP.utils import utils as util
 
 
 LOGIN_URL = '%s/login/' % SITEROOT
@@ -72,13 +91,13 @@ def esplogin(request):
         redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
         # Light security check -- make sure redirect_to isn't garbage.
         if not redirect_to or '://' in redirect_to or ' ' in redirect_to:
-    	    if SITEROOT:
+            if SITEROOT:
                  redirect_to = SITEROOT
             else:
                  redirect_to ='/'
         user = authenticate(username=username, password=password)
         if user is not None:
-	    if user.is_active:
+            if user.is_active:
                   login(request,user)
                   return HttpResponseRedirect(redirect_to)
             else: 
@@ -363,7 +382,7 @@ def casedefine(request,compfilter=""):
         'SITEROOT':SITEROOT,
         }
     c = Context(cinfo)
-    return render_to_response('esp/casedefine.html',c)
+    return render_to_response('esp/case_define.html',c)
 
 
 ###################################
@@ -450,7 +469,7 @@ def casedefine_detail(request, cpt="",component=""):
         'SITEROOT':SITEROOT,
         }
     c = Context(cinfo)
-    return render_to_response('esp/casedefine_detail.html',c)
+    return render_to_response('esp/case_define_detail.html',c)
     
                                 
                 
@@ -757,7 +776,7 @@ def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilte
             'SITEROOT':SITEROOT,
             }
     c = Context(cinfo)
-    return render_to_response('esp/cases_list.html',c)
+    return render_to_response('esp/old_case_list.html',c)
     
 
 
@@ -765,7 +784,7 @@ def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilte
 
 ###############################
 @user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
-def casedetail(request, inprod="1", object_id=None,restrict='F'):
+def old_casedetail(request, inprod="1", object_id=None,restrict='F'):
 
     """detailed case view with workflow history
     """
@@ -813,7 +832,7 @@ def casedetail(request, inprod="1", object_id=None,restrict='F'):
             }
 
     con = Context(cinfo)
-    return render_to_response('esp/cases_detail.html',con)
+    return render_to_response('esp/case_detail.html',con)
 
 
 ###################################
@@ -1191,7 +1210,7 @@ def preloadupdate(request,table='cptloincmap'):
                 res.append('%s\t%s\t%s\t%s\t%s\t%s' % (dbid,rule,drugname,route,cldefine,clsend))
                 lines.append([dbid,rule,drugname,route,cldefine,clsend])
                 
-	res.sort(key=lambda x: x.split('\t')[1:3]) # sort nicely on rule, drugname
+        res.sort(key=lambda x: x.split('\t')[1:3]) # sort nicely on rule, drugname
         res.append('')
         f.write('\n'.join(res))
         f.close()
@@ -1313,14 +1332,14 @@ def showhelp(request, topic=None):
     print 'topic=', topic
     if topic:
         try:
-        	h = get_object(helpdb,helpTopic__exact=topic)
+            h = get_object(helpdb,helpTopic__exact=topic)
         except:
                 h = helpdb()
                 h.helpTopic = 'Not available yet'
                 h.helpText = 'Sorry, nothing is written for this topic (yet)'
 
     else:
-    	h = None
+        h = None
     cinfo = {"request":request,
              "object":h,
              "SITEROOT":SITEROOT,
@@ -1374,7 +1393,7 @@ def updateWorkflow(request,object_id,newwf=''):
                              }
     con = Context(cinfo)
     
-    return render_to_response('esp/cases_detail.html',con)
+    return render_to_response('esp/case_detail.html',con)
             
 
 
@@ -1416,3 +1435,79 @@ def updateWorkflowComment(request,object_id):
     return HttpResponseRedirect("%s/cases/%s/F/" % (SITEROOT,caseid))
 
 
+
+
+@login_required
+def case_list(request):
+    values = {}
+    values['default_rp'] = settings.CASES_PER_PAGE
+    return render_to_response('esp/case_list.html', values, context_instance=RequestContext(request))
+
+
+@login_required
+def json_case_grid(request):
+    unrestricted = False # TODO:  implement unrestricted view of PHI
+    log.debug('request.POST: %s' % request.POST)
+    sortname = request.REQUEST.get('sortname', 'id')
+    page = request.REQUEST.get('page', 1)
+    sortorder = request.REQUEST.get('sortorder', 'asc')
+    rp = int(request.REQUEST.get('rp', settings.CASES_PER_PAGE))
+    log.debug('sortname: %s' % sortname)
+    log.debug('sortorder: %s' % sortorder)
+    log.debug('rp: %s' % rp)
+    cases = models.Case.objects.all()
+    if sortname == 'workflow':
+        cases = cases.order_by('caseWorkflow')
+    elif sortname == 'last_updated':
+        cases = cases.order_by('caseLastUpDate')
+    elif sortname == 'date_ordered':
+        #cases = cases.select_related().order_by('getLxOrderdate')
+        list = [(c.latest_lx_order_date(), c) for c in cases]
+        list.sort()
+        cases = [item[1] for item in list]
+    elif sortname == 'condition':
+        cases = cases.order_by('caseRule__ruleName')
+    elif sortname == 'site':
+        list = [(c.latest_lx_provider_site(), c) for c in cases]
+        list.sort()
+        cases = [item[1] for item in list]
+    else: # sortname == 'id'
+         cases = cases.order_by('id')
+    if sortorder == 'desc':
+        # It should not be necessary to convert QuerySet to List in order to
+        # do reverse(), but there appears to be a bug in Django requiring this
+        # work-around.
+        # TODO: submit bug report
+        cases = [c for c in cases]
+        cases.reverse()
+    #log.debug('cases: %s' % cases)
+    p = Paginator(cases, rp)
+    page_objects = p.page(page).object_list
+    rows = []
+    for case in page_objects:
+        row = {}
+        order_date = case.latest_lx_order_date().strftime(settings.DATE_FORMAT)
+        last_update = case.caseLastUpDate.strftime(settings.DATE_FORMAT)
+        row['id'] = case.id
+        if unrestricted:
+            pass # TODO: implement unrestricted view of PHI
+        else:
+            row['cell'] =  [
+                case.id, 
+                case.caseRule.ruleName, 
+                order_date,
+                case.latest_lx_provider_site(),
+                case.get_caseWorkflow_display(),
+                last_update,
+                case.getPrevcases()
+                ]
+        rows += [row]
+    json_dict = {
+        'page': page,
+        'total': p.count,
+        'rows': rows,
+        }
+    json = simplejson.dumps(json_dict)
+    #log.debug('json: %s' % json)
+    #return HttpResponse(json, mimetype='application/json')
+    return HttpResponse(json)
