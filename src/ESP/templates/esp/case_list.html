@@ -13,7 +13,7 @@
             $('#case_table').flexigrid({
                 striped: true,
                 height: 'auto',
-                url: '{% url json_case_grid %}',
+                url: '{% url json_case_grid %}{{ status }}/',
                 dataType: 'json',
                 {% if unrestricted_view %}
                 {# TODO: Add PHI fields #}

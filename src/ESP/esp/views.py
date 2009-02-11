@@ -34,6 +34,7 @@ import simplejson
 #sys.path.insert(0, '/home/ESP/')
 
 from django.core import serializers
+from django.core import urlresolvers
 from django.core.paginator import Paginator
 from django.core.paginator import InvalidPage
 from django.core.mail import send_mail
@@ -832,7 +833,7 @@ def old_casedetail(request, inprod="1", object_id=None,restrict='F'):
             }
 
     con = Context(cinfo)
-    return render_to_response('esp/case_detail.html',con)
+    return render_to_response('esp/old_case_detail.html',con)
 
 
 ###################################
@@ -1438,15 +1439,16 @@ def updateWorkflowComment(request,object_id):
 
 
 @login_required
-def case_list(request):
+def case_list(request, status):
     values = {}
     values['default_rp'] = settings.CASES_PER_PAGE
     values['request'] = request # Should this really be necessary?
+    values['status'] = status
     return render_to_response('esp/case_list.html', values, context_instance=RequestContext(request))
 
 
 @login_required
-def json_case_grid(request):
+def json_case_grid(request, status):
     unrestricted = False # TODO:  implement unrestricted view of PHI
     log.debug('request.POST: %s' % request.POST)
     sortname = request.REQUEST.get('sortname', 'id')
@@ -1458,6 +1460,17 @@ def json_case_grid(request):
     log.debug('qtype: %s' % qtype)
     log.debug('query: %s' % query)
     cases = models.Case.objects.all()
+    #
+    # Limit Cases by Status
+    #
+    if status == 'await':
+        cases = cases.filter(caseWorkflow='AR')
+    elif status == 'under':
+        cases = cases.filter(caseWorkflow='UR')
+    elif status == 'queued':
+        cases = cases.filter(caseWorkflow='Q')
+    elif status == 'sent':
+        cases = cases.filter(caseWorkflow='S')
     #
     # Search Cases
     #
@@ -1501,11 +1514,13 @@ def json_case_grid(request):
         order_date = case.latest_lx_order_date().strftime(settings.DATE_FORMAT)
         last_update = case.caseLastUpDate.strftime(settings.DATE_FORMAT)
         row['id'] = case.id
+        href = urlresolvers.reverse('case_detail', kwargs={'object_id': int(case.id)})
+        case_id_link = '%s <a href="' % case.id  + href + '">(view)</a>'
         if unrestricted:
             pass # TODO: implement unrestricted view of PHI
         else:
             row['cell'] =  [
-                case.id, 
+                case_id_link,
                 case.caseRule.ruleName, 
                 order_date,
                 case.latest_lx_provider_site(),
