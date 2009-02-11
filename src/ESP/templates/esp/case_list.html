@@ -16,8 +16,8 @@
                 url: '{% url json_case_grid %}',
                 dataType: 'json',
                 {% if unrestricted_view %}
+                {# TODO: Add PHI fields #}
                 colModel: [
-                    {# TODO: Add PHI fields #}
                     {display: 'Case ID #', name: 'id', width: 50, sortable: true, align: 'center'},
                     {display: 'Condition', name: 'condition', width: 100, sortable: true, align: 'center'},
                     {display: 'Date Ordered', name: 'date_ordered', width: 100, sortable: true, align: 'center'},
@@ -25,6 +25,9 @@
                     {display: 'Workflow State', name: 'workflow', width: 100, sortable: true, align: 'center'},
                     {display: 'Last Updated', name: 'last_updated', width: 100, sortable: true, align: 'center'},
                     {display: 'Previously Notified Cases', name: 'prev_cases', width: 100, sortable: true, align: 'center'},
+                    ],
+                searchitems: [
+                    {display: 'Condition', name: 'condition'},
                     ],
                 {% else %}
                 colModel: [
@@ -35,6 +38,9 @@
                     {display: 'Workflow State', name: 'workflow', width: 100, sortable: true, align: 'center'},
                     {display: 'Last Updated', name: 'last_updated', width: 100, sortable: true, align: 'center'},
                     {display: 'Previously Notified Cases', name: 'prev_cases', width: 100, sortable: true, align: 'center'},
+                    ],
+                searchitems: [
+                    {display: 'Condition', name: 'condition'},
                     ],
                 {% endif %}
                 sortname: 'id',

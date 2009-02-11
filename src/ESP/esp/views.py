@@ -1452,10 +1452,21 @@ def json_case_grid(request):
     page = request.REQUEST.get('page', 1)
     sortorder = request.REQUEST.get('sortorder', 'asc')
     rp = int(request.REQUEST.get('rp', settings.CASES_PER_PAGE))
-    log.debug('sortname: %s' % sortname)
-    log.debug('sortorder: %s' % sortorder)
-    log.debug('rp: %s' % rp)
+    qtype = request.REQUEST.get('qtype', None)
+    query = request.REQUEST.get('query', None)
+    log.debug('qtype: %s' % qtype)
+    log.debug('query: %s' % query)
     cases = models.Case.objects.all()
+    #
+    # Search Cases
+    #
+    # I would like also to be able to search by site, but we cannot do so in 
+    # a tolerably efficient manner without changes to the data model.
+    if query and qtype == 'condition':
+        cases = cases.filter(caseRule__ruleName__icontains=query)
+    #
+    # Sort Cases
+    #
     if sortname == 'workflow':
         cases = cases.order_by('caseWorkflow')
     elif sortname == 'last_updated':
