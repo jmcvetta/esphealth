@@ -45,7 +45,7 @@ WORKFLOW_STATES = [
     ('RM', 'REVIEW By MD'),
     ('FP','FALSE POSITIVE - DO NOT PROCESS'),
     ('Q','CONFIRMED CASE, TRANSMIT TO HEALTH DEPARTMENT'), 
-    ('S','TRANSMITTED TO HEALTH DEPARTMENT'),
+    ('S','TRANSMITTED TO HEALTH DEPARTMENT')
     ]
 
 DEST_TYPES = (
@@ -480,25 +480,10 @@ class Case(models.Model):
     caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
     caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
     
-    def getLxProviderSite(self):
-        '''
-        '''
-        # patched 30 jan to not barf if no LxIDs    
-        res = []
-        lxlist = self.caseLxID.split(',')
-        if len(lxlist) > 0:
-           lxs=Lx.objects.filter(id__in=lxlist)
-           sites=[]
-           for l in lxs:
-               relprov = Provider.objects.filter(id=l.LxOrdering_Provider.id)[0]
-               sitename = relprov.provPrimary_Dept
-               if sitename and sitename not in sites:
-                  sites.append(sitename)
-           res = []
-           for loc in sites:
-              res.append('%s ' % loc)
-        return unicode(''.join(res))
-        
+    class Meta:
+        permissions = [
+            ('view_phi', 'Can view protected health information'),
+            ]
     
     def latest_lx(self):
         '''
@@ -532,7 +517,6 @@ class Case(models.Model):
         s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
         
         return s
-    
  
     def showPatient(self): 
         p = self.getPatient()
@@ -545,7 +529,6 @@ class Case(models.Model):
     def getPatient(self): # doesn't work
         p = Demog.objects.get(id__exact = self.caseDemog.id)        
         return p
-
 
     def getPregnant(self):
         p=self.getPatient()
@@ -569,7 +552,6 @@ class Case(models.Model):
                     dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
                     if dur1.days>=0 or dur2.days>=0:
                         return (u'Pregnant', oneenc.EncEDC.replace('/',''))
-                                                                    
 #            for oneenc in encdb:
 #                encdate = oneencdb.EncEncounter_Date
 #                dur1 =datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
@@ -578,32 +560,12 @@ class Case(models.Model):
 #                    return ('Pregnant', oneenc.EncEDC.replace('/',''))
         elif encdb and not lxs:
             return (u'Pregnant', encdb[0].EncEDC.replace('/',''))
-
         return (u'',None)
-                                                                                                                                
-
 
     def getcaseLastUpDate(self):
         s = u'%s' % self.caseLastUpDate
         return s[:11]
-    
 
-    def redundantgetLxProviderSite(self):
-        lxs=Lx.objects.filter(id__in=self.caseLxID.split(','))
-        sites=[]
-        for l in lxs:
-            relprov = Provider.objects.filter(id=l.LxOrdering_Provider.id)[0]
-            sitename = relprov.provPrimary_Dept
-            if sitename and sitename not in sites:
-                sites.append(sitename)
-
-        returnstr=''
-        for loc in sites:
-            returnstr =returnstr+'%s ' % loc
-        return unicode(returnstr)
-                                                                                                 
-
-    
     def getWorkflows(self): # return a list of workflow states for history
         wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
         return wIter
@@ -625,6 +587,7 @@ class Case(models.Model):
         for c in othercases:
             returnstr.append(unicode(c.id))
         return returnstr
+
 
 ###################################
 class CaseWorkflow(models.Model):

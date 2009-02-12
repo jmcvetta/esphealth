@@ -28,6 +28,7 @@ import string
 import datetime
 import random
 import sha
+import pprint
 import simplejson
 
 # WTF?
@@ -1449,8 +1450,8 @@ def case_list(request, status):
 
 @login_required
 def json_case_grid(request, status):
-    unrestricted = False # TODO:  implement unrestricted view of PHI
-    log.debug('request.POST: %s' % request.POST)
+    view_phi = request.user.has_perm('view_phi') # Does user have permission to view PHI?
+    log.debug('request.REQUEST: %s' % pprint.pformat(request.REQUEST))
     sortname = request.REQUEST.get('sortname', 'id')
     page = request.REQUEST.get('page', 1)
     sortorder = request.REQUEST.get('sortorder', 'asc')
@@ -1481,6 +1482,7 @@ def json_case_grid(request, status):
     #
     # Sort Cases
     #
+    # Maybe some/all of this sorting logic should be in the Case model?
     if sortname == 'workflow':
         cases = cases.order_by('caseWorkflow')
     elif sortname == 'last_updated':
@@ -1494,6 +1496,15 @@ def json_case_grid(request, status):
         cases = cases.order_by('caseRule__ruleName')
     elif sortname == 'site':
         list = [(c.latest_lx_provider_site(), c) for c in cases]
+        list.sort()
+        cases = [item[1] for item in list]
+    # Sort on PHI -- limited to users w/ correct permissions
+    elif view_phi and sortname == 'name':
+        cases = cases.order_by('caseDemog__DemogLast_Name')
+    elif view_phi and sortname == 'mrn':
+        cases = cases.order_by('caseDemog__DemogMedical_Record_Number')
+    elif view_phi and sortname == 'address':
+        list = [(c.getAddress(), c) for c in cases]
         list.sort()
         cases = [item[1] for item in list]
     else: # sortname == 'id'
@@ -1516,8 +1527,23 @@ def json_case_grid(request, status):
         row['id'] = case.id
         href = urlresolvers.reverse('case_detail', kwargs={'object_id': int(case.id)})
         case_id_link = '%s <a href="' % case.id  + href + '">(view)</a>'
-        if unrestricted:
-            pass # TODO: implement unrestricted view of PHI
+        if view_phi:
+            patient = case.caseDemog
+            patient_name = '%s, %s %s' % (patient.DemogLast_Name, patient.DemogFirst_Name, patient.DemogMiddle_Initial)
+            row['cell'] =  [
+                case_id_link,
+                case.caseRule.ruleName, 
+                order_date,
+                case.latest_lx_provider_site(),
+                # Begin PHI
+                patient_name,
+                patient.DemogMedical_Record_Number,
+                case.getAddress(),
+                # End PHI
+                case.get_caseWorkflow_display(),
+                last_update,
+                case.getPrevcases()
+                ]
         else:
             row['cell'] =  [
                 case_id_link,

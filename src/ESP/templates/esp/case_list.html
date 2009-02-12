@@ -15,33 +15,41 @@
                 height: 'auto',
                 url: '{% url json_case_grid %}{{ status }}/',
                 dataType: 'json',
-                {% if unrestricted_view %}
-                {# TODO: Add PHI fields #}
-                colModel: [
-                    {display: 'Case ID #', name: 'id', width: 50, sortable: true, align: 'center'},
-                    {display: 'Condition', name: 'condition', width: 100, sortable: true, align: 'center'},
-                    {display: 'Date Ordered', name: 'date_ordered', width: 100, sortable: true, align: 'center'},
-                    {display: 'Provider Site', name: 'site', width: 200, sortable: true, align: 'center'},
-                    {display: 'Workflow State', name: 'workflow', width: 100, sortable: true, align: 'center'},
-                    {display: 'Last Updated', name: 'last_updated', width: 100, sortable: true, align: 'center'},
-                    {display: 'Previously Notified Cases', name: 'prev_cases', width: 100, sortable: true, align: 'center'},
-                    ],
-                searchitems: [
-                    {display: 'Condition', name: 'condition'},
-                    ],
+                {% if perms.esp.view_phi %}
+                    colModel: [
+                        {display: 'Case ID #', name: 'id', width: 50, sortable: true, align: 'left'},
+                        {display: 'Condition', name: 'condition', width: 100, sortable: true, align: 'left'},
+                        {display: 'Date Ordered', name: 'date_ordered', width: 75, sortable: true, align: 'left'},
+                        {display: 'Provider Site', name: 'site', width: 150, sortable: true, align: 'left'},
+                        {# Begin PHI #}
+                        {display: 'Patient Name', name: 'name', width: 200, sortable: true, align: 'left'},
+                        {display: 'Medical Record #', name: 'mrn', width: 50, sortable: true, align: 'left'},
+                        {display: 'Patient Address', name: 'address', width: 150, sortable: true, align: 'left'},
+                        {# End PHI #}
+                        {display: 'Workflow State', name: 'workflow', width: 100, sortable: true, align: 'left'},
+                        {display: 'Last Updated', name: 'last_updated', width: 75, sortable: true, align: 'left'},
+                        {display: 'Previously Notified Cases', name: 'prev_cases', width: 100, sortable: true, align: 'left'},
+                        ],
+                    searchitems: [
+                        {display: 'Condition', name: 'condition'},
+                        {# Begin PHI #}
+                        {display: 'Patient Last Name', name: 'name'},
+                        {display: 'Medical Record #', name: 'mrn'},
+                        {# End PHI #}
+                        ],
                 {% else %}
-                colModel: [
-                    {display: 'Case ID #', name: 'id', width: 50, sortable: true, align: 'center'},
-                    {display: 'Condition', name: 'condition', width: 100, sortable: true, align: 'center'},
-                    {display: 'Date Ordered', name: 'date_ordered', width: 100, sortable: true, align: 'center'},
-                    {display: 'Provider Site', name: 'site', width: 200, sortable: true, align: 'center'},
-                    {display: 'Workflow State', name: 'workflow', width: 100, sortable: true, align: 'center'},
-                    {display: 'Last Updated', name: 'last_updated', width: 100, sortable: true, align: 'center'},
-                    {display: 'Previously Notified Cases', name: 'prev_cases', width: 100, sortable: true, align: 'center'},
-                    ],
-                searchitems: [
-                    {display: 'Condition', name: 'condition'},
-                    ],
+                    colModel: [
+                        {display: 'Case ID #', name: 'id', width: 50, sortable: true, align: 'left'},
+                        {display: 'Condition', name: 'condition', width: 100, sortable: true, align: 'left'},
+                        {display: 'Date Ordered', name: 'date_ordered', width: 100, sortable: true, align: 'left'},
+                        {display: 'Provider Site', name: 'site', width: 200, sortable: true, align: 'left'},
+                        {display: 'Workflow State', name: 'workflow', width: 100, sortable: true, align: 'left'},
+                        {display: 'Last Updated', name: 'last_updated', width: 100, sortable: true, align: 'left'},
+                        {display: 'Previously Notified Cases', name: 'prev_cases', width: 100, sortable: true, align: 'left'},
+                        ],
+                    searchitems: [
+                        {display: 'Condition', name: 'condition'},
+                        ],
                 {% endif %}
                 sortname: 'id',
                 sortorder: 'asc',
