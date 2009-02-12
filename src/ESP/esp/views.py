@@ -1451,7 +1451,7 @@ def case_list(request, status):
 @login_required
 def json_case_grid(request, status):
     view_phi = request.user.has_perm('view_phi') # Does user have permission to view PHI?
-    log.debug('request.REQUEST: %s' % pprint.pformat(request.REQUEST))
+    log.debug('request.POST: %s' % request.POST)
     sortname = request.REQUEST.get('sortname', 'id')
     page = request.REQUEST.get('page', 1)
     sortorder = request.REQUEST.get('sortorder', 'asc')
@@ -1479,6 +1479,12 @@ def json_case_grid(request, status):
     # a tolerably efficient manner without changes to the data model.
     if query and qtype == 'condition':
         cases = cases.filter(caseRule__ruleName__icontains=query)
+    # Search on PHI -- limited to users w/ correct permissions
+    elif view_phi and query and qtype == 'name':
+        cases = cases.filter(caseDemog__DemogLast_Name__icontains=query)
+    elif view_phi and query and qtype == 'mrn':
+        # Is it sensible that MRN search is exact rather than contains?
+        cases = cases.filter(caseDemog__DemogMedical_Record_Number__iexact=query)
     #
     # Sort Cases
     #

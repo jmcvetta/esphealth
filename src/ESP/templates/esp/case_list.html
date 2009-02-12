@@ -22,8 +22,8 @@
                         {display: 'Date Ordered', name: 'date_ordered', width: 75, sortable: true, align: 'left'},
                         {display: 'Provider Site', name: 'site', width: 150, sortable: true, align: 'left'},
                         {# Begin PHI #}
-                        {display: 'Patient Name', name: 'name', width: 200, sortable: true, align: 'left'},
-                        {display: 'Medical Record #', name: 'mrn', width: 50, sortable: true, align: 'left'},
+                        {display: 'Patient Name', name: 'name', width: 150, sortable: true, align: 'left'},
+                        {display: 'MRN', name: 'mrn', width: 50, sortable: true, align: 'left'},
                         {display: 'Patient Address', name: 'address', width: 150, sortable: true, align: 'left'},
                         {# End PHI #}
                         {display: 'Workflow State', name: 'workflow', width: 100, sortable: true, align: 'left'},
@@ -55,8 +55,9 @@
                 sortorder: 'asc',
                 usepager: 'true',
                 width: '100%',
-                rpOptions: [10, 25, 50],
+                rpOptions: [10, 25, 50, 100],
                 rp: {{ default_rp }},
+                showToggleBtn: false,
             });
         });
     </script>
