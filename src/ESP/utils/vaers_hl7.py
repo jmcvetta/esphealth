@@ -239,7 +239,7 @@ class onehl7:
     ###################################
     def buildOBX_data_1(self):
         ##OBX
-        age = self.demog.getAge()
+        age = self.demog.oldGetAge()
         if type(age) != type(2):
             unit = getOnestr('^',['mo', 'month', 'ANSI'])
             agevalue = age.split()[0]

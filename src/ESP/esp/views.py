@@ -30,9 +30,7 @@ import random
 import sha
 import pprint
 import simplejson
-
-# WTF?
-#sys.path.insert(0, '/home/ESP/')
+import sets
 
 from django.core import serializers
 from django.core import urlresolvers
@@ -1522,16 +1520,21 @@ def json_case_grid(request, status):
         # TODO: submit bug report
         cases = [c for c in cases]
         cases.reverse()
-    #log.debug('cases: %s' % cases)
+    #
+    # Pagination
+    #
     p = Paginator(cases, rp)
     page_objects = p.page(page).object_list
     rows = []
+    #
+    # Generate JSON
+    #
     for case in page_objects:
         row = {}
         order_date = case.latest_lx_order_date().strftime(settings.DATE_FORMAT)
         last_update = case.caseLastUpDate.strftime(settings.DATE_FORMAT)
         row['id'] = case.id
-        href = urlresolvers.reverse('case_detail', kwargs={'object_id': int(case.id)})
+        href = urlresolvers.reverse('case_detail', kwargs={'case_id': int(case.id)})
         case_id_link = '%s <a href="' % case.id  + href + '">(view)</a>'
         if view_phi:
             patient = case.caseDemog
@@ -1567,6 +1570,67 @@ def json_case_grid(request, status):
         'rows': rows,
         }
     json = simplejson.dumps(json_dict)
-    #log.debug('json: %s' % json)
-    #return HttpResponse(json, mimetype='application/json')
-    return HttpResponse(json)
+    return HttpResponse(json, mimetype='application/json')
+    #return HttpResponse(json)
+
+
+@login_required
+def case_detail(request, case_id):
+    '''
+    Detailed case view with workflow history
+    '''
+    case = get_object_or_404(Case, pk=case_id)
+    wf = case.caseworkflow_set.all().order_by('-workflowDate')
+    patient = case.caseDemog
+    pid = patient.id
+    age = patient.age.days / 365 # Note that 365 is Int not Float, thus so is result
+    if age > 89:
+        age = '90+'
+    dob = patient.date_of_birth.strftime(settings.DATE_FORMAT)
+    created = case.casecreatedDate.strftime(settings.DATE_FORMAT)
+    updated = case.caseLastUpDate.strftime(settings.DATE_FORMAT)
+    #
+    # Reportable Info
+    #
+    if case.caseEncID:
+        rep_encs = Enc.objects.extra(where=['id IN (%s)' % case.caseEncID])
+    else:
+        rep_encs = []
+    if case.caseLxID:
+        rep_lxs = Lx.objects.extra(where=['id IN (%s)' % case.caseLxID])
+    else:
+        rep_lxs = []
+    if case.caseRxID:
+        rep_rxs = Rx.objects.extra(where=['id IN (%s)' % case.caseRxID])
+    else:
+        rep_rxs = []
+    #
+    # Non-Reportable Info
+    #
+    all_encs = Enc.objects.filter(EncPatient__id__exact=pid)
+    all_encs = sets.Set(all_encs) - sets.Set(rep_encs)
+    all_lxs = Lx.objects.filter(LxPatient__id__exact=pid)
+    all_lxs = sets.Set(all_lxs) - sets.Set(rep_lxs)
+    all_rxs = Rx.objects.filter(RxPatient__id__exact=pid)
+    all_rxs = sets.Set(all_rxs) - sets.Set(rep_lxs)
+    values = {
+        "request":request,
+		"case": case,
+		'pid': pid,
+        'condition': case.getCondition().ruleName,
+        'age': age,
+        'dob': dob,
+		"wf": wf,
+		"wfstate": WORKFLOW_STATES[:-1], # ??
+        'created': created,
+        'updated': updated,
+		'all_encs': all_encs,
+        'all_lxs': all_lxs,
+        'all_rxs': all_rxs,
+        'rep_encs': rep_encs,
+        'rep_lxs': rep_lxs,
+        'rep_rxs': rep_rxs,
+        }
+    return render_to_response('esp/case_detail.html', values, context_instance=RequestContext(request))
+
+

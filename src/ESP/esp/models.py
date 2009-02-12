@@ -304,9 +304,28 @@ class Demog(models.Model):
 
     def  __unicode__(self):
         return u"PID%s,%s, %s,%s, %s" % (self.DemogPatient_Identifier,self.DemogMedical_Record_Number,self.DemogLast_Name,self.DemogFirst_Name, self.DemogAddress1)
-
-
-    def getAge(self):
+    
+    def _get_date_of_birth(self):
+        '''
+        Returns patient's date of birth as a datetime.date instance
+        '''
+        dob = self.DemogDate_of_Birth
+        if not dob:
+            return None
+        yy = int(dob[:4])
+        mm = int(dob[4:6])
+        dd = int(dob[6:])
+        return datetime.date(yy, mm, dd)
+    date_of_birth = property(_get_date_of_birth)
+        
+    def _get_age(self):
+        '''
+        Returns patient's age as a datetime.timedelta instance
+        '''
+        return datetime.date.today() - self.date_of_birth
+    age = property(_get_age)
+        
+    def oldGetAge(self):
         dob = self.DemogDate_of_Birth
         if not dob:
             return u'No DOB'
@@ -703,6 +722,29 @@ class Lx(models.Model):
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
     # Use custom manager
     objects = LxManager()
+    
+    def _get_ext_test_code(self):
+        '''
+        Returns string representation of test code in the external source 
+        system.
+        This is a kludge until we implement more uniform handling of external 
+        test codes & names.
+        '''
+        if self.LxTest_Code_CPT:
+            if self.LxComponent:
+                return '%s / %s' % (self.LxTest_Code_CPT, self.LxComponent)
+            return '%s' % self.LxTest_Code_CPT
+        return None
+    ext_test_code = property(_get_ext_test_code)
+    
+    def _get_ext_test_name(self):
+        '''
+        Name of the test in external source system.
+        This is a kludge until we implement more uniform handling of external 
+        test codes & names.
+        '''
+        return self.LxComponentName
+    ext_test_name = property(_get_ext_test_name)
             
     def getCPT(self):
         """translate CPT code
@@ -797,6 +839,18 @@ class Enc(models.Model):
             s = [('', 'No icd9 codes found')]
         return unicode(s)
     
+    def _get_icd9_list(self):
+        '''
+        Returns a string containing nicely-spaced, comma-delimited, non-null 
+        ICD9 codes.
+        '''
+        list = []
+        for i in self.EncICD9_Codes.split(','):
+            if i:
+                list += [i]
+        return list
+    icd9_list = property(_get_icd9_list)
+        
 
     def iscaserelated(self):
         

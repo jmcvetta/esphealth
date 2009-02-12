@@ -36,8 +36,8 @@ urlpatterns += patterns('ESP.esp.views',
     url(r'^cases/(?P<object_id>\d+)/updatewf/(?P<newwf>\S*)/$', 'updateWorkflow'),
     url(r'^cases/(?P<object_id>\d+)/updatewf/$', 'updateWorkflow'),
     url(r'^cases/(?P<inprod>\d+)/(?P<object_id>\d+)/(?P<restrict>\w*)/$', 'old_casedetail'),
-    url(r'^pcps/(?P<object_id>\w+)/$', 'pcpdetail'),
-    url(r'^lx/(?P<object_id>\w+)/$', 'lxdetail'),
+    url(r'^pcps/(?P<object_id>\w+)/$', 'pcpdetail', name='provider'),
+    url(r'^lx/(?P<object_id>\w+)/$', 'lxdetail', name='lab_detail'),
     url(r'^rules/(?P<object_id>\w+)/$', 'ruledetail'),
     url(r'^workflows/(?P<object_id>\d+)/$', 'wfdetail'),
     url(r'^workflows/(?P<object_id>\d+)/updatewfComment/$', 'updateWorkflowComment'),
@@ -64,7 +64,7 @@ urlpatterns += patterns('ESP.esp.views',
     #
     # Case Detail
     #
-    url(r'^cases/view/(?P<object_id>\d+)/$', 'old_casedetail', {'restrict': 'F', 'inprod': 1}, name='case_detail'),
+    url(r'^cases/view/(?P<case_id>\d+)/$', 'case_detail', name='case_detail'),
 )
 
 
