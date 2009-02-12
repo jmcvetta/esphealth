@@ -1630,6 +1630,7 @@ def case_detail(request, case_id):
         'rep_encs': rep_encs,
         'rep_lxs': rep_lxs,
         'rep_rxs': rep_rxs,
+        'inprod': '1', # Ugh
         }
     return render_to_response('esp/case_detail.html', values, context_instance=RequestContext(request))
 

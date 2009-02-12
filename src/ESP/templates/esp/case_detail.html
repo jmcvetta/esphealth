@@ -4,6 +4,11 @@
 
 {% block extrastyle %}
     <link rel="stylesheet" type="text/css" media="screen" href="/js/flexigrid/css/flexigrid/flexigrid.css" />
+    <style type="text/css">
+        #transmit {
+            border: thick groove #800000;
+        }
+    </style>
 {% endblock %}
 
 {% block extrascript %}
@@ -21,7 +26,11 @@
                 $('#toggle_hide').show(); // Non-rep data is shown by default
                 $('#non_reportable_data').hide();
             });
-            $('#hide_non_rep').click();
+            $('#hide_non_rep').click(); // Hide non-reportable data by default
+            $('#patient_info').flexigrid({
+                title: 'Patient Information',
+                height: 'auto',
+            });
             $('#rep_lxs').flexigrid({
                 title: 'Laboratory Results (Reportable)',
                 resizable: false,
@@ -75,10 +84,14 @@
 {% endcomment %}
 
 
-<h1>
+<h1 style="float:left;">
     Suspected Condition: {{ condition }}
 </h1>
+<form action="{{SITEROOT}}/cases/{{ cobject.id }}/updatewf/Q/" method="post" style="float: right;">
+    <input type="submit" name="submit" value="Confirmed Case, Transmit to Health Department" id="transmit">
+</form>
 
+<p>&nbsp;</p>
 <hr>
 <p>&nbsp;</p>
 
@@ -96,49 +109,45 @@
 <hr>
 <p>&nbsp;</p>
 
-<table>
-    <thead>
-        <tr>
-            <th>Case ID</th>
-            {% if perms.esp.view_phi %}
-            <th>Patient Name &amp; MRN</th>
-            <th>Age &amp; DOB</th>
-            {% else %}
-            <th>Age</th>
-            {% endif %}
-            <th>Gender</th>
-            <th>Pregnancy</th>
-            <th>Workflow State</th>
-            <th>Comments</th>
-            <th>Created Date</th>
-            <th>Last Updated</th>
-            <th>Case Definition</th>
-            <th>Query ID</th></tr>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>{{ case.id }}</td>
-            {% if perms.esp.view_phi %}
-            <td>{{ case.showPatient }}</td> 
-            <td>
-                Age: {{ age }}
-                <hr>
-                DOB: {{ dob }}
-            </td>
-            {% else %}
-            <td>{{ age }}</td>
-            {% endif %}
-            <td>{{ case.getPatient.DemogGender }}</td>
-            <td>{{ case.getPregnant.0|default:"No" }}</td>
-            <td>{{ case.get_caseWorkflow_display }}</td>
-            <td> {{ case.caseComments }}</td>
-            <td>{{ created }}</td>
-            <td> {{ updated }}</td>
-            <td><a href="{{SITEROOT}}/rules/{{ case.caseRule.id }}/">{{ condition }}</a></td>
-            <td>{{ case.caseQueryID }}</td>
-        </tr>
-    </tbody>
+<table id="patient_info">
+    <tr>
+        <th>Case ID</th>
+        {% if perms.esp.view_phi %}
+        <th>Patient Name &amp; MRN</th>
+        <th>Age &amp; DOB</th>
+        {% else %}
+        <th>Age</th>
+        {% endif %}
+        <th>Gender</th>
+        <th>Pregnancy</th>
+        <th>Workflow State</th>
+        <th>Comments</th>
+        <th>Created Date</th>
+        <th>Last Updated</th>
+        <th>Case Definition</th>
+        <th>Query ID</th></tr>
+    </tr>
+    <tr>
+        <td>{{ case.id }}</td>
+        {% if perms.esp.view_phi %}
+        <td>{{ case.showPatient }}</td> 
+        <td>
+            Age: {{ age }}
+            <hr>
+            DOB: {{ dob }}
+        </td>
+        {% else %}
+        <td>{{ age }}</td>
+        {% endif %}
+        <td>{{ case.getPatient.DemogGender }}</td>
+        <td>{{ case.getPregnant.0|default:"No" }}</td>
+        <td>{{ case.get_caseWorkflow_display }}</td>
+        <td> {{ case.caseComments }}</td>
+        <td>{{ created }}</td>
+        <td> {{ updated }}</td>
+        <td><a href="{{SITEROOT}}/rules/{{ case.caseRule.id }}/">{{ condition }}</a></td>
+        <td>{{ case.caseQueryID }}</td>
+    </tr>
 </table>
 
 
@@ -427,10 +436,6 @@
 {% endifequal %}
 
 
-
-<form action="{{SITEROOT}}/cases/{{ cobject.id }}/updatewf/Q/" method="post">
-    <br><input type="submit" name="submit" value="Confirmed Case, Transmit to Health Department" >
-</form>
 
 
 {% endblock %}
