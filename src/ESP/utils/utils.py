@@ -121,3 +121,13 @@ def date_from_order_date_str(s):
     month = int(s[4:6])
     day = int(s[6:8])
     return datetime.date(year, month, day)
+
+
+def ext_code_from_cpt(cpt, compt):
+    '''
+    Generate a string for Lx.ext_code from CPT + CPT Component
+    '''
+    return '%s--%s' % (cpt, compt)
+    
+    
+    
