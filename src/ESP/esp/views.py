@@ -983,12 +983,13 @@ def preloadrulexclud(request,update=0):
 def preloadview(request,table='cptloincmap',orderby="cpt"):
     if not request.user.is_staff:
         return HttpResponse("You do not have permission to see this page")
-    
     rules=[]
     newrec=10
+    #
+    # DEPRECATED
+    #
     if table == 'cptloincmap':
         maps = CPTLOINCMap.objects.all()
-        
         try:
             orderby = string.strip(request.POST['ORDERBY'])
         except:
@@ -1001,8 +1002,10 @@ def preloadview(request,table='cptloincmap',orderby="cpt"):
             maps = map(lambda x:x[3], newm)
         elif orderby == 'loinc':
             maps = maps.order_by('Loinc','CPT', 'CPTCompt')
-
         returnurl = 'esp/cptloincmap.html'
+    #
+    # END DEPRECATED
+    #
     elif table == 'conditionloinc':
         maps = ConditionLOINC.objects.all()
         maps =maps.select_related().order_by('esp_rule.ruleName', 'CondiLOINC')
@@ -1436,7 +1439,6 @@ def updateWorkflowComment(request,object_id):
 
 
 
-
 @login_required
 def case_list(request, status):
     values = {}
@@ -1449,15 +1451,7 @@ def case_list(request, status):
 @login_required
 def json_case_grid(request, status):
     view_phi = request.user.has_perm('view_phi') # Does user have permission to view PHI?
-    log.debug('request.POST: %s' % request.POST)
-    sortname = request.REQUEST.get('sortname', 'id')
-    page = request.REQUEST.get('page', 1)
-    sortorder = request.REQUEST.get('sortorder', 'asc')
-    rp = int(request.REQUEST.get('rp', settings.CASES_PER_PAGE))
-    qtype = request.REQUEST.get('qtype', None)
-    query = request.REQUEST.get('query', None)
-    log.debug('qtype: %s' % qtype)
-    log.debug('query: %s' % query)
+    flexi = util.Flexigrid(request)
     cases = models.Case.objects.all()
     #
     # Limit Cases by Status
@@ -1475,45 +1469,45 @@ def json_case_grid(request, status):
     #
     # I would like also to be able to search by site, but we cannot do so in 
     # a tolerably efficient manner without changes to the data model.
-    if query and qtype == 'condition':
-        cases = cases.filter(caseRule__ruleName__icontains=query)
+    if flexi.query and flexi.qtype == 'condition':
+        cases = cases.filter(caseRule__ruleName__icontains=flexi.query)
     # Search on PHI -- limited to users w/ correct permissions
-    elif view_phi and query and qtype == 'name':
-        cases = cases.filter(caseDemog__DemogLast_Name__icontains=query)
-    elif view_phi and query and qtype == 'mrn':
+    elif view_phi and flexi.query and flexi.qtype == 'name':
+        cases = cases.filter(caseDemog__DemogLast_Name__icontains=flexi.query)
+    elif view_phi and flexi.query and flexi.qtype == 'mrn':
         # Is it sensible that MRN search is exact rather than contains?
-        cases = cases.filter(caseDemog__DemogMedical_Record_Number__iexact=query)
+        cases = cases.filter(caseDemog__DemogMedical_Record_Number__iexact=flexi.query)
     #
     # Sort Cases
     #
     # Maybe some/all of this sorting logic should be in the Case model?
-    if sortname == 'workflow':
+    if flexi.sortname == 'workflow':
         cases = cases.order_by('caseWorkflow')
-    elif sortname == 'last_updated':
+    elif flexi.sortname == 'last_updated':
         cases = cases.order_by('caseLastUpDate')
-    elif sortname == 'date_ordered':
+    elif flexi.sortname == 'date_ordered':
         #cases = cases.select_related().order_by('getLxOrderdate')
         list = [(c.latest_lx_order_date(), c) for c in cases]
         list.sort()
         cases = [item[1] for item in list]
-    elif sortname == 'condition':
+    elif flexi.sortname == 'condition':
         cases = cases.order_by('caseRule__ruleName')
-    elif sortname == 'site':
+    elif flexi.sortname == 'site':
         list = [(c.latest_lx_provider_site(), c) for c in cases]
         list.sort()
         cases = [item[1] for item in list]
     # Sort on PHI -- limited to users w/ correct permissions
-    elif view_phi and sortname == 'name':
+    elif view_phi and flexi.sortname == 'name':
         cases = cases.order_by('caseDemog__DemogLast_Name')
-    elif view_phi and sortname == 'mrn':
+    elif view_phi and flexi.sortname == 'mrn':
         cases = cases.order_by('caseDemog__DemogMedical_Record_Number')
-    elif view_phi and sortname == 'address':
+    elif view_phi and flexi.sortname == 'address':
         list = [(c.getAddress(), c) for c in cases]
         list.sort()
         cases = [item[1] for item in list]
     else: # sortname == 'id'
          cases = cases.order_by('id')
-    if sortorder == 'desc':
+    if flexi.sortorder == 'desc':
         # It should not be necessary to convert QuerySet to List in order to
         # do reverse(), but there appears to be a bug in Django requiring this
         # work-around.
@@ -1521,15 +1515,10 @@ def json_case_grid(request, status):
         cases = [c for c in cases]
         cases.reverse()
     #
-    # Pagination
-    #
-    p = Paginator(cases, rp)
-    page_objects = p.page(page).object_list
-    rows = []
-    #
     # Generate JSON
     #
-    for case in page_objects:
+    rows = []
+    for case in cases:
         row = {}
         order_date = case.latest_lx_order_date().strftime(settings.DATE_FORMAT)
         last_update = case.caseLastUpDate.strftime(settings.DATE_FORMAT)
@@ -1564,12 +1553,7 @@ def json_case_grid(request, status):
                 case.getPrevcases()
                 ]
         rows += [row]
-    json_dict = {
-        'page': page,
-        'total': p.count,
-        'rows': rows,
-        }
-    json = simplejson.dumps(json_dict)
+    json = flexi.json(rows)
     return HttpResponse(json, mimetype='application/json')
     #return HttpResponse(json)
 
@@ -1615,16 +1599,16 @@ def case_detail(request, case_id):
     all_rxs = sets.Set(all_rxs) - sets.Set(rep_lxs)
     values = {
         "request":request,
-		"case": case,
-		'pid': pid,
+        "case": case,
+        'pid': pid,
         'condition': case.getCondition().ruleName,
         'age': age,
         'dob': dob,
-		"wf": wf,
-		"wfstate": WORKFLOW_STATES[:-1], # ??
+        "wf": wf,
+        "wfstate": WORKFLOW_STATES[:-1], # ??
         'created': created,
         'updated': updated,
-		'all_encs': all_encs,
+        'all_encs': all_encs,
         'all_lxs': all_lxs,
         'all_rxs': all_rxs,
         'rep_encs': rep_encs,
@@ -1635,3 +1619,28 @@ def case_detail(request, case_id):
     return render_to_response('esp/case_detail.html', values, context_instance=RequestContext(request))
 
 
+@login_required
+def show_ext_loinc_maps(request):
+    '''
+    Administrative screen to add/delete/update ExternalToLoincMap objects
+    '''
+    values = {}
+    return render_to_response('esp/show_ext_loinc_maps.html', values, context_instance=RequestContext(request))
+
+
+@login_required
+def json_ext_loinc_grid(request):
+    '''
+    '''
+    rows = []
+    #return HttpResponse(json, mimetype='application/json')
+    return HttpResponse(json)
+
+
+@login_required
+def edit_ext_loinc_map(request, map_id):
+    '''
+    '''
+    values = {}
+    return render_to_response('esp/edit_ext_loinc_map.html', values, context_instance=RequestContext(request))
+    

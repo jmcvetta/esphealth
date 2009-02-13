@@ -15,8 +15,10 @@ import smtplib
 import datetime
 import time
 import logging
+import simplejson
 
 from django.db.models import Q
+from django.core.paginator import Paginator
 
 from ESP.esp import models
 from ESP import settings
@@ -130,4 +132,45 @@ def ext_code_from_cpt(cpt, compt):
     return '%s--%s' % (cpt, compt)
     
     
+class Flexigrid:
+    '''
+    Utility class for interacting with Flexigrid
+    '''
     
+    def __init__(self, request):
+        '''
+        Extracts standard Flexigrid variables from a Django REQUEST object.
+        '''
+        log.debug('request.POST: %s' % request.POST)
+        self.sortname = request.REQUEST.get('sortname', 'id') # Field to sort on
+        self.page = request.REQUEST.get('page', 1) # What page we are on
+        self.sortorder = request.REQUEST.get('sortorder', 'asc') # Ascending/descending
+        self.rp = int(request.REQUEST.get('rp', settings.CASES_PER_PAGE)) # Num requests per page
+        self.qtype = request.REQUEST.get('qtype', None) # Query type
+        self.query = request.REQUEST.get('query', None) # Query string
+        log.debug('sortname: %s' % self.sortname)
+        log.debug('page: %s' % self.page)
+        log.debug('sortorder: %s' % self.sortorder)
+        log.debug('rp: %s' % self.rp)
+        log.debug('qtype: %s' % self.qtype)
+        log.debug('query: %s' % self.query)
+    
+    def json(self, rows, use_paginator=True):
+        '''
+        Returns JSON suitable for feeding to Flexigrid.
+        @type rows: [{'id': 1, 'cell': ['field1, 'field2', ...]}, ...]
+        @param use_paginator: Set this to false if you are going to do 
+            pagination outside this class, for instance if you have a very
+            large set of objects and do not want to fetch all rows.
+        '''
+        p = Paginator(rows, self.rp)
+        if use_paginator:
+            rows = p.page(self.page).object_list
+        json_dict = {
+            'page': self.page,
+            'total': p.count,
+            'rows': rows
+            }
+        json = simplejson.dumps(json_dict)
+        return json
+            
