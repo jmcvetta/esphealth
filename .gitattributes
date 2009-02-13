@@ -69,6 +69,7 @@ src/ESP/templates/js/flexigrid/css/flexigrid/images/uup.png -text
 src/ESP/templates/js/flexigrid/css/flexigrid/images/wbg.gif -text
 src/ESP/templates/js/flexigrid/css/images/add.png -text
 src/ESP/templates/js/flexigrid/css/images/close.png -text
+src/ESP/templates/js/flexigrid/css/images/edit.gif -text
 src/ESP/templates/js/flexigrid/flash.png -text
 src/ESP/templates/js/flexigrid/flexigrid.js -text
 src/ESP/templates/js/flexigrid/flexigrid.pack.js -text
