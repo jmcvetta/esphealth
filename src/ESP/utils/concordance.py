@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-Generate a concordance lab result strings per LOINC
+Generate a concordance lab result strings per LOINC or CPT
 '''
 
 
@@ -38,17 +38,23 @@ def string_lab_results(filter_q=None):
             continue
         except:
             pass
-        yield result
+        yield str(result) # Use str() so our strings don't print out like u'this'.
 
 
 def main():
-    concordance = {}
+    loinc_concordance = {}
+    ext_concordance = {}
     for item in models.CPTLOINCMap.objects.values_list('Loinc', 'CPT').distinct():
         loinc = item[0]
-        cpt = item[1]
+        ext = item[1]
         q_obj = Q(LxLoinc=loinc)
-        concordance[str(cpt)] = str([i for i in string_lab_results(q_obj)])
-    pprint.pprint(concordance)
+        ext_concordance[str(ext)] = str([i for i in string_lab_results(q_obj)])
+        loinc_concordance[str(loinc)] = str([i for i in string_lab_results(q_obj)])
+    print 'LOINC Concordance:'
+    pprint.pprint(loinc_concordance)
+    print '-------------------------------------------------------------------------------'
+    print 'External Code Concordance:'
+    pprint.pprint(ext_concordance)
 
 
 if __name__ == '__main__':
