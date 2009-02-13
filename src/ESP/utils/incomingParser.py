@@ -26,6 +26,7 @@ from ESP.esp.models import *
 import ESP.utils.utils as utils
 from ESP import settings
 from ESP.utils.utils import log
+from ESP.esp import models
 
 
 cursor = connection.cursor()
@@ -490,83 +491,61 @@ def updateDB(table,setclause,values, id):
 
 
                                                         
-################################
-################################
 def parseLxOrd(incomdir,filename,demogdict, provdict):
-    
+    #
+    # This is bogus --  parseLxOrd populates esp_lx, not esp_lxo.  That cannot 
+    # be right.
+    #
     fname = os.path.join(incomdir,'%s' % filename)
     for (items, linenum) in splitfile(fname,'^'):
         if not items or items[0]=='CONTROL TOTALS':
             filelines = linenum
             continue
-
         try:
             pid,mrn,orderid,cpt,modi,accessnum,orderd, ordertp, phy = items
         except:
             log.error('Parser %s: wrong size - %s' % (filename,str(items)))
             continue
-
-            
         try:
             if demogdict:
                 demogid = demogdict[pid]
             else:
                 demogid = searchId('select id from esp_demog where DemogPatient_Identifier=%s', (pid,))
-                
                 #demogid = searchId('esp_demog',"DemogPatient_Identifier='%s'" % pid) 
         except:
             log.warning('Parser In LXORD: NO patient found: %s\n' % str(items))
             continue
-
-        
         #always create a new record, since no good way to identify unique tuple
         if not string.strip(orderid): orderid = today  ##since when passing HL7 msg, this is required
-
-        #get loinc
+        #
+        # Get loinc
+        #
+        ext_code = utils.ext_code_from_cpt(cpt, '')
         c = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt='')
-        if c:
-            lxloinc = (c[0].Loinc).strip()
-        else:
-            lxloinc=''
-            
+        m = models.ExternalToLoincMap.objects.get(ext_code=ext_code)
+        loinc = m.loinc
+        lxloinc = loinc.loinc_num
         try:
             if provdict:
                 provid=provdict[phy]
             else:
                 provid = searchId('select id from esp_provider where provCode=%s', (phy,))
-                
                 #provid= searchId('esp_provider',"provCode__exact='%s'" % phy)
-
         except:
             provid = 'NULL'
-
-
-        lxid = searchId('select id from esp_lx where LxPatient_id=%s and LxMedical_Record_Number=%s and LxOrder_Id_Num=%s and LxHVMA_Internal_Accession_number=%s and LxTest_Code_CPT=%s and LxOrderDate=%s and LxOrderType=%s', (demogid,mrn,orderid,accessnum,cpt,orderd,ordertp))
-        if lxid: #update
-            lx_str = """update esp_lx set
-             LxPatient_id=%s,
-             LxMedical_Record_Number =%s,
-             LxTest_Code_CPT=%s,
-             LxTest_Code_CPT_mod =%s,
-             LxHVMA_Internal_Accession_number=%s,
-             LxOrderDate=%s,
-             LxOrderType=%s,
-             LxOrder_Id_Num=%s,
-             LxLoinc=%s,
-             LxOrdering_Provider_id=%s,
-             lastUpDate=%s
-             where id =%s
-             """
-            values = (demogid,mrn,cpt,modi,accessnum,orderd,ordertp,orderid,lxloinc,provid,DBTIMESTR,lxid)
-        else:  #new
-            lx_str = """insert into esp_lx
-            (LxPatient_id,LxMedical_Record_Number,LxTest_Code_CPT,LxTest_Code_CPT_mod,LxHVMA_Internal_Accession_number,LxOrderDate,LxOrderType,LxOrder_Id_Num,LxLoinc,LxOrdering_Provider_id,lastUpDate,createdDate)
-             values (%s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s)
-            """
-            values = (demogid,mrn,cpt,modi,accessnum,orderd,ordertp,orderid,lxloinc,provid,DBTIMESTR,DBTIMESTR)
-
-        runSql(lx_str,values)
-                
+        lx, created = Lx.objects.get_or_create(LxPatient_id=demogid, 
+            LxMedical_Record_Number=mrn, 
+            LxOrder_Id_Num=orderid,
+            LxHVMA_Internal_Accession_number=accessnum,
+            LxTest_Code_CPT=cpt,
+            LxOrderDate=orderd,
+            LxOrderType=ordertp)
+        lx.LxTest_Code_CPT_mod = modi
+        lx.LxLoinc = lxloinc
+        lx.LxOrdering_Provider_id = provid
+        lx.lastUpdate = DBTIMESTR
+        lx.loinc = loinc
+        lx.save()
     movefile(incomdir, filename,filelines)
                                                                                                                                                                                                                                                                                                                                             
                 
