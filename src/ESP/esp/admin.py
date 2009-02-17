@@ -4,6 +4,7 @@
 from ESP.esp.models import *
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
+from ESP.esp import models
 
 class CaseOptions(admin.ModelAdmin):
     list_filter = ('caseWorkflow','caseQueryID','caseMsgFormat','caseProvider')
@@ -70,6 +71,9 @@ class CaseWorkflowOptions(admin.ModelAdmin):
 class RuleAdmin(admin.ModelAdmin):
     list_display = ('ruleName',)
 
+class ExternalToLoincMapAdmin(admin.ModelAdmin):
+    list_display = ['ext_code', 'ext_name', 'loinc', ]
+
 admin.site.register(Case, CaseOptions)
 admin.site.register(SocialHistory)
 admin.site.register(Enc, EncOptions)
@@ -95,4 +99,5 @@ admin.site.register(Demog, DemogOptions)
 admin.site.register(CaseWorkflow, CaseWorkflowOptions)
 admin.site.register(VAERSadditions)
 admin.site.register(Rule, RuleAdmin)
+admin.site.register(models.ExternalToLoincMap, ExternalToLoincMapAdmin)
 

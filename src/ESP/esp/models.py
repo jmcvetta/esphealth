@@ -56,6 +56,80 @@ DEST_TYPES = (
 )
 
 
+class Loinc(models.Model):
+    '''
+    Logical Observation Identifiers Names and Codes
+        Derived from RELMA database available at 
+        http://loinc.org/downloads
+    '''
+    
+    # This has to be come before field definitions, because there is a field 
+    # named property that lives in the same namespace.
+    def _get_name(self):
+        '''
+        Returns long common name if available, falling back to short name.
+        '''
+        if self.long_common_name:
+            return self.long_common_name
+        return self.shortname
+    name = property(_get_name)
+    
+    #
+    # The structure of this class mirrors exactly the schema of the LOINCDB.TXT 
+    # file distributed by RELMA.
+    #
+    loinc_num = models.CharField(max_length=20, primary_key=True) # The LOINC code itself
+    component = models.TextField(blank=True, null=True)
+    property = models.TextField(blank=True, null=True)
+    time_aspct = models.TextField(blank=True, null=True)
+    system = models.TextField(blank=True, null=True)
+    scale_typ = models.TextField(blank=True, null=True)
+    method_typ = models.TextField(blank=True, null=True)
+    relat_nms = models.TextField(blank=True, null=True)
+    loinc_class_field = models.TextField(blank=True, null=True)
+    source = models.TextField(blank=True, null=True)
+    dt_last_ch = models.TextField(blank=True, null=True)
+    chng_type = models.TextField(blank=True, null=True)
+    comments = models.TextField(blank=True, null=True)
+    answerlist = models.TextField(blank=True, null=True)
+    status = models.TextField(blank=True, null=True)
+    map_to = models.TextField(blank=True, null=True)
+    scope = models.TextField(blank=True, null=True)
+    norm_range = models.TextField(blank=True, null=True)
+    ipcc_units = models.TextField(blank=True, null=True)
+    reference = models.TextField(blank=True, null=True)
+    exact_cmp_sy = models.TextField(blank=True, null=True)
+    molar_mass = models.TextField(blank=True, null=True)
+    classtype = models.TextField(blank=True, null=True)
+    formula = models.TextField(blank=True, null=True)
+    species = models.TextField(blank=True, null=True)
+    exmpl_answers = models.TextField(blank=True, null=True)
+    acssym = models.TextField(blank=True, null=True)
+    base_name = models.TextField(blank=True, null=True)
+    final = models.TextField(blank=True, null=True)
+    naaccr_id = models.TextField(blank=True, null=True)
+    code_table = models.TextField(blank=True, null=True)
+    setroot = models.TextField(blank=True, null=True)
+    panelelements = models.TextField(blank=True, null=True)
+    survey_quest_text = models.TextField(blank=True, null=True)
+    survey_quest_src = models.TextField(blank=True, null=True)
+    unitsrequired = models.TextField(blank=True, null=True)
+    submitted_units = models.TextField(blank=True, null=True)
+    relatednames2 = models.TextField(blank=True, null=True)
+    shortname = models.TextField(blank=True, null=True)
+    order_obs = models.TextField(blank=True, null=True)
+    cdisc_common_tests = models.TextField(blank=True, null=True)
+    hl7_field_subfield_id = models.TextField(blank=True, null=True)
+    external_copyright_notice = models.TextField(blank=True, null=True)
+    example_units = models.TextField(blank=True, null=True)
+    inpc_percentage = models.TextField(blank=True, null=True)
+    long_common_name = models.TextField(blank=True, null=True)
+    
+    def __unicode__(self):
+        return '%s -- %s' % (self.loinc_num, self.name)
+    
+
+
 class icd9(models.Model):
     icd9Code = models.CharField('ICD9 Code', max_length=10,)
     icd9Long = models.CharField('Name', max_length=50,)
@@ -720,6 +794,11 @@ class Lx(models.Model):
     LxLoinc = models.CharField('LOINC code',max_length=20,blank=True,null=True,db_index=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+    #
+    # New fields
+    #
+    ext_code = models.CharField(max_length=100, blank=True, null=True)
+    loinc = models.ForeignKey(Loinc, blank=True, null=True)
     # Use custom manager
     objects = LxManager()
     
@@ -1014,6 +1093,11 @@ class ConditionLOINC(models.Model):
 
 
 class CPTLOINCMap(models.Model):
+    #
+    # DEPRECATED
+    #
+    # Use ExternalToLoincMap instead
+    #
     CPT = models.TextField('CPT Codes',blank=True,null=True)
     CPTCompt = models.TextField('Compoment Codes',blank=True,null=True)
     Loinc = models.TextField('Loinc Codes',blank=True,null=True)
@@ -1082,4 +1166,16 @@ class HL7File(models.Model):
         return u'%s %s' % (self.filename,self.datedownloaded)
 
                                 
- 
+class ExternalToLoincMap(models.Model):
+    '''
+    A mapping from an external code (for a lab result, etc) to a Loinc number
+    '''
+    # This table and utilities making use of it assume only one external 
+    # code table per ESP installation.  More work will be required if your 
+    # installation must comprehend multiple, potentially overlapping, external 
+    # code sources
+    ext_code = models.CharField(max_length=100, unique=True, blank=False)
+    ext_name = models.CharField(max_length=255, blank=True, null=True)
+    # Loinc can be null to indicate an external code that maps to nothing
+    loinc = models.ForeignKey(Loinc, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)

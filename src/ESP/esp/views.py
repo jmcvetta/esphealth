@@ -56,7 +56,10 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.sites.models import Site
+from django.utils.translation import ugettext, ugettext_lazy as _
+from django.views.generic.simple import redirect_to
 #from django import forms,oldforms # TODO fixme!
+
 
 from ESP.settings import SITEROOT
 from ESP.settings import TOPDIR
@@ -66,6 +69,7 @@ from ESP.settings import DATE_FORMAT
 from ESP import settings
 from ESP.esp.models import *
 from ESP.esp import models
+from ESP.esp import forms
 from ESP.utils.utils import log
 from ESP.utils import utils as util
 
@@ -1625,6 +1629,7 @@ def show_ext_loinc_maps(request):
     Administrative screen to add/delete/update ExternalToLoincMap objects
     '''
     values = {}
+    values['request'] = request # Needed for espbase.html
     return render_to_response('esp/show_ext_loinc_maps.html', values, context_instance=RequestContext(request))
 
 
@@ -1632,15 +1637,68 @@ def show_ext_loinc_maps(request):
 def json_ext_loinc_grid(request):
     '''
     '''
+    flexi = util.Flexigrid(request)
+    maps = models.ExternalToLoincMap.objects.select_related().all()
     rows = []
+    for m in maps:
+        row = {}
+        row['id'] = m.id
+        row['cell'] = [
+            m.id,
+            m.ext_code,
+            m.ext_name,
+            m.loinc.loinc_num,
+            m.loinc.name,
+            ]
+        rows += [row]
+    json = flexi.json(rows)
     #return HttpResponse(json, mimetype='application/json')
     return HttpResponse(json)
 
 
 @login_required
-def edit_ext_loinc_map(request, map_id):
+def edit_ext_loinc_map(request, map_id=None, action=None):
     '''
     '''
     values = {}
+    values['request'] = request # FIXME: Ugh, we really need to clean up espbase.html
+    log.debug('map_id: %s' % map_id)
+    log.debug('action: %s' % action)
+    if action == 'delete':
+        map_obj = get_object_or_404(models.ExternalToLoincMap, pk=map_id)
+        map_obj.delete()
+        return redirect_to(request, urlresolvers.reverse('show_ext_loinc_maps'))
+    elif action == 'new':
+        values['loinc_name'] = '[Enter a LOINC code...]'
+        map_obj = models.ExternalToLoincMap()
+        form = forms.ExtLoincForm()
+    else: # Edit
+        map_obj = get_object_or_404(models.ExternalToLoincMap, pk=map_id)
+        data = {
+            'ext_code': map_obj .ext_code,
+            'ext_name': map_obj.ext_name,
+            'loinc_num': map_obj.loinc.loinc_num,
+            'notes': map_obj.notes,
+            }
+        values['loinc_name'] = map_obj.loinc.name
+        form = forms.ExtLoincForm(data)
+    if request.method == 'POST':
+        form = forms.ExtLoincForm(request.POST)
+        if form.is_valid():
+            loinc = models.Loinc.objects.get(pk=form.cleaned_data['loinc_num'])
+            map_obj.loinc = loinc
+            map_obj.ext_code = form.cleaned_data['ext_code']
+            map_obj.ext_name = form.cleaned_data['ext_name']
+            map_obj.notes = form.cleaned_data['notes']
+            map_obj.save()
+            return redirect_to(request, urlresolvers.reverse('show_ext_loinc_maps'))
+    values['form'] = form
     return render_to_response('esp/edit_ext_loinc_map.html', values, context_instance=RequestContext(request))
     
+
+@login_required
+def loinc_name_lookup(request):
+    loinc_num = request.REQUEST['loinc_num']
+    log.debug('loinc_num: %s' % loinc_num)
+    loinc = get_object_or_404(models.Loinc, pk=loinc_num)
+    return HttpResponse(loinc.name, mimetype='text/plain')

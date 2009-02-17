@@ -15,6 +15,8 @@ urlpatterns = patterns('',
 )
 
 urlpatterns += patterns('ESP.esp.views',
+    url(r'^admin/(.*)', admin.site.root),
+    #
     url(r'^/index/$', 'index'),
     url(r'^$', 'index'),
     url(r'^/$', 'index'),
@@ -43,7 +45,6 @@ urlpatterns += patterns('ESP.esp.views',
     url(r'^workflows/(?P<object_id>\d+)/updatewfComment/$', 'updateWorkflowComment'),
     url(r'^help/(?P<topic>\w+)/$','showhelp'),
     url(r'^help/$','showhelp'),
-    url(r'^admin/(.*)', admin.site.root),
     url(r'^login/$', 'esplogin'),
     url(r'^pswdchange/$', 'password_change'),
     url(r'^logout/$', 'logout'),
@@ -65,6 +66,17 @@ urlpatterns += patterns('ESP.esp.views',
     # Case Detail
     #
     url(r'^cases/view/(?P<case_id>\d+)/$', 'case_detail', name='case_detail'),
+    #
+    # Administrative Screens (Non-Django)
+    #
+    url(r'^util/map/ext-loinc/$', 'show_ext_loinc_maps', name='show_ext_loinc_maps'),
+    url(r'^util/map/ext-loinc/edit/$', 'edit_ext_loinc_map', {'action': 'edit'}, name='edit_ext_loinc_map'), 
+    url(r'^util/map/ext-loinc/edit/(?P<map_id>\d+)/$', 'edit_ext_loinc_map', {'action': 'edit'}),
+    url(r'^util/map/ext-loinc/delete/$', 'edit_ext_loinc_map', {'action': 'delete'}, name='delete_ext_loinc_map'),
+    url(r'^util/map/ext-loinc/delete/(?P<map_id>\d+)/$', 'edit_ext_loinc_map', {'action': 'delete'}),
+    url(r'^util/map/ext-loinc/new/$', 'edit_ext_loinc_map', {'action': 'new'}, name='new_ext_loinc_map'),
+    url(r'^util/map/ext-loinc/grid/$', 'json_ext_loinc_grid', name='json_ext_loinc_grid'),
+    url(r'^util/loinc/name/$', 'loinc_name_lookup', name='loinc_name_lookup'),
 )
 
 
