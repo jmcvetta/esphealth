@@ -1448,3 +1448,10 @@ body.core-flatfile #id_content {
 .module table .vPositiveSmallIntegerField {
     width: 22px;
 }
+
+.blurb {
+    border: thin solid black;
+    background-color: #800000;
+    color: white;
+    padding: 0.25em;
+}
