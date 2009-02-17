@@ -2,7 +2,7 @@
 # uses a generator for large file processing
 # of delimited files
 
-import os,sys
+import os,sys,re
 sys.path.insert(0, '/home/ESP/ESP')
 # for esphealth.org sys.path.insert(0, '/home/ESPNew/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
@@ -269,9 +269,15 @@ def searchId(stmt, values ):
 def convertWgHg(wghg,unit,factor,factor2):
     """convert wghg (weight or height) from lbs to KG or from feet to cm
     assume weight/height always includes the unit 'lbs' or '\''
+feb 2009 seeing lots of errors like 
+RROR Parser epicvis.esp.02122009: Convert weight : 150 lb for Patient xxx
+ERROR Parser epicvis.esp.02122009: Convert weight : 182 lb 8 oz for Patient xxx
+ERROR Parser epicvis.esp.02122009: Convert weight : 136 lb for Patient xxx
+ERROR Parser epicvis.esp.02122009: Convert weight : 128 lb for Patient xxx
+ERROR Parser epicvis.esp.02122009: Convert weight : 137 lb for Patient xxx
+
     """
     
-    import re
     wghg =wghg.upper().strip()
     lbft_list=[i.strip() for i in wghg.split(unit) if i]
     lbft=lbft_list[0]
@@ -364,7 +370,10 @@ def parseEnc(incomdir, filename,demogdict,provdict):
             try:
                 weight= '%s kg' % convertWgHg(weight,'LBS',16,0.02835)
             except:
-                iplogging.error('Parser %s: Convert weight : %s for Patient %s' % (filename,weight,mrn))
+                try:
+                	weight= '%s kg' % convertWgHg(weight,'LB',16,0.02835)
+                except:
+	                iplogging.error('Parser %s: Convert error for weight : %s for Patient %s' % (filename,weight,mrn))
         if height:
             try:
                 height= convertWgHg(height,'\'',12,2.54)

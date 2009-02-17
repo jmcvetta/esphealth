@@ -171,7 +171,7 @@ def hl7handler():
     for f in files:
         f = hl7dir + '/%s' % f
         javaruncmd = "%s -classpath %s %s %s >> %s" % (os.path.join(javadir, 'java'), javaclass, sendMsgcls, f,logfile )
-
+        print '### running:',javaruncmd,'\n'
         fin,fout = os.popen4(javaruncmd)
         result = fout.read()
         if string.upper(result).find('ERROR')!=-1: ##error
@@ -195,15 +195,18 @@ def doFTP():
     try:
     	ftp = FTP(FTPSERVER)
     except:
+        errmsg = 'espmanager FTP login failed\n'
+        sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg=errmsg)
+	emlogging.warn(errmsg)
         return newfiles
     try:
         ftp.login(FTPUSER,FTPPWD)
     except:
         fp = StringIO.StringIO()
         traceback.print_exc(file=fp)
-        errmsg = 'Error when do FTP:\n\n' + fp.getvalue()
+        errmsg = '##espmanager FTP error :\n\n' + fp.getvalue()
         sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg=errmsg)
-        
+	emlogging.warn(errmsg)        
     #local site directory
     todir = os.path.join(TOPDIR, LOCALSITE,'incomingData/')
     os.chdir(todir)    
@@ -233,8 +236,9 @@ def doFTP():
             ##not downloaded yet
             newfiles.append(eachfile)
             ftp.retrbinary('RETR ' + eachfile, open(eachfile, 'wb').write)
-            
+            emlogging.info('## espmanager ftp got %s' % eachfile)
     ftp.quit()
+    print '## espmanager newfiles = ',newfiles
     return newfiles
 
 
