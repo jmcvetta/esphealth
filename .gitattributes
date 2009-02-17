@@ -20,6 +20,7 @@ src/ESP/backfill-by-month.sh -text
 src/ESP/esp/admin.py -text
 src/ESP/esp/forms.py -text
 src/ESP/esp/urls.py -text
+src/ESP/kettle/pdi_3_1_0.pg.sql -text
 src/ESP/kludge/north-adams-lab-result-kludge.py -text
 src/ESP/localsettings.py -text
 src/ESP/management.py -text
