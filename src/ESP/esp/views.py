@@ -37,6 +37,7 @@ from django.core import urlresolvers
 from django.core.paginator import Paginator
 from django.core.paginator import InvalidPage
 from django.core.mail import send_mail
+from django.db.models import Q
 from django.template import Context
 from django.template import loader
 from django.template import Template
@@ -1638,7 +1639,15 @@ def json_ext_loinc_grid(request):
     '''
     '''
     flexi = util.Flexigrid(request)
-    maps = models.ExternalToLoincMap.objects.select_related().all()
+    if flexi.sortorder == 'asc':
+        sortname = flexi.sortname
+    else:
+        sortname = '-%s' % flexi.sortname
+    maps = models.ExternalToLoincMap.objects.select_related().all().order_by(sortname)
+    if flexi.query:
+        query_str = 'Q(%s__icontains="%s")' % (flexi.qtype, flexi.query)
+        q_obj = eval(query_str)
+        maps = maps.filter(q_obj)
     rows = []
     for m in maps:
         row = {}

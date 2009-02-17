@@ -64,14 +64,13 @@
                     {display: 'Map ID', name: 'id', width: 50, sortable: true, align: 'left'},
                     {display: 'External Code', name: 'ext_code', width: 100, sortable: true, align: 'left'},
                     {display: 'External Name', name: 'ext_name', width: 300, sortable: true, align: 'left'},
-                    {display: 'LOINC Code', name: 'loinc_code', width: 100, sortable: true, align: 'left'},
-                    {display: 'LOINC Name', name: 'loinc_name', width: 400, sortable: true, align: 'left'},
+                    {display: 'LOINC Code', name: 'loinc__loinc_num', width: 100, sortable: true, align: 'left'},
+                    {display: 'LOINC Name', name: 'loinc__name', width: 400, sortable: false, align: 'left'},
                     ],
                 searchitems: [
                     {display: 'External Code', name: 'ext_code'},
                     {display: 'External Name', name: 'ext_name'},
-                    {display: 'LOINC Code', name: 'loinc_code'},
-                    {display: 'LOINC Name', name: 'loinc_name'},
+                    {display: 'LOINC Code', name: 'loinc__loinc_num'},
                     ],
                 buttons: [
                     {name: 'Add', bclass: 'add', onpress : add_map},
