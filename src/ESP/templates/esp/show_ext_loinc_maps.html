@@ -27,10 +27,14 @@
     <script type="text/javascript">
 
         function add_map(com, grid) {
+            location.href = "{% url new_ext_loinc_map %}";
         };
 
         function delete_map(com, grid) {
-            var id = $('.trSelected', grid)[0].cells[0].textContent;
+            var loinc_num = $('.trSelected', grid)[0].cells[3].textContent;
+            var ext = $('.trSelected', grid)[0].cells[1].textContent;
+            $('#delete_loinc').text(loinc_num);
+            $('#delete_ext').text(ext);
             $('#modal_delete').jqmShow();
         };
 
@@ -39,18 +43,18 @@
         {% endcomment %}
         function edit_map(com, grid) {
             var id = $('.trSelected', grid)[0].cells[0].textContent;
-            alert(id);
-            $('#modal_edit')
-                .jqm({
-                    {# FIXME: This really should use a {% url %} tag #}
-                    ajax: "/util/map/ext-loinc/edit/" + id,
-                    })
-                .jqmShow();
+            var url = '{% url edit_ext_loinc_map %}' + id;
+            location.href = url;
         };
 
         $(document).ready(function() {
             $('#modal_edit').jqm();
             $('#modal_delete').jqm();
+            $('#yes_delete').click( function() {
+                var id = $('.trSelected')[0].cells[0].textContent;
+                var url = "{% url delete_ext_loinc_map %}" + id;
+                location.href = url;
+            });
             $('#map_table').flexigrid({
                 striped: true,
                 height: 'auto',
@@ -100,16 +104,16 @@
 <table id="map_table">
 </table>
 
-<div id="modal_edit" class="jqmWindow">
-</div>
-
 <div id="modal_delete" class="jqmWindow">
     <h1>
         {% trans 'Delete Confirmation' %}
     </h1>
     <p>Are you sure you want to delete this map?<p>
+    <blockquote>
+        <span id="delete_ext"></span> --> <span id="delete_loinc"></span>
+    </blockquote>
     <input type='button' class="jqmClose" value='Cancel'>
-    <input type='button' name="yes_delete" value='Yes, delete it!'>
+    <input type='button' id="yes_delete" value='Yes, delete it!'>
 </div>
 
 
