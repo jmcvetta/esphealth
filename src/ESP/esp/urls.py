@@ -15,12 +15,10 @@ urlpatterns = patterns('',
 )
 
 urlpatterns += patterns('ESP.esp.views',
-    url(r'^admin/(.*)', admin.site.root),
-    #
     url(r'^/index/$', 'index'),
     url(r'^$', 'index'),
     url(r'^/$', 'index'),
-    url(r'^utilities/$','showutil'),
+    url(r'^utilities/$', 'showutil', name='admin_util'),
     url(r'^preload/rulexclud/(?P<update>\S*)/$', 'preloadrulexclud'),
     url(r'^preload/rulexclud/$', 'preloadrulexclud'),
     url(r'^preload/rulexclud/$', 'preloadrulexclud'),

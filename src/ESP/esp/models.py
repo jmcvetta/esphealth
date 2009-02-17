@@ -1179,3 +1179,6 @@ class ExternalToLoincMap(models.Model):
     # Loinc can be null to indicate an external code that maps to nothing
     loinc = models.ForeignKey(Loinc, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = 'External Code to LOINC Map'

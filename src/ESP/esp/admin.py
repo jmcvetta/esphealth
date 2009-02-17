@@ -74,6 +74,10 @@ class RuleAdmin(admin.ModelAdmin):
 class ExternalToLoincMapAdmin(admin.ModelAdmin):
     list_display = ['ext_code', 'ext_name', 'loinc', ]
 
+class LoincAdmin(admin.ModelAdmin):
+    list_display = ['loinc_num', 'name']
+    search_fields = ['loinc_num', 'long_common_name', 'shortname']
+
 admin.site.register(Case, CaseOptions)
 admin.site.register(SocialHistory)
 admin.site.register(Enc, EncOptions)
@@ -100,4 +104,5 @@ admin.site.register(CaseWorkflow, CaseWorkflowOptions)
 admin.site.register(VAERSadditions)
 admin.site.register(Rule, RuleAdmin)
 admin.site.register(models.ExternalToLoincMap, ExternalToLoincMapAdmin)
+admin.site.register(models.Loinc, LoincAdmin)
 

@@ -12,8 +12,7 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     # Django Admin
-    url(r'^ESP/admin/(.*)', admin.site.root),
-    url(r'^ESP/admin/doc/', include('django.contrib.admindocs.urls')),
+    url(r'^ESP/admin/(.*)', admin.site.root, name='db_admin'),
     url(r'^ESP/admin/doc/', include('django.contrib.admindocs.urls')),
     
     # Core Application

@@ -44,8 +44,7 @@
 	     <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/sent/">Case Report Archive</a></td></tr>
 
               {% if request.user.is_staff %}
-                   <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/admin/">Administration</a></td></tr> 
-                  <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/utilities/">Utilities</a></td></tr>
+                   <tr class="{% cycle rowcolors %}"><td><a href="{% url admin_util %}">Administration &amp; Utilities</a></td></tr> 
                {% endif %}
              <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/help/">Help, documentation</a></td></tr>
 	         {% endif %} 
