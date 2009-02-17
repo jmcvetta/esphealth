@@ -1,0 +1,116 @@
+{% extends 'esp/espbase.html' %}
+{% load i18n %}
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/jqModal.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="/js/flexigrid/css/flexigrid/flexigrid.css" />
+    <style type="text/css">
+    	.flexigrid div.fbutton .add
+		{
+			background: url(/js/flexigrid/css/images/add.png) no-repeat center left;
+		}	
+	.flexigrid div.fbutton .delete
+		{
+			background: url(/js/flexigrid/css/images/close.png) no-repeat center left;
+		}	
+	.flexigrid div.fbutton .edit
+		{
+			background: url(/js/flexigrid/css/images/edit.gif) no-repeat center left;
+		}	
+    </style>
+{% endblock %}
+
+{% block extrascript %}
+    <script type="text/javascript" src="/js/jquery-1.3.1.js"></script>
+    <script type="text/javascript" src="/js/jqModal.js"></script>
+    <script type="text/javascript" src="/js/flexigrid/flexigrid.js"></script>
+    <script type="text/javascript">
+
+        function add_map(com, grid) {
+        };
+
+        function delete_map(com, grid) {
+            var id = $('.trSelected', grid)[0].cells[0].textContent;
+            $('#modal_delete').jqmShow();
+        };
+
+        {% comment %}
+        Maybe we don't need to do this in a modal -- what's the point, anyway?
+        {% endcomment %}
+        function edit_map(com, grid) {
+            var id = $('.trSelected', grid)[0].cells[0].textContent;
+            alert(id);
+            $('#modal_edit')
+                .jqm({
+                    {# FIXME: This really should use a {% url %} tag #}
+                    ajax: "/util/map/ext-loinc/edit/" + id,
+                    })
+                .jqmShow();
+        };
+
+        $(document).ready(function() {
+            $('#modal_edit').jqm();
+            $('#modal_delete').jqm();
+            $('#map_table').flexigrid({
+                striped: true,
+                height: 'auto',
+                url: '{% url json_ext_loinc_grid %}',
+                dataType: 'json',
+                colModel: [
+                    {display: 'Map ID', name: 'id', width: 50, sortable: true, align: 'left'},
+                    {display: 'External Code', name: 'ext_code', width: 100, sortable: true, align: 'left'},
+                    {display: 'External Name', name: 'ext_name', width: 300, sortable: true, align: 'left'},
+                    {display: 'LOINC Code', name: 'loinc_code', width: 100, sortable: true, align: 'left'},
+                    {display: 'LOINC Name', name: 'loinc_name', width: 400, sortable: true, align: 'left'},
+                    ],
+                searchitems: [
+                    {display: 'External Code', name: 'ext_code'},
+                    {display: 'External Name', name: 'ext_name'},
+                    {display: 'LOINC Code', name: 'loinc_code'},
+                    {display: 'LOINC Name', name: 'loinc_name'},
+                    ],
+                buttons: [
+                    {name: 'Add', bclass: 'add', onpress : add_map},
+                    {separator: true},
+                    {name: 'Edit', bclass: 'edit', onpress : edit_map},
+                    {separator: true},
+                    {name: 'Delete', bclass: 'delete', onpress : delete_map},
+                    ],
+                singleSelect: true,
+                sortname: 'id',
+                sortorder: 'asc',
+                usepager: 'true',
+                width: '100%',
+                rpOptions: [50, 100],
+                // rp: {{ default_rp }},
+                showToggleBtn: false,
+                showTableToggleBtn: true,
+            });
+        });
+    </script>
+{% endblock %}
+
+
+{% block content %}
+
+<h1>
+    External Code to LOINC Map
+</h1>
+
+<table id="map_table">
+</table>
+
+<div id="modal_edit" class="jqmWindow">
+</div>
+
+<div id="modal_delete" class="jqmWindow">
+    <h1>
+        {% trans 'Delete Confirmation' %}
+    </h1>
+    <p>Are you sure you want to delete this map?<p>
+    <input type='button' class="jqmClose" value='Cancel'>
+    <input type='button' name="yes_delete" value='Yes, delete it!'>
+</div>
+
+
+{% endblock %} {# content #}

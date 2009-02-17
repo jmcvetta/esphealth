@@ -42,6 +42,7 @@ src/ESP/templates/esp/case_grid.html -text
 src/ESP/templates/esp/case_list.html -text
 src/ESP/templates/esp/matchupload.html -text
 src/ESP/templates/esp/rule_excludlist.html -text
+src/ESP/templates/esp/show_ext_loinc_maps.html -text
 src/ESP/templates/espheader.gif -text
 src/ESP/templates/espheader.png -text
 src/ESP/templates/espheader150.gif -text
