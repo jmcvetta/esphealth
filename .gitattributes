@@ -18,6 +18,7 @@ docs/FINAL[!!-~]ELR[!!-~]231[!!-~]Implementation[!!-~]Guide_052104.pdf -text svn
 /readme -text
 src/ESP/backfill-by-month.sh -text
 src/ESP/esp/admin.py -text
+src/ESP/esp/forms.py -text
 src/ESP/esp/urls.py -text
 src/ESP/kludge/north-adams-lab-result-kludge.py -text
 src/ESP/localsettings.py -text
