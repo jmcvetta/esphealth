@@ -31,6 +31,7 @@ src/ESP/sendMsgs/org/openuri/www/Bcdc_elrSoapStub.class -text
 src/ESP/setup_esp_env.sh -text
 src/ESP/templates/404.html -text
 src/ESP/templates/admin/base_site.html -text
+src/ESP/templates/admin/index.html -text
 src/ESP/templates/admin/login.html -text
 src/ESP/templates/arrow.GIF -text
 src/ESP/templates/css/jqModal.css -text
