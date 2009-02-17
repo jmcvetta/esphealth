@@ -125,8 +125,12 @@ class Loinc(models.Model):
     inpc_percentage = models.TextField(blank=True, null=True)
     long_common_name = models.TextField(blank=True, null=True)
     
+    class Meta:
+        verbose_name = 'LOINC'
+
     def __unicode__(self):
         return '%s -- %s' % (self.loinc_num, self.name)
+    
     
 
 
@@ -1096,7 +1100,7 @@ class CPTLOINCMap(models.Model):
     #
     # DEPRECATED
     #
-    # Use ExternalToLoincMap instead
+    # Use External_To_Loinc_Map instead
     #
     CPT = models.TextField('CPT Codes',blank=True,null=True)
     CPTCompt = models.TextField('Compoment Codes',blank=True,null=True)
@@ -1166,7 +1170,7 @@ class HL7File(models.Model):
         return u'%s %s' % (self.filename,self.datedownloaded)
 
                                 
-class ExternalToLoincMap(models.Model):
+class External_To_Loinc_Map(models.Model):
     '''
     A mapping from an external code (for a lab result, etc) to a Loinc number
     '''

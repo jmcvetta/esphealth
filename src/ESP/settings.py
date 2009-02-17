@@ -174,7 +174,8 @@ def getLogging(appname,debug=0):
 
 DATE_FORMAT = '%d %b %Y'
 
-CASES_PER_PAGE = 10 # Default number of cases displayed per page
+# Default number of rows per page displayed in Flexigrids.  Should be in [10, 25, 50, 100]
+ROWS_PER_PAGE = 10  
 
 
 #===============================================================================

@@ -521,9 +521,8 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
         # Get loinc
         #
         ext_code = utils.ext_code_from_cpt(cpt, '')
-        c = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt='')
-        m = models.ExternalToLoincMap.objects.get(ext_code=ext_code)
-        loinc = m.loinc
+        mapping = models.External_To_Loinc_Map.objects.get(ext_code=ext_code)
+        loinc = mapping.loinc
         lxloinc = loinc.loinc_num
         try:
             if provdict:
@@ -601,10 +600,15 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
             
         #get loinc
         c = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt=comp)
+        ext_code = utils.ext_code_from_cpt(cpt, '')
+        m = models.External_To_Loinc_Map.objects.filter(ext_code=ext_code)
         lxloinc=''
-        if c:
-            lxloinc=(c[0].Loinc).strip()
+        if m:
+            lxloinc=(c[0].loinc.loinc_num).strip()
         elif compname:
+            # 
+            # NOTE: This is where we do NLP code search
+            #
             if codeSearch(compname)  and not excdict.has_key(('%s' % cpt,'%s' % comp)) and (cpt,comp,compname.upper()) not in alertcode: ##log new CPT code which is not in esp_cptloincmap
                 alertcode.append((cpt,comp,compname.upper()))
 

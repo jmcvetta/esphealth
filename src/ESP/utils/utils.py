@@ -129,7 +129,10 @@ def ext_code_from_cpt(cpt, compt):
     '''
     Generate a string for Lx.ext_code from CPT + CPT Component
     '''
-    return '%s--%s' % (cpt, compt)
+    if compt:
+        return '%s--%s' % (cpt, compt)
+    else:
+        return cpt
     
     
 class Flexigrid:
@@ -145,7 +148,7 @@ class Flexigrid:
         self.sortname = request.REQUEST.get('sortname', 'id') # Field to sort on
         self.page = request.REQUEST.get('page', 1) # What page we are on
         self.sortorder = request.REQUEST.get('sortorder', 'asc') # Ascending/descending
-        self.rp = int(request.REQUEST.get('rp', settings.CASES_PER_PAGE)) # Num requests per page
+        self.rp = int(request.REQUEST.get('rp', settings.ROWS_PER_PAGE)) # Num requests per page
         self.qtype = request.REQUEST.get('qtype', None) # Query type
         self.query = request.REQUEST.get('query', None) # Query string
         log.debug('sortname: %s' % self.sortname)

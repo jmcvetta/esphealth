@@ -103,6 +103,6 @@ admin.site.register(Demog, DemogOptions)
 admin.site.register(CaseWorkflow, CaseWorkflowOptions)
 admin.site.register(VAERSadditions)
 admin.site.register(Rule, RuleAdmin)
-admin.site.register(models.ExternalToLoincMap, ExternalToLoincMapAdmin)
+admin.site.register(models.External_To_Loinc_Map, ExternalToLoincMapAdmin)
 admin.site.register(models.Loinc, LoincAdmin)
 
