@@ -12,9 +12,9 @@ NORTH_ADAMS/preLoaderData/esp_cptloincmap.txt -text
 NORTH_ADAMS/preLoaderData/esp_rule.txt -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
-docs/ELR[!!-~]EMR[!!-~]Query[!!-~]Specification[!!-~]v1.0.doc -text
-docs/ESPSpecificationsAug3_2006.doc -text
-docs/FINAL[!!-~]ELR[!!-~]231[!!-~]Implementation[!!-~]Guide_052104.pdf -text svneol=unset#unset
+doc/ELR[!!-~]EMR[!!-~]Query[!!-~]Specification[!!-~]v1.0.doc -text
+doc/ESPSpecificationsAug3_2006.doc -text
+doc/FINAL[!!-~]ELR[!!-~]231[!!-~]Implementation[!!-~]Guide_052104.pdf -text svneol=unset#unset
 /readme -text
 src/ESP/backfill-by-month.sh -text
 src/ESP/esp/admin.py -text

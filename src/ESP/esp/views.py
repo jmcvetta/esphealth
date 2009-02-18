@@ -1,27 +1,7 @@
-"""
-May 26 added site root for all contexts
-May 1
-Now adding faked enc, Lx and Rx records to case_detail views
+'''
+                             Views for ESP Health
+'''
 
-April 25
-Workflow history is now visible and individual entries can have their comment updated
-Todo - find patient by name or mrn
-
-so far, we have a fake case and workflow generator
-we can scroll through cases in each workflow state and change that state
-this makes a workflow history record and updates the case state
-
-need workflow history view for each case
-find patient by name and show cases and their states
-
-eventually need to extend case faker to include some pharmacy and labs
-show case with all encounter, pharmacy, lab and pcp data
-on the workflow updater screen which is probably the central one
-
-overview (counts) of workflow states, changes by date etc onto home page
-last logged in, who's logged in
-
-"""
 import sys
 import os
 import string
@@ -59,7 +39,6 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib.sites.models import Site
 from django.utils.translation import ugettext, ugettext_lazy as _
 from django.views.generic.simple import redirect_to
-#from django import forms,oldforms # TODO fixme!
 
 
 from ESP.settings import SITEROOT
