@@ -15,6 +15,7 @@
                 height: 'auto',
                 url: '{% url json_case_grid %}{{ status }}/',
                 dataType: 'json',
+                singleSelect: true,
                 {% if perms.esp.view_phi %}
                     colModel: [
                         {display: 'Case ID #', name: 'id', width: 50, sortable: true, align: 'left'},
