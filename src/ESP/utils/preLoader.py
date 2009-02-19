@@ -8,6 +8,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 import django, datetime
 from ESP.esp.models import *
+from ESP.esp import models
 from django.db.models import Q
 from ESP.settings import TOPDIR,LOCALSITE, USESQLITE,getLogging,EMAIL_SENDER
 import string,csv
@@ -538,10 +539,11 @@ def makecpt(cursor):
 
 ###################################
 def makeicd9(cursor):
-    """ found these codes somewhere or other..."""
-    cursor.execute("delete from esp_icd9")
-    cursor.execute("alter table esp_icd9 AUTO_INCREMENT=1") # make sure we start id=1 again!
-    codes = []
+    '''
+    See http://www.hcup-us.ahrq.gov/toolssoftware/mhsa/mhsa.jsp#representation 
+    for rules on representation of ICD9 codes with implicit decimals.
+    '''
+    models.icd9.objects.all().delete()
     n = 1
     from ESPicd9 import icd
     for line in icd.split('\n'):
@@ -549,10 +551,31 @@ def makeicd9(cursor):
             print n,'icd done'
         n += 1
         line = line.replace("'",'')
-        code,trans = line.split('\t')
-        code = '%s.%s' % (code[:3],code[3:]) # make all 3 digit decimals
-        c = icd9(icd9Code=code,icd9Long=trans.capitalize())
-        c.save()
+        code_str, name = line.split('\t')
+        code_str = code_str.strip()
+        letter = None
+        right = None
+        try:
+            left = int(code_str[:3])
+            right = code_str[3:]
+            code = '%s.%s' % (left, right)
+        except ValueError:
+            letter = code_str[:1]
+            if letter == 'V':
+                # Left code on V's are 2-digit
+                left = int(code_str[1:3])
+                right = code_str[3:]
+                pass
+            elif letter == 'E':
+                # Left code on E's are 3-digit
+                left = int(code_str[1:4])
+                right = code_str[4:]
+            else:
+                print code_str
+                raise 'WTF?'
+            code = '%s%s.%s' % (letter, left, right)
+        models.icd9(icd9Code=code, icd9Long=name).save()
+
 
 
 ###################################
