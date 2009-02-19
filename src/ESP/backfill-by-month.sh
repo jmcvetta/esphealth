@@ -5,7 +5,7 @@
 #
 #
 
-ESP_HOME=/home/rejmv/work/north_adams_simple-esp/
+ESP_HOME=/home/rejmv/work/north_adams/
 ESP_SRC=$ESP_HOME/src/ESP/
 ALL_HL7=$ESP_HOME/NORTH_ADAMS/all_HL7/
 INCOMING_HL7=$ESP_HOME/NORTH_ADAMS/incomingHL7/
@@ -14,16 +14,6 @@ INCOMING_DATA=$ESP_HOME/NORTH_ADAMS/incomingData/
 
 # Clean up any leftovers
 cd $INCOMING_HL7 && rm -f * || exit
-
-echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-echo '2008-4'
-echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-cd $ALL_HL7
-cp 2008-4* $INCOMING_HL7
-cd $ESP_SRC && rm -f $INCOMING_DATA/* || exit
-python utils/hl7_to_etl.py
-python utils/incomingParser.py --all
-
 
 for year_month in 200{8..9}-{1..12}; do
 	echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
