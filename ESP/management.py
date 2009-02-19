@@ -1,15 +1,12 @@
 import datetime,csv,sys,os
-# for esphealth testing sys.path.append('/home/ESPnew')
 import string
-sys.path.insert(0, '/home/ESP/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+import settings
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-from django.dispatch import dispatcher
 from django.db.models import signals
 
-import ESP.settings as settings
-from ESP.esp.models import *
-from ESP.esp import models as espmodel
+
+from esp.models import *
 
 
 ##################################

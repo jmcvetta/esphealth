@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 """
 Updated ross sept 20 2008 for the new 1.0 django release
 fixtures, moved all admin stuff out to admin.py using makeNewadmin.py script over
@@ -24,29 +25,80 @@ Updated april 24 to include cpt codes and code translations for the incomingMgr
 Updated August 9 to remove now unecessary hl7 message segment stuff.
 
 """
+import os, sys
+sys.path.append('../')
+import settings
+sys.path.append(settings.TOPDIR)
+
+
 from django.db import models
 from django.contrib.auth.models import User 
 import string
 import datetime
 
 
-FORMAT_TYPES = (
-    ('Text','Plain text representation'),
-    ('XML','eXtended Markup Language format'),
+FORMAT_TYPES = [
+    ('Text', 'Plain text representation'),
+    ('XML', 'eXtended Markup Language format'),
     ('HL7', 'Health Level 7 markup'),
     ('MADPHSimple', 'MADPH Simple markup (pipe delim simplifiedhl7)'),
-)
+]
 
+WORKFLOW_STATES = [
+    ('AR', 'AWAITING REVIEW'),
+    ('UR', 'UNDER REVIEW'),
+    ('RM', 'REVIEW By MD'),
+    ('FP', 'FALSE POSITIVE - DO NOT PROCESS'),
+    ('Q', 'CONFIRMED CASE, TRANSMIT TO HEALTH DEPARTMENT'),
+    ('S', 'TRANSMITTED TO HEALTH DEPARTMENT')
+]
 
-
-WORKFLOW_STATES = [('AR','AWAITING REVIEW'),('UR','UNDER REVIEW'),('RM', 'REVIEW By MD'),('FP','FALSE POSITIVE - DO NOT PROCESS'),('Q','CONFIRMED CASE, TRANSMIT TO HEALTH DEPARTMENT'), ('S','TRANSMITTED TO HEALTH DEPARTMENT')]
-
-DEST_TYPES = (
-    ('TextFile','Text file on the filesystem - path'),
-    ('PHIN-MS','PHINMS server URL'),
+DEST_TYPES = [
+    ('TextFile', 'Text file on the filesystem - path'),
+    ('PHIN-MS', 'PHINMS server URL'),
     ('SOAP', 'SOAP service URL'),
     ('XMLRPC', 'XML-RPC Server URL'),
-)
+]
+
+##########################################################################
+# Managers. 
+# Some classes need some funcionalities that are not provided by the standard models.Manager
+##########################################################################
+
+class DemogManager(models.Manager):
+    def sample(self, size=100):
+        from django.db import connection
+        cursor = connection.cursor()
+        table = 'esp_demog'
+        order_param = {
+            'mysql':'RAND()',
+            'postgresql_psycopg2':'RANDOM'
+            }
+        cmd = 'SELECT * FROM %s ORDER BY %s LIMIT %d' % (
+            table, 
+            order_param[settings.DATABASE_ENGINE],
+            size
+            )
+        
+        cursor.execute(cmd)
+        return [self.model(*x) for x in cursor.fetchall()]
+
+    def random(self):
+        return self.sample(size=1)[0]
+
+    
+class ImmunizationManager(models.Manager):
+    def patients_vaccinated_in_period(self, start_date, end_date):
+        return Immunization.objects.filter(ImmDate__gte=start_date, ImmDate__lte=end_date).values('ImmPatient').distinct()
+        
+
+
+
+
+#########################################################################
+# Models
+# Our models. If the model has a models.Manager defined, we should define objects as a models.Manager (to keep the default behavior), as well as add the desired manager. 'manager' is a good name. :)
+########################################################################
 
 
 class icd9(models.Model):
@@ -54,32 +106,35 @@ class icd9(models.Model):
     icd9Long = models.CharField('Name', max_length=50,)
 
     def __unicode__(self):
-        return u'%s %s' % (self.icd9Code,self.icd9Code)
+        return u'%s %s' % (self.icd9Code, self.icd9Code)
         
    
 class ndc(models.Model):
-    """ndc codes from http://www.fda.gov/cder/ndc/
+    """
+    ndc codes from http://www.fda.gov/cder/ndc/
     LISTING_SEQ_NO	LBLCODE	PRODCODE	STRENGTH	UNIT	RX_OTC	FIRM_SEQ_NO	TRADENAME
     eeesh this is horrible - there may be asterisks indicating an optional zero
-    and there is no obvious way to fix this..."""
-    ndcLbl = models.CharField('NDC Label Code (leading zeros are meaningless)', max_length=10,db_index=True)
-    ndcProd = models.CharField('NDC Product Code', max_length=5,db_index=True)
-    ndcTrade = models.CharField('NDC Trade Name', max_length=200,)
+    and there is no obvious way to fix this...
+    """
+    ndcLbl = models.CharField('NDC Label Code (leading zeros are meaningless)', max_length=10, db_index=True)
+    ndcProd = models.CharField('NDC Product Code', max_length=5, db_index=True)
+    ndcTrade = models.CharField('NDC Trade Name', max_length=200)
     
     def __unicode__(self):
-        return u'%s %s %s' % (self.ndcLbl,self.ndcProd,self.ndcTrade)
+        return u'%s %s %s' % (self.ndcLbl, self.ndcProd, self.ndcTrade)
         
    
 class cpt(models.Model):
-    """cpt codes I found at www.tricare.osd.mil/tai/downloads/cpt_codes.xls
+    """
+    cpt codes I found at www.tricare.osd.mil/tai/downloads/cpt_codes.xls
     """
     cptCode = models.CharField('CPT Code', max_length=10,db_index=True)
-    cptLong = models.TextField('Long name', max_length=500,)
-    cptShort = models.CharField('Short name', max_length=60,)
-    cptLastedit = models.DateTimeField('Last edited',editable=False,auto_now=True)
+    cptLong = models.TextField('Long name', max_length=500)
+    cptShort = models.CharField('Short name', max_length=60)
+    cptLastedit = models.DateTimeField('Last edited', editable=False, auto_now=True)
 
     def __unicode__(self):
-        return u'%s %s' % (self.cptCode,self.cptShort)
+        return u'%s %s' % (self.cptCode, self.cptShort)
         
 
 
@@ -94,7 +149,8 @@ RECODEFILE_TYPES = (
 
 
 class recode(models.Model):
-    """recode this value in this field in this file to that value eg cpt -> loinc
+    """
+    recode this value in this field in this file to that value eg cpt -> loinc
     """
     recodeFile = models.CharField('File name', max_length=40,)
     recodeField = models.CharField('Field name', max_length=40,)
@@ -102,17 +158,18 @@ class recode(models.Model):
     recodeOut = models.CharField('Replacement', max_length=50,)
     recodeNotes = models.TextField('Note',blank=True, null=True)
     recodeUseMe = models.BooleanField('Use This Definition',)
-    recodeCreated = models.DateField('Record created',auto_now_add=True,)
+    recodeCreated = models.DateField('Record created', auto_now_add=True)
 
     def __unicode__(self):
-        return u'%s %s %s %s' % (self.recodeFile,self.recodeField,self.recodeIn,self.recodeOut)
+        return u'%s %s %s %s' % (self.recodeFile, self.recodeField, self.recodeIn, self.recodeOut)
         
 
 
 class helpdb(models.Model):
-    """help database entries
     """
-    helpTopic = models.CharField('Help Topic', max_length=100,)
+    help database entries
+    """
+    helpTopic = models.CharField('Help Topic', max_length=100)
     helpText = models.TextField('Help Text', blank=True, null=True)
 
     def __unicode__(self):
@@ -121,39 +178,40 @@ class helpdb(models.Model):
 
 
 class config(models.Model):
-    """local config data - will take a while to accumulate
+    """
+    local config data - will take a while to accumulate
     Need to be able to read this from a config text file
     as the database is being created
     Now possible to do with the current release - read data after create 
     """
-    appName = models.CharField('Application name and version', max_length=40, blank=True, null=True,)
-    instComments = models.TextField('Comments', blank=True, null=True,)
-    institution_name = models.CharField('Institution name', blank=True, null=True, max_length=40,)
-    FacilityID = models.CharField('PHIN/DPH Facility Identifier', blank=True, null=True, max_length=40,)
-    sendingFac = models.CharField('PHIN/DPH Sending Facility Identifier', blank=True, null=True, max_length=40,)
-    institution_CLIA = models.CharField('Institution CLIA code', blank=True, null=True, max_length=40,)
-    instTechName = models.CharField('Technical name', blank=True, null=True, max_length=250,)
-    instTechEmail = models.CharField('Technical contact email', blank=True, null=True, max_length=250,)
-    instTechTel = models.CharField('Technical contact telephone', blank=True, null=True, max_length=50,)
-    instTechcel = models.CharField('Technical contact cellphone', blank=True, null=True, max_length=50,)
-    instIDFName = models.CharField('Infectious diseases contact first name', blank=True, null=True, max_length=250,)
-    instIDLName = models.CharField('Infectious diseases contact last name', blank=True, null=True, max_length=250,)
-    instIDEmail = models.CharField('Infectious diseases contact email', blank=True, null=True, max_length=250,)
-    instIDTelArea = models.CharField('Infectious diseases contact telephone areacode', blank=True, null=True, max_length=50,)
-    instIDTel = models.CharField('Infectious diseases contact telephone', blank=True, null=True, max_length=50,)
-    instIDTelExt = models.CharField('Infectious diseases contact telephone ext', blank=True, null=True, max_length=50,)
-    instIDcel = models.CharField('Infectious diseases contact cellphone', blank=True, null=True, max_length=50,)
-    instAddress1 = models.CharField('Institution address 1', max_length=100, blank=True, null=True,)
-    instAddress2 = models.CharField('Institution address 2', max_length=100, blank=True, null=True,)
-    instCity = models.CharField('City', max_length=100, blank=True, null=True,)
-    instState = models.CharField('State', max_length=10, blank=True, null=True,)
-    instZip = models.CharField('Zipcode', max_length=20, blank=True, null=True,)
-    instCountry = models.CharField('Country', max_length=30, blank=True, null=True,)
-    instTel = models.CharField('Institution Telephone', max_length=50, blank=True, null=True,)
-    instFax = models.CharField('Institution Fax', max_length=50, blank=True, null=True,)
+    appName = models.CharField('Application name and version', max_length=40, blank=True, null=True)
+    instComments = models.TextField('Comments', blank=True, null=True)
+    institution_name = models.CharField('Institution name', blank=True, null=True, max_length=40)
+    FacilityID = models.CharField('PHIN/DPH Facility Identifier', blank=True, null=True, max_length=40)
+    sendingFac = models.CharField('PHIN/DPH Sending Facility Identifier', blank=True, null=True, max_length=40)
+    institution_CLIA = models.CharField('Institution CLIA code', blank=True, null=True, max_length=40)
+    instTechName = models.CharField('Technical name', blank=True, null=True, max_length=250)
+    instTechEmail = models.CharField('Technical contact email', blank=True, null=True, max_length=250)
+    instTechTel = models.CharField('Technical contact telephone', blank=True, null=True, max_length=50)
+    instTechcel = models.CharField('Technical contact cellphone', blank=True, null=True, max_length=50)
+    instIDFName = models.CharField('Infectious diseases contact first name', blank=True, null=True, max_length=250)
+    instIDLName = models.CharField('Infectious diseases contact last name', blank=True, null=True, max_length=250)
+    instIDEmail = models.CharField('Infectious diseases contact email', blank=True, null=True, max_length=250)
+    instIDTelArea = models.CharField('Infectious diseases contact telephone areacode', blank=True, null=True, max_length=50)
+    instIDTel = models.CharField('Infectious diseases contact telephone', blank=True, null=True, max_length=50)
+    instIDTelExt = models.CharField('Infectious diseases contact telephone ext', blank=True, null=True, max_length=50)
+    instIDcel = models.CharField('Infectious diseases contact cellphone', blank=True, null=True, max_length=50)
+    instAddress1 = models.CharField('Institution address 1', max_length=100, blank=True, null=True)
+    instAddress2 = models.CharField('Institution address 2', max_length=100, blank=True, null=True)
+    instCity = models.CharField('City', max_length=100, blank=True, null=True)
+    instState = models.CharField('State', max_length=10, blank=True, null=True)
+    instZip = models.CharField('Zipcode', max_length=20, blank=True, null=True)
+    instCountry = models.CharField('Country', max_length=30, blank=True, null=True)
+    instTel = models.CharField('Institution Telephone', max_length=50, blank=True, null=True)
+    instFax = models.CharField('Institution Fax', max_length=50, blank=True, null=True)
     
-    configCreated = models.DateField('Configuration created',auto_now_add=True,)
-    configLastChanged = models.DateField('Configuration last changed',auto_now=True,)
+    configCreated = models.DateField('Configuration created',auto_now_add=True)
+    configLastChanged = models.DateField('Configuration last changed',auto_now=True)
 
     def  __unicode__(self):
         return u'%s' % self.institution_name 
@@ -162,7 +220,8 @@ class config(models.Model):
  
     
 class Rule(models.Model):
-    """case definition rule with destination and format 
+    """
+    case definition rule with destination and format 
     """
     ruleName = models.CharField('Rule Name', max_length=100,db_index=True)
     ruleSQL = models.TextField('', blank=True, null=True)
@@ -181,7 +240,8 @@ class Rule(models.Model):
     
 
     def gethtml_rulenote(self):
-        """generate a list to rule note display
+        """
+        generate a list to rule note display
         """
 
         data=[]
@@ -202,7 +262,8 @@ class Rule(models.Model):
 
  
 class Dest(models.Model):
-    """message destination for rules
+    """
+    message destination for rules
     """
     destName = models.CharField('Destination Name', max_length=100)
     destType = models.CharField('Destination Type',choices = DEST_TYPES ,max_length=20)
@@ -220,13 +281,14 @@ class Dest(models.Model):
 
 
 class Format(models.Model):
-    """message formats for rules
     """
-    formatName = models.CharField('Format Name', max_length=100,)
-    formatType = models.CharField('Format Type',choices = FORMAT_TYPES,max_length=20 )
-    formatValue = models.TextField('Format Value (eg URL)',null=True)
-    formatComments = models.TextField('Format Comments',null=True)
-    formatVerDate = models.DateTimeField('Last Edited date',auto_now=True)
+    message formats for rules
+    """
+    formatName = models.CharField('Format Name', max_length=100)
+    formatType = models.CharField('Format Type', choices = FORMAT_TYPES,max_length=20 )
+    formatValue = models.TextField('Format Value (eg URL)', null=True)
+    formatComments = models.TextField('Format Comments', null=True)
+    formatVerDate = models.DateTimeField('Last Edited date', auto_now=True)
     formatcreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
  
 
@@ -236,20 +298,20 @@ class Format(models.Model):
 
 class Provider(models.Model):
     provCode= models.CharField('Physician code',max_length=20,blank=True,db_index=True)
-    provLast_Name = models.CharField('Last Name',max_length=70,blank=True,null=True)
-    provFirst_Name = models.CharField('First Name',max_length=50,blank=True,null=True)
-    provMiddle_Initial = models.CharField('Middle_Initial',max_length=20,blank=True,null=True)
-    provTitle = models.CharField('Title',max_length=20,blank=True,null=True)
-    provPrimary_Dept_Id = models.CharField('Primary Department Id',max_length=20,blank=True,null=True)
-    provPrimary_Dept = models.CharField('Primary Department',max_length=200,blank=True,null=True)
-    provPrimary_Dept_Address_1 = models.CharField('Primary Department Address 1',max_length=100,blank=True,null=True)
-    provPrimary_Dept_Address_2 = models.CharField('Primary Department Address 2',max_length=20,blank=True,null=True)
-    provPrimary_Dept_City = models.CharField('Primary Department City',max_length=20,blank=True,null=True)
-    provPrimary_Dept_State = models.CharField('Primary Department State',max_length=20,blank=True,null=True)
-    provPrimary_Dept_Zip = models.CharField('Primary Department Zip',max_length=20,blank=True,null=True)
-    provTelAreacode = models.CharField('Primary Department Phone Areacode',max_length=20,blank=True,null=True)
-    provTel = models.CharField('Primary Department Phone Number',max_length=50,blank=True,null=True)
-    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    provLast_Name = models.CharField('Last Name', max_length=70, blank=True, null=True)
+    provFirst_Name = models.CharField('First Name', max_length=50, blank=True, null=True)
+    provMiddle_Initial = models.CharField('Middle_Initial', max_length=20, blank=True, null=True)
+    provTitle = models.CharField('Title', max_length=20, blank=True, null=True)
+    provPrimary_Dept_Id = models.CharField('Primary Department Id', max_length=20, blank=True, null=True)
+    provPrimary_Dept = models.CharField('Primary Department', max_length=200, blank=True, null=True)
+    provPrimary_Dept_Address_1 = models.CharField('Primary Department Address 1', max_length=100, blank=True, null=True)
+    provPrimary_Dept_Address_2 = models.CharField('Primary Department Address 2', max_length=20, blank=True, null=True)
+    provPrimary_Dept_City = models.CharField('Primary Department City', max_length=20, blank=True, null=True)
+    provPrimary_Dept_State = models.CharField('Primary Department State', max_length=20, blank=True, null=True)
+    provPrimary_Dept_Zip = models.CharField('Primary Department Zip', max_length=20, blank=True, null=True)
+    provTelAreacode = models.CharField('Primary Department Phone Areacode', max_length=20, blank=True, null=True)
+    provTel = models.CharField('Primary Department Phone Number', max_length=50, blank=True, null=True)
+    lastUpDate = models.DateTimeField('Last Updated date', auto_now=True, db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
          
 
@@ -263,6 +325,8 @@ class Provider(models.Model):
 
 
 class Demog(models.Model):
+    objects = models.Manager()
+    manager = DemogManager()
     DemogPatient_Identifier = models.CharField('Patient Identifier',max_length=20,blank=True,db_index=True)
     DemogMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,db_index=True,blank=True)
     DemogLast_Name = models.CharField('Last_Name',max_length=199,blank=True,null=True)
@@ -296,7 +360,11 @@ class Demog(models.Model):
             
 
     def  __unicode__(self):
-        return u"PID%s,%s, %s,%s, %s" % (self.DemogPatient_Identifier,self.DemogMedical_Record_Number,self.DemogLast_Name,self.DemogFirst_Name, self.DemogAddress1)
+        return u"%s %s\n\tID# %s\n\tMRN %s\n\tAddress: %s\n" % ( 
+            self.DemogFirst_Name, self.DemogLast_Name,
+            self.DemogPatient_Identifier,
+            self.DemogMedical_Record_Number,
+            self.DemogAddress1)
 
 
     def getAge(self):
@@ -312,17 +380,26 @@ class Demog(models.Model):
             age = 'Error'
             return age
 
-        cury = int(datetime.datetime.now().strftime("%Y"))
-        curm = int(datetime.datetime.now().strftime("%m"))
-        curd = int(datetime.datetime.now().strftime("%d"))
-        age = cury-yy
-        if (curm==mm and curd<dd) or (curm<mm):
-            age = age-1
-        if age==0 and cury==yy:
-            age = u'%s' % (curm-mm) + ' Months'
-        elif age==0:
-            age = u'%s' % (12-mm+curm) + ' Months'
+        now = datetime.datetime.now()
+        current_year, current_month, current_day = now.year, now.month, now.day
+
+        age = current_year - yy
+
+        # Case it's yet to complete birthday in current year, substract a year
+        if (((current_month == mm) and current_day < dd) or (current_month < mm)):
+            age-=1
+        
+        # Case was born in current year
+        if (current_year == yy):
+            age = u'%d Months' % (current_month - mm)
+        # Born in past year, but has not completed one full year
+        elif ((current_year == yy+1) and (current_month < mm)):
+            age = u'%d Months' % (12 + current_month - mm)
+  
         return age
+            
+        
+
 
 
 
@@ -341,10 +418,10 @@ class TestCase(models.Model):
     caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
     caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=FORMAT_TYPES, blank=True, null=True)
     caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=DEST_TYPES, blank=True, null=True)
-    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500,  blank=True, null=True)
-    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500,  blank=True, null=True)
-    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500,  blank=True, null=True)
-    caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
+    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500, blank=True, null=True)
+    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500, blank=True, null=True)
+    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500, blank=True, null=True)
+    caseICD9 = models.TextField('A list of related ICD9',max_length=500, blank=True, null=True)
     caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
     
     
@@ -467,10 +544,10 @@ class Case(models.Model):
     caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
     caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=FORMAT_TYPES, blank=True, null=True)
     caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=DEST_TYPES, blank=True,null=True)
-    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500,  blank=True, null=True)
-    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500,  blank=True, null=True)
-    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500,  blank=True, null=True)
-    caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
+    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500, blank=True, null=True)
+    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500, blank=True, null=True)
+    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500, blank=True, null=True)
+    caseICD9 = models.TextField('A list of related ICD9',max_length=500, blank=True, null=True)
     caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
     
 
@@ -517,12 +594,6 @@ class Case(models.Model):
                     if dur1.days>=0 or dur2.days>=0:
                         return (u'Pregnant', oneenc.EncEDC.replace('/',''))
                                                                     
-#            for oneenc in encdb:
-#                encdate = oneencdb.EncEncounter_Date
-#                dur1 =datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
-#                dur2 = datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8])) - datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))
-#                if dur1.days>=0 and dur2.days>=0:
-#                    return ('Pregnant', oneenc.EncEDC.replace('/',''))
         elif encdb and not lxs:
             return (u'Pregnant', encdb[0].EncEDC.replace('/',''))
 
@@ -610,11 +681,10 @@ class Rx(models.Model):
         """
         lbl = self.RxNational_Drug_Code[:6]
         prd = self.RxNational_Drug_Code[6:]
-        # hack ! TODO fixme
+        # FIXME: just a hack to get a 6-digit string.
         lbl = '0%s' % self.RxNational_Drug_Code[:5] # add a leading zero
         prd = self.RxNational_Drug_Code[5:-2] # ignore last 2 digits
         try:
-            #n = ndc.objects.get(ndcLbl__exact=lbl,ndcProd__exact=prd)
             n = ndc.objects.filter(ndcLbl=lbl,ndcProd=prd)
             s = '%s=%s' % (self.RxNational_Drug_Code,n[0].ndcTrade)
         except:
@@ -643,10 +713,10 @@ class Rx(models.Model):
 
 
 class LabComponent(models.Model):
-    componentName = models.CharField('Component Name', max_length=250,db_index=True)
-    CPT = models.CharField('CPT Codes',max_length=30, blank=True,null=True,db_index=True)
-    CPTCompt = models.CharField('Compoment Codes',max_length=30, blank=True,null=True,db_index=True)
-    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    componentName = models.CharField('Component Name', max_length=250, db_index=True)
+    CPT = models.CharField('CPT Codes',max_length=30, blank=True, null=True, db_index=True)
+    CPTCompt = models.CharField('Compoment Codes', max_length=30, blank=True, null=True, db_index=True)
+    lastUpDate = models.DateTimeField('Last Updated date', auto_now=True, db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
         
                   
@@ -663,13 +733,13 @@ class Lx(models.Model):
     LxHVMA_Internal_Accession_number = models.CharField('HVMA Internal Accession number',max_length=50,blank=True,null=True)
     LxComponent = models.CharField('Component',max_length=20,blank=True,null=True,db_index=True)
     LxComponentName = models.CharField('Component Name',max_length=200,blank=True,null=True, db_index=True)
-    LxTest_results = models.TextField('Test results',max_length=2000,blank=True,null=True,db_index=True)
+    LxTest_results = models.TextField('Test results',max_length=2000,blank=True,null=True)
     LxNormalAbnormal_Flag = models.CharField('Normal/Abnormal Flag',max_length=20,blank=True,null=True,db_index=True)
     LxReference_Low = models.CharField('Reference Low',max_length=100,blank=True,null=True)
     LxReference_High = models.CharField('Reference High',max_length=100,blank=True,null=True)
     LxReference_Unit = models.CharField('Reference Unit',max_length=100,blank=True,null=True)
     LxTest_status = models.CharField('Test status',max_length=50,blank=True,null=True)
-    LxComment = models.TextField('Comments', blank=True, null=True,)
+    LxComment = models.TextField('Comments', blank=True, null=True)
     LxImpression = models.TextField('Impression for Imaging only',max_length=2000,blank=True,null=True)
     LxLoinc = models.CharField('LOINC code',max_length=20,blank=True,null=True,db_index=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
@@ -813,6 +883,8 @@ class icd9Fact(models.Model):
 
 
 class Immunization(models.Model):
+    objects = models.Manager()
+    manager = ImmunizationManager()
     ImmPatient = models.ForeignKey(Demog) 
     ImmType = models.CharField('Immunization Type',max_length=20,blank=True,null=True)
     ImmName = models.CharField('Immunization Name',max_length=200,blank=True,null=True)
@@ -829,6 +901,9 @@ class Immunization(models.Model):
     def  __unicode__(self):
 
         return u"%s %s %s" % (self.ImmPatient.DemogPatient_Identifier,self.ImmName,self.ImmRecId)
+
+
+
 
 
 
@@ -898,14 +973,14 @@ class Problems(models.Model):
     PrbDateNoted = models.CharField('Date Noted',max_length=20,blank=True,null=True)
     PrbICD9Code = models.CharField('Problem ICD9 Code)',max_length=200,blank=True,null=True)
     PrbStatus = models.CharField('Problem status',max_length=50,blank=True,null=True)
-    PrbNote = models.TextField('Comments', blank=True, null=True,)
+    PrbNote = models.TextField('Comments', blank=True, null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
 
 
     def  __unicode__(self):
         
-        return u"%s %s %s" % (self.PrbPatient.DemogPatient_Identifier,self.PrbMRN,self.PrbID)
+        return u"%s %s %s" % (self.PrbPatient.DemogPatient_Identifier, self.PrbMRN, self.PrbID)
     
                                               
                                             
@@ -988,15 +1063,15 @@ class HL7File(models.Model):
     filename = models.CharField('hl7 file name',max_length=100,blank=True,null=True)
     case = models.ForeignKey(Case,verbose_name="Case ID",db_index=True)
     demogMRN = models.CharField('Medical Record Number',max_length=50,db_index=True,blank=True,null=True)
-    hl7encID = models.TextField('A list of ESP_ENC IDs in hl7', max_length=500,  blank=True, null=True)
-    hl7lxID = models.TextField('A list of ESP_Lx IDs in hl7', max_length=500,  blank=True, null=True)
-    hl7rxID = models.TextField('A list of ESP_Rx IDs in hl7', max_length=500,  blank=True, null=True)
-    hl7ICD9 = models.TextField('A list of related ICD9 in hl7', max_length=500,  blank=True, null=True)
-    hl7reportlxID=models.TextField('A list of report Lx IDs in hl7', max_length=500,  blank=True, null=True)
-    hl7specdate = models.TextField('A list of order date of report Lx in hl7', max_length=500,  blank=True, null=True)
-    hl7trmtDT = models.TextField('the order date of minium Rx', max_length=500,  blank=True, null=True)
-    hl7comment = models.TextField('note in NTE segment',  max_length=500,  blank=True, null=True)
-    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    hl7encID = models.TextField('A list of ESP_ENC IDs in hl7', max_length=500, blank=True, null=True)
+    hl7lxID = models.TextField('A list of ESP_Lx IDs in hl7', max_length=500, blank=True, null=True)
+    hl7rxID = models.TextField('A list of ESP_Rx IDs in hl7', max_length=500, blank=True, null=True)
+    hl7ICD9 = models.TextField('A list of related ICD9 in hl7', max_length=500, blank=True, null=True)
+    hl7reportlxID=models.TextField('A list of report Lx IDs in hl7', max_length=500, blank=True, null=True)
+    hl7specdate = models.TextField('A list of order date of report Lx in hl7', max_length=500, blank=True, null=True)
+    hl7trmtDT = models.TextField('the order date of minium Rx', max_length=500, blank=True, null=True)
+    hl7comment = models.TextField('note in NTE segment', max_length=500, blank=True, null=True)
+    lastUpDate = models.DateTimeField('Last Updated date', auto_now=True, db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
           
     def  __unicode__(self):

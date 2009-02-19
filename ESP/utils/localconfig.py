@@ -1,11 +1,15 @@
-import os
-from ESP.settings import TOPDIR,CODEDIR
+import os, sys
+sys.path.append('../')
+
+import settings
+
+
 import datetime,logging
-from ESP.esp.models import config
+from esp.models import config
 locals = config.objects.all()
 LOCALSITE='HVMA' # hack!
 for l in locals:
-    if l.institution_name in os.listdir(TOPDIR):
+    if l.institution_name in os.listdir(settings.TOPDIR):
         LOCALSITE=l.institution_name
 
 
@@ -23,7 +27,7 @@ def getJavaInfo():
 
 ###############################
 def getLogging(appname,debug=0):
-    logdir = os.path.join(TOPDIR,LOCALSITE, 'logs/')
+    logdir = os.path.join(settings.TOPDIR,LOCALSITE, 'logs/')
     if not os.path.isdir(logdir):
         os.mkdir(logdir)
         

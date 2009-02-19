@@ -1,21 +1,29 @@
-# load ESP with some data
-# eg  p = pids.PID(PIDLast_Name='Jones',PIDMedical_Record_Number1='1221')
-# p.save()
-# note the DJANGO_SETTINGS_MODULE must be set
-# eg set DJANGO_SETTINGS_MODULE=ESP.settings and run this from
-# the folder containing the ESP directory
+import os, sys
+sys.path.append('../')
 
-import datetime,random,csv,sys,os
-#os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-#os.environ['PYTHONPATH'] = '\home\rerla\mydjango\ESP'
+import datetime, random, csv
+import string
 import django
-import os
-from ESP.esp.models import *
-from ESP.settings import TOPDIR
+import settings
+
+
+# FIXME: some utility functions are not able to see the ESP module
+# For now, We need it, so we add the parent folder to the path.
+# In the future, this should not be necessary.
+sys.path.append(os.path.join(settings.TOPDIR, '../'))
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
+from esp.models import icd9, cpt, ndc, Demog, Immunization, Enc
+import utils
+
 import localconfig
 
-incomdir = os.path.join(TOPDIR+localconfig.LOCALSITE+'/','incomingData/')
+incomdir = os.path.join('%s/%s/incomingData/' % (settings.TOPDIR, localconfig.LOCALSITE))
 today = datetime.datetime.now().strftime('%Y%m%d')
+
+
+import pdb
 
 try:
     import psyco
@@ -23,10 +31,28 @@ try:
 except:
     print 'no psyco :-('
 
-fnames = ['Bill','Mary','Jim','Donna','Patricia','Susan','Robert','Barry','Bazza','Deena','Kylie','Shane'] # for testing
-snames = ['Bazfar','Barfoo','Hoobaz','Sotbar','Farbaz','Zotbaz','Smith','Jones','Fitz','Wong','Wright','Ngyin']
-psnames = ['Spock','Kruskal','Platt','Klompas','Lazarus','Who','Nick','Livingston','Doolittle','Casey','Finlay']
-sites = ['Brookline Ave','West Roxbury','Matapan','Sydney','Kansas']
+
+# For testing
+fnames = ['Bill', 'Mary', 'Jim', 'Donna', 'Patricia', 
+          'Susan', 'Robert', 'Barry', 'Bazza', 'Deena', 
+          'Kylie', 'Shane', 'John', 'Michael', 'Anne']
+
+snames = ['Bazfar', 'Barfoo', 'Hoobaz', 'Sotbar', 'Farbaz', 
+          'Zotbaz', 'Smith', 'Jones', 'Fitz', 'Wong', 'Wright', 'Ngyin']
+
+psnames = ['Spock', 'Kruskal', 'Platt', 'Klompas', 'Lazarus', 
+           'Who', 'Nick', 'Livingston', 'Doolittle', 'Casey', 'Finlay']
+
+sites = ['Brookline Ave', 'West Roxbury', 'Matapan', 'Sydney', 'Kansas']
+
+VACCINES = {
+    'mmr':'Measles, Mumps, Rubeola', 
+    'Tetanus':'Tetanus',
+    'Flu':'Influenza',
+    'OPV':'polio', 
+    'BCG':'Tuberculosis'
+    }
+
 
 remakendc = 0
 remakeicd = 0
@@ -256,6 +282,7 @@ def fakepcps(n=100):
     """
     fakepcps = []
     fh = open(incomdir + today+'_prov1.txt', 'w')
+
     for i in range(n):
         if random.random() > 0.5:
             fn1 = random.randint(1,len(fnames)-1)
@@ -271,9 +298,12 @@ def fakepcps(n=100):
         p = "%s^%s^%s^^MD^^%s^^^^^^^\n" % (pid,sname,fname,d)
         fh.write(p)
         fakepcps.append(pid)
+
+
     fh.write('CONTROL TOTALS^epicpro^^^346^8/9/06 15:10^8/9/06 15:10^0h0m1s\n')
     fh.close()
  
+
     return fakepcps
 
 ##################################
@@ -379,43 +409,139 @@ def cleanup():
         makecpt()   
 
 
+def make_fake_demog():
+    id = utils.random_string(length=20)
+    medical_record_id = utils.random_string(length=20)
+    last_name = random.choice(snames)
+    first_name = random.choice(fnames)
+    middle_initial = random.choice(string.uppercase)
+    date_of_birth = datetime.datetime.now() - datetime.timedelta(
+        days=random.randrange(0, 36500),
+        minutes=random.randrange(0, 1440),
+        seconds=random.randrange(0, 60)
+        ) # Any age up to 100 years old.
+    
+    gender = 'M' if random.random() <= 0.49 else 'F'
+    
+    d = Demog(
+        DemogPatient_Identifier=id,
+        DemogMedical_Record_Number=medical_record_id,
+        DemogFirst_Name = first_name,
+        DemogLast_Name = last_name,
+        DemogMiddle_Initial = middle_initial,
+        DemogDate_of_Birth = date_of_birth,
+        DemogGender = gender
+        )
+
+    d.save()
+    
+    return d
+
+
+def make_fake_immunization(patient=None, force_recent=False):
+    vaccine_type = random.choice(VACCINES.keys())
+    vaccine_name = VACCINES[vaccine_type]
+    now = datetime.datetime.now()
+    days_ago = 0 if force_recent else random.randrange(0, 1000)
+    date = now - datetime.timedelta(days=days_ago, minutes=random.randrange(0, 2500)) 
+    
+    # if patient is not defined, we get a random one from the database.
+    patient = patient or Demog.manager.random() 
+
+    # Let's check if this patient has a immunization record
+    # In case there are multiple records, we take any one.
+    # If patient has a immunization record, use it. Else, create random.
+    # lullis: I think a patient should have only one imm_record. 
+    patient_imm = Immunization.objects.filter(ImmPatient=patient)
+    imm_record_id = patient_imm[0].ImmRecId if patient_imm else utils.random_string(length=100)
+        
+       
+    i = Immunization(
+        ImmPatient=patient,
+        ImmType = vaccine_type,
+        ImmName = vaccine_name,
+        ImmDate = date,
+        ImmRecId = imm_record_id
+        )
+        
+    i.save()
+    return i
+        
+def make_fake_encounter(patient, force_recent=False, **conditions):
+    # make a date for the encounter
+    now = datetime.datetime.now()
+    days_ago = 0 if force_recent else random.randrange(0, 1000)
+    date = now - datetime.timedelta(days=days_ago, 
+                                    minutes=random.randrange(0, 2000))
+
+    # Conditions that are to be reported in encounter.
+    # Magic Numbers: default temperature oscilate between 97 and 98 degrees.
+    temp = conditions.get('temperature', 
+                          97.5 + (float(random.randrange(-5, 5))/10)
+                          )
+    icds = conditions.get('icds', '')
+
+    e = Enc(
+        EncPatient=patient,
+        EncMedical_Record_Number=patient.DemogMedical_Record_Number,
+        EncEncounter_ID=utils.random_string(length=20),
+        EncICD9_Codes = icds,
+        EncTemperature = temp,
+        EncEncounter_Date = date
+        )
+
+    e.save()
+
+    return e
+
+   
+    
+def get_codes_of_interest():
+    try:
+        ndcs = ndc.objects.all()
+        #ndcs = ['%s%s' % (x.ndcLbl, x.ndcProd) for x in ndc.objects.filter(ndcTrade__istartswith='Darvon')]
+        print 'got %d ndcs to play with' % (len(ndcs))
+    except Exception, why:
+        print 'bad ndc', why
+              
+        
+    try:
+        icds = icd9.objects.all()
+        # icds = [x.icd9Code for x in icd9.objects.extra(where=['icd9Code IN (079.88,099.5,09953)'])]
+        #icdds += [x.icd9Code for x in icd9.objects.filter(icd9Long__istartswith='Chlamydia')]
+        print 'got %d icds to play with' % (len(icds))
+    except Exception, why:
+        print 'bad icd9', why
+        
+        
+    try:
+        cpts = cpt.objects.all()
+        #cts = [x.cptCode for x in cpt.objects.filter(cptLong__contains='chlamydia')]
+        #cpts = [x.cptCode for x in cpt.objects.filter(cptLong__contains='ex')]
+        #cpts += [x.cptCode for x in cpt.objects.filter(cptLong__contains='re')]
+        #cpts = [x.cptCode for x in cpt.objects.filter(cptCode__exact='87491')]
+        print 'got %d cpts to play with' % (len(cpts))
+    except:
+        print 'bad cpt'
+    
+
+
+
+
+
+
 if __name__ == "__main__":
 
-   # cleanup()
+    try:
+        patients = [make_fake_demog() for p in xrange(100)]
+    except Exception, why:
+        print 'bad pacients', why
+        sys.exit(-1)
+
+    for patient in patients:
+        make_fake_immunization(patient)
+        make_fake_encounter(patient)
 
 
-   # ndcs = ['%s%s' % (x.ndcLbl,x.ndcProd) for x in ndc.objects.filter(ndcTrade__istartswith='azithromycin 1 g')]
-    ndcs = ['%s%s' % (x.ndcLbl,x.ndcProd) for x in ndc.objects.filter(ndcTrade__istartswith='Darvon')]
-   
-
-    print 'got %d ndcs to play with' % (len(ndcs))
+            
     
-
-    icds = [x.icd9Code for x in icd9.objects.extra(where=['icd9Code IN (079.88,099.5,09953)'])]
-    icds += [x.icd9Code for x in icd9.objects.filter(icd9Long__istartswith='Chlamydia')]
-
-    print 'got %d icds to play with' % (len(icds))
-
-    cpts = [x.cptCode for x in cpt.objects.filter(cptLong__contains='chlamydia')]
- 
-    cpts = [x.cptCode for x in cpt.objects.filter(cptLong__contains='ex')]
-    cpts += [x.cptCode for x in cpt.objects.filter(cptLong__contains='re')]
-    cpts = [x.cptCode for x in cpt.objects.filter(cptCode__exact='87491')]
-    print 'got %d cpts to play with' % (len(cpts))
-
-    pcps = fakepcps(10) # make 10 pcps
-    fakeDemogs(20,1,pcps,icds,cpts,ndcs)
-
-    
-#    r = Rule(ruleName='Chlamydia',ruleSQL='Chlamydia rules',ruleMsgFormat='HL7',ruleMsgDest='MaDPH',
-#             ruleHL7Code='603.9',ruleHL7Name='Chlamydia',ruleHL7CodeType='I9')
-#    r.save()
-#    r = Rule(ruleName='LatentTB',ruleSQL='Latent TB rules',ruleMsgFormat='HL7',ruleMsgDest='MaDPH',
-#             ruleHL7Code='023.9',ruleHL7Name='LatentTB',ruleHL7CodeType='I9')
-#    r.save()
-
-   # fakeDemogs(20,2,pcps,icds,cpts,ndcs)
-   # fakeDemogs(20,3,pcps,icds,cpts,ndcs)
-   # fakeDemogs(20,4,pcps,icds,cpts,ndcs)
-   # fakeDemogs(100000,None,pcps,icds,cpts,ndcs)
-

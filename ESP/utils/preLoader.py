@@ -6,22 +6,31 @@
 ##preLoader is to load some data into ESP_conditionNDC table, ESP_conditionLOINC, ESP_CPTLOINCMAP table
 ##
 import os,sys
-sys.path.insert(0, '/home/ESP/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+sys.path.append(
+    os.path.join(os.path.realpath(os.path.dirname(__file__)), '../')
+    )
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
+import settings
+from settings import USESQLITE, getLogging, EMAILSENDER
+sys.path.append(os.path.join(settings.TOPDIR, '../'))
 
 
-import django, datetime
-from ESP.esp.models import *
+
+import django
 from django.db.models import Q
-from ESP.settings import TOPDIR,LOCALSITE, USESQLITE,getLogging,EMAILSENDER
+
+
 import string,csv
 import traceback
 import StringIO
 import smtplib
+import datetime
 
+from esp.models import *
 
 logging=''
-datadir = os.path.join(TOPDIR,LOCALSITE, 'preLoaderData/')
+datadir = os.path.join(settings.TOPDIR, settings.LOCALSITE, 'preLoaderData/')
 print 'using ',datadir
 
 ###############################
@@ -590,7 +599,7 @@ if __name__ == "__main__":
 
     from django.db import connection
     cursor = connection.cursor()
-    cursor.execute('use espFeb09')
+    cursor.execute('use %s' % settings.DATABASE_NAME) 
     
     if len(sys.argv) > 1:
         try:
@@ -636,21 +645,25 @@ if __name__ == "__main__":
             message = fp.getvalue()
             logging.info(message+'\n')
     else:
-        table = 'esp_rule'
-        load2rule(table, getlines(datadir+table+'.txt'))  
-        table = 'esp_conditionndc'
-        load2ndc(table,getlines(datadir+table+'.txt'), cursor)
-        table = 'esp_conditionicd9'
-        load2icd9(table,getlines(datadir+table+'.txt'), cursor)
-        table = 'esp_conditionloinc'
-        load2loinc(table,getlines(datadir+table+'.txt'), cursor)
-        table = 'esp_cptloincmap'
-        load2cptloincmap(table, getlines(datadir+table+'.txt'), cursor)
-        addNewcptloincmap(cursor)
-        correctcptloincmap_lx(table,cursor)
-        table = 'esp_config'
-        load2config(table,getlines(datadir+table+'.txt'),cursor)
-        table = 'esp_conditiondrugname'
-        load2DrugNames(table,getlines(datadir+table+'.txt'), cursor)
+        try:
+            table = 'esp_rule'
+            load2rule(table, getlines(datadir+table+'.txt'))  
+            table = 'esp_conditionndc'
+            load2ndc(table,getlines(datadir+table+'.txt'), cursor)
+            table = 'esp_conditionicd9'
+            load2icd9(table,getlines(datadir+table+'.txt'), cursor)
+            table = 'esp_conditionloinc'
+            load2loinc(table,getlines(datadir+table+'.txt'), cursor)
+            table = 'esp_cptloincmap'
+            load2cptloincmap(table, getlines(datadir+table+'.txt'), cursor)
+            addNewcptloincmap(cursor)
+            correctcptloincmap_lx(table,cursor)
+            table = 'esp_config'
+            load2config(table,getlines(datadir+table+'.txt'),cursor)
+            table = 'esp_conditiondrugname'
+            load2DrugNames(table,getlines(datadir+table+'.txt'), cursor)
+        except Exception, why:
+            print 'Exception occurred during preloading', why
+
         
     

@@ -31,7 +31,13 @@ We need
 5) a new immunization record for each RXA in any VXU message
 
 """
-import sys, os, datetime, time, logging
+import sys, os
+sys.path.append('../')
+
+import settings 
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
+import datetime, time, logging
 from northadams import * # that's where all our configuration lives
 import utils
 import shutil

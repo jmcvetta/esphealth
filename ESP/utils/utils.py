@@ -1,26 +1,30 @@
 import os,sys
-sys.path.insert(0, '/home/ESP/')
-# for esphealth.org sys.path.insert(0, '/home/ESPNew/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
-
-import django, datetime,time
-from ESP.esp.models import *
-from django.db.models import Q
-from ESP.settings import *
-
+import django
+import datetime,time
 
 import string
 import traceback
 import smtplib
-import datetime
+import random
 
+sys.path.append('../')
+import settings
+
+from esp.models import *
+from django.db.models import Q
+
+
+
+
+def random_string(length=10):
+    chars = string.digits + string.letters
+    return ''.join([random.choice(chars) for x in xrange(length)])
 
 
 filenlist = ['epicmem.esp.','epicpro.esp.','epicvis.esp.','epicord.esp.','epicres.esp.','epicmed.esp.','epicimm.esp.']
 FILEBASE='epic' ##'epic' or 'test'
 
-###################################
-###################################
+######################################################################
 def getAnotherdate(date1, dayrange):
     try:
         return datetime.date(int(date1[:4]),int(date1[4:6]),int(date1[6:8]))+datetime.timedelta(dayrange)
@@ -30,8 +34,7 @@ def getAnotherdate(date1, dayrange):
     return ''
 
                     
-###################################
-###################################
+######################################################################
 def sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],msg='',subject='ESP management'):
     ##send email
     sender=EMAILSENDER
@@ -44,8 +47,7 @@ def sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],m
     mailServer.quit()
 
                                 
-###################################
-###################################
+######################################################################
 def getPeriod(date1,date2):
     try:
         timeperiod = datetime.date(int(date1[:4]),int(date1[4:6]),int(date1[6:8]))-datetime.date(int(date2[:4]),int(date2[4:6]),int(date2[6:8]))

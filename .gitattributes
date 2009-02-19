@@ -1,4 +1,5 @@
 * text=auto !eol
+/.svnignore -text
 ESP/esp/admin.py -text
 ESP/localsettings.py.sample -text
 ESP/management.py -text
@@ -27,14 +28,22 @@ ESP/templates/esplogo.gif -text
 ESP/templates/nav-bg-grabber.gif -text
 ESP/templates/nav-bg-reverse.gif -text
 ESP/templates/nav-bg.gif -text
+ESP/tests/__init__.py -text
+ESP/tests/mockData.py -text
 ESP/utils/LOINCDB.TXT -text
 ESP/utils/VAERSevents.py -text
 ESP/utils/hl7_to_etl.py -text
 ESP/utils/makeESPdm.py -text
 ESP/utils/northadams.py -text
 ESP/utils/parsehl7.py -text
+ESP/utils/test.py -text
 ESP/utils/utils.py -text
 ESP/utils/vaers_hl7.py -text
+ESP/vaers/VAERSevents.py -text
+ESP/vaers/__init__.py -text
+ESP/vaers/makeData.py -text
+ESP/vaers/rules.py -text
+ESP/vaers/test_suite.py -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
 docs/ELR[!!-~]EMR[!!-~]Query[!!-~]Specification[!!-~]v1.0.doc -text
