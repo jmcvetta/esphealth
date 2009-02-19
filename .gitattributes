@@ -18,6 +18,8 @@ doc/FINAL[!!-~]ELR[!!-~]231[!!-~]Implementation[!!-~]Guide_052104.pdf -text svne
 /readme -text
 src/ESP/backfill-by-month.sh -text
 src/ESP/esp/admin.py -text
+src/ESP/esp/fixtures/auth.json -text
+src/ESP/esp/fixtures/initial_data.json -text
 src/ESP/esp/forms.py -text
 src/ESP/esp/urls.py -text
 src/ESP/kettle/pdi_3_1_0.pg.sql -text

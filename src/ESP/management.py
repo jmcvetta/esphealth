@@ -86,7 +86,8 @@ def my_syncdb_func(sender,**kwargs):
     """To load CPT/ICD9/NDC for displaying purpose on case detail page
     """
 
-    if 'Lx' in dir(sender):
+    print 'Not doing anthing special on syncdb -- relying on initial_data fixture'
+    if False and 'Lx' in dir(sender):
         print 'syncdb signal for %s - installing initial data' % sender
         preloadcmd='%s %s/preLoader.py' % (sys.executable,os.path.join(settings.CODEDIR,'utils'))
         os.system(preloadcmd)
