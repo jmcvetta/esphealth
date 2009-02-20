@@ -442,16 +442,16 @@ class LxEvents:
 
 
 def post_imm_events(start_date, end_date):
-    # Find all patient vaccinated in the period defined by start/end date
+    # Find all patients vaccinated in the period defined by start/end date
     # For each patient, look for encounters with interesting icd9 codes
     # For each interesting icd9 code, check if exception rules apply.
-    # If exception rules does NOT apply, add to list of reportable events
+    # If exception rules do NOT apply, add to list of reportable events
     patients = Immunization.patients_vaccinated_in_period(start_date, end_date)
     
     print patients
 
 
-def match_icd9_expression(icd9_code, icd9_expression):
+def match_icd9_expression(icd9_code, expression_to_match):
     '''
     considering icd9 rules to be:
     - A code: 558.3
@@ -460,9 +460,58 @@ def match_icd9_expression(icd9_code, icd9_expression):
     
     this function verifies if icd9_code matches a rule
     '''
+
+    def transform_expression(expression):
+        if '-' in expression:
+            # It's an expression to show a range of values
+            low, high = expression.split('-')
+            if '*' in low: low = low.replace('*', '.0')
+            if '*' in high: high = high.replace('*', '.9')
+            
+        if '*' in expression and '-' not in expression:
+            low, high = expression.replace('*', '.0'), expression.replace('*', '.9')
+            
+        if '*' not in expression and '-' not in expression:
+            raise ValueError, 'not a valid icd9 expression'
+
+
+    # We must get two regular codes in the end.
+    ll, hh = float(low), float(high)    
+    assert(type(ll) is float)
+    assert(type(hh) is float)
     
-    #for now, we are only doing precise matches:
-    return icd9_code == icd9_expression
+    return ll, hh
+            
+    
+    def match_precise(code, expression):
+        return code == expression
+    
+    def match_range(code, lower_bound, greater_bound):
+        return lower_bound <= code <= greater_bound
+
+    def match_regexp(code, regexp):
+        lower_bound, higher_bound = transform_expression(regexp)
+        return match_range(code, lower_bound, greater_bound)
+
+
+    try:
+        target = float(icd9_code)
+    except ValueError:
+        raise ValueError, 'icd9_code is not valid'
+
+    try:
+        expression = float(expression_to_match)
+        return match_precise(target, expression)
+    except ValueError:
+        # expression_to_match is not a code
+        return match_regexp(target, expression_to_match)
+        
+        
+    
+
+    
+        
+        
 
 def diagnosis_by_code(icd9_code):
     # Check all rules, to see if the code we have is a possible adverse event
