@@ -73,7 +73,7 @@ def make_fake_demog():
     return d
 
 
-def make_fake_immunization(patient=None, force_recent=False):
+def fake_immunization(patient=None, force_recent=False):
     vaccine_type = random.choice(VACCINES.keys())
     vaccine_name = VACCINES[vaccine_type]
     now = datetime.datetime.now()

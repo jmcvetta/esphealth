@@ -66,7 +66,8 @@ from django.db import connection
 
 import rules
 
-
+NOW = datetime.datetime.now()
+EPOCH = NOW - datetime.timedelta(days=3*365)
 
 
 cursor = connection.cursor()
@@ -450,7 +451,7 @@ def post_imm_events(start_date, end_date):
     print patients
 
 
-def match(icd9_code, icd9_rule):
+def match_icd9_expression(icd9_code, icd9_expression):
     '''
     considering icd9 rules to be:
     - A code: 558.3
@@ -461,7 +462,21 @@ def match(icd9_code, icd9_rule):
     '''
     
     #for now, we are only doing precise matches:
-    return icd9_code == icd9_rule
+    return icd9_code == icd9_expression
+
+def diagnosis_by_code(icd9_code):
+    # Check all rules, to see if the code we have is a possible adverse event
+    for key in rules.ADVERSE_EVENTS.DIAGNOSTICS.keys():
+        codes = key.split(';')
+        # for all the codes that indicate the diagnosis, we see if it matches
+        # It it does, we have it.
+        for code in codes:
+            if match_icd9_expression(icd9_code, code):
+                return rules.ADVERSE_EVENTS_DIAGNOSTICS[key]
+
+    # Couldn't find a match
+    return None
+        
 
 def diagnosis_codes():
     '''
@@ -474,26 +489,28 @@ def diagnosis_codes():
     return set(codes)
 
 
-def exclusion_codes(event_code):
+def exclusion_codes(icd9_code):
     '''
     Given an icd9 code represented by event_code, returns a list of
     icd9 codes that indicate that the diagnosis is not an adverse
     event
     '''
-    # Check all rules, to see if the code we have is a possible adverse event
-    for key in rules.ADVERSE_EVENTS_DIAGNOSTICS.keys():
-        
-        codes = key.split(';')
-        # for all the codes that indicate the diagnosis, we see if it matches
-        # It it does, we have it.
-        for code in codes:
-            if match(event_diagnosis, code):
-                diagnosis = rules.ADVERSE_EVENTS_DIAGNOSTICS[key]
-                return diagnosis.get('ignore_codes', None)
+    diagnosis = diagnosis_by_code(icd9_code)
+    return (diagnosis and diagnosis.get('ignore_codes', None))
 
+def vaers_encounters(start_date=None, end_date=None):
+    import pdb
+    start_date = start_date or EPOCH
+    end_date = end_date or NOW
+    all_vaers_encounters = []
+    pdb.set_trace()
+    for code in diagnosis_codes():
+        encounters = Enc.objects.filter(EncEncounter_Date__gte=start_date,
+                                        EncEncounter_Date__lte=end_date,
+                                        EncICD9_Codes__icontains=code)
+        if encounters: all_vaers_encounters.extend(encounters)
             
-    # No match between event_code and the possible adverse events codes
-    return None     
+    return all_vaers_encounters
     
 
         
