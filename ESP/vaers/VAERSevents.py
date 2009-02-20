@@ -63,6 +63,12 @@ from esp.models import Immunization
 from esp.models import *
 from django.db.models import Q
 from django.db import connection
+
+import rules
+
+
+
+
 cursor = connection.cursor()
 
 EXCLUDESURNAME = 'XBALIDOCIOUS'
@@ -71,7 +77,7 @@ ZERODT = datetime.timedelta(0)
 RuleCatLookup = {'zero':'0', 'one':'1','two':'2','three':'3','four':'4'}
 DAYSTOWATCH=30 # for now
 MAXGAPDT = datetime.timedelta(days=DAYSTOWATCH)
-TEMPTOREPORT = 102 # degrees are F in our records, 38.8C = 102F
+TEMPTOREPORT = 100.4 # degrees are F in our records, 38C = 100.4F
 TEMPGAPTOREPORT = 7 # temp reports only for 1 week post imm
 DGAP = datetime.timedelta(days=DAYSTOWATCH)
 TEMPGAP = datetime.timedelta(days=TEMPGAPTOREPORT) # for testing
@@ -98,72 +104,6 @@ DEMMRN_KEY = 'DemogMedical_Record_Number'
 DEMSN_KEY = 'DemogLast_Name'
 DEMFN_KEY = 'DemogFirst_Name'
 
-""" MODELS look like this:
-    ImmPatient = models.ForeignKey(Demog) 
-    ImmType = models.CharField('Immunization Type',max_length=20,blank=True,null=True)
-    ImmName = models.CharField('Immunization Name',max_length=200,blank=True,null=True)
-    ImmDate = models.CharField('Immunization Date Given',max_length=20,blank=True,null=True)
-    ImmDose = models.CharField('Immunization Dose',max_length=100,blank=True,null=True)
-    ImmManuf =models.CharField('Manufacturer',max_length=100,blank=True,null=True)
-    ImmLot = models.TextField('Lot Number',max_length=500,blank=True,null=True)
-    ImmVisDate = models.CharField('Date of Visit',max_length=20,blank=True,null=True)
-    ImmRecId = models.CharField('Immunization Record Id',max_length=200,blank=True,null=True)
-    
-    DemogPatient_Identifier = models.CharField('Patient Identifier',max_length=20,blank=True,db_index=True)
-    DemogMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,db_index=True,blank=True)
-    DemogLast_Name = models.CharField('Last_Name',max_length=199,blank=True,null=True)
-    DemogFirst_Name = models.CharField('First_Name',max_length=199,blank=True,null=True)
-    DemogMiddle_Initial = models.CharField('Middle_Initial',max_length=199,blank=True,null=True)
-    DemogSuffix = models.CharField('Suffix',max_length=199,blank=True,null=True)
-    DemogAddress1 = models.CharField('Address1',max_length=200,blank=True,null=True)
-    DemogAddress2 = models.CharField('Address2',max_length=100,blank=True,null=True)
-    DemogCity = models.CharField('City',max_length=50,blank=True,null=True)
-    DemogState = models.CharField('State',max_length=20,blank=True,null=True)
-    DemogZip = models.CharField('Zip',max_length=20,blank=True,null=True)
-    DemogCountry = models.CharField('Country',max_length=20,blank=True,null=True)
-    DemogAreaCode = models.CharField('Home Phone Area Code',max_length=20,blank=True,null=True)
-    DemogTel = models.CharField('Home Phone Number',max_length=100,blank=True,null=True)
-    DemogExt = models.CharField('Home Phone Extension',max_length=50,blank=True,null=True)
-    DemogDate_of_Birth = models.CharField('Date of Birth',max_length=20,blank=True,null=True)
-    DemogGender = models.CharField('Gender',max_length=20,blank=True,null=True)
-    DemogRace = models.CharField('Race',max_length=20,blank=True,null=True)
-    DemogHome_Language = models.CharField('Home Language',max_length=20,blank=True,null=True)
-    DemogSSN = models.CharField('SSN',max_length=20,blank=True,null=True)
-    DemogProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True,null=True)
-    DemogMaritalStat = models.CharField('Marital Status',max_length=20,blank=True,null=True)
-    DemogReligion = models.CharField('Religion',max_length=20,blank=True,null=True)
-    DemogAliases = models.CharField('Aliases',max_length=250,blank=True,null=True)
-    DemogMotherMRN = models.CharField('Mother Medical Record Number',max_length=20,blank=True,null=True)
-    DemogDeath_Date = models.CharField('Date of death',max_length=200,blank=True,null=True)
-    DemogDeath_Indicator = models.CharField('Death_Indicator',max_length=30,blank=True,null=True)
-    DemogOccupation = models.CharField('Occupation',max_length=199,blank=True,null=True)
-    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
-    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-    
-    LxPatient = models.ForeignKey(Demog) 
-    LxMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,blank=True,null=True,db_index=True)
-    LxOrder_Id_Num = models.CharField('Order Id #',max_length=20,blank=True,null=True)
-    LxTest_Code_CPT = models.CharField('Test Code (CPT)',max_length=20,blank=True,null=True,db_index=True)
-    LxTest_Code_CPT_mod = models.CharField('Test Code (CPT) Modifier',max_length=20,blank=True,null=True)
-    LxOrderDate = models.CharField('Order Date',max_length=20,blank=True,null=True)
-    LxOrderType = models.CharField('Order Type',max_length=10,blank=True,null=True)   
-    LxOrdering_Provider = models.ForeignKey(Provider,blank=True,null=True) 
-    LxDate_of_result =models.CharField('Date of result',max_length=20,blank=True,null=True)  
-    LxHVMA_Internal_Accession_number = models.CharField('HVMA Internal Accession number',max_length=50,blank=True,null=True)
-    LxComponent = models.CharField('Component',max_length=20,blank=True,null=True,db_index=True)
-    LxComponentName = models.CharField('Component Name',max_length=200,blank=True,null=True, db_index=True)
-    LxTest_results = models.TextField('Test results',max_length=2000,blank=True,null=True,db_index=True)
-    LxNormalAbnormal_Flag = models.CharField('Normal/Abnormal Flag',max_length=20,blank=True,null=True,db_index=True)
-    LxReference_Low = models.CharField('Reference Low',max_length=100,blank=True,null=True)
-    LxReference_High = models.CharField('Reference High',max_length=100,blank=True,null=True)
-    LxReference_Unit = models.CharField('Reference Unit',max_length=100,blank=True,null=True)
-    LxTest_status = models.CharField('Test status',max_length=50,blank=True,null=True)
-    LxComment = models.TextField('Comments', blank=True, null=True,)
-    LxImpression = models.TextField('Impression for Imaging only',max_length=2000,blank=True,null=True)
-    LxLoinc = models.CharField('LOINC code',max_length=20,blank=True,null=True,db_index=True)
-    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
-    createdDate = models.DateTimeField('Date Created', auto_now_add=True)           
-"""
 
 ID_KEY = 'id'
 ENCTEMP_KEY = 'EncTemperature'
@@ -500,7 +440,7 @@ class LxEvents:
             
 
 
-def find_post_imm_events(start_date, end_date):
+def post_imm_events(start_date, end_date):
     # Find all patient vaccinated in the period defined by start/end date
     # For each patient, look for encounters with interesting icd9 codes
     # For each interesting icd9 code, check if exception rules apply.
@@ -508,10 +448,53 @@ def find_post_imm_events(start_date, end_date):
     patients = Immunization.patients_vaccinated_in_period(start_date, end_date)
     
     print patients
+
+
+def match(icd9_code, icd9_rule):
+    '''
+    considering icd9 rules to be:
+    - A code: 558.3
+    - An interval of codes: 047.0-047.1
+    - A regexp to represent a family of codes: 320*
     
+    this function verifies if icd9_code matches a rule
+    '''
+    
+    #for now, we are only doing precise matches:
+    return icd9_code == icd9_rule
+
+def diagnosis_codes():
+    '''
+    Returns a set of all the codes that are indicator of diagnosis
+    that may be an adverse event.
+    '''
+    codes = []
+    for key in rules.ADVERSE_EVENTS_DIAGNOSTICS.keys():
+        codes.extend(key.split(';'))
+    return set(codes)
 
 
+def exclusion_codes(event_code):
+    '''
+    Given an icd9 code represented by event_code, returns a list of
+    icd9 codes that indicate that the diagnosis is not an adverse
+    event
+    '''
+    # Check all rules, to see if the code we have is a possible adverse event
+    for key in rules.ADVERSE_EVENTS_DIAGNOSTICS.keys():
+        
+        codes = key.split(';')
+        # for all the codes that indicate the diagnosis, we see if it matches
+        # It it does, we have it.
+        for code in codes:
+            if match(event_diagnosis, code):
+                diagnosis = rules.ADVERSE_EVENTS_DIAGNOSTICS[key]
+                return diagnosis.get('ignore_codes', None)
 
+            
+    # No match between event_code and the possible adverse events codes
+    return None     
+    
 
         
 class PostImmEvents:

@@ -184,153 +184,169 @@ VACCINE_ADVERSE_EVENTS = [
     ]
 
 
-ADVERSE_EVENTS_DIAGNOSTICS_RULES = [
-    {'diagnosis':'Guillain-Barre',
-     'icd9_code':'357.0',
-     'ignore_if_previous_occurence':12,
-     'category':2,
-     'source':'Menactra'
-     },
- 
-    {'diagnosis':'Bell''s palsy',
-     'icd9_code':'351.0',
-     'ignore_if_previous_occurence':12,
-     'category':2,
-     'source':'Menactra'},
+ADVERSE_EVENTS_DIAGNOSTICS = {
+    '357.0': {
+        'diagnosis':'Guillain-Barre',
+        'ignore_if_previous_occurence':12,
+        'category':2,
+        'source':'Menactra'
+        },
+    
+    '351.0': {
+        'diagnosis':'Bell''s palsy',
+        'ignore_if_previous_occurence':12,
+        'category':2,
+        'source':'Menactra'
+        },
+    
+    '345.*; 780.3': {
+        'diagnosis':'Seizures',
+        'ignore_if_previous_occurence':None,
+        'category':2,
+        'source':'Menactra'
+        },
+    
+    '779.0; 333.2':{
+        'diagnosis':'Seizures (RotaTeq)',
+        'ignore_if_previous_occurence':None,
+        'category':2,
+        'source':'RotaTeq'
+        },
+    
+    '780.31': {
+        'diagnosis':'Febrile seizure ',
+        'ignore_if_previous_occurence':None,
+        'category':2,
+        'source':'MMR-V'
+        },
+    
+    '052.7; 334.4; 781.2; 781.3': {
+        'diagnosis':'Ataxia',
+          'ignore_if_previous_occurence':12,
+        'category':2,
+        'source':'MMR-V'
+        },
+    
+    '323.9; 323.5; 055.0; 052.0': {
+        'diagnosis':'Encephalitis',
+        'ignore_if_previous_occurence':12,
+        'category':2,
+        'source':'MMR-V'
+        },
+    
+    '714.9; 716.9; 056.71': {
+        'diagnosis':'Arthritis',
+        'ignore_if_previous_occurence':12,
+        'category':2,
+        'source':'MMR-V'
+        },
+    
+    '708.0': {
+        'diagnosis':'Allergic urticaria',
+        'ignore_if_previous_occurence':12,
+        'category':2,
+        'source':'MMR-V'
+        },
+    
+    '995.1': {
+        'diagnosis':'Angioneurotic edema',
+        'ignore_if_previous_occurence':12,
+        'category':2,
+        'source':'MMR-V'
+        },
+    
+    '999.4': {
+        'diagnosis':'Anaphylactic shock due to serum',
+        'ignore_if_previous_occurence':12,
+          'category':2,
+        'source':'MMR-V'
+        },
+    
+    '543.9; 560.0': {
+        'diagnosis':'Intussusception',
+        'ignore_if_previous_occurence':12,
+        'category':2,
+        'source':'RotaTeq'
+        
+        },
+    
+    '569.3; 578.1; 578.9': {
+        'diagnosis':'GI bleeding',
+        'ignore_if_previous_occurence':12,
+        'ignore_codes':['004*', '008*', '204-208*', '286*', '287*', '558.3', '800-998*'],
+        'category': 2,
+        'source':'RotaTeq'
+        },
+    
+    '047.8; 047.9; 049.9;321.2; 322*;323.5;323.9': {
+        'diagnosis':'Meningitis / encephalitis',
+        'ignore_if_previous_occurence':12,
+        'ignore_codes':['047.0-047.1', '048*', '049.0-049.8', '053-056*', '320*'],
+        'category':2,
+        'source':'RotaTeq'
+        },
+    
+    '429.0; 422*': {
+        'diagnosis':'Myocarditis',
+        'ignore_if_previous_occurence':12,
+        'category':2,
+        'source':'RotaTeq'
+        },
+    
+    '995.20': {
+        'diagnosis':'Hypersensitivity - drug, unspec',
+        'ignore_if_previous_occurence':None,
+        'category':3
+        },
+    
+    '495.9': {
+        'diagnosis':'Pneumonitis - hypersensitivity',
+        'ignore_if_previous_occurence':None,
+        'category':3
+          
+        },
+    
+    '478.8': {
+        'diagnosis':'Upper respiratory tract hypersensitivity reaction',
+        'ignore_if_previous_occurence':None,
+        'category':3
+        },
+    
+    '978.8': {
+        'diagnosis':'Poisoning - bacterial vaccine',
+        'ignore_if_previous_occurence':None,
+        'category':3
+        },
+    
+    '978.9': {
+        'diagnosis':'Poisoning - mixed bacterial (non-pertussis) vaccine',
+        'ignore_if_previous_occurence':None,
+        'category':3
+        },
+    
+    '999.39': {
+        'diagnosis':'Infection due to vaccine',
+        'ignore_if_previous_occurence':None,
+        'category':3
+        },
+    
+    '999.5': {
+        'diagnosis':'Post-immunization reaction',
+        'ignore_if_previous_occurence':None,
+        'category':3
+        },
+    
+    '323.52': {
+        'diagnosis':'Myelitis - post immunization',
+        'ignore_if_previous_occurence':None,
+        'category':3
+        },
+    
+    '323.51':{ 
+        'diagnosis':'Encephalitis / encephalomyelitis - post immunization',  
+        'ignore_if_previous_occurence':None,
+        'category':3          
+        }
+    }
 
-    {'diagnosis':'Seizures',
-     'icd9_code':'345.*; 780.3',
-     'ignore_if_previous_occurence':None,
-     'category':2,
-     'source':'Menactra'},
-
-    {'diagnosis':'Seizures (RotaTeq)',
-     'icd9_code':'779.0; 333.2',
-     'ignore_if_previous_occurence':None,
-     'category':2,
-     'source':'RotaTeq'},
-    
-    {'diagnosis':'Febrile seizure ',
-     'icd9_code':'780.31',
-     'ignore_if_previous_occurence':None,
-     'category':2,
-     'source':'MMR-V'},
-    
-    {'diagnosis':'Ataxia',
-     'icd9_code':'052.7; 334.4; 781.2; 781.3',
-     'ignore_if_previous_occurence':12,
-     'category':2,
-     'source':'MMR-V'},
-    
-    {'diagnosis':'Encephalitis',
-     'icd9_code':'323.9; 323.5; 055.0; 052.0',
-     'ignore_if_previous_occurence':12,
-     'category':2,
-     'source':'MMR-V'},
-    
-    {'diagnosis':'Arthritis',
-     'icd9_code':'714.9; 716.9; 056.71',
-     'ignore_if_previous_occurence':12,
-     'category':2,
-     'source':'MMR-V'},
-    
-    {'diagnosis':'Allergic urticaria',
-     'icd9_code':'708.0',
-     'ignore_if_previous_occurence':12,
-     'category':2,
-     'source':'MMR-V'},
-    
-    {'diagnosis':'Angioneurotic edema',
-     'icd9_code':'995.1',
-     'ignore_if_previous_occurence':12,
-     'category':2,
-     'source':'MMR-V'},
-    
-    {'diagnosis':'Anaphylactic shock due to serum',
-     'icd9_code':'999.4',
-     'ignore_if_previous_occurence':12,
-     'category':2,
-     'source':'MMR-V'},
-    
-    {'diagnosis':'Intussusception',
-     'icd9_code':'543.9; 560.0',
-     'ignore_if_previous_occurence':12,
-     'category':2,
-     'source':'RotaTeq'
-     },
-    
-    {'diagnosis':'GI bleeding',
-     'icd9_code':'569.3; 578.1; 578.9',
-     'ignore_if_previous_occurence':12,
-     'ignore_codes':['004*', '008*', '204-208*', '286*', '287*', '558.3', '800-998'],
-     'category': 2,
-     'source':'RotaTeq'},
-    
-    {'diagnosis':'Meningitis / encephalitis',
-     'icd9_code':'047.8; 047.9; 049.9;321.2; 322*;323.5;323.9',
-     'ignore_if_previous_occurence':12,
-     'ignore_codes':['047.0-047.1', '048*', '049.0-049.8', '053-056*', '320*'],
-     'category':2,
-     'source':'RotaTeq'},
-    
-    {'diagnosis':'Myocarditis',
-     'icd9_code':'429.0; 422*',
-     'ignore_if_previous_occurence':12,
-     'category':2,
-     'source':'RotaTeq'},
-    
-    {'diagnosis':'Hypersensitivity - drug, unspec',
-     'icd9_code':'995.20',
-     'ignore_if_previous_occurence':None,
-     'category':3
-     },
-    
-    {'diagnosis':'Pneumonitis - hypersensitivity',
-     'icd9_code':'495.9',
-     'ignore_if_previous_occurence':None,
-     'category':3
-     },
-
-    {'diagnosis':'Upper respiratory tract hypersensitivity reaction',
-     'icd9_code':'478.8',
-     'ignore_if_previous_occurence':None,
-     'category':3
-     },
-
-    {'diagnosis':'Poisoning - bacterial vaccine',
-     'icd9_code':'978.8',
-     'ignore_if_previous_occurence':None,
-     'category':3
-     },
-
-    {'diagnosis':'Poisoning - mixed bacterial (non-pertussis) vaccine',
-     'icd9_code':'978.9',
-     'ignore_if_previous_occurence':None,
-     'category':3
-     },
-
-    {'diagnosis':'Infection due to vaccine',
-     'icd9_code':'999.39',
-     'ignore_if_previous_occurence':None,
-     'category':3
-     },
-
-    {'diagnosis':'Post-immunization reaction',
-     'icd9_code':'999.5',
-     'ignore_if_previous_occurence':None,
-     'category':3
-     },
-
-    {'diagnosis':'Myelitis - post immunization',
-     'icd9_code':'323.52',
-     'ignore_if_previous_occurence':None,
-     'category':3
-     },
-
-    {'diagnosis':'Encephalitis / encephalomyelitis - post immunization',
-     'icd9_code':'323.51',
-     'ignore_if_previous_occurence':None,
-     'category':3
-     }
-]
 

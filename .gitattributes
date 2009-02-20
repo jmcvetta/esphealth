@@ -43,7 +43,7 @@ ESP/vaers/VAERSevents.py -text
 ESP/vaers/__init__.py -text
 ESP/vaers/makeData.py -text
 ESP/vaers/rules.py -text
-ESP/vaers/test_suite.py -text
+ESP/vaers/test.py -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
 docs/ELR[!!-~]EMR[!!-~]Query[!!-~]Specification[!!-~]v1.0.doc -text

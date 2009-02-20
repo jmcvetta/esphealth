@@ -22,9 +22,9 @@ def make_fake_adverse_event_encounter(patient):
 
 if __name__=='__main__':
     total_patients = Demog.objects.count()
-    people_count_to_affect = int(total_patients / (100/PERCENTAGE_TO_AFFECT))
+    total_affected = int(total_patients / (100/PERCENTAGE_TO_AFFECT))
 
-    for p in Demog.manager.sample(size=people_count_to_affect):
+    for p in Demog.manager.sample(size=total_affected):
         make_fake_adverse_event_encounter(p) 
 
     

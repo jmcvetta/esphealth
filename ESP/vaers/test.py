@@ -6,8 +6,9 @@ import datetime
 
 import settings
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from esp.models import Demog, Immunization, Enc
+from esp.models import Demog, Immunization, Enc, icd9
 
+import VAERSevents
 from tests import mockData
 import rules
 
@@ -29,6 +30,17 @@ class TestImmunization(unittest.TestCase):
             
         self.assertEqual(Immunization.objects.count(), size)
         
+        
+
+class TestIcd9DiagnosisIdentification(unittest.TestCase):       
+    def setUp(self):
+        self.diagnosis_codes = VAERSevents.diagnosis_codes()
+        self.exclusion_codes = VAERSevents.exclusion_codes()
+    def testRegularCodes(self):
+        print 'ok'
+        pass
+
+    
         
 
 
