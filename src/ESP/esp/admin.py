@@ -74,9 +74,20 @@ class RuleAdmin(admin.ModelAdmin):
 class ExternalToLoincMapAdmin(admin.ModelAdmin):
     list_display = ['ext_code', 'ext_name', 'loinc', ]
 
-class LoincAdmin(admin.ModelAdmin):
+class Loinc_Admin(admin.ModelAdmin):
     list_display = ['loinc_num', 'name']
     search_fields = ['loinc_num', 'long_common_name', 'shortname']
+
+class Condition_Admin(admin.ModelAdmin):
+    list_display = ['slug', 'long_name',]
+
+class Loinc_Rule_Collection_Admin(admin.ModelAdmin):
+    list_display = ['slug', 'long_name',]
+
+class Loinc_Rule_Admin(admin.ModelAdmin):
+    list_display = ['collection', 'loinc', 'operator', 'value', 'abnormal']
+    raw_id_fields = ['loinc',]
+
 
 admin.site.register(Case, CaseOptions)
 admin.site.register(SocialHistory)
@@ -86,23 +97,26 @@ admin.site.register(HL7File, HL7FileOptions)
 admin.site.register(Rx)
 admin.site.register(Provider, ProviderOptions)
 admin.site.register(Lx)
-admin.site.register(ConditionDrugName, ConditionDrugNameOptions)
+#admin.site.register(ConditionDrugName, ConditionDrugNameOptions)
 admin.site.register(Format, FormatOptions)
 admin.site.register(Dest, DestOptions)
 admin.site.register(Problems)
 admin.site.register(TestCase, TestCaseOptions)
-admin.site.register(ConditionLOINC, ConditionLOINCOptions)
+#admin.site.register(ConditionLOINC, ConditionLOINCOptions)
 admin.site.register(Lxo)
-admin.site.register(ConditionNdc, ConditionNdcOptions)
-admin.site.register(CPTLOINCMap, CPTLOINCMapOptions)
-admin.site.register(ConditionIcd9, ConditionIcd9Options)
+#admin.site.register(ConditionNdc, ConditionNdcOptions)
+#admin.site.register(CPTLOINCMap, CPTLOINCMapOptions)
+#admin.site.register(ConditionIcd9, ConditionIcd9Options)
 admin.site.register(Immunization)
 admin.site.register(DataFile, DataFileOptions)
 admin.site.register(icd9Fact)
 admin.site.register(Demog, DemogOptions)
 admin.site.register(CaseWorkflow, CaseWorkflowOptions)
 admin.site.register(VAERSadditions)
-admin.site.register(Rule, RuleAdmin)
+#admin.site.register(Rule, RuleAdmin)
 admin.site.register(models.External_To_Loinc_Map, ExternalToLoincMapAdmin)
-admin.site.register(models.Loinc, LoincAdmin)
+admin.site.register(models.Loinc, Loinc_Admin)
+admin.site.register(models.Condition, Condition_Admin)
+admin.site.register(models.Loinc_Rule_Collection, Loinc_Rule_Collection_Admin)
+admin.site.register(models.Loinc_Rule, Loinc_Rule_Admin)
 
