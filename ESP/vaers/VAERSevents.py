@@ -50,6 +50,7 @@ import time, datetime
 import copy, logging
 import pdb
 
+
 sys.path.append('../')
 import settings
 
@@ -453,12 +454,14 @@ def post_imm_events(start_date, end_date):
 
 def match_icd9_expression(icd9_code, expression_to_match):
     '''
-    considering icd9 rules to be:
+    considering expressions to represent:
     - A code: 558.3
     - An interval of codes: 047.0-047.1
     - A regexp to represent a family of codes: 320*
+    - An interval with a regexp: 802.3-998*
     
-    this function verifies if icd9_code matches a rule
+    this function verifies if icd9_code matches the expression, 
+    i.e, satisfies the condition represented by the expression
     '''
 
     def transform_expression(expression):
@@ -475,30 +478,36 @@ def match_icd9_expression(icd9_code, expression_to_match):
             raise ValueError, 'not a valid icd9 expression'
 
 
-    # We must get two regular codes in the end.
-    ll, hh = float(low), float(high)    
-    assert(type(ll) is float)
-    assert(type(hh) is float)
+        # We must get two regular codes in the end.
+        ll, hh = float(low), float(high)    
+
+
+        assert(type(ll) is float)
+        assert(type(hh) is float)
     
-    return ll, hh
+        return ll, hh
             
     
     def match_precise(code, expression):
         return code == expression
     
-    def match_range(code, lower_bound, greater_bound):
-        return lower_bound <= code <= greater_bound
+    def match_range(code, floor, ceiling):
+        return floor <= code <= ceiling
 
     def match_regexp(code, regexp):
-        lower_bound, higher_bound = transform_expression(regexp)
-        return match_range(code, lower_bound, greater_bound)
+        floor, ceiling = transform_expression(regexp)
+        return match_range(code, floor, ceiling)
 
 
+    # Verify first if the icd9 code is valid
+    # We will only accept icd9 codes in the XXX.X format
     try:
+        assert(len(icd9_code.strip()) == 5)
+        assert('.' == icd9_code[3])
         target = float(icd9_code)
-    except ValueError:
+    except Exception:
         raise ValueError, 'icd9_code is not valid'
-
+    
     try:
         expression = float(expression_to_match)
         return match_precise(target, expression)
@@ -548,11 +557,10 @@ def exclusion_codes(icd9_code):
     return (diagnosis and diagnosis.get('ignore_codes', None))
 
 def vaers_encounters(start_date=None, end_date=None):
-    import pdb
     start_date = start_date or EPOCH
     end_date = end_date or NOW
     all_vaers_encounters = []
-    pdb.set_trace()
+
     for code in diagnosis_codes():
         encounters = Enc.objects.filter(EncEncounter_Date__gte=start_date,
                                         EncEncounter_Date__lte=end_date,

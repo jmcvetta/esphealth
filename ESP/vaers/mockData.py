@@ -9,9 +9,11 @@ from esp.models import Demog, Immunization, Enc, icd9
 
 import rules
 from tests import mockData
+from utils.utils import timeit
 
 PERCENTAGE_TO_AFFECT = 5
 
+#@timeit
 def clear():
     if settings.DEBUG:
         Immunization.objects.all().delete()

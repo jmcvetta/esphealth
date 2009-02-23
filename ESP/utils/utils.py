@@ -15,6 +15,15 @@ from django.db.models import Q
 
 
 
+def timeit(func):
+    '''Poor man's profiler'''
+    def decorator(*args, **kw):
+        before = datetime.datetime.now()
+        res = func(*args, **kw)
+        print('%s took %s' % (func.__name__, (datetime.datetime.now() - before)))
+        return res
+    return decorator
+
 
 def random_string(length=10):
     chars = string.digits + string.letters
