@@ -1,5 +1,6 @@
 import os, sys
 import random
+import datetime
 
 sys.path.append('../')
 import settings
@@ -12,6 +13,7 @@ from tests import mockData
 from utils.utils import timeit
 
 PERCENTAGE_TO_AFFECT = 5
+ONE_WEEK = 7
 
 #@timeit
 def clear():
@@ -25,32 +27,51 @@ def clear():
 def create_population(size):
     mockData.create_patient_population(size)
 
-def make_recent_immunization(patient):
-    mockData.fake_immunization(patient, force_recent=True)
+def create_recent_immunization(patient):
+    mockData.create_immunization(patient, force_recent=True)
     
 
-def make_fake_adverse_event_encounter(patient):
-    # What adverse event happens to our patient? A random one...
-    adverse_event_codes = rules.ADVERSE_EVENTS_DIAGNOSTICS.keys()
-    try:
-        ev_codes = random.choice(adverse_event_codes)
-        icd = random.choice(ev_codes.split(';'))
-        # Create encounter with specific code
-        mockData.make_fake_encounter(patient, icds=icd)
-    except AttributeError:
-        raise AttributeError, 'event_diagnosis_rule has no icd code'
+def create_adverse_event_encounter(patient):
+    FEVER_EVENT_PCT = 50
+    DIAGNOSTICS_EVENT_PCT = 15
+
+    def fever_event(patient, date):
+        # How high the fever? 
+        fever_temp = rules.FEVER_TEMP_TO_REPORT + float(random.randrange(1, 30))/10
+        mockData.create_encounter(patient, 
+                                  date=date, 
+                                  temperature=fever_temp)
+        
+
+    def diagnostics_event(patient, date):
+        # What event happens to our patient? A random one...
+        adverse_event_codes = rules.VAERS_DIAGNOSTICS.keys()
+        try:
+            ev_codes = random.choice(adverse_event_codes)
+            icd = random.choice(ev_codes.split(';'))
+            # Create encounter with specific code
+            mockData.create_encounter(patient, date=date, icds=icd)
+        except AttributeError:
+            raise AttributeError, 'event_diagnosis_rule has no icd code'
+
+        
+    imm = mockData.create_immunization(patient)
+    if random.randrange(100) <= FEVER_EVENT_PCT:
+        delta = datetime.timedelta(days=random.randrange(ONE_WEEK))
+        fever_event(patient, imm.ImmDate-delta)
+
+    if random.randrange(100) <= DIAGNOSTICS_EVENT_PCT:
+        delta = datetime.timedelta(days=random.randrange(ONE_WEEK))
+        diagnostics_event(patient, imm.ImmDate-delta)
+                                   
+    
+
+
+def create_false_alarm_adverse_event(patient):
+    pass
 
 
 if __name__=='__main__':
-    total_patients = Demog.objects.count()
-    total_affected = int(total_patients / (100/PERCENTAGE_TO_AFFECT))
-
-    for p in Demog.manager.sample(size=total_affected):
-        make_fake_adverse_event_encounter(p) 
-
-    
-    
-
-    
+    pass
 
 

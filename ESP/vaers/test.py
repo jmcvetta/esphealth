@@ -1,7 +1,7 @@
 import os, sys
 import unittest
 import datetime
-
+import random
 
 sys.path.append('../')
 import settings
@@ -29,7 +29,7 @@ class TestImmunization(unittest.TestCase):
         self.assertEqual(Demog.objects.count(), POPULATION_SIZE)
         
         for patient in Demog.objects.all():
-            mockData.make_recent_immunization(patient)
+            mockData.recent_immunization(patient)
             
         self.assertEqual(Immunization.objects.count(), POPULATION_SIZE)
         
@@ -40,7 +40,7 @@ class TestIcd9DiagnosisIdentification(unittest.TestCase):
         self.diagnosis_codes = VAERSevents.diagnosis_codes()
         
     def testRegularCodes(self):
-        diagnostics = rules.ADVERSE_EVENTS_DIAGNOSTICS
+        diagnostics = rules.VAERS_DIAGNOSTICS
         bells_palsy_code = '351.0'
         guillian_barre_code = '357.0'
         self.assertEqual(diagnostics[bells_palsy_code]['diagnosis'], 'Bell''s palsy')
@@ -96,28 +96,7 @@ class TestIcd9CodeMatching(unittest.TestCase):
         
 
 
-
- 
-        
-class TestRulesDefinition(unittest.TestCase):
-    def setUp(self):
-        
-        
-
-        self.start_date = NOW - ONE_YEAR
-        self.end_date = NOW
-        
-    def testGetCategoryTwoRules(self):
-        pass
-        
-    def testGetCategoryThreeRules(self):
-        pass
-
-    def testOne(self):
-        pass
-
-
-    
+  
 class TestVAERSCreation(unittest.TestCase):
     def setUp(self):
         mockData.clear()
@@ -126,9 +105,25 @@ class TestVAERSCreation(unittest.TestCase):
     def testCreateVAERSPacient(self):
         mockData.create_population(POPULATION_SIZE)
         patient = Demog.manager.random()
-        mockData.make_fake_adverse_event_encounter(patient)
+        mockData.adverse_event_encounter(patient)
         
         self.assertEqual(len(VAERSevents.vaers_encounters()), 1)
+
+
+class TestCreateWholePopulation(unittest.TestCase):
+
+    def testCreatePopulation(self):
+        mockData.create_population(POPULATION_SIZE)
+        
+
+    def testImmunizePopulation(self):
+
+        for patient in Demog.objects.all():
+            mockData.create_recent_immunization(patient)
+            if random.randrange(0,100) < PERCENTAGE_TO_AFFECT:
+                mockData.create_adverse_event_encounter(patient)
+                
+
         
 
 
@@ -137,7 +132,8 @@ class TestVAERSCreation(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestIcd9CodeMatching)
+    mockData.clear()
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestCreateWholePopulation)
     unittest.TextTestRunner(verbosity=2).run(suite)
 
 
