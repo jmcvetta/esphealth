@@ -698,7 +698,7 @@ def haspriorNegaLx(onelxid, negaloinc=[],dayrange=-365,negvalues=[]):
     return returnl
    
 ###################################
-def checkICD_ALTAST(demog_lx,altloinc=['1742-6','1920-8'],dayrange=15):
+def checkICD_ALTAST(demog_lx,altloinc=['1742-6','1920-8'],dayrange=15, min_result_lvl=None):
     """check (ICD9 or ALT or AST)
     """
     newcases={}
@@ -708,6 +708,15 @@ def checkICD_ALTAST(demog_lx,altloinc=['1742-6','1920-8'],dayrange=15):
         if altlx: ##2 or 3
             for onelx in relatedlxids: ##need within 14 days period
                 for onealtlx in altlx:
+                    #
+                    # Hack to address ticket #7:
+                    #
+                    try:
+                        if min_result_lvl and not int(onealtlx.LxTest_results) >= min_result_lvl:
+                            continue
+                    except ValueError:
+                        pass
+                    #
                     if getLxduration(onelx,onealtlx.id) <dayrange and not newcases.has_key(onedemogid):
                         newcases[onedemogid]=[onelx,onealtlx.id]
 
@@ -1071,7 +1080,7 @@ def processAcuteHepC(condition):
     for oneloinc in ['16128-1','6422-0','34704-7','10676-5','38180-6','5012-0','11259-9','20416-4']:
         condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=condition,CondiSend=True)
         demog_lx=isPositive_givenLx(condition,[oneloinc])
-        newcases = checkICD_ALTAST(demog_lx,['1742-6'],dayrange=29)
+        newcases = checkICD_ALTAST(demog_lx,['1742-6'],dayrange=29, min_result_lvl=401)
         for onedemogid in  newcases.keys():
             if onedemogid in casedemogids:
                 continue
