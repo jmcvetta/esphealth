@@ -8,10 +8,11 @@
 ##
 
 import os, sys
-import django
-import time, datetime
-import copy, logging
+import datetime
+import logging
+import operator
 
+import pdb
 
 sys.path.append('../')
 import settings
@@ -23,7 +24,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 parent_dir = os.path.join(settings.TOPDIR, '../')
 sys.path.append(parent_dir)
 
-from esp.models import Immunization
+from esp.models import Immunization, Enc
 
 import utils
 import rules
@@ -34,29 +35,29 @@ EPOCH = NOW - datetime.timedelta(days=3*365)
 
 
 class AdverseEvent(object):
-    def __init__(self, triggered_by):
-        self.triggered_by = triggered_by
+    def __init__(self, trigger_immunization, encounter):
+        self.encounter = encounter
+        self.trigger_immunization = trigger_immunization
+        self.patient = trigger_immunization.ImmPatient
+        self.patient_immunization_record = trigger_immunization.ImmRecId
     def has_exclusion_rules(self):
         return False
 
 
-class FeverEvent(AdverseEvent):
-    TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
-    TIME_WINDOW_POST_EVENT = datetime.timedelta(days=7) # One week to report
-    def detect_events(immunization):
-        pass
-        
-    def __init__(self, triggered_by, **kw):
-        super(FeverEvent, self).__init__(triggered_by)
+class FeverEvent(AdverseEvent):        
+    def __init__(self, trigger_immunization, encounter, **kw):
+        super(FeverEvent, self).__init__(trigger_immunization, encounter)
         self.temp = kw.pop('temp', None)
+        self.name = 'Fever'
     def has_exclusion_rules(self):
-        return FeverEvent.TEMP_TO_REPORT >= self.temp
+        return rules.TEMP_TO_REPORT >= self.temp
 
 
 class Icd9DiagnosisEvent(AdverseEvent):
-    def __init__(self, triggered_by, **kw):
-        super(Icd9DiagnosisEvent, self).__init__(triggered_by)
+    def __init__(self, trigger_immunization, encounter, **kw):
+        super(Icd9DiagnosisEvent, self).__init__(trigger_immunization, encounter)
         self.diagnosis = kw.pop('diagnosis', None)
+        self.name = self.diagnosis['name']
 
     def same_diagnosis_in_past(self, time_in_months):
         pass
@@ -90,11 +91,11 @@ def match_icd9_expression(icd9_code, expression_to_match):
         if '-' in expression:
             # It's an expression to show a range of values
             low, high = expression.split('-')
-            if '*' in low: low = low.replace('*', '.0')
-            if '*' in high: high = high.replace('*', '.9')
+            if '*' in low: low = low.replace('*', '.00')
+            if '*' in high: high = high.replace('*', '.99')
             
         if '*' in expression and '-' not in expression:
-            low, high = expression.replace('*', '.0'), expression.replace('*', '.9')
+            low, high = expression.replace('*', '.00'), expression.replace('*', '.99')
             
         if '*' not in expression and '-' not in expression:
             raise ValueError, 'not a valid icd9 expression'
@@ -189,33 +190,53 @@ def vaers_encounters(start_date=None, end_date=None):
 
       
 
-def detect_events(immunization, detect_only=None):
+def get_immunization_adverse_events(immunization, detect_only=None):
 
-    def detect_fevers(imm):
-        pass
+    def detect_fevers(imm, patient):
+        
+        time_window = datetime.timedelta(days=rules.TIME_WINDOW_POST_EVENT)
 
-    return []
+        encounters = Enc.objects.filter(
+            EncPatient=patient, 
+            date__gte=imm.date,
+            date__lte=imm.date + time_window,
+            temperature__gte=rules.TEMP_TO_REPORT            
+            )
 
-def report(events):
-    for evt in events:
-        print evt
+        return [FeverEvent(imm, x, temp=x.temperature) for x in encounters]
 
 
-def run(**kw):
+    def detect_diagnosis_events(imm, patient):
+        return []
 
-    detect_only = kw.pop('detect_only', None)
+    def detect_lab_results_events(imm, patient):
+        return []
+
+
+    patient = immunization.ImmPatient
+    
+    actions = { 
+        'fever': detect_fevers(immunization, patient),
+        'diagnosis': detect_diagnosis_events(immunization, patient),
+        'lx': detect_lab_results_events(immunization, patient)
+        }
+
+    if detect_only in actions.keys():
+        return actions[detect_only]
+    else:
+        return reduce(operator.add, actions.values())
+
+
+
+def get_adverse_events(**kw):
     start_date = kw.pop('start_date', EPOCH)
     end_date = kw.pop('end_date', NOW)
+    detect_only = kw.pop('detect_only', None)
 
-    
-    immunizations = Immunization.manager.all_between(start_date, end_date)
-    
-    for imm in immunizations:
-        events = detect_events(imm, detect_only=detect_only)
-        report([ev for ev in events if not event.has_exclusion_rules()])
+    events = []
 
+    for imm in Immunization.manager.all_between(start_date, end_date):
+        events.extend(get_immunization_adverse_events(imm, detect_only))
 
 
-    
-if __name__ == "__main__":
-    run()
+    return events

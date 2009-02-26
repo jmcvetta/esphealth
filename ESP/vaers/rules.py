@@ -1,4 +1,6 @@
-FEVER_TEMP_TO_REPORT = 100.4
+
+TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
+TIME_WINDOW_POST_EVENT = days=7 # One week to report
 
 
 VAERS_LAB_RESULTS = [
@@ -189,84 +191,84 @@ VAERS_LAB_RESULTS = [
 
 VAERS_DIAGNOSTICS = {
     '357.0': {
-        'diagnosis':'Guillain-Barre',
+        'name':'Guillain-Barre',
         'ignore_period':12,
         'category':2,
         'source':'Menactra'
         },
     
     '351.0': {
-        'diagnosis':'Bell''s palsy',
+        'name':'Bell''s palsy',
         'ignore_period':12,
         'category':2,
         'source':'Menactra'
         },
     
     '345.*; 780.3': {
-        'diagnosis':'Seizures',
+        'name':'Seizures',
         'ignore_period':None,
         'category':2,
         'source':'Menactra'
         },
     
     '779.0; 333.2':{
-        'diagnosis':'Seizures (RotaTeq)',
+        'name':'Seizures (RotaTeq)',
         'ignore_period':None,
         'category':2,
         'source':'RotaTeq'
         },
     
     '780.31': {
-        'diagnosis':'Febrile seizure',
+        'name':'Febrile seizure',
         'ignore_period':None,
         'category':2,
         'source':'MMR-V'
         },
     
     '052.7; 334.4; 781.2; 781.3': {
-        'diagnosis':'Ataxia',
+        'name':'Ataxia',
         'ignore_period':12,
         'category':2,
         'source':'MMR-V'
         },
     
     '323.9; 323.5; 055.0; 052.0': {
-        'diagnosis':'Encephalitis',
+        'name':'Encephalitis',
         'ignore_period':12,
         'category':2,
         'source':'MMR-V'
         },
     
     '714.9; 716.9; 056.71': {
-        'diagnosis':'Arthritis',
+        'name':'Arthritis',
         'ignore_period':12,
         'category':2,
         'source':'MMR-V'
         },
     
     '708.0': {
-        'diagnosis':'Allergic urticaria',
+        'name':'Allergic urticaria',
         'ignore_period':12,
         'category':2,
         'source':'MMR-V'
         },
     
     '995.1': {
-        'diagnosis':'Angioneurotic edema',
+        'name':'Angioneurotic edema',
         'ignore_period':12,
         'category':2,
         'source':'MMR-V'
         },
     
     '999.4': {
-        'diagnosis':'Anaphylactic shock due to serum',
+        'name':'Anaphylactic shock due to serum',
         'ignore_period':12,
           'category':2,
         'source':'MMR-V'
         },
     
     '543.9; 560.0': {
-        'diagnosis':'Intussusception',
+        'name':'Intussusception',
         'ignore_period':12,
         'category':2,
         'source':'RotaTeq'
@@ -274,7 +276,7 @@ VAERS_DIAGNOSTICS = {
         },
     
     '569.3; 578.1; 578.9': {
-        'diagnosis':'GI bleeding',
+        'name':'GI bleeding',
         'ignore_period':12,
         'ignore_codes':['004*', '008*', '204-208*', '286*', '287*', '558.3', '800-998*'],
         'category': 2,
@@ -282,7 +284,7 @@ VAERS_DIAGNOSTICS = {
         },
     
     '047.8; 047.9; 049.9;321.2; 322*;323.5;323.9': {
-        'diagnosis':'Meningitis / encephalitis',
+        'name':'Meningitis / encephalitis',
         'ignore_period':12,
         'ignore_codes':['047.0-047.1', '048*', '049.0-049.8', '053-056*', '320*'],
         'category':2,
@@ -290,63 +292,63 @@ VAERS_DIAGNOSTICS = {
         },
     
     '429.0; 422*': {
-        'diagnosis':'Myocarditis',
+        'name':'Myocarditis',
         'ignore_period':12,
         'category':2,
         'source':'RotaTeq'
         },
     
     '995.20': {
-        'diagnosis':'Hypersensitivity - drug, unspec',
+        'name':'Hypersensitivity - drug, unspec',
         'ignore_period':None,
         'category':3
         },
     
     '495.9': {
-        'diagnosis':'Pneumonitis - hypersensitivity',
+        'name':'Pneumonitis - hypersensitivity',
         'ignore_period':None,
         'category':3
           
         },
     
     '478.8': {
-        'diagnosis':'Upper respiratory tract hypersensitivity reaction',
+        'name':'Upper respiratory tract hypersensitivity reaction',
         'ignore_period':None,
         'category':3
         },
     
     '978.8': {
-        'diagnosis':'Poisoning - bacterial vaccine',
+        'name':'Poisoning - bacterial vaccine',
         'ignore_period':None,
         'category':3
         },
     
     '978.9': {
-        'diagnosis':'Poisoning - mixed bacterial (non-pertussis) vaccine',
+        'name':'Poisoning - mixed bacterial (non-pertussis) vaccine',
         'ignore_period':None,
         'category':3
         },
     
     '999.39': {
-        'diagnosis':'Infection due to vaccine',
+        'name':'Infection due to vaccine',
         'ignore_period':None,
         'category':3
         },
     
     '999.5': {
-        'diagnosis':'Post-immunization reaction',
+        'name':'Post-immunization reaction',
         'ignore_period':None,
         'category':3
         },
     
     '323.52': {
-        'diagnosis':'Myelitis - post immunization',
+        'name':'Myelitis - post immunization',
         'ignore_period':None,
         'category':3
         },
     
     '323.51':{ 
-        'diagnosis':'Encephalitis / encephalomyelitis - post immunization',  
+        'name':'Encephalitis / encephalomyelitis - post immunization',  
         'ignore_period':None,
         'category':3          
         }

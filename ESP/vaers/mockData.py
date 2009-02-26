@@ -28,41 +28,50 @@ def create_population(size):
     mockData.create_patient_population(size)
 
 def create_recent_immunization(patient):
-    mockData.create_immunization(patient, force_recent=True)
+    return mockData.create_immunization(patient, force_recent=True)
     
 
-def create_adverse_event_encounter(patient):
+def create_adverse_event_encounter(immunization, patient):
     FEVER_EVENT_PCT = 50
     DIAGNOSTICS_EVENT_PCT = 15
 
-    def fever_event(patient, date):
+    encounter = Enc()
+    encounter.EncPatient = patient
+    
+    def fever_event():
         # How high the fever? 
-        fever_temp = rules.FEVER_TEMP_TO_REPORT + float(random.randrange(1, 30))/10
-        mockData.create_encounter(patient, 
-                                  date=date, 
-                                  temperature=fever_temp)
+        fever_temp = rules.TEMP_TO_REPORT + float(random.randrange(1, 30))/10
+        encounter.temperature = fever_temp
+        encounter.EncTemperature = str(fever_temp)
         
 
-    def diagnostics_event(patient, date):
+    def diagnostics_event():
         # What event happens to our patient? A random one...
         adverse_event_codes = rules.VAERS_DIAGNOSTICS.keys()
         try:
             ev_codes = random.choice(adverse_event_codes)
-            icd = random.choice(ev_codes.split(';'))
-            # Create encounter with specific code
-            mockData.create_encounter(patient, date=date, icds=icd)
+            icd = random.choice(ev_codes.split(';')).strip()
+            encounter.EncICD9_Codes = icd
         except AttributeError:
             raise AttributeError, 'event_diagnosis_rule has no icd code'
 
-        
-    imm = mockData.create_immunization(patient)
+            
+    days_from_immunization = random.randrange(rules.TIME_WINDOW_POST_EVENT)
+    delta = datetime.timedelta(days=days_from_immunization)
+    encounter_date = immunization.date + delta
+    
+    encounter.date = encounter_date
+
     if random.randrange(100) <= FEVER_EVENT_PCT:
-        delta = datetime.timedelta(days=random.randrange(ONE_WEEK))
-        fever_event(patient, imm.ImmDate-delta)
+        fever_event()
 
     if random.randrange(100) <= DIAGNOSTICS_EVENT_PCT:
-        delta = datetime.timedelta(days=random.randrange(ONE_WEEK))
-        diagnostics_event(patient, imm.ImmDate-delta)
+        diagnostics_event()
+
+    encounter.save()
+    
+    return encounter
+        
                                    
     
 

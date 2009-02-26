@@ -42,6 +42,7 @@ ESP/utils/vaers_hl7.py -text
 ESP/vaers/VAERSevents.py -text
 ESP/vaers/__init__.py -text
 ESP/vaers/mockData.py -text
+ESP/vaers/reports.py -text
 ESP/vaers/rules.py -text
 ESP/vaers/test.py -text
 axis-1_4/activation.jar -text

@@ -3,38 +3,28 @@ import unittest
 import datetime
 import random
 
+
 sys.path.append('../')
 import settings
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from esp.models import Demog, Immunization
 
-import VAERSevents
+
 import mockData
 import rules
 
-from VAERSevents import match_icd9_expression
+
+from VAERSevents import match_icd9_expression, diagnosis_codes
+from reports import temporal_clustering
 
 NOW = datetime.datetime.now()
 ONE_YEAR = datetime.timedelta(days=365)
 PERCENTAGE_TO_AFFECT = 50
-POPULATION_SIZE = 500
+POPULATION_SIZE = 5000
+POPULATION_TO_IMMUNIZE = 1000
         
-class TestImmunization(unittest.TestCase):
-    def setUp(self):
-        mockData.clear()
-
-    def testImmunizationRecord(self):
-        mockData.create_population(POPULATION_SIZE)
-        self.assertEqual(Demog.objects.count(), POPULATION_SIZE)
-        
-        for patient in Demog.objects.all():
-            mockData.recent_immunization(patient)
-            
-        self.assertEqual(Immunization.objects.count(), POPULATION_SIZE)
-        
-        
-
+     
 class TestIcd9DiagnosisIdentification(unittest.TestCase):       
     def setUp(self):
         self.diagnosis_codes = VAERSevents.diagnosis_codes()
@@ -43,7 +33,7 @@ class TestIcd9DiagnosisIdentification(unittest.TestCase):
         diagnostics = rules.VAERS_DIAGNOSTICS
         bells_palsy_code = '351.0'
         guillian_barre_code = '357.0'
-        self.assertEqual(diagnostics[bells_palsy_code]['diagnosis'], 'Bell''s palsy')
+        self.assertEqual(diagnostics[bells_palsy_code]['name'], 'Bell''s palsy')
         self.assertEqual(diagnostics[guillian_barre_code]['category'], 2)
 
 
@@ -97,34 +87,31 @@ class TestIcd9CodeMatching(unittest.TestCase):
 
 
   
-class TestVAERSCreation(unittest.TestCase):
+class TestVAERS(unittest.TestCase):
     def setUp(self):
-        mockData.clear()
+        self.immunizations = []
+        self.vaers_cases = []
+
+        for patient in Demog.manager.sample(size=POPULATION_TO_IMMUNIZE):
+            imm = mockData.create_recent_immunization(patient)
+            self.immunizations.append(imm)
+            if random.randrange(100) < PERCENTAGE_TO_AFFECT:
+                encounter = mockData.create_adverse_event_encounter(imm, patient)
+                self.vaers_cases.append(encounter)
 
 
-    def testCreateVAERSPacient(self):
-        mockData.create_population(POPULATION_SIZE)
-        patient = Demog.manager.random()
-        mockData.adverse_event_encounter(patient)
-        
-        self.assertEqual(len(VAERSevents.vaers_encounters()), 1)
+    def testTemporalClusteringReport(self):
+        print '\n\n\n'
+        temporal_clustering()
+        print '\n\n\n'
 
 
-class TestCreateWholePopulation(unittest.TestCase):
 
-    def testCreatePopulation(self):
-        mockData.create_population(POPULATION_SIZE)
-        
-
-    def testImmunizePopulation(self):
-
-        for patient in Demog.objects.all():
-            mockData.create_recent_immunization(patient)
-            if random.randrange(0,100) < PERCENTAGE_TO_AFFECT:
-                mockData.create_adverse_event_encounter(patient)
-                
-
-        
+    def tearDown(self):
+        for imm in self.immunizations:
+            imm.delete()
+        for case in self.vaers_cases:
+            case.delete()
 
 
 
@@ -132,8 +119,7 @@ class TestCreateWholePopulation(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    mockData.clear()
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestCreateWholePopulation)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestVAERS)
     unittest.TextTestRunner(verbosity=2).run(suite)
 
 
