@@ -11,19 +11,29 @@ import datetime
 from utils.utils import output
 from VAERSevents import get_adverse_events
 
-def temporal_clustering(out_file=None):
+def temporal_clustering(out_file=None, **kw):
     # Get fever events and output to file with format
     # id vaccDate eventDate daysToEvent VaccName eventName Ageyrs GenderMF 
         
+    start_date = kw.pop('start_date', None)
+    end_date = kw.pop('end_date', None)
+
     f = (out_file and open(out_file, 'w')) or None
       
-    for ev in get_adverse_events(detect_only='fever'):
+    for ev in get_adverse_events(detect_only='fever', 
+                                 start_date=start_date,
+                                 end_date=end_date):
+
         imm = ev.trigger_immunization
+        imm.date = datetime.datetime.strptime(imm.ImmDate, '%Y%m%d')
+
         days_to_event = (ev.encounter.date - imm.date).days
 
         output('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
                 imm.ImmRecId , 
-                imm.date, ev.encounter.date, days_to_event, 
+                imm.date.strftime('%m/%d/%Y'), 
+                ev.encounter.date.strftime('%m/%d/%Y'), 
+                days_to_event, 
                 imm.ImmName, ev.name, 
                 ev.patient.getAge(), ev.patient.DemogGender
                 ), f)

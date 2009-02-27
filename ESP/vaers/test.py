@@ -20,6 +20,10 @@ from reports import temporal_clustering
 
 NOW = datetime.datetime.now()
 ONE_YEAR = datetime.timedelta(days=365)
+ONE_MONTH = datetime.timedelta(days=30)
+ONE_WEEK = datetime.timedelta(days=7)
+
+
 PERCENTAGE_TO_AFFECT = 50
 POPULATION_SIZE = 5000
 POPULATION_TO_IMMUNIZE = 1000
@@ -88,30 +92,14 @@ class TestIcd9CodeMatching(unittest.TestCase):
 
   
 class TestVAERS(unittest.TestCase):
-    def setUp(self):
-        self.immunizations = []
-        self.vaers_cases = []
-
-        for patient in Demog.manager.sample(size=POPULATION_TO_IMMUNIZE):
-            imm = mockData.create_recent_immunization(patient)
-            self.immunizations.append(imm)
-            if random.randrange(100) < PERCENTAGE_TO_AFFECT:
-                encounter = mockData.create_adverse_event_encounter(imm, patient)
-                self.vaers_cases.append(encounter)
-
-
     def testTemporalClusteringReport(self):
-        print '\n\n\n'
-        temporal_clustering()
-        print '\n\n\n'
+        start = NOW - ONE_YEAR - ONE_WEEK
+        end = NOW - ONE_YEAR
+        
+        temporal_clustering(start_date=start, end_date=end)
 
 
 
-    def tearDown(self):
-        for imm in self.immunizations:
-            imm.delete()
-        for case in self.vaers_cases:
-            case.delete()
 
 
 

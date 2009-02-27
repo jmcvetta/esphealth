@@ -27,6 +27,8 @@ sys.path.append(parent_dir)
 from esp.models import Immunization, Enc
 
 import utils
+from utils.utils import debug
+
 import rules
 
 NOW = datetime.datetime.now()
@@ -37,6 +39,7 @@ EPOCH = NOW - datetime.timedelta(days=3*365)
 class AdverseEvent(object):
     def __init__(self, trigger_immunization, encounter):
         self.encounter = encounter
+        self.encounter.date = datetime.datetime.strptime(encounter.EncEncounter_Date, '%Y%m%d')
         self.trigger_immunization = trigger_immunization
         self.patient = trigger_immunization.ImmPatient
         self.patient_immunization_record = trigger_immunization.ImmRecId
@@ -196,14 +199,24 @@ def get_immunization_adverse_events(immunization, detect_only=None):
         
         time_window = datetime.timedelta(days=rules.TIME_WINDOW_POST_EVENT)
 
-        encounters = Enc.objects.filter(
-            EncPatient=patient, 
-            date__gte=imm.date,
-            date__lte=imm.date + time_window,
-            temperature__gte=rules.TEMP_TO_REPORT            
-            )
 
-        return [FeverEvent(imm, x, temp=x.temperature) for x in encounters]
+#        FIXME: current model won't allow us to do this query. 
+#
+#
+#        encounters = Enc.objects.filter(
+#            patient=patient, 
+#            date__gte=imm.date,
+#            date__lte=imm.date + time_window,
+#            temperature__gte=rules.TEMP_TO_REPORT            
+#            )
+#
+#       I'm keeping the function below as a workaround.
+
+        imm.date = datetime.datetime.strptime(imm.ImmDate, '%Y%m%d')        
+        encounters = Enc.manager.withFever(patient, rules.TEMP_TO_REPORT, start_date=imm.date, end_date = imm.date + time_window)
+        
+
+        return [FeverEvent(imm, x, temp=float(x.EncTemperature)) for x in encounters]
 
 
     def detect_diagnosis_events(imm, patient):
@@ -235,8 +248,8 @@ def get_adverse_events(**kw):
 
     events = []
 
-    for imm in Immunization.manager.all_between(start_date, end_date):
+    imms = Immunization.manager.all_between(start_date, end_date)
+    for imm in imms:
         events.extend(get_immunization_adverse_events(imm, detect_only))
-
 
     return events
