@@ -16,11 +16,11 @@ import datetime
 import time
 import logging
 import simplejson
+import types
 
 from django.db.models import Q
 from django.core.paginator import Paginator
 
-from ESP.esp import models
 from ESP import settings
 
 
@@ -114,15 +114,29 @@ def getfilesByDay(files):
     return returndays
 
                                                                         
-def date_from_order_date_str(s):
+def date_from_str(str):
     '''
     Returns a datetime.date instance based on the string representation of a
     date from LxOrderDate field.
     '''
-    year = int(s[0:4])
-    month = int(s[4:6])
-    day = int(s[6:8])
+    assert type(str) in [types.StringType, types.UnicodeType]
+    year = int(str[0:4])
+    month = int(str[4:6])
+    day = int(str[6:8])
     return datetime.date(year, month, day)
+
+
+def str_from_date(date):
+    '''
+    Returns a string representing the first date of the lookback window
+    '''
+    assert isinstance(date, datetime.date)
+    y = date.year
+    m = date.month
+    d = date.day
+    date_str = '%04d%02d%02d' % (y, m, d)
+    return date_str
+        
 
 
 def ext_code_from_cpt(cpt, compt):

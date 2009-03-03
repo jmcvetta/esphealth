@@ -29,9 +29,14 @@ import string
 import datetime
 
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.models import User 
 
+
 from ESP.esp import choices
+from ESP.utils import utils as util
+from ESP.utils.utils import log
+
 
 
 FORMAT_TYPES = (
@@ -75,7 +80,10 @@ class Loinc(models.Model):
         '''
         if self.long_common_name:
             return self.long_common_name
-        return self.shortname
+        elif self.shortname:
+            return self.shortname
+        else:
+            return self.component
     name = property(_get_name)
     
     #
@@ -132,7 +140,7 @@ class Loinc(models.Model):
     class Meta:
         verbose_name = 'LOINC'
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s -- %s' % (self.loinc_num, self.name)
 
 
@@ -384,7 +392,7 @@ class Demog(models.Model):
             
 
     def  __unicode__(self):
-        return u"PID%s,%s, %s,%s, %s" % (self.DemogPatient_Identifier,self.DemogMedical_Record_Number,self.DemogLast_Name,self.DemogFirst_Name, self.DemogAddress1)
+        return u"%-15s %-20s %-15s %s" % (self.DemogPatient_Identifier, self.DemogLast_Name, self.DemogFirst_Name, self.DemogAddress1)
     
     def _get_date_of_birth(self):
         '''
@@ -868,7 +876,7 @@ class Lx(models.Model):
         return self.LxComment[:10]
     
     def  __unicode__(self):
-        return u"%s %s %s %s" % (self.LxPatient.DemogPatient_Identifier,self.getCPT(),self.LxOrder_Id_Num,self.LxOrderDate)
+        return u"%-10s %-50s %-12s PID %s" % (self.LxOrder_Id_Num, self.getCPT(), self.LxOrderDate, self.LxPatient.DemogPatient_Identifier, )
     
 
 class Lxo(models.Model):
@@ -909,7 +917,15 @@ class Enc(models.Model):
     EncPeakFlow = models.CharField('Peak Flow',max_length=50,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-            
+
+    def _get_enc_date(self):
+        '''
+        Returns a datetime.date object
+        '''
+        return util.date_from_str(self.EncEncounter_Date)
+    encounter_date = property(_get_enc_date)
+        
+        
     def geticd9s(self):
         """translate icd9s in comma separated value
         """
@@ -925,7 +941,6 @@ class Enc(models.Model):
                     ilong=''
              #   if icd9l!= 0 and i in icd9l:
               #      s.append((1,'%s=%s' %(i,ilong)))
-
                 if i:
                     s.append((i,ilong))
                 else:
@@ -948,9 +963,7 @@ class Enc(models.Model):
         
 
     def iscaserelated(self):
-        
         c = Case.objects.filter(caseEncID__contains=self.id,caseDemog__id__exact=self.EncPatient.id)
-
         try:
             l=[string.strip(x) for x in string.split(c[0].caseEncID, ',')]
             indx = l.index('%s' % self.id)
@@ -965,7 +978,6 @@ class Enc(models.Model):
         return self.EncEncounter_Provider.getcliname()       
 
     def  __unicode__(self):
-
         return u"%s %s %s %s" % (self.EncPatient.id,self.geticd9s(), self.EncMedical_Record_Number,self.EncEncounter_Date)
 
 
@@ -1059,7 +1071,6 @@ class Allergies(models.Model):
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
 
-
     def  __unicode__(self):
         
         return u"%s %s %s" % (self.AllPatient.DemogPatient_Identifier,self.AllMRN,self.AllPrbID)
@@ -1076,69 +1087,14 @@ class Problems(models.Model):
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
 
-
     def  __unicode__(self):
         
         return u"%s %s %s" % (self.PrbPatient.DemogPatient_Identifier,self.PrbMRN,self.PrbID)
 
  
-class Condition(models.Model):
-    '''
-    A reportable medical condition
-    '''
-    slug = models.SlugField(blank=False, unique=True, db_index=True)
-    long_name = models.CharField(max_length=255,db_index=True)
-    #
-    date_last_analyzed = models.DateTimeField('Date last executed', editable=False, blank=True, null=True)
-    msg_format = models.CharField('Message Format', max_length=10, choices=FORMAT_TYPES,  blank=True, null=True)
-    msg_destination = models.CharField('Destination for formatted messages', max_length=10, choices=DEST_TYPES,  blank=True, null=True)
-    hl7_code = models.CharField('Code for HL7 messages with cases', max_length=10, blank=True, null=True)
-    hl7_name = models.CharField('Condition name for HL7 messages with cases', max_length=30, blank=True, null=True)
-    hl7_code_type = models.CharField('Code for HL7 code type', max_length=10, blank=True, null=True)
-    exclude_ext_codes = models.TextField('The exclusion list of (CPT, COMPT) when alerting', blank=True, null=True)
-    in_production = models.BooleanField('Is this condition in production?', blank=True)
-    initial_wf_state  =models.CharField('Initial Case status', max_length=20,choices=WORKFLOW_STATES, blank=True)
-    comments = models.TextField('Comments', blank=True, null=True)
-    
-    def __str__(self):
-        return self.slug
-
-
-class Loinc_Rule_Collection(models.Model):
-    '''
-    A named collection of LOINCs
-    '''
-    slug = models.SlugField(blank=False, unique=True, db_index=True)
-    long_name = models.CharField(max_length=255, blank=False)
-    # The disease to which this collection relates:
-    condition = models.ForeignKey(Condition, blank=True, null=True)
-    
-    class Meta:
-        verbose_name = 'LOINC Rule Collection'
-    
-    def __str__(self):
-        return self.slug
-
-
-class Loinc_Rule(models.Model):
-    collection = models.ForeignKey(Loinc_Rule_Collection, blank=False)
-    loinc = models.ForeignKey(Loinc, blank=False)
-    operator = models.CharField(max_length=50, blank=True, null=True, choices=choices.OPERATORS)
-    value = models.CharField(max_length=255, blank=True, null=True)
-    abnormal = models.BooleanField('Abnormal flag indicates positive test result', blank=False)
-    #CondiDefine = models.BooleanField('Loinc used in definition or not', blank=True,null=True)
-    #CondiSend = models.BooleanField('Loinc needs to be sent or not', blank=True,null=True)
-    snomed_pos = models.TextField('SNOMED Positive Codes',blank=True,null=True)
-    snomed_neg = models.TextField('SNOMED Negative Codes',blank=True,null=True)
-    snomed_ind = models.TextField('SNOMED Indeterminate Codes',blank=True,null=True)
-    
-    class Meta:
-        verbose_name = 'LOINC Rule'
-    
-    def __str__(self):
-        return '%s %s %s' % (self.loinc.loinc_num, self.operator, self.value)
-
-                                            
+#
+# We should probably do Icd9_Rule and Icd9_Rule_Collection, to parallel the Loinc_Rule structure
+#
 class ConditionIcd9(models.Model):
     CondiRule = models.ForeignKey(Rule)
     CondiICD9 = models.TextField('ICD-9 Codes',blank=True,null=True)
@@ -1147,6 +1103,7 @@ class ConditionIcd9(models.Model):
 
     def  __unicode__(self):
         return u'%s %s' % (self.CondiRule,self.CondiICD9)
+
 
 class ConditionLOINC(models.Model):
     CondiRule = models.ForeignKey(Rule)
@@ -1238,6 +1195,12 @@ class HL7File(models.Model):
     def  __unicode__(self):
         return u'%s %s' % (self.filename,self.datedownloaded)
 
+
+#===============================================================================
+#
+#--- ~~~ Disease Detection ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                 
 class External_To_Loinc_Map(models.Model):
     '''
@@ -1255,4 +1218,6 @@ class External_To_Loinc_Map(models.Model):
     
     class Meta:
         verbose_name = 'External Code to LOINC Map'
+
+
 

@@ -71,22 +71,14 @@ class CaseWorkflowOptions(admin.ModelAdmin):
 class RuleAdmin(admin.ModelAdmin):
     list_display = ('ruleName',)
 
-class ExternalToLoincMapAdmin(admin.ModelAdmin):
+class External_To_Loinc_Map_Admin(admin.ModelAdmin):
     list_display = ['ext_code', 'ext_name', 'loinc', ]
+    save_on_top = True
 
 class Loinc_Admin(admin.ModelAdmin):
     list_display = ['loinc_num', 'name']
     search_fields = ['loinc_num', 'long_common_name', 'shortname']
-
-class Condition_Admin(admin.ModelAdmin):
-    list_display = ['slug', 'long_name',]
-
-class Loinc_Rule_Collection_Admin(admin.ModelAdmin):
-    list_display = ['slug', 'long_name',]
-
-class Loinc_Rule_Admin(admin.ModelAdmin):
-    list_display = ['collection', 'loinc', 'operator', 'value', 'abnormal']
-    raw_id_fields = ['loinc',]
+    save_on_top = True
 
 
 admin.site.register(Case, CaseOptions)
@@ -114,9 +106,6 @@ admin.site.register(Demog, DemogOptions)
 admin.site.register(CaseWorkflow, CaseWorkflowOptions)
 admin.site.register(VAERSadditions)
 #admin.site.register(Rule, RuleAdmin)
-admin.site.register(models.External_To_Loinc_Map, ExternalToLoincMapAdmin)
+admin.site.register(models.External_To_Loinc_Map, External_To_Loinc_Map_Admin)
 admin.site.register(models.Loinc, Loinc_Admin)
-admin.site.register(models.Condition, Condition_Admin)
-admin.site.register(models.Loinc_Rule_Collection, Loinc_Rule_Collection_Admin)
-admin.site.register(models.Loinc_Rule, Loinc_Rule_Admin)
 
