@@ -44,6 +44,9 @@ class BaseDiseaseComponent:
         self.patient_q = None # Q object
         self.lab_q = None # Q object
         self.q_setup() 
+        assert self.name # Concrete class must define this!
+        assert (self.encounter_q or self.lab_q) # Gotta have one or the other
+        assert not (self.encounter_q and self.lab_q) # Can't have both
     
     def q_setup(self):
         '''
@@ -53,21 +56,23 @@ class BaseDiseaseComponent:
     
     def make_date_str(self, date):
         '''
-        Returns a string representing the first date of the lookback window
+        Returns a string representing a datetime.date object (kludge for old 
+        ESP data model)
         '''
         if type(date) == types.StringType:
             log.debug('String given as date -- no conversion')
             return date
         return util.str_from_date(date)
         
-    def get_encounters(self, begin_date=None, end_date=None, patient=None, queryset=None):
+    def get_encounters(self, begin_date=None, end_date=None, patient=None, queryset=None, **kw):
         '''
         Return all encounters matching this component
-        @type begin_date: datetime.date
-        @type end_date:   datetime.date
-        @type patient:    models.Demog
-        @type queryset:   QuerySet
+	        @type begin_date: datetime.date
+	        @type end_date:   datetime.date
+	        @type patient:    models.Demog
+	        @type queryset:   QuerySet
         '''
+        
         log.debug('Get encounters for "%s".' % self.name)
         if queryset:
             qs = queryset
@@ -88,10 +93,10 @@ class BaseDiseaseComponent:
     def get_lab_results(self, begin_date=None, end_date=None, patient=None, queryset=None):
         '''
         Return all lab results matching this component
-        @type begin_date: datetime.date
-        @type end_date:   datetime.date
-        @type patient:    models.Demog
-        @type queryset:   QuerySet
+	        @type begin_date: datetime.date
+	        @type end_date:   datetime.date
+	        @type patient:    models.Demog
+	        @type queryset:   QuerySet
         '''
         log.debug('Get lab results for "%s".' % self.name)
         if queryset:
@@ -113,16 +118,16 @@ class BaseDiseaseComponent:
     def get_patients(self, begin_date=None, end_date=None, patient=None, queryset=None, include_result=True):
         '''
         Return all patients matching this component
-        @type begin_date: datetime.date
-        @type end_date:   datetime.date
-        @type patient:    models.Demog
-        @type queryset:   QuerySet
+	        @type begin_date: datetime.date
+	        @type end_date:   datetime.date
+	        @type patient:    models.Demog
+	        @type queryset:   QuerySet
         '''
         log.debug('Get patients for "%s".' % self.name)
         if self.lab_q and self.encounter_q:
             raise "I don't know how to deal with this situation."
         elif self.lab_q:
-            labs = self.get_lab_results(begin_date, end_date, patient, queryset)
+            labs = self.get_lab_results(begin_date=begin_date, end_date=end_date, patient=patient, queryset=queryset)
             if include_result:
                 return [(l.LxPatient, l.LxTest_results) for l in labs.select_related('LxPatient')]
             else:
@@ -131,7 +136,7 @@ class BaseDiseaseComponent:
             #[patient_set.add(l.LxPatient) for l in labs.select_related('LxPatient')]
             #return patient_set
         elif self.encounter_q:
-            encs = self.get_encounters(begin_date, end_date, patient, queryset)
+            encs = self.get_encounters(begin_date=begin_date, end_date=end_date, patient=patient, queryset=queryset)
             if include_result:
                 return [(e.EncPatient, 'ICD9 Codes: %s' % e.EncICD9_Codes) for e in encs.select_related('EncPatient')]
             else:
@@ -161,8 +166,6 @@ class Jaundice(BaseDiseaseComponent):
     name = 'Jaundice, not of newborn'
     def q_setup(self):
         self.encounter_q = Q(EncICD9_Codes__icontains='782.4')
-        self.lab_q = None
-        self.patient_q = Q(enc__EncICD9_Codes__icontains='782.4')
 
 
 class Chronic_Hep_B(BaseDiseaseComponent):
@@ -172,8 +175,6 @@ class Chronic_Hep_B(BaseDiseaseComponent):
     name = 'Chronic Hepatitis B ICD9 = 070.32'
     def q_setup(self):
         self.encounter_q = Q(EncICD9_Codes__icontains='070.32')
-        self.lab_q = None
-        self.patient_q = Q(enc__EncICD9_Codes__icontains='070.32')
         
 
 #===============================================================================
@@ -189,20 +190,12 @@ class ALT_2x_Upper_Limit(BaseDiseaseComponent):
     '''
     name = 'Alanine aminotransferase (ALT) >2x upper limit of normal'
     def q_setup(self):
-        # No Encounter Query
-        self.encounter_q = None
         # Lab Result Query
         loinc_q = Q(LxLoinc='1742-6')
         no_ref_q = Q(LxReference_High=None) | Q(LxReference_High='')
-        ref_comp_q = no_ref_q & Q(LxTest_results__gt=F('LxReference_High') * 2)
-        static_comp_q = ~no_ref_q & Q(LxTest_results__gt=132)
+        ref_comp_q = ~no_ref_q & Q(LxTest_results__gt=F('LxReference_High') * 2)
+        static_comp_q = no_ref_q & Q(LxTest_results__gt=132)
         self.lab_q = loinc_q & (ref_comp_q | static_comp_q)
-        # Patient Query
-        loinc_q = Q(lx__LxLoinc='1742-6')
-        no_ref_q = Q(lx__LxReference_High=None) | Q(lx__LxReference_High='')
-        ref_comp_q = no_ref_q & Q(lx__LxTest_results__gt=F('lx__LxReference_High') * 2)
-        static_comp_q = ~no_ref_q & Q(lx__LxTest_results__gt=132)
-        self.patient_q = loinc_q & (ref_comp_q | static_comp_q)
 
 
 class ALT_5x_Upper_Limit(BaseDiseaseComponent):
@@ -211,8 +204,6 @@ class ALT_5x_Upper_Limit(BaseDiseaseComponent):
     '''
     name = 'Alanine aminotransferase (ALT) >5x upper limit of normal'
     def q_setup(self):
-        # No Encounter Query
-        self.encounter_q = None
         # Lab Result Query
         loinc_q = Q(LxLoinc='1742-6')
         # If record has a reference high, compare test result against that 
@@ -221,14 +212,6 @@ class ALT_5x_Upper_Limit(BaseDiseaseComponent):
         ref_comp_q = no_ref_q & Q(LxTest_results__gt=F('LxReference_High') * 5)
         static_comp_q = ~no_ref_q & Q(LxTest_results__gt=330)
         self.lab_q = loinc_q & (ref_comp_q | static_comp_q)
-        # Patient Query
-        loinc_q = Q(lx__LxLoinc='1742-6')
-        # If record has a reference high, compare test result against that 
-        # reference.  Otherwise, compare against a default 'high' value.
-        no_ref_q = Q(lx__LxReference_High=None) | Q(lx__LxReference_High='')
-        ref_comp_q = no_ref_q & Q(lx__LxTest_results__gt=F('lx__LxReference_High') * 5)
-        static_comp_q = ~no_ref_q & Q(lx__LxTest_results__gt=330)
-        self.patient_q = loinc_q & (ref_comp_q | static_comp_q)
 
 
 class AST_2x_Upper_Limit(BaseDiseaseComponent):
@@ -237,8 +220,6 @@ class AST_2x_Upper_Limit(BaseDiseaseComponent):
     '''
     name = 'Aspartate aminotransferase (AST) >2x upper limit of normal'
     def q_setup(self):
-        # No Encounter Query
-        self.encounter_q = None
         #
         # Lab Result Query
         #
@@ -250,17 +231,6 @@ class AST_2x_Upper_Limit(BaseDiseaseComponent):
         static_comp_q = ~no_ref_q & Q(LxTest_results__gt=132)
         #
         self.lab_q = loinc_q & (ref_comp_q | static_comp_q)
-        #
-        # Patient Query
-        #
-        loinc_q = Q(lx__LxLoinc='1920-8')
-        # If record has a reference high, compare test result against that 
-        # reference.  Otherwise, compare against a default 'high' value.
-        no_ref_q = Q(lx__LxReference_High=None) | Q(lx__LxReference_High='')
-        ref_comp_q = no_ref_q & Q(lx__LxTest_results__gt=F('lx__LxReference_High') * 2)
-        static_comp_q = ~no_ref_q & Q(lx__LxTest_results__gt=132)
-        #
-        self.patient_q = loinc_q & (ref_comp_q | static_comp_q)
 
 
 class AST_5x_Upper_Limit(BaseDiseaseComponent):
@@ -269,8 +239,6 @@ class AST_5x_Upper_Limit(BaseDiseaseComponent):
     '''
     name = 'Aspartate aminotransferase (AST) >2x upper limit of normal'
     def q_setup(self):
-        # No Encounter Query
-        self.encounter_q = None
         #
         # Lab Result Query
         #
@@ -282,17 +250,6 @@ class AST_5x_Upper_Limit(BaseDiseaseComponent):
         static_comp_q = ~no_ref_q & Q(LxTest_results__gt=330)
         #
         self.lab_q = loinc_q & (ref_comp_q | static_comp_q)
-        #
-        # Patient Query
-        #
-        loinc_q = Q(lx__LxLoinc='1920-8')
-        # If record has a reference high, compare test result against that 
-        # reference.  Otherwise, compare against a default 'high' value.
-        no_ref_q = Q(lx__LxReference_High=None) | Q(lx__LxReference_High='')
-        ref_comp_q = no_ref_q & Q(lx__LxTest_results__gt=F('lx__LxReference_High') * 5)
-        static_comp_q = ~no_ref_q & Q(lx__LxTest_results__gt=330)
-        #
-        self.patient_q = loinc_q & (ref_comp_q | static_comp_q)
 
 
 class Hep_A_IgM_Ab(BaseDiseaseComponent):
@@ -303,7 +260,6 @@ class Hep_A_IgM_Ab(BaseDiseaseComponent):
     def q_setup(self):
         self.encounter_q = None
         self.lab_q = Q(LxLoinc='22314-9', LxTest_results__istartswith='reactiv')
-        self.patient_q = Q(lx__LxLoinc='22314-9', lx__LxTest_results__istartswith='reactiv')
 
 
 class Hep_B_IgM_Ab(BaseDiseaseComponent):
@@ -314,7 +270,6 @@ class Hep_B_IgM_Ab(BaseDiseaseComponent):
     def q_setup(self):
         self.encounter_q = None
         self.lab_q = Q(LxLoinc='31204-1', LxTest_results__istartswith='reactiv')
-        self.patient_q = Q(lx__LxLoinc='31204-1', lx__LxTest_results__istartswith='reactiv')
 
 
 class Hep_B_Surface(BaseDiseaseComponent):
@@ -325,7 +280,6 @@ class Hep_B_Surface(BaseDiseaseComponent):
     def q_setup(self):
         self.encounter_q = None
         self.lab_q = Q(LxLoinc='5195-3', LxTest_results__istartswith='reactiv')
-        self.patient_q = Q(lx__LxLoinc='5195-3', lx__LxTest_results__istartswith='reactiv')
 
 
 class Hep_B_e_Antigen(BaseDiseaseComponent):
@@ -336,7 +290,6 @@ class Hep_B_e_Antigen(BaseDiseaseComponent):
     def q_setup(self):
         self.encounter_q = None
         self.lab_q = Q(LxLoinc='13954-3', LxTest_results__istartswith='reactiv')
-        self.patient_q = Q(lx__LxLoinc='13954-3', lx__LxTest_results__istartswith='reactiv')
 
 
 class Hep_B_Viral_DNA(BaseDiseaseComponent):
@@ -345,7 +298,6 @@ class Hep_B_Viral_DNA(BaseDiseaseComponent):
     '''
     name = 'Hepatitis B Viral DNA'
     def q_setup(self):
-        self.encounter_q = None
         # NOTE:  See note in Hep B google doc about "HEPATITIS B DNA, QN, IU/COPIES" portion of algorithm
         #
         # Lab Result Query
@@ -358,17 +310,6 @@ class Hep_B_Viral_DNA(BaseDiseaseComponent):
         # HEP B DNA COPIES/ML 
         lab_q = lab_q | Q(LxLoinc='5009-6', LxTest_results__gt=160)
         self.lab_q = lab_q
-        #
-        # Patient Query
-        #
-        # HEP B DNA PCR (QL) 
-        patient_q = Q(lx__LxLoinc='13126-8')
-        patient_q = patient_q & ( Q(lx__LxTest_results__istartswith='positiv') | Q(lx__LxTest_results__istartswith='detect') )
-        # HEP B VIRAL DNA IU/ML 
-        patient_q = patient_q | Q(lx__LxLoinc='16934-2', lx__LxTest_results__gt=100)
-        # HEP B DNA COPIES/ML 
-        patient_q = patient_q | Q(lx__LxLoinc='5009-6', lx__LxTest_results__gt=160)
-        self.patient_q = patient_q
 
 
 class Hep_E_Ab(BaseDiseaseComponent):
@@ -379,7 +320,6 @@ class Hep_E_Ab(BaseDiseaseComponent):
     def q_setup(self):
         self.encounter_q = None
         self.lab_q = Q(LxLoinc='14212-5', LxTest_results__istartswith='reactiv')
-        self.patient_q = Q(lx__LxLoinc='14212-5', lx__LxTest_results__istartswith='reactiv')
 
 
 class Hep_C_Ab(BaseDiseaseComponent):
@@ -390,7 +330,6 @@ class Hep_C_Ab(BaseDiseaseComponent):
     def q_setup(self):
         self.encounter_q = None
         self.lab_q = Q(LxLoinc='16128-1', LxTest_results__istartswith='reactiv')
-        self.patient_q = Q(lx__LxLoinc='16128-1', lx__LxTest_results__istartswith='reactiv')
 
 
 class Total_Bilirubin_gt_1_5(BaseDiseaseComponent):
@@ -400,7 +339,6 @@ class Total_Bilirubin_gt_1_5(BaseDiseaseComponent):
     name = 'Total bilirubin > 1.5'
     def q_setup(self):
         self.lab_q = Q(LxLoinc='33899-6', LxTest_results__gt=1.5)
-        self.patient_q = Q(lx__LxLoinc='33899-6', LxTest_results__gt=1.5)
 
 class Calculated_Bilirubin_gt_1_5(BaseDiseaseComponent):
     '''
@@ -443,32 +381,27 @@ class Acute_Hepatitis_A(BaseDiseaseDefinition):
             log.debug('Analysing time window %s to %s.' % (begin_date, end_date))
             for test in [j, alt, ast]:
                 tuple = test.get_patients(begin_date, end_date, patient, include_result=True)
-                if tuple:
+                if tuple: # We got a positive!
                     msg = '\n'
                     msg += '    The following patient tested positive for Hepatitis A IgM antibody, and\n' 
                     msg += '    for "%s"\n' % test.name
-                    print '--------------------------------------------------------------------------------'
-                    print tuple
-                    print len(tuple)
-                    print '--------------------------------------------------------------------------------'
                     msg += '    with results: "%s"\n' % tuple[0][1]
                     msg += '    within +/- 14 days, fulfilling criteria for an Acute Hep A case:\n'
                     msg += '    %s' % patient
                     log.info(msg)
                     positive.add(patient)
-                    break # Only need one positive in this group
-        for p in positive:
-            print p
-            
+                    break # Only need one positive in this bunch
+        return positive
                                 
 
 if __name__ == '__main__':
     x = Acute_Hepatitis_A()
     #x = ALT_2x_Upper_Limit()
     #l = x.lab_results
-    x.get_patients()
+    for p in x.get_patients():
+        print p
     #print '--------------------------------------------------------------------------------'
     #print len(x.get_patients())
     #print 'patients:    %s' % x.get_patients().count()
-    pprint.pprint(connection.queries)
+    #pprint.pprint(connection.queries)
     
