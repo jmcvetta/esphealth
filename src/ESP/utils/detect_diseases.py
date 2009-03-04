@@ -28,7 +28,7 @@ from ESP.utils.utils import log
 
 class BaseDiseaseComponent:
     '''
-    Abstract interface class for components detection algorithms
+    Abstract base class for disease component detection algorithms
     '''
     
     name = '[name of component]' # This should be defined in your concrete classes
@@ -45,8 +45,21 @@ class BaseDiseaseComponent:
         self.lab_q = None # Q object
         self.q_setup() 
         assert self.name # Concrete class must define this!
+        self.variant # Used for the sanity checks
+    
+    def _get_variant(self):
+        '''
+        Returns 'lab' or 'encounter'.
+        '''
+        # Sanity checks:
         assert (self.encounter_q or self.lab_q) # Gotta have one or the other
         assert not (self.encounter_q and self.lab_q) # Can't have both
+        #
+        if self.lab_q:
+            return 'lab'
+        elif self.encounter_q:
+            return 'encounter'
+    variant = property(_get_variant)
     
     def q_setup(self):
         '''
@@ -149,9 +162,48 @@ class BaseDiseaseComponent:
     patients = property(get_patients)
 
 
+class CaseAlreadyExists(BaseException):
+    '''
+    A case already exists for this disease + patient
+    '''
+    pass
+
+
 class BaseDiseaseDefinition:
+    '''
+    Abstract base class for disease definitions
+    '''
+    
+    def __init__(self):
+        #
+        # Sanity Checks
+        #
+        assert isinstance(self.condition, models.Rule) # Must have a valid condition ("Rule" in old ESP parlance)
+        assert type(self.report_icd9s) == types.ListType
+        assert type(self.related_components) == types.ListType
+        
     def get_patients(self):
         raise NotImplementedError
+    
+    def make_case(self, patient):
+        '''
+        Makes cases for the given patient
+            @type patient: models.Demog
+        '''
+        events = []
+        for component in self.related_components:
+            c = component()
+            if c.variant == 'lab':
+                events += [(l.LxDate_of_result, l) for l in c.get_lab_results(patient=patient)]
+            elif c.variant == 'encounter':
+                events += [(e.EncEncounter_Date, e) for e in c.get_encounters(patient=patient)]
+            else:
+                raise 'Fail!'
+        events.sort()
+        print '--------------------------------------------------------------------------------'
+        for e in events:
+            print e
+        
 
 #===============================================================================
 #
@@ -362,6 +414,15 @@ class Acute_Hepatitis_A(BaseDiseaseDefinition):
         b) Either Diagnosis of Jaundice; ALT test > 2x normal; or AST test > 2x normal 
     where (b) must occur "within 14 days" of (a)
     '''
+    condition = models.Rule.objects.get(ruleName__icontains='acute hepatitis a')
+    related_components = [
+        Jaundice,
+        ALT_2x_Upper_Limit,
+        AST_2x_Upper_Limit,
+        Hep_A_IgM_Ab,
+        ]
+    report_icd9s = []
+    
     def get_patients(self):
         log.info('Searching for cases of Acute Hepatitis A')
         j = Jaundice()
@@ -395,13 +456,8 @@ class Acute_Hepatitis_A(BaseDiseaseDefinition):
                                 
 
 if __name__ == '__main__':
-    x = Acute_Hepatitis_A()
-    #x = ALT_2x_Upper_Limit()
-    #l = x.lab_results
-    for p in x.get_patients():
-        print p
-    #print '--------------------------------------------------------------------------------'
-    #print len(x.get_patients())
-    #print 'patients:    %s' % x.get_patients().count()
+    hep_a= Acute_Hepatitis_A()
+    for p in hep_a.get_patients():
+        hep_a.make_case(p)
     #pprint.pprint(connection.queries)
     
