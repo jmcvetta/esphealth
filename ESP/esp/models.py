@@ -35,6 +35,14 @@ from django.db import models
 from django.contrib.auth.models import User 
 import string
 import datetime
+import random
+import pdb
+
+from utils.utils import debug
+
+NOW = datetime.datetime.now()
+EPOCH = NOW - datetime.timedelta(days=3*365)
+
 
 
 FORMAT_TYPES = [
@@ -84,15 +92,85 @@ class DemogManager(models.Manager):
         return [self.model(*x) for x in cursor.fetchall()]
 
     def random(self):
-        return self.sample(size=1)[0]
+        total = Demog.objects.count()
+        return Demog.objects.filter(id=random.randrange(1, total))
+
 
     
 class ImmunizationManager(models.Manager):
     def patients_vaccinated_in_period(self, start_date, end_date):
         return Immunization.objects.filter(ImmDate__gte=start_date, ImmDate__lte=end_date).values('ImmPatient').distinct()
+
+    
+    def all_between(self, start_date, end_date):
+        start = start_date.strftime('%Y%m%d')
+        end = end_date.strftime('%Y%m%d')
+
+        return Immunization.objects.filter(ImmDate__gte=start, 
+                                           ImmDate__lte=end)
+
+class EncounterManager(models.Manager):
+    def withFever(self, patient, fever_thresold, **kw):
+        
+        def filter_temperature(encounter):
+            try:
+                temp = float(encounter.EncTemperature)
+                return temp >= fever_thresold
+            except:
+                return False
+
+        def make_encounter(row):
+            return Enc(
+                EncPatient=patient,
+                EncEncounter_Date=row[4],
+                EncTemperature=row[13]
+                )
+
+
+        from django.db import connection
+        cursor = connection.cursor()
+
+
+        patient_id = patient.id
+        start_date = kw.pop('start_date', None) or NOW
+        end_date = kw.pop('end_date', None) or EPOCH
+        
+        fmt_start_date = start_date.strftime('%Y%m%d')
+        fmt_end_date = end_date.strftime('%Y%m%d')
+
+
+        cmd = 'SELECT * FROM esp_enc ' \
+            'WHERE EncEncounter_Date > "%s" AND EncEncounter_Date < "%s" ' \
+            'AND EncPatient_id = %d AND EncTemperature <> ""'  % (fmt_start_date, fmt_end_date, patient_id)
+
+        cursor.execute(cmd)
+        encounters = cursor.fetchall()
+        
+        return [make_encounter(x) for x in encounters]
+    
+    def from_patient(self, patient, **kw):
+        from django.db import connection
+        cursor = connection.cursor()
+        
+        start_date = kw.pop('start_date', None) or NOW
+        end_date = kw.pop('end_date', None) or EPOCH
+        
+        fmt_start_date = start_date.strftime('%Y%m%d')
+        fmt_end_date = end_date.strftime('%Y%m%d')
+
+      
+        cmd = 'SELECT * FROM esp_enc '\
+            'WHERE EncEncounter_Date > "%s" AND EncEncounter_Date < "%s" ' \
+            'AND EncPatient_id = %d'  % (fmt_start_date, fmt_end_date, patient.id)
+
+        cursor.execute(cmd)
+
+        return [self.model(*x) for x in cursor.fetchall()]
+        
         
 
 
+        
 
 
 #########################################################################
@@ -793,6 +871,12 @@ class Lxo(models.Model):
 
 ###################################
 class Enc(models.Model):
+    # These fields are being re-written. Duplicated fields may exist.
+    # Fields beginning with Enc are supposed to be deprecated and will later be removed.
+    objects = models.Manager()
+    manager = EncounterManager()
+    
+
     EncPatient = models.ForeignKey(Demog) 
     EncMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,blank=True,null=True,db_index=True)
     EncEncounter_ID = models.CharField('Encounter ID',max_length=20,blank=True,null=True)
@@ -822,7 +906,7 @@ class Enc(models.Model):
         """translate icd9s in comma separated value
         """
         ##icd9_codes are separeted by ' '
-        ilist = self.EncICD9_Codes.split(' ')
+        ilist = (self.EncICD9_Codes and self.EncICD9_Codes.split()) or ''
         if len(ilist) > 0:
             s=[]
             for i in ilist:
@@ -862,7 +946,7 @@ class Enc(models.Model):
 
     def  __unicode__(self):
 
-        return u"%s %s %s %s" % (self.EncPatient.id,self.geticd9s(), self.EncMedical_Record_Number,self.EncEncounter_Date)
+        return u"%s %s %s %s" % (self.EncPatient.id, self.geticd9s(), self.EncMedical_Record_Number,self.EncEncounter_Date)
 
 
 
@@ -885,7 +969,7 @@ class icd9Fact(models.Model):
 class Immunization(models.Model):
     objects = models.Manager()
     manager = ImmunizationManager()
-    ImmPatient = models.ForeignKey(Demog) 
+    ImmPatient = models.ForeignKey(Demog)
     ImmType = models.CharField('Immunization Type',max_length=20,blank=True,null=True)
     ImmName = models.CharField('Immunization Name',max_length=200,blank=True,null=True)
     ImmDate = models.CharField('Immunization Date Given',max_length=20,blank=True,null=True)
@@ -899,8 +983,7 @@ class Immunization(models.Model):
             
 
     def  __unicode__(self):
-
-        return u"%s %s %s" % (self.ImmPatient.DemogPatient_Identifier,self.ImmName,self.ImmRecId)
+        return u"Immunization %d [%s]" % (self.id, self.ImmName)
 
 
 

@@ -5,7 +5,6 @@ import datetime, random
 import string
 
 
-
 # FIXME: some utility functions are not able to see the ESP module
 # For now, We need it, so we add the parent folder to the path.
 # In the future, this should not be necessary.
@@ -15,6 +14,8 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 from esp.models import Demog, Immunization, Enc
 from utils import utils
+
+ONE_WEEK = 7 # a week.
 
 # For testing
 FIRST_NAMES = ['Bill', 'Mary', 'Jim', 'Donna', 'Patricia', 
@@ -44,7 +45,7 @@ VACCINES = {
 
 
 
-def make_fake_demog():
+def create_demog():
     id = utils.random_string(length=20)
     medical_record_id = utils.random_string(length=20)
     last_name = random.choice(LAST_NAMES)
@@ -73,12 +74,13 @@ def make_fake_demog():
     return d
 
 
-def fake_immunization(patient=None, force_recent=False):
+def create_immunization(patient=None, force_recent=False):
     vaccine_type = random.choice(VACCINES.keys())
     vaccine_name = VACCINES[vaccine_type]
     now = datetime.datetime.now()
-    days_ago = 0 if force_recent else random.randrange(0, 1000)
-    date = now - datetime.timedelta(days=days_ago, minutes=random.randrange(0, 2500)) 
+    days_ago = ONE_WEEK if force_recent else 1000
+    date = now - datetime.timedelta(days=random.randrange(0, days_ago), 
+                                    minutes=random.randrange(0, 2500)) 
     
     # if patient is not defined, we get a random one from the database.
     patient = patient or Demog.manager.random() 
@@ -90,24 +92,28 @@ def fake_immunization(patient=None, force_recent=False):
     patient_imm = Immunization.objects.filter(ImmPatient=patient)
     imm_record_id = patient_imm[0].ImmRecId if patient_imm else utils.random_string(length=100)
         
-       
+
     i = Immunization(
         ImmPatient=patient,
         ImmType = vaccine_type,
         ImmName = vaccine_name,
         ImmDate = date,
+        date = date,
         ImmRecId = imm_record_id
         )
         
     i.save()
     return i
         
-def make_fake_encounter(patient, force_recent=False, **conditions):
-    # make a date for the encounter
-    now = datetime.datetime.now()
-    days_ago = 0 if force_recent else random.randrange(0, 1000)
-    date = now - datetime.timedelta(days=days_ago, 
-                                    minutes=random.randrange(0, 2000))
+def create_encounter(patient, force_recent=False, **conditions):
+    if conditions.has_key('date'):
+        date = conditions['date']
+    else:
+        # make a date for the encounter
+        now = datetime.datetime.now()
+        days_ago = ONE_WEEK if force_recent else 1000
+        date = now - datetime.timedelta(days=random.randrange(0, days_ago), 
+                                        minutes=random.randrange(0, 2000))
 
     # Conditions that are to be reported in encounter.
     # Magic Numbers: default temperature oscilate between 97 and 98 degrees.
@@ -132,15 +138,15 @@ def make_fake_encounter(patient, force_recent=False, **conditions):
 
 def create_patient_population(size):
     for i in xrange(size):
-        make_fake_demog()
+        create_demog()
 
 
 if __name__ == "__main__":
 
-    patients = [make_fake_demog() for p in xrange(100)]
+    patients = [create_demog() for p in xrange(100)]
     for patient in patients:
-        make_fake_immunization(patient)
-        make_fake_encounter(patient)
+        create_immunization(patient)
+        create_encounter(patient)
 
 
             

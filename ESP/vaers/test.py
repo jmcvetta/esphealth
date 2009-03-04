@@ -14,9 +14,12 @@ from esp.models import Demog, Immunization
 import mockData
 import rules
 
+import VAERSevents
+from VAERSevents import match_icd9_expression
 
-from VAERSevents import match_icd9_expression, diagnosis_codes
-from reports import temporal_clustering
+import reports
+
+from transmitter import make_vaers_report
 
 NOW = datetime.datetime.now()
 ONE_YEAR = datetime.timedelta(days=365)
@@ -27,6 +30,9 @@ ONE_WEEK = datetime.timedelta(days=7)
 PERCENTAGE_TO_AFFECT = 50
 POPULATION_SIZE = 5000
 POPULATION_TO_IMMUNIZE = 1000
+
+
+
         
      
 class TestIcd9DiagnosisIdentification(unittest.TestCase):       
@@ -91,12 +97,68 @@ class TestIcd9CodeMatching(unittest.TestCase):
 
 
   
-class TestVAERS(unittest.TestCase):
+class TestReports(unittest.TestCase):
     def testTemporalClusteringReport(self):
         start = NOW - ONE_YEAR - ONE_WEEK
         end = NOW - ONE_YEAR
         
-        temporal_clustering(start_date=start, end_date=end)
+        reports.temporal_clustering(start_date=start, end_date=end)
+
+
+class TestVAERS(unittest.TestCase):
+    def setUp(self):
+        self.start_date = NOW - ONE_MONTH 
+        self.end_date = NOW - ONE_MONTH + ONE_WEEK
+
+        self.events = VAERSevents.get_adverse_events(
+            start_date=start_date,
+            end_date=end_date
+            )
+        
+    def testDiagnosisDetection(self):
+        events = VAERSevents.get_adverse_events(
+            start_date=start_date,
+            end_date=end_date, 
+            detect_only='diagnosis'
+            )
+        
+        print '\nchecking vaers based on icd9 codes\n'
+        for event in events:
+            print event.encounter
+            print event.trigger_immunization
+            print event.name
+
+
+class TestHL7Emitter(unittest.TestCase):
+    def setUp(self):
+        start_date = NOW - ONE_MONTH 
+        end_date = NOW - ONE_MONTH + ONE_WEEK
+
+        self.one_event = VAERSevents.any_event(start_date=start_date,
+                                          end_date=end_date)
+
+        
+    def testVaersReport(self):
+
+        event = self.one_event
+        imm = event.trigger_immunization
+        patient = event.patient
+        report = {
+            'summary':reports.vaers_summary(imm),
+            'vaccines_on_date':reports.vaccines_on_date(imm),
+            'prior_vaccinations':reports.prior_vaccinations(imm),
+            'previous_reports':reports.previous_reports(event),
+            'prior_vaers':reports.prior_vaers(imm),
+            'prior_siblings_vaers':reports.prior_vaers_in_sibling(imm),
+            'patient_stats':reports.patient_stats(patient),
+            'project_stats':reports.vaccination_project_stats(imm)
+            }
+        msg = make_vaers_report(report)
+
+        print msg
+    
+            
+        
 
 
 
@@ -107,7 +169,7 @@ class TestVAERS(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestVAERS)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestHL7Emitter)
     unittest.TextTestRunner(verbosity=2).run(suite)
 
 

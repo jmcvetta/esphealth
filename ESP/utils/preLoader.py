@@ -12,7 +12,7 @@ sys.path.append(
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 import settings
-from settings import USESQLITE, getLogging, EMAILSENDER
+from settings import USESQLITE, EMAILSENDER
 sys.path.append(os.path.join(settings.TOPDIR, '../'))
 
 
@@ -595,7 +595,7 @@ def makendc(cursor):
 ################################
 if __name__ == "__main__":
     startt = datetime.datetime.now()
-    logging = getLogging('preLoader.py_v0.1', debug=0)
+#    logging = getLogging('preLoader.py_v0.1', debug=0)
 
     from django.db import connection
     cursor = connection.cursor()

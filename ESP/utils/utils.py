@@ -14,7 +14,6 @@ from esp.models import *
 from django.db.models import Q
 
 
-
 def timeit(func):
     '''Poor man's profiler'''
     def decorator(*args, **kw):
@@ -24,10 +23,21 @@ def timeit(func):
         return res
     return decorator
 
+def output(out_string, stream=None):
+    ''' Simple function to output a string to either a file or stdout'''
+    if stream:
+        stream.write('%s\n' % out_string)
+    else:
+        print out_string
+
+def debug(msg):
+    if settings.DEBUG:
+        print msg
 
 def random_string(length=10):
     chars = string.digits + string.letters
     return ''.join([random.choice(chars) for x in xrange(length)])
+
 
 
 filenlist = ['epicmem.esp.','epicpro.esp.','epicvis.esp.','epicord.esp.','epicres.esp.','epicmed.esp.','epicimm.esp.']

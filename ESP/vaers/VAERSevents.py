@@ -34,6 +34,22 @@ import rules
 NOW = datetime.datetime.now()
 EPOCH = NOW - datetime.timedelta(days=3*365)
 
+def diagnosis_codes():
+    '''
+    Returns a set of all the codes that are indicator of diagnosis
+    that may be an adverse event.
+    '''
+    codes = []
+    for key in rules.VAERS_DIAGNOSTICS.keys():
+        codes.extend(key.split(';'))
+    return set(codes)
+
+
+# This can be a constant
+VAERS_DIAGNOSTICS_CODES = diagnosis_codes()
+
+
+
 
 
 class AdverseEvent(object):
@@ -53,7 +69,7 @@ class FeverEvent(AdverseEvent):
         self.temp = kw.pop('temp', None)
         self.name = 'Fever'
     def has_exclusion_rules(self):
-        return rules.TEMP_TO_REPORT >= self.temp
+        return self.temp < rules.TEMP_TO_REPORT
 
 
 class Icd9DiagnosisEvent(AdverseEvent):
@@ -83,26 +99,31 @@ def match_icd9_expression(icd9_code, expression_to_match):
     considering expressions to represent:
     - A code: 558.3
     - An interval of codes: 047.0-047.1
-    - A regexp to represent a family of codes: 320*
-    - An interval with a regexp: 802.3-998*
+    - A wildcard to represent a family of codes: 320*, 345.*
+    - An interval with a wildcard: 802.3-998*
     
     this function verifies if icd9_code matches the expression, 
     i.e, satisfies the condition represented by the expression
     '''
 
     def transform_expression(expression):
+
         if '-' in expression:
             # It's an expression to show a range of values
             low, high = expression.split('-')
+            if '.*' in low: low = low.replace('.*', '.00')
             if '*' in low: low = low.replace('*', '.00')
+
+            if '.*' in high: high = high.replace('.*', '.99')
             if '*' in high: high = high.replace('*', '.99')
             
         if '*' in expression and '-' not in expression:
-            low, high = expression.replace('*', '.00'), expression.replace('*', '.99')
+            ls, hs = ('00', '99') if '.*' in expression else ('.00', '.99')
+                
+            low, high = expression.replace('*', ls), expression.replace('*', hs)
             
         if '*' not in expression and '-' not in expression:
             raise ValueError, 'not a valid icd9 expression'
-
 
         # We must get two regular codes in the end.
         ll, hh = float(low), float(high)    
@@ -120,7 +141,7 @@ def match_icd9_expression(icd9_code, expression_to_match):
     def match_range(code, floor, ceiling):
         return floor <= code <= ceiling
 
-    def match_regexp(code, regexp):
+    def match_wildcard(code, regexp):
         floor, ceiling = transform_expression(regexp)
         return match_range(code, floor, ceiling)
 
@@ -133,16 +154,25 @@ def match_icd9_expression(icd9_code, expression_to_match):
         assert('.' == icd9_code[3])
         target = float(icd9_code)
     except Exception:
-        raise ValueError, 'icd9_code is not valid'
+        #In case it is a code that is really out of the pattern
+        return match_precise(icd9_code.strip(), 
+                             expression_to_match.strip())
     
     try:
         expression = float(expression_to_match)
         return match_precise(target, expression)
     except ValueError:
         # expression_to_match is not a code
-        return match_regexp(target, expression_to_match)
+        return match_wildcard(target, expression_to_match)
         
-        
+
+def is_diagnostics_match(code):
+    for expression in VAERS_DIAGNOSTICS_CODES:
+        if match_icd9_expression(code, expression):
+            return True
+
+    return False
+    
 
 def diagnosis_by_code(icd9_code):
     # Check all rules, to see if the code we have is a possible adverse event
@@ -151,22 +181,13 @@ def diagnosis_by_code(icd9_code):
         # for all the codes that indicate the diagnosis, we see if it matches
         # It it does, we have it.
         for code in codes:
-            if match_icd9_expression(icd9_code, code):
+            if match_icd9_expression(icd9_code, code.strip()):
                 return rules.VAERS_DIAGNOSTICS[key]
 
     # Couldn't find a match
     return None
         
 
-def diagnosis_codes():
-    '''
-    Returns a set of all the codes that are indicator of diagnosis
-    that may be an adverse event.
-    '''
-    codes = []
-    for key in rules.VAERS_DIAGNOSTICS.keys():
-        codes.extend(key.split(';'))
-    return set(codes)
 
 
 def exclusion_codes(icd9_code):
@@ -178,28 +199,15 @@ def exclusion_codes(icd9_code):
     diagnosis = diagnosis_by_code(icd9_code)
     return (diagnosis and diagnosis.get('ignore_codes', None))
 
-def vaers_encounters(start_date=None, end_date=None):
-    start_date = start_date or EPOCH
-    end_date = end_date or NOW
-    all_vaers_encounters = []
-
-    for code in diagnosis_codes():
-        encounters = Enc.objects.filter(EncEncounter_Date__gte=start_date,
-                                        EncEncounter_Date__lte=end_date,
-                                        EncICD9_Codes__icontains=code)
-        if encounters: all_vaers_encounters.extend(encounters)
-            
-    return all_vaers_encounters
 
       
 
 def get_immunization_adverse_events(immunization, detect_only=None):
+    
+    time_window = datetime.timedelta(days=rules.TIME_WINDOW_POST_EVENT)
 
     def detect_fevers(imm, patient):
         
-        time_window = datetime.timedelta(days=rules.TIME_WINDOW_POST_EVENT)
-
-
 #        FIXME: current model won't allow us to do this query. 
 #
 #
@@ -220,7 +228,23 @@ def get_immunization_adverse_events(immunization, detect_only=None):
 
 
     def detect_diagnosis_events(imm, patient):
-        return []
+    
+        imm.date = datetime.datetime.strptime(imm.ImmDate, '%Y%m%d')
+        patient_encounters = Enc.manager.from_patient(
+            patient, start_date=imm.date, end_date=imm.date + time_window
+            )
+        
+        result = []
+        for encounter in patient_encounters:
+            vaers_codes = [x for x in encounter.EncICD9_Codes.split(',') 
+                           if (x.strip() and is_diagnostics_match(x))]
+
+            for code in vaers_codes:
+                event = Icd9DiagnosisEvent(imm, encounter, 
+                                           diagnosis=diagnosis_by_code(code))
+                result.append(event)
+
+        return result
 
     def detect_lab_results_events(imm, patient):
         return []
@@ -253,3 +277,21 @@ def get_adverse_events(**kw):
         events.extend(get_immunization_adverse_events(imm, detect_only))
 
     return events
+
+
+
+def any_event(**kw):
+    start_date = kw.pop('start_date', EPOCH)
+    end_date = kw.pop('end_date', NOW)
+    detect_only = kw.pop('detect_only', None)
+    
+    imms = Immunization.manager.all_between(start_date, end_date)
+
+    for imm in imms:
+        events = get_immunization_adverse_events(imm, detect_only)
+        if events: return events[0]
+
+    return []
+    
+    
+    

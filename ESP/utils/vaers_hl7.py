@@ -4,7 +4,8 @@
 
 import os,sys,re
 sys.path.insert(0, '/home/ESP/')
-# for esphealth.org sys.path.insert(0, '/home/ESP/')
+
+
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
@@ -363,11 +364,11 @@ class onehl7:
         name =[self.demog.DemogLast_Name, self.demog.DemogFirst_Name, self.demog.DemogMiddle_Initial,self.demog.DemogSuffix, '','','L']
         race_d = {'ALASKAN': ['1002-5', 'American Indian or Alaska Native'],
                   'ASIAN': ['2028-9', 'Asian'],
-                  'BLACK':['2054-5', 'Black or Aferican-American'],
+                  'BLACK':['2054-5', 'Black or African-American'],
                   'CAUCASIAN':['2106-3', 'White'],
                   'HISPANIC':['2135-2', 'Hispanic or Latino'],
-                  'INDIAN':['1002-5', 'American Indian or Alaska Nat'],
-                  'NAT AMERICAN':['1002-5', 'American Indian or Alaska Nat'],
+                  'INDIAN':['1002-5', 'American Indian or Alaska Native'],
+                  'NAT AMERICAN':['1002-5', 'American Indian or Alaska Native'],
                   'NATIVE HAWAI':['2076-8', 'Native Hawaiian or Other Pacific Islander'],
                   'OTHER':['2131-1', 'Other Race'],
             }

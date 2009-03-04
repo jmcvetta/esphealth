@@ -11,6 +11,7 @@ import datetime
 from utils.utils import output
 from VAERSevents import get_adverse_events
 
+
 def temporal_clustering(out_file=None, **kw):
     # Get fever events and output to file with format
     # id vaccDate eventDate daysToEvent VaccName eventName Ageyrs GenderMF 
@@ -37,6 +38,40 @@ def temporal_clustering(out_file=None, **kw):
                 imm.ImmName, ev.name, 
                 ev.patient.getAge(), ev.patient.DemogGender
                 ), f)
+
+
+def vaers_summary(immunization):
+    '''Given an immunization that has caused an adverse event, 
+    returns information details about the event and the patient'''
+    return {}
+
+def vaccines_on_date(immunization):
+    return []
+
+def prior_vaers(immunization):
+    return []
+
+def prior_vaers_in_sibling(immunization):
+    return []
+
+def prior_vaccinations(immunization):
+    return []
+
+def previous_reports(event):
+    return []
+
+def patient_stats(patient):
+    return {}
+
+def vaccination_project_stats(immunization):
+    return {}
+
+
+
+    
+    
+
+    
             
             
 
