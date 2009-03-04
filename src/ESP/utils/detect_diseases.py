@@ -26,46 +26,30 @@ from ESP.utils.utils import log
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class BaseDiseaseComponent:
+class BaseHeuristic:
     '''
-    Abstract base class for disease component detection algorithms
+    Abstract interface lclass for heuristics, concrete instances of which are
+    used as components of disease definitions.l
     '''
     
-    name = '[name of component]' # This should be defined in your concrete classes
+    def setup(self):
+        '''
+        Setup the name, Q objects, etc -- this must be implemented in concrete 
+        classes.
+        '''
+        raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseHeuristic.')
     
-    def __init__(self):
+    def patients(self, begin_date=None, end_date=None):
         '''
-        @param lookback: Include encounters/lab results occurring no more 
-            than this many days before today.  If lookback is 0 or None, all 
-            records are examined.
-        @type lookback: Integer
+        Return a list of patients who are indicated as positive by this heuristic.
         '''
-        self.encounter_q = None # Q object
-        self.patient_q = None # Q object
-        self.lab_q = None # Q object
-        self.q_setup() 
-        assert self.name # Concrete class must define this!
-        self.variant # Used for the sanity checks
+        raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseHeuristic.')
     
-    def _get_variant(self):
+    def is_positive(self, patient, begin_date=None, end_date=None):
         '''
-        Returns 'lab' or 'encounter'.
+        Return True if specified patient is indicated positive by this heuristic.
         '''
-        # Sanity checks:
-        assert (self.encounter_q or self.lab_q) # Gotta have one or the other
-        assert not (self.encounter_q and self.lab_q) # Can't have both
-        #
-        if self.lab_q:
-            return 'lab'
-        elif self.encounter_q:
-            return 'encounter'
-    variant = property(_get_variant)
-    
-    def q_setup(self):
-        '''
-        Setup the Q objects -- this must be implemented in concrete classes
-        '''
-        raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseDiseaseComponent.')
+        raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseHeuristic.')
     
     def make_date_str(self, date):
         '''
@@ -76,59 +60,73 @@ class BaseDiseaseComponent:
             log.debug('String given as date -- no conversion')
             return date
         return util.str_from_date(date)
-        
-    def get_encounters(self, begin_date=None, end_date=None, patient=None, queryset=None, **kw):
-        '''
-        Return all encounters matching this component
-	        @type begin_date: datetime.date
-	        @type end_date:   datetime.date
-	        @type patient:    models.Demog
-	        @type queryset:   QuerySet
-        '''
-        
-        log.debug('Get encounters for "%s".' % self.name)
-        if queryset:
-            qs = queryset
-        else:
-            qs = models.Enc.objects.all()
-        if not self.encounter_q:
-            return qs.none()
-        if patient:
-            qs = qs.filter(EncPatient=patient)
-        if begin_date and end_date:
-            begin = self.make_date_str(begin_date)
-            end = self.make_date_str(end_date)
-            qs = qs.filter(EncEncounter_Date__gte=begin, EncEncounter_Date__lte=end)
-        log.debug('encounter_q: %s' % self.encounter_q)
-        return qs.filter(self.encounter_q).distinct()
-    encounters = property(get_encounters)
     
-    def get_lab_results(self, begin_date=None, end_date=None, patient=None, queryset=None):
+    
+class LabHeuristic(BaseHeuristic):
+    '''
+    Abstract base class for lab test heuristics, concrete instances of which
+    are used as components of DiseaseDefinitions
+    '''
+    def __init__(self):
         '''
-        Return all lab results matching this component
+        @param lookback: Include encounters/lab results occurring no more 
+            than this many days before today.  If lookback is 0 or None, all 
+            records are examined.
+        @type lookback: Integer
+        '''
+        self.name = None # Name of this heuristic, used for logging etc
+        self.loinc_nums = [] # List of LOINC numbers relevant to this heuristic
+        self.pos_q = None # Identifies positives from among the lab tests indicated by self.loinc_nums
+        self.setup() 
+        assert self.name # Concrete class must define this!
+    
+    def __get_lab_q(self):
+        '''
+        Returns a Q object that selects all labs identified by self.loinc_nums.
+        '''
+        lab_q = Q(LxLoinc='%s' % self.loinc_nums[0])
+        for num in self.loinc_nums[1:]:
+            lab_q = lab_q | Q(LxLoinc='%s' % num)
+        log.debug('lab_q: %s' % lab_q)
+        return lab_q
+    lab_q = property(__get_lab_q)
+        
+    def relevant_labs(self, begin_date=None, end_date=None, patient=None, queryset=None):
+        '''
+        Return all lab results relevant to this heuristic, whether or not they 
+        indicate positive.
 	        @type begin_date: datetime.date
 	        @type end_date:   datetime.date
 	        @type patient:    models.Demog
 	        @type queryset:   QuerySet
         '''
-        log.debug('Get lab results for "%s".' % self.name)
+        log.debug('Get lab results relevant to "%s".' % self.name)
         if queryset:
             qs = queryset
         else:
             qs = models.Lx.objects.all()
-        if not self.lab_q:
-            return qs.none()
         if patient:
             qs = qs.filter(LxPatient=patient)
         if begin_date and end_date:
             begin = self.make_date_str(begin_date)
             end = self.make_date_str(end_date)
             qs = qs.filter(LxDate_of_result__gte=begin, LxDate_of_result__lte=end)
-        log.debug('lab_q: %s' % self.lab_q)
-        return qs.filter(self.lab_q).distinct()
-    lab_results = property(get_lab_results)
+        return qs.filter(self.lab_q)
     
-    def get_patients(self, begin_date=None, end_date=None, patient=None, queryset=None, include_result=True):
+    def positive_labs(self, begin_date=None, end_date=None, patient=None, queryset=None):
+        '''
+        Return all lab results matching this component.
+	        @type begin_date: datetime.date
+	        @type end_date:   datetime.date
+	        @type patient:    models.Demog
+	        @type queryset:   QuerySet
+        '''
+        qs = self.relevant_labs(begin_date=begin_date, end_date=end_date, patient=patient, queryset=queryset)
+        log.debug('Get positive lab results for "%s".' % self.name)
+        log.debug('pos_q: %s' % self.pos_q)
+        return qs.filter(self.pos_q)
+    
+    def patients(self, begin_date=None, end_date=None, include_result=False):
         '''
         Return all patients matching this component
 	        @type begin_date: datetime.date
@@ -137,30 +135,78 @@ class BaseDiseaseComponent:
 	        @type queryset:   QuerySet
         '''
         log.debug('Get patients for "%s".' % self.name)
-        if self.lab_q and self.encounter_q:
-            raise "I don't know how to deal with this situation."
-        elif self.lab_q:
-            labs = self.get_lab_results(begin_date=begin_date, end_date=end_date, patient=patient, queryset=queryset)
-            if include_result:
-                return [(l.LxPatient, l.LxTest_results) for l in labs.select_related('LxPatient')]
-            else:
-                return [l.LxPatient for l in labs.select_related('LxPatient')]
-            #patient_set = sets.Set()
-            #[patient_set.add(l.LxPatient) for l in labs.select_related('LxPatient')]
-            #return patient_set
-        elif self.encounter_q:
-            encs = self.get_encounters(begin_date=begin_date, end_date=end_date, patient=patient, queryset=queryset)
-            if include_result:
-                return [(e.EncPatient, 'ICD9 Codes: %s' % e.EncICD9_Codes) for e in encs.select_related('EncPatient')]
-            else:
-                return [e.EncPatient for e in encs.select_related('EncPatient')]
-            #patient_set = sets.Set()
-            #[patient_set.add(e.EncPatient) for e in encs.select_related('EncPatient')]
-            #return patient_set
+        labs = self.get_lab_results(begin_date=begin_date, end_date=end_date)
+        if include_result:
+            return [(l.LxPatient, l.LxTest_results) for l in labs.select_related('LxPatient')]
         else:
-            raise 'WTF?'
-    patients = property(get_patients)
+            return [l.LxPatient for l in labs.select_related('LxPatient')]
+    
+    def is_positive(self, patient, begin_date=None, end_date=None):
+        if self.positive_labs(begin_date=begin_date, end_date=end_date, patient=patient):
+            return True
+        else:
+            return False
 
+
+class EncounterHeuristic(BaseHeuristic):
+    '''
+    Abstract base class for encounter heuristics, concrete instances of which
+    are used as components of DiseaseDefinitions
+    '''
+    def __init__(self):
+        self.name = None
+        self.icd9s = []
+        self.setup()
+        assert self.name # The name of this kind of encounter
+        assert self.icd9s # The ICD9 code(s) that define this kind of encounter
+    
+    def __get_enc_q(self):
+        '''
+        Returns a Q object to select all Encounters indicated by self.icd9s
+        '''
+        enc_q = Q()
+        for code in self.icd9s:
+            enc_q = enc_q | Q(EncICD9_Codes__icontains=code)
+        return enc_q
+    enc_q = property(__get_enc_q)
+
+    def encounters(self, begin_date=None, end_date=None, patient=None, queryset=None):
+        '''
+        Return all lab results relevant to this heuristic, whether or not they 
+        indicate positive.
+	        @type begin_date: datetime.date
+	        @type end_date:   datetime.date
+	        @type patient:    models.Demog
+	        @type queryset:   QuerySet
+        '''
+        log.debug('Get lab results relevant to "%s".' % self.name)
+        if queryset:
+            qs = queryset
+        else:
+            qs = models.Enc.objects.all()
+        if patient:
+            qs = qs.filter(EncPatient=patient)
+        if begin_date and end_date:
+            begin = self.make_date_str(begin_date)
+            end = self.make_date_str(end_date)
+            qs = qs.filter(EncEncounter_Date__gte=begin, EncEncounter_Date__lte=end)
+        return qs.filter(self.enc_q)
+    
+    def patients(self, begin_date=None, end_date=None, include_result=False):
+        '''
+        Return a list of patients who are indicated as positive by this heuristic
+        '''
+        encounters = self.encounters(begin_date=begin_date, end_date=end_date).select_related('EncPatient')
+        if include_result:
+            return [(e.EncPatient, 'Enc: %s' % self.name) for e in encounters]
+        else:
+            return [e.EncPatient for e in encounters]
+
+    def is_positive(self, patient, begin_date=None, end_date=None):
+        if self.encounters(begin_date=begin_date, end_date=end_date, patient=patient):
+            return True
+        else:
+            return False
 
 class CaseAlreadyExists(BaseException):
     '''
@@ -207,196 +253,197 @@ class BaseDiseaseDefinition:
 
 #===============================================================================
 #
-#--- ~~~ Diagnosis Components ~~~
+#--- ~~~ Encounter Heuristics ~~~
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                                
-class Jaundice(BaseDiseaseComponent):
+
+class Jaundice(EncounterHeuristic):
     '''
     Jaundice, not of newborn
     '''
-    name = 'Jaundice, not of newborn'
-    def q_setup(self):
-        self.encounter_q = Q(EncICD9_Codes__icontains='782.4')
+    def setup(self):
+        self.name = 'Jaundice, not of newborn'
+        self.icd9s = ['782.4']
 
 
-class Chronic_Hep_B(BaseDiseaseComponent):
+class Chronic_Hep_B(EncounterHeuristic):
     '''
-    Chronic Hepatitis B ICD9 = 070.32
+    Chronic Hepatitis B
     '''
-    name = 'Chronic Hepatitis B ICD9 = 070.32'
-    def q_setup(self):
-        self.encounter_q = Q(EncICD9_Codes__icontains='070.32')
-        
+    def setup(self):
+        self.name = 'Chronic Hepatitis B'
+        self.icd9s = ['070.32']
+                                
 
 #===============================================================================
 #
-#--- ~~~ Lab Test Components ~~~
+#--- ~~~ Lab Test Heuristics ~~~
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                 
 
-class ALT_2x_Upper_Limit(BaseDiseaseComponent):
+class ALT_2x_Upper_Limit(LabHeuristic):
     '''
     Alanine aminotransferase (ALT) >2x upper limit of normal
     '''
-    name = 'Alanine aminotransferase (ALT) >2x upper limit of normal'
-    def q_setup(self):
-        # Lab Result Query
-        loinc_q = Q(LxLoinc='1742-6')
+    def setup(self):
+        self.name = 'Alanine aminotransferase (ALT) >2x upper limit of normal'
+        self.loinc_nums = ['1742-6']
+        # If record has a reference high, compare test result against that 
+        # reference.  Otherwise, compare against a default 'high' value.
         no_ref_q = Q(LxReference_High=None) | Q(LxReference_High='')
         ref_comp_q = ~no_ref_q & Q(LxTest_results__gt=F('LxReference_High') * 2)
         static_comp_q = no_ref_q & Q(LxTest_results__gt=132)
-        self.lab_q = loinc_q & (ref_comp_q | static_comp_q)
+        #
+        self.pos_q = (ref_comp_q | static_comp_q)
 
 
-class ALT_5x_Upper_Limit(BaseDiseaseComponent):
+class ALT_5x_Upper_Limit(LabHeuristic):
     '''
     Alanine aminotransferase (ALT) >5x upper limit of normal
     '''
-    name = 'Alanine aminotransferase (ALT) >5x upper limit of normal'
-    def q_setup(self):
-        # Lab Result Query
-        loinc_q = Q(LxLoinc='1742-6')
+    def setup(self):
+        self.name = 'Alanine aminotransferase (ALT) >5x upper limit of normal'
+        self.loinc_nums = ['1742-6']
         # If record has a reference high, compare test result against that 
         # reference.  Otherwise, compare against a default 'high' value.
         no_ref_q = Q(LxReference_High=None) | Q(LxReference_High='')
         ref_comp_q = no_ref_q & Q(LxTest_results__gt=F('LxReference_High') * 5)
         static_comp_q = ~no_ref_q & Q(LxTest_results__gt=330)
-        self.lab_q = loinc_q & (ref_comp_q | static_comp_q)
+        #
+        self.pos_q = (ref_comp_q | static_comp_q)
 
 
-class AST_2x_Upper_Limit(BaseDiseaseComponent):
+class AST_2x_Upper_Limit(LabHeuristic):
     '''
     Aspartate aminotransferase (AST) >2x upper limit of normal
     '''
-    name = 'Aspartate aminotransferase (AST) >2x upper limit of normal'
-    def q_setup(self):
-        #
-        # Lab Result Query
-        #
-        loinc_q = Q(LxLoinc='1920-8')
+    def setup(self):
+        self.name = 'Aspartate aminotransferase (AST) >2x upper limit of normal'
+        self.loinc_nums = ['1920-8']
         # If record has a reference high, compare test result against that 
         # reference.  Otherwise, compare against a default 'high' value.
         no_ref_q = Q(LxReference_High=None) | Q(LxReference_High='')
         ref_comp_q = no_ref_q & Q(LxTest_results__gt=F('LxReference_High') * 2)
         static_comp_q = ~no_ref_q & Q(LxTest_results__gt=132)
         #
-        self.lab_q = loinc_q & (ref_comp_q | static_comp_q)
+        self.pos_q = (ref_comp_q | static_comp_q)
 
 
-class AST_5x_Upper_Limit(BaseDiseaseComponent):
+class AST_5x_Upper_Limit(LabHeuristic):
     '''
     Aspartate aminotransferase (AST) >2x upper limit of normal
     '''
-    name = 'Aspartate aminotransferase (AST) >2x upper limit of normal'
-    def q_setup(self):
-        #
-        # Lab Result Query
-        #
-        loinc_q = Q(LxLoinc='1920-8')
+    def setup(self):
+        self.name = 'Aspartate aminotransferase (AST) >2x upper limit of normal'
+        self.loinc_nums = ['1920-8']
         # If record has a reference high, compare test result against that 
         # reference.  Otherwise, compare against a default 'high' value.
         no_ref_q = Q(LxReference_High=None) | Q(LxReference_High='')
         ref_comp_q = no_ref_q & Q(LxTest_results__gt=F('LxReference_High') * 5)
         static_comp_q = ~no_ref_q & Q(LxTest_results__gt=330)
         #
-        self.lab_q = loinc_q & (ref_comp_q | static_comp_q)
+        self.pos_q = (ref_comp_q | static_comp_q)
 
 
-class Hep_A_IgM_Ab(BaseDiseaseComponent):
+class Hep_A_IgM_Ab(LabHeuristic):
     '''
     IgM antibody to Hepatitis A = "REACTIVE" (may be truncated)
     '''
-    name = 'IgM antibody to Hepatitis A = "REACTIVE" (may be truncated)'
-    def q_setup(self):
-        self.encounter_q = None
-        self.lab_q = Q(LxLoinc='22314-9', LxTest_results__istartswith='reactiv')
+    def setup(self):
+        self.name = 'IgM antibody to Hepatitis A = "REACTIVE" (may be truncated)'
+        self.loinc_nums = ['22314-9']
+        self.pos_q = Q(LxTest_results__istartswith='reactiv')
 
 
-class Hep_B_IgM_Ab(BaseDiseaseComponent):
+class Hep_B_IgM_Ab(LabHeuristic):
     '''
     IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)
     '''
-    name = 'IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)'
-    def q_setup(self):
-        self.encounter_q = None
-        self.lab_q = Q(LxLoinc='31204-1', LxTest_results__istartswith='reactiv')
+    def setup(self):
+        self.name = 'IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)'
+        self.loinc_nums = ['31204-1']
+        self.pos_q = Q(LxTest_results__istartswith='reactiv')
 
 
-class Hep_B_Surface(BaseDiseaseComponent):
+class Hep_B_Surface(LabHeuristic):
     '''
     Hepatitis B Surface Antigen = "REACTIVE" (may be truncated)
     '''
-    name = 'Hepatitis B Surface Antigen = "REACTIVE" (may be truncated)'
-    def q_setup(self):
-        self.encounter_q = None
-        self.lab_q = Q(LxLoinc='5195-3', LxTest_results__istartswith='reactiv')
+    def setup(self):
+        self.name = 'Hepatitis B Surface Antigen = "REACTIVE" (may be truncated)'
+        self.loinc_nums = ['5195-3']
+        self.pos_q = Q(LxTest_results__istartswith='reactiv')
 
 
-class Hep_B_e_Antigen(BaseDiseaseComponent):
+class Hep_B_e_Antigen(LabHeuristic):
     '''
     Hepatitis B "e" Antigen = "REACTIVE" (may be truncated)
     '''
-    name = 'Hepatitis B "e" Antigen = "REACTIVE" (may be truncated)'
-    def q_setup(self):
-        self.encounter_q = None
-        self.lab_q = Q(LxLoinc='13954-3', LxTest_results__istartswith='reactiv')
+    def setup(self):
+        self.name = 'Hepatitis B "e" Antigen = "REACTIVE" (may be truncated)'
+        self.loinc_nums = ['13954-3']
+        self.pos_q = Q(LxTest_results__istartswith='reactiv')
 
 
-class Hep_B_Viral_DNA(BaseDiseaseComponent):
+class Hep_B_Viral_DNA(LabHeuristic):
     '''
     Hepatitis B Viral DNA
     '''
-    name = 'Hepatitis B Viral DNA'
-    def q_setup(self):
+    def setup(self):
+        self.name = 'Hepatitis B Viral DNA'
+        self.loinc_nums = ['13126-8', '16934', '5009-6']
         # NOTE:  See note in Hep B google doc about "HEPATITIS B DNA, QN, IU/COPIES" portion of algorithm
         #
         # Lab Result Query
         #
         # HEP B DNA PCR (QL) 
-        lab_q = Q(LxLoinc='13126-8')
-        lab_q = lab_q & ( Q(LxTest_results__istartswith='positiv') | Q(LxTest_results__istartswith='detect') )
+        q_obj = Q(LxLoinc='13126-8') | Q(LxLoinc='16934')
+        q_obj = q_obj & ( Q(LxTest_results__istartswith='positiv') | Q(LxTest_results__istartswith='detect') )
         # HEP B VIRAL DNA IU/ML 
-        lab_q = lab_q | Q(LxLoinc='16934-2', LxTest_results__gt=100)
+        q_obj = q_obj | Q(LxLoinc='16934-2', LxTest_results__gt=100)
         # HEP B DNA COPIES/ML 
-        lab_q = lab_q | Q(LxLoinc='5009-6', LxTest_results__gt=160)
-        self.lab_q = lab_q
+        q_obj = q_obj | Q(LxLoinc='5009-6', LxTest_results__gt=160)
+        self.pos_q = q_obj
 
 
-class Hep_E_Ab(BaseDiseaseComponent):
+class Hep_E_Ab(LabHeuristic):
     '''
     Hepatitis E antibody
     '''
-    name = 'Hepatitis E antibody'
-    def q_setup(self):
-        self.encounter_q = None
-        self.lab_q = Q(LxLoinc='14212-5', LxTest_results__istartswith='reactiv')
+    def setup(self):
+        self.name = 'Hepatitis E antibody'
+        self.loinc_nums = ['14212-5']
+        self.pos_q = Q(LxTest_results__istartswith='reactiv')
 
 
-class Hep_C_Ab(BaseDiseaseComponent):
+class Hep_C_Ab(LabHeuristic):
     '''
     Hepatitis C antibody = "REACTIVE" (may be truncated)
     '''
-    name = 'Hepatitis C antibody = "REACTIVE" (may be truncated)'
-    def q_setup(self):
+    def setup(self):
+        self.name = 'Hepatitis C antibody = "REACTIVE" (may be truncated)'
         self.encounter_q = None
-        self.lab_q = Q(LxLoinc='16128-1', LxTest_results__istartswith='reactiv')
+        self.loinc_nums = ['16128-1']
+        self.pos_q = Q(LxTest_results__istartswith='reactiv')
 
 
-class Total_Bilirubin_gt_1_5(BaseDiseaseComponent):
+class Total_Bilirubin_gt_1_5(LabHeuristic):
     '''
     Total bilirubin > 1.5
     '''
-    name = 'Total bilirubin > 1.5'
-    def q_setup(self):
-        self.lab_q = Q(LxLoinc='33899-6', LxTest_results__gt=1.5)
+    def setup(self):
+        self.name = 'Total bilirubin > 1.5'
+        self.loinc_nums = ['33899-6']
+        self.pos_q = Q(LxTest_results__gt=1.5)
 
-class Calculated_Bilirubin_gt_1_5(BaseDiseaseComponent):
+
+class Calculated_Bilirubin_gt_1_5(LabHeuristic):
     '''
+    FINISH ME!
     '''
-    name = ''
-    def q_setup(self):
+    def setup(self):
+        self.name = ''
         self.encounter_q = None
     
         
@@ -430,7 +477,7 @@ class Acute_Hepatitis_A(BaseDiseaseDefinition):
         ast = AST_2x_Upper_Limit()
         ab = Hep_A_IgM_Ab()
         positive = sets.Set() # patients positive for Hep A
-        for lab in ab.lab_results.select_related('LxPatient'):
+        for lab in ab.positive_labs().select_related('LxPatient'):
             # These patients all tested positive for Hep A IgM antibody.  
             # Let's find out if they meet any of the other conditions.
             patient = lab.LxPatient
@@ -439,14 +486,12 @@ class Acute_Hepatitis_A(BaseDiseaseDefinition):
             fourteen = datetime.timedelta(days=14)
             begin_date = lab_date - fourteen
             end_date = lab_date + fourteen
-            log.debug('Analysing time window %s to %s.' % (begin_date, end_date))
+            log.debug('Analyzing time window %s to %s.' % (begin_date, end_date))
             for test in [j, alt, ast]:
-                tuple = test.get_patients(begin_date, end_date, patient, include_result=True)
-                if tuple: # We got a positive!
+                if test.is_positive(patient):
                     msg = '\n'
                     msg += '    The following patient tested positive for Hepatitis A IgM antibody, and\n' 
                     msg += '    for "%s"\n' % test.name
-                    msg += '    with results: "%s"\n' % tuple[0][1]
                     msg += '    within +/- 14 days, fulfilling criteria for an Acute Hep A case:\n'
                     msg += '    %s' % patient
                     log.info(msg)
@@ -458,6 +503,6 @@ class Acute_Hepatitis_A(BaseDiseaseDefinition):
 if __name__ == '__main__':
     hep_a= Acute_Hepatitis_A()
     for p in hep_a.get_patients():
-        hep_a.make_case(p)
+        print p
     #pprint.pprint(connection.queries)
     
