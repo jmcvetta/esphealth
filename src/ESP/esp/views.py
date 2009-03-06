@@ -1504,8 +1504,15 @@ def json_case_grid(request, status):
     rows = []
     for case in cases:
         row = {}
-        order_date = case.latest_lx_order_date().strftime(settings.DATE_FORMAT)
-        last_update = case.caseLastUpDate.strftime(settings.DATE_FORMAT)
+        print case.latest_lx_order_date()
+        print type(case.latest_lx_order_date())
+        #order_date = case.latest_lx_order_date().strftime(settings.DATE_FORMAT)
+        order_date = case.latest_lx_order_date()
+        if order_date:
+            order_date = order_date.strftime(settings.DATE_FORMAT)
+        last_update = case.caseLastUpDate
+        if last_update:
+            last_update = last_update.strftime(settings.DATE_FORMAT)
         row['id'] = case.id
         href = urlresolvers.reverse('case_detail', kwargs={'case_id': int(case.id)})
         case_id_link = '%s <a href="' % case.id  + href + '">(view)</a>'
