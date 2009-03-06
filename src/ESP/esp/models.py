@@ -597,9 +597,9 @@ class Case(models.Model):
         '''
         Returns the latest lab test relevant to this case
         '''
-        lab_result_ids = self.caseLxID.split(',')
-        if not lab_result_ids:
+        if not self.caseLxID:
             return None
+        lab_result_ids = self.caseLxID.split(',')
         lab_results = Lx.objects.filter(id__in=lab_result_ids).order_by('LxOrderDate').reverse()
         return lab_results[0]
         
@@ -608,6 +608,8 @@ class Case(models.Model):
         Return a datetime.date instance representing the date on which the 
         latest lab test relevant to this case was ordered.
         '''
+        if not self.latest_lx():
+            return None
         s = self.latest_lx().LxOrderDate
         year = int(s[0:4])
         month = int(s[4:6])
@@ -618,7 +620,10 @@ class Case(models.Model):
         '''
         Return the provider site for the latest lab test relevant to this case 
         '''
-        return self.latest_lx().LxOrdering_Provider.provPrimary_Dept
+        lx = self.latest_lx()
+        if not lx:
+            return None
+        return lx.LxOrdering_Provider.provPrimary_Dept
 
     def  __unicode__(self):
         p = self.showPatient()# self.pID
