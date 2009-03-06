@@ -521,9 +521,13 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
         # Get loinc
         #
         ext_code = utils.ext_code_from_cpt(cpt, '')
-        mapping = models.External_To_Loinc_Map.objects.get(ext_code=ext_code)
-        loinc = mapping.loinc
-        lxloinc = loinc.loinc_num
+        try:
+	        mapping = models.External_To_Loinc_Map.objects.get(ext_code=ext_code)
+	        loinc = mapping.loinc
+	        lxloinc = loinc.loinc_num
+        except models.External_To_Loinc_Map.DoesNotExist:
+            loinc = None
+            lxloinc = None
         try:
             if provdict:
                 provid=provdict[phy]
@@ -532,13 +536,14 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
                 #provid= searchId('esp_provider',"provCode__exact='%s'" % phy)
         except:
             provid = 'NULL'
-        lx, created = Lx.objects.get_or_create(LxPatient_id=demogid, 
+        patient = models.Demog.objects.get(pk=demogid)
+        lx = Lx.objects.get_or_create(LxPatient=patient, 
             LxMedical_Record_Number=mrn, 
             LxOrder_Id_Num=orderid,
             LxHVMA_Internal_Accession_number=accessnum,
             LxTest_Code_CPT=cpt,
             LxOrderDate=orderd,
-            LxOrderType=ordertp)
+            LxOrderType=ordertp)[0] # get_or_create() returns (obj, was_created)
         lx.LxTest_Code_CPT_mod = modi
         lx.LxLoinc = lxloinc
         lx.LxOrdering_Provider_id = provid
@@ -604,7 +609,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
         m = models.External_To_Loinc_Map.objects.filter(ext_code=ext_code)
         lxloinc=''
         if m:
-            lxloinc=(c[0].loinc.loinc_num).strip()
+            lxloinc=(m[0].loinc.loinc_num).strip()
         elif compname:
             # 
             # NOTE: This is where we do NLP code search
