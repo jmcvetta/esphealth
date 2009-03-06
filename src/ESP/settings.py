@@ -60,7 +60,8 @@ if localsettings.USESQLITE:
     SITEROOT = ''
 else:
     DATABASE_ENGINE = 'mysql' # 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
-    DATABASE_NAME = 'esp'             # Or path to database file if using sqlite3.
+#    DATABASE_NAME = 'esp'             # Or path to database file if using sqlite3.
+    DATABASE_NAME = 'esp_beast'             # Or path to database file if using sqlite3.
     DATABASE_USER = localsettings.MYSQL_DB_USER             # Not used with sqlite3.
     DATABASE_PASSWORD = localsettings.MYSQL_DB_PASSWORD        # Not used with sqlite3.
     DATABASE_HOST = '127.0.0.1'             # Set to empty string for localhost. Not used with sqlite3.
@@ -189,3 +190,16 @@ LOG_FILE = '/tmp/esp.log'
 # BEWARE: If you set the log level to DEBUG, *copious* info will be logged!
 LOG_LEVEL_CONSOLE = logging.DEBUG
 LOG_LEVEL_FILE = logging.DEBUG
+
+
+#===============================================================================
+#
+#--- ~~~ Case Generation ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REPORT_RX_DAYS_BEFORE = 7
+REPORT_RX_DAYS_AFTER = 14
+REPORT_LX_DAYS_BEFORE = 30
+REPORT_LX_DAYS_AFTER = 30
+REPORT_ICD9_DAYS_BEFORE = 14
+REPORT_ICD9_DAYS_AFTER = 14

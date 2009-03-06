@@ -22,6 +22,19 @@ from ESP.utils.utils import log
 
 #===============================================================================
 #
+#--- ~~~ Exceptions ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+class CaseAlreadyExists(BaseException):
+    '''
+    A case already exists for this disease + patient
+    '''
+    pass
+
+
+#===============================================================================
+#
 #--- ~~~ Base Classes ~~~
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -95,10 +108,10 @@ class LabHeuristic(BaseHeuristic):
         '''
         Return all lab results relevant to this heuristic, whether or not they 
         indicate positive.
-	        @type begin_date: datetime.date
-	        @type end_date:   datetime.date
-	        @type patient:    models.Demog
-	        @type queryset:   QuerySet
+            @type begin_date: datetime.date
+            @type end_date:   datetime.date
+            @type patient:    models.Demog
+            @type queryset:   QuerySet
         '''
         log.debug('Get lab results relevant to "%s".' % self.name)
         if queryset:
@@ -116,10 +129,10 @@ class LabHeuristic(BaseHeuristic):
     def positive_labs(self, begin_date=None, end_date=None, patient=None, queryset=None):
         '''
         Return all lab results matching this component.
-	        @type begin_date: datetime.date
-	        @type end_date:   datetime.date
-	        @type patient:    models.Demog
-	        @type queryset:   QuerySet
+            @type begin_date: datetime.date
+            @type end_date:   datetime.date
+            @type patient:    models.Demog
+            @type queryset:   QuerySet
         '''
         qs = self.relevant_labs(begin_date=begin_date, end_date=end_date, patient=patient, queryset=queryset)
         log.debug('Get positive lab results for "%s".' % self.name)
@@ -129,10 +142,10 @@ class LabHeuristic(BaseHeuristic):
     def patients(self, begin_date=None, end_date=None, include_result=False):
         '''
         Return all patients matching this component
-	        @type begin_date: datetime.date
-	        @type end_date:   datetime.date
-	        @type patient:    models.Demog
-	        @type queryset:   QuerySet
+            @type begin_date: datetime.date
+            @type end_date:   datetime.date
+            @type patient:    models.Demog
+            @type queryset:   QuerySet
         '''
         log.debug('Get patients for "%s".' % self.name)
         labs = self.get_lab_results(begin_date=begin_date, end_date=end_date)
@@ -174,10 +187,10 @@ class EncounterHeuristic(BaseHeuristic):
         '''
         Return all lab results relevant to this heuristic, whether or not they 
         indicate positive.
-	        @type begin_date: datetime.date
-	        @type end_date:   datetime.date
-	        @type patient:    models.Demog
-	        @type queryset:   QuerySet
+            @type begin_date: datetime.date
+            @type end_date:   datetime.date
+            @type patient:    models.Demog
+            @type queryset:   QuerySet
         '''
         log.debug('Get lab results relevant to "%s".' % self.name)
         if queryset:
@@ -208,14 +221,8 @@ class EncounterHeuristic(BaseHeuristic):
         else:
             return False
 
-class CaseAlreadyExists(BaseException):
-    '''
-    A case already exists for this disease + patient
-    '''
-    pass
 
-
-class BaseDiseaseDefinition:
+class DiseaseDefinition:
     '''
     Abstract base class for disease definitions
     '''
@@ -225,30 +232,129 @@ class BaseDiseaseDefinition:
         # Sanity Checks
         #
         assert isinstance(self.condition, models.Rule) # Must have a valid condition ("Rule" in old ESP parlance)
-        assert type(self.report_icd9s) == types.ListType
+        assert type(self.report_icd9) == types.ListType
+        assert type(self.report_rx) == types.ListType
         assert type(self.related_components) == types.ListType
         
     def get_patients(self):
-        raise NotImplementedError
+        raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from DiseaseDefinition.')
     
-    def make_case(self, patient):
+    def split_cases(self, patient, labs, encounters):
         '''
-        Makes cases for the given patient
+        Split list of labs and list of encounters into dicts, each representing
+            a separate case.  By default this method returns only a single 
+            event, but it's behavior can, and often should, be overridden in 
+            subclasses.
+        @return: [case_info, case_info, ...]
+            where case_info = {'patient': patient,
+                               'provider': provider,
+                               'date': case_establishment_date,
+                               'labs': labs,
+                               'encounters': encounters, }
+        '''
+        raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from DiseaseDefinition.')
+
+    
+    def sort_events(self, events):
+        '''
+        Sorts a list of events (labs & encounters) by date.
+        '''
+        x = [(e.date, e) for e in events]
+        x.sort()
+        return [i[1] for i in x]
+
+    def make_cases(self, patient):
+        '''
+        Makes a case for specified patient
             @type patient: models.Demog
         '''
         events = []
+        labs = []
+        encounters = []
         for component in self.related_components:
             c = component()
-            if c.variant == 'lab':
-                events += [(l.LxDate_of_result, l) for l in c.get_lab_results(patient=patient)]
-            elif c.variant == 'encounter':
-                events += [(e.EncEncounter_Date, e) for e in c.get_encounters(patient=patient)]
+            if isinstance(c, LabHeuristic):
+                # NOTE: We are fetching all *relevant* lab tests, not just 
+                # those which indicate positive.
+                labs += [i for i in c.relevant_labs(patient=patient)] 
+            elif isinstance(c, EncounterHeuristic):
+                encounters += [i for i in c.encounters(patient=patient)]
             else:
                 raise 'Fail!'
-        events.sort()
-        print '--------------------------------------------------------------------------------'
-        for e in events:
-            print e
+        existing_cases = models.Case.objects.filter(caseDemog=patient)
+        # Extract list of lab/encounter ID numbers from comma-delimited fields
+        existing_labs = ','.join([case.caseLxID for case in existing_cases]).split(',')
+        existing_encounters = ','.join([case.caseEncID for case in existing_cases]).split(',')
+        for case_info in self.split_cases(patient, labs=labs, encounters=encounters):
+            # Loop through the labs & encounters, and see if any of them 
+            # belongs to an existing case.  If so, skip to the next set of 
+            # case_events.
+            is_existing = False # Flag for use below
+            for l in case_info['labs']:
+                if l.id in existing_labs:
+                    log.debug('Lab "%s" belongs to an existing case' % l)
+                    is_existing = True
+            for e in case_info['encounters']:
+                if e.id in existing_encounters:
+                    log.debug('Encounter "%s" belongs to an existing case' % e)
+                    is_existing = True
+            if is_existing:
+                log.debug('These events belong to an existing case.  Skipping to next bunch')
+                continue
+            self.make_single_case(patient, case_info)
+
+    def make_single_case(self, patient, case_info):
+        '''
+        Makes a new case for specified patient, attaching relevant labs & 
+            encounters.
+        @type patient: models.Demog
+        @param case_info: {'patient': patient, 
+                           'provider': provider,
+                           'date': case_establishment_date, 
+                           'labs': labs, # Relevant labs (pos & neg both)
+                           'encounters': encounters, }
+        @type case_info: Dict
+        '''
+        case = models.Case()
+        case_date = case_info['date']
+        case.caseDemog = patient
+        case.caseRule = self.condition
+        case.caseEncID = ','.join( [str(e.id) for e in case_info['encounters'] ] )
+        case.caseLxID = ','.join( [str(l.id) for l in case_info['labs'] ] )
+        case.caseWorkflow = 'AR'
+        #
+        # Related Rx
+        #
+        rx_ids = []
+        rx_begin = case_date - datetime.timedelta(days=settings.REPORT_RX_DAYS_BEFORE)
+        rx_end = case_date + datetime.timedelta(days=settings.REPORT_RX_DAYS_AFTER)
+        for rx_name in self.report_rx:
+            result = models.Rx.objects.filter(RxPatient=patient, 
+                                              RxDrugName__icontains=rx_name,
+                                              RxOrderDate__gte=util.str_from_date(rx_begin),
+                                              RxOrderDate__lte=util.str_from_date(rx_end),
+                                              )
+            if result:
+                rx_ids += [r.id for r in result]
+        case.caseRxID = ','.join(rx_ids)
+        #
+        # Related Symptoms (ICD9s)
+        #
+        symptom_icd9s = []
+        symptom_begin = case_date - datetime.timedelta(days=settings.REPORT_ICD9_DAYS_BEFORE)
+        symptom_end = case_date + datetime.timedelta(days=settings.REPORT_ICD9_DAYS_AFTER)
+        for icd9 in self.report_icd9:
+            result = models.Enc.objects.filter(EncPatient=patient,
+                                               EncICD9_Codes__icontains=icd9,
+                                               EncEncounter_Date__gte=util.str_from_date(symptom_begin),
+                                               EncEncounter_Date__lte=util.str_from_date(symptom_end),
+                                               )
+            if result:
+                symptom_icd9s += [icd9]
+        case.caseICD9 = ','.join(symptom_icd9s)
+        log.info('Saving new case: %s' % case)
+        case.save()
+        
         
 
 #===============================================================================
@@ -454,7 +560,7 @@ class Calculated_Bilirubin_gt_1_5(LabHeuristic):
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class Acute_Hepatitis_A(BaseDiseaseDefinition):
+class Acute_Hepatitis_A(DiseaseDefinition):
     '''
     A case of Acute Hepatitis A is defined as a patient who has
         a) Positive test for IgM Antibody to Hepatitis A
@@ -468,7 +574,17 @@ class Acute_Hepatitis_A(BaseDiseaseDefinition):
         AST_2x_Upper_Limit,
         Hep_A_IgM_Ab,
         ]
-    report_icd9s = []
+    report_icd9 = [
+                   '780.6A',
+                   '782.4',
+                   '783.0',
+                   '780.79B',
+                   '789.0',
+                   '787.01',
+                   '787.02',
+                   '787.91',
+                   ]
+    report_rx = []
     
     def get_patients(self):
         log.info('Searching for cases of Acute Hepatitis A')
@@ -499,10 +615,27 @@ class Acute_Hepatitis_A(BaseDiseaseDefinition):
                     break # Only need one positive in this bunch
         return positive
                                 
+    def split_cases(self, patient, labs, encounters):
+        '''
+        From Mike Klompas:  "For acute hepatitis A it's one diagnosis per 
+        lifetime.  Subsequent positives are false positives."  Case date is 
+        the order date for Hepatitis A IgM lab test
+        '''
+        case_info = {'patient': patient,
+                     'labs': labs,
+                     'encounters': encounters,}
+        # It's easier to hit the DB just one time, than to loop through the
+        # list of all relevant labs provided as argument.
+        pos_test = Hep_A_IgM_Ab().positive_labs(patient=patient)[0]
+        case_info['date'] = util.date_from_str(pos_test.LxOrderDate)
+        case_info['provider'] = pos_test.LxOrdering_Provider
+        return [case_info]
+
+
 
 if __name__ == '__main__':
     hep_a= Acute_Hepatitis_A()
     for p in hep_a.get_patients():
-        print p
+        hep_a.make_cases(p)
     #pprint.pprint(connection.queries)
     

@@ -848,6 +848,14 @@ class Lx(models.Model):
         '''
         return self.LxComponentName
     ext_test_name = property(_get_ext_test_name)
+    
+    def _get_date(self):
+        '''
+        Return a datetime.date object representing the date of lab result
+        '''
+        return util.date_from_str(self.LxDate_of_result)
+    date = property(_get_date)
+    
             
     def getCPT(self):
         """translate CPT code
@@ -876,7 +884,8 @@ class Lx(models.Model):
         return self.LxComment[:10]
     
     def  __unicode__(self):
-        return u"%-10s %-50s %-12s PID %s" % (self.LxOrder_Id_Num, self.getCPT(), self.LxOrderDate, self.LxPatient.DemogPatient_Identifier, )
+        #return u"%-10s %-50s %-12s PID %s" % (self.LxOrder_Id_Num, self.getCPT(), self.LxOrderDate, self.LxPatient.DemogPatient_Identifier, )
+        return u'Ext ID: %-12s PID: %-12s LOINC: %-10s Date: %-10s' % (self.LxOrder_Id_Num, self.LxPatient.DemogPatient_Identifier, self.LxLoinc, util.date_from_str(self.LxDate_of_result))
     
 
 class Lxo(models.Model):
@@ -924,8 +933,15 @@ class Enc(models.Model):
         '''
         return util.date_from_str(self.EncEncounter_Date)
     encounter_date = property(_get_enc_date)
-        
-        
+    
+    def _get_date(self):
+        '''
+        Returns a datetime.date object
+        '''
+        return util.date_from_str(self.EncEncounter_Date)
+    date = property(_get_date)
+
+
     def geticd9s(self):
         """translate icd9s in comma separated value
         """
