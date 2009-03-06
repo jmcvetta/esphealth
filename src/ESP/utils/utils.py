@@ -191,3 +191,18 @@ class Flexigrid:
         json = simplejson.dumps(json_dict)
         return json
             
+
+def str_to_list(str):
+    '''
+    Converts a string representation of comma-delimited integers to a list of 
+        integers.
+    @param str: Comma-delimited integers 
+    @type str: String
+    @return: List
+    '''
+    result = []
+    for item in str.split(','):
+        if not item: # skip blank strings
+            continue
+        result += [int(item)]
+    return result

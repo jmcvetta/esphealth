@@ -283,24 +283,33 @@ class DiseaseDefinition:
                 raise 'Fail!'
         existing_cases = models.Case.objects.filter(caseDemog=patient)
         # Extract list of lab/encounter ID numbers from comma-delimited fields
-        existing_labs = ','.join([case.caseLxID for case in existing_cases]).split(',')
-        existing_encounters = ','.join([case.caseEncID for case in existing_cases]).split(',')
+        existing_lab_ids = []
+        [existing_lab_ids.extend( util.str_to_list(case.caseLxID) ) for case in existing_cases]
+        existing_encounter_ids = []
+        [existing_encounter_ids.extend( util.str_to_list(case.caseEncID) ) for case in existing_cases]
+        log.debug('existing_lab_ids: %s' % existing_lab_ids)
+        log.debug('existing_encounter_ids: %s' % existing_encounter_ids)
+        #
+        # Loop through the labs & encounters, and see if any of them belongs to
+        # an existing case.  If so, skip to the next set of case_events.
+        #
         for case_info in self.split_cases(patient, labs=labs, encounters=encounters):
-            # Loop through the labs & encounters, and see if any of them 
-            # belongs to an existing case.  If so, skip to the next set of 
-            # case_events.
+            log.debug('date: %s' % case_info['date'])
+            log.debug('labs: %s' % case_info['labs'])
+            log.debug('encounters: %s' % case_info['encounters'])
             is_existing = False # Flag for use below
             for l in case_info['labs']:
-                if l.id in existing_labs:
+                if l.id in existing_lab_ids:
                     log.debug('Lab "%s" belongs to an existing case' % l)
                     is_existing = True
             for e in case_info['encounters']:
-                if e.id in existing_encounters:
+                if e.id in existing_encounter_ids:
                     log.debug('Encounter "%s" belongs to an existing case' % e)
                     is_existing = True
             if is_existing:
                 log.debug('These events belong to an existing case.  Skipping to next bunch')
                 continue
+            log.debug('Events do match any events belonging to an existing case.')
             self.make_single_case(patient, case_info)
 
     def make_single_case(self, patient, case_info):
