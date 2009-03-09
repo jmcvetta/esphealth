@@ -316,6 +316,8 @@ class DiseaseDefinition:
         '''
         Makes a new case for specified patient, attaching relevant labs & 
             encounters.
+        FIXME: We are attaching too many labs.  Figure out how to winnow down
+            the list to more manageable size.
         @type patient: models.Demog
         @param case_info: {'patient': patient, 
                            'provider': provider,
