@@ -12,10 +12,10 @@
 # except the folder where it lives.
 #
 
-echo $0 | grep -q esp_env 
+echo $0 | grep -q env-setup 
 if [ $? -eq 0 ]; then
     echo "Usage:" >> /dev/stderr
-    echo "  $ source ./setup_esp_env.sh" >> /dev/stderr
+    echo "  $ source ./env-setup.sh" >> /dev/stderr
     exit
 fi
 

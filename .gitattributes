@@ -17,6 +17,7 @@ doc/ESPSpecificationsAug3_2006.doc -text
 doc/FINAL[!!-~]ELR[!!-~]231[!!-~]Implementation[!!-~]Guide_052104.pdf -text svneol=unset#unset
 /readme -text
 src/ESP/backfill-by-month.sh -text
+src/ESP/env-setup.sh -text
 src/ESP/esp/admin.py -text
 src/ESP/esp/choices.py -text
 src/ESP/esp/fixtures/auth.json -text
@@ -31,7 +32,6 @@ src/ESP/sendMsgs/org/openuri/www/Bcdc_elr.class -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elrLocator.class -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elrSoap.class -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elrSoapStub.class -text
-src/ESP/setup_esp_env.sh -text
 src/ESP/templates/404.html -text
 src/ESP/templates/admin/base_site.html -text
 src/ESP/templates/admin/index.html -text
