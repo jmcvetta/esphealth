@@ -323,6 +323,7 @@ class onehl7:
         self.msgTp = 'ORU^R01'
         self.sendfacility = institutionName
         self.case = onecase
+
         self.demog = Demog.objects.filter(id=self.case.caseDemog_id)[0]
 
 

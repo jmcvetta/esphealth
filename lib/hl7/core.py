@@ -1,83 +1,83 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 import datetime
+from copy import deepcopy
 
-
+ENCODING = '^~\&'
+VERSION = '2.3.1'
 EMPTY = ''
 
-def mark_subsequences(seq):
-    '''For a given sequence, we want to put find child elements that
-    are sequences themselves. These elements receive a subsequence_num
-    attribute.'''
+
+import pdb
+
+class Field(object):
+    def __init__(self, name, *values, **kw):
+        self.name = name
+        default_value = str(kw.get('default', EMPTY))
+        self.value = '^'.join([str(v) for v in values]) or default_value
+
+    def __repr__(self):
+        return self.value
+
+    def __str__(self):
+        return self.value
+
+    def __cmp__(self, value):
+        '''
+        From python doc: object.__cmp__(self, other) Should return a
+        negative integer if self < other, zero if self == other, a
+        positive integer if self > other.  Considering we are
+        interested in the value of the field, that's what we compare
+        with.
+        '''
+        if self.value == value:
+            return 0
+        elif self.value > value:
+            return 1
+        else:
+            return -1
+
+class Segment():
+    Fields = []
+    def __init__(self, **kw):
+        fields = dict([(f.name, f) for f in deepcopy(self.__class__.Fields)])
+        
+        for k, v in fields.items():
+            self.__dict__[k] = v
+                   
+        for key, value in kw.items():
+            if key in fields:
+                self.__dict__[key] = value
+
+    def __setattr__(self, name, value):
+        if name in self.__dict__:
+            self.__dict__[name] = value
+        else: raise NameError, '%s Not a valid field for %s' % (
+            name, self.__class__.__name__)
     
 
-class Component(object):
-    def __init__(self, *subcomponents):
-        self.subcomponents = subcomponents
-        
-    def render(self):
-        '^'.join(self.components)
+    def __str__(self):
 
-class ComponentCluster(object):
-    def __init__(self, *components):
-        self.components = components
+        field_names = [f.name for f in self.__class__.Fields]
+        return '|'.join([str(self.__dict__[k]) for k in field_names])
 
-class Segment(object):
-    def __init__(self, *components, **kw):
-        self.key = kw.get('key', None)
-        self.components = components
-        self.fields.insert(0, Component(self.key))
-
-    def render(self, seq_counter=None):
-        return '|'.join([str(x) for x in self.fields])
-
-
-class SegmentGroup(object):
-    def __init__(self, *segments):
-        self.segments = segments
 
         
 class Message(object):
-    def __init__(self, *args, **kw):
-        self.segments = args
-        self.version = kw.get('version', '2.3.1') # Default version
-        self.encoding = kw.get('encoding', '^~\&') # Default encoding
-        self.receiving_facility = kw.get('receiving_facility', None)
-        self.sending_facility = kw.get('sending_facility', None)
-        self.application_type = kw.get('application_type', None)
-        self.accept_type = kw.get('accept_type', None)
-        self.type = kw.get('type', None)
-        self.proc_id = kw.get('proc_id', None)
+    def __init__(self, version=VERSION, encoding=ENCODING):
+        self.version = version
+        self.encoding = encoding
+        self.created_on = datetime.datetime.now()
 
-
-        self.header = Segment(
-            self.encoding, EMPTY, self.sending_facility, EMPTY, 
-            self.receiving_facility, timestamp, EMPTY, self.message_type, 
-            timestamp+self.sending_facility, self.proc_id, self.version, 
-            EMPTY, EMPTY, self.accept_type, self.application_type, 
-            key='MSH'
-            )
-
-
-    def _render_header(self):
-        now = datetime.datetime.now()
-        timestamp = now.isoformat()
-        
-        return '|'.join([
-            ])
-    
-
-    def render(self):
-        return '\n'.join([
-                _render_header(),
-                self.segments])
+    def __str__(self):
+        raise NotImplementedError
     
     
     
     
     
-            
-        
+      
         
         
         

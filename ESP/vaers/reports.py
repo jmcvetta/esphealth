@@ -1,15 +1,10 @@
 import os, sys
 
-PWD = os.path.realpath(__file__)
-PARENT_DIR = os.path.join(PWD, '../')
-if PARENT_DIR not in sys.path:
-    sys.path.append(PARENT_DIR)
-
 import pdb
 import datetime
 
 from utils.utils import output
-from VAERSevents import get_adverse_events
+from VAERSevents import detect_adverse_events
 
 
 def temporal_clustering(out_file=None, **kw):
@@ -21,19 +16,20 @@ def temporal_clustering(out_file=None, **kw):
 
     f = (out_file and open(out_file, 'w')) or None
       
-    for ev in get_adverse_events(detect_only='fever', 
-                                 start_date=start_date,
-                                 end_date=end_date):
+    for ev in detect_adverse_events(detect_only='fever', 
+                                    start_date=start_date,
+                                    end_date=end_date):
 
-        imm = ev.trigger_immunization
+        imm = ev.immunization
         imm.date = datetime.datetime.strptime(imm.ImmDate, '%Y%m%d')
+        encounter_date = datetime.datetime.strptime(ev.encounter.EncEncounter_Date, '%Y%m%d')
 
-        days_to_event = (ev.encounter.date - imm.date).days
+        days_to_event = (encounter_date - imm.date).days
 
         output('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
                 imm.ImmRecId , 
                 imm.date.strftime('%m/%d/%Y'), 
-                ev.encounter.date.strftime('%m/%d/%Y'), 
+                encounter_date.strftime('%m/%d/%Y'), 
                 days_to_event, 
                 imm.ImmName, ev.name, 
                 ev.patient.getAge(), ev.patient.DemogGender

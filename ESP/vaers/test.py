@@ -2,24 +2,25 @@ import os, sys
 import unittest
 import datetime
 import random
+import pdb
 
-
-sys.path.append('../')
-import settings
-
+sys.path.append(os.path.realpath('..'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from esp.models import Demog, Immunization
 
+from esp.models import Demog, Immunization
+from vaers.models import AdverseEvent
 
 import mockData
 import rules
-
+import diagnostics
 import VAERSevents
-from VAERSevents import match_icd9_expression
-
 import reports
 
+
+from diagnostics import match_icd9_expression
 from transmitter import make_vaers_report
+
+import hl7_report
 
 NOW = datetime.datetime.now()
 ONE_YEAR = datetime.timedelta(days=365)
@@ -33,12 +34,8 @@ POPULATION_TO_IMMUNIZE = 1000
 
 
 
-        
      
-class TestIcd9DiagnosisIdentification(unittest.TestCase):       
-    def setUp(self):
-        self.diagnosis_codes = VAERSevents.diagnosis_codes()
-        
+class TestIcd9DiagnosisIdentification(unittest.TestCase):
     def testRegularCodes(self):
         diagnostics = rules.VAERS_DIAGNOSTICS
         bells_palsy_code = '351.0'
@@ -58,8 +55,8 @@ class TestIcd9CodeMatching(unittest.TestCase):
     def testRegexpMatching(self):
         self.assert_(match_icd9_expression('350.0', '350*'))
         self.assert_(match_icd9_expression('350.8', '350*'))
-        self.assertRaises(ValueError, match_icd9_expression, '350', '350*')
         self.assert_(match_icd9_expression('350.9', '350*'))
+        self.failIf(match_icd9_expression('351.00', '350*'))
 
 
     def testIntervalMatching(self):
@@ -107,26 +104,37 @@ class TestReports(unittest.TestCase):
 
 class TestVAERS(unittest.TestCase):
     def setUp(self):
-        self.start_date = NOW - ONE_MONTH 
-        self.end_date = NOW - ONE_MONTH + ONE_WEEK
+        self.start_date = NOW - ONE_YEAR
+        self.end_date = NOW - ONE_YEAR + ONE_WEEK
 
-        self.events = VAERSevents.get_adverse_events(
-            start_date=start_date,
-            end_date=end_date
+        self.fever_events = VAERSevents.record_adverse_events(
+            start_date=self.start_date,
+            end_date=self.end_date,
+            detect_only='fever'
             )
         
-    def testDiagnosisDetection(self):
-        events = VAERSevents.get_adverse_events(
-            start_date=start_date,
-            end_date=end_date, 
+        self.diagnostics_events = VAERSevents.detect_adverse_events(
+            start_date=self.start_date,
+            end_date=self.end_date,
             detect_only='diagnosis'
             )
         
-        print '\nchecking vaers based on icd9 codes\n'
-        for event in events:
-            print event.encounter
-            print event.trigger_immunization
-            print event.name
+
+        self.events = self.fever_events + self.diagnostics_events
+
+        
+
+    def testFeverEventDetection(self):
+        self.failIf(len(self.fever_events) == 0)
+
+    def testDiagnosisDetection(self):
+        self.failIf(len(self.diagnostics_events) == 0)
+        
+
+    def testVaersRecord(self):
+        self.failIf(len(self.events) == 0)
+        for ev in self.events:
+            ev.save()
 
 
 class TestHL7Emitter(unittest.TestCase):
@@ -156,20 +164,36 @@ class TestHL7Emitter(unittest.TestCase):
         msg = make_vaers_report(report)
 
         print msg
+
+
+
+class TestHL7Reporter(unittest.TestCase):
+    def setUp(self):
+        self.latest_events = AdverseEvent.objects.order_by('-last_updated')[:10]
+        patients = [ev.patient for ev in self.latest_events]
+        self.patient = random.choice(patients)
+
+
+    def testHasEventsToReport(self):
+        self.assert_(self.latest_events)
+        
+    def testHasPatient(self):
+        self.assert_(self.patient)
+        
+    def testVaersReport(self):
+        for event in self.latest_events:
+            report = hl7_report.make_report(event)
+            self.assert_(report, 'Report is empty')
+
+
+
+                                     
     
             
         
 
-
-
-
-
-
-
-
-
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestHL7Emitter)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestHL7Reporter)
     unittest.TextTestRunner(verbosity=2).run(suite)
 
 

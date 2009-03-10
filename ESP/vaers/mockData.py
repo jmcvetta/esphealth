@@ -2,7 +2,7 @@ import os, sys
 import random
 import datetime
 
-sys.path.append('../')
+sys.path.append(os.path.realpath('..'))
 import settings
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'

@@ -7,7 +7,7 @@ import traceback
 import smtplib
 import random
 
-sys.path.append('../')
+sys.path.append(os.path.realpath('..'))
 import settings
 
 from esp.models import *
