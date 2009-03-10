@@ -31,6 +31,8 @@ import datetime
 from django.db import models
 from django.db.models import Q
 from django.contrib.auth.models import User 
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes import generic
 
 
 from ESP.esp import choices
@@ -440,6 +442,34 @@ class Demog(models.Model):
         return age
 
 
+#===============================================================================
+#
+#--- ~~~ Heuristics ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+class Heuristic_Event(models.Model):
+    '''
+    An interesting medical event
+    '''
+    event_name = models.CharField(max_length=127, null=False, blank=False, db_index=True)
+    date = models.DateField(blank=False, db_index=True)
+    patient = models.ForeignKey(Demog, blank=False, db_index=True)
+    #
+    # Standard generic relation support
+    #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
+    #
+    content_type = models.ForeignKey(ContentType, db_index=True)
+    object_id = models.PositiveIntegerField(db_index=True)
+    content_object = generic.GenericForeignKey('content_type', 'object_id')
+    
+    class Meta:
+        unique_together = ['event_name', 'date', 'patient', 'content_type', 'object_id']
+    
+    def __str__(self):
+        return '%-15s %-12s Patient #%-20s' % (self.event_name, self.date, self.patient.id)
+
+
 
 
 ###################################
@@ -733,6 +763,8 @@ class Rx(models.Model):
     RxEndDate = models.CharField('End Date',max_length=20,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+    # Heuristics
+    heuristics = generic.GenericRelation(Heuristic_Event)
             
     def getNDC(self):
         """translate CPT code
@@ -801,35 +833,51 @@ class LxManager(models.Manager):
 
 class Lx(models.Model):
     LxPatient = models.ForeignKey(Demog) 
-    LxMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,blank=True,null=True,db_index=True)
-    LxOrder_Id_Num = models.CharField('Order Id #',max_length=20,blank=True,null=True)
-    LxTest_Code_CPT = models.CharField('Test Code (CPT)',max_length=20,blank=True,null=True,db_index=True)
-    LxTest_Code_CPT_mod = models.CharField('Test Code (CPT) Modifier',max_length=20,blank=True,null=True)
-    LxOrderDate = models.CharField('Order Date',max_length=20,blank=True,null=True)
-    LxOrderType = models.CharField('Order Type',max_length=10,blank=True,null=True)   
-    LxOrdering_Provider = models.ForeignKey(Provider,blank=True,null=True) 
-    LxDate_of_result =models.CharField('Date of result',max_length=20,blank=True,null=True)  
-    LxHVMA_Internal_Accession_number = models.CharField('HVMA Internal Accession number',max_length=50,blank=True,null=True)
-    LxComponent = models.CharField('Component',max_length=20,blank=True,null=True,db_index=True)
-    LxComponentName = models.CharField('Component Name',max_length=200,blank=True,null=True, db_index=True)
-    LxTest_results = models.TextField('Test results',max_length=2000,blank=True,null=True,db_index=True)
-    LxNormalAbnormal_Flag = models.CharField('Normal/Abnormal Flag',max_length=20,blank=True,null=True,db_index=True)
-    LxReference_Low = models.CharField('Reference Low',max_length=100,blank=True,null=True)
-    LxReference_High = models.CharField('Reference High',max_length=100,blank=True,null=True)
-    LxReference_Unit = models.CharField('Reference Unit',max_length=100,blank=True,null=True)
-    LxTest_status = models.CharField('Test status',max_length=50,blank=True,null=True)
-    LxComment = models.TextField('Comments', blank=True, null=True,)
-    LxImpression = models.TextField('Impression for Imaging only',max_length=2000,blank=True,null=True)
-    LxLoinc = models.CharField('LOINC code',max_length=20,blank=True,null=True,db_index=True)
-    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    LxMedical_Record_Number = models.CharField('Medical Record Number', max_length=20, blank=True, null=True, db_index=True)
+    LxOrder_Id_Num = models.CharField('Order Id #', max_length=20, blank=True, null=True)
+    LxTest_Code_CPT = models.CharField('Test Code (CPT)', max_length=20, blank=True, null=True, db_index=True)
+    LxTest_Code_CPT_mod = models.CharField('Test Code (CPT) Modifier', max_length=20, blank=True, null=True)
+    LxOrderDate = models.CharField('Order Date', max_length=20, blank=True, null=True)
+    LxOrderType = models.CharField('Order Type', max_length=10, blank=True, null=True)   
+    LxOrdering_Provider = models.ForeignKey(Provider, blank=True, null=True) 
+    LxDate_of_result = models.CharField('Date of result', max_length=20, blank=True, null=True, db_index=True)  
+    LxHVMA_Internal_Accession_number = models.CharField('HVMA Internal Accession number', max_length=50, blank=True, null=True)
+    LxComponent = models.CharField('Component', max_length=20, blank=True, null=True, db_index=True)
+    LxComponentName = models.CharField('Component Name', max_length=200, blank=True, null=True,  db_index=True)
+    LxTest_results = models.TextField('Test results', max_length=2000, blank=True, null=True, db_index=True)
+    LxNormalAbnormal_Flag = models.CharField('Normal/Abnormal Flag', max_length=20, blank=True, null=True, db_index=True)
+    LxReference_Low = models.CharField('Reference Low', max_length=100, blank=True, null=True, db_index=True)
+    LxReference_High = models.CharField('Reference High', max_length=100, blank=True, null=True, db_index=True)
+    LxReference_Unit = models.CharField('Reference Unit', max_length=100, blank=True, null=True)
+    LxTest_status = models.CharField('Test status', max_length=50, blank=True, null=True)
+    LxComment = models.TextField('Comments',  blank=True,  null=True, )
+    LxImpression = models.TextField('Impression for Imaging only', max_length=2000, blank=True, null=True)
+    LxLoinc = models.CharField('LOINC code', max_length=20, blank=True, null=True, db_index=True)
+    lastUpDate = models.DateTimeField('Last Updated date', auto_now=True, db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
     #
     # New fields
     #
     ext_code = models.CharField(max_length=100, blank=True, null=True)
     loinc = models.ForeignKey(Loinc, blank=True, null=True)
+    # Heuristics
+    heuristics = generic.GenericRelation(Heuristic_Event)
     # Use custom manager
     objects = LxManager()
+    
+    #
+    # Aliases
+    #
+    def _get_patient(self):
+        return self.LxPatient
+    patient = property(_get_patient)
+    
+    def _get_date(self):
+        '''
+        Return a datetime.date object representing the date of lab result
+        '''
+        return util.date_from_str(self.LxDate_of_result)
+    date = property(_get_date)
     
     def _get_ext_test_code(self):
         '''
@@ -854,14 +902,6 @@ class Lx(models.Model):
         return self.LxComponentName
     ext_test_name = property(_get_ext_test_name)
     
-    def _get_date(self):
-        '''
-        Return a datetime.date object representing the date of lab result
-        '''
-        return util.date_from_str(self.LxDate_of_result)
-    date = property(_get_date)
-    
-            
     def getCPT(self):
         """translate CPT code
         """
@@ -890,7 +930,7 @@ class Lx(models.Model):
     
     def  __unicode__(self):
         #return u"%-10s %-50s %-12s PID %s" % (self.LxOrder_Id_Num, self.getCPT(), self.LxOrderDate, self.LxPatient.DemogPatient_Identifier, )
-        return u'Ext ID: %-12s PID: %-12s LOINC: %-10s Date: %-10s' % (self.LxOrder_Id_Num, self.LxPatient.DemogPatient_Identifier, self.LxLoinc, util.date_from_str(self.LxDate_of_result))
+        return u'Lab Result | LOINC: %-10s | Patient: #%-12s | Date: %-10s' % (self.LxLoinc, self.LxPatient.id, util.date_from_str(self.LxDate_of_result))
     
 
 class Lxo(models.Model):
@@ -899,6 +939,8 @@ class Lxo(models.Model):
     LxoOrder_Id_Num = models.CharField('Order Id #',max_length=20,blank=True,null=True)
     LxoTest_ordered = models.CharField('Test ordered',max_length=20,blank=True,null=True)
     LxoHVMA_accession_number = models.CharField('HVMA accession number',max_length=20,blank=True,null=True)
+    # Heuristics
+    heuristics = generic.GenericRelation(Heuristic_Event)
 
     def  __unicode__(self):
         return u"%s %s %s %s" % (self.LxoPatient_Identifier,self.LxoMedical_Record_Number,self.LxoOrder_Id_Num,self.LxoTest_ordered)
@@ -931,6 +973,8 @@ class Enc(models.Model):
     EncPeakFlow = models.CharField('Peak Flow',max_length=50,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+    # Heuristics
+    heuristics = generic.GenericRelation(Heuristic_Event)
 
     def _get_enc_date(self):
         '''
@@ -1031,6 +1075,8 @@ class Immunization(models.Model):
     ImmRecId = models.CharField('Immunization Record Id',max_length=200,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+    # Heuristics
+    heuristics = generic.GenericRelation(Heuristic_Event)
             
 
     def  __unicode__(self):
