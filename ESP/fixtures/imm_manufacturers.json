@@ -1,0 +1,631 @@
+[
+ {
+   "pk":1,
+     "model":"esp.ImmunizationManufacturer",
+     "fields": {
+     "code":"AB",
+       "full_name":"Abbott Laboratories (includes Ross Products Division)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+ 
+ {
+   "pk":2,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"ACA",
+       "full_name":"Acambis, Inc",
+       "active":true,
+       "use_instead":null
+       }
+ },
+ 
+ {
+   "pk":3,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"AD",
+       "full_name":"Adams Laboratories, Inc.",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":4,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"ALP",
+       "full_name":"Alpha Therapeutic Corporation",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":5,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"AR",
+       "full_name":"Armour",
+       "active":false,
+       "use_instead":6
+       }
+ },
+
+ {
+   "pk":6,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"AVB",
+       "full_name":"Aventis Behring L.L.C. (formerly Centeon L.L.C.; includes Armour Pharmaceutical Company)",
+       "active":true,
+       "use_instead":55
+       }
+ },
+
+ {
+   "pk":7,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"AVI",
+       "full_name":"Aviron",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ 
+
+ {
+   "pk":8,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"BA",
+       "full_name":"Baxter Healthcare Corporation",
+       "active":false,
+       "use_instead":9
+       }
+ },
+
+ {
+   "pk":9,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"BAH",
+       "full_name":"Baxter Healthcare Corporation (includes Hyland Immuno, Immuno International AG, and North American Vaccine, Inc.)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":10,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"BAY",
+       "full_name":"Bayer Corporation (includes Miles, Inc. and Cutter Laboratories)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":11,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"BP",
+       "full_name":"Berna Products",
+       "active":false,
+       "use_instead":12
+       }
+ },
+
+ {
+   "pk":12,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"BPC",
+       "full_name":"Berna Products Corporation (includes Swiss Serum and Vaccine Institute Berne)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":13,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"MIP",
+       "full_name":"Bioport Corporation (formerly Michigan Biolologic Products Institute)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":14,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"CSL",
+       "full_name":"CSL Biotherapies, Inc.",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":15,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"CNJ",
+       "full_name":"Cangene Corporation",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":16,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"CMP",
+       "full_name":"Celltech Medeva Pharmaceuticals",
+       "active":false,
+       "use_instead":38
+       }
+ },
+
+ {
+   "pk":17,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"CEN",
+       "full_name":"Centeon L.L.C.",
+       "active":false,
+       "use_instead":6
+       }
+ },
+
+ {
+   "pk":18,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"CHI",
+       "full_name":"Chiron Corporation  includes PowderJect Pharmaceuticals, Celltech Medeva Vaccines and Evans Medical Limited",
+       "active":false,
+       "use_instead":38
+       }
+ },
+
+ {
+   "pk":19,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"CON",
+       "full_name":"Connaught",
+       "active":false,
+       "use_instead":45
+       }
+ },
+
+ {
+   "pk":20,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"DVC",
+       "full_name":"DynPort Vaccine Company, LLC",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":21,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"EVN",
+       "full_name":"Evans Medical Limited",
+       "active":false,
+       "use_instead":38
+       }
+ },
+
+ {
+   "pk":22,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"GEO",
+       "full_name":"GeoVax Labs, Inc.",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":23,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"SKB",
+       "full_name":"GlaxoSmithKline (formerly SmithKline Beecham; includes SmithKline Beecham and Glaxo Welcome)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":24,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"GRE",
+       "full_name":"Greer Laboratories, Inc.",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":25,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"IAG",
+       "full_name":"Immuno International AG",
+       "active":false,
+       "use_instead":9
+       }
+ },
+
+ {
+   "pk":26,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"IUS",
+       "full_name":"Immuno-U.S., Inc.",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":27,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"KGC",
+       "full_name":"Korea Green Cross Corporation",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":28,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"LED",
+       "full_name":"Lederle",
+       "active":false,
+       "use_instead":54
+       }
+ },
+
+ {
+   "pk":29,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"MBL",
+       "full_name":"Massachusetts Biologic Laboratories (formerly Massachusetts Public Health Biologic Laboratories)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":30,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"MA",
+       "full_name":"Massachusetts Public Health Biologic Laboratories",
+       "active":false,
+       "use_instead":29
+       }
+ },
+
+ {
+   "pk":31,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"MED",
+       "full_name":"MedImmune, Inc.",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":32,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"MSD",
+       "full_name":"Merck & Co., Inc.",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":33,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"IM",
+       "full_name":"Merieux",
+       "active":false,
+       "use_instead":45
+       }
+ },
+
+ {
+   "pk":34,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"MIL",
+       "full_name":"Miles",
+       "active":false,
+       "use_instead":10
+       }
+ },
+
+ {
+   "pk":35,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"NAB",
+       "full_name":"NABI (formerly North American Biologicals, Inc.)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":36,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"NYB",
+       "full_name":"New York Blood Center",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":37,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"NAV",
+       "full_name":"North American Vaccine, Inc.",
+       "active":false,
+       "use_instead":9
+       }
+ },
+
+ {
+   "pk":38,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"NOV",
+       "full_name":"Novartis Pharmaceutical Corporation (includes Chiron, PowderJect Pharmaceuticals, Celltech Medeva Vaccines and Evans Limited, Ciba-Geigy Limited and Sandoz Limited)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":39,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"NVX",
+       "full_name":"Novavax, Inc.",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":40,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"OTC",
+       "full_name":"Organon Teknika Corporation",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":41,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"ORT",
+       "full_name":"Ortho-Clinical Diagnostics (formerly Ortho Diagnostic Systems, Inc.)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":42,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"PD",
+       "full_name":"Parkedale Pharmaceuticals (formerly Parke-Davis)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":43,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"PWJ",
+       "full_name":"PowderJect Pharmaceuticals (includes Celltech Medeva Vaccines and Evans Medical Limited)",
+       "active":false,
+       "use_instead":38
+       }
+ },
+
+ {
+   "pk":44,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"PRX",
+       "full_name":"Praxis Biologics",
+       "active":false,
+       "use_instead":54
+       }
+ },
+
+ {
+   "pk":45,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"PMC",
+       "full_name":"sanofi pasteur (formerly Aventis Pasteur, Pasteur Merieux Connaught; includes Connaught Laboratories and Pasteur Merieux)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":46,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"JPN",
+       "full_name":"The Research Foundation for Microbial Diseases of Osaka University (BIKEN)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":47,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"SCL",
+       "full_name":"Sclavo, Inc.",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":48,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"SOL",
+       "full_name":"Solvay Pharmaceuticals",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":49,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"SI",
+       "full_name":"Swiss Serum and Vaccine Inst.",
+       "active":false,
+       "use_instead":12
+       }
+ },
+
+ {
+   "pk":50,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"TAL",
+       "full_name":"Talecris Biotherapeutics (includes Bayer Biologicals)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":51,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"USA",
+       "full_name":"United States Army Medical Research and Material Command",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":52,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"VXG",
+       "full_name":"VaxGen",
+       "active":true,
+       "use_instead":null
+       }
+ },
+
+ {
+   "pk":53,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"WA",
+       "full_name":"Wyeth-Ayerst",
+       "active":false,
+       "use_instead":54
+       }
+ },
+
+ {
+   "pk":54,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"WAL",
+     "full_name":"Wyeth-Ayerst (includes Wyeth-Lederle Vaccines and Pediatrics, Wyeth Laboratories, Lederle Laboratories, and Praxis Biologics)",
+     "active":true,
+     "use_instead":null
+     }
+ },
+
+ {
+   "pk":55,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"ZLB",
+       "full_name":"ZLB Behring (includes Aventis Behring and Armour Pharmaceutical Company)",
+       "active":true,
+       "use_instead":null
+       }
+ },
+ 
+ {
+   "pk":56,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"OTH",
+       "full_name":"Other manufacturer",
+       "active":true,
+       "use_instead":null
+       }
+ },
+ 
+ {
+   "pk":57,
+   "model":"esp.ImmunizationManufacturer",
+     "fields":{
+     "code":"UNK",
+       "full_name":"Unknown manufacturer",
+       "active":true,
+       "use_instead":null
+       }
+ }
+ 
+]

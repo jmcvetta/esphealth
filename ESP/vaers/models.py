@@ -43,6 +43,8 @@ class AdverseEvent(models.Model):
     encounter = models.ForeignKey(Enc)
     matching_rule_explain = models.CharField(max_length=200)
     last_updated = models.DateTimeField(auto_now = True)
+
+
     
 
     

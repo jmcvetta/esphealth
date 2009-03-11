@@ -1,21 +1,14 @@
 import os, sys
-sys.path.append('../')
+sys.path.append(os.path.realpath('..'))
 
 import datetime, random
 import string
 
-
-# FIXME: some utility functions are not able to see the ESP module
-# For now, We need it, so we add the parent folder to the path.
-# In the future, this should not be necessary.
 import settings
-sys.path.append(os.path.join(settings.TOPDIR, '../'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-from esp.models import Demog, Immunization, Enc
+from esp.models import Demog, Immunization, Enc, Provider
 from utils import utils
-
-ONE_WEEK = 7 # a week.
 
 # For testing
 FIRST_NAMES = ['Bill', 'Mary', 'Jim', 'Donna', 'Patricia', 
@@ -45,8 +38,8 @@ VACCINES = {
 
 
 
-def create_demog():
-    id = utils.random_string(length=20)
+def make_fake_demog():
+    code = utils.random_string(length=20)
     medical_record_id = utils.random_string(length=20)
     last_name = random.choice(LAST_NAMES)
     first_name = random.choice(FIRST_NAMES)
@@ -60,7 +53,7 @@ def create_demog():
     gender = 'M' if random.random() <= 0.49 else 'F'
     
     d = Demog(
-        DemogPatient_Identifier=id,
+        DemogPatient_Identifier=code,
         DemogMedical_Record_Number=medical_record_id,
         DemogFirst_Name = first_name,
         DemogLast_Name = last_name,
@@ -73,14 +66,48 @@ def create_demog():
     
     return d
 
+def make_fake_provider():
+    id = utils.random_string(length=10)
+    last_name = random.choice(LAST_NAMES)
+    first_name = random.choice(FIRST_NAMES)
+    middle_initial = random.choice(string.uppercase)
+    title = random.choice(['Dr.', 'M.D', 'Ph.D', ''])
+    address = ' '.join([str(random.randrange(1000)), 
+                        random.choice(SITES), 
+                        random.choice(['Street', 'Ave', 'Rd', 'Lane'])
+                        ])
+    zip_code = str(10000 + random.randrange(90000))
+    phone = utils.random_phone_number()
 
-def create_immunization(patient=None, force_recent=False):
+    department = 'MCIR VIM LHD Site' # I really need to check what
+                                     # kind of value should go here
+    
+    prov = Provider(
+        provCode=id,
+        provLast_Name=last_name,
+        provFirst_Name=first_name,
+        provMiddle_Initial=middle_initial,
+        provTitle=title,
+        provPrimary_Dept = department,
+        provPrimary_Dept_Address_1 = address,
+        provPrimary_Dept_Zip = zip_code,
+        provTelAreacode=phone.split('-')[0],
+        provTel=phone,
+        )
+
+    prov.save()
+
+    return prov
+        
+
+
+
+def make_fake_immunization(patient=None, force_recent=False):
     vaccine_type = random.choice(VACCINES.keys())
     vaccine_name = VACCINES[vaccine_type]
     now = datetime.datetime.now()
-    days_ago = ONE_WEEK if force_recent else 1000
-    date = now - datetime.timedelta(days=random.randrange(0, days_ago), 
-                                    minutes=random.randrange(0, 2500)) 
+    days_ago = 0 if force_recent else random.randrange(0, 1000)
+    date = now - datetime.timedelta(days=days_ago, minutes=random.randrange(0, 2500)) 
     
     # if patient is not defined, we get a random one from the database.
     patient = patient or Demog.manager.random() 
@@ -92,28 +119,24 @@ def create_immunization(patient=None, force_recent=False):
     patient_imm = Immunization.objects.filter(ImmPatient=patient)
     imm_record_id = patient_imm[0].ImmRecId if patient_imm else utils.random_string(length=100)
         
-
+       
     i = Immunization(
         ImmPatient=patient,
         ImmType = vaccine_type,
         ImmName = vaccine_name,
         ImmDate = date,
-        date = date,
         ImmRecId = imm_record_id
         )
         
     i.save()
     return i
         
-def create_encounter(patient, force_recent=False, **conditions):
-    if conditions.has_key('date'):
-        date = conditions['date']
-    else:
-        # make a date for the encounter
-        now = datetime.datetime.now()
-        days_ago = ONE_WEEK if force_recent else 1000
-        date = now - datetime.timedelta(days=random.randrange(0, days_ago), 
-                                        minutes=random.randrange(0, 2000))
+def make_fake_encounter(patient, force_recent=False, **conditions):
+    # make a date for the encounter
+    now = datetime.datetime.now()
+    days_ago = 0 if force_recent else random.randrange(0, 1000)
+    date = now - datetime.timedelta(days=days_ago, 
+                                    minutes=random.randrange(0, 2000))
 
     # Conditions that are to be reported in encounter.
     # Magic Numbers: default temperature oscilate between 97 and 98 degrees.
@@ -136,18 +159,17 @@ def create_encounter(patient, force_recent=False, **conditions):
     return e
 
 
+    
+
+
 def create_patient_population(size):
     for i in xrange(size):
-        create_demog()
+        make_fake_demog()
+
+
 
 
 if __name__ == "__main__":
 
-    patients = [create_demog() for p in xrange(100)]
-    for patient in patients:
-        create_immunization(patient)
-        create_encounter(patient)
-
-
-            
-    
+    for i in xrange(1000):
+        make_fake_provider()

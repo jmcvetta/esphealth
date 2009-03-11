@@ -169,7 +169,7 @@ class TestHL7Emitter(unittest.TestCase):
 
 class TestHL7Reporter(unittest.TestCase):
     def setUp(self):
-        self.latest_events = AdverseEvent.objects.order_by('-last_updated')[:10]
+        self.latest_events = AdverseEvent.objects.order_by('-last_updated')[:50]
         patients = [ev.patient for ev in self.latest_events]
         self.patient = random.choice(patients)
 

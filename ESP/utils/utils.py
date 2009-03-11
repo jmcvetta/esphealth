@@ -38,6 +38,14 @@ def random_string(length=10):
     chars = string.digits + string.letters
     return ''.join([random.choice(chars) for x in xrange(length)])
 
+def random_phone_number():
+    area_code = str(400 + random.randrange(500))
+    prefix = str(100 + random.randrange(900))
+    suffix = '%04d' % str(+ random.randrange(9000))
+    
+    return '-'.join([area_code, prefix, suffix])
+
+
 
 
 filenlist = ['epicmem.esp.','epicpro.esp.','epicvis.esp.','epicord.esp.','epicres.esp.','epicmed.esp.','epicimm.esp.']

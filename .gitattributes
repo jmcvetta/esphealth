@@ -1,8 +1,9 @@
 * text=auto !eol
 /.svnignore -text
 ESP/esp/admin.py -text
+ESP/fixtures/imm_manufacturers.json -text
+ESP/fixtures/vaccines.json -text
 ESP/localsettings.py.sample -text
-ESP/management.py -text
 ESP/sendMsgs/bcdc.jar -text
 ESP/sendMsgs/org/openuri/www/Bcdc_elr.class -text
 ESP/sendMsgs/org/openuri/www/Bcdc_elrLocator.class -text

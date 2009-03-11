@@ -976,6 +976,23 @@ class VAERSadditions(models.Model):
         return u"%s" % (self.VAERPatient.DemogPatient_Identifier)
 
 
+
+class Vaccine(models.Model):
+    code = models.CharField(max_length=5, unique=True)
+    short_name = models.CharField(max_length=60)
+    name = models.CharField(max_length=300)
+    
+
+class ImmunizationManufacturer(models.Model):
+    code = models.CharField(max_length=3)
+    full_name = models.CharField(max_length=60)
+    active = models.BooleanField(default=True)
+    use_instead = models.ForeignKey('self', null=True)
+    
+
+
+
+
                                                             
 
 ###################################

@@ -16,10 +16,17 @@ if LIB_DIR not in sys.path: sys.path.append(LIB_DIR)
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from esp.models import *
+from esp.models import Vaccine, ImmunizationManufacturer
 
+from hl7.core import Field
 from hl7 import segments
 
+from rules import VACCINE_MAPPING, MANUFACTURER_MAPPING
+
 import time, datetime
+
+UNKNOWN_VACCINE = Vaccine.objects.get(short_name='unknown')
+UNKNOWN_MANUFACTURER = ImmunizationManufacturer.objects.get(code='UNK')
 
 
 
@@ -58,7 +65,7 @@ obr_dict = {
 ####obx_dict = {(obrseq, obxseq): [datatype, [list of observationID], subid], ...}
 obx_dict = {
     (1,1):  ['NM',['21612-7', 'Reported Patient Age', 'LN'],''],
-    (1,2):  ['TS',['30947-6', 'Date form compelted', 'LN'],''],
+    (1,2):  ['TS',['30947-6', 'Date form completed', 'LN'],''],
     (1,3):  ['FT',['30948-4', 'Vaccination adverse events and treatment, if any','LN'],'1'],
     (1,4):  ['CE',['30949-2','Vaccination adverse event outcome','LN'],'1'],
     (1,5):  ['CE',['30949-2','Vaccination adverse event outcome','LN'],'1'],
@@ -239,7 +246,24 @@ class onehl7:
 
     
     def makeORC(self, provider):
-        return str(segments.ORC()) + '\n'
+        orc = segments.ORC()
+        orc.control = 'RE'
+        orc.ordering_provider = Field('ordering_provider', 
+                                      provider.provCode, provider.provTitle,
+                                      provider.provFirst_Name, provider.provMiddle_Initial)
+        orc.enterer_location = Field('enterer_location', 
+                                     provider.provPrimary_Dept_Address_1,
+                                     provider.provPrimary_Dept_City,
+                                     provider.provPrimary_Dept_State,
+                                     provider.provPrimary_Dept_Zip)
+        orc.callback_phone = Field('callback_phone',
+                                   provider.provTel,
+                                   'WPN'
+                                   )
+
+        
+        
+        return str(orc) + '\n'
             
 
 
@@ -279,26 +303,17 @@ class onehl7:
 
 
     def buildOBX_data_1(self):
-        # OBX
+
         age = self.demog.getAge()
-        if type(age) != type(2):
+        if type(age) is int:
+            unit = getOnestr('^',['yr', 'year', 'ANSI'])
+            value = age
+        else:
             unit = getOnestr('^',['mo', 'month', 'ANSI'])
             value = age.split()[0]
-        else:
-            unit = ''
-            value = age
 
-
-
-
-        # temperature
-        #encs = Enc.objects.extra(where=['id IN (%s)' %  self.case.caseEncID])
-
-        # p = re.compile('\s+')
-        #temperature_str =p.sub(' ', self.case.caseComments)
 
         temperature_str = self.case.encounter.EncTemperature
-
 
         # key = the sequence of OBX
         data_dict={
@@ -325,9 +340,15 @@ class onehl7:
         obxseq_l = range(1, 6*len(imms), 6)
         for indx in range(len(imms)):
             imm = imms[indx]
+            vaccine = VACCINE_MAPPING.get(imm.ImmName, UNKNOWN_VACCINE)
+            manuf = MANUFACTURER_MAPPING.get(imm.ImmManuf, 
+                                             UNKNOWN_MANUFACTURER)
+
+            vaccine_info = Field('value', vaccine.code, vaccine.name, 'CVX')
+            manuf_info = Field('value', manuf.code, manuf.full_name, 'MVX')
             setid_start = obxseq_l[indx]
-            data_dict[setid_start] = (imm.ImmName,'')
-            data_dict[setid_start+1] = (imm.ImmManuf,'')
+            data_dict[setid_start] =  (str(vaccine_info), '')
+            data_dict[setid_start+1] = (str(manuf_info), '')
             data_dict[setid_start+2] = (imm.ImmLot,'')
             data_dict[setid_start+3] = ('','')
             data_dict[setid_start+4] = ('','')
@@ -408,6 +429,7 @@ class onehl7:
 
     ###################################
     def makeOBXs(self, obrseq, totalobxseq, data_dict):
+
         returnseg=''
         repeats_seq = len(data_dict)/totalobxseq
 
@@ -417,10 +439,12 @@ class onehl7:
                 realindx = totalobxseq*(i-1)+obxseq
                 (value, unit) = data_dict[realindx]
 
-        obx = self.makeOBX(obxseq=realindx, datatp=datatp,
+                obx = self.makeOBX(obxseq=realindx, datatp=datatp,
                            obsID=getOnestr('^',obsIDl), subid=subid,
                            value=value,unit=unit)
-        returnseg =returnseg+obx
+
+                returnseg =returnseg+obx
+
         return returnseg
 
 
@@ -431,7 +455,7 @@ def make_report(event):
     testDoc = onehl7(event)  # 1946 is esp_demog.id
     msh = testDoc.makeMSH()
     pid =  testDoc.makePID()
-    orc = testDoc.makeORC('test')
+    orc = testDoc.makeORC(event.patient.DemogProvider)
     finalstr = msh + pid + orc
             
     # ORC = Provider who orders vaccination

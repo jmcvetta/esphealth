@@ -1,0 +1,1256 @@
+[
+		
+ {
+   "pk":1,
+     "model":"esp.Vaccine",
+     "fields": {
+     "code":"54",
+       "short_name":"adenovirus, type 4",
+       "name":"adenovirus vaccine, type 4, live, oral"
+       }
+ },
+ 
+ {
+   "pk":2,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"55",
+       "short_name":"adenovirus, type 7",
+       "name":"adenovirus vaccine, type 7, live, oral"
+       }
+ },
+ 
+ {
+   "pk":3,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"82",
+       "short_name":"adenovirus, NOS1",
+       "name":"adenovirus vaccine, NOS"
+       }
+ },
+ 
+ {
+   "pk":4,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"24",
+       "short_name":"anthrax",
+       "name":"anthrax vaccine"
+       }
+ },
+ 
+ {
+   "pk":5,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"19",
+       "short_name":"BCG",
+       "name":"Bacillus Calmette-Guerin vaccine"
+       }
+ },
+ 
+ {
+   "pk":6,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"27",
+       "short_name":"botulinum antitoxin",
+       "name":"botulinum antitoxin"
+       }
+ },
+ 
+ {
+   "pk":7,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"26",
+       "short_name":"cholera",
+       "name":"cholera vaccine"
+       }
+ },
+ 
+ {
+   "pk":8,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"29",
+       "short_name":"CMVIG",
+       "name":"cytomegalovirus immune globulin, intravenous"
+       }
+ },
+ 
+ {
+   "pk":9,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"56",
+       "short_name":"dengue fever",
+       "name":"dengue fever vaccine"
+       }
+ },
+ 
+ {
+   "pk":10,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"12",
+       "short_name":"diphtheria antitoxin",
+       "name":"diphtheria antitoxin"
+       }
+ },
+ 
+ {
+   "pk":11,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"28",
+       "short_name":"DT (pediatric)",
+       "name":"diphtheria and tetanus toxoids, adsorbed for pediatric use"
+       }
+ },
+ 
+ {
+   "pk":12,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"20",
+       "short_name":"DTaP",
+       "name":"diphtheria, tetanus toxoids and acellular pertussis vaccine"
+       }
+ },
+ 
+ {
+   "pk":13,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"106",
+       "short_name":"DTaP, 5 pertussis antigens",
+       "name":"diphtheria, tetanus toxoids and acellular pertussis vaccine, 5 pertussis antigens"
+       }
+ }
+ ,{
+   "pk":14,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"107",
+       "short_name":"DTaP, NOS",
+       "name":"diphtheria, tetanus toxoids and acellular pertussis vaccine, NOS"
+       }
+ }
+ ,{
+   "pk":15,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"110",
+       "short_name":"DTaP-Hep B-IPV",
+       "name":"DTaP-hepatitis B and poliovirus vaccine"
+       }
+ }
+ ,{
+   "pk":16,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"50",
+       "short_name":"DTaP-Hib",
+       "name":"DTaP-Haemophilus influenzae type b conjugate vaccine"
+       }
+ },
+ 
+ {
+   "pk":17,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"120",
+       "short_name":"DTaP-Hib-IPV",
+       "name":"diphtheria, tetanus toxoids and acellular pertussis vaccine, Haemophilus influenzae type b conjugate, and poliovirus vaccine,inactivated (DTaP-Hib-IPV)"
+       }
+ },
+ 
+ {
+   "pk":18,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"130",
+       "short_name":"DTaP-IPV",
+       "name":"Diphtheria, tetanus toxoids and acellular pertussis vaccine, and poliovirus vaccine, inactivated"
+       }
+ },
+ 
+ {
+   "pk":19,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"1",
+       "short_name":"DTP",
+       "name":"diphtheria, tetanus toxoids and pertussis vaccine"
+       }
+ },
+ 
+ {
+   "pk":20,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"22",
+       "short_name":"DTP-Hib",
+       "name":"DTP-Haemophilus influenzae type b conjugate vaccine"
+       }
+ },
+ 
+ {
+   "pk":21,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"102",
+       "short_name":"DTP-Hib-Hep B",
+       "name":"DTP- Haemophilus influenzae type b conjugate and hepatitis b vaccine"
+       }
+ },
+ 
+ {
+   "pk":22,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"57",
+       "short_name":"hantavirus",
+       "name":"hantavirus vaccine"
+       }
+ },
+ 
+ {
+   "pk":23,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"52",
+       "short_name":"Hep A, adult",
+       "name":"hepatitis A vaccine, adult dosage"
+       }
+ },
+ 
+ {
+   "pk":24,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"83",
+       "short_name":"Hep A, ped/adol, 2 dose",
+       "name":"hepatitis A vaccine, pediatric/adolescent dosage, 2 dose schedule"
+       }
+ },
+ 
+ {
+   "pk":25,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"84",
+       "short_name":"Hep A, ped/adol, 3 dose",
+       "name":"hepatitis A vaccine, pediatric/adolescent dosage, 3 dose schedule"
+       }
+ },
+ 
+ {
+   "pk":26,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"31",
+       "short_name":"Hep A, pediatric, NOS",
+       "name":"hepatitis A vaccine, pediatric dosage, NOS"
+       }
+ },
+ 
+ {
+   "pk":27,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"85",
+       "short_name":"Hep A, NOS",
+       "name":"hepatitis A vaccine, NOS"
+       }
+ },
+ 
+ {
+   "pk":28,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"104",
+       "short_name":"Hep A-Hep B",
+       "name":"hepatitis A and hepatitis B vaccine"
+       }
+ },
+ 
+ {
+   "pk":29,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"30",
+       "short_name":"HBIG",
+       "name":"hepatitis B immune globulin"
+       }
+ },
+ 
+ {
+   "pk":30,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"8",
+       "short_name":"Hep B, adolescent or pediatric",
+       "name":"hepatitis B vaccine, pediatric or pediatric/adolescent dosage"
+       }
+ },
+ 
+ {
+   "pk":31,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"42",
+       "short_name":"Hep B, adolescent/high risk infant2",
+       "name":"hepatitis B vaccine, adolescent/high risk infant dosage"
+       }
+ },
+ 
+ {
+   "pk":32,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"43",
+       "short_name":"Hep B, adult",
+       "name":"hepatitis B vaccine, adult dosage"
+       }
+ },
+ 
+ {
+   "pk":33,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"44",
+       "short_name":"Hep B, dialysis",
+       "name":"hepatitis B vaccine, dialysis patient dosage"
+       }
+ },
+ 
+ {
+   "pk":34,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"45",
+       "short_name":"Hep B, NOS",
+       "name":"hepatitis B vaccine, NOS"
+       }
+ },
+ 
+ {
+   "pk":35,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"58",
+       "short_name":"Hep C",
+       "name":"hepatitis C vaccine"
+       }
+ },
+ 
+ {
+   "pk":36,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"59",
+       "short_name":"Hep E",
+       "name":"hepatitis E vaccine"
+       }
+ },
+ 
+ {
+   "pk":37,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"60",
+       "short_name":"herpes simplex 2",
+       "name":"herpes simplex virus, type 2 vaccine"
+       }
+ },
+ 
+ {
+   "pk":38,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"46",
+       "short_name":"Hib (PRP-D)",
+       "name":"Haemophilus influenzae type b vaccine, PRP-D conjugate"
+       }
+ },
+ 
+ {
+   "pk":39,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"47",
+       "short_name":"Hib (HbOC)",
+       "name":"Haemophilus influenzae type b vaccine, HbOC conjugate"
+       }
+ },
+ 
+ {
+   "pk":40,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"48",
+       "short_name":"Hib (PRP-T)",
+       "name":"Haemophilus influenzae type b vaccine, PRP-T conjugate"
+       }
+ },
+ 
+ {
+   "pk":41,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"49",
+       "short_name":"Hib (PRP-OMP)",
+       "name":"Haemophilus influenzae type b vaccine, PRP-OMP conjugate"
+       }
+ },
+ 
+ {
+   "pk":42,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"17",
+       "short_name":"Hib, NOS",
+       "name":"Haemophilus influenzae type b vaccine, conjugate NOS"
+       }
+ },
+ 
+ {
+   "pk":43,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"51",
+       "short_name":"Hib-Hep B",
+       "name":"Haemophilus influenzae type b conjugate and Hepatitis B vaccine"
+       }
+ },
+ 
+ {
+   "pk":44,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"61",
+       "short_name":"HIV",
+       "name":"human immunodeficiency virus vaccine"
+       }
+ },
+ 
+ {
+   "pk":45,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"118",
+       "short_name":"HPV, bivalent",
+       "name":"human papilloma virus vaccine, bivalent"
+       }
+ },
+ 
+ {
+   "pk":46,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"62",
+       "short_name":"HPV, quadrivalent",
+       "name":"human papilloma virus vaccine, quadrivalent"
+       }
+ },
+ 
+ {
+   "pk":47,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"86",
+       "short_name":"IG",
+       "name":"immune globulin, intramuscular"
+       }
+ },
+ 
+ {
+   "pk":48,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"87",
+       "short_name":"IGIV",
+       "name":"immune globulin, intravenous"
+       }
+ },
+ 
+ {
+   "pk":49,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"14",
+       "short_name":"IG, NOS",
+       "name":"immune globulin, NOS"
+       }
+ },
+ 
+ {
+   "pk":50,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"111",
+       "short_name":"influenza, live, intranasal",
+       "name":"influenza virus vaccine, live, attenuated, for intranasal use"
+       }
+ }
+ 
+ ,{
+   "pk":51,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"15",
+       "short_name":"influenza, split (incl. purified surface antigen)",
+       "name":"influenza virus vaccine, split virus (incl. purified surface antigen)"
+       }
+ },
+ 
+ {
+   "pk":52,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"16",
+       "short_name":"influenza, whole",
+       "name":"influenza virus vaccine, whole virus"
+       }
+ },
+ 
+ {
+   "pk":53,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"88",
+       "short_name":"influenza, NOS",
+       "name":"influenza virus vaccine, NOS"
+       }
+ },
+ 
+ {
+   "pk":54,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"123",
+       "short_name":"influenza, H5N1-1203",
+       "name":"influenza virus vaccine, H5N1, A/Vietnam/1203/2004 (national stockpile)"
+       }
+ },
+ 
+ {
+   "pk":55,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"10",
+       "short_name":"IPV",
+       "name":"poliovirus vaccine, inactivated"
+       }
+ },
+ 
+ {
+   "pk":56,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"02",
+       "short_name":"OPV",
+       "name":"poliovirus vaccine, live, oral"
+       }
+ },
+ 
+ {
+   "pk":57,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"89",
+       "short_name":"polio, NOS",
+       "name":"poliovirus vaccine, NOS"
+       }
+ },
+ 
+ {
+   "pk":58,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"39",
+       "short_name":"Japanese encephalitis",
+       "name":"Japanese encephalitis vaccine"
+       }
+ },
+ 
+ {
+   "pk":59,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"63",
+       "short_name":"Junin virus",
+       "name":"Junin virus vaccine"
+       }
+ },
+ 
+ {
+   "pk":60,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"64",
+       "short_name":"leishmaniasis",
+       "name":"leishmaniasis vaccine"
+       }
+ },
+ 
+ {
+   "pk":61,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"65",
+       "short_name":"leprosy",
+       "name":"leprosy vaccine"
+       }
+ },
+ 
+ {
+   "pk":62,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"66",
+       "short_name":"Lyme disease",
+       "name":"Lyme disease vaccine"
+       }
+ },
+ 
+ {
+   "pk":63,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"03",
+       "short_name":"MMR",
+       "name":"measles, mumps and rubella virus vaccine"
+       }
+ },
+ 
+ {
+   "pk":64,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"04",
+       "short_name":"M/R",
+       "name":"measles and rubella virus vaccine"
+       }
+ },
+ 
+ {
+   "pk":65,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"94",
+       "short_name":"MMRV",
+       "name":"measles, mumps, rubella, and varicella virus vaccine"
+       }
+ },
+ 
+ {
+   "pk":66,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"67",
+       "short_name":"malaria",
+       "name":"malaria vaccine"
+       }
+ },
+ 
+ {
+   "pk":67,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"05",
+       "short_name":"measles",
+       "name":"measles virus vaccine"
+       }
+ },
+ 
+ {
+   "pk":68,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"68",
+       "short_name":"melanoma",
+       "name":"melanoma vaccine"
+       }
+ },
+ 
+ {
+   "pk":69,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"32",
+       "short_name":"meningococcal",
+       "name":"meningococcal polysaccharide vaccine (MPSV4)"
+       }
+ },
+ 
+ {
+   "pk":70,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"103",
+       "short_name":"meningococcal C conjugate",
+       "name":"meningococcal C conjugate vaccine"
+       }
+ }
+ ,{
+   "pk":71,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"114",
+       "short_name":"meningococcal A,C,Y,W-135 diphtheria conjugate",
+       "name":"meningococcal polysaccharide (groups A, C, Y and W-135) diphtheria toxoid conjugate vaccine (MCV4)"
+       }
+ }
+ ,{
+   "pk":72,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"108",
+       "short_name":"meningococcal, NOS",
+       "name":"meningococcal vaccine, NOS"
+       }
+ },
+ 
+ {
+   "pk":73,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"07",
+       "short_name":"mumps",
+       "name":"mumps virus vaccine"
+       }
+ },
+ 
+ {
+   "pk":74,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"69",
+       "short_name":"parainfluenza-3",
+       "name":"parainfluenza-3 virus vaccine"
+       }
+ },
+ 
+ {
+   "pk":75,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"11",
+       "short_name":"pertussis",
+       "name":"pertussis vaccine"
+       }
+ },
+ 
+ {
+   "pk":76,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"23",
+       "short_name":"plague",
+       "name":"plague vaccine"
+       }
+ },
+ 
+ {
+   "pk":77,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"33",
+       "short_name":"pneumococcal",
+       "name":"pneumococcal polysaccharide vaccine"
+       }
+ },
+ 
+ {
+   "pk":78,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"100",
+       "short_name":"pneumococcal conjugate",
+       "name":"pneumococcal conjugate vaccine, polyvalent"
+       }
+ },
+ 
+ {
+   "pk":79,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"109",
+       "short_name":"pneumococcal, NOS",
+       "name":"pneumococcal vaccine, NOS"
+       }
+ },
+ 
+ {
+   "pk":80,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"70",
+       "short_name":"Q fever",
+       "name":"Q fever vaccine"
+       }
+ },
+ 
+ {
+   "pk":81,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"18",
+       "short_name":"rabies, intramuscular injection",
+       "name":"rabies vaccine, for intramuscular injection"
+       }
+ },
+ 
+ {
+   "pk":82,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"40",
+       "short_name":"rabies, intradermal injection",
+       "name":"rabies vaccine, for intradermal injection"
+       }
+ },
+ 
+ {
+   "pk":83,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"90",
+       "short_name":"rabies, NOS",
+       "name":"rabies vaccine, NOS"
+       }
+ },
+ 
+ {
+   "pk":84,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"72",
+       "short_name":"rheumatic fever",
+       "name":"rheumatic fever vaccine"
+       }
+ },
+ 
+ {
+   "pk":85,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"73",
+       "short_name":"Rift Valley fever",
+       "name":"Rift Valley fever vaccine"
+       }
+ },
+ 
+ {
+   "pk":86,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"34",
+       "short_name":"RIG",
+       "name":"rabies immune globulin"
+       }
+ },
+ 
+ {
+   "pk":87,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"119",
+       "short_name":"rotavirus, monovalent",
+       "name":"rotavirus, live, monovalent vaccine"
+       }
+ },
+ 
+ {
+   "pk":88,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"122",
+       "short_name":"rotavirus, NOS1",
+       "name":"rotavirus vaccine, NOS"
+       }
+ },
+ 
+ {
+   "pk":89,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"116",
+       "short_name":"rotavirus, pentavalent",
+       "name":"rotavirus, live, pentavalent vaccine"
+       }
+ },
+ 
+ {
+   "pk":90,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"74",
+       "short_name":"rotavirus, tetravalent",
+       "name":"rotavirus, live, tetravalent vaccine"
+       }
+ },
+ 
+ {
+   "pk":91,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"71",
+       "short_name":"RSV-IGIV",
+       "name":"respiratory syncytial virus immune globulin, intravenous"
+       }
+ },
+ 
+ {
+   "pk":92,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"93",
+       "short_name":"RSV-MAb",
+       "name":"respiratory syncytial virus monoclonal antibody (palivizumab), intramuscular"
+       }
+ },
+ 
+ {
+   "pk":93,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"06",
+       "short_name":"rubella",
+       "name":"rubella virus vaccine"
+       }
+ },
+ 
+ {
+   "pk":94,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"38",
+       "short_name":"rubella/mumps",
+       "name":"rubella and mumps virus vaccine"
+       }
+ },
+ 
+ {
+   "pk":95,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"76",
+       "short_name":"Staphylococcus bacterio lysate",
+       "name":"Staphylococcus bacteriophage lysate"
+       }
+ },
+ 
+ {
+   "pk":96,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"113",
+       "short_name":"Td (adult)",
+       "name":"tetanus and diphtheria toxoids, adsorbed, preservative free, for adult use"
+       }
+ },
+ 
+ {
+   "pk":97,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"9",
+       "short_name":"Td (adult)",
+       "name":"tetanus and diphtheria toxoids, adsorbed for adult use"
+       }
+ },
+ 
+ {
+   "pk":98,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"115",
+       "short_name":"Tdap",
+       "name":"tetanus toxoid, reduced diphtheria toxoid, and acellular pertussis vaccine, adsorbed"
+       }
+ },
+ 
+ {
+   "pk":99,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"35",
+       "short_name":"tetanus toxoid",
+       "name":"tetanus toxoid, adsorbed"
+       }
+ },
+ 
+ {
+   "pk":100,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"112",
+       "short_name":"tetanus toxoid, NOS",
+       "name":"tetanus toxoid, NOS"
+       }
+ },
+ 
+ {
+   "pk":101,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"77",
+       "short_name":"tick-borne encephalitis",
+       "name":"tick-borne encephalitis vaccine"
+       }
+ },
+ 
+ {
+   "pk":102,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"13",
+       "short_name":"TIG",
+       "name":"tetanus immune globulin"
+       }
+ },
+ 
+ {
+   "pk":103,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"95",
+       "short_name":"TST-OT tine test",
+       "name":"tuberculin skin test; old tuberculin, multipuncture device"
+       }
+ },
+ 
+ {
+   "pk":104,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"96",
+       "short_name":"TST-PPD intradermal",
+       "name":"tuberculin skin test; purified protein derivative solution, intradermal"
+       }
+ },
+ 
+ {
+   "pk":105,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"97",
+       "short_name":"TST-PPD tine test",
+       "name":"tuberculin skin test; purified protein derivative, multipuncture device"
+       }
+ },
+ 
+ {
+   "pk":106,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"98",
+       "short_name":"TST, NOS",
+       "name":"tuberculin skin test; NOS"
+       }
+ },
+ 
+ {
+   "pk":107,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"78",
+       "short_name":"tularemia vaccine",
+       "name":"tularemia vaccine"
+       }
+ },
+ 
+ {
+   "pk":108,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"91",
+       "short_name":"typhoid, NOS",
+       "name":"typhoid vaccine, NOS"
+       }
+ },
+ 
+ {
+   "pk":109,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"25",
+       "short_name":"typhoid, oral",
+       "name":"typhoid vaccine, live, oral"
+       }
+ },
+ 
+ {
+   "pk":110,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"41",
+       "short_name":"typhoid, parenteral",
+       "name":"typhoid vaccine, parenteral, other than acetone-killed, dried"
+       }
+ },
+ 
+ {
+   "pk":111,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"53",
+       "short_name":"typhoid, parenteral, AKD (U.S. military)",
+       "name":"typhoid vaccine, parenteral, acetone-killed, dried (U.S. military)"
+       }
+ },
+ 
+ {
+   "pk":112,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"101",
+       "short_name":"typhoid, ViCPs",
+       "name":"typhoid Vi capsular polysaccharide vaccine"
+       }
+ }
+ ,{
+   "pk":113,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"75",
+       "short_name":"vaccinia (smallpox)",
+       "name":"vaccinia (smallpox) vaccine"
+       }
+ },
+ 
+ {
+   "pk":114,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"105",
+       "short_name":"vaccinia (smallpox) diluted",
+       "name":"vaccinia (smallpox) vaccine, diluted"
+       }
+ },
+ 
+ {
+   "pk":115,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"79",
+       "short_name":"vaccinia immune globulin",
+       "name":"vaccinia immune globulin"
+       }
+ },
+ 
+ {
+   "pk":116,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"21",
+       "short_name":"varicella",
+       "name":"varicella virus vaccine"
+       }
+ },
+ 
+ {
+   "pk":117,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"81",
+       "short_name":"VEE, inactivated",
+       "name":"Venezuelan equine encephalitis, inactivated"
+       }
+ },
+ 
+ {
+   "pk":118,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"80",
+       "short_name":"VEE, live",
+       "name":"Venezuelan equine encephalitis, live, attenuated"
+       }
+ },
+ 
+ {
+   "pk":119,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"92",
+       "short_name":"VEE, NOS",
+       "name":"Venezuelan equine encephalitis vaccine, NOS"
+       }
+ },
+ 
+ {
+   "pk":120,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"36",
+       "short_name":"VZIG",
+       "name":"varicella zoster immune globulin"
+       }
+ },
+ 
+ {
+   "pk":121,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"117",
+       "short_name":"VZIG (IND)",
+       "name":"varicella zoster immune globulin"
+       }
+ },
+ 
+ {
+   "pk":122,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"37",
+       "short_name":"yellow fever",
+       "name":"yellow fever vaccine"
+       }
+ },
+ 
+ {
+   "pk":123,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"121",
+       "short_name":"zoster",
+       "name":"zoster vaccine"
+       }
+ },
+ 
+ {
+   "pk":124,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"998",
+       "short_name":"no vaccine administered",
+       "name":"no vaccine administered"
+       }
+ },
+ 
+ {
+   "pk":125,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"999",
+       "short_name":"unknown",
+       "name":"unknown vaccine or immune globulin"
+       }
+ },
+ 
+ {
+   "pk":126,
+     "model":"esp.Vaccine",
+     "fields":{
+     "code":"99",
+       "short_name":"RESERVED - do not use",
+       "name":"RESERVED - do not use"
+       }
+ }
+]
