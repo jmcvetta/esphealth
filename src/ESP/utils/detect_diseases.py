@@ -461,8 +461,8 @@ class Disease_Definition:
         @type all_events:     [Heuristic_Event, Heuristic_Event, ...]
         '''
         case = models.Case()
-        case.patient = primary_event.patient
-        case.provider = primary_event.content_object.provider
+        case.caseDemog = primary_event.patient
+        case.caseProvider = primary_event.content_object.provider
         case.date = primary_event.date
         case.condition = self.condition
         case.save()
@@ -729,7 +729,8 @@ def hep_a_cases(self, new_only=False):
             case.events = sets.Set(case.events) + sets.Set(all_events)
             continue
         # Now check the db:
-        existing = models.Case.objects.filter(patient=patient, condition=self.condition)
+        # FIXME: This will need to be updated when we go to new Case model
+        existing = models.Case.objects.filter(caseDemog=patient, caseRule=self.condition)
         if existing and new_only:
             log.debug('Existing case found for %s.  Flag new_only is set, so skipping & continuing.' % patient)
             continue

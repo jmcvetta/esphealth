@@ -82,7 +82,7 @@ class Loinc_Admin(admin.ModelAdmin):
 
 class Heuristic_Event_Admin(admin.ModelAdmin):
     list_display = ['heuristic_name', 'patient', 'date', 'content_object']
-    list_filter = ['heuristic_name', 'content_object']
+    list_filter = ['heuristic_name']
 
 
 admin.site.register(Case, CaseOptions)

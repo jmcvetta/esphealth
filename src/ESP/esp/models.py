@@ -995,268 +995,313 @@ class External_To_Loinc_Map(models.Model):
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#class TestCase(models.Model):
-#
-#    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
-#    caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
-#    caseWorkflow = models.CharField('Workflow State', max_length=20,choices=WORKFLOW_STATES, blank=True,db_index=True )
-#    caseComments = models.TextField('Comments', blank=True, null=True)
-#    caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
-#    casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
-#    caseSendDate = models.DateTimeField('Date sent', null=True)
-#    caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID")
-#    caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
-#    caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=FORMAT_TYPES, blank=True, null=True)
-#    caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=DEST_TYPES, blank=True, null=True)
-#    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500,  blank=True, null=True)
-#    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500,  blank=True, null=True)
-#    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500,  blank=True, null=True)
-#    caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
-#    caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
-#    
-#    
-#    def  __unicode__(self):
-#        p = self.showPatient()# self.pID
-#        s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
-#        return s
-#    
-#        
-#    def showPatient(self): 
-#        p = self.getPatient()
-#        s = u'%s %s %s %s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial, p.DemogMedical_Record_Number)
-#        return s
-#    
-#    def getPatient(self): 
-#        p = Demog.objects.get(id__exact = self.caseDemog.id)
-#        return p
-#
-#    def getPregnant(self):
-#        p=self.getPatient()
-#        encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
-#        lxs = None
-#        lxlist = self.caseLxID.split(',')
-#        if len(lxlist) > 0:
-#            lxs=Lx.objects.filter(id__in=lxlist)
-#        if encdb and lxs:
-#            lx = lxs[0]
-#            lxorderd = lx.LxOrderDate
-#            lxresd=lx.LxDate_of_result
-#            lxresd = datetime.date(int(lxresd[:4]),int(lxresd[4:6]),int(lxresd[6:8]))+datetime.timedelta(30)
-#            lxresd = lxresd.strftime('%Y%m%d')
-#            for oneenc in encdb:
-#                encdate = oneenc.EncEncounter_Date
-#                edcdate = oneenc.EncEDC.replace('/','')
-#                if edcdate:
-#                    edcdate = datetime.date(int(edcdate[:4]),int(edcdate[4:6]), int(edcdate[6:8]))
-#                    dur1 =edcdate-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
-#                    dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
-#                    if dur1.days>=0 or dur2.days>=0:
-#                        return (u'Pregnant', oneenc.EncEDC.replace('/',''))
-#                
-#        elif encdb and not lxs:
-#            return (u'Pregnant', encdb[0].EncEDC.replace('/',''))
-#
-#        return (u'',None)
-#
-#
-#    def getcaseLastUpDate(self):
-#        s = u'%s' % self.caseLastUpDate
-#        return s[:11]
-#    
-#    def getLxOrderdate(self):
-#        """
-#        """
-#        # patched 30 jan to not barf if no LxIDs
-#        lxlist = self.caseLxID.split(',')
-#        orderdate=[]
-#        if len(lxlist) > 0:
-#           lxs=Lx.objects.filter(id__in=lxlist)
-#           for l in lxs:
-#              orderdate.append(unicode(l.LxOrderDate))
-#        return unicode(''.join(orderdate))
-#
-#
-#    def getLxProviderSite(self):
-#        '''
-#        '''
-#        # patched 30 jan to not barf if no LxIDs    
-#        res = []
-#        lxlist = self.caseLxID.split(',')
-#        if len(lxlist) > 0:
-#           lxs=Lx.objects.filter(id__in=lxlist)
-#           sites=[]
-#           for l in lxs:
-#               relprov = Provider.objects.filter(id=l.LxOrdering_Provider.id)[0]
-#               sitename = relprov.provPrimary_Dept
-#               if sitename and sitename not in sites:
-#                  sites.append(sitename)
-#           res = []
-#           for loc in sites:
-#              res.append('%s ' % loc)
-#        return unicode(''.join(res))
-#        
-#    def getWorkflows(self): # return a list of workflow states for history
-#        wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
-#        return wIter
-#    
-#    def getCondition(self):
-#        cond = Rule.objects.get(id__exact=self.caseRule.id)
-#        return cond
-#    
-#    def getAddress(self):
-#        p = self.getPatient()
-#        s=''
-#        if p.DemogAddress1:
-#            s = u'%s %s %s %s %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
-#        return s
-#    
-#    def getPrevcases(self):
-#        othercases = TestCase.objects.filter(caseDemog__id__exact=self.caseDemog.id, caseRule__id__exact=self.caseRule.id, id__lt=self.id)
-#        returnstr=[]
-#        for c in othercases:
-#            returnstr.append(unicode(c.id))
-#        return returnstr
-#                                                                                                                                                                    
-#                                                                                                                                                                                                                    
-#class Case(models.Model):
-#    """casePID can't be a foreign key or we get complaints that the pointed to model doesn't
-#    yet exist
-#    """
-#    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
-#    caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
-#    caseWorkflow = models.CharField('Workflow State', max_length=20,choices=WORKFLOW_STATES, blank=True,db_index=True )
-#    caseComments = models.TextField('Comments', blank=True, null=True)
-#    caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
-#    casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
-#    caseSendDate = models.DateTimeField('Date sent', null=True)
-#    caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID")
-#    caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
-#    caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=FORMAT_TYPES, blank=True, null=True)
-#    caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=DEST_TYPES, blank=True,null=True)
-#    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500,  blank=True, null=True)
-#    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500,  blank=True, null=True)
-#    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500,  blank=True, null=True)
-#    caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
-#    caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
-#    #
-#    # Heuristic Events
-#    #
-#    events = models.ManyToManyField(Heuristic_Event, blank=True, null=True, db_index=True)
-#    
-#    class Meta:
-#        permissions = [
-#            ('view_phi', 'Can view protected health information'),
-#            ]
-#    
-#    def latest_lx(self):
-#        '''
-#        Returns the latest lab test relevant to this case
-#        '''
-#        if not self.caseLxID:
-#            return None
-#        lab_result_ids = self.caseLxID.split(',')
-#        lab_results = Lx.objects.filter(id__in=lab_result_ids).order_by('LxOrderDate').reverse()
-#        return lab_results[0]
-#        
-#    def latest_lx_order_date(self):
-#        '''
-#        Return a datetime.date instance representing the date on which the 
-#        latest lab test relevant to this case was ordered.
-#        '''
-#        if not self.latest_lx():
-#            return None
-#        s = self.latest_lx().LxOrderDate
-#        year = int(s[0:4])
-#        month = int(s[4:6])
-#        day = int(s[6:8])
-#        return datetime.date(year, month, day)
-#    
-#    def latest_lx_provider_site(self):
-#        '''
-#        Return the provider site for the latest lab test relevant to this case 
-#        '''
-#        lx = self.latest_lx()
-#        if not lx:
-#            return None
-#        return lx.LxOrdering_Provider.provPrimary_Dept
-#
-#    def  __unicode__(self):
-#        p = self.showPatient()# self.pID
-#        s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
-#        
-#        return s
-# 
-#    def showPatient(self): 
-#        p = self.getPatient()
-#        #  s = '%s, %s: %s MRN=%s' % (p.PIDLast_Name, p.PIDFirst_Name, p.PIDFacility1, p.PIDMedical_Record_Number1 )
-#
-#        s = u'%s %s %s %s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial,p.DemogMedical_Record_Number )
-#
-#        return s
-#
-#    def getPatient(self): # doesn't work
-#        p = Demog.objects.get(id__exact = self.caseDemog.id)        
-#        return p
-#
-#    def getPregnant(self):
-#        p=self.getPatient()
-#        encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
-#        lxs = None
-#        lxi = self.caseLxID
-#        if len(lxi) > 0:
-#            lxs=Lx.objects.filter(id__in=lxi.split(','))
-#        if encdb and lxs:
-#            lx = lxs[0]
-#            lxorderd = lx.LxOrderDate
-#            lxresd=lx.LxDate_of_result
-#            lxresd = datetime.date(int(lxresd[:4]),int(lxresd[4:6]),int(lxresd[6:8]))+datetime.timedelta(30)
-#            lxresd = lxresd.strftime('%Y%m%d')
-#            for oneenc in encdb:
-#                encdate = oneenc.EncEncounter_Date
-#                edcdate = oneenc.EncEDC.replace('/','')
-#                if edcdate:
-#                    edcdate = datetime.date(int(edcdate[:4]),int(edcdate[4:6]), int(edcdate[6:8]))
-#                    dur1 =edcdate-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
-#                    dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
-#                    if dur1.days>=0 or dur2.days>=0:
-#                        return (u'Pregnant', oneenc.EncEDC.replace('/',''))
-##            for oneenc in encdb:
-##                encdate = oneencdb.EncEncounter_Date
-##                dur1 =datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
-##                dur2 = datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8])) - datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))
-##                if dur1.days>=0 and dur2.days>=0:
-##                    return ('Pregnant', oneenc.EncEDC.replace('/',''))
-#        elif encdb and not lxs:
-#            return (u'Pregnant', encdb[0].EncEDC.replace('/',''))
-#        return (u'',None)
-#
-#    def getcaseLastUpDate(self):
-#        s = u'%s' % self.caseLastUpDate
-#        return s[:11]
-#
-#    def getWorkflows(self): # return a list of workflow states for history
-#        wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
-#        return wIter
-#    
-#    def getCondition(self):
-#        cond = Rule.objects.get(id__exact=self.caseRule.id)
-#        return cond
-#
-#    def getAddress(self):
-#        p = self.getPatient()
-#        s=''
-#        if p.DemogAddress1:
-#            s = u'%s %s %s, %s, %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
-#        return s
-#
-#    def getPrevcases(self):
-#        othercases = Case.objects.filter(caseDemog__id__exact=self.caseDemog.id, caseRule__id__exact=self.caseRule.id, id__lt=self.id)
-#        returnstr=[]
-#        for c in othercases:
-#            returnstr.append(unicode(c.id))
-#        return returnstr
+class TestCase(models.Model):
 
+    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
+    caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
+    caseWorkflow = models.CharField('Workflow State', max_length=20,choices=choices.WORKFLOW_STATES, blank=True,db_index=True )
+    caseComments = models.TextField('Comments', blank=True, null=True)
+    caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
+    casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
+    caseSendDate = models.DateTimeField('Date sent', null=True)
+    caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID")
+    caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
+    caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=choices.FORMAT_TYPES, blank=True, null=True)
+    caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=choices.DEST_TYPES, blank=True, null=True)
+    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500,  blank=True, null=True)
+    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500,  blank=True, null=True)
+    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500,  blank=True, null=True)
+    caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
+    caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
+    
+    
+    def  __unicode__(self):
+        p = self.showPatient()# self.pID
+        s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
+        return s
+    
+        
+    def showPatient(self): 
+        p = self.getPatient()
+        s = u'%s %s %s %s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial, p.DemogMedical_Record_Number)
+        return s
+    
+    def getPatient(self): 
+        p = Demog.objects.get(id__exact = self.caseDemog.id)
+        return p
+
+    def getPregnant(self):
+        p=self.getPatient()
+        encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
+        lxs = None
+        lxlist = self.caseLxID.split(',')
+        if len(lxlist) > 0:
+            lxs=Lx.objects.filter(id__in=lxlist)
+        if encdb and lxs:
+            lx = lxs[0]
+            lxorderd = lx.LxOrderDate
+            lxresd=lx.LxDate_of_result
+            lxresd = datetime.date(int(lxresd[:4]),int(lxresd[4:6]),int(lxresd[6:8]))+datetime.timedelta(30)
+            lxresd = lxresd.strftime('%Y%m%d')
+            for oneenc in encdb:
+                encdate = oneenc.EncEncounter_Date
+                edcdate = oneenc.EncEDC.replace('/','')
+                if edcdate:
+                    edcdate = datetime.date(int(edcdate[:4]),int(edcdate[4:6]), int(edcdate[6:8]))
+                    dur1 =edcdate-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
+                    dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
+                    if dur1.days>=0 or dur2.days>=0:
+                        return (u'Pregnant', oneenc.EncEDC.replace('/',''))
+                
+        elif encdb and not lxs:
+            return (u'Pregnant', encdb[0].EncEDC.replace('/',''))
+
+        return (u'',None)
+
+
+    def getcaseLastUpDate(self):
+        s = u'%s' % self.caseLastUpDate
+        return s[:11]
+    
+    def getLxOrderdate(self):
+        """
+        """
+        # patched 30 jan to not barf if no LxIDs
+        lxlist = self.caseLxID.split(',')
+        orderdate=[]
+        if len(lxlist) > 0:
+           lxs=Lx.objects.filter(id__in=lxlist)
+           for l in lxs:
+              orderdate.append(unicode(l.LxOrderDate))
+        return unicode(''.join(orderdate))
+
+
+    def getLxProviderSite(self):
+        '''
+        '''
+        # patched 30 jan to not barf if no LxIDs    
+        res = []
+        lxlist = self.caseLxID.split(',')
+        if len(lxlist) > 0:
+           lxs=Lx.objects.filter(id__in=lxlist)
+           sites=[]
+           for l in lxs:
+               relprov = Provider.objects.filter(id=l.LxOrdering_Provider.id)[0]
+               sitename = relprov.provPrimary_Dept
+               if sitename and sitename not in sites:
+                  sites.append(sitename)
+           res = []
+           for loc in sites:
+              res.append('%s ' % loc)
+        return unicode(''.join(res))
+        
+    def getWorkflows(self): # return a list of workflow states for history
+        wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
+        return wIter
+    
+    def getCondition(self):
+        cond = Rule.objects.get(id__exact=self.caseRule.id)
+        return cond
+    
+    def getAddress(self):
+        p = self.getPatient()
+        s=''
+        if p.DemogAddress1:
+            s = u'%s %s %s %s %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
+        return s
+    
+    def getPrevcases(self):
+        othercases = TestCase.objects.filter(caseDemog__id__exact=self.caseDemog.id, caseRule__id__exact=self.caseRule.id, id__lt=self.id)
+        returnstr=[]
+        for c in othercases:
+            returnstr.append(unicode(c.id))
+        return returnstr
+                                                                                                                                                                    
+                                                                                                                                                                                                                    
 class Case(models.Model):
+    """casePID can't be a foreign key or we get complaints that the pointed to model doesn't
+    yet exist
+    """
+    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
+    caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
+    caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID") # Condition
+    # Date roughly indicates when condition was first detected
+    date = models.DateField(blank=False)
+    caseWorkflow = models.CharField('Workflow State', max_length=20,choices=choices.WORKFLOW_STATES, blank=True,db_index=True )
+    caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
+    casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
+    caseSendDate = models.DateTimeField('Date sent', null=True)
+    # Garbage?
+    caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
+    caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=choices.FORMAT_TYPES, blank=True, null=True)
+    caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=choices.DEST_TYPES, blank=True,null=True)
+    # Reporting
+    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500,  blank=True, null=True)
+    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500,  blank=True, null=True)
+    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500,  blank=True, null=True)
+    caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
+    caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
+    #
+    caseComments = models.TextField('Comments', blank=True, null=True)
+    #
+    # New Heuristics Support
+    #
+    events = models.ManyToManyField(Heuristic_Event, blank=True, null=True, db_index=True)
+    def _get_patient(self):
+        return self.caseDemog
+    def _set_patient(self, value):
+        self.caseDemog = value
+    def _get_provider(self):
+        return self.caseProvider
+    def _set_provider(self, value):
+        self.caseProvider = value
+    def _get_condition(self):
+        return self.caseRule
+    def _set_condition(self, value):
+        self.caseRule = value
+    def _get_encounters(self):
+        if self.caseEncID:
+            return Enc.objects.filter(id__in=self.caseEncID)
+        else:
+            return Enc.objects.none()
+    def _set_encounters(self, value):
+        # value is list of Enc objects
+        self.caseEncID = ' '.join([str(encounter.id) for encounter in value])
+    def _get_labs(self):
+        if self.caseLxID:
+            return Lx.objects.filter(id__in=self.caseLxID)
+        else:
+            return Lx.objects.none()
+    def _set_labs(self, value):
+        self.caseLxID = ' '.join([str(lab.id) for lab in value])
+    def _get_meds(self):
+        if self.caseRxID:
+            return Rx.objects.filter(id__in=self.caseRxID)
+        else:
+            return Rx.objects.none()
+    def _set_meds(self, value):
+        self.caseRxID = ' '.join([str(rx.id) for rx in value])
+    patient = property(_get_patient, _set_patient)
+    provider = property(_get_provider, _set_provider)
+    condition = property(_get_condition, _set_condition)
+    rep_encounters = property(_get_encounters, _set_encounters)
+    rep_labs = property(_get_labs, _set_labs)
+    rep_meds = property(_get_meds, _set_meds)
+    
+    class Meta:
+        permissions = [
+            ('view_phi', 'Can view protected health information'),
+            ]
+    
+    def latest_lx(self):
+        '''
+        Returns the latest lab test relevant to this case
+        '''
+        if not self.caseLxID:
+            return None
+        lab_result_ids = self.caseLxID.split(',')
+        lab_results = Lx.objects.filter(id__in=lab_result_ids).order_by('LxOrderDate').reverse()
+        return lab_results[0]
+        
+    def latest_lx_order_date(self):
+        '''
+        Return a datetime.date instance representing the date on which the 
+        latest lab test relevant to this case was ordered.
+        '''
+        if not self.latest_lx():
+            return None
+        s = self.latest_lx().LxOrderDate
+        year = int(s[0:4])
+        month = int(s[4:6])
+        day = int(s[6:8])
+        return datetime.date(year, month, day)
+    
+    def latest_lx_provider_site(self):
+        '''
+        Return the provider site for the latest lab test relevant to this case 
+        '''
+        lx = self.latest_lx()
+        if not lx:
+            return None
+        return lx.LxOrdering_Provider.provPrimary_Dept
+
+    def  __unicode__(self):
+        p = self.showPatient()# self.pID
+        s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
+        
+        return s
+ 
+    def showPatient(self): 
+        p = self.getPatient()
+        #  s = '%s, %s: %s MRN=%s' % (p.PIDLast_Name, p.PIDFirst_Name, p.PIDFacility1, p.PIDMedical_Record_Number1 )
+
+        s = u'%s %s %s %s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial,p.DemogMedical_Record_Number )
+
+        return s
+
+    def getPatient(self): # doesn't work
+        p = Demog.objects.get(id__exact = self.caseDemog.id)        
+        return p
+
+    def getPregnant(self):
+        p=self.getPatient()
+        encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
+        lxs = None
+        lxi = self.caseLxID
+        if len(lxi) > 0:
+            lxs=Lx.objects.filter(id__in=lxi.split(','))
+        if encdb and lxs:
+            lx = lxs[0]
+            lxorderd = lx.LxOrderDate
+            lxresd=lx.LxDate_of_result
+            lxresd = datetime.date(int(lxresd[:4]),int(lxresd[4:6]),int(lxresd[6:8]))+datetime.timedelta(30)
+            lxresd = lxresd.strftime('%Y%m%d')
+            for oneenc in encdb:
+                encdate = oneenc.EncEncounter_Date
+                edcdate = oneenc.EncEDC.replace('/','')
+                if edcdate:
+                    edcdate = datetime.date(int(edcdate[:4]),int(edcdate[4:6]), int(edcdate[6:8]))
+                    dur1 =edcdate-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
+                    dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
+                    if dur1.days>=0 or dur2.days>=0:
+                        return (u'Pregnant', oneenc.EncEDC.replace('/',''))
+#            for oneenc in encdb:
+#                encdate = oneencdb.EncEncounter_Date
+#                dur1 =datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
+#                dur2 = datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8])) - datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))
+#                if dur1.days>=0 and dur2.days>=0:
+#                    return ('Pregnant', oneenc.EncEDC.replace('/',''))
+        elif encdb and not lxs:
+            return (u'Pregnant', encdb[0].EncEDC.replace('/',''))
+        return (u'',None)
+
+    def getcaseLastUpDate(self):
+        s = u'%s' % self.caseLastUpDate
+        return s[:11]
+
+    def getWorkflows(self): # return a list of workflow states for history
+        wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
+        return wIter
+    
+    def getCondition(self):
+        cond = Rule.objects.get(id__exact=self.caseRule.id)
+        return cond
+
+    def getAddress(self):
+        p = self.getPatient()
+        s=''
+        if p.DemogAddress1:
+            s = u'%s %s %s, %s, %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
+        return s
+
+    def getPrevcases(self):
+        othercases = Case.objects.filter(caseDemog__id__exact=self.caseDemog.id, caseRule__id__exact=self.caseRule.id, id__lt=self.id)
+        returnstr=[]
+        for c in othercases:
+            returnstr.append(unicode(c.id))
+        return returnstr
+
+class NewCase(models.Model):
     '''
     A case of (reportable) disease
     '''

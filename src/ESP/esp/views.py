@@ -662,7 +662,7 @@ def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilte
     wf_display = ""
     if wf and wf <> '*':
         objs = objs.filter(caseWorkflow=wf)
-        wf_display = dict(WORKFLOW_STATES)[wf]
+        wf_display = dict(choices.WORKFLOW_STATES)[wf]
 
         
     ##Sort options        
@@ -811,7 +811,7 @@ def old_casedetail(request, inprod="1", object_id=None,restrict='F'):
              'pid' : pid,
              'labs':labs,
              'prescriptions':rxs,
-             "wfstate":WORKFLOW_STATES[:-1],
+             "wfstate":choices.WORKFLOW_STATES[:-1],
              'SITEROOT':SITEROOT,
             }
 
@@ -1028,7 +1028,7 @@ def preloadview(request,table='cptloincmap',orderby="cpt"):
     cinfo = {"request":request,
             'maps': maps,
              'rules':rules,
-             "wfstate":WORKFLOW_STATES[:-1],
+             "wfstate":choices.WORKFLOW_STATES[:-1],
              "orderby": orderby,
             'SITEROOT':SITEROOT,
              'newrec':range(newrec),
@@ -1365,7 +1365,7 @@ def updateWorkflow(request,object_id,newwf=''):
     acase.save()
         
     ###########Go to a confirm page
-    msg='The workflow state of this case has been successfully changed to "%s"!' % dict(WORKFLOW_STATES)[newwf]
+    msg='The workflow state of this case has been successfully changed to "%s"!' % dict(choices.WORKFLOW_STATES)[newwf]
     arcase = Case.objects.filter(caseWorkflow='AR')
     if arcase:
         nextcaseid=arcase[0].id
@@ -1596,7 +1596,7 @@ def case_detail(request, case_id):
         'age': age,
         'dob': dob,
         "wf": wf,
-        "wfstate": WORKFLOW_STATES[:-1], # ??
+        "wfstate": choices.WORKFLOW_STATES[:-1], # ??
         'created': created,
         'updated': updated,
         'all_encs': all_encs,
