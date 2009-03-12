@@ -22,6 +22,9 @@ from ESP.utils import utils as util
 from ESP.utils.utils import log
 
 
+
+
+
 #===============================================================================
 #
 #--- ~~~ Exceptions ~~~
@@ -408,17 +411,17 @@ class Disease_Definition:
         @type med_days_after:    Integer
         '''
         self.name = name
-        self.get_cases = get_cases_func
+        self.get_cases_func = get_cases_func
         self.icd9s = icd9s
-        self.icd9_days_before = icd9_days_before
-        self.icd9_days_after = icd9_days_after
+        self.icd9_days_before = datetime.timedelta(days=icd9_days_before)
+        self.icd9_days_after = datetime.timedelta(days=icd9_days_after)
         self.fever = fever
         self.lab_loinc_nums = lab_loinc_nums
-        self.lab_days_before = lab_days_before
-        self.lab_days_after = lab_days_after
+        self.lab_days_before = datetime.timedelta(days=lab_days_before)
+        self.lab_days_after = datetime.timedelta(days=lab_days_after)
         self.med_names = med_names
-        self.med_days_before = med_days_before
-        self.med_days_after = med_days_after
+        self.med_days_before = datetime.timedelta(days=med_days_before)
+        self.med_days_after = datetime.timedelta(days=med_days_after)
         #
         # Sanity checks
         #
@@ -433,6 +436,12 @@ class Disease_Definition:
         self.condition = models.Rule.objects.get(ruleName=self.name)
         self._register()
     
+    def get_cases(self, new_only=False):
+        '''
+        Calls the user-supplied case factory with appropriate arguments
+        '''
+        return self.get_cases_func(self, new_only)
+    
     __registry = {} # Class variable
     def _register(self):
         if self.name in self.__registry:
@@ -442,28 +451,72 @@ class Disease_Definition:
     
     def new_case(self, primary_event, all_events):
         '''
-        Returns a new Case object.  Case variables like provider and date are
-            set based on primary_event.  The set of primary_event + all_events 
-            are attached as the Case's events member.
+        Creates, saves, and returns a new Case object.  Case variables like 
+            provider and date are set based on primary_event.  The set of 
+            primary_event + all_events  are attached as the Case's events 
+            member.
         @param primary_event: Event on which this case is based
         @type primary_event:  Heuristic_Event
         @param all_events:    All events that together establish this case
         @type all_events:     [Heuristic_Event, Heuristic_Event, ...]
         '''
         case = models.Case()
-        case.caseDemog = primary_event.patient
-        case.caseProvider = primary_event.provider
-        case.caseRule = self.condition
-        case.events = sets.Set([primary_event]) + sets.Set(all_events)
+        case.patient = primary_event.patient
+        case.provider = primary_event.content_object.provider
+        case.date = primary_event.date
+        case.condition = self.condition
+        case.save()
+        events = sets.Set([primary_event]) | sets.Set(all_events)
+        case.events = [e for e in events]
+        self.update_reportable_events(case)
         return case
     
     def update_reportable_events(self, case):
         '''
+        Updates the reportable events for a given case, based on rules defined
+            when at Disease_Definition instantiation.  
         @param case: The case to update
         @type case:  models.Case
         '''
-        pass
-        
+        patient = case.patient
+        date = case.date
+        if self.icd9s:
+            enc_q = Q(EncICD9_Codes__icontains=self.icd9s[0])
+            for code in self.icd9s[1:]:
+                enc_q = enc_q | Q(EncICD9_Codes__icontains=code)
+            if self.fever: 
+                enc_q = enc_q | Q(EncTemperature__gte=100.4)
+            enc_q = enc_q & Q(EncPatient=patient)
+            enc_q = enc_q & Q(EncEncounter_Date__gte=util.str_from_date(date - self.icd9_days_before))
+            enc_q = enc_q & Q(EncEncounter_Date__lte=util.str_from_date(date + self.icd9_days_after))
+            log.debug('enc_q: %s' % enc_q)
+            encounters = models.Enc.objects.filter(enc_q)
+            case.rep_encounters = sets.Set(case.rep_encounters.all()) | sets.Set(encounters)
+        if self.lab_loinc_nums:
+            lab_q = Q(LxLoinc__in=self.lab_loinc_nums)
+            lab_q = lab_q & Q(LxPatient=patient)
+            lab_q = lab_q & Q(LxOrderDate__gte=util.str_from_date(date - self.lab_days_before))
+            lab_q = lab_q & Q(LxOrderDate__lte=util.str_from_date(date + self.lab_days_after))
+            log.debug('lab_q: %s' % lab_q)
+            labs = models.Lx.objects.filter(lab_q)
+            # Some of these lab results will be for the same test (ie same 
+            # LOINC code), but Mike only wants to see one result per test.  
+            # It's probably better to handle that in the case management UI,
+            # where we could potentially show a history for each test, than 
+            # here.
+            case.rep_labs = sets.Set(case.rep_labs.all()) | sets.Set(labs)
+        if self.med_names:
+            med_q = Q(RxDrugName__icontains=self.med_names[0])
+            for name in self.med_names[1:]:
+                med_q = med_q | Q(RxDrugName__icontains=name)
+            med_q = med_q & Q(RxPatient=patient)
+            med_q = med_q & Q(RxOrderDate__gte=util.str_from_date(date - self.med_days_before))
+            med_q = med_q & Q(RxOrderDate__lte=util.str_from_date(date + self.med_days_after))
+            log.debug('med_q: %s' % med_q)
+            medications = models.Rx.objects.filter(med_q)
+            case.rep_meds = sets.Set(case.rep_meds.all()) | sets.Set(medications)
+        # Support for reporting immunizations has not yet been implemented
+        return case
     
     def save_cases(self):
         pass
@@ -676,14 +729,14 @@ def hep_a_cases(self, new_only=False):
             case.events = sets.Set(case.events) + sets.Set(all_events)
             continue
         # Now check the db:
-        existing = models.Case.objects.filter(caseDemog=patient, caseRule=self.condition)
+        existing = models.Case.objects.filter(patient=patient, condition=self.condition)
         if existing and new_only:
             log.debug('Existing case found for %s.  Flag new_only is set, so skipping & continuing.' % patient)
             continue
         elif existing:
             log.debug('Existing case found for %s.  Updating its events (not saving), putting it in result list, and continuing.' % patient)
             case = existing[0] # should be only one hep A case
-            case.events = sets.Set(case.events) + sets.Set(all_events)
+            case.events = sets.Set(case.events.all()) | sets.Set(all_events)
             result[patient] = case
         else:
             # No case --
@@ -692,16 +745,22 @@ def hep_a_cases(self, new_only=False):
     return result
 
 hep_a = Disease_Definition(
-    name = 'Acute Hepatitis A',
+    name = 'Acute Hepatitis A', 
     get_cases_func = hep_a_cases,
+    icd9s = settings.DEFAULT_REPORTABLE_ICD9S,
+    icd9_days_before = 14,
+    icd9_days_after = 14,
+    fever = True,
+    lab_loinc_nums = ['1742-6', '1920-8', '22314-9', '14212-5', '16128-1'],
+    lab_days_before = 30,
+    lab_days_after = 30,
     )
-    
 
 if __name__ == '__main__':
     #alt_2x.save_events()
     #Heuristic.save_all_events()
     #high_calc_bilirubin.save_events()
     #pprint.pprint(connection.queries)
-    Acute_Hepatitis_A().generate_cases()
+    hep_a.get_cases()
     pass
     

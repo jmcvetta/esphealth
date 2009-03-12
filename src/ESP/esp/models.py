@@ -241,14 +241,14 @@ class Rule(models.Model):
     ruleVerDate = models.DateTimeField('Last Edited date',auto_now=True)
     rulecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
     rulelastexecDate = models.DateTimeField('Date last executed', editable=False, blank=True, null=True)
-    ruleMsgFormat = models.CharField('Message Format', max_length=10, choices=FORMAT_TYPES,  blank=True, null=True)
-    ruleMsgDest = models.CharField('Destination for formatted messages', max_length=10, choices=DEST_TYPES,  blank=True, null=True)
+    ruleMsgFormat = models.CharField('Message Format', max_length=10, choices=choices.FORMAT_TYPES,  blank=True, null=True)
+    ruleMsgDest = models.CharField('Destination for formatted messages', max_length=10, choices=choices.DEST_TYPES,  blank=True, null=True)
     ruleHL7Code = models.CharField('Code for HL7 messages with cases', max_length=10, blank=True, null=True)
     ruleHL7Name = models.CharField('Condition name for HL7 messages with cases', max_length=30, blank=True, null=True)
     ruleHL7CodeType = models.CharField('Code for HL7 code type', max_length=10, blank=True, null=True)
     ruleExcludeCode = models.TextField('The exclusion list of (CPT, COMPT) when alerting', blank=True, null=True)
     ruleinProd = models.BooleanField('this rule is in production or not', blank=True)
-    ruleInitCaseStatus  =models.CharField('Initial Case status', max_length=20,choices=WORKFLOW_STATES, blank=True)
+    ruleInitCaseStatus  =models.CharField('Initial Case status', max_length=20,choices=choices.WORKFLOW_STATES, blank=True)
     
 
     def gethtml_rulenote(self):
@@ -277,7 +277,7 @@ class Dest(models.Model):
     """message destination for rules
     """
     destName = models.CharField('Destination Name', max_length=100)
-    destType = models.CharField('Destination Type',choices = DEST_TYPES ,max_length=20)
+    destType = models.CharField('Destination Type',choices = choices.DEST_TYPES ,max_length=20)
     destValue = models.TextField('Destination Value (eg URL)',null=True)
     destComments = models.TextField('Destination Comments',null=True)
     destVerDate = models.DateTimeField('Last Edited date',auto_now=True)
@@ -295,7 +295,7 @@ class Format(models.Model):
     """message formats for rules
     """
     formatName = models.CharField('Format Name', max_length=100,)
-    formatType = models.CharField('Format Type',choices = FORMAT_TYPES,max_length=20 )
+    formatType = models.CharField('Format Type',choices = choices.FORMAT_TYPES, max_length=20 )
     formatValue = models.TextField('Format Value (eg URL)',null=True)
     formatComments = models.TextField('Format Comments',null=True)
     formatVerDate = models.DateTimeField('Last Edited date',auto_now=True)
@@ -471,10 +471,13 @@ class Rx(models.Model):
     heuristics = generic.GenericRelation(Heuristic_Event)
     def _get_patient(self):
         return self.RxPatient
-    patient = property(_get_patient)
     def _get_provider(self):
         return self.RxProvider
+    def _get_date(self):
+        return util.date_from_str(self.RxOrderDate)
+    patient = property(_get_patient)
     provider = property(_get_provider)
+    date = property(_get_date)
             
     def getNDC(self):
         """translate CPT code
@@ -577,10 +580,13 @@ class Lx(models.Model):
     heuristics = generic.GenericRelation(Heuristic_Event)
     def _get_patient(self):
         return self.LxPatient
-    patient = property(_get_patient)
     def _get_provider(self):
         return self.LxOrdering_Provider
+    def _get_date(self):
+        return util.date_from_str(self.LxOrderDate)
+    patient = property(_get_patient)
     provider = property(_get_provider)
+    date = property(_get_date)
     
     # Use custom manager
     objects = LxManager()
@@ -691,10 +697,13 @@ class Enc(models.Model):
     heuristics = generic.GenericRelation(Heuristic_Event)
     def _get_patient(self):
         return self.EncPatient
-    patient = property(_get_patient)
     def _get_provider(self):
         return self.EncEncounter_Provider
+    def _get_date(self):
+        return util.date_from_str(self.EncEncounter_Date)
+    patient = property(_get_patient)
     provider = property(_get_provider)
+    date = property(_get_date)
     
     def _get_enc_date(self):
         '''
@@ -964,26 +973,6 @@ class DataFile(models.Model):
         return u'%s %s' % (self.filename,self.datedownloaded)
 
 
-###################################
-class HL7File(models.Model):
-    filename = models.CharField('hl7 file name',max_length=100,blank=True,null=True)
-    case = models.ForeignKey(Case,verbose_name="Case ID",db_index=True)
-    demogMRN = models.CharField('Medical Record Number',max_length=50,db_index=True,blank=True,null=True)
-    hl7encID = models.TextField('A list of ESP_ENC IDs in hl7', max_length=500,  blank=True, null=True)
-    hl7lxID = models.TextField('A list of ESP_Lx IDs in hl7', max_length=500,  blank=True, null=True)
-    hl7rxID = models.TextField('A list of ESP_Rx IDs in hl7', max_length=500,  blank=True, null=True)
-    hl7ICD9 = models.TextField('A list of related ICD9 in hl7', max_length=500,  blank=True, null=True)
-    hl7reportlxID=models.TextField('A list of report Lx IDs in hl7', max_length=500,  blank=True, null=True)
-    hl7specdate = models.TextField('A list of order date of report Lx in hl7', max_length=500,  blank=True, null=True)
-    hl7trmtDT = models.TextField('the order date of minium Rx', max_length=500,  blank=True, null=True)
-    hl7comment = models.TextField('note in NTE segment',  max_length=500,  blank=True, null=True)
-    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
-    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-          
-    def  __unicode__(self):
-        return u'%s %s' % (self.filename,self.datedownloaded)
-
-
 class External_To_Loinc_Map(models.Model):
     '''
     A mapping from an external code (for a lab result, etc) to a Loinc number
@@ -1006,7 +995,6 @@ class External_To_Loinc_Map(models.Model):
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-###################################
 #class TestCase(models.Model):
 #
 #    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
@@ -1275,6 +1263,7 @@ class Case(models.Model):
     patient = models.ForeignKey(Demog, blank=False)
     condition = models.ForeignKey(Rule, blank=False)
     provider = models.ForeignKey(Provider, blank=False)
+    date = models.DateField(blank=False)
     workflow_state = models.CharField(max_length=20, choices=choices.WORKFLOW_STATES, default='AR', 
         blank=False, db_index=True )
     # Timestamps:
@@ -1282,12 +1271,12 @@ class Case(models.Model):
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
     sent_timestamp = models.DateTimeField(blank=True, null=True)
     # Events that define this case:
-    events = models.ForeignKey(Heuristic_Event, blank=True, null=True) # The events that caused this case to be generated
+    events = models.ManyToManyField(Heuristic_Event, blank=True, null=True) # The events that caused this case to be generated
     # Reportable events:
     rep_encounters = models.ManyToManyField(Enc, blank=True, null=True)
     rep_labs = models.ManyToManyField(Lx, blank=True, null=True)
     rep_meds = models.ManyToManyField(Rx, blank=True, null=True)
-    rep_immunizations = models.ManyToManyField(Immunization, blank=True, null=True)
+    rep_immunizations = models.ManyToManyField(Immunization, blank=True, null=True) # Not yet implemented
     # These fields were present in old Case model, but were not used:
     #
     #caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
@@ -1302,21 +1291,37 @@ class Case(models.Model):
             ]
 
 
-###################################
 class CaseWorkflow(models.Model):
     workflowCaseID = models.ForeignKey(Case)
     workflowDate = models.DateTimeField('Activated',auto_now=True)
-    workflowState = models.CharField('Workflow State',choices=WORKFLOW_STATES,max_length=20 )
+    workflowState = models.CharField('Workflow State',choices=choices.WORKFLOW_STATES,max_length=20 )
     workflowChangedBy = models.CharField('Changed By', max_length=30)
     workflowComment = models.TextField('Comments',blank=True,null=True)
     
     def  __unicode__(self):
         return u'%s %s %s' % (self.workflowCaseID, self.workflowDate, self.workflowState)
-
-
                                 
     class Meta:
         verbose_name = 'External Code to LOINC Map'
 
+
+
+class HL7File(models.Model):
+    filename = models.CharField('hl7 file name',max_length=100,blank=True,null=True)
+    case = models.ForeignKey(Case,verbose_name="Case ID",db_index=True)
+    demogMRN = models.CharField('Medical Record Number',max_length=50,db_index=True,blank=True,null=True)
+    hl7encID = models.TextField('A list of ESP_ENC IDs in hl7', max_length=500,  blank=True, null=True)
+    hl7lxID = models.TextField('A list of ESP_Lx IDs in hl7', max_length=500,  blank=True, null=True)
+    hl7rxID = models.TextField('A list of ESP_Rx IDs in hl7', max_length=500,  blank=True, null=True)
+    hl7ICD9 = models.TextField('A list of related ICD9 in hl7', max_length=500,  blank=True, null=True)
+    hl7reportlxID=models.TextField('A list of report Lx IDs in hl7', max_length=500,  blank=True, null=True)
+    hl7specdate = models.TextField('A list of order date of report Lx in hl7', max_length=500,  blank=True, null=True)
+    hl7trmtDT = models.TextField('the order date of minium Rx', max_length=500,  blank=True, null=True)
+    hl7comment = models.TextField('note in NTE segment',  max_length=500,  blank=True, null=True)
+    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+          
+    def  __unicode__(self):
+        return u'%s %s' % (self.filename,self.datedownloaded)
 
 
