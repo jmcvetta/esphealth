@@ -2,10 +2,6 @@
 '''
 Detect cases of (reportable) disease
 '''
-#
-# NOTE: If you are supremely foolish enough to assign the same name to more
-# than one Heuristic instance, this whole system will barf all over your data.
-#
 
 import datetime
 import pprint
@@ -15,6 +11,7 @@ import sets
 from django.db import connection
 from django.db.models import Q
 from django.db.models import F
+from django.db.models import Sum
 from django.db.models.query import QuerySet
 from django.contrib.contenttypes.models import ContentType
 
@@ -31,24 +28,32 @@ from ESP.utils.utils import log
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+class HeuristicAlreadyRegistered(BaseException):
+    '''
+    A Heuristic instance has already been registered with the same name 
+    as the instance you are trying to register.
+    '''
+    pass
+
+class DiseaseDefinitionAlreadyRegistered(BaseException):
+    '''
+    A Disease_Definition instance has already been registered with the same 
+    name as the instance you are trying to register.
+    '''
+    pass
+
 class CaseAlreadyExists(BaseException):
     '''
-    A case already exists for this disease + patient
+    A case already exists for this disease + patient.
     '''
     pass
 
 
 #===============================================================================
 #
-#--- ~~~ Base Classes ~~~
+#--- ~~~ Heuristics Framework ~~~
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-class HeuristicAlreadyRegistered(BaseException):
-    '''
-    A Heuristic instance has already been registered with the same name 
-    as the instance you are trying to register.
-    '''
 
 class Heuristic:
     '''
@@ -76,26 +81,41 @@ class Heuristic:
             log.debug('Registering heuristic with name "%s".' % name)
             registry[name] = [self]
     
+    @classmethod
+    def get_all_heuristics(cls):
+        '''
+        Returns a list of all registered Heuristic instances.
+        '''
+        result = []
+        keys = cls.__registry
+        keys.sort()
+        [result.extend(cls.__registry[key]) for key in keys]
+        log.debug('All Heuristic instances: %s' % result)
+        return result
+    
     def matches(self, begin_date=None, end_date=None):
         '''
         Return a QuerySet of matches for this heuristic
         '''
         raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseHeuristic.')
         
-    def generate_events(self, begin_date=None, end_date=None):
+    def save_events(self, begin_date=None, end_date=None):
         '''
         Generate models.Heuristic_Event records for each item returned by
         matches, if it does not already have one.
         @return: Integer number of new records created
         '''
-        counter = 0
-        existing = models.Heuristic_Event.objects.filter(event_name=self.name).values_list('object_id')
-        for event in self.matches(begin_date, end_date).select_related():
+        log.info('Generating events for heuristic "%s".' % self.name)
+        counter = 0 # Counts how many new records have been created
+        # First we retrieve a list of object IDs for this 
+        existing = models.Heuristic_Event.objects.filter(heuristic_name=self.name).values_list('object_id')
+        existing = [int(item[0]) for item in existing] # Convert to a list of integers
+        for event in self.matches(begin_date, end_date):
             if event.id in existing:
                 log.debug('Heuristic event "%s" already exists for: %s' % (self.name, event))
                 continue
             content_type = ContentType.objects.get_for_model(event)
-            obj, created = models.Heuristic_Event.objects.get_or_create(event_name=self.name,
+            obj, created = models.Heuristic_Event.objects.get_or_create(heuristic_name=self.name,
                                                          date=event.date,
                                                          patient=event.patient,
                                                          content_type=content_type,
@@ -106,8 +126,27 @@ class Heuristic:
                 obj.save()
                 counter += 1
             else:
-                log.debug('Already found a matching event: %s' % obj)
+                log.debug('Did not create heuristic event - found a matching event: %s' % obj)
+        log.info('Generated %s new events for "%s".' % (counter, self.name))
         return counter
+    
+    @classmethod
+    def save_all_events(cls, begin_date=None, end_date=None):
+        '''
+        Generate Heuristic_Event records for every registered Heuristic 
+            instance.
+        @param begin_date: Beginning of time window to examine
+        @type begin_date:  datetime.date
+        @param end_date:   End of time window to examine
+        @type end_date:    datetime.date
+        @return:           Integer number of new records created
+        '''
+        counter = 0 # Counts how many total new records have been created
+        for heuristic in cls.get_all_heuristics():
+            counter += heuristic.save_events()
+        log.info('Generated %s TOTAL new events.' % counter)
+        return counter
+    
     
     
     def make_date_str(self, date):
@@ -119,6 +158,9 @@ class Heuristic:
             log.debug('String given as date -- no conversion')
             return date
         return util.str_from_date(date)
+    
+    def __repr__(self):
+        return '<Heuristic: %s>' % self.name
     
     
 class Lab_Heuristic(Heuristic):
@@ -146,7 +188,6 @@ class Lab_Heuristic(Heuristic):
         lab_q = Q(LxLoinc='%s' % self.loinc_nums[0])
         for num in self.loinc_nums[1:]:
             lab_q = lab_q | Q(LxLoinc='%s' % num)
-        log.debug('lab_q: %s' % lab_q)
         return lab_q
     lab_q = property(__get_lab_q)
         
@@ -183,7 +224,7 @@ class High_Numeric_Lab_Heuristic(Lab_Heuristic):
     Matches labs with high numeric scores, as determined by a ratio to 
     '''
     
-    def __init__(self, name, verbose_name=None, loinc_nums=[], ratio=None, default=None, **kwargs):
+    def __init__(self, name, verbose_name=None, loinc_nums=[], ratio=None, default_high=None, **kwargs):
         '''
         @param name: Name of this heuristic (short slug)
         @type name: String
@@ -193,38 +234,39 @@ class High_Numeric_Lab_Heuristic(Lab_Heuristic):
         @type loinc_nums: List of strings
         @param ratio: Match on result > ratio * reference_high
         @type ratio: Integer
-        @param default: If no reference high, match on result > default
-        @type default: Integer
+        @param default_high: If no reference high, match on result > default_high
+        @type default_high: Integer
         '''
         self.name = name
         self.verbose_name = verbose_name
         self.loinc_nums = loinc_nums
         self.ratio = ratio
-        self.default = default
+        self.default_high = default_high
         assert self.name # Sanity check
         # Should we sanity check verbose_name?
         assert self.loinc_nums # Sanity check
-        assert self.ratio or self.default # Sanity check -- one or the other or both required
+        assert self.ratio or self.default_high # Sanity check -- one or the other or both required
         self._register(kwargs)
     
     def matches(self, begin_date=None, end_date=None):
         '''
         If record has a reference high, and a ratio has been specified, compare
         test result against that reference.  If a record does not have a
-        reference high, and a default has been specified, compare result
+        reference high, and a default_high has been specified, compare result
         against that default 'high' value.
         '''
+        relevant_labs = self.relevant_labs(begin_date, end_date)
         no_ref_q = Q(LxReference_High=None) | Q(LxReference_High='')
-        if self.default:
-            static_comp_q = no_ref_q & Q(LxTest_results__gt=self.default)
+        if self.default_high:
+            static_comp_q = no_ref_q & Q(LxTest_results__gt=self.default_high)
             pos_q = static_comp_q
         if self.ratio:
             ref_comp_q = ~no_ref_q & Q(LxTest_results__gt=F('LxReference_High') * self.ratio)
             pos_q = ref_comp_q
-        if self.default and self.ratio:
+        if self.default_high and self.ratio:
             pos_q = (ref_comp_q | static_comp_q)
         log.debug('pos_q: %s' % pos_q)
-        return self.relevant_labs(begin_date, end_date).filter(pos_q)
+        return relevant_labs.filter(pos_q)
 
 
 class String_Match_Lab_Heuristic(Lab_Heuristic):
@@ -275,7 +317,7 @@ class String_Match_Lab_Heuristic(Lab_Heuristic):
 
 
 
-class EncounterHeuristic(Heuristic):
+class Encounter_Heuristic(Heuristic):
     '''
     Abstract base class for encounter heuristics, concrete instances of which
     are used as components of DiseaseDefinitions
@@ -306,7 +348,7 @@ class EncounterHeuristic(Heuristic):
             @type patient:    models.Demog
             @type queryset:   QuerySet
         '''
-        log.debug('Get lab results relevant to "%s".' % self.name)
+        log.debug('Get encounters relevant to "%s".' % self.name)
         qs = models.Enc.objects.all()
         if begin_date and end_date:
             begin = self.make_date_str(begin_date)
@@ -315,152 +357,116 @@ class EncounterHeuristic(Heuristic):
         elif begin_date or end_date:
             raise 'If you specify either begin_date or end_date, you must also specify the other.'
         return qs.filter(self.enc_q)
+    
+    def matches(self, begin_date=None, end_date=None):
+        return self.encounters(begin_date, end_date)
 
 
-class DiseaseDefinition:
+class Disease_Definition:
     '''
     Abstract base class for disease definitions
     '''
     
-    def __init__(self):
+    def __init__(self, 
+        name, 
+        get_cases_func,
+        # Reporting
+        icd9s = [],
+        icd9_days_before = 14,
+        icd9_days_after = 14,
+        fever = True, 
+        lab_loinc_nums = [], 
+        lab_days_before = 14,
+        lab_days_after = 14,
+        med_names = [], 
+        med_days_before = 14,
+        med_days_after = 14,
+        ):
+        '''
+        @param name:             Name of this disease definition
+        @type name:              String
+        @param get_cases_func:   Callback that returns list of Case objects
+        @type get_cases_func:    Function
+        @param icd9s:            Report encounters matching these ICD9s
+        @type icd9s:             List of strings
+        @param icd9_days_before: How many days before case to search for encounters
+        @type icd9_days_before:  Integer
+        @param icd9_days_after:  How many days after case to search for encounters
+        @type icd9_days_after:   Integer
+        @param fever:            Do we report fever, determined as temp > 100.4, rather than as ICD9?
+        @type fever: 		     Boolean
+        @param lab_loinc_nums:   Report lab results matching these LOINCs
+        @type lab_loinc_nums:    List of strings
+        @param lab_days_before:  How many days before case to search for labs
+        @type lab_days_before:   Integer
+        @param lab_days_after:   How many days after case to search for labs
+        @param med_names:        Report medicines matching these names
+        @type med_names:         List of strings
+        @param med_days_before:  How many days before case to search for medicines
+        @type med_days_before:   Integer
+        @param med_days_after:   How many days after case to search for medicines
+        @type med_days_after:    Integer
+        '''
+        self.name = name
+        self.get_cases = get_cases_func
+        self.icd9s = icd9s
+        self.icd9_days_before = icd9_days_before
+        self.icd9_days_after = icd9_days_after
+        self.fever = fever
+        self.lab_loinc_nums = lab_loinc_nums
+        self.lab_days_before = lab_days_before
+        self.lab_days_after = lab_days_after
+        self.med_names = med_names
+        self.med_days_before = med_days_before
+        self.med_days_after = med_days_after
         #
-        # Sanity Checks
+        # Sanity checks
         #
-        assert isinstance(self.condition, models.Rule) # Must have a valid condition ("Rule" in old ESP parlance)
-        assert type(self.report_icd9) == types.ListType
-        assert type(self.report_rx) == types.ListType
-        assert type(self.related_components) == types.ListType
-        
-    def get_patients(self):
-        raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from DiseaseDefinition.')
+        assert self.name 
+        assert self.get_cases 
+        assert self.icd9_days_before
+        assert self.icd9_days_after
+        assert self.lab_days_before
+        assert self.lab_days_after
+        assert self.med_days_before
+        assert self.med_days_after
+        self.condition = models.Rule.objects.get(ruleName=self.name)
+        self._register()
     
-    def split_cases(self, patient, labs, encounters):
-        '''
-        Split list of labs and list of encounters into dicts, each representing
-            a separate case.  By default this method returns only a single 
-            event, but it's behavior can, and often should, be overridden in 
-            subclasses.
-        @return: [case_info, case_info, ...]
-            where case_info = {'patient': patient,
-                               'provider': provider,
-                               'date': case_establishment_date,
-                               'labs': labs,
-                               'encounters': encounters, }
-        '''
-        raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from DiseaseDefinition.')
-
+    __registry = {} # Class variable
+    def _register(self):
+        if self.name in self.__registry:
+            raise DiseaseDefinitionAlreadyRegistered('A disease definition with the name "%s" is already registered.' % self.name)
+        else:
+            self.__registry[self.name] = self
     
-    def sort_events(self, events):
+    def new_case(self, primary_event, all_events):
         '''
-        Sorts a list of events (labs & encounters) by date.
-        '''
-        x = [(e.date, e) for e in events]
-        x.sort()
-        return [i[1] for i in x]
-
-    def make_cases(self, patient):
-        '''
-        Makes a case for specified patient
-            @type patient: models.Demog
-        '''
-        events = []
-        labs = []
-        encounters = []
-        for component in self.related_components:
-            c = component()
-            if isinstance(c, Lab_Heuristic):
-                # NOTE: We are fetching all *relevant* lab tests, not just 
-                # those which indicate positive.
-                labs += [i for i in c.relevant_labs(patient=patient)] 
-            elif isinstance(c, EncounterHeuristic):
-                encounters += [i for i in c.encounters(patient=patient)]
-            else:
-                raise 'Fail!'
-        existing_cases = models.Case.objects.filter(caseDemog=patient)
-        # Extract list of lab/encounter ID numbers from comma-delimited fields
-        existing_lab_ids = []
-        [existing_lab_ids.extend( util.str_to_list(case.caseLxID) ) for case in existing_cases]
-        existing_encounter_ids = []
-        [existing_encounter_ids.extend( util.str_to_list(case.caseEncID) ) for case in existing_cases]
-        log.debug('existing_lab_ids: %s' % existing_lab_ids)
-        log.debug('existing_encounter_ids: %s' % existing_encounter_ids)
-        #
-        # Loop through the labs & encounters, and see if any of them belongs to
-        # an existing case.  If so, skip to the next set of case_events.
-        #
-        for case_info in self.split_cases(patient, labs=labs, encounters=encounters):
-            log.debug('date: %s' % case_info['date'])
-            log.debug('labs: %s' % case_info['labs'])
-            log.debug('encounters: %s' % case_info['encounters'])
-            is_existing = False # Flag for use below
-            for l in case_info['labs']:
-                if l.id in existing_lab_ids:
-                    log.debug('Lab "%s" belongs to an existing case' % l)
-                    is_existing = True
-            for e in case_info['encounters']:
-                if e.id in existing_encounter_ids:
-                    log.debug('Encounter "%s" belongs to an existing case' % e)
-                    is_existing = True
-            if is_existing:
-                log.debug('These events belong to an existing case.  Skipping to next bunch')
-                continue
-            log.debug('Events do match any events belonging to an existing case.')
-            self.make_single_case(patient, case_info)
-
-    def make_single_case(self, patient, case_info):
-        '''
-        Makes a new case for specified patient, attaching relevant labs & 
-            encounters.
-        FIXME: We are attaching too many labs.  Figure out how to winnow down
-            the list to more manageable size.
-        @type patient: models.Demog
-        @param case_info: {'patient': patient, 
-                           'provider': provider,
-                           'date': case_establishment_date, 
-                           'labs': labs, # Relevant labs (pos & neg both)
-                           'encounters': encounters, }
-        @type case_info: Dict
+        Returns a new Case object.  Case variables like provider and date are
+            set based on primary_event.  The set of primary_event + all_events 
+            are attached as the Case's events member.
+        @param primary_event: Event on which this case is based
+        @type primary_event:  Heuristic_Event
+        @param all_events:    All events that together establish this case
+        @type all_events:     [Heuristic_Event, Heuristic_Event, ...]
         '''
         case = models.Case()
-        case_date = case_info['date']
-        case.caseDemog = patient
+        case.caseDemog = primary_event.patient
+        case.caseProvider = primary_event.provider
         case.caseRule = self.condition
-        case.caseEncID = ','.join( [str(e.id) for e in case_info['encounters'] ] )
-        case.caseLxID = ','.join( [str(l.id) for l in case_info['labs'] ] )
-        case.caseWorkflow = 'AR'
-        #
-        # Related Rx
-        #
-        rx_ids = []
-        rx_begin = case_date - datetime.timedelta(days=settings.REPORT_RX_DAYS_BEFORE)
-        rx_end = case_date + datetime.timedelta(days=settings.REPORT_RX_DAYS_AFTER)
-        for rx_name in self.report_rx:
-            result = models.Rx.objects.filter(RxPatient=patient, 
-                                              RxDrugName__icontains=rx_name,
-                                              RxOrderDate__gte=util.str_from_date(rx_begin),
-                                              RxOrderDate__lte=util.str_from_date(rx_end),
-                                              )
-            if result:
-                rx_ids += [r.id for r in result]
-        case.caseRxID = ','.join(rx_ids)
-        #
-        # Related Symptoms (ICD9s)
-        #
-        symptom_icd9s = []
-        symptom_begin = case_date - datetime.timedelta(days=settings.REPORT_ICD9_DAYS_BEFORE)
-        symptom_end = case_date + datetime.timedelta(days=settings.REPORT_ICD9_DAYS_AFTER)
-        for icd9 in self.report_icd9:
-            result = models.Enc.objects.filter(EncPatient=patient,
-                                               EncICD9_Codes__icontains=icd9,
-                                               EncEncounter_Date__gte=util.str_from_date(symptom_begin),
-                                               EncEncounter_Date__lte=util.str_from_date(symptom_end),
-                                               )
-            if result:
-                symptom_icd9s += [icd9]
-        case.caseICD9 = ','.join(symptom_icd9s)
-        log.info('Saving new case: %s' % case)
-        case.save()
+        case.events = sets.Set([primary_event]) + sets.Set(all_events)
+        return case
+    
+    def update_reportable_events(self, case):
+        '''
+        @param case: The case to update
+        @type case:  models.Case
+        '''
+        pass
         
+    
+    def save_cases(self):
+        pass
         
 
 #===============================================================================
@@ -469,12 +475,12 @@ class DiseaseDefinition:
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-jaundice = EncounterHeuristic(name='jaundice', 
+jaundice = Encounter_Heuristic(name='jaundice', 
                               verbose_name='Jaundice, not of newborn',
                               icd9s=['782.4'],
                               )
 
-chronic_hep_b = EncounterHeuristic(name='chronic_hep_b',
+chronic_hep_b = Encounter_Heuristic(name='chronic_hep_b',
                                    verbose_name='Chronic Hepatitis B',
                                    icd9s=['070.32'],
                                    )
@@ -490,7 +496,7 @@ alt_2x = High_Numeric_Lab_Heuristic(
     verbose_name='Alanine aminotransferase (ALT) >2x upper limit of normal',
     loinc_nums=['1742-6'],
     ratio=2,
-    default=132,
+    default_high=132,
     )
 
 alt_5x = High_Numeric_Lab_Heuristic(
@@ -498,7 +504,7 @@ alt_5x = High_Numeric_Lab_Heuristic(
     verbose_name='Alanine aminotransferase (ALT) >5x upper limit of normal',
     loinc_nums=['1742-6'],
     ratio=5,
-    default=330,
+    default_high=330,
     )
 
 ast_2x = High_Numeric_Lab_Heuristic(
@@ -506,7 +512,7 @@ ast_2x = High_Numeric_Lab_Heuristic(
     verbose_name='Aspartate aminotransferase (ALT) >2x upper limit of normal',
     loinc_nums=['1920-8'],
     ratio=2,
-    default=132,
+    default_high=132,
     )
 
 ast_5x = High_Numeric_Lab_Heuristic(
@@ -514,7 +520,7 @@ ast_5x = High_Numeric_Lab_Heuristic(
     verbose_name='Aspartate aminotransferase (ALT) >5x upper limit of normal',
     loinc_nums=['1920-8'],
     ratio=5,
-    default=330,
+    default_high=330,
     )
 
 hep_a_igm_ab = String_Match_Lab_Heuristic(
@@ -568,78 +574,71 @@ hep_b_viral_dna_num1 = High_Numeric_Lab_Heuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['16934-2'],
-    default = 100,
+    default_high = 100,
     allow_duplicate_name=True,
     )
 hep_b_viral_dna_num2 = High_Numeric_Lab_Heuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['5009-6'],
-    default = 160,
+    default_high = 160,
     allow_duplicate_name=True,
     )
 
-class Hep_B_Viral_DNA(Lab_Heuristic):
-    '''
-    Hepatitis B Viral DNA
-    '''
-    def setup(self):
-        self.name = 'Hepatitis B Viral DNA'
-        self.loinc_nums = ['13126-8', '16934', '5009-6']
-        # NOTE:  See note in Hep B google doc about "HEPATITIS B DNA, QN, IU/COPIES" portion of algorithm
-        #
-        # Lab Result Query
-        #
-        # HEP B DNA PCR (QL) 
-        q_obj = Q(LxLoinc='13126-8') | Q(LxLoinc='16934')
-        q_obj = q_obj & ( Q(LxTest_results__istartswith='positiv') | Q(LxTest_results__istartswith='detect') )
-        # HEP B VIRAL DNA IU/ML 
-        q_obj = q_obj | Q(LxLoinc='16934-2', LxTest_results__gt=100)
-        # HEP B DNA COPIES/ML 
-        q_obj = q_obj | Q(LxLoinc='5009-6', LxTest_results__gt=160)
-        self.pos_q = q_obj
 
+hep_e_ab = String_Match_Lab_Heuristic(
+    name = 'hep_a_ab',
+    verbose_name = 'Hepatitis E antibody',
+    loinc_nums = ['14212-5'],
+    strings = ['reactiv'],
+    )
 
-class Hep_E_Ab(Lab_Heuristic):
-    '''
-    Hepatitis E antibody
-    '''
-    def setup(self):
-        self.name = 'Hepatitis E antibody'
-        self.loinc_nums = ['14212-5']
-        self.pos_q = Q(LxTest_results__istartswith='reactiv')
+hep_c_ab = String_Match_Lab_Heuristic(
+    name = 'hep_c_ab',
+    verbose_name = 'Hepatitis C antibody = "REACTIVE" (may be truncated)',
+    loinc_nums = ['16128-1'],
+    strings = ['reactiv'],
+    )
 
+total_bilirubin_high = High_Numeric_Lab_Heuristic(
+    name = 'total_bilirubin_high',
+    verbose_name = 'Total bilirubin > 1.5',
+    loinc_nums = ['33899-6'],
+    default_high = 1.5,
+    )
 
-class Hep_C_Ab(Lab_Heuristic):
+class High_Calculated_Bilirubin_Heuristic(Lab_Heuristic):
     '''
-    Hepatitis C antibody = "REACTIVE" (may be truncated)
+    Special heuristic for high Calculated Bilirubin values.  Since the value 
+    of calculated bilirubin is the sum of results of two seperate tests (w/ 
+    separate LOINCs), it cannot be handled by a generic Heuristic class.
     '''
-    def setup(self):
-        self.name = 'Hepatitis C antibody = "REACTIVE" (may be truncated)'
-        self.encounter_q = None
-        self.loinc_nums = ['16128-1']
-        self.pos_q = Q(LxTest_results__istartswith='reactiv')
-
-
-class Total_Bilirubin_gt_1_5(Lab_Heuristic):
-    '''
-    Total bilirubin > 1.5
-    '''
-    def setup(self):
-        self.name = 'Total bilirubin > 1.5'
-        self.loinc_nums = ['33899-6']
-        self.pos_q = Q(LxTest_results__gt=1.5)
-
-
-class Calculated_Bilirubin_gt_1_5(Lab_Heuristic):
-    '''
-    FINISH ME!
-    '''
-    def setup(self):
-        self.name = ''
-        self.encounter_q = None
-    
+    def __init__(self):
+        self.name = 'high_calc_bilirubin'
+        self.verbose_name = 'Calculated Bilirubin = (direct bilirubin + indirect bilirubin) > 1.5'
+        self.loinc_nums = ['29760-6', '14630-8']
+        self._register()
         
+    def matches(self, begin_date=None, end_date=None):
+        log.debug('Looking for high calculated bilirubin scores')
+        # First, we return a list of patient & order date pairs, where the sum
+        # of direct and indirect bilirubin tests ordered on the same day is 
+        # greater than 1.5.
+        relevant = self.relevant_labs(begin_date, end_date)
+        vqs = relevant.values('LxPatient', 'LxOrderDate') # returns ValueQuerySet
+        vqs = vqs.annotate(calc_bil=Sum('LxTest_results'))
+        vqs = vqs.filter(calc_bil__gt=1.5)
+        # Next we loop thru the patient/order-date list, fetch the relevant 
+        # (direct + indirect) > 1.5, just in case there is a funky situation
+        # where, e.g., the patient has had two indirect bilirubin tests ordered
+        # on the same day.
+        matches = []
+        for item in vqs:
+            matches += [i for i in relevant.filter(LxPatient__id=item['LxPatient'], LxOrderDate=item['LxOrderDate']) ]
+        return matches
+            
+high_calc_bilirubin = High_Calculated_Bilirubin_Heuristic()
+
 
 #===============================================================================
 #
@@ -647,80 +646,62 @@ class Calculated_Bilirubin_gt_1_5(Lab_Heuristic):
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#class Acute_Hepatitis_A(DiseaseDefinition):
-#    '''
-#    A case of Acute Hepatitis A is defined as a patient who has
-#        a) Positive test for IgM Antibody to Hepatitis A
-#        b) Either Diagnosis of Jaundice; ALT test > 2x normal; or AST test > 2x normal 
-#    where (b) must occur "within 14 days" of (a)
-#    '''
-#    condition = models.Rule.objects.get(ruleName__icontains='acute hepatitis a')
-#    related_components = [
-#        Jaundice,
-#        ALT_2x_Upper_Limit,
-#        AST_2x_Upper_Limit,
-#        Hep_A_IgM_Ab,
-#        ]
-#    report_icd9 = [
-#                   '780.6A',
-#                   '782.4',
-#                   '783.0',
-#                   '780.79B',
-#                   '789.0',
-#                   '787.01',
-#                   '787.02',
-#                   '787.91',
-#                   ]
-#    report_rx = []
-#    
-#    def get_patients(self):
-#        log.info('Searching for cases of Acute Hepatitis A')
-#        j = Jaundice()
-#        alt = ALT_2x_Upper_Limit()
-#        ast = AST_2x_Upper_Limit()
-#        ab = Hep_A_IgM_Ab()
-#        positive = sets.Set() # patients positive for Hep A
-#        for lab in ab.positive_labs().select_related('LxPatient'):
-#            # These patients all tested positive for Hep A IgM antibody.  
-#            # Let's find out if they meet any of the other conditions.
-#            patient = lab.LxPatient
-#            log.debug('Patient has positive Hep A IgM antibody test:\n    %s' % patient)
-#            lab_date = util.date_from_str(lab.LxOrderDate)
-#            fourteen = datetime.timedelta(days=14)
-#            begin_date = lab_date - fourteen
-#            end_date = lab_date + fourteen
-#            log.debug('Analyzing time window %s to %s.' % (begin_date, end_date))
-#            for test in [j, alt, ast]:
-#                if test.is_positive(patient):
-#                    msg = '\n'
-#                    msg += '    The following patient tested positive for Hepatitis A IgM antibody, and\n' 
-#                    msg += '    for "%s"\n' % test.name
-#                    msg += '    within +/- 14 days, fulfilling criteria for an Acute Hep A case:\n'
-#                    msg += '    %s' % patient
-#                    log.info(msg)
-#                    positive.add(patient)
-#                    break # Only need one positive in this bunch
-#        return positive
-#                                
-#    def split_cases(self, patient, labs, encounters):
-#        '''
-#        From Mike Klompas:  "For acute hepatitis A it's one diagnosis per 
-#        lifetime.  Subsequent positives are false positives."  Case date is 
-#        the order date for Hepatitis A IgM lab test
-#        '''
-#        case_info = {'patient': patient,
-#                     'labs': labs,
-#                     'encounters': encounters,}
-#        # It's easier to hit the DB just one time, than to loop through the
-#        # list of all relevant labs provided as argument.
-#        pos_test = Hep_A_IgM_Ab().positive_labs(patient=patient)[0]
-#        case_info['date'] = util.date_from_str(pos_test.LxOrderDate)
-#        case_info['provider'] = pos_test.LxOrdering_Provider
-#        return [case_info]
+        
+def hep_a_cases(self, new_only=False):
+    '''
+    Only one Hep A case per lifetime -- so return one case, with all relevant events attached.
+    '''
+    
+    result = {} # {Patient: Case}
+    igm_events = models.Heuristic_Event.objects.filter(heuristic_name='hep_a_igm_ab')
+    for event in igm_events:
+        patient = event.patient
+        fourteen = datetime.timedelta(days=14)
+        begin = event.date - fourteen
+        end = event.date + fourteen
+        other_names = ('jaundice', 'alt_2x', 'ast_2x')
+        q_obj = Q(patient=patient, heuristic_name__in=other_names, date__gte=begin, date__lte=end)
+        other_events = models.Heuristic_Event.objects.filter(q_obj)
+        if not other_events:
+            continue # Not a case
+        all_events = [event] + [e for e in other_events]
+        #
+        # Case established -- but a patient can have only one Acute Hep A 
+        # diagnosis per lifetime, so let's check and see if he already has 
+        # one.
+        #
+        if patient in result: # First, have we seen it in this detection run:
+            log.debug('Result list already contains case for %s.  Updating its events and continuing.' % patient)
+            case = result[patient]
+            case.events = sets.Set(case.events) + sets.Set(all_events)
+            continue
+        # Now check the db:
+        existing = models.Case.objects.filter(caseDemog=patient, caseRule=self.condition)
+        if existing and new_only:
+            log.debug('Existing case found for %s.  Flag new_only is set, so skipping & continuing.' % patient)
+            continue
+        elif existing:
+            log.debug('Existing case found for %s.  Updating its events (not saving), putting it in result list, and continuing.' % patient)
+            case = existing[0] # should be only one hep A case
+            case.events = sets.Set(case.events) + sets.Set(all_events)
+            result[patient] = case
+        else:
+            # No case --
+            log.debug('Creating new case for %s' % patient)
+            result[patient] = self.new_case(primary_event=event, all_events=all_events)
+    return result
 
-
+hep_a = Disease_Definition(
+    name = 'Acute Hepatitis A',
+    get_cases_func = hep_a_cases,
+    )
+    
 
 if __name__ == '__main__':
-    alt_2x.generate_events()
+    #alt_2x.save_events()
+    #Heuristic.save_all_events()
+    #high_calc_bilirubin.save_events()
     #pprint.pprint(connection.queries)
+    Acute_Hepatitis_A().generate_cases()
+    pass
     

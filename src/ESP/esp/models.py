@@ -41,32 +41,6 @@ from ESP.utils.utils import log
 
 
 
-FORMAT_TYPES = (
-    ('Text','Plain text representation'),
-    ('XML','eXtended Markup Language format'),
-    ('HL7', 'Health Level 7 markup'),
-    ('MADPHSimple', 'MADPH Simple markup (pipe delim simplifiedhl7)'),
-)
-
-
-
-WORKFLOW_STATES = [
-    ('AR','AWAITING REVIEW'),
-    ('UR','UNDER REVIEW'),
-    ('RM', 'REVIEW By MD'),
-    ('FP','FALSE POSITIVE - DO NOT PROCESS'),
-    ('Q','CONFIRMED CASE, TRANSMIT TO HEALTH DEPARTMENT'), 
-    ('S','TRANSMITTED TO HEALTH DEPARTMENT')
-    ]
-
-DEST_TYPES = (
-    ('TextFile','Text file on the filesystem - path'),
-    ('PHIN-MS','PHINMS server URL'),
-    ('SOAP', 'SOAP service URL'),
-    ('XMLRPC', 'XML-RPC Server URL'),
-)
-
-
 class Loinc(models.Model):
     '''
     Logical Observation Identifiers Names and Codes
@@ -452,7 +426,7 @@ class Heuristic_Event(models.Model):
     '''
     An interesting medical event
     '''
-    event_name = models.CharField(max_length=127, null=False, blank=False, db_index=True)
+    heuristic_name = models.CharField(max_length=127, null=False, blank=False, db_index=True)
     date = models.DateField(blank=False, db_index=True)
     patient = models.ForeignKey(Demog, blank=False, db_index=True)
     #
@@ -464,284 +438,12 @@ class Heuristic_Event(models.Model):
     content_object = generic.GenericForeignKey('content_type', 'object_id')
     
     class Meta:
-        unique_together = ['event_name', 'date', 'patient', 'content_type', 'object_id']
+        unique_together = ['heuristic_name', 'date', 'patient', 'content_type', 'object_id']
     
     def __str__(self):
-        return '%-15s %-12s Patient #%-20s' % (self.event_name, self.date, self.patient.id)
+        return '%-15s %-12s Patient #%-20s' % (self.heuristic_name, self.date, self.patient.id)
 
 
-
-
-###################################
-class TestCase(models.Model):
-
-    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
-    caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
-    caseWorkflow = models.CharField('Workflow State', max_length=20,choices=WORKFLOW_STATES, blank=True,db_index=True )
-    caseComments = models.TextField('Comments', blank=True, null=True)
-    caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
-    casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
-    caseSendDate = models.DateTimeField('Date sent', null=True)
-    caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID")
-    caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
-    caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=FORMAT_TYPES, blank=True, null=True)
-    caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=DEST_TYPES, blank=True, null=True)
-    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500,  blank=True, null=True)
-    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500,  blank=True, null=True)
-    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500,  blank=True, null=True)
-    caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
-    caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
-    
-    
-    def  __unicode__(self):
-        p = self.showPatient()# self.pID
-        s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
-        return s
-    
-        
-    def showPatient(self): 
-        p = self.getPatient()
-        s = u'%s %s %s %s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial, p.DemogMedical_Record_Number)
-        return s
-    
-    def getPatient(self): 
-        p = Demog.objects.get(id__exact = self.caseDemog.id)
-        return p
-
-    def getPregnant(self):
-        p=self.getPatient()
-        encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
-        lxs = None
-        lxlist = self.caseLxID.split(',')
-        if len(lxlist) > 0:
-            lxs=Lx.objects.filter(id__in=lxlist)
-        if encdb and lxs:
-            lx = lxs[0]
-            lxorderd = lx.LxOrderDate
-            lxresd=lx.LxDate_of_result
-            lxresd = datetime.date(int(lxresd[:4]),int(lxresd[4:6]),int(lxresd[6:8]))+datetime.timedelta(30)
-            lxresd = lxresd.strftime('%Y%m%d')
-            for oneenc in encdb:
-                encdate = oneenc.EncEncounter_Date
-                edcdate = oneenc.EncEDC.replace('/','')
-                if edcdate:
-                    edcdate = datetime.date(int(edcdate[:4]),int(edcdate[4:6]), int(edcdate[6:8]))
-                    dur1 =edcdate-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
-                    dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
-                    if dur1.days>=0 or dur2.days>=0:
-                        return (u'Pregnant', oneenc.EncEDC.replace('/',''))
-                
-        elif encdb and not lxs:
-            return (u'Pregnant', encdb[0].EncEDC.replace('/',''))
-
-        return (u'',None)
-
-
-    def getcaseLastUpDate(self):
-        s = u'%s' % self.caseLastUpDate
-        return s[:11]
-    
-    def getLxOrderdate(self):
-        """
-        """
-        # patched 30 jan to not barf if no LxIDs
-        lxlist = self.caseLxID.split(',')
-        orderdate=[]
-        if len(lxlist) > 0:
-           lxs=Lx.objects.filter(id__in=lxlist)
-           for l in lxs:
-              orderdate.append(unicode(l.LxOrderDate))
-        return unicode(''.join(orderdate))
-
-
-    def getLxProviderSite(self):
-        '''
-        '''
-        # patched 30 jan to not barf if no LxIDs    
-        res = []
-        lxlist = self.caseLxID.split(',')
-        if len(lxlist) > 0:
-           lxs=Lx.objects.filter(id__in=lxlist)
-           sites=[]
-           for l in lxs:
-               relprov = Provider.objects.filter(id=l.LxOrdering_Provider.id)[0]
-               sitename = relprov.provPrimary_Dept
-               if sitename and sitename not in sites:
-                  sites.append(sitename)
-           res = []
-           for loc in sites:
-              res.append('%s ' % loc)
-        return unicode(''.join(res))
-        
-    def getWorkflows(self): # return a list of workflow states for history
-        wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
-        return wIter
-    
-    def getCondition(self):
-        cond = Rule.objects.get(id__exact=self.caseRule.id)
-        return cond
-    
-    def getAddress(self):
-        p = self.getPatient()
-        s=''
-        if p.DemogAddress1:
-            s = u'%s %s %s %s %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
-        return s
-    
-    def getPrevcases(self):
-        othercases = TestCase.objects.filter(caseDemog__id__exact=self.caseDemog.id, caseRule__id__exact=self.caseRule.id, id__lt=self.id)
-        returnstr=[]
-        for c in othercases:
-            returnstr.append(unicode(c.id))
-        return returnstr
-                                                                                                                                                                    
-                                                                                                                                                                                                                    
-###################################                             
-class Case(models.Model):
-    """casePID can't be a foreign key or we get complaints that the pointed to model doesn't
-    yet exist
-    """
-    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
-    caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
-    caseWorkflow = models.CharField('Workflow State', max_length=20,choices=WORKFLOW_STATES, blank=True,db_index=True )
-    caseComments = models.TextField('Comments', blank=True, null=True)
-    caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
-    casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
-    caseSendDate = models.DateTimeField('Date sent', null=True)
-    caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID")
-    caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
-    caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=FORMAT_TYPES, blank=True, null=True)
-    caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=DEST_TYPES, blank=True,null=True)
-    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500,  blank=True, null=True)
-    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500,  blank=True, null=True)
-    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500,  blank=True, null=True)
-    caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
-    caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
-    
-    class Meta:
-        permissions = [
-            ('view_phi', 'Can view protected health information'),
-            ]
-    
-    def latest_lx(self):
-        '''
-        Returns the latest lab test relevant to this case
-        '''
-        if not self.caseLxID:
-            return None
-        lab_result_ids = self.caseLxID.split(',')
-        lab_results = Lx.objects.filter(id__in=lab_result_ids).order_by('LxOrderDate').reverse()
-        return lab_results[0]
-        
-    def latest_lx_order_date(self):
-        '''
-        Return a datetime.date instance representing the date on which the 
-        latest lab test relevant to this case was ordered.
-        '''
-        if not self.latest_lx():
-            return None
-        s = self.latest_lx().LxOrderDate
-        year = int(s[0:4])
-        month = int(s[4:6])
-        day = int(s[6:8])
-        return datetime.date(year, month, day)
-    
-    def latest_lx_provider_site(self):
-        '''
-        Return the provider site for the latest lab test relevant to this case 
-        '''
-        lx = self.latest_lx()
-        if not lx:
-            return None
-        return lx.LxOrdering_Provider.provPrimary_Dept
-
-    def  __unicode__(self):
-        p = self.showPatient()# self.pID
-        s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
-        
-        return s
- 
-    def showPatient(self): 
-        p = self.getPatient()
-        #  s = '%s, %s: %s MRN=%s' % (p.PIDLast_Name, p.PIDFirst_Name, p.PIDFacility1, p.PIDMedical_Record_Number1 )
-
-        s = u'%s %s %s %s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial,p.DemogMedical_Record_Number )
-
-        return s
-
-    def getPatient(self): # doesn't work
-        p = Demog.objects.get(id__exact = self.caseDemog.id)        
-        return p
-
-    def getPregnant(self):
-        p=self.getPatient()
-        encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
-        lxs = None
-        lxi = self.caseLxID
-        if len(lxi) > 0:
-            lxs=Lx.objects.filter(id__in=lxi.split(','))
-        if encdb and lxs:
-            lx = lxs[0]
-            lxorderd = lx.LxOrderDate
-            lxresd=lx.LxDate_of_result
-            lxresd = datetime.date(int(lxresd[:4]),int(lxresd[4:6]),int(lxresd[6:8]))+datetime.timedelta(30)
-            lxresd = lxresd.strftime('%Y%m%d')
-            for oneenc in encdb:
-                encdate = oneenc.EncEncounter_Date
-                edcdate = oneenc.EncEDC.replace('/','')
-                if edcdate:
-                    edcdate = datetime.date(int(edcdate[:4]),int(edcdate[4:6]), int(edcdate[6:8]))
-                    dur1 =edcdate-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
-                    dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
-                    if dur1.days>=0 or dur2.days>=0:
-                        return (u'Pregnant', oneenc.EncEDC.replace('/',''))
-#            for oneenc in encdb:
-#                encdate = oneencdb.EncEncounter_Date
-#                dur1 =datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
-#                dur2 = datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8])) - datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))
-#                if dur1.days>=0 and dur2.days>=0:
-#                    return ('Pregnant', oneenc.EncEDC.replace('/',''))
-        elif encdb and not lxs:
-            return (u'Pregnant', encdb[0].EncEDC.replace('/',''))
-        return (u'',None)
-
-    def getcaseLastUpDate(self):
-        s = u'%s' % self.caseLastUpDate
-        return s[:11]
-
-    def getWorkflows(self): # return a list of workflow states for history
-        wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
-        return wIter
-    
-    def getCondition(self):
-        cond = Rule.objects.get(id__exact=self.caseRule.id)
-        return cond
-
-    def getAddress(self):
-        p = self.getPatient()
-        s=''
-        if p.DemogAddress1:
-            s = u'%s %s %s, %s, %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
-        return s
-
-    def getPrevcases(self):
-        othercases = Case.objects.filter(caseDemog__id__exact=self.caseDemog.id, caseRule__id__exact=self.caseRule.id, id__lt=self.id)
-        returnstr=[]
-        for c in othercases:
-            returnstr.append(unicode(c.id))
-        return returnstr
-
-
-###################################
-class CaseWorkflow(models.Model):
-    workflowCaseID = models.ForeignKey(Case)
-    workflowDate = models.DateTimeField('Activated',auto_now=True)
-    workflowState = models.CharField('Workflow State',choices=WORKFLOW_STATES,max_length=20 )
-    workflowChangedBy = models.CharField('Changed By', max_length=30)
-    workflowComment = models.TextField('Comments',blank=True,null=True)
-    
-    def  __unicode__(self):
-        return u'%s %s %s' % (self.workflowCaseID, self.workflowDate, self.workflowState)
 
 
 class Rx(models.Model):
@@ -763,8 +465,16 @@ class Rx(models.Model):
     RxEndDate = models.CharField('End Date',max_length=20,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-    # Heuristics
+    #
+    # Heuristics support
+    #
     heuristics = generic.GenericRelation(Heuristic_Event)
+    def _get_patient(self):
+        return self.RxPatient
+    patient = property(_get_patient)
+    def _get_provider(self):
+        return self.RxProvider
+    provider = property(_get_provider)
             
     def getNDC(self):
         """translate CPT code
@@ -860,17 +570,20 @@ class Lx(models.Model):
     #
     ext_code = models.CharField(max_length=100, blank=True, null=True)
     loinc = models.ForeignKey(Loinc, blank=True, null=True)
-    # Heuristics
-    heuristics = generic.GenericRelation(Heuristic_Event)
-    # Use custom manager
-    objects = LxManager()
     
     #
-    # Aliases
+    # Heuristics Support
     #
+    heuristics = generic.GenericRelation(Heuristic_Event)
     def _get_patient(self):
         return self.LxPatient
     patient = property(_get_patient)
+    def _get_provider(self):
+        return self.LxOrdering_Provider
+    provider = property(_get_provider)
+    
+    # Use custom manager
+    objects = LxManager()
     
     def _get_date(self):
         '''
@@ -930,7 +643,7 @@ class Lx(models.Model):
     
     def  __unicode__(self):
         #return u"%-10s %-50s %-12s PID %s" % (self.LxOrder_Id_Num, self.getCPT(), self.LxOrderDate, self.LxPatient.DemogPatient_Identifier, )
-        return u'Lab Result | LOINC: %-10s | Patient: #%-12s | Date: %-10s' % (self.LxLoinc, self.LxPatient.id, util.date_from_str(self.LxDate_of_result))
+        return u'<Lab Result #%-10s (LOINC: %-7s)>' % (self.pk, self.LxLoinc)
     
 
 class Lxo(models.Model):
@@ -939,8 +652,6 @@ class Lxo(models.Model):
     LxoOrder_Id_Num = models.CharField('Order Id #',max_length=20,blank=True,null=True)
     LxoTest_ordered = models.CharField('Test ordered',max_length=20,blank=True,null=True)
     LxoHVMA_accession_number = models.CharField('HVMA accession number',max_length=20,blank=True,null=True)
-    # Heuristics
-    heuristics = generic.GenericRelation(Heuristic_Event)
 
     def  __unicode__(self):
         return u"%s %s %s %s" % (self.LxoPatient_Identifier,self.LxoMedical_Record_Number,self.LxoOrder_Id_Num,self.LxoTest_ordered)
@@ -973,9 +684,18 @@ class Enc(models.Model):
     EncPeakFlow = models.CharField('Peak Flow',max_length=50,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-    # Heuristics
+    
+    #
+    # Heuristics support
+    #
     heuristics = generic.GenericRelation(Heuristic_Event)
-
+    def _get_patient(self):
+        return self.EncPatient
+    patient = property(_get_patient)
+    def _get_provider(self):
+        return self.EncEncounter_Provider
+    provider = property(_get_provider)
+    
     def _get_enc_date(self):
         '''
         Returns a datetime.date object
@@ -1020,7 +740,7 @@ class Enc(models.Model):
         ICD9 codes.
         '''
         list = []
-        for i in self.EncICD9_Codes.split(','):
+        for i in self.EncICD9_Codes.split():
             if i:
                 list += [i]
         return list
@@ -1043,7 +763,8 @@ class Enc(models.Model):
         return self.EncEncounter_Provider.getcliname()       
 
     def  __unicode__(self):
-        return u"%s %s %s %s" % (self.EncPatient.id,self.geticd9s(), self.EncMedical_Record_Number,self.EncEncounter_Date)
+        #return u"%s %s %s %s" % (self.EncPatient.id,self.geticd9s(), self.EncMedical_Record_Number,self.EncEncounter_Date)
+        return u"<Encounter: #%-10s (CPT: %s)>" % (self.EncPatient.id, ', '.join(self.icd9_list))
 
 
 
@@ -1075,8 +796,8 @@ class Immunization(models.Model):
     ImmRecId = models.CharField('Immunization Record Id',max_length=200,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-    # Heuristics
-    heuristics = generic.GenericRelation(Heuristic_Event)
+    
+
             
 
     def  __unicode__(self):
@@ -1263,12 +984,6 @@ class HL7File(models.Model):
         return u'%s %s' % (self.filename,self.datedownloaded)
 
 
-#===============================================================================
-#
-#--- ~~~ Disease Detection ~~~
-#
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                                
 class External_To_Loinc_Map(models.Model):
     '''
     A mapping from an external code (for a lab result, etc) to a Loinc number
@@ -1282,7 +997,324 @@ class External_To_Loinc_Map(models.Model):
     # Loinc can be null to indicate an external code that maps to nothing
     loinc = models.ForeignKey(Loinc, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+
+
+
+#===============================================================================
+#
+#--- ~~~ Case Management ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+###################################
+#class TestCase(models.Model):
+#
+#    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
+#    caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
+#    caseWorkflow = models.CharField('Workflow State', max_length=20,choices=WORKFLOW_STATES, blank=True,db_index=True )
+#    caseComments = models.TextField('Comments', blank=True, null=True)
+#    caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
+#    casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
+#    caseSendDate = models.DateTimeField('Date sent', null=True)
+#    caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID")
+#    caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
+#    caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=FORMAT_TYPES, blank=True, null=True)
+#    caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=DEST_TYPES, blank=True, null=True)
+#    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500,  blank=True, null=True)
+#    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500,  blank=True, null=True)
+#    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500,  blank=True, null=True)
+#    caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
+#    caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
+#    
+#    
+#    def  __unicode__(self):
+#        p = self.showPatient()# self.pID
+#        s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
+#        return s
+#    
+#        
+#    def showPatient(self): 
+#        p = self.getPatient()
+#        s = u'%s %s %s %s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial, p.DemogMedical_Record_Number)
+#        return s
+#    
+#    def getPatient(self): 
+#        p = Demog.objects.get(id__exact = self.caseDemog.id)
+#        return p
+#
+#    def getPregnant(self):
+#        p=self.getPatient()
+#        encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
+#        lxs = None
+#        lxlist = self.caseLxID.split(',')
+#        if len(lxlist) > 0:
+#            lxs=Lx.objects.filter(id__in=lxlist)
+#        if encdb and lxs:
+#            lx = lxs[0]
+#            lxorderd = lx.LxOrderDate
+#            lxresd=lx.LxDate_of_result
+#            lxresd = datetime.date(int(lxresd[:4]),int(lxresd[4:6]),int(lxresd[6:8]))+datetime.timedelta(30)
+#            lxresd = lxresd.strftime('%Y%m%d')
+#            for oneenc in encdb:
+#                encdate = oneenc.EncEncounter_Date
+#                edcdate = oneenc.EncEDC.replace('/','')
+#                if edcdate:
+#                    edcdate = datetime.date(int(edcdate[:4]),int(edcdate[4:6]), int(edcdate[6:8]))
+#                    dur1 =edcdate-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
+#                    dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
+#                    if dur1.days>=0 or dur2.days>=0:
+#                        return (u'Pregnant', oneenc.EncEDC.replace('/',''))
+#                
+#        elif encdb and not lxs:
+#            return (u'Pregnant', encdb[0].EncEDC.replace('/',''))
+#
+#        return (u'',None)
+#
+#
+#    def getcaseLastUpDate(self):
+#        s = u'%s' % self.caseLastUpDate
+#        return s[:11]
+#    
+#    def getLxOrderdate(self):
+#        """
+#        """
+#        # patched 30 jan to not barf if no LxIDs
+#        lxlist = self.caseLxID.split(',')
+#        orderdate=[]
+#        if len(lxlist) > 0:
+#           lxs=Lx.objects.filter(id__in=lxlist)
+#           for l in lxs:
+#              orderdate.append(unicode(l.LxOrderDate))
+#        return unicode(''.join(orderdate))
+#
+#
+#    def getLxProviderSite(self):
+#        '''
+#        '''
+#        # patched 30 jan to not barf if no LxIDs    
+#        res = []
+#        lxlist = self.caseLxID.split(',')
+#        if len(lxlist) > 0:
+#           lxs=Lx.objects.filter(id__in=lxlist)
+#           sites=[]
+#           for l in lxs:
+#               relprov = Provider.objects.filter(id=l.LxOrdering_Provider.id)[0]
+#               sitename = relprov.provPrimary_Dept
+#               if sitename and sitename not in sites:
+#                  sites.append(sitename)
+#           res = []
+#           for loc in sites:
+#              res.append('%s ' % loc)
+#        return unicode(''.join(res))
+#        
+#    def getWorkflows(self): # return a list of workflow states for history
+#        wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
+#        return wIter
+#    
+#    def getCondition(self):
+#        cond = Rule.objects.get(id__exact=self.caseRule.id)
+#        return cond
+#    
+#    def getAddress(self):
+#        p = self.getPatient()
+#        s=''
+#        if p.DemogAddress1:
+#            s = u'%s %s %s %s %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
+#        return s
+#    
+#    def getPrevcases(self):
+#        othercases = TestCase.objects.filter(caseDemog__id__exact=self.caseDemog.id, caseRule__id__exact=self.caseRule.id, id__lt=self.id)
+#        returnstr=[]
+#        for c in othercases:
+#            returnstr.append(unicode(c.id))
+#        return returnstr
+#                                                                                                                                                                    
+#                                                                                                                                                                                                                    
+#class Case(models.Model):
+#    """casePID can't be a foreign key or we get complaints that the pointed to model doesn't
+#    yet exist
+#    """
+#    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
+#    caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
+#    caseWorkflow = models.CharField('Workflow State', max_length=20,choices=WORKFLOW_STATES, blank=True,db_index=True )
+#    caseComments = models.TextField('Comments', blank=True, null=True)
+#    caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
+#    casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
+#    caseSendDate = models.DateTimeField('Date sent', null=True)
+#    caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID")
+#    caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
+#    caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=FORMAT_TYPES, blank=True, null=True)
+#    caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=DEST_TYPES, blank=True,null=True)
+#    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500,  blank=True, null=True)
+#    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500,  blank=True, null=True)
+#    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500,  blank=True, null=True)
+#    caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
+#    caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
+#    #
+#    # Heuristic Events
+#    #
+#    events = models.ManyToManyField(Heuristic_Event, blank=True, null=True, db_index=True)
+#    
+#    class Meta:
+#        permissions = [
+#            ('view_phi', 'Can view protected health information'),
+#            ]
+#    
+#    def latest_lx(self):
+#        '''
+#        Returns the latest lab test relevant to this case
+#        '''
+#        if not self.caseLxID:
+#            return None
+#        lab_result_ids = self.caseLxID.split(',')
+#        lab_results = Lx.objects.filter(id__in=lab_result_ids).order_by('LxOrderDate').reverse()
+#        return lab_results[0]
+#        
+#    def latest_lx_order_date(self):
+#        '''
+#        Return a datetime.date instance representing the date on which the 
+#        latest lab test relevant to this case was ordered.
+#        '''
+#        if not self.latest_lx():
+#            return None
+#        s = self.latest_lx().LxOrderDate
+#        year = int(s[0:4])
+#        month = int(s[4:6])
+#        day = int(s[6:8])
+#        return datetime.date(year, month, day)
+#    
+#    def latest_lx_provider_site(self):
+#        '''
+#        Return the provider site for the latest lab test relevant to this case 
+#        '''
+#        lx = self.latest_lx()
+#        if not lx:
+#            return None
+#        return lx.LxOrdering_Provider.provPrimary_Dept
+#
+#    def  __unicode__(self):
+#        p = self.showPatient()# self.pID
+#        s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
+#        
+#        return s
+# 
+#    def showPatient(self): 
+#        p = self.getPatient()
+#        #  s = '%s, %s: %s MRN=%s' % (p.PIDLast_Name, p.PIDFirst_Name, p.PIDFacility1, p.PIDMedical_Record_Number1 )
+#
+#        s = u'%s %s %s %s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial,p.DemogMedical_Record_Number )
+#
+#        return s
+#
+#    def getPatient(self): # doesn't work
+#        p = Demog.objects.get(id__exact = self.caseDemog.id)        
+#        return p
+#
+#    def getPregnant(self):
+#        p=self.getPatient()
+#        encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
+#        lxs = None
+#        lxi = self.caseLxID
+#        if len(lxi) > 0:
+#            lxs=Lx.objects.filter(id__in=lxi.split(','))
+#        if encdb and lxs:
+#            lx = lxs[0]
+#            lxorderd = lx.LxOrderDate
+#            lxresd=lx.LxDate_of_result
+#            lxresd = datetime.date(int(lxresd[:4]),int(lxresd[4:6]),int(lxresd[6:8]))+datetime.timedelta(30)
+#            lxresd = lxresd.strftime('%Y%m%d')
+#            for oneenc in encdb:
+#                encdate = oneenc.EncEncounter_Date
+#                edcdate = oneenc.EncEDC.replace('/','')
+#                if edcdate:
+#                    edcdate = datetime.date(int(edcdate[:4]),int(edcdate[4:6]), int(edcdate[6:8]))
+#                    dur1 =edcdate-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
+#                    dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
+#                    if dur1.days>=0 or dur2.days>=0:
+#                        return (u'Pregnant', oneenc.EncEDC.replace('/',''))
+##            for oneenc in encdb:
+##                encdate = oneencdb.EncEncounter_Date
+##                dur1 =datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
+##                dur2 = datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8])) - datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))
+##                if dur1.days>=0 and dur2.days>=0:
+##                    return ('Pregnant', oneenc.EncEDC.replace('/',''))
+#        elif encdb and not lxs:
+#            return (u'Pregnant', encdb[0].EncEDC.replace('/',''))
+#        return (u'',None)
+#
+#    def getcaseLastUpDate(self):
+#        s = u'%s' % self.caseLastUpDate
+#        return s[:11]
+#
+#    def getWorkflows(self): # return a list of workflow states for history
+#        wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
+#        return wIter
+#    
+#    def getCondition(self):
+#        cond = Rule.objects.get(id__exact=self.caseRule.id)
+#        return cond
+#
+#    def getAddress(self):
+#        p = self.getPatient()
+#        s=''
+#        if p.DemogAddress1:
+#            s = u'%s %s %s, %s, %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
+#        return s
+#
+#    def getPrevcases(self):
+#        othercases = Case.objects.filter(caseDemog__id__exact=self.caseDemog.id, caseRule__id__exact=self.caseRule.id, id__lt=self.id)
+#        returnstr=[]
+#        for c in othercases:
+#            returnstr.append(unicode(c.id))
+#        return returnstr
+
+class Case(models.Model):
+    '''
+    A case of (reportable) disease
+    '''
+    patient = models.ForeignKey(Demog, blank=False)
+    condition = models.ForeignKey(Rule, blank=False)
+    provider = models.ForeignKey(Provider, blank=False)
+    workflow_state = models.CharField(max_length=20, choices=choices.WORKFLOW_STATES, default='AR', 
+        blank=False, db_index=True )
+    # Timestamps:
+    created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
+    updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
+    sent_timestamp = models.DateTimeField(blank=True, null=True)
+    # Events that define this case:
+    events = models.ForeignKey(Heuristic_Event, blank=True, null=True) # The events that caused this case to be generated
+    # Reportable events:
+    rep_encounters = models.ManyToManyField(Enc, blank=True, null=True)
+    rep_labs = models.ManyToManyField(Lx, blank=True, null=True)
+    rep_meds = models.ManyToManyField(Rx, blank=True, null=True)
+    rep_immunizations = models.ManyToManyField(Immunization, blank=True, null=True)
+    # These fields were present in old Case model, but were not used:
+    #
+    #caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
+    #caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=FORMAT_TYPES, blank=True, null=True)
+    #caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=DEST_TYPES, blank=True,null=True)
+    #
+    notes = models.TextField(blank=True, null=True)
+
+    class Meta:
+        permissions = [
+            ('view_phi', 'Can view protected health information'),
+            ]
+
+
+###################################
+class CaseWorkflow(models.Model):
+    workflowCaseID = models.ForeignKey(Case)
+    workflowDate = models.DateTimeField('Activated',auto_now=True)
+    workflowState = models.CharField('Workflow State',choices=WORKFLOW_STATES,max_length=20 )
+    workflowChangedBy = models.CharField('Changed By', max_length=30)
+    workflowComment = models.TextField('Comments',blank=True,null=True)
     
+    def  __unicode__(self):
+        return u'%s %s %s' % (self.workflowCaseID, self.workflowDate, self.workflowState)
+
+
+                                
     class Meta:
         verbose_name = 'External Code to LOINC Map'
 

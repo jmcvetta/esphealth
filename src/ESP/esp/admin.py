@@ -80,6 +80,10 @@ class Loinc_Admin(admin.ModelAdmin):
     search_fields = ['loinc_num', 'long_common_name', 'shortname']
     save_on_top = True
 
+class Heuristic_Event_Admin(admin.ModelAdmin):
+    list_display = ['heuristic_name', 'patient', 'date', 'content_object']
+    list_filter = ['heuristic_name', 'content_object']
+
 
 admin.site.register(Case, CaseOptions)
 admin.site.register(SocialHistory)
@@ -108,4 +112,5 @@ admin.site.register(VAERSadditions)
 #admin.site.register(Rule, RuleAdmin)
 admin.site.register(models.External_To_Loinc_Map, External_To_Loinc_Map_Admin)
 admin.site.register(models.Loinc, Loinc_Admin)
+admin.site.register(models.Heuristic_Event, Heuristic_Event_Admin)
 
