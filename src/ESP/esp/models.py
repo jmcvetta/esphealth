@@ -441,7 +441,10 @@ class Heuristic_Event(models.Model):
         unique_together = ['heuristic_name', 'date', 'patient', 'content_type', 'object_id']
     
     def __str__(self):
-        return '%-15s %-12s Patient #%-20s' % (self.heuristic_name, self.date, self.patient.id)
+        msg = '%-15s %-12s Patient #%-20s' % (self.heuristic_name, self.date, self.patient.id)
+        msg += '\n'
+        msg += '    %s' % self.content_object
+        return msg
 
 
 
@@ -649,7 +652,7 @@ class Lx(models.Model):
     
     def  __unicode__(self):
         #return u"%-10s %-50s %-12s PID %s" % (self.LxOrder_Id_Num, self.getCPT(), self.LxOrderDate, self.LxPatient.DemogPatient_Identifier, )
-        return u'<Lab Result #%-10s (LOINC: %-7s)>' % (self.pk, self.LxLoinc)
+        return u'<Lab #%-10s %-12s LOINC: %-7s Ref High: %-5s Result: %s>' % (self.pk, self.date, self.LxLoinc, self.LxReference_High, self.LxTest_results)
     
 
 class Lxo(models.Model):
@@ -773,7 +776,7 @@ class Enc(models.Model):
 
     def  __unicode__(self):
         #return u"%s %s %s %s" % (self.EncPatient.id,self.geticd9s(), self.EncMedical_Record_Number,self.EncEncounter_Date)
-        return u"<Encounter: #%-10s (CPT: %s)>" % (self.EncPatient.id, ', '.join(self.icd9_list))
+        return u"<Enc #%-10s %-12s CPT: %s>" % (self.EncPatient.id, self.date, ', '.join(self.icd9_list))
 
 
 
