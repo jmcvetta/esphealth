@@ -7,6 +7,7 @@ import datetime
 import pprint
 import types
 import sets
+import sys
 
 from django.db import connection
 from django.db.models import Q
@@ -277,21 +278,26 @@ class String_Match_Lab_Heuristic(Lab_Heuristic):
     Matches labs with results containing specified strings
     '''
     
-    def __init__(self, name, verbose_name=None, loinc_nums=[], strings=[], match_type='istartswith', **kwargs):
+    def __init__(self, name, verbose_name=None, loinc_nums=[], strings=[], 
+        abnormal_flag=False, match_type='istartswith', **kwargs):
         '''
-        @param name:         Name of this heuristic (short slug)
-        @type name:          String
-        @param verbose_name: Long name of this heuristic
-        @type verbose_name:  String
-        @param strings:      Strings to match against
-        @type strings:       List of strings
-        @param match_type:   Right now, only 'istartswith'
-        @type match_type:    String
+        @param name:          Name of this heuristic (short slug)
+        @type name:           String
+        @param verbose_name:  Long name of this heuristic
+        @type verbose_name:   String
+        @param strings:       Strings to match against
+        @type strings:        List of strings
+        @param abnormal_flag: If true, a lab result with its 'abnormal' flag
+            set will count as a match
+        @type abnormal_flag:  Boolean
+        @param match_type:    Right now, only 'istartswith'
+        @type match_type:     String
         '''
         self.name = name
         self.verbose_name = verbose_name
         self.loinc_nums = loinc_nums
         self.strings = strings
+        self.abnormal_flag = abnormal_flag
         self.match_type = match_type
         assert self.name # Sanity check
         # Should we sanity check verbose_name?
@@ -313,6 +319,10 @@ class String_Match_Lab_Heuristic(Lab_Heuristic):
             pos_q = Q(LxTest_results__istartswith=self.strings[0])
             for s in self.strings[1:]:
                 pos_q = pos_q | Q(LxTest_results__istartswith=s)
+            if self.abnormal_flag:
+                msg = 'IMPORTANT: Support for abnormal-flag-based queries has not yet been implemented!\n'
+                msg += '    Our existing data has only nulls for that field, so I am not sure what the query should look like.'
+                log.critical(msg)
         else:
             raise NotImplementedError('The only match type supported at this time is "istartswith".')
         log.debug('pos_q: %s' % pos_q)
@@ -372,7 +382,7 @@ class Disease_Definition:
     
     def __init__(self, 
         name, 
-        get_cases_func,
+        get_cases_func = None,
         # Reporting
         icd9s = [],
         icd9_days_before = 14,
@@ -386,6 +396,9 @@ class Disease_Definition:
         med_days_after = 14,
         ):
         '''
+        NOTE: No need to specify the LOINCs used to detect the condition, 
+            unless you want them reported even when negative.  All events
+            forming part of a disease's definition are reported.
         @param name:             Name of this disease definition
         @type name:              String
         @param get_cases_func:   Callback that returns list of Case objects
@@ -397,7 +410,7 @@ class Disease_Definition:
         @param icd9_days_after:  How many days after case to search for encounters
         @type icd9_days_after:   Integer
         @param fever:            Do we report fever, determined as temp > 100.4, rather than as ICD9?
-        @type fever: 		     Boolean
+        @type fever:              Boolean
         @param lab_loinc_nums:   Report lab results matching these LOINCs
         @type lab_loinc_nums:    List of strings
         @param lab_days_before:  How many days before case to search for labs
@@ -461,8 +474,8 @@ class Disease_Definition:
         @type all_events:     [Heuristic_Event, Heuristic_Event, ...]
         '''
         case = models.Case()
-        case.caseDemog = primary_event.patient
-        case.caseProvider = primary_event.content_object.provider
+        case.patient = primary_event.patient
+        case.provider = primary_event.content_object.provider
         case.date = primary_event.date
         case.condition = self.condition
         case.save()
@@ -518,8 +531,28 @@ class Disease_Definition:
         # Support for reporting immunizations has not yet been implemented
         return case
     
-    def save_cases(self):
-        pass
+    def split_cases_by_time(self):
+        # 
+        # THIS IS NOT COMPLETE -- DO NOT USE!
+        #
+        time_window = datetime.timedelta(days=self.split_days)
+        result = {} # {Patient: [Case, Case, ...]}
+        for event in models.Heuristic_Event.objects.filter(heuristic_name='chlamydia'):
+            patient = event.patient
+            date = event.date
+            if patient in result: # Do we already have a case (or cases) for this patient in results?
+                for case in result[patient]:
+                    # Check and see event occurred within an year of case
+                    one_year = datetime.timedelta(years=1)
+                    if (event.date >= case.date) and (event.date <= (case.date + one_year)):
+                        case.events = sets.Set(case.events.all()) | sets.Set([event])
+                        case.save()
+                    else: # Add new case to results
+                        pass
+            existing = models.Case.objects.filter(patient=patient, condition=self.condition)
+            if existing:
+                pass
+        
         
 
 #===============================================================================
@@ -692,6 +725,26 @@ class High_Calculated_Bilirubin_Heuristic(Lab_Heuristic):
             
 high_calc_bilirubin = High_Calculated_Bilirubin_Heuristic()
 
+gonorrhea_test = String_Match_Lab_Heuristic(
+    name =          'gonorrhea', 
+    verbose_name =  'Gonorrhea', 
+    loinc_nums =    ['691-6', '23908-7', '24111-7', '36902-5'], 
+    strings =       ['positiv', 'detect'], 
+    abnormal_flag = True, 
+    match_type =    'istartswith',
+    )
+
+chlamydia_test = String_Match_Lab_Heuristic(
+    name =          'chlamydia', 
+    verbose_name =  'Chlamydia', 
+    loinc_nums =    ['4993-2', '6349-5', '16601-7', '20993-2', '21613-5', '36902-5', ],
+    strings =       ['positiv', 'detect'], 
+    abnormal_flag = True, 
+    match_type =    'istartswith',
+    )
+
+
+
 
 #===============================================================================
 #
@@ -700,11 +753,10 @@ high_calc_bilirubin = High_Calculated_Bilirubin_Heuristic()
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         
-def hep_a_cases(self, new_only=False):
+def acute_hep_a_cases(self, new_only=False):
     '''
     Only one Hep A case per lifetime -- so return one case, with all relevant events attached.
     '''
-    
     result = {} # {Patient: Case}
     igm_events = models.Heuristic_Event.objects.filter(heuristic_name='hep_a_igm_ab')
     for event in igm_events:
@@ -718,6 +770,13 @@ def hep_a_cases(self, new_only=False):
         if not other_events:
             continue # Not a case
         all_events = [event] + [e for e in other_events]
+        msg = '\n'
+        msg += '    Acute Hepatitis A case detected for:\n'
+        msg += '        %s\n' % patient
+        msg += '    Components:\n'
+        for e in all_events:
+            msg += '        %s\n' % e.content_object
+        log.info(msg)
         #
         # Case established -- but a patient can have only one Acute Hep A 
         # diagnosis per lifetime, so let's check and see if he already has 
@@ -730,7 +789,7 @@ def hep_a_cases(self, new_only=False):
             continue
         # Now check the db:
         # FIXME: This will need to be updated when we go to new Case model
-        existing = models.Case.objects.filter(caseDemog=patient, caseRule=self.condition)
+        existing = models.Case.objects.filter(patient=patient, condition=self.condition)
         if existing and new_only:
             log.debug('Existing case found for %s.  Flag new_only is set, so skipping & continuing.' % patient)
             continue
@@ -745,9 +804,9 @@ def hep_a_cases(self, new_only=False):
             result[patient] = self.new_case(primary_event=event, all_events=all_events)
     return result
 
-hep_a = Disease_Definition(
+acute_hep_a = Disease_Definition(
     name = 'Acute Hepatitis A', 
-    get_cases_func = hep_a_cases,
+    get_cases_func = acute_hep_a_cases,
     icd9s = settings.DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     icd9_days_after = 14,
@@ -757,11 +816,79 @@ hep_a = Disease_Definition(
     lab_days_after = 30,
     )
 
-if __name__ == '__main__':
+
+
+
+def chlamydia_cases(self):
+    result = {} # {Patient: [Case, Case, ...]}
+    for patient_id in models.Heuristic_Event.objects.filter(heuristic_name='chlamydia').values_list('patient'):
+        pass
+    existing = models.Case.objects.filter(patient=patient, condition=self.condition)
+    if existing:
+        pass
+            
+
+chlamydia = Disease_Definition(
+    name = 'chlamydia',
+    verbose_name = 'Chlamydia',
+    get_cases_func = chlamydia_cases,
+    icd9s = [
+        '788.7',
+        '099.40',
+        '597.80',
+        '780.6A',
+        '616.0',
+        '616.10',
+        '623.5',
+        '789.07',
+        '789.04',
+        '789.09',
+        '789.03',
+        '789.00',
+        ],
+    icd9_days_before = 14,
+    icd9_days_after = 14,
+    fever = True,
+    med_names = [
+        'azithromycin',
+        'levofloxacin',
+        'ofloxacin',
+        'ciprofloxacin',
+        'doxycycline',
+        'eryrthromycin',
+        'amoxicillin',
+        'EES',
+        ],
+    med_days_before = 7,
+    med_days_after = 14
+    )
+
+    
+
+
+
+def main():
     #alt_2x.save_events()
     #Heuristic.save_all_events()
     #high_calc_bilirubin.save_events()
     #pprint.pprint(connection.queries)
-    hep_a.get_cases()
-    pass
+    #hep_a.get_cases()
+    #m = ast_2x.matches()
+    #for i in m:
+    #    print i
+    chlamydia.save_cases()
     
+    sys.exit()
+    qs = models.Heuristic_Event.objects.filter(heuristic_name='ast_2x')
+    print qs.count()
+    for e in qs.select_related():
+        try:
+            if int(e.content_object.LxTest_results) > 132:
+                continue
+        except ValueError:
+            pass
+        print e
+    
+
+if __name__ == '__main__':
+    main()
