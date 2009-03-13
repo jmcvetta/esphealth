@@ -7,9 +7,10 @@ from django.utils.translation import ugettext_lazy as _
 from ESP.esp import models
 
 class CaseOptions(admin.ModelAdmin):
-    list_filter = ('caseWorkflow','caseQueryID','caseMsgFormat','caseProvider')
-    ordering = ('caseLastUpDate', 'casecreatedDate')
-    list_display = ('caseProvider','caseWorkflow','caseComments','caseLastUpDate','caseQueryID','caseMsgFormat')
+    list_filter = ('workflow_state',)
+    ordering = ('updated_timestamp', 'created_timestamp')
+    #list_display = ('caseProvider','caseWorkflow','caseComments','caseLastUpDate','caseQueryID','caseMsgFormat')
+    list_display = ['provider', 'workflow_state', 'updated_timestamp', 'notes']
 
 class EncOptions(admin.ModelAdmin):
     list_display = ('EncPatient', 'EncEncounter_Date','EncMedical_Record_Number')

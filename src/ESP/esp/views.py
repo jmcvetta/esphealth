@@ -1441,50 +1441,50 @@ def json_case_grid(request, status):
     # Limit Cases by Status
     #
     if status == 'await':
-        cases = cases.filter(caseWorkflow='AR')
+        cases = cases.filter(workflow_state='AR')
     elif status == 'under':
-        cases = cases.filter(caseWorkflow='UR')
+        cases = cases.filter(workflow_state='UR')
     elif status == 'queued':
-        cases = cases.filter(caseWorkflow='Q')
+        cases = cases.filter(workflow_state='Q')
     elif status == 'sent':
-        cases = cases.filter(caseWorkflow='S')
+        cases = cases.filter(workflow_state='S')
     #
     # Search Cases
     #
     # I would like also to be able to search by site, but we cannot do so in 
     # a tolerably efficient manner without changes to the data model.
     if flexi.query and flexi.qtype == 'condition':
-        cases = cases.filter(caseRule__ruleName__icontains=flexi.query)
+        cases = cases.filter(condition__ruleName__icontains=flexi.query)
     # Search on PHI -- limited to users w/ correct permissions
     elif view_phi and flexi.query and flexi.qtype == 'name':
-        cases = cases.filter(caseDemog__DemogLast_Name__icontains=flexi.query)
+        cases = cases.filter(patient__DemogLast_Name__icontains=flexi.query)
     elif view_phi and flexi.query and flexi.qtype == 'mrn':
         # Is it sensible that MRN search is exact rather than contains?
-        cases = cases.filter(caseDemog__DemogMedical_Record_Number__iexact=flexi.query)
+        cases = cases.filter(patient__DemogMedical_Record_Number__iexact=flexi.query)
     #
     # Sort Cases
     #
     # Maybe some/all of this sorting logic should be in the Case model?
     if flexi.sortname == 'workflow':
-        cases = cases.order_by('caseWorkflow')
+        cases = cases.order_by('workflow_state')
     elif flexi.sortname == 'last_updated':
-        cases = cases.order_by('caseLastUpDate')
+        cases = cases.order_by('updated_timestamp')
     elif flexi.sortname == 'date_ordered':
         #cases = cases.select_related().order_by('getLxOrderdate')
         list = [(c.latest_lx_order_date(), c) for c in cases]
         list.sort()
         cases = [item[1] for item in list]
     elif flexi.sortname == 'condition':
-        cases = cases.order_by('caseRule__ruleName')
+        cases = cases.order_by('condition__ruleName')
     elif flexi.sortname == 'site':
         list = [(c.latest_lx_provider_site(), c) for c in cases]
         list.sort()
         cases = [item[1] for item in list]
     # Sort on PHI -- limited to users w/ correct permissions
     elif view_phi and flexi.sortname == 'name':
-        cases = cases.order_by('caseDemog__DemogLast_Name')
+        cases = cases.order_by('patient__DemogLast_Name')
     elif view_phi and flexi.sortname == 'mrn':
-        cases = cases.order_by('caseDemog__DemogMedical_Record_Number')
+        cases = cases.order_by('patient__DemogMedical_Record_Number')
     elif view_phi and flexi.sortname == 'address':
         list = [(c.getAddress(), c) for c in cases]
         list.sort()
@@ -1529,7 +1529,7 @@ def json_case_grid(request, status):
                 patient.DemogMedical_Record_Number,
                 case.getAddress(),
                 # End PHI
-                case.get_caseWorkflow_display(),
+                case.get_workflow_state_display(),
                 last_update,
                 case.getPrevcases()
                 ]
@@ -1539,7 +1539,7 @@ def json_case_grid(request, status):
                 case.caseRule.ruleName, 
                 order_date,
                 case.latest_lx_provider_site(),
-                case.get_caseWorkflow_display(),
+                case.get_workflow_state_display(),
                 last_update,
                 case.getPrevcases()
                 ]

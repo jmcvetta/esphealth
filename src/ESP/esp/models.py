@@ -1119,79 +1119,123 @@ class TestCase(models.Model):
                                                                                                                                                                     
                                                                                                                                                                                                                     
 class Case(models.Model):
-    """casePID can't be a foreign key or we get complaints that the pointed to model doesn't
-    yet exist
-    """
-    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
-    caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
-    caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID") # Condition
-    # Date roughly indicates when condition was first detected
+    '''
+    A case of (reportable) disease
+    '''
+    patient = models.ForeignKey(Demog, blank=False)
+    condition = models.ForeignKey(Rule, blank=False)
+    provider = models.ForeignKey(Provider, blank=False)
     date = models.DateField(blank=False)
-    caseWorkflow = models.CharField('Workflow State', max_length=20,choices=choices.WORKFLOW_STATES, blank=True,db_index=True )
-    caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
-    casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
-    caseSendDate = models.DateTimeField('Date sent', null=True)
-    # Garbage?
-    caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
-    caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=choices.FORMAT_TYPES, blank=True, null=True)
-    caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=choices.DEST_TYPES, blank=True,null=True)
-    # Reporting
-    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500,  blank=True, null=True)
-    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500,  blank=True, null=True)
-    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500,  blank=True, null=True)
-    caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
-    caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
+    workflow_state = models.CharField(max_length=20, choices=choices.WORKFLOW_STATES, default='AR', 
+        blank=False, db_index=True )
+    # Timestamps:
+    created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
+    updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
+    sent_timestamp = models.DateTimeField(blank=True, null=True)
+    # Events that define this case
+    events = models.ManyToManyField(Heuristic_Event, blank=False) # The events that caused this case to be generated
     #
-    caseComments = models.TextField('Comments', blank=True, null=True)
+    # Reportable Events
     #
-    # New Heuristics Support
+    encounters = models.ManyToManyField(Enc, blank=True, null=True)
+    lab_results = models.ManyToManyField(Lx, blank=True, null=True)
+    medications = models.ManyToManyField(Rx, blank=True, null=True)
+    immunizations = models.ManyToManyField(Immunization, blank=True, null=True)
     #
-    events = models.ManyToManyField(Heuristic_Event, blank=True, null=True, db_index=True)
-    def _get_patient(self):
-        return self.caseDemog
-    def _set_patient(self, value):
-        self.caseDemog = value
-    def _get_provider(self):
-        return self.caseProvider
-    def _set_provider(self, value):
-        self.caseProvider = value
-    def _get_condition(self):
-        return self.caseRule
-    def _set_condition(self, value):
-        self.caseRule = value
-    def _get_encounters(self):
-        if self.caseEncID:
-            return Enc.objects.filter(id__in=self.caseEncID)
-        else:
-            return Enc.objects.none()
-    def _set_encounters(self, value):
-        # value is list of Enc objects
-        self.caseEncID = ' '.join([str(encounter.id) for encounter in value])
-    def _get_labs(self):
-        if self.caseLxID:
-            return Lx.objects.filter(id__in=self.caseLxID)
-        else:
-            return Lx.objects.none()
-    def _set_labs(self, value):
-        self.caseLxID = ' '.join([str(lab.id) for lab in value])
-    def _get_meds(self):
-        if self.caseRxID:
-            return Rx.objects.filter(id__in=self.caseRxID)
-        else:
-            return Rx.objects.none()
-    def _set_meds(self, value):
-        self.caseRxID = ' '.join([str(rx.id) for rx in value])
-    patient = property(_get_patient, _set_patient)
-    provider = property(_get_provider, _set_provider)
-    condition = property(_get_condition, _set_condition)
-    rep_encounters = property(_get_encounters, _set_encounters)
-    rep_labs = property(_get_labs, _set_labs)
-    rep_meds = property(_get_meds, _set_meds)
+    notes = models.TextField(blank=True, null=True)
+    
+    #
+    # Backward Compatibility
+    #
+    def getCaseDemog(self):
+        return self.patient
+    def getCaseProvider(self):
+        return self.provider
+    def getCaseRule(self):
+        return self.condition
+    def getCaseWorkflow(self):
+        return self.workflow_state
+    def getCaseLastUpDate(self):
+        return self.updated_timestamp
+    def getCasecreatedDate(self):
+        return self.created_timestamp
+    def getCaseSendDate(self):
+        return self.sent_timestamp
+    def getCaseQueryID(self):
+        # AFAIK this field is never used.
+        return None
+    def getCaseMsgFormat(self):
+        # AFAIK this field is never used.
+        return None
+    def getCaseMsgDest(self):
+        # AFAIK this field is never used.
+        return None
+    def getCaseEncID(self):
+        return ','.join([str(item.id) for item in self.encounters.all()])
+    def getCaseLxID(self):
+        return ','.join([str(item.id) for item in self.lab_results.all()])
+    def getCaseRxID(self):
+        return ','.join([str(item.id) for item in self.medications.all()])
+    def getCaseICD9(self):
+        result = []
+        [result.extend(item.icd9_list) for item in self.encounters.all()]
+        return result
+    def getCaseImmID(self):
+        return ','.join([str(item.id) for item in self.immunizations.all()])
+    def getCaseComments(self):
+        return self.notes
+    def setCaseDemog(self, value):
+        self.patient = value
+    def setCaseProvider(self, value):
+        self.provider = value
+    def setCaseRule(self, value):
+        self.condition = value
+    def setCaseWorkflow(self, value):
+        self.workflow_state = value
+    def setCaseLastUpDate(self, value):
+        self.updated_timestamp = value
+    def setCasecreatedDate(self, value):
+        self.created_timestamp = value
+    def setCaseSendDate(self, value):
+        self.sent_timestamp = value
+    def setCaseQueryID(self, value):
+        raise NotImplementedError('AFAIK this field is never used.')
+    def setCaseMsgFormat(self, value):
+        raise NotImplementedError('AFAIK this field is never used.')
+    def setCaseMsgDest(self, value):
+        raise NotImplementedError('AFAIK this field is never used.')
+    def setCaseEncID(self, value):
+        raise DeprecationWarning('This property is read-only for backwards compatibility.  Use the ManyToManyFields instead.')
+        self.__caseEncID = value
+    def setCaseLxID(self, value):
+        raise DeprecationWarning('This property is read-only for backwards compatibility.  Use the ManyToManyFields instead.')
+    def setCaseRxID(self, value):
+        raise DeprecationWarning('This property is read-only for backwards compatibility.  Use the ManyToManyFields instead.')
+    def setCaseICD9(self, value):
+        raise DeprecationWarning('This property is read-only for backwards compatibility.  Use the ManyToManyFields instead.')
+    def setCaseImmID(self, value):
+        raise DeprecationWarning('This property is read-only for backwards compatibility.  Use the ManyToManyFields instead.')
+    def setCaseComments(self, value):
+        self.notes = value
+    caseDemog = property(getCaseDemog, setCaseDemog)
+    caseProvider = property(getCaseProvider, setCaseProvider)
+    caseRule = property(getCaseRule, setCaseRule)
+    caseWorkflow = property(getCaseWorkflow, setCaseWorkflow)
+    caseLastUpDate = property(getCaseLastUpDate, setCaseLastUpDate)
+    casecreatedDate = property(getCasecreatedDate, setCasecreatedDate)
+    caseSendDate = property(getCaseSendDate, setCaseSendDate)
+    caseQueryID = property(getCaseQueryID, setCaseQueryID)
+    caseMsgFormat = property(getCaseMsgFormat, setCaseMsgFormat)
+    caseMsgDest = property(getCaseMsgDest, setCaseMsgDest)
+    caseEncID = property(getCaseEncID, setCaseEncID)
+    caseLxID = property(getCaseLxID, setCaseLxID)
+    caseRxID = property(getCaseRxID, setCaseRxID)
+    caseICD9 = property(getCaseICD9, setCaseICD9)
+    caseImmID = property(getCaseImmID, setCaseImmID)
+    caseComments = property(getCaseComments, setCaseComments)
     
     class Meta:
-        permissions = [
-            ('view_phi', 'Can view protected health information'),
-            ]
+        permissions = [ ('view_phi', 'Can view protected health information'), ]
     
     def latest_lx(self):
         '''
@@ -1228,15 +1272,12 @@ class Case(models.Model):
     def  __unicode__(self):
         p = self.showPatient()# self.pID
         s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
-        
         return s
  
     def showPatient(self): 
         p = self.getPatient()
         #  s = '%s, %s: %s MRN=%s' % (p.PIDLast_Name, p.PIDFirst_Name, p.PIDFacility1, p.PIDMedical_Record_Number1 )
-
         s = u'%s %s %s %s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial,p.DemogMedical_Record_Number )
-
         return s
 
     def getPatient(self): # doesn't work
@@ -1295,47 +1336,13 @@ class Case(models.Model):
         return s
 
     def getPrevcases(self):
-        othercases = Case.objects.filter(caseDemog__id__exact=self.caseDemog.id, caseRule__id__exact=self.caseRule.id, id__lt=self.id)
+        othercases = Case.objects.filter(patient=self.patient, condition=self.condition.id, date__lt=self.date)
         returnstr=[]
         for c in othercases:
             returnstr.append(unicode(c.id))
         return returnstr
 
-class NewCase(models.Model):
-    '''
-    A case of (reportable) disease
-    '''
-    patient = models.ForeignKey(Demog, blank=False)
-    condition = models.ForeignKey(Rule, blank=False)
-    provider = models.ForeignKey(Provider, blank=False)
-    date = models.DateField(blank=False)
-    workflow_state = models.CharField(max_length=20, choices=choices.WORKFLOW_STATES, default='AR', 
-        blank=False, db_index=True )
-    # Timestamps:
-    created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
-    updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
-    sent_timestamp = models.DateTimeField(blank=True, null=True)
-    # Events that define this case:
-    events = models.ManyToManyField(Heuristic_Event, blank=True, null=True) # The events that caused this case to be generated
-    # Reportable events:
-    rep_encounters = models.ManyToManyField(Enc, blank=True, null=True)
-    rep_labs = models.ManyToManyField(Lx, blank=True, null=True)
-    rep_meds = models.ManyToManyField(Rx, blank=True, null=True)
-    rep_immunizations = models.ManyToManyField(Immunization, blank=True, null=True) # Not yet implemented
-    # These fields were present in old Case model, but were not used:
-    #
-    #caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
-    #caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=FORMAT_TYPES, blank=True, null=True)
-    #caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=DEST_TYPES, blank=True,null=True)
-    #
-    notes = models.TextField(blank=True, null=True)
-
-    class Meta:
-        permissions = [
-            ('view_phi', 'Can view protected health information'),
-            ]
-
-
+    
 class CaseWorkflow(models.Model):
     workflowCaseID = models.ForeignKey(Case)
     workflowDate = models.DateTimeField('Activated',auto_now=True)

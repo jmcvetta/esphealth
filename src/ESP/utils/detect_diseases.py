@@ -491,7 +491,7 @@ class Disease_Definition:
             enc_q = enc_q & Q(EncEncounter_Date__lte=util.str_from_date(date + self.icd9_days_after))
             log.debug('enc_q: %s' % enc_q)
             encounters = models.Enc.objects.filter(enc_q)
-            case.rep_encounters = sets.Set(case.rep_encounters.all()) | sets.Set(encounters)
+            case.encounters = sets.Set(case.encounters.all()) | sets.Set(encounters)
         if self.lab_loinc_nums:
             lab_q = Q(LxLoinc__in=self.lab_loinc_nums)
             lab_q = lab_q & Q(LxPatient=patient)
@@ -504,7 +504,7 @@ class Disease_Definition:
             # It's probably better to handle that in the case management UI,
             # where we could potentially show a history for each test, than 
             # here.
-            case.rep_labs = sets.Set(case.rep_labs.all()) | sets.Set(labs)
+            case.lab_results = sets.Set(case.lab_results.all()) | sets.Set(labs)
         if self.med_names:
             med_q = Q(RxDrugName__icontains=self.med_names[0])
             for name in self.med_names[1:]:
@@ -514,7 +514,7 @@ class Disease_Definition:
             med_q = med_q & Q(RxOrderDate__lte=util.str_from_date(date + self.med_days_after))
             log.debug('med_q: %s' % med_q)
             medications = models.Rx.objects.filter(med_q)
-            case.rep_meds = sets.Set(case.rep_meds.all()) | sets.Set(medications)
+            case.meds = sets.Set(case.meds.all()) | sets.Set(medications)
         # Support for reporting immunizations has not yet been implemented
         return case
     
