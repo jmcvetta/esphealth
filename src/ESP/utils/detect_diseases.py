@@ -91,7 +91,7 @@ class Heuristic:
         Returns a list of all registered Heuristic instances.
         '''
         result = []
-        keys = cls.__registry
+        keys = cls.__registry.keys()
         keys.sort()
         [result.extend(cls.__registry[key]) for key in keys]
         log.debug('All Heuristic instances: %s' % result)
@@ -103,7 +103,7 @@ class Heuristic:
         '''
         raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseHeuristic.')
         
-    def save_events(self, begin_date=None, end_date=None):
+    def generate_events(self, begin_date=None, end_date=None):
         '''
         Generate models.Heuristic_Event records for each item returned by
         matches, if it does not already have one.
@@ -135,7 +135,7 @@ class Heuristic:
         return counter
     
     @classmethod
-    def save_all_events(cls, begin_date=None, end_date=None):
+    def generate_all_events(cls, begin_date=None, end_date=None):
         '''
         Generate Heuristic_Event records for every registered Heuristic 
             instance.
@@ -147,7 +147,7 @@ class Heuristic:
         '''
         counter = 0 # Counts how many total new records have been created
         for heuristic in cls.get_all_heuristics():
-            counter += heuristic.save_events()
+            counter += heuristic.generate_events()
         log.info('Generated %s TOTAL new events.' % counter)
         return counter
     
@@ -464,6 +464,35 @@ class Disease_Definition:
         else:
             self.__registry[self.name] = self
     
+    @classmethod
+    def get_all_definitions(cls):
+        '''
+        Returns a list of all registered Heuristic instances.
+        '''
+        result = []
+        keys = cls.__registry.keys()
+        keys.sort()
+        [result.extend([cls.__registry[k]]) for k in keys]
+        log.debug('All Disease Definition instances: %s' % result)
+        return result
+    
+    @classmethod
+    def generate_all_cases(cls, begin_date=None, end_date=None):
+        '''
+        Generate Heuristic_Event records for every registered Heuristic 
+            instance.
+        @param begin_date: Beginning of time window to examine
+        @type begin_date:  datetime.date
+        @param end_date:   End of time window to examine
+        @type end_date:    datetime.date
+        @return:           Integer number of new records created
+        '''
+        counter = 0 # Counts how many total new records have been created
+        for definition in cls.get_all_definitions():
+            counter += definition.generate_cases()
+        log.info('Generated %s TOTAL new cases.' % counter)
+        return counter
+    
     def new_case(self, primary_event, all_events):
         '''
         Creates, saves, and returns a new Case object.  Case variables like 
@@ -481,9 +510,10 @@ class Disease_Definition:
         case.provider = primary_event.content_object.provider
         case.date = primary_event.date
         case.condition = self.condition
+        case.workflow_state = self.condition.ruleInitCaseStatus
         case.save()
-        events = sets.Set([primary_event]) | sets.Set(all_events)
-        case.events = [e for e in events]
+        events = set([primary_event]) | set(all_events)
+        case.events = events
         case = self.update_reportable_events(case)
         case.save()
         return case
@@ -495,6 +525,7 @@ class Disease_Definition:
         @param case: The case to update
         @type case:  models.Case
         '''
+        log.debug('Updating reportable events for case %s' % case)
         patient = case.patient
         date = case.date
         if self.icd9s:
@@ -533,7 +564,17 @@ class Disease_Definition:
             medications = models.Rx.objects.filter(med_q)
             case.medications = sets.Set(case.medications.all()) | sets.Set(medications)
         # Support for reporting immunizations has not yet been implemented
+        case.save()
         return case
+    
+    def update_all_cases(self):
+        '''
+        Updates reportable events for all existing cases
+        '''
+        log.info('Updating reportable events for existing cases.')
+        existing_cases = models.Case.objects.filter(condition=self.condition)
+        for case in existing_cases:
+            self.update_reportable_events(case)
     
     def split_cases_by_time(self):
         # 
@@ -729,19 +770,21 @@ class High_Calculated_Bilirubin_Heuristic(Lab_Heuristic):
             
 high_calc_bilirubin = High_Calculated_Bilirubin_Heuristic()
 
-gonorrhea_test = String_Match_Lab_Heuristic(
+GONORRHEA_LOINCS = ['691-6', '23908-7', '24111-7', '36902-5'] # Re-used in disease definition
+gonorrhea_lab = String_Match_Lab_Heuristic(
     name =          'gonorrhea', 
     verbose_name =  'Gonorrhea', 
-    loinc_nums =    ['691-6', '23908-7', '24111-7', '36902-5'], 
+    loinc_nums =    GONORRHEA_LOINCS,
     strings =       ['positiv', 'detect'], 
     abnormal_flag = True, 
     match_type =    'istartswith',
     )
 
-chlamydia_test = String_Match_Lab_Heuristic(
+CHLAMYDIA_LOINCS = ['4993-2', '6349-5', '16601-7', '20993-2', '21613-5', '36902-5', ] # Re-used in disease definition
+chlamydia_lab = String_Match_Lab_Heuristic(
     name =          'chlamydia', 
     verbose_name =  'Chlamydia', 
-    loinc_nums =    ['4993-2', '6349-5', '16601-7', '20993-2', '21613-5', '36902-5', ],
+    loinc_nums =    CHLAMYDIA_LOINCS,
     strings =       ['positiv', 'detect'], 
     abnormal_flag = True, 
     match_type =    'istartswith',
@@ -826,6 +869,10 @@ acute_hep_a = Disease_Definition(
 
 
 def generate_chlamydia_cases(self, new_only=False):
+    '''
+    Detects Chlamydia, generates new cases, and updates existing cases 
+    (unless new_only is True).
+    '''
     case_window = datetime.timedelta(days=365) # Group events occurring within case_window into single case
     counter = 0            # Number of new cases generated
     bound_events = []      # Events already bound to a Case object
@@ -842,10 +889,15 @@ def generate_chlamydia_cases(self, new_only=False):
         primary = existing_cases.filter(patient=patient, date__gte=begin, date__lte=end)
         if primary: # This event should be attached to an existing case
             assert len(primary) == 1 # Sanity check
-            log.debug('Attaching event %s to existing case %s' % (event, primary[0]))
-            primary[0].events.add(event)
+            primary_case = primary[0]
+            if new_only:
+                log.debug('Event %s belongs to existing case %s, but new_only flag is set to True.  Skipping.' % (event, primary_case) )
+                continue # Don't update case
+            log.debug('Attaching event:\n    %s\nto existing case\n    %s' % (event, primary_case))
+            primary_case.events.add(event)
+            primary_case.save()
         else: # A new case should be created for this event
-            case = self.new_case(event, [])
+            self.new_case(event, [])
             counter += 1 # Increment new case count
     return counter
             
@@ -884,6 +936,10 @@ chlamydia = Disease_Definition(
         ],
     med_days_before = 7,
     med_days_after = 14,
+    # Report both Chlamydia and Gonorrhea labs
+    lab_loinc_nums = CHLAMYDIA_LOINCS + GONORRHEA_LOINCS,
+    lab_days_before = 30,
+    lab_days_after = 30,
     )
 
     
@@ -891,27 +947,14 @@ chlamydia = Disease_Definition(
 
 
 def main():
-    #alt_2x.save_events()
-    #Heuristic.save_all_events()
-    #high_calc_bilirubin.save_events()
+    # 
+    # TODO: We need a proper optparser here, and a lockfile or some other
+    # means to prevent multiple instances running at once.
+    #
+    Heuristic.generate_all_events()
+    Disease_Definition.generate_all_cases()
+    Disease_Definition.update_all_cases()
     #pprint.pprint(connection.queries)
-    #hep_a.get_cases()
-    #m = ast_2x.matches()
-    #for i in m:
-    #    print i
-    chlamydia.generate_cases()
-    #acute_hep_a.get_cases()
-    
-    sys.exit()
-    qs = models.Heuristic_Event.objects.filter(heuristic_name='ast_2x')
-    print qs.count()
-    for e in qs.select_related():
-        try:
-            if int(e.content_object.LxTest_results) > 132:
-                continue
-        except ValueError:
-            pass
-        print e
     
 
 if __name__ == '__main__':

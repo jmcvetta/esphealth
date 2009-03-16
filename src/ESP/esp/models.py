@@ -368,7 +368,7 @@ class Demog(models.Model):
             
 
     def  __unicode__(self):
-        return u"%-15s %-20s %-15s %s" % (self.DemogPatient_Identifier, self.DemogLast_Name, self.DemogFirst_Name, self.DemogAddress1)
+        return u"#%-10s MRN: %-10s %-10s %-10s" % (self.id, self.DemogPatient_Identifier, self.DemogLast_Name, self.DemogFirst_Name)
     
     def _get_date_of_birth(self):
         '''
@@ -652,7 +652,7 @@ class Lx(models.Model):
     
     def  __unicode__(self):
         #return u"%-10s %-50s %-12s PID %s" % (self.LxOrder_Id_Num, self.getCPT(), self.LxOrderDate, self.LxPatient.DemogPatient_Identifier, )
-        return u'<Lab #%-10s %-12s LOINC: %-7s Ref High: %-5s Result: %s>' % (self.pk, self.date, self.LxLoinc, self.LxReference_High, self.LxTest_results)
+        return u'#%-10s %-12s LOINC: %-7s Ref High: %-5s Result: %s' % (self.pk, self.date, self.LxLoinc, self.LxReference_High, self.LxTest_results)
     
 
 class Lxo(models.Model):
@@ -776,7 +776,7 @@ class Enc(models.Model):
 
     def  __unicode__(self):
         #return u"%s %s %s %s" % (self.EncPatient.id,self.geticd9s(), self.EncMedical_Record_Number,self.EncEncounter_Date)
-        return u"<Enc #%-10s %-12s CPT: %s>" % (self.EncPatient.id, self.date, ', '.join(self.icd9_list))
+        return u"#%-10s %-12s CPT: %s" % (self.EncPatient.id, self.date, ', '.join(self.icd9_list))
 
 
 
@@ -1274,7 +1274,8 @@ class Case(models.Model):
 
     def  __unicode__(self):
         p = self.showPatient()# self.pID
-        s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
+        #s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
+        s = u'#%-10s %-10s %-15s Patient: %-10s' % (self.id, self.date, self.condition, self.patient)
         return s
  
     def showPatient(self): 
