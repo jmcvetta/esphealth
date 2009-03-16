@@ -183,7 +183,7 @@ class Flexigrid:
             be set
         @type page_count: Integer
         '''
-        assert use_paginator or page_count # Sanity check -- can't both be blank
+        assert use_paginator or type(page_count) == types.IntType # Sanity check -- gotta have one or the other
         p = Paginator(rows, self.rp)
         if use_paginator:
             rows = p.page(self.page).object_list
