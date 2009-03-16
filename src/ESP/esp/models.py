@@ -1128,7 +1128,7 @@ class Case(models.Model):
     patient = models.ForeignKey(Demog, blank=False)
     condition = models.ForeignKey(Rule, blank=False)
     provider = models.ForeignKey(Provider, blank=False)
-    date = models.DateField(blank=False)
+    date = models.DateField(blank=False, db_index=True)
     workflow_state = models.CharField(max_length=20, choices=choices.WORKFLOW_STATES, default='AR', 
         blank=False, db_index=True )
     # Timestamps:
