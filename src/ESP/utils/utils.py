@@ -172,20 +172,27 @@ class Flexigrid:
         log.debug('qtype: %s' % self.qtype)
         log.debug('query: %s' % self.query)
     
-    def json(self, rows, use_paginator=True):
+    def json(self, rows, use_paginator=True, page_count=None):
         '''
         Returns JSON suitable for feeding to Flexigrid.
         @type rows: [{'id': 1, 'cell': ['field1, 'field2', ...]}, ...]
         @param use_paginator: Set this to false if you are going to do 
             pagination outside this class, for instance if you have a very
             large set of objects and do not want to fetch all rows.
+        @param page_count: If use_paginator == False, then page_count should
+            be set
+        @type page_count: Integer
         '''
+        assert use_paginator or page_count # Sanity check -- can't both be blank
         p = Paginator(rows, self.rp)
         if use_paginator:
             rows = p.page(self.page).object_list
+            count = p.count
+        else:
+            count = page_count
         json_dict = {
             'page': self.page,
-            'total': p.count,
+            'total': count,
             'rows': rows
             }
         json = simplejson.dumps(json_dict)

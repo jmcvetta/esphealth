@@ -1501,13 +1501,12 @@ def json_case_grid(request, status):
     #
     # Generate JSON
     #
+    p = Paginator(cases, flexi.rp)
+    cases = p.page(flexi.page).object_list
     rows = []
     for case in cases:
         row = {}
-        #order_date = case.latest_lx_order_date().strftime(settings.DATE_FORMAT)
-        order_date = case.latest_lx_order_date()
-        if order_date:
-            order_date = order_date.strftime(settings.DATE_FORMAT)
+        case_date = case.date.strftime(settings.DATE_FORMAT)
         last_update = case.caseLastUpDate
         if last_update:
             last_update = last_update.strftime(settings.DATE_FORMAT)
@@ -1520,8 +1519,8 @@ def json_case_grid(request, status):
             row['cell'] =  [
                 case_id_link,
                 case.caseRule.ruleName, 
-                order_date,
-                case.latest_lx_provider_site(),
+                case_date,
+                case.provider.provPrimary_Dept,
                 # Begin PHI
                 patient_name,
                 patient.DemogMedical_Record_Number,
@@ -1535,14 +1534,14 @@ def json_case_grid(request, status):
             row['cell'] =  [
                 case_id_link,
                 case.caseRule.ruleName, 
-                order_date,
-                case.latest_lx_provider_site(),
+                case_date,
+                case.provider.provPrimary_Dept,
                 case.get_workflow_state_display(),
                 last_update,
                 case.getPrevcases()
                 ]
         rows += [row]
-    json = flexi.json(rows)
+    json = flexi.json(rows, use_paginator=False, page_count=p.count)
     return HttpResponse(json, mimetype='application/json')
     #return HttpResponse(json)
 
