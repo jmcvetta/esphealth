@@ -1504,8 +1504,6 @@ def json_case_grid(request, status):
     rows = []
     for case in cases:
         row = {}
-        print case.latest_lx_order_date()
-        print type(case.latest_lx_order_date())
         #order_date = case.latest_lx_order_date().strftime(settings.DATE_FORMAT)
         order_date = case.latest_lx_order_date()
         if order_date:
