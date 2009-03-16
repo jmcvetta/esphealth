@@ -401,8 +401,8 @@ class Disease_Definition:
             forming part of a disease's definition are reported.
         @param name:             Name of this disease definition
         @type name:              String
-        @param get_cases_func:   Callback that returns list of Case objects
-        @type get_cases_func:    Function
+        @param generate_cases_func:   Callback that returns list of Case objects
+        @type generate_cases_func:    Function
         @param icd9s:            Report encounters matching these ICD9s
         @type icd9s:             List of strings
         @param icd9_days_before: How many days before case to search for encounters
@@ -424,7 +424,7 @@ class Disease_Definition:
         @type med_days_after:    Integer
         '''
         self.name = name
-        self.get_cases_func = get_cases_func
+        self.generate_cases_func = get_cases_func
         self.icd9s = icd9s
         self.icd9_days_before = datetime.timedelta(days=icd9_days_before)
         self.icd9_days_after = datetime.timedelta(days=icd9_days_after)
@@ -439,7 +439,7 @@ class Disease_Definition:
         # Sanity checks
         #
         assert self.name 
-        assert self.get_cases 
+        assert self.generate_cases_func
         assert self.icd9_days_before
         assert self.icd9_days_after
         assert self.lab_days_before
@@ -449,11 +449,13 @@ class Disease_Definition:
         self.condition = models.Rule.objects.get(ruleName=self.name)
         self._register()
     
-    def get_cases(self, new_only=False):
+    def generate_cases(self, new_only=False):
         '''
         Calls the user-supplied case factory with appropriate arguments
         '''
-        return self.get_cases_func(self, new_only)
+        count = self.generate_cases_func(self, new_only)
+        log.info('Generated %s new cases of %s.' % (count, self.condition))
+        return count
     
     __registry = {} # Class variable
     def _register(self):
@@ -473,6 +475,7 @@ class Disease_Definition:
         @param all_events:    All events that together establish this case
         @type all_events:     [Heuristic_Event, Heuristic_Event, ...]
         '''
+        log.info('Creating a new %s case based on event:\n    %s' % (self.condition, primary_event))
         case = models.Case()
         case.patient = primary_event.patient
         case.provider = primary_event.content_object.provider
@@ -481,7 +484,8 @@ class Disease_Definition:
         case.save()
         events = sets.Set([primary_event]) | sets.Set(all_events)
         case.events = [e for e in events]
-        self.update_reportable_events(case)
+        case = self.update_reportable_events(case)
+        case.save()
         return case
     
     def update_reportable_events(self, case):
@@ -527,7 +531,7 @@ class Disease_Definition:
             med_q = med_q & Q(RxOrderDate__lte=util.str_from_date(date + self.med_days_after))
             log.debug('med_q: %s' % med_q)
             medications = models.Rx.objects.filter(med_q)
-            case.meds = sets.Set(case.meds.all()) | sets.Set(medications)
+            case.medications = sets.Set(case.medications.all()) | sets.Set(medications)
         # Support for reporting immunizations has not yet been implemented
         return case
     
@@ -753,11 +757,12 @@ chlamydia_test = String_Match_Lab_Heuristic(
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         
-def acute_hep_a_cases(self, new_only=False):
+def generate_acute_hep_a_cases(self, new_only=False):
     '''
     Only one Hep A case per lifetime -- so return one case, with all relevant events attached.
     '''
     result = {} # {Patient: Case}
+    count = 0 # New case counter
     igm_events = models.Heuristic_Event.objects.filter(heuristic_name='hep_a_igm_ab')
     for event in igm_events:
         patient = event.patient
@@ -802,11 +807,12 @@ def acute_hep_a_cases(self, new_only=False):
             # No case --
             log.debug('Creating new case for %s' % patient)
             result[patient] = self.new_case(primary_event=event, all_events=all_events)
-    return result
+            count += 1
+    return count
 
 acute_hep_a = Disease_Definition(
     name = 'Acute Hepatitis A', 
-    get_cases_func = acute_hep_a_cases,
+    get_cases_func = generate_acute_hep_a_cases,
     icd9s = settings.DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     icd9_days_after = 14,
@@ -819,19 +825,36 @@ acute_hep_a = Disease_Definition(
 
 
 
-def chlamydia_cases(self):
-    result = {} # {Patient: [Case, Case, ...]}
-    for patient_id in models.Heuristic_Event.objects.filter(heuristic_name='chlamydia').values_list('patient'):
-        pass
-    existing = models.Case.objects.filter(patient=patient, condition=self.condition)
-    if existing:
-        pass
+def generate_chlamydia_cases(self, new_only=False):
+    case_window = datetime.timedelta(days=365) # Group events occurring within case_window into single case
+    counter = 0            # Number of new cases generated
+    bound_events = []      # Events already bound to a Case object
+    existing_cases = models.Case.objects.filter(condition=self.condition).select_related('events')
+    [bound_events.extend(case.events.all()) for case in existing_cases]
+    log.debug('number of bound_events: %s' % len(bound_events))
+    for event in models.Heuristic_Event.objects.filter(heuristic_name='chlamydia').order_by('date'):
+        if event in bound_events:
+            log.debug('Event %s is already bound to a case' % event)
+            continue # Event is already attached to a case
+        patient = event.patient
+        begin = event.date - case_window
+        end = event.date
+        primary = existing_cases.filter(patient=patient, date__gte=begin, date__lte=end)
+        if primary: # This event should be attached to an existing case
+            assert len(primary) == 1 # Sanity check
+            log.debug('Attaching event %s to existing case %s' % (event, primary[0]))
+            primary[0].events.add(event)
+        else: # A new case should be created for this event
+            case = self.new_case(event, [])
+            counter += 1 # Increment new case count
+    return counter
+            
+        
             
 
 chlamydia = Disease_Definition(
-    name = 'chlamydia',
-    verbose_name = 'Chlamydia',
-    get_cases_func = chlamydia_cases,
+    name = 'Chlamydia',
+    get_cases_func = generate_chlamydia_cases,
     icd9s = [
         '788.7',
         '099.40',
@@ -860,7 +883,7 @@ chlamydia = Disease_Definition(
         'EES',
         ],
     med_days_before = 7,
-    med_days_after = 14
+    med_days_after = 14,
     )
 
     
@@ -876,7 +899,8 @@ def main():
     #m = ast_2x.matches()
     #for i in m:
     #    print i
-    chlamydia.save_cases()
+    chlamydia.generate_cases()
+    #acute_hep_a.get_cases()
     
     sys.exit()
     qs = models.Heuristic_Event.objects.filter(heuristic_name='ast_2x')
