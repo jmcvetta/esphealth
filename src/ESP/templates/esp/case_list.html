@@ -20,7 +20,7 @@
                     colModel: [
                         {display: 'Case ID #', name: 'id', width: 50, sortable: true, align: 'left'},
                         {display: 'Condition', name: 'condition', width: 100, sortable: true, align: 'left'},
-                        {display: 'Date Ordered', name: 'date_ordered', width: 75, sortable: true, align: 'left'},
+                        {display: 'Date', name: 'date_ordered', width: 75, sortable: true, align: 'left'},
                         {display: 'Provider Site', name: 'site', width: 150, sortable: true, align: 'left'},
                         {# Begin PHI #}
                         {display: 'Patient Name', name: 'name', width: 150, sortable: true, align: 'left'},
@@ -42,7 +42,7 @@
                     colModel: [
                         {display: 'Case ID #', name: 'id', width: 50, sortable: true, align: 'left'},
                         {display: 'Condition', name: 'condition', width: 100, sortable: true, align: 'left'},
-                        {display: 'Date Ordered', name: 'date_ordered', width: 100, sortable: true, align: 'left'},
+                        {display: 'Date', name: 'date_ordered', width: 100, sortable: true, align: 'left'},
                         {display: 'Provider Site', name: 'site', width: 200, sortable: true, align: 'left'},
                         {display: 'Workflow State', name: 'workflow', width: 100, sortable: true, align: 'left'},
                         {display: 'Last Updated', name: 'last_updated', width: 100, sortable: true, align: 'left'},
@@ -72,35 +72,3 @@
 
 
 {% endblock%}
-
-
-
-
-
-{% comment %}
-            $('#case_table').jqGrid({
-                url: '/new/cases/grid/',
-                datatype: 'json',
-                mtype: 'GET',
-                colNames: ['Case ID #', 'Condition', 'Date Ordered', 'Provider Site', 'Workflow State', 'Last Updated', 'Previously Notified Cases'],
-                colModel: [
-                    {name: 'id', index: 'id', width: '1*'},
-                    {name: 'condition', index: 'condition', width: '1*'},
-                    {name: 'date', index: 'date', width: '1*'},
-                    {name: 'provider', index: 'provider', width: '1*'},
-                    {name: 'wfstate', index: 'wfstate', width: '1*'},
-                    {name: 'lastupdate', index: 'lastupdate', width: '1*'},
-                    {name: 'prev', index: 'prev', width: '1*'},
-                ],
-                pager: $('#pager'),
-                rowNum: 10,
-                rowList: [10, 20, 30],
-                sortname: 'id',
-                sortorder: 'desc',
-                viewrecords: true,
-                imgpath: '/css/gqGrid_themes/basic/images',
-                caption: 'ESP Cases'
-            });
-{% endcomment %}
-
-
