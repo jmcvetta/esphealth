@@ -8,6 +8,8 @@ import pprint
 import types
 import sets
 import sys
+import optparse
+import re
 
 from django.db import connection
 from django.db.models import Q
@@ -487,11 +489,19 @@ class Disease_Definition:
         @type end_date:    datetime.date
         @return:           Integer number of new records created
         '''
-        counter = 0 # Counts how many total new records have been created
+        counter = {}# Counts how many total new records have been created
+        total = 0
         for definition in cls.get_all_definitions():
-            counter += definition.generate_cases()
-        log.info('Generated %s TOTAL new cases.' % counter)
-        return counter
+            counter[definition.name] = definition.generate_cases()
+        log.info('=' * 80)
+        log.info('New Cases Generated')
+        log.info('-' * 80)
+        for name in counter:
+            log.info('%20s  %s' % (name, counter[name]))
+            total += counter[name]
+        log.info('TOTAL: %s' % total)
+        log.info('=' * 80)
+        return total
     
     def new_case(self, primary_event, all_events):
         '''
@@ -567,37 +577,25 @@ class Disease_Definition:
         case.save()
         return case
     
-    def update_all_cases(self):
+    @classmethod
+    def update_all_cases(cls, begin_date=None, end_date=None):
         '''
         Updates reportable events for all existing cases
+        @param begin_date: Analyze cases with dates greater than begin_date
+        @type begin_date:  datetime.date
+        @param end_date:   Analyze cases with dates less than end_date
+        @type end_date:    datetime.date
         '''
         log.info('Updating reportable events for existing cases.')
-        existing_cases = models.Case.objects.filter(condition=self.condition)
-        for case in existing_cases:
-            self.update_reportable_events(case)
-    
-    def split_cases_by_time(self):
-        # 
-        # THIS IS NOT COMPLETE -- DO NOT USE!
-        #
-        time_window = datetime.timedelta(days=self.split_days)
-        result = {} # {Patient: [Case, Case, ...]}
-        for event in models.Heuristic_Event.objects.filter(heuristic_name='chlamydia'):
-            patient = event.patient
-            date = event.date
-            if patient in result: # Do we already have a case (or cases) for this patient in results?
-                for case in result[patient]:
-                    # Check and see event occurred within an year of case
-                    one_year = datetime.timedelta(years=1)
-                    if (event.date >= case.date) and (event.date <= (case.date + one_year)):
-                        case.events = sets.Set(case.events.all()) | sets.Set([event])
-                        case.save()
-                    else: # Add new case to results
-                        pass
-            existing = models.Case.objects.filter(patient=patient, condition=self.condition)
-            if existing:
-                pass
-        
+        for definition in cls.get_all_definitions():
+            q_obj = Q(condition=definition.condition)
+            if begin_date:
+                q_obj = q_obj & Q(date__gte=begin_date)
+            if end_date:
+                q_obj = q_obj & Q(date__lte=end_date)
+            existing_cases = models.Case.objects.filter(q_obj)
+            for case in existing_cases:
+                definition.update_reportable_events(case)
         
 
 #===============================================================================
@@ -943,18 +941,58 @@ chlamydia = Disease_Definition(
     )
 
     
+USAGE_MSG = '''\
+%prog [options]
 
+    One or more of '-e', '-c', '-u', or '-a' must be specified.
+    
+    DATE variables are specified in this format: '17-Mar-2009'\
+'''
 
 
 def main():
     # 
-    # TODO: We need a proper optparser here, and a lockfile or some other
-    # means to prevent multiple instances running at once.
+    # TODO: We need a lockfile or some othermeans to prevent multiple 
+    # instances running at once.
     #
-    Heuristic.generate_all_events()
-    Disease_Definition.generate_all_cases()
-    Disease_Definition.update_all_cases()
-    #pprint.pprint(connection.queries)
+    parser = optparse.OptionParser(usage=USAGE_MSG)
+    parser.add_option('-e', '--events', action='store_true', dest='events',
+        help='Generate heuristic events')
+    parser.add_option('-c', '--cases', action='store_true', dest='cases',
+        help='Generate new cases')
+    parser.add_option('-u', '--update-cases', action='store_true', dest='update',
+        help='Update cases')
+    parser.add_option('-a', '--all', action='store_true', dest='all', 
+        help='Generate heuristic events, generate new cases, and update existing cases')
+    parser.add_option('--begin', action='store', dest='begin', type='string', 
+        metavar='DATE', help='Analyze time window beginning at DATE')
+    parser.add_option('--end', action='store', dest='end', type='string', 
+        metavar='DATE', help='Analyze time window ending at DATE')
+    (options, args) = parser.parse_args()
+    log.debug('options: %s' % options)
+    #
+    # Date Parser
+    #
+    date_format = '%d-%b-%Y'
+    if options.begin:
+        options.begin = datetime.datetime.strptime(options.begin, date_format).date()
+    if options.end:
+        options.end = datetime.datetime.strptime(options.end, date_format).date()
+    #
+    # Main Control block
+    #
+    if options.all: # '--all' is exactly equivalent to '--events --cases --update-cases'
+        options.events = True
+        options.cases = True
+        options.update = True
+    if options.events:
+        Heuristic.generate_all_events(begin_date=options.begin, end_date=options.end)
+    if options.cases:
+        Disease_Definition.generate_all_cases(begin_date=options.begin, end_date=options.end)
+    if options.update:
+        Disease_Definition.update_all_cases(begin_date=options.begin, end_date=options.end)
+    if not (options.events or options.cases or options.update):
+        parser.print_help()
     
 
 if __name__ == '__main__':
