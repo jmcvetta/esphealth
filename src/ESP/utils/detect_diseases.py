@@ -384,7 +384,7 @@ class Disease_Definition:
     
     def __init__(self, 
         name, 
-        get_cases_func = None,
+        make_cases_func = None,
         # Reporting
         icd9s = [],
         icd9_days_before = 14,
@@ -403,8 +403,8 @@ class Disease_Definition:
             forming part of a disease's definition are reported.
         @param name:             Name of this disease definition
         @type name:              String
-        @param generate_cases_func:   Callback that returns list of Case objects
-        @type generate_cases_func:    Function
+        @param make_cases_func:   Callback that returns list of Case objects
+        @type make_cases_func:    Function
         @param icd9s:            Report encounters matching these ICD9s
         @type icd9s:             List of strings
         @param icd9_days_before: How many days before case to search for encounters
@@ -426,7 +426,7 @@ class Disease_Definition:
         @type med_days_after:    Integer
         '''
         self.name = name
-        self.generate_cases_func = get_cases_func
+        self.make_cases_func = make_cases_func
         self.icd9s = icd9s
         self.icd9_days_before = datetime.timedelta(days=icd9_days_before)
         self.icd9_days_after = datetime.timedelta(days=icd9_days_after)
@@ -441,7 +441,7 @@ class Disease_Definition:
         # Sanity checks
         #
         assert self.name 
-        assert self.generate_cases_func
+        assert self.make_cases_func
         assert self.icd9_days_before
         assert self.icd9_days_after
         assert self.lab_days_before
@@ -455,8 +455,9 @@ class Disease_Definition:
         '''
         Calls the user-supplied case factory with appropriate arguments
         '''
-        count = self.generate_cases_func(self, new_only)
+        count = self.make_cases_func(disease=self, new_only=new_only)
         log.info('Generated %s new cases of %s.' % (count, self.condition))
+        log.debug('Number of queries so far: %s' % len(connection.queries))
         return count
     
     __registry = {} # Class variable
@@ -598,18 +599,79 @@ class Disease_Definition:
                 definition.update_reportable_events(case)
         
 
+class Single_Heuristic_Time_Window_Case_Maker:
+    '''
+    Instances of this class, initialized with the name of a heuristic and a 
+    time window (number of days), are suitable for use as make_cases_func in 
+    a Disease_Definition.  When called the instance generates and saves new 
+    Case objects based on the named heuristic event.  All events occuring 
+    within the specified time window will be grouped into a single case.
+    Existing cases will be updated with any new events found, unless the
+    new_only flag is set to True.
+    '''
+    
+    def __init__(self, heuristic_name, time_window):
+        self.heuristic_name = heuristic_name
+        self.time_window = time_window
+        assert self.heuristic_name
+        assert self.time_window
+        
+    def __call__(self, disease, new_only=False):
+        '''
+        @param disease:  The Disease_Definition calling this method
+        @type disease:   Disease_Definition
+        @param new_only: Only create new cases, don't update existing cases
+        @type new_only:  Boolean
+        '''
+        case_window = datetime.timedelta(days=self.time_window) # Group events occurring within case_window into single case
+        counter = 0            # Number of new cases generated
+        #bound_events = []      # Events already bound to a Case object
+        #existing_cases = models.Case.objects.filter(condition=disease.condition).select_related('events')
+        existing_cases = models.Case.objects.filter(condition=disease.condition)
+        # 
+        # Next statement causes huge number of very similar queries
+        #
+        #[bound_events.extend(case.events.all()) for case in existing_cases]
+        #
+        # Events already bound to a Case object
+        bound_events = models.Heuristic_Event.objects.filter(case__in=existing_cases).select_related()
+        log.debug('number of bound_events: %s' % len(bound_events))
+        for event in models.Heuristic_Event.objects.filter(heuristic_name=self.heuristic_name).order_by('date').select_related():
+            if event in bound_events:
+                log.debug('Event #%s is already bound to a case' % event.id)
+                continue # Event is already attached to a case
+            patient = event.patient
+            begin = event.date - case_window
+            end = event.date
+            primary = existing_cases.filter(patient=patient, date__gte=begin, date__lte=end)
+            if primary: # This event should be attached to an existing case
+                assert len(primary) == 1 # Sanity check
+                primary_case = primary[0]
+                if new_only:
+                    log.debug('Event #%s belongs to existing case #%s, but new_only flag is set to True.  Skipping.' % (event.id, primary_case.id) )
+                    continue # Don't update case
+                log.debug('Attaching event:\n    %s\nto existing case\n    %s' % (event, primary_case))
+                primary_case.events.add(event)
+                primary_case.save()
+            else: # A new case should be created for this event
+                disease.new_case(event, [])
+                counter += 1 # Increment new case count
+        return counter
+    
+
+            
 #===============================================================================
 #
 #--- ~~~ Encounter Heuristics ~~~
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-jaundice = Encounter_Heuristic(name='jaundice', 
+jaundice_enc = Encounter_Heuristic(name='jaundice', 
                               verbose_name='Jaundice, not of newborn',
                               icd9s=['782.4'],
                               )
 
-chronic_hep_b = Encounter_Heuristic(name='chronic_hep_b',
+chronic_hep_b_enc = Encounter_Heuristic(name='chronic_hep_b',
                                    verbose_name='Chronic Hepatitis B',
                                    icd9s=['070.32'],
                                    )
@@ -620,7 +682,7 @@ chronic_hep_b = Encounter_Heuristic(name='chronic_hep_b',
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-alt_2x = High_Numeric_Lab_Heuristic(
+alt_2x_lab = High_Numeric_Lab_Heuristic(
     name='alt_2x',
     verbose_name='Alanine aminotransferase (ALT) >2x upper limit of normal',
     loinc_nums=['1742-6'],
@@ -628,7 +690,7 @@ alt_2x = High_Numeric_Lab_Heuristic(
     default_high=132,
     )
 
-alt_5x = High_Numeric_Lab_Heuristic(
+alt_5x_lab = High_Numeric_Lab_Heuristic(
     name='alt_5x',
     verbose_name='Alanine aminotransferase (ALT) >5x upper limit of normal',
     loinc_nums=['1742-6'],
@@ -636,7 +698,7 @@ alt_5x = High_Numeric_Lab_Heuristic(
     default_high=330,
     )
 
-ast_2x = High_Numeric_Lab_Heuristic(
+ast_2x_lab = High_Numeric_Lab_Heuristic(
     name='ast_2x',
     verbose_name='Aspartate aminotransferase (ALT) >2x upper limit of normal',
     loinc_nums=['1920-8'],
@@ -644,7 +706,7 @@ ast_2x = High_Numeric_Lab_Heuristic(
     default_high=132,
     )
 
-ast_5x = High_Numeric_Lab_Heuristic(
+ast_5x_lab = High_Numeric_Lab_Heuristic(
     name='ast_5x',
     verbose_name='Aspartate aminotransferase (ALT) >5x upper limit of normal',
     loinc_nums=['1920-8'],
@@ -652,28 +714,28 @@ ast_5x = High_Numeric_Lab_Heuristic(
     default_high=330,
     )
 
-hep_a_igm_ab = String_Match_Lab_Heuristic(
+hep_a_igm_ab_lab = String_Match_Lab_Heuristic(
     name='hep_a_igm_ab',
     verbose_name='IgM antibody to Hepatitis A = "REACTIVE" (may be truncated)',
     loinc_nums=['22314-9'],
     strings=['reactiv'],
     )
 
-hep_b_igm_ab = String_Match_Lab_Heuristic(
+hep_b_igm_ab_lab = String_Match_Lab_Heuristic(
     name='hep_b_igm_ab',
     verbose_name='IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['31204-1'],
     strings=['reactiv'],
     )
 
-hep_b_surface = String_Match_Lab_Heuristic(
+hep_b_surface_lab = String_Match_Lab_Heuristic(
     name='hep_b_surface',
     verbose_name='Hepatitis B Surface Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['5195-3'],
     strings=['reactiv'],
     )
 
-hep_b_e_antigen = String_Match_Lab_Heuristic(
+hep_b_e_antigen_lab = String_Match_Lab_Heuristic(
     name = 'hep_b_e_antigen',
     verbose_name = 'Hepatitis B "e" Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['13954-3'],
@@ -693,20 +755,20 @@ hep_b_e_antigen = String_Match_Lab_Heuristic(
 # NOTE:  See note in Hep B google doc about "HEPATITIS B DNA, QN, IU/COPIES" 
 # portion of algorithm
 #
-hep_b_viral_dna_str = String_Match_Lab_Heuristic(
+hep_b_viral_dna_str_lab = String_Match_Lab_Heuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['13126-8', '16934', '5009-6'],
     strings = ['positiv', 'detect'],
     )
-hep_b_viral_dna_num1 = High_Numeric_Lab_Heuristic(
+hep_b_viral_dna_num1_lab = High_Numeric_Lab_Heuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['16934-2'],
     default_high = 100,
     allow_duplicate_name=True,
     )
-hep_b_viral_dna_num2 = High_Numeric_Lab_Heuristic(
+hep_b_viral_dna_num2_lab = High_Numeric_Lab_Heuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['5009-6'],
@@ -715,21 +777,21 @@ hep_b_viral_dna_num2 = High_Numeric_Lab_Heuristic(
     )
 
 
-hep_e_ab = String_Match_Lab_Heuristic(
+hep_e_ab_lab = String_Match_Lab_Heuristic(
     name = 'hep_a_ab',
     verbose_name = 'Hepatitis E antibody',
     loinc_nums = ['14212-5'],
     strings = ['reactiv'],
     )
 
-hep_c_ab = String_Match_Lab_Heuristic(
+hep_c_ab_lab = String_Match_Lab_Heuristic(
     name = 'hep_c_ab',
     verbose_name = 'Hepatitis C antibody = "REACTIVE" (may be truncated)',
     loinc_nums = ['16128-1'],
     strings = ['reactiv'],
     )
 
-total_bilirubin_high = High_Numeric_Lab_Heuristic(
+total_bilirubin_high_lab = High_Numeric_Lab_Heuristic(
     name = 'total_bilirubin_high',
     verbose_name = 'Total bilirubin > 1.5',
     loinc_nums = ['33899-6'],
@@ -766,7 +828,7 @@ class High_Calculated_Bilirubin_Heuristic(Lab_Heuristic):
             matches += [i for i in relevant.filter(LxPatient__id=item['LxPatient'], LxOrderDate=item['LxOrderDate']) ]
         return matches
             
-high_calc_bilirubin = High_Calculated_Bilirubin_Heuristic()
+high_calc_bilirubin_lab = High_Calculated_Bilirubin_Heuristic()
 
 GONORRHEA_LOINCS = ['691-6', '23908-7', '24111-7', '36902-5'] # Re-used in disease definition
 gonorrhea_lab = String_Match_Lab_Heuristic(
@@ -798,7 +860,7 @@ chlamydia_lab = String_Match_Lab_Heuristic(
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         
-def generate_acute_hep_a_cases(self, new_only=False):
+def make_acute_hep_a_cases(disease, new_only=False):
     '''
     Only one Hep A case per lifetime -- so return one case, with all relevant events attached.
     '''
@@ -835,7 +897,7 @@ def generate_acute_hep_a_cases(self, new_only=False):
             continue
         # Now check the db:
         # FIXME: This will need to be updated when we go to new Case model
-        existing = models.Case.objects.filter(patient=patient, condition=self.condition)
+        existing = models.Case.objects.filter(patient=patient, condition=disease.condition)
         if existing and new_only:
             log.debug('Existing case found for %s.  Flag new_only is set, so skipping & continuing.' % patient)
             continue
@@ -847,13 +909,13 @@ def generate_acute_hep_a_cases(self, new_only=False):
         else:
             # No case --
             log.debug('Creating new case for %s' % patient)
-            result[patient] = self.new_case(primary_event=event, all_events=all_events)
+            result[patient] = disease.new_case(primary_event=event, all_events=all_events)
             count += 1
     return count
 
 acute_hep_a = Disease_Definition(
     name = 'Acute Hepatitis A', 
-    get_cases_func = generate_acute_hep_a_cases,
+    make_cases_func = make_acute_hep_a_cases,
     icd9s = settings.DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     icd9_days_after = 14,
@@ -866,7 +928,7 @@ acute_hep_a = Disease_Definition(
 
 
 
-def generate_chlamydia_cases(self, new_only=False):
+def old_make_chlamydia_cases(self, new_only=False):
     '''
     Detects Chlamydia, generates new cases, and updates existing cases 
     (unless new_only is True).
@@ -900,11 +962,14 @@ def generate_chlamydia_cases(self, new_only=False):
     return counter
             
         
-            
+make_chlamydia_cases = Single_Heuristic_Time_Window_Case_Maker(
+    heuristic_name = 'chlamydia', 
+    time_window = 365
+    )
 
 chlamydia = Disease_Definition(
     name = 'Chlamydia',
-    get_cases_func = generate_chlamydia_cases,
+    make_cases_func = make_chlamydia_cases,
     icd9s = [
         '788.7',
         '099.40',
@@ -938,6 +1003,50 @@ chlamydia = Disease_Definition(
     lab_loinc_nums = CHLAMYDIA_LOINCS + GONORRHEA_LOINCS,
     lab_days_before = 30,
     lab_days_after = 30,
+    )
+
+make_gonorrhea_cases = Single_Heuristic_Time_Window_Case_Maker(
+    heuristic_name = 'gonorrhea', 
+    time_window = 365
+    )
+
+gonorrhea = Disease_Definition(
+    name = 'Gonorrhea',
+    make_cases_func = make_gonorrhea_cases,
+    icd9s = [
+        '788.7',
+        '099.40',
+        '597.80',
+        '616.0',
+        '616.10',
+        '623.5',
+        '789.07',
+        '789.04',
+        '789.09',
+        '789.03',
+        '789.00',
+        ],
+    icd9_days_before = 14,
+    icd9_days_after = 14,
+    fever = True,
+    lab_loinc_nums = GONORRHEA_LOINCS, 
+    lab_days_before = 28,
+    lab_days_after = 28,
+    med_names = [
+        'amoxicillin',
+        'cefixime',
+        'cefotaxime',
+        'cefpodoxime',
+        'ceftizoxime',
+        'ceftriaxone',
+        'gatifloxacin',
+        'levofloxacin',
+        'ofloxacin',
+        'spectinomycin',
+        'moxifloxacin',
+        ],
+    med_days_before = 7,
+    med_days_after = 14
     )
 
     
@@ -997,3 +1106,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+    print len(connection.queries)
+    #pprint.pprint(connection.queries)
