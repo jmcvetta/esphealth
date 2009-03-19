@@ -537,15 +537,6 @@ class LxManager(models.Manager):
         '''
         return [x[0] for x in self.get_query_set().values_list('LxTest_results').distinct()]
     
-    def by_loinc_collection(self, slug):
-        '''
-        Given the slug for a Loinc_Collection, return all Lx with matching Loinc
-        @param slug: The slug for a Loinc_Collection
-        @type slug: String
-        '''
-        col = Loinc_Collection.objects.get(slug=slug)
-        return self.get_query_set().filter(LxLoinc__in=col.loinc_string_list)
-
 
 class Lx(models.Model):
     LxPatient = models.ForeignKey(Demog) 
@@ -593,13 +584,6 @@ class Lx(models.Model):
     
     # Use custom manager
     objects = LxManager()
-    
-    def _get_date(self):
-        '''
-        Return a datetime.date object representing the date of lab result
-        '''
-        return util.date_from_str(self.LxDate_of_result)
-    date = property(_get_date)
     
     def _get_ext_test_code(self):
         '''
@@ -715,14 +699,6 @@ class Enc(models.Model):
         return util.date_from_str(self.EncEncounter_Date)
     encounter_date = property(_get_enc_date)
     
-    def _get_date(self):
-        '''
-        Returns a datetime.date object
-        '''
-        return util.date_from_str(self.EncEncounter_Date)
-    date = property(_get_date)
-
-
     def geticd9s(self):
         """translate icd9s in comma separated value
         """
@@ -736,8 +712,8 @@ class Enc(models.Model):
                     ilong = '='+ilong[0].icd9Long # not sure why, but > 1 being found!
                 else:
                     ilong=''
-             #   if icd9l!= 0 and i in icd9l:
-              #      s.append((1,'%s=%s' %(i,ilong)))
+#                if icd9l!= 0 and i in icd9l:
+#                    s.append((1,'%s=%s' %(i,ilong)))
                 if i:
                     s.append((i,ilong))
                 else:
@@ -1073,9 +1049,9 @@ class TestCase(models.Model):
         lxlist = self.caseLxID.split(',')
         orderdate=[]
         if len(lxlist) > 0:
-           lxs=Lx.objects.filter(id__in=lxlist)
-           for l in lxs:
-              orderdate.append(unicode(l.LxOrderDate))
+            lxs=Lx.objects.filter(id__in=lxlist)
+            for l in lxs:
+                orderdate.append(unicode(l.LxOrderDate))
         return unicode(''.join(orderdate))
 
 
@@ -1086,16 +1062,16 @@ class TestCase(models.Model):
         res = []
         lxlist = self.caseLxID.split(',')
         if len(lxlist) > 0:
-           lxs=Lx.objects.filter(id__in=lxlist)
-           sites=[]
-           for l in lxs:
-               relprov = Provider.objects.filter(id=l.LxOrdering_Provider.id)[0]
-               sitename = relprov.provPrimary_Dept
-               if sitename and sitename not in sites:
-                  sites.append(sitename)
-           res = []
-           for loc in sites:
-              res.append('%s ' % loc)
+            lxs=Lx.objects.filter(id__in=lxlist)
+            sites=[]
+            for l in lxs:
+                relprov = Provider.objects.filter(id=l.LxOrdering_Provider.id)[0]
+                sitename = relprov.provPrimary_Dept
+                if sitename and sitename not in sites:
+                    sites.append(sitename)
+            res = []
+            for loc in sites:
+                res.append('%s ' % loc)
         return unicode(''.join(res))
         
     def getWorkflows(self): # return a list of workflow states for history
@@ -1379,5 +1355,3 @@ class HL7File(models.Model):
           
     def  __unicode__(self):
         return u'%s %s' % (self.filename,self.datedownloaded)
-
-
