@@ -1,7 +1,13 @@
 #-*- coding:utf-8 -*-
 
 import os, sys
-sys.path.append(os.path.realpath('..'))
+
+#Standard boilerplate code that we put to put the settings file in the
+#python path and make the Django environment have access to it.
+PWD = os.path.dirname(__file__)
+PARENT_DIR = os.path.realpath(os.path.join(PWD, '..'))
+if PARENT_DIR not in sys.path: sys.path.append(PARENT_DIR)
+
 
 import settings
 from django.db import models
@@ -24,8 +30,6 @@ class Rule(models.Model):
                                 choices=ADVERSE_EVENT_CATEGORIES)
     
     
-    
-
 class FeverEventRule(Rule):
     trigger_value = models.FloatField()
     
@@ -40,14 +44,19 @@ class LxEventRule(Rule):
 class AdverseEvent(models.Model):
     patient = models.ForeignKey(Demog)
     immunization = models.ForeignKey(Immunization)
-    encounter = models.ForeignKey(Enc)
     matching_rule_explain = models.CharField(max_length=200)
-    last_updated = models.DateTimeField(auto_now = True)
+    category = models.CharField(max_length=20, choices=ADVERSE_EVENT_CATEGORIES)
+    created_on = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
 
+class FeverEvent(AdverseEvent):
+    temperature = models.FloatField('Temperature')
+    encounter = models.ForeignKey(Enc)
 
+class DiagnosticsEvent(AdverseEvent):
+    encounter = models.ForeignKey(Enc)
+    icd9 = models.ForeignKey(icd9)
     
 
-    
-    
-    
-      
+class LabResultEvent(AdverseEvent):
+    lab_result = models.ForeignKey(Lx)

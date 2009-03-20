@@ -3,77 +3,45 @@ import os, sys
 import pdb
 import datetime
 
-from utils.utils import output
-from VAERSevents import detect_adverse_events
+from vaers.models import FeverEvent
 
 
-def temporal_clustering(out_file=None, **kw):
+def temporal_clustering(filename, **kw):
     # Get fever events and output to file with format
     # id vaccDate eventDate daysToEvent VaccName eventName Ageyrs GenderMF 
         
-    start_date = kw.pop('start_date', None)
-    end_date = kw.pop('end_date', None)
+    now = datetime.datetime.now()
+    yesterday = now - datetime.timedelta(days=1)
 
-    f = (out_file and open(out_file, 'w')) or None
+    start_date = kw.pop('start_date', yesterday)
+    end_date = kw.pop('end_date', now)
+
+    f = open(filename, 'w')
+
+    events = FeverEvent.objects.filter(
+        last_updated__gte=start_date,
+        last_updated__lte=end_date
+        )
       
-    for ev in detect_adverse_events(detect_only='fever', 
-                                    start_date=start_date,
-                                    end_date=end_date):
-
+    for ev in events:
         imm = ev.immunization
         imm.date = datetime.datetime.strptime(imm.ImmDate, '%Y%m%d')
-        encounter_date = datetime.datetime.strptime(ev.encounter.EncEncounter_Date, '%Y%m%d')
-
+        encounter_date = datetime.datetime.strptime(
+            ev.encounter.EncEncounter_Date, '%Y%m%d')
+        
         days_to_event = (encounter_date - imm.date).days
+        f.write('\t'.join(str(x) for x in [
+                    imm.ImmRecId, 
+                    imm.ImmDate,
+                    encounter_date.strftime('%Y%m%d'), 
+                    days_to_event, 
+                    imm.ImmName, ev.matching_rule_explain, 
+                    ev.patient.getAge(), ev.patient.DemogGender
+                    ]))
+        f.write('\n')
 
-        output('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (
-                imm.ImmRecId , 
-                imm.date.strftime('%m/%d/%Y'), 
-                encounter_date.strftime('%m/%d/%Y'), 
-                days_to_event, 
-                imm.ImmName, ev.name, 
-                ev.patient.getAge(), ev.patient.DemogGender
-                ), f)
-
-
-def vaers_summary(immunization):
-    '''Given an immunization that has caused an adverse event, 
-    returns information details about the event and the patient'''
-    return {}
-
-def vaccines_on_date(immunization):
-    return []
-
-def prior_vaers(immunization):
-    return []
-
-def prior_vaers_in_sibling(immunization):
-    return []
-
-def prior_vaccinations(immunization):
-    return []
-
-def previous_reports(event):
-    return []
-
-def patient_stats(patient):
-    return {}
-
-def vaccination_project_stats(immunization):
-    return {}
-
-
+    f.close()
 
     
     
-
     
-            
-            
-
-
-if __name__ == '__main__':
-    print 'Getting All Events...'
-    print '\n\n\n'
-    print temporal_clustering()
-    print '\n\n\n'

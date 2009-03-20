@@ -1,20 +1,22 @@
 #-*- coding:utf-8 -*-
 
 import os,sys,re
+import time, datetime
 import pdb
 
-ROOT_DIR = (os.path.realpath('../..'))
+
+PWD = os.path.dirname(__file__)
+ROOT_DIR = os.path.realpath(os.path.join(PWD, '../..'))
+PARENT_DIR = os.path.realpath(os.path.join(PWD, '..'))
+
 LIB_DIR = os.path.join(ROOT_DIR, 'lib')
-
-PARENT_DIR = os.path.realpath('..')
 MESSAGE_DIR = os.path.join(PARENT_DIR, 'messages')
-
-
 
 if PARENT_DIR not in sys.path: sys.path.append(PARENT_DIR)
 if LIB_DIR not in sys.path: sys.path.append(LIB_DIR)
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
 from esp.models import *
 from esp.models import Vaccine, ImmunizationManufacturer
 
@@ -22,8 +24,6 @@ from hl7.core import Field
 from hl7 import segments
 
 from rules import VACCINE_MAPPING, MANUFACTURER_MAPPING
-
-import time, datetime
 
 UNKNOWN_VACCINE = Vaccine.objects.get(short_name='unknown')
 UNKNOWN_MANUFACTURER = ImmunizationManufacturer.objects.get(code='UNK')
@@ -40,7 +40,7 @@ def isoTime(t=None):
         return time.strftime('%Y%m%d%H%M%S',t)
 
 def getOnestr(delimiter, templ):
-    return '%s' % delimiter.join(templ)
+    return delimiter.join(templ)
 
 
 
@@ -452,9 +452,9 @@ class onehl7:
 
 
 def make_report(event):
-    testDoc = onehl7(event)  # 1946 is esp_demog.id
+    testDoc = onehl7(event) 
     msh = testDoc.makeMSH()
-    pid =  testDoc.makePID()
+    pid = testDoc.makePID()
     orc = testDoc.makeORC(event.patient.DemogProvider)
     finalstr = msh + pid + orc
             
@@ -492,7 +492,8 @@ def make_report(event):
             
             
     try:
-        file_name = os.path.join(MESSAGE_DIR, 'VAERS_hl7Sample_case%s.hl7' % event.id)
+        file_name = os.path.join(MESSAGE_DIR, 
+                                 'VAERS_sample_case_%s.hl7' % event.id)
         f = file(file_name,'w')
         f.write(finalstr)
     except IOError, why:
@@ -501,8 +502,4 @@ def make_report(event):
         f.close()
     
 
-
     return finalstr
-
-
-
