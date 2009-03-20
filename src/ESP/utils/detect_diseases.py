@@ -862,8 +862,13 @@ chlamydia_lab = String_Match_Lab_Heuristic(
         
 def make_acute_hep_a_cases(disease, new_only=False):
     '''
-    Only one Hep A case per lifetime -- so return one case, with all relevant events attached.
-    '''
+    Only one Hep A case per lifetime -- so return one case, with all relevant 
+        events attached.
+    @param disease:  The Disease_Definition calling this method
+    @type disease:   Disease_Definition
+    @param new_only: Only create new cases, don't update existing cases
+    @type new_only:  Boolean
+        '''
     result = {} # {Patient: Case}
     count = 0 # New case counter
     igm_events = models.Heuristic_Event.objects.filter(heuristic_name='hep_a_igm_ab')
@@ -926,46 +931,94 @@ acute_hep_a = Disease_Definition(
     )
 
 
-
-
-def old_make_chlamydia_cases(self, new_only=False):
-    '''
-    Detects Chlamydia, generates new cases, and updates existing cases 
-    (unless new_only is True).
-    '''
-    case_window = datetime.timedelta(days=365) # Group events occurring within case_window into single case
-    counter = 0            # Number of new cases generated
-    bound_events = []      # Events already bound to a Case object
-    existing_cases = models.Case.objects.filter(condition=self.condition).select_related('events')
-    [bound_events.extend(case.events.all()) for case in existing_cases]
-    log.debug('number of bound_events: %s' % len(bound_events))
-    for event in models.Heuristic_Event.objects.filter(heuristic_name='chlamydia').order_by('date'):
-        if event in bound_events:
-            log.debug('Event %s is already bound to a case' % event)
-            continue # Event is already attached to a case
-        patient = event.patient
-        begin = event.date - case_window
-        end = event.date
-        primary = existing_cases.filter(patient=patient, date__gte=begin, date__lte=end)
-        if primary: # This event should be attached to an existing case
-            assert len(primary) == 1 # Sanity check
-            primary_case = primary[0]
-            if new_only:
-                log.debug('Event %s belongs to existing case %s, but new_only flag is set to True.  Skipping.' % (event, primary_case) )
-                continue # Don't update case
-            log.debug('Attaching event:\n    %s\nto existing case\n    %s' % (event, primary_case))
-            primary_case.events.add(event)
-            primary_case.save()
-        else: # A new case should be created for this event
-            self.new_case(event, [])
-            counter += 1 # Increment new case count
-    return counter
-            
-        
 make_chlamydia_cases = Single_Heuristic_Time_Window_Case_Maker(
     heuristic_name = 'chlamydia', 
     time_window = 365
     )
+
+
+class make_acute_hep_b_cases:
+    '''
+    Acute Hepatitis B definitions:
+    1)  (jaundice OR alt_5x OR ast_5x) 
+        AND hep_b_igm_ab 
+        WITHIN 14 days
+    2)  (jaundice OR alt_5x OR ast_5x) 
+        AND (total_bilirubin_high OR high_calc_bilirubin)
+        AND (hep_b_surface OR hep_b_viral_dna)
+        WITHIN 21 days
+        AND NOT chronic_hep_b AT THIS TIME
+        AND NOT (chronic_hep_b OR hep_b_surface OR hep_b_viral_dna) EVER IN PAST
+    3)  hep_b_surface
+        AND NOT (hep_b_surface OR hep_b_viral_dna OR jaundice) EVER IN PAST
+    '''
+    
+def __init__(self):
+    # This is used by several definitions:
+    q_obj = Q(heuristic_name__in=['jaundice_enc', 'alt_5x_lab', 'ast_5x_lab'])
+    self.jaundice_alt_ast = models.Case.objects.filter(q_obj)
+
+def definition_a(self):
+    result = []
+    for event in models.Case.objects.filter(heuristic_name='hep_b_igm_ab_lab'):
+        patient = event.patient
+        fourteen = datetime.timedelta(days=14)
+        begin = event.date - fourteen
+        end = event.date + fourteen
+        other_events = self.jaundice_alt_ast.filter(patient=patient, date__gte=begin, date__lte=end)
+        all_events = [event] + [e for e in other_events]
+        if not other_events:
+            continue # Not a case
+        ################################################################################
+        # Here we should return (patient, all_events) to a calling method, which will 
+        # assemble the results list.
+        ################################################################################
+        result += [(patient, all_events)]
+    return result
+
+def __call__(self, disease, new_only):
+    '''
+    @param disease:  The Disease_Definition calling this method
+    @type disease:   Disease_Definition
+    @param new_only: Only create new cases, don't update existing cases
+    @type new_only:  Boolean
+    '''
+    count = 0
+    candidates = []
+    for func in [self.definition_a, ]:
+        candidates += func()
+    result = {} # {Patient: Case}
+    for patient, events in candidates:
+        #
+        # Case established -- but a patient can have only one Acute Hep A 
+        # diagnosis per lifetime, so let's check and see if he already has 
+        # one.
+        #
+        if patient in result: # First, have we seen it in this detection run:
+            log.debug('Result list already contains case for %s.  Updating its events and continuing.' % patient)
+            case = result[patient]
+            case.events = sets.Set(case.events) + sets.Set(events)
+            continue
+        # Now check the db:
+        existing = models.Case.objects.filter(patient=patient, condition=disease.condition)
+        if existing and new_only:
+            log.debug('Existing case found for %s.  Flag new_only is set, so skipping & continuing.' % patient)
+            continue
+        elif existing:
+            log.debug('Existing case found for %s.  Updating its events (not saving), putting it in result list, and continuing.' % patient)
+            case = existing[0] # should be only one hep A case
+            case.events = sets.Set(case.events.all()) | sets.Set(events)
+            result[patient] = case
+        else:
+            # No existing case -- let's create one
+            #
+            # TODO: Primary date is date of first event
+            log.debug('Creating new case for %s' % patient)
+            result[patient] = disease.new_case(primary_event=event, all_events=all_events)
+            count += 1
+    return count
+        
+
 
 chlamydia = Disease_Definition(
     name = 'Chlamydia',
