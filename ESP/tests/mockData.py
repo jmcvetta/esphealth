@@ -2,7 +2,16 @@ import os, sys
 sys.path.append(os.path.realpath('..'))
 
 import datetime, random
+import simplejson
 import string
+
+PWD = os.path.dirname(__file__)
+PARENT_DIR = os.path.realpath(os.path.join(PWD, '..'))
+FIXTURE_DIR = os.path.join(PARENT_DIR, 'fixtures')
+
+if PARENT_DIR not in sys.path: sys.path.append(PARENT_DIR)
+
+
 
 import settings
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
@@ -26,16 +35,13 @@ LAST_NAMES = ['Bazfar', 'Barfoo', 'Hoobaz', 'Sotbar', 'Farbaz',
 
 SITES = ['Brookline Ave', 'West Roxbury', 'Matapan', 'Sydney', 'Kansas']
 
-VACCINES = {
-    'mmr':'Measles, Mumps, Rubeola', 
-    'Tetanus':'Tetanus',
-    'Flu':'Influenza',
-    'OPV':'polio', 
-    'BCG':'Tuberculosis'
-    }
 
 
+class obj():
+    pass
 
+def create_patient_fixture():
+    
 
 
 def make_fake_demog():

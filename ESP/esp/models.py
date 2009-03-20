@@ -69,73 +69,6 @@ class DemogManager(models.Manager):
 
 
     
-class ImmunizationManager(models.Manager):
-    def patients_vaccinated_in_period(self, start_date, end_date):
-        return Immunization.objects.filter(ImmDate__gte=start_date, ImmDate__lte=end_date).values('ImmPatient').distinct()
-
-    
-    def all_between(self, start_date, end_date):
-        start = start_date.strftime('%Y%m%d')
-        end = end_date.strftime('%Y%m%d')
-
-        return Immunization.objects.filter(ImmDate__gte=start, 
-                                           ImmDate__lte=end)
-
-class EncounterManager(models.Manager):
-    def withFever(self, patient, fever_thresold, **kw):
-        
-        def filter_temperature(encounter):
-            try:
-                temp = float(encounter.EncTemperature)
-                return temp >= fever_thresold
-            except:
-                return False
-
-
-        from django.db import connection
-        cursor = connection.cursor()
-
-
-        patient_id = patient.id
-        start_date = kw.pop('start_date', None) or NOW
-        end_date = kw.pop('end_date', None) or EPOCH
-        
-        fmt_start_date = start_date.strftime('%Y%m%d')
-        fmt_end_date = end_date.strftime('%Y%m%d')
-
-
-        cmd = 'SELECT * FROM esp_enc ' \
-            'WHERE EncEncounter_Date > "%s" AND EncEncounter_Date < "%s" ' \
-            'AND EncPatient_id = %d AND EncTemperature <> ""'  % (fmt_start_date, fmt_end_date, patient_id)
-
-        cursor.execute(cmd)
-        
-        return [self.model(*x) for x in cursor.fetchall()]
-    
-    def from_patient(self, patient, **kw):
-        from django.db import connection
-        cursor = connection.cursor()
-        
-        start_date = kw.pop('start_date', None) or NOW
-        end_date = kw.pop('end_date', None) or EPOCH
-        
-        fmt_start_date = start_date.strftime('%Y%m%d')
-        fmt_end_date = end_date.strftime('%Y%m%d')
-
-      
-        cmd = 'SELECT * FROM esp_enc '\
-            'WHERE EncEncounter_Date > "%s" AND EncEncounter_Date < "%s" ' \
-            'AND EncPatient_id = %d'  % (fmt_start_date, fmt_end_date, patient.id)
-
-        cursor.execute(cmd)
-
-        return [self.model(*x) for x in cursor.fetchall()]
-        
-        
-
-
-        
-
 
 #########################################################################
 # Models
@@ -800,6 +733,53 @@ class Lx(models.Model):
                 s=''
         return unicode(s)
 
+
+    
+
+    def previous(self):
+        last = Lx.objects.filter(
+            LxPatient=self.LxPatient,
+            LxDate_of_result__lt=self.LxOrder_Date,
+            LxTest_Code_CPT=self.LxTest_Code_CPT,
+            LxComponent=self.LxComponent
+            ).exclude(
+            LxTest_Results=''
+            ).order_by('-LxDate_of_result')[:1]
+        
+        return last or None
+
+    def compared_to_lkv(self, comparator, x):
+        '''
+        Builds and evals an inequation between the value of
+        the lab result and the Last Known Value (LKV).
+        Uses comparator and x as arguments.  Comparator can only be 
+        '>' or '<', while x can be any kind of string that can be 
+        part of a mathematical equation.
+        '''
+        try:
+            assert(comparator in ['>', '<'])
+            assert('LKV' in x)
+            previous = self.previous()
+            assert(previous.LxReference_Unit.lower() == self.LxReference_Unit.lower())
+            lkv = float(previous.LxTest_Results)
+            current = float(self.LxTest_Results)
+        except:
+            return None
+        
+        x = x.replace('LKV', str(lkv))
+        
+        equation = ' '.join([current, comparator, x])
+        return eval(equation)
+
+        
+        
+
+        
+
+            
+            
+            
+
  
     def iscaserelated(self):
         
@@ -838,7 +818,6 @@ class Enc(models.Model):
     # These fields are being re-written. Duplicated fields may exist.
     # Fields beginning with Enc are supposed to be deprecated and will later be removed.
     objects = models.Manager()
-    manager = EncounterManager()
     
 
     EncPatient = models.ForeignKey(Demog) 
@@ -932,7 +911,6 @@ class icd9Fact(models.Model):
 
 class Immunization(models.Model):
     objects = models.Manager()
-    manager = ImmunizationManager()
     ImmPatient = models.ForeignKey(Demog)
     ImmType = models.CharField('Immunization Type',max_length=20,blank=True,null=True)
     ImmName = models.CharField('Immunization Name',max_length=200,blank=True,null=True)
@@ -978,14 +956,14 @@ class VAERSadditions(models.Model):
 
 
 class Vaccine(models.Model):
-    code = models.CharField(max_length=5, unique=True)
+    code = models.IntegerField(unique=True)
     short_name = models.CharField(max_length=60)
     name = models.CharField(max_length=300)
     
 
 class ImmunizationManufacturer(models.Model):
     code = models.CharField(max_length=3)
-    full_name = models.CharField(max_length=60)
+    full_name = models.CharField(max_length=200)
     active = models.BooleanField(default=True)
     use_instead = models.ForeignKey('self', null=True)
     

@@ -23,13 +23,6 @@ def timeit(func):
         return res
     return decorator
 
-def output(out_string, stream=None):
-    ''' Simple function to output a string to either a file or stdout'''
-    if stream:
-        stream.write('%s\n' % out_string)
-    else:
-        print out_string
-
 def debug(msg):
     if settings.DEBUG:
         print msg
@@ -41,9 +34,16 @@ def random_string(length=10):
 def random_phone_number():
     area_code = str(400 + random.randrange(500))
     prefix = str(100 + random.randrange(900))
-    suffix = '%04d' % str(+ random.randrange(9000))
+    suffix = '%04d' % (1000 + random.randrange(9000))
     
     return '-'.join([area_code, prefix, suffix])
+
+def random_ssn():
+    prefix = '%03d' % random.randrange(1000)
+    infix = '%02d' % random.randrange(100)
+    suffix = '%04d' % random.randrange(10000)
+    
+    return '-'.join([prefix, infix, suffix])
 
 
 
