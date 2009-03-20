@@ -16,12 +16,13 @@ INCOMING_DATA=$ESP_HOME/NORTH_ADAMS/incomingData/
 cd $INCOMING_HL7 && rm -f * || exit
 
 for year_month in 200{8..9}-{1..12}; do
-	echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-	echo $year_month
-	echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-	cd $ALL_HL7
-	cp *_$year_month-* $INCOMING_HL7
-	cd $ESP_SRC && rm -f $INCOMING_DATA/* || exit
-	python utils/hl7_to_etl.py
-	python utils/incomingParser.py --all
+    echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+    echo $year_month
+    echo '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+    cd $ALL_HL7
+    cp *_$year_month-* $INCOMING_HL7
+    rm -f $INCOMING_DATA/* || exit
+    cd $ESP_SRC
+    python $ESP_SRC/utils/hl7_to_etl.py
+    python $ESP_SRC/utils/incomingParser.py --all
 done
