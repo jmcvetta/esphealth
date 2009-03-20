@@ -1408,3 +1408,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+    print '+' * 80
+    print 'number of queries: %s' % len(connection.queries)
+    print '+' * 80
+    
