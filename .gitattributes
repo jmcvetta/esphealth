@@ -53,9 +53,7 @@ ESP/vaers/mockData.py -text
 ESP/vaers/models.py -text
 ESP/vaers/reports.py -text
 ESP/vaers/rules.py -text
-ESP/vaers/test.py -text
 ESP/vaers/tests.py -text
-ESP/vaers/transmitter.py -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
 docs/ELR[!!-~]EMR[!!-~]Query[!!-~]Specification[!!-~]v1.0.doc -text
