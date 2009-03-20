@@ -181,6 +181,41 @@ ROWS_PER_PAGE = 10
 
 #===============================================================================
 #
+#--- ~~~ Case Generation ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+REPORT_RX_DAYS_BEFORE = 7
+REPORT_RX_DAYS_AFTER = 14
+REPORT_LX_DAYS_BEFORE = 30
+REPORT_LX_DAYS_AFTER = 30
+REPORT_ICD9_DAYS_BEFORE = 14
+REPORT_ICD9_DAYS_AFTER = 14
+
+# Default set of ICD9 codes to report
+DEFAULT_REPORTABLE_ICD9S = [
+    '780.6A', 
+    '782.4', 
+    '783.0', 
+    '780.79B', 
+    '789.00', 
+    '789.01', 
+    '789.02', 
+    '789.03', 
+    '789.04', 
+    '789.05', 
+    '789.06', 
+    '789.07', 
+    '789.08', 
+    '789.09', 
+    '787.01',
+    '787.02',
+    '787.03',
+    '787.91',
+    ]
+
+
+#===============================================================================
+#
 #--- ~~~ Logging Configuration ~~~
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -191,15 +226,3 @@ LOG_FILE = '/tmp/esp.log'
 LOG_LEVEL_CONSOLE = logging.DEBUG
 LOG_LEVEL_FILE = logging.DEBUG
 
-
-#===============================================================================
-#
-#--- ~~~ Case Generation ~~~
-#
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-REPORT_RX_DAYS_BEFORE = 7
-REPORT_RX_DAYS_AFTER = 14
-REPORT_LX_DAYS_BEFORE = 30
-REPORT_LX_DAYS_AFTER = 30
-REPORT_ICD9_DAYS_BEFORE = 14
-REPORT_ICD9_DAYS_AFTER = 14
