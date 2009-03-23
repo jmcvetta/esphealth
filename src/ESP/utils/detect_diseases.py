@@ -365,10 +365,12 @@ class Encounter_Heuristic(Heuristic):
         '''
         log.debug('Get encounters relevant to "%s".' % self.name)
         qs = models.Enc.objects.all()
-        if begin_date and end_date:
+        if begin_date :
             begin = self.make_date_str(begin_date)
+            qs = qs.filter(EncEncounter_Date__gte=begin)
+        if end_date:
             end = self.make_date_str(end_date)
-            qs = qs.filter(EncEncounter_Date__gte=begin, EncEncounter_Date__lte=end)
+            qs = qs.filter(EncEncounter_Date__lte=end)
         elif begin_date or end_date:
             raise 'If you specify either begin_date or end_date, you must also specify the other.'
         return qs.filter(self.enc_q)
