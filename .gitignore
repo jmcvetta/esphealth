@@ -1,2 +1,4 @@
 /.project
 /.pydevproject
+src/ESP/vaers/fixtures
+src/ESP/vaers/fixtures/lab_results.sql
