@@ -116,9 +116,9 @@ class Heuristic:
         # First we retrieve a list of object IDs for this 
         existing = models.Heuristic_Event.objects.filter(heuristic_name=self.name).values_list('object_id')
         existing = [int(item[0]) for item in existing] # Convert to a list of integers
-        for event in self.matches(begin_date, end_date):
+        for event in self.matches(begin_date, end_date).select_related():
             if event.id in existing:
-                log.debug('Heuristic event "%s" already exists for: %s' % (self.name, event))
+                log.debug('Heuristic event "%s" already exists for %s #%s' % (self.name, event._meta.object_name, event.id))
                 continue
             content_type = ContentType.objects.get_for_model(event)
             obj, created = models.Heuristic_Event.objects.get_or_create(heuristic_name=self.name,
@@ -128,11 +128,11 @@ class Heuristic:
                                                          object_id=event.pk,
                                                          )
             if created:
-                log.info('Creating new heuristic event "%s" for %s' % (self.name, event))
+                log.info('Creating new heuristic event "%s" for %s #%s' % (self.name, event._meta.object_name, event.id))
                 obj.save()
                 counter += 1
             else:
-                log.debug('Did not create heuristic event - found a matching event: %s' % obj)
+                log.debug('Did not create heuristic event - found matching event #%s' % obj.id)
         log.info('Generated %s new events for "%s".' % (counter, self.name))
         return counter
     
@@ -666,6 +666,40 @@ class Single_Heuristic_Time_Window_Case_Maker:
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+class Fever_Heuristic(Encounter_Heuristic):
+    '''
+    Abstract base class for encounter heuristics, concrete instances of which
+    are used as components of DiseaseDefinitions
+    '''
+    def __init__(self, **kwargs):
+        self.name = 'fever'
+        self.verbose_name = 'Fever'
+        self.icd9s = ['780.6A',]
+        self._register(kwargs)
+    
+    def encounters(self, begin_date=None, end_date=None):
+        '''
+        Return all encounters indicating fever.
+            @type begin_date: datetime.date
+            @type end_date:   datetime.date
+            @type patient:    models.Demog
+            @type queryset:   QuerySet
+        '''
+        log.debug('Get encounters matching "%s".' % self.name)
+        qs = models.Enc.objects.all()
+        if begin_date :
+            begin = self.make_date_str(begin_date)
+            qs = qs.filter(EncEncounter_Date__gte=begin)
+        if end_date:
+            end = self.make_date_str(end_date)
+            qs = qs.filter(EncEncounter_Date__lte=end)
+        # Either encounter has the 'fever' ICD9, or it records a high temp
+        q_obj = self.enc_q | Q(EncTemperature__gt=100.4)
+        log.debug('q_obj: %s' % q_obj)
+        return qs.filter(q_obj)
+
+fever_enc = Fever_Heuristic()
+
 jaundice_enc = Encounter_Heuristic(name='jaundice', 
                               verbose_name='Jaundice, not of newborn',
                               icd9s=['782.4'],
@@ -953,6 +987,26 @@ class make_acute_hep_b_cases:
         AND NOT (hep_b_surface OR hep_b_viral_dna OR jaundice) EVER IN PAST
     '''
     
+    '''
+    Def 1:
+    
+    select e3.*
+	from esp_heuristic_event e1 
+	join esp_heuristic_event e2 
+	    on e1.patient_id = e2.patient_id 
+	join esp_heuristic_event e3
+	    on (e3.id = e1.id) or (e3.id = e2.id)
+	where e1.heuristic_name = 'hep_b_igm_ab' 
+	and e2.heuristic_name in ('alt_5x', 'ast_5x', 'jaundice') 
+	and e2.date > e1.date - interval 14 day
+	and e2.date < e1.date + interval 14 day
+	order by e3.patient_id, e3.date
+    '''
+
+def foo(self):
+    jaa = Q(heuristic_name__in=['jaundice_enc', 'alt_5x_lab', 'ast_5x_lab'])
+    plus14 = Q(date)
+    
 def __init__(self):
     # This is used by several definitions:
     q_obj = Q(heuristic_name__in=['jaundice_enc', 'alt_5x_lab', 'ast_5x_lab'])
@@ -1157,7 +1211,11 @@ def main():
         parser.print_help()
     
 
+def experiment():
+    fever_enc.generate_events()
+
 if __name__ == '__main__':
-    main()
-    print len(connection.queries)
+    #main()
+    experiment()
+    print 'Total Number of DB Queries: %s' % len(connection.queries)
     #pprint.pprint(connection.queries)
