@@ -12,7 +12,7 @@ OPERATORS = [
     ('gte', '>='),
     ('lt', '<'),
     ('lte', '<='),
-    ('istartswith', 'Starts With (cae insensitive)'),
+    ('istartswith', 'Starts With (case insensitive)'),
     ('iendswith', 'Ends With (case insensitive)'),
     ]
 
