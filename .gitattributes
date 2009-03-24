@@ -37,9 +37,9 @@ ESP/utils/utils.py -text
 ESP/utils/vaers_hl7.py -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
-doc/ELR[!!-~]EMR[!!-~]Query[!!-~]Specification[!!-~]v1.0.doc -text
-doc/ESPSpecificationsAug3_2006.doc -text
-doc/FINAL[!!-~]ELR[!!-~]231[!!-~]Implementation[!!-~]Guide_052104.pdf -text svneol=unset#unset
+doc/specifications/EpicCare_ESP_Extract_Specifications--3_Aug_2006.doc -text
+doc/specifications/MDPH_ELR_EMR_Query_Specification_v1.0.doc -text
+doc/specifications/PHIN_ELR_Implementation_Guide--HL7_2.3.1--21_May_2004.pdf -text svneol=unset#unset
 prototype/preLoaderData/esp_conditiondrugname.txt -text
 prototype/preLoaderData/esp_conditionicd9.txt -text
 prototype/preLoaderData/esp_conditionloinc.txt -text
