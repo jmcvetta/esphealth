@@ -561,6 +561,9 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
     ##get all exclude code list
     exclude_l=[]
     rules = Rule.objects.all()
+    # 
+    # NLP: Codes to exclude
+    #
     for i in rules:
         if i.ruleExcludeCode:
             exclist=eval(i.ruleExcludeCode)
@@ -688,7 +691,11 @@ def newLabcompoent(compname, cpt, comp):
                                                                                     
 ###################################
 def codeSearch(compname):
-                    
+    '''
+    Primitive natural language processing (NLP) to detect new lab 
+    test with interesting names.
+    '''
+    # The search string list should probably be moved to settings.
     searchstr = ['CHLAM','TRACH', 'GC','GON','HEP','HBV','ALT','SGPT','AST','SGOT','AMINOTRANS','BILI', 'HAV','HCV','RIBA']
     notsearch = ['CAST', 'FASTING','YEAST','URINE','URO']
     for i in searchstr:
