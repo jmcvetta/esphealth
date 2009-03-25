@@ -36,14 +36,14 @@ from ESP.utils.utils import log
 
 class HeuristicAlreadyRegistered(BaseException):
     '''
-    A Heuristic instance has already been registered with the same name 
+    A BaseHeuristic instance has already been registered with the same name 
     as the instance you are trying to register.
     '''
     pass
 
 class DiseaseDefinitionAlreadyRegistered(BaseException):
     '''
-    A Disease_Definition instance has already been registered with the same 
+    A BaseDiseaseDefinition instance has already been registered with the same 
     name as the instance you are trying to register.
     '''
     pass
@@ -61,7 +61,7 @@ class CaseAlreadyExists(BaseException):
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class Heuristic:
+class BaseHeuristic:
     '''
     Abstract interface class for heuristics, concrete instances of which are
     used as components of disease definitions.
@@ -73,7 +73,7 @@ class Heuristic:
     __registry = {} # Class variable
     def _register(self, allow_duplicate_name=False):
         '''
-        Add this instance to the Heuristic registry
+        Add this instance to the BaseHeuristic registry
         '''
         name = self.name
         registry = self.__registry
@@ -82,7 +82,7 @@ class Heuristic:
                 log.debug('Registering additional heuristic for name "%s".' % name)
                 registry[name] += [self]
         elif name in registry:
-            raise HeuristicAlreadyRegistered('A Heuristic instance is already registered with name "%s".' % name)
+            raise HeuristicAlreadyRegistered('A BaseHeuristic instance is already registered with name "%s".' % name)
         else:
             log.debug('Registering heuristic with name "%s".' % name)
             registry[name] = [self]
@@ -90,13 +90,13 @@ class Heuristic:
     @classmethod
     def get_all_heuristics(cls):
         '''
-        Returns a list of all registered Heuristic instances.
+        Returns a list of all registered BaseHeuristic instances.
         '''
         result = []
         keys = cls.__registry.keys()
         keys.sort()
         [result.extend(cls.__registry[key]) for key in keys]
-        log.debug('All Heuristic instances: %s' % result)
+        log.debug('All BaseHeuristic instances: %s' % result)
         return result
     
     def matches(self, begin_date=None, end_date=None):
@@ -118,7 +118,7 @@ class Heuristic:
         existing = [int(item[0]) for item in existing] # Convert to a list of integers
         for event in self.matches(begin_date, end_date).select_related():
             if event.id in existing:
-                log.debug('Heuristic event "%s" already exists for %s #%s' % (self.name, event._meta.object_name, event.id))
+                log.debug('BaseHeuristic event "%s" already exists for %s #%s' % (self.name, event._meta.object_name, event.id))
                 continue
             content_type = ContentType.objects.get_for_model(event)
             obj, created = models.Heuristic_Event.objects.get_or_create(heuristic_name=self.name,
@@ -139,7 +139,7 @@ class Heuristic:
     @classmethod
     def generate_all_events(cls, begin_date=None, end_date=None):
         '''
-        Generate Heuristic_Event records for every registered Heuristic 
+        Generate Heuristic_Event records for every registered BaseHeuristic 
             instance.
         @param begin_date: Beginning of time window to examine
         @type begin_date:  datetime.date
@@ -166,10 +166,10 @@ class Heuristic:
         return util.str_from_date(date)
     
     def __repr__(self):
-        return '<Heuristic: %s>' % self.name
+        return '<BaseHeuristic: %s>' % self.name
     
     
-class Lab_Heuristic(Heuristic):
+class LabHeuristic(BaseHeuristic):
     '''
     Abstract base class for lab test heuristics, concrete instances of which
     are used as components of DiseaseDefinitions
@@ -225,7 +225,7 @@ class Lab_Heuristic(Heuristic):
         return qs.filter(self.lab_q)
 
 
-class High_Numeric_Lab_Heuristic(Lab_Heuristic):
+class HighNumericLabHeuristic(LabHeuristic):
     '''
     Matches labs with high numeric scores, as determined by a ratio to 
     '''
@@ -275,7 +275,7 @@ class High_Numeric_Lab_Heuristic(Lab_Heuristic):
         return relevant_labs.filter(pos_q)
 
 
-class String_Match_Lab_Heuristic(Lab_Heuristic):
+class StringMatchLabHeuristic(LabHeuristic):
     '''
     Matches labs with results containing specified strings
     '''
@@ -332,7 +332,7 @@ class String_Match_Lab_Heuristic(Lab_Heuristic):
 
 
 
-class Encounter_Heuristic(Heuristic):
+class EncounterHeuristic(BaseHeuristic):
     '''
     Abstract base class for encounter heuristics, concrete instances of which
     are used as components of DiseaseDefinitions
@@ -379,7 +379,7 @@ class Encounter_Heuristic(Heuristic):
         return self.encounters(begin_date, end_date)
 
 
-class Fever_Heuristic(Encounter_Heuristic):
+class FeverHeuristic(EncounterHeuristic):
     '''
     Abstract base class for encounter heuristics, concrete instances of which
     are used as components of DiseaseDefinitions
@@ -411,11 +411,11 @@ class Fever_Heuristic(Encounter_Heuristic):
         log.debug('q_obj: %s' % q_obj)
         return qs.filter(q_obj)
 
-class High_Calculated_Bilirubin_Heuristic(Lab_Heuristic):
+class CalculatedBilirubinHeuristic(LabHeuristic):
     '''
-    Special heuristic for high Calculated Bilirubin values.  Since the value 
-    of calculated bilirubin is the sum of results of two seperate tests (w/ 
-    separate LOINCs), it cannot be handled by a generic Heuristic class.
+    Special heuristic to detect high calculated bilirubin values.  Since the
+    value of calculated bilirubin is the sum of results of two seperate tests
+    (w/ separate LOINCs), it cannot be handled by a generic heuristic class.
     '''
     def __init__(self):
         self.name = 'high_calc_bilirubin'
@@ -448,7 +448,7 @@ class High_Calculated_Bilirubin_Heuristic(Lab_Heuristic):
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class Disease_Definition:
+class BaseDiseaseDefinition:
     '''
     Abstract base class for disease definitions
     '''
@@ -541,7 +541,7 @@ class Disease_Definition:
     @classmethod
     def get_all_definitions(cls):
         '''
-        Returns a list of all registered Heuristic instances.
+        Returns a list of all registered BaseHeuristic instances.
         '''
         result = []
         keys = cls.__registry.keys()
@@ -553,7 +553,7 @@ class Disease_Definition:
     @classmethod
     def generate_all_cases(cls, begin_date=None, end_date=None):
         '''
-        Generate Heuristic_Event records for every registered Heuristic 
+        Generate Heuristic_Event records for every registered BaseHeuristic 
             instance.
         @param begin_date: Beginning of time window to examine
         @type begin_date:  datetime.date
@@ -603,7 +603,7 @@ class Disease_Definition:
     def update_reportable_events(self, case):
         '''
         Updates the reportable events for a given case, based on rules defined
-            when at Disease_Definition instantiation.  
+            when at BaseDiseaseDefinition instantiation.  
         @param case: The case to update
         @type case:  models.Case
         '''
@@ -670,11 +670,11 @@ class Disease_Definition:
                 definition.update_reportable_events(case)
         
 
-class Single_Heuristic_Time_Window_Case_Maker:
+class SingleHeuristicTimeWindowCaseMaker:
     '''
     Instances of this class, initialized with the name of a heuristic and a 
     time window (number of days), are suitable for use as make_cases_func in 
-    a Disease_Definition.  When called the instance generates and saves new 
+    a BaseDiseaseDefinition.  When called the instance generates and saves new 
     Case objects based on the named heuristic event.  All events occuring 
     within the specified time window will be grouped into a single case.
     Existing cases will be updated with any new events found, unless the
@@ -689,8 +689,8 @@ class Single_Heuristic_Time_Window_Case_Maker:
         
     def __call__(self, disease, new_only=False):
         '''
-        @param disease:  The Disease_Definition calling this method
-        @type disease:   Disease_Definition
+        @param disease:  The BaseDiseaseDefinition calling this method
+        @type disease:   BaseDiseaseDefinition
         @param new_only: Only create new cases, don't update existing cases
         @type new_only:  Boolean
         '''
@@ -737,14 +737,14 @@ class Single_Heuristic_Time_Window_Case_Maker:
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-fever_enc = Fever_Heuristic()
+fever_enc = FeverHeuristic()
 
-jaundice_enc = Encounter_Heuristic(name='jaundice', 
+jaundice_enc = EncounterHeuristic(name='jaundice', 
                               verbose_name='Jaundice, not of newborn',
                               icd9s=['782.4'],
                               )
 
-chronic_hep_b_enc = Encounter_Heuristic(name='chronic_hep_b',
+chronic_hep_b_enc = EncounterHeuristic(name='chronic_hep_b',
                                    verbose_name='Chronic Hepatitis B',
                                    icd9s=['070.32'],
                                    )
@@ -755,7 +755,7 @@ chronic_hep_b_enc = Encounter_Heuristic(name='chronic_hep_b',
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-alt_2x = High_Numeric_Lab_Heuristic(
+alt_2x = HighNumericLabHeuristic(
     name='alt_2x',
     verbose_name='Alanine aminotransferase (ALT) >2x upper limit of normal',
     loinc_nums=['1742-6'],
@@ -763,7 +763,7 @@ alt_2x = High_Numeric_Lab_Heuristic(
     default_high=132,
     )
 
-alt_5x = High_Numeric_Lab_Heuristic(
+alt_5x = HighNumericLabHeuristic(
     name='alt_5x',
     verbose_name='Alanine aminotransferase (ALT) >5x upper limit of normal',
     loinc_nums=['1742-6'],
@@ -771,7 +771,7 @@ alt_5x = High_Numeric_Lab_Heuristic(
     default_high=330,
     )
 
-ast_2x = High_Numeric_Lab_Heuristic(
+ast_2x = HighNumericLabHeuristic(
     name='ast_2x',
     verbose_name='Aspartate aminotransferase (ALT) >2x upper limit of normal',
     loinc_nums=['1920-8'],
@@ -779,7 +779,7 @@ ast_2x = High_Numeric_Lab_Heuristic(
     default_high=132,
     )
 
-ast_5x = High_Numeric_Lab_Heuristic(
+ast_5x = HighNumericLabHeuristic(
     name='ast_5x',
     verbose_name='Aspartate aminotransferase (ALT) >5x upper limit of normal',
     loinc_nums=['1920-8'],
@@ -787,28 +787,28 @@ ast_5x = High_Numeric_Lab_Heuristic(
     default_high=330,
     )
 
-hep_a_igm_ab = String_Match_Lab_Heuristic(
+hep_a_igm_ab = StringMatchLabHeuristic(
     name='hep_a_igm_ab',
     verbose_name='IgM antibody to Hepatitis A = "REACTIVE" (may be truncated)',
     loinc_nums=['22314-9'],
     strings=['reactiv'],
     )
 
-hep_b_igm_ab = String_Match_Lab_Heuristic(
+hep_b_igm_ab = StringMatchLabHeuristic(
     name='hep_b_igm_ab',
     verbose_name='IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['31204-1'],
     strings=['reactiv'],
     )
 
-hep_b_surface = String_Match_Lab_Heuristic(
+hep_b_surface = StringMatchLabHeuristic(
     name='hep_b_surface',
     verbose_name='Hepatitis B Surface Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['5195-3'],
     strings=['reactiv'],
     )
 
-hep_b_e_antigen = String_Match_Lab_Heuristic(
+hep_b_e_antigen = StringMatchLabHeuristic(
     name = 'hep_b_e_antigen',
     verbose_name = 'Hepatitis B "e" Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['13954-3'],
@@ -828,20 +828,20 @@ hep_b_e_antigen = String_Match_Lab_Heuristic(
 # NOTE:  See note in Hep B google doc about "HEPATITIS B DNA, QN, IU/COPIES" 
 # portion of algorithm
 #
-hep_b_viral_dna_str = String_Match_Lab_Heuristic(
+hep_b_viral_dna_str = StringMatchLabHeuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['13126-8', '16934', '5009-6'],
     strings = ['positiv', 'detect'],
     )
-hep_b_viral_dna_num1 = High_Numeric_Lab_Heuristic(
+hep_b_viral_dna_num1 = HighNumericLabHeuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['16934-2'],
     default_high = 100,
     allow_duplicate_name=True,
     )
-hep_b_viral_dna_num2 = High_Numeric_Lab_Heuristic(
+hep_b_viral_dna_num2 = HighNumericLabHeuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['5009-6'],
@@ -850,31 +850,31 @@ hep_b_viral_dna_num2 = High_Numeric_Lab_Heuristic(
     )
 
 
-hep_e_ab = String_Match_Lab_Heuristic(
+hep_e_ab = StringMatchLabHeuristic(
     name = 'hep_a_ab',
     verbose_name = 'Hepatitis E antibody',
     loinc_nums = ['14212-5'],
     strings = ['reactiv'],
     )
 
-hep_c_ab = String_Match_Lab_Heuristic(
+hep_c_ab = StringMatchLabHeuristic(
     name = 'hep_c_ab',
     verbose_name = 'Hepatitis C antibody = "REACTIVE" (may be truncated)',
     loinc_nums = ['16128-1'],
     strings = ['reactiv'],
     )
 
-total_bilirubin_high = High_Numeric_Lab_Heuristic(
+total_bilirubin_high = HighNumericLabHeuristic(
     name = 'total_bilirubin_high',
     verbose_name = 'Total bilirubin > 1.5',
     loinc_nums = ['33899-6'],
     default_high = 1.5,
     )
 
-high_calc_bilirubin = High_Calculated_Bilirubin_Heuristic()
+high_calc_bilirubin = CalculatedBilirubinHeuristic()
 
 GONORRHEA_LOINCS = ['691-6', '23908-7', '24111-7', '36902-5'] # Re-used in disease definition
-gonorrhea = String_Match_Lab_Heuristic(
+gonorrhea = StringMatchLabHeuristic(
     name =          'gonorrhea', 
     verbose_name =  'Gonorrhea', 
     loinc_nums =    GONORRHEA_LOINCS,
@@ -884,7 +884,7 @@ gonorrhea = String_Match_Lab_Heuristic(
     )
 
 CHLAMYDIA_LOINCS = ['4993-2', '6349-5', '16601-7', '20993-2', '21613-5', '36902-5', ] # Re-used in disease definition
-chlamydia = String_Match_Lab_Heuristic(
+chlamydia = StringMatchLabHeuristic(
     name =          'chlamydia', 
     verbose_name =  'Chlamydia', 
     loinc_nums =    CHLAMYDIA_LOINCS,
@@ -907,8 +907,8 @@ def make_acute_hep_a_cases(disease, new_only=False):
     '''
     Only one Hep A case per lifetime -- so return one case, with all relevant 
         events attached.
-    @param disease:  The Disease_Definition calling this method
-    @type disease:   Disease_Definition
+    @param disease:  The BaseDiseaseDefinition calling this method
+    @type disease:   BaseDiseaseDefinition
     @param new_only: Only create new cases, don't update existing cases
     @type new_only:  Boolean
         '''
@@ -961,7 +961,7 @@ def make_acute_hep_a_cases(disease, new_only=False):
             count += 1
     return count
 
-acute_hep_a = Disease_Definition(
+acute_hep_a = BaseDiseaseDefinition(
     name = 'Acute Hepatitis A', 
     make_cases_func = make_acute_hep_a_cases,
     icd9s = settings.DEFAULT_REPORTABLE_ICD9S,
@@ -974,7 +974,7 @@ acute_hep_a = Disease_Definition(
     )
 
 
-make_chlamydia_cases = Single_Heuristic_Time_Window_Case_Maker(
+make_chlamydia_cases = SingleHeuristicTimeWindowCaseMaker(
     heuristic_name = 'chlamydia', 
     time_window = 365
     )
@@ -1041,8 +1041,8 @@ class make_acute_hep_b_cases:
     
     def __call__(self, disease, new_only):
         '''
-        @param disease:  The Disease_Definition calling this method
-        @type disease:   Disease_Definition
+        @param disease:  The BaseDiseaseDefinition calling this method
+        @type disease:   BaseDiseaseDefinition
         @param new_only: Only create new cases, don't update existing cases
         @type new_only:  Boolean
         '''
@@ -1083,7 +1083,7 @@ class make_acute_hep_b_cases:
             
 
 
-chlamydia = Disease_Definition(
+chlamydia = BaseDiseaseDefinition(
     name = 'Chlamydia',
     make_cases_func = make_chlamydia_cases,
     icd9s = [
@@ -1121,12 +1121,12 @@ chlamydia = Disease_Definition(
     lab_days_after = 30,
     )
 
-make_gonorrhea_cases = Single_Heuristic_Time_Window_Case_Maker(
+make_gonorrhea_cases = SingleHeuristicTimeWindowCaseMaker(
     heuristic_name = 'gonorrhea', 
     time_window = 365
     )
 
-gonorrhea = Disease_Definition(
+gonorrhea = BaseDiseaseDefinition(
     name = 'Gonorrhea',
     make_cases_func = make_gonorrhea_cases,
     icd9s = [
@@ -1211,11 +1211,11 @@ def main():
         options.cases = True
         options.update = True
     if options.events:
-        Heuristic.generate_all_events(begin_date=options.begin, end_date=options.end)
+        BaseHeuristic.generate_all_events(begin_date=options.begin, end_date=options.end)
     if options.cases:
-        Disease_Definition.generate_all_cases(begin_date=options.begin, end_date=options.end)
+        BaseDiseaseDefinition.generate_all_cases(begin_date=options.begin, end_date=options.end)
     if options.update:
-        Disease_Definition.update_all_cases(begin_date=options.begin, end_date=options.end)
+        BaseDiseaseDefinition.update_all_cases(begin_date=options.begin, end_date=options.end)
     if not (options.events or options.cases or options.update):
         parser.print_help()
     
