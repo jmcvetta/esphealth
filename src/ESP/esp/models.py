@@ -1139,7 +1139,9 @@ class Case(models.Model):
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
     sent_timestamp = models.DateTimeField(blank=True, null=True)
+    #
     # Events that define this case
+    #
     events = models.ManyToManyField(HeuristicEvent, blank=False) # The events that caused this case to be generated
     #
     # Reportable Events
