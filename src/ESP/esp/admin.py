@@ -113,5 +113,5 @@ admin.site.register(VAERSadditions)
 #admin.site.register(Rule, RuleAdmin)
 admin.site.register(models.External_To_Loinc_Map, External_To_Loinc_Map_Admin)
 admin.site.register(models.Loinc, Loinc_Admin)
-admin.site.register(models.Heuristic_Event, Heuristic_Event_Admin)
+admin.site.register(models.HeuristicEvent, Heuristic_Event_Admin)
 

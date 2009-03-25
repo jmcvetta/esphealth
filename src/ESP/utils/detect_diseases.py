@@ -107,21 +107,21 @@ class BaseHeuristic:
         
     def generate_events(self, begin_date=None, end_date=None):
         '''
-        Generate models.Heuristic_Event records for each item returned by
+        Generate models.HeuristicEvent records for each item returned by
         matches, if it does not already have one.
         @return: Integer number of new records created
         '''
         log.info('Generating events for heuristic "%s".' % self.name)
         counter = 0 # Counts how many new records have been created
         # First we retrieve a list of object IDs for this 
-        existing = models.Heuristic_Event.objects.filter(heuristic_name=self.name).values_list('object_id')
+        existing = models.HeuristicEvent.objects.filter(heuristic_name=self.name).values_list('object_id')
         existing = [int(item[0]) for item in existing] # Convert to a list of integers
         for event in self.matches(begin_date, end_date).select_related():
             if event.id in existing:
                 log.debug('BaseHeuristic event "%s" already exists for %s #%s' % (self.name, event._meta.object_name, event.id))
                 continue
             content_type = ContentType.objects.get_for_model(event)
-            obj, created = models.Heuristic_Event.objects.get_or_create(heuristic_name=self.name,
+            obj, created = models.HeuristicEvent.objects.get_or_create(heuristic_name=self.name,
                                                          date=event.date,
                                                          patient=event.patient,
                                                          content_type=content_type,
@@ -139,7 +139,7 @@ class BaseHeuristic:
     @classmethod
     def generate_all_events(cls, begin_date=None, end_date=None):
         '''
-        Generate Heuristic_Event records for every registered BaseHeuristic 
+        Generate HeuristicEvent records for every registered BaseHeuristic 
             instance.
         @param begin_date: Beginning of time window to examine
         @type begin_date:  datetime.date
@@ -455,7 +455,6 @@ class BaseDiseaseDefinition:
     
     def __init__(self, 
         name, 
-        make_cases_func = None,
         # Reporting
         icd9s = [],
         icd9_days_before = 14,
@@ -474,8 +473,6 @@ class BaseDiseaseDefinition:
             forming part of a disease's definition are reported.
         @param name:             Name of this disease definition
         @type name:              String
-        @param make_cases_func:   Callback that returns list of Case objects
-        @type make_cases_func:    Function
         @param icd9s:            Report encounters matching these ICD9s
         @type icd9s:             List of strings
         @param icd9_days_before: How many days before case to search for encounters
@@ -497,7 +494,6 @@ class BaseDiseaseDefinition:
         @type med_days_after:    Integer
         '''
         self.name = name
-        self.make_cases_func = make_cases_func
         self.icd9s = icd9s
         self.icd9_days_before = datetime.timedelta(days=icd9_days_before)
         self.icd9_days_after = datetime.timedelta(days=icd9_days_after)
@@ -512,7 +508,6 @@ class BaseDiseaseDefinition:
         # Sanity checks
         #
         assert self.name 
-        assert self.make_cases_func
         assert self.icd9_days_before
         assert self.icd9_days_after
         assert self.lab_days_before
@@ -526,10 +521,7 @@ class BaseDiseaseDefinition:
         '''
         Calls the user-supplied case factory with appropriate arguments
         '''
-        count = self.make_cases_func(disease=self, new_only=new_only)
-        log.info('Generated %s new cases of %s.' % (count, self.condition))
-        log.debug('Number of queries so far: %s' % len(connection.queries))
-        return count
+        raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseDiseaseDefinition.')
     
     __registry = {} # Class variable
     def _register(self):
@@ -553,7 +545,7 @@ class BaseDiseaseDefinition:
     @classmethod
     def generate_all_cases(cls, begin_date=None, end_date=None):
         '''
-        Generate Heuristic_Event records for every registered BaseHeuristic 
+        Generate HeuristicEvent records for every registered BaseHeuristic 
             instance.
         @param begin_date: Beginning of time window to examine
         @type begin_date:  datetime.date
@@ -582,9 +574,9 @@ class BaseDiseaseDefinition:
             primary_event + all_events  are attached as the Case's events 
             member.
         @param primary_event: Event on which this case is based
-        @type primary_event:  Heuristic_Event
+        @type primary_event:  HeuristicEvent
         @param all_events:    All events that together establish this case
-        @type all_events:     [Heuristic_Event, Heuristic_Event, ...]
+        @type all_events:     [HeuristicEvent, HeuristicEvent, ...]
         '''
         log.info('Creating a new %s case based on event:\n    %s' % (self.condition, primary_event))
         case = models.Case()
@@ -668,6 +660,17 @@ class BaseDiseaseDefinition:
             existing_cases = models.Case.objects.filter(q_obj)
             for case in existing_cases:
                 definition.update_reportable_events(case)
+
+
+class BaseCaseDemarcator:
+    '''
+    Concrete instances of this abstract base class divide a set of heuristic 
+    events into one or more cases.
+    '''
+    
+    def demarcate(self, event_dict):
+        raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseCaseDemarcator.')
+        
         
 
 class SingleHeuristicTimeWindowCaseMaker:
@@ -705,9 +708,9 @@ class SingleHeuristicTimeWindowCaseMaker:
         #[bound_events.extend(case.events.all()) for case in existing_cases]
         #
         # Events already bound to a Case object
-        bound_events = models.Heuristic_Event.objects.filter(case__in=existing_cases).select_related()
+        bound_events = models.HeuristicEvent.objects.filter(case__in=existing_cases).select_related()
         log.debug('number of bound_events: %s' % len(bound_events))
-        for event in models.Heuristic_Event.objects.filter(heuristic_name=self.heuristic_name).order_by('date').select_related():
+        for event in models.HeuristicEvent.objects.filter(heuristic_name=self.heuristic_name).order_by('date').select_related():
             if event in bound_events:
                 log.debug('Event #%s is already bound to a case' % event.id)
                 continue # Event is already attached to a case
@@ -914,7 +917,7 @@ def make_acute_hep_a_cases(disease, new_only=False):
         '''
     result = {} # {Patient: Case}
     count = 0 # New case counter
-    igm_events = models.Heuristic_Event.objects.filter(heuristic_name='hep_a_igm_ab')
+    igm_events = models.HeuristicEvent.objects.filter(heuristic_name='hep_a_igm_ab')
     for event in igm_events:
         patient = event.patient
         fourteen = datetime.timedelta(days=14)
@@ -922,7 +925,7 @@ def make_acute_hep_a_cases(disease, new_only=False):
         end = event.date + fourteen
         other_names = ('jaundice', 'alt_2x', 'ast_2x')
         q_obj = Q(patient=patient, heuristic_name__in=other_names, date__gte=begin, date__lte=end)
-        other_events = models.Heuristic_Event.objects.filter(q_obj)
+        other_events = models.HeuristicEvent.objects.filter(q_obj)
         if not other_events:
             continue # Not a case
         all_events = [event] + [e for e in other_events]

@@ -395,7 +395,7 @@ class Demog(models.Model):
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class Heuristic_Event(models.Model):
+class HeuristicEvent(models.Model):
     '''
     An interesting medical event
     '''
@@ -412,6 +412,7 @@ class Heuristic_Event(models.Model):
     
     class Meta:
         unique_together = ['heuristic_name', 'date', 'patient', 'content_type', 'object_id']
+        db_table = 'esp_heuristic_event' # For db readability
     
     def __str__(self):
         msg = '%-15s %-12s Patient #%-20s' % (self.heuristic_name, self.date, self.patient.id)
@@ -444,7 +445,7 @@ class Rx(models.Model):
     #
     # Heuristics support
     #
-    heuristics = generic.GenericRelation(Heuristic_Event)
+    heuristics = generic.GenericRelation(HeuristicEvent)
     def _get_patient(self):
         return self.RxPatient
     def _get_provider(self):
@@ -544,7 +545,7 @@ class Lx(models.Model):
     #
     # Heuristics Support
     #
-    heuristics = generic.GenericRelation(Heuristic_Event)
+    heuristics = generic.GenericRelation(HeuristicEvent)
     def _get_patient(self):
         return self.LxPatient
     def _get_provider(self):
@@ -691,7 +692,7 @@ class Enc(models.Model):
     #
     # Heuristics support
     #
-    heuristics = generic.GenericRelation(Heuristic_Event)
+    heuristics = generic.GenericRelation(HeuristicEvent)
     def _get_patient(self):
         return self.EncPatient
     def _get_provider(self):
@@ -1139,7 +1140,7 @@ class Case(models.Model):
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
     sent_timestamp = models.DateTimeField(blank=True, null=True)
     # Events that define this case
-    events = models.ManyToManyField(Heuristic_Event, blank=False) # The events that caused this case to be generated
+    events = models.ManyToManyField(HeuristicEvent, blank=False) # The events that caused this case to be generated
     #
     # Reportable Events
     #
