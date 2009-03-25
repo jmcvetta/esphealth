@@ -379,6 +379,75 @@ class Encounter_Heuristic(Heuristic):
         return self.encounters(begin_date, end_date)
 
 
+class Fever_Heuristic(Encounter_Heuristic):
+    '''
+    Abstract base class for encounter heuristics, concrete instances of which
+    are used as components of DiseaseDefinitions
+    '''
+    def __init__(self, **kwargs):
+        self.name = 'fever'
+        self.verbose_name = 'Fever'
+        self.icd9s = ['780.6A',]
+        self._register(kwargs)
+    
+    def encounters(self, begin_date=None, end_date=None):
+        '''
+        Return all encounters indicating fever.
+            @type begin_date: datetime.date
+            @type end_date:   datetime.date
+            @type patient:    models.Demog
+            @type queryset:   QuerySet
+        '''
+        log.debug('Get encounters matching "%s".' % self.name)
+        qs = models.Enc.objects.all()
+        if begin_date :
+            begin = self.make_date_str(begin_date)
+            qs = qs.filter(EncEncounter_Date__gte=begin)
+        if end_date:
+            end = self.make_date_str(end_date)
+            qs = qs.filter(EncEncounter_Date__lte=end)
+        # Either encounter has the 'fever' ICD9, or it records a high temp
+        q_obj = self.enc_q | Q(EncTemperature__gt=100.4)
+        log.debug('q_obj: %s' % q_obj)
+        return qs.filter(q_obj)
+
+class High_Calculated_Bilirubin_Heuristic(Lab_Heuristic):
+    '''
+    Special heuristic for high Calculated Bilirubin values.  Since the value 
+    of calculated bilirubin is the sum of results of two seperate tests (w/ 
+    separate LOINCs), it cannot be handled by a generic Heuristic class.
+    '''
+    def __init__(self):
+        self.name = 'high_calc_bilirubin'
+        self.verbose_name = 'Calculated Bilirubin = (direct bilirubin + indirect bilirubin) > 1.5'
+        self.loinc_nums = ['29760-6', '14630-8']
+        self._register()
+        
+    def matches(self, begin_date=None, end_date=None):
+        log.debug('Looking for high calculated bilirubin scores')
+        # First, we return a list of patient & order date pairs, where the sum
+        # of direct and indirect bilirubin tests ordered on the same day is 
+        # greater than 1.5.
+        relevant = self.relevant_labs(begin_date, end_date)
+        vqs = relevant.values('LxPatient', 'LxOrderDate') # returns ValueQuerySet
+        vqs = vqs.annotate(calc_bil=Sum('LxTest_results'))
+        vqs = vqs.filter(calc_bil__gt=1.5)
+        # Next we loop thru the patient/order-date list, fetch the relevant 
+        # (direct + indirect) > 1.5, just in case there is a funky situation
+        # where, e.g., the patient has had two indirect bilirubin tests ordered
+        # on the same day.
+        matches = []
+        for item in vqs:
+            matches += [i for i in relevant.filter(LxPatient__id=item['LxPatient'], LxOrderDate=item['LxOrderDate']) ]
+        return matches
+            
+
+#===============================================================================
+#
+#--- ~~~ Disease Definition Framework ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 class Disease_Definition:
     '''
     Abstract base class for disease definitions
@@ -668,38 +737,6 @@ class Single_Heuristic_Time_Window_Case_Maker:
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class Fever_Heuristic(Encounter_Heuristic):
-    '''
-    Abstract base class for encounter heuristics, concrete instances of which
-    are used as components of DiseaseDefinitions
-    '''
-    def __init__(self, **kwargs):
-        self.name = 'fever'
-        self.verbose_name = 'Fever'
-        self.icd9s = ['780.6A',]
-        self._register(kwargs)
-    
-    def encounters(self, begin_date=None, end_date=None):
-        '''
-        Return all encounters indicating fever.
-            @type begin_date: datetime.date
-            @type end_date:   datetime.date
-            @type patient:    models.Demog
-            @type queryset:   QuerySet
-        '''
-        log.debug('Get encounters matching "%s".' % self.name)
-        qs = models.Enc.objects.all()
-        if begin_date :
-            begin = self.make_date_str(begin_date)
-            qs = qs.filter(EncEncounter_Date__gte=begin)
-        if end_date:
-            end = self.make_date_str(end_date)
-            qs = qs.filter(EncEncounter_Date__lte=end)
-        # Either encounter has the 'fever' ICD9, or it records a high temp
-        q_obj = self.enc_q | Q(EncTemperature__gt=100.4)
-        log.debug('q_obj: %s' % q_obj)
-        return qs.filter(q_obj)
-
 fever_enc = Fever_Heuristic()
 
 jaundice_enc = Encounter_Heuristic(name='jaundice', 
@@ -718,7 +755,7 @@ chronic_hep_b_enc = Encounter_Heuristic(name='chronic_hep_b',
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-alt_2x_lab = High_Numeric_Lab_Heuristic(
+alt_2x = High_Numeric_Lab_Heuristic(
     name='alt_2x',
     verbose_name='Alanine aminotransferase (ALT) >2x upper limit of normal',
     loinc_nums=['1742-6'],
@@ -726,7 +763,7 @@ alt_2x_lab = High_Numeric_Lab_Heuristic(
     default_high=132,
     )
 
-alt_5x_lab = High_Numeric_Lab_Heuristic(
+alt_5x = High_Numeric_Lab_Heuristic(
     name='alt_5x',
     verbose_name='Alanine aminotransferase (ALT) >5x upper limit of normal',
     loinc_nums=['1742-6'],
@@ -734,7 +771,7 @@ alt_5x_lab = High_Numeric_Lab_Heuristic(
     default_high=330,
     )
 
-ast_2x_lab = High_Numeric_Lab_Heuristic(
+ast_2x = High_Numeric_Lab_Heuristic(
     name='ast_2x',
     verbose_name='Aspartate aminotransferase (ALT) >2x upper limit of normal',
     loinc_nums=['1920-8'],
@@ -742,7 +779,7 @@ ast_2x_lab = High_Numeric_Lab_Heuristic(
     default_high=132,
     )
 
-ast_5x_lab = High_Numeric_Lab_Heuristic(
+ast_5x = High_Numeric_Lab_Heuristic(
     name='ast_5x',
     verbose_name='Aspartate aminotransferase (ALT) >5x upper limit of normal',
     loinc_nums=['1920-8'],
@@ -750,28 +787,28 @@ ast_5x_lab = High_Numeric_Lab_Heuristic(
     default_high=330,
     )
 
-hep_a_igm_ab_lab = String_Match_Lab_Heuristic(
+hep_a_igm_ab = String_Match_Lab_Heuristic(
     name='hep_a_igm_ab',
     verbose_name='IgM antibody to Hepatitis A = "REACTIVE" (may be truncated)',
     loinc_nums=['22314-9'],
     strings=['reactiv'],
     )
 
-hep_b_igm_ab_lab = String_Match_Lab_Heuristic(
+hep_b_igm_ab = String_Match_Lab_Heuristic(
     name='hep_b_igm_ab',
     verbose_name='IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['31204-1'],
     strings=['reactiv'],
     )
 
-hep_b_surface_lab = String_Match_Lab_Heuristic(
+hep_b_surface = String_Match_Lab_Heuristic(
     name='hep_b_surface',
     verbose_name='Hepatitis B Surface Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['5195-3'],
     strings=['reactiv'],
     )
 
-hep_b_e_antigen_lab = String_Match_Lab_Heuristic(
+hep_b_e_antigen = String_Match_Lab_Heuristic(
     name = 'hep_b_e_antigen',
     verbose_name = 'Hepatitis B "e" Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['13954-3'],
@@ -791,20 +828,20 @@ hep_b_e_antigen_lab = String_Match_Lab_Heuristic(
 # NOTE:  See note in Hep B google doc about "HEPATITIS B DNA, QN, IU/COPIES" 
 # portion of algorithm
 #
-hep_b_viral_dna_str_lab = String_Match_Lab_Heuristic(
+hep_b_viral_dna_str = String_Match_Lab_Heuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['13126-8', '16934', '5009-6'],
     strings = ['positiv', 'detect'],
     )
-hep_b_viral_dna_num1_lab = High_Numeric_Lab_Heuristic(
+hep_b_viral_dna_num1 = High_Numeric_Lab_Heuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['16934-2'],
     default_high = 100,
     allow_duplicate_name=True,
     )
-hep_b_viral_dna_num2_lab = High_Numeric_Lab_Heuristic(
+hep_b_viral_dna_num2 = High_Numeric_Lab_Heuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['5009-6'],
@@ -813,61 +850,31 @@ hep_b_viral_dna_num2_lab = High_Numeric_Lab_Heuristic(
     )
 
 
-hep_e_ab_lab = String_Match_Lab_Heuristic(
+hep_e_ab = String_Match_Lab_Heuristic(
     name = 'hep_a_ab',
     verbose_name = 'Hepatitis E antibody',
     loinc_nums = ['14212-5'],
     strings = ['reactiv'],
     )
 
-hep_c_ab_lab = String_Match_Lab_Heuristic(
+hep_c_ab = String_Match_Lab_Heuristic(
     name = 'hep_c_ab',
     verbose_name = 'Hepatitis C antibody = "REACTIVE" (may be truncated)',
     loinc_nums = ['16128-1'],
     strings = ['reactiv'],
     )
 
-total_bilirubin_high_lab = High_Numeric_Lab_Heuristic(
+total_bilirubin_high = High_Numeric_Lab_Heuristic(
     name = 'total_bilirubin_high',
     verbose_name = 'Total bilirubin > 1.5',
     loinc_nums = ['33899-6'],
     default_high = 1.5,
     )
 
-class High_Calculated_Bilirubin_Heuristic(Lab_Heuristic):
-    '''
-    Special heuristic for high Calculated Bilirubin values.  Since the value 
-    of calculated bilirubin is the sum of results of two seperate tests (w/ 
-    separate LOINCs), it cannot be handled by a generic Heuristic class.
-    '''
-    def __init__(self):
-        self.name = 'high_calc_bilirubin'
-        self.verbose_name = 'Calculated Bilirubin = (direct bilirubin + indirect bilirubin) > 1.5'
-        self.loinc_nums = ['29760-6', '14630-8']
-        self._register()
-        
-    def matches(self, begin_date=None, end_date=None):
-        log.debug('Looking for high calculated bilirubin scores')
-        # First, we return a list of patient & order date pairs, where the sum
-        # of direct and indirect bilirubin tests ordered on the same day is 
-        # greater than 1.5.
-        relevant = self.relevant_labs(begin_date, end_date)
-        vqs = relevant.values('LxPatient', 'LxOrderDate') # returns ValueQuerySet
-        vqs = vqs.annotate(calc_bil=Sum('LxTest_results'))
-        vqs = vqs.filter(calc_bil__gt=1.5)
-        # Next we loop thru the patient/order-date list, fetch the relevant 
-        # (direct + indirect) > 1.5, just in case there is a funky situation
-        # where, e.g., the patient has had two indirect bilirubin tests ordered
-        # on the same day.
-        matches = []
-        for item in vqs:
-            matches += [i for i in relevant.filter(LxPatient__id=item['LxPatient'], LxOrderDate=item['LxOrderDate']) ]
-        return matches
-            
-high_calc_bilirubin_lab = High_Calculated_Bilirubin_Heuristic()
+high_calc_bilirubin = High_Calculated_Bilirubin_Heuristic()
 
 GONORRHEA_LOINCS = ['691-6', '23908-7', '24111-7', '36902-5'] # Re-used in disease definition
-gonorrhea_lab = String_Match_Lab_Heuristic(
+gonorrhea = String_Match_Lab_Heuristic(
     name =          'gonorrhea', 
     verbose_name =  'Gonorrhea', 
     loinc_nums =    GONORRHEA_LOINCS,
@@ -877,7 +884,7 @@ gonorrhea_lab = String_Match_Lab_Heuristic(
     )
 
 CHLAMYDIA_LOINCS = ['4993-2', '6349-5', '16601-7', '20993-2', '21613-5', '36902-5', ] # Re-used in disease definition
-chlamydia_lab = String_Match_Lab_Heuristic(
+chlamydia = String_Match_Lab_Heuristic(
     name =          'chlamydia', 
     verbose_name =  'Chlamydia', 
     loinc_nums =    CHLAMYDIA_LOINCS,
@@ -993,87 +1000,87 @@ class make_acute_hep_b_cases:
     Def 1:
     
     select e3.*
-	from esp_heuristic_event e1 
-	join esp_heuristic_event e2 
-	    on e1.patient_id = e2.patient_id 
-	join esp_heuristic_event e3
-	    on (e3.id = e1.id) or (e3.id = e2.id)
-	where e1.heuristic_name = 'hep_b_igm_ab' 
-	and e2.heuristic_name in ('alt_5x', 'ast_5x', 'jaundice') 
-	and e2.date > e1.date - interval 14 day
-	and e2.date < e1.date + interval 14 day
-	order by e3.patient_id, e3.date
+    from esp_heuristic_event e1 
+    join esp_heuristic_event e2 
+        on e1.patient_id = e2.patient_id 
+    join esp_heuristic_event e3
+        on (e3.id = e1.id) or (e3.id = e2.id)
+    where e1.heuristic_name = 'hep_b_igm_ab' 
+    and e2.heuristic_name in ('alt_5x', 'ast_5x', 'jaundice') 
+    and e2.date > e1.date - interval 14 day
+    and e2.date < e1.date + interval 14 day
+    order by e3.patient_id, e3.date
     '''
 
-def foo(self):
-    jaa = Q(heuristic_name__in=['jaundice_enc', 'alt_5x_lab', 'ast_5x_lab'])
-    plus14 = Q(date)
-    
-def __init__(self):
-    # This is used by several definitions:
-    q_obj = Q(heuristic_name__in=['jaundice_enc', 'alt_5x_lab', 'ast_5x_lab'])
-    self.jaundice_alt_ast = models.Case.objects.filter(q_obj)
-
-def definition_a(self):
-    result = []
-    for event in models.Case.objects.filter(heuristic_name='hep_b_igm_ab_lab'):
-        patient = event.patient
-        fourteen = datetime.timedelta(days=14)
-        begin = event.date - fourteen
-        end = event.date + fourteen
-        other_events = self.jaundice_alt_ast.filter(patient=patient, date__gte=begin, date__lte=end)
-        all_events = [event] + [e for e in other_events]
-        if not other_events:
-            continue # Not a case
-        ################################################################################
-        # Here we should return (patient, all_events) to a calling method, which will 
-        # assemble the results list.
-        ################################################################################
-        result += [(patient, all_events)]
-    return result
-
-def __call__(self, disease, new_only):
-    '''
-    @param disease:  The Disease_Definition calling this method
-    @type disease:   Disease_Definition
-    @param new_only: Only create new cases, don't update existing cases
-    @type new_only:  Boolean
-    '''
-    count = 0
-    candidates = []
-    for func in [self.definition_a, ]:
-        candidates += func()
-    result = {} # {Patient: Case}
-    for patient, events in candidates:
-        #
-        # Case established -- but a patient can have only one Acute Hep A 
-        # diagnosis per lifetime, so let's check and see if he already has 
-        # one.
-        #
-        if patient in result: # First, have we seen it in this detection run:
-            log.debug('Result list already contains case for %s.  Updating its events and continuing.' % patient)
-            case = result[patient]
-            case.events = sets.Set(case.events) + sets.Set(events)
-            continue
-        # Now check the db:
-        existing = models.Case.objects.filter(patient=patient, condition=disease.condition)
-        if existing and new_only:
-            log.debug('Existing case found for %s.  Flag new_only is set, so skipping & continuing.' % patient)
-            continue
-        elif existing:
-            log.debug('Existing case found for %s.  Updating its events (not saving), putting it in result list, and continuing.' % patient)
-            case = existing[0] # should be only one hep A case
-            case.events = sets.Set(case.events.all()) | sets.Set(events)
-            result[patient] = case
-        else:
-            # No existing case -- let's create one
-            #
-            # TODO: Primary date is date of first event
-            log.debug('Creating new case for %s' % patient)
-            result[patient] = disease.new_case(primary_event=event, all_events=all_events)
-            count += 1
-    return count
+    def foo(self):
+        jaa = Q(heuristic_name__in=['jaundice_enc', 'alt_5x_lab', 'ast_5x_lab'])
+        plus14 = Q(date)
         
+    def __init__(self):
+        # This is used by several definitions:
+        q_obj = Q(heuristic_name__in=['jaundice_enc', 'alt_5x_lab', 'ast_5x_lab'])
+        self.jaundice_alt_ast = models.Case.objects.filter(q_obj)
+    
+    def definition_a(self):
+        result = []
+        for event in models.Case.objects.filter(heuristic_name='hep_b_igm_ab_lab'):
+            patient = event.patient
+            fourteen = datetime.timedelta(days=14)
+            begin = event.date - fourteen
+            end = event.date + fourteen
+            other_events = self.jaundice_alt_ast.filter(patient=patient, date__gte=begin, date__lte=end)
+            all_events = [event] + [e for e in other_events]
+            if not other_events:
+                continue # Not a case
+            ################################################################################
+            # Here we should return (patient, all_events) to a calling method, which will 
+            # assemble the results list.
+            ################################################################################
+            result += [(patient, all_events)]
+        return result
+    
+    def __call__(self, disease, new_only):
+        '''
+        @param disease:  The Disease_Definition calling this method
+        @type disease:   Disease_Definition
+        @param new_only: Only create new cases, don't update existing cases
+        @type new_only:  Boolean
+        '''
+        count = 0
+        candidates = []
+        for func in [self.definition_a, ]:
+            candidates += func()
+        result = {} # {Patient: Case}
+        for patient, events in candidates:
+            #
+            # Case established -- but a patient can have only one Acute Hep A 
+            # diagnosis per lifetime, so let's check and see if he already has 
+            # one.
+            #
+            if patient in result: # First, have we seen it in this detection run:
+                log.debug('Result list already contains case for %s.  Updating its events and continuing.' % patient)
+                case = result[patient]
+                case.events = sets.Set(case.events) + sets.Set(events)
+                continue
+            # Now check the db:
+            existing = models.Case.objects.filter(patient=patient, condition=disease.condition)
+            if existing and new_only:
+                log.debug('Existing case found for %s.  Flag new_only is set, so skipping & continuing.' % patient)
+                continue
+            elif existing:
+                log.debug('Existing case found for %s.  Updating its events (not saving), putting it in result list, and continuing.' % patient)
+                case = existing[0] # should be only one hep A case
+                case.events = sets.Set(case.events.all()) | sets.Set(events)
+                result[patient] = case
+            else:
+                # No existing case -- let's create one
+                #
+                # TODO: Primary date is date of first event
+                log.debug('Creating new case for %s' % patient)
+                result[patient] = disease.new_case(primary_event=event, all_events=all_events)
+                count += 1
+        return count
+            
 
 
 chlamydia = Disease_Definition(
