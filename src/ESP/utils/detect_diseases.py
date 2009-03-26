@@ -608,6 +608,8 @@ class BaseDiseaseDefinition(object):
 			else:
 				previous = existing_cases.filter(patient=patient)
 			if previous: # This event should be attached to an existing case
+				print previous
+				print type(previous)
 				assert len(previous) == 1 # Sanity check
 				primary_case = previous[0]
 				if new_only:
@@ -1040,15 +1042,18 @@ class make_acute_hep_b_cases:
 		AND (total_bilirubin_high OR high_calc_bilirubin)
 		AND (hep_b_surface OR hep_b_viral_dna)
 		WITHIN 21 days
-		AND NOT chronic_hep_b AT THIS TIME
 		AND NOT (chronic_hep_b OR hep_b_surface OR hep_b_viral_dna) EVER IN PAST
 	3)  hep_b_surface
 		AND NOT (hep_b_surface OR hep_b_viral_dna OR jaundice) EVER IN PAST
 	'''
 	
 # 
+# TODO:
+#
 # We need a way to deal with multiple underlying databases.  For instance, 
 # the SQL below should be marked for use with MySQL.
+#
+# Also, these SQL statements should be commented for greater clarity
 #
 
 HEP_A_SQL = '''
@@ -1060,8 +1065,8 @@ join esp_heuristic_event e3
 	on (e3.id = e1.id) or (e3.id = e2.id)
 where e1.heuristic_name = 'hep_a_igm_ab' 
 and e2.heuristic_name in ('alt_5x', 'ast_5x', 'jaundice') 
-and e2.date > e1.date - interval 14 day
-and e2.date < e1.date + interval 14 day
+and e2.date >= e1.date - interval 14 day
+and e2.date <= e1.date + interval 14 day
 order by e3.patient_id, e3.date
 '''
 
@@ -1074,9 +1079,38 @@ join esp_heuristic_event e3
 	on (e3.id = e1.id) or (e3.id = e2.id)
 where e1.heuristic_name = 'hep_b_igm_ab' 
 and e2.heuristic_name in ('alt_5x', 'ast_5x', 'jaundice') 
-and e2.date > e1.date - interval 14 day
-and e2.date < e1.date + interval 14 day
+and e2.date >= e1.date - interval 14 day
+and e2.date <= e1.date + interval 14 day
 order by e3.patient_id, e3.date
+'''
+
+HEP_B_DEF_2_SQL = '''
+select e4.id
+from esp_heuristic_event e1
+inner join esp_heuristic_event e2
+	on e1.patient_id = e2.patient_id
+inner join esp_heuristic_event e3
+	on e1.patient_id = e3.patient_id
+-- We use e4 to get the id of every event that matches
+inner join esp_heuristic_event e4
+	on e4.id in (e1.id, e2.id, e3.id)
+left outer join
+	-- Must never have had any of the following conditions in the past
+	(
+	select * from esp_heuristic_event 
+	where heuristic_name in ('chronic_hep_b', 'hep_b_surface', 'hep_b_viral_dna')
+	) e5
+	on e1.patient_id = e5.patient_id
+		and e5.date < e1.date - interval 21 day
+		and e5.id is null
+where e1.heuristic_name in ('alt_5x', 'ast_5x', 'jaundice') 
+	and e2.heuristic_name in ('total_bilirubin_high', 'high_calc_bilirubin')
+		and e2.date >= e1.date - interval 21 day
+		and e2.date <= e1.date + interval 21 day
+	and e3.heuristic_name in ('hep_b_surface', 'hep_b_viral_dna')
+		and e3.date >= e1.date - interval 21 day
+		and e3.date <= e1.date + interval 21 day
+order by e4.date
 '''
 
 acute_hep_a_def = RawSqlDiseaseDefinition(
@@ -1094,7 +1128,7 @@ acute_hep_a_def = RawSqlDiseaseDefinition(
 
 acute_hep_b_def = RawSqlDiseaseDefinition(
 	name = 'Acute Hepatitis B',
-	queries = [HEP_B_DEF_1_SQL, ], 
+	queries = [HEP_B_DEF_1_SQL, HEP_B_DEF_2_SQL, ], 
 	time_window = 365,
 	)
 
