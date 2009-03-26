@@ -462,7 +462,7 @@ def load2rule(table,lines):
             
         rl.ruleName = name
         rl.ruleInitCaseStatus=initstatus
-        rl.ruleinProd = inprod
+        rl.ruleinProd = (inprod  == '1')
         rl.ruleMsgFormat = fmt
         rl.ruleMsgDest = dest
         rl.ruleHL7Name = hl7name
