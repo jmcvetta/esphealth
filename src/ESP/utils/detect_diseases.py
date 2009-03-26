@@ -151,8 +151,6 @@ class BaseHeuristic(object):
 		log.info('Generated %s TOTAL new events.' % counter)
 		return counter
 	
-	
-	
 	def make_date_str(self, date):
 		'''
 		Returns a string representing a datetime.date object (kludge for old 
@@ -174,10 +172,12 @@ class LabHeuristic(BaseHeuristic):
 	'''
 	def __init__(self, name, verbose_name=None, loinc_nums=[], **kwargs):
 		'''
-		@param lookback: Include encounters/lab results occurring no more 
-			than this many days before today.  If lookback is 0 or None, all 
-			records are examined.
-		@type lookback: Integer
+		@param name:         Short name -- used internally to identify this heuristic's results
+		@type name:          String
+		@param verbose_name: Long name of this heuristic -- for display only
+		@type verbose_name:  String
+		@param loinc_nums:   LOINC numbers for lab results this heuristic will examine
+		@type loinc_nums:    [String, String, String, ...]
 		'''
 		self.name = name
 		self.verbose_name = verbose_name
@@ -192,6 +192,7 @@ class LabHeuristic(BaseHeuristic):
 		lab_q = Q(LxLoinc='%s' % self.loinc_nums[0])
 		for num in self.loinc_nums[1:]:
 			lab_q = lab_q | Q(LxLoinc='%s' % num)
+		log.debug('lab_q: %s' % lab_q)
 		return lab_q
 	lab_q = property(__get_lab_q)
 		
@@ -213,33 +214,29 @@ class LabHeuristic(BaseHeuristic):
 		if end_date:
 			end = self.make_date_str(end_date)
 			qs = qs.filter(LxDate_of_result__lte=end)
-		#
-		# Build Q object
-		#
-		lab_q = Q(LxLoinc='%s' % self.loinc_nums[0])
-		for num in self.loinc_nums[1:]:
-			lab_q = lab_q | Q(LxLoinc='%s' % num)
-		log.debug('lab_q: %s' % lab_q)
-		return qs.filter(self.lab_q)
+		qs = qs.filter(self.lab_q)
+		log.debug('query:\n%s\n' % qs.query.as_sql())
+		return qs
 
 
 class HighNumericLabHeuristic(LabHeuristic):
 	'''
-	Matches labs with high numeric scores, as determined by a ratio to 
+	Matches labs results with high numeric scores, as determined by a ratio to 
+	that result's reference high, with fall back to a default high value.
 	'''
 	
 	def __init__(self, name, verbose_name=None, loinc_nums=[], ratio=None, default_high=None, **kwargs):
 		'''
-		@param name: Name of this heuristic (short slug)
-		@type name: String
+		@param name:         Name of this heuristic (short slug)
+		@type name:          String
 		@param verbose_name: Long name of this heuristic
-		@type verbose_name: String
-		@param loinc_nums: LOINC numbers relevant to this heuristic
-		@type loinc_nums: List of strings
-		@param ratio: Match on result > ratio * reference_high
-		@type ratio: Integer
+		@type verbose_name:  String
+		@param loinc_nums:   LOINC numbers relevant to this heuristic
+		@type loinc_nums:    [String, String, String, ...]
+		@param ratio:        Match on result > ratio * reference_high
+		@type ratio:         Integer
 		@param default_high: If no reference high, match on result > default_high
-		@type default_high: Integer
+		@type default_high:  Integer
 		'''
 		self.name = name
 		self.verbose_name = verbose_name
@@ -258,6 +255,8 @@ class HighNumericLabHeuristic(LabHeuristic):
 		test result against that reference.  If a record does not have a
 		reference high, and a default_high has been specified, compare result
 		against that default 'high' value.
+		@type begin_date: datetime.date
+		@type end_date:   datetime.date
 		'''
 		relevant_labs = self.relevant_labs(begin_date, end_date)
 		no_ref_q = Q(LxReference_High=None) | Q(LxReference_High='')
@@ -270,7 +269,9 @@ class HighNumericLabHeuristic(LabHeuristic):
 		if self.default_high and self.ratio:
 			pos_q = (ref_comp_q | static_comp_q)
 		log.debug('pos_q: %s' % pos_q)
-		return relevant_labs.filter(pos_q)
+		result = relevant_labs.filter(pos_q)
+		log.debug('query:\n%s\n' % result.query.as_sql())
+		return result
 
 
 class StringMatchLabHeuristic(LabHeuristic):
@@ -281,17 +282,17 @@ class StringMatchLabHeuristic(LabHeuristic):
 	def __init__(self, name, verbose_name=None, loinc_nums=[], strings=[], 
 		abnormal_flag=False, match_type='istartswith', **kwargs):
 		'''
-		@param name:		  Name of this heuristic (short slug)
-		@type name:		   String
+		@param name:          Name of this heuristic (short slug)
+		@type name:           String
 		@param verbose_name:  Long name of this heuristic
 		@type verbose_name:   String
-		@param strings:	   Strings to match against
-		@type strings:		List of strings
+		@param strings:       Strings to match against
+		@type strings:		  [String, String, String, ...]
 		@param abnormal_flag: If true, a lab result with its 'abnormal' flag
 			set will count as a match
 		@type abnormal_flag:  Boolean
-		@param match_type:	Right now, only 'istartswith'
-		@type match_type:	 String
+		@param match_type:    Right now, only 'istartswith'
+		@type match_type:     String
 		'''
 		self.name = name
 		self.verbose_name = verbose_name
@@ -326,7 +327,9 @@ class StringMatchLabHeuristic(LabHeuristic):
 		else:
 			raise NotImplementedError('The only match type supported at this time is "istartswith".')
 		log.debug('pos_q: %s' % pos_q)
-		return self.relevant_labs(begin_date, end_date).filter(pos_q)
+		result = self.relevant_labs(begin_date, end_date).filter(pos_q)
+		log.debug('query:\n%s\n' % result.query.as_sql())
+		return result
 
 
 
@@ -371,7 +374,9 @@ class EncounterHeuristic(BaseHeuristic):
 			qs = qs.filter(EncEncounter_Date__lte=end)
 		elif begin_date or end_date:
 			raise 'If you specify either begin_date or end_date, you must also specify the other.'
-		return qs.filter(self.enc_q)
+		qs = qs.filter(self.enc_q)
+		log.debug('query:\n%s\n' % qs.query.as_sql())
+		return qs
 	
 	def matches(self, begin_date=None, end_date=None):
 		return self.encounters(begin_date, end_date)
@@ -407,7 +412,9 @@ class FeverHeuristic(EncounterHeuristic):
 		# Either encounter has the 'fever' ICD9, or it records a high temp
 		q_obj = self.enc_q | Q(EncTemperature__gt=100.4)
 		log.debug('q_obj: %s' % q_obj)
-		return qs.filter(q_obj)
+		qs = qs.filter(q_obj)
+		log.debug('query:\n%s\n' % qs.query.as_sql())
+		return qs
 
 class CalculatedBilirubinHeuristic(LabHeuristic):
 	'''
@@ -434,11 +441,14 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
 		# (direct + indirect) > 1.5, just in case there is a funky situation
 		# where, e.g., the patient has had two indirect bilirubin tests ordered
 		# on the same day.
+		log.debug('query:\n%s\n' % vqs.query.as_sql())
 		matches = []
 		for item in vqs:
-			matches += [i for i in relevant.filter(LxPatient__id=item['LxPatient'], LxOrderDate=item['LxOrderDate']) ]
+			filtered_relevant = relevant.filter(LxPatient__id=item['LxPatient'], LxOrderDate=item['LxOrderDate']) 
+			matches += [i for i in filtered_relevant]
+			log.debug('query:\n%s\n' % filtered_relevant.query.as_sql())
 		return matches
-			
+
 
 #===============================================================================
 #
@@ -512,7 +522,6 @@ class BaseDiseaseDefinition(object):
 		# Sanity checks
 		#
 		assert self.name 
-		assert self.time_window
 		assert self.icd9_days_before
 		assert self.icd9_days_after
 		assert self.lab_days_before
@@ -597,7 +606,7 @@ class BaseDiseaseDefinition(object):
 			if self.time_window > 0:
 				previous = existing_cases.filter(patient=patient, date__gte=begin, date__lte=end)
 			else:
-				previous = existing_cases.filter(patient=patient, date__gte=begin, date__lte=end)
+				previous = existing_cases.filter(patient=patient)
 			if previous: # This event should be attached to an existing case
 				assert len(previous) == 1 # Sanity check
 				primary_case = previous[0]
@@ -611,6 +620,7 @@ class BaseDiseaseDefinition(object):
 			else: # A new case should be created for this event
 				self.new_case(event, [])
 				counter += 1 # Increment new case count
+		return counter
 	
 	
 	@classmethod
@@ -1036,7 +1046,26 @@ class make_acute_hep_b_cases:
 		AND NOT (hep_b_surface OR hep_b_viral_dna OR jaundice) EVER IN PAST
 	'''
 	
-HEP_B_DEF_1 = '''
+# 
+# We need a way to deal with multiple underlying databases.  For instance, 
+# the SQL below should be marked for use with MySQL.
+#
+
+HEP_A_SQL = '''
+select e3.id
+from esp_heuristic_event e1 
+join esp_heuristic_event e2 
+	on e1.patient_id = e2.patient_id 
+join esp_heuristic_event e3
+	on (e3.id = e1.id) or (e3.id = e2.id)
+where e1.heuristic_name = 'hep_a_igm_ab' 
+and e2.heuristic_name in ('alt_5x', 'ast_5x', 'jaundice') 
+and e2.date > e1.date - interval 14 day
+and e2.date < e1.date + interval 14 day
+order by e3.patient_id, e3.date
+'''
+
+HEP_B_DEF_1_SQL = '''
 select e3.id
 from esp_heuristic_event e1 
 join esp_heuristic_event e2 
@@ -1050,9 +1079,22 @@ and e2.date < e1.date + interval 14 day
 order by e3.patient_id, e3.date
 '''
 
+acute_hep_a_def = RawSqlDiseaseDefinition(
+    name = 'Acute Hepatitis A',
+    queries = [HEP_A_SQL,],
+    time_window = 0,
+    icd9s = settings.DEFAULT_REPORTABLE_ICD9S,
+	icd9_days_before = 14,
+	icd9_days_after = 14,
+	fever = True,
+	lab_loinc_nums = ['1742-6', '1920-8', '22314-9', '14212-5', '16128-1'],
+	lab_days_before = 30,
+	lab_days_after = 30,
+    )
+
 acute_hep_b_def = RawSqlDiseaseDefinition(
 	name = 'Acute Hepatitis B',
-	queries = [HEP_B_DEF_1, ], 
+	queries = [HEP_B_DEF_1_SQL, ], 
 	time_window = 365,
 	)
 
@@ -1203,7 +1245,7 @@ def experiment():
 	acute_hep_b_def.generate_cases()
 
 if __name__ == '__main__':
-	#main()
-	experiment()
+	main()
+	#experiment()
 	print 'Total Number of DB Queries: %s' % len(connection.queries)
 	#pprint.pprint(connection.queries)
