@@ -105,7 +105,8 @@ def addNewcptloincmap(cursor):
         logging.info('Done on Adding new loinc to esp_lx table')
     
 ###################################
-def correctcptloincmap_lx(table, cursor):
+##There are two functions with same name: correctcptloincmap_lx, so change this one
+def correctcptloincmap_lx_old(table, cursor):
     if logging:
         logging.info('Correct CPTLOINC Map in esp_lx table')
 
