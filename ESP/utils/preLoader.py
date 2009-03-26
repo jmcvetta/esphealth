@@ -1,7 +1,7 @@
 # amazing wasste of time feb 09
 # ross spent about 10 days sorting out a change in django
 # now if you send '0' to a boolean field, it becomes true which is reasonable
-# but...
+# but....
 
 ##preLoader is to load some data into ESP_conditionNDC table, ESP_conditionLOINC, ESP_CPTLOINCMAP table
 ##
@@ -108,7 +108,8 @@ def addNewcptloincmap(cursor):
         logging.info('Done on Adding new loinc to esp_lx table')
     
 ###################################
-def correctcptloincmap_lx(table, cursor):
+##There are two functions with same name: correctcptloincmap_lx, so change this one
+def correctcptloincmap_lx_old(table, cursor):
     if logging:
         logging.info('Correct CPTLOINC Map in esp_lx table')
 
@@ -221,6 +222,9 @@ def correctcptloincmap_lx(table, cursor):
             thislx.LxLoinc=''
             thislx.save()
 
+
+
+####################################
 def small_ram_correctcptloincmap_lx(table, cursor):
     """smaller ram - about half of that for the old version
     """
@@ -467,7 +471,7 @@ def load2rule(table,lines):
             
         rl.ruleName = name
         rl.ruleInitCaseStatus=initstatus
-        rl.ruleinProd = inprod
+        rl.ruleinProd = (inprod  == '1')
         rl.ruleMsgFormat = fmt
         rl.ruleMsgDest = dest
         rl.ruleHL7Name = hl7name
