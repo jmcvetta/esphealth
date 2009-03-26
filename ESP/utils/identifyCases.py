@@ -36,6 +36,7 @@ import copy
 
 ###For logging
 iclogging = getLogging('identifyCases.py_v0.1', debug=0)
+sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG','jason.mcvetta@channing.harvard.edu','ross.lazarus@channing.harvard.edu'], 
 
 case_dict={}
 
@@ -1533,8 +1534,7 @@ if __name__ == "__main__":
     if TEST==1:
         utils.sendoutemail(towho=['rexua@channing.harvard.edu'],msg=msg, subject='Testing ESP on lkenpesp2 - Daily summary of all detected cases')
     else:    
-        utils.sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],msg=msg, 
-           subject='ESP on lkenpesp2 - Daily summary of all detected cases')
+        utils.sendoutemail(towho=sendEmailToList, msg=msg, subject='ESP on lkenpesp2 - Daily summary of all detected cases')
      
     
     iclogging.shutdown()
