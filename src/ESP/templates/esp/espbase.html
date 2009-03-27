@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-us" xml:lang="en-us">
 <head>
     <title>Electronic Support for Public Health</title>
-    <link rel="stylesheet" type="text/css" href="{{SITEROOT}}/css/base.css" />
+    <link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/css/base.css" />
     {% block extrastyle %}{% endblock %}
     {% block extrascript %}{% endblock %}
 </head>
@@ -12,7 +12,7 @@
 
 <table width="100%">
 <tr ><td colspan="2" >
-<img src="{{SITEROOT}}/images/espheader2.png" border="0"> 
+<img src="{{MEDIA_URL}}/images/espheader2.png" border="0"> 
 </td></tr>
  
 <tr >
@@ -70,7 +70,7 @@ protection of the <a href="http://www.gnu.org/licenses/lgpl.html">LGPL</a> is fr
 
 <br>
 This <a href="http://python.org">Python</a> application relies on the <a href="http://www.djangoproject.com">
-<img src="{{SITEROOT}}/images/django-logo-negative.png" alt='Django' width="60" height="30" border="0"></a> framework 
+<img src="{{ MEDIA_URL }}/images/django-logo-negative.png" alt='Django' width="60" height="30" border="0"></a> framework 
 and the <a href="http://mysql.com">MySQL</a> RDBMS </p>
 {% endblock %}
 </div>

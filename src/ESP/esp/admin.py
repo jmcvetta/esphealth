@@ -1,15 +1,12 @@
-
-
-#[Sat Sep 20 09:35:05 rossl@rosst61:~/py/informatics/django/ESP/esp ] $ python makeNewadmin.py models.py
-from ESP.esp.models import *
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
+
+from ESP.esp.models import *
 from ESP.esp import models
 
 class CaseOptions(admin.ModelAdmin):
     list_filter = ('workflow_state',)
     ordering = ('updated_timestamp', 'created_timestamp')
-    #list_display = ('caseProvider','caseWorkflow','caseComments','caseLastUpDate','caseQueryID','caseMsgFormat')
     list_display = ['provider', 'workflow_state', 'updated_timestamp', 'notes']
 
 class EncOptions(admin.ModelAdmin):
@@ -82,7 +79,7 @@ class Loinc_Admin(admin.ModelAdmin):
     save_on_top = True
 
 class Heuristic_Event_Admin(admin.ModelAdmin):
-    list_display = ['heuristic_name', 'patient', 'date', 'content_object']
+    list_display = ['heuristic_name', 'patient', 'date']
     list_filter = ['heuristic_name']
 
 
@@ -94,7 +91,7 @@ admin.site.register(HL7File, HL7FileOptions)
 admin.site.register(Rx)
 admin.site.register(Provider, ProviderOptions)
 admin.site.register(Lx)
-#admin.site.register(ConditionDrugName, ConditionDrugNameOptions)
+admin.site.register(ConditionDrugName, ConditionDrugNameOptions)
 admin.site.register(Format, FormatOptions)
 admin.site.register(Dest, DestOptions)
 admin.site.register(Problems)
@@ -109,9 +106,12 @@ admin.site.register(DataFile, DataFileOptions)
 admin.site.register(icd9Fact)
 admin.site.register(Demog, DemogOptions)
 admin.site.register(CaseWorkflow, CaseWorkflowOptions)
-admin.site.register(VAERSadditions)
+#admin.site.register(VAERSadditions)
 #admin.site.register(Rule, RuleAdmin)
 admin.site.register(models.External_To_Loinc_Map, External_To_Loinc_Map_Admin)
 admin.site.register(models.Loinc, Loinc_Admin)
 admin.site.register(models.HeuristicEvent, Heuristic_Event_Admin)
 
+
+admin.site.register(Vaccine)
+admin.site.register(ImmunizationManufacturer)

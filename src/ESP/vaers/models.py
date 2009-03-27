@@ -16,13 +16,21 @@ from esp.models import Demog, Immunization, Enc, icd9, Lx
 
 
 ADVERSE_EVENT_CATEGORIES = [
-    ('auto', 'Report automatically'),
-    ('default', 'Message CDC if no comment from clinician within 72 hours'),
-    ('confirm', 'Message clinician to confirm or decline'),
-    ('discard', 'Discard')
+    ('auto', 'report automatically to CDC'),
+    ('default', 'report case to CDC if no comment from clinician within 72 hours'),
+    ('confirm', 'report to CDC only if confirmed by clinician'),
+    ('discard', 'discard')
 ]
 
-
+class AdverseEventManager(models.Manager):
+    def by_id(self, key):
+        for klass in [FeverEvent, DiagnosticsEvent, LabResultEvent]:
+            try:
+                obj = klass.objects.get(id=key)
+                return obj
+            except: pass
+        return None
+    
 
 class Rule(models.Model):
     title = models.CharField(max_length=100)
@@ -41,7 +49,10 @@ class LxEventRule(Rule):
     lab_result = models.ForeignKey(Lx)
 
 
+
 class AdverseEvent(models.Model):
+    objects = models.Manager()
+    manager = AdverseEventManager()
     patient = models.ForeignKey(Demog)
     immunization = models.ForeignKey(Immunization)
     matching_rule_explain = models.CharField(max_length=200)

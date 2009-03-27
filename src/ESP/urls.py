@@ -8,19 +8,33 @@ from django.conf.urls.defaults import include
 from django.contrib.auth.views import login, logout
 
 from django.contrib import admin
+
+from ESP.esp.views import index
+
+from settings import MEDIA_ROOT, MEDIA_URL
+
 admin.autodiscover()
 
-urlpatterns = patterns('',
-    # Django Admin
-    url(r'^ESP/admin/(.*)', admin.site.root, name='db_admin'),
-    url(r'^ESP/admin/doc/', include('django.contrib.admindocs.urls')),
+urlpatterns = patterns(
+    '',
     
     # Core Application
-    url(r'^ESP/', include('ESP.esp.urls')),
-    url(r'', include('ESP.esp.urls')),
+    (r'^$', index),
+    (r'^esp/', include('ESP.esp.urls')),
     
+    # Vaers
+    (r'^vaers/', include('ESP.vaers.urls')),
+    
+    
+    
+    # Django Admin
+    (r'^admin/(.*)', admin.site.root),
+#    (r'^admin/doc/', include('django.contrib.admindocs.urls'),
+    
+
+
     # Static Content 
     #
     # TODO: Remove before deployment into production!
-    (r'^site_media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': '/home/ESP/ESP/templates'}),
+    (r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIA_ROOT}),
 )

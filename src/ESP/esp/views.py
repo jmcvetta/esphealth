@@ -12,40 +12,28 @@ import pprint
 import simplejson
 import sets
 
-from django.core import serializers
-from django.core import urlresolvers
+from django.core import serializers, urlresolvers
 from django.core.paginator import Paginator
 from django.core.paginator import InvalidPage
 from django.core.mail import send_mail
 from django.db.models import Q
-from django.template import Context
-from django.template import loader
-from django.template import Template
-from django.template import RequestContext
-from django.http import HttpResponse
-from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response
-from django.shortcuts import get_object_or_404
-from django.contrib.auth import authenticate
-from django.contrib.auth import login
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth.forms import PasswordResetForm
+from django.template import loader, Template, Context, RequestContext
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render_to_response, get_object_or_404
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.contrib.auth.forms import PasswordChangeForm
-from django.contrib.auth import REDIRECT_FIELD_NAME
-from django.contrib.auth import SESSION_KEY
+from django.contrib.auth import REDIRECT_FIELD_NAME, SESSION_KEY
 from django.contrib.auth import authenticate
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.sites.models import Site
 from django.utils.translation import ugettext, ugettext_lazy as _
 from django.views.generic.simple import redirect_to
 
 
-from ESP.settings import SITEROOT
-from ESP.settings import TOPDIR
-from ESP.settings import LOCALSITE
-from ESP.settings import CODEDIR
-from ESP.settings import DATE_FORMAT
+from ESP.settings import TOPDIR, CODEDIR
+from ESP.settings import SITEROOT, MEDIA_URL
+from ESP.settings import LOCALSITE, DATE_FORMAT
 from ESP import settings
 from ESP.esp.models import *
 from ESP.esp import models
@@ -187,7 +175,11 @@ def password_change(request):
         errors = form.get_validation_errors(new_data)
         if not errors:
             form.save(new_data)
-            return render_to_response('registration/password_change_done.html', Context({'request':request,'SITEROOT': SITEROOT,}))
+            return render_to_response(
+                'registration/password_change_done.html', 
+                Context({'request':request,
+                         'SITEROOT': SITEROOT,
+                         'MEDIA_URL': MEDIA_URL}))
         
     return render_to_response('registration/password_change_form.html', {'form': forms.FormWrapper(form, new_data, errors), 'SITEROOT': SITEROOT, 'request':request},
         context_instance=RequestContext(request))
@@ -201,8 +193,12 @@ def index(request):
     """
     core index page
     """
-    c = Context({'request':request,'SITEROOT':SITEROOT,})
+    c = Context({'request':request,
+                 'SITEROOT':SITEROOT,
+                 'MEDIA_URL':MEDIA_URL
+                 })
     return render_to_response('esp/index.html',c)
+
 
     
 #################################
@@ -543,20 +539,12 @@ def casematch(request,  download=''):
         return response
                                                     
     else:
-        
-        if len(returnlist)>0:
-            cinfo = {
-
-                "request": request,
-                "filedata": returnlist,
-                'SITEROOT':SITEROOT,
-                }
-        else:
-            cinfo={
-                "request": request,
-                "filedata": None,
-                'SITEROOT':SITEROOT,
-                }
+        cinfo = {
+            "request": request,
+            "filedata": returnlist or None, 
+            'SITEROOT':SITEROOT,
+            'MEDIA_URL':MEDIA_URL,
+            }
         c = Context(cinfo)
         return render_to_response('esp/matchupload.html',c)
 
@@ -1046,6 +1034,7 @@ def showutil(request):
             
     cinfo = {"request":request,
              "SITEROOT":SITEROOT,
+             "MEDIA_URL":MEDIA_URL,
              }
     c = Context(cinfo)
     return render_to_response('esp/utiladmin.html',c)

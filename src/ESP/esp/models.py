@@ -831,6 +831,9 @@ class Vaccine(models.Model):
     code = models.IntegerField(unique=True)
     short_name = models.CharField(max_length=60)
     name = models.CharField(max_length=300)
+
+    def __unicode__(self):
+        return '%s (%s)'% (self.short_name, self.name)
     
 
 class ImmunizationManufacturer(models.Model):
@@ -838,6 +841,10 @@ class ImmunizationManufacturer(models.Model):
     full_name = models.CharField(max_length=200)
     active = models.BooleanField(default=True)
     use_instead = models.ForeignKey('self', null=True)
+
+    def __unicode__(self):
+        return self.full_name
+                         
     
 
 
@@ -1226,6 +1233,7 @@ class Case(models.Model):
         raise DeprecationWarning('This property is read-only for backwards compatibility.  Use the ManyToManyFields instead.')
     def setCaseComments(self, value):
         self.notes = value
+
     caseDemog = property(getCaseDemog, setCaseDemog)
     caseProvider = property(getCaseProvider, setCaseProvider)
     caseRule = property(getCaseRule, setCaseRule)
@@ -1252,6 +1260,7 @@ class Case(models.Model):
         '''
         if not self.caseLxID:
             return None
+
         lab_result_ids = self.caseLxID.split(',')
         lab_results = Lx.objects.filter(id__in=lab_result_ids).order_by('LxOrderDate').reverse()
         return lab_results[0]
@@ -1263,6 +1272,7 @@ class Case(models.Model):
         '''
         if not self.latest_lx():
             return None
+
         s = self.latest_lx().LxOrderDate
         year = int(s[0:4])
         month = int(s[4:6])

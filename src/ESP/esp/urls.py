@@ -8,16 +8,9 @@ from django.conf.urls.defaults import url
 from django.contrib import admin
 from ESP.settings import CODEDIR
 
-urlpatterns = patterns('',
-    url(r'^images/(?P<path>.*)$', 'django.views.static.serve', {'document_root': '%s/templates' % CODEDIR}),
-    url(r'^css/(?P<path>.*)$', 'django.views.static.serve', {'document_root': '%s/templates/css' % CODEDIR}),
-    url(r'^js/(?P<path>.*)$', 'django.views.static.serve', {'document_root': '%s/templates/js' % CODEDIR}),
-)
-
-urlpatterns += patterns('ESP.esp.views',
+urlpatterns = patterns('ESP.esp.views',
     url(r'^/index/$', 'index'),
     url(r'^$', 'index'),
-    url(r'^/$', 'index'),
     url(r'^utilities/$', 'showutil', name='admin_util'),
     url(r'^preload/rulexclud/(?P<update>\S*)/$', 'preloadrulexclud'),
     url(r'^preload/rulexclud/$', 'preloadrulexclud'),
