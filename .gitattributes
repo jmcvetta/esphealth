@@ -32,6 +32,7 @@ src/ESP/sendMsgs/org/openuri/www/Bcdc_elr.class -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elrLocator.class -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elrSoap.class -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elrSoapStub.class -text
+src/ESP/settings.py.sample -text
 src/ESP/static/images/arrow.gif -text
 src/ESP/static/images/default-bg-reverse.gif -text
 src/ESP/static/images/default-bg.gif -text
@@ -55,6 +56,7 @@ src/ESP/templates/default-bg-reverse.gif -text
 src/ESP/templates/default-bg.gif -text
 src/ESP/templates/django-logo-negative.png -text
 src/ESP/templates/django-logo-positive.png -text
+src/ESP/templates/email_messages/notify_case.txt -text
 src/ESP/templates/esp/case_define.html -text
 src/ESP/templates/esp/case_define_detail.html -text
 src/ESP/templates/esp/case_detail.html -text
@@ -98,5 +100,6 @@ src/ESP/vaers/reports.py -text
 src/ESP/vaers/rules.py -text
 src/ESP/vaers/tests.py -text
 src/ESP/vaers/urls.py -text
+src/ESP/vaers/utils.py -text
 src/ESP/vaers/views.py -text
 src/hl7/core.py -text

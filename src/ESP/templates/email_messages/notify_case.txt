@@ -1,0 +1,14 @@
+{{ provider.provTitle }} {{ provider.provLast_Name }},
+
+ESP VAERS software has detected an occurence of an adverse event
+following an immunization to a patient. This case requires
+confirmation from the clinician that it actually is an adverse event,
+in order to be reported to the CDC.
+
+Please, visit {{ url }} in order to confirm that you are the clinician
+responsible for this case. After confirmation, you will be presented
+with the case. If you believe that you not supposed to receive this message
+please contact {{ misdirected_email_contact }}.
+
+
+

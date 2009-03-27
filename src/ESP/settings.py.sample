@@ -1,0 +1,133 @@
+'''
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                        Django settings for ESP project
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+'''
+import os
+import logging
+
+
+
+# Variables that we have defined here, but should be defined elsewhere.
+# 
+TOPDIR = os.path.dirname(__file__)
+CODEDIR = TOPDIR
+SITEROOT = ''
+LOCALSITE = ''
+DATE_FORMAT = '%Y%m%d'
+ROWS_PER_PAGE = 50
+RUNFAKEDATA = False
+USESQLITE = False
+EMAIL_SENDER = ''
+
+
+
+
+
+DEBUG = True
+TEMPLATE_DEBUG = DEBUG
+
+
+
+ADMINS = (
+    ('ADMIN', 'admin@example.com'),
+)
+
+DEVELOPER_EMAIL_LIST = [item[1] for item in ADMINS]
+
+MANAGERS = ADMINS
+
+DATABASE_ENGINE = 'YOUR_DATABASE' # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_NAME = 'YOUR_DATABASE_NAME'             # Or path to database file if using sqlite3.
+DATABASE_USER = 'DB_USER'             # Not used with sqlite3.
+DATABASE_PASSWORD = 'DB_PASS'        # Not used with sqlite3.
+DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
+DATABASE_PORT = ''             # Set to empty string for default. Not used with sqlite3.
+
+# Locale settings
+TIME_ZONE = 'America/New_York'
+LANGUAGE_CODE = 'en-us'
+USE_I18N = True
+
+# Definition of folder that contain admin and static files.
+MEDIA_ROOT = os.path.join(TOPDIR, 'static')
+MEDIA_URL = '/static'
+ADMIN_MEDIA_PREFIX = '/media/'
+
+# Make this unique, and don't share it with anybody.
+SECRET_KEY = 'YOUR_SECRET_KEY'
+SITE_ID = 1 # Or whatever id you have for your site.
+
+# List of callables that know how to import templates from various sources.
+TEMPLATE_LOADERS = (
+    'django.template.loaders.filesystem.load_template_source',
+    'django.template.loaders.app_directories.load_template_source',
+)
+
+MIDDLEWARE_CLASSES = (
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+)
+
+ROOT_URLCONF = 'ESP.urls'
+
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.core.context_processors.auth',
+    'django.core.context_processors.debug',
+    'django.core.context_processors.i18n',
+    'django.core.context_processors.media',
+    'esp.context_processors.path_definitions' 
+    )
+
+
+TEMPLATE_DIRS = (
+    # Put strings here, like '/home/html/django_templates' or 'C:/www/django/templates'.
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    os.path.join(TOPDIR, 'templates'),
+    os.path.join(TOPDIR, 'templates/esp')
+)
+
+INSTALLED_APPS = (
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    'django.contrib.admin',
+    'esp',
+    'vaers'
+)
+
+
+EMAIL_HOST = 'mail.example.com'
+EMAIL_HOST_USER = 'you@example.com'
+EMAIL_HOST_PASSWORD = 'YOUR_PASSWORD'
+# Extra optional parameters that you may need to set in order to send
+# emails through Django 
+# EMAIL_PORT = 443 
+# EMAIL_USE_TLS = True
+
+VAERS_EMAIL_RECIPIENT = 'recipient@example.com'
+VAERS_EMAIL_SENDER = 'notifier@example.com'
+VAERS_NOTIFICATION_EMAIL_SUBJECT = ''
+
+
+
+
+#===============================================================================
+#
+#--- ~~~ Logging Configuration ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+LOG_FORMAT_CONSOLE = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
+LOG_FORMAT_FILE = '%(asctime)s:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
+LOG_FILE = '/tmp/esp.log'
+# BEWARE: If you set the log level to DEBUG, *copious* info will be logged!
+LOG_LEVEL_CONSOLE = logging.INFO
+LOG_LEVEL_FILE = logging.INFO 
+
+
+

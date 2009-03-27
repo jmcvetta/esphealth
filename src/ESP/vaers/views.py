@@ -10,7 +10,8 @@ from django.views.generic.simple import direct_to_template
 from django.contrib.sites.models import Site
 
 from models import AdverseEvent, LabResultEvent
-from esp.models import Lx
+from esp.models import Lx, Demog, Immunization
+from vaers.utils import send_notifications
 
 import datetime
 
@@ -18,13 +19,14 @@ PAGE_TEMPLATE_DIR = 'pages/vaers/'
 WIDGET_TEMPLATE_DIR = 'widgets/vaers/'
 
 def index(request):
-    return HttpResponse('Welcome Home')
+    res = send_notifications()
+    return HttpResponse(res)
 
 
 
-def present(request, case_id):
+def present(request, key):
 
-    case = AdverseEvent.manager.by_id(int(case_id))
+    case = AdverseEvent.manager.by_digest(key)
     if not case: return HttpResponseNotFound('Case not found')
     if case.category == 'auto': return HttpResponseForbidden('Not for your eyes')
 
@@ -39,6 +41,8 @@ def present(request, case_id):
                           kwargs={'case_id':case_id, 'action':'confirm'})
     discard_url = reverse('case_action', 
                           kwargs={'case_id':case_id, 'action':'discard'})
+
+    
 
     
     return direct_to_template(request, PAGE_TEMPLATE_DIR + 'present.html', {
