@@ -83,6 +83,7 @@ src/ESP/utils/concordance.py -text
 src/ESP/utils/detect_diseases.py -text
 src/ESP/utils/hl7_to_etl.py -text
 src/ESP/utils/makeESPdm.py -text
+src/ESP/utils/metrics.py -text
 src/ESP/utils/northadams.py -text
 src/ESP/utils/parsehl7.py -text
 src/ESP/utils/utils.py -text
