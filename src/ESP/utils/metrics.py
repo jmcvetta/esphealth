@@ -4,10 +4,15 @@ Report on data flow metrics
 '''
 
 import datetime
+import csv
+import sys
 
 from ESP.utils import utils
 from ESP.esp import models
 from django.db.models import Avg, Max, Min, Count
+
+
+OUT_FILE = '/home/rejmv/work/dev-esp/metrics.csv'
 
 
 class Metric:
@@ -27,10 +32,8 @@ class Metric:
         self.convert_date = convert_date
     
     def measure(self):
-        for item in self.model.objects.values(self.date_field).distinct().annotate(count=Count('id'))[100]:
-            day = item[self.date_field] 
-            if self.convert_date:
-                day = utils.date_from_str(day)
+        for item in self.model.objects.values(self.date_field).distinct().annotate(count=Count('id')):
+            day = item[self.date_field].date()
             count = item['count']
             try:
                 day_result = self.result[day]
@@ -42,14 +45,24 @@ class Metric:
 
 
 def main():
-    Metric(model=models.Rx, date_field='RxOrderDate').measure()
-    Metric(model=models.Enc, date_field='EncEncounter_Date').measure()
-    Metric(model=models.Immunization, date_field='ImmDate').measure()
-    Metric(model=models.Lx, date_field='LxDate_of_result').measure()
-    r = Metric.result
-    for i in r:
-        print i, r[i]
-
+    Metric(model=models.Rx, date_field='lastUpDate').measure()
+    Metric(model=models.Enc, date_field='lastUpDate').measure()
+    Metric(model=models.Immunization, date_field='lastUpDate').measure()
+    Metric(model=models.Lx, date_field='lastUpDate').measure()
+    Metric(model=models.Case, date_field='caseLastUpDate').measure()
+    all_days = Metric.result.keys()
+    all_days.sort()
+    writer = csv.writer(open(OUT_FILE, 'w'), delimiter=',')
+    row = ['Date', 'Rx', 'Enc', 'Imm', 'Lx', 'Case']
+    writer.writerow(row)
+    for day in all_days:
+        rx = Metric.result[day].get('Rx', 0)
+        enc = Metric.result[day].get('Enc', 0)
+        imm = Metric.result[day].get('Immunization', 0)
+        lx = Metric.result[day].get('Lx', 0)
+        case = Metric.result[day].get('Case', 0)
+        row = [day, rx, enc, imm, lx, case]
+        writer.writerow(row)
 
 if __name__ == '__main__':
     main()
