@@ -2,56 +2,55 @@
 {% load i18n %}
 
 {% block extrascript %}
-    <script type="text/javascript" src="/js/jquery-1.3.1.js"></script>
-    <script type="text/javascript">
+<script type="text/javascript">
 
-        function disable_code_fields() {
-            $('#id_ext_code').attr('disabled', true);
-            $('#id_ext_name').attr('disabled', true);
-            $('#id_notes').attr('disabled', true);
-        };
+  function disable_code_fields() {
+  $('#id_ext_code').attr('disabled', true);
+  $('#id_ext_name').attr('disabled', true);
+  $('#id_notes').attr('disabled', true);
+  };
+  
+  function enable_code_fields() {
+  $('#id_ext_code').removeAttr('disabled');
+  $('#id_ext_name').removeAttr('disabled');
+  $('#id_notes').removeAttr('disabled');
+  };
 
-        function enable_code_fields() {
-            $('#id_ext_code').removeAttr('disabled');
-            $('#id_ext_name').removeAttr('disabled');
-            $('#id_notes').removeAttr('disabled');
-        };
-
-        $(document).ready( function() {
-            $('#loinc_lookup')
-                .click( function() {
-                    var loinc_num = $('#id_loinc_num').val();
-                    if ( loinc_num ) {
-                        $('#loinc_name').load('{% url loinc_name_lookup %}', {loinc_num: loinc_num}, function(responseText, textStatus) {
-                            if ( textStatus == 'success' ) {
-                                $('.blurb').hide();
-                                $('#blurb_found').show();
-                                enable_code_fields();
-                                $('#id_ext_code').focus();
-                            } else {
-                                $('.blurb').hide();
-                                $('#blurb_not_found').show();
-                                disable_code_fields();
-                            };
-                        });
-                    } else {
-                        $('.blurb').hide();
-                        $('#blurb_enter_number').show();
-                        disable_code_fields();
-                    };
-                    return false;
-                })
-                .blur( function() {
-                    this.click();
-                })
-                .click()
-                ;
-            $('#cancel_button').click( function() {
-                location.href = "{% url show_ext_loinc_maps %}";
-            });
-            $('#id_loinc_num').focus();
-        });
-    </script>
+  $(document).ready( function() {
+  $('#loinc_lookup')
+  .click( function() {
+  var loinc_num = $('#id_loinc_num').val();
+  if ( loinc_num ) {
+  $('#loinc_name').load('{% url loinc_name_lookup %}', {loinc_num: loinc_num}, function(responseText, textStatus) {
+  if ( textStatus == 'success' ) {
+  $('.blurb').hide();
+  $('#blurb_found').show();
+  enable_code_fields();
+  $('#id_ext_code').focus();
+  } else {
+  $('.blurb').hide();
+  $('#blurb_not_found').show();
+  disable_code_fields();
+  };
+  });
+  } else {
+  $('.blurb').hide();
+  $('#blurb_enter_number').show();
+  disable_code_fields();
+  };
+  return false;
+  })
+  .blur( function() {
+  this.click();
+  })
+  .click()
+  ;
+  $('#cancel_button').click( function() {
+  location.href = "{% url show_ext_loinc_maps %}";
+  });
+  $('#id_loinc_num').focus();
+  });
+</script>
 {% endblock %}
 
 

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div>
+    Please confirm that you are {{ case.patient.DemogProvider.ProvTitle }} 
+    {{ case.patient.DemogProvider.ProvLast_Name }} and that you are the care 
+    provider for {{ case.patient.DemogFirst_Name }} {{ case.patient.DemogLast_Name }} 
+    <div>
+      <form action="{% url verify_case case.digest %}" method="POST">
+	<input type="hidden" value="{{ case.patient.DemogProvider.id }}"/>
+	<input type="radio" name="provider_confirmation" value="confirmed">Yes</input>
+	<input type="radio" name="provider_confirmation" value="">No</input>
+	<input type="submit" value="Submit" />
+      </form>
+    </div>
+</div>
+{% endblock %}

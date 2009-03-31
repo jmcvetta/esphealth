@@ -5,18 +5,6 @@
 import os, sys
 import datetime
 
-import pdb
-
-#Standard boilerplate code that we put to put the settings file in the
-#python path and make the Django environment have access to it.
-PWD = os.path.dirname(__file__)
-PARENT_DIR = os.path.realpath(os.path.join(PWD, '..'))
-if PARENT_DIR not in sys.path: sys.path.append(PARENT_DIR)
-
-
-import settings
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-
 from esp.models import Immunization, Enc, Lx, icd9
 from vaers.models import AdverseEvent
 from vaers.models import FeverEvent, DiagnosticsEvent, LabResultEvent

@@ -3,12 +3,25 @@ from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
 from django.template.loader import get_template
 from django.template import Context
+from django.db.models import Q
 
 from vaers.models import AdverseEvent
 from ESP import settings
 
+import datetime
+
 def send_notifications():
-    cases_to_notify = AdverseEvent.objects.filter(state='AR')
+    now = datetime.datetime.now()
+    three_days_ago = now - datetime.timedelta(days=3)
+
+    # Category 3 (cases that need clinicians confirmation for report)
+    must_confirm = Q(category='confirm') 
+
+    # Category 2 (cases that are reported by default, i.e, no comment
+    # from the clinician after 72 hours since the detection.
+    may_receive_comments = Q(category='default', created_on__gte=three_days_ago)
+
+    cases_to_notify = AdverseEvent.objects.filter(must_confirm|may_receive_comments)
     current_site = Site.objects.get_current()
 
     for case in cases_to_notify:
@@ -17,7 +30,7 @@ def send_notifications():
             params = {
                 'provider':provider,
                 'url':'http://%s%s' % (current_site, reverse(
-                        'case_details', kwargs={'case_id':case.digest})),
+                        'verify_case', kwargs={'key':case.digest})),
                 'misdirected_email_contact':settings.VAERS_EMAIL_SENDER
                 }
             
@@ -28,7 +41,9 @@ def send_notifications():
                       [settings.VAERS_EMAIL_RECIPIENT],
                       fail_silently=False)
 
-        except:
-            print 'Failed to send in case %s' % case.id
+        except Exception, why:
+            print 'Failed to send in case %s.\nReason: %s' % (case.id, why)
+
+
             
 

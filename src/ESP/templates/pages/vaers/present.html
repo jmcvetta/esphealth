@@ -64,8 +64,22 @@ to <span class="msg_case_category">{{ case.get_category_display}}.</span>
   {% endif %}
 </table>
 
-<div id="panel_case_prompt">
-  <button onClick="postAndNextScreen('{{ confirm_url }}', $('#panel_case_prompt'));">Report as adverse event to Immunization</button>
-  <button onClick="postAndNextScreen('{{ discard_url }}', $('#panel_case_prompt'));">Not an adverse event to Immunization</button>
+<div id="case_comments_list">
+  <h3>Notes and Comments</h3>
+  {% for comment in comments %}
+  <div class="comment_entry">
+     <div class="comment_time" >
+      {{ comment.created_on|date:"M d, Y" }}<br />
+      {{ comment.created_on|date:"H:i" }}
+    </div>
+    <div class="comment">{{ comment.text }}</div>
+    <div style="clear:both"></div>
+  </div>
+  {% endfor %}
 </div>
+
+<form id="frm_case_confirmation" method="POST" action="{% url present_case case.id %}">
+  {{ form.as_ul }}
+  <input type="submit" value="submit" />
+</form>
 {% endblock %}

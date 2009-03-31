@@ -9,9 +9,11 @@ from django.shortcuts import render_to_response
 from django.views.generic.simple import direct_to_template
 from django.contrib.sites.models import Site
 
-from models import AdverseEvent, LabResultEvent
+from models import AdverseEvent, LabResultEvent, ProviderComment
 from esp.models import Lx, Demog, Immunization
 from vaers.utils import send_notifications
+from forms import CaseConfirmForm
+import reports
 
 import datetime
 
@@ -19,67 +21,106 @@ PAGE_TEMPLATE_DIR = 'pages/vaers/'
 WIDGET_TEMPLATE_DIR = 'widgets/vaers/'
 
 def index(request):
-    res = send_notifications()
-    return HttpResponse(res)
+    send_notifications()
+    return HttpResponse('ok')
 
 
-
-def present(request, key):
+def verify(request, key):
 
     case = AdverseEvent.manager.by_digest(key)
     if not case: return HttpResponseNotFound('Case not found')
-    if case.category == 'auto': return HttpResponseForbidden('Not for your eyes')
+    if case.category == 'auto': 
+        return HttpResponseForbidden('This case will be automatically reported')
 
-    parse_date = datetime.datetime.strptime # Just a shorter name. 
-    case.immunization.date = parse_date(case.immunization.ImmDate, '%Y%m%d')
-    encounter_date = getattr(case, 'encounter', None) and parse_date(
-        case.encounter.EncEncounter_Date, '%Y%m%d')
-    lab_result_date = getattr(case, 'lab_result', None) and parse_date(
-                case.lab_result.LxDate_of_result, '%Y%m%d')
+    provider = case.patient.DemogProvider
+    if not provider: return HttpResponseForbidden('Not for your eyes')
 
-    confirm_url = reverse('case_action', 
-                          kwargs={'case_id':case_id, 'action':'confirm'})
-    discard_url = reverse('case_action', 
-                          kwargs={'case_id':case_id, 'action':'discard'})
 
-    
+    if request.method == 'GET':
+        authorized_id = int(request.COOKIES.get('confirmed_id', 0))
+        if authorized_id and authorized_id == provider.id:
+            # No need to see confirm again. Will redirect
+            return HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
+        else:
+            return direct_to_template(request, PAGE_TEMPLATE_DIR + 'identify.html', {
+                    'case':case })
 
-    
-    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'present.html', {
-            'case':case,
-            'encounter_date': encounter_date,
-            'lab_result_date': lab_result_date,
-            'confirm_url':confirm_url,
-            'discard_url':discard_url
-            })
-
-def action(request, case_id, action):
-    collect_info_actions = {
-        'confirm':{
-            'headline':'Case Report Notes',
-            'instructions':'Please include information that you would like to add to the case report',
-            'url':reverse('case_action', kwargs={'case_id':case_id, 
-                                                 'action':'comment'})
-            },
-        'discard':{
-            'headline':'Report Detection Error',
-            'instructions':'Please explain why do you think our detection system is wrong',
-            'url':reverse('case_action', kwargs={'case_id':case_id, 
-                                                 'action':'feedback'})
-            }
-        }
-
-    if action in collect_info_actions: 
-        a = collect_info_actions[action]
-        return direct_to_template(
-            request,  WIDGET_TEMPLATE_DIR + 'feedback_form.html', {
-                'headline': a['headline'],
-                'instructions':a['instructions'],
-                'action_url':a['url']
-                })
 
     else:
-        return HttpResponse('Not Implemented Yet')
+        confirmed_id = request.POST.get('provider_confirmation', 0) and provider.id
+        response = HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
+        response.set_cookie('confirmed_id', confirmed_id)
+        return response
+        
+            
+        
+
+
+def case_details(request, id):
+
+    response = HttpResponse()
+
+    case = AdverseEvent.manager.by_id(id)
+    if not case: return HttpResponseNotFound('Case not found')
+    if case.category == 'auto': 
+        return HttpResponseForbidden('This case will be automatically reported')
+
+    provider = case.patient.DemogProvider
+    if not provider: return HttpResponseForbidden('Not for your eyes')
+    
+    authorized_id = request.COOKIES.get('confirmed_id', None)
+
+    if not (authorized_id and int(authorized_id)==provider.id):
+        return HttpResponseForbidden('You have not confirmed you are the care '\
+                                         'provider for this patient. Please go '\
+                                         'back to the confirmation step.')
+
+
+    form = CaseConfirmForm(request.POST) if request.method == 'POST' else CaseConfirmForm()
+
+    
+    if request.method == 'POST' and form.is_valid():
+        next_status = {
+            'confirm':'Q',
+            'false_positive':'FP',
+            'wait':'UR'
+            }
+        
+        action = form.cleaned_data['action']
+        comment_text = form.cleaned_data['comment']
+        
+            
+        case.status = next_status[action]
+        case.save()
+        comment = ProviderComment(author=provider, event=case,
+                                  text=comment_text)
+        comment.save()
+
+        return HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
+            
+    else:
+        parse_date = datetime.datetime.strptime # Just a shorter name. 
+        case.immunization.date = parse_date(case.immunization.ImmDate, '%Y%m%d')
+        encounter_date = getattr(case, 'encounter', None) and parse_date(
+            case.encounter.EncEncounter_Date, '%Y%m%d')
+        lab_result_date = getattr(case, 'lab_result', None) and parse_date(
+            case.lab_result.LxDate_of_result, '%Y%m%d')
+
+        comments = ProviderComment.objects.filter(author=provider,
+                                                  event=case).order_by('-created_on')
+
+        return direct_to_template(request, PAGE_TEMPLATE_DIR + 'present.html', {
+                'case':case,
+                'encounter_date': encounter_date,
+                'lab_result_date': lab_result_date,
+                'comments':comments,
+                'form':form
+                
+                
+                })
+
+
+
 
 
 

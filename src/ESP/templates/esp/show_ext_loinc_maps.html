@@ -2,8 +2,8 @@
 {% load i18n %}
 
 {% block extrastyle %}
-    <link rel="stylesheet" type="text/css" media="screen" href="/css/jqModal.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="/js/flexigrid/css/flexigrid/flexigrid.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ static_css_folder }}jqModal.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ static_javascript_folder }}flexigrid/css/flexigrid/flexigrid.css" />
     <style type="text/css">
     	.flexigrid div.fbutton .add
 		{
@@ -21,9 +21,7 @@
 {% endblock %}
 
 {% block extrascript %}
-    <script type="text/javascript" src="/js/jquery-1.3.1.js"></script>
-    <script type="text/javascript" src="/js/jqModal.js"></script>
-    <script type="text/javascript" src="/js/flexigrid/flexigrid.js"></script>
+    <script type="text/javascript" src="{{ static_javascript_folder }}jqModal.js"></script>
     <script type="text/javascript">
 
         function add_map(com, grid) {

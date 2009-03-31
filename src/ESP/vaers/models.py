@@ -3,7 +3,7 @@
 from django.db import models
 from django.db.models import signals
 
-from esp.models import Demog, Immunization, Enc, icd9, Lx
+from esp.models import Demog, Immunization, Enc, icd9, Lx, Provider
 from esp.choices import WORKFLOW_STATES
 
 
@@ -70,8 +70,6 @@ class DiagnosticsEventRule(Rule):
 class LxEventRule(Rule):
     lab_result = models.ForeignKey(Lx)
 
-
-
 class AdverseEvent(models.Model):
     objects = models.Manager()
     manager = AdverseEventManager()
@@ -96,6 +94,15 @@ class DiagnosticsEvent(AdverseEvent):
 
 class LabResultEvent(AdverseEvent):
     lab_result = models.ForeignKey(Lx)
+
+
+class ProviderComment(models.Model):
+    text = models.TextField()
+    author = models.ForeignKey(Provider)
+    event = models.ForeignKey(AdverseEvent)
+    created_on = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
 
 
 signals.post_save.connect(adverse_event_digest, sender=DiagnosticsEvent)

@@ -1,10 +1,21 @@
-import os, sys
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
-import pdb
+from django.db.models import Q
 import datetime
 
-from vaers.models import FeverEvent
+from vaers.models import AdverseEvent, FeverEvent
 
+
+def cases_to_report():
+    now = datetime.datetime.now()
+    three_days_ago = now - datetime.timedelta(days=7)
+
+    auto = Q(category='auto')
+    confirmed = Q(category='confirm', state='Q')
+    to_report_by_default = Q(category='default', state='AR', created_on__lte=three_days_ago)
+
+    return AdverseEvent.objects.filter(auto | confirmed | to_report_by_default)
 
 def temporal_clustering(filename, **kw):
     # Get fever events and output to file with format
