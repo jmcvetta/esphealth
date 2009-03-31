@@ -31,6 +31,10 @@ We need
 5) a new immunization record for each RXA in any VXU message
 
 """
+INCOMING_DIR = '/home/ESP/NORTH_ADAMS/incomingHL7/'
+DEST_DIR = '/home/ESP/NORTH_ADAMS/archivedHL7/'
+
+
 import sys
 import os
 import datetime
@@ -399,9 +403,9 @@ def writeMDicts(mclasses={}):
 
 
 ###################################
-def movefile(f, fromdir, todir):
-    shutil.move(fromdir+'/%s' % f, todir)
-    log.info('Moving file %s from %s to %s\n' % (f, fromdir, todir))
+def movefile(f, fromdir, DEST_DIR):
+    shutil.move(fromdir+'/%s' % f, DEST_DIR)
+    log.info('Moving file %s from %s to %s\n' % (f, fromdir, DEST_DIR))
 
 ###################################
 def parseMessages(mlist=[],grammar_dict={},incominghl7f=None):
@@ -442,16 +446,14 @@ def parseMessages(mlist=[],grammar_dict={},incominghl7f=None):
 def main():
     #setLogging(appname=prog)
     log.info('HL7 message processing started at %s' % timenow())
-    hlfiles=os.listdir('/home/ESP/NORTH_ADAMS/incomingHL7/')
-    incomdir = '/home/ESP/NORTH_ADAMS/incomingHL7/'
-    todir = '/home/ESP/NORTH_ADAMS/archivedHL7/'
+    hlfiles=os.listdir(INCOMING_DIR)
     for f in hlfiles:
         print 'Processing: %s' % f
-        mlist = split_hl7_message(incomdir+f)
+        mlist = split_hl7_message(INCOMING_DIR+f)
         grammar_dict = makeGrammars()
         mclasses = parseMessages(mlist=mlist,grammar_dict=grammar_dict,incominghl7f = f)
         writeMDicts(mclasses=mclasses)
-        movefile(f, incomdir, todir)
+        movefile(f, INCOMING_DIR, DEST_DIR)
 
     for x in dict(map(lambda x:(x,None), outfilenames)).keys():
         xh  =file(x,'a+')
