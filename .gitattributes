@@ -20,6 +20,7 @@ pdi/esp_dev_pdi_3_1_0.pg.sql -text
 src/ESP/backfill-by-month.sh -text
 src/ESP/conf/__init__.py -text
 src/ESP/conf/choices.py -text
+src/ESP/conf/fixtures/conf.json -text
 src/ESP/conf/models.py -text
 src/ESP/conf/tests.py -text
 src/ESP/conf/views.py -text
