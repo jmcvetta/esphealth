@@ -1599,7 +1599,7 @@ def case_detail(request, case_id):
 @login_required
 def show_ext_loinc_maps(request):
     '''
-    Administrative screen to add/delete/update External_To_Loinc_Map objects
+    Administrative screen to add/delete/update ExtToLoincMap objects
     '''
     values = {}
     values['request'] = request # Needed for espbase.html
@@ -1616,7 +1616,7 @@ def json_ext_loinc_grid(request):
         sortname = flexi.sortname
     else:
         sortname = '-%s' % flexi.sortname
-    maps = models.External_To_Loinc_Map.objects.select_related().all().order_by(sortname)
+    maps = models.ExtToLoincMap.objects.select_related().all().order_by(sortname)
     if flexi.query:
         query_str = 'Q(%s__icontains="%s")' % (flexi.qtype, flexi.query)
         q_obj = eval(query_str)
@@ -1647,15 +1647,15 @@ def edit_ext_loinc_map(request, map_id=None, action=None):
     log.debug('map_id: %s' % map_id)
     log.debug('action: %s' % action)
     if action == 'delete':
-        map_obj = get_object_or_404(models.External_To_Loinc_Map, pk=map_id)
+        map_obj = get_object_or_404(models.ExtToLoincMap, pk=map_id)
         map_obj.delete()
         return redirect_to(request, urlresolvers.reverse('show_ext_loinc_maps'))
     elif action == 'new':
         values['loinc_name'] = '[Enter a LOINC code...]'
-        map_obj = models.External_To_Loinc_Map()
+        map_obj = models.ExtToLoincMap()
         form = forms.ExtLoincForm()
     else: # Edit
-        map_obj = get_object_or_404(models.External_To_Loinc_Map, pk=map_id)
+        map_obj = get_object_or_404(models.ExtToLoincMap, pk=map_id)
         data = {
             'ext_code': map_obj .ext_code,
             'ext_name': map_obj.ext_name,

@@ -18,7 +18,7 @@ class ExtLoincForm(forms.Form):
     def clean_ext_code(self):
         ext_code = self.cleaned_data['ext_code']
         log.debug('ext_code: %s' % ext_code)
-        existing = models.External_To_Loinc_Map.objects.filter(ext_code=ext_code)
+        existing = models.ExtToLoincMap.objects.filter(ext_code=ext_code)
         if len(existing) > 0:
             msg = _('Each code may be mapped to only one LOINC, and this code is already mapped to LOINC %s.' % existing[0].loinc.loinc_num)
             raise forms.ValidationError(msg)

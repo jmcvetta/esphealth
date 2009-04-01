@@ -269,7 +269,7 @@ class Format(models.Model):
         return u'%s' % self.formatName 
 
 
-class External_To_Loinc_Map(models.Model):
+class ExtToLoincMap(models.Model):
     '''
     A mapping from an external code (for a lab result, etc) to a Loinc number
     '''
@@ -282,5 +282,8 @@ class External_To_Loinc_Map(models.Model):
     # Loinc can be null to indicate an external code that maps to nothing
     loinc = models.ForeignKey(Loinc, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    class Meta:
+        # Use underscores to make table name more readable
+        db_table = 'conf_ext_to_loinc'
 
 

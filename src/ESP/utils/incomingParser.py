@@ -522,10 +522,10 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
         #
         ext_code = utils.ext_code_from_cpt(cpt, '')
         try:
-	        mapping = models.External_To_Loinc_Map.objects.get(ext_code=ext_code)
+	        mapping = models.ExtToLoincMap.objects.get(ext_code=ext_code)
 	        loinc = mapping.loinc
 	        lxloinc = loinc.loinc_num
-        except models.External_To_Loinc_Map.DoesNotExist:
+        except models.ExtToLoincMap.DoesNotExist:
             loinc = None
             lxloinc = None
         try:
@@ -568,6 +568,9 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
         if i.ruleExcludeCode:
             exclist=eval(i.ruleExcludeCode)
             exclude_l=exclude_l+exclist
+    #
+    # TODO: Include codes from mapping table in ignore list!
+    #
     excdict = dict(map(lambda x:((x[0],x[1]), 1), exclude_l))
 
         
@@ -609,7 +612,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
         #get loinc
         c = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt=comp)
         ext_code = utils.ext_code_from_cpt(cpt, '')
-        m = models.External_To_Loinc_Map.objects.filter(ext_code=ext_code)
+        m = models.ExtToLoincMap.objects.filter(ext_code=ext_code)
         lxloinc=''
         if m:
             lxloinc=(m[0].loinc.loinc_num).strip()
