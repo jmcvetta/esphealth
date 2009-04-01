@@ -1,10 +1,19 @@
 '''
-Core Data Model Choices
-for
-ESP Health
+                            Core Data Model Choices
+                                      for
+                                  ESP Health
+
+@author: Jason McVetta <jason.mcvetta@gmail.com>
+@organization: Channing Laboratory http://www.channing.harvard.edu
+@copyright: (c) 2009 Channing Laboratory
+@license: LGPL
 '''
 
-# Subset of Django query operators used for matching Loinc_Rules
+# These are used by both conf.models.Rule and esp.models.Case
+from ESP.conf.choices import FORMAT_TYPES
+from ESP.conf.choices import WORKFLOW_STATES
+from ESP.conf.choices import DEST_TYPES
+
 OPERATORS = [
     ('iexact', 'Exact (case insenstive)'),
     ('icontains', 'Contains (case insensitive)'),
@@ -15,28 +24,3 @@ OPERATORS = [
     ('istartswith', 'Starts With (case insensitive)'),
     ('iendswith', 'Ends With (case insensitive)'),
     ]
-
-FORMAT_TYPES = (
-    ('Text','Plain text representation'),
-    ('XML','eXtended Markup Language format'),
-    ('HL7', 'Health Level 7 markup'),
-    ('MADPHSimple', 'MADPH Simple markup (pipe delim simplifiedhl7)'),
-)
-
-WORKFLOW_STATES = [
-    ('AR','AWAITING REVIEW'),
-    ('UR','UNDER REVIEW'),
-    ('RM', 'REVIEW By MD'),
-    ('FP','FALSE POSITIVE - DO NOT PROCESS'),
-    ('Q','CONFIRMED CASE, TRANSMIT TO HEALTH DEPARTMENT'), 
-    ('S','TRANSMITTED TO HEALTH DEPARTMENT')
-    ]
-
-DEST_TYPES = (
-    ('TextFile','Text file on the filesystem - path'),
-    ('PHIN-MS','PHINMS server URL'),
-    ('SOAP', 'SOAP service URL'),
-    ('XMLRPC', 'XML-RPC Server URL'),
-)
-
-

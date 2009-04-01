@@ -17,6 +17,11 @@ doc/ESPSpecificationsAug3_2006.doc -text
 doc/FINAL[!!-~]ELR[!!-~]231[!!-~]Implementation[!!-~]Guide_052104.pdf -text svneol=unset#unset
 /readme -text
 src/ESP/backfill-by-month.sh -text
+src/ESP/conf/__init__.py -text
+src/ESP/conf/choices.py -text
+src/ESP/conf/models.py -text
+src/ESP/conf/tests.py -text
+src/ESP/conf/views.py -text
 src/ESP/env-setup.sh -text
 src/ESP/esp/admin.py -text
 src/ESP/esp/choices.py -text
