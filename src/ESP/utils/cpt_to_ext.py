@@ -13,6 +13,14 @@ Generate ext_code field from CPT + Component.
 # will probably take quite a while to run on a large Lx table.
 #
 
+# Instead of this code, which was a PiA, I am using raw SQL:
+#
+# update esp_lx set ext_code=null; 
+# update esp_lx set ext_code = LxTest_Code_CPT where LxTest_Code_CPT <> '' and LxComponent = '' limit 10; 
+# update esp_lx set ext_code = Concat(LxTest_Code_CPT, '--', LxComponent) where LxTest_Code_CPT <> '' and LxComponent <> '' limit 10;
+#
+
+
 from django.db.models import Q
 from django.db.models import F
 from django.db import connection
@@ -25,7 +33,7 @@ def main():
     counter = 0
     with_cpt = Q(LxTest_Code_CPT__isnull=False) & ~Q(LxTest_Code_CPT='')
     with_comp = Q(LxComponent__isnull=False) & ~Q(LxComponent='')
-    without_comp = ~with_comp
+    without_comp = Q(LxComponent__isnull=True) | Q(LxComponent='')
     lx_cpt = Lx.objects.filter(with_cpt).filter(without_comp)
     lx_comp = Lx.objects.filter(with_cpt).filter(with_comp)
     for item in lx_cpt[:10]:
