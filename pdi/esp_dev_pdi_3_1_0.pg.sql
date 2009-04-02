@@ -1943,6 +1943,8 @@ COPY r_cluster_slave (id_cluster_slave, id_cluster, id_slave) FROM stdin;
 --
 
 COPY r_condition (id_condition, id_condition_parent, negated, operator, left_name, condition_function, right_name, id_value_right) FROM stdin;
+1	0	N	-      	loinc_num	IS NOT NULL	\N	-1
+2	0	N	-      	loinc_num	IS NOT NULL	\N	-1
 \.
 
 
@@ -1959,6 +1961,7 @@ COPY r_database (id_database, name, id_database_type, id_database_contype, host_
 6	ESP Beast (MySQL)	36	1	localhost	esp_beast	3306	rejmv	Encrypted 2be98c8a70cd2918fb216bb62cd97a3dc	\N	\N	\N
 7	esp_beast@localhost (MySQL)	36	1	localhost	esp_beast	3306	rejmv	Encrypted 2be98c8a70cd2918fb216bb62cd97a3dc	\N	\N	\N
 8	esp@beast (MySQL)	36	1	beast	esp	3306	espuser	Encrypted 2be98afc86a948194be0aab628cc2ff8c	\N	\N	\N
+9	esp_northadams@localhost (MySQL)	36	1	localhost	esp_northadams	3306	ESP	Encrypted 616568693769654d6f6f546836546f6f71756f6832617535d1e1c0a708c69ba9a21aa629df9aa4d5	\N	\N	\N
 \.
 
 
@@ -1967,69 +1970,77 @@ COPY r_database (id_database, name, id_database_type, id_database_contype, host_
 --
 
 COPY r_database_attribute (id_database_attribute, id_database, code, value_str) FROM stdin;
-64	1	SQL_CONNECT	\N
-65	1	STREAM_RESULTS	Y
-66	1	USE_POOLING	N
-67	1	FORCE_IDENTIFIERS_TO_LOWERCASE	N
-68	1	IS_CLUSTERED	N
-69	1	QUOTE_ALL_FIELDS	N
-70	1	FORCE_IDENTIFIERS_TO_UPPERCASE	N
-71	1	PORT_NUMBER	3306
-72	2	SQL_CONNECT	\N
-73	2	USE_POOLING	N
-74	2	FORCE_IDENTIFIERS_TO_LOWERCASE	N
-75	2	IS_CLUSTERED	N
-76	2	QUOTE_ALL_FIELDS	N
-77	2	FORCE_IDENTIFIERS_TO_UPPERCASE	N
-78	2	PORT_NUMBER	5432
-79	3	SQL_CONNECT	\N
-80	3	USE_POOLING	N
-81	3	FORCE_IDENTIFIERS_TO_LOWERCASE	N
-82	3	IS_CLUSTERED	N
-83	3	QUOTE_ALL_FIELDS	N
-84	3	FORCE_IDENTIFIERS_TO_UPPERCASE	N
-85	3	PORT_NUMBER	5432
-86	4	SQL_CONNECT	\N
-87	4	STREAM_RESULTS	Y
-88	4	USE_POOLING	N
-89	4	FORCE_IDENTIFIERS_TO_LOWERCASE	N
-90	4	QUOTE_ALL_FIELDS	N
-91	4	IS_CLUSTERED	N
-92	4	FORCE_IDENTIFIERS_TO_UPPERCASE	N
-93	4	PORT_NUMBER	3306
-94	5	INITIAL_POOL_SIZE	5
-95	5	MAXIMUM_POOL_SIZE	20
-96	5	USE_POOLING	Y
-97	5	IS_CLUSTERED	N
-98	5	PORT_NUMBER	5432
-99	5	FORCE_IDENTIFIERS_TO_UPPERCASE	N
-100	5	FORCE_IDENTIFIERS_TO_LOWERCASE	N
-101	5	SQL_CONNECT	\N
-102	5	QUOTE_ALL_FIELDS	N
-103	6	SQL_CONNECT	\N
-104	6	STREAM_RESULTS	Y
-105	6	USE_POOLING	N
-106	6	FORCE_IDENTIFIERS_TO_LOWERCASE	N
-107	6	IS_CLUSTERED	N
-108	6	QUOTE_ALL_FIELDS	N
-109	6	FORCE_IDENTIFIERS_TO_UPPERCASE	N
-110	6	PORT_NUMBER	3306
-111	7	SQL_CONNECT	\N
-112	7	STREAM_RESULTS	Y
-113	7	USE_POOLING	N
-114	7	FORCE_IDENTIFIERS_TO_LOWERCASE	N
-115	7	QUOTE_ALL_FIELDS	N
-116	7	IS_CLUSTERED	N
-117	7	FORCE_IDENTIFIERS_TO_UPPERCASE	N
-118	7	PORT_NUMBER	3306
-119	8	SQL_CONNECT	\N
-120	8	STREAM_RESULTS	Y
-121	8	USE_POOLING	N
-122	8	FORCE_IDENTIFIERS_TO_LOWERCASE	N
-123	8	QUOTE_ALL_FIELDS	N
-124	8	IS_CLUSTERED	N
-125	8	FORCE_IDENTIFIERS_TO_UPPERCASE	N
-126	8	PORT_NUMBER	3306
+253	9	SQL_CONNECT	\N
+254	9	STREAM_RESULTS	Y
+255	9	USE_POOLING	N
+256	9	FORCE_IDENTIFIERS_TO_LOWERCASE	N
+257	9	IS_CLUSTERED	N
+258	9	QUOTE_ALL_FIELDS	N
+259	9	FORCE_IDENTIFIERS_TO_UPPERCASE	N
+260	9	PORT_NUMBER	3306
+190	1	SQL_CONNECT	\N
+191	1	STREAM_RESULTS	Y
+192	1	USE_POOLING	N
+193	1	FORCE_IDENTIFIERS_TO_LOWERCASE	N
+194	1	IS_CLUSTERED	N
+195	1	QUOTE_ALL_FIELDS	N
+196	1	FORCE_IDENTIFIERS_TO_UPPERCASE	N
+197	1	PORT_NUMBER	3306
+198	2	SQL_CONNECT	\N
+199	2	USE_POOLING	N
+200	2	FORCE_IDENTIFIERS_TO_LOWERCASE	N
+201	2	IS_CLUSTERED	N
+202	2	QUOTE_ALL_FIELDS	N
+203	2	FORCE_IDENTIFIERS_TO_UPPERCASE	N
+204	2	PORT_NUMBER	5432
+205	3	SQL_CONNECT	\N
+206	3	USE_POOLING	N
+207	3	FORCE_IDENTIFIERS_TO_LOWERCASE	N
+208	3	IS_CLUSTERED	N
+209	3	QUOTE_ALL_FIELDS	N
+210	3	FORCE_IDENTIFIERS_TO_UPPERCASE	N
+211	3	PORT_NUMBER	5432
+212	4	SQL_CONNECT	\N
+213	4	STREAM_RESULTS	Y
+214	4	USE_POOLING	N
+215	4	FORCE_IDENTIFIERS_TO_LOWERCASE	N
+216	4	QUOTE_ALL_FIELDS	N
+217	4	IS_CLUSTERED	N
+218	4	FORCE_IDENTIFIERS_TO_UPPERCASE	N
+219	4	PORT_NUMBER	3306
+220	5	INITIAL_POOL_SIZE	5
+221	5	MAXIMUM_POOL_SIZE	20
+222	5	USE_POOLING	Y
+223	5	IS_CLUSTERED	N
+224	5	PORT_NUMBER	5432
+225	5	FORCE_IDENTIFIERS_TO_UPPERCASE	N
+226	5	FORCE_IDENTIFIERS_TO_LOWERCASE	N
+227	5	SQL_CONNECT	\N
+228	5	QUOTE_ALL_FIELDS	N
+229	6	SQL_CONNECT	\N
+230	6	STREAM_RESULTS	Y
+231	6	USE_POOLING	N
+232	6	FORCE_IDENTIFIERS_TO_LOWERCASE	N
+233	6	IS_CLUSTERED	N
+234	6	QUOTE_ALL_FIELDS	N
+235	6	FORCE_IDENTIFIERS_TO_UPPERCASE	N
+236	6	PORT_NUMBER	3306
+237	7	SQL_CONNECT	\N
+238	7	STREAM_RESULTS	Y
+239	7	USE_POOLING	N
+240	7	FORCE_IDENTIFIERS_TO_LOWERCASE	N
+241	7	QUOTE_ALL_FIELDS	N
+242	7	IS_CLUSTERED	N
+243	7	FORCE_IDENTIFIERS_TO_UPPERCASE	N
+244	7	PORT_NUMBER	3306
+245	8	SQL_CONNECT	\N
+246	8	STREAM_RESULTS	Y
+247	8	USE_POOLING	N
+248	8	FORCE_IDENTIFIERS_TO_LOWERCASE	N
+249	8	QUOTE_ALL_FIELDS	N
+250	8	IS_CLUSTERED	N
+251	8	FORCE_IDENTIFIERS_TO_UPPERCASE	N
+252	8	PORT_NUMBER	3306
 \.
 
 
@@ -2314,6 +2325,16 @@ COPY r_repository_log (id_repository_log, rep_version, log_date, log_user, opera
 4	3.0	2009-04-01 13:46:10.774	esp	save transformation 'Load LOINC Additions'
 5	3.0	2009-04-01 13:46:24.676	esp	save transformation 'Load LOINC Additions'
 6	3.0	2009-04-01 13:46:38.412	esp	save transformation 'Load LOINC Additions'
+7	3.0	2009-04-01 14:11:27.543	esp	save transformation 'Load External Code to LOINC Maps -- Atrius'
+8	3.0	2009-04-01 14:14:10.754	esp	save transformation 'Load External Code to LOINC Maps -- Atrius'
+9	3.0	2009-04-01 14:15:10.747	esp	save transformation 'Load External Code to LOINC Maps -- Atrius'
+10	3.0	2009-04-01 14:15:28.133	esp	save transformation 'Load External Code to LOINC Maps -- Atrius'
+11	3.0	2009-04-01 14:17:24.933	esp	save transformation 'Load External Code to LOINC Maps -- Atrius'
+12	3.0	2009-04-01 14:17:41.957	esp	save transformation 'Load External Code to LOINC Maps -- Atrius'
+13	3.0	2009-04-01 14:18:07.031	esp	save transformation 'Load External Code to LOINC Maps -- Atrius'
+14	3.0	2009-04-02 16:14:44.177	esp	save transformation 'Load External Code to LOINC Maps -- North Adams'
+15	3.0	2009-04-02 16:14:53.625	esp	save transformation 'Load External Code to LOINC Maps -- North Adams'
+16	3.0	2009-04-02 16:17:19.073	esp	save transformation 'Load External Code to LOINC Maps -- North Adams'
 \.
 
 
@@ -2336,6 +2357,28 @@ COPY r_step (id_step, id_transformation, name, description, id_step_type, distri
 4	2	Read loinc_additions.txt	\N	3	Y	1	140	40	Y
 5	2	Select values	\N	15	Y	1	140	140	Y
 6	2	Write core_loinc	\N	21	Y	1	140	260	Y
+20	5	Abort	\N	19	Y	1	320	320	Y
+21	5	Get ESP_SOURCE_SYSTEM	\N	44	Y	1	121	665	Y
+22	5	LOINC number found?	\N	25	N	1	180	320	Y
+23	5	Lookup  system_id	\N	30	Y	1	278	658	Y
+24	5	Lookup LOINC	\N	30	N	1	180	200	Y
+25	5	Read North Adams LOINC Code map	\N	3	Y	1	180	80	Y
+26	5	Select values	\N	15	Y	1	540	540	Y
+27	5	Wait for all LOINCs to pass	\N	49	Y	1	180	440	Y
+28	5	Write to core_external_to_loinc_map	\N	21	Y	1	540	660	Y
+7	3	Abort	\N	19	Y	1	700	240	Y
+8	3	Add id	\N	20	Y	1	560	456	Y
+9	3	Ext_code from CPT + Comp	\N	35	Y	1	560	40	Y
+10	3	Get ESP_SOURCE_SYSTEM	\N	44	Y	1	260	40	Y
+11	3	Get system data	\N	27	Y	1	123	171	Y
+12	3	LOINC number found?	\N	25	N	1	560	240	Y
+13	3	Lookup  system_id	\N	30	Y	1	133	284	Y
+14	3	Lookup LOINC	\N	30	N	1	560	140	Y
+15	3	Read mapping file	\N	16	Y	1	60	40	Y
+16	3	Select values	\N	15	Y	1	559	546	Y
+17	3	Validate system_id not null	\N	78	Y	1	173	405	Y
+18	3	Wait for all LOINCs to pass	\N	49	Y	1	560	360	Y
+19	3	Write to conf_ext_to_loinc	\N	21	Y	1	558	644	Y
 \.
 
 
@@ -2344,6 +2387,27 @@ COPY r_step (id_step, id_transformation, name, description, id_step_type, distri
 --
 
 COPY r_step_attribute (id_step_attribute, id_transformation, id_step, nr, code, value_num, value_str) FROM stdin;
+1099	5	27	0	compress	0	Y
+1100	5	27	0	cluster_schema	0	\N
+1101	5	28	0	PARTITIONING_SCHEMA	0	\N
+1102	5	28	0	PARTITIONING_METHOD	0	none
+1103	5	28	0	id_connection	9	\N
+1104	5	28	0	schema	0	\N
+1105	5	28	0	table	0	conf_ext_to_loinc
+1106	5	28	0	commit	1	\N
+1107	5	28	0	truncate	0	Y
+1108	5	28	0	ignore_errors	0	N
+1109	5	28	0	use_batch	0	N
+1110	5	28	0	partitioning_enabled	0	N
+1111	5	28	0	partitioning_field	0	\N
+1112	5	28	0	partitioning_daily	0	N
+1113	5	28	0	partitioning_monthly	0	Y
+1114	5	28	0	tablename_in_field	0	N
+1115	5	28	0	tablename_field	0	\N
+1116	5	28	0	tablename_in_table	0	Y
+1117	5	28	0	return_keys	0	N
+1118	5	28	0	return_field	0	\N
+1119	5	28	0	cluster_schema	0	\N
 637	2	4	0	PARTITIONING_SCHEMA	0	\N
 638	2	4	0	PARTITIONING_METHOD	0	none
 639	2	4	0	filename	0	/home/rejmv/work/git-esp/src/esp/data/loinc_additions.txt
@@ -3044,6 +3108,404 @@ COPY r_step_attribute (id_step_attribute, id_transformation, id_step, nr, code, 
 634	1	3	0	return_keys	0	N
 635	1	3	0	return_field	0	\N
 636	1	3	0	cluster_schema	0	\N
+951	5	20	0	PARTITIONING_SCHEMA	0	\N
+952	5	20	0	PARTITIONING_METHOD	0	none
+953	5	20	0	row_threshold	0	0
+954	5	20	0	message	0	LOINC Number not found!
+955	5	20	0	always_log_rows	0	Y
+956	5	20	0	cluster_schema	0	\N
+957	5	21	0	PARTITIONING_SCHEMA	0	\N
+958	5	21	0	PARTITIONING_METHOD	0	none
+959	5	21	0	field_name	0	source_system
+960	5	21	0	field_variable	0	${ESP_SOURCE_SYSTEM}
+961	5	21	0	cluster_schema	0	\N
+962	5	22	0	PARTITIONING_SCHEMA	0	\N
+963	5	22	0	PARTITIONING_METHOD	0	none
+964	5	22	0	id_condition	2	\N
+965	5	22	0	send_true_to	0	Wait for all LOINCs to pass
+966	5	22	0	send_false_to	0	Abort
+967	5	22	0	cluster_schema	0	\N
+968	5	23	0	PARTITIONING_SCHEMA	0	\N
+969	5	23	0	PARTITIONING_METHOD	0	none
+970	5	23	0	id_connection	5	\N
+971	5	23	0	cache	0	Y
+972	5	23	0	cache_load_all	0	N
+973	5	23	0	cache_size	0	\N
+974	5	23	0	lookup_schema	0	\N
+975	5	23	0	lookup_table	0	core_source_system
+976	5	23	0	lookup_orderby	0	\N
+977	5	23	0	fail_on_multiple	0	N
+978	5	23	0	eat_row_on_failure	0	Y
+979	5	23	0	lookup_key_name	0	source_system
+980	5	23	0	lookup_key_field	0	name
+981	5	23	0	lookup_key_condition	0	LIKE
+982	5	23	0	lookup_key_name2	0	\N
+983	5	23	0	return_value_name	0	id
+984	5	23	0	return_value_rename	0	system_id
+985	5	23	0	return_value_default	0	\N
+986	5	23	0	return_value_type	0	Integer
+987	5	23	0	cluster_schema	0	\N
+988	5	24	0	PARTITIONING_SCHEMA	0	\N
+989	5	24	0	PARTITIONING_METHOD	0	none
+990	5	24	0	id_connection	5	\N
+991	5	24	0	cache	0	N
+992	5	24	0	cache_load_all	0	N
+993	5	24	0	cache_size	0	\N
+994	5	24	0	lookup_schema	0	\N
+995	5	24	0	lookup_table	0	core_loinc
+996	5	24	0	lookup_orderby	0	\N
+997	5	24	0	fail_on_multiple	0	N
+998	5	24	0	eat_row_on_failure	0	N
+999	5	24	0	lookup_key_name	0	LOINC
+1000	5	24	0	lookup_key_field	0	loinc_num
+1001	5	24	0	lookup_key_condition	0	LIKE
+1002	5	24	0	lookup_key_name2	0	\N
+1003	5	24	0	return_value_name	0	loinc_num
+1004	5	24	0	return_value_rename	0	loinc_num
+1005	5	24	0	return_value_default	0	\N
+1006	5	24	0	return_value_type	0	String
+1007	5	24	0	cluster_schema	0	\N
+1008	5	25	0	PARTITIONING_SCHEMA	0	\N
+1009	5	25	0	PARTITIONING_METHOD	0	none
+1010	5	25	0	filename	0	/home/rejmv/work/dev-esp/NORTH_ADAMS/NorthAdamsLocal-LOINCmapMay2008.redacted.xls
+1011	5	25	0	filename_field	0	\N
+1012	5	25	0	rownum_field	0	\N
+1013	5	25	0	include_filename	0	N
+1014	5	25	0	separator	0	\t
+1015	5	25	0	enclosure	0	"
+1016	5	25	0	buffer_size	0	50000
+1017	5	25	0	header	0	Y
+1018	5	25	0	lazy_conversion	0	Y
+1019	5	25	0	add_filename_result	0	N
+1020	5	25	0	parallel	0	N
+1021	5	25	0	encoding	0	\N
+1022	5	25	0	field_name	0	Dept
+1023	5	25	0	field_type	0	String
+1024	5	25	0	field_format	0	\N
+1025	5	25	0	field_currency	0	\N
+1026	5	25	0	field_decimal	0	\N
+1027	5	25	0	field_group	0	\N
+701	3	7	0	PARTITIONING_SCHEMA	0	\N
+702	3	7	0	PARTITIONING_METHOD	0	none
+703	3	7	0	row_threshold	0	0
+704	3	7	0	message	0	LOINC Number not found!
+705	3	7	0	always_log_rows	0	Y
+706	3	7	0	cluster_schema	0	\N
+707	3	8	0	PARTITIONING_SCHEMA	0	\N
+708	3	8	0	PARTITIONING_METHOD	0	none
+709	3	8	0	valuename	0	id
+710	3	8	0	use_database	0	N
+711	3	8	0	id_connection	8	\N
+712	3	8	0	schema	0	\N
+713	3	8	0	seqname	0	core_external_to_loinc_map_id_seq
+714	3	8	0	use_counter	0	Y
+715	3	8	0	counter_name	0	\N
+716	3	8	0	start_at	0	1
+717	3	8	0	increment_by	0	1
+718	3	8	0	max_value	0	999999999
+719	3	8	0	cluster_schema	0	\N
+720	3	9	0	PARTITIONING_SCHEMA	0	\N
+1028	5	25	0	field_length	0	\N
+1029	5	25	0	field_precision	0	\N
+721	3	9	0	PARTITIONING_METHOD	0	none
+722	3	9	0	compatible	0	Y
+723	3	9	0	jsScript_name	0	Script 1
+724	3	9	0	jsScript_script	0	var comp = Component.getString();\nvar ext_code = '';\n\nif (comp != null) {\n\text_code = CPT.getString() + "--" + comp;\n} else {\n\text_code = CPT.getString();\n};\n
+725	3	9	0	jsScript_type	0	\N
+726	3	9	0	field_name	0	ext_code
+727	3	9	0	field_rename	0	ext_code
+728	3	9	0	field_type	0	String
+729	3	9	0	field_length	-1	\N
+730	3	9	0	field_precision	-1	\N
+731	3	9	0	cluster_schema	0	\N
+732	3	10	0	PARTITIONING_SCHEMA	0	\N
+733	3	10	0	PARTITIONING_METHOD	0	none
+734	3	10	0	field_name	0	source_system
+735	3	10	0	field_variable	0	${ESP_SOURCE_SYSTEM}
+736	3	10	0	cluster_schema	0	\N
+737	3	11	0	PARTITIONING_SCHEMA	0	\N
+738	3	11	0	PARTITIONING_METHOD	0	none
+739	3	11	0	field_name	0	created_timestamp
+740	3	11	0	field_type	0	system date (fixed)
+741	3	11	1	field_name	0	updated_timestamp
+742	3	11	1	field_type	0	system date (fixed)
+743	3	11	2	field_name	0	hostname
+744	3	11	2	field_type	0	Hostname
+745	3	11	3	field_name	0	timestamp
+746	3	11	3	field_type	0	system date (fixed)
+747	3	11	0	cluster_schema	0	\N
+748	3	12	0	PARTITIONING_SCHEMA	0	\N
+749	3	12	0	PARTITIONING_METHOD	0	none
+750	3	12	0	id_condition	1	\N
+751	3	12	0	send_true_to	0	Wait for all LOINCs to pass
+752	3	12	0	send_false_to	0	Abort
+753	3	12	0	cluster_schema	0	\N
+754	3	13	0	PARTITIONING_SCHEMA	0	\N
+755	3	13	0	PARTITIONING_METHOD	0	none
+756	3	13	0	id_connection	5	\N
+757	3	13	0	cache	0	Y
+758	3	13	0	cache_load_all	0	N
+759	3	13	0	cache_size	0	\N
+760	3	13	0	lookup_schema	0	\N
+761	3	13	0	lookup_table	0	core_source_system
+762	3	13	0	lookup_orderby	0	\N
+763	3	13	0	fail_on_multiple	0	N
+764	3	13	0	eat_row_on_failure	0	Y
+765	3	13	0	lookup_key_name	0	source_system
+766	3	13	0	lookup_key_field	0	name
+767	3	13	0	lookup_key_condition	0	LIKE
+768	3	13	0	lookup_key_name2	0	\N
+769	3	13	0	return_value_name	0	id
+770	3	13	0	return_value_rename	0	system_id
+771	3	13	0	return_value_default	0	\N
+772	3	13	0	return_value_type	0	Integer
+773	3	13	0	cluster_schema	0	\N
+774	3	14	0	PARTITIONING_SCHEMA	0	\N
+775	3	14	0	PARTITIONING_METHOD	0	none
+776	3	14	0	id_connection	8	\N
+777	3	14	0	cache	0	N
+778	3	14	0	cache_load_all	0	N
+779	3	14	0	cache_size	0	\N
+780	3	14	0	lookup_schema	0	\N
+781	3	14	0	lookup_table	0	conf_loinc
+782	3	14	0	lookup_orderby	0	\N
+783	3	14	0	fail_on_multiple	0	N
+784	3	14	0	eat_row_on_failure	0	N
+785	3	14	0	lookup_key_name	0	LOINC
+786	3	14	0	lookup_key_field	0	loinc_num
+787	3	14	0	lookup_key_condition	0	LIKE
+788	3	14	0	lookup_key_name2	0	\N
+789	3	14	0	return_value_name	0	loinc_num
+790	3	14	0	return_value_rename	0	loinc_num
+791	3	14	0	return_value_default	0	\N
+792	3	14	0	return_value_type	0	String
+793	3	14	0	cluster_schema	0	\N
+794	3	15	0	PARTITIONING_SCHEMA	0	\N
+795	3	15	0	PARTITIONING_METHOD	0	none
+796	3	15	0	accept_filenames	0	N
+797	3	15	0	accept_field	0	\N
+798	3	15	0	accept_stepname	0	\N
+799	3	15	0	separator	0	\t
+800	3	15	0	enclosure	0	\N
+801	3	15	0	enclosure_breaks	0	N
+802	3	15	0	escapechar	0	\N
+803	3	15	0	header	0	Y
+804	3	15	0	nr_headerlines	0	\N
+805	3	15	0	footer	0	N
+806	3	15	0	nr_footerlines	1	\N
+807	3	15	0	line_wrapped	0	N
+808	3	15	0	nr_wraps	0	\N
+809	3	15	0	layout_paged	0	N
+810	3	15	0	nr_lines_per_page	0	\N
+811	3	15	0	nr_lines_doc_header	0	\N
+812	3	15	0	noempty	0	Y
+813	3	15	0	include	0	N
+814	3	15	0	include_field	0	filepath
+815	3	15	0	rownum	0	N
+816	3	15	0	rownumByFile	0	N
+817	3	15	0	rownum_field	0	\N
+818	3	15	0	format	0	Unix
+819	3	15	0	encoding	0	\N
+820	3	15	0	add_to_result_filenames	0	N
+821	3	15	0	limit	0	\N
+822	3	15	0	file_name	0	/home/rejmv/work/dev-esp/src/ESP/data/atrius-map.csv
+823	3	15	0	file_mask	0	\N
+824	3	15	0	file_required	0	\N
+825	3	15	0	file_type	0	CSV
+826	3	15	0	compression	0	None
+827	3	15	0	field_name	0	CPT
+828	3	15	0	field_type	0	String
+829	3	15	0	field_format	0	\N
+830	3	15	0	field_currency	0	\N
+831	3	15	0	field_decimal	0	\N
+832	3	15	0	field_group	0	\N
+833	3	15	0	field_nullif	0	\N
+834	3	15	0	field_ifnull	0	\N
+835	3	15	0	field_position	-1	\N
+836	3	15	0	field_length	-1	\N
+837	3	15	0	field_precision	-1	\N
+838	3	15	0	field_trim_type	0	none
+839	3	15	0	field_repeat	0	N
+840	3	15	1	field_name	0	Component
+841	3	15	1	field_type	0	String
+842	3	15	1	field_format	0	\N
+843	3	15	1	field_currency	0	\N
+844	3	15	1	field_decimal	0	\N
+845	3	15	1	field_group	0	\N
+846	3	15	1	field_nullif	0	\N
+847	3	15	1	field_ifnull	0	\N
+848	3	15	1	field_position	-1	\N
+849	3	15	1	field_length	-1	\N
+850	3	15	1	field_precision	-1	\N
+851	3	15	1	field_trim_type	0	none
+852	3	15	1	field_repeat	0	N
+853	3	15	2	field_name	0	LOINC
+854	3	15	2	field_type	0	String
+855	3	15	2	field_format	0	\N
+856	3	15	2	field_currency	0	\N
+857	3	15	2	field_decimal	0	\N
+858	3	15	2	field_group	0	\N
+859	3	15	2	field_nullif	0	\N
+860	3	15	2	field_ifnull	0	\N
+861	3	15	2	field_position	-1	\N
+862	3	15	2	field_length	-1	\N
+863	3	15	2	field_precision	-1	\N
+864	3	15	2	field_trim_type	0	none
+865	3	15	2	field_repeat	0	N
+866	3	15	0	error_ignored	0	N
+867	3	15	0	error_line_skipped	0	N
+868	3	15	0	error_count_field	0	\N
+869	3	15	0	error_fields_field	0	\N
+870	3	15	0	error_text_field	0	\N
+871	3	15	0	bad_line_files_dest_dir	0	\N
+872	3	15	0	bad_line_files_ext	0	warning
+873	3	15	0	error_line_files_dest_dir	0	\N
+874	3	15	0	error_line_files_ext	0	error
+875	3	15	0	line_number_files_dest_dir	0	\N
+876	3	15	0	line_number_files_ext	0	line
+877	3	15	0	date_format_lenient	0	Y
+878	3	15	0	date_format_locale	0	en_us
+879	3	15	0	cluster_schema	0	\N
+880	3	16	0	PARTITIONING_SCHEMA	0	\N
+881	3	16	0	PARTITIONING_METHOD	0	none
+882	3	16	0	field_name	0	loinc_num
+883	3	16	0	field_rename	0	loinc_id
+884	3	16	0	field_length	-1	\N
+885	3	16	0	field_precision	-1	\N
+886	3	16	1	field_name	0	ext_code
+887	3	16	1	field_rename	0	\N
+888	3	16	1	field_length	-1	\N
+889	3	16	1	field_precision	-1	\N
+890	3	16	2	field_name	0	id
+891	3	16	2	field_rename	0	\N
+892	3	16	2	field_length	-1	\N
+893	3	16	2	field_precision	-1	\N
+894	3	16	0	select_unspecified	0	N
+895	3	16	0	cluster_schema	0	\N
+896	3	17	0	PARTITIONING_SCHEMA	0	\N
+897	3	17	0	PARTITIONING_METHOD	0	none
+898	3	17	0	validator_field_name	0	system_id
+899	3	17	0	validator_field_validation_name	0	system_id not null
+900	3	17	0	validator_field_max_length	-1	\N
+901	3	17	0	validator_field_min_length	-1	\N
+902	3	17	0	validator_field_null_allowed	0	N
+903	3	17	0	validator_field_only_null_allowed	0	N
+904	3	17	0	validator_field_only_numeric_allowed	0	N
+905	3	17	0	validator_field_data_type	0	Integer
+906	3	17	0	validator_field_data_type_verified	0	N
+907	3	17	0	validator_field_conversion_mask	0	\N
+908	3	17	0	validator_field_decimal_symbol	0	\N
+909	3	17	0	validator_field_grouping_symbol	0	\N
+910	3	17	0	validator_field_max_value	0	\N
+911	3	17	0	validator_field_min_value	0	\N
+912	3	17	0	validator_field_start_string	0	\N
+913	3	17	0	validator_field_end_string	0	\N
+914	3	17	0	validator_field_start_string_not_allowed	0	\N
+915	3	17	0	validator_field_end_string_not_allowed	0	\N
+916	3	17	0	validator_field_regular_expression	0	\N
+917	3	17	0	validator_field_regular_expression_not_allowed	0	\N
+918	3	17	0	validator_field_error_code	0	\N
+919	3	17	0	validator_field_error_description	0	system_id must not be null
+920	3	17	0	validator_field_is_sourcing_values	0	N
+921	3	17	0	validator_field_sourcing_step	0	\N
+922	3	17	0	validator_field_sourcing_field	0	\N
+923	3	17	0	cluster_schema	0	\N
+924	3	18	0	PARTITIONING_SCHEMA	0	\N
+925	3	18	0	PARTITIONING_METHOD	0	none
+926	3	18	0	pass_all_rows	0	Y
+927	3	18	0	directory	0	%%java.io.tmpdir%%
+928	3	18	0	prefix	0	block
+929	3	18	0	cache_size	5000	\N
+930	3	18	0	compress	0	Y
+931	3	18	0	cluster_schema	0	\N
+932	3	19	0	PARTITIONING_SCHEMA	0	\N
+933	3	19	0	PARTITIONING_METHOD	0	none
+934	3	19	0	id_connection	8	\N
+935	3	19	0	schema	0	\N
+936	3	19	0	table	0	conf_ext_to_loinc
+937	3	19	0	commit	1	\N
+938	3	19	0	truncate	0	Y
+939	3	19	0	ignore_errors	0	N
+940	3	19	0	use_batch	0	N
+941	3	19	0	partitioning_enabled	0	N
+942	3	19	0	partitioning_field	0	\N
+943	3	19	0	partitioning_daily	0	N
+944	3	19	0	partitioning_monthly	0	Y
+945	3	19	0	tablename_in_field	0	N
+946	3	19	0	tablename_field	0	\N
+947	3	19	0	tablename_in_table	0	Y
+948	3	19	0	return_keys	0	N
+949	3	19	0	return_field	0	\N
+950	3	19	0	cluster_schema	0	\N
+1030	5	25	0	field_trim_type	0	none
+1031	5	25	1	field_name	0	AttrCode
+1032	5	25	1	field_type	0	String
+1033	5	25	1	field_format	0	\N
+1034	5	25	1	field_currency	0	\N
+1035	5	25	1	field_decimal	0	\N
+1036	5	25	1	field_group	0	\N
+1037	5	25	1	field_length	0	\N
+1038	5	25	1	field_precision	0	\N
+1039	5	25	1	field_trim_type	0	none
+1040	5	25	2	field_name	0	AttrMnemonic
+1041	5	25	2	field_type	0	String
+1042	5	25	2	field_format	0	\N
+1043	5	25	2	field_currency	0	\N
+1044	5	25	2	field_decimal	0	\N
+1045	5	25	2	field_group	0	\N
+1046	5	25	2	field_length	0	\N
+1047	5	25	2	field_precision	0	\N
+1048	5	25	2	field_trim_type	0	none
+1049	5	25	3	field_name	0	AttrName
+1050	5	25	3	field_type	0	String
+1051	5	25	3	field_format	0	\N
+1052	5	25	3	field_currency	0	\N
+1053	5	25	3	field_decimal	0	\N
+1054	5	25	3	field_group	0	\N
+1055	5	25	3	field_length	0	\N
+1056	5	25	3	field_precision	0	\N
+1057	5	25	3	field_trim_type	0	none
+1058	5	25	4	field_name	0	LOINC
+1059	5	25	4	field_type	0	String
+1060	5	25	4	field_format	0	\N
+1061	5	25	4	field_currency	0	\N
+1062	5	25	4	field_decimal	0	\N
+1063	5	25	4	field_group	0	\N
+1064	5	25	4	field_length	0	\N
+1065	5	25	4	field_precision	0	\N
+1066	5	25	4	field_trim_type	0	none
+1067	5	25	5	field_name	0	LOINC Name
+1068	5	25	5	field_type	0	String
+1069	5	25	5	field_format	0	\N
+1070	5	25	5	field_currency	0	\N
+1071	5	25	5	field_decimal	0	\N
+1072	5	25	5	field_group	0	\N
+1073	5	25	5	field_length	0	\N
+1074	5	25	5	field_precision	0	\N
+1075	5	25	5	field_trim_type	0	none
+1076	5	25	0	cluster_schema	0	\N
+1077	5	26	0	PARTITIONING_SCHEMA	0	\N
+1078	5	26	0	PARTITIONING_METHOD	0	none
+1079	5	26	0	field_name	0	AttrCode
+1080	5	26	0	field_rename	0	ext_code
+1081	5	26	0	field_length	-1	\N
+1082	5	26	0	field_precision	-1	\N
+1083	5	26	1	field_name	0	AttrName
+1084	5	26	1	field_rename	0	ext_name
+1085	5	26	1	field_length	-1	\N
+1086	5	26	1	field_precision	-1	\N
+1087	5	26	2	field_name	0	loinc_num
+1088	5	26	2	field_rename	0	loinc_id
+1089	5	26	2	field_length	-1	\N
+1090	5	26	2	field_precision	-1	\N
+1091	5	26	0	select_unspecified	0	N
+1092	5	26	0	cluster_schema	0	\N
+1093	5	27	0	PARTITIONING_SCHEMA	0	\N
+1094	5	27	0	PARTITIONING_METHOD	0	none
+1095	5	27	0	pass_all_rows	0	Y
+1096	5	27	0	directory	0	%%java.io.tmpdir%%
+1097	5	27	0	prefix	0	block
+1098	5	27	0	cache_size	5000	\N
 \.
 
 
@@ -3178,6 +3640,14 @@ COPY r_trans_attribute (id_trans_attribute, id_transformation, nr, code, value_n
 6	1	0	CAPTURE_STEP_PERFORMANCE	0	N
 7	1	0	STEP_PERFORMANCE_CAPTURING_DELAY	0	\N
 8	1	0	STEP_PERFORMANCE_LOG_TABLE	0	\N
+25	5	0	UNIQUE_CONNECTIONS	0	N
+26	5	0	FEEDBACK_SHOWN	0	Y
+27	5	0	FEEDBACK_SIZE	0	\N
+28	5	0	USING_THREAD_PRIORITIES	0	Y
+29	5	0	SHARED_FILE	0	\N
+30	5	0	CAPTURE_STEP_PERFORMANCE	0	N
+31	5	0	STEP_PERFORMANCE_CAPTURING_DELAY	0	\N
+32	5	0	STEP_PERFORMANCE_LOG_TABLE	0	\N
 9	2	0	UNIQUE_CONNECTIONS	0	N
 10	2	0	FEEDBACK_SHOWN	0	Y
 11	2	0	FEEDBACK_SIZE	50000	\N
@@ -3186,6 +3656,14 @@ COPY r_trans_attribute (id_trans_attribute, id_transformation, nr, code, value_n
 14	2	0	CAPTURE_STEP_PERFORMANCE	0	N
 15	2	0	STEP_PERFORMANCE_CAPTURING_DELAY	1000	\N
 16	2	0	STEP_PERFORMANCE_LOG_TABLE	0	\N
+17	3	0	UNIQUE_CONNECTIONS	0	N
+18	3	0	FEEDBACK_SHOWN	0	Y
+19	3	0	FEEDBACK_SIZE	0	\N
+20	3	0	USING_THREAD_PRIORITIES	0	Y
+21	3	0	SHARED_FILE	0	\N
+22	3	0	CAPTURE_STEP_PERFORMANCE	0	N
+23	3	0	STEP_PERFORMANCE_CAPTURING_DELAY	0	\N
+24	3	0	STEP_PERFORMANCE_LOG_TABLE	0	\N
 \.
 
 
@@ -3206,6 +3684,21 @@ COPY r_trans_hop (id_trans_hop, id_transformation, id_step_from, id_step_to, ena
 2	1	2	3	Y
 3	2	4	5	Y
 4	2	5	6	Y
+14	5	26	28	Y
+15	5	25	24	Y
+16	5	24	22	Y
+17	5	22	20	Y
+18	5	22	27	Y
+19	5	27	26	Y
+5	3	16	19	Y
+6	3	14	12	Y
+7	3	12	7	Y
+8	3	12	18	Y
+9	3	15	10	Y
+10	3	9	14	Y
+11	3	18	8	Y
+12	3	8	16	Y
+13	3	10	9	Y
 \.
 
 
@@ -3238,6 +3731,8 @@ COPY r_trans_slave (id_trans_slave, id_transformation, id_slave) FROM stdin;
 --
 
 COPY r_trans_step_condition (id_transformation, id_step, id_condition) FROM stdin;
+3	12	1
+5	22	2
 \.
 
 
@@ -3248,6 +3743,8 @@ COPY r_trans_step_condition (id_transformation, id_step, id_condition) FROM stdi
 COPY r_transformation (id_transformation, id_directory, name, description, extended_description, trans_version, trans_status, id_step_read, id_step_write, id_step_input, id_step_output, id_step_update, id_database_log, table_name_log, use_batchid, use_logfield, id_database_maxdate, table_name_maxdate, field_name_maxdate, offset_maxdate, diff_maxdate, created_user, created_date, modified_user, modified_date, size_rowset) FROM stdin;
 1	1	Load LOINC db	\N	\N	\N	0	-1	-1	-1	-1	-1	-1	\N	Y	N	-1	\N	\N	0.00	0.00	jason	\N	esp	2009-04-01 13:44:35.167	10000
 2	1	Load LOINC Additions	\N	\N	\N	1	-1	-1	-1	-1	-1	-1	\N	Y	N	-1	\N	\N	0.00	0.00	jason	2009-02-20 17:25:14.602	esp	2009-04-01 13:46:38.307	10000
+3	1	Load External Code to LOINC Maps -- Atrius	\N	\N	\N	0	-1	-1	-1	-1	-1	-1	\N	Y	N	-1	\N	\N	0.00	0.00	jason	\N	esp	2009-04-01 14:18:06.967	10000
+5	1	Load External Code to LOINC Maps -- North Adams	\N	\N	\N	0	-1	-1	-1	-1	-1	-1	\N	Y	N	-1	\N	\N	0.00	0.00	jason	\N	esp	2009-04-02 16:17:19.019	10000
 \.
 
 
