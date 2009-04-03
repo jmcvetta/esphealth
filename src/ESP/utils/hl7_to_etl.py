@@ -1,3 +1,18 @@
+'''
+                                  ESP Health
+                               Load HL7 Messages
+
+Converts incoming HL7 messages into Epic Care-style ETL files in one month 
+batches, and loads them into ESP database.
+
+@author: Ross Lazarus <ross.lazarus@channing.harvard.edu>
+@author: Xuanlin Hou <rexua@channing.harvard.edu>
+@author: Jason McVetta <jason.mcvetta@gmail.com>
+@organization: Channing Laboratory http://www.channing.harvard.edu
+@copyright: (c) 2009 Channing Laboratory
+@license: LGPL
+'''
+
 """
 #For NORTH Adams
 # mostly generic functions driven by

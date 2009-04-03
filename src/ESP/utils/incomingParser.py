@@ -1,6 +1,17 @@
-# incoming parser
-# uses a generator for large file processing
-# of delimited files
+'''
+                                  ESP Health
+                                Incoming Parser
+
+Uses a generator to load large delimited ETL files, as produced by Epic Care, 
+into database.
+
+@author: Ross Lazarus <ross.lazarus@channing.harvard.edu>
+@author: Xuanlin Hou <rexua@channing.harvard.edu>
+@author: Jason McVetta <jason.mcvetta@gmail.com>
+@organization: Channing Laboratory http://www.channing.harvard.edu
+@copyright: (c) 2009 Channing Laboratory
+@license: LGPL
+'''
 
 import os
 import sys

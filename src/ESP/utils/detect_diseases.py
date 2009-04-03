@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 '''
-Detect cases of (reportable) disease
+                                  ESP Health
+                       (New) Disease Detection Framework
+
+Detects cases of (reportable) disease
+
+@author: Jason McVetta <jason.mcvetta@gmail.com>
+@organization: Channing Laboratory http://www.channing.harvard.edu
+@copyright: (c) 2009 Channing Laboratory
+@license: LGPL
 '''
 
 import datetime
