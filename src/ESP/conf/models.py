@@ -285,5 +285,4 @@ class ExtToLoincMap(models.Model):
     class Meta:
         # Use underscores to make table name more readable
         db_table = 'conf_ext_to_loinc'
-
-
+        verbose_name = 'External Code to LOINC Map'
