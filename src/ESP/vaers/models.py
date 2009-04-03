@@ -3,8 +3,9 @@
 from django.db import models
 from django.db.models import signals
 
-from esp.models import Demog, Immunization, Enc, icd9, Lx, Provider
-from esp.choices import WORKFLOW_STATES
+from ESP.esp.models import Demog, Immunization, Enc, Lx, Provider
+from ESP.esp.choices import WORKFLOW_STATES
+from ESP.conf.models import Icd9
 
 
 def adverse_event_digest(**kw):
@@ -65,7 +66,7 @@ class FeverEventRule(Rule):
     
 
 class DiagnosticsEventRule(Rule):
-    icd9_codes = models.ManyToManyField(icd9)
+    icd9_codes = models.ManyToManyField(Icd9)
     
 class LxEventRule(Rule):
     lab_result = models.ForeignKey(Lx)
@@ -89,7 +90,7 @@ class FeverEvent(AdverseEvent):
 
 class DiagnosticsEvent(AdverseEvent):
     encounter = models.ForeignKey(Enc)
-    icd9 = models.ForeignKey(icd9)
+    icd9 = models.ForeignKey(Icd9)
     
 
 class LabResultEvent(AdverseEvent):
