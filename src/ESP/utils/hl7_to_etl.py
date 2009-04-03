@@ -568,7 +568,7 @@ def main():
         process_files(file_batch, input_folder, output_folder)
         if options.load:
             log.debug('Calling incomingParser to load data into db')
-            ip_opts = object() # Faux options object for incomingParser.main()
+            ip_opts = optparse.Values() # Faux options object for incomingParser.main()
             ip_opts.mail = options.mail
             ip_opts.all = True # Load everything
             ip_opts.move = False # Don't move anything around
