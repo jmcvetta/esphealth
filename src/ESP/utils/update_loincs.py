@@ -23,8 +23,7 @@ def main():
     counter = 0
     for mapping in ExtToLoincMap.objects.all():
         log.info('Updating external code "%s" to LOINC "%s".' % (mapping.ext_code, mapping.loinc.loinc_num))
-        #count = Lx.objects.filter(ext_code=unicode(mapping.ext_code)).update(LxLoinc=unicode(mapping.loinc.pk))
-        count = Lx.objects.filter(ext_code=mapping.ext_code).update(LxLoinc=mapping.loinc.pk)
+        count = Lx.objects.filter(ext_code=mapping.ext_code, LxLoinc__isnull=True).update(LxLoinc=mapping.loinc.pk)
         log.debug('Objects updated: %s' % count)
         counter += count
     log.info('Total number of objects updated: %s' % counter)
