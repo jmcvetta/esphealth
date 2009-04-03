@@ -539,13 +539,16 @@ def main():
             continue
         year = int(m.group(1))
         month = int(m.group(2))
-        key = '%s-%s' % (year, month)
+        key = '%4d-%02d' % (year, month)
         try:
             files_by_month[key] += [f] # Add to existing
         except KeyError:
             files_by_month[key] = [f] # New key
     #log.debug('files_by_month: %s' % files_by_month)
-    for month in files_by_month.keys():
+    keys = files_by_month.keys()
+    keys.sort()
+    keys.reverse() # Start from earliest month
+    for month in keys:
         log.info('Processing month: %s' % month)
         file_batch = files_by_month[month]
         process_files(file_batch, input_folder, output_folder)
