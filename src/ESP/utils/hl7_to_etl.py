@@ -31,8 +31,9 @@ We need
 5) a new immunization record for each RXA in any VXU message
 
 """
-INCOMING_DIR = '/home/ESP/NORTH_ADAMS/incomingHL7/'
-DEST_DIR = '/home/ESP/NORTH_ADAMS/archivedHL7/'
+INCOMING_DIR = '/home/rejmv/work/NORTH_ADAMS/all_HL7/'
+DEST_DIR = '/home/rejmv/work/NORTH_ADAMS/archivedHL7/'
+OUTFILEDIR = '/home/rejmv/work/NORTH_ADAMS/incomingData/'
 
 
 import sys
@@ -43,20 +44,20 @@ import utils
 import shutil
 import string
 import logging
+import optparse
+import re
 import pprint
 
 from ESP.utils.utils import log
 from ESP.utils import northadams
+from ESP.utils import incomingParser
+from ESP.esp.models import Hl7InputFile
+from ESP.esp.choices import HL7_INPUT_FILE_STATUS
 
 from northadams import * # that's where all our configuration lives
 
 
 prog = os.path.split(sys.argv[0])[-1]
-
-def timenow():
-    """return current time as a string
-    """
-    return time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(time.time()))
 
 def setLogging(appname=''):
     """setup a logger
@@ -359,7 +360,7 @@ def messageIterator(
     raise StopIteration
 
 
-def writeMDicts(mclasses={}):
+def writeMDicts(outfilenames, mclasses={}):
     """We now have a dict of message classes, each pointing to
     an id and a list of instances.
     We need to write an
@@ -443,29 +444,129 @@ def parseMessages(mlist=[],grammar_dict={},incominghl7f=None):
                     mclasses[kind][id] = sofar # replace with update
     return mclasses
 
-def main():
-    #setLogging(appname=prog)
-    log.info('HL7 message processing started at %s' % timenow())
-    hlfiles=os.listdir(INCOMING_DIR)
-    for f in hlfiles:
-        print 'Processing: %s' % f
-        mlist = split_hl7_message(INCOMING_DIR+f)
-        grammar_dict = makeGrammars()
-        mclasses = parseMessages(mlist=mlist,grammar_dict=grammar_dict,incominghl7f = f)
-        writeMDicts(mclasses=mclasses)
-        movefile(f, INCOMING_DIR, DEST_DIR)
 
+def record_file_status(filename, status, msg=None):
+    '''
+    Logs the status of a given filename to the database
+    @type filename: String
+    @type   status: String
+    '''
+    assert status in [item[0] for item in HL7_INPUT_FILE_STATUS] # Sanity check
+    try:
+        h = Hl7InputFile.objects.get(filename=filename)
+    except Hl7InputFile.DoesNotExist:
+        h = Hl7InputFile(filename=filename)
+    h.timestamp = datetime.datetime.now()
+    h.status = status
+    if msg:
+        h.message = msg
+    h.save()
+
+def process_files(input_files, input_folder, output_folder):
+    '''
+    Parses HL7 messages, leaving Epic Care-style ETL files in output_folder
+        #
+    @param input_files:   List of filenames to be parsed
+    @type input_files:    [String, String, String, ...]
+    @type input_folder:   String
+    @type output_folder:  String
+    '''
+    # First, clean output folder
+    for f in os.listdir(output_folder):
+        os.unlink(os.path.join(output_folder, f))
+    # this defines the output file names
+    suffix = datetime.datetime.now().strftime('%m%d%Y')
+    outfilenames = ['%s/epicpro.esp.%s' % (output_folder, suffix),
+                    '%s/epicmem.esp.%s' % (output_folder, suffix),
+                    '%s/epicall.esp.%s' % (output_folder, suffix),
+                    '%s/epicvis.esp.%s' % (output_folder, suffix),
+                    '%s/epicord.esp.%s' % (output_folder, suffix),
+                    '%s/epicres.esp.%s' % (output_folder, suffix),
+                    '%s/epicimm.esp.%s' % (output_folder, suffix),
+                    '%s/epicprb.esp.%s' % (output_folder, suffix),
+                    '%s/epicmed.esp.%s' % (output_folder, suffix)]
+    for filename in input_files:
+        log.debug('Processing: %s' % filename)
+        try:
+            message_list = split_hl7_message( os.path.join(input_folder, filename))
+            grammar_dict = makeGrammars()
+            mclasses = parseMessages(mlist=message_list, grammar_dict=grammar_dict, incominghl7f = filename)
+            writeMDicts(outfilenames, mclasses=mclasses)
+            record_file_status(filename, 'p') # Successful parse
+        except BaseException, e:
+            record_file_status(filename, 'f', msg=e) # Fail!
     for x in dict(map(lambda x:(x,None), outfilenames)).keys():
         xh  =file(x,'a+')
         xh.write('CONTROL TOTALS^NorthAdams^^^^\n')
         xh.close() # close etl files
-                                               
 
 
-    log.info('##########Processing completed at %s' % timenow())
+def main():
+    # Set defaults:
+    input_folder = INCOMING_DIR
+    output_folder = OUTFILEDIR
+    parser = optparse.OptionParser()
+    parser.add_option('--new', action='store_true', dest='new', 
+        help='Process only new HL7 messages.  [DEFAULT]')
+    parser.add_option('--retry', action='store_true', dest='retry',
+        help='Process only HL7 messages that have previously failed to process')
+    parser.add_option('--all', action='store_true', dest='all', 
+        help='Process new and retry HL7 messages.')
+    parser.add_option('--no-load', action='store_false', dest='load', default=True,
+        help='Do not load HL7 message data into ESP')
+    parser.add_option('--mail', action='store_true', dest='mail', default=False,
+        help='Send email notifications' )
+    options, args = parser.parse_args()
+    log.debug('options: %s' % options)
+    #
+    all_files = set( os.listdir(input_folder) )
+    if options.all or (options.new and options.retry): # Implies both 'new' and 'retry'
+        # Include all files that have not yet been successfully processed
+        input_files = all_files - set( Hl7InputFile.objects.filter(status='l').values_list('filename', flat=True) )
+    elif options.retry:
+        # Include only those files that have failed in the past
+        input_files = all_files & set( Hl7InputFile.objects.filter(status='f').values_list('filename', flat=True) )
+    else: # Default is options.new
+        # Include only files we have never seen before
+        input_files = all_files - set( Hl7InputFile.objects.all().values_list('filename', flat=True) )
+    #log.debug('input_files: %s' % input_files)
+    files_by_month = {}
+    date_regex = re.compile(r'(\d{4})-(\d{1,2})-(\d{1,2})')
+    for f in input_files:
+        m = date_regex.search(f)
+        if not m:
+            record_file_status(f, 'f', msg='Could not parse file date stamp')
+            continue
+        year = int(m.group(1))
+        month = int(m.group(2))
+        key = '%s-%s' % (year, month)
+        try:
+            files_by_month[key] += [f] # Add to existing
+        except KeyError:
+            files_by_month[key] = [f] # New key
+    #log.debug('files_by_month: %s' % files_by_month)
+    for month in files_by_month.keys():
+        log.info('Processing month: %s' % month)
+        file_batch = files_by_month[month]
+        process_files(file_batch, input_folder, output_folder)
+        if options.load:
+            log.debug('Calling incomingParser to load data into db')
+            ip_opts = object() # Faux options object for incomingParser.main()
+            ip_opts.mail = options.mail
+            ip_opts.all = True # Load everything
+            ip_opts.move = False # Don't move anything around
+            ip_opts.input = output_folder # Where to find the ETL files
+            try:
+                incomingParser.main(opts=ip_opts)
+                for f in file_batch:
+                    record_file_status(f, 'l')
+            except BaseException, e:
+                log.error('Exception raised during db load:')
+                log.error(e)
+                for f in file_batch:
+                    record_file_status(f, 'f', msg=e)
 
 
 if __name__ == "__main__":
     main()
-
 

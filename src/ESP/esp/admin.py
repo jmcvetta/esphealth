@@ -4,16 +4,18 @@ from django.utils.translation import ugettext_lazy as _
 from ESP.esp.models import *
 from ESP.esp import models
 
-class CaseOptions(admin.ModelAdmin):
-    list_filter = ('workflow_state',)
-    ordering = ('updated_timestamp', 'created_timestamp')
-    list_display = ['provider', 'workflow_state', 'updated_timestamp', 'notes']
+class CaseAdmin(admin.ModelAdmin):
+    list_filter = ('caseWorkflow',)
+    #ordering = ('updated_timestamp', 'created_timestamp')
+    #list_display = ['provider', 'workflow_state', 'updated_timestamp', 'notes']
+    ordering = ('caseLastUpDate', 'casecreatedDate')
+    list_display = ['caseProvider', 'caseWorkflow', 'caseLastUpDate',]
 
 class EncOptions(admin.ModelAdmin):
     list_display = ('EncPatient', 'EncEncounter_Date','EncMedical_Record_Number')
     search_fields = ['EncPatient', 'EncMedical_Record_Number']
 
-class HL7FileOptions(admin.ModelAdmin):
+class Hl7OutputFileOptions(admin.ModelAdmin):
     list_display = ('filename', 'case','demogMRN')
     search_fields =('filename', 'case')
 
@@ -24,12 +26,6 @@ class ProviderOptions(admin.ModelAdmin):
 class ConditionDrugNameOptions(admin.ModelAdmin):
     list_display = ('CondiRule', 'CondiDrugName','CondiDrugRoute')
     search_fields = ['CondiDrugName']
-
-class FormatOptions(admin.ModelAdmin):
-    ordering = ('formatVerDate', 'formatName')
-
-class DestOptions(admin.ModelAdmin):
-    ordering = ('destVerDate', 'destName')
 
 class TestCaseOptions(admin.ModelAdmin):
     list_filter = ('caseWorkflow','caseQueryID','caseMsgFormat','caseProvider')
@@ -69,49 +65,41 @@ class CaseWorkflowOptions(admin.ModelAdmin):
 class RuleAdmin(admin.ModelAdmin):
     list_display = ('ruleName',)
 
-class External_To_Loinc_Map_Admin(admin.ModelAdmin):
-    list_display = ['ext_code', 'ext_name', 'loinc', ]
-    save_on_top = True
-
-class Loinc_Admin(admin.ModelAdmin):
+class LoincAdmin(admin.ModelAdmin):
     list_display = ['loinc_num', 'name']
     search_fields = ['loinc_num', 'long_common_name', 'shortname']
     save_on_top = True
 
-class Heuristic_Event_Admin(admin.ModelAdmin):
+class HeuristicEventAdmin(admin.ModelAdmin):
     list_display = ['heuristic_name', 'patient', 'date']
     list_filter = ['heuristic_name']
 
+class Hl7InputFileAdmin(admin.ModelAdmin):
+    list_display = ['filename', 'timestamp', 'status',]
+    list_filter = ['status',]
 
-admin.site.register(Case, CaseOptions)
+
+admin.site.register(Case, CaseAdmin)
 admin.site.register(SocialHistory)
 admin.site.register(Enc, EncOptions)
 admin.site.register(Allergies)
-admin.site.register(HL7File, HL7FileOptions)
+admin.site.register(Hl7OutputFile, Hl7OutputFileOptions)
 admin.site.register(Rx)
 admin.site.register(Provider, ProviderOptions)
 admin.site.register(Lx)
 admin.site.register(ConditionDrugName, ConditionDrugNameOptions)
-admin.site.register(Format, FormatOptions)
-admin.site.register(Dest, DestOptions)
 admin.site.register(Problems)
 admin.site.register(TestCase, TestCaseOptions)
-#admin.site.register(ConditionLOINC, ConditionLOINCOptions)
 admin.site.register(Lxo)
-#admin.site.register(ConditionNdc, ConditionNdcOptions)
-#admin.site.register(CPTLOINCMap, CPTLOINCMapOptions)
-#admin.site.register(ConditionIcd9, ConditionIcd9Options)
 admin.site.register(Immunization)
 admin.site.register(DataFile, DataFileOptions)
 admin.site.register(icd9Fact)
 admin.site.register(Demog, DemogOptions)
 admin.site.register(CaseWorkflow, CaseWorkflowOptions)
-#admin.site.register(VAERSadditions)
-#admin.site.register(Rule, RuleAdmin)
-admin.site.register(models.ExtToLoincMap, External_To_Loinc_Map_Admin)
-admin.site.register(models.Loinc, Loinc_Admin)
-admin.site.register(models.HeuristicEvent, Heuristic_Event_Admin)
-
+admin.site.register(Rule, RuleAdmin)
+admin.site.register(models.Loinc, LoincAdmin)
+admin.site.register(models.HeuristicEvent, HeuristicEventAdmin)
+admin.site.register(Hl7InputFile, Hl7InputFileAdmin)
 
 admin.site.register(Vaccine)
 admin.site.register(ImmunizationManufacturer)

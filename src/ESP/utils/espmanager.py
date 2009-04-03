@@ -109,7 +109,7 @@ def generateOneBatch(hl7dir,cases,filename):
                            workflowComment='Case sent')
         wfr.save()
 
-        ##store in HL7File for tracking
+        ##store in Hl7OutputFile for tracking
         trmtdt =''
         if rx:
             rxobjs = Rx.objects.filter(id__in = rx).order_by('RxOrder_Id_Num')
@@ -120,7 +120,7 @@ def generateOneBatch(hl7dir,cases,filename):
                     pass
 
         specdate = '/'.join([lxtemp.LxOrderDate for lxtemp in Lx.objects.filter(id__in=hl7lxids).order_by('LxOrder_Id_Num')])
-        hl7track = HL7File(filename=filename, case=case,
+        hl7track = Hl7OutputFile(filename=filename, case=case,
                            demogMRN=demog.DemogMedical_Record_Number,
                            hl7comment=ntestr,
                            hl7encID=','.join([str(i).strip() for i in ex]),

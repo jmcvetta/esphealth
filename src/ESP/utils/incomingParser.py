@@ -1243,7 +1243,12 @@ def updateLoinc_lx():
 #--- ~~~ Main Logic ~~~
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-def main():
+def main(opts=None):
+    '''
+    @param options: Used for calling this function from another python script.  
+        If specified, optparse will not be run.
+    @type opts: optparse.Values or interface-compatible
+    '''
     parser = optparse.OptionParser()
     parser.add_option('-n', '--no-move', action='store_false', dest='move', default=True,
         help='Do not move files after processing')
@@ -1258,8 +1263,12 @@ def main():
     parser.add_option('--imm', action='store_true', dest='imm', default=False)
     parser.add_option('--soc', action='store_true', dest='soc', default=False)
     parser.add_option('--prb', action='store_true', dest='prb', default=False)
+    parser.add_option('--input-folder', action='store', dest='input', type='string', metavar='FOLDER')
     global options # So we don't need to explicitly pass to every function
-    (options, args) = parser.parse_args()
+    if opts:
+        options = opts
+    else:
+        (options, args) = parser.parse_args()
     log.debug('options: %s' % options)
     try: 
         
@@ -1267,7 +1276,11 @@ def main():
         ###try to update esp_lx
         updateLoinc_lx()
         ##get incoming files and do validations
-        incomdir = os.path.join(TOPDIR, LOCALSITE,'incomingData/')
+        if options.input:
+            assert os.path.isdir(options.input) # Sanity check -- did user specify a real folder?
+            incomdir = options.input
+        else:
+            incomdir = os.path.join(TOPDIR, LOCALSITE,'incomingData/')
         allf = os.listdir(incomdir)
         days= utils.getfilesByDay(allf)  #days are sorted list
         log.info('Days are: %s; \n' % str(days))
@@ -1286,25 +1299,25 @@ def main():
             provdict = parseProvider(incomdir, provf)
             demogf =  FILEBASE+'mem.esp.'+oneday 
             demogdict = parseDemog(incomdir, demogf)
-            if options.enc or options.all:
+            if options.all or options.enc:
                 visf =  FILEBASE+'vis.esp.'+oneday      
                 parseEnc(incomdir , visf,demogdict,provdict)
-            if options.med or options.all:
+            if options.all or options.med:
                 medf = FILEBASE+'med.esp.'+oneday
                 parseRx(incomdir , medf,demogdict,provdict)
-            if options.ord or options.all:
+            if options.all or options.ord:
                 lxordf = FILEBASE+'ord.esp.'+oneday
                 parseLxOrd(incomdir,lxordf, demogdict,provdict)
-            if options.res or options.all:
+            if options.all or options.res:
                 lxresf = FILEBASE+'res.esp.'+oneday
                 parseLxRes(incomdir,lxresf, demogdict,provdict)
-            if options.imm or options.all:
+            if options.all or options.imm:
                 immf = FILEBASE+'imm.esp.'+oneday  
                 parseImm(incomdir , immf, demogdict)
-            if options.prb or options.all:
+            if options.all or options.prb:
                 prbf = FILEBASE+'prb.esp.'+ oneday
                 parsePrb(incomdir , prbf, demogdict)
-            if options.soc or options.all:
+            if options.all or options.soc:
                 socf = FILEBASE+'soc.esp.'+ oneday
                 if os.path.exists(socf):
                     parseSoc(incomdir , socf, demogdict)

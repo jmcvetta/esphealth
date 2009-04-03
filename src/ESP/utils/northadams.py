@@ -26,12 +26,10 @@ We need
 5) a new immunization record for each RXA in any VXU message
 
 """
-import datetime
 
 from ESP.utils.utils import log
 
 
-TODAY_STR = datetime.datetime.now().strftime('%m%d%Y')
 FIELD_DELIMITER = '|'
 SUBFIELD_DELIMITER = '^'
 ETL_DELIMITER = '^'
@@ -64,19 +62,6 @@ etlnames = ['pcp','pid','allergies','enc',
             'laborder','labres','vaccinations','problems',
             'rx']
 
-# this defines the output file names
-#outfilenames = ['esp_pcp','esp_demog','esp_enc','esp_allergy',
-#            'esp_lx','esp_lx','esp_imm','esp_prob','esp_rx']
-outfiledir = '/home/ESP/NORTH_ADAMS/incomingData/'
-outfilenames = ['%s/epicpro.esp.%s' % (outfiledir,TODAY_STR),
-                '%s/epicmem.esp.%s' % (outfiledir,TODAY_STR),
-                '%s/epicall.esp.%s' % (outfiledir,TODAY_STR),
-                '%s/epicvis.esp.%s' % (outfiledir,TODAY_STR),
-                '%s/epicord.esp.%s' % (outfiledir,TODAY_STR),
-                '%s/epicres.esp.%s' % (outfiledir,TODAY_STR),
-                '%s/epicimm.esp.%s' % (outfiledir,TODAY_STR),
-                '%s/epicprb.esp.%s' % (outfiledir,TODAY_STR),
-                '%s/epicmed.esp.%s' % (outfiledir,TODAY_STR)]
 
 ## the following lists control the way output ETL records are written
 ## each output file has a lookup list of element names from

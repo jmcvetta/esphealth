@@ -24,3 +24,9 @@ OPERATORS = [
     ('istartswith', 'Starts With (case insensitive)'),
     ('iendswith', 'Ends With (case insensitive)'),
     ]
+
+HL7_INPUT_FILE_STATUS = [
+    ('p', 'Parsed'),
+    ('l', 'Loaded'),
+    ('f', 'Failure'),
+    ]

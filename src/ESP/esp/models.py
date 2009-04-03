@@ -272,7 +272,8 @@ class Lx(models.Model):
     LxHVMA_Internal_Accession_number = models.CharField('HVMA Internal Accession number', max_length=50, blank=True, null=True)
     LxComponent = models.CharField('Component', max_length=20, blank=True, null=True, db_index=True)
     LxComponentName = models.CharField('Component Name', max_length=200, blank=True, null=True,  db_index=True)
-    LxTest_results = models.TextField('Test results', max_length=2000, blank=True, null=True, db_index=True)
+    # Test results should be a TextField -- however, MySQL can index max 1000 char CharField, and we NEED index
+    LxTest_results = models.CharField('Test results', max_length=1000, blank=True, null=True, db_index=True)
     LxNormalAbnormal_Flag = models.CharField('Normal/Abnormal Flag', max_length=20, blank=True, null=True, db_index=True)
     LxReference_Low = models.CharField('Reference Low', max_length=100, blank=True, null=True, db_index=True)
     LxReference_High = models.CharField('Reference High', max_length=100, blank=True, null=True, db_index=True)
@@ -280,7 +281,8 @@ class Lx(models.Model):
     LxTest_status = models.CharField('Test status', max_length=50, blank=True, null=True)
     LxComment = models.TextField('Comments',  blank=True,  null=True, )
     LxImpression = models.TextField('Impression for Imaging only', max_length=2000, blank=True, null=True)
-    LxLoinc = models.ForeignKey(Loinc, blank=True, null=True)
+    #LxLoinc = models.ForeignKey(Loinc, blank=True, null=True)
+    LxLoinc = models.CharField('LOINC code', max_length=20, blank=True, null=True, db_index=True)
     lastUpDate = models.DateTimeField('Last Updated date', auto_now=True, db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
     #
@@ -1131,13 +1133,12 @@ class CaseWorkflow(models.Model):
     
     def  __unicode__(self):
         return u'%s %s %s' % (self.workflowCaseID, self.workflowDate, self.workflowState)
-                                
-    class Meta:
-        verbose_name = 'External Code to LOINC Map'
 
 
-
-class HL7File(models.Model):
+class Hl7OutputFile(models.Model):
+    '''
+    An HL7 file that has been sent to Dept Public Health
+    '''
     filename = models.CharField('hl7 file name',max_length=100,blank=True,null=True)
     case = models.ForeignKey(Case,verbose_name="Case ID",db_index=True)
     demogMRN = models.CharField('Medical Record Number',max_length=50,db_index=True,blank=True,null=True)
@@ -1154,6 +1155,15 @@ class HL7File(models.Model):
           
     def  __unicode__(self):
         return u'%s %s' % (self.filename,self.datedownloaded)
-    
 
+
+class Hl7InputFile(models.Model):
+    '''
+    An HL7 file containing EMR data.  Records when we tried to import the
+    file, and the status of our attempt.
+    '''
+    filename = models.CharField(max_length=255, blank=False, unique=True, db_index=True)
+    timestamp = models.DateTimeField(blank=False)
+    status = models.CharField(max_length=1, choices=choices.HL7_INPUT_FILE_STATUS, blank=False, db_index=True)
+    message = models.TextField('Status Message', blank=True, null=True)
 
