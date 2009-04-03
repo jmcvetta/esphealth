@@ -561,8 +561,7 @@ def main():
             files_by_month[key] = [f] # New key
     #log.debug('files_by_month: %s' % files_by_month)
     keys = files_by_month.keys()
-    keys.sort()
-    keys.reverse() # Start from earliest month
+    keys.sort() # Start from earliest month
     for month in keys:
         log.info('Processing month: %s' % month)
         file_batch = files_by_month[month]
