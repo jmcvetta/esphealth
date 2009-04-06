@@ -302,10 +302,12 @@ class Lx(models.Model):
         return util.date_from_str(self.LxOrderDate)
     def _get_loinc(self):
         return self.LxLoinc
+    def _set_loinc(self, value):
+        self.LxLoinc = value
     patient = property(_get_patient)
     provider = property(_get_provider)
     date = property(_get_date)
-    loinc = property(_get_loinc)
+    loinc = property(_get_loinc, _set_loinc)
     
     # Use custom manager
     objects = LxManager()
@@ -519,7 +521,7 @@ class Enc(models.Model):
 
 
 ###################################
-class icd9Fact(models.Model):
+class Icd9Fact(models.Model):
     icd9Enc = models.ForeignKey(Enc)
     icd9Code = models.CharField('ICD9 codes',max_length=200,blank=True,null=True)
     icd9Patient = models.ForeignKey(Demog)
@@ -619,8 +621,7 @@ class SocialHistory(models.Model):
         return u"%s %s" % (self.SocPatient.DemogPatient_Identifier,self.SocMRN)
     
 
-
-class Allergies(models.Model):
+class Allergy(models.Model):
     AllPatient = models.ForeignKey(Demog)
     AllMRN = models.CharField('Medical Record Number',max_length=25,blank=True,null=True,db_index=True)
     AllPrbID = models.CharField('Problem Id #',max_length=25,blank=True,null=True)
@@ -634,11 +635,13 @@ class Allergies(models.Model):
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
 
     def  __unicode__(self):
-        
         return u"%s %s %s" % (self.AllPatient.DemogPatient_Identifier,self.AllMRN,self.AllPrbID)
 
 
-class Problems(models.Model):
+class Problem(models.Model):
+    '''
+    WTF exactly is a "Problem"?  How is it different than an Encounter?
+    '''
     PrbPatient = models.ForeignKey(Demog)
     PrbMRN = models.CharField('Medical Record Number',max_length=25,blank=True,null=True,db_index=True)
     PrbID = models.CharField('Problem Id #',max_length=25,blank=True,null=True)
@@ -650,13 +653,9 @@ class Problems(models.Model):
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
 
     def  __unicode__(self):
-        
         return u"%s %s %s" % (self.PrbPatient.DemogPatient_Identifier,self.PrbMRN,self.PrbID)
 
  
-#
-# We should probably do Icd9_Rule and Icd9_Rule_Collection, to parallel the Loinc_Rule structure
-#
 class ConditionIcd9(models.Model):
     CondiRule = models.ForeignKey(Rule)
     CondiICD9 = models.TextField('ICD-9 Codes',blank=True,null=True)

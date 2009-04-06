@@ -46,9 +46,17 @@ We need
 5) a new immunization record for each RXA in any VXU message
 
 """
-INCOMING_DIR = '/home/rejmv/work/NORTH_ADAMS/all_HL7/'
-DEST_DIR = '/home/rejmv/work/NORTH_ADAMS/archivedHL7/'
-OUTFILEDIR = '/home/rejmv/work/NORTH_ADAMS/incomingData/'
+
+
+#
+# Default folder from which to read HL7 messages
+#
+INCOMING_DIR = '/home/rejmv/work/NORTH_ADAMS/incomingHL7/'
+
+
+
+#DEST_DIR = '/home/rejmv/work/NORTH_ADAMS/archivedHL7/'
+#OUTFILEDIR = '/home/rejmv/work/NORTH_ADAMS/incomingData/'
 
 
 import sys
@@ -61,6 +69,8 @@ import string
 import logging
 import optparse
 import re
+import tempfile
+import shutil
 import pprint
 
 from ESP.utils.utils import log
@@ -167,7 +177,8 @@ def apply_grammar(seg_list, grammar):
             if string.find(string.upper(ename), 'DATE')!=-1: ##it is a data field
                 if len(seg_list[eoffset][esubfield])==6:
                     e = seg_list[eoffset][esubfield][:6]+'01'
-                    log.warning('Modify Date Field %s (%d:%d) in %s' % (ename,eoffset,esubfield,seg_list))
+                    # This used to be WARNING; but DEBUG seems more appropriate -JM
+                    log.debug('Modify Date Field %s (%d:%d) in %s' % (ename,eoffset,esubfield,seg_list))
                 else:
                     e = seg_list[eoffset][esubfield][:8]
             else:
@@ -277,7 +288,10 @@ def messageIterator(
             npi = segment.get('Attending_Provider_NPI',None)
             if not npi:
                 # WTF: If we cannot cope, why do we continue iteration?
-                log.critical('PV1 without an NPI! Cannot cope -- File: "%s"; Row: %s' % (incominghl7f, row_txt))
+                #
+                # Update: obviously we can cope, so I am changing this
+                # from CRITICAL to WARNING.  -JM
+                log.warning('PV1 without an NPI! Cannot cope -- File: "%s"; Row: %s' % (incominghl7f, row_txt))
                 npi = 'UNKNOWN'
             segment[PCP_NPI] = npi # add some useful elements to all records
             msh_seg[PCP_NPI] = npi
@@ -301,7 +315,8 @@ def messageIterator(
                 if seg_type == 'OBX':
                     obxattrcode = segment.get(LABRES_CODE,None)
                     if not obxattrcode:
-                        log.critical('OBX encountered without %s for pid_num: %s: File %s: %s' % 
+                        # This looks more like WARNING than CRITICAL -JM
+                        log.warning('OBX encountered without %s for pid_num: %s: File %s: %s' % 
                             (LABRES_CODE, pid_num, incominghl7f, segment))
                     elif obxattrcode == current_obxattrcode: # falsely split text!
                         # FIXME: this should be handled in a better way
@@ -357,7 +372,10 @@ def messageIterator(
                     obxs = []
                     thisattrcode = None
                 s = 'Unexpected segment; Mtype: %s; Seg_Type: %s; File: %s' % (mtype, seg_type, incominghl7f)
-                log.critical(s)
+                # This used to be CRITICAL.  However, it doesn't actually seem
+                # to hurt anything, except probably missing the data in this 
+                # particular segment.  So I am setting it to WARNING for now.  -JM
+                log.warning(s)
     if final_I9dict:
         final_I9dict['Diagnosis_Code']=totalI9
         yield ('enc',(pid_num,final_I9dict))
@@ -417,11 +435,6 @@ def writeMDicts(outfilenames, mclasses={}):
     for x in writefiles.values():
         x.close() # close etl files
 
-
-###################################
-def movefile(f, fromdir, DEST_DIR):
-    shutil.move(fromdir+'/%s' % f, DEST_DIR)
-    log.info('Moving file %s from %s to %s\n' % (f, fromdir, DEST_DIR))
 
 ###################################
 def parseMessages(mlist=[],grammar_dict={},incominghl7f=None):
@@ -519,7 +532,7 @@ def process_files(input_files, input_folder, output_folder):
 def main():
     # Set defaults:
     input_folder = INCOMING_DIR
-    output_folder = OUTFILEDIR
+    intermediate_folder = tempfile.mkdtemp()
     parser = optparse.OptionParser()
     parser.add_option('--new', action='store_true', dest='new', 
         help='Process only new HL7 messages.  [DEFAULT]')
@@ -531,22 +544,32 @@ def main():
         help='Do not load HL7 message data into ESP')
     parser.add_option('--mail', action='store_true', dest='mail', default=False,
         help='Send email notifications' )
+    parser.add_option('--input', action='store', dest='input_folder', default=INCOMING_DIR,
+        help='Folder from which to read incoming HL7 messages')
+    parser.add_option('--dry-run', action='store_true', dest='dry_run', default=False,
+        help='Show which files would be loaded, but do not actually load them.')
     options, args = parser.parse_args()
     log.debug('options: %s' % options)
     #
     all_files = set( os.listdir(input_folder) )
+    log.debug('combined HL7 file count: %s' % len(all_files))
     if options.all or (options.new and options.retry): # Implies both 'new' and 'retry'
-        # Include all files that have not yet been successfully processed
+        # Include all files that have not yet been loaded
         input_files = all_files - set( Hl7InputFile.objects.filter(status='l').values_list('filename', flat=True) )
     elif options.retry:
-        # Include only those files that have failed in the past
+        # Include only those files that have previously failed 
         input_files = all_files & set( Hl7InputFile.objects.filter(status='f').values_list('filename', flat=True) )
     else: # Default is options.new
-        # Include only files we have never seen before
-        input_files = all_files - set( Hl7InputFile.objects.all().values_list('filename', flat=True) )
-    #log.debug('input_files: %s' % input_files)
+        # Include all files that have not loaded or failed
+        input_files = all_files - set( Hl7InputFile.objects.filter(status__in=('l', 'f')).values_list('filename', flat=True) )
+    log.debug('input file count: %s' % len(input_files))
     files_by_month = {}
     date_regex = re.compile(r'(\d{4})-(\d{1,2})-(\d{1,2})')
+    if options.dry_run:
+        # Print file list then quit
+        for f in input_files:
+            print f
+        sys.exit()
     for f in input_files:
         m = date_regex.search(f)
         if not m:
@@ -563,16 +586,16 @@ def main():
     keys = files_by_month.keys()
     keys.sort() # Start from earliest month
     for month in keys:
-        log.info('Processing month: %s' % month)
+        log.info('Parsing files for month: %s' % month)
         file_batch = files_by_month[month]
-        process_files(file_batch, input_folder, output_folder)
+        process_files(file_batch, input_folder, intermediate_folder)
         if options.load:
-            log.debug('Calling incomingParser to load data into db')
+            log.info('Loading files into db for month: %s' % month)
             ip_opts = optparse.Values() # Faux options object for incomingParser.main()
             ip_opts.mail = options.mail
             ip_opts.all = True # Load everything
             ip_opts.move = False # Don't move anything around
-            ip_opts.input = output_folder # Where to find the ETL files
+            ip_opts.input = intermediate_folder # Where to find the ETL files
             try:
                 incomingParser.main(opts=ip_opts)
                 for f in file_batch:
@@ -582,6 +605,7 @@ def main():
                 log.error(e)
                 for f in file_batch:
                     record_file_status(f, 'f', msg=e)
+    shutil.rmtree(intermediate_folder)
 
 
 if __name__ == "__main__":

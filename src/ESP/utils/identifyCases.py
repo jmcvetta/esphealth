@@ -1102,7 +1102,7 @@ def processSyphilis(cond):
     ruleicd9s = map(lambda x:x.CondiICD9.strip(), condicd9s)
     demog_dict={}
     for oneicd9 in ruleicd9s:
-        res = icd9Fact.objects.filter(icd9Code__icontains=oneicd9)
+        res = Icd9Fact.objects.filter(icd9Code__icontains=oneicd9)
         for onerec in res:
             encpid = onerec.icd9Patient_id
             onevalue = (onerec.icd9Enc_id, onerec.icd9Code,onerec.icd9EncDate) 
