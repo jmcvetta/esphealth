@@ -357,7 +357,8 @@ def messageIterator(
                     yield (target,(pid_num,segment))
         else: # invalid segment or no PID/MSH found yet
             if not pid_num or not msh_seg or not npi:
-                log.critical('Message segment found before MSH, PV1 and PID in: %s: %s: %s' 
+                # This is obviously not CRITICAL, so I am lowering it to WARNING  -JM
+                log.warning('Message segment found before MSH, PV1 and PID in: %s: %s: %s' 
                     % (seg_type, incominghl7f, m))
             else:
                 if inobr:
@@ -490,7 +491,7 @@ def record_file_status(filename, status, msg=None):
         h.message = msg
     h.save()
 
-def process_files(input_files, input_folder, output_folder):
+def hl7_to_etl(input_files, input_folder, output_folder):
     '''
     Parses HL7 messages, leaving Epic Care-style ETL files in output_folder
         #
@@ -522,6 +523,7 @@ def process_files(input_files, input_folder, output_folder):
             writeMDicts(outfilenames, mclasses=mclasses)
             record_file_status(filename, 'p') # Successful parse
         except BaseException, e:
+            e = 'Failed in hl7_to_etl(): ' + e
             record_file_status(filename, 'f', msg=e) # Fail!
     for x in dict(map(lambda x:(x,None), outfilenames)).keys():
         xh  =file(x,'a+')
@@ -588,7 +590,7 @@ def main():
     for month in keys:
         log.info('Parsing files for month: %s' % month)
         file_batch = files_by_month[month]
-        process_files(file_batch, input_folder, intermediate_folder)
+        hl7_to_etl(file_batch, input_folder, intermediate_folder)
         if options.load:
             log.info('Loading files into db for month: %s' % month)
             ip_opts = optparse.Values() # Faux options object for incomingParser.main()
@@ -604,6 +606,7 @@ def main():
                 log.error('Exception raised during db load:')
                 log.error(e)
                 for f in file_batch:
+                    e = 'Failed in incoingParser: ' + e
                     record_file_status(f, 'f', msg=e)
     shutil.rmtree(intermediate_folder)
 

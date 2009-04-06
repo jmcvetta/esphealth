@@ -28,7 +28,7 @@ import optparse
 import pprint
 
 import django, datetime,time
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.db import connection
 
 from ESP.settings import TOPDIR, LOCALSITE, USESQLITE
@@ -37,6 +37,7 @@ from ESP.esp.models import SocialHistory, Problem, Icd9Fact
 from ESP.esp.models import LabComponent, DataFile
 from ESP.conf.models import ExtToLoincMap, Rule
 from ESP.utils import utils
+from ESP.utils import update_loincs
 from ESP.utils.utils import log
 
 
@@ -321,7 +322,7 @@ def parseEnc(incomdir, filename,demogdict,provdict):
             provid =provdict[phy]
         except:
             provid = None
-        patient = Demog.objects.get(DemogPatient_Identifier=demogid)
+        patient, created = Demog.objects.get_or_create(DemogPatient_Identifier=demogid)
         e, created = Enc.objects.get_or_create(EncPatient=patient, EncEncounter_ID=encid)
         e.EncMedical_Record_Number=mrn
         e.EncEncounter_Date=encd
@@ -344,25 +345,19 @@ def parseEnc(incomdir, filename,demogdict,provdict):
         e.EncPregnancy_Status=pregstatus
         e.lastUpDate=DBTIMESTR
         e.save()
-        espencid = e.pk
-        updateIcd9Fact(espencid, demogid, encd, icd9)
+        clist = icd9.split()
+        for onec in clist:
+            i, created = Icd9Fact.objects.get_or_create(icd9Patient=patient,
+                icd9Enc=e,
+                icd9Code=onec)
+            if not created:
+                pass # Already exists
+            else: ##new one
+                i.icd9encDate = encd
+                i.lastUpDate = DBTIMESTR
+                i.created = DBTIMESTR
+                i.save()
     movefile(incomdir, filename,filelines)    
-
-###################################
-###################################
-def updateIcd9Fact(espencid, demogid, encdate, icd9):
-    clist = icd9.split()
-    for onec in clist:
-        i, created = Icd9Fact.objects.get_or_create(icd9Patient_Id=demogid,
-            icd9Enc_Id=espencid,
-            icd9Code=onec)
-        if not created:
-            pass # Already exists
-        else: ##new one
-            i.icd9encDate = encdate
-            i.lastUpDate = DBTIMESTR
-            i.created = DBTIMESTR
-            i.save()
 
 
 def parseLxOrd(incomdir,filename,demogdict, provdict):
@@ -430,7 +425,8 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
 def parseLxRes(incomdir,filename,demogdict, provdict):
     """
     """
-    log.debug('Parsing file %s' % filename)
+    #log.debug('Parsing file %s' % filename)
+    log.info('Parsing file %s' % filename)
     log.info('=' * 100)
     log.info('Parsing Lx!')
     log.info('=' * 100)
@@ -589,7 +585,8 @@ def parseRx(incomdir,filename,demogdict,provdict):
             except Provider.DoesNotExist:
                 provid = None
         if not route: route='N/A'       
-        r, created = Rx.objects.get_or_create(RxPatient_id=demogid, RxOrder_Id_Num=orderid)
+        patient, created = Demog.objects.get_or_create(DemogPatient_Identifier=demogid)
+        r, created = Rx.objects.get_or_create(RxPatient=patient, RxOrder_Id_Num=orderid)
         r.RxMedical_Record_Number=mrn
         r.RxOrderDate=orderd
         r.RxStatus=status
@@ -1015,33 +1012,6 @@ def doValidation(incomdir,days):
 
 
 
-###################################
-###################################
-def updateLoinc_lx():
-    log.info('Start to update cptloinc map in esp_cptloincmap table and esp_lx table')
-    from ESP.utils.preLoader import load2cptloincmap, addNewcptloincmap, correctcptloincmap_lx
-    from ESP.utils.preLoader import getlines as preloadgetlines
-
-    preloadf = os.path.join(TOPDIR,LOCALSITE, 'preLoaderData','esp_cptloincmap.txt')
-    filetime= time.localtime(os.path.getmtime(preloadf))
-    file_lastmodtime = datetime.datetime(filetime[0],filetime[1],filetime[2])
-    cursor.execute("""select max(lastupdate) from esp_demog""")
-    dbtime = cursor.fetchall()[0][0]
-    print '##got dbtime=%s, type=%s' % (dbtime,type(dbtime))
-    if type(dbtime) == type(unicode('x')): # sqlite returns a unicode str
-           dbd = str(dbtime).split(' ')[0].split('-') # sqlite returns '2008-08-03 06:13:22'
-           dbtime = datetime.datetime(int(dbd[0]),int(dbd[1]),int(dbd[2]))
-    if dbtime and dbtime<file_lastmodtime:
-        log.info('Need do updating cptloinc map in esp_cptloincmap & esp_lx tables')
-        table='esp_cptloincmap'
-        load2cptloincmap(table, preloadgetlines(preloadf), cursor)
-        addNewcptloincmap(cursor)
-        correctcptloincmap_lx(table,cursor)
-        log.info('Done on updating esp_lx table')
-    else:
-        log.info('No need updating cptloinc map in esp_cptloincmap & esp_lx tables')
-            
-            
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #--- ~~~ Main Logic ~~~
@@ -1077,8 +1047,12 @@ def main(opts=None):
     try: 
         
         startt = datetime.datetime.now()
-        ###try to update esp_lx
-        updateLoinc_lx()
+        #
+        # We are not going to automatically update LOINC codes -- this is an 
+        # intensive operation, and need not be performed unless the external 
+        # to LOINC map table has been updated.
+        #
+        #update_loincs.main()
         ##get incoming files and do validations
         if options.input:
             assert os.path.isdir(options.input) # Sanity check -- did user specify a real folder?
