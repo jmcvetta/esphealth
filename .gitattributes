@@ -137,7 +137,6 @@ src/ESP/templates/pages/vaers/identify.html -text
 src/ESP/templates/pages/vaers/present.html -text
 src/ESP/templates/widgets/vaers/feedback_form.html -text
 src/ESP/urls.py -text
-src/ESP/utils/LOINCDB.TXT -text
 src/ESP/utils/concordance.py -text
 src/ESP/utils/cpt_to_ext.py -text
 src/ESP/utils/detect_diseases.py -text
