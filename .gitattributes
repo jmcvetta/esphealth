@@ -141,7 +141,7 @@ src/ESP/utils/LOINCDB.TXT -text
 src/ESP/utils/concordance.py -text
 src/ESP/utils/cpt_to_ext.py -text
 src/ESP/utils/detect_diseases.py -text
-src/ESP/utils/hl7_to_etl.py -text
+src/ESP/utils/load_hl7.py -text
 src/ESP/utils/makeESPdm.py -text
 src/ESP/utils/metrics.py -text
 src/ESP/utils/northadams.py -text
