@@ -22,9 +22,7 @@ TEMPLATE_DEBUG = DEBUG
 TOPDIR='/srv/esp' # Top folder of ESP installation 
 
 ADMINS = (
-    ('Ross Lazarus', 'ross.lazarus@gmail.com'),
-    ('Jason McVetta', 'jason.mcvetta@channing.harvard.edu'),
-    ('Xuanlin Hou', 'rexua@channing.harvard.edu'),
+    ('Your Name', 'your_email@your_domain.com'),
 )
 
 DEVELOPER_EMAIL_LIST = [item[1] for item in ADMINS]
@@ -47,7 +45,7 @@ FTPPWD = ''
 FTPSERVER = ''
 
 
-EMAIL_SENDER='user@domain.com'
+EMAIL_SENDER='your_email@your_domain.com'
 
 
 DATABASE_ENGINE = 'mysql' 
