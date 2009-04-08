@@ -13,7 +13,7 @@ class DestOptions(admin.ModelAdmin):
     ordering = ('destVerDate', 'destName')
 
 class ExtToLoincMapAdmin(admin.ModelAdmin):
-    list_display = ['native_code', 'ext_name', 'loinc', ]
+    list_display = ['native_code', 'native_name', 'loinc', ]
     save_on_top = True
 
 

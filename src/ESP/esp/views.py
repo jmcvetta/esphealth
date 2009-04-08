@@ -1628,7 +1628,7 @@ def json_ext_loinc_grid(request):
         row['cell'] = [
             m.id,
             m.native_code,
-            m.ext_name,
+            m.native_name,
             m.loinc.loinc_num,
             m.loinc.name,
             ]
@@ -1658,7 +1658,7 @@ def edit_ext_loinc_map(request, map_id=None, action=None):
         map_obj = get_object_or_404(models.NativeToLoincMap, pk=map_id)
         data = {
             'native_code': map_obj .native_code,
-            'ext_name': map_obj.ext_name,
+            'native_name': map_obj.native_name,
             'loinc_num': map_obj.loinc.loinc_num,
             'notes': map_obj.notes,
             }
@@ -1670,7 +1670,7 @@ def edit_ext_loinc_map(request, map_id=None, action=None):
             loinc = models.Loinc.objects.get(pk=form.cleaned_data['loinc_num'])
             map_obj.loinc = loinc
             map_obj.native_code = form.cleaned_data['native_code']
-            map_obj.ext_name = form.cleaned_data['ext_name']
+            map_obj.native_name = form.cleaned_data['native_name']
             map_obj.notes = form.cleaned_data['notes']
             map_obj.save()
             return redirect_to(request, urlresolvers.reverse('show_ext_loinc_maps'))
