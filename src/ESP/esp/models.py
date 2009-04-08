@@ -130,7 +130,10 @@ class Demog(models.Model):
                 years -= 1
                 months += 12
 
-            return str(years) if years > 0 else '%d Months' % months
+            if years > 0:
+                return str(years) 
+            else:
+                return '%d Months' % months
         
     age = property(_get_age)
         
