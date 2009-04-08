@@ -281,7 +281,7 @@ class Lx(models.Model):
     LxTest_status = models.CharField('Test status', max_length=50, blank=True, null=True)
     LxComment = models.TextField('Comments',  blank=True,  null=True, )
     LxImpression = models.TextField('Impression for Imaging only', max_length=2000, blank=True, null=True)
-    #LxLoinc = models.ForeignKey(Loinc, blank=True, null=True)
+    # Use of LxLoinc is deprecated -- we should do all future queries with native_code
     LxLoinc = models.CharField('LOINC code', max_length=20, blank=True, null=True, db_index=True)
     lastUpDate = models.DateTimeField('Last Updated date', auto_now=True, db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
