@@ -9,11 +9,11 @@ from django.shortcuts import render_to_response
 from django.views.generic.simple import direct_to_template
 from django.contrib.sites.models import Site
 
-from models import AdverseEvent, LabResultEvent, ProviderComment
-from esp.models import Lx, Demog, Immunization
-from vaers.utils import send_notifications
-from forms import CaseConfirmForm
-import reports
+from ESP.vaers.models import AdverseEvent, LabResultEvent, ProviderComment
+from ESP.esp.models import Lx, Demog, Immunization
+from ESP.vaers.utils import send_notifications
+from ESP.vaers.forms import CaseConfirmForm
+from ESP.vaers import reports
 
 import datetime
 
@@ -76,7 +76,10 @@ def case_details(request, id):
                                          'back to the confirmation step.')
 
 
-    form = CaseConfirmForm(request.POST) if request.method == 'POST' else CaseConfirmForm()
+    if request.method == 'POST':
+        form = CaseConfirmForm(request.POST) 
+    else:
+        form =CaseConfirmForm()
 
     
     if request.method == 'POST' and form.is_valid():

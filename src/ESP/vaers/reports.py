@@ -4,7 +4,7 @@
 from django.db.models import Q
 import datetime
 
-from vaers.models import AdverseEvent, FeverEvent
+from ESP.vaers.models import AdverseEvent, FeverEvent
 
 
 def cases_to_report():

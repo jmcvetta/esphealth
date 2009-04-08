@@ -5,7 +5,7 @@ from django.template.loader import get_template
 from django.template import Context
 from django.db.models import Q
 
-from vaers.models import AdverseEvent
+from ESP.vaers.models import AdverseEvent
 from ESP import settings
 
 import datetime

@@ -2,7 +2,7 @@
 
 from django.conf.urls.defaults import url, patterns
 
-import views
+from ESP.vaers import views
 
 urlpatterns = patterns(
     '',
