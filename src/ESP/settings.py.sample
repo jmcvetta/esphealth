@@ -115,6 +115,13 @@ VAERS_EMAIL_RECIPIENT = 'recipient@example.com'
 VAERS_EMAIL_SENDER = 'notifier@example.com'
 VAERS_NOTIFICATION_EMAIL_SUBJECT = ''
 
+TEMPLATE_CONTEXT_PROCESSORS = (
+	"django.core.context_processors.auth",
+	"django.core.context_processors.debug",
+	"django.core.context_processors.i18n",
+	"django.core.context_processors.media",
+	'ESP.esp.context_processors.path_definitions',
+)
 
 
 
