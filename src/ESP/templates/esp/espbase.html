@@ -1,42 +1,43 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-us" xml:lang="en-us">
-<head>
+  <head>
     <title>Electronic Support for Public Health</title>
     <link rel="stylesheet" type="text/css" href="{{ site_css_folder }}base.css" />
     <script type="text/javascript" src="{{ site_javascript_folder }}jquery-1.3.2.min.js"></script>
     <script type="text/javascript" src="{{ site_javascript_folder }}flexigrid/flexigrid.js"></script>
     {% block extrastyle %}{% endblock %}
     {% block extrascript %}{% endblock %}
-</head>
+  </head>
 <body>
-
-
-
-<table width="100%">
-<tr ><td colspan="2" >
-<img src="{{MEDIA_URL}}/images/espheader2.png" border="0"> 
-</td></tr>
- 
-<tr >
-<td width="90" >
-    <div id="sidebar">
-        {% block sidebar %}
-        <p><p>
-
-        <table cellpadding="1" border=2 bordercolor = white>
-	    <tr class="{% cycle row2,row1 as rowcolors %}">
-                 {% if not request.user or not request.user.is_authenticated %}<td>AnonymousUser</td></tr>
-                  <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/login/">ESP Login</a></td></tr>
-                  <tr class="{% cycle rowcolors %}"><td><a href="mailto:ross.lazarus&#64;channing.harvard.edu">Request a new account</a></td></tr>
-                  {% else %}
-                      <td>Current user is {{request.user.get_full_name}}
-                        <p><form action="{{SITEROOT}}/logout/" method="post">
-                        <input type="Submit" value="Logout" /></form>
-                        </td></tr>
-                      <tr class="{% cycle rowcolors %}"><td> <a href="{{SITEROOT}}/pswdchange/">Change My Password</a></td></tr>
+    
+  <table width="100%">
+    <tr><td colspan="2" >
+	<img src="{{MEDIA_URL}}/images/espheader2.png" border="0" /> 
+      </td>
+    </tr>
+	
+    <tr>
+      <td width="90" >
+	<div id="sidebar">
+          {% block sidebar %}
+          <p><p>
+	      <table cellpadding="1" border="2" bordercolor="white">
+		<tr class="{% cycle row2,row1 as rowcolors %}">
+                  {% if not user or not user.is_authenticated %}<td>AnonymousUser</td></tr>
+                <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/login/">ESP Login</a></td></tr>
+                <tr class="{% cycle rowcolors %}"><td><a href="mailto:ross.lazarus&#64;channing.harvard.edu">Request a new account</a></td></tr>
+                {% else %}
+                <td>Current user is {{user.get_full_name}}
+                  <p>
+		    <form action="{% url esp.views.esplogout %}" 
+			  method="post">
+		      <input type="Submit" value="Logout" />
+		    </form>
+                </td></tr>
+                <tr class="{% cycle rowcolors %}"><td> <a href="{{SITEROOT}}/pswdchange/">Change My Password</a></td></tr>
                        
-
-             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/">ESP Home</a></td></tr>
+		
+		<tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/">ESP Home</a></td></tr>
              <tr class="{% cycle rowcolors %}"><td><a href="{% url cases_all %}">ALL Cases</a></td></tr>
              <tr class="{% cycle rowcolors %}"><td><a href="{% url cases_awaiting_review %}">Cases Awaiting Review</a></td></tr>
              <tr class="{% cycle rowcolors %}"><td><a href="{% url cases_under_review %}">Cases Under Review</a></td></tr>
@@ -45,7 +46,7 @@
              <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/1/FP////">Cases: False Positive</a></td></tr>
 	     <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/sent/">Case Report Archive</a></td></tr>
 
-              {% if request.user.is_staff %}
+              {% if user.is_staff %}
                    <tr class="{% cycle rowcolors %}"><td><a href="{% url admin_util %}">Administration &amp; Utilities</a></td></tr> 
                {% endif %}
              <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/help/">Help, documentation</a></td></tr>

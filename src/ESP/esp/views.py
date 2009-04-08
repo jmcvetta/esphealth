@@ -23,7 +23,8 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
+from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import REDIRECT_FIELD_NAME, SESSION_KEY
 from django.contrib.auth import authenticate
@@ -37,7 +38,8 @@ from django.views.generic.simple import redirect_to, direct_to_template
 
 from ESP.settings import TOPDIR, CODEDIR
 from ESP.settings import MEDIA_URL
-from ESP.settings import LOCALSITE, DATE_FORMAT
+from ESP.localsettings import LOCALSITE
+from ESP.settings import DATE_FORMAT
 from ESP import settings
 from ESP.esp.models import *
 from ESP.esp import models
@@ -45,43 +47,66 @@ from ESP.esp import forms
 from ESP.utils.utils import log
 from ESP.utils import utils as util
 
+from forms import LoginForm
 
-LOGIN_URL = reverse('esplogin')
+HOME_URL = '/'
+LOGIN_URL = '/login'
 REDIRECT_FIELD_NAME = 'next'
+
+
+###################################
+@login_required
+def index(request):
+    """
+    core index page
+    """
+    return direct_to_template(request, 'esp/index.html')
+
+
 
 
 ############################
 def esplogin(request):
     "Displays the login form and handles the login action."
-    if not request.POST:
-        return render_to_response('registration/login.html', {
-                REDIRECT_FIELD_NAME: '', 
-                'site_name': Site.objects.get_current().name, 
-                'form': AuthenticationForm(),
-                }, 
-                                  context_instance=RequestContext(request))
-    else:
-        username = request.POST['username']
-        password = request.POST['password']
-        redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
-        user = authenticate(username=username, password=password)
-        if user is not None:
-            if user.is_active:
-                  login(request,user)
-                  return HttpResponseRedirect(redirect_to)
-            else: 
-                 return HttpResponseRedirect(LOGIN_URL)
+
+    error = None
+    frm = LoginForm()
+    redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, HOME_URL)
+    
+    if request.user.is_authenticated():
+        return HttpResponseRedirect(redirect_to)
+
+    if request.method == 'POST':
+        frm = LoginForm(request.POST)
+        if frm.is_valid():
+            username = frm.cleaned_data['username']
+            password = frm.cleaned_data['password']
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                if user.is_active:
+                    login(request,user)
+                    return HttpResponseRedirect(redirect_to)
+                else:
+                    error = 'User not active'
+            else:
+                error = 'Invalid user and/or password'
         else:
-            return HttpResponseRedirect(LOGIN_URL)
+            error = 'form is invalid'
+
+
+    if error or request.method == 'GET':
+        return direct_to_template(request, 'registration/login.html', {
+                REDIRECT_FIELD_NAME: '', 
+                'form': frm,
+                'error': error
+                })
+
+
 
 def esplogout(request):
     logout(request)
-    return HttpResponseRedirect(reverse('index'))
+    return HttpResponseRedirect(HOME_URL)
 
-
-def redirect_to_login(next, login_url=LOGIN_URL):
-    "Redirects the user to the login page, passing the given 'next' page"
-    return HttpResponseRedirect('%s?%s=%s' % (login_url, REDIRECT_FIELD_NAME, next))
 
 #####################
 def password_reset(request, is_admin_site=False):
@@ -124,17 +149,6 @@ def password_change(request):
 password_change = login_required(password_change)
 
 
-
-###################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
-def index(request):
-    """
-    core index page
-    """
-    c = Context({'request':request,
-                 'MEDIA_URL':MEDIA_URL
-                 })
-    return render_to_response('esp/index.html',c)
 
 
     
@@ -945,7 +959,7 @@ def preloadview(request,table='cptloincmap',orderby="cpt"):
             'maps': maps,
              'rules':rules,
              "wfstate":choices.WORKFLOW_STATES[:-1],
-             "orderby": orderby
+             "orderby": orderby,
              'newrec':range(newrec),
             }
     con = Context(cinfo)
@@ -959,7 +973,7 @@ def showutil(request):
     if not request.user.is_staff:
         return HttpResponse("You do not have permission to see this page")
             
-    cinfo = {"request":request
+    cinfo = {"request":request,
              "MEDIA_URL":MEDIA_URL,
              }
     c = Context(cinfo)

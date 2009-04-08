@@ -7,6 +7,10 @@ from django.utils.translation import ugettext, ugettext_lazy as _
 from ESP.esp import models
 from ESP.utils.utils import log
 
+class LoginForm(forms.Form):
+    username = forms.CharField(max_length=30)
+    password = forms.CharField(max_length=30, widget=forms.PasswordInput)
+
 
 class ExtLoincForm(forms.Form):
     native_code = forms.CharField(max_length=100, required=True)

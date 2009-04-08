@@ -31,8 +31,6 @@ DEVELOPER_EMAIL_LIST = [item[1] for item in ADMINS]
 MANAGERS = ADMINS
 
 
-SECRET_KEY = localsettings.SECRET_KEY
-SITE_ID = 2
 
 
 # Database parameters are defined on localsettings
@@ -50,6 +48,12 @@ EMAIL_HOST_USER = localsettings.EMAIL_HOST_USER
 EMAIL_HOST_PASSWORD = localsettings.EMAIL_HOST_PASSWORD
 EMAIL_PORT = localsettings.EMAIL_PORT
 EMAIL_USE_TLS = localsettings.EMAIL_USE_TLS
+
+
+
+SECRET_KEY = localsettings.SECRET_KEY
+SITE_ID = 2
+
 
 
 
@@ -84,6 +88,7 @@ MIDDLEWARE_CLASSES = (
 )
 
 ROOT_URLCONF = 'ESP.urls'
+LOGIN_URL = '/login'
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.auth',

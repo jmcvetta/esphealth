@@ -36,7 +36,7 @@ urlpatterns = patterns('ESP.esp.views',
     url(r'^workflows/(?P<object_id>\d+)/updatewfComment/$', 'updateWorkflowComment'),
     url(r'^help/(?P<topic>\w+)/$','showhelp'),
     url(r'^help/$','showhelp'),
-    url(r'^login/$', 'esplogin'),
+    url(r'^login/$', 'esplogin', name='login'),
     url(r'^pswdchange/$', 'password_change'),
     url(r'^logout/$', 'esplogout'),
     #
