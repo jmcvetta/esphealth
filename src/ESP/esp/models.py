@@ -288,7 +288,7 @@ class Lx(models.Model):
     #
     # New fields
     #
-    ext_code = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    native_code = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     
     #
     # Heuristics Support

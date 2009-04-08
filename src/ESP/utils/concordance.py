@@ -44,7 +44,7 @@ def string_lab_results(filter_q=None):
 def main():
     concordance = {}
     #for item in models.CPTLOINCMap.objects.values_list('Loinc', 'CPT').distinct():
-    for m in models.ExtToLoincMap.objects.all():
+    for m in models.NativeToLoincMap.objects.all():
         loinc_qs = models.Lx.objects.filter(LxLoinc=m.loinc.loinc_num)
         results_tuple = []
         for result in loinc_qs.values_list('LxTest_results').distinct():

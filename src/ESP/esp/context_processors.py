@@ -1,4 +1,4 @@
-import settings
+from ESP import settings
 
 def path_definitions(request):
     return {

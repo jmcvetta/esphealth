@@ -537,7 +537,7 @@ def main():
     intermediate_folder = tempfile.mkdtemp()
     parser = optparse.OptionParser()
     parser.add_option('--new', action='store_true', dest='new', 
-        help='Process only new HL7 messages.  [DEFAULT]')
+        help='Process only new HL7 messages')
     parser.add_option('--retry', action='store_true', dest='retry',
         help='Process only HL7 messages that have previously failed to process')
     parser.add_option('--all', action='store_true', dest='all', 
@@ -549,7 +549,7 @@ def main():
     parser.add_option('--input', action='store', dest='input_folder', default=INCOMING_DIR,
         help='Folder from which to read incoming HL7 messages')
     parser.add_option('--dry-run', action='store_true', dest='dry_run', default=False,
-        help='Show which files would be loaded, but do not actually load them.')
+        help='Show which files would be loaded, but do not actually load them')
     options, args = parser.parse_args()
     log.debug('options: %s' % options)
     #
@@ -561,9 +561,13 @@ def main():
     elif options.retry:
         # Include only those files that have previously failed 
         input_files = all_files & set( Hl7InputFile.objects.filter(status='f').values_list('filename', flat=True) )
-    else: # Default is options.new
+    elif options.new:
         # Include all files that have not loaded or failed
         input_files = all_files - set( Hl7InputFile.objects.filter(status__in=('l', 'f')).values_list('filename', flat=True) )
+    else:
+        sys.stderr.write('You must select either --new, --retry, or --all\n')
+        parser.print_help()
+        sys.exit()
     log.debug('input file count: %s' % len(input_files))
     files_by_month = {}
     date_regex = re.compile(r'(\d{4})-(\d{1,2})-(\d{1,2})')

@@ -269,20 +269,20 @@ class Format(models.Model):
         return u'%s' % self.formatName 
 
 
-class ExtToLoincMap(models.Model):
+class NativeToLoincMap(models.Model):
     '''
-    A mapping from an external code (for a lab result, etc) to a Loinc number
+    A mapping from a native code (for a lab result, etc) to a Loinc number
     '''
     # This table and utilities making use of it assume only one external 
     # code table per ESP installation.  More work will be required if your 
     # installation must comprehend multiple, potentially overlapping, external 
     # code sources
-    ext_code = models.CharField(max_length=100, unique=True, blank=False)
-    ext_name = models.CharField(max_length=255, blank=True, null=True)
+    native_code = models.CharField(max_length=100, unique=True, blank=False)
+    native_name = models.CharField(max_length=255, blank=True, null=True)
     # Loinc can be null to indicate an external code that maps to nothing
     loinc = models.ForeignKey(Loinc, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     class Meta:
         # Use underscores to make table name more readable
-        db_table = 'conf_ext_to_loinc'
-        verbose_name = 'External Code to LOINC Map'
+        db_table = 'conf_native_to_loinc'
+        verbose_name = 'Native Code to LOINC Map'

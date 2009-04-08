@@ -143,9 +143,9 @@ def str_from_date(date):
         
 
 
-def ext_code_from_cpt(cpt, compt):
+def native_code_from_cpt(cpt, compt):
     '''
-    Generate a string for Lx.ext_code from CPT + CPT Component
+    Generate a string for Lx.native_code from CPT + CPT Component
     '''
     if compt:
         return '%s--%s' % (cpt, compt)

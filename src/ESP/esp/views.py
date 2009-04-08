@@ -1599,7 +1599,7 @@ def case_detail(request, case_id):
 @login_required
 def show_ext_loinc_maps(request):
     '''
-    Administrative screen to add/delete/update ExtToLoincMap objects
+    Administrative screen to add/delete/update NativeToLoincMap objects
     '''
     values = {}
     values['request'] = request # Needed for espbase.html
@@ -1616,7 +1616,7 @@ def json_ext_loinc_grid(request):
         sortname = flexi.sortname
     else:
         sortname = '-%s' % flexi.sortname
-    maps = models.ExtToLoincMap.objects.select_related().all().order_by(sortname)
+    maps = models.NativeToLoincMap.objects.select_related().all().order_by(sortname)
     if flexi.query:
         query_str = 'Q(%s__icontains="%s")' % (flexi.qtype, flexi.query)
         q_obj = eval(query_str)
@@ -1627,7 +1627,7 @@ def json_ext_loinc_grid(request):
         row['id'] = m.id
         row['cell'] = [
             m.id,
-            m.ext_code,
+            m.native_code,
             m.ext_name,
             m.loinc.loinc_num,
             m.loinc.name,
@@ -1647,17 +1647,17 @@ def edit_ext_loinc_map(request, map_id=None, action=None):
     log.debug('map_id: %s' % map_id)
     log.debug('action: %s' % action)
     if action == 'delete':
-        map_obj = get_object_or_404(models.ExtToLoincMap, pk=map_id)
+        map_obj = get_object_or_404(models.NativeToLoincMap, pk=map_id)
         map_obj.delete()
         return redirect_to(request, urlresolvers.reverse('show_ext_loinc_maps'))
     elif action == 'new':
         values['loinc_name'] = '[Enter a LOINC code...]'
-        map_obj = models.ExtToLoincMap()
+        map_obj = models.NativeToLoincMap()
         form = forms.ExtLoincForm()
     else: # Edit
-        map_obj = get_object_or_404(models.ExtToLoincMap, pk=map_id)
+        map_obj = get_object_or_404(models.NativeToLoincMap, pk=map_id)
         data = {
-            'ext_code': map_obj .ext_code,
+            'native_code': map_obj .native_code,
             'ext_name': map_obj.ext_name,
             'loinc_num': map_obj.loinc.loinc_num,
             'notes': map_obj.notes,
@@ -1669,7 +1669,7 @@ def edit_ext_loinc_map(request, map_id=None, action=None):
         if form.is_valid():
             loinc = models.Loinc.objects.get(pk=form.cleaned_data['loinc_num'])
             map_obj.loinc = loinc
-            map_obj.ext_code = form.cleaned_data['ext_code']
+            map_obj.native_code = form.cleaned_data['native_code']
             map_obj.ext_name = form.cleaned_data['ext_name']
             map_obj.notes = form.cleaned_data['notes']
             map_obj.save()

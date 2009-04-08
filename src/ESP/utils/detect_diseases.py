@@ -28,7 +28,7 @@ from django.contrib.contenttypes.models import ContentType
 
 
 from ESP.esp.models import Lx, Enc, Rx, Case, HeuristicEvent
-from ESP.conf.models import Rule, ExtToLoincMap
+from ESP.conf.models import Rule, NativeToLoincMap
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
@@ -198,7 +198,7 @@ class LabHeuristic(BaseHeuristic):
         '''
         Returns a Q object that selects all labs identified by self.loinc_nums.
         '''
-        code_map = dict( ExtToLoincMap.objects.all().values_list('loinc', 'ext_code') )
+        code_map = dict( NativeToLoincMap.objects.all().values_list('loinc', 'native_code') )
         log.debug('LOINC to native code map for %s: %s' % (self.name, code_map) )
         codes = []
         for loinc in self.loinc_nums:
@@ -209,9 +209,9 @@ class LabHeuristic(BaseHeuristic):
         if not codes: # Is length of codes == 0?
             log.critical('Could not generate events for heuristic "%s" because no LOINCs can be mapped to native codes' % self.name)
             return Q(pk__isnull=True) # Matches nothing
-        lab_q = Q(ext_code='%s' % codes[0])
+        lab_q = Q(native_code='%s' % codes[0])
         for code in codes[1:]:
-            lab_q = lab_q | Q(ext_code='%s' % code)
+            lab_q = lab_q | Q(native_code='%s' % code)
         log.debug('lab_q for %s: %s' % (self.name, lab_q) )
         return lab_q
     lab_q = property(__get_lab_q)
@@ -449,15 +449,9 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
         # of direct and indirect bilirubin tests ordered on the same day is 
         # greater than 1.5.
         relevant = self.relevant_labs(begin_date, end_date)
-        print '=' * 80
-        print relevant
-        print '=' * 80
         vqs = relevant.values('LxPatient', 'LxOrderDate') # returns ValueQuerySet
         vqs = vqs.annotate(calc_bil=Sum('LxTest_results'))
         vqs = vqs.filter(calc_bil__gt=1.5)
-        print '=' * 80
-        print vqs
-        print '=' * 80
         # Next we loop thru the patient/order-date list, fetch the relevant 
         # (direct + indirect) > 1.5, just in case there is a funky situation
         # where, e.g., the patient has had two indirect bilirubin tests ordered

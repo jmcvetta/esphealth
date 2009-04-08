@@ -35,7 +35,7 @@ from ESP.settings import TOPDIR, LOCALSITE, USESQLITE
 from ESP.esp.models import Enc, Lx, Lxo, Demog, Provider, Rx, Immunization
 from ESP.esp.models import SocialHistory, Problem, Icd9Fact
 from ESP.esp.models import LabComponent, DataFile
-from ESP.conf.models import ExtToLoincMap, Rule
+from ESP.conf.models import NativeToLoincMap, Rule
 from ESP.utils import utils
 from ESP.utils import update_loincs
 from ESP.utils.utils import log
@@ -388,12 +388,12 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
         #
         # Get loinc
         #
-        ext_code = utils.ext_code_from_cpt(cpt, '')
+        native_code = utils.native_code_from_cpt(cpt, '')
         try:
-            mapping = ExtToLoincMap.objects.get(ext_code=ext_code)
+            mapping = NativeToLoincMap.objects.get(native_code=native_code)
             loinc = mapping.loinc
             lxloinc = loinc.loinc_num
-        except ExtToLoincMap.DoesNotExist:
+        except NativeToLoincMap.DoesNotExist:
             loinc = None
             lxloinc = None
         if provdict:
@@ -473,19 +473,20 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
         if not string.strip(orderid):
             orderid = today  ##since when passing HL7 msg, this is required
         if not string.strip(resd):
-            resd =today
+            resd = today
         if not refu:
-            refu = 'N/A'          
+            refu = None
         #get loinc
         #c = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt=comp)
-        ext_code = utils.ext_code_from_cpt(cpt, '')
-        m = ExtToLoincMap.objects.filter(ext_code=ext_code)
-        lxloinc=''
+        native_code = utils.native_code_from_cpt(cpt, None)
+        m = NativeToLoincMap.objects.filter(native_code=native_code)
+        lxloinc = None
         if m:
             lxloinc=(m[0].loinc.loinc_num).strip()
         elif compname:
             # 
-            # NOTE: This is where we do NLP code search
+            # NOTE: This is where we do NLP code search.  It should really be 
+            # done in a separate tool.
             #
             if codeSearch(compname)  and not excdict.has_key(('%s' % cpt,'%s' % comp)) and (cpt,comp,compname.upper()) not in alertcode: ##log new CPT code which is not in esp_cptloincmap
                 alertcode.append((cpt,comp,compname.upper()))
@@ -623,13 +624,14 @@ def parseImm(incomdir, filename,demogdict):
             continue
         try:
             demogid = demogdict[pid]
+            patient = Demog.objects.get(pk=demogid)
         except:
             log.warning('Parser In Imm: NO patient found: %s\n' % str(items))
             continue
-        i, created = Immunization.objects.get_or_create(ImmPatient_id=demogid, ImmRecId=recid)
+        i, created = Immunization.objects.get_or_create(ImmPatient=patient, ImmRecId=recid)
         i.ImmType = immtp
         i.ImmName = immname
-        i.ImmDate = immdate
+        i.ImmDate = immd
         i.ImmDose = immdose
         i.ImmManuf = manf
         i.ImmLot = lot
