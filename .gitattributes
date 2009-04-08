@@ -43,13 +43,12 @@ src/ESP/esp/forms.py -text
 src/ESP/esp/urls.py -text
 src/ESP/kettle/pdi_3_1_0.pg.sql -text
 src/ESP/kludge/north-adams-lab-result-kludge.py -text
-src/ESP/localsettings.py -text
 src/ESP/sendMsgs/bcdc.jar -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elr.class -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elrLocator.class -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elrSoap.class -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elrSoapStub.class -text
-src/ESP/settings.py.sample -text
+src/ESP/settings.py -text
 src/ESP/static/css/base.css -text
 src/ESP/static/css/changelists.css -text
 src/ESP/static/css/global.css -text
