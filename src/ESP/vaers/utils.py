@@ -44,7 +44,7 @@ def send_notifications():
             
             t = get_template('email_messages/notify_case.txt')
             msg = t.render(Context(params))
-            send_mail(settings.VAERS_NOTIFICATION_EMAIL_SUBJECT, msg,
+            send_mail(settings.VAERS_EMAIL_SUBJECT, msg,
                       settings.VAERS_EMAIL_SENDER, 
                       [settings.VAERS_EMAIL_RECIPIENT],
                       fail_silently=False)
