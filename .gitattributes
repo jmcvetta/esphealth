@@ -10,6 +10,7 @@ NORTH_ADAMS/preLoaderData/esp_conditionndc.txt -text
 NORTH_ADAMS/preLoaderData/esp_config.txt -text
 NORTH_ADAMS/preLoaderData/esp_cptloincmap.txt -text
 NORTH_ADAMS/preLoaderData/esp_rule.txt -text
+/apache.conf -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
 doc/ELR[!!-~]EMR[!!-~]Query[!!-~]Specification[!!-~]v1.0.doc -text
