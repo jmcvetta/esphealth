@@ -27,7 +27,8 @@ from django.db.models.query import QuerySet
 from django.contrib.contenttypes.models import ContentType
 
 
-from ESP.esp import models
+from ESP.esp.models import Lx, Enc, Rx, Case, HeuristicEvent
+from ESP.conf.models import Rule, ExtToLoincMap
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
@@ -113,21 +114,21 @@ class BaseHeuristic(object):
         
     def generate_events(self, begin_date=None, end_date=None):
         '''
-        Generate models.HeuristicEvent records for each item returned by
+        Generate HeuristicEvent records for each item returned by
         matches, if it does not already have one.
         @return: Integer number of new records created
         '''
         log.info('Generating events for heuristic "%s".' % self.name)
         counter = 0 # Counts how many new records have been created
         # First we retrieve a list of object IDs for this 
-        existing = models.HeuristicEvent.objects.filter(heuristic_name=self.name).values_list('object_id')
+        existing = HeuristicEvent.objects.filter(heuristic_name=self.name).values_list('object_id')
         existing = [int(item[0]) for item in existing] # Convert to a list of integers
         for event in self.matches(begin_date, end_date).select_related():
             if event.id in existing:
                 log.debug('BaseHeuristic event "%s" already exists for %s #%s' % (self.name, event._meta.object_name, event.id))
                 continue
             content_type = ContentType.objects.get_for_model(event)
-            obj, created = models.HeuristicEvent.objects.get_or_create(heuristic_name=self.name,
+            obj, created = HeuristicEvent.objects.get_or_create(heuristic_name=self.name,
                 date=event.date,
                 patient=event.patient,
                 content_type=content_type,
@@ -197,10 +198,21 @@ class LabHeuristic(BaseHeuristic):
         '''
         Returns a Q object that selects all labs identified by self.loinc_nums.
         '''
-        lab_q = Q(LxLoinc='%s' % self.loinc_nums[0])
-        for num in self.loinc_nums[1:]:
-            lab_q = lab_q | Q(LxLoinc='%s' % num)
-        log.debug('lab_q: %s' % lab_q)
+        code_map = dict( ExtToLoincMap.objects.all().values_list('loinc', 'ext_code') )
+        log.debug('LOINC to native code map for %s: %s' % (self.name, code_map) )
+        codes = []
+        for loinc in self.loinc_nums:
+            try:
+                codes.append( code_map[loinc] )
+            except KeyError:
+                log.error('Could not map LOINC "%s" to a native code! (Required by heuristic "%s".)' % (loinc, self.name))
+        if not codes: # Is length of codes == 0?
+            log.critical('Could not generate events for heuristic "%s" because no LOINCs can be mapped to native codes' % self.name)
+            return Q(pk__isnull=True) # Matches nothing
+        lab_q = Q(ext_code='%s' % codes[0])
+        for code in codes[1:]:
+            lab_q = lab_q | Q(ext_code='%s' % code)
+        log.debug('lab_q for %s: %s' % (self.name, lab_q) )
         return lab_q
     lab_q = property(__get_lab_q)
         
@@ -210,12 +222,12 @@ class LabHeuristic(BaseHeuristic):
         indicate positive.
             @type begin_date: datetime.date
             @type end_date:   datetime.date
-            @type patient:    models.Demog
+            @type patient:    Demog
             @type queryset:   QuerySet
         '''
         log.debug('Get lab results relevant to "%s".' % self.name)
         log.debug('Time window: %s to %s' % (begin_date, end_date))
-        qs = models.Lx.objects.all()
+        qs = Lx.objects.all()
         if begin_date:
             begin = self.make_date_str(begin_date)
             qs = qs.filter(LxDate_of_result__gte=begin)
@@ -223,7 +235,6 @@ class LabHeuristic(BaseHeuristic):
             end = self.make_date_str(end_date)
             qs = qs.filter(LxDate_of_result__lte=end)
         qs = qs.filter(self.lab_q)
-        log.debug('query:\n%s\n' % qs.query.as_sql())
         return qs
 
 
@@ -278,7 +289,6 @@ class HighNumericLabHeuristic(LabHeuristic):
             pos_q = (ref_comp_q | static_comp_q)
         log.debug('pos_q: %s' % pos_q)
         result = relevant_labs.filter(pos_q)
-        log.debug('query:\n%s\n' % result.query.as_sql())
         return result
 
 
@@ -336,7 +346,6 @@ class StringMatchLabHeuristic(LabHeuristic):
             raise NotImplementedError('The only match type supported at this time is "istartswith".')
         log.debug('pos_q: %s' % pos_q)
         result = self.relevant_labs(begin_date, end_date).filter(pos_q)
-        log.debug('query:\n%s\n' % result.query.as_sql())
         return result
 
 
@@ -369,11 +378,11 @@ class EncounterHeuristic(BaseHeuristic):
         indicate positive.
             @type begin_date: datetime.date
             @type end_date:   datetime.date
-            @type patient:    models.Demog
+            @type patient:    Demog
             @type queryset:   QuerySet
         '''
         log.debug('Get encounters relevant to "%s".' % self.name)
-        qs = models.Enc.objects.all()
+        qs = Enc.objects.all()
         if begin_date :
             begin = self.make_date_str(begin_date)
             qs = qs.filter(EncEncounter_Date__gte=begin)
@@ -383,7 +392,6 @@ class EncounterHeuristic(BaseHeuristic):
         elif begin_date or end_date:
             raise 'If you specify either begin_date or end_date, you must also specify the other.'
         qs = qs.filter(self.enc_q)
-        log.debug('query:\n%s\n' % qs.query.as_sql())
         return qs
     
     def matches(self, begin_date=None, end_date=None):
@@ -406,11 +414,11 @@ class FeverHeuristic(EncounterHeuristic):
         Return all encounters indicating fever.
             @type begin_date: datetime.date
             @type end_date:   datetime.date
-            @type patient:    models.Demog
+            @type patient:    Demog
             @type queryset:   QuerySet
         '''
         log.debug('Get encounters matching "%s".' % self.name)
-        qs = models.Enc.objects.all()
+        qs = Enc.objects.all()
         if begin_date :
             begin = self.make_date_str(begin_date)
             qs = qs.filter(EncEncounter_Date__gte=begin)
@@ -421,7 +429,6 @@ class FeverHeuristic(EncounterHeuristic):
         q_obj = self.enc_q | Q(EncTemperature__gt=100.4)
         log.debug('q_obj: %s' % q_obj)
         qs = qs.filter(q_obj)
-        log.debug('query:\n%s\n' % qs.query.as_sql())
         return qs
 
 class CalculatedBilirubinHeuristic(LabHeuristic):
@@ -442,19 +449,22 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
         # of direct and indirect bilirubin tests ordered on the same day is 
         # greater than 1.5.
         relevant = self.relevant_labs(begin_date, end_date)
+        print '=' * 80
+        print relevant
+        print '=' * 80
         vqs = relevant.values('LxPatient', 'LxOrderDate') # returns ValueQuerySet
         vqs = vqs.annotate(calc_bil=Sum('LxTest_results'))
         vqs = vqs.filter(calc_bil__gt=1.5)
+        print '=' * 80
+        print vqs
+        print '=' * 80
         # Next we loop thru the patient/order-date list, fetch the relevant 
         # (direct + indirect) > 1.5, just in case there is a funky situation
         # where, e.g., the patient has had two indirect bilirubin tests ordered
         # on the same day.
-        log.debug('query:\n%s\n' % vqs.query.as_sql())
-        matches = []
+        matches = Lx.objects.filter(pk__isnull=True) # Lx QuerySet that matches nothing
         for item in vqs:
-            filtered_relevant = relevant.filter(LxPatient__id=item['LxPatient'], LxOrderDate=item['LxOrderDate']) 
-            matches += [i for i in filtered_relevant]
-            log.debug('query:\n%s\n' % filtered_relevant.query.as_sql())
+            matches = matches | relevant.filter(LxPatient__id=item['LxPatient'], LxOrderDate=item['LxOrderDate']) 
         return matches
 
 
@@ -536,7 +546,7 @@ class BaseDiseaseDefinition(object):
         assert self.lab_days_after
         assert self.med_days_before
         assert self.med_days_after
-        self.condition = models.Rule.objects.get(ruleName=self.name)
+        self.condition = Rule.objects.get(ruleName=self.name)
         self._register()
     
     __registry = {} # Class variable
@@ -581,7 +591,7 @@ class BaseDiseaseDefinition(object):
         @type all_events:     [HeuristicEvent, HeuristicEvent, ...]
         '''
         log.info('Creating a new %s case based on event:\n    %s' % (self.condition, primary_event))
-        case = models.Case()
+        case = Case()
         case.patient = primary_event.patient
         case.provider = primary_event.content_object.provider
         case.date = primary_event.date
@@ -601,10 +611,10 @@ class BaseDiseaseDefinition(object):
         case_window = datetime.timedelta(days=self.time_window) # Group events occurring within case_window into single case
         counter = 0            # Number of new cases generated
         log.info('Generating cases for %s' % self.condition)
-        existing_cases = models.Case.objects.filter(condition=self.condition)
+        existing_cases = Case.objects.filter(condition=self.condition)
         print existing_cases
         # Primary keys of events already bound to a Case object:
-        bound_event_pks = models.HeuristicEvent.objects.filter(case__in=existing_cases).values_list('pk') # ValuesListQuerySet
+        bound_event_pks = HeuristicEvent.objects.filter(case__in=existing_cases).values_list('pk') # ValuesListQuerySet
         bound_event_pks = [item[0] for item in bound_event_pks]
         log.debug('number of bound_events: %s' % len(bound_event_pks))
         for event in self.find_events():
@@ -666,7 +676,7 @@ class BaseDiseaseDefinition(object):
         Updates the reportable events for a given case, based on rules defined
             when at BaseDiseaseDefinition instantiation.  
         @param case: The case to update
-        @type case:  models.Case
+        @type case:  Case
         '''
         log.debug('Updating reportable events for case %s' % case)
         patient = case.patient
@@ -681,7 +691,7 @@ class BaseDiseaseDefinition(object):
             enc_q = enc_q & Q(EncEncounter_Date__gte=util.str_from_date(date - self.icd9_days_before))
             enc_q = enc_q & Q(EncEncounter_Date__lte=util.str_from_date(date + self.icd9_days_after))
             log.debug('enc_q: %s' % enc_q)
-            encounters = models.Enc.objects.filter(enc_q)
+            encounters = Enc.objects.filter(enc_q)
             case.encounters = sets.Set(case.encounters.all()) | sets.Set(encounters)
         if self.lab_loinc_nums:
             lab_q = Q(LxLoinc__in=self.lab_loinc_nums)
@@ -689,7 +699,7 @@ class BaseDiseaseDefinition(object):
             lab_q = lab_q & Q(LxOrderDate__gte=util.str_from_date(date - self.lab_days_before))
             lab_q = lab_q & Q(LxOrderDate__lte=util.str_from_date(date + self.lab_days_after))
             log.debug('lab_q: %s' % lab_q)
-            labs = models.Lx.objects.filter(lab_q)
+            labs = Lx.objects.filter(lab_q)
             # Some of these lab results will be for the same test (ie same 
             # LOINC code), but Mike only wants to see one result per test.  
             # It's probably better to handle that in the case management UI,
@@ -704,7 +714,7 @@ class BaseDiseaseDefinition(object):
             med_q = med_q & Q(RxOrderDate__gte=util.str_from_date(date - self.med_days_before))
             med_q = med_q & Q(RxOrderDate__lte=util.str_from_date(date + self.med_days_after))
             log.debug('med_q: %s' % med_q)
-            medications = models.Rx.objects.filter(med_q)
+            medications = Rx.objects.filter(med_q)
             case.medications = sets.Set(case.medications.all()) | sets.Set(medications)
         # Support for reporting immunizations has not yet been implemented
         case.save()
@@ -726,7 +736,7 @@ class BaseDiseaseDefinition(object):
                 q_obj = q_obj & Q(date__gte=begin_date)
             if end_date:
                 q_obj = q_obj & Q(date__lte=end_date)
-            existing_cases = models.Case.objects.filter(q_obj)
+            existing_cases = Case.objects.filter(q_obj)
             for case in existing_cases:
                 definition.update_reportable_events(case)
 
@@ -797,7 +807,7 @@ class RawSqlDiseaseDefinition(BaseDiseaseDefinition):
         cursor = connection.cursor()
         cursor.execute(query)
         pk_list = [row[0] for row in cursor.fetchall()]
-        return models.HeuristicEvent.objects.filter(pk__in=pk_list)
+        return HeuristicEvent.objects.filter(pk__in=pk_list)
 
 
 class SingleHeuristicDiseaseDefinition(BaseDiseaseDefinition):
@@ -843,7 +853,7 @@ class SingleHeuristicDiseaseDefinition(BaseDiseaseDefinition):
             )
     
     def find_events(self):
-        return models.HeuristicEvent.objects.filter(heuristic_name=self.heuristic_name).order_by('date').select_related()
+        return HeuristicEvent.objects.filter(heuristic_name=self.heuristic_name).order_by('date').select_related()
 
 
             
