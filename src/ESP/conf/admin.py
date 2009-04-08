@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.utils.translation import ugettext_lazy as _
 
 from ESP.conf.models import Format
 from ESP.conf.models import Dest
@@ -12,11 +11,11 @@ class FormatOptions(admin.ModelAdmin):
 class DestOptions(admin.ModelAdmin):
     ordering = ('destVerDate', 'destName')
 
-class ExtToLoincMapAdmin(admin.ModelAdmin):
+class NativeToLoincMapAdmin(admin.ModelAdmin):
     list_display = ['native_code', 'native_name', 'loinc', ]
     save_on_top = True
 
 
 admin.site.register(Format, FormatOptions)
 admin.site.register(Dest, DestOptions)
-admin.site.register(NativeToLoincMap, ExtToLoincMapAdmin)
+admin.site.register(NativeToLoincMap, NativeToLoincMapAdmin)
