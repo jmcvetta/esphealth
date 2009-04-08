@@ -10,7 +10,8 @@ import django, datetime
 from ESP.esp.models import *
 from ESP.esp import models
 from django.db.models import Q
-from ESP.settings import TOPDIR,LOCALSITE, USESQLITE,getLogging,EMAIL_SENDER
+from ESP.localsettings import LOCALSITE
+from ESP.settings import TOPDIR, getLogging, EMAIL_SENDER
 import string,csv
 import traceback
 import StringIO
@@ -18,7 +19,7 @@ import smtplib
 
 
 logging=''
-datadir = os.path.join(TOPDIR,LOCALSITE, 'preLoaderData/')
+datadir = os.path.join(TOPDIR, LOCALSITE, 'preLoaderData/')
 
 
 ###############################

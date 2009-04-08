@@ -13,6 +13,7 @@ import simplejson
 import sets
 
 from django.core import serializers, urlresolvers
+from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator
 from django.core.paginator import InvalidPage
 from django.core.mail import send_mail
@@ -20,19 +21,22 @@ from django.db.models import Q
 from django.template import loader, Template, Context, RequestContext
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
-from django.contrib.auth import authenticate, login
+
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import REDIRECT_FIELD_NAME, SESSION_KEY
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.sites.models import Site
-from django.utils.translation import ugettext, ugettext_lazy as _
-from django.views.generic.simple import redirect_to
+
+
+
+from django.views.generic.simple import redirect_to, direct_to_template
 
 
 from ESP.settings import TOPDIR, CODEDIR
-from ESP.settings import SITEROOT, MEDIA_URL
+from ESP.settings import MEDIA_URL
 from ESP.settings import LOCALSITE, DATE_FORMAT
 from ESP import settings
 from ESP.esp.models import *
@@ -42,7 +46,7 @@ from ESP.utils.utils import log
 from ESP.utils import utils as util
 
 
-LOGIN_URL = '%s/login/' % SITEROOT
+LOGIN_URL = reverse('esplogin')
 REDIRECT_FIELD_NAME = 'next'
 
 
@@ -50,97 +54,30 @@ REDIRECT_FIELD_NAME = 'next'
 def esplogin(request):
     "Displays the login form and handles the login action."
     if not request.POST:
-       return render_to_response('registration/login.html', 
-                                 {
-                                  REDIRECT_FIELD_NAME: '', 
-                                  'site_name': Site.objects.get_current().name, 
-                                  'SITEROOT': SITEROOT,  
-                                  'form': AuthenticationForm(),
-                                  }, context_instance=RequestContext(request))
+        return render_to_response('registration/login.html', {
+                REDIRECT_FIELD_NAME: '', 
+                'site_name': Site.objects.get_current().name, 
+                'form': AuthenticationForm(),
+                }, 
+                                  context_instance=RequestContext(request))
     else:
         username = request.POST['username']
         password = request.POST['password']
         redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
-        # Light security check -- make sure redirect_to isn't garbage.
-        if not redirect_to or '://' in redirect_to or ' ' in redirect_to:
-            if SITEROOT:
-                 redirect_to = SITEROOT
-            else:
-                 redirect_to ='/'
         user = authenticate(username=username, password=password)
         if user is not None:
             if user.is_active:
                   login(request,user)
                   return HttpResponseRedirect(redirect_to)
             else: 
-                 return HttpResponseRedirect('/login')
+                 return HttpResponseRedirect(LOGIN_URL)
         else:
-            return HttpResponseRedirect('/login')
+            return HttpResponseRedirect(LOGIN_URL)
 
+def esplogout(request):
+    logout(request)
+    return HttpResponseRedirect(reverse('index'))
 
-    #manipulator = AuthenticationForm(request)
-    #redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
-
-    
-    #if request.POST:
-        #new_data = request.POST.copy()
-        #errors = manipulator.get_validation_errors(new_data)
-    
-        #if not errors:
-            #user = authenticate(username=request.username, password=request.password)
-            # Light security check -- make sure redirect_to isn't garbage.
-            #if not redirect_to or '://' in redirect_to or ' ' in redirect_to:
-            #    if SITEROOT:
-            #        redirect_to = SITEROOT
-            #    else:
-            #        redirect_to ='/'
-            #else:
-            #    redirect_to = '%s/%s' % (SITEROOT,redirect_to)
-
-            #request.session[SESSION_KEY] = manipulator.get_user_id()
-            #from django.contrib.auth import login
-            #login(request, manipulator.get_user())
-            #request.session.delete_test_cookie()
-
-            #return HttpResponseRedirect(redirect_to)
-    #else:
-        #errors = {}
-    #request.session.set_test_cookie()
-    # patch for 1.0 alpha svn - oldforms - TODO fix this for current forms library
-    #return render_to_response('registration/login.html', {
-    #    'form': oldforms.FormWrapper(manipulator, request.POST, errors),
-    #    REDIRECT_FIELD_NAME: '',
-    #    'site_name': Site.objects.get_current().name,
-    #    'SITEROOT': SITEROOT,
-    #}, context_instance=RequestContext(request))
-
-
-def rosslogout(request):
-    try:
-        request.user = None
-        del request.user
-        del request.session
-        print 'request.user is None now'
-    except:
-        print "whoopsie on del request.session"
-    return HttpResponse("You are now logged out.")
-
-
-
-def logout(request, next_page=SITEROOT):
-    "Logs out the user and displays 'You are logged out' message."
-    try:
-        del request.session[SESSION_KEY]
-    except KeyError:
-        return render_to_response('registration/login.html', {'title': 'Logged out'}, context_instance=RequestContext(request))
-    else:
-        # Redirect to this page until the session has been cleared.
-        return HttpResponseRedirect(next_page or request.path)
-
-
-def logout_then_login(request, login_url=LOGIN_URL):
-    "Logs out the user if he is logged in. Then redirects to the log-in page."
-    return logout(request, login_url)
 
 def redirect_to_login(next, login_url=LOGIN_URL):
     "Redirects the user to the login page, passing the given 'next' page"
@@ -178,11 +115,12 @@ def password_change(request):
             return render_to_response(
                 'registration/password_change_done.html', 
                 Context({'request':request,
-                         'SITEROOT': SITEROOT,
                          'MEDIA_URL': MEDIA_URL}))
         
-    return render_to_response('registration/password_change_form.html', {'form': forms.FormWrapper(form, new_data, errors), 'SITEROOT': SITEROOT, 'request':request},
-        context_instance=RequestContext(request))
+    return render_to_response('registration/password_change_form.html', {
+            'form': forms.FormWrapper(form, new_data, errors), 
+            'request':request},
+                              context_instance=RequestContext(request))
 password_change = login_required(password_change)
 
 
@@ -194,7 +132,6 @@ def index(request):
     core index page
     """
     c = Context({'request':request,
-                 'SITEROOT':SITEROOT,
                  'MEDIA_URL':MEDIA_URL
                  })
     return render_to_response('esp/index.html',c)
@@ -313,8 +250,7 @@ def casesent(request, orderby="sortid",download=''):
             "request": request,
             "object_list": returnlist,
             "orderby": orderby,
-            "casenum": len(returnlist),
-            'SITEROOT':SITEROOT,
+            "casenum": len(returnlist)
                     }
     
         c = Context(cinfo)
@@ -358,8 +294,7 @@ def casedefine(request,compfilter=""):
         "request": request,
         "lxs": cptcmpt_list,
         "numrec": numrec,
-        "compname": compfilter,
-        'SITEROOT':SITEROOT,
+        "compname": compfilter
         }
     c = Context(cinfo)
     return render_to_response('esp/case_define.html',c)
@@ -445,8 +380,7 @@ def casedefine_detail(request, cpt="",component=""):
     
     cinfo={
         "request": request,
-        "lxs": returnl,
-        'SITEROOT':SITEROOT,
+        "lxs": returnl
         }
     c = Context(cinfo)
     return render_to_response('esp/case_define_detail.html',c)
@@ -542,7 +476,6 @@ def casematch(request,  download=''):
         cinfo = {
             "request": request,
             "filedata": returnlist or None, 
-            'SITEROOT':SITEROOT,
             'MEDIA_URL':MEDIA_URL,
             }
         c = Context(cinfo)
@@ -682,7 +615,7 @@ def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilte
     elif orderby == 'datecol':
         objs = objs.select_related().order_by('esp_case.caseLastUpDate')
         
-    postdest = '%s/cases/search/%s/%s/%s/%s/%s/' % (SITEROOT,wf,cfilter,mrnfilter,rulefilter,orderby)
+    postdest = '/cases/search/%s/%s/%s/%s/%s/' % (wf,cfilter,mrnfilter,rulefilter,orderby)
     #print 'using postdest=%s, rulefilter=%sDDD' % (postdest,rulefilter)
     if download:
         response = HttpResponse(mimetype='application/vnd.ms-excel')
@@ -725,8 +658,7 @@ def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilte
             "previous": max(page - 1,1),
             "pages": paginator.num_pages,
             "first_page": 1,
-            "last_page": max(paginator.num_pages,1),
-            'SITEROOT':SITEROOT,
+            "last_page": max(paginator.num_pages,1)
             }
     else:
         cinfo= {
@@ -744,8 +676,7 @@ def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilte
             "wf_display":wf_display,
             "casenum": None,
             "object_list": None,
-            "is_paginated": False,
-            'SITEROOT':SITEROOT,
+            "is_paginated": False
             }
     c = Context(cinfo)
     return render_to_response('esp/old_case_list.html',c)
@@ -799,8 +730,7 @@ def old_casedetail(request, inprod="1", object_id=None,restrict='F'):
              'pid' : pid,
              'labs':labs,
              'prescriptions':rxs,
-             "wfstate":choices.WORKFLOW_STATES[:-1],
-             'SITEROOT':SITEROOT,
+             "wfstate":choices.WORKFLOW_STATES[:-1]
             }
 
     con = Context(cinfo)
@@ -834,8 +764,7 @@ def pcpdetail(request, object_id):
     """
     p = Provider.objects.get(id__exact=object_id)
     cinfo = {"request":request,
-             "pcp":p,
-             'SITEROOT':SITEROOT,
+             "pcp":p
              }
     con = Context(cinfo)
     return render_to_response('esp/pcp_detail.html',con)
@@ -848,8 +777,7 @@ def lxdetail(request, object_id):
     """
     lx = Lx.objects.get(id__exact=object_id)
     cinfo = {"request":request,
-             "lx":lx,
-             'SITEROOT':SITEROOT,
+             "lx":lx
              }
     con = Context(cinfo)
     return render_to_response('esp/lx_detail.html',con)
@@ -864,8 +792,7 @@ def ruledetail(request, object_id):
     r = Rule.objects.get(id__exact=object_id)
     
     cinfo = {"request":request,
-             "rule":r,
-            'SITEROOT':SITEROOT,
+             "rule":r
             }
     con = Context(cinfo)
     return render_to_response('esp/rule_detail1.html',con)
@@ -936,14 +863,15 @@ def preloadrulexclud(request,update=0):
             pass
                      
         
-    cinfo = {"request":request,
-             "rules": rules,
-             "msg":msg,
-             "preloadrule": ruleid,
-             "exclusions":exclude_l,
-             'newrec':range(newrec),
-             'SITEROOT':SITEROOT,
-                         }
+    cinfo = {
+        "request":request,
+        "rules": rules,
+        "msg":msg,
+        "preloadrule": ruleid,
+        "exclusions":exclude_l,
+        'newrec':range(newrec)
+        }
+
     con = Context(cinfo)
     
     return render_to_response(returnurl,con)
@@ -1017,8 +945,7 @@ def preloadview(request,table='cptloincmap',orderby="cpt"):
             'maps': maps,
              'rules':rules,
              "wfstate":choices.WORKFLOW_STATES[:-1],
-             "orderby": orderby,
-            'SITEROOT':SITEROOT,
+             "orderby": orderby
              'newrec':range(newrec),
             }
     con = Context(cinfo)
@@ -1032,8 +959,7 @@ def showutil(request):
     if not request.user.is_staff:
         return HttpResponse("You do not have permission to see this page")
             
-    cinfo = {"request":request,
-             "SITEROOT":SITEROOT,
+    cinfo = {"request":request
              "MEDIA_URL":MEDIA_URL,
              }
     c = Context(cinfo)
@@ -1295,8 +1221,7 @@ def preloadupdate(request,table='cptloincmap'):
         
     ###########        
     cinfo = {"request":request,
-            'msg': msg,
-            'SITEROOT':SITEROOT,
+            'msg': msg
             }
     con = Context(cinfo)
     
@@ -1317,8 +1242,7 @@ def showhelp(request, topic=None):
     else:
         h = None
     cinfo = {"request":request,
-             "object":h,
-             "SITEROOT":SITEROOT,
+             "object":h
              }
     c = Context(cinfo)
     return render_to_response('esp/help.html',c)
@@ -1361,12 +1285,12 @@ def updateWorkflow(request,object_id,newwf=''):
     else:
         nextcaseid=''
         
-    cinfo = {"request":request,
-             'wfmsg': msg,
-             'inprod': 1,
-             'nextcaseid':nextcaseid,
-             'SITEROOT':SITEROOT,
-                             }
+    cinfo = {
+        "request":request,
+        'wfmsg': msg,
+        'inprod': 1,
+        'nextcaseid':nextcaseid
+        }
     con = Context(cinfo)
     
     return render_to_response('esp/case_detail.html',con)
@@ -1383,8 +1307,7 @@ def wfdetail(request, object_id):
     caseid = wf.workflowCaseID.id
     cinfo = {"request":request,
              "object":wf,
-             "caseid":caseid,
-             'SITEROOT':SITEROOT,
+             "caseid":caseid
     }
     c = Context(cinfo)
     return render_to_response('esp/workflow_detail.html',c)
@@ -1408,7 +1331,7 @@ def updateWorkflowComment(request,object_id):
     else:
         print 'No change in workflow comment - not saved'
         
-    return HttpResponseRedirect("%s/cases/%s/F/" % (SITEROOT,caseid))
+    return HttpResponseRedirect("cases/%s/F/" % caseid)
 
 
 

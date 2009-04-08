@@ -27,11 +27,12 @@ import exceptions
 import optparse
 import pprint
 
-import django, datetime,time
+import django, datetime, time
 from django.db.models import Q, Max
 from django.db import connection
 
-from ESP.settings import TOPDIR, LOCALSITE, USESQLITE
+from ESP.localsettings import LOCALSITE
+from ESP.settings import TOPDIR
 from ESP.esp.models import Enc, Lx, Lxo, Demog, Provider, Rx, Immunization
 from ESP.esp.models import SocialHistory, Problem, Icd9Fact
 from ESP.esp.models import LabComponent, DataFile

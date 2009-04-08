@@ -27,8 +27,16 @@ def send_notifications():
     for case in cases_to_notify:
         try:
             provider = case.patient.DemogProvider
+            patient_name = ' '.join([case.patient.DemogFirst_Name, 
+                                     case.patient.DemogLast_Name])
+            immunization = case.immunization
+            imm_date = datetime.datetime.strptime(immunization.ImmDate, 
+                                                  '%Y%m%d')
             params = {
                 'provider':provider,
+                'patient_name': patient_name,
+                'immunization': immunization,
+                'immunization_date': imm_date,
                 'url':'http://%s%s' % (current_site, reverse(
                         'verify_case', kwargs={'key':case.digest})),
                 'misdirected_email_contact':settings.VAERS_EMAIL_SENDER

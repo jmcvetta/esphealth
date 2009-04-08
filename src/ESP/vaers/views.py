@@ -21,7 +21,6 @@ PAGE_TEMPLATE_DIR = 'pages/vaers/'
 WIDGET_TEMPLATE_DIR = 'widgets/vaers/'
 
 def index(request):
-    send_notifications()
     return HttpResponse('ok')
 
 
@@ -57,8 +56,6 @@ def verify(request, key):
 
 
 def case_details(request, id):
-
-    response = HttpResponse()
 
     case = AdverseEvent.manager.by_id(id)
     if not case: return HttpResponseNotFound('Case not found')
@@ -118,8 +115,6 @@ def case_details(request, id):
                 'lab_result_date': lab_result_date,
                 'comments':comments,
                 'form':form
-                
-                
                 })
 
 

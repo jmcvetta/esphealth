@@ -115,6 +115,7 @@ src/ESP/templates/default-bg.gif -text
 src/ESP/templates/django-logo-negative.png -text
 src/ESP/templates/django-logo-positive.png -text
 src/ESP/templates/email_messages/notify_case.txt -text
+src/ESP/templates/email_messages/notify_category_three.txt -text
 src/ESP/templates/esp/case_define.html -text
 src/ESP/templates/esp/case_define_detail.html -text
 src/ESP/templates/esp/case_detail.html -text

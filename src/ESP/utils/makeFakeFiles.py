@@ -1,18 +1,16 @@
-# load ESP with some data
-# eg  p = pids.PID(PIDLast_Name='Jones',PIDMedical_Record_Number1='1221')
-# p.save()
-# note the DJANGO_SETTINGS_MODULE must be set
-# eg set DJANGO_SETTINGS_MODULE=ESP.settings and run this from
-# the folder containing the ESP directory
 
-import datetime,random,csv,sys,os
-# for esphealth testing sys.path.append('/home/ESPnew')
+import datetime, random, csv, sys, os
+
+
 sys.path.append('/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+
 import django
 import os,sys
 from ESP.esp.models import *
-from ESP.settings import TOPDIR,LOCALSITE
+
+from ESP.localsettings import LOCALSITE
+from ESP.settings import TOPDIR
 
 incomdir = os.path.join(TOPDIR,LOCALSITE,'incomingData/')
 if not os.path.isdir(incomdir):

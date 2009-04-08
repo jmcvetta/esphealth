@@ -49,7 +49,6 @@ class AdverseEventManager(models.Manager):
             except: pass
         return None
 
-    
     def all(self):
         return [self.by_id(ev.id) for ev in AdverseEvent.objects.all()]
             

@@ -5,7 +5,8 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 import django, datetime
 from ESP.esp.models import *
-from ESP.settings import TOPDIR,CODEDIR,LOCALSITE,FTPUSER,FTPPWD,FTPSERVER,EMAILSENDER,getLogging,getJavaInfo
+from ESP.localsettings import LOCALSITE, FTP_USER, FTP_PASSWORD, FTP_SERVER
+from ESP.settings import TOPDIR, CODEDIR, EMAIL_SENDER, getLogging,getJavaInfo
 from ESP.utils import hl7XML
 import ESP.utils.utils as utils
 
@@ -25,7 +26,7 @@ emlogging = getLogging('espmanager.py_v0.1', debug=0)
 ###################################
 def sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg=''):
     ##send email
-    sender=EMAILSENDER
+    sender=EMAIL_SENDER
 
     subject='ESP management'
     headers = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (sender, ','.join(towho), subject)
@@ -193,11 +194,11 @@ def doFTP():
     newfiles=[]
     ##get incoming files
     try:
-    	ftp = FTP(FTPSERVER)
+    	ftp = FTP(FTP_SERVER)
     except:
         return newfiles
     try:
-        ftp.login(FTPUSER,FTPPWD)
+        ftp.login(FTP_USER, FTP_PASSWORD)
     except:
         fp = StringIO.StringIO()
         traceback.print_exc(file=fp)

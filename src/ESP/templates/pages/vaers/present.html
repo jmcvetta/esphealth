@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block extrastyle %}
-<link rel="stylesheet" type="text/css" href="{{MEDIA_URL}}/css/vaers.css" />
+<link rel="stylesheet" type="text/css" href="{{ site_css_folder }}vaers.css" />
 {% endblock %}
 {% block extrascript %}
 <script type="text/javascript" src="{{ site_javascript_folder }}vaers.js">
@@ -15,12 +15,15 @@
 
 <h2>Adverse Event to Vaccination Report</h2>
 
-Please confirm if <span class="patient_name">
+<p>Please confirm if <span class="patient_name">
 {{ case.patient.DemogFirst_Name }} {{ case.patient.DemogLast_Name }}</span>'s case should be reported as an adverse event.<br />
 ESP VAERS has
 identified this case and the recommended action is
-to <span class="msg_case_category">{{ case.get_category_display}}.</span>
+to <span class="msg_case_category">{{ case.get_category_display}}.</span></p>
   
+<p>Please provide any additional clinical details
+on this event that you think might be helpful to CDC and FDA vaccine
+safety investigators:</p>
 
 <table id="tbl_case_details">
   <tr>

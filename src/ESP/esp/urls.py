@@ -38,7 +38,7 @@ urlpatterns = patterns('ESP.esp.views',
     url(r'^help/$','showhelp'),
     url(r'^login/$', 'esplogin'),
     url(r'^pswdchange/$', 'password_change'),
-    url(r'^logout/$', 'logout'),
+    url(r'^logout/$', 'esplogout'),
     #
     # Case List
     #

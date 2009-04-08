@@ -5,137 +5,114 @@
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 '''
-
-# Do we really need both settings.py and localsettings.py?  Not sure what
-# benefit we get from them.
-
-
-import sys
 import os
-import datetime
 import logging
 
+import localsettings
+
+TOPDIR = os.path.dirname(__file__)
+CODEDIR = TOPDIR
+
+DATE_FORMAT = '%d %b %Y'
+ROWS_PER_PAGE = 50
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
-TOPDIR='/srv/esp' # Top folder of ESP installation 
-
 ADMINS = (
-    ('Your Name', 'your_email@your_domain.com'),
+    ('Ross Lazarus', 'ross.lazarus@gmail.com'),
+    ('Jason McVetta', 'jason.mcvetta@channing.harvard.edu'),
+    ('Xuanlin Hou', 'rexua@channing.harvard.edu'),
+    ('Raphael Lullis', 'relul@channing.harvard.edu'),
 )
 
 DEVELOPER_EMAIL_LIST = [item[1] for item in ADMINS]
 
-
 MANAGERS = ADMINS
 
 
-SITEROOT='/ESP'
-
-# This is used by incomingParser.py and a few other deprecated or nearly-
-# deprecated tools.
-LOCALSITE='MYSITE'
+SECRET_KEY = localsettings.SECRET_KEY
+SITE_ID = 2
 
 
+# Database parameters are defined on localsettings
+DATABASE_ENGINE = localsettings.DATABASE_ENGINE
+DATABASE_NAME = localsettings.DATABASE_NAME
+DATABASE_USER = localsettings.DATABASE_USER
+DATABASE_PASSWORD = localsettings.DATABASE_PASSWORD
+DATABASE_HOST = localsettings.DATABASE_HOST
+DATABASE_PORT = localsettings.DATABASE_PORT
 
-# FTP credentials for fetching data in espmanager.py
-FTPUSER = ''
-FTPPWD = ''
-FTPSERVER = ''
+# Email server connection parameters are defined on localsettings
+EMAIL_SENDER = localsettings.EMAIL_SENDER
+EMAIL_HOST = localsettings.EMAIL_HOST
+EMAIL_HOST_USER = localsettings.EMAIL_HOST_USER
+EMAIL_HOST_PASSWORD = localsettings.EMAIL_HOST_PASSWORD
+EMAIL_PORT = localsettings.EMAIL_PORT
+EMAIL_USE_TLS = localsettings.EMAIL_USE_TLS
 
 
-EMAIL_SENDER='your_email@your_domain.com'
 
-
-DATABASE_ENGINE = 'mysql' 
-DATABASE_NAME = ''
-DATABASE_USER = ''
-DATABASE_PASSWORD = ''
-DATABASE_HOST = 'localhost'
-DATABASE_PORT = 3306
-
-# Local time zone for this installation. All choices can be found here:
-# http://www.postgresql.org/docs/current/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
 TIME_ZONE = 'America/New_York'
-
-# Language code for this installation. All choices can be found here:
-# http://www.w3.org/TR/REC-html40/struct/dirlang.html#langcodes
-# http://blogs.law.harvard.edu/tech/stories/storyReader$15
 LANGUAGE_CODE = 'en-us'
-
-SITE_ID = 1
-
-ROOT_URLCONF = 'ESP.urls'
-
-CODEDIR = os.path.join(TOPDIR, 'src', 'ESP')
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = os.path.join(CODEDIR, 'static')
+MEDIA_ROOT = os.path.join(TOPDIR, 'static')
 
-# URL that handles the media served from MEDIA_ROOT.
-# Example: "http://media.lawrence.com"
-MEDIA_URL = '/media'
+# URL that handles the media served from MEDIA_ROOT. Make sure to use a
+# trailing slash if there is a path component (optional in other cases).
+# Examples: "http://media.lawrence.com", "http://example.com/media/"
+MEDIA_URL = '/static'
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/ESP/media/' 
+ADMIN_MEDIA_PREFIX = '/media/'
 
-# Make this unique, and don't share it with anybody.
-SECRET_KEY = ''  #  MUST fill me in to run ESP web app!
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.load_template_source',
-    'django.template.loaders.app_directories.load_template_source',
+    'django.template.loaders.app_directories.load_template_source'
 )
 
+MIDDLEWARE_CLASSES = (
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+)
+
+ROOT_URLCONF = 'ESP.urls'
 
 TEMPLATE_CONTEXT_PROCESSORS = (
-    "django.core.context_processors.auth",
-    "django.core.context_processors.debug",
-    "django.core.context_processors.i18n",
-    "django.core.context_processors.media",
-    'ESP.esp.context_processors.path_definitions',
-)
-
- 
-MIDDLEWARE_CLASSES = (
-    #"django.middleware.cache.CacheMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.middleware.doc.XViewMiddleware",
-    "django.middleware.gzip.GZipMiddleware",
-)
+    'django.core.context_processors.auth',
+    'django.core.context_processors.debug',
+    'django.core.context_processors.i18n',
+    'django.core.context_processors.media',
+    'esp.context_processors.path_definitions' 
+    )
 
 
 TEMPLATE_DIRS = (
-    "%s/templates" % CODEDIR,
-    "%s/templates/esp" % CODEDIR,
-    "%s/templates" % TOPDIR,
-    "%s/templates/esp" % TOPDIR,
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    os.path.join(TOPDIR, 'templates'),
+    os.path.join(TOPDIR, 'templates/esp')
 )
 
 INSTALLED_APPS = (
-       'django.contrib.auth',
-       'django.contrib.sites',
-       'django.contrib.contenttypes',
-       'django.contrib.sessions',
-       'django.contrib.admin',
-       'ESP.esp',
-       'ESP.conf',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    'django.contrib.admin',
+    'conf', 
+    'esp',
+    'vaers'
 )
 
 
-
-# Display format for date objects in the web interface
-DATE_FORMAT = '%d %b %Y'
-
-# Default number of rows per page displayed in Flexigrids.  Should be in [10, 25, 50, 100]
-ROWS_PER_PAGE = 10  
 
 
 #===============================================================================
@@ -173,6 +150,9 @@ DEFAULT_REPORTABLE_ICD9S = [
     ]
 
 
+
+
+
 #===============================================================================
 #
 #--- ~~~ Logging Configuration ~~~
@@ -181,7 +161,9 @@ DEFAULT_REPORTABLE_ICD9S = [
 LOG_FORMAT_CONSOLE = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 LOG_FORMAT_FILE = '%(asctime)s:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 LOG_FILE = '/tmp/esp.log'
-# NOTE WELL: If you set the log level to DEBUG, *copious* info will be logged!
-LOG_LEVEL_CONSOLE = logging.ERROR
-LOG_LEVEL_FILE = logging.INFO
+# BEWARE: If you set the log level to DEBUG, *copious* info will be logged!
+LOG_LEVEL_CONSOLE = logging.INFO
+LOG_LEVEL_FILE = logging.INFO 
+
+
 
