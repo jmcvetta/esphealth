@@ -103,9 +103,9 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
-    'conf', 
-    'esp',
-    'vaers'
+    'ESP.esp',
+    'ESP.conf', 
+    'ESP.vaers'
 )
 
 
