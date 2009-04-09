@@ -43,6 +43,7 @@ src/ESP/esp/forms.py -text
 src/ESP/esp/urls.py -text
 src/ESP/kettle/pdi_3_1_0.pg.sql -text
 src/ESP/kludge/north-adams-lab-result-kludge.py -text
+src/ESP/localsettings.py.sample -text
 src/ESP/sendMsgs/bcdc.jar -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elr.class -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elrLocator.class -text

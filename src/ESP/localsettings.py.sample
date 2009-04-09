@@ -1,0 +1,58 @@
+'''
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                                   ESP Health
+                              Local Site Settings
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+'''
+
+
+#===============================================================================
+#
+#                                   Database
+#
+#===============================================================================
+DATABASE_ENGINE = 'mysql' # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_NAME = 'esp'
+DATABASE_USER = 'esp'
+DATABASE_PASSWORD = ''
+DATABASE_HOST = 'localhost'
+DATABASE_PORT = 3306
+
+
+#===============================================================================
+#
+#                                   General
+#
+#===============================================================================
+ADMINS = (
+    ('Your Name', 'your_email@your_domain.com'),
+)
+# Make your SECRET_KEY unique, and don't share it with anybody.  The unix
+# utility 'pwgen' is very useful for generating long random password strings.
+SECRET_KEY = ''
+
+
+#===============================================================================
+#
+#                                    Email
+#
+#===============================================================================
+EMAIL_SENDER = 'esp-noreply@your_domain.com'
+EMAIL_HOST = 'localhost'
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_PORT = ''
+EMAIL_USE_TLS = True
+
+
+#===============================================================================
+#
+#                                   Logging
+#
+#===============================================================================
+LOG_FILE = '/path/to/esp/log'
+# WARNING: If you set the log level to DEBUG, *copious* info will be logged!
+LOG_LEVEL_CONSOLE = logging.INFO
+LOG_LEVEL_FILE = logging.INFO 

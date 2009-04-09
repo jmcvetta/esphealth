@@ -1,10 +1,16 @@
 '''
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-                        Django settings for ESP project
+                                  ESP Health
+                                Django settings
 
+
+Most deployments should not require any changes to this file.  All passwords &
+other site-specific configuration are stored in localsettings.py.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 '''
+
+
 import os
 import logging
 
@@ -19,21 +25,11 @@ ROWS_PER_PAGE = 50
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
-ADMINS = (
-    ('Ross Lazarus', 'ross.lazarus@gmail.com'),
-    ('Jason McVetta', 'jason.mcvetta@channing.harvard.edu'),
-    ('Xuanlin Hou', 'rexua@channing.harvard.edu'),
-    ('Raphael Lullis', 'relul@channing.harvard.edu'),
-)
-
 DEVELOPER_EMAIL_LIST = [item[1] for item in ADMINS]
 
+ADMINS = localsettings.ADMINS
 MANAGERS = ADMINS
 
-
-
-
-# Database parameters are defined on localsettings
 DATABASE_ENGINE = localsettings.DATABASE_ENGINE
 DATABASE_NAME = localsettings.DATABASE_NAME
 DATABASE_USER = localsettings.DATABASE_USER
@@ -41,7 +37,7 @@ DATABASE_PASSWORD = localsettings.DATABASE_PASSWORD
 DATABASE_HOST = localsettings.DATABASE_HOST
 DATABASE_PORT = localsettings.DATABASE_PORT
 
-# Email server connection parameters are defined on localsettings
+
 EMAIL_SENDER = localsettings.EMAIL_SENDER
 EMAIL_HOST = localsettings.EMAIL_HOST
 EMAIL_HOST_USER = localsettings.EMAIL_HOST_USER
@@ -49,14 +45,9 @@ EMAIL_HOST_PASSWORD = localsettings.EMAIL_HOST_PASSWORD
 EMAIL_PORT = localsettings.EMAIL_PORT
 EMAIL_USE_TLS = localsettings.EMAIL_USE_TLS
 
-
-
 SECRET_KEY = localsettings.SECRET_KEY
+
 SITE_ID = 2
-
-
-
-
 TIME_ZONE = 'America/New_York'
 LANGUAGE_CODE = 'en-us'
 
@@ -165,10 +156,10 @@ DEFAULT_REPORTABLE_ICD9S = [
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 LOG_FORMAT_CONSOLE = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 LOG_FORMAT_FILE = '%(asctime)s:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
-LOG_FILE = '/tmp/esp.log'
+LOG_FILE = localsettings.LOG_FILE
 # BEWARE: If you set the log level to DEBUG, *copious* info will be logged!
-LOG_LEVEL_CONSOLE = logging.INFO
-LOG_LEVEL_FILE = logging.INFO 
+LOG_LEVEL_CONSOLE = localsettings.LOG_LEVEL_CONSOLE
+LOG_LEVEL_FILE = localsettings.LOG_LEVEL_FILE
 
 
 
