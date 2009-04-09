@@ -14,18 +14,14 @@ other site-specific configuration are stored in localsettings.py.
 import os
 import logging
 
-import localsettings
+from ESP import localsettings
+
 
 TOPDIR = os.path.dirname(__file__)
 CODEDIR = TOPDIR
 
-DATE_FORMAT = '%d %b %Y'
-ROWS_PER_PAGE = 50
-
-DEBUG = True
+DEBUG = localsettings.DEBUG
 TEMPLATE_DEBUG = DEBUG
-
-
 
 ADMINS = localsettings.ADMINS
 MANAGERS = ADMINS
@@ -51,6 +47,9 @@ SECRET_KEY = localsettings.SECRET_KEY
 SITE_ID = 2
 TIME_ZONE = 'America/New_York'
 LANGUAGE_CODE = 'en-us'
+
+DATE_FORMAT = '%d %b %Y'
+ROWS_PER_PAGE = 50
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
@@ -117,12 +116,12 @@ INSTALLED_APPS = (
 #--- ~~~ Case Generation ~~~
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-REPORT_RX_DAYS_BEFORE = 7
-REPORT_RX_DAYS_AFTER = 14
-REPORT_LX_DAYS_BEFORE = 30
-REPORT_LX_DAYS_AFTER = 30
-REPORT_ICD9_DAYS_BEFORE = 14
-REPORT_ICD9_DAYS_AFTER = 14
+REPORT_RX_DAYS_BEFORE = localsettings.REPORT_RX_DAYS_BEFORE
+REPORT_RX_DAYS_AFTER = localsettings.REPORT_RX_DAYS_AFTER
+REPORT_LX_DAYS_BEFORE = localsettings.REPORT_LX_DAYS_BEFORE
+REPORT_LX_DAYS_AFTER = localsettings.REPORT_LX_DAYS_AFTER
+REPORT_ICD9_DAYS_BEFORE = localsettings.REPORT_ICD9_DAYS_BEFORE
+REPORT_ICD9_DAYS_AFTER = localsettings.REPORT_ICD9_DAYS_AFTER
 
 # Default set of ICD9 codes to report
 DEFAULT_REPORTABLE_ICD9S = [
