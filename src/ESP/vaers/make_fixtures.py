@@ -1,6 +1,7 @@
 import os, sys
 import datetime, random
 import simplejson
+import optparse
 import string
 import pdb
 
@@ -493,16 +494,57 @@ def lab_results():
             except AssertionError:
                 pass
 
-            
-
-
     return fixture
 
+
+def main():
+    parser = optparse.OptionParser()
+    parser.add_option('-e', '--events', action='store_true', dest='events',
+        help='Generate heuristic events')
+    parser.add_option('-c', '--cases', action='store_true', dest='cases',
+        help='Generate new cases')
+    parser.add_option('-u', '--update-cases', action='store_true', dest='update',
+        help='Update cases')
+    parser.add_option('-a', '--all', action='store_true', dest='all', 
+        help='Generate heuristic events, generate new cases, and update existing cases')
+    parser.add_option('--begin', action='store', dest='begin', type='string', 
+        metavar='DATE', help='Analyze time window beginning at DATE')
+    parser.add_option('--end', action='store', dest='end', type='string', 
+        metavar='DATE', help='Analyze time window ending at DATE')
+    (options, args) = parser.parse_args()
+    log.debug('options: %s' % options)
+    #
+    # Date Parser
+    #
+    date_format = '%d-%b-%Y'
+    if options.begin:
+        options.begin = datetime.datetime.strptime(options.begin, date_format).date()
+    if options.end:
+        options.end = datetime.datetime.strptime(options.end, date_format).date()
+    #
+    # Main Control block
+    #
+    if options.all: # '--all' is exactly equivalent to '--events --cases --update-cases'
+        options.events = True
+        options.cases = True
+        options.update = True
+    if options.events:
+        BaseHeuristic.generate_all_events(begin_date=options.begin, end_date=options.end)
+    if options.cases:
+        BaseDiseaseDefinition.generate_all_cases(begin_date=options.begin, end_date=options.end)
+    if options.update:
+        BaseDiseaseDefinition.update_all_cases(begin_date=options.begin, end_date=options.end)
+    if not (options.events or options.cases or options.update):
+        parser.print_help()
+
+
+
 if __name__ == "__main__":
+    main()
 #    write_to_file('patients.json', patients())    
 #    write_to_file('providers.json', providers())
 #    write_to_file('immunizations.json', immunizations())
-    write_to_file('encounters.json', encounters())
+#    write_to_file('encounters.json', encounters())
 #    write_to_file('lab_results.json', lab_results())
 #    write_to_file('icd9.json', icd9_codes())
 
