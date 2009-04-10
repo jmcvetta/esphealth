@@ -292,7 +292,7 @@ class Lx(models.Model):
     # New fields
     #
     native_code = models.CharField(max_length=100, blank=True, null=True, db_index=True)
-    
+    native_name = models.CharField(max_length=500, blank=True, null=True)
     #
     # Heuristics Support
     #

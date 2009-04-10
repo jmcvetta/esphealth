@@ -405,18 +405,21 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
             except Provider.DoesNotExist:
                 provid = None
         patient = Demog.objects.get(pk=demogid)
-        lx, created = Lx.objects.get_or_create(LxPatient=patient, 
-            LxMedical_Record_Number=mrn, 
+        lx, created = Lx.objects.get_or_create(
+            LxPatient = patient, 
+            LxMedical_Record_Number = mrn, 
             LxOrder_Id_Num=orderid,
-            LxHVMA_Internal_Accession_number=accessnum,
-            LxTest_Code_CPT=cpt,
-            LxOrderDate=orderd,
-            LxOrderType=ordertp)
+            LxHVMA_Internal_Accession_number = accessnum,
+            LxTest_Code_CPT = cpt,
+            LxOrderDate = orderd,
+            LxOrderType = ordertp
+            )
         lx.LxTest_Code_CPT_mod = modi
         lx.LxLoinc = lxloinc
         lx.LxOrdering_Provider_id = provid
         lx.lastUpdate = DBTIMESTR
         lx.loinc = loinc
+        lx.native_code = native_code
         lx.save()
     movefile(incomdir, filename,filelines)
                                                                                                                                                                                                                                                                                                                                             
@@ -523,7 +526,9 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
             LxImpression=impre,
             loinc=lxloinc,
             LxOrdering_Provider_id=provid,
-            lastUpDate=DBTIMESTR
+            lastUpDate=DBTIMESTR,
+            native_code = native_code,
+            native_name = compname,
             ).save()
     movefile(incomdir, filename,filelines)   
 
