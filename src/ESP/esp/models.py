@@ -662,8 +662,8 @@ class Problem(models.Model):
 class ConditionIcd9(models.Model):
     CondiRule = models.ForeignKey(Rule)
     CondiICD9 = models.TextField('ICD-9 Codes',blank=True,null=True)
-    CondiDefine = models.BooleanField('Icd9 used in definition or not', blank=True,null=True)
-    CondiSend = models.BooleanField('Icd9 needs to be sent or not', blank=True,null=True)
+    CondiDefine = models.NullBooleanField('Icd9 used in definition or not', blank=True,null=True)
+    CondiSend = models.NullBooleanField('Icd9 needs to be sent or not', blank=True,null=True)
 
     def  __unicode__(self):
         return u'%s %s' % (self.CondiRule,self.CondiICD9)
@@ -672,8 +672,8 @@ class ConditionIcd9(models.Model):
 class ConditionLOINC(models.Model):
     CondiRule = models.ForeignKey(Rule)
     CondiLOINC = models.TextField('LOINC Codes',blank=True,null=True)
-    CondiDefine = models.BooleanField('Loinc used in definition or not', blank=True,null=True)
-    CondiSend = models.BooleanField('Loinc needs to be sent or not', blank=True,null=True)
+    CondiDefine = models.NullBooleanField('Loinc used in definition or not', blank=True,null=True)
+    CondiSend = models.NullBooleanField('Loinc needs to be sent or not', blank=True,null=True)
     CondiSNMDPosi = models.TextField('SNOMED Positive Codes',blank=True,null=True)
     CondiSNMDNega = models.TextField('SNOMED Negative Codes',blank=True,null=True)
     CondiSNMDInde = models.TextField('SNOMED Indeterminate Codes',blank=True,null=True)
@@ -711,8 +711,8 @@ class CPTLOINCMap(models.Model):
 class ConditionNdc(models.Model):
     CondiRule = models.ForeignKey(Rule)
     CondiNdc = models.TextField('NDC Codes',blank=True,null=True)
-    CondiDefine = models.BooleanField('Ndc used in definition or not', blank=True,null=True)
-    CondiSend = models.BooleanField('Ndc need to be send or not', blank=True,null=True)
+    CondiDefine = models.NullBooleanField('Ndc used in definition or not', blank=True,null=True)
+    CondiSend = models.NullBooleanField('Ndc need to be send or not', blank=True,null=True)
 
     def  __unicode__(self):
         return u'%s %s' % (self.CondiRule,self.CondiNdc)
@@ -722,8 +722,8 @@ class ConditionDrugName(models.Model):
     CondiRule = models.ForeignKey(Rule)
     CondiDrugName = models.TextField('Drug Name',blank=True,null=True)
     CondiDrugRoute = models.TextField('Drug Route',blank=True,null=True)
-    CondiDefine = models.BooleanField('Used in case definition or not', blank=True,null=True)
-    CondiSend = models.BooleanField('Must be sent or not', blank=True,null=True)
+    CondiDefine = models.NullBooleanField('Used in case definition or not', blank=True,null=True)
+    CondiSend = models.NullBooleanField('Must be sent or not', blank=True,null=True)
 
     def  __unicode__(self):
         return u'%s %s %s' % (self.CondiRule,self.CondiDrugName, self.CondiDrugRoute)
