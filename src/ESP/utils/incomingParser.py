@@ -738,6 +738,9 @@ def movefile(incomdir, f, linenum):
     """file name format shoUld be ***.esp.MMDDYY
     YYYYMMDD_prov.txt
     """
+    if not options.move:
+        log.debug('options.move is False; not moving file %s' % f)
+        return
     ##save the filename in DB
     dataf = DataFile()
     dataf.filename=f
@@ -762,9 +765,8 @@ def movefile(incomdir, f, linenum):
     subdir = os.path.join(curdir, 'MONTH_%s/' % mon)
     if not os.path.isdir(subdir):
         os.makedirs(subdir)
-    if options.move:
-        log.info('Moving file %s from %s to %s\n' % (f, incomdir, subdir))
-        shutil.move(incomdir+'/%s' % f, subdir)
+    log.info('Moving file %s from %s to %s\n' % (f, incomdir, subdir))
+    shutil.move(incomdir+'/%s' % f, subdir)
 
 
 ################################
