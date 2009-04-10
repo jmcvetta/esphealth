@@ -51,7 +51,7 @@ We need
 #
 # Default folder from which to read HL7 messages
 #
-INCOMING_DIR = '/home/rejmv/work/NORTH_ADAMS/incomingHL7/'
+INCOMING_DIR = '/home/ESP/NORTH_ADAMS/incomingHL7'
 
 
 
@@ -553,6 +553,9 @@ def main():
     options, args = parser.parse_args()
     log.debug('options: %s' % options)
     #
+    if options.input_folder:
+        assert os.path.isdir(options.input_folder) # Sanity check -- is really a folder?
+        input_folder = options.input_folder
     all_files = set( os.listdir(input_folder) )
     log.debug('combined HL7 file count: %s' % len(all_files))
     if options.all or (options.new and options.retry): # Implies both 'new' and 'retry'
