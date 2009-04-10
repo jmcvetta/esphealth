@@ -264,35 +264,32 @@ class LxManager(models.Manager):
 
 class Lx(models.Model):
     LxPatient = models.ForeignKey(Demog) 
+    LxOrdering_Provider = models.ForeignKey(Provider, blank=True, null=True) 
     LxMedical_Record_Number = models.CharField('Medical Record Number', max_length=20, blank=True, null=True, db_index=True)
     LxOrder_Id_Num = models.CharField('Order Id #', max_length=20, blank=True, null=True)
-    LxTest_Code_CPT = models.CharField('Test Code (CPT)', max_length=20, blank=True, null=True, db_index=True)
-    LxTest_Code_CPT_mod = models.CharField('Test Code (CPT) Modifier', max_length=20, blank=True, null=True)
+    native_code = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    native_name = models.CharField(max_length=500, blank=True, null=True)
+    #LxTest_Code_CPT = models.CharField('Test Code (CPT)', max_length=20, blank=True, null=True, db_index=True)
+    #LxTest_Code_CPT_mod = models.CharField('Test Code (CPT) Modifier', max_length=20, blank=True, null=True)
     LxOrderDate = models.CharField('Order Date', max_length=20, blank=True, null=True)
     LxOrderType = models.CharField('Order Type', max_length=10, blank=True, null=True)   
-    LxOrdering_Provider = models.ForeignKey(Provider, blank=True, null=True) 
     LxDate_of_result = models.CharField('Date of result', max_length=20, blank=True, null=True, db_index=True)  
     LxHVMA_Internal_Accession_number = models.CharField('HVMA Internal Accession number', max_length=50, blank=True, null=True)
-    LxComponent = models.CharField('Component', max_length=20, blank=True, null=True, db_index=True)
-    LxComponentName = models.CharField('Component Name', max_length=200, blank=True, null=True,  db_index=True)
+    #LxComponent = models.CharField('Component', max_length=20, blank=True, null=True, db_index=True)
+    #LxComponentName = models.CharField('Component Name', max_length=200, blank=True, null=True,  db_index=True)
     # Test results should be a TextField -- however, MySQL can index max 1000 char CharField, and we NEED index
-    LxTest_results = models.CharField('Test results', max_length=1000, blank=True, null=True, db_index=True)
     LxNormalAbnormal_Flag = models.CharField('Normal/Abnormal Flag', max_length=20, blank=True, null=True, db_index=True)
     LxReference_Low = models.CharField('Reference Low', max_length=100, blank=True, null=True, db_index=True)
     LxReference_High = models.CharField('Reference High', max_length=100, blank=True, null=True, db_index=True)
     LxReference_Unit = models.CharField('Reference Unit', max_length=100, blank=True, null=True)
     LxTest_status = models.CharField('Test status', max_length=50, blank=True, null=True)
-    LxComment = models.TextField('Comments',  blank=True,  null=True, )
-    LxImpression = models.TextField('Impression for Imaging only', max_length=2000, blank=True, null=True)
     # Use of LxLoinc is deprecated -- we should do all future queries with native_code
-    LxLoinc = models.CharField('LOINC code', max_length=20, blank=True, null=True, db_index=True)
     lastUpDate = models.DateTimeField('Last Updated date', auto_now=True, db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-    #
-    # New fields
-    #
-    native_code = models.CharField(max_length=100, blank=True, null=True, db_index=True)
-    native_name = models.CharField(max_length=500, blank=True, null=True)
+    #LxLoinc = models.CharField('LOINC code', max_length=20, blank=True, null=True, db_index=True)
+    LxImpression = models.TextField('Impression for Imaging only', max_length=2000, blank=True, null=True)
+    LxTest_results = models.CharField('Test results', max_length=1000, blank=True, null=True, db_index=True)
+    LxComment = models.TextField('Comments',  blank=True,  null=True, )
     #
     # Heuristics Support
     #
