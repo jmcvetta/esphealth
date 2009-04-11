@@ -36,7 +36,7 @@ import copy
 
 ###For logging
 iclogging = getLogging('identifyCases.py_v0.1', debug=0)
-sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG','jason.mcvetta@channing.harvard.edu','ross.lazarus@channing.harvard.edu'], 
+sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG','jason.mcvetta@channing.harvard.edu', 'ross.lazarus@channing.harvard.edu']
 
 case_dict={}
 
@@ -1526,7 +1526,7 @@ if __name__ == "__main__":
     k.sort()
     msg='Date: %s\n' % datetime.datetime.now().strftime('%Y%m%d')
     if not k:
-        msg = msg+'There is no new case detected\n'
+        msg = msg+'No new case(s) detected\n'
         
     for i in k:
         msg = msg+ '%s:\t\t%s\n' % (i, case_dict[i])

@@ -106,6 +106,9 @@ def addNewcptloincmap(cursor):
         indx+=1
     if logging:
         logging.info('Done on Adding new loinc to esp_lx table')
+    del cptcmpt_list # 3GB!?
+    del cptcmpt_dic
+    logging.info('deleted cptcmpt_list and dic')
     
 ###################################
 ##There are two functions with same name: correctcptloincmap_lx, so change this one

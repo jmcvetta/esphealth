@@ -25,7 +25,8 @@ import smtplib
 VERSION = '0.2'
 DO_VALIDATE = 1 # set to zero to avoid the validation step
 REJECT_INVALID = 1 # don't process if any errors - usually are missing provider so ignore
-
+emailToList = ['rerla@channing.harvard.edu','rexua@channing.harvard.edu','mklompas@partners.org','julie_dunn@hphc.org',
+'jason.mcvetta@channing.harvard.edu','raphael.lullis@channing.harvard.edu']
 
 today=datetime.datetime.now().strftime('%Y%m%d')
 
@@ -105,7 +106,7 @@ def runSql(stmt,values=None):
         errmsg = "ERROR: %s; VALUES == %s\n" % (stmt,str(values))
         iplogging.error(errmsg)
         #cursor.execute("rollback;")
-       # sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg='SQL loading errors when running incomingParse.py;\n%s' % errmsg)
+       # sendoutemail(towho=emailToList,msg='SQL loading errors when running incomingParser.py;\n%s' % errmsg)
         
     #    sys.exit(1)
         
@@ -1203,7 +1204,7 @@ def doValidation(incomdir,days):
     if errordays:
         msg = 'Found validation errors when running incomingParse.py; Error days are:%s; Please go to log file for detail;' % (str(errordays))
 #        print msg
-        utils.sendoutemail(towho=['rerla@channing.harvard.edu','rexua@channing.harvard.edu'],msg=msg)
+        utils.sendoutemail(towho=emailToList,msg=msg)
         
     return parsedays
 
@@ -1222,7 +1223,6 @@ def updateLoinc_lx():
     file_lastmodtime = datetime.datetime(filetime[0],filetime[1],filetime[2])
     cursor.execute("""select max(lastupdate) from esp_demog""")
     dbtime = cursor.fetchall()[0][0]
-    print '##got dbtime=%s, type=%s' % (dbtime,type(dbtime))
     if type(dbtime) == type(unicode('x')): # sqlite returns a unicode str
            dbd = str(dbtime).split(' ')[0].split('-') # sqlite returns '2008-08-03 06:13:22'
            dbtime = datetime.datetime(int(dbd[0]),int(dbd[1]),int(dbd[2]))
@@ -1318,9 +1318,9 @@ if __name__ == "__main__":
                 parseAll(incomdir , socf, demogdict)
                                                 
         ##send email
-        iplogging.warning('New CPT/COMPT code: %s\n' % str(alertcode))
         if alertcode:
-            utils.sendoutemail(towho=['MKLOMPAS@PARTNERS.ORG','Julie_Dunn@harvardpilgrim.org', 'rexua@channing.harvard.edu','rerla@channing.harvard.edu'],msg='New (CPT,COMPT,ComponentName): %s' % str(alertcode))
+            iplogging.warning('New CPT/COMPT code: %s\n' % str(alertcode))
+            utils.sendoutemail(towho=emailToList,msg='New (CPT,COMPT,ComponentName): %s' % str(alertcode))
         
         iplogging.info('Start: %s\n' %  startt)
         iplogging.info('End:   %s\n' % datetime.datetime.now())
