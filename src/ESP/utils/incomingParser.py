@@ -410,9 +410,11 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
             LxMedical_Record_Number = mrn, 
             LxOrder_Id_Num=orderid,
             LxHVMA_Internal_Accession_number = accessnum,
+            LxTest_Code_CPT = cpt,
             LxOrderDate = orderd,
             LxOrderType = ordertp
             )
+        lx.LxTest_Code_CPT_mod = modi
         lx.LxLoinc = lxloinc
         lx.LxOrdering_Provider_id = provid
         lx.lastUpdate = DBTIMESTR
@@ -508,6 +510,9 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
             LxMedical_Record_Number=mrn, 
             LxOrder_Id_Num=orderid,
             LxHVMA_Internal_Accession_number=accessnum,
+            LxTest_Code_CPT=cpt,
+            LxComponent=comp,
+            LxComponentName=compname,
             LxTest_results=res,
             LxOrderDate=orderd,
             LxOrderType=ordertp,
