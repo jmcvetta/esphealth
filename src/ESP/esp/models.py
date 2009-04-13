@@ -139,40 +139,6 @@ class Demog(models.Model):
         
             
 
-#===============================================================================
-#
-#--- ~~~ Heuristics ~~~
-#
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-class HeuristicEvent(models.Model):
-    '''
-    An interesting medical event
-    '''
-    heuristic_name = models.CharField(max_length=127, null=False, blank=False, db_index=True)
-    date = models.DateField(blank=False, db_index=True)
-    patient = models.ForeignKey(Demog, blank=False, db_index=True)
-    #
-    # Standard generic relation support
-    #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
-    #
-    content_type = models.ForeignKey(ContentType, db_index=True)
-    object_id = models.PositiveIntegerField(db_index=True)
-    content_object = generic.GenericForeignKey('content_type', 'object_id')
-    
-    class Meta:
-        unique_together = ['heuristic_name', 'date', 'patient', 'content_type', 'object_id']
-        db_table = 'esp_heuristic_event' # For db readability
-    
-    def __str__(self):
-        msg = '%-15s %-12s Patient #%-20s' % (self.heuristic_name, self.date, self.patient.id)
-        msg += '\n'
-        msg += '    %s' % self.content_object
-        return msg
-
-
-
-
 class Rx(models.Model):
     RxPatient = models.ForeignKey(Demog) 
     RxMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,blank=True,db_index=True)
@@ -192,10 +158,6 @@ class Rx(models.Model):
     RxEndDate = models.CharField('End Date',max_length=20,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-    #
-    # Heuristics support
-    #
-    heuristics = generic.GenericRelation(HeuristicEvent)
     def _get_patient(self):
         return self.RxPatient
     def _get_provider(self):
@@ -269,16 +231,16 @@ class Lx(models.Model):
     LxOrder_Id_Num = models.CharField('Order Id #', max_length=20, blank=True, null=True)
     native_code = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     native_name = models.CharField(max_length=500, blank=True, null=True)
-    LxTest_Code_CPT = models.CharField('Test Code (CPT)', max_length=20, blank=True, null=True, db_index=True)
-    LxTest_Code_CPT_mod = models.CharField('Test Code (CPT) Modifier', max_length=20, blank=True, null=True)
+    #LxTest_Code_CPT = models.CharField('Test Code (CPT)', max_length=20, blank=True, null=True, db_index=True)
+    #LxTest_Code_CPT_mod = models.CharField('Test Code (CPT) Modifier', max_length=20, blank=True, null=True)
     LxOrderDate = models.CharField('Order Date', max_length=20, blank=True, null=True)
     LxOrderType = models.CharField('Order Type', max_length=10, blank=True, null=True)   
     lastUpDate = models.DateTimeField('Last Updated date', auto_now=True, db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
     LxDate_of_result = models.CharField('Date of result', max_length=20, blank=True, null=True, db_index=True)  
     LxHVMA_Internal_Accession_number = models.CharField('HVMA Internal Accession number', max_length=50, blank=True, null=True)
-    LxComponent = models.CharField('Component', max_length=20, blank=True, null=True, db_index=True)
-    LxComponentName = models.CharField('Component Name', max_length=200, blank=True, null=True,  db_index=True)
+    #LxComponent = models.CharField('Component', max_length=20, blank=True, null=True, db_index=True)
+    #LxComponentName = models.CharField('Component Name', max_length=200, blank=True, null=True,  db_index=True)
     # Test results should be a TextField -- however, MySQL can index max 1000 char CharField, and we NEED index
     LxNormalAbnormal_Flag = models.CharField('Normal/Abnormal Flag', max_length=20, blank=True, null=True, db_index=True)
     LxReference_Low = models.CharField('Reference Low', max_length=100, blank=True, null=True, db_index=True)
@@ -286,14 +248,10 @@ class Lx(models.Model):
     LxReference_Unit = models.CharField('Reference Unit', max_length=100, blank=True, null=True)
     LxTest_status = models.CharField('Test status', max_length=50, blank=True, null=True)
     # Use of LxLoinc is deprecated -- we should do all future queries with native_code
-    LxLoinc = models.CharField('LOINC code', max_length=20, blank=True, null=True, db_index=True)
+    #LxLoinc = models.CharField('LOINC code', max_length=20, blank=True, null=True, db_index=True)
     LxTest_results = models.CharField('Test results', max_length=1000, blank=True, null=True, db_index=True)
     LxImpression = models.TextField('Impression for Imaging only', max_length=2000, blank=True, null=True)
     LxComment = models.TextField('Comments',  blank=True,  null=True, )
-    #
-    # Heuristics Support
-    #
-    heuristics = generic.GenericRelation(HeuristicEvent)
     def _get_patient(self):
         return self.LxPatient
     def _get_provider(self):
@@ -441,11 +399,6 @@ class Enc(models.Model):
     EncPeakFlow = models.CharField('Peak Flow',max_length=50,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-    
-    #
-    # Heuristics support
-    #
-    heuristics = generic.GenericRelation(HeuristicEvent)
     def _get_patient(self):
         return self.EncPatient
     def _get_provider(self):
@@ -870,290 +823,52 @@ class TestCase(models.Model):
 #
 # Old, deprecated Case model -- here for script testing
 #
-class Case(models.Model):
-    """casePID can't be a foreign key or we get complaints that the pointed to model doesn't
-    yet exist
-    """
-    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
-    caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
-    caseWorkflow = models.CharField('Workflow State', max_length=20,choices=choices.WORKFLOW_STATES, blank=True,db_index=True )
-    caseComments = models.TextField('Comments', blank=True, null=True)
-    caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
-    casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
-    caseSendDate = models.DateTimeField('Date sent', null=True)
-    caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID")
-    caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
-    caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=choices.FORMAT_TYPES, blank=True, null=True)
-    caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=choices.DEST_TYPES, blank=True,null=True)
-    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500,  blank=True, null=True)
-    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500,  blank=True, null=True)
-    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500,  blank=True, null=True)
-    caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
-    caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
+#class Case(models.Model):
+#    """casePID can't be a foreign key or we get complaints that the pointed to model doesn't
+#    yet exist
+#    """
+#    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
+#    caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
+#    caseWorkflow = models.CharField('Workflow State', max_length=20,choices=choices.WORKFLOW_STATES, blank=True,db_index=True )
+#    caseComments = models.TextField('Comments', blank=True, null=True)
+#    caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
+#    casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
+#    caseSendDate = models.DateTimeField('Date sent', null=True)
+#    caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID")
+#    caseQueryID = models.CharField('External Query which generated this case',max_length=20, blank=True, null=True)
+#    caseMsgFormat = models.CharField('Case Message Format', max_length=20, choices=choices.FORMAT_TYPES, blank=True, null=True)
+#    caseMsgDest = models.CharField('Destination for formatted messages', max_length=120, choices=choices.DEST_TYPES, blank=True,null=True)
+#    caseEncID = models.TextField('A list of ESP_ENC IDs',max_length=500,  blank=True, null=True)
+#    caseLxID = models.TextField('A list of ESP_Lx IDs',max_length=500,  blank=True, null=True)
+#    caseRxID = models.TextField('A list of ESP_Rx IDs',max_length=500,  blank=True, null=True)
+#    caseICD9 = models.TextField('A list of related ICD9',max_length=500,  blank=True, null=True)
+#    caseImmID = models.TextField('A list of Immunizations same date',max_length=500, blank=True, null=True)
 
 
-class NewCase(models.Model):
-    '''
-    A case of (reportable) disease
-    '''
-    patient = models.ForeignKey(Demog, blank=False)
-    condition = models.ForeignKey(Rule, blank=False)
-    provider = models.ForeignKey(Provider, blank=False)
-    date = models.DateField(blank=False, db_index=True)
-    workflow_state = models.CharField(max_length=20, choices=choices.WORKFLOW_STATES, default='AR', 
-        blank=False, db_index=True )
-    # Timestamps:
-    created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
-    updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
-    sent_timestamp = models.DateTimeField(blank=True, null=True)
-    #
-    # Events that define this case
-    #
-    events = models.ManyToManyField(HeuristicEvent, blank=False) # The events that caused this case to be generated
-    #
-    # Reportable Events
-    #
-    encounters = models.ManyToManyField(Enc, blank=True, null=True)
-    lab_results = models.ManyToManyField(Lx, blank=True, null=True)
-    medications = models.ManyToManyField(Rx, blank=True, null=True)
-    immunizations = models.ManyToManyField(Immunization, blank=True, null=True)
-    #
-    notes = models.TextField(blank=True, null=True)
-    
-    #
-    # Backward Compatibility
-    #
-    def getCaseDemog(self):
-        return self.patient
-    def getCaseProvider(self):
-        return self.provider
-    def getCaseRule(self):
-        return self.condition
-    def getCaseWorkflow(self):
-        return self.workflow_state
-    def getCaseLastUpDate(self):
-        return self.updated_timestamp
-    def getCasecreatedDate(self):
-        return self.created_timestamp
-    def getCaseSendDate(self):
-        return self.sent_timestamp
-    def getCaseQueryID(self):
-        # AFAIK this field is never used.
-        return None
-    def getCaseMsgFormat(self):
-        # AFAIK this field is never used.
-        return None
-    def getCaseMsgDest(self):
-        # AFAIK this field is never used.
-        return None
-    def getCaseEncID(self):
-        return ','.join([str(item.id) for item in self.encounters.all()])
-    def getCaseLxID(self):
-        return ','.join([str(item.id) for item in self.lab_results.all()])
-    def getCaseRxID(self):
-        return ','.join([str(item.id) for item in self.medications.all()])
-    def getCaseICD9(self):
-        result = []
-        [result.extend(item.icd9_list) for item in self.encounters.all()]
-        return result
-    def getCaseImmID(self):
-        return ','.join([str(item.id) for item in self.immunizations.all()])
-    def getCaseComments(self):
-        return self.notes
-    def setCaseDemog(self, value):
-        self.patient = value
-    def setCaseProvider(self, value):
-        self.provider = value
-    def setCaseRule(self, value):
-        self.condition = value
-    def setCaseWorkflow(self, value):
-        self.workflow_state = value
-    def setCaseLastUpDate(self, value):
-        self.updated_timestamp = value
-    def setCasecreatedDate(self, value):
-        self.created_timestamp = value
-    def setCaseSendDate(self, value):
-        self.sent_timestamp = value
-    def setCaseQueryID(self, value):
-        raise NotImplementedError('AFAIK this field is never used.')
-    def setCaseMsgFormat(self, value):
-        raise NotImplementedError('AFAIK this field is never used.')
-    def setCaseMsgDest(self, value):
-        raise NotImplementedError('AFAIK this field is never used.')
-    def setCaseEncID(self, value):
-        raise DeprecationWarning('This property is read-only for backwards compatibility.  Use the ManyToManyFields instead.')
-        self.__caseEncID = value
-    def setCaseLxID(self, value):
-        raise DeprecationWarning('This property is read-only for backwards compatibility.  Use the ManyToManyFields instead.')
-    def setCaseRxID(self, value):
-        raise DeprecationWarning('This property is read-only for backwards compatibility.  Use the ManyToManyFields instead.')
-    def setCaseICD9(self, value):
-        raise DeprecationWarning('This property is read-only for backwards compatibility.  Use the ManyToManyFields instead.')
-    def setCaseImmID(self, value):
-        raise DeprecationWarning('This property is read-only for backwards compatibility.  Use the ManyToManyFields instead.')
-    def setCaseComments(self, value):
-        self.notes = value
-
-    caseDemog = property(getCaseDemog, setCaseDemog)
-    caseProvider = property(getCaseProvider, setCaseProvider)
-    caseRule = property(getCaseRule, setCaseRule)
-    caseWorkflow = property(getCaseWorkflow, setCaseWorkflow)
-    caseLastUpDate = property(getCaseLastUpDate, setCaseLastUpDate)
-    casecreatedDate = property(getCasecreatedDate, setCasecreatedDate)
-    caseSendDate = property(getCaseSendDate, setCaseSendDate)
-    caseQueryID = property(getCaseQueryID, setCaseQueryID)
-    caseMsgFormat = property(getCaseMsgFormat, setCaseMsgFormat)
-    caseMsgDest = property(getCaseMsgDest, setCaseMsgDest)
-    caseEncID = property(getCaseEncID, setCaseEncID)
-    caseLxID = property(getCaseLxID, setCaseLxID)
-    caseRxID = property(getCaseRxID, setCaseRxID)
-    caseICD9 = property(getCaseICD9, setCaseICD9)
-    caseImmID = property(getCaseImmID, setCaseImmID)
-    caseComments = property(getCaseComments, setCaseComments)
-    
-    class Meta:
-        permissions = [ ('view_phi', 'Can view protected health information'), ]
-    
-    def latest_lx(self):
-        '''
-        Returns the latest lab test relevant to this case
-        '''
-        if not self.caseLxID:
-            return None
-
-        lab_result_ids = self.caseLxID.split(',')
-        lab_results = Lx.objects.filter(id__in=lab_result_ids).order_by('LxOrderDate').reverse()
-        return lab_results[0]
-        
-    def latest_lx_order_date(self):
-        '''
-        Return a datetime.date instance representing the date on which the 
-        latest lab test relevant to this case was ordered.
-        '''
-        if not self.latest_lx():
-            return None
-
-        s = self.latest_lx().LxOrderDate
-        year = int(s[0:4])
-        month = int(s[4:6])
-        day = int(s[6:8])
-        return datetime.date(year, month, day)
-    
-    def latest_lx_provider_site(self):
-        '''
-        Return the provider site for the latest lab test relevant to this case 
-        '''
-        lx = self.latest_lx()
-        if not lx:
-            return None
-        return lx.LxOrdering_Provider.provPrimary_Dept
-
-    def  __unicode__(self):
-        p = self.showPatient()# self.pID
-        #s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
-        s = u'#%-10s %-10s %-15s Patient: %-10s' % (self.id, self.date, self.condition, self.patient)
-        return s
- 
-    def showPatient(self): 
-        p = self.getPatient()
-        #  s = '%s, %s: %s MRN=%s' % (p.PIDLast_Name, p.PIDFirst_Name, p.PIDFacility1, p.PIDMedical_Record_Number1 )
-        s = u'%s %s %s %s' % (p.DemogLast_Name, p.DemogFirst_Name, p.DemogMiddle_Initial,p.DemogMedical_Record_Number )
-        return s
-
-    def getPatient(self): # doesn't work
-        p = Demog.objects.get(id__exact = self.caseDemog.id)        
-        return p
-
-    def getPregnant(self):
-        p=self.getPatient()
-        encdb = Enc.objects.filter(EncPatient=p, EncPregnancy_Status='Y').order_by('EncEncounter_Date')
-        lxs = None
-        lxi = self.caseLxID
-        if len(lxi) > 0:
-            lxs=Lx.objects.filter(id__in=lxi.split(','))
-        if encdb and lxs:
-            lx = lxs[0]
-            lxorderd = lx.LxOrderDate
-            lxresd=lx.LxDate_of_result
-            lxresd = datetime.date(int(lxresd[:4]),int(lxresd[4:6]),int(lxresd[6:8]))+datetime.timedelta(30)
-            lxresd = lxresd.strftime('%Y%m%d')
-            for oneenc in encdb:
-                encdate = oneenc.EncEncounter_Date
-                edcdate = oneenc.EncEDC.replace('/','')
-                if edcdate:
-                    edcdate = datetime.date(int(edcdate[:4]),int(edcdate[4:6]), int(edcdate[6:8]))
-                    dur1 =edcdate-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
-                    dur2 = edcdate-datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8]))
-                    if dur1.days>=0 or dur2.days>=0:
-                        return (u'Pregnant', oneenc.EncEDC.replace('/',''))
-#            for oneenc in encdb:
-#                encdate = oneencdb.EncEncounter_Date
-#                dur1 =datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))-datetime.date(int(lxorderd[:4]),int(lxorderd[4:6]), int(lxorderd[6:8]))
-#                dur2 = datetime.date(int(lxresd[:4]),int(lxresd[4:6]), int(lxresd[6:8])) - datetime.date(int(encdate[:4]),int(encdate[4:6]), int(encdate[6:8]))
-#                if dur1.days>=0 and dur2.days>=0:
-#                    return ('Pregnant', oneenc.EncEDC.replace('/',''))
-        elif encdb and not lxs:
-            return (u'Pregnant', encdb[0].EncEDC.replace('/',''))
-        return (u'',None)
-
-    def getcaseLastUpDate(self):
-        s = u'%s' % self.caseLastUpDate
-        return s[:11]
-
-    def getWorkflows(self): # return a list of workflow states for history
-        wIter = CaseWorkflow.objects.iterator(workflowCaseID__exact = self.id).order_by('-workflowDate')
-        return wIter
-    
-    def getCondition(self):
-        cond = Rule.objects.get(id__exact=self.caseRule.id)
-        return cond
-
-    def getAddress(self):
-        p = self.getPatient()
-        s=''
-        if p.DemogAddress1:
-            s = u'%s %s %s, %s, %s' % (p.DemogAddress1, p.DemogAddress2, p.DemogCity,p.DemogState,p.DemogZip)
-        return s
-
-    def getPrevcases(self):
-        othercases = Case.objects.filter(patient=self.patient, condition=self.condition.id, date__lt=self.date)
-        returnstr=[]
-        for c in othercases:
-            returnstr.append(unicode(c.id))
-        return returnstr
-
-    
-class CaseWorkflow(models.Model):
-    workflowCaseID = models.ForeignKey(Case)
-    workflowDate = models.DateTimeField('Activated',auto_now=True)
-    workflowState = models.CharField('Workflow State',choices=choices.WORKFLOW_STATES,max_length=20 )
-    workflowChangedBy = models.CharField('Changed By', max_length=30)
-    workflowComment = models.TextField('Comments',blank=True,null=True)
-    
-    def  __unicode__(self):
-        return u'%s %s %s' % (self.workflowCaseID, self.workflowDate, self.workflowState)
-
-
-class Hl7OutputFile(models.Model):
-    '''
-    An HL7 file that has been sent to Dept Public Health
-    '''
-    filename = models.CharField('hl7 file name',max_length=100,blank=True,null=True)
-    case = models.ForeignKey(Case,verbose_name="Case ID",db_index=True)
-    demogMRN = models.CharField('Medical Record Number',max_length=50,db_index=True,blank=True,null=True)
-    hl7encID = models.TextField('A list of ESP_ENC IDs in hl7', max_length=500,  blank=True, null=True)
-    hl7lxID = models.TextField('A list of ESP_Lx IDs in hl7', max_length=500,  blank=True, null=True)
-    hl7rxID = models.TextField('A list of ESP_Rx IDs in hl7', max_length=500,  blank=True, null=True)
-    hl7ICD9 = models.TextField('A list of related ICD9 in hl7', max_length=500,  blank=True, null=True)
-    hl7reportlxID=models.TextField('A list of report Lx IDs in hl7', max_length=500,  blank=True, null=True)
-    hl7specdate = models.TextField('A list of order date of report Lx in hl7', max_length=500,  blank=True, null=True)
-    hl7trmtDT = models.TextField('the order date of minium Rx', max_length=500,  blank=True, null=True)
-    hl7comment = models.TextField('note in NTE segment',  max_length=500,  blank=True, null=True)
-    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
-    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-          
-    def  __unicode__(self):
-        return u'%s %s' % (self.filename,self.datedownloaded)
+#
+# This depends on old Case class above, and will probably need to be both
+# relocated (to nodis?) and refactored
+#
+#class Hl7OutputFile(models.Model):
+#    '''
+#    An HL7 file that has been sent to Dept Public Health
+#    '''
+#    filename = models.CharField('hl7 file name',max_length=100,blank=True,null=True)
+#    case = models.ForeignKey(Case,verbose_name="Case ID",db_index=True)
+#    demogMRN = models.CharField('Medical Record Number',max_length=50,db_index=True,blank=True,null=True)
+#    hl7encID = models.TextField('A list of ESP_ENC IDs in hl7', max_length=500,  blank=True, null=True)
+#    hl7lxID = models.TextField('A list of ESP_Lx IDs in hl7', max_length=500,  blank=True, null=True)
+#    hl7rxID = models.TextField('A list of ESP_Rx IDs in hl7', max_length=500,  blank=True, null=True)
+#    hl7ICD9 = models.TextField('A list of related ICD9 in hl7', max_length=500,  blank=True, null=True)
+#    hl7reportlxID=models.TextField('A list of report Lx IDs in hl7', max_length=500,  blank=True, null=True)
+#    hl7specdate = models.TextField('A list of order date of report Lx in hl7', max_length=500,  blank=True, null=True)
+#    hl7trmtDT = models.TextField('the order date of minium Rx', max_length=500,  blank=True, null=True)
+#    hl7comment = models.TextField('note in NTE segment',  max_length=500,  blank=True, null=True)
+#    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
+#    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+#          
+#    def  __unicode__(self):
+#        return u'%s %s' % (self.filename,self.datedownloaded)
 
 
 class Hl7InputFile(models.Model):

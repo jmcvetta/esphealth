@@ -105,7 +105,9 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'ESP.esp',
     'ESP.conf', 
-    'ESP.vaers'
+    'ESP.hef',
+    'ESP.nodis',
+    'ESP.vaers',
 )
 
 
