@@ -193,20 +193,11 @@ class LabHeuristic(BaseHeuristic):
         '''
         Returns a Q object that selects all labs identified by self.loinc_nums.
         '''
-        code_map = dict( NativeToLoincMap.objects.all().values_list('loinc', 'native_code') )
-        log.debug('LOINC to native code map for %s: %s' % (self.name, code_map) )
-        codes = []
-        for loinc in self.loinc_nums:
-            try:
-                codes.append( code_map[loinc] )
-            except KeyError:
-                log.error('Could not map LOINC "%s" to a native code! (Required by heuristic "%s".)' % (loinc, self.name))
+        codes = NativeToLoincMap.objects.filter(loinc__in=self.loinc_nums).values_list('native_code', flat=True)
         if not codes: # Is length of codes == 0?
             log.critical('Could not generate events for heuristic "%s" because no LOINCs can be mapped to native codes' % self.name)
             return Q(pk__isnull=True) # Matches nothing
-        lab_q = Q(native_code='%s' % codes[0])
-        for code in codes[1:]:
-            lab_q = lab_q | Q(native_code='%s' % code)
+        lab_q = Q(native_code__in=codes)
         log.debug('lab_q for %s: %s' % (self.name, lab_q) )
         return lab_q
     lab_q = property(__get_lab_q)
