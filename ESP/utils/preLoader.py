@@ -597,7 +597,6 @@ if __name__ == "__main__":
 
     from django.db import connection
     cursor = connection.cursor()
-    cursor.execute('use espFeb09')
     
     if len(sys.argv) > 1:
         try:
