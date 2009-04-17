@@ -53,9 +53,10 @@ class HeuristicEvent(models.Model):
         unique_together = ['heuristic_name', 'date', 'patient', 'content_type', 'object_id']
     
     def __str__(self):
-        msg = '%-15s %-12s Patient #%-20s' % (self.heuristic_name, self.date, self.patient.id)
-        msg += '\n'
-        msg += '    %s' % self.content_object
-        return msg
+        #msg = '%-15s %-12s Patient #%-20s' % (self.heuristic_name, self.date, self.patient.id)
+        #msg += '\n'
+        #msg += '    %s' % self.content_object
+        #return msg
+        return 'HeuristicEvent #%s (%s %s)' % (self.pk, self.heuristic_name, self.date)
 
 

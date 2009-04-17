@@ -358,7 +358,8 @@ class Lx(models.Model):
     
     def  __unicode__(self):
         #return u"%-10s %-50s %-12s PID %s" % (self.LxOrder_Id_Num, self.getCPT(), self.LxOrderDate, self.LxPatient.DemogPatient_Identifier, )
-        return u'#%-10s %-12s LOINC: %-7s Ref High: %-5s Result: %s' % (self.pk, self.date, self.LxLoinc, self.LxReference_High, self.LxTest_results)
+        #return u'#%-10s %-12s LOINC: %-7s Ref High: %-5s Result: %s' % (self.pk, self.date, self.LxLoinc, self.LxReference_High, self.LxTest_results)
+        return u'Lx #%s' % self.pk
     
 
 class Lxo(models.Model):
