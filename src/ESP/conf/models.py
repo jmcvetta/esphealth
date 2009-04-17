@@ -97,7 +97,7 @@ class Loinc(models.Model):
 
 
 class Icd9(models.Model):
-    icd9Code = models.CharField('ICD9 Code', max_length=10,)
+    icd9Code = models.CharField('ICD9 Code', max_length=10, unique=True)
     icd9Long = models.CharField('Name', max_length=50,)
 
     def __unicode__(self):
