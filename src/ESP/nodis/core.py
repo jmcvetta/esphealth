@@ -48,6 +48,46 @@ class DiseaseDefinitionAlreadyRegistered(BaseException):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+class OutOfWindow(ValueError):
+    '''
+    Raised when attempting to add an event to EventTimeWindow, where the 
+    event's date falls outside the window.
+    '''
+    pass
+
+
+class EventTimeWindow(object):
+    def __init__(self, window, events=[]):
+        assert isinstance(window, datetime.timedelta)
+        self.__window = window
+        self.__events = events
+    
+    def _get_start_date(self):
+        return self.__events[-1].date - self.__window
+    start = property(_get_start_date)
+    
+    def _get_end_date(self):
+        return self.__events[0].date + self.__window
+    end = property(_get_end_date)
+    
+    def _get_events(self):
+        return self.__events
+    events = property(_get_events)
+    
+    def add_event(self, event):
+        if len(self.__events) == 0:
+            self.__events = [event]
+        elif (event.date >= self.start) and (event.date <= self.end):
+            self.__events += [event]
+            self.__events.sort(lambda x,y: (x.date-y.date).days) # Sort by date
+        else:
+            raise OutOfWindow
+        
+    def __repr__(self):
+        return 'Window %s - %s (%s events)' % (self.start, self.end, len(self.events))
+ 
+
+
 class DiseaseCriterion(object):
     '''
     One set of rules for algorithmically defining a disease.  Satisfying a 
@@ -92,46 +132,135 @@ class DiseaseCriterion(object):
         self.exclude = exclude
         self.exclude_past = exclude_past
     
+    def oldMatches(self, begin_date=None, end_date=None):
+        #
+        # Examine only the time slice specified
+        #
+        all_events = HeuristicEvent.objects.all()
+        if begin_date:
+            all_events = all_events.filter(date__gte=begin_date)
+        if end_date:
+            all_events = all_events.filter(date__lte=end_date)
+        #
+        # Do we match all required events?
+        #
+        pde = {} # patient/date/event:  {patient: {date: [event, ...], date: [event, ...], ...}, ...}
+        # Each requirement is an instance of (a subclass of) BaseHeuristic
+        first_req = self.require[0] # Doesn't matter which tuple is considered first, since they are AND'ed
+        other_reqs = self.require[1:]
+        for e in all_events.filter(heuristic_name__in=[h.name for h in first_req]):
+            #
+            print e.date
+            print type(e.date)
+            sys.exit()
+            #
+            try:
+                events_by_date = pde[e.patient]
+            except KeyError:
+                events_by_date = pde[e.patient] = {}
+            try:
+                events_by_date[e.date].append(e)
+            except KeyError:
+                events_by_date[e.date] = [e]
+        # For each patient we have one or more dates, and for each of those 
+        # dates we have one or more events.  Since these events
+        # are required, each (event +/- self.window) defines a temporal slice
+        # in which to query for other events.
+        for patient in pde:
+            for date in pde[patient]: # 'day' so not to conflict w/ reserved word 'date'
+                begin = date - self.window
+                end = date + self.window
+
     def matches(self, begin_date=None, end_date=None):
         #
         # Examine only the time slice specified
         #
         all_events = HeuristicEvent.objects.all()
         if begin_date:
-            begin = self.make_date_str(begin_date)
-            all_events = all_events.filter(LxDate_of_result__gte=begin)
+            all_events = all_events.filter(date__gte=begin_date)
         if end_date:
-            end = self.make_date_str(end_date)
-            all_events = all_events.filter(LxDate_of_result__lte=end)
+            all_events = all_events.filter(date__lte=end_date)
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # First we do some simple queries and set arithmetic to generate a list
+        # of patients who *could* have the disease.
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #
-        # Do we match all required events?
-        #
-        first_req = self.require[0] # Doesn't matter which tuple is considered first, since they are AND'ed
-        names = [e.name for e in first_req]
-        #events = all_events.filter(heuristic_name__in=names).values_list('patient', flat=True)
-        events = all_events.filter(heuristic_name__in=names)
-        p_e = {} # {patient: [event, event, ...]}  
-        for e in events:
+        # 'pids' are patient IDs -- db primary keys
+        for req in self.require:
+            pids_this_req = set()
+            for h in req: # One or more BaseHeuristic instances
+                s = set(h.get_events().values_list('patient_id', flat=True))
+                pids_this_req = pids_this_req | s 
+                log.debug('%50s: %s' % (h, len(pids_this_req)) )
             try:
-                p_e[e.patient].append(e)
-            except KeyError:
-                p_e[e.patient] = [e]
-        for patient in p_e.keys():
-            for req in self.require[1:]:
-                known_events = p_e[patient]
-                known_events.sort(lambda x, y: x.date-y.date)
-                window_end = known_events[0].date + self.window
-                names = [e.name for e in req]
-                events = all_events.filter(patient=patient, heuristic_name__in=names)
-                if events:
-                    p_e[patient].extend( list(events))
-                else:
-                    del p_e[patient] # This patient does not match this criterion
-                    break # Move on to the next patient
-        #
-        # Now p_e is a dict whose keys are valid patients, and whose values are the validating events for
-        # the respective patients.
-        #
+                pids = pids & pids_this_req
+            except UnboundLocalError:
+                pids = pids_this_req
+        log.info('%50s: %s' % (self.name, len(pids)) )
+        patient_windows = {}
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Build time windows
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        for pid in list(pids):
+            wins = self.match_patient(pid)
+            if wins:
+                patient_windows[pid] = wins
+    
+    def match_patient(self, patient_pk):
+        t_windows = [] # [EventTimeWindow, EventTimeWindow, ...]
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Create all possible time windows from first set of required events
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        for h in self.require[0]: # Create EventTimeWindows for first req
+            for event in h.get_events().filter(patient__pk=patient_pk):
+                found_window = False # Did we find an existing window for this event?
+                for win in t_windows:
+                    try:
+                        win.add_event(event)
+                        log.debug('Added event %s to %s' % (event, win))
+                        found_window = True
+                    except OutOfWindow:
+                        continue
+                if not found_window:
+                    # This event didn't fit in any existing window, so 
+                    # create a new window for it.
+                    win = EventTimeWindow(self.window, events=[event])
+                    log.debug('Created %s for event %s' % (win, event))
+                    t_windows.append(win)
+        log.debug('Possible time windows: %s' % t_windows)
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # For each remaining set of requirements, see if we can fit the 
+        # the required events into one of our time windows.  If no events fit
+        # in a given window, that window does not fulfill this disease 
+        # criterion.
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        for req in self.require[1:]:
+            new_windows = [] # EventWindows containing events for this req
+            for h in req: # h is HeuristicEvent type
+                events = h.get_events().filter(patient__pk=patient_pk)
+                for win in t_windows:
+                    found_event = False # Did we find event that fits this window?
+                    for e in events:
+                        try:
+                            win.add_event(e)
+                            log.debug('Event %s fits in %s' % (e, win))
+                            found_event = True
+                        except OutOfWindow:
+                            continue
+                    if found_event:
+                        new_windows.append(win)
+            t_windows = list(new_windows)
+            log.debug('Remaining valid time windows: %s' % t_windows)
+            # DEBUG:
+            for win in t_windows:
+                print '+' * 80
+                print win
+                for e in win.events:
+                    print '\t%s' % e
+            # /DEBUG
+            return t_windows
+            
+        
             
             
 
