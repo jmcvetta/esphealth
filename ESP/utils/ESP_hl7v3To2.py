@@ -76,6 +76,9 @@ Brookline Avenue</XAD.1><XAD.3>Boston</XAD.3><XAD.4>MA</XAD.4><XAD.5>02215</XAD.
 """
 class v3Tov2:
     """class to wrap the functionality of xml2bar.py for multiple message munging
+    Instantiate with a list of individual xml hl7 v3 message strings as v3XML and
+    an output file prototype, and it will spit out the hl7 v2 version more or less
+    as a series of indexed message files based on the prototype filename
     """
     def __init__(self,v3XML=[],outNameProto='test1'):
         """converted into a self processing class
