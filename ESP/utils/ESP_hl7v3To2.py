@@ -114,7 +114,7 @@ class v3Tov2:
         self.thisCompNo = 0
         self.thisSubCompNo = 0
         self.res = []
-        # is this safe?
+        # is this safe? It seems to work for 30 messages in a batch
         del self.xml_parser
         xml_parser = xml.parsers.expat.ParserCreate()
         # TODO figure out how to safely reset a self.xml_parser
@@ -267,7 +267,7 @@ if __name__ == "__main__":
         s = s.split('\n') # new line list
         s = ''.join([x.strip() for x in s]) # stripped of cr/lf
         b = s.split(startBatch) # each ESP v3 file has only one cdata seg
-        if len(b) > 1: # 
+        if len(b) > 1: # must be one of ours :)
             s = b[1].split(endBatch)[0] # and strip off last endBatch
         xlist = s.split(startMess) 
         xlist = ['%s%s' % (startMess,x) for x in xlist if len(x) > 10]
