@@ -86,8 +86,11 @@ class v3Tov2:
         self.outfskel = '%s_v2_%%d.hl7' % outNameProto # use to create output name
         # Set up the state information
         self.tagMatch = re.compile('^...$')
-        for i,xml in enumerate(v3XML): # expect a list of v3 messages like the test sample above
-            tx = [x.strip() for x in xml.split('\n')] # remove all cr/line feeds
+        # Create the XML parser
+        self.xml_parser = xml.parsers.expat.ParserCreate()
+ 
+        for i,s in enumerate(v3XML): # expect a list of v3 messages like the test sample above
+            tx = [x.strip() for x in s.split('\n')] # remove all cr/line feeds
             s = ' '.join(tx) # one long string
             self.reset()
             self.parseOne(s)
@@ -111,6 +114,19 @@ class v3Tov2:
         self.thisCompNo = 0
         self.thisSubCompNo = 0
         self.res = []
+        # is this safe?
+        del self.xml_parser
+        xml_parser = xml.parsers.expat.ParserCreate()
+        # TODO figure out how to safely reset a self.xml_parser
+        # sure, this is inefficient but there's no obvious
+        # reset and although it may be ok after a parse('')
+        # it seems safer to suffer the time and heap frag
+        # Associate the handlers with the parser
+        xml_parser.StartElementHandler = self.startElement
+        xml_parser.EndElementHandler = self.endElement
+        xml_parser.CharacterDataHandler = self.characterData
+        self.xml_parser = xml_parser
+
 
     # Called when a start tag is found
     def startElement(self,tag, attrs) :
@@ -214,16 +230,8 @@ class v3Tov2:
         """
         # Read in the XML and strip off any start of line formatting
 
-        # Create the XML parser
-        xml_parser = xml.parsers.expat.ParserCreate()
-
-        # Associate the handlers with the parser
-        xml_parser.StartElementHandler = self.startElement
-        xml_parser.EndElementHandler = self.endElement
-        xml_parser.CharacterDataHandler = self.characterData
-
-        # Parse and handle the data
-        xml_parser.Parse(XML)
+        # Parse and handle the data http://docs.python.org/library/pyexpat.html
+        self.xml_parser.Parse(XML,True) # isfinal to ensure everything is parsed
 
         if self.Seg != '' :
             self.Seg = self.Seg.replace('&#92;', '\\')
@@ -258,8 +266,9 @@ if __name__ == "__main__":
         fName = os.path.splitext(infName)[0]
         s = s.split('\n') # new line list
         s = ''.join([x.strip() for x in s]) # stripped of cr/lf
-        s = s.split(startBatch)[1] # each ESP v3 file has only one cdata seg
-        s = s.split(endBatch)[0] # and strip off last endBatch
+        b = s.split(startBatch) # each ESP v3 file has only one cdata seg
+        if len(b) > 1: # 
+            s = b[1].split(endBatch)[0] # and strip off last endBatch
         xlist = s.split(startMess) 
         xlist = ['%s%s' % (startMess,x) for x in xlist if len(x) > 10]
         p = v3Tov2(v3XML=xlist,outNameProto=fName)
