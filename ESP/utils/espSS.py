@@ -126,13 +126,17 @@ def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
             nfcases = icd9Fact.objects.filter(id__in=icases,icd9EncDate__gte=startDT, 
              icd9EncDate__lte=endDT)
     if checkFever: # must look for some codes with fever or icd9 fever
-        realFevers = Enc.objects.filter(EncTemperature__gte='100', EncEncounter_Date__gte=startDT,
+        # TODO: eesh - the text seems to want to ignore any case with 
+        # an ICD9 fever code but a measured temp <= 100F!!
+        # not sure I can be bothered...
+        realFevers = Enc.objects.filter(EncTemperature__gt='100', EncEncounter_Date__gte=startDT,
             EncEncounter_Date__lte=endDT).values_list('EncPatient',flat=True).distinct()
+        # patient ids with measured fever
         icdFevers = icd9Fact.objects.filter(icd9Code__in=icdFevercodes,icd9EncDate__gte=startDT, 
           icd9EncDate__lte=endDT).values_list('icd9Patient',flat=True).distinct() 
-        # patients with icd fever
+        # patient ids with icd fever
         feverIDs = list(realFevers) + list(icdFevers)
-        if len(feverIDs) > 0: # should be few of these each period
+        if len(feverIDs) > 0: # expect few of these each period
             fcases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
             icd9Code__in=feverCodes, icd9Patient__in=feverIDs)
     if fcases and cases:
@@ -148,9 +152,9 @@ def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
         # or values for dict instead with overheads.
         caselist = list(cases.values_list('id','icd9Enc','icd9Code','icd9Patient','icd9EncDate')) 
         for i,c in enumerate(caselist):
-	     c = list(c)
-             c.insert(0,zips[i])
-             caselist[i] = c
+            c = list(c)
+            c.insert(0,zips[i])
+            caselist[i] = c
         for c in caselist:
             yield c
     else:
@@ -168,5 +172,5 @@ def test():
             print s,i,c
 
 if __name__ == "__main__":
-    test()        
- 
+  test()
+
