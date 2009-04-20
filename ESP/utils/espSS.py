@@ -99,6 +99,23 @@ iclogging = getLogging('espSSdev_v0.1', debug=0)
 #sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG','jason.mcvetta@channing.harvard.edu', 'ross.lazarus@channing.harvard.edu']
 sendEmailToList = ['ross.lazarus@gmail.com']
 
+def makeAge(dob='20070101',edate='20080101'):
+    """return age in years for mdph ILI reports 
+    """
+    if len(dob) < 8:
+        logging.error('### duff dob %s in makeAge' % dob)
+        return None
+    else:
+        yy,mm,dd = map(int,[dob[:4],dob[4:6],dob[6:8]])
+        bd = datetime.date(yy,mm,dd)
+    if len(edate) < 8:
+        logging.error('### duff edate %s in makeAge' % edate)
+        return None
+    else:
+        yy,mm,dd = map(int,[edate[:4],edate[4:6],edate[6:8]])
+        ed = datetime.date(yy,mm,dd)       
+    return (ed-bd).days
+
 def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
     """ prototype for development
     yield all events from startDT to endDT with any
@@ -129,7 +146,7 @@ def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
         # TODO: eesh - the text seems to want to ignore any case with 
         # an ICD9 fever code but a measured temp <= 100F!!
         # not sure I can be bothered...
-        realFevers = Enc.objects.filter(EncTemperature__gt='100', EncEncounter_Date__gte=startDT,
+        realFevers = Enc.objects.filter(EncTemperature__gte='100', EncEncounter_Date__gte=startDT,
             EncEncounter_Date__lte=endDT).values_list('EncPatient',flat=True).distinct()
         # patient ids with measured fever
         icdFevers = icd9Fact.objects.filter(icd9Code__in=icdFevercodes,icd9EncDate__gte=startDT, 
@@ -147,12 +164,16 @@ def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
         cases = nfcases
     if cases:
         zips = [x.icd9Patient.DemogZip for x in cases] # get zips!   
-        zips = [x.split('-')[0] for x in zips] # get rid of trailing stuff - want 5 digit only     
+        zips = [x.split('-')[0] for x in zips] # get rid of trailing stuff - want 5 digit only  
+        dobs = [x.icd9Patient.DemogDate_of_Birth for x in cases] # get dobs   
+        encdates = [x.icd9Enc.EncEncounter_Date for x in cases] # get encdates   
+        encAges = [int(makeAge(dobs[i],encdates[i])/365.25) for i in range(len(encdates))]
         # for testing can return tuples for efficiency rather than mongo django objects
         # or values for dict instead with overheads.
         caselist = list(cases.values_list('id','icd9Enc','icd9Code','icd9Patient','icd9EncDate')) 
         for i,c in enumerate(caselist):
             c = list(c)
+            c.insert(0,encAges[i])
             c.insert(0,zips[i])
             caselist[i] = c
         for c in caselist:
@@ -173,4 +194,5 @@ def test():
 
 if __name__ == "__main__":
   test()
+
 
