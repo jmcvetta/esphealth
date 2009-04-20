@@ -30,6 +30,8 @@ ESP/templates/nav-bg.gif -text
 ESP/utils/ESP_hl7v3To2.py -text
 ESP/utils/LOINCDB.TXT -text
 ESP/utils/VAERSevents.py -text
+ESP/utils/espSS.py -text
+ESP/utils/espSSconf.py -text
 ESP/utils/hl7_to_etl.py -text
 ESP/utils/makeESPdm.py -text
 ESP/utils/northadams.py -text
