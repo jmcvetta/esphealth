@@ -4,6 +4,8 @@ from django.utils.translation import ugettext_lazy as _
 from ESP.esp.models import *
 from ESP.esp import models
 
+
+
 class CaseAdmin(admin.ModelAdmin):
     list_filter = ('caseWorkflow',)
     #ordering = ('updated_timestamp', 'created_timestamp')
@@ -79,11 +81,11 @@ class Hl7InputFileAdmin(admin.ModelAdmin):
     list_filter = ['status',]
 
 
-admin.site.register(Case, CaseAdmin)
+admin.site.register(TestCase, CaseAdmin)
 admin.site.register(SocialHistory)
 admin.site.register(Enc, EncOptions)
 admin.site.register(Allergy)
-admin.site.register(Hl7OutputFile, Hl7OutputFileOptions)
+# admin.site.register(Hl7OutputFile, Hl7OutputFileOptions)
 admin.site.register(Rx)
 admin.site.register(Provider, ProviderOptions)
 admin.site.register(Lx)
