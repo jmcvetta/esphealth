@@ -77,6 +77,7 @@ src/ESP/backfill-by-month.sh -text
 src/ESP/conf/__init__.py -text
 src/ESP/conf/admin.py -text
 src/ESP/conf/choices.py -text
+src/ESP/conf/common.py -text
 src/ESP/conf/fixtures/conf-atrius.json -text
 src/ESP/conf/fixtures/conf-northadams.json -text
 src/ESP/conf/models.py -text
