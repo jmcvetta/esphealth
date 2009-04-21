@@ -102,6 +102,61 @@ class Icd9(models.Model):
 
     def __unicode__(self):
         return u'%s %s' % (self.icd9Code,self.icd9Code)
+    
+    @staticmethod
+    def expansion(expression):
+        '''
+        considering expressions to represent:
+        - An interval of codes: 047.0-047.1
+        - A wildcard to represent a family of codes: 320*, 345.*
+        - An interval with a wildcard: 802.3-998*
+        
+        Bear in mind that wildcards are supposed to represent only the
+        fractional part. E.g: 809.9* is not a valid expression to expand and
+        may result in errors.
+        
+        This method returns a list of all of the codes that satisfy the
+        expression.
+        '''
+
+        expression = expression.strip()
+
+        # Sanity check. Not a true expression. Should only be a code.
+        # If it's a string representing a code, return the appropriate code.
+        if '*' not in expression and '-' not in expression:
+            return Icd9.objects.filter(icd9Code=expression)
+
+    
+
+        if '-' in expression:
+            # It's an expression to show a range of values
+            low, high = [x.strip() for x in expression.split('-')]
+            
+            # Lower bound will always be truncated to the integer part
+            low = low.rstrip('.*') 
+        
+            #Higher bound, however, must be appended to the highest
+            #possible value of the range if X itself is a wildcard
+            #expression. E.g: 998* -> 998.99
+            if high.rstrip('.*') != high:
+                high = high.rstrip('.*') + '.99'
+                
+
+        if '*' in expression and '-' not in expression:
+            low = expression.rstrip('.*')
+            high = expression.rstrip('.*') + '.99'
+
+
+        assert(float(low))
+        assert(float(high))
+            
+        return Icd9.objects.filter(
+            icd9Code__gte=low, 
+            icd9Code__lte=high
+            ).order_by('icd9Code')
+
+    
+        
         
    
 class Ndc(models.Model):
