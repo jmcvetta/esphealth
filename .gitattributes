@@ -210,6 +210,7 @@ src/ESP/templates/pages/vaers/identify.html -text
 src/ESP/templates/pages/vaers/present.html -text
 src/ESP/templates/widgets/vaers/feedback_form.html -text
 src/ESP/urls.py -text
+src/ESP/utils/common.py -text
 src/ESP/utils/concordance.py -text
 src/ESP/utils/load_hl7.py -text
 src/ESP/utils/makeESPdm.py -text
