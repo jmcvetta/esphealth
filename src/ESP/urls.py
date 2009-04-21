@@ -26,7 +26,7 @@ urlpatterns = patterns(
     (r'^vaers/', include('ESP.vaers.urls')),
     
     # Login and Logout
-    (r'^login$', esplogin),
+    (r'^login/?$', esplogin),
     
     
     # Django Admin
