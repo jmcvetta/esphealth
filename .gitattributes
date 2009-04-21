@@ -219,6 +219,7 @@ src/ESP/utils/northadams.py -text
 src/ESP/utils/parsehl7.py -text
 src/ESP/utils/pd1.py -text
 src/ESP/utils/pv1.py -text
+src/ESP/utils/update_icd9_encounters.py -text
 src/ESP/utils/update_loincs.py -text
 src/ESP/utils/utils.py -text
 src/ESP/utils/vaers_hl7.py -text
