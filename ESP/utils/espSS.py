@@ -1,8 +1,12 @@
 """
-Notes on design for ESP:SS module
-ross lazarus April 20 2009
+21 april 2009: added btzipdict to espSSconf.py - lookup a zip code to get the MDPH BT region
 
+Copyright ross lazarus April 20 2009
+All rights reserved
+Licensed under the LGPL v3.0 or a later version at your preference
+see http://www.gnu.org/licenses/lgpl.html
 
+Notes during design and prototyping of an ESP:SS module
 Need to decouple the definitions, detection and consumption of events
 
 a) Definitions are lists of icd9 codes +/- fever
@@ -37,8 +41,7 @@ event iterator as eg getEvents(icdList,needFever,startDT,endDT)
 returning a tuple (encId,demogId,pcpId,icd9,obsDT,obsZip) for each event, 
 and do whatever it wants including store individual records or just pump out totals by zip
 
-icdList and needFever come from a table eg of 
-
+TODO: icdList and needFever come from a table eg of:
 esp_syndefs
 id
 syndName
@@ -70,6 +73,8 @@ eventDT
 eventZip
 demogID
 encID (gives PCP)
+age
+zip
 
 
 
@@ -82,10 +87,8 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 from ESP.esp.models import *
 from django.db.models import Q
 from ESP.settings import *
-from django.db import connection
-cursor = connection.cursor()
 
-from espSSconf import atriusSites,ILIdef,HAEMdef,LESIONSdef,LYMPHdef
+from espSSconf import btzipdict,atriusSites,ILIdef,HAEMdef,LESIONSdef,LYMPHdef
 from espSSconf import LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef
 # these are [icd,feverreq] lists
 import utils
@@ -94,13 +97,12 @@ nameList = ['ILI','Haematological','Lesions','Lymphatic','Lower GI','Upper GI',
 'Neurological','Rashes','Respiratory']
 syndDefs = dict(zip(nameList,defList))
 
-###For logging
 iclogging = getLogging('espSSdev_v0.1', debug=0)
 #sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG','jason.mcvetta@channing.harvard.edu', 'ross.lazarus@channing.harvard.edu']
 sendEmailToList = ['ross.lazarus@gmail.com']
 
 def makeAge(dob='20070101',edate='20080101'):
-    """return age in years for mdph ILI reports 
+    """return age in days for mdph ILI reports 
     """
     if len(dob) < 8:
         logging.error('### duff dob %s in makeAge' % dob)
@@ -120,14 +122,6 @@ def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
     """ prototype for development
     yield all events from startDT to endDT with any
     of the ICD codes taking fever into account if required
-    
-    class icd9Fact(models.Model):
-    icd9Enc = models.ForeignKey(Enc)
-    icd9Code = models.CharField('ICD9 codes',max_length=200,blank=True,null=True)
-    icd9Patient = models.ForeignKey(Demog)
-    icd9EncDate = models.CharField('Encounter Date',max_length=20,blank=True,null=True)
-    lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
-    createdDate = models.DateTimeField('Date Created', auto_now_add=True)
     """
     nfcases = None
     fcases = None
@@ -148,9 +142,11 @@ def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
         # not sure I can be bothered...
         realFevers = Enc.objects.filter(EncTemperature__gte='100', EncEncounter_Date__gte=startDT,
             EncEncounter_Date__lte=endDT).values_list('EncPatient',flat=True).distinct()
+        # mmmm - we really only need this done once over all syndromes
+        # TODO is this worth fixing - move outside syndrome loop - bah!
         # patient ids with measured fever
         icdFevers = icd9Fact.objects.filter(icd9Code__in=icdFevercodes,icd9EncDate__gte=startDT, 
-          icd9EncDate__lte=endDT).values_list('icd9Patient',flat=True).distinct() 
+        icd9EncDate__lte=endDT).values_list('icd9Patient',flat=True).distinct() 
         # patient ids with icd fever
         feverIDs = list(realFevers) + list(icdFevers)
         if len(feverIDs) > 0: # expect few of these each period
@@ -191,8 +187,7 @@ def test():
         g = syndGen(syndDef=d,syndName=s,startDT='20080201',endDT='20080201')
         for i,c in enumerate(g):
             print s,i,c
+        del g
 
 if __name__ == "__main__":
   test()
-
-

@@ -35,7 +35,7 @@ def getlines(fname):
         return []
             
     # print file,len(lines)
-    returnl = [x.split('\t') for x in lines if len(x.split('\t')) >= 1]
+    returnl = [x.split('\t') for x in lines if len(x.split('\t')) >= 2]
 
     return returnl
 

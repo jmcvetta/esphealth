@@ -99,6 +99,7 @@ def getRelatedLx(condition,defines=[],demog=None):
         defines = ConditionLOINC.objects.filter(CondiRule__ruleName__icontains=condition,CondiDefine=True)
 
     loincs = map(lambda x:x.CondiLOINC, defines)
+    # loincs = [x.CondiLOINC for x in defines] is clearer?
     
 
     if demog:

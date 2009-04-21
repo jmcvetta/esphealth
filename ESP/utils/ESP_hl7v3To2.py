@@ -1,3 +1,28 @@
+#
+# turns out that the ordering bothers the Ohio parser
+"""
+2.3 Unsolicited Observation Message (ORU)/ Event R01
+Laboratory information is reported through the ORU^R01 message to public health agencies. The
+supported segments and usage for Public Health ORU/R01 message structure are described below.
+          ORU - unsolicited transmission of an observation message (event R01)
+                          Observational Results (Unsolicited)                           Chapter
+  ORU^R01
+  MSH                     Message Header segment                                            2
+  PID                     Patient Identification segment                                    3
+  NK1                     Next-Of-Kin segment                                               3
+  ORC                     Order common segment                                              4
+   {
+        OBR               Observations Report ID segment                                    7
+         {
+             [OBX]        Observation/Result segment                                        7
+            { [NTE] }     Notes and comments segment                                        2
+          }
+  }
+
+"""
+# it looks to me like we need to make sure the ORC/OBR/OBX follow the last NK1 and get rid of the 
+# NTE create new case and we might be ok
+#
 # snarfed from http://www.humehealth.com.au/humeNET/browse.asp?page=421
 # mods to read and parse out messages from our MDPH v3 HL7 batch
 # turned main function of xml2bar.py into a class
@@ -242,16 +267,41 @@ class v3Tov2:
             self.res.append(copy.copy(self.Seg))
 
     def writeRes(self,messIndex=1):
+        """ need to do some shuffling of segments - make sure the ORC and all after it
+        are after the last NK1, get rid of the NTE|||Create new case
         """
-        """
-        fname = self.outfskel % messIndex
-        f = file(fname,'w')
-        f.write('\r'.join(self.res))
-        f.write('\r')
-        f.close()
-        if showdebug:
-            print 'wrote', fname,'\n','\n'.join(self.res),'\n'
-
+        orcsegi = []
+        ntesegi = []
+        nk1segi = []
+        self.res = [x for x in self.res if len(x) > 0]
+        for i,x in enumerate(self.res):
+            if x[:3] == 'ORC':
+                orcsegi.append(i)
+            if x[:3] == 'NTE':
+                ntesegi.append(i)
+            if x[:3] == 'NK1':
+                nk1segi.append(i)
+        res = []
+        lastnk1 = nk1segi[-1] + 1 
+        firstorc = orcsegi[0] - 1 # take first one - can we cope with multiple ORCs?
+        self.res = [x for i,x in enumerate(self.res) if not i in ntesegi] 
+        # may not need this?
+        if lastnk1: # 0 1 2 lastntk 4 5 firstorc 7 8 9
+            endnk1 = lastnk1 + 1 # include it
+            res = copy.copy(self.res[:lastnk1]) # copy all up to nk1
+            res += copy.copy(self.res[firstorc:]) # orc and all following
+            res += copy.copy(self.res[lastnk1:firstorc]) # the rest
+            fname = self.outfskel % messIndex
+            f = file(fname,'w')
+            f.write('\r'.join(res))
+            f.write('\r')
+            f.close()
+            if showdebug:
+                print '\n===\n## nk1=',lastnk1, 'orc=',firstorc,'nrows=',len(self.res)
+                print 'wrote', fname,'\n','\n'.join(res),'\n---- was \n','\n'.join(self.res)
+        else:
+            print '### eeek - no lastnk1 in %s' % ('\n'.join(self.res))
+  
 def test():
     p = v3Tov2(v3XML=[testXML,],outNameProto='test1')
 
@@ -263,6 +313,8 @@ if __name__ == "__main__":
         except:
             print 'Cannot open %s - permissions? exists?' % infName
             sys.exit(1)
+        if len(sys.argv[1]) > 2:
+            showdebug = True
         fName = os.path.splitext(infName)[0]
         s = s.split('\n') # new line list
         s = ''.join([x.strip() for x in s]) # stripped of cr/lf
