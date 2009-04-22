@@ -32,8 +32,6 @@ from ESP.conf.models import Cpt
 from ESP.conf.models import Rule
 from ESP.conf.models import NativeToLoincMap
 
-
-
 class Provider(models.Model):
     provCode= models.CharField('Physician code',max_length=20,blank=True,db_index=True)
     provLast_Name = models.CharField('Last Name',max_length=70,blank=True,null=True)
@@ -393,7 +391,7 @@ class Enc(models.Model):
     EncPatient = models.ForeignKey(Demog) 
     EncMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,blank=True,null=True,db_index=True)
     EncEncounter_ID = models.CharField('Encounter ID',max_length=20,blank=True,null=True)
-    EncEncounter_Date = models.CharField('Encounter Date',max_length=20,blank=True,null=True)
+    EncEncounter_Date = models.CharField('Encounter Date', max_length=20, blank=True, null=True, db_index=True)
     EncEncounter_Status = models.CharField('Encounter Status',max_length=20,blank=True,null=True)
     EncEncounter_ClosedDate = models.CharField('Encounter Closed Date',max_length=20,blank=True,null=True) 
     EncEncounter_Provider = models.ForeignKey(Provider,blank=True,null=True) 
@@ -412,6 +410,10 @@ class Enc(models.Model):
     EncBPDias = models.CharField('BP Diastolic',max_length=100,blank=True,null=True)
     EncO2stat = models.CharField('O2 Stat',max_length=50,blank=True,null=True)
     EncPeakFlow = models.CharField('Peak Flow',max_length=50,blank=True,null=True)
+    reported_icd9_list = models.ManyToManyField(Icd9)
+
+
+
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
     def _get_patient(self):
