@@ -154,30 +154,33 @@ b) ICD9 code of 780.6 (fever)
     if checkNoFever:
         nfcases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
              icd9EncDate__lte=endDT, icd9Code__in=noFevercodes).values_list('id',flat=True).distinct()
+        print '## Nofever: %d cases' % len(list(nfcases))
     if checkFever: # must look for some codes with fever or icd9 fever
         # complex - find all encs with relevant icd9 code first
-        # find all enc ids with fevercode and relevant icd9 code
         icd9encs = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
-            icd9Code__in=feverCodes).values_list('icd9Enc',flat=True).distinct() 
+            icd9Code__in=feverCodes).values_list('icd9Enc',flat=True).distinct() # all relevant icd9facts
         realFeverEncs = Enc.objects.filter(EncTemperature__gte=100,
             id__in = icd9encs,EncEncounter_Date__gte=startDT,
-            EncEncounter_Date__lte=endDT).values_list('id',flat=True).distinct()
+            EncEncounter_Date__lte=endDT).values_list('id',flat=True).distinct() # encids of these with measured fever
         realFeverCases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
-            icd9Code__in=feverCodes, icd9Enc__in=realFeverEncs).values_list('id',flat=True).distinct() 
-            # whew - now icd9Fact id list
+            icd9Code__in=feverCodes, icd9Enc__in=realFeverEncs).values_list('id',flat=True).distinct()  
+        # whew - these are all cases with a measured fever 
         # pass if no temp recorded but an icd9 fever code
-        #.exclude(icd9Enc__in=notFeverEncs).values_list('icd9Enc',flat=True).distinct() 
         notFeverEncs = Enc.objects.filter(EncTemperature__lt=100, EncTemperature__gte=90,
             id__in = icd9encs, EncEncounter_Date__gte=startDT,
-            EncEncounter_Date__lte=endDT).values_list('id',flat=True).distinct()        
+            EncEncounter_Date__lte=endDT).values_list('id',flat=True).distinct() # measured, but NOT fever      
         # find all with an icd9 code for fever but NO measured temp
         icdFeverCases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
           icd9EncDate__lte=endDT, icd9Enc__in = icd9encs,
-          icd9Code__in=icdFevercodes).exclude(icd9Enc__in=notFeverEncs).values_list('id',flat=True).distinct() 
-        # these are icd9Fact ids
-        fcases = list(realFeverCases) + list(icdFeverCases)
+          icd9Code__in=icdFevercodes).exclude(icd9Enc__in=notFeverEncs).values_list('id',flat=True).distinct()
+        # these are cases without measured temp but an icd9 fever code recorded
+        fcases = list(realFeverCases) + list(icdFeverCases) # icd9fact id lists
+        n1 = len(list(icd9encs))
+        n2 = len(list(realFeverCases))
+        n3 = len(list(icdFeverCases))
+        print '### fever: %d potential matches, %d with measured fever, %d with no measured temp but icd9 fever' % (n1,n2,n3)
     caseids = list(nfcases) + fcases
-    cases = icd9Fact.objects.filter(id__in=caseids)
+    cases = icd9Fact.objects.filter(id__in=caseids) # convert to icd9fact object lists
     if cases:
         zips = [x.icd9Patient.DemogZip for x in cases] # get zips!   
         zips = [x.split('-')[0] for x in zips] # get rid of trailing stuff - want 5 digit only  
@@ -212,7 +215,7 @@ def makeAMDS(sdate='20080101',edate='20080102',syndDefs={},cclassifier="ESPSS",
         """
         res = ['<GeoLocationSupported>',]
         gs = '<GeoLocation type="zip%d">%s</GeoLocation>'
-        for z in ziplist:
+        for z in ziplist: 
             ndig = len(z.strip())
             s = gs % (ndig,z)
             res.append(s)
@@ -344,7 +347,6 @@ def testAMDS(sdate='20080101',edate='20080102'):
     mdk.sort()
     for syndrome in mdk:
         m = mdict[syndrome]
-        print '###',syndrome,sdate,edate,fproto
         fname = fproto % (syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(m))
