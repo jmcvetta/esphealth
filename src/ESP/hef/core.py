@@ -28,8 +28,8 @@ from django.contrib.contenttypes.models import ContentType
 
 
 from ESP.esp.models import Lx, Enc, Rx
-from ESP.conf.models import Rule
-from ESP.hef.models import NativeToLoincMap, HeuristicEvent
+from ESP.conf.models import Rule, NativeToLoincMap
+from ESP.hef.models import HeuristicEvent
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
@@ -196,19 +196,6 @@ class LabHeuristic(BaseHeuristic):
         assert self.name # Concrete class must define this!
         self._register(**kwargs)
     
-    def __get_lab_q(self):
-        '''
-        Returns a Q object that selects all labs identified by self.loinc_nums.
-        '''
-        codes = NativeToLoincMap.objects.filter(loinc__in=self.loinc_nums).values_list('native_code', flat=True)
-        if not codes: # Is length of codes == 0?
-            log.critical('Could not generate events for heuristic "%s" because no LOINCs can be mapped to native codes' % self.name)
-            return Q(pk__isnull=True) # Matches nothing
-        lab_q = Q(native_code__in=codes)
-        log.debug('lab_q for %s: %s' % (self.name, lab_q) )
-        return lab_q
-    lab_q = property(__get_lab_q)
-        
     def relevant_labs(self, begin_date=None, end_date=None):
         '''
         Return all lab results relevant to this heuristic, whether or not they 
@@ -220,12 +207,11 @@ class LabHeuristic(BaseHeuristic):
         '''
         log.debug('Get lab results relevant to "%s".' % self.name)
         log.debug('Time window: %s to %s' % (begin_date, end_date))
-        qs = Lx.objects.all()
+        qs = Lx.objects.filter_loincs(self.loinc_nums)
         if begin_date:
             qs = qs.filter(date__gte=begin_date)
         if end_date:
             qs = qs.filter(date__lte=end_date)
-        qs = qs.filter(self.lab_q)
         return qs
 
 

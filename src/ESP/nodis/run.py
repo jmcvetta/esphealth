@@ -2,7 +2,7 @@
 '''
                                   ESP Health
                          Notifiable Diseases Framework
-Command Line Runner
+                              Command Line Runner
 
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
@@ -70,16 +70,20 @@ def main():
         DiseaseDefinition.generate_all_cases(begin_date=options.begin, end_date=options.end)
     if options.update:
         DiseaseDefinition.update_all_cases(begin_date=options.begin, end_date=options.end)
-    if not (options.events or options.cases or options.update):
+    if not (options.cases or options.update):
         parser.print_help()
 
 
 def experiment():
-    print defs.hep_b_1.matches()
+    #defs.hep_b_1.matches()
+    #defs.hep_b_2.matches()
+    print defs.hep_b_3.matches()
+    #defs.gonorrhea_crit_1.matches()
+    #defs.hep_b.generate_cases()
 
 
 if __name__ == '__main__':
-    #main()
-    experiment()
+    main()
+    #experiment()
     print 'Total Number of DB Queries: %s' % len(connection.queries)
     #pprint.pprint(connection.queries)

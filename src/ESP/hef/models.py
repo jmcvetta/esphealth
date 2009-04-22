@@ -17,23 +17,6 @@ from ESP.conf.models import Loinc
 from ESP.esp.models import Demog
 
 
-class NativeToLoincMap(models.Model):
-    '''
-    A mapping from a native code (for a lab result, etc) to a Loinc number
-    '''
-    # This table and utilities making use of it assume only one external 
-    # code table per ESP installation.  More work will be required if your 
-    # installation must comprehend multiple, potentially overlapping, external 
-    # code sources
-    native_code = models.CharField(max_length=100, unique=True, blank=False)
-    native_name = models.CharField(max_length=255, blank=True, null=True)
-    # Loinc can be null to indicate an external code that maps to nothing
-    loinc = models.ForeignKey(Loinc, blank=True, null=True)
-    notes = models.TextField(blank=True, null=True)
-    class Meta:
-        verbose_name = 'Native Code to LOINC Map'
-
-
 class HeuristicEvent(models.Model):
     '''
     An interesting medical event

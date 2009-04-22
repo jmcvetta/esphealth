@@ -11,14 +11,175 @@
 '''
 
 from ESP.settings import DEFAULT_REPORTABLE_ICD9S
-from ESP.nodis.core import DiseaseCriterion, DiseaseDefinition
+from ESP.nodis.core import DiseaseCriterion
+from ESP.nodis.core import DiseaseDefinition
 from ESP.hef.events import jaundice
-from ESP.hef.events import alt_2x, ast_2x, alt_5x, ast_5x
-from ESP.hef.events import hep_b_igm_ab, hep_b_surface, hep_b_viral_dna, hep_b_igm_ab, chronic_hep_b, no_hep_b_surface
-from ESP.hef.events import total_bilirubin_high, high_calc_bilirubin
+from ESP.hef.events import fever
+from ESP.hef.events import alt_2x
+from ESP.hef.events import ast_2x
+from ESP.hef.events import alt_5x
+from ESP.hef.events import ast_5x
+from ESP.hef.events import hep_b_igm_ab
+from ESP.hef.events import hep_b_surface
+from ESP.hef.events import hep_b_viral_dna
+from ESP.hef.events import hep_b_igm_ab
+from ESP.hef.events import chronic_hep_b
+from ESP.hef.events import no_hep_b_surface
+from ESP.hef.events import high_calc_bilirubin
+from ESP.hef.events import total_bilirubin_high
+from ESP.hef.events import gonorrhea as gonorrhea_event
+from ESP.hef.events import chlamydia as chlamydia_event
+from ESP.hef.events import CHLAMYDIA_LOINCS
+from ESP.hef.events import GONORRHEA_LOINCS
+from ESP.hef.events import hep_a_igm_ab
 
-class Foo:
-    pass
+
+#===============================================================================
+#
+# Chlamydia
+#
+#-------------------------------------------------------------------------------
+
+chlamydia_crit_1 = DiseaseCriterion(
+    name = 'Chlamydia Criterion 1',
+    version = 1,
+    window = 30, # Not applicable, since only one primary event
+    require = [
+        (chlamydia_event,),
+        ],
+    )
+
+chlamydia = DiseaseDefinition(
+    name = 'Chlamydia',
+    criteria = [chlamydia_crit_1,],
+    icd9s = [
+        '788.7',
+        '099.40',
+        '597.80',
+        '780.6A',
+        '616.0',
+        '616.10',
+        '623.5',
+        '789.07',
+        '789.04',
+        '789.09',
+        '789.03',
+        '789.00',
+        ],
+    icd9_days_before = 14,
+    icd9_days_after = 14,
+    fever = True,
+    med_names = [
+        'azithromycin',
+        'levofloxacin',
+        'ofloxacin',
+        'ciprofloxacin',
+        'doxycycline',
+        'eryrthromycin',
+        'amoxicillin',
+        'EES',
+        ],
+    med_days_before = 7,
+    med_days_after = 14,
+    # Report both Chlamydia and Gonorrhea labs
+    lab_loinc_nums = CHLAMYDIA_LOINCS + GONORRHEA_LOINCS,
+    lab_days_before = 30,
+    lab_days_after = 30,
+    )
+
+
+#===============================================================================
+#
+# Gonorrhea
+#
+#-------------------------------------------------------------------------------
+
+gonorrhea_crit_1 = DiseaseCriterion(
+    name = 'Gonorrhea Criterion 1',
+    version = 1,
+    window = 30,
+    require = [
+        (gonorrhea_event,),
+        ],
+    )
+
+gonorrhea = DiseaseDefinition(
+    name = 'Gonorrhea',
+    criteria = [gonorrhea_crit_1,],
+    icd9s = [
+        '788.7',
+        '099.40',
+        '597.80',
+        '616.0',
+        '616.10',
+        '623.5',
+        '789.07',
+        '789.04',
+        '789.09',
+        '789.03',
+        '789.00',
+        ],
+    icd9_days_before = 14,
+    icd9_days_after = 14,
+    fever = True,
+    lab_loinc_nums = GONORRHEA_LOINCS, 
+    lab_days_before = 28,
+    lab_days_after = 28,
+    med_names = [
+        'amoxicillin',
+        'cefixime',
+        'cefotaxime',
+        'cefpodoxime',
+        'ceftizoxime',
+        'ceftriaxone',
+        'gatifloxacin',
+        'levofloxacin',
+        'ofloxacin',
+        'spectinomycin',
+        'moxifloxacin',
+        ],
+    med_days_before = 7,
+    med_days_after = 14
+    )
+
+
+
+#===============================================================================
+#
+# Hepatitis A
+#
+#-------------------------------------------------------------------------------
+
+hep_a_crit_1 = DiseaseCriterion(
+    name = 'Acute Hepatitis A Criterion 1',
+    version = 1,
+    window = 30,
+    require = [
+        (hep_a_igm_ab, ),
+        (jaundice, alt_2x, ast_2x),
+        ]
+    )
+ 
+acute_hep_a = DiseaseDefinition(
+    name = 'Acute Hepatitis A',
+    criteria = [hep_a_crit_1,],
+    icd9s = DEFAULT_REPORTABLE_ICD9S,
+    icd9_days_before = 14,
+    icd9_days_after = 14,
+    fever = True,
+    lab_loinc_nums = ['1742-6', '1920-8', '22314-9', '14212-5', '16128-1'],
+    lab_days_before = 30,
+    lab_days_after = 30,
+    )
+
+
+
+#===============================================================================
+#
+# Hepatitis B
+#
+#-------------------------------------------------------------------------------
+
 
 '''
 Acute Hepatitis B definitions:
@@ -82,8 +243,8 @@ hep_b_3 = DiseaseCriterion(
 
 
 hep_b = DiseaseDefinition(
-    name = 'Hepatitis B',
-    components = [hep_b_1, hep_b_2, hep_b_3],
+    name = 'Acute Hepatitis B',
+    criteria = [hep_b_1, hep_b_2, hep_b_3],
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     icd9_days_after = 14,
@@ -105,136 +266,11 @@ hep_b = DiseaseDefinition(
     lab_days_after = 14,
     )
 
-
-
-
-
-#hep_c_1 = Foo(disease='Hepatitis C', version=1)
-#hep_c_1.window = 14 # 14 day window
-#hep_c_1.require(jaundice, alt_5x, ast_5x) # OR
-#hep_c_1.require(hep_b_igm_ab)
-#
-#hep_c_2 = Foo(disease='Hepatitis C', version=1)
-#hep_c_2.window = 21 # 21 day window
-#hep_c_2.require = [
-#    (jaundice, alt_5x, ast_5x),
-#    (hep_b_surface, hep_b_viral_dna),
-#    ]
-#hep_c_2.exclude = []
-#hep_c_2.exclude_past = [
-#    (chronic_hep_b, hep_b_surface, hep_b_viral_dna),
-#    ]
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#    
-#acute_hep_a_def = Foo(
-#    name = 'Acute Hepatitis A',
-#    queries = [HEP_A_SQL,],
-#    time_window = 0,
-#    icd9s = settings.DEFAULT_REPORTABLE_ICD9S,
-#    icd9_days_before = 14,
-#    icd9_days_after = 14,
-#    fever = True,
-#    lab_loinc_nums = ['1742-6', '1920-8', '22314-9', '14212-5', '16128-1'],
-#    lab_days_before = 30,
-#    lab_days_after = 30,
-#    )
-#
-#acute_hep_b_def = Foo(
-#    name = 'Acute Hepatitis B',
-#    queries = [HEP_B_DEF_1_SQL, HEP_B_DEF_2_SQL, ], 
-#    time_window = 365,
-#    )
-#
-#
-#chlamydia_def = Foo(
-#    name = 'Chlamydia',
-#    heuristic_name = 'chlamydia', 
-#    time_window = 365,
-#    icd9s = [
-#        '788.7',
-#        '099.40',
-#        '597.80',
-#        '780.6A',
-#        '616.0',
-#        '616.10',
-#        '623.5',
-#        '789.07',
-#        '789.04',
-#        '789.09',
-#        '789.03',
-#        '789.00',
+#hep_c_1 = DiseaseCriterion(
+#    name = 'Acute Hepatitis C Criterion 1',
+#    version = 1,
+#    require = [
+#        ()
 #        ],
-#    icd9_days_before = 14,
-#    icd9_days_after = 14,
-#    fever = True,
-#    med_names = [
-#        'azithromycin',
-#        'levofloxacin',
-#        'ofloxacin',
-#        'ciprofloxacin',
-#        'doxycycline',
-#        'eryrthromycin',
-#        'amoxicillin',
-#        'EES',
-#        ],
-#    med_days_before = 7,
-#    med_days_after = 14,
-#    # Report both Chlamydia and Gonorrhea labs
-#    lab_loinc_nums = CHLAMYDIA_LOINCS + GONORRHEA_LOINCS,
-#    lab_days_before = 30,
-#    lab_days_after = 30,
 #    )
-#
-#gonorrhea_def = Foo(
-#    name = 'Gonorrhea',
-#    heuristic_name = 'gonorrhea', 
-#    time_window = 365,
-#    icd9s = [
-#        '788.7',
-#        '099.40',
-#        '597.80',
-#        '616.0',
-#        '616.10',
-#        '623.5',
-#        '789.07',
-#        '789.04',
-#        '789.09',
-#        '789.03',
-#        '789.00',
-#        ],
-#    icd9_days_before = 14,
-#    icd9_days_after = 14,
-#    fever = True,
-#    lab_loinc_nums = GONORRHEA_LOINCS, 
-#    lab_days_before = 28,
-#    lab_days_after = 28,
-#    med_names = [
-#        'amoxicillin',
-#        'cefixime',
-#        'cefotaxime',
-#        'cefpodoxime',
-#        'ceftizoxime',
-#        'ceftriaxone',
-#        'gatifloxacin',
-#        'levofloxacin',
-#        'ofloxacin',
-#        'spectinomycin',
-#        'moxifloxacin',
-#        ],
-#    med_days_before = 7,
-#    med_days_after = 14
-#    )
-#
-#
 

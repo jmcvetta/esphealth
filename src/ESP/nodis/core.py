@@ -26,7 +26,9 @@ from django.db.models.query import QuerySet
 from django.contrib.contenttypes.models import ContentType
 
 
-from ESP.hef.models import NativeToLoincMap, HeuristicEvent
+from ESP.hef.models import HeuristicEvent
+from ESP.esp.models import Rule, Enc, Lx, Rx
+from ESP.nodis.models import Case
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
@@ -57,10 +59,14 @@ class OutOfWindow(ValueError):
 
 
 class EventTimeWindow(object):
+    '''
+    A potential case.
+    '''
     def __init__(self, window, events=[]):
         assert isinstance(window, datetime.timedelta)
         self.__window = window
         self.__events = events
+        self.past_events = [] # Past events
     
     def _get_start_date(self):
         return self.__events[-1].date - self.__window
@@ -94,8 +100,8 @@ class DiseaseCriterion(object):
     single disease criterion is sufficient to indicate a case of that disease, 
     but a given disease may have arbitrarily many criteria.
     '''
-    def __init__(self,  name, version, window, require, require_past = None, require_past_window = None,
-        exclude = None, exclude_past = None):
+    def __init__(self,  name, version, window, require, require_past = [], require_past_window = [],
+        exclude = [], exclude_past = []):
         '''
         @param name: Name of this criterion
         @type name: String
@@ -132,81 +138,12 @@ class DiseaseCriterion(object):
         self.exclude = exclude
         self.exclude_past = exclude_past
     
-    def oldMatches(self, begin_date=None, end_date=None):
-        #
-        # Examine only the time slice specified
-        #
-        all_events = HeuristicEvent.objects.all()
-        if begin_date:
-            all_events = all_events.filter(date__gte=begin_date)
-        if end_date:
-            all_events = all_events.filter(date__lte=end_date)
-        #
-        # Do we match all required events?
-        #
-        pde = {} # patient/date/event:  {patient: {date: [event, ...], date: [event, ...], ...}, ...}
-        # Each requirement is an instance of (a subclass of) BaseHeuristic
-        first_req = self.require[0] # Doesn't matter which tuple is considered first, since they are AND'ed
-        other_reqs = self.require[1:]
-        for e in all_events.filter(heuristic_name__in=[h.name for h in first_req]):
-            #
-            print e.date
-            print type(e.date)
-            sys.exit()
-            #
-            try:
-                events_by_date = pde[e.patient]
-            except KeyError:
-                events_by_date = pde[e.patient] = {}
-            try:
-                events_by_date[e.date].append(e)
-            except KeyError:
-                events_by_date[e.date] = [e]
-        # For each patient we have one or more dates, and for each of those 
-        # dates we have one or more events.  Since these events
-        # are required, each (event +/- self.window) defines a temporal slice
-        # in which to query for other events.
-        for patient in pde:
-            for date in pde[patient]: # 'day' so not to conflict w/ reserved word 'date'
-                begin = date - self.window
-                end = date + self.window
-
-    def matches(self, begin_date=None, end_date=None):
-        #
-        # Examine only the time slice specified
-        #
-        all_events = HeuristicEvent.objects.all()
-        if begin_date:
-            all_events = all_events.filter(date__gte=begin_date)
-        if end_date:
-            all_events = all_events.filter(date__lte=end_date)
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # First we do some simple queries and set arithmetic to generate a list
-        # of patients who *could* have the disease.
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #
-        # 'pids' are patient IDs -- db primary keys
-        for req in self.require:
-            pids_this_req = set()
-            for h in req: # One or more BaseHeuristic instances
-                s = set(h.get_events().values_list('patient_id', flat=True))
-                pids_this_req = pids_this_req | s 
-                log.debug('%50s: %s' % (h, len(pids_this_req)) )
-            try:
-                pids = pids & pids_this_req
-            except UnboundLocalError:
-                pids = pids_this_req
-        log.info('%50s: %s' % (self.name, len(pids)) )
-        patient_windows = {}
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Build time windows
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        for pid in list(pids):
-            wins = self.match_patient(pid)
-            if wins:
-                patient_windows[pid] = wins
-    
-    def match_patient(self, patient_pk):
+    def __match_plausible_patient(self, patient_pk):
+        '''
+        For a given plausible (meeting match()'s screening criteria) patient, 
+        identified by db primary key, return EventTimeWindow objects matching
+        disease requirements.
+        '''
         t_windows = [] # [EventTimeWindow, EventTimeWindow, ...]
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Create all possible time windows from first set of required events
@@ -251,15 +188,101 @@ class DiseaseCriterion(object):
                         new_windows.append(win)
             t_windows = list(new_windows)
             log.debug('Remaining valid time windows: %s' % t_windows)
-            # DEBUG:
-            for win in t_windows:
-                print '+' * 80
-                print win
-                for e in win.events:
-                    print '\t%s' % e
-            # /DEBUG
-            return t_windows
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Exclude if we match exclude_past
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        for req in self.exclude_past:
+            valid_windows = [] # EventWindows matching all requirements
+            for h in req: # h is HeuristicEvent type
+                for win in t_windows:
+                    events = h.get_events().filter(patient__pk=patient_pk, date__lt=win.start)
+                    if events:
+                        win.past_events += [events]
+                        log.debug('Window %s was excluded by past event %s' % (win, h))
+                    else:
+                        valid_windows.append(win)
+                    t_windows = list(new_windows)
+            log.debug('Remaining valid time windows: %s' % t_windows)
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Check that we fulfill require_past
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        for req in self.require_past:
+            valid_windows = [] # EventWindows matching all requirements
+            for h in req: # h is HeuristicEvent type
+                for win in t_windows:
+                    end = win.start
+                    start = win.start - self.require_past_window
+                    events = h.get_events().filter(patient__pk=patient_pk, date__gte=start, date__lt=end)
+                    if events:
+                        win.past_events += [events]
+                        log.debug('Window %s matches require_past %s' % (win, h))
+                        valid_windows.append(win)
+                    t_windows = list(new_windows)
+            log.debug('Remaining valid time windows: %s' % t_windows)
+        # DEBUG:
+        #for win in t_windows:
+            #print '+' * 80
+            #print win
+            #for e in win.events:
+                #print '\t%s' % e
+        # /DEBUG
+        return t_windows
             
+    def matches(self, begin_date=None, end_date=None, matches={}):
+        '''
+        @param matches: A match dictionary, in the same format as this 
+            function returns.  New matches are added to this dictionary, and 
+            the combined dict returned.
+        @type matches:  {Demog: [EventTimeWindow, EventTimeWindow, ...], ...}
+        @return:        {Demog: [EventTimeWindow, EventTimeWindow, ...], ...}
+        '''
+        log.info('Finding matches for %s' % self.name)
+        #
+        # Examine only the time slice specified
+        #
+        all_events = HeuristicEvent.objects.all()
+        if begin_date:
+            all_events = all_events.filter(date__gte=begin_date)
+        if end_date:
+            all_events = all_events.filter(date__lte=end_date)
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # First we do some simple queries and set arithmetic to generate a list
+        # of patients who *could* have the disease.
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #
+        # 'pids' are patient IDs -- db primary keys
+        for req in (self.require + self.require_past):
+            pids_this_req = set()
+            for h in req: # One or more BaseHeuristic instances
+                s = set(h.get_events().values_list('patient_id', flat=True))
+                pids_this_req = pids_this_req | s 
+                log.debug('%50s: %s' % (h, len(pids_this_req)) )
+            try:
+                pids = pids & pids_this_req
+            except UnboundLocalError:
+                pids = pids_this_req
+        for item in self.exclude:
+            pids_this_item = set()
+            for h in item: # One or more BaseHeuristic instances
+                s = set(h.get_events().values_list('patient_id', flat=True))
+                pids_this_item = pids_this_req | s 
+                log.debug('%50s: %s' % (h, len(pids_this_item)) )
+            pids = pids - pids_this_item
+        log.debug('Plausible %50s: %s' % (self.name, len(pids)) )
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Now that we have screened for patients who are plausible disease
+        # candidates, we individually examine them to see if they match the 
+        # full battery of requirements.
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        for pid in list(pids):
+            wins = self.__match_plausible_patient(pid)
+            if wins:
+                try:
+                    matches[pid] += wins
+                except KeyError:
+                    matches[pid] = wins
+        return matches
+    
         
             
             
@@ -267,18 +290,12 @@ class DiseaseCriterion(object):
 
  
 class DiseaseDefinition(object):
-    def __init__(self, **kwargs):
-        pass
-        
-
-class BaseDiseaseDefinition(object):
     '''
-    Abstract base class for disease definitions
     '''
     
     def __init__(self, 
         name, 
-        time_window = 0,
+        criteria,
         # Reporting
         icd9s = [],
         icd9_days_before = 14,
@@ -297,6 +314,8 @@ class BaseDiseaseDefinition(object):
             forming part of a disease's definition are reported.
         @param name:             Name of this disease definition
         @type name:              String
+        @param criteria:         Criteria used to identify cases of this disease
+        @type criteria:          [DiseaseCriterion, DiseaseCriterion, ...]
         @param time_window:      Events occurring within the specified time 
             window will be grouped into a single case.  If zero, all events
             will be considered part of the same case.
@@ -322,7 +341,7 @@ class BaseDiseaseDefinition(object):
         @type med_days_after:    Integer
         '''
         self.name = name
-        self.time_window = time_window
+        self.criteria = criteria
         self.icd9s = icd9s
         self.icd9_days_before = datetime.timedelta(days=icd9_days_before)
         self.icd9_days_after = datetime.timedelta(days=icd9_days_after)
@@ -365,81 +384,57 @@ class BaseDiseaseDefinition(object):
         log.debug('All Disease Definition instances: %s' % result)
         return result
     
-    def find_events(self):
+    def new_case(self, etw):
         '''
-        Finds heuristic events that, taken together, constitute a disease case.  
-            Returns a list of HeuristicEvent instances, usually ordered by 
-            date.  For each patient, the first event that is not bound to an
-            existing case, and does not fall within an existing case's time 
-            window, will be used as the primary event for dating a new case.
-        @return: [HeuristicEvent, HeuristicEvent, HeuristicEvent, ...]  
+        Creates, saves, and returns a new Case object.
+            #
+        @type patient: esp.models.Demog
+        @type etw:     EventTimeWindow
         '''
-        raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseDiseaseDefinition.')
-        
-    def new_case(self, primary_event, all_events):
-        '''
-        Creates, saves, and returns a new Case object.  Case variables like 
-            provider and date are set based on primary_event.  The set of 
-            primary_event | all_events  are attached as the Case's events 
-            member.
-        @param primary_event: Event on which the case's date, provider, etc are based
-        @type primary_event:  HeuristicEvent
-        @param all_events:    All events that together establish this case
-        @type all_events:     [HeuristicEvent, HeuristicEvent, ...]
-        '''
-        log.info('Creating a new %s case based on event:\n    %s' % (self.condition, primary_event))
+        patient = etw.events[0].patient
+        log.info('Creating a new %s case for patient #%s based on %s' % (self.condition, patient.pk, etw))
         case = Case()
-        case.patient = primary_event.patient
-        case.provider = primary_event.content_object.provider
-        case.date = primary_event.date
+        case.patient = patient
+        case.provider = etw.events[0].content_object.provider
+        case.date = etw.start
         case.condition = self.condition
         case.workflow_state = self.condition.ruleInitCaseStatus
         case.save()
-        events = set([primary_event]) | set(all_events)
-        case.events = events
+        case.events = etw.events
         case = self.update_reportable_events(case)
         case.save()
         return case
     
-    def generate_cases(self, new_only=False):
+    def generate_cases(self):
         '''
         Calls the user-supplied case factory with appropriate arguments
         '''
-        case_window = datetime.timedelta(days=self.time_window) # Group events occurring within case_window into single case
         counter = 0            # Number of new cases generated
         log.info('Generating cases for %s' % self.condition)
         existing_cases = Case.objects.filter(condition=self.condition)
-        print existing_cases
         # Primary keys of events already bound to a Case object:
         bound_event_pks = HeuristicEvent.objects.filter(case__in=existing_cases).values_list('pk') # ValuesListQuerySet
         bound_event_pks = [item[0] for item in bound_event_pks]
         log.debug('number of bound_events: %s' % len(bound_event_pks))
-        for event in self.find_events():
-            if event.pk in bound_event_pks: 
-                log.debug('Event #%s is already bound to a case' % event.pk) 
-                continue # Event is already attached to a case
-            patient = event.patient
-            begin = event.date - case_window
-            end = event.date
-            if self.time_window > 0:
-                previous = existing_cases.filter(patient=patient, date__gte=begin, date__lte=end)
-            else:
-                previous = existing_cases.filter(patient=patient)
-            if previous: # This event should be attached to an existing case
-                print previous
-                assert len(previous) == 1 # Sanity check
-                primary_case = previous[0]
-                if new_only:
-                    log.debug('Event #%s belongs to existing case #%s, but new_only flag is set to True.  Skipping.' % (event.id, primary_case.id) )
-                    continue # Don't update case
+        matches = {}
+        for criterion in self.criteria:
+            matches = criterion.matches(matches=matches)
+        for pid in matches:
+            for etw in matches[pid]:
+                bound = False
+                for event in etw.events:
+                    if event.pk in bound_event_pks:
+                        log.debug('Event #%s is already bound to a case' % event.pk) 
+                        bound = True
+                        break # Event already attached to a case
+                if bound:
+                    # Ignore this match, as it appears to be already bound.  Note this will cause
+                    # problems if events can validly be bound to more than one case of the same disease.
+                    break 
                 else:
-                    log.debug('Attaching event:\n    %s\nto existing case\n    %s' % (event, primary_case))
-                    primary_case.events.add(event)
-                    primary_case.save()
-                    bound_event_pks.extend([event.pk])
-            else: # A new case should be created for this event
-                self.new_case(event, [])
-                counter += 1 # Increment new case count
+                    self.new_case(etw)
+                    counter += 1
+        log.debug('Generated %s new cases of %s' % (counter, self.name))
         return counter
     
     
@@ -491,12 +486,11 @@ class BaseDiseaseDefinition(object):
             encounters = Enc.objects.filter(enc_q)
             case.encounters = sets.Set(case.encounters.all()) | sets.Set(encounters)
         if self.lab_loinc_nums:
-            lab_q = Q(LxLoinc__in=self.lab_loinc_nums)
-            lab_q = lab_q & Q(LxPatient=patient)
+            lab_q = Q(LxPatient=patient)
             lab_q = lab_q & Q(LxOrderDate__gte=util.str_from_date(date - self.lab_days_before))
             lab_q = lab_q & Q(LxOrderDate__lte=util.str_from_date(date + self.lab_days_after))
             log.debug('lab_q: %s' % lab_q)
-            labs = Lx.objects.filter(lab_q)
+            labs = Lx.objects.filter_loincs(self.lab_loinc_nums).filter(lab_q)
             # Some of these lab results will be for the same test (ie same 
             # LOINC code), but Mike only wants to see one result per test.  
             # It's probably better to handle that in the case management UI,

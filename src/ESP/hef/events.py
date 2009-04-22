@@ -47,6 +47,31 @@ chronic_hep_b = EncounterHeuristic(name='chronic_hep_b',
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
+GONORRHEA_LOINCS = ['691-6', '23908-7', '24111-7', '36902-5'] # Re-used in disease definition
+gonorrhea = StringMatchLabHeuristic(
+    name =          'gonorrhea', 
+    verbose_name =  'Gonorrhea', 
+    loinc_nums =    GONORRHEA_LOINCS,
+    strings =       ['positiv', 'detect'], 
+    abnormal_flag = True, 
+    match_type =    'istartswith',
+    )
+
+CHLAMYDIA_LOINCS = ['4993-2', '6349-5', '16601-7', '20993-2', '21613-5', '36902-5', ] # Re-used in disease definition
+chlamydia = StringMatchLabHeuristic(
+    name =          'chlamydia', 
+    verbose_name =  'Chlamydia', 
+    loinc_nums =    CHLAMYDIA_LOINCS,
+    strings =       ['positiv', 'detect'], 
+    abnormal_flag = True, 
+    match_type =    'istartswith',
+    )
+
+
+
+
+
 alt_2x = HighNumericLabHeuristic(
     name='alt_2x',
     verbose_name='Alanine aminotransferase (ALT) >2x upper limit of normal',
@@ -103,8 +128,8 @@ hep_b_surface = StringMatchLabHeuristic(
 no_hep_b_surface = StringMatchLabHeuristic(
     # This is the exactly the same as hep_b_surface above, but with 'exclude'
     # flag set.
-    name = 'hep_b_surface',
-    verbose_name = 'Hepatitis B Surface Antigen = "REACTIVE" (may be truncated)',
+    name = 'no_hep_b_surface',
+    verbose_name = 'EXCLUDE: Hepatitis B Surface Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['5195-3'],
     strings = ['reactiv'],
     exclude = True,
@@ -136,14 +161,14 @@ hep_b_viral_dna = StringMatchLabHeuristic(
     loinc_nums = ['13126-8', '16934', '5009-6'],
     strings = ['positiv', 'detect'],
     )
-hep_b_viral_dna_num1 = HighNumericLabHeuristic(
+hep_b_viral_dna_part2 = HighNumericLabHeuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['16934-2'],
     default_high = 100,
     allow_duplicate_name=True,
     )
-hep_b_viral_dna_num2 = HighNumericLabHeuristic(
+hep_b_viral_dna_part3 = HighNumericLabHeuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['5009-6'],
@@ -175,26 +200,65 @@ total_bilirubin_high = HighNumericLabHeuristic(
 
 high_calc_bilirubin = CalculatedBilirubinHeuristic()
 
-GONORRHEA_LOINCS = ['691-6', '23908-7', '24111-7', '36902-5'] # Re-used in disease definition
-gonorrhea = StringMatchLabHeuristic(
-    name =          'gonorrhea', 
-    verbose_name =  'Gonorrhea', 
-    loinc_nums =    GONORRHEA_LOINCS,
-    strings =       ['positiv', 'detect'], 
-    abnormal_flag = True, 
-    match_type =    'istartswith',
+hep_c_signal_cutoff = HighNumericLabHeuristic(
+    name = 'hep_c_signal_cutoff',
+    verbose_name = 'Hepatitis C Signal Cutoff Ratio',
+    loinc_nums = ['MDPH-144',],
+    default_high = 3.8,
     )
 
-CHLAMYDIA_LOINCS = ['4993-2', '6349-5', '16601-7', '20993-2', '21613-5', '36902-5', ] # Re-used in disease definition
-chlamydia = StringMatchLabHeuristic(
-    name =          'chlamydia', 
-    verbose_name =  'Chlamydia', 
-    loinc_nums =    CHLAMYDIA_LOINCS,
-    strings =       ['positiv', 'detect'], 
-    abnormal_flag = True, 
-    match_type =    'istartswith',
+hep_c_riba = StringMatchLabHeuristic(
+    name = 'hep_c_riba',
+    verbose_name = 'Hepatitis C RIBA = "POSITIVE"',
+    loinc_nums = ['5199-5'],
+    strings = ['positiv'],
     )
 
-
-
-
+hep_c_rna = StringMatchLabHeuristic(
+    name = 'hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['6422-0'],
+    strings = ['detected'],
+    )
+HighNumericLabHeuristic(
+    name = 'hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['10676-5'],
+    default_high = 100,
+    allow_duplicate_name = True,
+    )
+HighNumericLabHeuristic(
+    name = 'hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['38180-6'],
+    default_high = 2.79,
+    allow_duplicate_name = True,
+    )
+HighNumericLabHeuristic(
+    name = 'hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['34704-7'],
+    default_high = 50,
+    allow_duplicate_name = True,
+    )
+HighNumericLabHeuristic(
+    name = 'hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['11259-9'],
+    default_high = 10,
+    allow_duplicate_name = True,
+    )
+HighNumericLabHeuristic(
+    name = 'hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['20416-4'],
+    default_high = 0.70,
+    allow_duplicate_name = True,
+    )
+HighNumericLabHeuristic(
+    name = 'hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['34703-9'],
+    default_high = 500,
+    allow_duplicate_name = True,
+    )

@@ -30,6 +30,7 @@ from ESP.conf.models import Icd9
 from ESP.conf.models import Loinc
 from ESP.conf.models import Cpt
 from ESP.conf.models import Rule
+from ESP.conf.models import NativeToLoincMap
 
 
 
@@ -222,6 +223,19 @@ class LxManager(models.Manager):
         @return: [Str, Str, ...]
         '''
         return [x[0] for x in self.get_query_set().values_list('LxTest_results').distinct()]
+    
+    @classmethod
+    def filter_loincs(self, loinc_nums, **kwargs):
+        '''
+        Translate LOINC numbers to native codes and lookup
+        @param loinc_nums: List of LOINC numbers for which to retrieve lab results
+        @type loinc_nums:  [String, String, ...]
+        '''
+        log.debug('Querying lab results by LOINC')
+        log.debug('LOINCs: %s' % loinc_nums)
+        native_codes = NativeToLoincMap.objects.filter(loinc__in=loinc_nums).values_list('native_code', flat=True)
+        log.debug('Native Codes: %s' % native_codes)
+        return Lx.objects.filter(native_code__in=native_codes, **kwargs)
     
 
 class Lx(models.Model):
