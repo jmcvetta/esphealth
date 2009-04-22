@@ -1,5 +1,6 @@
 """
 21 april 2009: added btzipdict to espSSconf.py - lookup a zip code to get the MDPH BT region
+22 april 2009: added quick'n'dirty AMDS xml generator - bugger the xsd :)
 
 Copyright ross lazarus April 20 2009
 All rights reserved
@@ -79,7 +80,7 @@ zip
 
 
 """
-import os, sys, django, datetime
+import os, sys, django, time
 sys.path.insert(0, '/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
@@ -98,8 +99,20 @@ nameList = ['ILI','Haematological','Lesions','Lymphatic','Lower GI','Upper GI',
 syndDefs = dict(zip(nameList,defList))
 
 iclogging = getLogging('espSSdev_v0.1', debug=0)
-#sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG','jason.mcvetta@channing.harvard.edu', 'ross.lazarus@channing.harvard.edu']
+#sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG',
+# 'jason.mcvetta@channing.harvard.edu', 'ross.lazarus@channing.harvard.edu']
 sendEmailToList = ['ross.lazarus@gmail.com']
+
+def isoTime(t=None): 
+    """ yyyymmddhhmmss - as at now unless a localtime is passed in
+    # bah. Not what ncphi use - has tz and seps
+    date time handling is hard - use gmt and punt on dst and tz
+    """
+    if t == None:
+        t = time.gmtime()
+    s = time.strftime('%Y-%m-%dT%H:%M:%S00:00',t)
+    return s
+
 
 def makeAge(dob='20070101',edate='20080101'):
     """return age in days for mdph ILI reports 
@@ -122,6 +135,11 @@ def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
     """ prototype for development
     yield all events from startDT to endDT with any
     of the ICD codes taking fever into account if required
+    2) One of the following under the conditions specified:	
+a) Measured fever of at least 100F (in temperature field of database)	
+OR, if and only if there is no valid measured temperature of any magnitude,	
+b) ICD9 code of 780.6 (fever)	
+
     """
     nfcases = None
     fcases = None
@@ -131,33 +149,35 @@ def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
     feverCodes = [x[0] for x in syndDef if x[1]]
     checkFever = (len(feverCodes) > 0)
     checkNoFever = (len(noFevercodes) > 0)
+    nfcases = []
+    fcases = []
     if checkNoFever:
-        icases = icd9Fact.objects.filter(icd9Code__in=noFevercodes).values_list('id',flat=True)
-        if len(icases) > 0:
-            nfcases = icd9Fact.objects.filter(id__in=icases,icd9EncDate__gte=startDT, 
-             icd9EncDate__lte=endDT)
+        nfcases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
+             icd9EncDate__lte=endDT, icd9Code__in=noFevercodes).values_list('id',flat=True).distinct()
     if checkFever: # must look for some codes with fever or icd9 fever
-        # TODO: eesh - the text seems to want to ignore any case with 
-        # an ICD9 fever code but a measured temp <= 100F!!
-        # not sure I can be bothered...
-        realFevers = Enc.objects.filter(EncTemperature__gte='100', EncEncounter_Date__gte=startDT,
-            EncEncounter_Date__lte=endDT).values_list('EncPatient',flat=True).distinct()
-        # mmmm - we really only need this done once over all syndromes
-        # TODO is this worth fixing - move outside syndrome loop - bah!
-        # patient ids with measured fever
-        icdFevers = icd9Fact.objects.filter(icd9Code__in=icdFevercodes,icd9EncDate__gte=startDT, 
-        icd9EncDate__lte=endDT).values_list('icd9Patient',flat=True).distinct() 
-        # patient ids with icd fever
-        feverIDs = list(realFevers) + list(icdFevers)
-        if len(feverIDs) > 0: # expect few of these each period
-            fcases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
-            icd9Code__in=feverCodes, icd9Patient__in=feverIDs)
-    if fcases and cases:
-        cases = nfcases + fcases
-    elif fcases:
-        cases = fcases
-    elif nfcases:
-        cases = nfcases
+        # complex - find all encs with relevant icd9 code first
+        # find all enc ids with fevercode and relevant icd9 code
+        icd9encs = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
+            icd9Code__in=feverCodes).values_list('icd9Enc',flat=True).distinct() 
+        realFeverEncs = Enc.objects.filter(EncTemperature__gte=100,
+            id__in = icd9encs,EncEncounter_Date__gte=startDT,
+            EncEncounter_Date__lte=endDT).values_list('id',flat=True).distinct()
+        realFeverCases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
+            icd9Code__in=feverCodes, icd9Enc__in=realFeverEncs).values_list('id',flat=True).distinct() 
+            # whew - now icd9Fact id list
+        # pass if no temp recorded but an icd9 fever code
+        #.exclude(icd9Enc__in=notFeverEncs).values_list('icd9Enc',flat=True).distinct() 
+        notFeverEncs = Enc.objects.filter(EncTemperature__lt=100, EncTemperature__gte=90,
+            id__in = icd9encs, EncEncounter_Date__gte=startDT,
+            EncEncounter_Date__lte=endDT).values_list('id',flat=True).distinct()        
+        # find all with an icd9 code for fever but NO measured temp
+        icdFeverCases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
+          icd9EncDate__lte=endDT, icd9Enc__in = icd9encs,
+          icd9Code__in=icdFevercodes).exclude(icd9Enc__in=notFeverEncs).values_list('id',flat=True).distinct() 
+        # these are icd9Fact ids
+        fcases = list(realFeverCases) + list(icdFeverCases)
+    caseids = list(nfcases) + fcases
+    cases = icd9Fact.objects.filter(id__in=caseids)
     if cases:
         zips = [x.icd9Patient.DemogZip for x in cases] # get zips!   
         zips = [x.split('-')[0] for x in zips] # get rid of trailing stuff - want 5 digit only  
@@ -176,8 +196,127 @@ def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
             yield c
     else:
         raise StopIteration # nada
+
+def makeAMDS(sdate='20080101',edate='20080102',syndDefs={},cclassifier="ESPSS",
+    crtime='2009-03-30T22:24:23-05:00',doid='',requ='',minCount=5):
+    """this includes some very crude xml generating code for
+    testing.
+    """
+
+    def makeGeoHeader(ziplist=[]):
+        """
+        <GeoLocationSupported>
+    <GeoLocation type="zip3">300</GeoLocation>
+    <GeoLocation type="zip3">301</GeoLocation>
+    </GeoLocationSupported>
+        """
+        res = ['<GeoLocationSupported>',]
+        gs = '<GeoLocation type="zip%d">%s</GeoLocation>'
+        for z in ziplist:
+            ndig = len(z.strip())
+            s = gs % (ndig,z)
+            res.append(s)
+        res.append('</GeoLocationSupported>')
+        return res
+
+
+    def makeTargetHeader(syndlist=[]):
+        """
+        <TargetQuery>
+    <Condition classifier="BioSense">GI</Condition>
+    <Condition classifier="BioSense">Fever</Condition>
+    </TargetQuery>
+        """
+        res = ['<TargetQuery>',]
+        ts = '<Condition classifier="%s">%s</Condition>'
+        for synd in syndlist:
+            s = ts % (cclassifier,synd)
+            res.append(s)
+        res.append('</TargetQuery>')
+        return res
+
+    def makeCounts(aday={},edate='20080101'):
+        """ all counts for a date by zip
+        <CountItem>
+    <Day>2009-01-01</Day>
+    <LocationItem>
+    <PatientLocation>300</PatientLocation>
+    <Count>51</Count>
+    </LocationItem>
+    <LocationItem>				
+    <PatientLocation>300</PatientLocation>
+    <Count suppressed="true"/>
+    </LocationItem>
+    </CountItem>
+        """
+        res = []
+        zips = aday.keys()
+        zips.sort()
+        for i,z in enumerate(zips):
+            count = aday[z]
+            if i == 0: # first one
+                res.append('<CountItem>')
+                res.append('<Day>%s-%s-%s</Day>' % (edate[:4],edate[4:6],edate[6:]))
+            res.append('<LocationItem>')
+            res.append('<PatientLocation>%s</PatientLocation>' % z)
+            if count > minCount:
+                res.append('<Count>%d</Count>' % count)
+            else:
+                res.append('<Count suppressed="true"/>')
+            res.append('</LocationItem>')
+        res.append('</CountItem>')
+        return res
+        
+    def makeMessage(ziplist,syndrome,countsBydate):
+        """
+        so simple, not worth using an xml parser?
+        First challenge - write the header with all the zips and syndromes to follow
+        counts is a dict of syndromes, containing dicts of dates containing dicts of zip/count
+        """
+        # provide sd,ed,ctime,ruser,doid
+        m = ['<AMDSRecordSummary>',]
+        m.append('<DateStart>%s</DateStart>' % sdate)
+        m.append('<DateEnd>%s</DateEnd>' % edate)
+        m.append('<CreationDateTime>%s</CreationDateTime>' % crtime)
+        m.append('<RequestingUser>%s</RequestingUser>' % requ)
+        m.append('<DataSourceOID>%s</DataSourceOID>' % doid)
+        g = makeGeoHeader(ziplist)
+        m += g
+        t = makeTargetHeader([syndrome,])
+        m += t
+        m.append('<CellSuppressionRule>%d</CellSuppressionRule>' % minCount)
+        m.append('</AMDSRecordSummary>')
+        m.append('<CountSet>')
+        dkeys = countsBydate.keys()
+        dkeys.sort()
+        for d in dkeys:
+            c = makeCounts(countsBydate[d],d)
+            m += c
+        m.append('</CountSet>')
+        m.append('</AMDSRecordSummary>')
+        return m  
     
-def test():
+    # main makeAMDS starts here
+    mdict = {}
+    for syndrome in syndDefs:
+        countsBydate = {} # we want {date1:{zip1:22,zip2:41},date2:{..}}
+        zips = {}
+        print 'looking for',syndrome
+        icdlist = syndDefs[syndrome] # icd list
+        g = syndGen(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate)
+        for i,c in enumerate(g):
+            (zipc,age,id,enc,icd,demog,encdate) = c
+            zip3 = zipc[:3] # testing with 3 digit zips
+            zips.setdefault(zip3,zip3) # record all unique zips        
+            countsBydate.setdefault(encdate,{})
+            countsBydate[encdate].setdefault(zip3,0)
+            countsBydate[encdate][zip3] += 1
+        del g
+        m = makeMessage(zips,syndrome,countsBydate)
+        mdict[syndrome] = m
+    return mdict
+
+def testsyndGen():
     """ 
     for dev
     """
@@ -186,8 +325,34 @@ def test():
         d = syndDefs[s] # icd list
         g = syndGen(syndDef=d,syndName=s,startDT='20080201',endDT='20080201')
         for i,c in enumerate(g):
+            (age,zip,id,enc,icd,demog,encdate) = c
             print s,i,c
         del g
 
+def testAMDS(sdate='20080101',edate='20080102'):
+    """ test stub for AMDS xml generator
+    """
+    doid='ESP:SS@Atrius'
+    requ='Ross'
+    minCount=5
+    crtime=isoTime(time.localtime())
+    print 'crtime =',crtime
+    fproto = 'ESP_AMDS_%s_%s_%s.xml'
+    mdict = makeAMDS(sdate=sdate,edate=edate,syndDefs=syndDefs,cclassifier="ESPSS",
+       crtime=crtime,doid=doid,requ=requ,minCount=minCount)
+    mdk = mdict.keys() # syndromes
+    mdk.sort()
+    for syndrome in mdk:
+        m = mdict[syndrome]
+        print '###',syndrome,sdate,edate,fproto
+        fname = fproto % (syndrome,sdate,edate)
+        f = open(fname,'w')
+        f.write('\n'.join(m))
+        f.write('\n')
+        f.close()
+        print '## wrote %d rows to %s' % (len(m),fname)
+
 if __name__ == "__main__":
-  test()
+  testAMDS()
+
+
