@@ -232,6 +232,7 @@ src/ESP/vaers/fixtures/encounters.sql -text
 src/ESP/vaers/fixtures/immunizations.sql -text
 src/ESP/vaers/fixtures/lab_results.sql -text
 src/ESP/vaers/forms.py -text
+src/ESP/vaers/heuristics.py -text
 src/ESP/vaers/hl7_report.py -text
 src/ESP/vaers/make_fixtures.py -text
 src/ESP/vaers/models.py -text

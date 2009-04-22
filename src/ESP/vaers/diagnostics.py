@@ -1,5 +1,8 @@
 import rules
 
+
+
+
 def codes():
     '''
     Returns a set of all the codes that are indicator of diagnosis
@@ -26,6 +29,8 @@ def by_code(icd9_code):
 
     # Couldn't find a match
     return None
+
+
         
 def exclusion_codes(icd9_code):
     '''
@@ -57,6 +62,13 @@ def match_icd9_expression(icd9_code, expression_to_match):
     '''
 
     def transform_expression(expression):
+        '''
+        considering expressions to represent:
+        - An interval of codes: 047.0-047.1
+        - A wildcard to represent a family of codes: 320*, 345.*
+        - An interval with a wildcard: 802.3-998*
+        '''
+
 
         if '-' in expression:
             # It's an expression to show a range of values
@@ -113,3 +125,19 @@ def match_icd9_expression(icd9_code, expression_to_match):
     except ValueError:
         # expression_to_match is not a code
         return match_wildcard(target, expression_to_match)
+
+
+
+
+        
+
+
+
+
+
+
+        
+
+
+            
+    

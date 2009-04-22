@@ -26,7 +26,7 @@ def index(request):
 
 def verify(request, key):
 
-    case = AdverseEvent.manager.by_digest(key)
+    case = AdverseEvent.objects.by_digest(key)
     if not case: return HttpResponseNotFound('Case not found')
     if case.category == 'auto': 
         return HttpResponseForbidden('This case will be automatically reported')
@@ -57,7 +57,7 @@ def verify(request, key):
 
 def case_details(request, id):
 
-    case = AdverseEvent.manager.by_id(id)
+    case = AdverseEvent.objects.by_id(id)
     if not case: return HttpResponseNotFound('Case not found')
     if case.category == 'auto': 
         return HttpResponseForbidden('This case will be automatically reported')

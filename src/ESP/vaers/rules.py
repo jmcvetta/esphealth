@@ -1,14 +1,9 @@
-import os, sys
+#-*- coding:utf-8 -*-
 
-#Standard boilerplate code that we put to put the settings file in the
-#python path and make the Django environment have access to it.
+from ESP.esp.models import Vaccine, ImmunizationManufacturer
+from ESP.conf.models import Icd9
 
-PWD = os.path.dirname(__file__)
-PARENT_DIR = os.path.realpath(os.path.join(PWD, '..'))
-if PARENT_DIR not in sys.path: sys.path.append(PARENT_DIR)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-
-from esp.models import Vaccine, ImmunizationManufacturer
+from ESP.vaers.models import DiagnosticsEventRule
 
 # Constants defined in the VAERS documents.
 TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
@@ -274,7 +269,7 @@ VAERS_DIAGNOSTICS = {
     '999.4': {
         'name':'Anaphylactic shock due to serum',
         'ignore_period':12,
-          'category':'default',
+        'category':'default',
         'source':'MMR-V'
         },
     
@@ -495,3 +490,50 @@ MANUFACTURER_MAPPING = {
     "WYETH-AYERST":ImmunizationManufacturer.objects.get(code="WA"),
     "ZLB BEHRING":ImmunizationManufacturer.objects.get(code="ZLB")
     }
+
+
+
+def define_active_rules():
+    '''Read each of the rules defined in VAERS_DIAGNOSTICS
+    dict to create the Rule objects. The keys in the dict define a
+    whole set of icd9 codes that are indication of a VAERS Event'''
+    
+    def find_and_add_codes(code_expression_list, code_set):
+        for code_expression in code_expression_list:
+            try:
+                # If it's a single code, we should be able to find it
+                # here. Before we try to raise ValueError to check if
+                # it's an expression or a code. Faster than going to
+                # the DB.
+                c = float(code_expression)
+                code = Icd9.objects.get(icd9Code=code_expression)
+                code_set.add(code)
+            except:
+                # DoesNotExist. It means we're dealing with an expression.
+                # We'll expand it, get the codes and add
+                codes = Icd9.expansion(code_expression)
+                for code in codes:
+                    code_set.add(code)
+
+
+    # Deactivating ALL Rules and replacing them with the current set
+    DiagnosticsEventRule.manager.deactivate_all()
+
+
+    for k, v in VAERS_DIAGNOSTICS.items():
+        obj, created = DiagnosticsEventRule.objects.get_or_create(
+            name=v['name'],
+            ignored_if_past_occurrance = v['ignore_period'],
+            category=v['category'],
+            source=v.get('source', None)
+            )
+        
+        obj.activate()
+
+        find_and_add_codes(k.split(';'), obj.heuristic_defining_codes)
+        find_and_add_codes(v.get('ignore_codes', []), 
+                           obj.heuristic_discarding_codes)
+
+
+if __name__ == '__main__':
+    define_active_rules()
