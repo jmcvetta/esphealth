@@ -613,7 +613,7 @@ def main():
                 log.error('Exception raised during db load:')
                 log.error(e)
                 for f in file_batch:
-                    e = 'Failed in incoingParser: ' + e
+                    e = 'Failed in incoingParser: %s' % e
                     record_file_status(f, 'f', msg=e)
     shutil.rmtree(intermediate_folder)
 
