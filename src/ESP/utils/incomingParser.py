@@ -2,8 +2,8 @@
                                   ESP Health
                                 Incoming Parser
 
-Uses a generator to load large delimited ETL files, as produced by Epic Care, 
-into database.
+Uses a generator to load large delimited ETL files, as produced by the Epic Care
+administrators at Atrius, into database.
 
 @author: Ross Lazarus <ross.lazarus@channing.harvard.edu>
 @author: Xuanlin Hou <rexua@channing.harvard.edu>
@@ -12,6 +12,7 @@ into database.
 @copyright: (c) 2009 Channing Laboratory
 @license: LGPL
 '''
+
 
 import os
 import sys
@@ -451,6 +452,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
 
         
     fname = os.path.join(incomdir,'%s' % filename)
+    res_regex = re.compile(r'^(\d+\.?\d*)')
     for (items, linenum) in splitfile(fname,'^'):
         log.debug('line %s: %s' % (linenum, items))
         if not items or items[0]=='CONTROL TOTALS':
@@ -506,6 +508,11 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
             except Provider.DoesNotExist:
                 provid = None
         log.debug('provid: %s' % provid)
+        match = res_regex.match(res)
+        if match:
+            res_float = match.group(1)
+        else:
+            res_float = None
         Lx(LxPatient_id=demogid,
             LxMedical_Record_Number=mrn, 
             LxOrder_Id_Num=orderid,
@@ -514,6 +521,8 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
             LxComponent=comp,
             LxComponentName=compname,
             LxTest_results=res,
+            result_float = res_float,
+            result_str = res,
             LxOrderDate=orderd,
             LxOrderType=ordertp,
             LxDate_of_result=resd,
