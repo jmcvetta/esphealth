@@ -24,6 +24,7 @@ from django.contrib.contenttypes import generic
 
 from ESP.esp import choices
 from ESP.utils import utils as util
+from ESP.utils import randomizer
 from ESP.utils.utils import log
 from ESP.conf.models import Ndc 
 from ESP.conf.models import Icd9
@@ -33,6 +34,36 @@ from ESP.conf.models import Rule
 from ESP.conf.models import NativeToLoincMap
 
 class Provider(models.Model):
+    
+
+    # Some methods to deal with mock/fake data
+    @staticmethod
+    def delete_fakes():
+        Provider.objects.filter(provCode__startswith='FAKE').delete()
+
+    @staticmethod
+    def make_fakes(how_many):
+        for i in xrange(0, how_many):
+            make_mock(save_on_db=True)
+            
+    @staticmethod
+    def make_mock(save_on_db=False):
+        p = Provider(
+            provCode = 'FAKE-%05d' % randomizer.string(length=8),
+            provLast_Name = randomizer.first_name(),
+            provFirst_Name = randomizer.last_name(),
+            provMiddle_Initial = random.choice(string.uppercase),
+            provTitle = 'Fake Dr.',
+            provPrimary_Dept = 'Department of Wonderland',
+            provPrimary_Dept_Address_1 = randomizer.address(),
+            provPrimary_Dept_Zip = randomizer.zip_code(),
+            provTel = randomizer.phone_number()
+            )
+        
+        if save_on_db: p.save()
+        return p
+
+
     provCode= models.CharField('Physician code',max_length=20,blank=True,db_index=True)
     provLast_Name = models.CharField('Last Name',max_length=70,blank=True,null=True)
     provFirst_Name = models.CharField('First Name',max_length=50,blank=True,null=True)
@@ -56,11 +87,71 @@ class Provider(models.Model):
 
     def getcliname(self):
         return u'%s, %s' % (self.provLast_Name,self.provFirst_Name)
+
+    def is_fake(self):
+        return self.provCode.startswith('FAKE')
+    
+
+
+    
+        
     
 
 
 
 class Demog(models.Model):
+
+    @staticmethod
+    def clear():
+        Demog.objects.filter(DemogPatient_Identifier__startswith='FAKE').delete()
+            
+    @staticmethod
+    def make_fakes(how_many):
+        for i in xrange(how_many):
+            Demog.make_mock(save_on_db=save_on_db)
+
+     @staticmethod
+     def make_mock(save_on_db=False):
+         phone_number = randomizer.phone_number()
+         address = randomizer.address()
+         city = randomizer.city()
+         identifier = randomizer.string(length=8)
+
+     
+         p = Demog(
+             DemogPatient_Identifier = 'FAKE-%s' % identifier,
+             DemogMedical_Record_Number = 'FAKE-%s' % identifier,
+             DemogLast_Name = randomizer.last_name(),
+             DemogFirst_Name = randomizer.first_name(),
+             DemogSuffix = '',
+             DemogCountry = 'Fakeland',
+             DemogCity = city[0],
+             DemogState = city[1],
+             DemogZip = randomizer.zip_code(),
+             DemogAddress1 = address,
+             DemogAddress2 = '',
+             DemogMiddle_Initial = random.choice(string.uppercase),
+             DemogDate_of_Birth = randomizer.date_of_birth(as_string=True),
+             DemogGender = randomizer.gender(),
+             DemogRace = randomizer.race(),
+             DemogAreaCode = phone_number.split('-')[0],
+             DemogTel = phone_number[4:],
+             DemogExt = '',
+             DemogSSN = randomizer.ssn(),
+             DemogMaritalStat = randomizer.marital_status(),
+             DemogReligion = '',
+             DemogAliases = '',
+             DemogHome_Language = '',
+             DemogMotherMRN = '',
+             DemogDeath_Date = '',
+             DemogDeath_Indicator = '',
+             DemogOccupation = ''
+             )
+
+         if save_on_db: p.save()
+         return p
+
+
     DemogPatient_Identifier = models.CharField('Patient Identifier',max_length=20,blank=True,db_index=True)
     DemogMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,db_index=True,blank=True)
     DemogLast_Name = models.CharField('Last_Name',max_length=199,blank=True,null=True)
@@ -91,6 +182,11 @@ class Demog(models.Model):
     DemogOccupation = models.CharField('Occupation',max_length=199,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+
+
+    def is_fake(self):
+        return self.DemogPatient_Identifier.startswith('FAKE')
+
             
 
     def  __unicode__(self):
