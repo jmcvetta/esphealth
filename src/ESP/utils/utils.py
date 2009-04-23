@@ -33,7 +33,7 @@ from ESP import settings
 
 def __get_logger():
     #logging.basicConfig(level=logging.DEBUG, datefmt='%d-%b--%H:%M')
-    log = logging.getLogger('esp')
+    log = logging.getLogger()
     if not log.handlers: # Don't register handlers more than once
         file = logging.FileHandler(settings.LOG_FILE, 'a')
         file.setLevel(settings.LOG_LEVEL_FILE)
@@ -44,7 +44,6 @@ def __get_logger():
         log.setLevel(logging.DEBUG) # Maximum level that will be logged, regardless of per-handler levels
         log.addHandler(console)
         log.addHandler(file)
-    print log.handlers
     return log
 log = __get_logger()
 #===============================================================================
