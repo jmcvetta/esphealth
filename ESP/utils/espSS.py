@@ -332,7 +332,7 @@ def testsyndGen():
             print s,i,c
         del g
 
-def testAMDS(sdate='20080101',edate='20080102'):
+def testAMDS(sdate='20090201',edate='20090202'):
     """ test stub for AMDS xml generator
     """
     doid='ESP:SS@Atrius'

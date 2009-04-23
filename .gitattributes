@@ -1,5 +1,6 @@
 * text=auto !eol
 ESP/esp/admin.py -text
+ESP/httpdconf/httpd.conf.esp.sample -text
 ESP/localsettings.py.sample -text
 ESP/management.py -text
 ESP/sendMsgs/bcdc.jar -text
