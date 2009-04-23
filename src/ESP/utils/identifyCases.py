@@ -44,14 +44,13 @@ from django.db.models import Q
 from django.db import connection
 from django.core.mail import send_mail
 
-# FIXME: Get rid of wildcard imports
-from ESP.esp.models import Lx, Enc, Rx, Immunization
-from ESP.esp.models import Demog, Case, TestCase, Rule, CaseWorkflow, Icd9Fact
-from ESP.esp.models import ConditionDrugName, ConditionIcd9, ConditionLOINC, ConditionNdc
-#from ESP.settings import *
-from ESP.esp import models
-from ESP import settings
 from ESP.utils.utils import log
+from ESP.esp.models import Demog, Lx, Enc, Rx, Immunization
+from ESP.esp.models import Case, TestCase, CaseWorkflow, Icd9Fact
+from ESP.esp.models import ConditionDrugName, ConditionIcd9, ConditionLOINC, ConditionNdc
+from ESP.conf.models import Rule
+from ESP.settings import EMAIL_SENDER
+from ESP.settings import DEVELOPER_EMAIL_LIST
 
 
 cursor = connection.cursor()
@@ -913,8 +912,8 @@ def processHepBPreg(condition):
             send_mail(
                 subject = 'ESP ERROR - HepB with Pregnancy',
                 message = errstr, 
-                from_email = settings.EMAIL_SENDER,
-                recipient_list = settings.DEVELOPER_EMAIL_LIST,
+                from_email = EMAIL_SENDER,
+                recipient_list = DEVELOPER_EMAIL_LIST,
                 fail_silently = True, # Do we want this?
                 )
             
@@ -1397,13 +1396,13 @@ def main():
     for i in k:
         msg = msg+ '%s:\t\t%s\n' % (i, case_dict[i])
     if options.send_mail:
-        recipient_list = settings.DEVELOPER_EMAIL_LIST
+        recipient_list = DEVELOPER_EMAIL_LIST
         if not TEST:
             recipient_list += ['MKLOMPAS@PARTNERS.ORG']
         send_mail(
             subject = 'ESP - Daily summary of all detected cases',
             message = msg, 
-            from_email = settings.EMAIL_SENDER,
+            from_email = EMAIL_SENDER,
             recipient_list = recipient_list,
             fail_silently = True, # Do we want this?
             )
