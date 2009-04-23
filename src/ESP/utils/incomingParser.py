@@ -533,7 +533,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
             LxTest_status=status,
             LxComment=note,
             LxImpression=impre,
-            loinc=lxloinc,
+            LxLoinc=lxloinc,
             LxOrdering_Provider_id=provid,
             lastUpDate=DBTIMESTR,
             native_code = native_code,
