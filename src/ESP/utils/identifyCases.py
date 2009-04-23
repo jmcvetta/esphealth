@@ -38,14 +38,17 @@ import datetime
 import utils
 import copy
 import optparse
+import string
 
 from django.db.models import Q
 from django.db import connection
 from django.core.mail import send_mail
 
 # FIXME: Get rid of wildcard imports
-from ESP.esp.models import *
-from ESP.settings import *
+from ESP.esp.models import Lx, Enc, Rx, Immunization
+from ESP.esp.models import Demog, Case, TestCase, Rule, CaseWorkflow, Icd9Fact
+from ESP.esp.models import ConditionDrugName, ConditionIcd9, ConditionLOINC, ConditionNdc
+#from ESP.settings import *
 from ESP.esp import models
 from ESP import settings
 from ESP.utils.utils import log
@@ -1211,7 +1214,7 @@ def updatingSyphilis(cond):
             finallxids = ','.join(dict(map(lambda x: ('%s' % x, None), lxindb+newids)).keys())
             c.caseLxID=finallxids
             c.save()
-            iclogging.info('\n\nUpdate case: %s' % c.id)
+            log.info('\n\nUpdate case: %s' % c.id)
             updateCaseWF(c,note = note)
         
 
