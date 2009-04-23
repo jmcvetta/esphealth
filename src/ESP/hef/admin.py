@@ -6,12 +6,11 @@
 
 from django.contrib import admin
 
-from ESP.hef.models import NativeToLoincMap
+from ESP.hef.models import HeuristicEvent
 
 
-class NativeToLoincMapAdmin(admin.ModelAdmin):
-    list_display = ['native_code', 'native_name', 'loinc', ]
-    save_on_top = True
+class HeuristicEventAdmin(admin.ModelAdmin):
+    list_display = ['heuristic_name', 'date', 'patient', 'content_object']
 
 
-admin.site.register(NativeToLoincMap, NativeToLoincMapAdmin)
+admin.site.register(HeuristicEvent, HeuristicEventAdmin)

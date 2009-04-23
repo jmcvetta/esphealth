@@ -67,21 +67,12 @@ class CaseWorkflowOptions(admin.ModelAdmin):
 class RuleAdmin(admin.ModelAdmin):
     list_display = ('ruleName',)
 
-class LoincAdmin(admin.ModelAdmin):
-    list_display = ['loinc_num', 'name']
-    search_fields = ['loinc_num', 'long_common_name', 'shortname']
-    save_on_top = True
-
-class HeuristicEventAdmin(admin.ModelAdmin):
-    list_display = ['heuristic_name', 'patient', 'date']
-    list_filter = ['heuristic_name']
-
 class Hl7InputFileAdmin(admin.ModelAdmin):
     list_display = ['filename', 'timestamp', 'status',]
     list_filter = ['status',]
 
 
-admin.site.register(TestCase, CaseAdmin)
+admin.site.register(Case, CaseAdmin)
 admin.site.register(SocialHistory)
 admin.site.register(Enc, EncOptions)
 admin.site.register(Allergy)
@@ -99,8 +90,6 @@ admin.site.register(Icd9Fact)
 admin.site.register(Demog, DemogOptions)
 admin.site.register(CaseWorkflow, CaseWorkflowOptions)
 admin.site.register(Rule, RuleAdmin)
-admin.site.register(models.Loinc, LoincAdmin)
-admin.site.register(models.HeuristicEvent, HeuristicEventAdmin)
 admin.site.register(Hl7InputFile, Hl7InputFileAdmin)
 
 admin.site.register(Vaccine)
