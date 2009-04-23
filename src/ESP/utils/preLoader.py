@@ -6,19 +6,26 @@ sys.path.insert(0, '/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
-import django, datetime
-from ESP.esp.models import *
-from ESP.esp import models
-from django.db.models import Q
-from ESP.localsettings import LOCALSITE
-from ESP.settings import TOPDIR, getLogging, EMAIL_SENDER
-import string,csv
+import string
+import csv
 import traceback
 import StringIO
 import smtplib
+import datetime
+
+#import django
+from django.db.models import Q
+
+from ESP.utils.utils import log
+from ESP.conf.models import Rule, Ndc, Cpt, Config
+from ESP.esp.models import Case
+from ESP.esp.models import Lx, Enc, Rx, Lxo
+from ESP.esp.models import CPTLOINCMap
+from ESP.esp.models import ConditionDrugName, ConditionIcd9, ConditionNdc, ConditionLOINC
+from ESP.settings import TOPDIR, EMAIL_SENDER
+from ESP.localsettings import LOCALSITE
 
 
-logging=''
 datadir = os.path.join(TOPDIR, LOCALSITE, 'preLoaderData/')
 
 
@@ -28,8 +35,7 @@ def getlines(fname):
     try:
         lines = file(fname).readlines()
     except:
-        if logging:
-            logging.error('Can not read file:%s\n' % fname)
+        log.error('Can not read file:%s\n' % fname)
         return []
             
    # print file,len(lines)
@@ -56,14 +62,9 @@ def sendoutemail(towho=['rexua@channing.harvard.edu','rerla@channing.harvard.edu
  
 ################################
 def load2cptloincmap(table,lines, cursor):
-    if logging:
-        logging.info('Load CPTLOINC Map')
-
+    log.info('Load CPTLOINC Map')
     cursor.execute("delete from esp_cptloincmap")
-
-    if logging:
-        logging.info('Total %s CPT_Loinc_map records in file' % len(lines))
-
+    log.info('Total %s CPT_Loinc_map records in file' % len(lines))
     indx=1
     for l in lines:
         id, cpt,cmpt,loinc = [x.strip() for x in l]
@@ -73,8 +74,7 @@ def load2cptloincmap(table,lines, cursor):
         cl.Loinc=loinc
         cl.save()
         indx+=1
-    if logging:
-        logging.info('Done on saving into esp_cptloincmap table.')
+    log.info('Done on saving into esp_cptloincmap table.')
     
 
 ###################################
@@ -94,23 +94,19 @@ def addNewcptloincmap(cursor):
         cmpt=onecptmap.CPTCompt
         loinc = onecptmap.Loinc
         if cptcmpt_dic.has_key(('%s' % cpt,'%s'%cmpt)):
-            if logging:
-                logging.info('%s of %s: Adding new loinc-%s for (CPT, COMPT)=(%s,%s)' % (indx, len(cptmap), loinc, cpt,cmpt))
+            log.info('%s of %s: Adding new loinc-%s for (CPT, COMPT)=(%s,%s)' % (indx, len(cptmap), loinc, cpt,cmpt))
             ##add into Lx table
             a=Lx.objects.filter(LxTest_Code_CPT=cpt,LxComponent=cmpt)
             for onelx in a:##need update loinc
                 onelx.LxLoinc=loinc
                 onelx.save()
         indx+=1
-    if logging:
-        logging.info('Done on Adding new loinc to esp_lx table')
+    log.info('Done on Adding new loinc to esp_lx table')
     
 ###################################
 ##There are two functions with same name: correctcptloincmap_lx, so change this one
 def correctcptloincmap_lx_old(table, cursor):
-    if logging:
-        logging.info('Correct CPTLOINC Map in esp_lx table')
-
+    log.info('Correct CPTLOINC Map in esp_lx table')
     curcases=Case.objects.all()
     caselx=[]
     for onecase in curcases:
@@ -134,8 +130,7 @@ def correctcptloincmap_lx_old(table, cursor):
         for anLx in Lx.objects.filter(LxLoinc__iexact=thisLOINC).iterator(): # restricted loop
             n += 1
             if n % 100000 == 0:
-                if logging:
-                    logging.info('## correctcptloincmap_lx at %d' % n)
+                log.info('## correctcptloincmap_lx at %d' % n)
             id = anLx.id
             cpt = anLx.LxTest_Code_CPT
             comp = anLx.LxComponent
@@ -151,39 +146,29 @@ def correctcptloincmap_lx_old(table, cursor):
                 thislx = Lx.objects.filter(id=id)[0]
                 thislx.LxLoinc=temp[0].Loinc
                 thislx.save()
-                if logging:
-                    logging.info('CPT=%s, Comp=%s, CorrectLoinc=%s, LxLoinc=%s, Lxid=%s' % (cpt,comp,temp[0].Loinc,loinc,id))
+                log.info('CPT=%s, Comp=%s, CorrectLoinc=%s, LxLoinc=%s, Lxid=%s' % (cpt,comp,temp[0].Loinc,loinc,id))
             elif not temp:
-                if logging:
-                    logging.info('CPT=%s, Comp=%s, CorrectLoinc=None, LxLoinc=%s, Lxid=%s' % (cpt,comp,loinc,id))
+                log.info('CPT=%s, Comp=%s, CorrectLoinc=None, LxLoinc=%s, Lxid=%s' % (cpt,comp,loinc,id))
                 thislx = Lx.objects.filter(id=id)[0]
                 thislx.LxLoinc=''
                 thislx.save()
-    if logging:
-        logging.info('## correctcptloincmap_lx scanned %d records' % n)
+    log.info('## correctcptloincmap_lx scanned %d records' % n)
 
 
 #####################################
 def correctcptloincmap_lx(table, cursor):
-    if logging:
-        logging.info('## Correct CPTLOINC Map in esp_lx table')
-
+    log.info('## Correct CPTLOINC Map in esp_lx table')
     curcases=Case.objects.all()
-    if logging:        
-        logging.info('# got all case objects')
+    log.info('# got all case objects')
 
     caselx=[]
     for onecase in curcases:
         newlx_list = [i for i in onecase.caseLxID.split(',') if i.strip()]
         caselx =caselx+newlx_list
     caselxid_dict = dict(map(lambda x:(x,0), caselx))
-    if logging:        
-        logging.info('# created caselxid_dict of len %d' % len(caselxid_dict))
-    
-
+    log.info('# created caselxid_dict of len %d' % len(caselxid_dict))
     cptmap = CPTLOINCMap.objects.all()
-    if logging:        
-        logging.info('# created cptmap of len %d' % len(cptmap))
+    log.info('# created cptmap of len %d' % len(cptmap))
 
     #cursor.execute("""select id, LxTest_Code_CPT,LxComponent,LxLoinc from esp_lx where LxLoinc !=''""")
     # this is nearly 2M records after 2 years at atrius out of 50M total 
@@ -192,18 +177,15 @@ def correctcptloincmap_lx(table, cursor):
     n = 0
     for anLx in Lx.objects.filter(LxLoinc__gt='').iterator():
         n += 1
-	if (n) % 100000 == 0:
-	   print 'correctcptloincmap_lx at %d' % n
+        if (n) % 100000 == 0:
+            print 'correctcptloincmap_lx at %d' % n
         id = anLx.id
         cpt = anLx.LxTest_Code_CPT
         comp = anLx.LxComponent
         loinc = anLx.LxLoinc
-
-
         temp = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt=comp)
         if caselxid_dict.has_key('%s' % id):
-            ##is a case, do nothing
-            continue
+            continue ##is a case, do nothing
         
         if temp and temp[0].Loinc == loinc:
             pass
@@ -211,11 +193,9 @@ def correctcptloincmap_lx(table, cursor):
             thislx = Lx.objects.filter(id=id)[0]
             thislx.LxLoinc=temp[0].Loinc
             thislx.save()
-            if logging:
-                logging.info('CPT=%s, Comp=%s, CorrectLoinc=%s, LxLoinc=%s, Lxid=%s' % (cpt,comp,temp[0].Loinc,loinc,id))
+            log.info('CPT=%s, Comp=%s, CorrectLoinc=%s, LxLoinc=%s, Lxid=%s' % (cpt,comp,temp[0].Loinc,loinc,id))
         elif not temp:
-            if logging:
-                logging.info('CPT=%s, Comp=%s, CorrectLoinc=None, LxLoinc=%s, Lxid=%s' % (cpt,comp,loinc,id))
+            log.info('CPT=%s, Comp=%s, CorrectLoinc=None, LxLoinc=%s, Lxid=%s' % (cpt,comp,loinc,id))
             thislx = Lx.objects.filter(id=id)[0]
             thislx.LxLoinc=''
             thislx.save()
@@ -223,20 +203,15 @@ def correctcptloincmap_lx(table, cursor):
 def small_ram_correctcptloincmap_lx(table, cursor):
     """smaller ram - about half of that for the old version
     """
-    if logging:
-        logging.info('## Correct CPTLOINC Map in esp_lx table')
-
+    log.info('## Correct CPTLOINC Map in esp_lx table')
     curcases=Case.objects.all()
-    if logging:        
-        logging.info('# got all case objects')
-
+    log.info('# got all case objects')
     caselx=[]
     for onecase in curcases:
         newlx_list = [i for i in onecase.caseLxID.split(',') if i.strip()]
         caselx =caselx+newlx_list
     caselxid_dict = dict(map(lambda x:(x,0), caselx))
-    if logging:        
-        logging.info('# created caselxid_dict of len %d' % len(caselxid_dict))
+    log.info('# created caselxid_dict of len %d' % len(caselxid_dict))
     
 
     #cursor.execute("""select id, LxTest_Code_CPT,LxComponent,Lxloinc from esp_lx where LxLoinc !=''""")
@@ -256,8 +231,7 @@ def small_ram_correctcptloincmap_lx(table, cursor):
         for anLx in Lx.objects.filter(LxLoinc__iexact=thisLOINC).iterator(): # restricted loop
             n += 1
             if n % 100000 == 0:
-                if logging:
-                    logging.info('## correctcptloincmap_lx at %d' % n)
+                log.info('## correctcptloincmap_lx at %d' % n)
             id = anLx.id
             cpt = anLx.LxTest_Code_CPT
             comp = anLx.LxComponent
@@ -273,58 +247,52 @@ def small_ram_correctcptloincmap_lx(table, cursor):
                 thislx = Lx.objects.filter(id=id)[0]
                 thislx.LxLoinc=temp[0].Loinc
                 thislx.save()
-                if logging:
-                    logging.info('CPT=%s, Comp=%s, CorrectLoinc=%s, LxLoinc=%s, Lxid=%s' % (cpt,comp,temp[0].Loinc,loinc,id))
+                log.info('CPT=%s, Comp=%s, CorrectLoinc=%s, LxLoinc=%s, Lxid=%s' % (cpt,comp,temp[0].Loinc,loinc,id))
             elif not temp:
-                if logging:
-                    logging.info('CPT=%s, Comp=%s, CorrectLoinc=None, LxLoinc=%s, Lxid=%s' % (cpt,comp,loinc,id))
+                log.info('CPT=%s, Comp=%s, CorrectLoinc=None, LxLoinc=%s, Lxid=%s' % (cpt,comp,loinc,id))
                 thislx = Lx.objects.filter(id=id)[0]
                 thislx.LxLoinc=''
                 thislx.save()
     allLOINC = list(set(allLOINC)) # remove dupes
-    if logging:
-        logging.info('## correctcptloincmap_lx scanned %d records - now looking for old loincs' % n)
+    log.info('## correctcptloincmap_lx scanned %d records - now looking for old loincs' % n)
     n = 0
     q_obj = Q(LxLoinc__in=allLOINC)
     for anLx in Lx.objects.filter(~q_obj).iterator(): # restricted loop
         n += 1
         if n % 1000 == 0:
-            if logging:
-                logging.info('## correctcptloincmap_lx deleting old loincs at %d' % n)
+            log.info('## correctcptloincmap_lx deleting old loincs at %d' % n)
         id = anLx.id
         cpt = anLx.LxTest_Code_CPT
         comp = anLx.LxComponent
         loinc = anLx.Lxloinc
-        if logging:
-            logging.info('CPT=%s, Comp=%s, CorrectLoinc=None, LxLoinc=%s, Lxid=%s' % (cpt,comp,loinc,id))
+        log.info('CPT=%s, Comp=%s, CorrectLoinc=None, LxLoinc=%s, Lxid=%s' % (cpt,comp,loinc,id))
         thislx = Lx.objects.filter(id=id)[0]
         thislx.LxLoinc=''
         thislx.save()
-    if logging:
-        logging.info('## correctcptloincmap_lx deleted old loincs from %d records' % n)
+    log.info('## correctcptloincmap_lx deleted old loincs from %d records' % n)
 
 
 
                     
 ################################
 def correctcptloincmap(table):
-    logging.info('Correct CPTLoinc map')
+    log.info('Correct CPTLoinc map')
     curcases=Case.objects.all()
     caselx=[]
     for onecase in curcases:
         newlx_list = [i for i in onecase.caseLxID.split(',') if i.strip()]
         caselx =caselx+newlx_list
         
-    logging.info('Total Case Lx=%s' % len(caselx))
+    log.info('Total Case Lx=%s' % len(caselx))
 
     lines = getlines(datadir+table+'.txt')
-    logging.info('Total %s CPT_Loinc_map records' % len(lines))
+    log.info('Total %s CPT_Loinc_map records' % len(lines))
     disclx={}
     indx=1
     for l in lines:
         id, cpt,cmpt,loinc = [x.strip() for x in l]
         if indx%10==0:
-            logging.info('Processed %s of %s maps' % (indx, len(lines)))
+            log.info('Processed %s of %s maps' % (indx, len(lines)))
         indx=indx+1
 
         ##update Lx table
@@ -333,11 +301,11 @@ def correctcptloincmap(table):
         for onelx in lx:##need update loinc
             if onelx.LxLoinc!=loinc:
                 disclx[onelx.id]=(loinc,onelx.LxLoinc)
-                logging.info('LOINC update,ID=%s: %s-->%s'  % (onelx.id,onelx.LxLoinc,loinc))
+                log.info('LOINC update,ID=%s: %s-->%s'  % (onelx.id,onelx.LxLoinc,loinc))
                 onelx.LxLoinc=loinc
                 onelx.save()
 
-  #  logging.info('DisLOINC:%s' % str(disclx))
+  #  log.info('DisLOINC:%s' % str(disclx))
 
                                                                                                                                                                                 
 
@@ -362,8 +330,7 @@ def load2DrugNames(table,lines,cursor):
         cl.CondiDefine=(define=='1')
         cl.CondiSend=(send == '1')
         cl.save()
-    if logging:
-        logging.info('Done on loading to esp_conditiondrugname')
+    log.info('Done on loading to esp_conditiondrugname')
 
 ################################
 def load2ndc(table,lines,cursor):
@@ -384,8 +351,7 @@ def load2ndc(table,lines,cursor):
             if ndc[0] == '0':
               ndc = ndc[1:]
         elif l > ndclen:
-            if logging:
-                logging.warning('Bah. ndc code %s at line %d is not massagable into 9 meaningful digits' % (ndc,n))
+            log.warning('Bah. ndc code %s at line %d is not massagable into 9 meaningful digits' % (ndc,n))
                         
         cl = ConditionNdc(id=n)
 
@@ -484,7 +450,7 @@ def  load2config(table,lines,cursor):
     for items  in lines:
         (id, t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16,t17,t18,t19,t20,t21,t22,t23,t24,t25) = [x.strip() for x in items]
         indx+=1
-        cf = config(id=indx)
+        cf = Config(id=indx)
         
         cf.appName = t1
         cf.FacilityID=t2
@@ -535,7 +501,7 @@ def makecpt(cursor):
             print i,'cpt done'
         long = long.replace('"','')
         short = short.replace('"','')
-        c = cpt(cptCode=code,cptLong=long.capitalize(),cptShort=short.capitalize(),cptLastedit=now)
+        c = Cpt(cptCode=code,cptLong=long.capitalize(),cptShort=short.capitalize(),cptLastedit=now)
         c.save()
 
 
@@ -597,7 +563,7 @@ def makendc(cursor):
         lbl = lbl.replace('*','0')
         prod = prod.replace('*','0')
         trade = line[44:].strip()
-        newn = ndc(ndcLbl=lbl.capitalize(),ndcProd=prod.capitalize(),ndcTrade=trade.capitalize())
+        newn = Ndc(ndcLbl=lbl.capitalize(),ndcProd=prod.capitalize(),ndcTrade=trade.capitalize())
         newn.save()
                                                                                                                                                                                                                                             
             
@@ -608,7 +574,6 @@ def makendc(cursor):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def main():
     startt = datetime.datetime.now()
-    logging = getLogging('preLoader.py_v0.1', debug=0)
 
     from django.db import connection
     cursor = connection.cursor()
@@ -648,15 +613,15 @@ def main():
                 load2DrugNames(table,getlines(datadir+table+'.txt'), cursor)
             else:
                 msg = 'Unknown table - %s\n' % table
-                logging.info(msg)
+                log.info(msg)
 
-            logging.info('Start: %s\n' %  startt)
-            logging.info('End:   %s\n' % datetime.datetime.now())
+            log.info('Start: %s\n' %  startt)
+            log.info('End:   %s\n' % datetime.datetime.now())
         except:
             fp = StringIO.StringIO()
             traceback.print_exc(file=fp)
             message = fp.getvalue()
-            logging.info(message+'\n')
+            log.info(message+'\n')
     else:
         table = 'esp_rule'
         load2rule(table, getlines(datadir+table+'.txt'))  
