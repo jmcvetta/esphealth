@@ -110,46 +110,44 @@ class Demog(models.Model):
         for i in xrange(how_many):
             Demog.make_mock(save_on_db=save_on_db)
 
-     @staticmethod
-     def make_mock(save_on_db=False):
-         phone_number = randomizer.phone_number()
-         address = randomizer.address()
-         city = randomizer.city()
-         identifier = randomizer.string(length=8)
-
-     
-         p = Demog(
-             DemogPatient_Identifier = 'FAKE-%s' % identifier,
-             DemogMedical_Record_Number = 'FAKE-%s' % identifier,
-             DemogLast_Name = randomizer.last_name(),
-             DemogFirst_Name = randomizer.first_name(),
-             DemogSuffix = '',
-             DemogCountry = 'Fakeland',
-             DemogCity = city[0],
-             DemogState = city[1],
-             DemogZip = randomizer.zip_code(),
-             DemogAddress1 = address,
-             DemogAddress2 = '',
-             DemogMiddle_Initial = random.choice(string.uppercase),
-             DemogDate_of_Birth = randomizer.date_of_birth(as_string=True),
-             DemogGender = randomizer.gender(),
-             DemogRace = randomizer.race(),
-             DemogAreaCode = phone_number.split('-')[0],
-             DemogTel = phone_number[4:],
-             DemogExt = '',
-             DemogSSN = randomizer.ssn(),
-             DemogMaritalStat = randomizer.marital_status(),
-             DemogReligion = '',
-             DemogAliases = '',
-             DemogHome_Language = '',
-             DemogMotherMRN = '',
-             DemogDeath_Date = '',
-             DemogDeath_Indicator = '',
-             DemogOccupation = ''
-             )
-
-         if save_on_db: p.save()
-         return p
+    @staticmethod
+    def make_mock(save_on_db=False):
+        phone_number = randomizer.phone_number()
+        address = randomizer.address()
+        city = randomizer.city()
+        identifier = randomizer.string(length=8)
+        p = Demog(
+            DemogPatient_Identifier = 'FAKE-%s' % identifier,
+            DemogMedical_Record_Number = 'FAKE-%s' % identifier,
+            DemogLast_Name = randomizer.last_name(),
+            DemogFirst_Name = randomizer.first_name(),
+            DemogSuffix = '',
+            DemogCountry = 'Fakeland',
+            DemogCity = city[0],
+            DemogState = city[1],
+            DemogZip = randomizer.zip_code(),
+            DemogAddress1 = address,
+            DemogAddress2 = '',
+            DemogMiddle_Initial = random.choice(string.uppercase),
+            DemogDate_of_Birth = randomizer.date_of_birth(as_string=True),
+            DemogGender = randomizer.gender(),
+            DemogRace = randomizer.race(),
+            DemogAreaCode = phone_number.split('-')[0],
+            DemogTel = phone_number[4:],
+            DemogExt = '',
+            DemogSSN = randomizer.ssn(),
+            DemogMaritalStat = randomizer.marital_status(),
+            DemogReligion = '',
+            DemogAliases = '',
+            DemogHome_Language = '',
+            DemogMotherMRN = '',
+            DemogDeath_Date = '',
+            DemogDeath_Indicator = '',
+            DemogOccupation = ''
+            )
+        if save_on_db: 
+            p.save()
+            return p
 
 
     DemogPatient_Identifier = models.CharField('Patient Identifier',max_length=20,blank=True,db_index=True)
