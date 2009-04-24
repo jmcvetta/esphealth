@@ -103,6 +103,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
+    'ESP.core',
     'ESP.esp',
     'ESP.conf', 
     'ESP.hef',
