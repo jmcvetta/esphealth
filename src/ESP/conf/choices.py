@@ -41,3 +41,9 @@ WORKFLOW_STATES = [
     ('Q','CONFIRMED CASE, TRANSMIT TO HEALTH DEPARTMENT'), 
     ('S','TRANSMITTED TO HEALTH DEPARTMENT')
     ]
+
+EMR_SOFTWARE = [
+    ('Unknown', 'Unknown'),
+    ('EpicCare', 'EpicCare'),
+    ('eClinicalWorks', 'eClinicalWorks'),
+    ]
