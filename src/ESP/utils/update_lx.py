@@ -12,16 +12,34 @@ import sys
 from ESP.esp.models import Lx
 
 
-sr = re.compile(r'^(\d+\.?\d*)')
-
-
-
-for str in Lx.objects.all().values_list('LxTest_results', flat=True).distinct()[0:100]:
-    match = sr.match(str)
-    try:
-        f = match.group(1)
-    except AttributeError:
-        f = None
-    print '%40s %40s' % (str, f)
-    count = Lx.objects.filter(LxTest_results=str).update(result_string=str, result_float=f)
+def update_result():
+    sr = re.compile(r'^(\d+\.?\d*)')
+    for str in Lx.objects.all().values_list('LxTest_results', flat=True).distinct()[0:100]:
+        match = sr.match(str)
+        try:
+            f = match.group(1)
+        except AttributeError:
+            f = None
+        print '%40s %40s' % (str, f)
+        count = Lx.objects.filter(LxTest_results=str).update(result_string=str, result_float=f)
     print '%s updated' % count
+
+def update_refs():
+    sr = re.compile(r'^(\d+\.?\d*)')
+    for str in Lx.objects.all().values_list('LxReference_High', flat=True).distinct()[0:100]:
+        match = sr.match(str)
+        try:
+            f = match.group(1)
+        except AttributeError:
+            f = None
+        print '%40s %40s' % (str, f)
+        count = Lx.objects.filter(LxReference_High=str).update(ref_high_string=str, ref_high_float=f)
+    print '%s updated' % count
+
+
+def main():
+    #update_result()
+    update_refs()
+
+if __name__ == '__main__':
+    main()
