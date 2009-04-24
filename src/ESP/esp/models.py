@@ -331,34 +331,59 @@ class LxManager(models.Manager):
     
 
 class Lx(models.Model):
+    # rename: patient
     LxPatient = models.ForeignKey(Demog) 
+    # rename: provider
     LxOrdering_Provider = models.ForeignKey(Provider, blank=True, null=True) 
+    # rename: mrn
     LxMedical_Record_Number = models.CharField('Medical Record Number', max_length=20, blank=True, null=True, db_index=True)
+    # rename: order_num
     LxOrder_Id_Num = models.CharField('Order Id #', max_length=20, blank=True, null=True)
     native_code = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     native_name = models.CharField(max_length=500, blank=True, null=True)
+    # delete
     LxTest_Code_CPT = models.CharField('Test Code (CPT)', max_length=20, blank=True, null=True, db_index=True)
+    # delete
     LxTest_Code_CPT_mod = models.CharField('Test Code (CPT) Modifier', max_length=20, blank=True, null=True)
+    # rename: order_date
     LxOrderDate = models.CharField('Order Date', max_length=20, blank=True, null=True)
+    # Is this garbage?
     LxOrderType = models.CharField('Order Type', max_length=10, blank=True, null=True)   
+    # rename: updated
     lastUpDate = models.DateTimeField('Last Updated date', auto_now=True, db_index=True)
+    # rename: created
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
+    # rename: date
     LxDate_of_result = models.CharField('Date of result', max_length=20, blank=True, null=True, db_index=True)  
+    # is this garbage?
     LxHVMA_Internal_Accession_number = models.CharField('HVMA Internal Accession number', max_length=50, blank=True, null=True)
+    # delete
     LxComponent = models.CharField('Component', max_length=20, blank=True, null=True, db_index=True)
+    # delete
     LxComponentName = models.CharField('Component Name', max_length=200, blank=True, null=True,  db_index=True)
-    # Test results should be a TextField -- however, MySQL can index max 1000 char CharField, and we NEED index
+    # rename: abnormal_flag
     LxNormalAbnormal_Flag = models.CharField('Normal/Abnormal Flag', max_length=20, blank=True, null=True, db_index=True)
+    # delete
     LxReference_Low = models.CharField('Reference Low', max_length=100, blank=True, null=True, db_index=True)
+    # delete
     LxReference_High = models.CharField('Reference High', max_length=100, blank=True, null=True, db_index=True)
+    ref_low_string = models.CharField('Reference Low (string)', max_length=100, blank=True, null=True, db_index=True)
+    ref_high_string = models.CharField('Reference High (string)', max_length=100, blank=True, null=True, db_index=True)
+    ref_low_float = models.FloatField('Reference Low (number)', blank=True, null=True, db_index=True)
+    ref_high_float = models.FloatField('Reference High (number)', blank=True, null=True, db_index=True)
+    # rename: ref_unit
     LxReference_Unit = models.CharField('Reference Unit', max_length=100, blank=True, null=True)
+    # rename: status
     LxTest_status = models.CharField('Test status', max_length=50, blank=True, null=True)
-    # Use of LxLoinc is deprecated -- we should do all future queries with native_code
+    # delete
     LxLoinc = models.CharField('LOINC code', max_length=20, blank=True, null=True, db_index=True)
     result_float = models.FloatField(blank=True, null=True, db_index=True)
     result_string = models.CharField(max_length=2000, blank=True, null=True, db_index=True)
+    # delete
     LxTest_results = models.CharField('Test results', max_length=1000, blank=True, null=True, db_index=True)
+    # rename: impression
     LxImpression = models.TextField('Impression for Imaging only', max_length=2000, blank=True, null=True)
+    # rename: comment
     LxComment = models.TextField('Comments',  blank=True,  null=True, )
     def _get_patient(self):
         return self.LxPatient
@@ -366,14 +391,9 @@ class Lx(models.Model):
         return self.LxOrdering_Provider
     def _get_date(self):
         return util.date_from_str(self.LxOrderDate)
-    def _get_loinc(self):
-        return self.LxLoinc
-    def _set_loinc(self, value):
-        self.LxLoinc = value
     patient = property(_get_patient)
     provider = property(_get_provider)
     date = property(_get_date)
-    loinc = property(_get_loinc, _set_loinc)
     
     # Use custom manager
     objects = LxManager()
