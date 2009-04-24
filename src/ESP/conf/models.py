@@ -13,7 +13,10 @@
 
 from django.db import models
 
-from ESP.conf import choices
+from ESP.conf.choices import EMR_SOFTWARE
+from ESP.conf.choices import FORMAT_TYPES
+from ESP.conf.choices import DEST_TYPES
+from ESP.conf.choices import WORKFLOW_STATES
 
 
 class Loinc(models.Model):
@@ -97,8 +100,8 @@ class Loinc(models.Model):
 
 
 class Icd9(models.Model):
-    icd9Code = models.CharField('ICD9 Code', max_length=10, unique=True)
-    icd9Long = models.CharField('Name', max_length=50,)
+    code = models.CharField('ICD9 Code', max_length=10, primary_key=True)
+    name = models.CharField('Name', max_length=50,)
 
     def __unicode__(self):
         return u'%s %s' % (self.icd9Code,self.icd9Code)
@@ -262,14 +265,14 @@ class Rule(models.Model):
     ruleVerDate = models.DateTimeField('Last Edited date',auto_now=True)
     rulecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
     rulelastexecDate = models.DateTimeField('Date last executed', editable=False, blank=True, null=True)
-    ruleMsgFormat = models.CharField('Message Format', max_length=10, choices=choices.FORMAT_TYPES,  blank=True, null=True)
-    ruleMsgDest = models.CharField('Destination for formatted messages', max_length=10, choices=choices.DEST_TYPES,  blank=True, null=True)
+    ruleMsgFormat = models.CharField('Message Format', max_length=10, choices=FORMAT_TYPES,  blank=True, null=True)
+    ruleMsgDest = models.CharField('Destination for formatted messages', max_length=10, choices=DEST_TYPES,  blank=True, null=True)
     ruleHL7Code = models.CharField('Code for HL7 messages with cases', max_length=10, blank=True, null=True)
     ruleHL7Name = models.CharField('Condition name for HL7 messages with cases', max_length=30, blank=True, null=True)
     ruleHL7CodeType = models.CharField('Code for HL7 code type', max_length=10, blank=True, null=True)
     ruleExcludeCode = models.TextField('The exclusion list of (CPT, COMPT) when alerting', blank=True, null=True)
     ruleinProd = models.BooleanField('this rule is in production or not', blank=True)
-    ruleInitCaseStatus  =models.CharField('Initial Case status', max_length=20,choices=choices.WORKFLOW_STATES, blank=True)
+    ruleInitCaseStatus  =models.CharField('Initial Case status', max_length=20,choices=WORKFLOW_STATES, blank=True)
     
 
     def gethtml_rulenote(self):
@@ -297,7 +300,7 @@ class Dest(models.Model):
     """message destination for rules
     """
     destName = models.CharField('Destination Name', max_length=100)
-    destType = models.CharField('Destination Type',choices = choices.DEST_TYPES ,max_length=20)
+    destType = models.CharField('Destination Type',choices = DEST_TYPES ,max_length=20)
     destValue = models.TextField('Destination Value (eg URL)',null=True)
     destComments = models.TextField('Destination Comments',null=True)
     destVerDate = models.DateTimeField('Last Edited date',auto_now=True)
@@ -314,7 +317,7 @@ class Format(models.Model):
     """message formats for rules
     """
     formatName = models.CharField('Format Name', max_length=100,)
-    formatType = models.CharField('Format Type',choices = choices.FORMAT_TYPES, max_length=20 )
+    formatType = models.CharField('Format Type',choices = FORMAT_TYPES, max_length=20 )
     formatValue = models.TextField('Format Value (eg URL)',null=True)
     formatComments = models.TextField('Format Comments',null=True)
     formatVerDate = models.DateTimeField('Last Edited date',auto_now=True)
@@ -322,6 +325,22 @@ class Format(models.Model):
 
     def  __unicode__(self):
         return u'%s' % self.formatName 
+
+class SourceSystem(models.Model):
+    '''
+    A source EMR system providing data to ESP, e.g. HVMA or North Adams
+    '''
+    name = models.CharField(max_length=100, blank=False)
+    # Various non-critical information about the source system:
+    software = models.CharField(max_length=50, choices=EMR_SOFTWARE, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = 'Source EMR System'
+    
+    def __str__(self):
+        return self.name
+
 
 
 
