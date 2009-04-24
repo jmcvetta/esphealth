@@ -17,7 +17,7 @@ import datetime
 from django.db.models import Q
 
 from ESP.utils.utils import log
-from ESP.conf.models import Rule, Ndc, Cpt, Config
+from ESP.conf.models import Rule, Ndc, Cpt, Config, Icd9
 from ESP.esp.models import Case
 from ESP.esp.models import Lx, Enc, Rx, Lxo
 from ESP.esp.models import CPTLOINCMap
@@ -506,12 +506,12 @@ def makecpt(cursor):
 
 
 ###################################
-def makeicd9(cursor):
+def makeicd9():
     '''
     See http://www.hcup-us.ahrq.gov/toolssoftware/mhsa/mhsa.jsp#representation 
     for rules on representation of ICD9 codes with implicit decimals.
     '''
-    models.icd9.objects.all().delete()
+    Icd9.objects.all().delete()
     n = 1
     from ESPicd9 import icd
     for line in icd.split('\n'):
@@ -542,7 +542,7 @@ def makeicd9(cursor):
                 print code_str
                 raise 'WTF?'
             code = '%s%s.%s' % (letter, left, right)
-        models.icd9(icd9Code=code, icd9Long=name).save()
+        Icd9(code=code, name=name).save()
 
 
 
@@ -584,8 +584,10 @@ def main():
             table = sys.argv[1]
             if table == 'remake':
                 makendc(cursor)
-                makeicd9(cursor) 
+                makeicd9() 
                 makecpt(cursor)
+            elif table == 'icd9':
+                makeicd9()
             elif table == 'esp_conditionndc':
                 load2ndc(table,getlines(datadir+table+'.txt'), cursor)
             elif table == 'esp_conditionicd9':
