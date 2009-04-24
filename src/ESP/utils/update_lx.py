@@ -13,6 +13,7 @@ from ESP.esp.models import Lx
 
 
 def update_result():
+    counter = 0
     sr = re.compile(r'^(\d+\.?\d*)')
     for str in Lx.objects.all().values_list('LxTest_results', flat=True).distinct()[0:100]:
         match = sr.match(str)
@@ -20,11 +21,13 @@ def update_result():
             f = match.group(1)
         except AttributeError:
             f = None
-        print '%40s %40s' % (str, f)
         count = Lx.objects.filter(LxTest_results=str).update(result_string=str, result_float=f)
+        print '%40s %40s %20s' % (str, f, count)
+        counter += count
     print '%s updated' % count
 
 def update_refs():
+    counter = 0
     sr = re.compile(r'^(\d+\.?\d*)')
     for str in Lx.objects.all().values_list('LxReference_High', flat=True).distinct()[0:100]:
         match = sr.match(str)
@@ -32,9 +35,10 @@ def update_refs():
             f = match.group(1)
         except AttributeError:
             f = None
-        print '%40s %40s' % (str, f)
         count = Lx.objects.filter(LxReference_High=str).update(ref_high_string=str, ref_high_float=f)
-    print '%s updated' % count
+        print '%40s %40s %20s' % (str, f, count)
+        counter += count
+    print '%s updated' % counter
 
 
 def main():
