@@ -12,6 +12,13 @@ NORTH_ADAMS/preLoaderData/esp_cptloincmap.txt -text
 NORTH_ADAMS/preLoaderData/esp_rule.txt -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
+doc/disease-protocols/Chlamydia.doc -text
+doc/disease-protocols/Combined_Hepatitis_B.doc -text
+doc/disease-protocols/Gonorrhea.doc -text
+doc/disease-protocols/Hepatitis_A.doc -text
+doc/specifications/EpicCare_ESP_Extract_Specifications--3_Aug_2006.doc -text
+doc/specifications/MDPH_ELR_EMR_Query_Specification_v1.0.doc -text
+doc/specifications/PHIN_ELR_Implementation_Guide--HL7_2.3.1--21_May_2004.pdf -text svneol=unset#unset
 etc/apache.conf -text
 media/css/base.css -text
 media/css/changelists.css -text
