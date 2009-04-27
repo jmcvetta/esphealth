@@ -2,7 +2,7 @@
 21 april 2009: added btzipdict to espSSconf.py - lookup a zip code to get the MDPH BT region
 22 april 2009: added quick'n'dirty AMDS xml generator - bugger the xsd :)
 
-Copyright ross lazarus April 20 2009
+Copyright Ross Lazarus April 20 2009
 All rights reserved
 Licensed under the LGPL v3.0 or a later version at your preference
 see http://www.gnu.org/licenses/lgpl.html
@@ -89,7 +89,7 @@ from ESP.esp.models import *
 from django.db.models import Q
 from ESP.settings import *
 
-from espSSconf import btzipdict,atriusSites,ILIdef,HAEMdef,LESIONSdef,LYMPHdef
+from espSSconf import btzipdict,atriusUseDict,atriusLookup,ILIdef,HAEMdef,LESIONSdef,LYMPHdef
 from espSSconf import LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef
 # these are [icd,feverreq] lists
 import utils
@@ -131,27 +131,50 @@ def makeAge(dob='20070101',edate='20080101'):
         ed = datetime.date(yy,mm,dd)       
     return (ed-bd).days
 
+def encDateVolumes(startDT=None,endDT=None,zip5=True):
+    """return a dict of date, with zip specific total encounter volume for each day
+    """
+    allencdates = Enc.objects.filter(EncEncounter_Date__gte=startDT,
+      EncEncounter_Date__lte=endDT) # .values_list('EncEncounter_Date','EncPatient')
+    allZips = [x.EncPatient.DemogZip for x in allencdates] # list of zip codes  
+    allencdates = allencdates.values_list('EncEncounter_Date',flat=True)
+    datecounts = {}
+    if not zip5:
+       zl = 3
+    else:
+       zl = 5 # use 5 - ignore rest
+    for i,d in enumerate(allencdates):
+        z = allZips[i][:zl] # corresponding zip
+        dz = datecounts.setdefault(d,{})
+        n = datecounts[d].setdefault(z,0)
+        datecounts[d][z] += 1
+    return datecounts
+
 def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
     """ prototype for development
-    yield all events from startDT to endDT with any
-    of the ICD codes taking fever into account if required
+    currently a generator although for AMDS we want all cases
+    so the cases are amalgamated in the AMDS code...
+    
+    yield all cases for this specific syndName from startDT to endDT with any
+    of the ICD codes in syndDef taking fever into account if required
+    from the spreadshit:
     2) One of the following under the conditions specified:	
-a) Measured fever of at least 100F (in temperature field of database)	
-OR, if and only if there is no valid measured temperature of any magnitude,	
-b) ICD9 code of 780.6 (fever)	
+        a) Measured fever of at least 100F (in temperature field of database)	
+        OR, if and only if there is no valid measured temperature of any magnitude,	
+        b) ICD9 code of 780.6 (fever)	
 
     """
-    nfcases = None
-    fcases = None
-    cases = None
-    icdFevercodes = ['780.6','780.31'] # note febrile convulsion!
-    noFevercodes = [x[0] for x in syndDef if not x[1]]
-    feverCodes = [x[0] for x in syndDef if x[1]]
-    checkFever = (len(feverCodes) > 0)
+    ignoreSite = 0
+    ignoredSites = {}
+    nfcases = [] # so we can add
+    fcases = []    
+    cases = []
+    icdFevercodes = ['780.6','780.31'] # note febrile convulsion added !
+    noFevercodes = [x[0] for x in syndDef if not x[1]] # definitive in absence of fever 
+    feverCodes = [x[0] for x in syndDef if x[1]] # definitive if fever or.. see note on complexities
+    checkFever = (len(feverCodes) > 0) # no point if not needed
     checkNoFever = (len(noFevercodes) > 0)
-    nfcases = []
-    fcases = []
-    if checkNoFever:
+    if checkNoFever: # get all definitive cases as icd9fact ids
         nfcases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
              icd9EncDate__lte=endDT, icd9Code__in=noFevercodes).values_list('id',flat=True).distinct()
         print '## Nofever: %d cases' % len(list(nfcases))
@@ -164,7 +187,7 @@ b) ICD9 code of 780.6 (fever)
             EncEncounter_Date__lte=endDT).values_list('id',flat=True).distinct() # encids of these with measured fever
         realFeverCases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
             icd9Code__in=feverCodes, icd9Enc__in=realFeverEncs).values_list('id',flat=True).distinct()  
-        # whew - these are all cases with a measured fever 
+        # whew - these are all cases with a measured fever as icd9fact ids
         # pass if no temp recorded but an icd9 fever code
         notFeverEncs = Enc.objects.filter(EncTemperature__lt=100, EncTemperature__gte=90,
             id__in = icd9encs, EncEncounter_Date__gte=startDT,
@@ -179,12 +202,14 @@ b) ICD9 code of 780.6 (fever)
         n2 = len(list(realFeverCases))
         n3 = len(list(icdFeverCases))
         print '### fever: %d potential matches, %d with measured fever, %d with no measured temp but icd9 fever' % (n1,n2,n3)
-    caseids = list(nfcases) + fcases
+    caseids = list(nfcases) + fcases # fcases is already a list
+    print '#### Total count = %d' % (len(caseids))
     cases = icd9Fact.objects.filter(id__in=caseids) # convert to icd9fact object lists
     if cases:
         zips = [x.icd9Patient.DemogZip for x in cases] # get zips!   
         zips = [x.split('-')[0] for x in zips] # get rid of trailing stuff - want 5 digit only  
-        dobs = [x.icd9Patient.DemogDate_of_Birth for x in cases] # get dobs   
+        dobs = [x.icd9Patient.DemogDate_of_Birth for x in cases] # get dobs  
+        atriusCodes = [x.icd9Enc.EncEncounter_Site for x in cases] 
         encdates = [x.icd9Enc.EncEncounter_Date for x in cases] # get encdates   
         encAges = [int(makeAge(dobs[i],encdates[i])/365.25) for i in range(len(encdates))]
         # for testing can return tuples for efficiency rather than mongo django objects
@@ -194,9 +219,15 @@ b) ICD9 code of 780.6 (fever)
             c = list(c)
             c.insert(0,encAges[i])
             c.insert(0,zips[i])
-            caselist[i] = c
-        for c in caselist:
-            yield c
+            aSite = atriusCodes[i]
+            if atriusUseDict.get(aSite,None):
+                yield c
+            else:
+                aSiteName = atriusLookup.get(aSite,'%s?' % aSite)
+                n = ignoredSites.setdefault(aSiteName,0)
+                ignoredSites[aSiteName] += 1
+                ignoreSite += 1
+        print '# total atrius ignore site cases = %d, sites= %s' % (ignoreSite,ignoredSites)
     else:
         raise StopIteration # nada
 
@@ -277,7 +308,8 @@ def makeAMDS(sdate='20080101',edate='20080102',syndDefs={},cclassifier="ESPSS",
         counts is a dict of syndromes, containing dicts of dates containing dicts of zip/count
         """
         # provide sd,ed,ctime,ruser,doid
-        m = ['<AMDSRecordSummary>',]
+        m = ['<AMDSQueryResponse>']
+        m.append('<AMDSRecordSummary>')
         m.append('<DateStart>%s</DateStart>' % sdate)
         m.append('<DateEnd>%s</DateEnd>' % edate)
         m.append('<CreationDateTime>%s</CreationDateTime>' % crtime)
@@ -297,6 +329,7 @@ def makeAMDS(sdate='20080101',edate='20080102',syndDefs={},cclassifier="ESPSS",
             m += c
         m.append('</CountSet>')
         m.append('</AMDSRecordSummary>')
+        m.append('</AMDSQueryResponse>')
         return m  
     
     # main makeAMDS starts here
@@ -332,11 +365,16 @@ def testsyndGen():
             print s,i,c
         del g
 
-def testAMDS(sdate='20090201',edate='20090202'):
+def testAMDS(sdate='20080101',edate='20080102'):
     """ test stub for AMDS xml generator
+    On Thu, Apr 23, 2009 at 11:54 PM, Lee, Brian A. (CDC/CCHIS/NCPHI)
+    (CTR) <fya1@cdc.gov> wrote:
+    > I changed the root element to be <AMDSQueryResponse> since these
+    > examples have two root elements (AMDSRecordSummary and CountSet). Other
+    > than that, the data makes for great sample sets.
     """
-    doid='ESP:SS@Atrius'
-    requ='Ross'
+    doid='ESPSS@Atrius'
+    requ='Ross Lazarus'
     minCount=5
     crtime=isoTime(time.localtime())
     print 'crtime =',crtime
@@ -355,6 +393,8 @@ def testAMDS(sdate='20090201',edate='20090202'):
         print '## wrote %d rows to %s' % (len(m),fname)
 
 if __name__ == "__main__":
+  #dd = encDateVolumes(startDT='20090101',endDT='20090102')
+  #print dd
   testAMDS()
 
 

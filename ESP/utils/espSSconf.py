@@ -789,8 +789,14 @@ atriusSites="""IgnoreForILI	| count(EncEncounter_SiteName) | EncEncounter_SiteNa
 *	|                          148 | WEYMOUTH WOODS ULTRASOUND                                    | 529101            |																																																																																																																																																																																																																																																														
 *	|                            4 | WEYMOUTH WOODS ULTRASOUND KINGSTON                           | 529102            |																																																																																																																																																																																																																																																														
 """.split('\n')
-atriusSites = [x.split('|') for x in atriusSites[2:]] # drop header
-atriusSites = [[x[3].strip(),x[2].strip(),x[0].strip()] for x in atriusSites if len(x) > 3] # code,name,ignore for SS
+atriusAllSites = [x.split('|') for x in atriusSites[2:] if len(x.split('|')) > 3] # drop header
+atriusAllSites = [[x[2].strip(),x[3].strip(),x[0].strip()] for x in atriusAllSites] # name,code,ignore
+atriusAllCodes = [x[1] for x in atriusAllSites] # code
+atriusAllNames = [x[0] for x in atriusAllSites] # name
+atriusLookup = dict(zip(atriusAllCodes,atriusAllNames))
+atriusUse = [[x[0],x[1]] for x in atriusAllSites if (x[2] <> '*')] # name, code all not ignored codes
+atriusUseCodes = [x[1] for x in atriusUse] # code is second
+atriusUseDict = dict(zip(atriusUseCodes,atriusUse)) # can lookup - use only found
 
 # MDPH definition of ILI
 """
@@ -1879,3 +1885,4 @@ btzip = [x.strip().split('\t') for x in btzip]
 btzips = [x[2] for x in btzip] # just the zip codes
 btcodes = [x[0] for x in btzip]
 btzipdict = dict(zip(btzips,btcodes)) # given a 5 digit zip return the bt region code
+
