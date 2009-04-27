@@ -59,3 +59,12 @@ def zip_code():
     return '%05d' % random.randrange(90000)
 
 
+
+
+def fever_temperature():
+    '''Returns a float that can be interpreted as a fever-high temperature'''
+    return 101 + float(random.randrange(-5, 5))/10
+
+def body_temperature():
+    '''returns a value common for human temperature (in F)'''
+    return 98 - float(random.randrange(-2, 2))/10

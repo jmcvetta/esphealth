@@ -14,6 +14,7 @@
 
 import string
 import datetime
+import random
 import pdb
 
 from django.db import models
@@ -44,7 +45,7 @@ class Provider(models.Model):
     @staticmethod
     def make_fakes(how_many):
         for i in xrange(0, how_many):
-            make_mock(save_on_db=True)
+            Provider.make_mock(save_on_db=True)
             
     @staticmethod
     def make_mock(save_on_db=False):
@@ -101,9 +102,11 @@ class Provider(models.Model):
 
 class Demog(models.Model):
 
+    fake_q = Q(DemogPatient_Identifier__startswith='FAKE')
+
     @staticmethod
     def clear():
-        Demog.objects.filter(DemogPatient_Identifier__startswith='FAKE').delete()
+        Demog.objects.filter(Demog.fake_q).delete()
             
     @staticmethod
     def make_fakes(how_many):
@@ -111,11 +114,17 @@ class Demog(models.Model):
             Demog.make_mock(save_on_db=save_on_db)
 
     @staticmethod
+    def fakes():
+        return Demog.objects.filter(Demog.fake_q)
+
+    @staticmethod
     def make_mock(save_on_db=False):
         phone_number = randomizer.phone_number()
         address = randomizer.address()
         city = randomizer.city()
         identifier = randomizer.string(length=8)
+        
+        
         p = Demog(
             DemogPatient_Identifier = 'FAKE-%s' % identifier,
             DemogMedical_Record_Number = 'FAKE-%s' % identifier,
@@ -145,9 +154,9 @@ class Demog(models.Model):
             DemogDeath_Indicator = '',
             DemogOccupation = ''
             )
-        if save_on_db: 
-            p.save()
-            return p
+        
+        if save_on_db: p.save()
+        return p
 
 
     DemogPatient_Identifier = models.CharField('Patient Identifier',max_length=20,blank=True,db_index=True)
@@ -504,6 +513,60 @@ class Lxo(models.Model):
 
 ###################################
 class Enc(models.Model):
+
+    fake_q = Q(EncPatient__DemogPatient_Identifier__startswith='FAKE')
+
+    @staticmethod
+    def delete_fakes():
+        Enc.objects.filter(fake_q).delete()
+
+    @staticmethod
+    def make_fakes(how_many, **kw):
+        now = datetime.datetime.now()
+        start = kw.get('start_date', None)
+        interval = kw.get('interval', None)
+        
+        for patient in Demog.fakes():
+            when = start or patient.date_of_birth
+            for i in xrange(0, how_many):
+                next_encounter_interval = interval or random.randrange(0, 180)
+                when += datetime.timedelta(days=next_encounter_interval)
+                if when < now: 
+                    Enc.make_mock(patient, save_on_db=True, when=when)
+            
+    @staticmethod
+    def make_mock(patient, save_on_db=False, **kw):
+        
+        when = kw.get('when', datetime.datetime.now())
+        e = Enc(
+            EncPatient=patient,
+            EncEncounter_ID = 'FAKE-%s' % randomizer.string(length=10),
+            EncEncounter_Provider=patient.DemogProvider,
+            EncMedical_Record_Number = patient.DemogMedical_Record_Number,
+            EncEvent_Type = 'FAKE',
+            EncEncounter_Status = 'FAKE',
+            EncEncounter_Date = when.strftime('%Y%m%d'),
+            EncEncounter_ClosedDate = when.strftime('%Y%m%d'),
+            EncEDC = '', 
+            EncPregnancy_Status = '',
+            EncEncounter_SiteName = '',
+            EncEncounter_Site = '',
+            EncCPT_codes = '',
+            EncTemperature = '',
+            EncICD9_Codes = '',
+            EncICD9_Qualifier = '',
+            EncWeight = '',
+            EncHeight = '',
+            EncBPSys = '',
+            EncBPDias = '',
+            EncO2stat = '',
+            EncPeakFlow = '',
+            )
+        
+        if save_on_db: e.save()
+        return e
+    
+
     EncPatient = models.ForeignKey(Demog) 
     EncMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,blank=True,null=True,db_index=True)
     EncEncounter_ID = models.CharField('Encounter ID',max_length=20,blank=True,null=True)
@@ -604,6 +667,9 @@ class Enc(models.Model):
         #return u"%s %s %s %s" % (self.EncPatient.id,self.geticd9s(), self.EncMedical_Record_Number,self.EncEncounter_Date)
         return u"#%-10s %-12s CPT: %s" % (self.EncPatient.id, self.date, ', '.join(self.icd9_list))
 
+    def is_fake(self):
+        return self.EncEvent_Type == 'FAKE'
+
 
 
 ###################################
@@ -636,7 +702,12 @@ class Immunization(models.Model):
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
     
 
-            
+    @staticmethod
+    def fakes():
+        return Immunization.objects.filter(ImmName='FAKE')
+
+    def is_fake(self):
+        return self.ImmName == 'FAKE'
 
     def  __unicode__(self):
 
@@ -667,12 +738,20 @@ class VAERSadditions(models.Model):
 
 
 class Vaccine(models.Model):
+
+    @staticmethod
+    def random():
+        return Vaccine.objects.exclude(short_name='UNK').order_by('?')[0]
+
     code = models.IntegerField(unique=True)
     short_name = models.CharField(max_length=60)
     name = models.CharField(max_length=300)
 
     def __unicode__(self):
         return '%s (%s)'% (self.short_name, self.name)
+
+
+        
     
 
 class ImmunizationManufacturer(models.Model):

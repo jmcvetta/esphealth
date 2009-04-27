@@ -229,6 +229,7 @@ src/ESP/utils/vaers_hl7.py -text
 src/ESP/vaers/VAERSevents.py -text
 src/ESP/vaers/__init__.py -text
 src/ESP/vaers/diagnostics.py -text
+src/ESP/vaers/fake.py -text
 src/ESP/vaers/fixtures/encounters.sql -text
 src/ESP/vaers/fixtures/immunizations.sql -text
 src/ESP/vaers/fixtures/lab_results.sql -text

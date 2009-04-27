@@ -517,7 +517,7 @@ def define_active_rules():
 
 
     # Deactivating ALL Rules and replacing them with the current set
-    DiagnosticsEventRule.manager.deactivate_all()
+    DiagnosticsEventRule.objects.deactivate_all()
 
 
     for k, v in VAERS_DIAGNOSTICS.items():

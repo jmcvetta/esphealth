@@ -66,12 +66,47 @@ class AdverseEvent(models.Model):
 
 
 class FeverEvent(AdverseEvent):
+
+    explain_string = 'Patient with %3.1fF fever'
+    
+    @staticmethod
+    def make_mock(patient, immunization, encounter):
+        temp = randomizer.fever_temperature() if causes_fever_event else randomizer.body_temperature()
+        
+        assert patient.is_fake()
+        assert encounter.is_fake()
+        assert immunization.is_fake()
+        
+        return FeverEvent.objects.create(
+            patient=patient, immunization=immunization,
+            temperature=temp, 
+            matching_rule_explain = FeverEvent.explain_string % temp
+            )
+            
     temperature = models.FloatField('Temperature')
     encounter = models.ForeignKey(Enc)
 
 class DiagnosticsEvent(AdverseEvent):
     encounter = models.ForeignKey(Enc)
-    icd9 = models.ForeignKey(Icd9)    
+    icd9 = models.ForeignKey(Icd9)   
+
+    explain_string = 'Patient diagnosed with %s'
+
+    @staticmethod
+    def make_mock(patient, immunization, encounter, icd9):
+        assert patient.is_fake()
+        assert encounter.is_fake()
+        assert immunization.is_fake()
+        
+        explain_rule = DiagnosticsEvent.explain_string % icd9.icd9Long
+
+        return DiagnosticsEvent.objects.create(
+            patient=patient, immunization=immunization,
+            icd9=icd9,
+            matching_rule_explain = explain_rule
+            )
+
+
 
 class LabResultEvent(AdverseEvent):
     lab_result = models.ForeignKey(Lx)
