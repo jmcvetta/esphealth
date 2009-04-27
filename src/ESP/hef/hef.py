@@ -101,6 +101,35 @@ class BaseHeuristic(object):
         log.debug('All BaseHeuristic instances: %s' % result)
         return result
     
+    @classmethod
+    def get_all_loincs(cls):
+        '''
+        Returns a list of all LOINC numbers for registered heuristics
+        '''
+        loincs = set()
+        for heuristic in cls.get_all_heuristics():
+            try:
+                loincs = loincs | set(heuristic.loinc_nums)
+            except AttributeError:
+                pass # Skip heuristics w/ no LOINCs defined
+        return loincs
+    
+    @classmethod
+    def get_all_loincs_by_event(cls):
+        '''
+        Returns a list of all LOINC numbers for registered heuristics
+        '''
+        loincs = {}
+        for heuristic in cls.get_all_heuristics():
+            try:
+                try:
+                    loincs[heuristic] += set(heuristic.loinc_nums)
+                except KeyError:
+	                loincs[heuristic] = set(heuristic.loinc_nums)
+            except AttributeError:
+                pass # Skip heuristics w/ no LOINCs defined
+        return loincs
+    
     def matches(self, begin_date=None, end_date=None):
         '''
         Return a QuerySet of matches for this heuristic
@@ -255,12 +284,12 @@ class HighNumericLabHeuristic(LabHeuristic):
         @type end_date:   datetime.date
         '''
         relevant_labs = self.relevant_labs(begin_date, end_date)
-        no_ref_q = Q(LxReference_High=None) | Q(LxReference_High='')
+        no_ref_q = Q(ref_high_float=None)
         if self.default_high:
-            static_comp_q = no_ref_q & Q(LxTest_results__gt=self.default_high)
+            static_comp_q = no_ref_q & Q(result_float__gt=self.default_high)
             pos_q = static_comp_q
         if self.ratio:
-            ref_comp_q = ~no_ref_q & Q(LxTest_results__gt=F('LxReference_High') * self.ratio)
+            ref_comp_q = ~no_ref_q & Q(result_float__gt=F('ref_high_float') * self.ratio)
             pos_q = ref_comp_q
         if self.default_high and self.ratio:
             pos_q = (ref_comp_q | static_comp_q)

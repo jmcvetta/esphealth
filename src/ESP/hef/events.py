@@ -9,8 +9,8 @@
 @license: LGPL
 '''
 
-from ESP.hef.core import EncounterHeuristic, StringMatchLabHeuristic, HighNumericLabHeuristic
-from ESP.hef.core import FeverHeuristic, CalculatedBilirubinHeuristic
+from ESP.hef.hef import EncounterHeuristic, StringMatchLabHeuristic, HighNumericLabHeuristic
+from ESP.hef.hef import FeverHeuristic, CalculatedBilirubinHeuristic
 
 
 # These definitions do not necessarily *need* to be assigned to variables.  The mere
