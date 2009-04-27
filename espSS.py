@@ -393,8 +393,8 @@ def testAMDS(sdate='20080101',edate='20080102'):
         print '## wrote %d rows to %s' % (len(m),fname)
 
 if __name__ == "__main__":
-  dd = encDateVolumes(startDT='20090101',endDT='20090102')
-  print dd
+  #dd = encDateVolumes(startDT='20090101',endDT='20090102')
+  #print dd
   testAMDS()
 
 
