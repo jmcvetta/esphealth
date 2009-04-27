@@ -135,9 +135,12 @@ def encDateVolumes(startDT=None,endDT=None,zip5=True):
     """return a dict of date, with zip specific total encounter volume for each day
     """
     allencdates = Enc.objects.filter(EncEncounter_Date__gte=startDT,
-      EncEncounter_Date__lte=endDT) # .values_list('EncEncounter_Date','EncPatient')
-    allZips = [x.EncPatient.DemogZip for x in allencdates] # list of zip codes  
-    allencdates = allencdates.values_list('EncEncounter_Date',flat=True)
+      EncEncounter_Date__lte=endDT).values_list('EncEncounter_Date',flat=True) 
+    allencdemids = Enc.objects.filter(EncEncounter_Date__gte=startDT,
+      EncEncounter_Date__lte=endDT).values_list('EncPatient',flat=True) # demogids
+    allZips = [Demog.objects.get(id__exact=x).DemogZip for x in allencdemids] # list of zip codes  
+    # this is slow, but uses less ram than getting all the actual enc objects and
+    # looking up their demogzips
     datecounts = {}
     if not zip5:
        zl = 3
@@ -352,6 +355,68 @@ def makeAMDS(sdate='20080101',edate='20080102',syndDefs={},cclassifier="ESPSS",
         mdict[syndrome] = m
     return mdict
 
+def makeTab(sdate='20080101',edate='20080102',syndDefs={},encDateVols={}):
+    """crude generator for xls
+    rml april 27 2009 swine flu season?
+    """
+
+    def makeCounts(syndrome='?',aday={},edate='20080101'):
+        """ all counts for a date by zip
+        """
+        res = []
+        zips = aday.keys()
+        zips.sort()
+        zips.reverse()
+        print '### zips=',zips
+        alld = encDateVols.get(edate,{})
+        #print 'makeCounts tab, aday',aday,'alld',alld        
+        for i,z in enumerate(zips):
+            zn = int(aday[z])
+            alln = int(alld.get(z,0))
+            #print 'z=',z,type(z), 'alln=',alln,type(alln),'zn=',zn,type(zn)
+            if alln > 0:
+                f = (100.0*zn)/alln
+                allfrac = '%f' % f
+            else:
+                allfrac = 'wft 0.0 - no all event count this zip?'
+            row = '\t'.join((edate,z,syndrome,'%d' % zn,'%d' % alln,allfrac))
+            res.append(row)
+        return res
+        
+    def makeMessage(ziplist,syndrome,countsBydate):
+        """
+        format a simple xls report
+        """
+        # provide sd,ed,ctime,ruser,doid
+        m = ['Date\tZip\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome']
+        dkeys = countsBydate.keys()
+        dkeys.sort()
+        for d in dkeys:
+            c = makeCounts(syndrome,countsBydate[d],d)
+            m += c
+        return m  
+    
+    # main makeTab starts here
+    mdict = {}
+    for syndrome in syndDefs:
+        countsBydate = {} # we want {date1:{zip1:22,zip2:41},date2:{..}}
+        zips = {}
+        print 'looking for',syndrome
+        icdlist = syndDefs[syndrome] # icd list
+        g = syndGen(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate)
+        for i,c in enumerate(g):
+            (zipc,age,id,enc,icd,demog,encdate) = c
+            zip5 = zipc[:5] # testing with 3 digit zips
+            zips.setdefault(zip5,zip5) # record all unique zips        
+            countsBydate.setdefault(encdate,{})
+            countsBydate[encdate].setdefault(zip5,0)
+            countsBydate[encdate][zip5] += 1
+        del g
+        m = makeMessage(zips,syndrome,countsBydate)
+        mdict[syndrome] = m
+    return mdict
+
+
 def testsyndGen():
     """ 
     for dev
@@ -392,9 +457,29 @@ def testAMDS(sdate='20080101',edate='20080102'):
         f.close()
         print '## wrote %d rows to %s' % (len(m),fname)
 
+def testTab(sdate='20090101',edate='20090102'):
+    """ test stub for tab delim generator
+    date zip syndrome syndN allencN syndPct
+    """
+    print '## getting encDateVols'
+    dd = encDateVolumes(startDT=sdate,endDT=edate)
+    print '## got encDateVols'
+    fproto = 'ESP%s_Synd_%s_%s_%s.xls'
+    mdict = makeTab(sdate=sdate,edate=edate,syndDefs=syndDefs,encDateVols=dd)
+    mdk = mdict.keys() # syndromes
+    mdk.sort()
+    for syndrome in mdk:
+        m = mdict[syndrome]
+        fname = fproto % ('Atrius',syndrome,sdate,edate)
+        f = open(fname,'w')
+        f.write('\n'.join(m))
+        f.write('\n')
+        f.close()
+        print '## wrote %d rows to %s' % (len(m),fname)
+
 if __name__ == "__main__":
   #dd = encDateVolumes(startDT='20090101',endDT='20090102')
-  #print dd
-  testAMDS()
+  testTab()
+
 
 
