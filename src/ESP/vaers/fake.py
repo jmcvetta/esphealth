@@ -16,22 +16,23 @@ ICD9_EVENT_PCT = 5
 
 def create_history(patient):
 
-    
-
     history = ImmunizationHistory(patient)
     vaccine_date = patient.date_of_birth + datetime.timedelta(days=180)
 
 
     for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
-        # Check conditions for vaccine and add to history
-        causes_fever = random.randrange(100) > FEVER_EVENT_PCT
-        causes_icd9 = random.randrange(100) > ICD9_EVENT_PCT
-        history.add_immunization(Vaccine.random(), vaccine_date,
-                                 causes_fever=causes_fever,
-                                 causes_icd9=causes_icd9)
+        try:
+            # Check conditions for vaccine and add to history
+            causes_fever = random.randrange(100) > FEVER_EVENT_PCT
+            causes_icd9 = random.randrange(100) > ICD9_EVENT_PCT
+            history.add_immunization(Vaccine.random(), vaccine_date,
+                                     causes_fever=causes_fever,
+                                     causes_icd9=causes_icd9)
         
-        # Set date for next vaccination
-        vaccine_date += datetime.timedelta(days=random.randrange(30, 180))
+            # Set date for next vaccination
+            vaccine_date += datetime.timedelta(days=random.randrange(30, 180))
+        except:
+            continue
         
         
         
