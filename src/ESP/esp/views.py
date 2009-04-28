@@ -973,11 +973,7 @@ def showutil(request):
     if not request.user.is_staff:
         return HttpResponse("You do not have permission to see this page")
             
-    cinfo = {"request":request,
-             "MEDIA_URL":MEDIA_URL,
-             }
-    c = Context(cinfo)
-    return render_to_response('esp/utiladmin.html',c)
+    return direct_to_template(request, 'esp/utiladmin.html')
 
 
 #######################################
