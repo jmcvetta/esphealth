@@ -1,4 +1,5 @@
 """
+28 april 2009: changed code to count all encounters to work by day to save ram. Not sure how to speed it up
 28 april 2009: ah - mixing up icd9Fact ids with Enc ids is not a very good idea - counts now sane
 28 april 2009: getting one zip with 1 as volume but 2 ILI cases. arrgh. 
 27 april 2009: swine flu - added a simple tab delimited file dumperqscreen 
@@ -134,60 +135,43 @@ def makeAge(dob='20070101',edate='20080101'):
         ed = datetime.date(yy,mm,dd)       
     return (ed-bd).days
 
-def OencDateVolumes(startDT=None,endDT=None,zip5=True):
-    """return a dict of date, with zip specific total encounter volume for each day
-    exclude from atriusExcludeCodes
-    """
-    started = time.time()
-    allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT,
-     EncEncounter_Date__lte=endDT, EncEncounter_Site__in \
-     = atriusUseCodes).order_by('id')
-    allZips = [x.EncPatient.DemogZip for x in allenc]
-    allDates = [x.EncEncounter_Date for x in allenc]
-    print '# got all zips and dates', time.time() - started
-    del allenc
-    datecounts = {}
-    if not zip5:
-       zl = 3
-    else:
-       zl = 5 # use 5 - ignore rest
-    for i,d in enumerate(allDates):
-        z = allZips[i][:zl] # corresponding zip
-        dz = datecounts.setdefault(d,{})
-        n = datecounts[d].setdefault(z,0)
-        datecounts[d][z] += 1
-    return datecounts
 
 def encDateVolumes(startDT=None,endDT=None,zip5=True):
     """return a dict of date, with zip specific total encounter volume for each day
-    exclude from atriusExcludeCodes
-    This requires huge amounts of ram - try doing it date at a time?
+    exclude from atriusExcludeCodes. Challenge is that it requires looking up the zip of
+    every encounter..
+    This requires huge amounts of ram to do in one hit for a long period.
+    Now fixed to do a day at a time - seems ok..
+    Using extra to squirt some SQL into the ORM call reduces this to
+    about 13secs/day - tolerable and uses very little RAM.
+    TODO: find a better/faster/lessRAM way?
     """
     started = time.time()
+    datecounts = {}
     dates = Enc.objects.filter(EncEncounter_Date__gte=startDT,
      EncEncounter_Date__lte=endDT, EncEncounter_Site__in \
      = atriusUseCodes).values_list('EncEncounter_Date',flat=True)
-    dates = list(set(list(dates)))
-    for d in dates:
-        print 'encDateVolumes date = ',d
-        allenc = Enc.objects.filter(EncEncounter_Date__exact=d,
-         EncEncounter_Site__in = atriusUseCodes).order_by('id')
-        allZips = [x.EncPatient.DemogZip for x in allenc]
-        allDates = [x.EncEncounter_Date for x in allenc]
-        del allenc
-        datecounts = {}
+    dates = list(set(list(dates))) # takes a few seconds to get all dates
+    dates.sort()
+    esel = {'ezip':'select DemogZip from esp_demog where esp_demog.id = esp_enc.EncPatient_id'}
+    # an extra select dict to speed up the foreign key lookup - note real SQL table and column names!
+    for adate in dates:
+        allenc = Enc.objects.filter(EncEncounter_Date__exact=adate,
+         EncEncounter_Site__in = atriusUseCodes).extra(select=esel).order_by('id').values_list('ezip',
+        'EncEncounter_Date')
+        print '#### encDateVolumes allenc=%d, date=%s, %f secs' % (len(allenc),adate,time.time()-started)            
         if not zip5:
            zl = 3
         else:
            zl = 5 # use 5 - ignore rest
-        for i,d in enumerate(allDates):
-            z = allZips[i][:zl] # corresponding zip
-            dz = datecounts.setdefault(d,{})
-            n = datecounts[d].setdefault(z,0)
-            datecounts[d][z] += 1
+        for i,zdate in enumerate(allenc):
+            (z,thisd) = zdate
+            z = z[:zl] # corresponding zip
+            dz = datecounts.setdefault(thisd,{})
+            n = datecounts[thisd].setdefault(z,0)
+            datecounts[thisd][z] += 1
+        del allenc
     return datecounts
-
-
 
 def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
     """ revised to make the enc record the central unit
