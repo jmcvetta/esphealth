@@ -14,7 +14,7 @@ other site-specific configuration are stored in localsettings.py.
 import os
 import logging
 
-from ESP import localsettings
+import localsettings
 
 
 TOPDIR = os.path.dirname(__file__)
