@@ -54,6 +54,11 @@ LOGIN_URL = '/login'
 REDIRECT_FIELD_NAME = 'next'
 
 
+def run(request):
+    '''Have a job to run that needs to go through Django? 
+    Use this method'''
+    return HttpResponse('OK')
+
 ###################################
 @login_required
 def index(request):
