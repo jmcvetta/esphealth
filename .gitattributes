@@ -217,6 +217,7 @@ src/ESP/templates/nav-bg.gif -text
 src/ESP/templates/pages/vaers/collect_feedback.html -text
 src/ESP/templates/pages/vaers/identify.html -text
 src/ESP/templates/pages/vaers/present.html -text
+src/ESP/templates/widgets/fixture_builder.json -text
 src/ESP/templates/widgets/vaers/feedback_form.html -text
 src/ESP/urls.py -text
 src/ESP/utils/common.py -text
