@@ -134,7 +134,7 @@ def makeAge(dob='20070101',edate='20080101'):
         ed = datetime.date(yy,mm,dd)       
     return (ed-bd).days
 
-def encDateVolumes(startDT=None,endDT=None,zip5=True):
+def OencDateVolumes(startDT=None,endDT=None,zip5=True):
     """return a dict of date, with zip specific total encounter volume for each day
     exclude from atriusExcludeCodes
     """
@@ -158,6 +158,34 @@ def encDateVolumes(startDT=None,endDT=None,zip5=True):
         datecounts[d][z] += 1
     return datecounts
 
+def encDateVolumes(startDT=None,endDT=None,zip5=True):
+    """return a dict of date, with zip specific total encounter volume for each day
+    exclude from atriusExcludeCodes
+    This requires huge amounts of ram - try doing it date at a time?
+    """
+    started = time.time()
+    dates = Enc.objects.filter(EncEncounter_Date__gte=startDT,
+     EncEncounter_Date__lte=endDT, EncEncounter_Site__in \
+     = atriusUseCodes).values_list('EncEncounter_Date',flat=True)
+    dates = list(set(list(dates)))
+    for d in dates:
+        print 'encDateVolumes date = ',d
+        allenc = Enc.objects.filter(EncEncounter_Date__exact=d,
+         EncEncounter_Site__in = atriusUseCodes).order_by('id')
+        allZips = [x.EncPatient.DemogZip for x in allenc]
+        allDates = [x.EncEncounter_Date for x in allenc]
+        del allenc
+        datecounts = {}
+        if not zip5:
+           zl = 3
+        else:
+           zl = 5 # use 5 - ignore rest
+        for i,d in enumerate(allDates):
+            z = allZips[i][:zl] # corresponding zip
+            dz = datecounts.setdefault(d,{})
+            n = datecounts[d].setdefault(z,0)
+            datecounts[d][z] += 1
+    return datecounts
 
 
 
