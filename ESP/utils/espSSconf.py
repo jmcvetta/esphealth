@@ -797,6 +797,8 @@ atriusLookup = dict(zip(atriusAllCodes,atriusAllNames))
 atriusUse = [[x[0],x[1]] for x in atriusAllSites if (x[2] <> '*')] # name, code all not ignored codes
 atriusUseCodes = [x[1] for x in atriusUse] # code is second
 atriusUseDict = dict(zip(atriusUseCodes,atriusUse)) # can lookup - use only found
+atriusExcludeCodes = [x[1] for x in atriusAllSites if (x[2] == '*')] # used for volume cleaning
+
 
 # MDPH definition of ILI
 """

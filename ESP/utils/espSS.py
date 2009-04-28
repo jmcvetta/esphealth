@@ -1,4 +1,7 @@
 """
+28 april 2009: ah - mixing up icd9Fact ids with Enc ids is not a very good idea - counts now sane
+28 april 2009: getting one zip with 1 as volume but 2 ILI cases. arrgh. 
+27 april 2009: swine flu - added a simple tab delimited file dumperqscreen 
 21 april 2009: added btzipdict to espSSconf.py - lookup a zip code to get the MDPH BT region
 22 april 2009: added quick'n'dirty AMDS xml generator - bugger the xsd :)
 
@@ -25,12 +28,12 @@ DONE: first task is to set up data structures for defs
 rml april 20 - see espSSconf.py
 
 fever # MDPH definition of ILI
-2) One of the following under the conditions specified:	
-a) Measured fever of at least 100F (in temperature field of database)	
-OR, if and only if there is no valid measured temperature of any magnitude,	
-b) ICD9 code of 780.6 (fever)	
+2) One of the following under the conditions specified: 
+a) Measured fever of at least 100F (in temperature field of database)   
+OR, if and only if there is no valid measured temperature of any magnitude,
+b) ICD9 code of 780.6 (fever)   
 Note febrile convulsion added sometimes? 
-ICD9 code 780.31 (Febrile Convulsions)			
+ICD9 code 780.31 (Febrile Convulsions)  
 
 TODO: clarify whether febrile convulsions diag counts as fever
 TODO: create a function to figure if an encounter with an 
@@ -89,8 +92,8 @@ from ESP.esp.models import *
 from django.db.models import Q
 from ESP.settings import *
 
-from espSSconf import btzipdict,atriusUseDict,atriusLookup,ILIdef,HAEMdef,LESIONSdef,LYMPHdef
-from espSSconf import LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef
+from espSSconf import btzipdict,atriusUseDict,atriusLookup,atriusExcludeCodes,atriusUseCodes, \
+ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef
 # these are [icd,feverreq] lists
 import utils
 defList = [ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef]
@@ -133,27 +136,129 @@ def makeAge(dob='20070101',edate='20080101'):
 
 def encDateVolumes(startDT=None,endDT=None,zip5=True):
     """return a dict of date, with zip specific total encounter volume for each day
+    exclude from atriusExcludeCodes
     """
-    allencdates = Enc.objects.filter(EncEncounter_Date__gte=startDT,
-      EncEncounter_Date__lte=endDT).values_list('EncEncounter_Date',flat=True) 
-    allencdemids = Enc.objects.filter(EncEncounter_Date__gte=startDT,
-      EncEncounter_Date__lte=endDT).values_list('EncPatient',flat=True) # demogids
-    allZips = [Demog.objects.get(id__exact=x).DemogZip for x in allencdemids] # list of zip codes  
-    # this is slow, but uses less ram than getting all the actual enc objects and
-    # looking up their demogzips
+    started = time.time()
+    allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT,
+     EncEncounter_Date__lte=endDT, EncEncounter_Site__in \
+     = atriusUseCodes).order_by('id')
+    allZips = [x.EncPatient.DemogZip for x in allenc]
+    allDates = [x.EncEncounter_Date for x in allenc]
+    print '# got all zips and dates', time.time() - started
+    del allenc
     datecounts = {}
     if not zip5:
        zl = 3
     else:
        zl = 5 # use 5 - ignore rest
-    for i,d in enumerate(allencdates):
+    for i,d in enumerate(allDates):
         z = allZips[i][:zl] # corresponding zip
         dz = datecounts.setdefault(d,{})
         n = datecounts[d].setdefault(z,0)
         datecounts[d][z] += 1
     return datecounts
 
-def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
+
+
+
+def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
+    """ revised to make the enc record the central unit
+    Atrius exclusions are such a pain...
+    yield all cases for this specific syndName from startDT to endDT with any
+    of the ICD codes in syndDef taking fever into account if required
+    from the spreadshit:
+    2) One of the following under the conditions specified:
+        a) Measured fever of at least 100F (in temperature field of database)   
+        OR, if and only if there is no valid measured temperature of any magnitude,
+        b) ICD9 code of 780.6 (fever)   
+
+    """
+    redundant = 0
+    ignoreSite = 0
+    ignoredSites = {}
+    nffacts = [] # so we can add
+    ffacts = []
+    fcases = []    
+    cases = []
+    icdFevercodes = ['780.6','780.31'] # note febrile convulsion added !
+    noFevercodes = [x[0] for x in syndDef if not x[1]] # definitive in absence of fever 
+    feverCodes = [x[0] for x in syndDef if x[1]] # definitive if fever or.. see note on complexities
+    checkFever = (len(feverCodes) > 0) # no point if not needed
+    checkNoFever = (len(noFevercodes) > 0)
+    if checkNoFever: # get all definitive cases as icd9fact ids
+        nffacts = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
+             icd9EncDate__lte=endDT, icd9Code__in=noFevercodes).values_list('id',flat=True)
+        nffacts = list(nffacts) # and back to list of unique encounter id 
+        print '## Nofever: %d diags (may be redundancies on events of course)' % len(list(nffacts))
+    if checkFever: # must look for specific icd9 codes accompanied by measured fever or no temp measure but icd9 fever
+        # complex - find all encs with relevant icd9 code requiring a fever
+        icd9Encs = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
+            icd9Code__in=feverCodes).exclude(id__in=nffacts).values_list('icd9Enc',flat=True) 
+        # all relevant icd9facts -> enc id list
+        feverEncs = Enc.objects.filter(EncTemperature__gte=100,EncEncounter_Date__gte=startDT, 
+             EncEncounter_Date__lte=endDT,
+            id__in=icd9Encs).values_list('id',flat=True) # filtered with measured fever
+        realFeverFacts = icd9Fact.objects.filter(icd9Code__in=feverCodes, icd9EncDate__gte=startDT, 
+             icd9EncDate__lte=endDT,
+            icd9Enc__in=feverEncs).exclude(id__in=nffacts).values_list('id',flat=True) 
+        # convert to icd9Fact ids - may include redundancies - filter encounters later
+        # whew - these are all cases with a measured fever as icd9Fact ids
+        # Look for no temp recorded but one of the icd9 codes for fever instead
+        notFeverEncs = Enc.objects.filter(EncTemperature__lt=100, EncTemperature__gte=90,EncEncounter_Date__gte=startDT, 
+             EncEncounter_Date__lte=endDT,
+            id__in = icd9Encs).values_list('id',flat=True) # measured, but NOT fever      
+        # find all with an icd9 code for fever but NO measured temp
+        icdFeverFacts = icd9Fact.objects.filter(icd9Enc__in = icd9Encs, icd9EncDate__gte=startDT, 
+             icd9EncDate__lte=endDT,
+          icd9Code__in=icdFevercodes).exclude(icd9Enc__in=notFeverEncs,id__in=nffacts).values_list('id',flat=True)
+        # these are cases without measured temp but an icd9 fever code recorded
+        ffacts = set(list(realFeverFacts) + list(icdFeverFacts)) # enc id lists
+        ffacts = list(ffacts) # back to list (!) cheap way to remove duplicate encounters...
+        n1 = len(list(icd9Encs))
+        n2 = len(list(realFeverFacts))
+        n3 = len(list(icdFeverFacts))
+        print '### fever icdfacts (redundant): %d icdmatch, %d measured fever, %d no measured temp but icd9 fever' % (n1,n2,n3)
+    caseids = nffacts + ffacts # already lists
+    print '#### Total count = %d' % (len(caseids))
+    if caseids: # some
+        factids = icd9Fact.objects.filter(id__in=caseids).order_by('id') # keep in id order
+        zips = [x.icd9Patient.DemogZip.split('-')[0] for x in factids] # get zips less -xxxx 
+        dobs = [x.icd9Patient.DemogDate_of_Birth for x in factids] # get dobs  
+        atriusCodes = [x.icd9Enc.EncEncounter_Site for x in factids] 
+        encdates = [x.icd9Enc.EncEncounter_Date for x in factids] # get encdates   
+        encAges = [int(makeAge(dobs[i],encdates[i])/365.25) for i in range(len(encdates))]
+        icd9FactIds = [x.id for x in factids]
+        encIds = [x.icd9Enc.id for x in factids] # fk lookup
+        demogIds = [x.icd9Patient.id for x in factids]
+        icd9codes = [x.icd9Code for x in factids]
+        # need to remove redundancy on demog Id and date
+        dateId = {} # this will be hard if we got to periods other than days? TODO: fixme...one day
+        for i,edate in enumerate(encdates):
+            id = demogIds[i] # this subject
+            z = zips[i][:ziplen]            
+            dateId.setdefault(edate,{})
+            dateId[edate].setdefault(z,{})
+            if dateId[edate][z].get(id,None) == None: # is new for this syndrome, date, zip
+                aSite = atriusCodes[i]
+                if atriusUseDict.get(aSite,None):     
+                    age = encAges[i]
+                    encId = encIds[i]
+                    icd9FactId = icd9FactIds[i]
+                    icd9code = icd9codes[i]
+                    demogId = demogIds[i]
+                    dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
+                else:
+                    aSiteName = atriusLookup.get(aSite,'%s?' % aSite)
+                    n = ignoredSites.setdefault(aSiteName,0)
+                    ignoredSites[aSiteName] += 1
+                    ignoreSite += 1
+            else:
+                redundant += 1
+        print '# total atrius ignore site cases = %d, sites= %s' % (ignoreSite,ignoredSites)
+        print '## total redundant ids for zip/date/syndrome = %d' % redundant 
+        return dateId
+
+def syndGen1(syndDef=[],syndName='',startDT=None,endDT=None):
     """ prototype for development
     currently a generator although for AMDS we want all cases
     so the cases are amalgamated in the AMDS code...
@@ -161,10 +266,10 @@ def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
     yield all cases for this specific syndName from startDT to endDT with any
     of the ICD codes in syndDef taking fever into account if required
     from the spreadshit:
-    2) One of the following under the conditions specified:	
-        a) Measured fever of at least 100F (in temperature field of database)	
-        OR, if and only if there is no valid measured temperature of any magnitude,	
-        b) ICD9 code of 780.6 (fever)	
+    2) One of the following under the conditions specified:
+        a) Measured fever of at least 100F (in temperature field of database)   
+        OR, if and only if there is no valid measured temperature of any magnitude,
+        b) ICD9 code of 780.6 (fever)   
 
     """
     ignoreSite = 0
@@ -177,37 +282,37 @@ def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
     feverCodes = [x[0] for x in syndDef if x[1]] # definitive if fever or.. see note on complexities
     checkFever = (len(feverCodes) > 0) # no point if not needed
     checkNoFever = (len(noFevercodes) > 0)
-    if checkNoFever: # get all definitive cases as icd9fact ids
+    if checkNoFever: # get all definitive cases as icd9Fact ids
         nfcases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
-             icd9EncDate__lte=endDT, icd9Code__in=noFevercodes).values_list('id',flat=True).distinct()
-        print '## Nofever: %d cases' % len(list(nfcases))
+             icd9EncDate__lte=endDT, icd9Code__in=noFevercodes).values_list('id',flat=True)
+        print '## Nofever: %d diags' % len(list(nfcases))
     if checkFever: # must look for some codes with fever or icd9 fever
         # complex - find all encs with relevant icd9 code first
         icd9encs = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
-            icd9Code__in=feverCodes).values_list('icd9Enc',flat=True).distinct() # all relevant icd9facts
+            icd9Code__in=feverCodes).exclude(id__in=nfcases).values_list('icd9Enc',flat=True) 
+        # all relevant icd9facts -> encid list
         realFeverEncs = Enc.objects.filter(EncTemperature__gte=100,
-            id__in = icd9encs,EncEncounter_Date__gte=startDT,
-            EncEncounter_Date__lte=endDT).values_list('id',flat=True).distinct() # encids of these with measured fever
-        realFeverCases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
-            icd9Code__in=feverCodes, icd9Enc__in=realFeverEncs).values_list('id',flat=True).distinct()  
-        # whew - these are all cases with a measured fever as icd9fact ids
+            id__in=icd9encs).distinct().values_list('id',flat=True) # encids of these with measured fever
+        realFeverCases = icd9Fact.objects.filter(icd9Code__in=feverCodes, 
+            icd9Enc__in=realFeverEncs).exclude(id__in=nfcases).values_list('id',flat=True)  
+        # don't need date limits - realFeverencs has them
+        # whew - these are all cases with a measured fever as icd9Fact ids
         # pass if no temp recorded but an icd9 fever code
         notFeverEncs = Enc.objects.filter(EncTemperature__lt=100, EncTemperature__gte=90,
-            id__in = icd9encs, EncEncounter_Date__gte=startDT,
-            EncEncounter_Date__lte=endDT).values_list('id',flat=True).distinct() # measured, but NOT fever      
+            id__in = icd9encs).values_list('id',flat=True) # measured, but NOT fever      
         # find all with an icd9 code for fever but NO measured temp
         icdFeverCases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
           icd9EncDate__lte=endDT, icd9Enc__in = icd9encs,
-          icd9Code__in=icdFevercodes).exclude(icd9Enc__in=notFeverEncs).values_list('id',flat=True).distinct()
+          icd9Code__in=icdFevercodes).exclude(icd9Enc__in=notFeverEncs,id__in=nfcases).values_list('id',flat=True)
         # these are cases without measured temp but an icd9 fever code recorded
-        fcases = list(realFeverCases) + list(icdFeverCases) # icd9fact id lists
+        fcases = list(realFeverCases) + list(icdFeverCases) # icd9Fact id lists
         n1 = len(list(icd9encs))
         n2 = len(list(realFeverCases))
         n3 = len(list(icdFeverCases))
         print '### fever: %d potential matches, %d with measured fever, %d with no measured temp but icd9 fever' % (n1,n2,n3)
     caseids = list(nfcases) + fcases # fcases is already a list
     print '#### Total count = %d' % (len(caseids))
-    cases = icd9Fact.objects.filter(id__in=caseids) # convert to icd9fact object lists
+    cases = icd9Fact.objects.filter(id__in=caseids) # convert to icd9Fact object lists
     if cases:
         zips = [x.icd9Patient.DemogZip for x in cases] # get zips!   
         zips = [x.split('-')[0] for x in zips] # get rid of trailing stuff - want 5 digit only  
@@ -233,6 +338,7 @@ def syndGen(syndDef=[],syndName='',startDT=None,endDT=None):
         print '# total atrius ignore site cases = %d, sites= %s' % (ignoreSite,ignoredSites)
     else:
         raise StopIteration # nada
+
 
 def makeAMDS(sdate='20080101',edate='20080102',syndDefs={},cclassifier="ESPSS",
     crtime='2009-03-30T22:24:23-05:00',doid='',requ='',minCount=5):
@@ -280,7 +386,7 @@ def makeAMDS(sdate='20080101',edate='20080102',syndDefs={},cclassifier="ESPSS",
     <PatientLocation>300</PatientLocation>
     <Count>51</Count>
     </LocationItem>
-    <LocationItem>				
+    <LocationItem>
     <PatientLocation>300</PatientLocation>
     <Count suppressed="true"/>
     </LocationItem>
@@ -355,7 +461,7 @@ def makeAMDS(sdate='20080101',edate='20080102',syndDefs={},cclassifier="ESPSS",
         mdict[syndrome] = m
     return mdict
 
-def makeTab(sdate='20080101',edate='20080102',syndDefs={},encDateVols={}):
+def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
     """crude generator for xls
     rml april 27 2009 swine flu season?
     """
@@ -365,56 +471,77 @@ def makeTab(sdate='20080101',edate='20080102',syndDefs={},encDateVols={}):
         """
         res = []
         zips = aday.keys()
+        if len(zips) == 0:
+             print '## no events for %s on %s' % (syndrome, edate)
+             return res # empty
         zips.sort()
-        zips.reverse()
-        print '### zips=',zips
         alld = encDateVols.get(edate,{})
-        #print 'makeCounts tab, aday',aday,'alld',alld        
+##        print '\n\n@@@@###### %s makeCountstab %s: alld (%d) = \n###%s' % (syndrome,edate,len(alld),alld) 
+##        print 'aday (%d) =\n###%s' % (len(aday),aday)   
         for i,z in enumerate(zips):
-            zn = int(aday[z])
-            alln = int(alld.get(z,0))
-            #print 'z=',z,type(z), 'alln=',alln,type(alln),'zn=',zn,type(zn)
-            if alln > 0:
-                f = (100.0*zn)/alln
-                allfrac = '%f' % f
-            else:
-                allfrac = 'wft 0.0 - no all event count this zip?'
-            row = '\t'.join((edate,z,syndrome,'%d' % zn,'%d' % alln,allfrac))
-            res.append(row)
+            zn = len(aday[z]) # number of individual records in each zip for this date/synd
+            if zn > 0: # can be empty because of the way it's constructed
+                alln = alld.get(z,None)
+                #print 'z=',z,type(z), 'alln=',alln,type(alln),'zn=',zn,type(zn)
+                if alln:
+                    if zn > alln:
+                        print '####! syndrome counts %d > volume %d for zip %s, date %s, synd %s' % (zn,alln,z,edate,syndrome)
+                        allfrac = '? bug'
+                    else:
+                        f = (100.0*zn)/alln
+                        allfrac = '%f' % f
+                else:
+                    allfrac = '###!! wtf None - no all event count zip %s ?' % z
+                    alln = 0
+                row = '\t'.join((edate,z,syndrome,'%d' % zn,'%d' % alln,allfrac))
+                res.append(row)
         return res
-        
-    def makeMessage(ziplist,syndrome,countsBydate):
+    
+    def makeLinelist(syndrome='?',aday={},edate='20080101'):
+        """ make individual records
+        """
+        res = []
+        zips = aday.keys()
+        zips.sort()
+        #print '### zips=',zips
+        #alld = encDateVols.get(edate,{})
+        #print 'makeCounts tab, aday',aday,'alld',alld        
+        for zipcode in zips:
+            zip5 = zipcode[:5] # testing with 3 digit zips
+            zips.setdefault(zip5,zip5) # record all unique zips for amds headers
+            zids = zipIds[zipcode]
+            idk = zids.keys()
+            idk.sort()
+            for id in idk:
+                (z,age,icd9FactId,encId,icd9code,demogId,edate) = zids[id] # whew 
+                row = '\t'.join((syndrome,edate,z,age,icd9code))
+                res.append(row)
+        return res 
+    
+    
+    def makeMessage(syndrome='?',dateId={}):
         """
         format a simple xls report
         """
         # provide sd,ed,ctime,ruser,doid
-        m = ['Date\tZip\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome']
-        dkeys = countsBydate.keys()
-        dkeys.sort()
-        for d in dkeys:
-            c = makeCounts(syndrome,countsBydate[d],d)
+        m = ['Date\tZip\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome',]
+        edk = dateId.keys()
+        edk.sort()
+        print '!!!!#$$$$$ makeMessage, edk=',edk
+        for thisdate in edk:
+            print '!!!!#### processing syndrome %s for date %s' % (syndrome,thisdate)
+            c = makeCounts(syndrome,dateId[thisdate],thisdate)
             m += c
         return m  
     
     # main makeTab starts here
-    mdict = {}
-    for syndrome in syndDefs:
-        countsBydate = {} # we want {date1:{zip1:22,zip2:41},date2:{..}}
-        zips = {}
-        print 'looking for',syndrome
-        icdlist = syndDefs[syndrome] # icd list
-        g = syndGen(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate)
-        for i,c in enumerate(g):
-            (zipc,age,id,enc,icd,demog,encdate) = c
-            zip5 = zipc[:5] # testing with 3 digit zips
-            zips.setdefault(zip5,zip5) # record all unique zips        
-            countsBydate.setdefault(encdate,{})
-            countsBydate[encdate].setdefault(zip5,0)
-            countsBydate[encdate][zip5] += 1
-        del g
-        m = makeMessage(zips,syndrome,countsBydate)
-        mdict[syndrome] = m
-    return mdict
+    print 'looking for',syndrome
+    icdlist = syndDefs[syndrome] # icd list
+    dateId = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate)
+    # now returns dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
+    res = makeMessage(syndrome, dateId)
+    return res
+
 
 
 def testsyndGen():
@@ -457,29 +584,25 @@ def testAMDS(sdate='20080101',edate='20080102'):
         f.close()
         print '## wrote %d rows to %s' % (len(m),fname)
 
-def testTab(sdate='20090101',edate='20090102'):
+def testTab(sdate='20090301',edate='20090331'):
     """ test stub for tab delim generator
     date zip syndrome syndN allencN syndPct
     """
-    print '## getting encDateVols'
     dd = encDateVolumes(startDT=sdate,endDT=edate)
-    print '## got encDateVols'
     fproto = 'ESP%s_Synd_%s_%s_%s.xls'
-    mdict = makeTab(sdate=sdate,edate=edate,syndDefs=syndDefs,encDateVols=dd)
-    mdk = mdict.keys() # syndromes
-    mdk.sort()
-    for syndrome in mdk:
-        m = mdict[syndrome]
+    syndromes = syndDefs.keys() # syndromes
+    syndromes.sort()
+    for syndrome in syndromes:
+        res = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=dd)
         fname = fproto % ('Atrius',syndrome,sdate,edate)
         f = open(fname,'w')
-        f.write('\n'.join(m))
+        f.write('\n'.join(res))
         f.write('\n')
         f.close()
-        print '## wrote %d rows to %s' % (len(m),fname)
+        print '## wrote %d rows to %s' % (len(res),fname)
 
 if __name__ == "__main__":
   #dd = encDateVolumes(startDT='20090101',endDT='20090102')
   testTab()
-
 
 
