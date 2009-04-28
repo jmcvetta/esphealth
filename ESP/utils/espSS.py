@@ -94,7 +94,7 @@ from django.db.models import Q
 from ESP.settings import *
 
 from espSSconf import btzipdict,atriusUseDict,atriusLookup,atriusExcludeCodes,atriusUseCodes, \
-ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef
+atriusZips, ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef
 # these are [icd,feverreq] lists
 import utils
 defList = [ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef]
@@ -142,7 +142,7 @@ def encDateVolumes(startDT=None,endDT=None,zip5=True):
     every encounter..
     This requires huge amounts of ram to do in one hit for a long period.
     Now fixed to do a day at a time - seems ok..
-    Using extra to squirt some SQL into the ORM call reduces this to
+)   Using extra to squirt some SQL into the ORM call reduces this to
     about 13secs/day - tolerable and uses very little RAM.
     TODO: find a better/faster/lessRAM way?
     """
@@ -172,6 +172,7 @@ def encDateVolumes(startDT=None,endDT=None,zip5=True):
             datecounts[thisd][z] += 1
         del allenc
     return datecounts
+
 
 def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
     """ revised to make the enc record the central unit
@@ -270,89 +271,8 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
         print '## total redundant ids for zip/date/syndrome = %d' % redundant 
         return dateId
 
-def syndGen1(syndDef=[],syndName='',startDT=None,endDT=None):
-    """ prototype for development
-    currently a generator although for AMDS we want all cases
-    so the cases are amalgamated in the AMDS code...
-    
-    yield all cases for this specific syndName from startDT to endDT with any
-    of the ICD codes in syndDef taking fever into account if required
-    from the spreadshit:
-    2) One of the following under the conditions specified:
-        a) Measured fever of at least 100F (in temperature field of database)   
-        OR, if and only if there is no valid measured temperature of any magnitude,
-        b) ICD9 code of 780.6 (fever)   
 
-    """
-    ignoreSite = 0
-    ignoredSites = {}
-    nfcases = [] # so we can add
-    fcases = []    
-    cases = []
-    icdFevercodes = ['780.6','780.31'] # note febrile convulsion added !
-    noFevercodes = [x[0] for x in syndDef if not x[1]] # definitive in absence of fever 
-    feverCodes = [x[0] for x in syndDef if x[1]] # definitive if fever or.. see note on complexities
-    checkFever = (len(feverCodes) > 0) # no point if not needed
-    checkNoFever = (len(noFevercodes) > 0)
-    if checkNoFever: # get all definitive cases as icd9Fact ids
-        nfcases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
-             icd9EncDate__lte=endDT, icd9Code__in=noFevercodes).values_list('id',flat=True)
-        print '## Nofever: %d diags' % len(list(nfcases))
-    if checkFever: # must look for some codes with fever or icd9 fever
-        # complex - find all encs with relevant icd9 code first
-        icd9encs = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
-            icd9Code__in=feverCodes).exclude(id__in=nfcases).values_list('icd9Enc',flat=True) 
-        # all relevant icd9facts -> encid list
-        realFeverEncs = Enc.objects.filter(EncTemperature__gte=100,
-            id__in=icd9encs).distinct().values_list('id',flat=True) # encids of these with measured fever
-        realFeverCases = icd9Fact.objects.filter(icd9Code__in=feverCodes, 
-            icd9Enc__in=realFeverEncs).exclude(id__in=nfcases).values_list('id',flat=True)  
-        # don't need date limits - realFeverencs has them
-        # whew - these are all cases with a measured fever as icd9Fact ids
-        # pass if no temp recorded but an icd9 fever code
-        notFeverEncs = Enc.objects.filter(EncTemperature__lt=100, EncTemperature__gte=90,
-            id__in = icd9encs).values_list('id',flat=True) # measured, but NOT fever      
-        # find all with an icd9 code for fever but NO measured temp
-        icdFeverCases = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
-          icd9EncDate__lte=endDT, icd9Enc__in = icd9encs,
-          icd9Code__in=icdFevercodes).exclude(icd9Enc__in=notFeverEncs,id__in=nfcases).values_list('id',flat=True)
-        # these are cases without measured temp but an icd9 fever code recorded
-        fcases = list(realFeverCases) + list(icdFeverCases) # icd9Fact id lists
-        n1 = len(list(icd9encs))
-        n2 = len(list(realFeverCases))
-        n3 = len(list(icdFeverCases))
-        print '### fever: %d potential matches, %d with measured fever, %d with no measured temp but icd9 fever' % (n1,n2,n3)
-    caseids = list(nfcases) + fcases # fcases is already a list
-    print '#### Total count = %d' % (len(caseids))
-    cases = icd9Fact.objects.filter(id__in=caseids) # convert to icd9Fact object lists
-    if cases:
-        zips = [x.icd9Patient.DemogZip for x in cases] # get zips!   
-        zips = [x.split('-')[0] for x in zips] # get rid of trailing stuff - want 5 digit only  
-        dobs = [x.icd9Patient.DemogDate_of_Birth for x in cases] # get dobs  
-        atriusCodes = [x.icd9Enc.EncEncounter_Site for x in cases] 
-        encdates = [x.icd9Enc.EncEncounter_Date for x in cases] # get encdates   
-        encAges = [int(makeAge(dobs[i],encdates[i])/365.25) for i in range(len(encdates))]
-        # for testing can return tuples for efficiency rather than mongo django objects
-        # or values for dict instead with overheads.
-        caselist = list(cases.values_list('id','icd9Enc','icd9Code','icd9Patient','icd9EncDate')) 
-        for i,c in enumerate(caselist):
-            c = list(c)
-            c.insert(0,encAges[i])
-            c.insert(0,zips[i])
-            aSite = atriusCodes[i]
-            if atriusUseDict.get(aSite,None):
-                yield c
-            else:
-                aSiteName = atriusLookup.get(aSite,'%s?' % aSite)
-                n = ignoredSites.setdefault(aSiteName,0)
-                ignoredSites[aSiteName] += 1
-                ignoreSite += 1
-        print '# total atrius ignore site cases = %d, sites= %s' % (ignoreSite,ignoredSites)
-    else:
-        raise StopIteration # nada
-
-
-def makeAMDS(sdate='20080101',edate='20080102',syndDefs={},cclassifier="ESPSS",
+def OmakeAMDS(sdate='20080101',edate='20080102',syndDefs={},cclassifier="ESPSS",
     crtime='2009-03-30T22:24:23-05:00',doid='',requ='',minCount=5):
     """this includes some very crude xml generating code for
     testing.
@@ -472,6 +392,131 @@ def makeAMDS(sdate='20080101',edate='20080102',syndDefs={},cclassifier="ESPSS",
         m = makeMessage(zips,syndrome,countsBydate)
         mdict[syndrome] = m
     return mdict
+
+def makeAMDS(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
+    """crude generator for xls
+    rml april 27 2009 swine flu season?
+    """
+
+    def makeGeoHeader(ziplist=[]):
+        """
+        <GeoLocationSupported>
+    <GeoLocation type="zip3">300</GeoLocation>
+    <GeoLocation type="zip3">301</GeoLocation>
+    </GeoLocationSupported>
+        """
+        res = ['<GeoLocationSupported>',]
+        gs = '<GeoLocation type="zip%d">%s</GeoLocation>'
+        for z in ziplist: 
+            ndig = len(z.strip())
+            s = gs % (ndig,z)
+            res.append(s)
+        res.append('</GeoLocationSupported>')
+        return res
+
+
+    def makeTargetHeader(syndlist=[]):
+        """
+        <TargetQuery>
+    <Condition classifier="BioSense">GI</Condition>
+    <Condition classifier="BioSense">Fever</Condition>
+    </TargetQuery>
+        """
+        res = ['<TargetQuery>',]
+        ts = '<Condition classifier="%s">%s</Condition>'
+        for synd in syndlist:
+            s = ts % (cclassifier,synd)
+            res.append(s)
+        res.append('</TargetQuery>')
+        return res
+
+    def makeCounts(aday={},edate='20080101',ziplist=[]):
+        """ all counts for a date by zip
+        <CountItem>
+    <Day>2009-01-01</Day>
+    <LocationItem>
+    <PatientLocation>300</PatientLocation>
+    <Count>51</Count>
+    </LocationItem>
+    <LocationItem>
+    <PatientLocation>300</PatientLocation>
+    <Count suppressed="true"/>
+    </LocationItem>
+    </CountItem>
+        I guess we need zeros for empty zips to keep the xml bloated and regular?
+        """
+        res = []
+        alld = encDateVols.get(edate,{})
+        zips = aday.keys()
+        if len(zips) == 0:
+             print '## no events for %s on %s' % (syndrome, edate)
+             return res # empty
+        zips.sort()
+        alld = encDateVols.get(edate,{})
+        res.append('<CountItem>')
+        res.append('<Day>%s-%s-%s</Day>' % (edate[:4],edate[4:6],edate[6:]))
+        for i,z in enumerate(ziplist): # note use of ziplist to keep xml bloated
+            count = len(aday.get(z,[])) 
+            #if count > 0: # can be zero because of exclusions
+            alln = alld.get(z,0)
+            res.append('<LocationItem>')
+            res.append('<PatientLocation>%s</PatientLocation>' % z)
+            if count > minCount:
+                res.append('<Count>%d</Count>' % count)
+            else:
+                res.append('<Count suppressed="true"/>')
+            res.append('<AllCount>%d</AllCount>' % alln) # ross addition to xml!
+            res.append('</LocationItem>')
+        res.append('</CountItem>')
+        return res
+
+    def makeMessage(syndrome='?',dateId={}):
+        """
+        so simple, not worth using an xml parser?
+        First challenge - write the header with all the zips and syndromes to follow
+        counts is a dict of syndromes, containing dicts of dates containing dicts of zip/count
+        """
+        zips = {}
+        for d in dateId.keys():
+            zs = dateId[d].keys()
+            for z in zs:
+                zips.setdefault(z,z)
+        ziplist = zips.keys()
+        ziplist.sort() # for header
+        m = ['<AMDSQueryResponse>']
+        m.append('<AMDSRecordSummary>')
+        m.append('<DateStart>%s</DateStart>' % sdate)
+        m.append('<DateEnd>%s</DateEnd>' % edate)
+        m.append('<CreationDateTime>%s</CreationDateTime>' % crtime)
+        m.append('<RequestingUser>%s</RequestingUser>' % requ)
+        m.append('<DataSourceOID>%s</DataSourceOID>' % doid)
+        g = makeGeoHeader(ziplist)
+        m += g
+        t = makeTargetHeader([syndrome,])
+        m += t
+        m.append('<CellSuppressionRule>%d</CellSuppressionRule>' % minCount)
+        m.append('</AMDSRecordSummary>')
+        m.append('<CountSet>')
+        edk = dateId.keys()
+        edk.sort()
+        print '!!!!#$$$$$ makeMessage, edk=',edk
+        for thisdate in edk:
+            print '!!!!#### processing syndrome %s for date %s' % (syndrome,thisdate)
+            c = makeCounts(syndrome,dateId[thisdate],thisdate,ziplist)
+            m += c
+        m.append('</CountSet>')
+        m.append('</AMDSRecordSummary>')
+        m.append('</AMDSQueryResponse>')
+        return m  
+    
+    # main makeAMDS starts here
+    print 'looking for',syndrome
+    icdlist = syndDefs[syndrome] # icd list
+    dateId = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate)
+    # now returns dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
+    res = makeMessage(syndrome, dateId)
+    return res
+
 
 def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
     """crude generator for xls
@@ -596,7 +641,7 @@ def testAMDS(sdate='20080101',edate='20080102'):
         f.close()
         print '## wrote %d rows to %s' % (len(m),fname)
 
-def testTab(sdate='20090301',edate='20090331'):
+def testTab(sdate='20090101',edate='20090102'):
     """ test stub for tab delim generator
     date zip syndrome syndN allencN syndPct
     """
@@ -616,5 +661,4 @@ def testTab(sdate='20090301',edate='20090331'):
 if __name__ == "__main__":
   #dd = encDateVolumes(startDT='20090101',endDT='20090102')
   testTab()
-
 
