@@ -3,6 +3,7 @@
 # ross lazarus April 20 2009
 # mostly from Katherine Yih provided spreadsheets
 # syndrome defs 5 15 06 clean.xls eg
+# atrius sites updated april 29 2009
 
 atriusSites="""Asterisk	Zip	 count(EncEncounter_SiteName) | EncEncounter_SiteName                                        | EncEncounter_Site |												
 		+------------------------------+--------------------------------------------------------------+-------------------+												

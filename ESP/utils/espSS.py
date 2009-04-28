@@ -84,6 +84,7 @@ zip
 
 
 """
+myVersion = '0.003'
 import os, sys, django, time
 sys.path.insert(0, '/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
@@ -102,7 +103,7 @@ nameList = ['ILI','Haematological','Lesions','Lymphatic','Lower GI','Upper GI',
 'Neurological','Rashes','Respiratory']
 syndDefs = dict(zip(nameList,defList))
 
-iclogging = getLogging('espSSdev_v0.1', debug=0)
+SSlogging = getLogging('espSS_v%d' % myVersion, debug=0)
 #sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG',
 # 'jason.mcvetta@channing.harvard.edu', 'ross.lazarus@channing.harvard.edu']
 sendEmailToList = ['ross.lazarus@gmail.com']
@@ -159,7 +160,7 @@ def encDateVolumes(startDT=None,endDT=None,zip5=True):
         allenc = Enc.objects.filter(EncEncounter_Date__exact=adate,
          EncEncounter_Site__in = atriusUseCodes).extra(select=esel).order_by('id').values_list('ezip',
         'EncEncounter_Date')
-        print '#### encDateVolumes allenc=%d, date=%s, %f secs' % (len(allenc),adate,time.time()-started)            
+        SSlogging.info('#### encDateVolumes allenc=%d, date=%s, %f secs' % (len(allenc),adate,time.time()-started))           
         if not zip5:
            zl = 3
         else:
@@ -202,7 +203,7 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
         nffacts = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
              icd9EncDate__lte=endDT, icd9Code__in=noFevercodes).values_list('id',flat=True)
         nffacts = list(nffacts) # and back to list of unique encounter id 
-        print '## Nofever: %d diags (may be redundancies on events of course)' % len(list(nffacts))
+        SSlogging.info('## Nofever: %d diags (includes redundancies on patients in events)' % len(list(nffacts)))
     if checkFever: # must look for specific icd9 codes accompanied by measured fever or no temp measure but icd9 fever
         # complex - find all encs with relevant icd9 code requiring a fever
         icd9Encs = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
@@ -230,9 +231,10 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
         n1 = len(list(icd9Encs))
         n2 = len(list(realFeverFacts))
         n3 = len(list(icdFeverFacts))
-        print '### fever icdfacts (redundant): %d icdmatch, %d measured fever, %d no measured temp but icd9 fever' % (n1,n2,n3)
+        SSlogging.info('### fever icdfacts (redundant): %d icdmatch, %d measured fever, %d no measured temp but icd9 fever' % (n1,
+        n2,n3))
     caseids = nffacts + ffacts # already lists
-    print '#### Total count = %d' % (len(caseids))
+    SSlogging.info('#### Total count = %d' % (len(caseids)))
     if caseids: # some
         factids = icd9Fact.objects.filter(id__in=caseids).order_by('id') # keep in id order
         zips = [x.icd9Patient.DemogZip.split('-')[0] for x in factids] # get zips less -xxxx 
@@ -267,8 +269,8 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
                     ignoreSite += 1
             else:
                 redundant += 1
-        print '# total atrius ignore site cases = %d, sites= %s' % (ignoreSite,ignoredSites)
-        print '## total redundant ids for zip/date/syndrome = %d' % redundant 
+        SSlogging.info('# Total Atrius ignore site cases = %d, sites= %s' % (ignoreSite,ignoredSites))
+        SSlogging.info('## total redundant ids for zip/date/syndrome = %d' % redundant)
         return dateId
 
 
@@ -378,7 +380,7 @@ def OmakeAMDS(sdate='20080101',edate='20080102',syndDefs={},cclassifier="ESPSS",
     for syndrome in syndDefs:
         countsBydate = {} # we want {date1:{zip1:22,zip2:41},date2:{..}}
         zips = {}
-        print 'looking for',syndrome
+        SSlogging.info('looking for %s' % syndrome)
         icdlist = syndDefs[syndrome] # icd list
         g = syndGen(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate)
         for i,c in enumerate(g):
@@ -449,7 +451,7 @@ def makeAMDS(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
         alld = encDateVols.get(edate,{})
         zips = aday.keys()
         if len(zips) == 0:
-             print '## no events for %s on %s' % (syndrome, edate)
+             SSlogging.info('## no events for %s on %s' % (syndrome, edate))
              return res # empty
         zips.sort()
         alld = encDateVols.get(edate,{})
@@ -499,9 +501,8 @@ def makeAMDS(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
         m.append('<CountSet>')
         edk = dateId.keys()
         edk.sort()
-        print '!!!!#$$$$$ makeMessage, edk=',edk
         for thisdate in edk:
-            print '!!!!#### processing syndrome %s for date %s' % (syndrome,thisdate)
+            SSlogging.info('!!!!#### processing syndrome %s for date %s' % (syndrome,thisdate))
             c = makeCounts(syndrome,dateId[thisdate],thisdate,ziplist)
             m += c
         m.append('</CountSet>')
@@ -510,7 +511,7 @@ def makeAMDS(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
         return m  
     
     # main makeAMDS starts here
-    print 'looking for',syndrome
+    SSlogging.info('looking for %s' % syndrome)
     icdlist = syndDefs[syndrome] # icd list
     dateId = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate)
     # now returns dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
@@ -529,26 +530,28 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
         res = []
         zips = aday.keys()
         if len(zips) == 0:
-             print '## no events for %s on %s' % (syndrome, edate)
+             SSlogging.info('## no events for %s on %s' % (syndrome, edate))
              return res # empty
         zips.sort()
         alld = encDateVols.get(edate,{})
-##        print '\n\n@@@@###### %s makeCountstab %s: alld (%d) = \n###%s' % (syndrome,edate,len(alld),alld) 
-##        print 'aday (%d) =\n###%s' % (len(aday),aday)   
+        SSlogging.debug('\n\n@@@@###### %s makeCountstab %s: alld (%d) = \n###%s' % (syndrome,edate,len(alld),alld))
+        SSlogging.debug('aday (%d) =\n###%s' % (len(aday),aday))   
         for i,z in enumerate(zips):
             zn = len(aday[z]) # number of individual records in each zip for this date/synd
             if zn > 0: # can be empty because of the way it's constructed
                 alln = alld.get(z,None)
-                #print 'z=',z,type(z), 'alln=',alln,type(alln),'zn=',zn,type(zn)
+                SSlogging.debug('z=',z,type(z), 'alln=',alln,type(alln),'zn=',zn,type(zn))
                 if alln:
                     if zn > alln:
-                        print '####! syndrome counts %d > volume %d for zip %s, date %s, synd %s' % (zn,alln,z,edate,syndrome)
+                        SSlogging.warning('####! syndrome counts %d > volume %d for zip %s, date %s, synd %s' % (zn,
+                        alln,z,edate,syndrome))
                         allfrac = '? bug'
                     else:
                         f = (100.0*zn)/alln
                         allfrac = '%f' % f
                 else:
                     allfrac = '###!! wtf None - no all event count zip %s ?' % z
+                    SSlogging.warning(allfrac)
                     alln = 0
                 row = '\t'.join((edate,z,syndrome,'%d' % zn,'%d' % alln,allfrac))
                 res.append(row)
@@ -560,9 +563,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
         res = []
         zips = aday.keys()
         zips.sort()
-        #print '### zips=',zips
-        #alld = encDateVols.get(edate,{})
-        #print 'makeCounts tab, aday',aday,'alld',alld        
+        SSlogging.debug('### zips=',zips)
         for zipcode in zips:
             zip5 = zipcode[:5] # testing with 3 digit zips
             zips.setdefault(zip5,zip5) # record all unique zips for amds headers
@@ -584,15 +585,13 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
         m = ['Date\tZip\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome',]
         edk = dateId.keys()
         edk.sort()
-        print '!!!!#$$$$$ makeMessage, edk=',edk
         for thisdate in edk:
-            print '!!!!#### processing syndrome %s for date %s' % (syndrome,thisdate)
+            SSlogging.info('!!!!#### processing syndrome %s for date %s' % (syndrome,thisdate))
             c = makeCounts(syndrome,dateId[thisdate],thisdate)
             m += c
         return m  
     
     # main makeTab starts here
-    print 'looking for',syndrome
     icdlist = syndDefs[syndrome] # icd list
     dateId = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate)
     # now returns dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
@@ -626,7 +625,7 @@ def testAMDS(sdate='20080101',edate='20080102'):
     requ='Ross Lazarus'
     minCount=5
     crtime=isoTime(time.localtime())
-    print 'crtime =',crtime
+    SSlogging.debug('crtime = %s' % crtime)
     fproto = 'ESP_AMDS_%s_%s_%s.xml'
     mdict = makeAMDS(sdate=sdate,edate=edate,syndDefs=syndDefs,cclassifier="ESPSS",
        crtime=crtime,doid=doid,requ=requ,minCount=minCount)
