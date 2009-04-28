@@ -104,7 +104,7 @@ class Icd9(models.Model):
     name = models.CharField('Name', max_length=50,)
 
     def __unicode__(self):
-        return u'%s %s' % (self.icd9Code, self.icd9Long)
+        return u'%s %s' % (self.code, self.name)
     
     @staticmethod
     def expansion(expression):
