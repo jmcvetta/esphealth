@@ -1,5 +1,10 @@
 """
 welcome to espSS.py
+Please look at http://esphealth.org/trac/ESP/wiki/ESPSS
+to get some idea of the background
+This is a syndromic surveillance module for ESP encounter tables
+It generates the new AMDS XML format for CDC NCPHI, and aggregate tables with 
+unit records as simple fake spreadsheets
 
 Most Recent Changes First:
 
@@ -102,7 +107,7 @@ cclassifier = 'ESPSSApril2009'
 
 import os, sys, django, time, datetime
 sys.path.insert(0, '/home/ESP/')
-#os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
 from ESP.esp.models import *
@@ -230,7 +235,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True,localIgnore=
     return datecounts,dateagecounts
 
 
-def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,localIgnore=True):
+def findCaseFactIds(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,localIgnore=True):
     """ revised to make the enc record the central unit
     Atrius exclusions are such a pain...
     yield all cases for this specific syndName from startDT to endDT with any
@@ -290,6 +295,14 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,localI
         n2,n3))
     caseids = nffacts + ffacts # already lists
     SSlogging.info('#### %s Total count = %d' % (syndName,len(caseids)))
+    return caseids
+
+def caseIdsToDateIds(caseids=[]):
+    """
+    split out from preparing caseid list - now process into
+    reporting structures
+    """
+    
     if caseids: # some
         factids = icd9Fact.objects.filter(id__in=caseids).order_by('id') # keep in id order
         zips = [x.icd9Patient.DemogZip.split('-')[0] for x in factids] # get zips less -xxxx 
@@ -304,12 +317,13 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,localI
         icd9codes = [x.icd9Code for x in factids]
         # need to remove redundancy on demog Id and date
         dateId = {} # this will be hard if we got to periods other than days? TODO: fixme...one day
-        for i,edate in enumerate(encdates):
+        for i,edate in enumerate(encdates): # reporting outermost is date
             id = demogIds[i] # this subject
             z = zips[i][:ziplen]            
             dateId.setdefault(edate,{})
             dateId[edate].setdefault(z,{})
             if dateId[edate][z].get(id,None) == None: # is new for this syndrome, date, zip
+                # this step is crucial to remove multiple potential counting for a single syndrome/person/day
                 aSite = localSiteCodes[i]
                 if localSiteUseDict.get(aSite,None) or (not localIgnore): # site not important if not localIgnore     
                     age = encAges[i]
@@ -320,11 +334,14 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,localI
                         icd9code = icd9codes[i]
                         demogId = demogIds[i]
                         dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature)
+                        # preserve entire record for line list
+                        # TODO may need to expand this for more line list column versions
                 else:
                     aSiteName = localSiteLookup.get(aSite,'%s?' % aSite)
                     n = ignoredSites.setdefault(aSiteName,0)
                     ignoredSites[aSiteName] += 1
                     ignoreSite += 1
+                    # keep track of sites not being counted
             else:
                 redundant += 1
         if localIgnore: # log some evidence of the effects...
@@ -338,15 +355,19 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,localI
 def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='ESPSS',
     encAgeDateVols=None,doid=None,requ=None,minCount=5,crtime=None,localIgnore=False):
     """crude generator for xls
+    genesis at http://esphealth.org/trac/ESP/wiki/ESPSS
     rml april 27 2009 swine flu season?
     """
 
     def makeGeoHeader(ziplist=[]):
         """
+        xml fragment easily isolated and faked
+        not sure if we need a zero entry for every zip specified here.
+        Prolly do...
         <GeoLocationSupported>
-    <GeoLocation type="zip3">300</GeoLocation>
-    <GeoLocation type="zip3">301</GeoLocation>
-    </GeoLocationSupported>
+            <GeoLocation type="zip3">300</GeoLocation>
+            <GeoLocation type="zip3">301</GeoLocation>
+        </GeoLocationSupported>
         """
         res = ['<GeoLocationSupported>',]
         gs = '<GeoLocation type="zip%d">%s</GeoLocation>'
@@ -360,10 +381,11 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
 
     def makeTargetHeader(syndlist=[]):
         """
+        xml fragment easily isolated and faked
         <TargetQuery>
-    <Condition classifier="BioSense">GI</Condition>
-    <Condition classifier="BioSense">Fever</Condition>
-    </TargetQuery>
+            <Condition classifier="BioSense">GI</Condition>
+            <Condition classifier="BioSense">Fever</Condition>
+        </TargetQuery>
         """
         res = ['<TargetQuery>',]
         ts = '<Condition classifier="%s">%s</Condition>'
@@ -377,16 +399,16 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
         """ 
         all counts for a date by zip
         <CountItem>
-    <Day>2009-01-01</Day>
-    <LocationItem>
-    <PatientLocation>300</PatientLocation>
-    <Count>51</Count>
-    </LocationItem>
-    <LocationItem>
-    <PatientLocation>300</PatientLocation>
-    <Count suppressed="true"/>
-    </LocationItem>
-    </CountItem>
+            <Day>2009-01-01</Day>
+            <LocationItem>
+            <PatientLocation>300</PatientLocation>
+            <Count>51</Count>
+            </LocationItem>
+            <LocationItem>
+            <PatientLocation>300</PatientLocation>
+            <Count suppressed="true"/>
+            </LocationItem>
+            </CountItem>
         I guess we need zeros for empty zips to keep the xml bloated and regular?
         """
         res = []
@@ -444,7 +466,7 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
         edk = dateId.keys()
         edk.sort()
         for thisdate in edk:
-            SSlogging.info('!!!!#### processing syndrome %s for date %s' % (syndrome,thisdate))
+            SSlogging.debug('!!!!#### processing syndrome %s for date %s' % (syndrome,thisdate))
             c = makeCounts(syndrome,dateId[thisdate],thisdate,ziplist)
             m += c
         m.append('</CountSet>')
@@ -453,10 +475,14 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
         return m  
     
     # main makeAMDS starts here
-    SSlogging.info('looking for %s' % syndrome)
+    SSlogging.info('makeAMDS now looking for %s at %s' % (syndrome, timenow()))
     icdlist = syndDefs[syndrome] # icd list
-    dateId = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
-    # now returns dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
+    icdlist = syndDefs[syndrome] # icd list
+    caseids = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
+    # generate a simple vector of caseId encounter primary keys
+    dateId = caseIdsToDateIds(caseids=caseids)
+    # process it into the reporting structure - a dict as date->zip->age..counts and a dict of cases
+    # now returns (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature) = zids[id]
     if len(dateId) > 0:
         res = makeMessage(syndrome, dateId)
     else:
@@ -543,7 +569,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
         edk = dateId.keys()
         edk.sort()
         for thisdate in edk:
-            SSlogging.debug('!!!!#### processing syndrome %s for date %s' % (syndrome,thisdate))
+            SSlogging.debug('!!!!#### processing syndrome %s at %s' % (syndrome,isoTime()))
             c = makeCounts(syndrome,dateId[thisdate],thisdate)
             m += c
             if syndrome == 'ILI':
@@ -553,8 +579,11 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
     
     # main makeTab starts here
     icdlist = syndDefs[syndrome] # icd list
-    dateId = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
-    # now returns dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
+    caseids = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
+    # generate a simple vector of caseId encounter primary keys
+    dateId = caseIdsToDateIds(caseids=caseids)
+    # process it into the reporting structure - a dict as date->zip->age..counts and a dict of cases
+    # now returns (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature) = zids[id]
     res,lres = makeMessage(syndrome, dateId)
     return res,lres
 
@@ -616,33 +645,33 @@ def testTab(sdate='20090401',edate='20090431'):
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes:
-        ignore = 'SiteExcl'
+        ignoreMode = 'SiteExcl'
         res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
             encDateVols=encDateVols,encDateAgeVols=encDateAgeVols,localIgnore=True)
-        fname = fproto % (thisSite,ignore,syndrome,sdate,edate)
+        fname = fproto % (thisSite,ignoreMode,syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(res))
         f.write('\n')
         f.close()
         SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
         if len(lres) > 1: # is ILI
-            fname = lfproto % (thisSite,ignore,syndrome,sdate,edate)
+            fname = lfproto % (thisSite,ignoreMode,syndrome,sdate,edate)
             f = open(fname,'w')
             f.write('\n'.join(lres))
             f.write('\n')
             f.close()
             SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
-        ignore = 'AllSites'
+        ignoreMode = 'AllSites'
         res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
             encDateVols=allEncDateVols,encDateAgeVols=allEncDateAgeVols,localIgnore=False)
-        fname = fproto % (thisSite,ignore,syndrome,sdate,edate)
+        fname = fproto % (thisSite,ignoreMode,syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(res))
         f.write('\n')
         f.close()
         SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
         if len(lres) > 1: # is ILI
-            fname = lfproto % (thisSite,ignore,syndrome,sdate,edate)
+            fname = lfproto % (thisSite,ignoreMode,syndrome,sdate,edate)
             f = open(fname,'w')
             f.write('\n'.join(lres))
             f.write('\n')
