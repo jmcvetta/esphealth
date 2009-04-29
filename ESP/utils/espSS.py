@@ -299,6 +299,8 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,localI
             SSlogging.info('# %s Total localSite ignore site cases = %d, sites= %s' % (syndName, ignoreSite,ignoredSites))
         SSlogging.info('## %s Total redundant ids for zip/date/syndrome = %d' % (syndName,redundant))
         return dateId
+    else:
+        return {}
 
 
 def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='ESPSS',
@@ -616,6 +618,6 @@ def testTab(sdate='20090401',edate='20090431'):
             SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
 
 if __name__ == "__main__":
-    testTab()
     testAMDS()
+    #testTab()
 
