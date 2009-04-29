@@ -339,8 +339,9 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
         res.append('</TargetQuery>')
         return res
 
-    def makeCounts(aday={},edate='20080101',ziplist=[]):
-        """ all counts for a date by zip
+    def makeCounts(syndrome='?',aday={},edate='20080101',ziplist=[]):
+        """ 
+        all counts for a date by zip
         <CountItem>
     <Day>2009-01-01</Day>
     <LocationItem>
