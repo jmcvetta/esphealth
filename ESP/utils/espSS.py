@@ -352,7 +352,7 @@ def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
 
 
 def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='ESPSS',ziplen=3,
-    encAgeDateVols=None,doid=None,requ=None,minCount=5,crtime=None,localIgnore=False):
+    encAgeDateVols=None,doid=None,requ=None,minCount=0,crtime=None,localIgnore=False):
     """crude generator for xls
     genesis at http://esphealth.org/trac/ESP/wiki/ESPSS
     rml april 27 2009 swine flu season?
@@ -621,7 +621,7 @@ def testAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3):
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes:
-        res = makeAMDS(sdate=sdate,edate=edate,syndrome=syndrome,
+        res = makeAMDS(sdate=sdate,edate=edate,syndrome=syndrome,minCount=minCount,
           encDateVols=dateZip,encAgeDateVols=dateZipAge,cclassifier=cclassifier,
           doid=doid,requ=requ,minCount=minCount,crtime=crtime,localIgnore=False,ziplen=ziplen)
         if len(res) > 0:
