@@ -294,7 +294,7 @@ def findCaseFactIds(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,loca
     SSlogging.info('#### %s Total count = %d' % (syndName,len(caseids)))
     return caseids
 
-def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True):
+def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
     """
     split out from preparing caseid list - now process into
     reporting structures
@@ -344,8 +344,8 @@ def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True):
             else:
                 redundant += 1
         if localIgnore: # log some evidence of the effects...
-            SSlogging.info('# %s Total localSite ignore site cases = %d, sites= %s' % (syndName, ignoreSite,ignoredSites))
-        SSlogging.info('## %s Total redundant ids for zip/date/syndrome = %d' % (syndName,redundant))
+            SSlogging.info('# %s Total localSite ignore site cases = %d, sites= %s' % (syndrome, ignoreSite,ignoredSites))
+        SSlogging.info('## %s Total redundant ids for zip/date/syndrome = %d' % (syndrome,redundant))
         return dateId
     else:
         return {}
@@ -480,7 +480,7 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
     caseids = findCaseFactIds(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,
         ziplen=ziplen,localIgnore=localIgnore)
     # generate a simple vector of caseId encounter primary keys
-    dateId = caseIdsToDateIds(caseids=caseids,ziplen=ziplen,localIgnore=localIgnore)
+    dateId = caseIdsToDateIds(caseids=caseids,ziplen=ziplen,localIgnore=localIgnore,syndrome=syndrome)
     # process it into the reporting structure - a dict as date->zip->age..counts and a dict of cases
     # now returns (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature) = zids[id]
     if len(dateId) > 0:
@@ -582,7 +582,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
     caseids = findCaseFactIds(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,
     ziplen=ziplen,localIgnore=localIgnore)
     # generate a simple vector of caseId encounter primary keys
-    dateId = caseIdsToDateIds(caseids=caseids,ziplen=5,localIgnore=localIgnore)
+    dateId = caseIdsToDateIds(caseids=caseids,ziplen=5,localIgnore=localIgnore,syndrome=syndrome)
     # process it into the reporting structure - a dict as date->zip->age..counts and a dict of cases
     # now returns (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature) = zids[id]
     res,lres = makeMessage(syndrome, dateId)
