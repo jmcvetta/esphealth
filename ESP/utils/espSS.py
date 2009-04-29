@@ -105,7 +105,7 @@ nameList = ['ILI','Haematological','Lesions','Lymphatic','Lower GI','Upper GI',
 'Neurological','Rashes','Respiratory']
 syndDefs = dict(zip(nameList,defList))
 
-SSlogging = getLogging('espSS_v%d' % myVersion, debug=0)
+SSlogging = getLogging('espSS_v%s' % myVersion, debug=0)
 #sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG',
 # 'jason.mcvetta@channing.harvard.edu', 'ross.lazarus@channing.harvard.edu']
 sendEmailToList = ['ross.lazarus@gmail.com']
@@ -125,13 +125,13 @@ def makeAge(dob='20070101',edate='20080101'):
     """return age in days for mdph ILI reports 
     """
     if len(dob) < 8:
-        logging.error('### duff dob %s in makeAge' % dob)
+        SSlogging.error('### duff dob %s in makeAge' % dob)
         return None
     else:
         yy,mm,dd = map(int,[dob[:4],dob[4:6],dob[6:8]])
         bd = datetime.date(yy,mm,dd)
     if len(edate) < 8:
-        logging.error('### duff edate %s in makeAge' % edate)
+        SSlogging.error('### duff edate %s in makeAge' % edate)
         return None
     else:
         yy,mm,dd = map(int,[edate[:4],edate[4:6],edate[6:8]])
