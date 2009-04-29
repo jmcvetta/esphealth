@@ -89,8 +89,10 @@ zip
 
 """
 myVersion = '0.004'
-thisSite = 'Atrius'
-thisRequestor = 'Ross Lazarus'
+thisSite = 'Atrius' # for amds header
+thisRequestor = 'Ross Lazarus' 
+cclassifier = 'ESPSSApril2009'  
+
 import os, sys, django, time
 sys.path.insert(0, '/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
@@ -150,7 +152,7 @@ def makeAge(dob='20070101',edate='20080101'):
 
 
 
-def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
+def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True,localIgnore=True):
     """return a dict of date, with zip and age in years (!) specific total encounter volume for each day
     exclude from localSiteExcludeCodes. Challenge is that it requires looking up the zip and age of
     every encounter..
@@ -164,9 +166,14 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
     esel = {'ezip':'select DemogZip from esp_demog where esp_demog.id = esp_enc.EncPatient_id',
             'dob': 'select DemogDate_of_Birth from esp_demog where esp_demog.id = esp_enc.EncPatient_id'}
     # an extra select dict to speed up the foreign key lookup - note real SQL table and column names!
-    allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, EncEncounter_Date__lte=endDT,
-         EncEncounter_Site__in = localSiteUseCodes).extra(select=esel).values_list('ezip','dob',
-        'EncEncounter_Date').iterator() # not sure if this will really work - lets test       
+    if localIgnore:
+        allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, EncEncounter_Date__lte=endDT,
+             EncEncounter_Site__in = localSiteUseCodes).extra(select=esel).values_list('ezip','dob',
+            'EncEncounter_Date').iterator() # yes - this works well to minimize ram    
+    else:
+        allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, 
+        EncEncounter_Date__lte=endDT).extra(select=esel).values_list('ezip','dob',
+            'EncEncounter_Date').iterator() # yes - this works well to minimize ram             
     if not zip5:
        zl = 3
     else:
@@ -190,7 +197,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
     return datecounts,dateagecounts
 
 
-def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
+def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,localIgnore=True):
     """ revised to make the enc record the central unit
     Atrius exclusions are such a pain...
     yield all cases for this specific syndName from startDT to endDT with any
@@ -271,7 +278,7 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
             dateId[edate].setdefault(z,{})
             if dateId[edate][z].get(id,None) == None: # is new for this syndrome, date, zip
                 aSite = localSiteCodes[i]
-                if localSiteUseDict.get(aSite,None):     
+                if localSiteUseDict.get(aSite,None) or (not localIgnore): # site not important if not localIgnore     
                     age = encAges[i]
                     if age: # may be null if duff dates
                         encId = encIds[i]
@@ -287,13 +294,14 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
                     ignoreSite += 1
             else:
                 redundant += 1
-        SSlogging.info('# %s Total localSite ignore site cases = %d, sites= %s' % (syndName, ignoreSite,ignoredSites))
-        SSlogging.info('## %s total redundant ids for zip/date/syndrome = %d' % (syndName,redundant))
+        if localIgnore: # log some evidence of the effects...
+            SSlogging.info('# %s Total localSite ignore site cases = %d, sites= %s' % (syndName, ignoreSite,ignoredSites))
+        SSlogging.info('## %s Total redundant ids for zip/date/syndrome = %d' % (syndName,redundant))
         return dateId
 
 
-def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,
-    encAgeDateVols=None,doid=None,requ=None,minCount=5,crtime=None):
+def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='ESPSS',
+    encAgeDateVols=None,doid=None,requ=None,minCount=5,crtime=None,localIgnore=True):
     """crude generator for xls
     rml april 27 2009 swine flu season?
     """
@@ -411,14 +419,14 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,
     # main makeAMDS starts here
     SSlogging.info('looking for %s' % syndrome)
     icdlist = syndDefs[syndrome] # icd list
-    dateId = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate)
+    dateId = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
     # now returns dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
     res = makeMessage(syndrome, dateId)
     return res
 
 
 def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
-    encDateVols={},encDateAgeVols={}):
+    encDateVols={},encDateAgeVols={},localIgnore=True):
     """crude generator for xls
     rml april 27 2009 swine flu season?
     """
@@ -506,7 +514,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
     
     # main makeTab starts here
     icdlist = syndDefs[syndrome] # icd list
-    dateId = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate)
+    dateId = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
     # now returns dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
     res,lres = makeMessage(syndrome, dateId)
     return res,lres
@@ -546,7 +554,7 @@ def testAMDS(sdate='20080101',edate='20080102'):
     syndromes.sort()
     for syndrome in syndromes:
         res = makeAMDS(sdate=sdate,edate=edate,syndrome=syndrome,
-          encDateVols=dateZip,encAgeDateVols=dateZipAge,
+          encDateVols=dateZip,encAgeDateVols=dateZipAge,cclassifier=cclassifier,
           doid=doid,requ=requ,minCount=minCount,crtime=crtime)
         fname = fproto % (thisSite,syndrome,sdate,edate)
         f = open(fname,'w')
@@ -561,13 +569,19 @@ def testTab(sdate='20090401',edate='20090431'):
     """ test stub for tab delim generator
     date zip syndrome syndN allencN syndPct
     """
-    encDateVols,encDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate)
+    encDateVols,encDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=True)
+    AllencDateVols,AllencDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False)
     fproto = 'ESP%s_SyndAgg_%s_%s_%s.xls'
     lfproto = 'ESP%s_SyndInd_%s_%s_%s.xls'
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes:
-        res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=encDateVols,encDateAgeVols=encDateAgeVols)
+        if syndrome == 'ILI':
+            res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
+           encDateVols=AllencDateVols,DateAgeVols=AllencDateAgeVols,localIgnore=True)
+        else:
+             res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
+           encDateVols=encDateVols,DateAgeVols=encDateAgeVols,localIgnore=False)
         fname = fproto % (thisSite,syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(res))
