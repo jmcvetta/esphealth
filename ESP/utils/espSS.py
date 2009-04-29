@@ -125,13 +125,13 @@ def makeAge(dob='20070101',edate='20080101'):
     """return age in days for mdph ILI reports 
     """
     if len(dob) < 8:
-        SSlogging.error('### duff dob %s in makeAge' % dob)
+        SSlogging.error('### duff dob "%s" in makeAge' % dob)
         return None
     else:
         yy,mm,dd = map(int,[dob[:4],dob[4:6],dob[6:8]])
         bd = datetime.date(yy,mm,dd)
     if len(edate) < 8:
-        SSlogging.error('### duff edate %s in makeAge' % edate)
+        SSlogging.error('### duff edate "%s" in makeAge' % edate)
         return None
     else:
         yy,mm,dd = map(int,[edate[:4],edate[4:6],edate[6:8]])
@@ -406,7 +406,7 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,
 
 
 def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
-    encDateVols={},encAgeDateVols={}):
+    encDateVols={},encDateAgeVols={}):
     """crude generator for xls
     rml april 27 2009 swine flu season?
     """
@@ -548,12 +548,12 @@ def testTab(sdate='20090401',edate='20090431'):
     """ test stub for tab delim generator
     date zip syndrome syndN allencN syndPct
     """
-    dateZip,dateZipAge = AgeencDateVolumes(startDT=sdate,endDT=edate)
+    encDateVols,encDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate)
     fproto = '%s%s_Synd_%s_%s_%s.xls'
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes:
-        res = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=dateZip,encAgeDateVols=dateZipAge)
+        res = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=dateZip,encDateAgeVols=encDateAgeVols)
         fname = fproto % (thisSite,syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(res))
