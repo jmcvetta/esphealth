@@ -122,7 +122,7 @@ def isoTime(t=None):
 
 
 def makeAge(dob='20070101',edate='20080101'):
-    """return age in days for mdph ILI reports 
+    """return age in 5 year chunks for mdph ILI reports 
     """
     if len(dob) < 8:
         SSlogging.error('### duff dob "%s" in makeAge' % dob)
@@ -136,7 +136,12 @@ def makeAge(dob='20070101',edate='20080101'):
     else:
         yy,mm,dd = map(int,[edate[:4],edate[4:6],edate[6:8]])
         ed = datetime.date(yy,mm,dd)       
-    return (ed-bd).days
+    age = (ed-bd).days
+    age = int(age/365.25) # whole years
+    age = 5*int(age/5.) # if 0-4 = 0, if 5..9 = 5 if 10..14=10 etc
+    age = min(90,age) # clean up end
+    return age
+
 
 
 def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
@@ -166,9 +171,6 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
         (z,dob,thisd) = anenc
         age = makeAge(dob,thisd) # small fraction have bad dates
         if age:
-            age = int(age/365.25) # whole years
-            age = 5*int(age/5.) # if 0-4 = 0, if 5..9 = 5 if 10..14=10 etc
-            age = min(90,age) # clean up end
             z = z[:zl] # corresponding zip
             dz = dateagecounts.setdefault(thisd,{})
             az = dateagecounts[thisd].setdefault(z,{})
@@ -265,7 +267,6 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
                 if atriusUseDict.get(aSite,None):     
                     age = encAges[i]
                     if age: # may be null if duff dates
-                        age = int(age/365.25)
                         encId = encIds[i]
                         icd9FactId = icd9FactIds[i]
                         icd9code = icd9codes[i]
@@ -471,7 +472,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
                     alldza = 0
                 if alldza == 0:
                     SSlogging.warning('###!! Makelinelist: 0 count for age=%d, syndrome=%s, zipcode=%s' % (age,syndrome,zip5))
-                row = '\t'.join((syndrome,edate,z,age,icd9code,alldza))
+                row = '\t'.join((syndrome,edate,z,'%d' % age,icd9code,'%d' % alldza))
                 res.append(row)
         return res 
     
