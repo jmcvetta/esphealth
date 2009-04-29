@@ -1,11 +1,16 @@
 # some data structures for developing
 # esp:ss 
+# NOTE - the site exclusion complexities are ATRIUS specific and will need to be
+# completely adjusted for the kinds of exclusions required to satisfy the local
+# DPH - here, we're excluding all the specialty practices to try to make ILI reporting more like
+# sentinel site practice reporting...not sure how this affects other syndromes - should
+# almost certainly be ignored!
 # ross lazarus April 20 2009
 # mostly from Katherine Yih provided spreadsheets
 # syndrome defs 5 15 06 clean.xls eg
 # atrius sites updated april 29 2009
 
-atriusSites="""Asterisk	Zip	 count(EncEncounter_SiteName) | EncEncounter_SiteName                                        | EncEncounter_Site |												
+localSiteSites="""Asterisk	Zip	 count(EncEncounter_SiteName) | EncEncounter_SiteName                                        | EncEncounter_Site |												
 		+------------------------------+--------------------------------------------------------------+-------------------+												
 *		|                       141532 |                                                              | 16                |												
 *		|                            1 | Adult Cardiology - Warwick                                   | 823611            |												
@@ -790,17 +795,17 @@ atriusSites="""Asterisk	Zip	 count(EncEncounter_SiteName) | EncEncounter_SiteNam
 *		|                          148 | WEYMOUTH WOODS ULTRASOUND                                    | 529101            |												
 *		|                            4 | WEYMOUTH WOODS ULTRASOUND KINGSTON                           | 529102            |												
 """.split('\n')
-atriusAllSites = [x.split('|') for x in atriusSites[2:] if len(x.split('|')) > 3] # drop header
-atriusAllSites = [[x[2].strip(),x[3].strip(),x[0].strip()] for x in atriusAllSites] # name,code,ignore
-atriusAllCodes = [x[1] for x in atriusAllSites] # code
-atriusAllNames = [x[0] for x in atriusAllSites] # name
-atriusLookup = dict(zip(atriusAllCodes,atriusAllNames))
-atriusUse = [[x[0],x[1],x[2]] for x in atriusAllSites if (x[2] <> '*')] # name, code, zip all not ignored codes
-atriusUseCodes = [x[1] for x in atriusUse] # code is second
-atriusUseDict = dict(zip(atriusUseCodes,atriusUse)) # can lookup - use only found
-atriusExcludeCodes = [x[1] for x in atriusAllSites if (x[2] == '*')] # used for volume cleaning
-atriusZ = [x[2] for x in atriusUse]
-atriusZips = dict(zip(atriusUseCodes,atriusZ))
+localSiteAllSites = [x.split('|') for x in localSiteSites[2:] if len(x.split('|')) > 3] # drop header
+localSiteAllSites = [[x[2].strip(),x[3].strip(),x[0].strip()] for x in localSiteAllSites] # name,code,ignore
+localSiteAllCodes = [x[1] for x in localSiteAllSites] # code
+localSiteAllNames = [x[0] for x in localSiteAllSites] # name
+localSiteLookup = dict(zip(localSiteAllCodes,localSiteAllNames))
+localSiteUse = [[x[0],x[1],x[2]] for x in localSiteAllSites if (x[2] <> '*')] # name, code, zip all not ignored codes
+localSiteUseCodes = [x[1] for x in localSiteUse] # code is second
+localSiteUseDict = dict(zip(localSiteUseCodes,localSiteUse)) # can lookup - use only found
+localSiteExcludeCodes = [x[1] for x in localSiteAllSites if (x[2] == '*')] # used for volume cleaning
+localSiteZ = [x[2] for x in localSiteUse]
+localSiteZips = dict(zip(localSiteUseCodes,localSiteZ))
  
 # atrius sites list code,name,ignore
 
