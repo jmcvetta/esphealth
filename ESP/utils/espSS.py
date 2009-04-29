@@ -1,4 +1,7 @@
 """
+29 april 2009: added temp for ILI individual report with age to nearest 5 years
+29 april 2009: fixed all encounter counting - add SQL extras to the filter and .iterator() - wicked fast now.
+               surprisingly good for an ORM - sqlalchemy is really slick
 28 april 2009: changed code to count all encounters to work by day to save ram. Not sure how to speed it up
 28 april 2009: ah - mixing up icd9Fact ids with Enc ids is not a very good idea - counts now sane
 28 april 2009: getting one zip with 1 as volume but 2 ILI cases. arrgh. 
@@ -10,6 +13,7 @@ Copyright Ross Lazarus April 20 2009
 All rights reserved
 Licensed under the LGPL v3.0 or a later version at your preference
 see http://www.gnu.org/licenses/lgpl.html
+Part of the esp project - see http://esphealth.org
 
 Notes during design and prototyping of an ESP:SS module
 Need to decouple the definitions, detection and consumption of events
@@ -84,7 +88,7 @@ zip
 
 
 """
-myVersion = '0.003'
+myVersion = '0.004'
 thisSite = 'Atrius'
 thisRequestor = 'Ross Lazarus'
 import os, sys, django, time
@@ -95,11 +99,13 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 from ESP.esp.models import *
 from django.db.models import Q
 from ESP.settings import *
-
-from espSSconf import btzipdict,atriusUseDict,atriusLookup,atriusExcludeCodes,atriusUseCodes, \
-atriusZips, ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef
-# these are [icd,feverreq] lists
 import utils
+from espSSconfATRIUS import btzipdict,localSiteUseDict,localSiteLookup,localSiteExcludeCodes,localSiteUseCodes, \
+localSiteZips, ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef
+# these are [icd,feverreq] lists
+
+
+
 defList = [ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef]
 nameList = ['ILI','Haematological','Lesions','Lymphatic','Lower GI','Upper GI',
 'Neurological','Rashes','Respiratory']
@@ -146,7 +152,7 @@ def makeAge(dob='20070101',edate='20080101'):
 
 def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
     """return a dict of date, with zip and age in years (!) specific total encounter volume for each day
-    exclude from atriusExcludeCodes. Challenge is that it requires looking up the zip and age of
+    exclude from localSiteExcludeCodes. Challenge is that it requires looking up the zip and age of
     every encounter..
 )   Using extra to squirt some SQL into the ORM call 
     iterator seems to work - ram use is now reasonable and it's fast enough..
@@ -159,7 +165,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
             'dob': 'select DemogDate_of_Birth from esp_demog where esp_demog.id = esp_enc.EncPatient_id'}
     # an extra select dict to speed up the foreign key lookup - note real SQL table and column names!
     allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, EncEncounter_Date__lte=endDT,
-         EncEncounter_Site__in = atriusUseCodes).extra(select=esel).values_list('ezip','dob',
+         EncEncounter_Site__in = localSiteUseCodes).extra(select=esel).values_list('ezip','dob',
         'EncEncounter_Date').iterator() # not sure if this will really work - lets test       
     if not zip5:
        zl = 3
@@ -248,9 +254,10 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
         factids = icd9Fact.objects.filter(id__in=caseids).order_by('id') # keep in id order
         zips = [x.icd9Patient.DemogZip.split('-')[0] for x in factids] # get zips less -xxxx 
         dobs = [x.icd9Patient.DemogDate_of_Birth for x in factids] # get dobs  
-        atriusCodes = [x.icd9Enc.EncEncounter_Site for x in factids] 
+        localSiteCodes = [x.icd9Enc.EncEncounter_Site for x in factids] 
         encdates = [x.icd9Enc.EncEncounter_Date for x in factids] # get encdates   
         encAges = [makeAge(dobs[i],encdates[i]) for i in range(len(encdates))]
+        temperatures = [x.icd9Enc.EncTemperature for x in factids]
         icd9FactIds = [x.id for x in factids]
         encIds = [x.icd9Enc.id for x in factids] # fk lookup
         demogIds = [x.icd9Patient.id for x in factids]
@@ -263,23 +270,24 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
             dateId.setdefault(edate,{})
             dateId[edate].setdefault(z,{})
             if dateId[edate][z].get(id,None) == None: # is new for this syndrome, date, zip
-                aSite = atriusCodes[i]
-                if atriusUseDict.get(aSite,None):     
+                aSite = localSiteCodes[i]
+                if localSiteUseDict.get(aSite,None):     
                     age = encAges[i]
                     if age: # may be null if duff dates
                         encId = encIds[i]
                         icd9FactId = icd9FactIds[i]
+                        temperature = temperatures[i]
                         icd9code = icd9codes[i]
                         demogId = demogIds[i]
-                        dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
+                        dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature)
                 else:
-                    aSiteName = atriusLookup.get(aSite,'%s?' % aSite)
+                    aSiteName = localSiteLookup.get(aSite,'%s?' % aSite)
                     n = ignoredSites.setdefault(aSiteName,0)
                     ignoredSites[aSiteName] += 1
                     ignoreSite += 1
             else:
                 redundant += 1
-        SSlogging.info('# %s Total Atrius ignore site cases = %d, sites= %s' % (syndName, ignoreSite,ignoredSites))
+        SSlogging.info('# %s Total localSite ignore site cases = %d, sites= %s' % (syndName, ignoreSite,ignoredSites))
         SSlogging.info('## %s total redundant ids for zip/date/syndrome = %d' % (syndName,redundant))
         return dateId
 
@@ -457,23 +465,24 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
         alld = encDateAgeVols.get(edate,{})
         SSlogging.debug('### MakeLinelist zips=',zips)
         for zipcode in zips:
-            alldz = alld.get(zipcode,{})
-            if alldz == {}:
-                SSlogging.warning('###!! Makelinelist: alldz empty for syndrome %s zip %s' % (syndrome, zipcode)) 
-            zip5 = zipcode[:5] # testing with 3 digit zips
             zids = aday[zipcode]
             idk = zids.keys()
-            idk.sort()
-            for id in idk:
-                (z,age,icd9FactId,encId,icd9code,demogId,edate) = zids[id] # whew 
-                if age:
-                    alldza = alldz.get(age,0)
-                else:
-                    alldza = 0
-                if alldza == 0:
-                    SSlogging.warning('###!! Makelinelist: 0 count for age=%d, syndrome=%s, zipcode=%s' % (age,syndrome,zip5))
-                row = '\t'.join((syndrome,edate,z,'%d' % age,icd9code,'%d' % alldza))
-                res.append(row)
+            if len(idk) > 0: # can be empty because of the way we generate..
+                idk.sort()
+                alldz = alld.get(zipcode,{})
+                if alldz == {}:
+                    SSlogging.warning('###!! Makelinelist: alldz empty for syndrome %s zip %s' % (syndrome, zipcode)) 
+                zip5 = zipcode[:5] # testing with 3 digit zips
+                for id in idk:
+                    (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature) = zids[id] # whew 
+                    if age:
+                        alldza = alldz.get(age,0)
+                    else:
+                        alldza = 0
+                    if alldza == 0:
+                        SSlogging.warning('###!! Makelinelist: 0 count for age=%d, syndrome=%s, zipcode=%s' % (age,syndrome,zip5))
+                    row = '\t'.join((syndrome,edate,z,'%d' % age,icd9code,temperature,'%d' % alldza))
+                    res.append(row)
         return res 
     
     
@@ -483,15 +492,16 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
         """
         # provide sd,ed,ctime,ruser,doid
         m = ['Date\tZip\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome',] # amalg
-        lm = ['Synd\tDate\tZip_Res\tAge_Yrs\tICD9code\tN_All_Encs_Age_Zip',] # line list
+        lm = ['Synd\tDate\tZip_Res\tAge_5Yrs\tICD9code\tTemperature\tN_All_Encs_Age_Zip',] # line list
         edk = dateId.keys()
         edk.sort()
         for thisdate in edk:
             SSlogging.debug('!!!!#### processing syndrome %s for date %s' % (syndrome,thisdate))
             c = makeCounts(syndrome,dateId[thisdate],thisdate)
             m += c
-            c = makeLinelist(syndrome,dateId[thisdate],thisdate)
-            lm += c
+            if syndrome == 'ILI':
+                c = makeLinelist(syndrome,dateId[thisdate],thisdate)
+                lm += c
         return m,lm  
     
     # main makeTab starts here
@@ -564,12 +574,13 @@ def testTab(sdate='20090401',edate='20090431'):
         f.write('\n')
         f.close()
         SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
-        fname = lfproto % (thisSite,syndrome,sdate,edate)
-        f = open(fname,'w')
-        f.write('\n'.join(lres))
-        f.write('\n')
-        f.close()
-        SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
+        if len(lres) > 0: # is ILI
+            fname = lfproto % (thisSite,syndrome,sdate,edate)
+            f = open(fname,'w')
+            f.write('\n'.join(lres))
+            f.write('\n')
+            f.close()
+            SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
 
 if __name__ == "__main__":
   testTab()
