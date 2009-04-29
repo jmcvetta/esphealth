@@ -190,7 +190,7 @@ def makeAge(dob='20070101',edate='20080101',chunk=5):
     return age
 
 
-def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True,localIgnore=True):
+def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=True):
     """return a dict of date, with zip and age in years (!) specific total encounter volume for each day
     exclude from localSiteExcludeCodes. Challenge is that it requires looking up the zip and age of
     every encounter..
@@ -212,10 +212,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True,localIgnore=
         allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, 
         EncEncounter_Date__lte=endDT).extra(select=esel).values_list('ezip','dob',
             'EncEncounter_Date').iterator() # yes - this works well to minimize ram             
-    if not zip5:
-       zl = 3
-    else:
-       zl = 5 # use 5 - ignore rest
+    zl = ziplen # use 5 - ignore rest
     for i,anenc in enumerate(allenc):
         if (i+1) % 10000 == 0:
             SSlogging.debug('AgeencDateVolumes at %d, %f /sec' % (i+1, i/(time.time() - started)))
@@ -297,7 +294,7 @@ def findCaseFactIds(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,loca
     SSlogging.info('#### %s Total count = %d' % (syndName,len(caseids)))
     return caseids
 
-def caseIdsToDateIds(caseids=[]):
+def caseIdsToDateIds(caseids=[],ziplen=5):
     """
     split out from preparing caseid list - now process into
     reporting structures
@@ -352,7 +349,7 @@ def caseIdsToDateIds(caseids=[]):
         return {}
 
 
-def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='ESPSS',
+def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='ESPSS',ziplen=3,
     encAgeDateVols=None,doid=None,requ=None,minCount=5,crtime=None,localIgnore=False):
     """crude generator for xls
     genesis at http://esphealth.org/trac/ESP/wiki/ESPSS
@@ -478,9 +475,10 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
     SSlogging.info('makeAMDS now looking for %s at %s' % (syndrome, isoTime()))
     icdlist = syndDefs[syndrome] # icd list
     icdlist = syndDefs[syndrome] # icd list
-    caseids = findCaseFactIds(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
+    caseids = findCaseFactIds(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,
+        ziplen=ziplen,localIgnore=localIgnore)
     # generate a simple vector of caseId encounter primary keys
-    dateId = caseIdsToDateIds(caseids=caseids)
+    dateId = caseIdsToDateIds(caseids=caseids,ziplen=ziplen)
     # process it into the reporting structure - a dict as date->zip->age..counts and a dict of cases
     # now returns (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature) = zids[id]
     if len(dateId) > 0:
@@ -490,7 +488,7 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
     return res
 
 
-def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
+def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
     encDateVols={},encDateAgeVols={},localIgnore=True):
     """crude generator for xls
     rml april 27 2009 swine flu season?
@@ -579,9 +577,10 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
     
     # main makeTab starts here
     icdlist = syndDefs[syndrome] # icd list
-    caseids = findCaseFactIds(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
+    caseids = findCaseFactIds(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,
+    ziplen=ziplen,localIgnore=localIgnore)
     # generate a simple vector of caseId encounter primary keys
-    dateId = caseIdsToDateIds(caseids=caseids)
+    dateId = caseIdsToDateIds(caseids=caseids,ziplen=5)
     # process it into the reporting structure - a dict as date->zip->age..counts and a dict of cases
     # now returns (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature) = zids[id]
     res,lres = makeMessage(syndrome, dateId)
@@ -602,7 +601,7 @@ def testsyndGen():
             print s,i,c
         del g
 
-def testAMDS(sdate='20090401',edate='20090431'):
+def testAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3):
     """ test stub for AMDS xml generator
     On Thu, Apr 23, 2009 at 11:54 PM, Lee, Brian A. (CDC/CCHIS/NCPHI)
     (CTR) <fya1@cdc.gov> wrote:
@@ -611,10 +610,9 @@ def testAMDS(sdate='20090401',edate='20090431'):
     > than that, the data makes for great sample sets.
     """
     
-    dateZip,dateZipAge = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False)
+    dateZip,dateZipAge = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False,ziplen=ziplen)
     doid='ESPSS@%s' % thisSite
     requ=thisRequestor
-    minCount=5
     crtime=isoTime(time.localtime())
     SSlogging.debug('crtime = %s' % crtime)
     fproto = 'ESP%s_AMDS_%s_%s_%s.xml'
@@ -623,7 +621,7 @@ def testAMDS(sdate='20090401',edate='20090431'):
     for syndrome in syndromes:
         res = makeAMDS(sdate=sdate,edate=edate,syndrome=syndrome,
           encDateVols=dateZip,encAgeDateVols=dateZipAge,cclassifier=cclassifier,
-          doid=doid,requ=requ,minCount=minCount,crtime=crtime,localIgnore=False)
+          doid=doid,requ=requ,minCount=minCount,crtime=crtime,localIgnore=False,ziplen=ziplen)
         if len(res) > 0:
             fname = fproto % (thisSite,syndrome,sdate,edate)
             f = open(fname,'w')
@@ -634,12 +632,12 @@ def testAMDS(sdate='20090401',edate='20090431'):
     
 
 
-def testTab(sdate='20090401',edate='20090431'):
+def testTab(sdate='20090401',edate='20090431',ziplen=5):
     """ test stub for tab delim generator
     date zip syndrome syndN allencN syndPct
     """
-    encDateVols,encDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=True)
-    allEncDateVols,allEncDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False)
+    encDateVols,encDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=True,ziplen=ziplen)
+    allEncDateVols,allEncDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False,ziplen=ziplen)
     fproto = 'ESP%s_SyndAgg%s_%s_%s_%s.xls'
     lfproto = 'ESP%s_SyndInd%s_%s_%s_%s.xls'
     syndromes = syndDefs.keys() # syndromes
@@ -649,7 +647,7 @@ def testTab(sdate='20090401',edate='20090431'):
         res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
             encDateVols=encDateVols,encDateAgeVols=encDateAgeVols,localIgnore=True)
         fname = fproto % (thisSite,ignoreMode,syndrome,sdate,edate)
-        f = open(fname,'w')
+        f = open(fname,'w') 
         f.write('\n'.join(res))
         f.write('\n')
         f.close()
@@ -679,6 +677,6 @@ def testTab(sdate='20090401',edate='20090431'):
             SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
 
 if __name__ == "__main__":
-    testAMDS()
-    testTab()
+    testAMDS(ziplen=3)
+    testTab(ziplen=5)
 
