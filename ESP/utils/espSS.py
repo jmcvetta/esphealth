@@ -475,7 +475,7 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
         return m  
     
     # main makeAMDS starts here
-    SSlogging.info('makeAMDS now looking for %s at %s' % (syndrome, timenow()))
+    SSlogging.info('makeAMDS now looking for %s at %s' % (syndrome, isoTime()))
     icdlist = syndDefs[syndrome] # icd list
     icdlist = syndDefs[syndrome] # icd list
     caseids = findCaseFactIds(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
