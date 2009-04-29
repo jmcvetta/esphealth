@@ -574,7 +574,7 @@ def testTab(sdate='20090401',edate='20090431'):
         f.write('\n')
         f.close()
         SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
-        if len(lres) > 0: # is ILI
+        if len(lres) > 1: # is ILI
             fname = lfproto % (thisSite,syndrome,sdate,edate)
             f = open(fname,'w')
             f.write('\n'.join(lres))
@@ -583,5 +583,6 @@ def testTab(sdate='20090401',edate='20090431'):
             SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
 
 if __name__ == "__main__":
-  testTab()
+    testTab()
+    testAMDS()
 
