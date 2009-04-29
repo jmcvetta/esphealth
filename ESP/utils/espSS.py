@@ -299,7 +299,9 @@ def caseIdsToDateIds(caseids=[],ziplen=5):
     split out from preparing caseid list - now process into
     reporting structures
     """
-    
+    redundant = 0
+    ignoreSite = 0
+    ignoredSites = {}
     if caseids: # some
         factids = icd9Fact.objects.filter(id__in=caseids).order_by('id') # keep in id order
         zips = [x.icd9Patient.DemogZip.split('-')[0] for x in factids] # get zips less -xxxx 
