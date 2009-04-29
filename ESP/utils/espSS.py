@@ -1,4 +1,5 @@
 """
+29 april 2009: create reports with and without site exclusions - they're interesting and variable
 29 april 2009: added temp for ILI individual report with age to nearest 5 years
 29 april 2009: fixed all encounter counting - add SQL extras to the filter and .iterator() - wicked fast now.
                surprisingly good for an ORM - sqlalchemy is really slick
@@ -301,7 +302,7 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,localI
 
 
 def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='ESPSS',
-    encAgeDateVols=None,doid=None,requ=None,minCount=5,crtime=None,localIgnore=True):
+    encAgeDateVols=None,doid=None,requ=None,minCount=5,crtime=None,localIgnore=False):
     """crude generator for xls
     rml april 27 2009 swine flu season?
     """
@@ -543,7 +544,7 @@ def testAMDS(sdate='20080101',edate='20080102'):
     > than that, the data makes for great sample sets.
     """
     
-    dateZip,dateZipAge = AgeencDateVolumes(startDT=sdate,endDT=edate)
+    dateZip,dateZipAge = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False)
     doid='ESPSS@%s' % thisSite
     requ=thisRequestor
     minCount=5
@@ -555,7 +556,7 @@ def testAMDS(sdate='20080101',edate='20080102'):
     for syndrome in syndromes:
         res = makeAMDS(sdate=sdate,edate=edate,syndrome=syndrome,
           encDateVols=dateZip,encAgeDateVols=dateZipAge,cclassifier=cclassifier,
-          doid=doid,requ=requ,minCount=minCount,crtime=crtime)
+          doid=doid,requ=requ,minCount=minCount,crtime=crtime,localIgnore=False)
         fname = fproto % (thisSite,syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(res))
@@ -571,25 +572,38 @@ def testTab(sdate='20090401',edate='20090431'):
     """
     encDateVols,encDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=True)
     AllencDateVols,AllencDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False)
-    fproto = 'ESP%s_SyndAgg_%s_%s_%s.xls'
-    lfproto = 'ESP%s_SyndInd_%s_%s_%s.xls'
+    fproto = 'ESP%s_SyndAgg%s_%s_%s_%s.xls'
+    lfproto = 'ESP%s_SyndInd%s_%s_%s_%s.xls'
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes:
-        if syndrome == 'ILI':
-            res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
-           encDateVols=AllencDateVols,DateAgeVols=AllencDateAgeVols,localIgnore=True)
-        else:
-             res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
-           encDateVols=encDateVols,DateAgeVols=encDateAgeVols,localIgnore=False)
-        fname = fproto % (thisSite,syndrome,sdate,edate)
+        ignore = 'SiteExcl'
+        res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
+            encDateVols=AllencDateVols,encDateAgeVols=AllencDateAgeVols,localIgnore=True)
+        fname = fproto % (thisSite,ignore,syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(res))
         f.write('\n')
         f.close()
         SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
         if len(lres) > 1: # is ILI
-            fname = lfproto % (thisSite,syndrome,sdate,edate)
+            fname = lfproto % (thisSite,ignore,syndrome,sdate,edate)
+            f = open(fname,'w')
+            f.write('\n'.join(lres))
+            f.write('\n')
+            f.close()
+            SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
+        ignore = 'AllSites'
+        res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
+            encDateVols=encDateVols,encDateAgeVols=encDateAgeVols,localIgnore=False)
+        fname = fproto % (thisSite,ignore,syndrome,sdate,edate)
+        f = open(fname,'w')
+        f.write('\n'.join(res))
+        f.write('\n')
+        f.close()
+        SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
+        if len(lres) > 1: # is ILI
+            fname = lfproto % (thisSite,ignore,syndrome,sdate,edate)
             f = open(fname,'w')
             f.write('\n'.join(lres))
             f.write('\n')
