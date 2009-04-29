@@ -498,8 +498,8 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
     icdlist = syndDefs[syndrome] # icd list
     dateId = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate)
     # now returns dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
-    res = makeMessage(syndrome, dateId)
-    return res
+    res,lres = makeMessage(syndrome, dateId)
+    return res,lres
 
 
 
@@ -552,17 +552,24 @@ def testTab(sdate='20090401',edate='20090431'):
     date zip syndrome syndN allencN syndPct
     """
     encDateVols,encDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate)
-    fproto = 'ESP%s_Synd_%s_%s_%s.xls'
+    fproto = 'ESP%s_SyndAgg_%s_%s_%s.xls'
+    lfproto = 'ESP%s_SyndInd_%s_%s_%s.xls'
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes:
-        res = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=encDateVols,encDateAgeVols=encDateAgeVols)
+        res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=encDateVols,encDateAgeVols=encDateAgeVols)
         fname = fproto % (thisSite,syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(res))
         f.write('\n')
         f.close()
         SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
+        fname = lfproto % (thisSite,syndrome,sdate,edate)
+        f = open(fname,'w')
+        f.write('\n'.join(lres))
+        f.write('\n')
+        f.close()
+        SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
 
 if __name__ == "__main__":
   testTab()
