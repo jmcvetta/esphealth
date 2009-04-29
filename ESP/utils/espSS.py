@@ -478,7 +478,7 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
     SSlogging.info('makeAMDS now looking for %s at %s' % (syndrome, timenow()))
     icdlist = syndDefs[syndrome] # icd list
     icdlist = syndDefs[syndrome] # icd list
-    caseids = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
+    caseids = findCaseFactIds(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
     # generate a simple vector of caseId encounter primary keys
     dateId = caseIdsToDateIds(caseids=caseids)
     # process it into the reporting structure - a dict as date->zip->age..counts and a dict of cases
@@ -579,7 +579,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
     
     # main makeTab starts here
     icdlist = syndDefs[syndrome] # icd list
-    caseids = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
+    caseids = findCaseFactIds(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
     # generate a simple vector of caseId encounter primary keys
     dateId = caseIdsToDateIds(caseids=caseids)
     # process it into the reporting structure - a dict as date->zip->age..counts and a dict of cases
@@ -680,5 +680,5 @@ def testTab(sdate='20090401',edate='20090431'):
 
 if __name__ == "__main__":
     testAMDS()
-    #testTab()
+    testTab()
 
