@@ -1,4 +1,8 @@
 """
+welcome to espSS.py
+
+Most Recent Changes First:
+
 29 april 2009: create reports with and without site exclusions - they're interesting and variable
 29 april 2009: added temp for ILI individual report with age to nearest 5 years
 29 april 2009: fixed all encounter counting - add SQL extras to the filter and .iterator() - wicked fast now.
@@ -15,6 +19,8 @@ All rights reserved
 Licensed under the LGPL v3.0 or a later version at your preference
 see http://www.gnu.org/licenses/lgpl.html
 Part of the esp project - see http://esphealth.org
+
+Accumulated debris:
 
 Notes during design and prototyping of an ESP:SS module
 Need to decouple the definitions, detection and consumption of events
@@ -94,18 +100,39 @@ thisSite = 'Atrius' # for amds header
 thisRequestor = 'Ross Lazarus' 
 cclassifier = 'ESPSSApril2009'  
 
-import os, sys, django, time
+import os, sys, django, time, datetime
 sys.path.insert(0, '/home/ESP/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+#os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
 from ESP.esp.models import *
 from django.db.models import Q
 from ESP.settings import *
 import utils
+SSlogging = getLogging('espSS_v%s' % myVersion, debug=0)
+#sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG',
+# 'jason.mcvetta@channing.harvard.edu', 'ross.lazarus@channing.harvard.edu']
+sendEmailToList = ['ross.lazarus@gmail.com']
+
+
+# conditions for ESP:SS are determined by an encounter having any of a (potentially empty)
+# 'nofevericd9' list of icd9 codes, or any of a different 'fevericd9'
+# (potentially empty) list of icd9 codes that also require a fever to be counted as cases.
+# the definition of fever is painful as it involves a lot of missing temp data
+#
 from espSSconfATRIUS import btzipdict,localSiteUseDict,localSiteLookup,localSiteExcludeCodes,localSiteUseCodes, \
 localSiteZips, ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef
-# these are [icd,feverreq] lists
+# these are a defining group of [icd,feverreq] lists, and they are instantiated from
+# long strings cut and paste from the 
+# original specification, subject to text processing into dicts and lists 
+# used as structures representing rules to identify syndrome 'cases'
+# over a specified period, for reporting by syndrome, date and zipcode counts as AMDS
+# xml, as tab delimited aggregate count, and as unit record formats for MDPH
+#
+# if feverreq, additional complex logic is used - either measured temp >= 100
+# or no temp measured (ie missing) but one of 2 icd9 fever/febrile convulsion icd9s
+# eesh
+# The icd9 codes are matched 'or' on all the subject codes.  
 
 
 
@@ -113,11 +140,13 @@ defList = [ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef,RES
 nameList = ['ILI','Haematological','Lesions','Lymphatic','Lower GI','Upper GI',
 'Neurological','Rashes','Respiratory']
 syndDefs = dict(zip(nameList,defList))
-
-SSlogging = getLogging('espSS_v%s' % myVersion, debug=0)
-#sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG',
-# 'jason.mcvetta@channing.harvard.edu', 'ross.lazarus@channing.harvard.edu']
-sendEmailToList = ['ross.lazarus@gmail.com']
+# our application is now configured with all the data structures
+# needed to identify and report cases and aggregates
+# these can be easily adjusted - check the espSSconfATRIUS.py file
+# to see how this is done.
+# TODO: use svn to version these and allow updating - propogate version metadata
+#       to derived data
+#
 
 def isoTime(t=None): 
     """ yyyymmddhhmmss - as at now unless a localtime is passed in
@@ -130,8 +159,12 @@ def isoTime(t=None):
     return s
 
 
-def makeAge(dob='20070101',edate='20080101'):
-    """return age in 5 year chunks for mdph ILI reports 
+def makeAge(dob='20070101',edate='20080101',chunk=5):
+    """return age in year chunks for mdph ILI reports 
+    for d in ['20000101','20010101','20030204']:
+    for e in ['20040101','20050101','20030604']:
+        print makeAge(dob=d,edate=e,chunk=5)
+
     """
     if len(dob) < 8:
         SSlogging.error('### duff dob "%s" in makeAge' % dob)
@@ -147,10 +180,9 @@ def makeAge(dob='20070101',edate='20080101'):
         ed = datetime.date(yy,mm,dd)       
     age = (ed-bd).days
     age = int(age/365.25) # whole years
-    age = 5*int(age/5.) # if 0-4 = 0, if 5..9 = 5 if 10..14=10 etc
-    age = min(90,age) # clean up end
+    age = chunk*int(age/chunk) # if 0-4 = 0, if 5..9 = 5 if 10..14=10 etc
+    age = min(95,age) # compress last cat
     return age
-
 
 
 def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True,localIgnore=True):
@@ -541,7 +573,7 @@ def testsyndGen():
             print s,i,c
         del g
 
-def testAMDS(sdate='20080101',edate='20080102'):
+def testAMDS(sdate='20090401',edate='20090431'):
     """ test stub for AMDS xml generator
     On Thu, Apr 23, 2009 at 11:54 PM, Lee, Brian A. (CDC/CCHIS/NCPHI)
     (CTR) <fya1@cdc.gov> wrote:
