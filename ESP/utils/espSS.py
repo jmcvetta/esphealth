@@ -85,6 +85,8 @@ zip
 
 """
 myVersion = '0.003'
+thisSite = 'Atrius'
+thisRequestor = 'Ross Lazarus'
 import os, sys, django, time
 sys.path.insert(0, '/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
@@ -137,53 +139,12 @@ def makeAge(dob='20070101',edate='20080101'):
     return (ed-bd).days
 
 
-def encDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
-    """return a dict of date, with zip specific total encounter volume for each day
-    exclude from atriusExcludeCodes. Challenge is that it requires looking up the zip of
-    every encounter..
-    This requires huge amounts of ram to do in one hit for a long period.
-    Now fixed to do a day at a time - seems ok..
-)   Using extra to squirt some SQL into the ORM call reduces this to
-    about 13secs/day - tolerable and uses very little RAM.
-    TODO: find a better/faster/lessRAM way?
-    """
-    started = time.time()
-    datecounts = {}
-    dates = Enc.objects.filter(EncEncounter_Date__gte=startDT,
-     EncEncounter_Date__lte=endDT, EncEncounter_Site__in \
-     = atriusUseCodes).values_list('EncEncounter_Date',flat=True)
-    dates = list(set(list(dates))) # takes a few seconds to get all dates
-    dates.sort()
-    esel = {'ezip':'select DemogZip from esp_demog where esp_demog.id = esp_enc.EncPatient_id'}
-    # an extra select dict to speed up the foreign key lookup - note real SQL table and column names!
-    for adate in dates:
-        allenc = Enc.objects.filter(EncEncounter_Date__exact=adate,
-         EncEncounter_Site__in = atriusUseCodes).extra(select=esel).order_by('id').values_list('ezip',
-        'EncEncounter_Date')
-        SSlogging.debug('#### encDateVolumes allenc=%d, date=%s, %f secs' % (len(allenc),adate,time.time()-started))           
-        if not zip5:
-           zl = 3
-        else:
-           zl = 5 # use 5 - ignore rest
-        for i,zdate in enumerate(allenc):
-            (z,thisd) = zdate
-            z = z[:zl] # corresponding zip
-            dz = datecounts.setdefault(thisd,{})
-            n = datecounts[thisd].setdefault(z,0)
-            datecounts[thisd][z] += 1
-        del allenc
-    return datecounts
-
-
 def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
     """return a dict of date, with zip and age in years (!) specific total encounter volume for each day
-    exclude from atriusExcludeCodes. Challenge is that it requires looking up the zip of
+    exclude from atriusExcludeCodes. Challenge is that it requires looking up the zip and age of
     every encounter..
-    This requires huge amounts of ram to do in one hit for a long period.
-    Now fixed to do a day at a time - seems ok..
-)   Using extra to squirt some SQL into the ORM call reduces this to
-    about 13secs/day - tolerable and uses very little RAM.
-    TODO: find a better/faster/lessRAM way?
+)   Using extra to squirt some SQL into the ORM call 
+    iterator seems to work - ram use is now reasonable and it's fast enough..
     """
     started = time.time()
     datecounts = {}
@@ -202,15 +163,17 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
         if (i+1) % 10000 == 0:
             SSlogging.info('AgeencDateVolumes at %d, %f /sec' % (i+1, i/(time.time() - started)))
         (z,dob,thisd) = anenc
-        age = int(makeAge(dob,thisd)/365.25) + 1 # make <1 = 1 etc..
-        z = z[:zl] # corresponding zip
-        dz = dateagecounts.setdefault(thisd,{})
-        az = dateagecounts[thisd].setdefault(z,{})
-        naz = dateagecounts[thisd][z].setdefault(age,0)
-        dateagecounts[thisd][z][age] += 1
-        dz = datecounts.setdefault(thisd,{})
-        az = datecounts[thisd].setdefault(z,0)
-        datecounts[thisd][z] += 1
+        age = makeAge(dob,thisd) # small fraction have bad dates
+        if age:
+            age = int(age/365.25) + 1 # make <1 = 1 etc..
+            z = z[:zl] # corresponding zip
+            dz = dateagecounts.setdefault(thisd,{})
+            az = dateagecounts[thisd].setdefault(z,{})
+            naz = dateagecounts[thisd][z].setdefault(age,0)
+            dateagecounts[thisd][z][age] += 1
+            dz = datecounts.setdefault(thisd,{})
+            az = datecounts[thisd].setdefault(z,0)
+            datecounts[thisd][z] += 1
 
     del allenc
     return datecounts,dateagecounts
@@ -244,7 +207,7 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
         nffacts = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
              icd9EncDate__lte=endDT, icd9Code__in=noFevercodes).values_list('id',flat=True)
         nffacts = list(nffacts) # and back to list of unique encounter id 
-        SSlogging.info('## Nofever: %d diags (includes redundancies on patients in events)' % len(list(nffacts)))
+        SSlogging.info('## %s Nofever: %d diags (+redundancies on patients in events)' % (syndrome,len(list(nffacts))))
     if checkFever: # must look for specific icd9 codes accompanied by measured fever or no temp measure but icd9 fever
         # complex - find all encs with relevant icd9 code requiring a fever
         icd9Encs = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
@@ -272,7 +235,7 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
         n1 = len(list(icd9Encs))
         n2 = len(list(realFeverFacts))
         n3 = len(list(icdFeverFacts))
-        SSlogging.info('### fever icdfacts (redundant): %d icdmatch, %d measured fever, %d no measured temp but icd9 fever' % (n1,
+        SSlogging.info('### %s fever icds: %d icdmatch, %d +fever, %d notemp but icd9 fever' % (syndrome, n1,
         n2,n3))
     caseids = nffacts + ffacts # already lists
     SSlogging.info('#### Total count = %d' % (len(caseids)))
@@ -282,7 +245,7 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
         dobs = [x.icd9Patient.DemogDate_of_Birth for x in factids] # get dobs  
         atriusCodes = [x.icd9Enc.EncEncounter_Site for x in factids] 
         encdates = [x.icd9Enc.EncEncounter_Date for x in factids] # get encdates   
-        encAges = [int(makeAge(dobs[i],encdates[i])/365.25) for i in range(len(encdates))]
+        encAges = [makeAge(dobs[i],encdates[i]) for i in range(len(encdates))]
         icd9FactIds = [x.id for x in factids]
         encIds = [x.icd9Enc.id for x in factids] # fk lookup
         demogIds = [x.icd9Patient.id for x in factids]
@@ -298,11 +261,13 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
                 aSite = atriusCodes[i]
                 if atriusUseDict.get(aSite,None):     
                     age = encAges[i]
-                    encId = encIds[i]
-                    icd9FactId = icd9FactIds[i]
-                    icd9code = icd9codes[i]
-                    demogId = demogIds[i]
-                    dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
+                    if age: # may be null if duff dates
+                        age = int(age/365.25)
+                        encId = encIds[i]
+                        icd9FactId = icd9FactIds[i]
+                        icd9code = icd9codes[i]
+                        demogId = demogIds[i]
+                        dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
                 else:
                     aSiteName = atriusLookup.get(aSite,'%s?' % aSite)
                     n = ignoredSites.setdefault(aSiteName,0)
@@ -310,133 +275,13 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
                     ignoreSite += 1
             else:
                 redundant += 1
-        SSlogging.info('# Total Atrius ignore site cases = %d, sites= %s' % (ignoreSite,ignoredSites))
-        SSlogging.info('## total redundant ids for zip/date/syndrome = %d' % redundant)
+        SSlogging.info('# %s Total Atrius ignore site cases = %d, sites= %s' % (syndrome, ignoreSite,ignoredSites))
+        SSlogging.info('## %s total redundant ids for zip/date/syndrome = %d' % (syndrome,redundant))
         return dateId
 
 
-def OmakeAMDS(sdate='20080101',edate='20080102',syndDefs={},cclassifier="ESPSS",
-    crtime='2009-03-30T22:24:23-05:00',doid='',requ='',minCount=5):
-    """this includes some very crude xml generating code for
-    testing.
-    """
-
-    def makeGeoHeader(ziplist=[]):
-        """
-        <GeoLocationSupported>
-    <GeoLocation type="zip3">300</GeoLocation>
-    <GeoLocation type="zip3">301</GeoLocation>
-    </GeoLocationSupported>
-        """
-        res = ['<GeoLocationSupported>',]
-        gs = '<GeoLocation type="zip%d">%s</GeoLocation>'
-        for z in ziplist: 
-            ndig = len(z.strip())
-            s = gs % (ndig,z)
-            res.append(s)
-        res.append('</GeoLocationSupported>')
-        return res
-
-
-    def makeTargetHeader(syndlist=[]):
-        """
-        <TargetQuery>
-    <Condition classifier="BioSense">GI</Condition>
-    <Condition classifier="BioSense">Fever</Condition>
-    </TargetQuery>
-        """
-        res = ['<TargetQuery>',]
-        ts = '<Condition classifier="%s">%s</Condition>'
-        for synd in syndlist:
-            s = ts % (cclassifier,synd)
-            res.append(s)
-        res.append('</TargetQuery>')
-        return res
-
-    def makeCounts(aday={},edate='20080101'):
-        """ all counts for a date by zip
-        <CountItem>
-    <Day>2009-01-01</Day>
-    <LocationItem>
-    <PatientLocation>300</PatientLocation>
-    <Count>51</Count>
-    </LocationItem>
-    <LocationItem>
-    <PatientLocation>300</PatientLocation>
-    <Count suppressed="true"/>
-    </LocationItem>
-    </CountItem>
-        """
-        res = []
-        zips = aday.keys()
-        zips.sort()
-        for i,z in enumerate(zips):
-            count = aday[z]
-            if i == 0: # first one
-                res.append('<CountItem>')
-                res.append('<Day>%s-%s-%s</Day>' % (edate[:4],edate[4:6],edate[6:]))
-            res.append('<LocationItem>')
-            res.append('<PatientLocation>%s</PatientLocation>' % z)
-            if count > minCount:
-                res.append('<Count>%d</Count>' % count)
-            else:
-                res.append('<Count suppressed="true"/>')
-            res.append('</LocationItem>')
-        res.append('</CountItem>')
-        return res
-        
-    def makeMessage(ziplist,syndrome,countsBydate):
-        """
-        so simple, not worth using an xml parser?
-        First challenge - write the header with all the zips and syndromes to follow
-        counts is a dict of syndromes, containing dicts of dates containing dicts of zip/count
-        """
-        # provide sd,ed,ctime,ruser,doid
-        m = ['<AMDSQueryResponse>']
-        m.append('<AMDSRecordSummary>')
-        m.append('<DateStart>%s</DateStart>' % sdate)
-        m.append('<DateEnd>%s</DateEnd>' % edate)
-        m.append('<CreationDateTime>%s</CreationDateTime>' % crtime)
-        m.append('<RequestingUser>%s</RequestingUser>' % requ)
-        m.append('<DataSourceOID>%s</DataSourceOID>' % doid)
-        g = makeGeoHeader(ziplist)
-        m += g
-        t = makeTargetHeader([syndrome,])
-        m += t
-        m.append('<CellSuppressionRule>%d</CellSuppressionRule>' % minCount)
-        m.append('</AMDSRecordSummary>')
-        m.append('<CountSet>')
-        dkeys = countsBydate.keys()
-        dkeys.sort()
-        for d in dkeys:
-            c = makeCounts(countsBydate[d],d)
-            m += c
-        m.append('</CountSet>')
-        m.append('</AMDSRecordSummary>')
-        m.append('</AMDSQueryResponse>')
-        return m  
-    
-    # main makeAMDS starts here
-    mdict = {}
-    for syndrome in syndDefs:
-        countsBydate = {} # we want {date1:{zip1:22,zip2:41},date2:{..}}
-        zips = {}
-        SSlogging.info('looking for %s' % syndrome)
-        icdlist = syndDefs[syndrome] # icd list
-        g = syndGen(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate)
-        for i,c in enumerate(g):
-            (zipc,age,id,enc,icd,demog,encdate) = c
-            zip3 = zipc[:3] # testing with 3 digit zips
-            zips.setdefault(zip3,zip3) # record all unique zips        
-            countsBydate.setdefault(encdate,{})
-            countsBydate[encdate].setdefault(zip3,0)
-            countsBydate[encdate][zip3] += 1
-        del g
-        m = makeMessage(zips,syndrome,countsBydate)
-        mdict[syndrome] = m
-    return mdict
-
-def makeAMDS(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
+def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,
+    encAgeDateVols=None,doid=None,requ=None,minCount=5,crtime=None):
     """crude generator for xls
     rml april 27 2009 swine flu season?
     """
@@ -560,7 +405,8 @@ def makeAMDS(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
     return res
 
 
-def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
+def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
+    encDateVols={},encAgeDateVols={}):
     """crude generator for xls
     rml april 27 2009 swine flu season?
     """
@@ -601,11 +447,15 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
     def makeLinelist(syndrome='?',aday={},edate='20080101'):
         """ make individual records
         """
-        res = []
+        res = ['Synd\tDate\tZip_Res\tAge_Yrs\tICD9code\tN_All_Encs_Age_Zip']
         zips = aday.keys()
         zips.sort()
+        alld = encDateAgeVols.get(edate,{})
         SSlogging.debug('### zips=',zips)
         for zipcode in zips:
+            alldz = alld.get(zipcode,{})
+            if alldz == {}:
+                SSlogging.warning('###!! alldz empty for syndrome %s zip %s' % (syndrome, zipcode)) 
             zip5 = zipcode[:5] # testing with 3 digit zips
             zips.setdefault(zip5,zip5) # record all unique zips for amds headers
             zids = zipIds[zipcode]
@@ -613,7 +463,13 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
             idk.sort()
             for id in idk:
                 (z,age,icd9FactId,encId,icd9code,demogId,edate) = zids[id] # whew 
-                row = '\t'.join((syndrome,edate,z,age,icd9code))
+                if age:
+                    alldza = alldz.get(age,0)
+                else:
+                    alldza = 0
+                if alldza == 0:
+                    SSlogging.warning('Zero count for age=%d, syndrome=%s, zipcode=%s' % (age,syndrome,zip5))
+                row = '\t'.join((syndrome,edate,z,age,icd9code,alldza))
                 res.append(row)
         return res 
     
@@ -627,7 +483,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',encDateVols={}):
         edk = dateId.keys()
         edk.sort()
         for thisdate in edk:
-            SSlogging.info('!!!!#### processing syndrome %s for date %s' % (syndrome,thisdate))
+            SSlogging.debug('!!!!#### processing syndrome %s for date %s' % (syndrome,thisdate))
             c = makeCounts(syndrome,dateId[thisdate],thisdate)
             m += c
         return m  
@@ -662,36 +518,40 @@ def testAMDS(sdate='20080101',edate='20080102'):
     > examples have two root elements (AMDSRecordSummary and CountSet). Other
     > than that, the data makes for great sample sets.
     """
-    doid='ESPSS@Atrius'
-    requ='Ross Lazarus'
+    
+    dateZip,dateZipAge = AgeencDateVolumes(startDT=sdate,endDT=edate)
+    doid='ESPSS@%s' % thisSite
+    requ=thisRequestor
     minCount=5
     crtime=isoTime(time.localtime())
     SSlogging.debug('crtime = %s' % crtime)
     fproto = 'ESP_AMDS_%s_%s_%s.xml'
-    mdict = makeAMDS(sdate=sdate,edate=edate,syndDefs=syndDefs,cclassifier="ESPSS",
-       crtime=crtime,doid=doid,requ=requ,minCount=minCount)
-    mdk = mdict.keys() # syndromes
-    mdk.sort()
-    for syndrome in mdk:
-        m = mdict[syndrome]
-        fname = fproto % (syndrome,sdate,edate)
+    syndromes = syndDefs.keys() # syndromes
+    syndromes.sort()
+    for syndrome in syndromes:
+        res = makeAMDS(sdate=sdate,edate=edate,syndrome=syndrome,
+          encDateVols=dateZip,encAgeDateVols=dateZipAge,
+          doid=doid,requ=requ,minCount=minCount,crtime=crtime)
+        fname = fproto % (thisSite,syndrome,sdate,edate)
         f = open(fname,'w')
-        f.write('\n'.join(m))
+        f.write('\n'.join(res))
         f.write('\n')
         f.close()
-        SSlogging.debug('## wrote %d rows to %s' % (len(m),fname))
+        SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
+    
+
 
 def testTab(sdate='20090401',edate='20090431'):
     """ test stub for tab delim generator
     date zip syndrome syndN allencN syndPct
     """
     dateZip,dateZipAge = AgeencDateVolumes(startDT=sdate,endDT=edate)
-    fproto = 'ESP%s_Synd_%s_%s_%s.xls'
+    fproto = '%s%s_Synd_%s_%s_%s.xls'
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes:
-        res = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=dateZip)
-        fname = fproto % ('Atrius',syndrome,sdate,edate)
+        res = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=dateZip,encAgeDateVols=dateZipAge)
+        fname = fproto % (thisSite,syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(res))
         f.write('\n')
@@ -699,6 +559,5 @@ def testTab(sdate='20090401',edate='20090431'):
         SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
 
 if __name__ == "__main__":
-  #dd = encDateVolumes(startDT='20090101',endDT='20090102')
   testTab()
 
