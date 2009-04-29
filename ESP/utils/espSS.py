@@ -161,7 +161,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
        zl = 5 # use 5 - ignore rest
     for i,anenc in enumerate(allenc):
         if (i+1) % 10000 == 0:
-            SSlogging.info('AgeencDateVolumes at %d, %f /sec' % (i+1, i/(time.time() - started)))
+            SSlogging.debug('AgeencDateVolumes at %d, %f /sec' % (i+1, i/(time.time() - started)))
         (z,dob,thisd) = anenc
         age = makeAge(dob,thisd) # small fraction have bad dates
         if age:
@@ -207,7 +207,7 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
         nffacts = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
              icd9EncDate__lte=endDT, icd9Code__in=noFevercodes).values_list('id',flat=True)
         nffacts = list(nffacts) # and back to list of unique encounter id 
-        SSlogging.info('## %s Nofever: %d diags (+redundancies on patients in events)' % (syndrome,len(list(nffacts))))
+        SSlogging.info('## %s Nofever: %d diags (+redundancies on patients in events)' % (syndName,len(list(nffacts))))
     if checkFever: # must look for specific icd9 codes accompanied by measured fever or no temp measure but icd9 fever
         # complex - find all encs with relevant icd9 code requiring a fever
         icd9Encs = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
@@ -235,10 +235,10 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
         n1 = len(list(icd9Encs))
         n2 = len(list(realFeverFacts))
         n3 = len(list(icdFeverFacts))
-        SSlogging.info('### %s fever icds: %d icdmatch, %d +fever, %d notemp but icd9 fever' % (syndrome, n1,
+        SSlogging.info('### %s fever icds: %d icdmatch, %d +fever, %d notemp but icd9 fever' % (syndName, n1,
         n2,n3))
     caseids = nffacts + ffacts # already lists
-    SSlogging.info('#### Total count = %d' % (len(caseids)))
+    SSlogging.info('#### %s Total count = %d' % (syndName,len(caseids)))
     if caseids: # some
         factids = icd9Fact.objects.filter(id__in=caseids).order_by('id') # keep in id order
         zips = [x.icd9Patient.DemogZip.split('-')[0] for x in factids] # get zips less -xxxx 
@@ -275,8 +275,8 @@ def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
                     ignoreSite += 1
             else:
                 redundant += 1
-        SSlogging.info('# %s Total Atrius ignore site cases = %d, sites= %s' % (syndrome, ignoreSite,ignoredSites))
-        SSlogging.info('## %s total redundant ids for zip/date/syndrome = %d' % (syndrome,redundant))
+        SSlogging.info('# %s Total Atrius ignore site cases = %d, sites= %s' % (syndName, ignoreSite,ignoredSites))
+        SSlogging.info('## %s total redundant ids for zip/date/syndrome = %d' % (syndName,redundant))
         return dateId
 
 
