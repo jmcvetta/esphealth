@@ -531,7 +531,7 @@ def testAMDS(sdate='20080101',edate='20080102'):
     minCount=5
     crtime=isoTime(time.localtime())
     SSlogging.debug('crtime = %s' % crtime)
-    fproto = 'ESP_AMDS_%s_%s_%s.xml'
+    fproto = 'ESP%s_AMDS_%s_%s_%s.xml'
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes:
@@ -552,7 +552,7 @@ def testTab(sdate='20090401',edate='20090431'):
     date zip syndrome syndN allencN syndPct
     """
     encDateVols,encDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate)
-    fproto = '%s%s_Synd_%s_%s_%s.xls'
+    fproto = 'ESP%s_Synd_%s_%s_%s.xls'
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes:
