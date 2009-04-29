@@ -137,7 +137,7 @@ def makeAge(dob='20070101',edate='20080101'):
     return (ed-bd).days
 
 
-def encDateVolumes(startDT=None,endDT=None,zip5=True):
+def encDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
     """return a dict of date, with zip specific total encounter volume for each day
     exclude from atriusExcludeCodes. Challenge is that it requires looking up the zip of
     every encounter..
@@ -160,7 +160,7 @@ def encDateVolumes(startDT=None,endDT=None,zip5=True):
         allenc = Enc.objects.filter(EncEncounter_Date__exact=adate,
          EncEncounter_Site__in = atriusUseCodes).extra(select=esel).order_by('id').values_list('ezip',
         'EncEncounter_Date')
-        SSlogging.info('#### encDateVolumes allenc=%d, date=%s, %f secs' % (len(allenc),adate,time.time()-started))           
+        SSlogging.debug('#### encDateVolumes allenc=%d, date=%s, %f secs' % (len(allenc),adate,time.time()-started))           
         if not zip5:
            zl = 3
         else:
@@ -173,6 +173,47 @@ def encDateVolumes(startDT=None,endDT=None,zip5=True):
             datecounts[thisd][z] += 1
         del allenc
     return datecounts
+
+
+def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
+    """return a dict of date, with zip and age in years (!) specific total encounter volume for each day
+    exclude from atriusExcludeCodes. Challenge is that it requires looking up the zip of
+    every encounter..
+    This requires huge amounts of ram to do in one hit for a long period.
+    Now fixed to do a day at a time - seems ok..
+)   Using extra to squirt some SQL into the ORM call reduces this to
+    about 13secs/day - tolerable and uses very little RAM.
+    TODO: find a better/faster/lessRAM way?
+    """
+    started = time.time()
+    datecounts = {}
+    dateagecounts = {}
+    esel = {'ezip':'select DemogZip from esp_demog where esp_demog.id = esp_enc.EncPatient_id',
+            'dob': 'select DemogDate_of_Birth from esp_demog where esp_demog.id = esp_enc.EncPatient_id'}
+    # an extra select dict to speed up the foreign key lookup - note real SQL table and column names!
+    allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, EncEncounter_Date__lte=endDT,
+         EncEncounter_Site__in = atriusUseCodes).extra(select=esel).values_list('ezip','dob',
+        'EncEncounter_Date').iterator() # not sure if this will really work - lets test       
+    if not zip5:
+       zl = 3
+    else:
+       zl = 5 # use 5 - ignore rest
+    for i,anenc in enumerate(allenc):
+        if (i+1) % 10000 == 0:
+            SSlogging.info('AgeencDateVolumes at %d, %f /sec' % (i+1, i/(time.time() - started)))
+        (z,dob,thisd) = anenc
+        age = int(makeAge(dob,thisd)/365.25) + 1 # make <1 = 1 etc..
+        z = z[:zl] # corresponding zip
+        dz = dateagecounts.setdefault(thisd,{})
+        az = dateagecounts[thisd].setdefault(z,{})
+        naz = dateagecounts[thisd][z].setdefault(age,0)
+        dateagecounts[thisd][z][age] += 1
+        dz = datecounts.setdefault(thisd,{})
+        az = datecounts[thisd].setdefault(z,0)
+        datecounts[thisd][z] += 1
+
+    del allenc
+    return datecounts,dateagecounts
 
 
 def syndDateZipId(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5):
@@ -638,24 +679,24 @@ def testAMDS(sdate='20080101',edate='20080102'):
         f.write('\n'.join(m))
         f.write('\n')
         f.close()
-        print '## wrote %d rows to %s' % (len(m),fname)
+        SSlogging.debug('## wrote %d rows to %s' % (len(m),fname))
 
-def testTab(sdate='20090101',edate='20090102'):
+def testTab(sdate='20090401',edate='20090431'):
     """ test stub for tab delim generator
     date zip syndrome syndN allencN syndPct
     """
-    dd = encDateVolumes(startDT=sdate,endDT=edate)
+    dateZip,dateZipAge = AgeencDateVolumes(startDT=sdate,endDT=edate)
     fproto = 'ESP%s_Synd_%s_%s_%s.xls'
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes:
-        res = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=dd)
+        res = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=dateZip)
         fname = fproto % ('Atrius',syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(res))
         f.write('\n')
         f.close()
-        print '## wrote %d rows to %s' % (len(res),fname)
+        SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
 
 if __name__ == "__main__":
   #dd = encDateVolumes(startDT='20090101',endDT='20090102')
