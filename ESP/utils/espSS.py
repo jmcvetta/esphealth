@@ -571,7 +571,7 @@ def testTab(sdate='20090401',edate='20090431'):
     date zip syndrome syndN allencN syndPct
     """
     encDateVols,encDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=True)
-    AllencDateVols,AllencDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False)
+    allEncDateVols,allEncDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False)
     fproto = 'ESP%s_SyndAgg%s_%s_%s_%s.xls'
     lfproto = 'ESP%s_SyndInd%s_%s_%s_%s.xls'
     syndromes = syndDefs.keys() # syndromes
@@ -579,7 +579,7 @@ def testTab(sdate='20090401',edate='20090431'):
     for syndrome in syndromes:
         ignore = 'SiteExcl'
         res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
-            encDateVols=AllencDateVols,encDateAgeVols=AllencDateAgeVols,localIgnore=True)
+            encDateVols=encDateVols,encDateAgeVols=encDateAgeVols,localIgnore=True)
         fname = fproto % (thisSite,ignore,syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(res))
@@ -595,7 +595,7 @@ def testTab(sdate='20090401',edate='20090431'):
             SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
         ignore = 'AllSites'
         res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
-            encDateVols=encDateVols,encDateAgeVols=encDateAgeVols,localIgnore=False)
+            encDateVols=allEncDateVols,encDateAgeVols=allEncDateAgeVols,localIgnore=False)
         fname = fproto % (thisSite,ignore,syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(res))
