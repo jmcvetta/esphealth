@@ -423,7 +423,10 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
     icdlist = syndDefs[syndrome] # icd list
     dateId = syndDateZipId(syndDef=icdlist,syndName=syndrome,startDT=sdate,endDT=edate,localIgnore=localIgnore)
     # now returns dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate)
-    res = makeMessage(syndrome, dateId)
+    if len(dateId) > 0:
+        res = makeMessage(syndrome, dateId)
+    else:
+        res = []
     return res
 
 
@@ -558,12 +561,13 @@ def testAMDS(sdate='20080101',edate='20080102'):
         res = makeAMDS(sdate=sdate,edate=edate,syndrome=syndrome,
           encDateVols=dateZip,encAgeDateVols=dateZipAge,cclassifier=cclassifier,
           doid=doid,requ=requ,minCount=minCount,crtime=crtime,localIgnore=False)
-        fname = fproto % (thisSite,syndrome,sdate,edate)
-        f = open(fname,'w')
-        f.write('\n'.join(res))
-        f.write('\n')
-        f.close()
-        SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
+        if len(res) > 0:
+            fname = fproto % (thisSite,syndrome,sdate,edate)
+            f = open(fname,'w')
+            f.write('\n'.join(res))
+            f.write('\n')
+            f.close()
+            SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
     
 
 
