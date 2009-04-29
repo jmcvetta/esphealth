@@ -447,15 +447,15 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
     def makeLinelist(syndrome='?',aday={},edate='20080101'):
         """ make individual records
         """
-        res = ['Synd\tDate\tZip_Res\tAge_Yrs\tICD9code\tN_All_Encs_Age_Zip']
+        res = []
         zips = aday.keys()
         zips.sort()
         alld = encDateAgeVols.get(edate,{})
-        SSlogging.debug('### zips=',zips)
+        SSlogging.debug('### MakeLinelist zips=',zips)
         for zipcode in zips:
             alldz = alld.get(zipcode,{})
             if alldz == {}:
-                SSlogging.warning('###!! alldz empty for syndrome %s zip %s' % (syndrome, zipcode)) 
+                SSlogging.warning('###!! Makelinelist: alldz empty for syndrome %s zip %s' % (syndrome, zipcode)) 
             zip5 = zipcode[:5] # testing with 3 digit zips
             zips.setdefault(zip5,zip5) # record all unique zips for amds headers
             zids = zipIds[zipcode]
@@ -468,7 +468,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
                 else:
                     alldza = 0
                 if alldza == 0:
-                    SSlogging.warning('Zero count for age=%d, syndrome=%s, zipcode=%s' % (age,syndrome,zip5))
+                    SSlogging.warning('###!! Makelinelist: 0 count for age=%d, syndrome=%s, zipcode=%s' % (age,syndrome,zip5))
                 row = '\t'.join((syndrome,edate,z,age,icd9code,alldza))
                 res.append(row)
         return res 
@@ -479,14 +479,17 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
         format a simple xls report
         """
         # provide sd,ed,ctime,ruser,doid
-        m = ['Date\tZip\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome',]
+        m = ['Date\tZip\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome',] # amalg
+        lm = ['Synd\tDate\tZip_Res\tAge_Yrs\tICD9code\tN_All_Encs_Age_Zip',] # line list
         edk = dateId.keys()
         edk.sort()
         for thisdate in edk:
             SSlogging.debug('!!!!#### processing syndrome %s for date %s' % (syndrome,thisdate))
             c = makeCounts(syndrome,dateId[thisdate],thisdate)
             m += c
-        return m  
+            c = makeLinelist(syndrome,dateId[thisdate],thisdate)
+            lm += c
+        return m,lm  
     
     # main makeTab starts here
     icdlist = syndDefs[syndrome] # icd list
