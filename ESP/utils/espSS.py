@@ -457,8 +457,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',
             if alldz == {}:
                 SSlogging.warning('###!! Makelinelist: alldz empty for syndrome %s zip %s' % (syndrome, zipcode)) 
             zip5 = zipcode[:5] # testing with 3 digit zips
-            zips.setdefault(zip5,zip5) # record all unique zips for amds headers
-            zids = zipIds[zipcode]
+            zids = aday[zipcode]
             idk = zids.keys()
             idk.sort()
             for id in idk:
@@ -553,7 +552,7 @@ def testTab(sdate='20090401',edate='20090431'):
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes:
-        res = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=dateZip,encDateAgeVols=encDateAgeVols)
+        res = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=encDateVols,encDateAgeVols=encDateAgeVols)
         fname = fproto % (thisSite,syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(res))
