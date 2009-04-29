@@ -145,6 +145,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
     every encounter..
 )   Using extra to squirt some SQL into the ORM call 
     iterator seems to work - ram use is now reasonable and it's fast enough..
+    Age in 5 year chunks added at Ben Kruskal's request for line lists
     """
     started = time.time()
     datecounts = {}
@@ -165,7 +166,9 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',zip5=True):
         (z,dob,thisd) = anenc
         age = makeAge(dob,thisd) # small fraction have bad dates
         if age:
-            age = int(age/365.25) + 1 # make <1 = 1 etc..
+            age = int(age/365.25) # whole years
+            age = 5*int(age/5.) # if 0-4 = 0, if 5..9 = 5 if 10..14=10 etc
+            age = min(90,age) # clean up end
             z = z[:zl] # corresponding zip
             dz = dateagecounts.setdefault(thisd,{})
             az = dateagecounts[thisd].setdefault(z,{})
