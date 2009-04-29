@@ -204,7 +204,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
     esel = {'ezip':'select DemogZip from esp_demog where esp_demog.id = esp_enc.EncPatient_id',
             'dob': 'select DemogDate_of_Birth from esp_demog where esp_demog.id = esp_enc.EncPatient_id'}
     # an extra select dict to speed up the foreign key lookup - note real SQL table and column names!
-    if localIgnore:
+    if localIgnore: # use encounter site exclusions from the exclude list in the espSSconf[sitename].py file
         allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, EncEncounter_Date__lte=endDT,
              EncEncounter_Site__in = localSiteUseCodes).extra(select=esel).values_list('ezip','dob',
             'EncEncounter_Date').iterator() # yes - this works well to minimize ram    
@@ -212,7 +212,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
         allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, 
         EncEncounter_Date__lte=endDT).extra(select=esel).values_list('ezip','dob',
             'EncEncounter_Date').iterator() # yes - this works well to minimize ram             
-    zl = ziplen # use 5 - ignore rest
+    zl = ziplen # eg use 5 - ignore rest
     for i,anenc in enumerate(allenc):
         if (i+1) % 10000 == 0:
             SSlogging.debug('AgeencDateVolumes at %d, %f /sec' % (i+1, i/(time.time() - started)))
@@ -227,7 +227,6 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
             dz = datecounts.setdefault(thisd,{})
             az = datecounts[thisd].setdefault(z,0)
             datecounts[thisd][z] += 1
-
     del allenc
     return datecounts,dateagecounts
 
@@ -296,14 +295,14 @@ def findCaseFactIds(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,loca
 
 def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
     """
-    split out from preparing caseid list - now process into
-    reporting structures
+    split out from preparing caseid list - now process cases into
+    reporting structures - individual level xls and for aggregates AMDS and xls
     """
     redundant = 0
     ignoreSite = 0
     ignoredSites = {}
     if caseids: # some
-        factids = icd9Fact.objects.filter(id__in=caseids).order_by('id') # keep in id order
+        factids = icd9Fact.objects.filter(id__in=caseids).order_by('id') # recreate query set - keep in id order
         zips = [x.icd9Patient.DemogZip.split('-')[0] for x in factids] # get zips less -xxxx 
         dobs = [x.icd9Patient.DemogDate_of_Birth for x in factids] # get dobs  
         localSiteCodes = [x.icd9Enc.EncEncounter_Site for x in factids] 
@@ -321,7 +320,7 @@ def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
             z = zips[i][:ziplen]            
             dateId.setdefault(edate,{})
             dateId[edate].setdefault(z,{})
-            if dateId[edate][z].get(id,None) == None: # is new for this syndrome, date, zip
+            if dateId[edate][z].get(id,None) == None: # demogid not yet counted for this syndrome, date, zip
                 # this step is crucial to remove multiple potential counting for a single syndrome/person/day
                 aSite = localSiteCodes[i]
                 if localSiteUseDict.get(aSite,None) or (not localIgnore): # site not important if not localIgnore     
@@ -623,7 +622,7 @@ def testAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3):
     for syndrome in syndromes:
         res = makeAMDS(sdate=sdate,edate=edate,syndrome=syndrome,minCount=minCount,
           encDateVols=dateZip,encAgeDateVols=dateZipAge,cclassifier=cclassifier,
-          doid=doid,requ=requ,minCount=minCount,crtime=crtime,localIgnore=False,ziplen=ziplen)
+          doid=doid,requ=requ,crtime=crtime,localIgnore=False,ziplen=ziplen)
         if len(res) > 0:
             fname = fproto % (thisSite,syndrome,sdate,edate)
             f = open(fname,'w')
