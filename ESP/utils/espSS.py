@@ -186,7 +186,7 @@ def makeAge(dob='20070101',edate='20080101',chunk=5):
     age = (ed-bd).days
     age = int(age/365.25) # whole years
     age = chunk*int(age/chunk) # if 0-4 = 0, if 5..9 = 5 if 10..14=10 etc
-    age = min(95,age) # compress last cat
+    age = min(80,age) # compress last cat
     return age
 
 
@@ -216,7 +216,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
     for i,anenc in enumerate(allenc):
         if (i+1) % 10000 == 0:
             SSlogging.debug('AgeencDateVolumes at %d, %f /sec' % (i+1, i/(time.time() - started)))
-        (z,dob,thisd) = anenc
+        (z,dob,thisd) = anenc # returned as a list of tuples by value_list
         age = makeAge(dob,thisd) # small fraction have bad dates
         if age:
             z = z[:zl] # corresponding zip
@@ -232,7 +232,8 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
 
 
 def findCaseFactIds(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,localIgnore=True):
-    """ revised to make the enc record the central unit
+    """ revised to make the icd9fact record the basis for the report
+    after removing demogid redundancy for each synd/date/zip
     Atrius exclusions are such a pain...
     yield all cases for this specific syndName from startDT to endDT with any
     of the ICD codes in syndDef taking fever into account if required
@@ -306,6 +307,7 @@ def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
         zips = [x.icd9Patient.DemogZip.split('-')[0] for x in factids] # get zips less -xxxx 
         dobs = [x.icd9Patient.DemogDate_of_Birth for x in factids] # get dobs  
         localSiteCodes = [x.icd9Enc.EncEncounter_Site for x in factids] 
+        localZips = [localSiteZips.get(x,'Unknown') for x in localSiteCodes] # for Katherine...
         encdates = [x.icd9Enc.EncEncounter_Date for x in factids] # get encdates   
         encAges = [makeAge(dobs[i],encdates[i]) for i in range(len(encdates))]
         temperatures = [x.icd9Enc.EncTemperature for x in factids]
@@ -331,7 +333,9 @@ def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
                         temperature = temperatures[i]
                         icd9code = icd9codes[i]
                         demogId = demogIds[i]
-                        dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature)
+                        siteZip = localZips[i] # looked up from local site data
+                        dob = dobs[i] # for debugging
+                        dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature,dob,siteZip)
                         # preserve entire record for line list
                         # TODO may need to expand this for more line list column versions
                 else:
@@ -546,14 +550,14 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
                     SSlogging.warning('###!! Makelinelist: alldz empty for syndrome %s zip %s' % (syndrome, zipcode)) 
                 zip5 = zipcode[:5] # testing with 3 digit zips
                 for id in idk:
-                    (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature) = zids[id] # whew 
+                    (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature,dob,siteZip) = zids[id] # whew 
                     if age:
                         alldza = alldz.get(age,0)
                     else:
                         alldza = 0
                     if alldza == 0:
                         SSlogging.warning('###!! Makelinelist: 0 count for age=%d, syndrome=%s, zipcode=%s' % (age,syndrome,zip5))
-                    row = '\t'.join((syndrome,edate,z,'%d' % age,icd9code,temperature,'%d' % alldza))
+                    row = '\t'.join((syndrome,edate,z,siteZip,'%d' % age,icd9code,temperature,'%d' % alldza,dob))
                     res.append(row)
         return res 
     
@@ -563,7 +567,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
         format a simple xls report
         """
         # provide sd,ed,ctime,ruser,doid
-        m = ['Date\tZip\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome',] # amalg
+        m = ['Date\tZip\tClinicZip\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome',] # amalg
         lm = ['Synd\tDate\tZip_Res\tAge_5Yrs\tICD9code\tTemperature\tN_All_Encs_Age_Zip',] # line list
         edk = dateId.keys()
         edk.sort()
