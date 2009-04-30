@@ -26,6 +26,17 @@ mysql> select count(*) from esp_enc;
 +----------+
 1 row in set (0.00 sec)
 
+Ahhh. Most have no temp recorded. Might be an ETL fugup.
+
+mysql> select count(*) from esp_enc where esp_enc.EncTemperature = '' and  esp_enc.EncPatient_id in (select id from  esp_demog where DemogDate_of_Birth > '20050101');
++----------+
+| count(*) |
++----------+
+|   649109 | 
++----------+
+1 row in set (1 min 57.58 sec)
+
+
 29 april 2009: create reports with and without site exclusions - they're interesting and variable
 29 april 2009: added temp for ILI individual report with age to nearest 5 years
 29 april 2009: fixed all encounter counting - add SQL extras to the filter and .iterator() - wicked fast now.
@@ -190,21 +201,21 @@ def makeAge(dob='20070101',edate='20080101',chunk=5):
 
     """
     if len(dob) < 8:
-        SSlogging.error('### duff dob "%s" in makeAge' % dob)
+        SSlogging.error('### Short (<8) dob "%s" in makeAge' % dob)
         return None
     else:
         yy,mm,dd = map(int,[dob[:4],dob[4:6],dob[6:8]])
         bd = datetime.date(yy,mm,dd)
     if len(edate) < 8:
-        SSlogging.error('### duff edate "%s" in makeAge' % edate)
+        SSlogging.error('### Short (<8)edate "%s" in makeAge' % edate)
         return None
     else:
-        yy,mm,dd = map(int,[edate[:4],edate[4:6],edate[6:8]])
+        yy,mm,dd = map(int,[edate[:4],edate[4:6],edate[6:8]]) # dates are all yyyymmdd 
         ed = datetime.date(yy,mm,dd)       
     age = (ed-bd).days
-    age = int(age/365.25) # whole years
+    age = int(age/365.25) # whole years taking leap years into account (!)
     age = chunk*int(age/chunk) # if 0-4 = 0, if 5..9 = 5 if 10..14=10 etc
-    age = min(80,age) # compress last cat
+    age = min(80,age) # compress last cat so all > 80 are 80
     return age
 
 
@@ -217,26 +228,28 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
     Age in 5 year chunks added at Ben Kruskal's request for line lists
     """
     started = time.time()
-    datecounts = {}
-    dateagecounts = {}
-    agecounts = {} # for debugging - why no infants?
+    datecounts = {} # for residential zip volumes
+    dateSitecounts = {} # for local practice zip code volumes
+    dateagecounts = {} # for age chunk by residential zip volumes
+    agecounts = {} # for debugging - why no infants - rml april 30 ?
     esel = {'ezip':'select DemogZip from esp_demog where esp_demog.id = esp_enc.EncPatient_id',
             'dob': 'select DemogDate_of_Birth from esp_demog where esp_demog.id = esp_enc.EncPatient_id'}
     # an extra select dict to speed up the foreign key lookup - note real SQL table and column names!
     if localIgnore: # use encounter site exclusions from the exclude list in the espSSconf[sitename].py file
         allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, EncEncounter_Date__lte=endDT,
              EncEncounter_Site__in = localSiteUseCodes).extra(select=esel).values_list('ezip','dob',
-            'EncEncounter_Date').iterator() # yes - this works well to minimize ram    
+            'EncEncounter_Date','EncEncounter_Site').iterator() # yes - this works well to minimize ram    
     else:
         allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, 
         EncEncounter_Date__lte=endDT).extra(select=esel).values_list('ezip','dob',
-            'EncEncounter_Date').iterator() # yes - this works well to minimize ram             
+            'EncEncounter_Date','EncEncounter_Site').iterator() # yes - this works well to minimize ram             
     zl = ziplen # eg use 5 - ignore rest
     for i,anenc in enumerate(allenc):
         if (i+1) % 10000 == 0:
             SSlogging.debug('AgeencDateVolumes at %d, %f /sec' % (i+1, i/(time.time() - started)))
-        (z,dob,thisd) = anenc # returned as a list of tuples by value_list
+        (z,dob,thisd,siteCode) = anenc # returned as a list of tuples by value_list
         age = makeAge(dob,thisd) # small fraction have bad dates
+        siteZip = localSiteZips.get(siteCode,'Unknown')
         if age:
             agecounts.setdefault(age,0)
             agecounts[age] += 1
@@ -589,11 +602,14 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
     
     def makeMessage(syndrome='?',dateId={}):
         """
-        format a simple xls report
+        format a simple fake table delimited header row text.xls - return list of 
+        ready to write strings
         """
         # provide sd,ed,ctime,ruser,doid
         m = ['Date\tZip\tClinicZip\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome',] # amalg
-        lm = ['Synd\tDate\tZip_Res\tAge_5Yrs\tICD9code\tTemperature\tN_All_Encs_Age_Zip',] # line list
+        lm = ['Synd\tDate\tZip_Res\tZip_Seen\tAge_5Yrs\tICD9code\tTemperature\tNEncs_Age_Zip_Res\tNEncs_Age_Zip_Site',] 
+        # lm is list of strings for the line list
+        # todo - add N all encs age zip_seen as well as zipres
         edk = dateId.keys()
         edk.sort()
         for thisdate in edk:
@@ -631,16 +647,17 @@ def testsyndGen():
             print s,i,c
         del g
 
-def testAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3):
+def generateAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3):
     """ test stub for AMDS xml generator
     On Thu, Apr 23, 2009 at 11:54 PM, Lee, Brian A. (CDC/CCHIS/NCPHI)
     (CTR) <fya1@cdc.gov> wrote:
     > I changed the root element to be <AMDSQueryResponse> since these
     > examples have two root elements (AMDSRecordSummary and CountSet). Other
     > than that, the data makes for great sample sets.
-    """
-    
+    """    
     dateZip,dateZipAge = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False,ziplen=ziplen)
+    # these are the volume counts of all encounters by date and zip, or date, zip and 5 year age (!)
+    # BL has agreed to add AllCount element to AMDS spec next revision - yay!
     doid='ESPSS@%s' % thisSite
     requ=thisRequestor
     crtime=isoTime(time.localtime())
@@ -648,7 +665,7 @@ def testAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3):
     fproto = 'ESP%s_AMDS_%s_%s_%s.xml'
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
-    for syndrome in syndromes:
+    for syndrome in syndromes: # get ready to write AMDS XML as a list of strings
         res = makeAMDS(sdate=sdate,edate=edate,syndrome=syndrome,minCount=minCount,
           encDateVols=dateZip,encAgeDateVols=dateZipAge,cclassifier=cclassifier,
           doid=doid,requ=requ,crtime=crtime,localIgnore=False,ziplen=ziplen)
@@ -662,7 +679,7 @@ def testAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3):
     
 
 
-def testTab(sdate='20090401',edate='20090431',ziplen=5):
+def generateTab(sdate='20090401',edate='20090431',ziplen=5):
     """ test stub for tab delim generator
     date zip syndrome syndN allencN syndPct
     """
@@ -672,7 +689,7 @@ def testTab(sdate='20090401',edate='20090431',ziplen=5):
     lfproto = 'ESP%s_SyndInd%s_%s_%s_%s.xls'
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
-    for syndrome in syndromes:
+    for syndrome in syndromes: # get ready to write tab delimited data as a list of strings
         ignoreMode = 'SiteExcl'
         res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
             encDateVols=encDateVols,encDateAgeVols=encDateAgeVols,localIgnore=True)
@@ -682,14 +699,15 @@ def testTab(sdate='20090401',edate='20090431',ziplen=5):
         f.write('\n')
         f.close()
         SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
-        if len(lres) > 1: # is ILI
+        if len(lres) > 1: # makeTab only returns header row except for ILI at present 
             fname = lfproto % (thisSite,ignoreMode,syndrome,sdate,edate)
             f = open(fname,'w')
             f.write('\n'.join(lres))
             f.write('\n')
             f.close()
             SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
-        ignoreMode = 'AllSites'
+        ignoreMode = 'AllSites' # do it again - for comparison or other uses
+        # the question is whether these site exclusions are statistically useful?
         res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
             encDateVols=allEncDateVols,encDateAgeVols=allEncDateAgeVols,localIgnore=False)
         fname = fproto % (thisSite,ignoreMode,syndrome,sdate,edate)
@@ -707,6 +725,6 @@ def testTab(sdate='20090401',edate='20090431',ziplen=5):
             SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
 
 if __name__ == "__main__":
-    testAMDS(ziplen=3)
-    testTab(ziplen=5)
+    generateAMDS(ziplen=3,minCount=0)
+    generateTab(ziplen=5)
 
