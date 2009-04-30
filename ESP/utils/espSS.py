@@ -515,7 +515,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
     """
 
     def makeCounts(syndrome='?',aday={},edate='20080101'):
-        """ all counts for a date by zip
+        """ all counts for a date by residential zip
         """
         res = []
         zips = aday.keys()
@@ -591,7 +591,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
         ready to write strings
         """
         # provide sd,ed,ctime,ruser,doid
-        m = ['Date\tZip\tClinicZip\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome',] # amalg
+        m = ['Date\tZip\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome',] # amalg
         lm = ['Synd\tDate\tZip_Res\tZip_Seen\tAge_5Yrs\tICD9code\tTemperature\tNEncs_Age_Zip_Res\tNEncs_Age_Zip_Site',] 
         # lm is list of strings for the line list
         # todo - add N all encs age zip_seen as well as zipres
@@ -601,7 +601,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
             SSlogging.debug('!!!!#### processing syndrome %s at %s' % (syndrome,isoTime()))
             c = makeCounts(syndrome,dateId[thisdate],thisdate)
             m += c
-            if syndrome == 'ILI':
+            if True or syndrome == 'ILI': # all for the moment..
                 c = makeLinelist(syndrome,dateId[thisdate],thisdate)
                 lm += c
         return m,lm  

@@ -1,6 +1,6 @@
 # some data structures for developing
 # esp:ss 
-# NOTE - the site exclusion complexities are ATRIUS specific and will need to be
+# NOTE - the site exclusion complexitiesre ATRIUS specific and will need to be
 # completely adjusted for the kinds of exclusions required to satisfy the local
 # DPH - here, we're excluding all the specialty practices to try to make ILI reporting more like
 # sentinel site practice reporting...not sure how this affects other syndromes - should
