@@ -8,35 +8,7 @@ unit records as simple fake spreadsheets
 
 Most Recent Changes First:
 
-30 April 2009: Odd. No cases in the 0-4 range for april. WTF? They have about 6% of all encounters but no
-respiratory syndromes in april?
-mysql> select count(*) from esp_enc where esp_enc.EncPatient_id in (select id from  esp_demog where DemogDate_of_Birth > '20050101');
-+----------+
-| count(*) |
-+----------+
-|   835362 |
-+----------+
-1 row in set (1 min 43.66 sec)
-
-mysql> select count(*) from esp_enc;
-+----------+
-| count(*) |
-+----------+
-| 14978331 |
-+----------+
-1 row in set (0.00 sec)
-
-Ahhh. Most have no temp recorded. Might be an ETL fugup.
-
-mysql> select count(*) from esp_enc where esp_enc.EncTemperature = '' and  esp_enc.EncPatient_id in (select id from  esp_demog where DemogDate_of_Birth > '20050101');
-+----------+
-| count(*) |
-+----------+
-|   649109 | 
-+----------+
-1 row in set (1 min 57.58 sec)
-
-
+30 april 2009: KY wants site volumes in line list. Sigh. As Frank Zappa said, 'the torture never stops...'
 29 april 2009: create reports with and without site exclusions - they're interesting and variable
 29 april 2009: added temp for ILI individual report with age to nearest 5 years
 29 april 2009: fixed all encounter counting - add SQL extras to the filter and .iterator() - wicked fast now.
@@ -133,6 +105,7 @@ myVersion = '0.004'
 thisSite = 'Atrius' # for amds header
 thisRequestor = 'Ross Lazarus' 
 cclassifier = 'ESPSSApril2009'  
+ageChunksize = 5 #
 
 import os, sys, django, time, datetime
 sys.path.insert(0, '/home/ESP/')
@@ -193,7 +166,7 @@ def isoTime(t=None):
     return s
 
 
-def makeAge(dob='20070101',edate='20080101',chunk=5):
+def makeAge(dob='20070101',edate='20080101',chunk=ageChunksize):
     """return age in year chunks for mdph ILI reports 
     for d in ['20000101','20010101','20030204']:
     for e in ['20040101','20050101','20030604']:
@@ -228,10 +201,10 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
     Age in 5 year chunks added at Ben Kruskal's request for line lists
     """
     started = time.time()
-    datecounts = {} # for residential zip volumes
+    dateCounts = {} # for residential zip volumes
     dateSitecounts = {} # for local practice zip code volumes
-    dateagecounts = {} # for age chunk by residential zip volumes
-    agecounts = {} # for debugging - why no infants - rml april 30 ?
+    dateAgecounts = {} # for age chunk by residential zip volumes
+    ageCounts = {} # for debugging - why no infants - rml april 30 ?
     esel = {'ezip':'select DemogZip from esp_demog where esp_demog.id = esp_enc.EncPatient_id',
             'dob': 'select DemogDate_of_Birth from esp_demog where esp_demog.id = esp_enc.EncPatient_id'}
     # an extra select dict to speed up the foreign key lookup - note real SQL table and column names!
@@ -248,25 +221,28 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
         if (i+1) % 10000 == 0:
             SSlogging.debug('AgeencDateVolumes at %d, %f /sec' % (i+1, i/(time.time() - started)))
         (z,dob,thisd,siteCode) = anenc # returned as a list of tuples by value_list
-        age = makeAge(dob,thisd) # small fraction have bad dates
-        siteZip = localSiteZips.get(siteCode,'Unknown')
+        age = makeAge(dob,thisd,ageChunksize) # small fraction have bad dates
         if age <> None:
-            agecounts.setdefault(age,0)
-            agecounts[age] += 1
+            ageCounts.setdefault(age,0)
+            ageCounts[age] += 1
             z = z[:zl] # corresponding zip
-            dz = dateagecounts.setdefault(thisd,{})
-            az = dateagecounts[thisd].setdefault(z,{})
-            naz = dateagecounts[thisd][z].setdefault(age,0)
-            dateagecounts[thisd][z][age] += 1
-            dz = datecounts.setdefault(thisd,{})
-            az = datecounts[thisd].setdefault(z,0)
-            datecounts[thisd][z] += 1
+            dz = dateAgecounts.setdefault(thisd,{})
+            az = dateAgecounts[thisd].setdefault(z,{})
+            naz = dateAgecounts[thisd][z].setdefault(age,0)
+            dateAgecounts[thisd][z][age] += 1
+            dz = dateCounts.setdefault(thisd,{})
+            az = dateCounts[thisd].setdefault(z,0)
+            dateCounts[thisd][z] += 1
+            siteZip = localSiteZips.get(siteCode,'Unknown')
+            dateSitecounts.setdefault(thisd,{})
+            dateSitecounts[thisd].setdefault(siteZip,0) # eeesh.
+            dateSitecounts[thisd][siteZip] += 1
     del allenc
     ak = agecounts.keys()
     ak.sort()
     a = ['%d:%d' % (x, agecounts[x]) for x in ak]
-    print '*****AgeencDateVolumes, localIgnore = %s, agecounts=%s' % (localIgnore,'\n'.join(a))
-    return datecounts,dateagecounts
+    print '*****AgeencDateVolumes, localIgnore = %s, age chunky counts=\n%s' % (localIgnore,'\n'.join(a))
+    return dateCounts,dateAgecounts,dateSitecounts
 
 
 def findCaseFactIds(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,localIgnore=True):
@@ -347,7 +323,7 @@ def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
         localSiteCodes = [x.icd9Enc.EncEncounter_Site for x in factids] 
         localZips = [localSiteZips.get(x,'Unknown') for x in localSiteCodes] # for Katherine...
         encdates = [x.icd9Enc.EncEncounter_Date for x in factids] # get encdates   
-        encAges = [makeAge(dobs[i],encdates[i]) for i in range(len(encdates))]
+        encAges = [makeAge(dobs[i],encdates[i],ageChunksize) for i in range(len(encdates))]
         temperatures = [x.icd9Enc.EncTemperature for x in factids]
         icd9FactIds = [x.id for x in factids]
         encIds = [x.icd9Enc.id for x in factids] # fk lookup
@@ -532,7 +508,7 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
 
 
 def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
-    encDateVols={},encDateAgeVols={},localIgnore=True):
+    encDateVols={},encDateAgeVols={},encDateSiteVols={},localIgnore=True):
     """crude generator for xls
     rml april 27 2009 swine flu season?
     """
@@ -577,6 +553,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
         zips = aday.keys()
         zips.sort()
         alld = encDateAgeVols.get(edate,{})
+        allsd = encDateSiteVols.get(edate,{}) # for site volumes...eeeksssh
         SSlogging.debug('### MakeLinelist zips=',zips)
         for zipcode in zips:
             zids = aday[zipcode]
@@ -586,16 +563,23 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
                 alldz = alld.get(zipcode,{})
                 if alldz == {}:
                     SSlogging.warning('###!! Makelinelist: alldz empty for syndrome %s zip %s' % (syndrome, zipcode)) 
+                allsdz = allsd.get(zipcode,{})
+                if allsdz == {}:
+                    SSlogging.warning('###!! Makelinelist: allsdz empty for syndrome %s zip %s' % (syndrome, zipcode)) 
                 zip5 = zipcode[:5] # testing with 3 digit zips
                 for id in idk:
                     (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature,dob,siteZip) = zids[id] # whew 
                     if age <> None:
                         alldza = alldz.get(age,0)
+                        alldsza = allsdz.get(age,0)
                     else:
                         alldza = 0
+                        alldsza = 0
                     if alldza == 0:
-                        SSlogging.warning('###!! Makelinelist: 0 count for age=%d, syndrome=%s, zipcode=%s' % (age,syndrome,zip5))
-                    row = '\t'.join((syndrome,edate,z,siteZip,'%d' % age,icd9code,temperature,'%d' % alldza,dob))
+                        SSlogging.warning('###!! Makelinelist: 0 all reszip count for age=%d, syndrome=%s, zipcode=%s' % (age,syndrome,zip5))
+                    if alldsza == 0:
+                        SSlogging.warning('###!! Makelinelist: 0 all sitezip count for age=%d, syndrome=%s, zipcode=%s' % (age,syndrome,zip5))
+                    row = '\t'.join((syndrome,edate,z,siteZip,'%d' % age,icd9code,temperature,'%d' % alldza,'%d' % alldsza))
                     res.append(row)
         return res 
     
@@ -655,8 +639,9 @@ def generateAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3):
     > examples have two root elements (AMDSRecordSummary and CountSet). Other
     > than that, the data makes for great sample sets.
     """    
-    dateZip,dateZipAge = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False,ziplen=ziplen)
-    # these are the volume counts of all encounters by date and zip, or date, zip and 5 year age (!)
+    dateZip,dateZipAge,dateSiteZipAge = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False,ziplen=ziplen)
+    # these are the volume counts of all encounters by date and zip, or date, zip and chunked year age 
+    # or date, site seen zip and chunked age (!)
     # BL has agreed to add AllCount element to AMDS spec next revision - yay!
     doid='ESPSS@%s' % thisSite
     requ=thisRequestor
@@ -683,16 +668,18 @@ def generateTab(sdate='20090401',edate='20090431',ziplen=5):
     """ test stub for tab delim generator
     date zip syndrome syndN allencN syndPct
     """
-    encDateVols,encDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=True,ziplen=ziplen)
-    allEncDateVols,allEncDateAgeVols = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False,ziplen=ziplen)
+    encDateVols,encDateAgeVols,encDateSiteVols = AgeencDateVolumes(startDT=sdate,endDT=edate,
+       localIgnore=True,ziplen=ziplen)
+    allEncDateVols,allEncDateAgeVols,allEncDateSiteVols = AgeencDateVolumes(startDT=sdate,
+       endDT=edate,localIgnore=False,ziplen=ziplen)
     fproto = 'ESP%s_SyndAgg%s_%s_%s_%s.xls'
     lfproto = 'ESP%s_SyndInd%s_%s_%s_%s.xls'
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes: # get ready to write tab delimited data as a list of strings
         ignoreMode = 'SiteExcl'
-        res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
-            encDateVols=encDateVols,encDateAgeVols=encDateAgeVols,localIgnore=True)
+        res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=encDateVols,
+           encDateAgeVols=encDateAgeVols,encDateSiteVols=encDateSiteVols,localIgnore=True)
         fname = fproto % (thisSite,ignoreMode,syndrome,sdate,edate)
         f = open(fname,'w') 
         f.write('\n'.join(res))
@@ -708,8 +695,8 @@ def generateTab(sdate='20090401',edate='20090431',ziplen=5):
             SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
         ignoreMode = 'AllSites' # do it again - for comparison or other uses
         # the question is whether these site exclusions are statistically useful?
-        res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,
-            encDateVols=allEncDateVols,encDateAgeVols=allEncDateAgeVols,localIgnore=False)
+        res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=allEncDateVols,
+          encDateAgeVols=allEncDateAgeVols,encDateSiteVols=allEncDateSiteVols,localIgnore=False)
         fname = fproto % (thisSite,ignoreMode,syndrome,sdate,edate)
         f = open(fname,'w')
         f.write('\n'.join(res))
