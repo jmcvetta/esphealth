@@ -8,6 +8,24 @@ unit records as simple fake spreadsheets
 
 Most Recent Changes First:
 
+30 April 2009: Odd. No cases in the 0-4 range for april. WTF? They have about 6% of all encounters but no
+respiratory syndromes in april?
+mysql> select count(*) from esp_enc where esp_enc.EncPatient_id in (select id from  esp_demog where DemogDate_of_Birth > '20050101');
++----------+
+| count(*) |
++----------+
+|   835362 |
++----------+
+1 row in set (1 min 43.66 sec)
+
+mysql> select count(*) from esp_enc;
++----------+
+| count(*) |
++----------+
+| 14978331 |
++----------+
+1 row in set (0.00 sec)
+
 29 april 2009: create reports with and without site exclusions - they're interesting and variable
 29 april 2009: added temp for ILI individual report with age to nearest 5 years
 29 april 2009: fixed all encounter counting - add SQL extras to the filter and .iterator() - wicked fast now.
@@ -201,6 +219,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
     started = time.time()
     datecounts = {}
     dateagecounts = {}
+    agecounts = {} # for debugging - why no infants?
     esel = {'ezip':'select DemogZip from esp_demog where esp_demog.id = esp_enc.EncPatient_id',
             'dob': 'select DemogDate_of_Birth from esp_demog where esp_demog.id = esp_enc.EncPatient_id'}
     # an extra select dict to speed up the foreign key lookup - note real SQL table and column names!
@@ -219,6 +238,8 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
         (z,dob,thisd) = anenc # returned as a list of tuples by value_list
         age = makeAge(dob,thisd) # small fraction have bad dates
         if age:
+            agecounts.setdefault(age,0)
+            agecounts[age] += 1
             z = z[:zl] # corresponding zip
             dz = dateagecounts.setdefault(thisd,{})
             az = dateagecounts[thisd].setdefault(z,{})
@@ -228,6 +249,10 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
             az = datecounts[thisd].setdefault(z,0)
             datecounts[thisd][z] += 1
     del allenc
+    ak = agecounts.keys()
+    ak.sort()
+    a = ['%d:%d' % (x, agecounts[x]) for x in ak]
+    print '*****AgeencDateVolumes, localIgnore = %s, agecounts=%s' % (localIgnore,'\n'.join(a))
     return datecounts,dateagecounts
 
 
