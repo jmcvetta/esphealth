@@ -238,9 +238,9 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
             dateSitecounts[thisd].setdefault(siteZip,0) # eeesh.
             dateSitecounts[thisd][siteZip] += 1
     del allenc
-    ak = agecounts.keys()
+    ak = ageCounts.keys()
     ak.sort()
-    a = ['%d:%d' % (x, agecounts[x]) for x in ak]
+    a = ['%d:%d' % (x, ageCounts[x]) for x in ak]
     print '*****AgeencDateVolumes, localIgnore = %s, age chunky counts=\n%s' % (localIgnore,'\n'.join(a))
     return dateCounts,dateAgecounts,dateSitecounts
 
