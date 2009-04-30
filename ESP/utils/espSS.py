@@ -235,8 +235,9 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
             dateCounts[thisd][z] += 1
             siteZip = localSiteZips.get(siteCode,'Unknown')
             dateSitecounts.setdefault(thisd,{})
-            dateSitecounts[thisd].setdefault(siteZip,0) # eeesh.
-            dateSitecounts[thisd][siteZip] += 1
+            dateSitecounts[thisd].setdefault(siteZip,{}) # eeesh.
+            dateSitecounts[thisd][siteZip].setdefault(age,0)
+            dateSitecounts[thisd][siteZip][age] += 1
     del allenc
     ak = ageCounts.keys()
     ak.sort()
@@ -712,6 +713,6 @@ def generateTab(sdate='20090401',edate='20090431',ziplen=5):
             SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
 
 if __name__ == "__main__":
-    generateAMDS(ziplen=3,minCount=0)
+    #generateAMDS(ziplen=3,minCount=0)
     generateTab(ziplen=5)
 
