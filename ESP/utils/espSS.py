@@ -193,7 +193,7 @@ def makeAge(dob='20070101',edate='20080101',chunk=ageChunksize):
 
 
 def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=True):
-    """return a dict of date, with zip and age in years (!) specific total encounter volume for each day
+    """return a dict of date, with zip and age in chunked years (!) specific total encounter volume for each day
     exclude from localSiteExcludeCodes. Challenge is that it requires looking up the zip and age of
     every encounter..
 )   Using extra to squirt some SQL into the ORM call 
@@ -564,12 +564,12 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
                 alldz = alld.get(zipcode,{})
                 if alldz == {}:
                     SSlogging.warning('###!! Makelinelist: alldz empty for syndrome %s zip %s' % (syndrome, zipcode)) 
-                allsdz = allsd.get(zipcode,{})
-                if allsdz == {}:
-                    SSlogging.warning('###!! Makelinelist: allsdz empty for syndrome %s zip %s' % (syndrome, zipcode)) 
-                zip5 = zipcode[:5] # testing with 3 digit zips
+                zipN = zipcode[:ziplen] # 5 or 3 digit zips configurable
                 for id in idk:
                     (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature,dob,siteZip) = zids[id] # whew 
+                    allsdz = allsd.get(siteZip,{})
+                    if allsdz == {}:
+                        SSlogging.warning('###!! Makelinelist: allsdz empty for syndrome %s sitezip %s' % (syndrome, siteZip)) 
                     if age <> None:
                         alldza = alldz.get(age,0)
                         alldsza = allsdz.get(age,0)
@@ -577,9 +577,9 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
                         alldza = 0
                         alldsza = 0
                     if alldza == 0:
-                        SSlogging.warning('###!! Makelinelist: 0 all reszip count for age=%d, syndrome=%s, zipcode=%s' % (age,syndrome,zip5))
+                        SSlogging.warning('###!! Makelinelist: 0 reszip count for age=%d,synd=%s,zipcode=%s' % (age,syndrome,zipN))
                     if alldsza == 0:
-                        SSlogging.warning('###!! Makelinelist: 0 all sitezip count for age=%d, syndrome=%s, zipcode=%s' % (age,syndrome,zip5))
+                        SSlogging.warning('###!! Makelinelist: 0 sitezip count for age=%d,synd=%s,sitezip=%s' % (age,syndrome,siteZip))
                     row = '\t'.join((syndrome,edate,z,siteZip,'%d' % age,icd9code,temperature,'%d' % alldza,'%d' % alldsza))
                     res.append(row)
         return res 
