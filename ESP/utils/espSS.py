@@ -250,7 +250,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
         (z,dob,thisd,siteCode) = anenc # returned as a list of tuples by value_list
         age = makeAge(dob,thisd) # small fraction have bad dates
         siteZip = localSiteZips.get(siteCode,'Unknown')
-        if age:
+        if age <> None:
             agecounts.setdefault(age,0)
             agecounts[age] += 1
             z = z[:zl] # corresponding zip
@@ -365,7 +365,7 @@ def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
                 aSite = localSiteCodes[i]
                 if localSiteUseDict.get(aSite,None) or (not localIgnore): # site not important if not localIgnore     
                     age = encAges[i]
-                    if age: # may be null if duff dates
+                    if age <> None: # may be null if duff dates
                         encId = encIds[i]
                         icd9FactId = icd9FactIds[i]
                         temperature = temperatures[i]
@@ -589,7 +589,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
                 zip5 = zipcode[:5] # testing with 3 digit zips
                 for id in idk:
                     (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature,dob,siteZip) = zids[id] # whew 
-                    if age:
+                    if age <> None:
                         alldza = alldz.get(age,0)
                     else:
                         alldza = 0
