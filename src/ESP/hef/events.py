@@ -27,7 +27,11 @@ from ESP.hef.hef import FeverHeuristic, CalculatedBilirubinHeuristic
 
 
 
-fever = FeverHeuristic()
+fever = FeverHeuristic(
+    name = 'esp-fever',
+    temperature = 100.4,
+    icd9s = ['780.6A',],
+    )
 
 jaundice = EncounterHeuristic(name='jaundice', 
                               verbose_name='Jaundice, not of newborn',
@@ -37,6 +41,11 @@ jaundice = EncounterHeuristic(name='jaundice',
 chronic_hep_b = EncounterHeuristic(name='chronic_hep_b',
                                    verbose_name='Chronic Hepatitis B',
                                    icd9s=['070.32'],
+                                   )
+
+chronic_hep_c = EncounterHeuristic(name='chronic_hep_c',
+                                   verbose_name='Chronic Hepatitis C',
+                                   icd9s=['070.54', '070.70',],
                                    )
 
 
@@ -104,6 +113,13 @@ ast_5x = HighNumericLabHeuristic(
     default_high=330,
     )
 
+alt_400 = HighNumericLabHeuristic(
+    name='alt_400',
+    verbose_name='Alanine aminotransferase (ALT) >400',
+    loinc_nums=['1742-6'],
+    default_high=400,
+    )
+
 hep_a_igm_ab = StringMatchLabHeuristic(
     name='hep_a_igm_ab',
     verbose_name='IgM antibody to Hepatitis A = "REACTIVE" (may be truncated)',
@@ -111,11 +127,36 @@ hep_a_igm_ab = StringMatchLabHeuristic(
     strings=['reactiv'],
     )
 
+no_hep_a_igm_ab = StringMatchLabHeuristic(
+    name='no_hep_a_igm_ab',
+    verbose_name='IgM antibody to Hepatitis A = "REACTIVE" (may be truncated)',
+    loinc_nums=['22314-9'],
+    strings=['reactiv'],
+    exclude = True,
+    )
+
 hep_b_igm_ab = StringMatchLabHeuristic(
     name='hep_b_igm_ab',
     verbose_name='IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['31204-1'],
     strings=['reactiv'],
+    )
+
+no_hep_b_igm_ab = StringMatchLabHeuristic(
+    name='no_hep_b_igm_ab',
+    verbose_name='IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)',
+    loinc_nums = ['31204-1'],
+    strings=['reactiv'],
+    exclude = True,
+    )
+
+no_hep_b_core_ab = StringMatchLabHeuristic(
+    # We're only looking for the negative here
+    name='no_hep_b_core_ab',
+    verbose_name='General antibody to Hepatitis B Core Antigen',
+    loinc_nums = ['16933-4'],
+    strings=['reactiv'],
+    exclude = True,
     )
 
 hep_b_surface = StringMatchLabHeuristic(
@@ -126,8 +167,6 @@ hep_b_surface = StringMatchLabHeuristic(
     )
 
 no_hep_b_surface = StringMatchLabHeuristic(
-    # This is the exactly the same as hep_b_surface above, but with 'exclude'
-    # flag set.
     name = 'no_hep_b_surface',
     verbose_name = 'EXCLUDE: Hepatitis B Surface Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['5195-3'],
@@ -207,11 +246,30 @@ hep_c_signal_cutoff = HighNumericLabHeuristic(
     default_high = 3.8,
     )
 
+no_hep_c_signal_cutoff = HighNumericLabHeuristic(
+    # This is the exactly the same as hep_c_signal_cutoff above, but with 'exclude'
+    # flag set.
+    name = 'hep_c_signal_cutoff',
+    verbose_name = 'Hepatitis C Signal Cutoff Ratio',
+    loinc_nums = ['MDPH-144',],
+    default_high = 3.8,
+    exclude = True,
+    )
+
+
 hep_c_riba = StringMatchLabHeuristic(
     name = 'hep_c_riba',
     verbose_name = 'Hepatitis C RIBA = "POSITIVE"',
     loinc_nums = ['5199-5'],
     strings = ['positiv'],
+    )
+
+no_hep_c_riba = StringMatchLabHeuristic(
+    name = 'no_hep_c_riba',
+    verbose_name = 'Hepatitis C RIBA = "POSITIVE"',
+    loinc_nums = ['5199-5'],
+    strings = ['positiv'],
+    exclude = True,
     )
 
 hep_c_rna = StringMatchLabHeuristic(
@@ -261,4 +319,79 @@ HighNumericLabHeuristic(
     loinc_nums = ['34703-9'],
     default_high = 500,
     allow_duplicate_name = True,
+    )
+
+no_hep_c_rna = StringMatchLabHeuristic(
+    name = 'no_hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['6422-0'],
+    strings = ['detected'],
+    exclude = True,
+    )
+HighNumericLabHeuristic(
+    name = 'no_hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['10676-5'],
+    default_high = 100,
+    allow_duplicate_name = True,
+    exclude = True,
+    )
+HighNumericLabHeuristic(
+    name = 'no_hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['38180-6'],
+    default_high = 2.79,
+    allow_duplicate_name = True,
+    exclude = True,
+    )
+HighNumericLabHeuristic(
+    name = 'no_hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['34704-7'],
+    default_high = 50,
+    allow_duplicate_name = True,
+    exclude = True,
+    )
+HighNumericLabHeuristic(
+    name = 'no_hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['11259-9'],
+    default_high = 10,
+    allow_duplicate_name = True,
+    exclude = True,
+    )
+HighNumericLabHeuristic(
+    name = 'no_hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['20416-4'],
+    default_high = 0.70,
+    allow_duplicate_name = True,
+    exclude = True,
+    )
+HighNumericLabHeuristic(
+    name = 'no_hep_c_rna',
+    verbose_name = 'Hepatitis C RNA',
+    loinc_nums = ['34703-9'],
+    default_high = 500,
+    allow_duplicate_name = True,
+    exclude = True,
+    )
+
+hep_c_elisa = StringMatchLabHeuristic(
+    name =          'hep_c_elisa', 
+    verbose_name =  'Hepatitis C ELISA = "REACTIVE"', 
+    loinc_nums =    ['16128-1',],
+    strings =       ['reativ'],
+    abnormal_flag = True,  # appropriate here?
+    match_type =    'istartswith',
+    )
+
+no_hep_c_elisa = StringMatchLabHeuristic(
+    name =          'no_hep_c_elisa', 
+    verbose_name =  'Hepatitis C ELISA = "REACTIVE"', 
+    loinc_nums =    ['16128-1',],
+    strings =       ['reativ'],
+    abnormal_flag = True,  # appropriate here?
+    match_type =    'istartswith',
+    exclude = True,
     )

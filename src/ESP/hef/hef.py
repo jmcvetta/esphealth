@@ -449,10 +449,14 @@ class FeverHeuristic(EncounterHeuristic):
     Abstract base class for encounter heuristics, concrete instances of which
     are used as components of DiseaseDefinitions
     '''
-    def __init__(self, **kwargs):
-        self.name = 'fever'
-        self.verbose_name = 'Fever'
-        self.icd9s = ['780.6A',]
+    def __init__(self, name, temperature, icd9s=[], verbose_name=None, **kwargs):
+        assert name
+        assert icd9s
+        assert temperature
+        self.name = name
+        self.temperature = temperature
+        self.verbose_name = verbose_name
+        self.icd9s = icd9s
         self._register(kwargs)
     
     def encounters(self, begin_date=None, end_date=None):
@@ -472,7 +476,7 @@ class FeverHeuristic(EncounterHeuristic):
             end = self.make_date_str(end_date)
             qs = qs.filter(date__lte=end)
         # Either encounter has the 'fever' ICD9, or it records a high temp
-        q_obj = self.enc_q | Q(temperature__gt=100.4)
+        q_obj = self.enc_q | Q(temperature__gt=self.temperature)
         log.debug('q_obj: %s' % q_obj)
         qs = qs.filter(q_obj)
         return qs
