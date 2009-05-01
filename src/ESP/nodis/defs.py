@@ -19,6 +19,7 @@ from ESP.hef.events import alt_2x
 from ESP.hef.events import ast_2x
 from ESP.hef.events import alt_5x
 from ESP.hef.events import ast_5x
+from ESP.hef.events import alt_400
 from ESP.hef.events import hep_b_igm_ab
 from ESP.hef.events import hep_b_surface
 from ESP.hef.events import hep_b_viral_dna
@@ -32,6 +33,17 @@ from ESP.hef.events import chlamydia as chlamydia_event
 from ESP.hef.events import CHLAMYDIA_LOINCS
 from ESP.hef.events import GONORRHEA_LOINCS
 from ESP.hef.events import hep_a_igm_ab
+from ESP.hef.events import hep_c_elisa
+from ESP.hef.events import no_hep_c_signal_cutoff
+from ESP.hef.events import no_hep_c_riba
+from ESP.hef.events import no_hep_c_rna
+from ESP.hef.events import no_hep_a_igm_ab
+from ESP.hef.events import no_hep_b_igm_ab
+from ESP.hef.events import no_hep_b_core_ab
+from ESP.hef.events import hep_c_elisa
+from ESP.hef.events import hep_c_riba
+from ESP.hef.events import hep_c_rna
+from ESP.hef.events import no_hep_c_elisa
 
 
 #===============================================================================
@@ -266,11 +278,96 @@ hep_b = DiseaseDefinition(
     lab_days_after = 14,
     )
 
-#hep_c_1 = DiseaseCriterion(
-#    name = 'Acute Hepatitis C Criterion 1',
-#    version = 1,
-#    require = [
-#        ()
-#        ],
-#    )
+hep_c_1 = DiseaseCriterion(
+    name = 'Acute Hepatitis C Criterion 1',
+    version = 1,
+    window = 28, # 28 days
+    require = [
+        (jaundice, alt_400,), # "(1 or 2)"
+        (hep_c_elisa,),       # "3 positive"
+        (no_hep_a_igm_ab,),   # "7 negative"
+        (no_hep_b_igm_ab, no_hep_b_core_ab,) # "(8 negative or 9 non-reactive)"
+        ],
+    exclude = [
+        (no_hep_c_signal_cutoff,), # "4 positive (if done)"
+        (no_hep_c_riba,), # "5 positive (if done)"
+        (no_hep_c_rna,), # "6 positive (if done)"
+        ],
+    exclude_past = [
+        (hep_c_elisa, hep_c_riba, hep_c_rna,),  # "no prior positive 3 or 5 or 6"
+        (chronic_hep_b,), # "no ICD9 (070.54 or 070.70) ever prior to this encounter"
+        ]
+    )
+
+hep_c_2 = DiseaseCriterion(
+    name = 'Acute Hepatitis C Criterion 2',
+    version = 1,
+    window = 28, # 28 days
+    require = [
+        (jaundice, alt_400,), # "(1 or 2)"
+        (hep_c_rna,),         # "6 positive"
+        (no_hep_a_igm_ab,),   # "7 negative"
+        (no_hep_b_igm_ab, no_hep_b_core_ab,) # "(8 negative or 9 non-reactive)"
+        ],
+    exclude = [
+        (no_hep_c_signal_cutoff,), # "4 positive (if done)"
+        (no_hep_c_riba,), # "5 positive (if done)"
+        ],
+    exclude_past = [
+        (hep_c_elisa, hep_c_riba, hep_c_rna,),  # "no prior positive 3 or 5 or 6"
+        (chronic_hep_b,), # "no ICD9 (070.54 or 070.70) ever prior to this encounter"
+        ]
+    )
+
+hep_c_3 = DiseaseCriterion(
+    name = 'Acute Hepatitis C Criterion 3',
+    version = 1,
+    window = 1, # Not relevant, since only 1 require
+    require = [
+        (hep_c_rna,), # "6 positive"
+        ],
+    require_past_window = 365, # 12 months
+    require_past = [
+        (no_hep_c_elisa,) # "record of (3 negative within the prior 12 months)"
+        ]
+    )
+
+hep_c_4 = DiseaseCriterion(
+    name = 'Acute Hepatitis C Criterion 4',
+    version = 1,
+    window = 1, # Not relevant, since only 1 require
+    require = [
+        (hep_c_elisa,), # "3 positive"
+        ],
+    require_past_window = 365, # 12 months
+    require_past = [
+        (no_hep_c_elisa,) # "record of (3 negative within the prior 12 months)"
+        ]
+    )
+
+hep_c = DiseaseDefinition(
+    name = 'Acute Hepatitis C',
+    criteria = [hep_c_1, hep_c_2, hep_c_3, hep_c_4],
+    icd9s = DEFAULT_REPORTABLE_ICD9S,
+    icd9_days_before = 14,
+    icd9_days_after = 14,
+    fever = True,
+    lab_loinc_nums = [
+        '16128-1',
+        'MDPH-144',
+        '6422-0',
+        '10676-5',
+        '34704-7',
+        '38180-6',
+        '5012-0',
+        '11259-9',
+        '20416-4',
+        '34703-9',
+        '1742-6',
+        '31204-1',
+        '22314-9',
+        ],
+    lab_days_before = 28,
+    lab_days_after = 28,
+    )
 
