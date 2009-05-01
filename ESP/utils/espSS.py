@@ -2,12 +2,38 @@
 welcome to espSS.py
 Please look at http://esphealth.org/trac/ESP/wiki/ESPSS
 to get some idea of the background
+
 This is a syndromic surveillance module for ESP encounter tables
-It generates the new AMDS XML format for CDC NCPHI, and aggregate tables with 
-unit records as simple fake spreadsheets
+It generates prototypical AMDS XML format for CDC NCPHI, and aggregate tables with 
+unit records as simple fake spreadsheets for MDPH.
+
+It's probably useful as a starting point for any icd9 or lab value based ESP rule engine
+because it's fairly low impedance to reconfigure, using a corny, specification table
+text processing kludge in an accompanying configuration python module, (do we really
+need a database? We have svn for free?) 
+to dynamically set up a fairly horrible set of rules:
+
+a) case if in period encounter with any of an icd9 list 'NoFever';
+b) case if has 'fever' and any of icd9list 'WithFever'. 
+Define fever as measured >= 100F or measure missing (yes, missing) 
+and one of 2 fever icd9 codes. 
+
+Given code to implement those definitions, the idea is to construct 
+some simple dict based structures to enable the kinds of 
+reports needed. Essentially, we can arrange the data in subdicts of syndromes, 
+then event dates, then zipcodes, and then ages (yes we need all those) or more generally, as
+a tuple of characteristics needed for unit records like age and residential zip.
+
+Given those data structures, formatting AMDS by syndrome, period, and zip; 
+and similar but xls format aggregate summaries and unit records is straightforward.
+
+The last of those will probably requiring some additional and explicit
+approval and permission from the local data custodians before deploying those - we
+have it here at Atrius...
 
 Most Recent Changes First:
 
+30 april 2009: get ids and encounter counts for zips over long period as sampling weights?
 30 april 2009: KY wants site volumes in line list. Sigh. As Frank Zappa said, 'the torture never stops...'
 29 april 2009: create reports with and without site exclusions - they're interesting and variable
 29 april 2009: added temp for ILI individual report with age to nearest 5 years
@@ -26,7 +52,7 @@ Licensed under the LGPL v3.0 or a later version at your preference
 see http://www.gnu.org/licenses/lgpl.html
 Part of the esp project - see http://esphealth.org
 
-Accumulated debris:
+Accumulated debris of free form notes during development:
 
 Notes during design and prototyping of an ESP:SS module
 Need to decouple the definitions, detection and consumption of events
@@ -101,7 +127,7 @@ zip
 
 
 """
-myVersion = '0.004'
+myVersion = '0.7'
 thisSite = 'Atrius' # for amds header
 thisRequestor = 'Ross Lazarus' 
 cclassifier = 'ESPSSApril2009'  
@@ -156,8 +182,8 @@ syndDefs = dict(zip(nameList,defList))
 #
 
 def isoTime(t=None): 
-    """ yyyymmddhhmmss - as at now unless a localtime is passed in
-    # bah. Not what ncphi use - has tz and seps
+    """ Needed for AMDS - now unless a localtime is passed in
+    ncphi has tz and seps
     date time handling is hard - use gmt and punt on dst and tz
     """
     if t == None:
@@ -193,8 +219,15 @@ def makeAge(dob='20070101',edate='20080101',chunk=ageChunksize):
 
 
 def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=True):
-    """return a dict of date, with zip and age in chunked years (!) specific total encounter volume for each day
-    exclude from localSiteExcludeCodes. Challenge is that it requires looking up the zip and age of
+    """
+    This started simple, but grew with specification creep. 
+    Now returns 3 sets of counts for each date
+    a) by residential zip, b) by residential zip and then age chunk, 
+    and...drum roll..c) by clinic site zip and age. 
+    Oy.
+    localIgnore determines whether specific total encounter volume for each day excludes the sites
+    in localSiteExcludeCodes. 
+    Challenge is that it requires looking up the zip and age of
     every encounter..
 )   Using extra to squirt some SQL into the ORM call 
     iterator seems to work - ram use is now reasonable and it's fast enough..
@@ -205,13 +238,17 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
     dateSitecounts = {} # for local practice zip code volumes
     dateAgecounts = {} # for age chunk by residential zip volumes
     ageCounts = {} # for debugging - why no infants - rml april 30 ?
-    esel = {'ezip':'select DemogZip from esp_demog where esp_demog.id = esp_enc.EncPatient_id',
-            'dob': 'select DemogDate_of_Birth from esp_demog where esp_demog.id = esp_enc.EncPatient_id'}
+    esel = {'ezip': # django has a very neat way to inject sql!!
+            'select DemogZip from esp_demog where esp_demog.id = esp_enc.EncPatient_id',
+            'dob': 
+            'select DemogDate_of_Birth from esp_demog where esp_demog.id = esp_enc.EncPatient_id'}
     # an extra select dict to speed up the foreign key lookup - note real SQL table and column names!
-    if localIgnore: # use encounter site exclusions from the exclude list in the espSSconf[sitename].py file
+    if localIgnore: # use encounter site exclusions 
+                    # from the exclude list in the espSSconf[sitename].py file
         allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, EncEncounter_Date__lte=endDT,
              EncEncounter_Site__in = localSiteUseCodes).extra(select=esel).values_list('ezip','dob',
-            'EncEncounter_Date','EncEncounter_Site').iterator() # yes - this works well to minimize ram    
+            'EncEncounter_Date','EncEncounter_Site').iterator() 
+            # yes - this works well to minimize ram    
     else:
         allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, 
         EncEncounter_Date__lte=endDT).extra(select=esel).values_list('ezip','dob',
@@ -242,13 +279,13 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
     ak = ageCounts.keys()
     ak.sort()
     a = ['%d:%d' % (x, ageCounts[x]) for x in ak]
-    print '*****AgeencDateVolumes, localIgnore = %s, age chunky counts=\n%s' % (localIgnore,'\n'.join(a))
+    SSlogging.info('*****AgeencDateVolumes, localIgnore = %s, age chunky counts=\n%s' % (localIgnore,'\n'.join(a)))
     return dateCounts,dateAgecounts,dateSitecounts
 
 
 def findCaseFactIds(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,localIgnore=True):
     """ revised to make the icd9fact record the basis for the report
-    after removing demogid redundancy for each synd/date/zip
+    requires removing demogid redundancy for each synd/date/zip
     Atrius exclusions are such a pain...
     yield all cases for this specific syndName from startDT to endDT with any
     of the ICD codes in syndDef taking fever into account if required
@@ -311,8 +348,9 @@ def findCaseFactIds(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,loca
 
 def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
     """
-    split out from preparing caseid list - now process cases into
+    split out from preparing icd9 fact id list - now process icd9 facts into
     reporting structures - individual level xls and for aggregates AMDS and xls
+    must remove demogId redundancy by syndrome/date/zip 
     """
     redundant = 0
     ignoreSite = 0
@@ -361,6 +399,7 @@ def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
                     # keep track of sites not being counted
             else:
                 redundant += 1
+        del factids # could be a big structure
         if localIgnore: # log some evidence of the effects...
             SSlogging.info('# %s Total localSite ignore site cases = %d, sites= %s' % (syndrome, ignoreSite,ignoredSites))
         SSlogging.info('## %s Total redundant ids for zip/date/syndrome = %d' % (syndrome,redundant))
@@ -506,7 +545,40 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
     else:
         res = []
     return res
+# end makeAMDS
 
+def generateAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3):
+    """ test stub for AMDS xml generator
+    On Thu, Apr 23, 2009 at 11:54 PM, Lee, Brian A. (CDC/CCHIS/NCPHI)
+    (CTR) <fya1@cdc.gov> wrote:
+    > I changed the root element to be <AMDSQueryResponse> since these
+    > examples have two root elements (AMDSRecordSummary and CountSet). Other
+    > than that, the data makes for great sample sets.
+    """    
+    dateZip,dateZipAge,dateSiteZipAge = AgeencDateVolumes(startDT=sdate,
+      endDT=edate,localIgnore=False,ziplen=ziplen)
+    # these are the volume counts of all encounters by date and zip, or date, zip and chunked year age 
+    # or date, site seen zip and chunked age (!)
+    # BL has agreed to add AllCount element to AMDS spec next revision - yay!
+    doid='ESPSS@%s' % thisSite
+    requ=thisRequestor
+    crtime=isoTime(time.localtime())
+    SSlogging.debug('crtime = %s' % crtime)
+    fproto = 'ESP%s_AMDS_zip%s_%s_%s_%s.xml'
+    syndromes = syndDefs.keys() # syndromes
+    syndromes.sort()
+    for syndrome in syndromes: # get ready to write AMDS XML as a list of strings
+        res = makeAMDS(sdate=sdate,edate=edate,syndrome=syndrome,minCount=minCount,
+          encDateVols=dateZip,encAgeDateVols=dateZipAge,cclassifier=cclassifier,
+          doid=doid,requ=requ,crtime=crtime,localIgnore=False,ziplen=ziplen)
+        if len(res) > 0:
+            fname = fproto % (thisSite,ziplen,syndrome,sdate,edate)
+            f = open(fname,'w')
+            f.write('\n'.join(res))
+            f.write('\n')
+            f.close()
+            SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
+  
 
 def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
     encDateVols={},encDateAgeVols={},encDateSiteVols={},localIgnore=True):
@@ -616,72 +688,26 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
     # now returns (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature) = zids[id]
     res,lres = makeMessage(syndrome, dateId)
     return res,lres
-
-
-
-def testsyndGen():
-    """ 
-    for dev
-    """
-    for s in syndDefs:
-        print 'looking for',s
-        d = syndDefs[s] # icd list
-        g = syndGen(syndDef=d,syndName=s,startDT='20080201',endDT='20080201')
-        for i,c in enumerate(g):
-            (age,zip,id,enc,icd,demog,encdate) = c
-            print s,i,c
-        del g
-
-def generateAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3):
-    """ test stub for AMDS xml generator
-    On Thu, Apr 23, 2009 at 11:54 PM, Lee, Brian A. (CDC/CCHIS/NCPHI)
-    (CTR) <fya1@cdc.gov> wrote:
-    > I changed the root element to be <AMDSQueryResponse> since these
-    > examples have two root elements (AMDSRecordSummary and CountSet). Other
-    > than that, the data makes for great sample sets.
-    """    
-    dateZip,dateZipAge,dateSiteZipAge = AgeencDateVolumes(startDT=sdate,endDT=edate,localIgnore=False,ziplen=ziplen)
-    # these are the volume counts of all encounters by date and zip, or date, zip and chunked year age 
-    # or date, site seen zip and chunked age (!)
-    # BL has agreed to add AllCount element to AMDS spec next revision - yay!
-    doid='ESPSS@%s' % thisSite
-    requ=thisRequestor
-    crtime=isoTime(time.localtime())
-    SSlogging.debug('crtime = %s' % crtime)
-    fproto = 'ESP%s_AMDS_%s_%s_%s.xml'
-    syndromes = syndDefs.keys() # syndromes
-    syndromes.sort()
-    for syndrome in syndromes: # get ready to write AMDS XML as a list of strings
-        res = makeAMDS(sdate=sdate,edate=edate,syndrome=syndrome,minCount=minCount,
-          encDateVols=dateZip,encAgeDateVols=dateZipAge,cclassifier=cclassifier,
-          doid=doid,requ=requ,crtime=crtime,localIgnore=False,ziplen=ziplen)
-        if len(res) > 0:
-            fname = fproto % (thisSite,syndrome,sdate,edate)
-            f = open(fname,'w')
-            f.write('\n'.join(res))
-            f.write('\n')
-            f.close()
-            SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
-    
+# end makeTab  
 
 
 def generateTab(sdate='20090401',edate='20090431',ziplen=5):
-    """ test stub for tab delim generator
-    date zip syndrome syndN allencN syndPct
+    """ test wrapper for simple aggregate and unit record tab delim generator
+    date zip_residence zip_practice syndrome temp syndN allencN syndPct 
     """
     encDateVols,encDateAgeVols,encDateSiteVols = AgeencDateVolumes(startDT=sdate,endDT=edate,
        localIgnore=True,ziplen=ziplen)
     allEncDateVols,allEncDateAgeVols,allEncDateSiteVols = AgeencDateVolumes(startDT=sdate,
        endDT=edate,localIgnore=False,ziplen=ziplen)
-    fproto = 'ESP%s_SyndAgg%s_%s_%s_%s.xls'
+    fproto = 'ESP%s_SyndAgg_zip%s_%s_%s_%s_%s.xls'
     lfproto = 'ESP%s_SyndInd%s_%s_%s_%s.xls'
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes: # get ready to write tab delimited data as a list of strings
-        ignoreMode = 'SiteExcl'
+        ignoreMode = 'Excl'
         res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=encDateVols,
            encDateAgeVols=encDateAgeVols,encDateSiteVols=encDateSiteVols,localIgnore=True)
-        fname = fproto % (thisSite,ignoreMode,syndrome,sdate,edate)
+        fname = fproto % (thisSite,ziplen,ignoreMode,syndrome,sdate,edate)
         f = open(fname,'w') 
         f.write('\n'.join(res))
         f.write('\n')
@@ -694,7 +720,7 @@ def generateTab(sdate='20090401',edate='20090431',ziplen=5):
             f.write('\n')
             f.close()
             SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
-        ignoreMode = 'AllSites' # do it again - for comparison or other uses
+        ignoreMode = 'All' # do it again - for comparison or other uses
         # the question is whether these site exclusions are statistically useful?
         res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=allEncDateVols,
           encDateAgeVols=allEncDateAgeVols,encDateSiteVols=allEncDateSiteVols,localIgnore=False)
@@ -713,6 +739,6 @@ def generateTab(sdate='20090401',edate='20090431',ziplen=5):
             SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
 
 if __name__ == "__main__":
-    #generateAMDS(ziplen=3,minCount=0)
+    generateAMDS(ziplen=3,minCount=0)
     generateTab(ziplen=5)
 
