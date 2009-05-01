@@ -14,7 +14,7 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
 from ESP.conf.models import Loinc
-from ESP.esp.models import Demog
+from ESP.core.models import Patient
 
 
 class HeuristicEvent(models.Model):
@@ -23,7 +23,7 @@ class HeuristicEvent(models.Model):
     '''
     heuristic_name = models.CharField(max_length=127, null=False, blank=False, db_index=True)
     date = models.DateField(blank=False, db_index=True)
-    patient = models.ForeignKey(Demog, blank=False, db_index=True)
+    patient = models.ForeignKey(Patient, blank=False, db_index=True)
     #
     # Standard generic relation support
     #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
