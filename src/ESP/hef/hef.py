@@ -27,8 +27,11 @@ from django.db.models.query import QuerySet
 from django.contrib.contenttypes.models import ContentType
 
 
-from ESP.esp.models import Lx, Enc, Rx
-from ESP.conf.models import Rule, NativeToLoincMap
+from ESP.core.models import LabResult
+from ESP.core.models import Encounter
+from ESP.core.models import Medication
+from ESP.conf.models import NativeToLoincMap
+#from ESP.conf.models import Rule
 from ESP.hef.models import HeuristicEvent
 from ESP import settings
 from ESP.utils import utils as util
@@ -165,6 +168,9 @@ class BaseHeuristic(object):
             else:
                 log.debug('Did not create heuristic event - found matching event #%s' % obj.id)
         log.info('Generated %s new events for "%s".' % (counter, self.name))
+        for item in connection.queries:
+            log.debug('\n\t%8s    %s' % (item['time'], item['sql']))
+        connection.queries = []
         return counter
     
     @classmethod
@@ -236,7 +242,7 @@ class LabHeuristic(BaseHeuristic):
         '''
         log.debug('Get lab results relevant to "%s".' % self.name)
         log.debug('Time window: %s to %s' % (begin_date, end_date))
-        qs = Lx.objects.filter_loincs(self.loinc_nums)
+        qs = LabResult.objects.filter_loincs(self.loinc_nums)
         if begin_date:
             qs = qs.filter(date__gte=begin_date)
         if end_date:
@@ -344,9 +350,9 @@ class StringMatchLabHeuristic(LabHeuristic):
         @type end_date:    datetime.date
         '''
         if self.match_type == 'istartswith':
-            pos_q = Q(LxTest_results__istartswith=self.strings[0])
+            pos_q = Q(result_string__istartswith=self.strings[0])
             for s in self.strings[1:]:
-                pos_q = pos_q | Q(LxTest_results__istartswith=s)
+                pos_q = pos_q | Q(result_string__istartswith=s)
             if self.abnormal_flag:
                 msg = 'IMPORTANT: Support for abnormal-flag-based queries has not yet been implemented!\n'
                 msg += '    Our existing data has only nulls for that field, so I am not sure what the query should look like.'
@@ -386,7 +392,7 @@ class EncounterHeuristic(BaseHeuristic):
         '''
         enc_q = Q()
         for code in self.icd9s:
-            enc_q = enc_q | Q(EncICD9_Codes__icontains=code)
+            enc_q = enc_q | Q(icd9_codes__code=code)
         return enc_q
     enc_q = property(__get_enc_q)
 
@@ -400,13 +406,13 @@ class EncounterHeuristic(BaseHeuristic):
             @type queryset:   QuerySet
         '''
         log.debug('Get encounters relevant to "%s".' % self.name)
-        qs = Enc.objects.all()
+        qs = Encounter.objects.all()
         if begin_date :
             begin = self.make_date_str(begin_date)
-            qs = qs.filter(EncEncounter_Date__gte=begin)
+            qs = qs.filter(date__gte=begin)
         if end_date:
             end = self.make_date_str(end_date)
-            qs = qs.filter(EncEncounter_Date__lte=end)
+            qs = qs.filter(date__lte=end)
         elif begin_date or end_date:
             raise 'If you specify either begin_date or end_date, you must also specify the other.'
         qs = qs.filter(self.enc_q)
@@ -436,15 +442,15 @@ class FeverHeuristic(EncounterHeuristic):
             @type queryset:   QuerySet
         '''
         log.debug('Get encounters matching "%s".' % self.name)
-        qs = Enc.objects.all()
+        qs = Encounter.objects.all()
         if begin_date :
             begin = self.make_date_str(begin_date)
-            qs = qs.filter(EncEncounter_Date__gte=begin)
+            qs = qs.filter(date__gte=begin)
         if end_date:
             end = self.make_date_str(end_date)
-            qs = qs.filter(EncEncounter_Date__lte=end)
+            qs = qs.filter(date__lte=end)
         # Either encounter has the 'fever' ICD9, or it records a high temp
-        q_obj = self.enc_q | Q(EncTemperature__gt=100.4)
+        q_obj = self.enc_q | Q(temperature__gt=100.4)
         log.debug('q_obj: %s' % q_obj)
         qs = qs.filter(q_obj)
         return qs
@@ -467,14 +473,14 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
         # of direct and indirect bilirubin tests ordered on the same day is 
         # greater than 1.5.
         relevant = self.relevant_labs(begin_date, end_date)
-        vqs = relevant.values('LxPatient', 'LxOrderDate') # returns ValueQuerySet
-        vqs = vqs.annotate(calc_bil=Sum('LxTest_results'))
+        vqs = relevant.values('patient', 'order_date') # returns ValueQuerySet
+        vqs = vqs.annotate(calc_bil=Sum('result_float'))
         vqs = vqs.filter(calc_bil__gt=1.5)
         # Next we loop thru the patient/order-date list, fetch the relevant 
         # (direct + indirect) > 1.5, just in case there is a funky situation
         # where, e.g., the patient has had two indirect bilirubin tests ordered
         # on the same day.
-        matches = Lx.objects.filter(pk__isnull=True) # Lx QuerySet that matches nothing
+        matches = LabResult.objects.filter(pk__isnull=True) # Lx QuerySet that matches nothing
         for item in vqs:
-            matches = matches | relevant.filter(LxPatient__id=item['LxPatient'], LxOrderDate=item['LxOrderDate']) 
+            matches = matches | relevant.filter(patient=item['patient'], order_date=item['order_date']) 
         return matches

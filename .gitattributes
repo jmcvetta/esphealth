@@ -88,6 +88,11 @@ src/ESP/conf/fixtures/icd9.json -text
 src/ESP/conf/models.py -text
 src/ESP/conf/tests.py -text
 src/ESP/conf/views.py -text
+src/ESP/core/__init__.py -text
+src/ESP/core/choices.py -text
+src/ESP/core/dadmin.py -text
+src/ESP/core/models.py -text
+src/ESP/core/views.py -text
 src/ESP/data/atrius-map.csv -text
 src/ESP/data/diseases.txt -text
 src/ESP/data/icd9.txt -text
