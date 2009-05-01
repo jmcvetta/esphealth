@@ -106,7 +106,7 @@ class DiseaseCriterion(object):
     single disease criterion is sufficient to indicate a case of that disease, 
     but a given disease may have arbitrarily many criteria.
     '''
-    def __init__(self,  name, version, window, require, require_past = [], require_past_window = [],
+    def __init__(self,  name, version, window, require, require_past = [], require_past_window = None,
         exclude = [], exclude_past = []):
         '''
         @param name: Name of this criterion
@@ -135,12 +135,12 @@ class DiseaseCriterion(object):
         assert require
         if require_past:
             assert require_past_window
+            self.require_past_window = datetime.timedelta(require_past_window)
         self.name = name
         self.version = version
         self.window = datetime.timedelta(window)
         self.require = require
         self.require_past = require_past
-        self.require_past_window = require_past_window
         self.exclude = exclude
         self.exclude_past = exclude_past
     
@@ -207,7 +207,7 @@ class DiseaseCriterion(object):
                         log.debug('Window %s was excluded by past event %s' % (win, h))
                     else:
                         valid_windows.append(win)
-                    t_windows = list(new_windows)
+                    t_windows = list(valid_windows)
             log.debug('Remaining valid time windows: %s' % t_windows)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Check that we fulfill require_past
@@ -223,7 +223,7 @@ class DiseaseCriterion(object):
                         win.past_events += [events]
                         log.debug('Window %s matches require_past %s' % (win, h))
                         valid_windows.append(win)
-                    t_windows = list(new_windows)
+                    t_windows = list(valid_windows)
             log.debug('Remaining valid time windows: %s' % t_windows)
         # DEBUG:
         #for win in t_windows:
