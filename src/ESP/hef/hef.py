@@ -105,6 +105,23 @@ class BaseHeuristic(object):
         return result
     
     @classmethod
+    def get_heuristics_by_name(cls, name):
+        '''
+        Given a string naming a heuristic, returns the appropriate BaseHeuristic instance
+        '''
+        return cls.__registry[name]
+    
+    @classmethod
+    def list_heuristic_names(cls):
+        '''
+        Returns a sorted list of strings naming all registered BaseHeuristic instances
+        '''
+        names = cls.__registry.keys()
+        names.sort()
+        return names
+    
+    
+    @classmethod
     def get_all_loincs(cls):
         '''
         Returns a list of all LOINC numbers for registered heuristics
@@ -189,6 +206,11 @@ class BaseHeuristic(object):
             counter += heuristic.generate_events()
         log.info('Generated %s TOTAL new events.' % counter)
         return counter
+    
+    @classmethod
+    def generate_events_by_name(cls, name, begin_date=None, end_date=None):
+        for heuristic in cls.get_heuristics_by_name(name):
+            heuristic.generate_events(begin_date, end_date)
     
     def get_events(self):
         '''

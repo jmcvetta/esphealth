@@ -11,6 +11,7 @@
 @license: LGPL
 '''
 
+import sys
 import datetime
 import optparse
 
@@ -47,6 +48,10 @@ def main():
     # instances running at once.
     #
     parser = optparse.OptionParser(usage=USAGE_MSG)
+    parser.add_option('--heuristic', action='store', dest='event', type='string',
+        metavar='NAME', help='Generate events for heuristic NAME only')
+    parser.add_option('--list', action='store_true', dest='list', 
+        help='List all registered heuristics')
     parser.add_option('--begin', action='store', dest='begin', type='string', 
         metavar='DATE', help='Analyze time window beginning at DATE')
     parser.add_option('--end', action='store', dest='end', type='string', 
@@ -64,10 +69,19 @@ def main():
     # 
     # Main
     #
-    BaseHeuristic.generate_all_events(begin_date=options.begin, end_date=options.end)
+    if options.event and options.list:
+        sys.stderr.write('\nERROR: --list and --heuristic are mutually incompatible.\n\n')
+        parser.print_help()
+    elif options.list:
+        for name in BaseHeuristic.list_heuristic_names():
+            print name
+    elif options.event:
+        BaseHeuristic.generate_events_by_name(name=options.event, begin_date=options.begin, end_date=options.end)
+    else:
+        BaseHeuristic.generate_all_events(begin_date=options.begin, end_date=options.end)
     
 
 if __name__ == '__main__':
     main()
-    print 'Total Number of DB Queries: %s' % len(connection.queries)
+    #print 'Total Number of DB Queries: %s' % len(connection.queries)
     #pprint.pprint(connection.queries)
