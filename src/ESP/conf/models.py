@@ -19,13 +19,13 @@ from ESP.conf.choices import DEST_TYPES
 from ESP.conf.choices import WORKFLOW_STATES
 
 
+
 class Loinc(models.Model):
     '''
     Logical Observation Identifiers Names and Codes
         Derived from RELMA database available at 
         http://loinc.org/downloads
     '''
-    
     # This has to be come before field definitions, because there is a field 
     # named 'property' that, since they live in the same namespace, clashes with
     # the built-in method 'property()'.  
@@ -40,7 +40,6 @@ class Loinc(models.Model):
         else:
             return self.component
     name = property(_get_name)
-    
     #
     # The structure of this class mirrors exactly the schema of the LOINCDB.TXT 
     # file distributed by RELMA.
@@ -157,9 +156,6 @@ class Icd9(models.Model):
             icd9Code__gte=low, 
             icd9Code__lte=high
             ).order_by('icd9Code')
-
-    
-        
         
    
 class Ndc(models.Model):
@@ -185,10 +181,6 @@ class Cpt(models.Model):
 
     def __unicode__(self):
         return u'%s %s' % (self.cptCode,self.cptShort)
-        
-
-
-
 
 
 class Recode(models.Model):
@@ -204,7 +196,6 @@ class Recode(models.Model):
 
     def __unicode__(self):
         return u'%s %s %s %s' % (self.recodeFile,self.recodeField,self.recodeIn,self.recodeOut)
-        
 
 
 class HelpDb(models.Model):
@@ -215,7 +206,6 @@ class HelpDb(models.Model):
 
     def __unicode__(self):
         return u'%s' % self.helpTopic 
-
 
 
 class Config(models.Model):
@@ -273,7 +263,6 @@ class Rule(models.Model):
     ruleExcludeCode = models.TextField('The exclusion list of (CPT, COMPT) when alerting', blank=True, null=True)
     ruleinProd = models.BooleanField('this rule is in production or not', blank=True)
     ruleInitCaseStatus  =models.CharField('Initial Case status', max_length=20,choices=WORKFLOW_STATES, blank=True)
-    
 
     def gethtml_rulenote(self):
         """
@@ -294,7 +283,6 @@ class Rule(models.Model):
     def  __unicode__(self):
         return u'%s' % self.ruleName 
 
-
  
 class Dest(models.Model):
     """message destination for rules
@@ -311,8 +299,6 @@ class Dest(models.Model):
             (self.destName,self.destType,self.destValue)
 
 
-
-
 class Format(models.Model):
     """message formats for rules
     """
@@ -325,6 +311,7 @@ class Format(models.Model):
 
     def  __unicode__(self):
         return u'%s' % self.formatName 
+
 
 class SourceSystem(models.Model):
     '''
@@ -342,12 +329,11 @@ class SourceSystem(models.Model):
         return self.name
 
 
-
-
 class NativeToLoincMap(models.Model):
     '''
     A mapping from a native code (for a lab result, etc) to a Loinc number
     '''
+    system = models.ForeignKey(SourceSystem, db_index=True, blank=False)
     # This table and utilities making use of it assume only one external 
     # code table per ESP installation.  More work will be required if your 
     # installation must comprehend multiple, potentially overlapping, external 
