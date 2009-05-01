@@ -26,12 +26,18 @@ from django.db.models.query import QuerySet
 from django.contrib.contenttypes.models import ContentType
 
 
-from ESP.hef.models import HeuristicEvent
-from ESP.esp.models import Rule, Enc, Lx, Rx
-from ESP.nodis.models import Case
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
+from ESP.core.models import LabResult
+from ESP.core.models import Encounter
+from ESP.core.models import Medication
+from ESP.core.models import Immunization
+from ESP.core.models import Patient
+from ESP.core.models import Provider
+from ESP.hef.models import HeuristicEvent
+from ESP.conf.models import Rule
+from ESP.nodis.models import Case
 
 
 
@@ -362,7 +368,7 @@ class DiseaseDefinition(object):
         assert self.lab_days_after
         assert self.med_days_before
         assert self.med_days_after
-        self.condition = Rule.objects.get(ruleName=self.name)
+        #self.condition = Rule.objects.get(ruleName=self.name)
         self._register()
     
     __registry = {} # Class variable
@@ -392,13 +398,13 @@ class DiseaseDefinition(object):
         @type etw:     EventTimeWindow
         '''
         patient = etw.events[0].patient
-        log.info('Creating a new %s case for patient #%s based on %s' % (self.condition, patient.pk, etw))
+        log.info('Creating a new %s case for patient #%s based on %s' % (self.name, patient.pk, etw))
         case = Case()
         case.patient = patient
         case.provider = etw.events[0].content_object.provider
         case.date = etw.start
-        case.condition = self.condition
-        case.workflow_state = self.condition.ruleInitCaseStatus
+        case.condition = self.name
+        #case.workflow_state = self.condition.ruleInitCaseStatus
         case.save()
         case.events = etw.events
         case = self.update_reportable_events(case)
@@ -410,8 +416,8 @@ class DiseaseDefinition(object):
         Calls the user-supplied case factory with appropriate arguments
         '''
         counter = 0            # Number of new cases generated
-        log.info('Generating cases for %s' % self.condition)
-        existing_cases = Case.objects.filter(condition=self.condition)
+        log.info('Generating cases for %s' % self.name)
+        existing_cases = Case.objects.filter(condition=self.name)
         # Primary keys of events already bound to a Case object:
         bound_event_pks = HeuristicEvent.objects.filter(case__in=existing_cases).values_list('pk') # ValuesListQuerySet
         bound_event_pks = [item[0] for item in bound_event_pks]
@@ -474,23 +480,23 @@ class DiseaseDefinition(object):
         patient = case.patient
         date = case.date
         if self.icd9s:
-            enc_q = Q(EncICD9_Codes__icontains=self.icd9s[0])
+            enc_q = Q(icd9_codes__code=self.icd9s[0])
             for code in self.icd9s[1:]:
-                enc_q = enc_q | Q(EncICD9_Codes__icontains=code)
+                enc_q = enc_q | Q(icd9_codes__code=code)
             if self.fever: 
-                enc_q = enc_q | Q(EncTemperature__gte=100.4)
-            enc_q = enc_q & Q(EncPatient=patient)
-            enc_q = enc_q & Q(EncEncounter_Date__gte=util.str_from_date(date - self.icd9_days_before))
-            enc_q = enc_q & Q(EncEncounter_Date__lte=util.str_from_date(date + self.icd9_days_after))
+                enc_q = enc_q | Q(temperature__gte=100.4)
+            enc_q = enc_q & Q(patient=patient)
+            enc_q = enc_q & Q(date__gte=(date - self.icd9_days_before))
+            enc_q = enc_q & Q(date__lte=(date + self.icd9_days_after))
             log.debug('enc_q: %s' % enc_q)
-            encounters = Enc.objects.filter(enc_q)
+            encounters = Encounter.objects.filter(enc_q)
             case.encounters = sets.Set(case.encounters.all()) | sets.Set(encounters)
         if self.lab_loinc_nums:
-            lab_q = Q(LxPatient=patient)
-            lab_q = lab_q & Q(LxOrderDate__gte=util.str_from_date(date - self.lab_days_before))
-            lab_q = lab_q & Q(LxOrderDate__lte=util.str_from_date(date + self.lab_days_after))
+            lab_q = Q(patient=patient)
+            lab_q = lab_q & Q(order_date__gte=(date - self.lab_days_before))
+            lab_q = lab_q & Q(order_date__lte=(date + self.lab_days_after))
             log.debug('lab_q: %s' % lab_q)
-            labs = Lx.objects.filter_loincs(self.lab_loinc_nums).filter(lab_q)
+            labs = LabResult.objects.filter_loincs(self.lab_loinc_nums).filter(lab_q)
             # Some of these lab results will be for the same test (ie same 
             # LOINC code), but Mike only wants to see one result per test.  
             # It's probably better to handle that in the case management UI,
@@ -498,14 +504,14 @@ class DiseaseDefinition(object):
             # here.
             case.lab_results = sets.Set(case.lab_results.all()) | sets.Set(labs)
         if self.med_names:
-            med_q = Q(RxDrugName__icontains=self.med_names[0])
+            med_q = Q(name__icontains=self.med_names[0])
             for name in self.med_names[1:]:
-                med_q = med_q | Q(RxDrugName__icontains=name)
-            med_q = med_q & Q(RxPatient=patient)
-            med_q = med_q & Q(RxOrderDate__gte=util.str_from_date(date - self.med_days_before))
-            med_q = med_q & Q(RxOrderDate__lte=util.str_from_date(date + self.med_days_after))
+                med_q = med_q | Q(name__icontains=name)
+            med_q = med_q & Q(patient=patient)
+            med_q = med_q & Q(date__gte=(date - self.med_days_before))
+            med_q = med_q & Q(date__lte=(date + self.med_days_after))
             log.debug('med_q: %s' % med_q)
-            medications = Rx.objects.filter(med_q)
+            medications = Medication.objects.filter(med_q)
             case.medications = sets.Set(case.medications.all()) | sets.Set(medications)
         # Support for reporting immunizations has not yet been implemented
         case.save()
@@ -522,7 +528,7 @@ class DiseaseDefinition(object):
         '''
         log.info('Updating reportable events for existing cases.')
         for definition in cls.get_all_definitions():
-            q_obj = Q(condition=definition.condition)
+            q_obj = Q(condition=definition.name)
             if begin_date:
                 q_obj = q_obj & Q(date__gte=begin_date)
             if end_date:
