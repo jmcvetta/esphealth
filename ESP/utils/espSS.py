@@ -3,6 +3,16 @@ welcome to espSS.py
 Please look at http://esphealth.org/trac/ESP/wiki/ESPSS
 to get some idea of the background
 
+Copyright Ross Lazarus April 20 2009
+All rights reserved
+Licensed under the LGPL v2.0 or a later version at your preference
+see http://www.gnu.org/licenses/lgpl.html
+Part of the esp project - see http://esphealth.org
+Feel free to modify and redistribute this source but please leave this copyright and license
+statement - add your own as an LGPL derived work and please let me know if you
+can figure out how to find me.
+
+
 This is a syndromic surveillance module for ESP encounter tables
 It generates prototypical AMDS XML format for CDC NCPHI, and aggregate tables with 
 unit records as simple fake spreadsheets for MDPH.
@@ -32,7 +42,7 @@ approval and permission from the local data custodians before deploying those - 
 have it here at Atrius...
 
 Most Recent Changes First:
-
+2 May 2009: fixed a silly xml bug found while experimenting with AMDS format files
 30 april 2009: get ids and encounter counts for zips over long period as sampling weights?
 30 april 2009: KY wants site volumes in line list. Sigh. As Frank Zappa said, 'the torture never stops...'
 29 april 2009: create reports with and without site exclusions - they're interesting and variable
@@ -46,11 +56,6 @@ Most Recent Changes First:
 21 april 2009: added btzipdict to espSSconf.py - lookup a zip code to get the MDPH BT region
 22 april 2009: added quick'n'dirty AMDS xml generator - bugger the xsd :)
 
-Copyright Ross Lazarus April 20 2009
-All rights reserved
-Licensed under the LGPL v3.0 or a later version at your preference
-see http://www.gnu.org/licenses/lgpl.html
-Part of the esp project - see http://esphealth.org
 
 Accumulated debris of free form notes during development:
 
@@ -355,7 +360,7 @@ def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
     redundant = 0
     ignoreSite = 0
     ignoredSites = {}
-    if caseids: # some
+    if caseids: # some - we need lots of additional info on each 'case' for reporting and redundancy filtering
         factids = icd9Fact.objects.filter(id__in=caseids).order_by('id') # recreate query set - keep in id order
         zips = [x.icd9Patient.DemogZip.split('-')[0] for x in factids] # get zips less -xxxx 
         dobs = [x.icd9Patient.DemogDate_of_Birth for x in factids] # get dobs  
@@ -410,7 +415,7 @@ def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
 
 def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='ESPSS',ziplen=3,
     encAgeDateVols=None,doid=None,requ=None,minCount=0,crtime=None,localIgnore=False):
-    """crude generator for xls
+    """crude generator for xls for a period and 
     genesis at http://esphealth.org/trac/ESP/wiki/ESPSS
     rml april 27 2009 swine flu season?
     """
@@ -526,7 +531,6 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
             c = makeCounts(syndrome,dateId[thisdate],thisdate,ziplist)
             m += c
         m.append('</CountSet>')
-        m.append('</AMDSRecordSummary>')
         m.append('</AMDSQueryResponse>')
         return m  
     
@@ -692,7 +696,9 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
 
 
 def generateTab(sdate='20090401',edate='20090431',ziplen=5):
-    """ test wrapper for simple aggregate and unit record tab delim generator
+    """ test wrapper for simple aggregate 
+    date synd zip n nall pct
+    and unit record tab delim generator
     date zip_residence zip_practice syndrome temp syndN allencN syndPct 
     """
     encDateVols,encDateAgeVols,encDateSiteVols = AgeencDateVolumes(startDT=sdate,endDT=edate,
