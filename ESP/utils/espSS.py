@@ -284,7 +284,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
     ak = ageCounts.keys()
     ak.sort()
     a = ['%d:%d' % (x, ageCounts[x]) for x in ak]
-    SSlogging.info('*****AgeencDateVolumes, localIgnore = %s, age chunky counts=\n%s' % (localIgnore,'\n'.join(a)))
+    SSlogging.info('*****AgeencDateVolumes, localIgnore = %s, age chunk counts=\n%s' % (localIgnore,'\n'.join(a)))
     return dateCounts,dateAgecounts,dateSitecounts
 
 
@@ -701,50 +701,47 @@ def generateTab(sdate='20090401',edate='20090431',ziplen=5):
     and unit record tab delim generator
     date zip_residence zip_practice syndrome temp syndN allencN syndPct 
     """
-    encDateVols,encDateAgeVols,encDateSiteVols = AgeencDateVolumes(startDT=sdate,endDT=edate,
-       localIgnore=True,ziplen=ziplen)
-    allEncDateVols,allEncDateAgeVols,allEncDateSiteVols = AgeencDateVolumes(startDT=sdate,
-       endDT=edate,localIgnore=False,ziplen=ziplen)
-    fproto = 'ESP%s_SyndAgg_zip%s_%s_%s_%s_%s.xls'
-    lfproto = 'ESP%s_SyndInd%s_%s_%s_%s.xls'
-    syndromes = syndDefs.keys() # syndromes
-    syndromes.sort()
-    for syndrome in syndromes: # get ready to write tab delimited data as a list of strings
-        ignoreMode = 'Excl'
-        res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=encDateVols,
-           encDateAgeVols=encDateAgeVols,encDateSiteVols=encDateSiteVols,localIgnore=True)
-        fname = fproto % (thisSite,ziplen,ignoreMode,syndrome,sdate,edate)
-        f = open(fname,'w') 
-        f.write('\n'.join(res))
-        f.write('\n')
-        f.close()
-        SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
-        if len(lres) > 1: # makeTab only returns header row except for ILI at present 
-            fname = lfproto % (thisSite,ignoreMode,syndrome,sdate,edate)
-            f = open(fname,'w')
-            f.write('\n'.join(lres))
+    for localIgnore in (True,False):
+        encDateVols,encDateAgeVols,encDateSiteVols = AgeencDateVolumes(startDT=sdate,endDT=edate,
+           localIgnore=localIgnore,ziplen=ziplen)
+        fproto = 'ESP%s_SyndAgg_zip%s_%s_%s_%s_%s.xls'
+        lfproto = 'ESP%s_SyndInd%s_%s_%s_%s.xls'
+        syndromes = syndDefs.keys() # syndromes
+        syndromes.sort()
+        for syndrome in syndromes: # get ready to write tab delimited data as a list of strings
+            ignoreMode = 'Excl'
+            res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=encDateVols,
+               encDateAgeVols=encDateAgeVols,encDateSiteVols=encDateSiteVols,localIgnore=localIgnore)
+            fname = fproto % (thisSite,ziplen,ignoreMode,syndrome,sdate,edate)
+            f = open(fname,'w') 
+            f.write('\n'.join(res))
             f.write('\n')
             f.close()
-            SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
-        ignoreMode = 'All' # do it again - for comparison or other uses
-        # the question is whether these site exclusions are statistically useful?
-        res,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=allEncDateVols,
-          encDateAgeVols=allEncDateAgeVols,encDateSiteVols=allEncDateSiteVols,localIgnore=False)
-        fname = fproto % (thisSite,ignoreMode,syndrome,sdate,edate)
-        f = open(fname,'w')
-        f.write('\n'.join(res))
-        f.write('\n')
-        f.close()
-        SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
-        if len(lres) > 1: # is ILI
-            fname = lfproto % (thisSite,ignoreMode,syndrome,sdate,edate)
-            f = open(fname,'w')
-            f.write('\n'.join(lres))
-            f.write('\n')
-            f.close()
-            SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
-
+            SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
+            if len(lres) > 1: # makeTab only returns header row except for ILI at present 
+                fname = lfproto % (thisSite,ignoreMode,syndrome,sdate,edate)
+                f = open(fname,'w')
+                f.write('\n'.join(lres))
+                f.write('\n')
+                f.close()
+                SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
+        del encDateVols,encDateAgeVols,encDateSiteVols   
+        
 if __name__ == "__main__":
+    if len(sys.argv) >= 3:
+        sdate = sys.argv[1]
+        edate = sys.argv[2]
+    else:
+        SSlogging.info('## supply sdate and edate as command line parameters to change the default dates')
+        sdate='20060101'
+        edate='20090430'
+    if len(sys.argv) >= 4:
+        ziplen = int(sys.argv[3])
+    else:
+        ziplen = 5
+        print '## supply ziplen (eg 3 or 5) as the third parameter to change from default %d' % ziplen
+    SSlogging.info('espSS.py starting at %s. sdate=%s, edate=%s, ziplen=%d' % (isoTime,sdate,edate,ziplen))
+    generateTab(ziplen=ziplen)
     generateAMDS(ziplen=3,minCount=0)
-    generateTab(ziplen=5)
+    generateAMDS(ziplen=5,minCount=0)
 
