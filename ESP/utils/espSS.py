@@ -741,7 +741,7 @@ if __name__ == "__main__":
         ziplen = 5
         print '## supply ziplen (eg 3 or 5) as the third parameter to change from default %d' % ziplen
     SSlogging.info('espSS.py starting at %s. sdate=%s, edate=%s, ziplen=%d' % (isoTime(),sdate,edate,ziplen))
-    generateTab(ziplen=ziplen,sdate=sdate,edate=edate,ziplen=ziplen)
+    generateTab(ziplen=ziplen,sdate=sdate,edate=edate)
     generateAMDS(ziplen=3,minCount=0,sdate=sdate,edate=edate)
     generateAMDS(ziplen=5,minCount=0,sdate=sdate,edate=edate)
 
