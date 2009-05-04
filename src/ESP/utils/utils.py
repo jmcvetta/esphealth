@@ -136,11 +136,7 @@ def str_from_date(date):
     Returns a string representing the first date of the lookback window
     '''
     assert isinstance(date, datetime.date)
-    y = date.year
-    m = date.month
-    d = date.day
-    date_str = '%04d%02d%02d' % (y, m, d)
-    return date_str
+    return date.strftime('%Y%m%d')
         
 
 

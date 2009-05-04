@@ -1,7 +1,7 @@
 #-*- coding:utf-8 -*-
 
 from django.db import models
-from django.db.models import signals
+from django.db.models import signals, Q
 from django.contrib.contenttypes.models import ContentType
 
 
@@ -32,7 +32,6 @@ class AdverseEventManager(models.Manager):
 
     def by_id(self, key):
         try:
-            obj = AdverseEventManager.objects
             return self.get(id=key)
         except:
             return None
@@ -45,9 +44,6 @@ class AdverseEventManager(models.Manager):
 
 class AdverseEvent(models.Model):
     content_type = models.ForeignKey(ContentType, editable=False, null=True)
-
-
-    patient = models.ForeignKey(Demog)
     immunization = models.ForeignKey(Immunization)
     matching_rule_explain = models.CharField(max_length=200)
     category = models.CharField(max_length=20, choices=ADVERSE_EVENT_CATEGORIES)
@@ -56,6 +52,17 @@ class AdverseEvent(models.Model):
 
     created_on = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+
+    fake_q = Q(immunization__ImmPatient__DemogFirst_Name__startswith='FAKE')
+
+    @classmethod
+    def fakes(cls):
+        return cls.objects.filter(AdverseEvent.fake_q)
+
+    @classmethod
+    def delete_fakes(cls):
+        cls.objects.filter(AdverseEvent.fake_q).delete()
+
 
     def save(self):
         if(not self.content_type):
@@ -66,25 +73,26 @@ class AdverseEvent(models.Model):
 
 
 class FeverEvent(AdverseEvent):
+    temperature = models.FloatField('Temperature')
+    encounter = models.ForeignKey(Enc)
 
     explain_string = 'Patient with %3.1fF fever'
-    
+
     @staticmethod
-    def make_mock(patient, immunization, encounter):
-        temp = randomizer.fever_temperature() if causes_fever_event else randomizer.body_temperature()
-        
-        assert patient.is_fake()
+    def make_fake(immunization, encounter):
+
         assert encounter.is_fake()
         assert immunization.is_fake()
+        assert immunization.ImmPatient.is_fake()
+
+        temp = randomizer.fever_temperature() 
         
         return FeverEvent.objects.create(
-            patient=patient, immunization=immunization,
+            immunization=immunization,
             temperature=temp, 
             matching_rule_explain = FeverEvent.explain_string % temp
             )
             
-    temperature = models.FloatField('Temperature')
-    encounter = models.ForeignKey(Enc)
 
 class DiagnosticsEvent(AdverseEvent):
     encounter = models.ForeignKey(Enc)
@@ -93,17 +101,17 @@ class DiagnosticsEvent(AdverseEvent):
     explain_string = 'Patient diagnosed with %s'
 
     @staticmethod
-    def make_mock(patient, immunization, encounter, icd9):
-        assert patient.is_fake()
+    def make_fake(immunization, encounter, icd9):
+
         assert encounter.is_fake()
         assert immunization.is_fake()
+        assert immunization.ImmPatient.is_fake()
         
-        explain_rule = DiagnosticsEvent.explain_string % icd9.icd9Long
+        explain_rule = DiagnosticsEvent.explain_string % icd9.name
 
         return DiagnosticsEvent.objects.create(
-            patient=patient, immunization=immunization,
-            icd9=icd9,
-            matching_rule_explain = explain_rule
+            immunization=immunization, matching_rule_explain = explain_rule,
+            encounter=encounter, icd9=icd9
             )
 
 
@@ -162,13 +170,30 @@ class DiagnosticsEventManager(models.Manager):
         self.all().update(in_use=False)
         
 class DiagnosticsEventRule(Rule):
+
+    @staticmethod
+    def all_active():
+        return DiagnosticsEventRule.objects.filter(in_use=True)
+    
+    @staticmethod
+    def by_name(name, only_if_active=True):
+        q = DiagnosticsEventRule.objects.filter(name=name)
+        if only_if_active: q = q.filter(in_use=True)
+        return q
+
+    @staticmethod
+    def random():
+        return DiagnosticsEventRule.objects.order_by('?')[0]
+ 
     objects = DiagnosticsEventManager()
     source = models.CharField(max_length=30, null=True)
-    ignored_if_past_occurrance = models.PositiveIntegerField(null=True)
+    ignored_if_past_occurrence = models.PositiveIntegerField(null=True)
     heuristic_defining_codes = models.ManyToManyField(
         Icd9, related_name='defining_icd9_code_set')
     heuristic_discarding_codes = models.ManyToManyField(
         Icd9, related_name='discarding_icd9_code_set')
+
+    
     
 
 class LxEventRule(Rule):

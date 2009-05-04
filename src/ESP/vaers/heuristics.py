@@ -4,12 +4,13 @@
 import optparse
 import datetime
 
+from django.db import backend
 from django.db.models import Q, F
 
 from ESP.hef.core import EncounterHeuristic
 from ESP.conf.common import EPOCH
 from ESP.conf.models import Icd9
-from ESP.esp.models import Immunization, Enc, Lx
+from ESP.esp.models import Demog, Immunization, Enc, Lx
 from ESP.vaers.models import AdverseEvent
 from ESP.vaers.models import FeverEvent, DiagnosticsEvent, LabResultEvent
 from ESP.vaers.models import DiagnosticsEventRule
@@ -25,33 +26,43 @@ class DiagnosisHeuristic(EncounterHeuristic):
         '''
         @type icd9s: [<Icd9>, <Icd9>, <Icd9>, ...]
         @type discarding_icd9: [<Icd9>, <Icd9>, <Icd9>, ...]
-        @type ignored_if_past_occurrance: int
+        @type ignored_if_past_occurrence: int
         @type verbose_name: String
         '''
         self.discarding_icd9s = kwargs.pop('discarding_icd9s', [])
-        self.ignored_if_past_occurrance = kwargs.pop(
-            'ignored_if_past_occurrance', None)
-
+        self.ignored_if_past_occurrence = kwargs.pop(
+            'ignored_if_past_occurrence', None)
+        
         super(DiagnosisHeuristic, 
               self).__init__(name, icd9s, verbose_name, **kwargs)
-
-
-    
+        
+        
+        
 
     def matches(self, begin_date=None, end_date=None):
         begin_date = begin_date or EPOCH
         end_date = end_date or datetime.date.today()
 
-        
 
-        possible = Enc.objects.filter(
-            reported_icd9_list__in=self.icd9s,
-            EncEncounter_Date__gte=begin_date.strftime('%Y%m%d'),
-            EncEncounter_Date__lte=end_date.strftime('%Y%m%d')
-            ).only('id', 'EncPatient')
         
-        
-        return possible
+        candidates = Enc.objects.following_vaccination(
+            rules.TIME_WINDOW_POST_EVENT, 
+            begin_date=begin_date, end_date=end_date).filter(
+            reported_icd9_list__in=self.icd9s)
+
+
+        if self.discarding_icd9s:
+            candidates = [x for x in candidates if not x.EncPatient.has_history_of(self.discarding_icd9s, end_date=end_date)]
+
+        if self.ignored_if_past_occurrence:
+            months = self.ignored_if_past_occurrence
+            candidates = [x for x in candidates 
+                          if not x.is_reoccurrence(month_period=months)]
+
+        return candidates
+            
+            
+             
 
         
 
@@ -121,12 +132,12 @@ def detect_diagnostics(immunization, time_window):
         for code in vaers_codes:
             diag = diagnostics.by_code(code)
 
-            # FIXME: icd9Code matching could be exact, but some
+            # FIXME: code matching could be exact, but some
             # strings on the table are not trimmed. Instead of using
             # objects.get, I'm forced to use the a query with LIKE
             # operator, hence objects.filter(__startswith)
 
-            icd9_code = icd9.objects.filter(icd9Code__startswith=code)[:1]
+            icd9_code = icd9.objects.filter(code__startswith=code)[:1]
             if icd9_code:    
                 rule='Patient diagnosed with %s' % diag['name']
                 ev, new = DiagnosticsEvent.objects.get_or_create(
@@ -176,9 +187,6 @@ def detect_lab_results(immunization, time_window):
                                                [])
 
         return any([lx.compared_to_lkv(*r['exclude_if']) for r in lab_test])
-
-
-        
 
     lab_results = Lx.objects.filter(
         LxPatient=patient,
@@ -248,7 +256,7 @@ def make_diagnosis_heuristic(name):
     icd9s = rule.heuristic_defining_codes.all()
 
     d = {
-        'ignored_if_past_occurrance':rule.ignored_if_past_occurrance,
+        'ignored_if_past_occurrence':rule.ignored_if_past_occurrence,
         'discarding_icd9s': rule.heuristic_discarding_codes.all(),
         'category':rule.category
         }
@@ -257,17 +265,14 @@ def make_diagnosis_heuristic(name):
         
 
 
+ACTIVE_DIAGNOSTICS_HEURISTICS = [make_diagnosis_heuristic(v['name'])
+                                 for v in rules.VAERS_DIAGNOSTICS.values()]
+
 
 if __name__ == '__main__':
-    import datetime
+    for h in ACTIVE_DIAGNOSTICS_HEURISTICS:
+        encounters = h.matches(begin_date=datetime.date(year=1985, month=01, day=01))
+        print h.name, encounters        
 
-    heuristics = [make_diagnosis_heuristic(v['name'])
-                  for v in rules.VAERS_DIAGNOSTICS.values()]
-
-    for h in heuristics:
-        print h.matches(begin_date=datetime.date(year=2006, month=01, day=02),
-                        end_date=datetime.date(year=2006, month=02, day=02)
-                        )
-    
     
         

@@ -1,41 +1,94 @@
 import datetime
 import random
 
+
 from ESP.conf.models import Icd9
-from ESP.esp.models import Demog, Enc, Immunization, Vaccine
-from ESP.vaers.models import FeverEvent, DiagnosticsEvent
+from ESP.esp.models import Demog, Enc, Immunization, Vaccine, Lx
+from ESP.vaers.models import AdverseEvent, FeverEvent, DiagnosticsEvent
 from ESP.vaers.models import DiagnosticsEventRule
 from ESP.utils import randomizer
 
 
 from rules import TIME_WINDOW_POST_EVENT
 
-FEVER_EVENT_PCT = 30
-ICD9_EVENT_PCT = 5
+FEVER_EVENT_PCT = 40
+ICD9_EVENT_PCT = 10
+IGNORE_FOR_REOCCURRENCE_PCT = 20
+IGNORE_FOR_HISTORY_PCT = 60
 
 
-def create_history(patient):
+def clear():
+    for klass in [Immunization, Enc, Lx, AdverseEvent]:
+        klass.delete_fakes()
 
-    history = ImmunizationHistory(patient)
-    vaccine_date = patient.date_of_birth + datetime.timedelta(days=180)
+
+class Vaers(object):
+
+    def __init__(self, immunization):
+        self.immunization = immunization
+        self.patient = immunization.ImmPatient
+        self.immunization_date = datetime.datetime.strptime(
+            immunization.ImmDate, '%Y%m%d')
+
+        self.matching_encounter = None
 
 
-    for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
-        try:
-            # Check conditions for vaccine and add to history
-            causes_fever = random.randrange(100) > FEVER_EVENT_PCT
-            causes_icd9 = random.randrange(100) > ICD9_EVENT_PCT
-            history.add_immunization(Vaccine.random(), vaccine_date,
-                                     causes_fever=causes_fever,
-                                     causes_icd9=causes_icd9)
+    def _encounter(self):
+        days_after =  datetime.timedelta(days=random.randrange(
+                0, TIME_WINDOW_POST_EVENT))
+
+        when = self.immunization_date+days_after
+        return Enc.make_mock(self.patient, when=when)
+
+
+    def cause_fever(self):
+        encounter = self._encounter()
+        encounter.EncTemperature = randomizer.fever_temperature() 
+        encounter.save()
+
+    def cause_icd9(self, code):
+        encounter = self._encounter()
+        encounter.save()
+        encounter.EncTemperature = randomizer.body_temperature() 
+        encounter.reported_icd9_list.add(code)
+        encounter.save()
         
-            # Set date for next vaccination
-            vaccine_date += datetime.timedelta(days=random.randrange(30, 180))
-        except:
-            continue
+        self.matching_encounter = encounter
+
         
+
+
+    def cause_icd9_ignored_for_history(self, code):
+        maximum_days_ago =  (self.immunization_date - 
+                             self.patient.date_of_birth).days
+
+        when = self.immunization_date - datetime.timedelta(
+            days=random.randrange(0, maximum_days_ago))
+
+        past_encounter = Enc.make_mock(self.patient, when=when)
+        past_encounter.EncTemperature = randomizer.body_temperature()
+        past_encounter.save()
+        past_encounter.reported_icd9_list.add(code)
+        past_encounter.save()
+
+
         
+    def cause_icd9_ignored_for_reoccurrence(self, code, max_period):
+        maximum_days_ago = min(
+            (self.immunization_date - self.patient.date_of_birth).days,
+            max_period * 30
+            )
+
+        when = self.immunization_date - datetime.timedelta(
+            days=random.randrange(0, maximum_days_ago))
+
+        past_encounter = Enc.make_mock(self.patient, when=when)
+        past_encounter.EncTemperature = randomizer.body_temperature()
+        past_encounter.save()
+        past_encounter.reported_icd9_list.add(code)
+        past_encounter.save()
         
+    
 
 class ImmunizationHistory(object):
 
@@ -47,60 +100,56 @@ class ImmunizationHistory(object):
         self.clear()
         
     def clear(self):
-        Immunization.objects.filter(ImmPatient=patient).delete()
+        Immunization.objects.filter(ImmPatient=self.patient).delete()
 
-    def add_immunization(self, vaccine, date, **kw):
-        causes_fever_event = kw.get('causes_fever', False)
-        causes_icd9_event = kw.get('causes_icd9', False)
+    def add_immunization(self):
+        ''' Gives a completely random vaccine to a patient in a
+        completely random date between his date_of_birth and
+        today()'''
         
-        assert (date >= datetime.datetime.now(), 
-                'Can not vaccinate someone in the future')
+        # Find a vaccine
+        vaccine = Vaccine.random()
 
-        imm = Immunization.objects.create(
-            ImmPatient=self.patient,
-            ImmType = vaccine.code,
-            ImmDate = date.strftime('%Y%m%d'),
-            ImmName = 'FAKE',
-            ImmManuf = 'FAKE',
-            ImmDose = '3.1415 pi',
-            ImmLot = 'FAKE',
-            ImmVisDate = date.strftime('%Y%m%d'),
-            ImmRecId = 'FAKE-%s' % self.patient.id
-            )
+        # Find a random date
+        today = datetime.datetime.today()
+        interval = today - self.patient.date_of_birth
+        days_ago = random.randrange(0, interval.days)
         
-        # If this immunization causes no event, our job is done.
-        if not causes_fever_event and not causes_icd9_event:
-            return
+        when = today - datetime.timedelta(days=days_ago)
+        assert (self.patient.date_of_birth <= when <= today)
 
-        # Else, we need to produce a Enc that happens after vaccination date
-        days_after = datetime.timedelta(
-            days=random.randrange(0, TIME_WINDOW_POST_EVENT))
-        encounter = Enc.make_mock(self.patient,
-                                  when=date+days_after)
+        # If everything is ok, give patient the vaccine
+        return Immunization.make_mock(vaccine, self.patient, when)
+        
 
-        # And we need to set the Enc to reflect the information we
-        # need recorded to qualify as an event.
-        temp = randomizer.fever_temperature() if causes_fever_event else randomizer.body_temperature()
-
-        encounter.EncTemperature = temp
-
-        encounter.save()
-
-        if causes_icd9_event:
-            # Get a random rule that is active. This will be our event
-            # to be detected. Get one of the icd9s that define that
-            # rule and add to the reported icd9 list.
-            rule = DiagnosticsEventRule.objects.filter(
-                in_use=True).order_by('?')[0]
-            code = random.choice(rule.heuristic_defining_codes.all())
-            encounter.reported_icd9_list.add(code)
 
     
 
                     
 
 if __name__ == '__main__':
+    clear()
     for patient in Demog.fakes():
-        create_history(patient)
-    
+        history = ImmunizationHistory(patient)
+        for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
+            imm = history.add_immunization()
+            # Should we cause a fever event?
+            if random.randrange(100) <= FEVER_EVENT_PCT:
+                ev = Vaers(imm)
+                ev.cause_fever()
+            # Or a icd9 Event?
+            elif random.randrange(100) <= ICD9_EVENT_PCT:
+                ev = Vaers(imm)
+                rule = DiagnosticsEventRule.random()
+                code = random.choice(rule.heuristic_defining_codes.all())
+                ev.cause_icd9(code)
+
+                # Maybe it's one that should be ignored?
+                if random.randrange(100) <= IGNORE_FOR_REOCCURRENCE_PCT:
+                    ev.cause_icd9_ignored_for_reoccurrence(code, 12)
+                elif random.randrange(100) <= IGNORE_FOR_HISTORY_PCT:
+                    if len(rule.heuristic_discarding_codes.all()) > 0:
+                        discarding_code = random.choice(
+                            rule.heuristic_discarding_codes.all())
+                        ev.cause_icd9_ignored_for_history(discarding_code)
     

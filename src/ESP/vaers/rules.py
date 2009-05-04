@@ -506,7 +506,7 @@ def define_active_rules():
                 # it's an expression or a code. Faster than going to
                 # the DB.
                 c = float(code_expression)
-                code = Icd9.objects.get(icd9Code=code_expression)
+                code = Icd9.objects.get(code=code_expression)
                 code_set.add(code)
             except:
                 # DoesNotExist. It means we're dealing with an expression.
@@ -523,7 +523,7 @@ def define_active_rules():
     for k, v in VAERS_DIAGNOSTICS.items():
         obj, created = DiagnosticsEventRule.objects.get_or_create(
             name=v['name'],
-            ignored_if_past_occurrance = v['ignore_period'],
+            ignored_if_past_occurrence = v['ignore_period'],
             category=v['category'],
             source=v.get('source', None)
             )

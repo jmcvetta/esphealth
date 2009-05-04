@@ -17,12 +17,16 @@ import datetime
 import random
 import pdb
 
-from django.db import models
+from django.db import models, connection, backend
 from django.db.models import Q
 from django.contrib.auth.models import User 
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
+from django.core.exceptions import ObjectDoesNotExist
+from django.utils.datastructures import SortedDict 
 
+
+from ESP.conf.common import EPOCH
 from ESP.esp import choices
 from ESP.utils import utils as util
 from ESP.utils import randomizer
@@ -33,7 +37,81 @@ from ESP.conf.models import Loinc
 from ESP.conf.models import Cpt
 from ESP.conf.models import Rule
 from ESP.conf.models import NativeToLoincMap
+from ESP.localsettings import DATABASE_ENGINE
 
+
+
+class EncounterManager(models.Manager):
+    def following_vaccination(self, days_after, begin_date=None, end_date=None):
+
+        encounter_meta = Enc.objects.model._meta
+        demog_meta = Demog.objects.model._meta
+        imm_meta = Immunization.objects.model._meta
+        
+        # Get PKs from patients, encounters, immunizations
+        # We will need them to construct a correct WHERE clause
+        ppk =  '%s.%s' % (demog_meta.db_table, demog_meta.pk.name) 
+        enc_pk = '%s.%s' % (encounter_meta.db_table, encounter_meta.pk.name) 
+
+        enc_fk = '%s.%s' % (encounter_meta.db_table, 
+                            encounter_meta.get_field('EncPatient').attname) 
+        imm_fk = '%s.%s' % (imm_meta.db_table, 
+                            imm_meta.get_field('ImmPatient').attname)
+
+        patient_in_encounter = '%s=%s' % (ppk, enc_fk) #Patient.id=Enc.EncPatient_id
+        patient_in_immunization = '%s=%s' % (ppk, imm_fk) #Patient.id = Imm.ImmPatient_id
+
+
+        # Get "Full Name" for EncounterDate and ImmunizationDate fields
+        enc_date_field = '%s.%s' % (encounter_meta.db_table, 'EncEncounter_Date')
+        imm_date_field = '%s.%s' % (imm_meta.db_table, 'ImmDate')
+
+
+        timestamp = r'%Y%m%d'
+        date_cmp_field_name = 'days_after'
+
+        if DATABASE_ENGINE == 'sqlite3':
+            def STR_TO_DATE():
+                # If you know any better way to get a date from
+                # a YYYYMMDD string in sqlite, please let me know. 
+                return '''julianday(SUBSTR(%s, 0, 4)||'-'||SUBSTR(%s, 5, 2)||'-'||SUBSTR(%s, 7, 2))'''
+            date_cmp_select = '- '.join([STR_TO_DATE(), STR_TO_DATE()])
+
+            # And the absurdity is not alone. Check out this tuple. 
+            params = (enc_date_field, enc_date_field, enc_date_field, 
+                      imm_date_field, imm_date_field, imm_date_field)
+
+
+        elif DATABASE_ENGINE == 'mysql':
+            # MySQL is a little bit less insane, using STR_TO_DATE funcion
+            date_cmp_select = "DATEDIFF(STR_TO_DATE(%s, '%s'), STR_TO_DATE(%s, '%s'))"
+            params = (enc_date_field, timestamp, imm_date_field, timestamp)
+        else:
+            raise NotImplementedError, 'Implemented only for Sqlite and MySQL (So far)'
+
+        max_days = ' '.join([date_cmp_select % params, '<=', str(days_after)])
+        same_day = (date_cmp_select % params) + ' >= 0'
+
+
+        # This is our minimum WHERE clause
+        where_clauses = [patient_in_encounter, patient_in_immunization, 
+                         max_days, same_day]
+
+
+        if begin_date:
+            where_clauses.append("%s >= '%s'" % (imm_date_field, begin_date.strftime(timestamp)))
+            
+        if end_date:
+            where_clauses.append("%s <= '%s'" % (imm_date_field, end_date.strftime(timestamp)))
+
+
+        return self.extra(
+            tables = [demog_meta.db_table, imm_meta.db_table],
+            where = where_clauses
+            )
+
+
+           
 class Provider(models.Model):
     
 
@@ -158,6 +236,15 @@ class Demog(models.Model):
         if save_on_db: p.save()
         return p
 
+    @staticmethod
+    def random(fake=True):
+        '''Returns a random fake user. If fake is False, returns a
+        completely random user'''
+        objs = Demog.objects
+        query = objs.filter(Demog.fake_q) if fake else objs.all()
+        return query.order_by('?')[0]
+        
+
 
     DemogPatient_Identifier = models.CharField('Patient Identifier',max_length=20,blank=True,db_index=True)
     DemogMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,db_index=True,blank=True)
@@ -238,6 +325,20 @@ class Demog(models.Model):
                 return '%d Months' % months
         
     age = property(_get_age)
+
+    def has_history_of(self, icd9s, begin_date=None, end_date=None):
+        '''
+        returns a boolean if the patient has any of the icd9s code 
+        in their history of encounters.
+        '''
+        begin_date = begin_date or self.date_of_birth or EPOCH
+        end_date = end_date or datetime.date.today()
+
+        return Enc.objects.filter(EncPatient=self).filter(
+            EncEncounter_Date__gte=util.str_from_date(begin_date),
+            EncEncounter_Date__lt=util.str_from_date(end_date),
+            ).filter(
+            reported_icd9_list__in=icd9s).count() != 0
         
             
 
@@ -406,6 +507,18 @@ class Lx(models.Model):
     
     # Use custom manager
     objects = LxManager()
+
+    
+    fake_q = Q(LxPatient__DemogPatient_Identifier__startswith='FAKE')
+    
+    @staticmethod
+    def delete_fakes():
+        Lx.objects.filter(Lx.fake_q).delete()
+
+    @staticmethod
+    def fakes():
+        return Lx.objects.filter(Lx.fake_q)
+        
     
     def _get_ext_test_code(self):
         '''
@@ -518,7 +631,11 @@ class Enc(models.Model):
 
     @staticmethod
     def delete_fakes():
-        Enc.objects.filter(fake_q).delete()
+        Enc.objects.filter(Enc.fake_q).delete()
+
+    @staticmethod
+    def fakes():
+        return Enc.objects.filter(Enc.fake_q)
 
     @staticmethod
     def make_fakes(how_many, **kw):
@@ -565,8 +682,12 @@ class Enc(models.Model):
         
         if save_on_db: e.save()
         return e
-    
 
+
+
+
+
+    objects = EncounterManager()
     EncPatient = models.ForeignKey(Demog) 
     EncMedical_Record_Number = models.CharField('Medical Record Number',max_length=20,blank=True,null=True,db_index=True)
     EncEncounter_ID = models.CharField('Encounter ID',max_length=20,blank=True,null=True)
@@ -620,7 +741,7 @@ class Enc(models.Model):
         if len(ilist) > 0:
             s=[]
             for i in ilist:
-                ilong = Icd9.objects.filter(icd9Code__exact=i)
+                ilong = Icd9.objects.filter(code__exact=i)
                 if ilong:
                     ilong = '='+ilong[0].icd9Long # not sure why, but > 1 being found!
                 else:
@@ -670,6 +791,24 @@ class Enc(models.Model):
     def is_fake(self):
         return self.EncEvent_Type == 'FAKE'
 
+    def is_reoccurrence(self, month_period=12):
+        '''
+        returns a boolean indicating if this encounters shows any icd9
+        code that has been registered for this patient in last
+        month_period time.
+        '''
+        
+        earliest = self.date-datetime.timedelta(days=30*month_period)
+        
+        return Enc.objects.filter(
+            EncEncounter_Date__lt=self.EncEncounter_Date).filter(
+            EncEncounter_Date__gte=util.str_from_date(earliest)).filter(
+                EncPatient=self.EncPatient).filter(
+                reported_icd9_list__in=self.reported_icd9_list.all()).count() > 0
+                
+                    
+                    
+
 
 
 ###################################
@@ -702,9 +841,25 @@ class Immunization(models.Model):
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
     
 
+    fake_q = Q(ImmName='FAKE')
+
+    @staticmethod
+    def delete_fakes():
+        Immunization.objects.filter(Immunization.fake_q).delete()
+    
     @staticmethod
     def fakes():
-        return Immunization.objects.filter(ImmName='FAKE')
+        return Immunization.objects.filter(Immunization.fake_q)
+
+    @staticmethod
+    def make_mock(vaccine, patient, date):
+        fmt = '%Y%m%d'
+        return Immunization.objects.create(
+            ImmPatient=patient, ImmRecId='FAKE-%s' % patient.id,
+            ImmType=vaccine.code, ImmDose='3.1415 pi',
+            ImmDate=date.strftime(fmt), ImmVisDate = date.strftime(fmt),
+            ImmName='FAKE', ImmManuf='FAKE', ImmLot='FAKE'
+            )
 
     def is_fake(self):
         return self.ImmName == 'FAKE'
