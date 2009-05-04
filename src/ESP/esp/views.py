@@ -47,17 +47,14 @@ from ESP.esp import forms
 from ESP.utils.utils import log
 from ESP.utils import utils as util
 
+from ESP.conf.models import HelpDb
+
 from forms import LoginForm
 
 HOME_URL = '/'
 LOGIN_URL = '/login'
 REDIRECT_FIELD_NAME = 'next'
 
-
-def run(request):
-    '''Have a job to run that needs to go through Django? 
-    Use this method'''
-    return HttpResponse('OK')
 
 ###################################
 @login_required
@@ -1250,17 +1247,15 @@ def showhelp(request, topic=None):
         try:
             h = get_object(helpdb,helpTopic__exact=topic)
         except:
-                h = helpdb()
+                h = HelpDb()
                 h.helpTopic = 'Not available yet'
                 h.helpText = 'Sorry, nothing is written for this topic (yet)'
 
     else:
         h = None
-    cinfo = {"request":request,
-             "object":h
-             }
-    c = Context(cinfo)
-    return render_to_response('esp/help.html',c)
+
+    return direct_to_template(request, 'esp/help.html',
+                              {'object':h})
 
 
 #######################################

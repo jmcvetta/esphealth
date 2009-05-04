@@ -4,8 +4,8 @@
 {% block sidebar %}
 <p><p>
 <table cellpadding="1" border="1" >
-    <tr><td><a href="{{SITEROOT}}/">ESP Home</a></td></tr>
-    <tr><td><a href="{{SITEROOT}}/help/overview/">Overview</a></td></tr>
+    <tr><td><a href="{% url ESP.esp.views.index %}">ESP Home</a></td></tr>
+    <tr><td><a href="{{SITEROOT}}/esp/help/overview/">Overview</a></td></tr>
 </table>
 {% endblock %}
 
