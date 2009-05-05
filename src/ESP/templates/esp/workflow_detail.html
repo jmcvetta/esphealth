@@ -1,0 +1,46 @@
+{% extends "espbase.html" %}
+
+{% block content %}
+
+<h1>You may ADD a comment to the existing one (if any)</h1>
+<h2>Your comment will be appended when you update</h2>
+
+<a href="{{SITEROOT}}/cases/{{caseid}}/">Back to Case</a>
+
+{% if object %}
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="{{SITEROOT}}/workflows/{{ object.id }}/updatewfComment/" method="post">
+<table>
+
+<tr >
+<td bgcolor="orchid" ><h3>Existing Comment (read only - you CANNOT edit this - append text below only)</h3> 
+     <font color="darkblue">
+     <textarea name="ExistingComment" readonly rows=5 cols=80 style="color: white; background-color: orchid" >
+     {{ object.workflowComment }}</textarea>  
+     </font >
+</td>
+</tr>
+
+<tr>
+<td><h3>Your Addition to comment</h3>
+     <textarea name="NewComment" rows=5 cols=80 > </textarea> 
+</td>
+</tr>
+
+<tr><td><input type="Submit" value="Update the workflow comment" />
+</td></tr>
+</form>
+
+<table cellspacing="10" cellpadding="3">
+<tr class="{% cycle row1,row2 as rowcolors %}"><th>Case ID</th><td>{{ object.workflowCaseID_id }}</td></tr>
+<tr class="{% cycle rowcolors %}"><th>Workflow State</th><td>{{ object.workflowState  }}</td></tr>
+<tr class="{% cycle rowcolors %}"><th>Date</th><td>{{ object.workflowDate }}</td></tr>
+<tr class="{% cycle rowcolors %}"><th>Updated By</th><td> {{ object.workflowChangedBy  }}</td></tr>
+</table>
+
+{% else %}
+    <p>No Workflow record found.</p>
+{% endif %}
+{% endblock %}

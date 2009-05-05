@@ -1,0 +1,21 @@
+{% extends "espbase.html" %}
+
+{% block content %}
+
+{% if form.has_errors %}
+<p>Your username and password didn't match. Please try again.</p>
+{% if error %}
+{{ error }}
+{% endif %}
+{% endif %}
+
+<form method="post" action="{% url ESP.esp.views.esplogin %}" >
+<table>
+{{ form.as_table }}
+</table>
+
+<input type="submit" value="login" />
+<input type="hidden" name="next" value="{{ next }}" />
+</form>
+
+{% endblock %}

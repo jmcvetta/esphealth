@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block extrastyle %}
+<link rel="stylesheet" type="text/css" href="{{ site_css_folder }}vaers.css" />
+{% endblock %}
+{% block extrascript %}
+<script type="text/javascript" src="{{ site_javascript_folder }}vaers.js">
+
+</script>
+{% endblock%}
+
+
+
+{% block sidebar %}{% endblock %}
+{% block content %}
+
+<h2>Adverse Event to Vaccination Report</h2>
+
+<p>Please confirm if <span class="patient_name">
+{{ case.patient.DemogFirst_Name }} {{ case.patient.DemogLast_Name }}</span>'s case should be reported as an adverse event.<br />
+ESP VAERS has
+identified this case and the recommended action is
+to <span class="msg_case_category">{{ case.get_category_display}}.</span></p>
+  
+<p>Please provide any additional clinical details
+on this event that you think might be helpful to CDC and FDA vaccine
+safety investigators:</p>
+
+<table id="tbl_case_details">
+  <tr>
+  <th>Reason for being considered an adverse event</th>
+    <td>{{ case.matching_rule_explain }}</td>
+  </tr>
+  {% if case.icd9 %}
+  <tr>
+    <th>Icd9 Code</th>
+    <td>{{ case.icd9.icd9Code }} ({{case.icd9.icd9Long }})</td>
+  </tr>
+  {% endif %}
+  
+  <tr><th>Date of Immunization</th>
+    <td>{{ case.immunization.date|date:"M d, Y"}}</td>
+  </tr>
+  {% if case.encounter %}
+  <tr>
+    <th>Date of encounter that indicated Adverse Event</th>
+    <td>{{ encounter_date|date:"M d, Y"}}</td>
+  </tr>
+  {% endif %}
+  <tr>
+    <th>Detected on</th>
+    <td>{{ case.created_on|date:"M d, Y"}}</td>
+  </tr>
+    {% if case.lab_result %}
+  <tr>
+    <th>Lab Result that indicated Adverse Event</th>
+    <td>
+      <ul class="lx_summary">
+	<li>Results Obtained on {{ lab_result_date|date:"M d, Y"}}</li>
+	<li>Order: #{{ case.lab_result.LxOrder_Id_Num }}</li>
+	<li>Component: {{ case.lab_result.LxComponentName}}</li>
+	<li>Results: {{ case.lab_result.LxTest_results|default:"N/A"}} 
+	  ({{ lab_result.LxTest_status|default:"N/A"}})
+	</li>
+      </ul>
+    </td>
+  </tr>
+  {% endif %}
+</table>
+
+<div id="case_comments_list">
+  <h3>Notes and Comments</h3>
+  {% for comment in comments %}
+  <div class="comment_entry">
+     <div class="comment_time" >
+      {{ comment.created_on|date:"M d, Y" }}<br />
+      {{ comment.created_on|date:"H:i" }}
+    </div>
+    <div class="comment">{{ comment.text }}</div>
+    <div style="clear:both"></div>
+  </div>
+  {% endfor %}
+</div>
+
+<form id="frm_case_confirmation" method="POST" action="{% url present_case case.id %}">
+  {{ form.as_ul }}
+  <input type="submit" value="submit" />
+</form>
+{% endblock %}
