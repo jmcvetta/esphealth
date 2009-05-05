@@ -449,10 +449,9 @@ class FeverHeuristic(EncounterHeuristic):
     Abstract base class for encounter heuristics, concrete instances of which
     are used as components of DiseaseDefinitions
     '''
-    def __init__(self, name, temperature, icd9s=[], verbose_name=None, **kwargs):
+    def __init__(self, name, temperature=None, icd9s=[], verbose_name=None, **kwargs):
         assert name
-        assert icd9s
-        assert temperature
+        assert (icd9s or temperature)
         self.name = name
         self.temperature = temperature
         self.verbose_name = verbose_name
