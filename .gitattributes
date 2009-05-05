@@ -201,13 +201,9 @@ src/ESP/utils/vaers_hl7.py -text
 src/ESP/utils/validator.py -text
 src/ESP/vaers/__init__.py -text
 src/ESP/vaers/fake.py -text
-src/ESP/vaers/fixtures/encounters.sql -text
-src/ESP/vaers/fixtures/immunizations.sql -text
-src/ESP/vaers/fixtures/lab_results.sql -text
 src/ESP/vaers/forms.py -text
 src/ESP/vaers/heuristics.py -text
 src/ESP/vaers/hl7_report.py -text
-src/ESP/vaers/make_fixtures.py -text
 src/ESP/vaers/models.py -text
 src/ESP/vaers/reports.py -text
 src/ESP/vaers/rules.py -text
