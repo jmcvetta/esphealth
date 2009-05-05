@@ -6,6 +6,7 @@ doc/FINAL[!!-~]ELR[!!-~]231[!!-~]Implementation[!!-~]Guide_052104.pdf -text svne
 etc/apache.conf -text
 /readme -text
 src/ESP/__init__.py -text
+src/ESP/appdemo.db -text
 src/ESP/backfill-by-month.sh -text
 src/ESP/conf/__init__.py -text
 src/ESP/conf/admin.py -text
@@ -25,7 +26,6 @@ src/ESP/data/loincdb.txt -text
 src/ESP/data/ndc_codes.txt -text
 src/ESP/data/source_systems.txt -text
 src/ESP/env-setup.sh -text
-src/ESP/esp.db -text
 src/ESP/esp/__init__.py -text
 src/ESP/esp/admin.py -text
 src/ESP/esp/choices.py -text
