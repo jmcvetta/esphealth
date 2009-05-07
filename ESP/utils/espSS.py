@@ -245,7 +245,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
     dateSitecounts = {} # for local practice zip code volumes
     dateAgecounts = {} # for age chunk by residential zip volumes
     ageCounts = {} # for debugging - why no infants - rml april 30 ?
-    esel = {'ezip': # django has a very neat way to inject sql!!
+    esel = {'ezip': # django has a very neat way to inject sql
             'select DemogZip from esp_demog where esp_demog.id = esp_enc.EncPatient_id',
             'dob': 
             'select DemogDate_of_Birth from esp_demog where esp_demog.id = esp_enc.EncPatient_id'}
@@ -718,7 +718,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
         edk.sort()
         for thisdate in edk:
             SSlogging.debug('!!!!#### processing syndrome %s at %s' % (syndrome,isoTime()))
-            thisdateId = dateId.get(thisdate,{})
+            thisdateId = dateId.get(thisdate,{}) # strange, one of these may be missing
             thissitedateId = sitedateId.get(thisdate,{})
             c,sc = makeCounts(syndrome,thisdateId,thissitedateId,thisdate)
             m += c
@@ -737,7 +737,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
     # process it into the reporting structure - a dict as date->zip->age..counts and a dict of cases
     # now returns (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature) = zids[id]
     res,sres,lres = makeMessage(syndrome, dateId, sitedateId) # specification gallop
-    return res,sres,lqres
+    return res,sres,lres
 # end makeTab  
 
 
