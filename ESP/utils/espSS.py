@@ -735,7 +735,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
     # process it into the reporting structure - a dict as date->zip->age..counts and a dict of cases
     # now returns (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature) = zids[id]
     res,sres,lres = makeMessage(syndrome, dateId, sitedateId) # specification gallop
-    return res,lres,sres
+    return res,sres,lres
 # end makeTab  
 
 
