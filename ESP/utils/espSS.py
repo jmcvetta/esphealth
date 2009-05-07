@@ -280,7 +280,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
             siteZip = localSiteZips.get(siteCode,'Unknown')
             dateSitecounts.setdefault(thisd,{})
             dateSitecounts[thisd].setdefault(siteZip,{}) # eeesh.
-	    dateSitecounts[thisd][siteZip].setdefault(age,0)
+            dateSitecounts[thisd][siteZip].setdefault(age,0)
             dateSitecounts[thisd][siteZip][age] += 1
     del allenc
     ak = ageCounts.keys()
@@ -647,8 +647,8 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
                 allencs = alld.get(z,None)
                 if allencs:
                     alln = sum(allencs.values()) # dict keyed by age!
-		else:
-		    alln = 0
+                else:
+                    alln = 0
                 if alln > 0:
                     if zn > alln:
                         SSlogging.warning('####! site syndrome counts %d > volume %d for zip %s, date %s, synd %s' % (zn,
@@ -745,7 +745,8 @@ def generateTab(sdate='20090401',edate='20090431',ziplen=5):
     and unit record tab delim generator
     date zip_residence zip_practice syndrome temp syndN allencN syndPct 
     """
-    for localIgnore in (True,False):
+    for i,localIgnore in enumerate((True,False)):
+        ignoreMode = ['Excl','All'][i]
         encDateVols,encDateAgeVols,encDateSiteVols = AgeencDateVolumes(startDT=sdate,endDT=edate,
            localIgnore=localIgnore,ziplen=ziplen)
         fproto = 'ESP%s_SyndAgg_zip%s_%s_%s_%s_%s.xls'
@@ -753,7 +754,6 @@ def generateTab(sdate='20090401',edate='20090431',ziplen=5):
         syndromes = syndDefs.keys() # syndromes
         syndromes.sort()
         for syndrome in syndromes: # get ready to write tab delimited data as a list of strings
-            ignoreMode = 'Excl'
             res,sres,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=encDateVols,
                encDateAgeVols=encDateAgeVols,encDateSiteVols=encDateSiteVols,localIgnore=localIgnore)
             fname = fproto % (thisSite,ziplen,ignoreMode,syndrome,sdate,edate)
