@@ -259,7 +259,7 @@ if __name__ == '__main__':
     all_heuristics = vaers_heuristics()
     today = datetime.datetime.today()
     a_month_ago = today - datetime.timedelta(days=30)
-    BaseHeuristic.generate_all_events(begin_date=today, end_date=a_month_ago)
+    BaseHeuristic.generate_all_events(begin_date=a_month_ago, end_date=today)
     
     
         
