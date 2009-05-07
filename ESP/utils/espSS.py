@@ -280,7 +280,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
             siteZip = localSiteZips.get(siteCode,'Unknown')
             dateSitecounts.setdefault(thisd,{})
             dateSitecounts[thisd].setdefault(siteZip,{}) # eeesh.
-            dateSitecounts[thisd][siteZip].setdefault(age,0)
+	    dateSitecounts[thisd][siteZip].setdefault(age,0)
             dateSitecounts[thisd][siteZip][age] += 1
     del allenc
     ak = ageCounts.keys()
@@ -559,6 +559,7 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
     return res
 # end makeAMDS
 
+
 def generateAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3):
     """ test stub for AMDS xml generator
     On Thu, Apr 23, 2009 at 11:54 PM, Lee, Brian A. (CDC/CCHIS/NCPHI)
@@ -643,9 +644,12 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
         for i,z in enumerate(zips):
             zn = siteaday[z] # not length - is number of individual records in each zip for this date/synd
             if zn > 0: # can be empty because of the way it's constructed
-                alln = alld.get(z,None)
-                SSlogging.debug('z=',z,type(z), 'alln=',alln,type(alln),'zn=',zn,type(zn))
-                if alln:
+                allencs = alld.get(z,None)
+                if allencs:
+                    alln = sum(allencs.values()) # dict keyed by age!
+		else:
+		    alln = 0
+                if alln > 0:
                     if zn > alln:
                         SSlogging.warning('####! site syndrome counts %d > volume %d for zip %s, date %s, synd %s' % (zn,
                         alln,z,edate,syndrome))
@@ -790,4 +794,5 @@ if __name__ == "__main__":
     generateTab(ziplen=ziplen,sdate=sdate,edate=edate)
     generateAMDS(ziplen=3,minCount=0,sdate=sdate,edate=edate)
     generateAMDS(ziplen=5,minCount=0,sdate=sdate,edate=edate)
+
 
