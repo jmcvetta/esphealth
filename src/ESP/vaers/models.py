@@ -20,9 +20,11 @@ ADVERSE_EVENT_CATEGORIES = [
 def adverse_event_digest(**kw):
     import hashlib
     event = kw.get('instance')
+
     if not event.digest:
-        clear_msg = '%s%s%s%s' % (event.id, event.patient, 
-                                  event.immunization.id, event.category)
+        clear_msg = '%s%s%s%s' % (event.id, event.immunizations, 
+                                  event.matching_rule_explain, 
+                                  event.category)
         event.digest = hashlib.sha224(clear_msg).hexdigest()
         event.save()
 
@@ -43,8 +45,7 @@ class AdverseEventManager(models.Manager):
             return None
 
 class AdverseEvent(models.Model):
-    content_type = models.ForeignKey(ContentType, editable=False, null=True)
-    immunization = models.ForeignKey(Immunization)
+    immunizations = models.ManyToManyField(Immunization)
     matching_rule_explain = models.CharField(max_length=200)
     category = models.CharField(max_length=20, choices=ADVERSE_EVENT_CATEGORIES)
     digest = models.CharField(max_length=200, null=True)
@@ -63,69 +64,15 @@ class AdverseEvent(models.Model):
     def delete_fakes(cls):
         cls.objects.filter(AdverseEvent.fake_q).delete()
 
-
-    def save(self):
-        if(not self.content_type):
-            klass = self.__class__
-            self.content_type = ContentType.objects.get_for_model(klass)
-        self.save_base()
-
-
-
-class FeverEvent(AdverseEvent):
-    temperature = models.FloatField('Temperature')
+class EncounterEvent(AdverseEvent):
     encounter = models.ForeignKey(Enc)
-
     explain_string = 'Patient with %3.1fF fever'
 
-    @staticmethod
-    def make_fake(immunization, encounter):
-
-        assert encounter.is_fake()
-        assert immunization.is_fake()
-        assert immunization.ImmPatient.is_fake()
-
-        temp = randomizer.fever_temperature() 
-        
-        return FeverEvent.objects.create(
-            immunization=immunization,
-            temperature=temp, 
-            matching_rule_explain = FeverEvent.explain_string % temp
-            )
-            
-
-class DiagnosticsEvent(AdverseEvent):
-    encounter = models.ForeignKey(Enc)
-    icd9 = models.ForeignKey(Icd9)   
-
-    explain_string = 'Patient diagnosed with %s'
-
-    @staticmethod
-    def make_fake(immunization, encounter, icd9):
-
-        assert encounter.is_fake()
-        assert immunization.is_fake()
-        assert immunization.ImmPatient.is_fake()
-        
-        explain_rule = DiagnosticsEvent.explain_string % icd9.name
-
-        return DiagnosticsEvent.objects.create(
-            immunization=immunization, matching_rule_explain = explain_rule,
-            encounter=encounter, icd9=icd9
-            )
 
 
 
 class LabResultEvent(AdverseEvent):
     lab_result = models.ForeignKey(Lx)
-
-
-ADVERSE_EVENT_CLASSES = {
-    'fever':FeverEvent,
-    'diagnostics':DiagnosticsEvent,
-    'lab_result': LabResultEvent
-    }
-
 
 
 
@@ -139,8 +86,7 @@ class ProviderComment(models.Model):
 
 
 
-signals.post_save.connect(adverse_event_digest, sender=DiagnosticsEvent)
-signals.post_save.connect(adverse_event_digest, sender=FeverEvent)
+signals.post_save.connect(adverse_event_digest, sender=EncounterEvent)
 signals.post_save.connect(adverse_event_digest, sender=LabResultEvent)
 
 

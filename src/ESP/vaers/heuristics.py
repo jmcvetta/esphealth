@@ -4,46 +4,96 @@
 import optparse
 import datetime
 
-from django.db import backend
-from django.db.models import Q, F
+from django.db.models import Q
 
-from ESP.hef.core import EncounterHeuristic
+from ESP.hef.core import BaseHeuristic
 from ESP.conf.common import EPOCH
 from ESP.conf.models import Icd9
 from ESP.esp.models import Demog, Immunization, Enc, Lx
 from ESP.vaers.models import AdverseEvent
-from ESP.vaers.models import FeverEvent, DiagnosticsEvent, LabResultEvent
+from ESP.vaers.models import EncounterEvent, LabResultEvent
 from ESP.vaers.models import DiagnosticsEventRule
+from ESP.utils.utils import log
 
 import rules
-import diagnostics
+
 
 LAB_TESTS_NAMES = rules.VAERS_LAB_RESULTS.keys()
 
 
-class DiagnosisHeuristic(EncounterHeuristic):
-    def __init__(self, name, icd9s, verbose_name=None, **kwargs):
+class AdverseEventHeuristic(BaseHeuristic):
+    def __init__(self, name, verbose_name=None):
+        self.name = name
+        self.verbose_name = verbose_name
+        self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
+        self._register()            
+            
+    
+
+
+class VaersFeverHeuristic(AdverseEventHeuristic):
+    def __init__(self):
+        self.category = 'default'
+        super(VaersFeverHeuristic, self).__init__(
+            'VAERS Fever', verbose_name='Fever reaction to immunization')
+
+
+    def matches(self, begin_date=None, end_date=None):
+        log.info('Getting matches for %s' % self.name)
+        begin_date = begin_date or EPOCH
+        end_date = end_date or datetime.date.today()
+
+        return Enc.objects.following_vaccination(
+            rules.TIME_WINDOW_POST_EVENT, 
+            begin_date=begin_date, end_date=end_date).filter(
+            EncTemperature__gte=str(rules.TEMP_TO_REPORT))
+
+    def generate_events(self, begin_date=None, end_date=None):
+        log.info('Generating events for %s' % self.name)
+        matches = self.matches(begin_date=begin_date, end_date=end_date)
+        for e in matches:
+            rule_explain = 'Patient had %3.1f fever after immunization(s)'
+            
+            # Create event instance
+            ev = EncounterEvent.objects.create(
+                matching_rule_explain=rule_explain % float(e.EncTemperature),
+                category = self.category,
+                encounter=e
+                )
+            
+            ev.save()
+
+            # Register which immunizations may be responsible for the event
+            for imm in Immunization.vaers_candidates(e, self.time_post_immunization):
+                ev.immunizations.add(imm)
+                
+                
+            ev.save()
+
+        return len(matches)
+        
+
+class DiagnosisHeuristic(AdverseEventHeuristic):
+    def __init__(self, name, icd9s, category, verbose_name=None, **kwargs):
         '''
         @type icd9s: [<Icd9>, <Icd9>, <Icd9>, ...]
         @type discarding_icd9: [<Icd9>, <Icd9>, <Icd9>, ...]
         @type ignored_if_past_occurrence: int
         @type verbose_name: String
         '''
+                 
+        self.icd9s = icd9s
+        self.category = category
         self.discarding_icd9s = kwargs.pop('discarding_icd9s', [])
         self.ignored_if_past_occurrence = kwargs.pop(
             'ignored_if_past_occurrence', None)
         
-        super(DiagnosisHeuristic, 
-              self).__init__(name, icd9s, verbose_name, **kwargs)
-        
-        
-        
-
+        super(DiagnosisHeuristic, self).__init__(name, verbose_name)
+            
     def matches(self, begin_date=None, end_date=None):
+        log.info('Getting matches for %s' % self.name)
         begin_date = begin_date or EPOCH
         end_date = end_date or datetime.date.today()
-
-
         
         candidates = Enc.objects.following_vaccination(
             rules.TIME_WINDOW_POST_EVENT, 
@@ -52,7 +102,9 @@ class DiagnosisHeuristic(EncounterHeuristic):
 
 
         if self.discarding_icd9s:
-            candidates = [x for x in candidates if not x.EncPatient.has_history_of(self.discarding_icd9s, end_date=end_date)]
+            candidates = [x for x in candidates if not 
+                          x.EncPatient.has_history_of(self.discarding_icd9s, 
+                                                      end_date=end_date)]
 
         if self.ignored_if_past_occurrence:
             months = self.ignored_if_past_occurrence
@@ -60,98 +112,28 @@ class DiagnosisHeuristic(EncounterHeuristic):
                           if not x.is_reoccurrence(month_period=months)]
 
         return candidates
-            
-            
-             
-
-        
 
 
-    
+    def generate_events(self, begin_date=None, end_date=None):
+        log.info('Generating events for %s' % self.name)
+        matches = self.matches(begin_date=begin_date, end_date=end_date)
+        for e in matches:
+            # Create event instance
+            ev = EncounterEvent.objects.create(
+                matching_rule_explain= self.verbose_name,
+                category = self.category,
+                encounter=e
+                )
+            ev.save()
 
+            # Register which immunizations may be responsible for the event
+            for imm in Immunization.vaers_candidates(e, self.time_post_immunization):
+                ev.immunizations.add(imm)
+                            
+            ev.save()
 
-# The detect_* functions below determine if a given immunization has
-# caused a adverse event. time_window is the time that after the
-# immunization that is considered for the event to be a consequence of
-# the immunization.
+        return len(matches)
 
-# Immunization is an instance from models.Immunization, which contains
-# information about the patient, dose, date taken, etc
-
-def detect_fevers(immunization, time_window):
-
-    patient = immunization.ImmPatient
-    date = datetime.datetime.strptime(immunization.ImmDate, '%Y%m%d')        
-    patient_encounters = Enc.objects.filter(
-        EncPatient=patient, 
-        EncEncounter_Date__gte=date.strftime('%Y%m%d'),
-        EncEncounter_Date__lte=(date+time_window).strftime('%Y%m%d')
-        )
-
-    fever_encounters = []
-    for e in patient_encounters:
-        try:
-            temperature = float(e.EncTemperature)
-            if temperature >= rules.TEMP_TO_REPORT: 
-                fever_encounters.append(e)
-            e.temperature = temperature
-        except:
-            pass
-    
-
-    detected = []
-    for e in fever_encounters:
-        rule='Patient with %3.1fF fever' % e.temperature
-        ev, new = FeverEvent.objects.get_or_create(
-            patient=patient,
-            temperature=e.temperature,
-            immunization=immunization,
-            category='auto',
-            defaults = {'matching_rule_explain': rule,
-                        'encounter':e}
-            )
-        detected.append(ev)
-
-    return detected
-        
-
-def detect_diagnostics(immunization, time_window):
-    patient = immunization.ImmPatient
-    date = datetime.datetime.strptime(immunization.ImmDate, '%Y%m%d')
-    patient_encounters = Enc.objects.filter(
-        EncPatient=patient,
-        EncEncounter_Date__gte=date.strftime('%Y%m%d'),
-        EncEncounter_Date__lte=(date+time_window).strftime('%Y%m%d')
-        )
-        
-    detected = []
-    for e in patient_encounters:
-        vaers_codes = [x for x in e.EncICD9_Codes.split(',') 
-                       if (x.strip() and diagnostics.is_match(x))]
-
-        for code in vaers_codes:
-            diag = diagnostics.by_code(code)
-
-            # FIXME: code matching could be exact, but some
-            # strings on the table are not trimmed. Instead of using
-            # objects.get, I'm forced to use the a query with LIKE
-            # operator, hence objects.filter(__startswith)
-
-            icd9_code = icd9.objects.filter(code__startswith=code)[:1]
-            if icd9_code:    
-                rule='Patient diagnosed with %s' % diag['name']
-                ev, new = DiagnosticsEvent.objects.get_or_create(
-                    patient=patient,
-                    immunization=immunization,
-                    category=diag['category'],
-                    encounter=e,
-                    icd9=icd9_code[0],
-                    defaults = {'matching_rule_explain': rule}
-                    )
-
-                detected.append(ev)
-
-    return detected
  
 
 def detect_lab_results(immunization, time_window):
@@ -254,25 +236,30 @@ def make_diagnosis_heuristic(name):
     rule = DiagnosticsEventRule.objects.get(name=name)
     verbose_name = '%s as an adverse reaction to immunization' % name
     icd9s = rule.heuristic_defining_codes.all()
+    category = rule.category
 
-    d = {
-        'ignored_if_past_occurrence':rule.ignored_if_past_occurrence,
-        'discarding_icd9s': rule.heuristic_discarding_codes.all(),
-        'category':rule.category
+    d = {'ignored_if_past_occurrence':rule.ignored_if_past_occurrence,
+         'discarding_icd9s': rule.heuristic_discarding_codes.all(),
         }
 
-    return DiagnosisHeuristic(name, icd9s, verbose_name, **d)
+    return DiagnosisHeuristic(name, icd9s, category, verbose_name, **d)
         
 
 
-ACTIVE_DIAGNOSTICS_HEURISTICS = [make_diagnosis_heuristic(v['name'])
-                                 for v in rules.VAERS_DIAGNOSTICS.values()]
+def vaers_heuristics():
+    diagnostics = [make_diagnosis_heuristic(v['name'])
+                   for v in rules.VAERS_DIAGNOSTICS.values()]
+
+    fever = VaersFeverHeuristic()
+    
+    return diagnostics.append(fever)
 
 
 if __name__ == '__main__':
-    for h in ACTIVE_DIAGNOSTICS_HEURISTICS:
-        encounters = h.matches(begin_date=datetime.date(year=1985, month=01, day=01))
-        print h.name, encounters        
-
+    all_heuristics = vaers_heuristics()
+    today = datetime.datetime.today()
+    a_month_ago = today - datetime.timedelta(days=30)
+    BaseHeuristic.generate_all_events(begin_date=today, end_date=a_month_ago)
+    
     
         

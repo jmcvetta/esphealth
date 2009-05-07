@@ -100,7 +100,6 @@ class EncounterManager(models.Manager):
 
         if begin_date:
             where_clauses.append("%s >= '%s'" % (imm_date_field, begin_date.strftime(timestamp)))
-            
         if end_date:
             where_clauses.append("%s <= '%s'" % (imm_date_field, end_date.strftime(timestamp)))
 
@@ -845,6 +844,21 @@ class Immunization(models.Model):
 
     fake_q = Q(ImmName='FAKE')
 
+
+    @staticmethod
+    def vaers_candidates(encounter, days_prior):
+        '''Given an encounter that is considered an adverse event,
+        returns a queryset that represents the possible immunizations
+        that have caused it, given a '''
+        
+        earliest_date = encounter.date - datetime.timedelta(days=days_prior)
+        
+        return Immunization.objects.filter(
+            ImmPatient=encounter.EncPatient,
+            ImmDate__lte=encounter.EncEncounter_Date,
+            ImmDate__gte=earliest_date.strftime('%Y%m%d')
+            )
+
     @staticmethod
     def delete_fakes():
         Immunization.objects.filter(Immunization.fake_q).delete()
@@ -865,6 +879,8 @@ class Immunization(models.Model):
 
     def is_fake(self):
         return self.ImmName == 'FAKE'
+
+
 
     def  __unicode__(self):
 

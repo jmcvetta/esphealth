@@ -48,7 +48,6 @@ src/ESP/hef/models.py -text
 src/ESP/hef/run.py -text
 src/ESP/hef/tests.py -text
 src/ESP/hef/views.py -text
-src/ESP/localsettings.py -text
 src/ESP/localsettings.py.sample -text
 src/ESP/manage.py -text
 src/ESP/nodis/__init__.py -text
