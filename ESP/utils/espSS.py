@@ -718,7 +718,9 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
         edk.sort()
         for thisdate in edk:
             SSlogging.debug('!!!!#### processing syndrome %s at %s' % (syndrome,isoTime()))
-            c,sc = makeCounts(syndrome,dateId[thisdate],sitedateId[thisdate],thisdate)
+            thisdateId = dateId.get(thisdate,{})
+            thissitedateId = sitedateId.get(thisdate,{})
+            c,sc = makeCounts(syndrome,thisdateId,thissitedateId,thisdate)
             m += c
             sm += sc
             if True or syndrome == 'ILI': # all for the moment..
@@ -735,7 +737,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
     # process it into the reporting structure - a dict as date->zip->age..counts and a dict of cases
     # now returns (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature) = zids[id]
     res,sres,lres = makeMessage(syndrome, dateId, sitedateId) # specification gallop
-    return res,sres,lres
+    return res,sres,lqres
 # end makeTab  
 
 
