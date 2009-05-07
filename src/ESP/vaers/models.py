@@ -54,15 +54,6 @@ class AdverseEvent(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
-    fake_q = Q(immunization__ImmPatient__DemogFirst_Name__startswith='FAKE')
-
-    @classmethod
-    def fakes(cls):
-        return cls.objects.filter(AdverseEvent.fake_q)
-
-    @classmethod
-    def delete_fakes(cls):
-        cls.objects.filter(AdverseEvent.fake_q).delete()
 
 class EncounterEvent(AdverseEvent):
     encounter = models.ForeignKey(Enc)
