@@ -3,6 +3,23 @@ welcome to espSS.py
 Please look at http://esphealth.org/trac/ESP/wiki/ESPSS
 to get some idea of the background
 
+Most Recent Changes First:
+7 May 2009: specification stampede overwhelms valiant programmer - now with site zip amalgamation
+            and code bloat(TM)
+2 May 2009: fixed a silly xml bug found while experimenting with AMDS format files
+30 april 2009: get ids and encounter counts for zips over long period as sampling weights?
+30 april 2009: KY wants site volumes in line list. Sigh. As Frank Zappa said, 'the torture never stops...'
+29 april 2009: create reports with and without site exclusions - they're interesting and variable
+29 april 2009: added temp for ILI individual report with age to nearest 5 years
+29 april 2009: fixed all encounter counting - add SQL extras to the filter and .iterator() - wicked fast now.
+               surprisingly good for an ORM - sqlalchemy is really slick
+28 april 2009: changed code to count all encounters to work by day to save ram. Not sure how to speed it up
+28 april 2009: ah - mixing up icd9Fact ids with Enc ids is not a very good idea - counts now sane
+28 april 2009: getting one zip with 1 as volume but 2 ILI cases. arrgh. 
+27 april 2009: swine flu - added a simple tab delimited file dumperqscreen 
+21 april 2009: added btzipdict to espSSconf.py - lookup a zip code to get the MDPH BT region
+22 april 2009: added quick'n'dirty AMDS xml generator - bugger the xsd :)
+
 Copyright Ross Lazarus April 20 2009
 All rights reserved
 Licensed under the LGPL v2.0 or a later version at your preference
@@ -41,24 +58,7 @@ The last of those will probably requiring some additional and explicit
 approval and permission from the local data custodians before deploying those - we
 have it here at Atrius...
 
-Most Recent Changes First:
-7 May 2009: specification stampede overwhelms valiant programmer - now with site zip amalgamation
-            and code bloat (TM)
-2 May 2009: fixed a silly xml bug found while experimenting with AMDS format files
-30 april 2009: get ids and encounter counts for zips over long period as sampling weights?
-30 april 2009: KY wants site volumes in line list. Sigh. As Frank Zappa said, 'the torture never stops...'
-29 april 2009: create reports with and without site exclusions - they're interesting and variable
-29 april 2009: added temp for ILI individual report with age to nearest 5 years
-29 april 2009: fixed all encounter counting - add SQL extras to the filter and .iterator() - wicked fast now.
-               surprisingly good for an ORM - sqlalchemy is really slick
-28 april 2009: changed code to count all encounters to work by day to save ram. Not sure how to speed it up
-28 april 2009: ah - mixing up icd9Fact ids with Enc ids is not a very good idea - counts now sane
-28 april 2009: getting one zip with 1 as volume but 2 ILI cases. arrgh. 
-27 april 2009: swine flu - added a simple tab delimited file dumperqscreen 
-21 april 2009: added btzipdict to espSSconf.py - lookup a zip code to get the MDPH BT region
-22 april 2009: added quick'n'dirty AMDS xml generator - bugger the xsd :)
-
-
+======================
 Accumulated debris of free form notes during development:
 
 Notes during design and prototyping of an ESP:SS module
@@ -236,7 +236,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
     in localSiteExcludeCodes. 
     Challenge is that it requires looking up the zip and age of
     every encounter..
-)   Using extra to squirt some SQL into the ORM call 
+    Using extra to squirt some SQL into the ORM call 
     iterator seems to work - ram use is now reasonable and it's fast enough..
     Age in 5 year chunks added at Ben Kruskal's request for line lists
     """
@@ -709,9 +709,9 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
         ready to write strings
         """
         # provide sd,ed,ctime,ruser,doid
-        m = ['Date\tZip_Res\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome',] # amalg
-        sm = ['Date\tZip_Site\tSyndrome\tNSyndrome\tNAllEnc\tPctSyndrome',] # site zip amalg
-        lm = ['Synd\tDate\tZip_Res\tZip_Seen\tAge_5Yrs\tICD9code\tTemperature\tNEncs_Age_Zip_Res\tNEncs_Age_Zip_Site',] 
+        m = ['edate\tzip_res\tsyndrome\tnsyndrome\tnallEnc\tpctsyndrome',] # amalg
+        sm = ['edate\tzip_site\tsyndrome\tnsyndrome\tnallEnc\tpctsyndrome',] # site zip amalg
+        lm = ['syndrome\tedate\tzip_res\tzip_seen\tage_5yrs\ticd9\ttemperature\tnencs_age_zip_res\tnencs_age_zip_site',] 
         # lm is list of strings for the line list
         # todo - add N all encs age zip_seen as well as zipres
         edk = dateId.keys()
@@ -758,7 +758,7 @@ def generateTab(sdate='20090401',edate='20090431',ziplen=5):
         for syndrome in syndromes: # get ready to write tab delimited data as a list of strings
             res,sres,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=encDateVols,
                encDateAgeVols=encDateAgeVols,encDateSiteVols=encDateSiteVols,localIgnore=localIgnore)
-            fname = fproto % (thisSite,ziplen,ignoreMode,syndrome,sdate,edate)
+            fname = fproto % (thisSite,'%d_Res' % ziplen,ignoreMode,syndrome,sdate,edate)
             f = open(fname,'w') 
             f.write('\n'.join(res))
             f.write('\n')
