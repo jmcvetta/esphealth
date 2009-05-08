@@ -560,7 +560,7 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
 # end makeAMDS
 
 
-def generateAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3):
+def generateAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3,outdir='./'):
     """ test stub for AMDS xml generator
     On Thu, Apr 23, 2009 at 11:54 PM, Lee, Brian A. (CDC/CCHIS/NCPHI)
     (CTR) <fya1@cdc.gov> wrote:
@@ -577,7 +577,7 @@ def generateAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3):
     requ=thisRequestor
     crtime=isoTime(time.localtime())
     SSlogging.debug('crtime = %s' % crtime)
-    fproto = 'ESP%s_AMDS_zip%s_%s_%s_%s.xml'
+    fproto = os.path.join(outdir,'ESP%s_AMDS_zip%s_%s_%s_%s.xml')
     syndromes = syndDefs.keys() # syndromes
     syndromes.sort()
     for syndrome in syndromes: # get ready to write AMDS XML as a list of strings
@@ -741,7 +741,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
 # end makeTab  
 
 
-def generateTab(sdate='20090401',edate='20090431',ziplen=5):
+def generateTab(sdate='20090401',edate='20090431',ziplen=5,outdir='./'):
     """ test wrapper for simple aggregate 
     date synd zip n nall pct
     and unit record tab delim generator
@@ -751,8 +751,8 @@ def generateTab(sdate='20090401',edate='20090431',ziplen=5):
         ignoreMode = ['Excl','All'][i]
         encDateVols,encDateAgeVols,encDateSiteVols = AgeencDateVolumes(startDT=sdate,endDT=edate,
            localIgnore=localIgnore,ziplen=ziplen)
-        fproto = 'ESP%s_SyndAgg_zip%s_%s_%s_%s_%s.xls'
-        lfproto = 'ESP%s_SyndInd_zip%s_%s_%s_%s_%s.xls'
+        fproto = os.path.join(outdir,'ESP%s_SyndAgg_zip%s_%s_%s_%s_%s.xls')
+        lfproto = os.path.join(outdir,'ESP%s_SyndInd_zip%s_%s_%s_%s_%s.xls')
         syndromes = syndDefs.keys() # syndromes
         syndromes.sort()
         for syndrome in syndromes: # get ready to write tab delimited data as a list of strings
@@ -792,9 +792,14 @@ if __name__ == "__main__":
     else:
         ziplen = 5
         print '## supply ziplen (eg 3 or 5) as the third parameter to change from default %d' % ziplen
-    SSlogging.info('espSS.py starting at %s. sdate=%s, edate=%s, ziplen=%d' % (isoTime(),sdate,edate,ziplen))
-    generateTab(ziplen=ziplen,sdate=sdate,edate=edate)
-    generateAMDS(ziplen=3,minCount=0,sdate=sdate,edate=edate)
-    generateAMDS(ziplen=5,minCount=0,sdate=sdate,edate=edate)
+    if len(sys.argv) >= 5:
+        outdir = sys.argv[4]
+    else:
+        outdir = '/home/ESP/SS'
+        print '## supply the output directory path as the fourth parameter to change from default %s' % outdir
+    SSlogging.info('espSS.py starting at %s. sdate=%s, edate=%s, ziplen=%d, outdir=%s' % (isoTime(),sdate,edate,ziplen,outdir))
+    generateTab(ziplen=ziplen,sdate=sdate,edate=edate,outdir=outdir)
+    generateAMDS(ziplen=3,minCount=0,sdate=sdate,edate=edate,outdir=outdir)
+    generateAMDS(ziplen=5,minCount=0,sdate=sdate,edate=edate,outdir=outdir)
 
 
