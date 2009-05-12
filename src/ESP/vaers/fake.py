@@ -1,11 +1,10 @@
 import datetime
 import random
 
-
+from ESP.conf.common import EPOCH
 from ESP.conf.models import Icd9
 from ESP.esp.models import Demog, Enc, Immunization, Vaccine, Lx
-from ESP.vaers.models import AdverseEvent, FeverEvent, DiagnosticsEvent
-from ESP.vaers.models import DiagnosticsEventRule
+from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
 from ESP.utils import randomizer
 
 
@@ -20,6 +19,34 @@ IGNORE_FOR_HISTORY_PCT = 60
 def clear():
     for klass in [Immunization, Enc, Lx, AdverseEvent]:
         klass.delete_fakes()
+
+def fake_world():
+    clear()
+    for patient in Demog.fakes():
+        history = ImmunizationHistory(patient)
+        for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
+            imm = history.add_immunization()
+            # Should we cause a fever event?
+            if random.randrange(100) <= FEVER_EVENT_PCT:
+                ev = Vaers(imm)
+                ev.cause_fever()
+            # Or a icd9 Event?
+            elif random.randrange(100) <= ICD9_EVENT_PCT:
+                ev = Vaers(imm)
+                rule = DiagnosticsEventRule.random()
+                code = random.choice(rule.heuristic_defining_codes.all())
+                ev.cause_icd9(code)
+
+                # Maybe it's one that should be ignored?
+                if random.randrange(100) <= IGNORE_FOR_REOCCURRENCE_PCT:
+                    ev.cause_icd9_ignored_for_reoccurrence(code, 12)
+                elif random.randrange(100) <= IGNORE_FOR_HISTORY_PCT:
+                    if len(rule.heuristic_discarding_codes.all()) > 0:
+                        discarding_code = random.choice(
+                            rule.heuristic_discarding_codes.all())
+                        ev.cause_icd9_ignored_for_history(discarding_code)
+    
+
 
 
 class Vaers(object):
@@ -41,10 +68,19 @@ class Vaers(object):
         return Enc.make_mock(self.patient, when=when)
 
 
+    def make_post_immunization_encounter(self):
+        encounter = self._encounter()
+        encounter.EncTemperature = randomizer.body_temperature() 
+        encounter.save()
+        self.matching_encounter = encounter
+
+
+
     def cause_fever(self):
         encounter = self._encounter()
         encounter.EncTemperature = randomizer.fever_temperature() 
         encounter.save()
+        self.matching_encounter = encounter
 
     def cause_icd9(self, code):
         encounter = self._encounter()
@@ -112,11 +148,13 @@ class ImmunizationHistory(object):
 
         # Find a random date
         today = datetime.datetime.today()
-        interval = today - self.patient.date_of_birth
+
+        interval = today - (max(self.patient.date_of_birth, EPOCH))
         days_ago = random.randrange(0, interval.days)
         
         when = today - datetime.timedelta(days=days_ago)
         assert (self.patient.date_of_birth <= when <= today)
+        assert (EPOCH <= when <= today)
 
         # If everything is ok, give patient the vaccine
         return Immunization.make_mock(vaccine, self.patient, when)
@@ -128,28 +166,4 @@ class ImmunizationHistory(object):
                     
 
 if __name__ == '__main__':
-    clear()
-    for patient in Demog.fakes():
-        history = ImmunizationHistory(patient)
-        for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
-            imm = history.add_immunization()
-            # Should we cause a fever event?
-            if random.randrange(100) <= FEVER_EVENT_PCT:
-                ev = Vaers(imm)
-                ev.cause_fever()
-            # Or a icd9 Event?
-            elif random.randrange(100) <= ICD9_EVENT_PCT:
-                ev = Vaers(imm)
-                rule = DiagnosticsEventRule.random()
-                code = random.choice(rule.heuristic_defining_codes.all())
-                ev.cause_icd9(code)
-
-                # Maybe it's one that should be ignored?
-                if random.randrange(100) <= IGNORE_FOR_REOCCURRENCE_PCT:
-                    ev.cause_icd9_ignored_for_reoccurrence(code, 12)
-                elif random.randrange(100) <= IGNORE_FOR_HISTORY_PCT:
-                    if len(rule.heuristic_discarding_codes.all()) > 0:
-                        discarding_code = random.choice(
-                            rule.heuristic_discarding_codes.all())
-                        ev.cause_icd9_ignored_for_history(discarding_code)
-    
+    fake_world()

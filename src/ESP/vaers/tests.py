@@ -12,23 +12,22 @@ MESSAGE_DIR = os.path.realpath(os.path.join(
 from ESP.conf.models import Icd9
 from ESP.esp.models import Demog, Immunization, Lx, Enc
 from ESP.vaers.models import AdverseEvent
-from ESP.vaers.models import FeverEvent, DiagnosticsEvent, LabResultEvent
+
 
 from ESP.vaers.models import DiagnosticsEventRule
 
 # Modules that we are using and/or testing
 import fake
 import heuristics
-import reports
+
 
 from rules import VAERS_DIAGNOSTICS
-from heuristics import ACTIVE_DIAGNOSTICS_HEURISTICS
-from heuristics import make_diagnosis_heuristic
 from fake import ImmunizationHistory, Vaers, clear
 
 
-
+ACTIVE_HEURISTICS = dict([(h.name, h) for h in heuristics.vaers_heuristics()])
     
+
 
 class TestClearing(unittest.TestCase):
     def testClear(self):
@@ -47,7 +46,7 @@ class TestRuleEngine(unittest.TestCase):
         for v in VAERS_DIAGNOSTICS.values():
             clear()
             # Get rule and corresponding heuristic 
-            heuristic = make_diagnosis_heuristic(v['name'])
+            heuristic = ACTIVE_HEURISTICS[v['name']]
             rule = DiagnosticsEventRule.by_name(v['name'])[0]
 
             # Cause an adverse reaction to one random "victim".
@@ -60,9 +59,11 @@ class TestRuleEngine(unittest.TestCase):
             # Create the adverse event
             ev = Vaers(imm)
             ev.cause_icd9(code)
+
+            matches = heuristic.matches()
   
-            self.assert_(len(heuristic.matches()) == 1)
-            self.assert_(ev.matching_encounter in heuristic.matches())
+            self.assert_(len(matches) == 1, 'Expected to find one match, got %d' % len(matches))
+            self.assert_(ev.matching_encounter in matches)
             
             
 
@@ -73,7 +74,7 @@ class TestRuleEngine(unittest.TestCase):
         for v in VAERS_DIAGNOSTICS.values():
             clear()
             # Get rule and corresponding heuristic 
-            heuristic = make_diagnosis_heuristic(v['name'])
+            heuristic = ACTIVE_HEURISTICS[v['name']]
             rule = DiagnosticsEventRule.by_name(v['name'])[0]
 
             # Cause an adverse reaction to one random "victim".
@@ -88,8 +89,10 @@ class TestRuleEngine(unittest.TestCase):
             ev = Vaers(imm)
             ev.cause_icd9(code)
   
-            self.assert_(len(heuristic.matches()) == 0)
-            self.assert_(ev.matching_encounter not in heuristic.matches())
+            matches = heuristic.matches()
+
+            self.assert_(len(matches) == 0)
+            self.assert_(ev.matching_encounter not in matches)
         
 
     def testDiagnosticsNegativeByReocurrence(self):
@@ -99,7 +102,7 @@ class TestRuleEngine(unittest.TestCase):
         for v in relevant:
             clear()
             # Get rule and corresponding heuristic 
-            heuristic = make_diagnosis_heuristic(v['name'])
+            heuristic = ACTIVE_HEURISTICS[v['name']]
             rule = DiagnosticsEventRule.by_name(v['name'])[0]
             
             # Cause an adverse reaction to one random "victim".
@@ -116,7 +119,7 @@ class TestRuleEngine(unittest.TestCase):
             matches = heuristic.matches()
   
             # So far, the heuristic should detect as a positive
-            self.assert_(len(matches) == 1)
+            self.assert_(len(matches) == 1, 'Expected to find one match, got %d' % len(matches))
             self.assert_(ev.matching_encounter in matches)
 
             # But when we add a past encounter with the same code, it
@@ -125,7 +128,7 @@ class TestRuleEngine(unittest.TestCase):
                                                    v['ignore_period'])
             matches = heuristic.matches()
 
-            self.assert_(len(matches) == 0)
+            self.assert_(len(matches) == 0, 'Expected to find no match, got %d' % len(matches))
             self.assert_(ev.matching_encounter not in matches)
 
 
@@ -142,7 +145,7 @@ class TestRuleEngine(unittest.TestCase):
         for v in relevant:
             clear()
             # Get rule and corresponding heuristic 
-            heuristic = make_diagnosis_heuristic(v['name'])
+            heuristic = ACTIVE_HEURISTICS[v['name']]
             rule = DiagnosticsEventRule.by_name(v['name'])[0]
             
             # Cause an adverse reaction to one random "victim".
@@ -156,11 +159,12 @@ class TestRuleEngine(unittest.TestCase):
             ev = Vaers(imm)
             ev.cause_icd9(code)
 
+
             matches = heuristic.matches()
-  
+
             # So far, the heuristic should detect as a positive
-            self.assert_(len(matches) == 1)
-            self.assert_(ev.matching_encounter in matches)
+            self.assert_(len(matches) == 1, 'Expected to find one match, got %d' % len(matches))
+            self.assert_(ev.matching_encounter in matches, 'encounter not in matches')
 
             # But when we add a history condition that makes it
             # ignorable, it no longer is a match.
@@ -170,15 +174,48 @@ class TestRuleEngine(unittest.TestCase):
 
 
             matches = heuristic.matches()
-            self.assert_(len(matches) == 0)
-            self.assert_(ev.matching_encounter not in matches)
+            self.assert_(len(matches) == 0,  'Expected to find no match, got %d' % len(matches))
+            self.assert_(ev.matching_encounter not in matches, 'heuristic match found encounter that should not be a match')
 
 
     def testFeverDetection(self):
-        pass
+        heuristic = ACTIVE_HEURISTICS['VAERS Fever']
+        
+        # Find proper patient, immunization and code
+        victim = Demog.random()
+        imm = ImmunizationHistory(victim).add_immunization()
+                
+        # Create the adverse event
+        ev = Vaers(imm)
+        ev.cause_fever()
 
+        matches = heuristic.matches()
+  
+        # So far, the heuristic should detect as a positive
+        self.assert_(len(matches) == 1, 'Expected to find one match, got %d' % len(matches))
+        self.assert_(ev.matching_encounter in matches)
+
+        
+        
     def testFeverNegativeDetection(self):
-        pass
+        '''To test whether this heuristic is checking only for fever, we'll give a normal encounter to the victim, but with a normal temperature'''
+        
+        heuristic = ACTIVE_HEURISTICS['VAERS Fever']
+        
+        # Find proper patient, immunization and code
+        victim = Demog.random()
+        imm = ImmunizationHistory(victim).add_immunization()
+                
+        # Create the adverse event
+        ev = Vaers(imm)
+        ev.make_post_immunization_encounter()
+
+        matches = heuristic.matches()
+
+
+        self.assert_(len(matches) == 0)
+        self.assert_(ev.matching_encounter not in matches)
+
 
 
 

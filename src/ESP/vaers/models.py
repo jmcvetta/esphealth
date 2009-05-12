@@ -55,6 +55,19 @@ class AdverseEvent(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
 
 
+    fake_q = Q(immunizations__ImmName='FAKE')
+
+    @staticmethod
+    def fakes():
+        return AdverseEvent.objects.filter(AdverseEvent.fake_q)
+
+    @staticmethod
+    def delete_fakes():
+        AdverseEvent.fakes().delete()
+
+    
+
+
 class EncounterEvent(AdverseEvent):
     encounter = models.ForeignKey(Enc)
     explain_string = 'Patient with %3.1fF fever'

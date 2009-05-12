@@ -26,7 +26,7 @@ class AdverseEventHeuristic(BaseHeuristic):
         self.name = name
         self.verbose_name = verbose_name
         self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
-        self._register()            
+        self._register(name)            
             
     
 
@@ -38,15 +38,22 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
             'VAERS Fever', verbose_name='Fever reaction to immunization')
 
 
+
     def matches(self, begin_date=None, end_date=None):
-        log.info('Getting matches for %s' % self.name)
+        # log.info('Getting matches for %s' % self.name)
         begin_date = begin_date or EPOCH
         end_date = end_date or datetime.date.today()
 
-        return Enc.objects.following_vaccination(
-            rules.TIME_WINDOW_POST_EVENT, 
-            begin_date=begin_date, end_date=end_date).filter(
-            EncTemperature__gte=str(rules.TEMP_TO_REPORT))
+        # Can't use string to compare temperature
+        encounters = Enc.objects.following_vaccination(
+            rules.TIME_WINDOW_POST_EVENT, begin_date=begin_date, 
+            end_date=end_date).exclude(EncTemperature='')
+
+        return [e for e in encounters if 
+                float(e.EncTemperature) >= rules.TEMP_TO_REPORT]
+                    
+            
+            
 
     def generate_events(self, begin_date=None, end_date=None):
         log.info('Generating events for %s' % self.name)
@@ -88,10 +95,10 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         self.ignored_if_past_occurrence = kwargs.pop(
             'ignored_if_past_occurrence', None)
         
-        super(DiagnosisHeuristic, self).__init__(name, verbose_name)
+        super(DiagnosisHeuristic, self).__init__(name, verbose_name=verbose_name)
             
     def matches(self, begin_date=None, end_date=None):
-        log.info('Getting matches for %s' % self.name)
+ #       log.info('Getting matches for %s' % self.name)
         begin_date = begin_date or EPOCH
         end_date = end_date or datetime.date.today()
         
@@ -243,16 +250,21 @@ def make_diagnosis_heuristic(name):
         }
 
     return DiagnosisHeuristic(name, icd9s, category, verbose_name, **d)
+
+def make_fever_heuristic():
+    return VaersFeverHeuristic()
         
 
 
 def vaers_heuristics():
-    diagnostics = [make_diagnosis_heuristic(v['name'])
+    
+    diagnostics_heuristics = [make_diagnosis_heuristic(v['name'])
                    for v in rules.VAERS_DIAGNOSTICS.values()]
 
     fever = VaersFeverHeuristic()
     
-    return diagnostics.append(fever)
+    all_heuristics = diagnostics_heuristics + [fever]
+    return all_heuristics
 
 
 if __name__ == '__main__':
