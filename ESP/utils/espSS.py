@@ -785,8 +785,10 @@ if __name__ == "__main__":
         edate = sys.argv[2]
     else:
         SSlogging.info('## supply sdate and edate as command line parameters to change the default dates')
-        sdate='20060701'
-        edate='20090430'
+        today = datetime.datetime.now()
+        yesterday = today - datetime.timedelta(days=1)
+        sdate= '%d%02d%02d' % (yesterday.year,yesterday.month,yesterday.day)
+        edate= '%d%02d%02d' % (today.year,today.month,today.day)
     if len(sys.argv) >= 4:
         ziplen = int(sys.argv[3])
     else:
