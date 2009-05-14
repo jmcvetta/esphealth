@@ -16,7 +16,7 @@ from django.db.models import Q
 
 from ESP.conf.models import NativeToLoincMap
 #from ESP.esp.models import Lx
-from ESP.core.models import LabResult
+from ESP.emr.models import LabResult
 
 
 SEARCH = ['CHLAM','TRACH', 'GC','GON','HEP','HBV','ALT','SGPT','AST','SGOT','AMINOTRANS','BILI', 'HAV','HCV','RIBA']

@@ -27,9 +27,9 @@ from django.db.models.query import QuerySet
 from django.contrib.contenttypes.models import ContentType
 
 
-from ESP.core.models import LabResult
-from ESP.core.models import Encounter
-from ESP.core.models import Medication
+from ESP.emr.models import LabResult
+from ESP.emr.models import Encounter
+from ESP.emr.models import Prescription
 from ESP.conf.models import NativeToLoincMap
 #from ESP.conf.models import Rule
 from ESP.hef.models import HeuristicEvent

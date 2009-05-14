@@ -131,7 +131,7 @@ class Patient(BaseMedicalRecord):
         return u'%s, %s %s' % (self.last_name, self.first_name, self.middle_name)
     name = property(_get_name)
     
-    def __unicode__(self):
+    def __str__(self):
         return self.name
     
 
@@ -150,8 +150,8 @@ class BasePatientRecord(BaseMedicalRecord):
     provider = models.ForeignKey(Provider, blank=True, null=True) 
     # Meaning of date (e.g. order date or result date?) should be specified in child classes
     date = models.DateField(blank=True, null=True) 
-    patient_id_num = models.CharField('Patient Identifier', max_length=50, blank=True, null=True)
-    provider_id_num = models.CharField('Provider ID #', max_length=50, blank=True, null=True)
+    # Does it make sense to have an MRN field on every patient record table?  
+    # Will all patient records have their own individual MRN?
     mrn = models.CharField('Medical Record Number', max_length=50, blank=True, null=True)
     
     class Meta:
@@ -197,10 +197,8 @@ class LabResult(BasePatientRecord):
     native_name = models.CharField(max_length=255, blank=True, null=True)
     # Order
     order = models.ForeignKey(LabOrder, blank=True, null=True)
-    order_id_num = models.CharField('Order Id #', max_length=20, blank=True, null=True)
-    order_date = models.DateField(blank=True, null=True)
     status = models.CharField('Result Status', max_length=50, blank=True, null=True)
-    result_id_num = models.CharField('Result Id #', max_length=100, blank=True, null=True)
+    #result_id_num = models.CharField('Result Id #', max_length=100, blank=True, null=True)
     # Reference
     ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
     ref_low_string = models.CharField('Reference Low (string)', max_length=100, blank=True, null=True)
@@ -219,6 +217,8 @@ class LabResult(BasePatientRecord):
     # 
     class Meta:
         verbose_name = 'Lab Test Result'
+    def __str__(self):
+        return 'Lab Result #%s' % self.pk
 
 
 class Prescription(BasePatientRecord):
@@ -229,8 +229,6 @@ class Prescription(BasePatientRecord):
     #
     order_id_num = models.CharField('Order Id #', max_length=20, blank=True, null=True)
     ndc = models.ForeignKey(Ndc, blank=True, null=True)
-    # Is ndc_str necessary?
-    ndc_str = models.CharField('National Drug Code', max_length=20, blank=True, null=True)
     name = models.TextField(max_length=3000, blank=False, db_index=True)
     directions = models.TextField(max_length=3000, blank=True, null=True)
     dose = models.CharField(max_length=200, blank=True, null=True)
@@ -259,15 +257,18 @@ class Encounter(BasePatientRecord):
     event_type = models.CharField(max_length=20, blank=True, null=True)
     pregnancy_status = models.CharField(max_length=20, blank=True, null=True)
     edc = models.DateField('Expected date of confinement', blank=True, null=True) 
-    temperature = models.FloatField(blank=True, null=True)
+    temperature = models.FloatField('Temperature (C)', blank=True, null=True)
     # WTF: What is an icd9_qualifier?
     #icd9_qualifier = models.CharField(max_length=200, blank=True, null=True)
     weight = models.FloatField('Weight (kg)', max_length=200, blank=True, null=True)
     height = models.FloatField('Height (cm)', max_length=200, blank=True, null=True)
-    bp_systolic = models.FloatField('Blood Pressure - Systolic', blank=True, null=True)
-    bp_diastolic = models.FloatField('Blood Pressure - Diastolic', blank=True, null=True)
+    bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True)
+    bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True)
     o2_stat = models.FloatField(max_length=50, blank=True, null=True)
     peak_flow = models.FloatField(max_length=50, blank=True, null=True)
+    
+    def __str__(self):
+        return 'Encounter #%s' % self.pk
             
 
 class Immunization(BasePatientRecord):

@@ -1,13 +1,13 @@
 from django.contrib import admin
-from ESP.core.models import SourceSystem
-from ESP.core.models import Provider
-from ESP.core.models import Patient
-from ESP.core.models import LabOrder
-from ESP.core.models import LabResult
-from ESP.core.models import Encounter
+#from ESP.conf.models import SourceSystem
+from ESP.emr.models import Provider
+from ESP.emr.models import Patient
+from ESP.emr.models import LabOrder
+from ESP.emr.models import LabResult
+from ESP.emr.models import Encounter
 
-class Source_System_Admin(admin.ModelAdmin):
-    list_display = ['name', 'software']
+#class Source_System_Admin(admin.ModelAdmin):
+#    list_display = ['name', 'software']
     #list_filter = ['software']
 
 class Provider_Admin(admin.ModelAdmin):
@@ -39,7 +39,7 @@ class Medical_Event_Admin(admin.ModelAdmin):
     list_display = ['patient', 'provider']
     raw_id_fields = ['patient', 'provider']
 
-admin.site.register(SourceSystem, Source_System_Admin)
+#admin.site.register(SourceSystem, Source_System_Admin)
 admin.site.register(Provider, Provider_Admin)
 admin.site.register(Patient, Patient_Admin)
 admin.site.register(LabOrder, Lab_Order_Admin)

@@ -29,12 +29,12 @@ from django.contrib.contenttypes.models import ContentType
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
-from ESP.core.models import LabResult
-from ESP.core.models import Encounter
-from ESP.core.models import Medication
-from ESP.core.models import Immunization
-from ESP.core.models import Patient
-from ESP.core.models import Provider
+from ESP.emr.models import LabResult
+from ESP.emr.models import Encounter
+from ESP.emr.models import Prescription
+from ESP.emr.models import Immunization
+from ESP.emr.models import Patient
+from ESP.emr.models import Provider
 from ESP.hef.models import HeuristicEvent
 from ESP.conf.models import Rule
 from ESP.nodis.models import Case
@@ -511,7 +511,7 @@ class DiseaseDefinition(object):
             med_q = med_q & Q(date__gte=(date - self.med_days_before))
             med_q = med_q & Q(date__lte=(date + self.med_days_after))
             log.debug('med_q: %s' % med_q)
-            medications = Medication.objects.filter(med_q)
+            medications = Prescription.objects.filter(med_q)
             case.medications = sets.Set(case.medications.all()) | sets.Set(medications)
         # Support for reporting immunizations has not yet been implemented
         case.save()

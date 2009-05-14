@@ -263,4 +263,6 @@ src/ESP/vaers/tests.py -text
 src/ESP/vaers/urls.py -text
 src/ESP/vaers/utils.py -text
 src/ESP/vaers/views.py -text
+src/hl7/__init__.py -text
 src/hl7/core.py -text
+src/hl7/hl7.py -text
