@@ -1,6 +1,12 @@
 '''
-                               Core Data Models 
-                                for ESP Health
+                              ESP Health Project
+Electronic Medical Records Warehouse
+                                  Data Models
+
+@authors: Jason McVetta <jason.mcvetta@gmail.com>
+@organization: Channing Laboratory http://www.channing.harvard.edu
+@copyright: (c) 2009 Channing Laboratory
+@license: LGPL
 '''
 
 
@@ -8,7 +14,7 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
-from ESP.core import choices
+from ESP.emr import choices
 from ESP.conf.models import SourceSystem
 from ESP.conf.models import NativeToLoincMap
 from ESP.conf.models import Loinc
@@ -42,7 +48,7 @@ class BaseMedicalRecord(models.Model):
     '''
     Abstract base class for a medical record
     '''
-    system = models.ForeignKey(SourceSystem, db_index=True, blank=False)
+    #system = models.ForeignKey(SourceSystem, db_index=True, blank=False)
     #provenance = models.ForeignKey(Provenance, blank=True)
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
@@ -62,7 +68,8 @@ class Provider(BaseMedicalRecord):
     '''
     A medical care provider
     '''
-    provider_id_num = models.CharField('Physician code', max_length=20, blank=True, null=True, db_index=True)
+    provider_id_num = models.CharField('Physician code', unique=True, max_length=20, 
+        blank=True, null=True, db_index=True)
     last_name = models.CharField('Last Name',max_length=70,blank=True,null=True)
     first_name = models.CharField('First Name',max_length=50,blank=True,null=True)
     middle_initial = models.CharField('Middle_Initial',max_length=20,blank=True,null=True)
@@ -77,9 +84,6 @@ class Provider(BaseMedicalRecord):
     area_code = models.CharField('Primary Department Phone Areacode',max_length=20,blank=True,null=True)
     telephone = models.CharField('Primary Department Phone Number',max_length=50,blank=True,null=True)
     
-    class Meta:
-        unique_together = ['provider_id_num', 'system']
-    
     def _get_name(self):
         return u'%s, %s %s %s' % (self.last_name, self.title, self.first_name, self.middle_initial)
     name = property(_get_name)
@@ -92,7 +96,8 @@ class Patient(BaseMedicalRecord):
     '''
     A patient, with demographic information
     '''
-    patient_id_num = models.CharField('Patient ID #', max_length=20, blank=True, null=True, db_index=True)
+    patient_id_num = models.CharField('Patient ID #', unique=True, max_length=20, 
+        blank=True, null=True, db_index=True)
     provider_id_num = models.CharField('Provider ID #', max_length=20, blank=True, null=True, db_index=True)
     mrn = models.CharField('Medical Record ', max_length=20, blank=True, null=True, db_index=True)
     last_name = models.CharField('Last Name', max_length=199, blank=True, null=True)
@@ -172,6 +177,7 @@ class LabResultManager(models.Manager):
         Translate LOINC numbers to native codes and lookup
         @param loinc_nums: List of LOINC numbers for which to retrieve lab results
         @type loinc_nums:  [String, String, ...]
+        @return: QuerySet
         '''
         log.debug('Querying lab results by LOINC')
         log.debug('LOINCs: %s' % loinc_nums)
@@ -215,7 +221,7 @@ class LabResult(BasePatientRecord):
         verbose_name = 'Lab Test Result'
 
 
-class Medication(BasePatientRecord):
+class Prescription(BasePatientRecord):
     '''
     A prescribed medication
     '''
@@ -277,8 +283,4 @@ class Immunization(BasePatientRecord):
     manufacturer = models.CharField('Manufacturer', max_length=100, blank=True, null=True)
     lot = models.TextField('Lot Number', max_length=500, blank=True, null=True)
     visit_date = models.DateField('Date of Visit', blank=True, null=True)
-
-
-
-
 

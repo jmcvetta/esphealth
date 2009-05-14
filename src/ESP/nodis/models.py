@@ -9,12 +9,12 @@ import datetime
 
 from django.db import models
 
-from ESP.core.models import LabResult
-from ESP.core.models import Encounter
-from ESP.core.models import Medication
-from ESP.core.models import Immunization
-from ESP.core.models import Provider
-from ESP.core.models import Patient
+from ESP.emr.models import LabResult
+from ESP.emr.models import Encounter
+from ESP.emr.models import Medication
+from ESP.emr.models import Immunization
+from ESP.emr.models import Provider
+from ESP.emr.models import Patient
 from ESP.hef.models import HeuristicEvent
 from ESP.conf.models import Rule
 from ESP.conf.choices import WORKFLOW_STATES

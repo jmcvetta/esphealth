@@ -163,16 +163,20 @@ class Icd9(models.Model):
         
    
 class Ndc(models.Model):
-    """ndc codes from http://www.fda.gov/cder/ndc/
+    '''
+    ndc codes from http://www.fda.gov/cder/ndc/
     LISTING_SEQ_NO    LBLCODE    PRODCODE    STRENGTH    UNIT    RX_OTC    FIRM_SEQ_NO    TRADENAME
     eeesh this is horrible - there may be asterisks indicating an optional zero
-    and there is no obvious way to fix this..."""
-    ndcLbl = models.CharField('NDC Label Code (leading zeros are meaningless)', max_length=10,db_index=True)
-    ndcProd = models.CharField('NDC Product Code', max_length=5,db_index=True)
-    ndcTrade = models.CharField('NDC Trade Name', max_length=200,)
+    and there is no obvious way to fix this...
+    '''
+    label_code = models.CharField('NDC Label Code (leading zeros are meaningless)', 
+        blank=True, null=True, max_length=10, db_index=True)
+    product_code = models.CharField('NDC Product Code', max_length=5, 
+        blank=True, null=True, db_index=True)
+    trade_name = models.CharField('NDC Trade Name', max_length=200, blank=False)
     
-    def __unicode__(self):
-        return u'%s %s %s' % (self.ndcLbl,self.ndcProd,self.ndcTrade)
+    def __str__(self):
+        return self.trade_name
         
    
 class Cpt(models.Model):

@@ -14,7 +14,7 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
 from ESP.conf.models import Loinc
-from ESP.core.models import Patient
+from ESP.emr.models import Patient
 
 
 class HeuristicEvent(models.Model):
