@@ -225,7 +225,7 @@ class Medication(BasePatientRecord):
     ndc = models.ForeignKey(Ndc, blank=True, null=True)
     # Is ndc_str necessary?
     ndc_str = models.CharField('National Drug Code', max_length=20, blank=True, null=True)
-    name = models.TextField(max_length=3000, blank=False)
+    name = models.TextField(max_length=3000, blank=False, db_index=True)
     directions = models.TextField(max_length=3000, blank=True, null=True)
     dose = models.CharField(max_length=200, blank=True, null=True)
     frequency = models.CharField(max_length=200, blank=True, null=True)
