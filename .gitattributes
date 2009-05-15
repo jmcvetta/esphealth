@@ -14,7 +14,10 @@ src/ESP/conf/choices.py -text
 src/ESP/conf/common.py -text
 src/ESP/conf/fixtures/conf-atrius.json -text
 src/ESP/conf/fixtures/conf-northadams.json -text
+src/ESP/conf/fixtures/conf-test-loincs.csv -text
 src/ESP/conf/fixtures/icd9s.json -text
+src/ESP/conf/fixtures/loinc.csv -text
+src/ESP/conf/fixtures/test-loinc_to_native.csv -text
 src/ESP/conf/models.py -text
 src/ESP/conf/tests.py -text
 src/ESP/conf/views.py -text

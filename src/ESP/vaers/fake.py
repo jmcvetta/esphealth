@@ -58,6 +58,8 @@ class Vaers(object):
             immunization.ImmDate, '%Y%m%d')
 
         self.matching_encounter = None
+        self.matching_lab_result = None
+
 
 
     def _encounter(self):
@@ -66,6 +68,14 @@ class Vaers(object):
 
         when = self.immunization_date+days_after
         return Enc.make_mock(self.patient, when=when)
+
+    def _lab_result(self, loinc):
+        days_after =  datetime.timedelta(days=random.randrange(
+                0, TIME_WINDOW_POST_EVENT))
+
+        when = self.immunization_date+days_after
+        return Lx.make_mock(loinc, self.patient, when=when)
+
 
 
     def make_post_immunization_encounter(self):
@@ -123,7 +133,35 @@ class Vaers(object):
         past_encounter.save()
         past_encounter.reported_icd9_list.add(code)
         past_encounter.save()
+
+    def cause_positive_lab_result(self, loinc, criterium):
+        lx = self._lab_result(loinc)
+        # criterium['trigger'] is always a string that represents an
+        # inequation in the "X(>|<)Value" format.
         
+        trigger = criterium['trigger']
+        gt_pos = trigger.find('>')
+        lt_pos = trigger.find('<')
+        
+        value = -1
+        
+        if (gt_pos != -1) and (len(trigger.split('>')) == 2):
+            baseline = trigger.split('>')[-1]
+            value = float(baseline) + 1
+            
+        if (lt_pos != -1) and (len(trigger.split('<')) == 2):
+            baseline = trigger.split('<')[-1]
+            value = float(baseline) - 1
+
+        # If value has not been updated, this means our criterium is ill-formed.
+        if value == -1: 
+            raise ValueError, 'Couldn\'t figure out the trigger value'
+
+        lx.native_code = loinc
+        lx.result_float = float(value)
+        lx.save()
+
+        self.matching_lab_result = lx
     
 
 class ImmunizationHistory(object):

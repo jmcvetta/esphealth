@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from ESP.esp.models import Demog, Immunization, Enc, Lx, Provider
 from ESP.esp.choices import WORKFLOW_STATES
-from ESP.conf.models import Icd9
+from ESP.conf.models import Icd9, Loinc
 
 
 ADVERSE_EVENT_CATEGORIES = [
@@ -51,6 +51,8 @@ class AdverseEvent(models.Model):
     digest = models.CharField(max_length=200, null=True)
     state = models.SlugField(max_length=2, choices=WORKFLOW_STATES, default='AR')
 
+    date = models.DateField()
+
     created_on = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -66,13 +68,8 @@ class AdverseEvent(models.Model):
         AdverseEvent.fakes().delete()
 
     
-
-
 class EncounterEvent(AdverseEvent):
     encounter = models.ForeignKey(Enc)
-    explain_string = 'Patient with %3.1fF fever'
-
-
 
 
 class LabResultEvent(AdverseEvent):
@@ -112,18 +109,20 @@ class Rule(models.Model):
             self.in_use = False
             self.save()
     
+    @classmethod
+    def deactivate_all(cls):
+        cls.objects.all().update(in_use=False)
 
 
 
-class DiagnosticsEventManager(models.Manager):
-    def deactivate_all(self):
-        self.all().update(in_use=False)
         
 class DiagnosticsEventRule(Rule):
 
     @staticmethod
     def all_active():
         return DiagnosticsEventRule.objects.filter(in_use=True)
+
+
     
     @staticmethod
     def by_name(name, only_if_active=True):
@@ -135,7 +134,7 @@ class DiagnosticsEventRule(Rule):
     def random():
         return DiagnosticsEventRule.objects.order_by('?')[0]
  
-    objects = DiagnosticsEventManager()
+
     source = models.CharField(max_length=30, null=True)
     ignored_if_past_occurrence = models.PositiveIntegerField(null=True)
     heuristic_defining_codes = models.ManyToManyField(
@@ -146,6 +145,25 @@ class DiagnosticsEventRule(Rule):
     
     
 
-class LxEventRule(Rule):
-    lab_result = models.ForeignKey(Lx)
+class LabResultEventRule(Rule):
+    @staticmethod
+    def all_active():
+        return LabResultEventRule.objects.filter(in_use=True)
+    
+    @staticmethod
+    def by_name(name, only_if_active=True):
+        q = LabResultEventRule.objects.filter(name=name)
+        if only_if_active: q = q.filter(in_use=True)
+        return q
+
+    @staticmethod
+    def random():
+        return LabResultEventRule.objects.order_by('?')[0]
+
+    loinc = models.ForeignKey(Loinc)
+
+
+#class LabResultCriteria(models.Model):
+    
+    
 

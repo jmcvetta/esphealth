@@ -9,7 +9,7 @@ MESSAGE_DIR = os.path.realpath(os.path.join(
         os.path.dirname(__file__), '..', 'messages'))
 
 # Models
-from ESP.conf.models import Icd9
+from ESP.conf.models import Icd9, Loinc, NativeToLoincMap
 from ESP.esp.models import Demog, Immunization, Lx, Enc
 from ESP.vaers.models import AdverseEvent
 
@@ -21,12 +21,26 @@ import fake
 import heuristics
 
 
-from rules import VAERS_DIAGNOSTICS
+from rules import VAERS_DIAGNOSTICS, VAERS_LAB_RESULTS
 from fake import ImmunizationHistory, Vaers, clear
 
+FEVER_HEURISTIC = heuristics.fever_heuristic()
+DIAGNOSTICS_HEURISTICS = dict([(h.name, h) for h in heuristics.diagnostic_heuristics()])
+LAB_HEURISTICS = heuristics.lab_heuristics()
 
-ACTIVE_HEURISTICS = dict([(h.name, h) for h in heuristics.vaers_heuristics()])
-    
+
+
+class TestLoincCodes(unittest.TestCase):
+    def setUp(self):
+        self.codes = VAERS_LAB_RESULTS.keys()
+
+    def testLoincTable(self):
+        for loinc in self.codes:
+            self.assert_(Loinc.objects.get(loinc_num=loinc))
+
+    def testNativeCodeTable(self):
+        for loinc in self.codes:
+            self.assert_(NativeToLoincMap.objects.get(native_code=loinc))
 
 
 class TestClearing(unittest.TestCase):
@@ -46,7 +60,7 @@ class TestRuleEngine(unittest.TestCase):
         for v in VAERS_DIAGNOSTICS.values():
             clear()
             # Get rule and corresponding heuristic 
-            heuristic = ACTIVE_HEURISTICS[v['name']]
+            heuristic = DIAGNOSTICS_HEURISTICS[v['name']]
             rule = DiagnosticsEventRule.by_name(v['name'])[0]
 
             # Cause an adverse reaction to one random "victim".
@@ -74,7 +88,7 @@ class TestRuleEngine(unittest.TestCase):
         for v in VAERS_DIAGNOSTICS.values():
             clear()
             # Get rule and corresponding heuristic 
-            heuristic = ACTIVE_HEURISTICS[v['name']]
+            heuristic = DIAGNOSTICS_HEURISTICS[v['name']]
             rule = DiagnosticsEventRule.by_name(v['name'])[0]
 
             # Cause an adverse reaction to one random "victim".
@@ -102,7 +116,7 @@ class TestRuleEngine(unittest.TestCase):
         for v in relevant:
             clear()
             # Get rule and corresponding heuristic 
-            heuristic = ACTIVE_HEURISTICS[v['name']]
+            heuristic = DIAGNOSTICS_HEURISTICS[v['name']]
             rule = DiagnosticsEventRule.by_name(v['name'])[0]
             
             # Cause an adverse reaction to one random "victim".
@@ -145,7 +159,7 @@ class TestRuleEngine(unittest.TestCase):
         for v in relevant:
             clear()
             # Get rule and corresponding heuristic 
-            heuristic = ACTIVE_HEURISTICS[v['name']]
+            heuristic = DIAGNOSTICS_HEURISTICS[v['name']]
             rule = DiagnosticsEventRule.by_name(v['name'])[0]
             
             # Cause an adverse reaction to one random "victim".
@@ -179,7 +193,7 @@ class TestRuleEngine(unittest.TestCase):
 
 
     def testFeverDetection(self):
-        heuristic = ACTIVE_HEURISTICS['VAERS Fever']
+        heuristic = FEVER_HEURISTIC
         
         # Find proper patient, immunization and code
         victim = Demog.random()
@@ -200,7 +214,7 @@ class TestRuleEngine(unittest.TestCase):
     def testFeverNegativeDetection(self):
         '''To test whether this heuristic is checking only for fever, we'll give a normal encounter to the victim, but with a normal temperature'''
         
-        heuristic = ACTIVE_HEURISTICS['VAERS Fever']
+        heuristic = FEVER_HEURISTIC
         
         # Find proper patient, immunization and code
         victim = Demog.random()
@@ -216,6 +230,63 @@ class TestRuleEngine(unittest.TestCase):
         self.assert_(len(matches) == 0)
         self.assert_(ev.matching_encounter not in matches)
 
+
+    def testLabResultPositiveDetection(self):
+        for heuristic in LAB_HEURISTICS:
+            loinc = heuristic.loinc
+            # Find patient and apply immunization
+            victim = Demog.random()
+            imm = ImmunizationHistory(victim).add_immunization()
+
+            # Create the adverse event
+            ev = Vaers(imm)
+
+            # Get criteria, create one adverse event for each.
+            for criterium in VAERS_LAB_RESULTS[loinc]['criteria']:
+                if criterium == heuristic.criterium:
+                    print 'adding criterium %s for lab %s' % (criterium, loinc)
+                    ev.cause_positive_lab_result(loinc, criterium)
+
+            matches = heuristic.matches()
+
+
+            if len(matches):
+                print 'This Ok\n'
+            else:
+                print 'This Fail\n'
+
+
+            # So far, the heuristic should detect as a positive
+            self.assert_(len(matches) == 1, 'Expected to find one match, got %d' % len(matches))
+            self.assert_(ev.matching_lab_result in matches, 'Lab Result not in matches')
+
+    def testLabResultNegativeDetection(self):
+        for heuristic in LAB_HEURISTICS:
+            clear()
+            # Find patient and apply immunization
+            victim = Demog.random()
+            imm = ImmunizationHistory(victim).add_immunization()
+
+            # To check if the negative detection is ok, we will add
+            # lab results for every possible criterium EXCEPT the one
+            # that we are looking for. There should be no match for
+            # that.
+
+            #Create the adverse event
+            ev = Vaers(imm)
+
+            # Get criteria, trigger event if not considered interesting.
+            for loinc in VAERS_LAB_RESULTS.keys():
+                for criterium in VAERS_LAB_RESULTS[loinc]['criteria']:
+                    if criterium != heuristic.criterium:
+                        ev.cause_positive_lab_result(loinc, criterium)
+
+            matches = heuristic.matches()
+
+            # Assert that our heuristic can not find anything. There
+            # should not be anything to find.
+            self.assert_(len(matches) == 0, 'Expected to find no match, got %d' % len(matches))
+            self.assert_(ev.matching_lab_result not in matches, 'Lab Result in matches, when it should not be there.')
 
 
 
