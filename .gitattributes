@@ -99,8 +99,8 @@ src/ESP/data/source_systems.txt -text
 src/ESP/emr/__init__.py -text
 src/ESP/emr/choices.py -text
 src/ESP/emr/dadmin.py -text
+src/ESP/emr/load_hl7.py -text
 src/ESP/emr/models.py -text
-src/ESP/emr/new_load_hl7.py -text
 src/ESP/emr/views.py -text
 src/ESP/env-setup.sh -text
 src/ESP/esp/admin.py -text
@@ -231,11 +231,11 @@ src/ESP/templates/widgets/vaers/feedback_form.html -text
 src/ESP/urls.py -text
 src/ESP/utils/common.py -text
 src/ESP/utils/concordance.py -text
-src/ESP/utils/load_hl7.py -text
 src/ESP/utils/makeESPdm.py -text
 src/ESP/utils/metrics.py -text
 src/ESP/utils/nlp_report.py -text
 src/ESP/utils/northadams.py -text
+src/ESP/utils/old_load_hl7.py -text
 src/ESP/utils/parsehl7.py -text
 src/ESP/utils/pd1.py -text
 src/ESP/utils/pv1.py -text

@@ -1,8 +1,14 @@
 '''
-Field Choices
-for ESP Health
-core data model
+                              ESP Health Project
+                     Electronic Medical Records Warehouse
+                            Choices for Data Models
+
+@authors: Jason McVetta <jason.mcvetta@gmail.com>
+@organization: Channing Laboratory http://www.channing.harvard.edu
+@copyright: (c) 2009 Channing Laboratory
+@license: LGPL
 '''
+
 
 DATA_TRANSPORT = [
     ('File', 'File'),
@@ -48,3 +54,10 @@ COMPARISONS = [
     ('n', 'Compare value with numerical result'),
     ('s', 'Compare value with string result'),
    ]
+
+HL7_MESSAGE_LOAD_STATUS = [
+    ('s', 'Skipped'),
+    ('a', 'Attempted'),
+    ('l', 'Loaded'),
+    ('f', 'Failure'),
+    ]

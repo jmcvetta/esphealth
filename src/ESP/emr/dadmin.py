@@ -1,3 +1,15 @@
+'''
+                              ESP Health Project
+                     Electronic Medical Records Warehouse
+                         Admin Interface Configuration
+
+@authors: Jason McVetta <jason.mcvetta@gmail.com>
+@organization: Channing Laboratory http://www.channing.harvard.edu
+@copyright: (c) 2009 Channing Laboratory
+@license: LGPL
+'''
+
+
 from django.contrib import admin
 #from ESP.conf.models import SourceSystem
 from ESP.emr.models import Provider

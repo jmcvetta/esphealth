@@ -1,6 +1,6 @@
 '''
                               ESP Health Project
-Electronic Medical Records Warehouse
+                     Electronic Medical Records Warehouse
                                   Data Models
 
 @authors: Jason McVetta <jason.mcvetta@gmail.com>
@@ -30,18 +30,38 @@ from ESP.utils.utils import log
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class Provenance(models.Model):
+
+#class Provenance(models.Model):
+#    '''
+#    Answers the question "Where did this data come from?"
+#    '''
+#    provenance_id = models.AutoField(primary_key=True)
+#    file_name = models.CharField(max_length=500, blank=True, null=True)
+#    file_date = models.DateField('Timestamp on file', blank=True, null=True)
+#    hostname = models.CharField('Host from which data was loaded', max_length=255, blank=True)
+#    batch_timestamp = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+#    
+#    class Meta:
+#        unique_together = ['file_name', 'file_date', 'hostname']
+
+
+class Hl7Message(models.Model):
     '''
-    Answers the question "Where did this data come from?"
+    An HL7 file from which EMR data was loaded into the database.  Records when 
+    we tried to import the file, and the status of our attempt.
     '''
-    provenance_id = models.AutoField(primary_key=True)
-    file_name = models.CharField(max_length=500, blank=True, null=True)
-    file_date = models.DateField('Timestamp on file', blank=True, null=True)
-    hostname = models.CharField('Host from which data was loaded', max_length=255, blank=True)
-    batch_timestamp = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-    
-    class Meta:
-        unique_together = ['file_name', 'file_date', 'hostname']
+    filename = models.CharField(max_length=255, blank=False, unique=True, db_index=True)
+    timestamp = models.DateTimeField(blank=False)
+    status = models.CharField(max_length=1, choices=choices.HL7_MESSAGE_LOAD_STATUS, 
+        blank=False, db_index=True)
+    message = models.TextField('Status Message', blank=True, null=True)
+
+
+#===============================================================================
+#
+#--- ~~~ Medical Records ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 class BaseMedicalRecord(models.Model):
@@ -56,13 +76,6 @@ class BaseMedicalRecord(models.Model):
     class Meta:
         abstract = True
     
-
-#===============================================================================
-#
-#--- ~~~ Medical Records ~~~
-#
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 
 class Provider(BaseMedicalRecord):
     '''
@@ -277,7 +290,7 @@ class Immunization(BasePatientRecord):
     '''
     # Date is immunization date
     #
-    ext_imm_id_num = models.CharField('Immunization Record Id', max_length=200, blank=True, null=True)
+    imm_id_num = models.CharField('Immunization Record Id', max_length=200, blank=True, null=True)
     imm_type = models.CharField('Immunization Type', max_length=20, blank=True, null=True)
     name = models.CharField('Immunization Name', max_length=200, blank=True, null=True)
     dose = models.CharField('Immunization Dose', max_length=100, blank=True, null=True)
