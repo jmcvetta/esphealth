@@ -664,6 +664,8 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
                 row = '\t'.join((edate,z,syndrome,'%d' % zn,'%d' % alln,allfrac))
                 ress.append(row)
         return res,ress
+
+            
     
     def makeLinelist(syndrome='?',aday={},edate='20080101'):
         """ make individual records
@@ -778,7 +780,69 @@ def generateTab(sdate='20090401',edate='20090431',ziplen=5,outdir='./'):
                 f.close()
                 SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
         del encDateVols,encDateAgeVols,encDateSiteVols   
-        
+
+def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5):
+    """ need volumes for espss over all time
+    write site and residential total encs by age
+    eg date zip all 0 5..80 85
+    """
+    fproto = os.path.join(outdir,'ESP%s_AllEnc_zip%d_%s_%s.xls')
+    localIgnore = 1
+    ziplen = 5
+    encDateVols,encDateAgeVols,encDateSiteVols = AgeencDateVolumes(startDT=sdate,endDT=edate,
+           localIgnore=localIgnore,ziplen=ziplen)
+    ages = [x for x in range(0,90,5)]
+    agess = ['%d' % x for x in ages]
+    head = ['edate','zip','all'] + agess
+    head = '\t'.join(head)
+    sres = [head,]
+    rres = [head,] # residential
+    dk = encDateSiteVols.keys()
+    dk.sort()
+    allrz = {}
+    allsz = {} # keep tabs of all
+    for d in dk: # 
+        zk = encDateVols.get(d,{}).keys() # if any
+        for z in zk:
+            allrz.setdefault(z,1) # keep trac of res zips
+        zk = encDateSiteVols.get(d,{}).keys() # if any
+        for z in zk:
+            allsz.setdefault(z,1) # keep trac of site zips
+    rzk = allrz.keys()
+    szk = allsz.keys()
+    for d in dk: # now make report with empty days and zips!
+        for z in rzk: # for all possible zips
+            rt = 0 
+            resn = []
+            for a in ages: # all ages
+                n = encDateAgeVols[d][z].get(a,0)
+                rt += n # total
+                resn.append(n) # res counts by age
+            row = [d,z,'%d' % rt] + ['%d' % x for x in resn] # string    
+        rres.append(row) # for residential encounter report
+        for z in szk: # for all possible zips
+            st = 0 
+            siten = []
+            for a in ages: # all ages
+                n = encDateSiteVols[d][z].get(a,0)
+                st += n # total
+                siten.append(n) # res counts by age
+            row = [d,z,'%d' % st] + ['%d' % x for x in siten] # string    
+        sres.append(row) # for residential encounter report
+    fname = fproto % (thisSite,ziplen,'Excl','Site')
+    f = open(fname,'w')
+    f.write('\n'.join(['\t'.join(x) for x in sres]))
+    f.write('\n')
+    f.close()
+    fname = fproto % (thisSite,ziplen,'Excl','Res')
+    f = open(fname,'w')
+    f.write('\n'.join(['\t'.join(x) for x in rres]))
+    f.write('\n')
+    f.close()
+    
+            
+
+
 if __name__ == "__main__":
     if len(sys.argv) >= 3:
         sdate = sys.argv[1]
@@ -800,8 +864,8 @@ if __name__ == "__main__":
         outdir = '/home/ESP/SS'
         print '## supply the output directory path as the fourth parameter to change from default %s' % outdir
     SSlogging.info('espSS.py starting at %s. sdate=%s, edate=%s, ziplen=%d, outdir=%s' % (isoTime(),sdate,edate,ziplen,outdir))
-    generateTab(ziplen=ziplen,sdate=sdate,edate=edate,outdir=outdir)
-    generateAMDS(ziplen=3,minCount=0,sdate=sdate,edate=edate,outdir=outdir)
-    generateAMDS(ziplen=5,minCount=0,sdate=sdate,edate=edate,outdir=outdir)
-
+    #generateTab(ziplen=ziplen,sdate=sdate,edate=edate,outdir=outdir)
+    #generateAMDS(ziplen=3,minCount=0,sdate=sdate,edate=edate,outdir=outdir)
+    #generateAMDS(ziplen=5,minCount=0,sdate=sdate,edate=edate,outdir=outdir)
+    makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5)
 
