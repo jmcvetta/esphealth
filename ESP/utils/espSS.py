@@ -785,7 +785,9 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5):
     """ need volumes for espss over all time
     write site and residential total encs by age
     eg date zip all 0 5..80 85
+    limit to zips with > 10 cases over entire period arbitrarily
     """
+    limit = 10
     fproto = os.path.join(outdir,'ESP%s_AllEnc_zip%d_%s_%s.xls')
     localIgnore = 1
     ziplen = 5
@@ -804,31 +806,37 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5):
     for d in dk: # 
         zk = encDateVols.get(d,{}).keys() # if any
         for z in zk:
-            allrz.setdefault(z,1) # keep trac of res zips
+            allrz.setdefault(z,0) # keep trac of res zips
+            allrz[z] += 1
         zk = encDateSiteVols.get(d,{}).keys() # if any
         for z in zk:
-            allsz.setdefault(z,1) # keep trac of site zips
+            allsz.setdefault(z,0) # keep trac of site zips
+            allsz[z] += 1
     rzk = allrz.keys()
     szk = allsz.keys()
     for d in dk: # now make report with empty days and zips!
         for z in rzk: # for all possible zips
-            rt = 0 
-            resn = []
-            for a in ages: # all ages
-                n = encDateAgeVols[d][z].get(a,0)
-                rt += n # total
-                resn.append(n) # res counts by age
-            row = [d,z,'%d' % rt] + ['%d' % x for x in resn] # string    
-        rres.append(row) # for residential encounter report
+            if allrz[z] > limit:
+                rt = 0 
+                resn = []
+                dz = encDateAgeVols[d].get(z,{}) # may be empty
+                for a in ages: # all ages
+                    n = dz.get(a,0)
+                    rt += n # total
+                    resn.append(n) # res counts by age
+                row = [d,z,'%d' % rt] + ['%d' % x for x in resn] # string    
+                rres.append(row) # for residential encounter report
         for z in szk: # for all possible zips
-            st = 0 
-            siten = []
-            for a in ages: # all ages
-                n = encDateSiteVols[d][z].get(a,0)
-                st += n # total
-                siten.append(n) # res counts by age
-            row = [d,z,'%d' % st] + ['%d' % x for x in siten] # string    
-        sres.append(row) # for residential encounter report
+            if allsz[z] > limit:
+                st = 0 
+                siten = []
+                dz = encDateSiteVols[d].get(z,{}) # may be empty
+                for a in ages: # all ages
+                    n = dz.get(a,0)
+                    st += n # total
+                    siten.append(n) # res counts by age
+                row = [d,z,'%d' % st] + ['%d' % x for x in siten] # string    
+                sres.append(row) # for residential encounter report
     fname = fproto % (thisSite,ziplen,'Excl','Site')
     f = open(fname,'w')
     f.write('\n'.join(['\t'.join(x) for x in sres]))
