@@ -4,6 +4,8 @@ Please look at http://esphealth.org/trac/ESP/wiki/ESPSS
 to get some idea of the background
 
 Most Recent Changes First:
+18 May 2009: added all encounter/date/zip reports. filter by zips > 10 encounters over entire period
+             Needed for the new espss/ssmap django app.
 7 May 2009: specification stampede overwhelms valiant programmer - now with site zip amalgamation
             and code bloat(TM)
 2 May 2009: fixed a silly xml bug found while experimenting with AMDS format files
