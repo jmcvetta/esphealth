@@ -28,9 +28,10 @@ from django.utils.datastructures import SortedDict
 
 from ESP.conf.common import EPOCH
 from ESP.esp import choices
-from ESP.utils import utils as util
 from ESP.utils import randomizer
 from ESP.utils.utils import log
+from ESP.utils.utils import str_from_date
+from ESP.utils.utils import date_from_str
 from ESP.conf.models import Ndc 
 from ESP.conf.models import Icd9
 from ESP.conf.models import Loinc
@@ -335,8 +336,8 @@ class Demog(models.Model):
         end_date = end_date or datetime.date.today()
 
         return Enc.objects.filter(EncPatient=self).filter(
-            EncEncounter_Date__gte=util.str_from_date(begin_date),
-            EncEncounter_Date__lt=util.str_from_date(end_date),
+            EncEncounter_Date__gte=str_from_date(begin_date),
+            EncEncounter_Date__lt=str_from_date(end_date),
             ).filter(
             reported_icd9_list__in=icd9s).count() != 0
         
@@ -366,7 +367,7 @@ class Rx(models.Model):
     def _get_provider(self):
         return self.RxProvider
     def _get_date(self):
-        return util.date_from_str(self.RxOrderDate)
+        return date_from_str(self.RxOrderDate)
     patient = property(_get_patient)
     provider = property(_get_provider)
     date = property(_get_date)
@@ -500,7 +501,7 @@ class Lx(models.Model):
     def _get_provider(self):
         return self.LxOrdering_Provider
     def _get_date(self):
-        return util.date_from_str(self.LxOrderDate)
+        return date_from_str(self.LxOrderDate)
     patient = property(_get_patient)
     provider = property(_get_provider)
     date = property(_get_date)
@@ -721,7 +722,7 @@ class Enc(models.Model):
     def _get_provider(self):
         return self.EncEncounter_Provider
     def _get_date(self):
-        return util.date_from_str(self.EncEncounter_Date)
+        return date_from_str(self.EncEncounter_Date)
     patient = property(_get_patient)
     provider = property(_get_provider)
     date = property(_get_date)
@@ -730,7 +731,7 @@ class Enc(models.Model):
         '''
         Returns a datetime.date object
         '''
-        return util.date_from_str(self.EncEncounter_Date)
+        return date_from_str(self.EncEncounter_Date)
     encounter_date = property(_get_enc_date)
     
     def geticd9s(self):
@@ -802,7 +803,7 @@ class Enc(models.Model):
         
         return Enc.objects.filter(
             EncEncounter_Date__lt=self.EncEncounter_Date).filter(
-            EncEncounter_Date__gte=util.str_from_date(earliest)).filter(
+            EncEncounter_Date__gte=str_from_date(earliest)).filter(
                 EncPatient=self.EncPatient).filter(
                 reported_icd9_list__in=self.reported_icd9_list.all()).count() > 0
                 
