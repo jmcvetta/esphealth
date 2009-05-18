@@ -124,11 +124,8 @@ def date_from_str(str):
     Returns a datetime.date instance based on the string representation of a
     date from LxOrderDate field.
     '''
-    assert type(str) in [types.StringType, types.UnicodeType]
-    year = int(str[0:4])
-    month = int(str[4:6])
-    day = int(str[6:8])
-    return datetime.date(year, month, day)
+    import time
+    return datetime.date(*time.strptime(str, '%Y%m%d')[:3])
 
 
 def str_from_date(date):

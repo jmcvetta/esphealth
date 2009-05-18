@@ -1,11 +1,13 @@
 import datetime
 import random
 
+
 from ESP.conf.common import EPOCH
 from ESP.conf.models import Icd9
 from ESP.esp.models import Demog, Enc, Immunization, Vaccine, Lx
 from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
 from ESP.utils import randomizer
+from ESP.utils import utils
 
 
 from rules import TIME_WINDOW_POST_EVENT
@@ -54,11 +56,11 @@ class Vaers(object):
     def __init__(self, immunization):
         self.immunization = immunization
         self.patient = immunization.ImmPatient
-        self.immunization_date = datetime.datetime.strptime(
-            immunization.ImmDate, '%Y%m%d')
+        self.immunization_date = utils.date_from_str(immunization.ImmDate)
 
         self.matching_encounter = None
         self.matching_lab_result = None
+        self.last_lab_result = None # Last Lx done before the immunization
 
 
 
@@ -74,7 +76,10 @@ class Vaers(object):
                 0, TIME_WINDOW_POST_EVENT))
 
         when = self.immunization_date+days_after
-        return Lx.make_mock(loinc, self.patient, when=when)
+        return  Lx.make_mock(loinc, self.patient, when=when)
+       
+
+
 
 
 
@@ -162,6 +167,84 @@ class Vaers(object):
         lx.save()
 
         self.matching_lab_result = lx
+
+    def cause_negative_lx_for_lkv(self, loinc, criterium):
+        ''' 
+        exclude_if is a entry that may exist on criteria rules. It is
+        a tuple that contains a comparator and a thresold string. The
+        thresold string is a string that is supposed to represent a math
+        inequation that compares the value of the last known value to
+        the value of the current latest post-immunization lab result.
+
+        Example strings are "LKV+0.5" or "LKV*0.8". We use those
+        strings to calculate a value for LKV that, given the value of
+        the current lx, make the current lx be a negative case.
+
+        Once the proper value for lkv is found, we create a mock Lx with that value.
+        
+        '''
+
+        # We are supposed to have add the positive case first.
+        assert self.matching_lab_result
+        
+        # This is needed because we need the value for the current lab.
+        current_value = self.matching_lab_result.result_float
+
+        # The regular expression that breaks the string into its components.
+        import re
+        regex = re.compile('(LKV)([\+|\-|\*|\/])(.*)')  #LKV+0.5, LKV-0.5, LKV*1.3...
+        comparator, baseline = criterium['exclude_if']
+
+        try:
+            lkv_equation = regex.match(baseline)
+            op, coefficient = lkv_equation.group(2), float(lkv_equation.group(3))
+        except:
+            import pdb
+            pdb.set_trace()
+            raise ValueError, 'Could not create a negative %s lx based on rules from %s' % (loinc, criterium)
+
+        # Now that we have all the terms of the inequation, we solve it
+        # (in a very rudimentary way)
+
+        # One example for uur original inequation could be "X > LKV*1.5'
+        # So we do the operation to isolate LKV in one side of the inequation
+
+        if op == '*': current_value /= coefficient # X > LKV*1.5 --> X/1.5 > LKV
+        elif op == '/': current_value *= coefficient # You got the idea
+        elif op == '-': current_value += coefficient
+        elif op == '+': current_value -= coefficient
+
+        # Now that LKV is isolated, we just checked the comparator and
+        # give it a value that make the inequation true.
+        lkv = (current_value - 0.1) if comparator == '>' else (current_value + 0.1) 
+        
+
+        # Now that we have the value, we create the Lx corresponding
+        # to the "Last" one. It has to be before the immunization.
+        max_days = (self.immunization.date - max(self.patient.date_of_birth, EPOCH)).days
+        when = self.immunization.date - datetime.timedelta(days=random.randrange(1, max_days))
+
+        last_lx = Lx.make_mock(loinc, self.patient, when=when)
+
+        # And now we add the values for lkv
+        last_lx.result_float = lkv
+        last_lx.result_string = str(lkv)
+        last_lx.loinc = loinc
+        last_lx.save()
+
+                                                           
+                    
+
+        
+    
+
+        
+
+        
+            
+
+                         
+        
     
 
 class ImmunizationHistory(object):
@@ -185,7 +268,8 @@ class ImmunizationHistory(object):
         vaccine = Vaccine.random()
 
         # Find a random date
-        today = datetime.datetime.today()
+
+        today = datetime.date.today()
 
         interval = today - (max(self.patient.date_of_birth, EPOCH))
         days_ago = random.randrange(0, interval.days)

@@ -13,6 +13,7 @@
 '''
 
 import string
+import time
 import datetime
 import random
 import pdb
@@ -289,8 +290,8 @@ class Demog(models.Model):
         Returns patient's date of birth as a datetime.datetime instance
         '''
         try:
-            return datetime.datetime.strptime(
-                self.DemogDate_of_Birth, '%Y%m%d')
+            return datetime.date(*time.strptime(
+                    self.DemogDate_of_Birth, '%Y%m%d')[:3])
         except ValueError:
             return None
     date_of_birth = property(_get_date_of_birth)
@@ -568,9 +569,33 @@ class Lx(models.Model):
         return self.LxOrdering_Provider
     def _get_date(self):
         return util.date_from_str(self.LxOrderDate)
+    
+    def _get_result_date(self):
+        return util.date_from_str(self.LxDate_of_result)
+
+    def _get_loinc(self):
+        try:
+            return NativeToLoincMap.objects.get(native_code=self.native_code, 
+                                                native_name=self.native_name)
+        except:
+            return None
+        
+    def _set_loinc(self, value):
+        try:
+            mapping = NativeToLoincMap.objects.get(loinc=value)
+            self.native_code = mapping.native_code
+            self.native_name = mapping.native_name
+        except:
+            import pdb
+            pdb.set_trace()
+            raise ValueError, "Not a valid Loinc used for attribution"
+
+    
     patient = property(_get_patient)
     provider = property(_get_provider)
     date = property(_get_date)
+    result_date = property(_get_result_date)
+    loinc = property(_get_loinc, _set_loinc)
     
     # Use custom manager
     objects = LxManager()
@@ -589,7 +614,7 @@ class Lx(models.Model):
     @staticmethod
     def make_mock(loinc, patient, when=None, save_on_db=True):
         
-        when = when or datetime.datetime.today()
+        when = when or datetime.date.today()
 
         order_date = when - datetime.timedelta(
             days=random.randrange(1, 10))
@@ -603,8 +628,13 @@ class Lx(models.Model):
             LxDate_of_result=util.str_from_date(when)
             )
         if save_on_db: lx.save()
+
         return lx
-            
+
+
+
+        
+        
         
 
     
@@ -645,32 +675,31 @@ class Lx(models.Model):
         return unicode(s)
 
     def previous(self):
-        last = Lx.objects.filter(
-            LxPatient=self.LxPatient,
-            LxTest_Code_CPT=self.LxTest_Code_CPT,
-            LxComponent=self.LxComponent
-            ).exclude(
-            LxDate_of_result__gte=self.LxOrder_Date,
-            LxTest_Results=''
-            ).order_by('-LxDate_of_result')[:1]
-        
-        return last or None
+        try:
+            return Lx.objects.filter(
+                LxPatient=self.LxPatient,
+                native_code=self.native_code
+                ).exclude(
+                LxDate_of_result__gte=self.LxDate_of_result
+                ).latest('LxDate_of_result')
+        except:
+            return None
+
 
     def last_known_value(self, loinc, since=None):
         
-        since = since or datetime.datetime.today()
-        
-        date = min(since, datetime.datetime.strptime(
-                self.LxDate_of_result, '%Y%m%d'))
-        
-        q = Lx.filter_loinc([loinc]).filter(LxPatient=self.LxPatient).exclude(
-            LxDate_of_result__lt=date.strftime('%Y%m%d')).order_by('-LxDate_of_result')[:1]
-
-        if len(q) > 0:
-            previous = q[0]
-            return previous.result_float or previous.result_string
-
-        else: return None
+        since = since or datetime.date.today()
+        date = min(since, self.result_date)
+      
+        try:
+            last = Lx.objects.filter_loincs([loinc]).filter(LxPatient=self.LxPatient).exclude(
+                pk=self.pk,
+                LxDate_of_result__gte=self.LxDate_of_result
+                ).latest('LxDate_of_result')
+            
+            return last.result_float or last.result_string
+        except:
+            return None
 
 
     def compared_to_lkv(self, comparator, x):
@@ -940,8 +969,8 @@ class Immunization(models.Model):
     ImmRecId = models.CharField('Immunization Record Id',max_length=200,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-    
 
+    
     fake_q = Q(ImmName='FAKE')
 
 
@@ -980,7 +1009,10 @@ class Immunization(models.Model):
     def is_fake(self):
         return self.ImmName == 'FAKE'
 
+    def _get_date(self):
+        return util.date_from_str(self.ImmDate)
 
+    date = property(_get_date)
 
     def  __unicode__(self):
 

@@ -175,6 +175,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
 
         def excluded_due_to_history(lx, comparator, baseline):
             try:
+                
                 lkv = lx.last_known_value(self.loinc)
                 if not lkv: return False
                 
@@ -184,7 +185,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 assert float(lkv)
                 
                 equation = ' '.join(
-                    [current_value, comparator, baseline.replace('LKV', str(lkv))])
+                    [str(current_value), comparator, baseline.replace('LKV', str(lkv))])
 
                 return eval(equation)
             except:
@@ -195,11 +196,13 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         trigger = self.criterium['trigger']
         comparator, baseline = self.criterium['exclude_if']
 
+     
+
         candidates = Lx.objects.following_vaccination(days, loinc=self.loinc).filter(
             LxDate_of_result__gte=begin, LxDate_of_result__lte=end)
         
         
-            
+
         return [c for c in candidates if is_trigger_value(c, trigger) and not 
                 excluded_due_to_history(c, comparator, baseline)]
 

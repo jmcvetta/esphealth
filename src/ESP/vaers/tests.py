@@ -36,11 +36,17 @@ class TestLoincCodes(unittest.TestCase):
 
     def testLoincTable(self):
         for loinc in self.codes:
-            self.assert_(Loinc.objects.get(loinc_num=loinc))
+            try:
+                self.assert_(Loinc.objects.get(loinc_num=loinc))
+            except:
+                self.assert_(False, 'Loinc %s not found in table' % loinc)
 
     def testNativeCodeTable(self):
         for loinc in self.codes:
-            self.assert_(NativeToLoincMap.objects.get(native_code=loinc))
+            try:
+                self.assert_(NativeToLoincMap.objects.get(native_code=loinc))
+            except:
+                self.assert_(False, 'Code %s not found in NativetoLoinc Map' % loinc)
 
 
 class TestClearing(unittest.TestCase):
@@ -244,16 +250,11 @@ class TestRuleEngine(unittest.TestCase):
             # Get criteria, create one adverse event for each.
             for criterium in VAERS_LAB_RESULTS[loinc]['criteria']:
                 if criterium == heuristic.criterium:
-                    print 'adding criterium %s for lab %s' % (criterium, loinc)
                     ev.cause_positive_lab_result(loinc, criterium)
 
             matches = heuristic.matches()
 
 
-            if len(matches):
-                print 'This Ok\n'
-            else:
-                print 'This Fail\n'
 
 
             # So far, the heuristic should detect as a positive
@@ -287,6 +288,51 @@ class TestRuleEngine(unittest.TestCase):
             # should not be anything to find.
             self.assert_(len(matches) == 0, 'Expected to find no match, got %d' % len(matches))
             self.assert_(ev.matching_lab_result not in matches, 'Lab Result in matches, when it should not be there.')
+
+    def testLabResultNegativeForHistory(self):
+        ''' 
+        Same strategy use in diagnosis test for history. We create a
+        lab test that is positive, and later we add another old lab
+        result that should make the whole thing a negative case. The
+        first time, the heuristic must find one positive match, and
+        after the excluding criteria, no match should occur'''
+
+        for heuristic in LAB_HEURISTICS:
+            loinc = heuristic.loinc
+            # Find patient and apply immunization
+            victim = Demog.random()
+            imm = ImmunizationHistory(victim).add_immunization()
+
+            # Create the adverse event
+            ev = Vaers(imm)
+
+            # Get criteria, create one adverse event for each.
+            for criterium in VAERS_LAB_RESULTS[loinc]['criteria']:
+                if criterium == heuristic.criterium:
+                    ev.cause_positive_lab_result(loinc, criterium)
+
+            matches = heuristic.matches()
+
+            # So far, the heuristic should detect as a positive
+            self.assert_(len(matches) == 1, 'Expected to find one match, got %d' % len(matches))
+            self.assert_(ev.matching_lab_result in matches, 'Lab Result not in matches')
+
+            # Get criteria, create one adverse event for each.
+            for criterium in VAERS_LAB_RESULTS[loinc]['criteria']:
+                if criterium == heuristic.criterium:
+                    ev.cause_negative_lx_for_lkv(loinc, criterium)
+
+            matches = heuristic.matches()
+
+            if len(matches):
+                import pdb
+                pdb.set_trace()
+                heuristic.matches()
+
+            # Now, no match should show up.
+            self.assert_(len(matches) == 0, 'Expected to find no match, got %d' % len(matches))
+            self.assert_(ev.matching_lab_result not in matches, 'Lab Result in matches')
+        
 
 
 
