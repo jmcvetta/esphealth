@@ -214,10 +214,8 @@ class LabResult(BasePatientRecord):
     #result_id_num = models.CharField('Result Id #', max_length=100, blank=True, null=True)
     # Reference
     ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
-    ref_low_string = models.CharField('Reference Low (string)', max_length=100, blank=True, null=True)
-    ref_high_string = models.CharField('Reference High (string)', max_length=100, blank=True, null=True)
-    ref_low_float = models.FloatField('Reference Low (number)', blank=True, null=True, db_index=True)
-    ref_high_float = models.FloatField('Reference High (number)', blank=True, null=True, db_index=True)
+    ref_low = models.FloatField('Reference Low', blank=True, null=True, db_index=True)
+    ref_high = models.FloatField('Reference High', blank=True, null=True, db_index=True)
     # Result
     abnormal_flag = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     result_float = models.FloatField('Test results (numeric)', blank=True, null=True, db_index=True)
