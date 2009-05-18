@@ -22,6 +22,11 @@ INCOMING_DIR = '/home/ESP/NORTH_ADAMS/incomingHL7'
 #
 UPDATED_BY = 'load_hl7.py'
 
+#
+# Populate tables in old schema (Demog, Lx, Rx, etc)?
+#
+POPULATE_OLD_SCHEMA = True
+
 
 import os
 import datetime
@@ -35,6 +40,7 @@ import operator
 
 from hl7 import hl7
 
+from ESP.conf.models import NativeToLoincMap
 from ESP.conf.models import Icd9
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
@@ -46,6 +52,16 @@ from ESP.emr.models import Immunization
 from ESP.emr.models import Hl7Message
 from ESP.emr.choices import HL7_MESSAGE_LOAD_STATUS
 from ESP.utils.utils import log
+from ESP.utils.utils import str_from_date
+
+if POPULATE_OLD_SCHEMA:
+    from ESP.esp.models import Demog
+    from ESP.esp.models import Provider as OldProvider
+    from ESP.esp.models import Enc
+    from ESP.esp.models import Lx
+    from ESP.esp.models import Lxo
+    from ESP.esp.models import Rx
+    from ESP.esp.models import Immunization as OldImmunization
 
 
 
@@ -138,19 +154,41 @@ class Hl7MessageLoader(object):
         if not len(pid_seg) >= 9:
             raise CannotParseHl7('PID segment has only %s fields' % len(pid_seg))
         patient_id_num = pid_seg[3][0]
-        log.debug('Patient ID #: %s' % patient_id_num)
-        patient = Patient.objects.get_or_create(patient_id_num=patient_id_num)[0]
-        patient.updated_by = UPDATED_BY
-        patient.mrn = patient_id_num # Patient ID # is same as their Medical Record Number
+        patient, is_new_patient = Patient.objects.get_or_create(patient_id_num=patient_id_num)
+        if len(pid_seg[5]) >= 3:
+            patient.first_name  = pid_seg[5][1]
+            patient.middle_name = pid_seg[5][2]
+            patient.last_name = pid_seg[5][0]
+        else:
+            log.warning('PID segment does not contain patient name in a format we can understand.')
         dob = pid_seg[8]
         if len(dob) == 6: # Partially deidentified -- only year & month
             dob = datetime.date(year=dob[0:4], month=dob[4:6], day=01) # Default to 1st of month
         else:
             dob = None
-        patient.dob = dob
-        patient.gender = pid_seg[8]
+        gender = pid_seg[8]
+        patient.updated_by = UPDATED_BY
+        patient.mrn = patient_id_num # Patient ID # is same as their Medical Record Number
+        patient.gender = gender
         patient.save()
+        if POPULATE_OLD_SCHEMA:
+            demog = Demog.objects.get_or_create(pk=patient.pk)[0]
+            demog.DemogPatient_Identifier = patient.patient_id_num
+            demog.DemogMedical_Record_Number = patient.mrn
+            demog.DemogFirst_Name = patient.first_name
+            demog.DemogMiddle_Initial = patient.middle_name
+            demog.DemogLast_Name = patient.last_name
+            demog.Date_of_Birth = str_from_date(patient.dob)
+            demog.DemogGender = patient.gender
+            demog.save()
+            self.demog = demog
         self.patient = patient
+        if is_new_patient:
+            log.debug('NEW PATIENT')
+            log.debug('\t Patient ID #: %s' % patient_id_num)
+            log.debug('\t Name (l, f m): "%s, %s %s"' % (patient.last_name, patient.first_name, patient.middle_name))
+            log.debug('\t DoB: %s' % patient.dob)
+            log.debug('\t Gender: %s' % patient.gender)
         #
         # PV1
         #
@@ -163,15 +201,28 @@ class Hl7MessageLoader(object):
             provider_id_num = '[Unknown]'
         log.debug('Provider ID (NPI) #: %s' % provider_id_num)
         prov_last = pv1_seg[7][1]
+        if not prov_last: # Better to have NULL than a blank string
+            prov_last = None
         prov_first = pv1_seg[7][2]
-        provider = Provider.objects.get_or_create(provider_id_num=provider_id_num)[0]
-        if prov_first:
-            provider.first_name = prov_first
-        if prov_last:
-            provider.last_name = prov_last
+        if not prov_first:
+            prov_first = None
+        provider, is_new_provider = Provider.objects.get_or_create(provider_id_num=provider_id_num)
+        provider.first_name = prov_first
+        provider.last_name = prov_last
         provider.updated_by = UPDATED_BY
         provider.save()
+        if POPULATE_OLD_SCHEMA:
+            oldprov = OldProvider.objects.get_or_create(pk=provider.pk)[0]
+            oldprov.provCode = provider_id_num
+            oldprov.provFirst_Name = prov_first
+            oldprov.provLast_Name = prov_last
+            oldprov.save()
+            self.old_provider = oldprov
         self.provider = provider
+        if is_new_provider:
+            log.debug('NEW PROVIDER')
+            log.debug('Provider ID #: %s' % provider_id_num)
+            log.debug('Name: %s, %s' % (prov_last, prov_first))
         #
         # Call methods for other segment types
         #
@@ -186,39 +237,69 @@ class Hl7MessageLoader(object):
             self.make_prescription()
             self.make_allergy()
         if mt in ['VXU']:
-            self.make_vaccination()
+            self.make_immunization()
     
     def make_prescription(self):
         for rxo in hl7.segments('RXO', self.message):
             pre = Prescription(patient=self.patient, provider=self.provider, updated_by=UPDATED_BY)
             pre.date = self.visit_date
-            log.debug('NEW PRESCRIPTION')
-            pre.name = rxo[1][1]
-            log.debug('Name: %s' % pre.name)
-            pre.directions = rxo[2][0]
-            log.debug('Directions: %s' % pre.directions)
-            pre.quantity = rxo[3][0]
-            log.debug('Quantity: %s' % pre.quantity)
-            pre.dose = rxo[4][0]
-            log.debug('Dose: %s' % pre.dose)
-            pre.frequency = rxo[5][0]
-            log.debug('Frequency: %s' % pre.frequency)
-            pre.route = rxo[12][0]
-            log.debug('Route: %s' % pre.route)
+            name = rxo[1][1]
+            directions = rxo[2][0]
+            quantity = rxo[3][0]
+            dose = rxo[4][0]
+            frequency = rxo[5][0]
+            route = rxo[12][0]
+            pre.name = name
+            pre.directions = directions
+            pre.quantity = quantity
+            pre.dose = dose
+            pre.frequency = frequency
+            pre.route = route 
             pre.save()
+            if POPULATE_OLD_SCHEMA:
+                rx = Rx(pk=pre.pk)
+                rx.RxPatient = self.demog
+                rx.RxProvider = self.old_provider
+                rx.RxOrderDate = str_from_date(self.visit_date)
+                rx.RxDrugName = name
+                rx.RxDrugDesc = directions
+                rx.RxQuantity = quantity
+                rx.RxFrequency = frequency
+                rx.RxRoute = route
+                rx.save()
+            log.debug('NEW PRESCRIPTION')
+            log.debug('\t Name: %s' % pre.name)
+            log.debug('\t Directions: %s' % pre.directions)
+            log.debug('\t Quantity: %s' % pre.quantity)
+            log.debug('\t Dose: %s' % pre.dose)
+            log.debug('\t Frequency: %s' % pre.frequency)
+            log.debug('\t Route: %s' % pre.route)
     
-    def make_vaccination(self):
+    def make_immunization(self):
         for rxa in hl7.segments('RXA', self.message):
+            name = rxa[5][1]
+            imm_date = self.datetime_from_string(rxa[3][0])
+            imm_type = rxa[5][0]
+            lot = rxa[16][0]
             imm = Immunization(patient=self.patient, provider=self.provider, updated_by=UPDATED_BY)
-            imm.name = rxa[5][1]
-            imm.date = self.datetime_from_string(rxa[3][0])
-            imm.imm_type = rxa[5][0]
-            imm.lot = rxa[16][0]
+            imm.name = name
+            imm.date = imm_date
+            imm.imm_type = imm_type
+            imm.lot = lot
             imm.save()
+            if POPULATE_OLD_SCHEMA:
+                oldimm = OldImmunization(pk=imm.pk)
+                oldimm.ImmPatient = self.demog
+                oldimm.ImmName = name
+                oldimm.ImmDate = str_from_date(imm_date)
+                oldimm.ImmType = imm_type
+                oldimm.ImmLot = lot
+                oldimm.save()
             log.debug('NEW IMMUNIZATION')
-            log.debug('Name: %s (%s)' % (imm.name, imm.imm_type))
-            log.debug('Date: %s' % imm.date)
-            log.debug('Lot: %s' % imm.lot)
+            log.debug('\t Name: %s (%s)' % (imm.name, imm.imm_type))
+            log.debug('\t Date: %s' % imm.date)
+            log.debug('\t Type: %s' % imm.imm_type)
+            log.debug('\t Lot: %s' % imm.lot)
     
     def make_allergy(self):
         pass
@@ -226,41 +307,66 @@ class Hl7MessageLoader(object):
     def make_lab(self):
         float_regex = re.compile(r'^(\d+\.?\d*)') # Copied from incomingParser -- maybe should be in util?
         for obx in hl7.segments('OBX', self.message):
-            log.debug('NEW LAB RESULT')
-            result = LabResult(patient=self.patient, provider=self.provider, updated_by=UPDATED_BY)
-            result.date = self.datetime_from_string(obx[14][0])
-            log.debug('Date: %s' % result.date)
-            result.native_code = obx[3][0]
-            result.native_name = obx[3][1]
-            log.debug('Native code (name): %s (%s)' % (result.native_code, result.native_name))
-            result.result_string = obx[5][0]
-            match = float_regex.match(result.result_string)
+            resdate = self.datetime_from_string(obx[14][0])
+            native_code = obx[3][0]
+            native_name = obx[3][1]
+            result_string = obx[5][0]
+            ref_unit = obx[6][0]
+            ref_range = obx[7][0].split('-')
+            abnormal_flag = obx[8][0]
+            status = obx[11][0]
+            if not abnormal_flag:
+                abnormal_flag = None
+            match = float_regex.match(result_string)
             if match:
                 res_float = float(match.group(1))
             else:
                 res_float = None
-            result.result_float = res_float
-            result.ref_unit = obx[6][0]
-            log.debug('Lab result: %s %s (float: %s)' % (result.result_string, result.ref_unit, result.result_float))
-            ref_range = obx[7][0].split('-')
+            ref_low = None
+            ref_high = None
             if len(ref_range) == 2: # There must be both high and low
                 low_match = float_regex.match(ref_range[0])
                 if low_match:
-                    ref_low = low_match.group(1)
-                    result.ref_low_string = ref_low
-                    result.ref_low_float = float(ref_low)
+                    ref_low = float(low_match.group(1))
                 high_match = float_regex.match(ref_range[1])
                 if high_match:
-                    ref_high = high_match.group(1)
-                    result.ref_high_string = ref_high
-                    result.ref_high_float = float(ref_high)
-                    log.debug('Reference range: %s - %s' % (result.ref_low_float, result.ref_high_float))
-            result.abnormal_flag = obx[8][0]
-            if result.abnormal_flag:
-                log.debug('Abnormal flag: %s' % result.abnormal_flag)
-            result.status = obx[11][0]
-            log.debug('Status: %s' % result.status)
+                    ref_high = float(high_match.group(1))
+            result = LabResult(patient=self.patient, provider=self.provider, updated_by=UPDATED_BY)
+            result.date = resdate
+            result.native_code = native_code 
+            result.native_name = native_name
+            result.result_string = result_string
+            result.result_float = res_float
+            result.ref_unit = ref_unit
+            result.ref_low = ref_low
+            result.ref_high = ref_high
+            result.abnormal_flag = abnormal_flag
+            result.status = status 
             result.save()
+            if POPULATE_OLD_SCHEMA:
+                lx = Lx(pk=result.pk)
+                lx.LxPatient = self.demog
+                lx.LxOrdering_Provider = self.old_provider
+                lx.LxDate_of_result = resdate
+                lx.native_code = native_code
+                codemap = NativeToLoincMap.objects.filter(native_code=native_code)
+                if codemap:
+                    lx.LxLoinc = codemap[0].loinc.pk
+                lx.native_name = native_name
+                lx.LxTest_results = result_string
+                lx.LxReference_Unit = ref_unit
+                lx.LxReference_Low = ref_low
+                lx.LxReference_High = ref_high
+                lx.LxNormalAbnormal_Flag = abnormal_flag
+                lx.LxTest_status = status
+                lx.save()
+            log.debug('NEW LAB RESULT')
+            log.debug('\t Date: %s' % result.date)
+            log.debug('\t Native code (name): %s (%s)' % (result.native_code, result.native_name))
+            log.debug('\t Lab result: %s %s (float: %s)' % (result.result_string, result.ref_unit, result.result_float))
+            log.debug('\t Reference range: %s - %s' % (result.ref_low, result.ref_high))
+            log.debug('\t Abnormal flag: %s' % result.abnormal_flag)
+            log.debug('\t Status: %s' % result.status)
             
     def make_encounter(self):
         encounter = Encounter(patient=self.patient, provider=self.provider, 
@@ -350,6 +456,18 @@ class Hl7MessageLoader(object):
                     encounter.weight = value
         if encounter: # Ignore if it is still None
             encounter.save() # Save just once, after all info has been added
+        if encounter and POPULATE_OLD_SCHEMA:
+            enc = Enc(pk=encounter.pk)
+            enc.EncPatient = self.demog
+            enc.EncEncounter_Provider = self.old_provider
+            enc.EncEncounter_Date = str_from_date(encounter.date)
+            enc.EncBPSys = encounter.bp_systolic
+            enc.EncBPDias = encounter.bp_diastolic
+            enc.EncTemperature = encounter.temperature
+            enc.EncHeight = encounter.height
+            enc.EncWeight = encounter.weight
+            enc.EncICD9_Codes = ','.join(encounter.icd9_codes.all().values_list('code', flat=True))
+            enc.save()
         
     def __has_seg(self, seg_type_list):
         if (self.seg_types & set(seg_type_list)):

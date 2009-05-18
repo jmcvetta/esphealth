@@ -24,13 +24,6 @@ from ESP.conf.models import Icd9
 from ESP.utils.utils import log
 
 
-#===============================================================================
-#
-#--- ~~~ Provenance ~~~
-#
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
 #class Provenance(models.Model):
 #    '''
 #    Answers the question "Where did this data come from?"
