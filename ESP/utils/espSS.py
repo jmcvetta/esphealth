@@ -874,5 +874,5 @@ if __name__ == "__main__":
     #generateTab(ziplen=ziplen,sdate=sdate,edate=edate,outdir=outdir)
     #generateAMDS(ziplen=3,minCount=0,sdate=sdate,edate=edate,outdir=outdir)
     #generateAMDS(ziplen=5,minCount=0,sdate=sdate,edate=edate,outdir=outdir)
-    makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5)
+    makeEncVols(sdate='20060701',edate='20200101',outdir=outdir,ziplen=5)
 
