@@ -132,6 +132,11 @@ def record_file_status(filename, status, msg=None):
 
 
 class Hl7MessageLoader(object):
+    
+    # We read the entire NativeToLoincMap into memory (it's small) just once, then do 
+    # dictionary lookup, instead of db lookup, each time we populate an Lx record.
+    codemap = dict(NativeToLoincMap.objects.values_list('native_code', 'loinc__pk')) # Class variable
+    
     def __init__(self, msg_string):
         #
         # MSH
@@ -349,9 +354,7 @@ class Hl7MessageLoader(object):
                 lx.LxOrdering_Provider = self.old_provider
                 lx.LxDate_of_result = resdate
                 lx.native_code = native_code
-                codemap = NativeToLoincMap.objects.filter(native_code=native_code)
-                if codemap:
-                    lx.LxLoinc = codemap[0].loinc.pk
+                lx.LxLoinc = self.codemap.get(native_code, None)
                 lx.native_name = native_name
                 lx.LxTest_results = result_string
                 lx.LxReference_Unit = ref_unit
