@@ -23,7 +23,8 @@
           <p><p>
 	      <table cellpadding="1" border="2" bordercolor="white">
 		<tr class="{% cycle row2,row1 as rowcolors %}">
-                  {% if not user or not user.is_authenticated %}<td>AnonymousUser</td></tr>
+                  {% if not user or not user.is_authenticated %}<td>Anonymous
+User</td></tr>
                 <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/login/">ESP Login</a></td></tr>
                 <tr class="{% cycle rowcolors %}"><td><a href="mailto:ross.lazarus&#64;channing.harvard.edu">Request a new account</a></td></tr>
                 {% else %}

@@ -1,0 +1,25 @@
+{% extends "espbase.html" %}
+
+{% block extrastyle %}
+<link rel="stylesheet" type="text/css" href="{{ site_css_folder }}vaers.css" />
+{% endblock %}
+
+{% block sidebar %}
+<div>Actions</div>
+<ul class="vaers_menu_action">
+  <li class="{% cycle row2,row1 as rowcolors %}">
+    <a href="{% url vaers.views.detect %}">Run Vaers Heuristics</a>
+  </li>
+  <li class="{% cycle rowcolors %}">
+    <a href="{% url vaers.views.notify %}">Email Vaers Notification report</a>
+  </li>
+  <li class="{% cycle rowcolors %}">
+    <a href="{% url vaers.views.report %}">Satscan Clustering Report</a>
+  </li>
+</ul>
+{% endblock %}
+
+{% block content %}
+
+{% endblock %}
+
