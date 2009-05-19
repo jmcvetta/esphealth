@@ -4,6 +4,24 @@
 }
 
 
+/* Sidebar */
+ul.vaers_menu_action{
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #999;
+    line-height: 13px;
+}
+
+ul.vaers_menu_action li{
+    display: block;
+    width: 96px;
+    border-top: 1px solid #999;
+    padding: 5px;
+}
+
+
+
 #frm_case_confirmation {
     width:720px;
     margin: auto;
