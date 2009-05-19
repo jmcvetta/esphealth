@@ -13,7 +13,7 @@ from ESP.esp.models import Demog, Immunization, Enc, Lx
 from ESP.vaers.models import AdverseEvent
 from ESP.vaers.models import EncounterEvent, LabResultEvent
 from ESP.vaers.models import DiagnosticsEventRule
-from ESP.utils.utils import log
+from ESP.utils.utils import log, date_from_str
 
 import rules
 
@@ -155,6 +155,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         self.criterium = criterium
         self.verbose_name = verbose_name
         self._register(name)
+        self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
 
     def matches(self, begin_date=None, end_date=None):
         
@@ -216,7 +217,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         for lab_result in matches:
             result = lab_result.result_float or lab_result.result_string
             
-            date = utils.date_from_str(lab_result.LxDate_of_result)
+            date = date_from_str(lab_result.LxDate_of_result)
             rule_explain = 'Lab Result for %s resulting in %s'% (self.name, result)
             
             ev, created = LabResultEvent.objects.get_or_create(
@@ -377,12 +378,19 @@ def lab_heuristics():
     return hs
 
 
+def init_vaers_heuristics():
+    '''Just a method to instantiate all of the heuristics'''
+    fever_heuristic()
+    diagnostic_heuristics()
+    lab_heuristics()
+    
+
 
 if __name__ == '__main__':
-    all_heuristics = vaers_heuristics()
+    init_vaers_heuristics()
     today = datetime.datetime.today()
     a_month_ago = today - datetime.timedelta(days=30)
-    BaseHeuristic.generate_all_events(begin_date=a_month_ago, end_date=today)
+    BaseHeuristic.generate_all_events(begin_date=EPOCH, end_date=today)
     
     
         

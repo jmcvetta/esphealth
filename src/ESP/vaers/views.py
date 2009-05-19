@@ -13,7 +13,7 @@ from ESP.vaers.models import AdverseEvent, LabResultEvent, ProviderComment
 from ESP.esp.models import Lx, Demog, Immunization
 from ESP.vaers.utils import send_notifications
 from ESP.vaers.forms import CaseConfirmForm
-from ESP.vaers import reports
+
 
 import datetime
 
@@ -21,7 +21,19 @@ PAGE_TEMPLATE_DIR = 'pages/vaers/'
 WIDGET_TEMPLATE_DIR = 'widgets/vaers/'
 
 def index(request):
-    return HttpResponse('ok')
+    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'home.html')
+
+def detect(request):
+    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'detect.html')
+
+
+def notify(request):
+    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'notify.html')
+
+def report(request):
+    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'report.html')
+
+                              
 
 
 def verify(request, key):

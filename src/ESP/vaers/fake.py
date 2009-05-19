@@ -10,10 +10,11 @@ from ESP.utils import randomizer
 from ESP.utils import utils
 
 
-from rules import TIME_WINDOW_POST_EVENT
+from rules import TIME_WINDOW_POST_EVENT, VAERS_LAB_RESULTS
 
 FEVER_EVENT_PCT = 40
-ICD9_EVENT_PCT = 10
+ICD9_EVENT_PCT = 15
+LX_EVENT_PCT = 15
 IGNORE_FOR_REOCCURRENCE_PCT = 20
 IGNORE_FOR_HISTORY_PCT = 60
 
@@ -47,6 +48,21 @@ def fake_world():
                         discarding_code = random.choice(
                             rule.heuristic_discarding_codes.all())
                         ev.cause_icd9_ignored_for_history(discarding_code)
+
+            # Or a lab result event?
+            elif random.randrange(100) <= LX_EVENT_PCT:
+                ev = Vaers(imm)
+                loinc = random.choice(VAERS_LAB_RESULTS.keys())
+                lx = VAERS_LAB_RESULTS[loinc]
+                criterium = random.choice(lx['criteria'])
+                ev.cause_positive_lab_result(loinc, criterium)
+                # Maybe it's one that should be ignored?
+                if random.randrange(100) <= IGNORE_FOR_HISTORY_PCT:
+                    ev.cause_negative_lx_for_lkv(loinc, criterium)
+                    
+                
+
+                
     
 
 
@@ -232,20 +248,6 @@ class Vaers(object):
         last_lx.loinc = loinc
         last_lx.save()
 
-                                                           
-                    
-
-        
-    
-
-        
-
-        
-            
-
-                         
-        
-    
 
 class ImmunizationHistory(object):
 
@@ -282,10 +284,6 @@ class ImmunizationHistory(object):
         return Immunization.make_mock(vaccine, self.patient, when)
         
 
-
-    
-
-                    
 
 if __name__ == '__main__':
     fake_world()

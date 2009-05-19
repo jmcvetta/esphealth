@@ -41,7 +41,7 @@ VAERS_LAB_RESULTS = {
             }]
         },
 
-    '26499-9':{
+    '26449-9':{
         'name':'Eosinophils',
         'criteria':[{
             'trigger':'X>600',
