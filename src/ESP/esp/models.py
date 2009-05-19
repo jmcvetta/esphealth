@@ -690,13 +690,14 @@ class Lx(models.Model):
         
         since = since or datetime.date.today()
         date = min(since, self.result_date)
+
+        code, patient = self.native_code, self.LxPatient
       
         try:
-            last = Lx.objects.filter_loincs([loinc]).filter(LxPatient=self.LxPatient).exclude(
-                pk=self.pk,
-                LxDate_of_result__gte=self.LxDate_of_result
+            last = Lx.objects.filter(native_code=code, LxPatient=patient).exclude(
+                pk=self.pk, LxDate_of_result__gte=self.LxDate_of_result
                 ).latest('LxDate_of_result')
-            
+                                     
             return last.result_float or last.result_string
         except:
             return None
