@@ -40,6 +40,7 @@ import operator
 
 from hl7 import hl7
 
+from ESP.settings import DEBUG
 from ESP.conf.models import NativeToLoincMap
 from ESP.conf.models import Icd9
 from ESP.emr.models import Provider
@@ -581,6 +582,10 @@ def main():
         log.info('Loading HL7 message: "%s"' % filename)
         filepath = os.path.join(input_folder, filename)
         msg = open(filepath).read()
+        if DEBUG:
+            exception_to_catch = Hl7LoaderException
+        else:
+            exception_to_catch = BaseException
         try:
             Hl7MessageLoader(msg)
         # 
@@ -589,7 +594,7 @@ def main():
         # caught and logged, rather than allowing the program to crash.
         #
         #except BaseException, e:
-        except Hl7LoaderException, e:
+        except exception_to_catch, e:
             failure_counter += 1
             log_msg = str(e)
             log.error(log_msg)
