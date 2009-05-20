@@ -145,7 +145,7 @@ class BaseHeuristic(object):
                 try:
                     loincs[heuristic] += set(heuristic.loinc_nums)
                 except KeyError:
-	                loincs[heuristic] = set(heuristic.loinc_nums)
+                    loincs[heuristic] = set(heuristic.loinc_nums)
             except AttributeError:
                 pass # Skip heuristics w/ no LOINCs defined
         return loincs
@@ -312,12 +312,12 @@ class HighNumericLabHeuristic(LabHeuristic):
         @type end_date:   datetime.date
         '''
         relevant_labs = self.relevant_labs(begin_date, end_date)
-        no_ref_q = Q(ref_high_float=None)
+        no_ref_q = Q(ref_high=None)
         if self.default_high:
             static_comp_q = no_ref_q & Q(result_float__gt=self.default_high)
             pos_q = static_comp_q
         if self.ratio:
-            ref_comp_q = ~no_ref_q & Q(result_float__gt=F('ref_high_float') * self.ratio)
+            ref_comp_q = ~no_ref_q & Q(result_float__gt=F('ref_high') * self.ratio)
             pos_q = ref_comp_q
         if self.default_high and self.ratio:
             pos_q = (ref_comp_q | static_comp_q)
@@ -497,8 +497,12 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
         # First, we return a list of patient & order date pairs, where the sum
         # of direct and indirect bilirubin tests ordered on the same day is 
         # greater than 1.5.
-        relevant = self.relevant_labs(begin_date, end_date)
-        vqs = relevant.values('patient', 'order_date') # returns ValueQuerySet
+        #
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # TODO: Confirm filter() on following line works correctly -- cannot test
+        # now because emr_laborder is not yet populated.
+        relevant = self.relevant_labs(begin_date, end_date).filter(order__date__isnull=False)
+        vqs = relevant.values('patient', 'order__date') # returns ValueQuerySet
         vqs = vqs.annotate(calc_bil=Sum('result_float'))
         vqs = vqs.filter(calc_bil__gt=1.5)
         # Next we loop thru the patient/order-date list, fetch the relevant 
@@ -507,5 +511,5 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
         # on the same day.
         matches = LabResult.objects.filter(pk__isnull=True) # Lx QuerySet that matches nothing
         for item in vqs:
-            matches = matches | relevant.filter(patient=item['patient'], order_date=item['order_date']) 
+            matches = matches | relevant.filter(patient=item['patient'], order__date=item['order__date']) 
         return matches

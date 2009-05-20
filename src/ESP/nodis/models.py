@@ -11,7 +11,7 @@ from django.db import models
 
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
-from ESP.emr.models import Medication
+from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
@@ -43,7 +43,7 @@ class Case(models.Model):
     #
     encounters = models.ManyToManyField(Encounter, blank=True, null=True)
     lab_results = models.ManyToManyField(LabResult, blank=True, null=True)
-    medications = models.ManyToManyField(Medication, blank=True, null=True)
+    medications = models.ManyToManyField(Prescription, blank=True, null=True)
     immunizations = models.ManyToManyField(Immunization, blank=True, null=True)
     #
     notes = models.TextField(blank=True, null=True)
