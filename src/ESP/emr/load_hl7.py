@@ -151,6 +151,8 @@ class Hl7MessageLoader(object):
         log.debug('Message type: %s' % self.msg_type)
         self.message_date = self.datetime_from_string(msh_seg[6][0])
         log.debug('Message date: %s' % self.message_date)
+    
+    def parse(self):
         #
         # PID
         #
@@ -587,7 +589,7 @@ def main():
         else:
             exception_to_catch = BaseException
         try:
-            Hl7MessageLoader(msg)
+            Hl7MessageLoader(msg).parse()
         # 
         # For debug we catch Hl7LoaderException, to draw attention to other 
         # kinds of exception; but in production all exceptions should be 
