@@ -51,13 +51,13 @@ from ESP.conf.models import HelpDb
 
 from forms import LoginForm
 
+
+
 HOME_URL = '/'
-LOGIN_URL = '/login'
 REDIRECT_FIELD_NAME = 'next'
 
 
 ###################################
-@login_required
 def index(request):
     """
     core index page
@@ -155,7 +155,7 @@ password_change = login_required(password_change)
 
     
 #################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+@login_required
 def casesent(request, orderby="sortid",download=''):
     """A report for sent cases
     """
@@ -275,7 +275,7 @@ def casesent(request, orderby="sortid",download=''):
 
 ###################################
 ###################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+@login_required
 def casedefine(request,compfilter=""):
     """a page to enable admin to search cpt, component by inputing partial of component name during the new condition define process
     """
@@ -318,7 +318,7 @@ def casedefine(request,compfilter=""):
 
 ###################################
 ###################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+@login_required
 def casedefine_detail(request, cpt="",component=""):
     from django.db import connection
     cursor = connection.cursor()
@@ -404,7 +404,7 @@ def casedefine_detail(request, cpt="",component=""):
                                 
                 
 ###################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+@login_required
 def casematch(request,  download=''):
     from django.db import connection
     cursor = connection.cursor()
@@ -546,7 +546,7 @@ def getDownloaddata(objs):
     return returnlist
 
 #################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+@login_required
 def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilter="0", orderby="sortid",download=''):
     """search cases by Patient Name or MRN
     """
@@ -702,7 +702,7 @@ def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilte
     
 
 ###############################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+@login_required
 def old_casedetail(request, inprod="1", object_id=None,restrict='F'):
 
     """detailed case view with workflow history
@@ -774,7 +774,7 @@ def getI9_onecode(oneicd9):
     return i9str
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+@login_required
 def pcpdetail(request, object_id):
     """detailed case view with workflow history
     """
@@ -787,7 +787,7 @@ def pcpdetail(request, object_id):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+@login_required
 def lxdetail(request, object_id):
     """detailed Lab result  view for a given lab order
     """
@@ -801,7 +801,7 @@ def lxdetail(request, object_id):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+@login_required
 def ruledetail(request, object_id):
     """rule detail
     """
@@ -816,7 +816,7 @@ def ruledetail(request, object_id):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL)
+@login_required
 def preloadrulexclud(request,update=0):
 
     rules = Rule.objects.all()
@@ -895,7 +895,7 @@ def preloadrulexclud(request,update=0):
         
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL)
+@login_required
 def preloadview(request,table='cptloincmap',orderby="cpt"):
     if not request.user.is_staff:
         return HttpResponse("You do not have permission to see this page")
@@ -970,7 +970,7 @@ def preloadview(request,table='cptloincmap',orderby="cpt"):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+@login_required
 def showutil(request):
     if not request.user.is_staff:
         return HttpResponse("You do not have permission to see this page")
@@ -979,7 +979,7 @@ def showutil(request):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+@login_required
 def preloadupdate(request,table='cptloincmap'):
     if not request.user.is_staff:
         return HttpResponse("You do not have permission to see this page")
@@ -1259,7 +1259,7 @@ def showhelp(request, topic=None):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL)
+@login_required
 def updateWorkflow(request,object_id,newwf=''):
     """update case workflow state
     write a new workflow state history record
@@ -1309,7 +1309,7 @@ def updateWorkflow(request,object_id,newwf=''):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+@login_required
 def wfdetail(request, object_id):
     """detailed workflow view
     """
@@ -1324,7 +1324,7 @@ def wfdetail(request, object_id):
 
 
 #######################################
-@user_passes_test(lambda u: u.is_authenticated() , login_url=LOGIN_URL )
+@login_required
 def updateWorkflowComment(request,object_id):
     """update caseworkflow comment only
     workflowComment = meta.TextField('Comments',blank=True)
