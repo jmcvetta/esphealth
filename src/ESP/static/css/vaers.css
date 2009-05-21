@@ -1,6 +1,14 @@
-#content {
-    width: 960px;
+/* Common Elements */
+button {
+    font-size: 9pt;
     margin: auto;
+    padding: 0px 2px;
+    border: 1px solid #999;
+}
+
+button:hover {
+    background-color: #333;
+    color: #CCC;
 }
 
 
@@ -20,34 +28,45 @@ ul.vaers_menu_action li{
     padding: 5px;
 }
 
-
-
-#frm_case_confirmation {
-    width:720px;
-    margin: auto;
+#frm_case_confirmation{
+    width: 75%;
 }
 
 #frm_case_confirmation li{
+    margin: 0;
+    padding: 0;
     list-style-type: none;
     clear: left;
 }
 
+#frm_case_confirmation textarea {
+    width: 100%;
+    margin: 20px 50px;
+    height: 250px;
+}
+
+#frm_case_confirmation div {
+    margin: 10px 50px;
+}
+
+#frm_case_confirmation input[type="submit"] {
+    margin-left: 360px;
+    width: 80px;
+}
+
+ 
 #case_comments_list {
-    width:720px;
-    margin: auto;
+    width:75%;
     margin-bottom: 30px;
 }
 
-#case_comments_list > h3 {
-    margin-left: 10px;
-}
 
 #case_comments_list > div.comment_entry {
     font-size: 11pt;
     clear: both;
     background-color: #EEE;
     border-bottom: 1pt solid #999;
-    margin: 10pt 0;
+    margin: 10px 0;
 }
 
 
@@ -64,15 +83,15 @@ ul.vaers_menu_action li{
 #case_comments_list div.comment {
     padding: 5px 0;
     padding-bottom: 10px;
-    margin-left: 10px;
-    width: 80%;
+    margin-left: 50px;
+    width: 75%;
     clear: left;
 }
 
 
 #tbl_case_details {
-    width: 720px;
-    margin: 25px auto;
+    width: 75%;
+    margin: 20px 50px;
 }
 
 #tbl_case_details tr > th {
@@ -104,11 +123,6 @@ ul.lx_summary li  {
 .msg_case_category {
     color: #333;
     font-weight: 600;
-}
-
-textarea {
-    width: 100%;
-    height: 250px;
 }
 
 
