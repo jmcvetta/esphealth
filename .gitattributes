@@ -199,6 +199,7 @@ src/ESP/templates/admin/index.html -text
 src/ESP/templates/admin/login.html -text
 src/ESP/templates/arrow.GIF -text
 src/ESP/templates/base.html -text
+src/ESP/templates/conf/code_maintenance.html -text
 src/ESP/templates/default-bg-reverse.gif -text
 src/ESP/templates/default-bg.gif -text
 src/ESP/templates/django-logo-negative.png -text

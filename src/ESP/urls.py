@@ -10,32 +10,33 @@ from django.contrib import admin
 from ESP.settings import MEDIA_ROOT, MEDIA_URL
 from ESP.esp.views import index, esplogin
 from ESP.conf.views import code_maintenance
+from ESP.conf.views import json_code_grid
 
 
 admin.autodiscover()
 
 urlpatterns = patterns(
-    '',
-    
+    '', # Why this??
     
     # Core Application
-    (r'^$', index),
-    (r'^esp/', include('ESP.esp.urls')),
+    url(r'^$', index),
+    url(r'^esp/', include('ESP.esp.urls')),
     
     # Vaers
-    (r'^vaers/', include('ESP.vaers.urls')),
+    url(r'^vaers/', include('ESP.vaers.urls')),
     
     # Login and Logout
-    (r'^login/?$', esplogin),
+    url(r'^login/?$', esplogin),
     
     
     # Django Admin
-    (r'^admin/(.*)', admin.site.root),
+    url(r'^admin/(.*)', admin.site.root),
 #    (r'^admin/doc/', include('django.contrib.admindocs.urls'),
 
-    (r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIA_ROOT}),
+    url(r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIA_ROOT}),
     #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #
-    (r'^codes', code_maintenance),
+    url(r'^codes', code_maintenance),
+    url(r'^json_code_grid', json_code_grid, name='json_code_grid'),
 )
