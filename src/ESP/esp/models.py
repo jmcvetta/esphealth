@@ -116,6 +116,10 @@ class Provider(models.Model):
 
     # Some methods to deal with mock/fake data
     @staticmethod
+    def fakes():
+        Provider.objects
+
+    @staticmethod
     def delete_fakes():
         Provider.objects.filter(provCode__startswith='FAKE').delete()
 
@@ -140,6 +144,7 @@ class Provider(models.Model):
         
         if save_on_db: p.save()
         return p
+    
 
 
     provCode= models.CharField('Physician code',max_length=20,blank=True,db_index=True)
@@ -165,6 +170,10 @@ class Provider(models.Model):
 
     def getcliname(self):
         return u'%s, %s' % (self.provLast_Name,self.provFirst_Name)
+
+    def full_name(self):
+        return unicode(' '.join([self.provTitle, self.provLast_Name]))
+
 
     def is_fake(self):
         return self.provCode.startswith('FAKE')
@@ -284,6 +293,9 @@ class Demog(models.Model):
 
     def  __unicode__(self):
         return u"#%-10s MRN: %-10s %-10s %-10s" % (self.id, self.DemogPatient_Identifier, self.DemogLast_Name, self.DemogFirst_Name)
+
+    def full_name(self):
+        return u'%s %s' % (self.DemogFirst_Name, self.DemogLast_Name)
     
     def _get_date_of_birth(self):
         '''
@@ -586,8 +598,6 @@ class Lx(models.Model):
             self.native_code = mapping.native_code
             self.native_name = mapping.native_name
         except:
-            import pdb
-            pdb.set_trace()
             raise ValueError, "Not a valid Loinc used for attribution"
 
     
@@ -986,7 +996,7 @@ class Immunization(models.Model):
         return Immunization.objects.filter(
             ImmPatient=patient,
             ImmDate__gte=earliest_date.strftime('%Y%m%d'),
-            ImmDate__lte=event.date
+            ImmDate__lte=event.date.strftime('%Y%m%d')
             )
 
     @staticmethod
@@ -1013,10 +1023,16 @@ class Immunization(models.Model):
     def _get_date(self):
         return util.date_from_str(self.ImmDate)
 
+    def vaccine_type(self):
+        try:
+            vaccine = Vaccine.objects.get(code=self.ImmType)
+            return vaccine.name
+        except:
+            return 'Unknown Vaccine'
+
     date = property(_get_date)
 
     def  __unicode__(self):
-
         return u"%s %s %s" % (self.ImmPatient.DemogPatient_Identifier,self.ImmName,self.ImmRecId)
 
 
