@@ -8,7 +8,7 @@ urlpatterns = patterns(
     '',
     (r'^$', views.index),
     (r'^detect$', views.detect),
-    (r'^notify$', views.notify),
+    (r'^notify/(?P<id>\d+)/$', views.notify),
     (r'^report$', views.report),
     
     url(r'^verify/(?P<key>\w*)/$', views.verify, name='verify_case'),

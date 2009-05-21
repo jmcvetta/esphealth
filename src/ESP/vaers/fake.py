@@ -237,8 +237,10 @@ class Vaers(object):
 
         # Now that we have the value, we create the Lx corresponding
         # to the "Last" one. It has to be before the immunization.
-        max_days = (self.immunization.date - max(self.patient.date_of_birth, EPOCH)).days
-        when = self.immunization.date - datetime.timedelta(days=random.randrange(1, max_days))
+        earliest = max(self.patient.date_of_birth, EPOCH)
+        max_days = (self.immunization.date - earliest).days
+        days_ago = random.randrange(1, max_days) if max_days > 1 else 1
+        when = self.immunization.date - datetime.timedelta(days=days_ago)
 
         last_lx = Lx.make_mock(loinc, self.patient, when=when)
 

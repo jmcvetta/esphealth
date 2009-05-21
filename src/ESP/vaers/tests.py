@@ -21,7 +21,7 @@ import fake
 import heuristics
 
 
-from rules import VAERS_DIAGNOSTICS, VAERS_LAB_RESULTS
+from rules import VAERS_DIAGNOSTICS, VAERS_LAB_RESULTS, TIME_WINDOW_POST_EVENT
 from fake import ImmunizationHistory, Vaers, clear
 
 FEVER_HEURISTIC = heuristics.fever_heuristic()
@@ -47,6 +47,49 @@ class TestLoincCodes(unittest.TestCase):
                 self.assert_(NativeToLoincMap.objects.get(native_code=loinc))
             except:
                 self.assert_(False, 'Code %s not found in NativetoLoinc Map' % loinc)
+
+
+class TestFake(unittest.TestCase):
+    def setUp(self):
+        clear()
+
+    def testAllPatientsHaveProviders(self):
+        for patient in Demog.fakes():
+            provider = patient.DemogProvider
+            self.assert_(provider, 'Does not have a provider')
+            self.assert_(provider.is_fake(), 'Provider is not fake')
+    
+    def testAddVaccination(self):
+        random_patient = Demog.fakes().order_by('?')[0]
+        history = ImmunizationHistory(random_patient)
+        imm = history.add_immunization()
+        self.assert_(Immunization.objects.count() == 1)
+        self.assert_(imm.ImmPatient == random_patient)
+
+    def testImmunizationIsCandidate(self):
+        random_patient = Demog.fakes().order_by('?')[0]
+        history = ImmunizationHistory(random_patient)
+        imm = history.add_immunization()
+        ev = Vaers(imm)
+        rule = DiagnosticsEventRule.random()
+        code = random.choice(rule.heuristic_defining_codes.all())
+        ev.cause_icd9(code)
+        
+        earliest_date = ev.matching_encounter.date - datetime.timedelta(days=TIME_WINDOW_POST_EVENT)
+        
+        candidates = Immunization.objects.filter(
+            ImmPatient=random_patient,
+            ImmDate__gte=earliest_date.strftime('%Y%m%d'),
+            ImmDate__lte=ev.matching_encounter.date.strftime('%Y%m%d')
+            )
+
+        self.assert_(imm in candidates)
+        
+
+
+        
+        
+
 
 
 class TestClearing(unittest.TestCase):
