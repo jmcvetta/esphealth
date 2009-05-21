@@ -10,6 +10,7 @@
 @copyright: (c) 2009 Channing Laboratory
 @license: LGPL
 '''
+from ESP.utils.utils import date_from_str
 
 
 #
@@ -46,7 +47,6 @@ from ESP.conf.models import Icd9
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
-from ESP.emr.models import LabOrder
 from ESP.emr.models import LabResult
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
@@ -258,22 +258,22 @@ class Hl7MessageLoader(object):
             frequency = rxo[5][0]
             route = rxo[12][0]
             pre.name = name
-            pre.directions = directions
-            pre.quantity = quantity
-            pre.dose = dose
-            pre.frequency = frequency
-            pre.route = route 
+            pre.directions = directions if directions else None
+            pre.quantity = quantity if quantity else None
+            pre.dose = dose if dose else None
+            pre.frequency = frequency if frequency else None
+            pre.route = route if route else None
             pre.save()
             if POPULATE_OLD_SCHEMA:
                 rx = Rx(pk=pre.pk)
                 rx.RxPatient = self.demog
                 rx.RxProvider = self.old_provider
-                rx.RxOrderDate = str_from_date(self.visit_date)
-                rx.RxDrugName = name
-                rx.RxDrugDesc = directions
-                rx.RxQuantity = quantity
-                rx.RxFrequency = frequency
-                rx.RxRoute = route
+                rx.RxOrderDate = str_from_date(pre.date)
+                rx.RxDrugName = pre.name
+                rx.RxDrugDesc = pre.directions
+                rx.RxQuantity = pre.quantity
+                rx.RxFrequency = pre.frequency
+                rx.RxRoute = pre.route
                 rx.save()
             log.debug('NEW PRESCRIPTION')
             log.debug('\t Name: %s' % pre.name)
@@ -314,15 +314,32 @@ class Hl7MessageLoader(object):
     
     def make_lab(self):
         float_regex = re.compile(r'^(\d+\.?\d*)') # Copied from incomingParser -- maybe should be in util?
-        for obx in hl7.segments('OBX', self.message):
-            resdate = self.datetime_from_string(obx[14][0])
-            native_code = obx[3][0]
-            native_name = obx[3][1]
-            result_string = obx[5][0]
-            ref_unit = obx[6][0]
-            ref_range = obx[7][0].split('-')
-            abnormal_flag = obx[8][0]
-            status = obx[11][0]
+        # order_num defaults to None if no OBR segment is found
+        order_num = None  
+        # If order_date is not overwritten by an OBR segment, date from OBX 
+        # segment will be used as both 'date' and 'order_date'.
+        order_date = None 
+        for seg in [segment for segment in self.message if segment[0][0] in ['OBR', 'OBX']]:
+            if seg[0][0] == 'OBR':
+                # Set the order variables, which are then consumed by all OBX 
+                # segments, up until the next OBR segment is encountered
+                order_num = seg[2][0]
+                order_date = date_from_str(seg[7][0])
+                log.debug('OBR segment')
+                log.debug('\t Order number: %s' % order_num)
+                log.debug('\t Order date: %s' % order_date)
+                continue
+            # Below this point, we will only have OBX segments
+            resdate = self.datetime_from_string(seg[14][0])
+            if not order_date:
+                order_date = resdate
+            native_code = seg[3][0]
+            native_name = seg[3][1]
+            result_string = seg[5][0]
+            ref_unit = seg[6][0]
+            ref_range = seg[7][0].split('-')
+            abnormal_flag = seg[8][0]
+            status = seg[11][0]
             if not abnormal_flag:
                 abnormal_flag = None
             match = float_regex.match(result_string)
@@ -340,22 +357,29 @@ class Hl7MessageLoader(object):
                 if high_match:
                     ref_high = float(high_match.group(1))
             result = LabResult(patient=self.patient, provider=self.provider, updated_by=UPDATED_BY)
+            # Set (result) date and order date to the same thing, since we do 
+            # not have separate order date info.
             result.date = resdate
+            result.order_date = order_date
+            result.order_num = order_num
             result.native_code = native_code 
             result.native_name = native_name
             result.result_string = result_string
             result.result_float = res_float
-            result.ref_unit = ref_unit
             result.ref_low = ref_low
             result.ref_high = ref_high
+            result.ref_unit = ref_unit
+            result.ref_range = ref_range
             result.abnormal_flag = abnormal_flag
             result.status = status 
             result.save()
             if POPULATE_OLD_SCHEMA:
+                resdate_str = str_from_date(resdate)
                 lx = Lx(pk=result.pk)
                 lx.LxPatient = self.demog
                 lx.LxOrdering_Provider = self.old_provider
-                lx.LxDate_of_result = resdate
+                lx.LxDate_of_result = resdate_str
+                lx.LxOrderDate = resdate_str
                 lx.native_code = native_code
                 lx.LxLoinc = self.codemap.get(native_code, None)
                 lx.native_name = native_name
