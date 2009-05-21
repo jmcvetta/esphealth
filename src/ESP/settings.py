@@ -34,7 +34,6 @@ DATABASE_PASSWORD = localsettings.DATABASE_PASSWORD
 DATABASE_HOST = localsettings.DATABASE_HOST
 DATABASE_PORT = localsettings.DATABASE_PORT
 
-
 EMAIL_SENDER = localsettings.EMAIL_SENDER
 EMAIL_HOST = localsettings.EMAIL_HOST
 EMAIL_HOST_USER = localsettings.EMAIL_HOST_USER
@@ -43,6 +42,9 @@ EMAIL_PORT = localsettings.EMAIL_PORT
 EMAIL_USE_TLS = localsettings.EMAIL_USE_TLS
 
 SECRET_KEY = localsettings.SECRET_KEY
+
+NLP_SEARCH = localsettings.NLP_SEARCH
+NLP_EXCLUDE = localsettings.NLP_EXCLUDE
 
 SITE_ID = 2
 TIME_ZONE = 'America/New_York'
