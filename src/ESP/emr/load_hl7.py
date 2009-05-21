@@ -290,18 +290,18 @@ class Hl7MessageLoader(object):
             imm_type = rxa[5][0]
             lot = rxa[16][0]
             imm = Immunization(patient=self.patient, provider=self.provider, updated_by=UPDATED_BY)
-            imm.name = name
-            imm.date = imm_date
-            imm.imm_type = imm_type
-            imm.lot = lot
+            imm.name = name if name else None
+            imm.date = imm_date if imm_date else None
+            imm.imm_type = imm_type if imm_type else None
+            imm.lot = lot if lot else None
             imm.save()
             if POPULATE_OLD_SCHEMA:
                 oldimm = OldImmunization(pk=imm.pk)
                 oldimm.ImmPatient = self.demog
-                oldimm.ImmName = name
-                oldimm.ImmDate = str_from_date(imm_date)
-                oldimm.ImmType = imm_type
-                oldimm.ImmLot = lot
+                oldimm.ImmName = imm.name
+                oldimm.ImmDate = str_from_date(imm.date)
+                oldimm.ImmType = imm.imm_type
+                oldimm.ImmLot = imm.lot
                 oldimm.save()
             log.debug('NEW IMMUNIZATION')
             log.debug('\t Name: %s (%s)' % (imm.name, imm.imm_type))
@@ -359,36 +359,36 @@ class Hl7MessageLoader(object):
             result = LabResult(patient=self.patient, provider=self.provider, updated_by=UPDATED_BY)
             # Set (result) date and order date to the same thing, since we do 
             # not have separate order date info.
-            result.date = resdate
-            result.order_date = order_date
-            result.order_num = order_num
-            result.native_code = native_code 
-            result.native_name = native_name
-            result.result_string = result_string
-            result.result_float = res_float
-            result.ref_low = ref_low
-            result.ref_high = ref_high
-            result.ref_unit = ref_unit
-            result.ref_range = ref_range
-            result.abnormal_flag = abnormal_flag
-            result.status = status 
+            result.date = resdate if resdate else None
+            result.order_date = order_date if order_date else None
+            result.order_num = order_num if order_num else None
+            result.native_code = native_code if native_code else None
+            result.native_name = native_name if native_name else None
+            result.result_string = result_string if result_string else None
+            result.result_float = res_float if res_float else None
+            result.ref_low = ref_low if ref_low else None
+            result.ref_high = ref_high if ref_high else None
+            result.ref_unit = ref_unit if ref_unit else None
+            result.ref_range = ref_range if ref_range else None
+            result.abnormal_flag = abnormal_flag if abnormal_flag else None
+            result.status = status if status else None
             result.save()
             if POPULATE_OLD_SCHEMA:
-                resdate_str = str_from_date(resdate)
+                resdate_str = str_from_date(result.date)
                 lx = Lx(pk=result.pk)
                 lx.LxPatient = self.demog
                 lx.LxOrdering_Provider = self.old_provider
                 lx.LxDate_of_result = resdate_str
                 lx.LxOrderDate = resdate_str
-                lx.native_code = native_code
-                lx.LxLoinc = self.codemap.get(native_code, None)
-                lx.native_name = native_name
-                lx.LxTest_results = result_string
-                lx.LxReference_Unit = ref_unit
-                lx.LxReference_Low = ref_low
-                lx.LxReference_High = ref_high
-                lx.LxNormalAbnormal_Flag = abnormal_flag
-                lx.LxTest_status = status
+                lx.native_code = result.native_code
+                lx.LxLoinc = self.codemap.get(result.native_code, None)
+                lx.native_name = result.native_name
+                lx.LxTest_results = result.result_string
+                lx.LxReference_Unit = result.ref_unit
+                lx.LxReference_Low = result.ref_low
+                lx.LxReference_High = result.ref_high
+                lx.LxNormalAbnormal_Flag = result.abnormal_flag
+                lx.LxTest_status = result.status
                 lx.save()
             log.debug('NEW LAB RESULT')
             log.debug('\t Date: %s' % result.date)
