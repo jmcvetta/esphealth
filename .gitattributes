@@ -214,6 +214,7 @@ src/ESP/vaers/hl7_report.py -text
 src/ESP/vaers/models.py -text
 src/ESP/vaers/reports.py -text
 src/ESP/vaers/rules.py -text
+src/ESP/vaers/settings.py -text
 src/ESP/vaers/tests.py -text
 src/ESP/vaers/urls.py -text
 src/ESP/vaers/utils.py -text
