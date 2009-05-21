@@ -164,18 +164,6 @@ class BasePatientRecord(BaseMedicalRecord):
         abstract = True
 
 
-class LabOrder(BasePatientRecord):
-    '''
-    An order for a lab test
-    '''
-    # Date is order date
-    #
-    order_id_num = models.CharField('Order Id #', max_length=20, blank=True, null=True)
-    
-    class Meta:
-        verbose_name = 'Lab Test Order'
-
-
 class LabResultManager(models.Manager):
     @classmethod
     def filter_loincs(self, loinc_nums, **kwargs):
@@ -202,13 +190,16 @@ class LabResult(BasePatientRecord):
     native_code = models.CharField(max_length=30, blank=True, null=True, db_index=True)
     native_name = models.CharField(max_length=255, blank=True, null=True)
     # Order
-    order = models.ForeignKey(LabOrder, blank=True, null=True)
+    #order = models.ForeignKey(LabOrder, blank=True, null=True)
+    order_date = models.DateField(blank=True, null=True, db_index=True)
+    order_num = models.CharField(max_length=128, blank=True, null=True)
     status = models.CharField('Result Status', max_length=50, blank=True, null=True)
     #result_id_num = models.CharField('Result Id #', max_length=100, blank=True, null=True)
     # Reference
-    ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
     ref_low = models.FloatField('Reference Low', blank=True, null=True, db_index=True)
     ref_high = models.FloatField('Reference High', blank=True, null=True, db_index=True)
+    ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
+    ref_range = models.CharField('Reference Range (raw string', max_length=255, blank=True, null=True)
     # Result
     abnormal_flag = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     result_float = models.FloatField('Test results (numeric)', blank=True, null=True, db_index=True)
@@ -231,9 +222,9 @@ class Prescription(BasePatientRecord):
     '''
     # Date is order date
     #
-    order_id_num = models.CharField('Order Id #', max_length=20, blank=True, null=True)
-    ndc = models.ForeignKey(Ndc, blank=True, null=True)
+    order_num = models.CharField('Order Id #', max_length=20, blank=True, null=True)
     name = models.TextField(max_length=3000, blank=False, db_index=True)
+    code = models.CharField('Drug Code (system varies by site)', max_length=255, blank=True, null=True)
     directions = models.TextField(max_length=3000, blank=True, null=True)
     dose = models.CharField(max_length=200, blank=True, null=True)
     frequency = models.CharField(max_length=200, blank=True, null=True)
