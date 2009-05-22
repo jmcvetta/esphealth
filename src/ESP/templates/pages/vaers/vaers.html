@@ -8,6 +8,12 @@
 <div>Actions</div>
 <ul class="vaers_menu_action">
   <li class="{% cycle row2,row1 as rowcolors %}">
+    <a href="{% url esp.views.index %}">ESP Home</a>
+  </li>
+  <li class="{% cycle rowcolors %}">
+    <a href="{% url vaers.views.index %}">Vaers Home</a>
+  </li>
+  <li class="{% cycle rowcolors %}">
     <a href="{% url vaers.views.detect %}">Run Vaers Heuristics</a>
   </li>
   <li class="{% cycle rowcolors %}">
