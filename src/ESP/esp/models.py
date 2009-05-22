@@ -1033,7 +1033,8 @@ class Immunization(models.Model):
     date = property(_get_date)
 
     def  __unicode__(self):
-        return u"%s %s %s" % (self.ImmPatient.DemogPatient_Identifier,self.ImmName,self.ImmRecId)
+        return u"Patient with Immunization Record %s received %s on %s" % (
+            self.ImmRecId, self.vaccine_type(), self.date)
 
 
 

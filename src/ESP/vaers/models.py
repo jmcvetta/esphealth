@@ -139,9 +139,19 @@ class AdverseEvent(models.Model):
 class EncounterEvent(AdverseEvent):
     encounter = models.ForeignKey(Enc)
 
+    def __unicode__(self):
+        return u"Encounter Event %s: Patient %s, %s on %s" % (
+            self.id, self.encounter.EncPatient.full_name(), 
+            self.matching_rule_explain, self.date)
+
 
 class LabResultEvent(AdverseEvent):
     lab_result = models.ForeignKey(Lx)
+    
+    def __unicode__(self):
+        return u"Lx Event %s: Patient %s, %s on %s" % (
+            self.id, self.lab_result.LxPatient.full_name(), 
+            self.matching_rule_explain, self.date)
 
 
 
@@ -211,7 +221,8 @@ class DiagnosticsEventRule(Rule):
         Icd9, related_name='discarding_icd9_code_set')
 
     
-    
+    def __unicode__(self):
+        return unicode(self.name)
 
 class LabResultEventRule(Rule):
     @staticmethod

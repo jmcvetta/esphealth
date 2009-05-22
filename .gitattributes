@@ -208,6 +208,7 @@ src/ESP/utils/utils.py -text
 src/ESP/utils/vaers_hl7.py -text
 src/ESP/utils/validator.py -text
 src/ESP/vaers/__init__.py -text
+src/ESP/vaers/admin.py -text
 src/ESP/vaers/fake.py -text
 src/ESP/vaers/forms.py -text
 src/ESP/vaers/heuristics.py -text
