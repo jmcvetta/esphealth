@@ -18,12 +18,13 @@ from django.db.models import Q
 
 from ESP.conf.models import NativeToLoincMap
 from ESP.emr.models import LabResult
+from ESP.settings import NLP_SEARCH, NLP_EXCLUDE
 
 
 
 def main():
-    search_re = re.compile(r'|'.join(SEARCH))
-    exclude_re = re.compile(r'|'.join(EXCLUDE))
+    search_re = re.compile(r'|'.join(NLP_SEARCH))
+    exclude_re = re.compile(r'|'.join(NLP_EXCLUDE))
     mapped_codes = NativeToLoincMap.objects.values_list('native_code', flat=True)
     q_obj = ~Q(native_code__in=mapped_codes)
     q_obj = q_obj & Q(native_code__isnull=False)
