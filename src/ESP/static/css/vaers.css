@@ -1,3 +1,12 @@
+/* Common Classes */
+.left {
+    float: left;
+}
+
+.right{
+    float: right;
+}
+
 /* Common Elements */
 button {
     font-size: 9pt;
@@ -9,6 +18,56 @@ button {
 button:hover {
     background-color: #333;
     color: #CCC;
+}
+
+div.warning {
+    font-weight: bold;
+    background-color: lightyellow;
+    padding: 10px 1em;
+    margin-bottom: 15px;
+    border: 1px dashed #CC9;
+}
+
+div.info {
+    font-weight: bold;
+    background-color: lightblue;
+    padding: 10px 1em;
+    margin-bottom: 15px;
+    border: 1px dashed #9CC;
+}
+
+#email_address {
+    font-size: 125%;
+    font-style: italic;
+}
+
+
+span.button {
+    color: #D22;
+    }
+
+span.button:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+
+
+/* Banner and Widgets */
+#btn_close_banner {
+    float: right;
+    position: relative;
+    top: 0;
+    right: 0;
+}
+
+#case_table {
+    width: 700px;
+}
+
+#case_table td, #case_table th {
+    width: 130px;
+    
 }
 
 

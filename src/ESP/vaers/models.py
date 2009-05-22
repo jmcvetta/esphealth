@@ -65,6 +65,17 @@ class AdverseEvent(models.Model):
         except:
             return None
 
+    @staticmethod
+    def paginated(page=1, results_per_page=100):
+        # Set limits for query
+        floor = max(page-1, 0)*results_per_page
+        ceiling = floor+results_per_page
+
+        #We are only getting the fake ones. There is no possible case
+        #in our application where we need paginated results for real
+        #cases.
+        return AdverseEvent.fakes()[floor:ceiling]
+
     
 
     fake_q = Q(immunizations__ImmName='FAKE')

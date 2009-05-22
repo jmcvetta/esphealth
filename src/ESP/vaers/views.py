@@ -24,18 +24,27 @@ PAGE_TEMPLATE_DIR = 'pages/vaers/'
 WIDGET_TEMPLATE_DIR = 'widgets/vaers/'
 
 def index(request):
-    # Check pagination
-    RESULTS_PER_PAGE = 100
-    page = int(request.GET.get('page', 1))
+     # Complete query and present results
+    cases = AdverseEvent.paginated()
+    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'home.html',
+                              {'cases':cases,
+                               'page':1
+                               })
 
-    # Set limits for query
-    floor = max(page-1, 0)*RESULTS_PER_PAGE
-    ceiling = floor+RESULTS_PER_PAGE
+def list_cases(request):
+    # This is a ajax call. Our response contains only the result page.
+
+    # Page may be passed in the query string and must be a positive number
+    page = max(int(request.POST.get('page', 1)), 1)
+    
 
     # Complete query and present results
-    cases = AdverseEvent.fakes()[floor:ceiling]
-    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'home.html',
-                              {'cases':cases})
+    cases = AdverseEvent.paginated(page=page)
+    return direct_to_template(request, WIDGET_TEMPLATE_DIR +'case_table.html',
+                              {'cases':cases,
+                               'page':page})
+
+
 
 def detect(request):
     return direct_to_template(request, PAGE_TEMPLATE_DIR + 'detect.html')
@@ -43,14 +52,16 @@ def detect(request):
 def notify(request, id):
 
     case = AdverseEvent.by_id(id)
-    log.info('case: %s' % case)
     if request.method == 'POST' and case:
         try:
             assert case.is_fake()
-            case.mail_notification()
-            return HttpResponse('OK')
+            email = request.POST.get('email', None)
+            case.mail_notification(email_address=email)
+            result = 'Successfully sent report on case %s to %s' % (
+                case.id, email)
+            return HttpResponse(result)
         except Exception, why:
-            log.warn(why)
+            log.warn('Exception during email notification: %s' % why)
     else:
         return direct_to_template(request, PAGE_TEMPLATE_DIR + 'notify.html')
 

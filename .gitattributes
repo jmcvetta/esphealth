@@ -175,6 +175,7 @@ src/ESP/templates/pages/vaers/vaers.html -text
 src/ESP/templates/registration/login.html -text
 src/ESP/templates/registration/password_change_done.html -text
 src/ESP/templates/registration/password_change_form.html -text
+src/ESP/templates/widgets/vaers/case_table.html -text
 src/ESP/templates/widgets/vaers/feedback_form.html -text
 src/ESP/urls.py -text
 src/ESP/utils/ESPicd9.py -text
