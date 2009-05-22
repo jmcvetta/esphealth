@@ -501,8 +501,8 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # TODO: Confirm filter() on following line works correctly -- cannot test
         # now because emr_laborder is not yet populated.
-        relevant = self.relevant_labs(begin_date, end_date).filter(order__date__isnull=False)
-        vqs = relevant.values('patient', 'order__date') # returns ValueQuerySet
+        relevant = self.relevant_labs(begin_date, end_date).filter(order_date__isnull=False)
+        vqs = relevant.values('patient', 'order_date') # returns ValueQuerySet
         vqs = vqs.annotate(calc_bil=Sum('result_float'))
         vqs = vqs.filter(calc_bil__gt=1.5)
         # Next we loop thru the patient/order-date list, fetch the relevant 
@@ -511,5 +511,5 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
         # on the same day.
         matches = LabResult.objects.filter(pk__isnull=True) # Lx QuerySet that matches nothing
         for item in vqs:
-            matches = matches | relevant.filter(patient=item['patient'], order__date=item['order__date']) 
+            matches = matches | relevant.filter(patient=item['patient'], order_date=item['order_date']) 
         return matches
