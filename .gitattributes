@@ -12,6 +12,7 @@ NORTH_ADAMS/preLoaderData/esp_cptloincmap.txt -text
 NORTH_ADAMS/preLoaderData/esp_rule.txt -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
+doc/ESP-architecture.png -text svneol=unset#unset
 doc/ESP-architecture.xmind -text svneol=unset#unset
 doc/disease-protocols/Chlamydia.doc -text
 doc/disease-protocols/Combined_Hepatitis_B.doc -text
