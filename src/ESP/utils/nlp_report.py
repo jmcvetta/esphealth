@@ -10,28 +10,33 @@ Natural Language Processing Report
 @license: LGPL
 '''
 
+import re
+
 
 from django.db import connection
 from django.db.models import Q
 
 from ESP.conf.models import NativeToLoincMap
-#from ESP.esp.models import Lx
 from ESP.emr.models import LabResult
 
 
-SEARCH = ['CHLAM','TRACH', 'GC','GON','HEP','HBV','ALT','SGPT','AST','SGOT','AMINOTRANS','BILI', 'HAV','HCV','RIBA']
-EXCLUDE = ['CAST', 'FASTING','YEAST','URINE','URO']
 
 def main():
+    search_re = re.compile(r'|'.join(SEARCH))
+    exclude_re = re.compile(r'|'.join(EXCLUDE))
     mapped_codes = NativeToLoincMap.objects.values_list('native_code', flat=True)
-    unmapped_q = ~Q(native_code__in=mapped_codes)
-    native_names = LabResult.objects.filter(unmapped_q).values_list('native_name', flat=True).distinct()
-    for name in native_names:
+    q_obj = ~Q(native_code__in=mapped_codes)
+    q_obj = q_obj & Q(native_code__isnull=False)
+    native_names = LabResult.objects.filter(q_obj).values_list('native_code', 'native_name').distinct('native_code')
+    for item in native_names:
+        code, name = item
         if not name:
             continue # Skip null
         uname = name.upper()
-        if (uname in SEARCH) and not (uname in EXCLUDE):
-            print name
+        if exclude_re.match(uname):
+            continue # Excluded
+        if search_re.match(uname):
+            print '%-20s %s' % (code, name)
 
 
 if __name__ == '__main__':
