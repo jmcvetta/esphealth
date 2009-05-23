@@ -1,7 +1,0 @@
-softlink or copy this to a djangomedia directory at the root of your web site - eg 
-/var/www/html so it can be picked up in the apache configuration sample supplied.
-
-PLEASE edit the configuration file to reflect your own domain name and so on, before you fire 
-up your web server with something like
-sudo /usr/bin/apachectl -k restart 
-When asked (by sudo), use your own (NOT root) password.
