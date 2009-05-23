@@ -167,13 +167,13 @@ ILI	20060701	2122	2215	15	79.99	100.5	2	15
                 if r.count() > 0:
                     c.rule = r[0]
                     edateToday = eventdate.objects.filter(edate__exact = adatedt)
-		    if len(edateToday) > 0:
+                    if len(edateToday) > 0:
                         edateToday = edateToday[0]
-	            else:
-        	        e = eventdate()
-                	e.edate = adatedt
-                	e.save() # cache as foreign key
-                        edateToday = e
+                    else:
+                        e = eventdate()
+                    e.edate = adatedt
+                    e.save() # cache as foreign key
+                    edateToday = e
                     c.edate=edateToday
                     if p_seen:
                         c.seen_place=p_seen
@@ -336,7 +336,7 @@ def loadEnc(sdate='20060701',edate='20200101',ziplen=5):
     for d in dk: # 
         adatedt = '%04d-%02d-%02d' % (int(d[0:4]),int(d[4:6]),int(d[6:8]))  
         edateToday = eventdate.objects.filter(edate__exact=adatedt)
-	if len(edateToday) < 1:
+        if len(edateToday) < 1:
             e = eventdate()
             e.edate = adatedt
             e.save() # cache as foreign key
@@ -369,9 +369,9 @@ def loadEnc(sdate='20060701',edate='20200101',ziplen=5):
                 edateToday = eventdate.objects.filter(edate__exact = adatedt)[0]
                 e = enc.objects.filter(edate__exact = edateToday, place__exact = rg) # need one for each of these
                 if len(e) > 0:
-			e = e[0]
-	        else:
-	                e = enc() # new encounter date record
+                    e = e[0]
+                else:
+                    e = enc() # new encounter date record
                 e.edate = edateToday
                 e.agecounts = '\t'.join(resrow)
                 e.place = rg
@@ -396,9 +396,9 @@ def loadEnc(sdate='20060701',edate='20200101',ziplen=5):
                 edateToday = eventdate.objects.filter(edate__exact = adatedt)[0]
                 e = enc.objects.filter(edate__exact = edateToday, place__exact = rg) # need one for each of these
                 if len(e) > 0:
-			e = e[0]
-	        else:
-	                e = enc() # new encounter date record
+                    e = e[0]
+                else:
+                    e = enc() # new encounter date record
                 e.edate = edateToday
                 e.agecounts = '\t'.join(resrow)
                 e.place = rg
