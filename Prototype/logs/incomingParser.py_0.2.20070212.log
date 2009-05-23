@@ -1,0 +1,35 @@
+Mon, 12 Feb 2007 18:58:48 INFO Days are: [('20070209', '02092007')]; 
+
+Mon, 12 Feb 2007 18:58:48 INFO Validator - Process epicmem.esp.02092007
+Mon, 12 Feb 2007 18:58:48 INFO Validator -Process epicpro.esp.02092007
+Mon, 12 Feb 2007 18:58:48 INFO Validator -Process epicvis.esp.02092007
+Mon, 12 Feb 2007 18:58:48 INFO Validator - Process epicord.esp.02092007
+Mon, 12 Feb 2007 18:58:48 INFO Validator - Process epicres.esp.02092007
+Mon, 12 Feb 2007 18:58:48 INFO Validator - Process epicmed.esp.02092007
+Mon, 12 Feb 2007 18:58:48 INFO Validator - Process epicimm.esp.02092007
+Mon, 12 Feb 2007 18:58:48 INFO Validator - Files for day 02092007 OK
+
+Mon, 12 Feb 2007 18:58:48 INFO Validating is done. Parsed days are ['02092007']
+
+Mon, 12 Feb 2007 18:58:48 INFO Parser - parse day 02092007
+
+Mon, 12 Feb 2007 18:58:51 INFO Moving file epicpro.esp.02092007 from /home/ESP/Prototype/incomingData/ to /home/ESP/Prototype/processedData/2007/MONTH_02/
+
+Mon, 12 Feb 2007 18:58:59 INFO Moving file epicmem.esp.02092007 from /home/ESP/Prototype/incomingData/ to /home/ESP/Prototype/processedData/2007/MONTH_02/
+
+Mon, 12 Feb 2007 18:59:34 INFO Moving file epicvis.esp.02092007 from /home/ESP/Prototype/incomingData/ to /home/ESP/Prototype/processedData/2007/MONTH_02/
+
+Mon, 12 Feb 2007 18:59:59 INFO Moving file epicmed.esp.02092007 from /home/ESP/Prototype/incomingData/ to /home/ESP/Prototype/processedData/2007/MONTH_02/
+
+Mon, 12 Feb 2007 18:59:59 INFO Moving file epicord.esp.02092007 from /home/ESP/Prototype/incomingData/ to /home/ESP/Prototype/processedData/2007/MONTH_02/
+
+Mon, 12 Feb 2007 19:00:28 INFO Moving file epicres.esp.02092007 from /home/ESP/Prototype/incomingData/ to /home/ESP/Prototype/processedData/2007/MONTH_02/
+
+Mon, 12 Feb 2007 19:00:34 INFO Moving file epicimm.esp.02092007 from /home/ESP/Prototype/incomingData/ to /home/ESP/Prototype/processedData/2007/MONTH_02/
+
+Mon, 12 Feb 2007 19:00:34 WARNING New Chlamydia/Gonorrhea CPT code: []
+
+Mon, 12 Feb 2007 19:00:35 INFO Start: 2007-02-12 18:58:48.053207
+
+Mon, 12 Feb 2007 19:00:35 INFO End:   2007-02-12 19:00:35.077776
+

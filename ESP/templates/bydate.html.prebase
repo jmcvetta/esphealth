@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<link rel=Stylesheet href="http://esphealth.org/espss/static/mapstyle.css" type="text/css">
+{% if scount_list %}
+
+<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;sensor=false&amp;key={{ GOOGLE_KEY }}"
+   type="text/javascript"></script>
+<title>ESP:SS Syndromic Surveillance Maps</title>
+<script src="http://esphealth.org/espss/static/cVerticalMapTypeControl.js"></script>
+<script src="http://esphealth.org/espss/static/mapiconmaker.js"></script>
+<script src="http://gmaps-utility-library.googlecode.com/svn/trunk/markermanager/release/src/markermanager.js"></script>
+<script type="text/javascript">
+    var scounts = [{% for c in scount_list %}[{{c.lon}},{{c.lati}},'{{c.z}}','{{c.synd}}',
+    '{{c.n}}','{{c.pct}}','{{ c.edate }}',{{c.heat}}]{% if not forloop.last %},{% endif %}{% endfor %}];
+
+  
+    var map_long = -71.0928603;
+    var map_lat = 42.3404107;
+    var map_zoom = 10;
+    var custom = 0;
+    /* see colour gradient maker at http://www.herethere.net/~samson/php/color_gradient/?cbegin=00FF00&cend=FF0000&steps=10 
+    and the mapiconmaker docs at http://gmaps-utility-library.googlecode.com/svn/trunk/mapiconmaker/1.1/docs/examples.html */
+    var heat1 = MapIconMaker.createMarkerIcon({primaryColor: "#00ff00"});
+    var heat2 = MapIconMaker.createMarkerIcon({primaryColor: "#19E500"});
+    var heat3 = MapIconMaker.createMarkerIcon({primaryColor: "#33CC00"});
+    var heat4 = MapIconMaker.createMarkerIcon({primaryColor: "#4CB200"});
+    var heat5 = MapIconMaker.createMarkerIcon({primaryColor: "#669900"});
+    var heat6 = MapIconMaker.createMarkerIcon({primaryColor: "#7F7F00"});
+    var heat7 = MapIconMaker.createMarkerIcon({primaryColor: "#996600"});
+    var heat8 = MapIconMaker.createMarkerIcon({primaryColor: "#B24C00"});
+    var heat9 = MapIconMaker.createMarkerIcon({primaryColor: "#CC3200"});
+    var heat10 = MapIconMaker.createMarkerIcon({primaryColor: "#FF0000"});
+    var hicons = [heat1,heat2,heat3,heat4,heat5,heat6,heat7,heat8,heat9,heat10];
+
+    function addSyndMarker(map,lng, lat, z, synd, n, pct, edate, heat) {
+        var latlng = new GLatLng(lat,lng);
+        var marker = new GMarker(latlng, {icon: hicons[heat]});
+        var html = '<b>Date =&nbsp;' + edate + '</b><br>Zip Code =&nbsp;' + z + '<br>Synd Count=' + n + '<br>Synd Pct=' + pct;
+        GEvent.addListener(marker, "click", function() { marker.openInfoWindowHtml(html); });
+        map.addOverlay(marker);
+    }
+
+    function initialize() {
+        if (GBrowserIsCompatible()) {
+            var map = new GMap2(document.getElementById("map_canvas"));
+            {% if not map_type %} var map_type="normal"; {% else %} var map_type = {{map_type}}; {% endif %}            
+            if (map_type == "normal") map.setMapType(G_NORMAL_MAP);                  
+            if (map_type == "satellite") map.setMapType(G_SATELLITE_MAP);               
+            if (map_type == "hybrid") map.setMapType(G_HYBRID_MAP);                  
+            if (map_type == "terrain") map.setMapType(G_TERRAIN_MAP);      
+            map.setCenter(new GLatLng(map_lat,map_long), map_zoom);
+            var mgr = new MarkerManager(map); 
+            if (custom==1){
+                var pos1 = new GControlPosition(G_ANCHOR_TOP_LEFT, new GSize(19,170));
+                map.addControl(new GSmallMapControl(),pos1 );
+                var pos2 = new GControlPosition(G_ANCHOR_TOP_LEFT, new GSize(7,90));
+                map.addControl(new cVerticalMapTypeControl(), pos2);
+            }
+            else {             
+            map.setUIToDefault();
+            }
+            if (scounts) {
+                for (var i=0; i < scounts.length; i++) {
+                    addSyndMarker(map,scounts[i][0], scounts[i][1], scounts[i][2], 
+                    scounts[i][3], scounts[i][4],scounts[i][5],scounts[i][6],scounts[i][7]);
+                }
+            }
+            }
+
+      }  
+
+</script>
+
+</head>
+
+<body onload="initialize()" onunload="GUnload()">
+
+<div>
+
+<table align="center" border="0" width="100%" cellpadding="10">
+<tr><td valign="middle" align="center">
+<a id="logo" href="http://esphealth.org/trac/ESP">
+<img src="http://esphealth.org/espss/static/espheader.png" alt="esp trac"
+border="0" /></a>
+</td></tr>
+<tr><td valign="middle" align="center"><font size="+2" color="maroon">
+ESP Syndrome Map for {{syndrome}} on {{sdate}} </font></td></tr>
+<tr><td valign="middle" align="center"><font color="maroon">Change date -&gt; </font>
+
+<SELECT size="5" width="150" name="dsel" style="color:maroon;text-align:center;width:150px"
+ onchange="window.location.href=this.options[this.selectedIndex].value">
+{% for d in date_list %} <OPTION VALUE="/espss/ssmap/{{d.date}}" {% ifequal d.date tdate %} SELECTED {% endifequal %}>{{d.datetime}}</OPTION> 
+{% endfor %} 
+</SELECT>
+</td></tr></table>
+</div>
+<br>
+<div id="map_canvas" style="margin-right:auto;margin-left:auto;height:600px;width:800px;text-align:center">
+</div>
+<hr>
+
+{% else %}
+</head><body>
+<div>
+<table align="center" border="0" width="100%" cellpadding="10">
+<tr><td valign="middle" align="center"><font size="+2" color="maroon">
+ESP Syndrome Map for {{syndrome}}<br>
+Sorry, no data available for date {{sdate}}. Please select a date from the list </font></td></tr>
+<tr><td valign="middle" align="center"><font color="maroon">Please select a valid date&nbsp;&nbsp;</font>
+
+<SELECT size="5" width="150" name="dsel" style="color:maroon;text-align:center;width:150px"
+ onchange="window.location.href=this.options[this.selectedIndex].value">
+{% for d in date_list %} <OPTION VALUE="/espss/ssmap/{{d.date}}" {% ifequal d.date tdate %} SELECTED {% endifequal %}>{{d.datetime}}  </OPTION> 
+{% endfor %} 
+</SELECT>
+</td></tr></table>
+</div>
+{% endif %}
+<div id="footer">
+&copy Ross Lazarus 2009. Source code available licensed under the GLP V2 or later at your choice
+Technologies include Google maps, Django and Python<br>
+Funded by the CDC as part of the PHI Center of Excellence in Public Health Informatics<br>
+Data kindly made available by Atrius Health
+</div>
+<br>
+<div id="disclaimer">
+Please consult your personal physician before basing any action on data provided here.
+</div>
+</body>
+</html>
+
+
