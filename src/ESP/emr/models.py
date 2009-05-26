@@ -248,11 +248,11 @@ class Encounter(BasePatientRecord):
     site_name = models.CharField(max_length=100, blank=True, null=True)
     native_site_num = models.CharField('Site Id #', max_length=30, blank=True, null=True)
     native_encounter_num = models.CharField('Encounter Id #', max_length=20, blank=True, null=True)
-    cpt = models.ForeignKey(Cpt,  blank=True,  null=True)
+    #cpt = models.ForeignKey(Cpt,  blank=True,  null=True)
     event_type = models.CharField(max_length=20, blank=True, null=True)
     pregnancy_status = models.CharField(max_length=20, blank=True, null=True)
     edc = models.DateField('Expected date of confinement', blank=True, null=True) 
-    temperature = models.FloatField('Temperature (C)', blank=True, null=True)
+    temperature = models.FloatField('Temperature (C)', blank=True, null=True, db_index=True)
     # WTF: What is an icd9_qualifier?
     #icd9_qualifier = models.CharField(max_length=200, blank=True, null=True)
     weight = models.FloatField('Weight (kg)', max_length=200, blank=True, null=True)
