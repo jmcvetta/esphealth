@@ -38,7 +38,9 @@ from ESP.conf.models import Icd9
 from ESP.conf.models import Loinc
 from ESP.conf.models import Cpt
 from ESP.conf.models import Rule
-from ESP.conf.models import NativeToLoincMap
+from ESP.conf.models import NativeCode
+from ESP.emr.models import Patient as NewPatient
+from ESP.emr.models import Provider as NewProvider
 from ESP.localsettings import DATABASE_ENGINE
 
 
@@ -445,7 +447,7 @@ class LxManager(models.Manager):
         '''
         log.debug('Querying lab results by LOINC')
         log.debug('LOINCs: %s' % loinc_nums)
-        native_codes = NativeToLoincMap.objects.filter(loinc__in=loinc_nums).values_list('native_code', flat=True)
+        native_codes = NativeCode.objects.filter(loinc__in=loinc_nums).values_list('native_code', flat=True)
         log.debug('Native Codes: %s' % native_codes)
         return self.filter(native_code__in=native_codes, **kwargs)
 
@@ -1418,12 +1420,13 @@ class Case(models.Model):
     """casePID can't be a foreign key or we get complaints that the pointed to model doesn't
     yet exist
     """
-    caseDemog = models.ForeignKey(Demog,verbose_name="Patient ID",db_index=True)
-    caseProvider = models.ForeignKey(Provider,verbose_name="Provider ID",blank=True, null=True)
+    #caseDemog = models.ForeignKey(Demog, verbose_name="Patient ID",db_index=True)
+    caseDemog = models.ForeignKey(NewPatient, related_name='oldcase_set', verbose_name="Patient ID",db_index=True)
+    caseProvider = models.ForeignKey(NewProvider, related_name='oldcase_set', verbose_name="Provider ID",blank=True, null=True)
     caseRule = models.ForeignKey(Rule,verbose_name="Case Definition ID") # Condition
     # Date roughly indicates when condition was first detected
     date = models.DateField(blank=False)
-    caseWorkflow = models.CharField('Workflow State', max_length=20,choices=choices.WORKFLOW_STATES, blank=True,db_index=True )
+    #caseWorkflow = models.CharField('Workflow State', max_length=20,choices=choices.WORKFLOW_STATES, blank=True,db_index=True )
     caseLastUpDate = models.DateTimeField('Last Updated date',auto_now=True)
     casecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
     caseSendDate = models.DateTimeField('Date sent', null=True)
@@ -1518,9 +1521,9 @@ class Case(models.Model):
         return lx.LxOrdering_Provider.provPrimary_Dept
 
     def  __unicode__(self):
-        p = self.showPatient()# self.pID
-        s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
-        
+        #p = self.showPatient()# self.pID
+        #s = u'Patient=%s RuleID=%s MsgFormat=%s Comments=%s' % (p,self.caseRule.id, self.caseMsgFormat,self.caseComments)
+        s = '#%s (%s)' % (self.pk, self.caseDemog)
         return s
  
     def showPatient(self): 
