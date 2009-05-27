@@ -96,7 +96,8 @@ TEMPLATE_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     os.path.join(TOPDIR, 'templates'),
-    os.path.join(TOPDIR, 'templates/esp')
+    os.path.join(TOPDIR, 'templates/esp'),
+    os.path.join(TOPDIR, 'templates/pages/vaers')
 )
 
 INSTALLED_APPS = (
