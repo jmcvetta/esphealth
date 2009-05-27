@@ -853,10 +853,13 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5):
     f.close()
     
             
-
+u = """espss.py
+usage: python espss.py -s[startdate as 20090101] -e[enddate] -z [ziplen] 
+-o [outdir] -t [tabreps] -a [amdsreps] -i [do not ignore local exclusions] -v [make vols file]"""
 
 if __name__ == "__main__":
     progname = os.path.basename(sys.argv[0])
+    today = datetime.datetime.now()
     edef = (today - datetime.timedelta(1)).strftime('%Y%m%d')
     sdef = (today - datetime.timedelta(2)).strftime('%Y%m%d')
     parser = OptionParser(usage=u, version="%prog 0.01")
@@ -864,17 +867,21 @@ if __name__ == "__main__":
     a("-s","--sdate",dest="sdate",default=sdef)
     a("-e","--edate",dest="edate",default=edef)
     a("-o","--outdir",dest="outdir",default='/home/ESP/SS')
-    a("-z","--ziplen",dest="ziplen",default='5')
+    a("-z","--ziplen",dest="ziplen",default=5,type="int")
     a("-t","--tab", action="store_true", dest="maketab",default=False)
     a("-a","--amds", action="store_true", dest="makeamds",default=False)
     a("-i","--ignorex", action="store_false", dest="localignore",default=True)
     a("-v","--vols", action="store_true", dest="makevols",default=False)
     (options,args) = parser.parse_args()
-    SSlogging.info('espSS.py starting at %s. sdate=%s, edate=%s, ziplen=%d, outdir=%s' % (isoTime(),sdate,edate,ziplen,outdir))
-    if options.tab:
-        generateTab(ziplen=ziplen,sdate=sdate,edate=edate,outdir=outdir)
-    if options.amds:
-        generateAMDS(ziplen=ziplen,minCount=0,sdate=sdate,edate=edate,outdir=outdir)    
-    if options.vols:
-        makeEncVols(sdate=sdate,edate=edate,outdir=outdir,ziplen=ziplen)
+    SSlogging.info('espSS.py starting at %s. sdate=%s, edate=%s, ziplen=%d, outdir=%s' % (isoTime(),
+    options.sdate,options.edate,options.ziplen,options.outdir))
+    if options.maketab:
+        generateTab(ziplen=options.ziplen,sdate=options.sdate,
+         edate=options.edate,outdir=options.outdir)
+    if options.makeamds:
+        generateAMDS(ziplen=options.ziplen,minCount=0,sdate=options.sdate,
+         edate=options.edate,outdir=options.outdir)    
+    if options.makevols:
+        makeEncVols(sdate=options.sdate,edate=options.edate,
+         outdir=options.outdir,ziplen=options.ziplen)
 
