@@ -8,10 +8,7 @@ from django.conf.urls.defaults import url
 from django.contrib import admin
 from ESP.settings import CODEDIR
 
-#from ESP.esp.views import run
-
 urlpatterns = patterns('ESP.esp.views',
-#                       (r'^run$', run),
     url(r'^/index/$', 'index'),
     url(r'^$', 'index'),
     url(r'^utilities/$', 'showutil', name='admin_util'),
