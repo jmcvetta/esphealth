@@ -570,6 +570,8 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
 # end makeAMDS
 
 
+
+
 def generateAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3,outdir='./',
      encDateVols={},encDateAgeVols={},encDateSiteVols={},localIgnore=True):
     """ test stub for AMDS xml generator
@@ -579,10 +581,7 @@ def generateAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3,outdir='.
     > examples have two root elements (AMDSRecordSummary and CountSet). Other
     > than that, the data makes for great sample sets.
     """    
-    dateZip,dateZipAge,dateSiteZipAge = AgeencDateVolumes(startDT=sdate,
-      endDT=edate,localIgnore=False,ziplen=ziplen)
-    # these are the volume counts of all encounters by date and zip, or date, zip and chunked year age 
-    # or date, site seen zip and chunked age (!)
+
     # BL has agreed to add AllCount element to AMDS spec next revision - yay!
     doid='ESPSS@%s' % thisSite
     requ=thisRequestor
@@ -895,7 +894,7 @@ if __name__ == "__main__":
     if options.makeamds:
         generateAMDS(ziplen=options.ziplen,minCount=0,sdate=options.sdate,
          edate=options.edate,outdir=options.outdir,encDateVols=edv,
-         encDateAgeVols=edav,encDateSiteVols=edsv)    
+         encDateAgeVols=edav,encDateSiteVols=edsv,localIgnore=options.localignore)    
     if options.makevols:
         makeEncVols(sdate=options.sdate,edate=options.edate,
          outdir=options.outdir,ziplen=options.ziplen,
