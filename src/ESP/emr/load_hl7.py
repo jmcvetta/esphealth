@@ -42,7 +42,7 @@ import operator
 from hl7 import hl7
 
 from ESP.settings import DEBUG
-from ESP.conf.models import NativeToLoincMap
+from ESP.conf.models import NativeCode
 from ESP.conf.models import Icd9
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
@@ -134,9 +134,9 @@ def record_file_status(filename, status, msg=None):
 
 class Hl7MessageLoader(object):
     
-    # We read the entire NativeToLoincMap into memory (it's small) just once, then do 
+    # We read the entire NativeCode into memory (it's small) just once, then do 
     # dictionary lookup, instead of db lookup, each time we populate an Lx record.
-    codemap = dict(NativeToLoincMap.objects.values_list('native_code', 'loinc__pk')) # Class variable
+    codemap = dict(NativeCode.objects.values_list('native_code', 'loinc__pk')) # Class variable
     
     def __init__(self, msg_string):
         #

@@ -346,9 +346,7 @@ class SourceSystem(models.Model):
         return self.name
 
 
-
-
-class NativeToLoincMap(models.Model):
+class NativeCode(models.Model):
     '''
     A mapping from a native code (for a lab result, etc) to a Loinc number
     '''
@@ -360,6 +358,8 @@ class NativeToLoincMap(models.Model):
     native_name = models.CharField(max_length=255, blank=True, null=True)
     # Loinc can be null to indicate an external code that maps to nothing
     loinc = models.ForeignKey(Loinc, blank=True, null=True)
+    ignore = models.BooleanField('Ignore in NLP report', blank=False, default=False)
+    positive_string = models.CharField(max_length=255, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     class Meta:
         verbose_name = 'Native Code to LOINC Map'

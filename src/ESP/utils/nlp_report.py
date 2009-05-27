@@ -16,7 +16,7 @@ import re
 from django.db import connection
 from django.db.models import Q
 
-from ESP.conf.models import NativeToLoincMap
+from ESP.conf.models import NativeCode
 from ESP.emr.models import LabResult
 from ESP.settings import NLP_SEARCH, NLP_EXCLUDE
 
@@ -25,10 +25,11 @@ from ESP.settings import NLP_SEARCH, NLP_EXCLUDE
 def main():
     search_re = re.compile(r'|'.join(NLP_SEARCH))
     exclude_re = re.compile(r'|'.join(NLP_EXCLUDE))
-    mapped_codes = NativeToLoincMap.objects.values_list('native_code', flat=True)
+    mapped_codes = NativeCode.objects.values_list('native_code', flat=True)
     q_obj = ~Q(native_code__in=mapped_codes)
     q_obj = q_obj & Q(native_code__isnull=False)
-    native_names = LabResult.objects.filter(q_obj).values_list('native_code', 'native_name').distinct('native_code')
+    #native_names = LabResult.objects.filter(q_obj).values_list('native_code', 'native_name').distinct('native_code')
+    native_names = LabResult.objects.all().values_list('native_code', 'native_name').distinct('native_code')
     for item in native_names:
         code, name = item
         if not name:

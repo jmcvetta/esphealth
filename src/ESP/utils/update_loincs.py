@@ -15,13 +15,13 @@ import pprint
 from django.db import connection
 
 from ESP.utils.utils import log
-from ESP.conf.models import NativeToLoincMap
+from ESP.conf.models import NativeCode
 from ESP.esp.models import Lx
 
 
 def main():
     counter = 0
-    for mapping in NativeToLoincMap.objects.all():
+    for mapping in NativeCode.objects.all():
         log.info('Updating external code "%s" to LOINC "%s".' % (mapping.native_code, mapping.loinc.loinc_num))
         count = Lx.objects.filter(native_code=mapping.native_code, LxLoinc__isnull=True).update(LxLoinc=mapping.loinc.pk)
         log.debug('Objects updated: %s' % count)

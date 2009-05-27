@@ -37,7 +37,7 @@ from ESP.settings import TOPDIR
 from ESP.esp.models import Enc, Lx, Lxo, Demog, Provider, Rx, Immunization
 from ESP.esp.models import SocialHistory, Problem, Icd9Fact
 from ESP.esp.models import LabComponent, DataFile
-from ESP.conf.models import NativeToLoincMap, Rule
+from ESP.conf.models import NativeCode, Rule
 from ESP.utils import utils
 from ESP.utils import update_loincs
 from ESP.utils.utils import log
@@ -392,10 +392,10 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
         #
         native_code = utils.native_code_from_cpt(cpt, '')
         try:
-            mapping = NativeToLoincMap.objects.get(native_code=native_code)
+            mapping = NativeCode.objects.get(native_code=native_code)
             loinc = mapping.loinc
             lxloinc = loinc.loinc_num
-        except NativeToLoincMap.DoesNotExist:
+        except NativeCode.DoesNotExist:
             loinc = None
             lxloinc = None
         if provdict:
@@ -485,7 +485,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
         #get loinc
         #c = CPTLOINCMap.objects.filter(CPT=cpt,CPTCompt=comp)
         native_code = utils.native_code_from_cpt(cpt, None)
-        m = NativeToLoincMap.objects.filter(native_code=native_code)
+        m = NativeCode.objects.filter(native_code=native_code)
         lxloinc = None
         if m:
             lxloinc=(m[0].loinc.loinc_num).strip()

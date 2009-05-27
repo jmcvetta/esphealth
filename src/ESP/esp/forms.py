@@ -22,7 +22,7 @@ class ExtLoincForm(forms.Form):
     def clean_native_code(self):
         native_code = self.cleaned_data['native_code']
         log.debug('native_code: %s' % native_code)
-        existing = models.NativeToLoincMap.objects.filter(native_code=native_code)
+        existing = models.NativeCode.objects.filter(native_code=native_code)
         if len(existing) > 0:
             msg = _('Each code may be mapped to only one LOINC, and this code is already mapped to LOINC %s.' % existing[0].loinc.loinc_num)
             raise forms.ValidationError(msg)

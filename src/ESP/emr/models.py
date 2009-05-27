@@ -16,7 +16,7 @@ from django.contrib.contenttypes import generic
 
 from ESP.emr import choices
 from ESP.conf.models import SourceSystem
-from ESP.conf.models import NativeToLoincMap
+from ESP.conf.models import NativeCode
 from ESP.conf.models import Loinc
 from ESP.conf.models import Ndc
 from ESP.conf.models import Cpt
@@ -175,7 +175,7 @@ class LabResultManager(models.Manager):
         '''
         log.debug('Querying lab results by LOINC')
         log.debug('LOINCs: %s' % loinc_nums)
-        native_codes = NativeToLoincMap.objects.filter(loinc__in=loinc_nums).values_list('native_code', flat=True)
+        native_codes = NativeCode.objects.filter(loinc__in=loinc_nums).values_list('native_code', flat=True)
         log.debug('Native Codes: %s' % native_codes)
         return LabResult.objects.filter(native_code__in=native_codes, **kwargs)
 

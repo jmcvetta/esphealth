@@ -29,7 +29,7 @@ from django.contrib.contenttypes.models import ContentType
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
-from ESP.conf.models import NativeToLoincMap
+from ESP.conf.models import NativeCode
 #from ESP.conf.models import Rule
 from ESP.hef.models import HeuristicEvent
 from ESP import settings
@@ -258,8 +258,6 @@ class LabHeuristic(BaseHeuristic):
         indicate positive.
             @type begin_date: datetime.date
             @type end_date:   datetime.date
-            @type patient:    Demog
-            @type queryset:   QuerySet
         '''
         log.debug('Get lab results relevant to "%s".' % self.name)
         log.debug('Time window: %s to %s' % (begin_date, end_date))

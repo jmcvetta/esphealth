@@ -32,7 +32,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 
 from ESP.settings import NLP_SEARCH, NLP_EXCLUDE
 from ESP.settings import ROWS_PER_PAGE
-from ESP.conf.models import NativeToLoincMap
+from ESP.conf.models import NativeCode
 from ESP.emr.models import LabResult
 from ESP.utils.utils import Flexigrid
 
@@ -50,7 +50,7 @@ def code_maintenance(request):
     values = {'title': 'Code Maintenance'}
     search_re = re.compile(r'|'.join(NLP_SEARCH))
     exclude_re = re.compile(r'|'.join(NLP_EXCLUDE))
-    mapped_codes = NativeToLoincMap.objects.values_list('native_code', flat=True)
+    mapped_codes = NativeCode.objects.values_list('native_code', flat=True)
     q_obj = ~Q(native_code__in=mapped_codes)
     q_obj = q_obj & Q(native_code__isnull=False)
     #native_names = LabResult.objects.filter(q_obj).values_list('native_code', 'native_name').distinct('native_code')
@@ -77,7 +77,7 @@ def json_code_grid(request):
         sortname = flexi.sortname
     else:
         sortname = '-%s' % flexi.sortname
-#    maps = models.NativeToLoincMap.objects.select_related().all().order_by(sortname)
+#    maps = models.NativeCode.objects.select_related().all().order_by(sortname)
 #    if flexi.query:
 #        query_str = 'Q(%s__icontains="%s")' % (flexi.qtype, flexi.query)
 #        q_obj = eval(query_str)
@@ -101,10 +101,10 @@ def json_code_grid(request):
         native_name = item['native_name']
         ignore = '-' # TODO: finish me!!
         try:
-            loinc = NativeToLoincMap.objects.get(native_code=native_code).loinc
+            loinc = NativeCode.objects.get(native_code=native_code).loinc
             loinc_num = loinc.loinc_num
             loinc_name = loinc.name
-        except NativeToLoincMap.DoesNotExist:
+        except NativeCode.DoesNotExist:
             loinc_num = None
             loinc_name = None
         row = {}
