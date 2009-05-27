@@ -1,12 +1,9 @@
 * text=auto !eol
 ESP/__init__.py -text
-ESP/__init__.pyc -text
 ESP/badzips.xls -text
 ESP/esp/__init__.py -text
-ESP/esp/__init__.pyc -text
 ESP/esp/admin.py -text
 ESP/esp/models.py -text
-ESP/esp/models.pyc -text
 ESP/esp/templatetags/__init__.py -text
 ESP/esp/templatetags/esplib.py -text
 ESP/esp/views.py -text
@@ -14,10 +11,8 @@ ESP/httpdconf/djangomedia/README -text
 ESP/httpdconf/djangomedia/media/ESPMay2006Talk.htm -text
 ESP/httpdconf/httpd.conf.esp.sample -text
 ESP/localsettings.py.sample -text
-ESP/localsettings.pyc -text
 ESP/manage.py -text
 ESP/management.py -text
-ESP/management.pyc -text
 ESP/sendMsgs/bcdc.jar -text
 ESP/sendMsgs/bcdc_elr_jws.wsdl -text
 ESP/sendMsgs/messageHandler.py -text
@@ -32,12 +27,9 @@ ESP/sendMsgs/org/openuri/www/Bcdc_elrSoapStub.java -text
 ESP/sendMsgs/sendMsg.bat -text
 ESP/sendMsgs/sendMsg.java -text
 ESP/settings.py.sample -text
-ESP/settings.pyc -text
 ESP/ssmap/__init__.py -text
-ESP/ssmap/__init__.pyc -text
 ESP/ssmap/admin.py -text
 ESP/ssmap/models.py -text
-ESP/ssmap/models.pyc -text
 ESP/ssmap/views.py -text
 ESP/templates/404.html -text
 ESP/templates/admin/login.html -text
@@ -96,12 +88,10 @@ ESP/utils/ESPicd9.py -text
 ESP/utils/LOINCDB.TXT -text
 ESP/utils/VAERSevents.py -text
 ESP/utils/__init__.py -text
-ESP/utils/__init__.pyc -text
 ESP/utils/anonymizer.py -text
 ESP/utils/cpt_codes.csv -text
 ESP/utils/espSS.py -text
 ESP/utils/espSSconfATRIUS.py -text
-ESP/utils/espSSconfATRIUS.pyc -text
 ESP/utils/esp_urls.py -text
 ESP/utils/espmanager.py -text
 ESP/utils/hl7XML.py -text
