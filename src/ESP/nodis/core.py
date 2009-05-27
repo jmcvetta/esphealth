@@ -398,7 +398,6 @@ class DiseaseDefinition(object):
         @type etw:     EventTimeWindow
         '''
         patient = etw.events[0].patient
-        log.info('Creating a new %s case for patient #%s based on %s' % (self.name, patient.pk, etw))
         case = Case()
         case.patient = patient
         case.provider = etw.events[0].content_object.provider
@@ -409,6 +408,7 @@ class DiseaseDefinition(object):
         case.events = etw.events
         case = self.update_reportable_events(case)
         case.save()
+        log.info('Created new %s case #%s for patient #%s based on %s' % (self.name, case.pk, patient.pk, etw))
         return case
     
     def generate_cases(self):
