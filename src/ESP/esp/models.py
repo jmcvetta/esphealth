@@ -13,6 +13,7 @@
 '''
 
 import string
+import time
 import datetime
 import random
 import pdb
@@ -69,7 +70,6 @@ class EncounterManager(models.Manager):
 
 
         timestamp = r'%Y%m%d'
-        date_cmp_field_name = 'days_after'
 
         if DATABASE_ENGINE == 'sqlite3':
             def STR_TO_DATE():
@@ -101,7 +101,6 @@ class EncounterManager(models.Manager):
 
         if begin_date:
             where_clauses.append("%s >= '%s'" % (imm_date_field, begin_date.strftime(timestamp)))
-            
         if end_date:
             where_clauses.append("%s <= '%s'" % (imm_date_field, end_date.strftime(timestamp)))
 
@@ -117,6 +116,10 @@ class Provider(models.Model):
     
 
     # Some methods to deal with mock/fake data
+    @staticmethod
+    def fakes():
+        Provider.objects
+
     @staticmethod
     def delete_fakes():
         Provider.objects.filter(provCode__startswith='FAKE').delete()
@@ -167,6 +170,10 @@ class Provider(models.Model):
 
     def getcliname(self):
         return u'%s, %s' % (self.provLast_Name,self.provFirst_Name)
+
+    def full_name(self):
+        return unicode(' '.join([self.provTitle, self.provLast_Name]))
+
 
     def is_fake(self):
         return self.provCode.startswith('FAKE')
@@ -286,14 +293,17 @@ class Demog(models.Model):
 
     def  __unicode__(self):
         return u"#%-10s MRN: %-10s %-10s %-10s" % (self.id, self.DemogPatient_Identifier, self.DemogLast_Name, self.DemogFirst_Name)
+
+    def full_name(self):
+        return u'%s %s' % (self.DemogFirst_Name, self.DemogLast_Name)
     
     def _get_date_of_birth(self):
         '''
         Returns patient's date of birth as a datetime.datetime instance
         '''
         try:
-            return datetime.datetime.strptime(
-                self.DemogDate_of_Birth, '%Y%m%d')
+            return datetime.date(*time.strptime(
+                    self.DemogDate_of_Birth, '%Y%m%d')[:3])
         except ValueError:
             return None
     date_of_birth = property(_get_date_of_birth)
@@ -427,7 +437,6 @@ class LxManager(models.Manager):
         '''
         return [x[0] for x in self.get_query_set().values_list('LxTest_results').distinct()]
     
-    @classmethod
     def filter_loincs(self, loinc_nums, **kwargs):
         '''
         Translate LOINC numbers to native codes and lookup
@@ -438,7 +447,77 @@ class LxManager(models.Manager):
         log.debug('LOINCs: %s' % loinc_nums)
         native_codes = NativeToLoincMap.objects.filter(loinc__in=loinc_nums).values_list('native_code', flat=True)
         log.debug('Native Codes: %s' % native_codes)
-        return Lx.objects.filter(native_code__in=native_codes, **kwargs)
+        return self.filter(native_code__in=native_codes, **kwargs)
+
+    def following_vaccination(self, days_after, loinc=None, begin_date=None, end_date=None):
+
+        lx_meta = Lx.objects.model._meta
+        demog_meta = Demog.objects.model._meta
+        imm_meta = Immunization.objects.model._meta
+        
+        # Get PKs from patients, lab results, immunizations
+        # We will need them to construct a correct WHERE clause
+        ppk =  '%s.%s' % (demog_meta.db_table, demog_meta.pk.name) 
+        lx_pk = '%s.%s' % (lx_meta.db_table, lx_meta.pk.name) 
+
+        lx_fk = '%s.%s' % (lx_meta.db_table, 
+                            lx_meta.get_field('LxPatient').attname) 
+        imm_fk = '%s.%s' % (imm_meta.db_table, 
+                            imm_meta.get_field('ImmPatient').attname)
+
+        patient_in_encounter = '%s=%s' % (ppk, lx_fk) #Patient.id=Enc.EncPatient_id
+        patient_in_immunization = '%s=%s' % (ppk, imm_fk) #Patient.id = Imm.ImmPatient_id
+
+
+        # Get "Full Name" for OrderDate and ImmunizationDate fields
+        lx_date_field = '%s.%s' % (lx_meta.db_table, 'LxDate_of_result')
+        imm_date_field = '%s.%s' % (imm_meta.db_table, 'ImmDate')
+
+
+        timestamp = r'%Y%m%d'
+
+        if DATABASE_ENGINE == 'sqlite3':
+            def STR_TO_DATE():
+                # If you know any better way to get a date from
+                # a YYYYMMDD string in sqlite, please let me know. 
+                return '''julianday(SUBSTR(%s, 0, 4)||'-'||SUBSTR(%s, 5, 2)||'-'||SUBSTR(%s, 7, 2))'''
+            date_cmp_select = '- '.join([STR_TO_DATE(), STR_TO_DATE()])
+
+            # And the absurdity is not alone. Check out this tuple. 
+            params = (lx_date_field, lx_date_field, lx_date_field, 
+                      imm_date_field, imm_date_field, imm_date_field)
+
+
+        elif DATABASE_ENGINE == 'mysql':
+            # MySQL is a little bit less insane, using STR_TO_DATE funcion
+            date_cmp_select = "DATEDIFF(STR_TO_DATE(%s, '%s'), STR_TO_DATE(%s, '%s'))"
+            params = (lx_date_field, timestamp, imm_date_field, timestamp)
+        else:
+            raise NotImplementedError, 'Implemented only for Sqlite and MySQL (So far)'
+
+        max_days = ' '.join([date_cmp_select % params, '<=', str(days_after)])
+        same_day = (date_cmp_select % params) + ' >= 0'
+
+
+        # This is our minimum WHERE clause
+        where_clauses = [patient_in_encounter, patient_in_immunization, 
+                         max_days, same_day]
+
+
+        if begin_date:
+            where_clauses.append("%s >= '%s'" % (imm_date_field, begin_date.strftime(timestamp)))
+        if end_date:
+            where_clauses.append("%s <= '%s'" % (
+                    imm_date_field, end_date.strftime(timestamp)))
+            
+
+        # To find an specific lab result.    
+        qs = self.filter_loincs([loinc]) if loinc else self
+
+        return qs.extra(
+            tables = [demog_meta.db_table, imm_meta.db_table],
+            where = where_clauses
+            )
     
 
 class Lx(models.Model):
@@ -502,9 +581,31 @@ class Lx(models.Model):
         return self.LxOrdering_Provider
     def _get_date(self):
         return date_from_str(self.LxOrderDate)
+    
+    def _get_result_date(self):
+        return date_from_str(self.LxDate_of_result)
+
+    def _get_loinc(self):
+        try:
+            return NativeToLoincMap.objects.get(native_code=self.native_code, 
+                                                native_name=self.native_name)
+        except:
+            return None
+        
+    def _set_loinc(self, value):
+        try:
+            mapping = NativeToLoincMap.objects.get(loinc=value)
+            self.native_code = mapping.native_code
+            self.native_name = mapping.native_name
+        except:
+            raise ValueError, "Not a valid Loinc used for attribution"
+
+    
     patient = property(_get_patient)
     provider = property(_get_provider)
     date = property(_get_date)
+    result_date = property(_get_result_date)
+    loinc = property(_get_loinc, _set_loinc)
     
     # Use custom manager
     objects = LxManager()
@@ -514,12 +615,38 @@ class Lx(models.Model):
     
     @staticmethod
     def delete_fakes():
-        Lx.objects.filter(Lx.fake_q).delete()
+        Lx.fakes().delete()
 
     @staticmethod
     def fakes():
         return Lx.objects.filter(Lx.fake_q)
+
+    @staticmethod
+    def make_mock(loinc, patient, when=None, save_on_db=True):
         
+        when = when or datetime.date.today()
+
+        order_date = when - datetime.timedelta(
+            days=random.randrange(1, 10))
+
+        # Make sure the patient was alive for the order...
+        order_date = max(order_date, patient.date_of_birth)
+
+        lx = Lx(
+            LxPatient=patient,
+            LxOrderDate = str_from_date(order_date),
+            LxDate_of_result=str_from_date(when)
+            )
+        if save_on_db: lx.save()
+
+        return lx
+
+
+
+        
+        
+        
+
     
     def _get_ext_test_code(self):
         '''
@@ -558,16 +685,33 @@ class Lx(models.Model):
         return unicode(s)
 
     def previous(self):
-        last = Lx.objects.filter(
-            LxPatient=self.LxPatient,
-            LxTest_Code_CPT=self.LxTest_Code_CPT,
-            LxComponent=self.LxComponent
-            ).exclude(
-            LxDate_of_result__gte=self.LxOrder_Date,
-            LxTest_Results=''
-            ).order_by('-LxDate_of_result')[:1]
+        try:
+            return Lx.objects.filter(
+                LxPatient=self.LxPatient,
+                native_code=self.native_code
+                ).exclude(
+                LxDate_of_result__gte=self.LxDate_of_result
+                ).latest('LxDate_of_result')
+        except:
+            return None
+
+
+    def last_known_value(self, loinc, since=None):
         
-        return last or None
+        since = since or datetime.date.today()
+        date = min(since, self.result_date)
+
+        code, patient = self.native_code, self.LxPatient
+      
+        try:
+            last = Lx.objects.filter(native_code=code, LxPatient=patient).exclude(
+                pk=self.pk, LxDate_of_result__gte=self.LxDate_of_result
+                ).latest('LxDate_of_result')
+                                     
+            return last.result_float or last.result_string
+        except:
+            return None
+
 
     def compared_to_lkv(self, comparator, x):
         '''
@@ -577,16 +721,10 @@ class Lx(models.Model):
         '>' or '<', while x can be any kind of string that can be 
         part of a mathematical equation.
         '''
-        try:
-            previous = self.previous()
-            assert(previous)
-            assert(comparator in ['>', '<'])
-            assert('LKV' in x)
-            assert(previous.LxReference_Unit.lower() == self.LxReference_Unit.lower())
-            lkv = float(previous.LxTest_Results)
-            current = float(self.LxTest_Results)
-        except:
-            return None
+
+
+        lkv = float(previous.LxTest_Results)
+        current = float(self.LxTest_Results)
         
         x = x.replace('LKV', str(lkv))
         
@@ -840,9 +978,23 @@ class Immunization(models.Model):
     ImmRecId = models.CharField('Immunization Record Id',max_length=200,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
-    
 
     fake_q = Q(ImmName='FAKE')
+
+
+    @staticmethod
+    def vaers_candidates(patient, event, days_prior):
+        '''Given an encounter that is considered an adverse event,
+        returns a queryset that represents the possible immunizations
+        that have caused it'''
+        
+        earliest_date = event.date - datetime.timedelta(days=days_prior)
+        
+        return Immunization.objects.filter(
+            ImmPatient=patient,
+            ImmDate__gte=earliest_date.strftime('%Y%m%d'),
+            ImmDate__lte=event.date.strftime('%Y%m%d')
+            )
 
     @staticmethod
     def delete_fakes():
@@ -865,9 +1017,21 @@ class Immunization(models.Model):
     def is_fake(self):
         return self.ImmName == 'FAKE'
 
-    def  __unicode__(self):
+    def _get_date(self):
+        return date_from_str(self.ImmDate)
 
-        return u"%s %s %s" % (self.ImmPatient.DemogPatient_Identifier,self.ImmName,self.ImmRecId)
+    def vaccine_type(self):
+        try:
+            vaccine = Vaccine.objects.get(code=self.ImmType)
+            return vaccine.name
+        except:
+            return 'Unknown Vaccine'
+
+    date = property(_get_date)
+
+    def  __unicode__(self):
+        return u"Patient with Immunization Record %s received %s on %s" % (
+            self.ImmRecId, self.vaccine_type(), self.date)
 
 
 
