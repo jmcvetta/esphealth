@@ -1,6 +1,8 @@
 # Sample Django settings for esp project.
 # change these for your site
 # note the DEBUG setting is useful but very, very dangerous
+
+SYNC_PRE = 0
 DEBUG = True # DO NOT leave this set for production!!
 # it exposes your entire site to anyone who can throw an error
 TEMPLATE_DEBUG = DEBUG
@@ -8,12 +10,10 @@ import localsettings
 
 SITEROOT = localsettings.SITEROOT
 
-TOPDIR='/home/ESP'
-CODEDIR = '/home/ESP/ESP'
+TOPDIR=localsettings.TOPDIR
+CODEDIR = localsettings.CODEDIR
 
-ADMINS = (
-    ('root', 'admin@yoursite.com'),
-)
+ADMINS = localsettings.ADMINS
 
 MANAGERS = ADMINS
 #CACHE_BACKEND = "locmem:///"
@@ -32,22 +32,12 @@ EMAILSENDER=localsettings.EMAILSENDER
 
 
 
-USESQLITE=localsettings.USESQLITE
-if localsettings.USESQLITE:
-    DATABASE_ENGINE = 'sqlite3' # 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
-    DATABASE_NAME = CODEDIR + '/ESPsqlite'             # Or path to database file if using sqlite3.
-    DATABASE_USER = localsettings.SQLITE_DB_USER             # Not used with sqlite3.
-    DATABASE_PASSWORD = localsettings.SQLITE_DB_PASSWORD         # Not used with sqlite3.
-    DATABASE_HOST = '127.0.0.1'             # Set to empty string for localhost. Not used with sqlite3.
-    DATABASE_PORT = 3306             # Set to empty string for default. Not used with sqlite3.
-    SITEROOT = ''
-else:
-    DATABASE_ENGINE = 'mysql' # 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
-    DATABASE_NAME = 'esp'             # Or path to database file if using sqlite3.
-    DATABASE_USER = localsettings.MYSQL_DB_USER             # Not used with sqlite3.
-    DATABASE_PASSWORD = localsettings.MYSQL_DB_PASSWORD        # Not used with sqlite3.
-    DATABASE_HOST = '127.0.0.1'             # Set to empty string for localhost. Not used with sqlite3.
-    DATABASE_PORT = 3306             # Set to empty string for default. Not used with sqlite3.
+DATABASE_ENGINE = localsettings.DATABASE_ENGINE # 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
+DATABASE_NAME = localsettings.DATABASE_NAME             # Or path to database file if using sqlite3.
+DATABASE_USER = localsettings.DATABASE_USER             # Not used with sqlite3.
+DATABASE_PASSWORD = localsettings.DATABASE_PASSWORD        # Not used with sqlite3.
+DATABASE_HOST = localsettings.DATABASE_HOSTNAME             # Set to empty string for localhost. Not used with sqlite3.
+DATABASE_PORT = localsettings.DATABASE_PORT             # Set to empty string for default. Not used with sqlite3.
 
 # Local time zone for this installation. All choices can be found here:
 # http://www.postgresql.org/docs/current/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
@@ -108,6 +98,7 @@ INSTALLED_APPS = (
        'django.contrib.sessions',
        'django.contrib.admin',
         'ESP.esp',
+        'ESP.ssmap',
 )
 
 
@@ -119,6 +110,7 @@ def getJavaInfo():
     javaclass=" /home/ESP/ESP/sendMsgs:/home/ESP/axis-1_4/activation.jar:/usr/local/axis-1_4/lib/axis.jar:/usr/local/axis-1_4/lib/commons-logging-1.0.4.jar:/usr/local/axis-1_4/lib/commons-discovery-0.2.jar:/usr/local/axis-1_4/lib/jaxrpc.jar:/usr/local/axis-1_4/lib/wsdl4j-1.5.1.jar:/usr/local/axis-1_4/lib/saaj.jar:/usr/local/axis-1_4/lib/axis-ant.jar:/usr/local/axis-1_4/lib/log4j-1.2.8.jar:/home/ESP/axis-1_4/mail.jar:/home/ESP/ESP/sendMsgs/bcdc.jar  "
     sendMsgcls = 'sendMsg'
     return (javadir, javaclass,sendMsgcls)
+
 
 ###############################
 def getLogging(appname,debug=0):
