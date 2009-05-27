@@ -250,6 +250,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
     dateSitecounts = {} # for local practice zip code volumes
     dateAgecounts = {} # for age chunk by residential zip volumes
     ageCounts = {} # for debugging - why no infants - rml april 30 ?
+    nenc = 0
     esel = {'ezip': # django has a very neat way to inject sql
             'select DemogZip from esp_demog where esp_demog.id = esp_enc.EncPatient_id',
             'dob': 
@@ -267,6 +268,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
             'EncEncounter_Date','EncEncounter_Site').iterator() # yes - this works well to minimize ram             
     zl = ziplen # eg use 5 - ignore rest
     for i,anenc in enumerate(allenc):
+        nenc += 1
         if (i+1) % 10000 == 0:
             SSlogging.debug('AgeencDateVolumes at %d, %f /sec' % (i+1, i/(time.time() - started)))
         (z,dob,thisd,siteCode) = anenc # returned as a list of tuples by value_list
@@ -292,7 +294,7 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
     ak.sort()
     a = ['%d:%d' % (x, ageCounts[x]) for x in ak]
     SSlogging.info('*****AgeencDateVolumes, localIgnore = %s, age chunk counts=\n%s' % (localIgnore,'\n'.join(a)))
-    return dateCounts,dateAgecounts,dateSitecounts
+    return dateCounts,dateAgecounts,dateSitecounts,nenc
 
 
 def findCaseFactIds(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,localIgnore=True):
@@ -876,8 +878,12 @@ if __name__ == "__main__":
     SSlogging.info('espSS.py starting at %s. sdate=%s, edate=%s, ziplen=%d, outdir=%s' % (isoTime(),
     options.sdate,options.edate,options.ziplen,options.outdir))
     if options.maketab or options.makevols or options.makevols:
-        edv,edvs,edsv = AgeencDateVolumes(startDT=options.sdate,endDT=options.edate,
+        edv,edav,edsv,nenc = AgeencDateVolumes(startDT=options.sdate,endDT=options.edate,
            localIgnore=options.localignore,ziplen=options.ziplen)
+    if len(nenc == 0):
+        SSlogging.debug('espSS.py found no events - dates in future perhaps?')
+        SSlogging.shutdown()
+        sys.exit(1)
     if options.maketab:
         generateTab(ziplen=options.ziplen,sdate=options.sdate,localIgnore=options.localignore,
          edate=options.edate,outdir=options.outdir,encDateVols=edv,
