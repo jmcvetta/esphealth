@@ -1,10 +1,19 @@
-USESQLITE=0
+import os
+
+USESQLITE=1
 RUNFAKEDATA=0
 SITEROOT='/ESP'
+TOPDIR = '/home/espss'
+CODEDIR = os.path.join( TOPDIR + 'ESP')
+
 LOCALSITE='Prototype'
 
-MYSQL_DB_USER = 'espuser'
-MYSQL_DB_PASSWORD = 'password'
+DATABASE_ENGINE = 'sqlite3' # 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
+DATABASE_NAME = 'espss.sqlite'
+DATABASE_USER = '' 
+DATABASE_PASSWORD = ''
+DATABASE_HOSTNAME = ''
+DATABASE_PORT = ''
 
 
 FTPUSER = 'ftpuser'
@@ -12,4 +21,8 @@ FTPPWD = 'ftppassword'
 FTPSERVER = 'ftp.yoursite.com'
 
 
-EMAILSENDER='espuser@yoursite.com'
+EMAILSENDER='esp@esp2.channing.harvard.edu'
+ADMINS = (
+    ('rossl', 'ross.lazarus@gmail.com'),
+)
+
