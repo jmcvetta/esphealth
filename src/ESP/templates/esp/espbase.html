@@ -12,7 +12,7 @@
     
   <table width="100%">
     <tr><td colspan="2" >
-	<img src="{{MEDIA_URL}}/images/espheader2.png" border="0" /> 
+	<img src="{{MEDIA_URL}}/images/espheader2.png" border="0" />
       </td>
     </tr>
 	
@@ -23,7 +23,8 @@
           <p><p>
 	      <table cellpadding="1" border="2" bordercolor="white">
 		<tr class="{% cycle row2,row1 as rowcolors %}">
-                  {% if not user or not user.is_authenticated %}<td>AnonymousUser</td></tr>
+                  {% if not user or not user.is_authenticated %}<td>Anonymous
+User</td></tr>
                 <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/login/">ESP Login</a></td></tr>
                 <tr class="{% cycle rowcolors %}"><td><a href="mailto:ross.lazarus&#64;channing.harvard.edu">Request a new account</a></td></tr>
                 {% else %}
@@ -37,17 +38,18 @@
                 <tr class="{% cycle rowcolors %}"><td> <a href="{{SITEROOT}}/pswdchange/">Change My Password</a></td></tr>
                        
 		
-		<tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/">ESP Home</a></td></tr>
-             <tr class="{% cycle rowcolors %}"><td><a href="{% url cases_all %}">ALL Cases</a></td></tr>
-             <tr class="{% cycle rowcolors %}"><td><a href="{% url cases_awaiting_review %}">Cases Awaiting Review</a></td></tr>
-             <tr class="{% cycle rowcolors %}"><td><a href="{% url cases_under_review %}">Cases Under Review</a></td></tr>
-             <tr class="{% cycle rowcolors %}"><td><a href="{% url cases_queued %}">Cases Queued</a></td></tr> 
-             <tr class="{% cycle rowcolors %}"><td><a href="{% url cases_sent %}">Cases Sent</a></td></tr>
-             {% comment %}
-             <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/1/FP////">Cases: False Positive</a></td></tr>
-	     <tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/sent/">Case Report Archive</a></td></tr>
-             {% endcomment %}
-
+		<tr class="{% cycle rowcolors %}"><td><a href="{% url esp.views.index %}">ESP Home</a></td></tr>
+		<tr class="{% cycle rowcolors %}"><td><a href="{% url vaers.views.index %}">Vaers Home</a></td></tr>
+		<tr class="{% cycle rowcolors %}"><td><a href="{% url cases_all %}">ALL Cases</a></td></tr>
+		<tr class="{% cycle rowcolors %}"><td><a href="{% url cases_awaiting_review %}">Cases Awaiting Review</a></td></tr>
+		<tr class="{% cycle rowcolors %}"><td><a href="{% url cases_under_review %}">Cases Under Review</a></td></tr>
+		<tr class="{% cycle rowcolors %}"><td><a href="{% url cases_queued %}">Cases Queued</a></td></tr> 
+		<tr class="{% cycle rowcolors %}"><td><a href="{% url cases_sent %}">Cases Sent</a></td></tr>
+		{% comment %}
+		<tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/1/FP////">Cases: False Positive</a></td></tr>
+		<tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/sent/">Case Report Archive</a></td></tr>
+		{% endcomment %}
+		
               {% if user.is_staff %}
                    <tr class="{% cycle rowcolors %}"><td><a href="{% url admin_util %}">Administration &amp; Utilities</a></td></tr> 
                {% endif %}

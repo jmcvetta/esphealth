@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "vaers.html" %}
 {% block content %}
 <div>
-    Please confirm that you are {{ case.patient.DemogProvider.ProvTitle }} 
+    Please confirm that you are {{ case.patient.DemogProvider.full_name }} 
     {{ case.patient.DemogProvider.ProvLast_Name }} and that you are the care 
     provider for {{ case.patient.DemogFirst_Name }} {{ case.patient.DemogLast_Name }} 
     <div>

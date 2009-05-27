@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "vaers.html" %}
 {% block extrastyle %}
 <link rel="stylesheet" type="text/css" href="{{ site_css_folder }}vaers.css" />
 {% endblock %}
@@ -8,9 +8,6 @@
 </script>
 {% endblock%}
 
-
-
-{% block sidebar %}{% endblock %}
 {% block content %}
 
 <h2>Adverse Event to Vaccination Report</h2>
@@ -30,20 +27,30 @@ safety investigators:</p>
   <th>Reason for being considered an adverse event</th>
     <td>{{ case.matching_rule_explain }}</td>
   </tr>
-  {% if case.icd9 %}
-  <tr>
-    <th>Icd9 Code</th>
-    <td>{{ case.icd9.icd9Code }} ({{case.icd9.icd9Long }})</td>
-  </tr>
-  {% endif %}
   
-  <tr><th>Date of Immunization</th>
-    <td>{{ case.immunization.date|date:"M d, Y"}}</td>
+  <tr><th>Relevant Immunizations</th>
+    <td>
+      <dl>
+	{% for imm in case.immunizations.all %}
+	<dd>{{ imm.vaccine_type }} on {{ imm.date|date:"M d, Y"}}</dd>
+	{% endfor %}
+      </dl>
+    </td>
   </tr>
   {% if case.encounter %}
   <tr>
     <th>Date of encounter that indicated Adverse Event</th>
     <td>{{ encounter_date|date:"M d, Y"}}</td>
+  </tr>
+  <tr>
+    <th>Icd9 Codes</th>
+    <td>
+      <ul>
+	{% for icd9 in case.encounter.icd9_reported_list.all %}
+	<li>{{ icd9.icd9Code }} ({{ icd9.icd9Long }})</li>
+	{% endfor %}
+      </ul>
+    </td>
   </tr>
   {% endif %}
   <tr>
@@ -55,12 +62,10 @@ safety investigators:</p>
     <th>Lab Result that indicated Adverse Event</th>
     <td>
       <ul class="lx_summary">
-	<li>Results Obtained on {{ lab_result_date|date:"M d, Y"}}</li>
-	<li>Order: #{{ case.lab_result.LxOrder_Id_Num }}</li>
-	<li>Component: {{ case.lab_result.LxComponentName}}</li>
-	<li>Results: {{ case.lab_result.LxTest_results|default:"N/A"}} 
-	  ({{ lab_result.LxTest_status|default:"N/A"}})
-	</li>
+	<li>Lab Test: {{ case.lab_result.native_name }}</li>
+	<li>Order: #{{ case.lab_result.LxOrder_Id_Num|default:"N/A" }}</li>
+	<li>Results Obtained on {{ case.lab_result.result_date|date:"M d, Y"}}</li>
+	<li>Results: {{ case.lab_result.result_float|default:"N/A"}}</li>
       </ul>
     </td>
   </tr>
@@ -83,6 +88,9 @@ safety investigators:</p>
 
 <form id="frm_case_confirmation" method="POST" action="{% url present_case case.id %}">
   {{ form.as_ul }}
+  <div>
+    Please add any commentary or information that you would like to attach to the case report here. Comments for confirmed cases will be added to the final report, while comments on false positives will be used as feedback for our detection system.
+  </div>
   <input type="submit" value="submit" />
 </form>
 {% endblock %}
