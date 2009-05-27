@@ -799,7 +799,7 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5,
     limit to zips with > 10 cases over entire period arbitrarily
     """
     limit = 10
-    fproto = os.path.join(outdir,'ESP%s_AllEnc_zip%d_%s_%s.xls')
+    fproto = os.path.join(outdir,'ESP%s_AllEnc_zip%d_%s_%s_%s_%s.xls')
     localIgnore = 1
     ziplen = 5
     ages = [x for x in range(0,90,5)]
@@ -845,7 +845,7 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5,
                 siten.append(n) # res counts by age
             row = [d,z,'%d' % st] + ['%d' % x for x in siten] # string    
             sres.append(row) # for residential encounter report
-    fname = fproto % (thisSite,ziplen,'Excl','Site')
+    fname = fproto % (thisSite,ziplen,'Excl','Site',sdate,edate)
     f = open(fname,'w')
     f.write('\n'.join(['\t'.join(x) for x in sres]))
     f.write('\n')
