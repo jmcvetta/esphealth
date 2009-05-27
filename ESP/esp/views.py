@@ -493,6 +493,8 @@ def casematch(request,  download=''):
         headerl=['Patient Index', 'DPH Status','DPH Date','ESP LastName','ESP FirstName','ESP Gender', 'ESP D.O.B','Note']
         report.insert(0,headerl)
         returnlist= eval(request.POST['filedata'])
+        if not returnlist: # None type is not iterable, so we must replace it with blank list
+            returnlist = []
         indx=1
         for onerow in returnlist:
             (lname,fname,gender,dob,totalnum, exactrec, totalrec,dphstatus,dhpdate,indx) = onerow
