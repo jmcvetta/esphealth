@@ -14,7 +14,6 @@
 import datetime
 import pprint
 import types
-import sets
 import sys
 import optparse
 import re
@@ -458,12 +457,11 @@ class FeverHeuristic(EncounterHeuristic):
         self.icd9s = icd9s
         self._register(kwargs)
     
-    def encounters(self, begin_date=None, end_date=None):
+    def encounters(self, begin_date=None, end_date=None, queryset=None):
         '''
         Return all encounters indicating fever.
             @type begin_date: datetime.date
             @type end_date:   datetime.date
-            @type patient:    Demog
             @type queryset:   QuerySet
         '''
         log.debug('Get encounters matching "%s".' % self.name)
