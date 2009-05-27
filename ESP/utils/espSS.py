@@ -268,12 +268,12 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
             'EncEncounter_Date','EncEncounter_Site').iterator() # yes - this works well to minimize ram             
     zl = ziplen # eg use 5 - ignore rest
     for i,anenc in enumerate(allenc):
-        nenc += 1
         if (i+1) % 10000 == 0:
             SSlogging.debug('AgeencDateVolumes at %d, %f /sec' % (i+1, i/(time.time() - started)))
         (z,dob,thisd,siteCode) = anenc # returned as a list of tuples by value_list
         age = makeAge(dob,thisd,ageChunksize) # small fraction have bad dates
         if age <> None:
+            nenc += 1
             ageCounts.setdefault(age,0)
             ageCounts[age] += 1
             z = z[:zl] # corresponding zip
@@ -290,10 +290,13 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
             dateSitecounts[thisd][siteZip].setdefault(age,0)
             dateSitecounts[thisd][siteZip][age] += 1
     del allenc
-    ak = ageCounts.keys()
-    ak.sort()
-    a = ['%d:%d' % (x, ageCounts[x]) for x in ak]
-    SSlogging.info('*****AgeencDateVolumes, localIgnore = %s, age chunk counts=\n%s' % (localIgnore,'\n'.join(a)))
+    if nenc > 0:
+        ak = ageCounts.keys()
+        ak.sort()
+        a = ['%d:%d' % (x, ageCounts[x]) for x in ak]
+        SSlogging.info('*****AgeencDateVolumes, localIgnore = %s, age chunk counts=\n%s' % (localIgnore,'\n'.join(a)))
+    else:
+        SSlogging.info('*****AgeencDateVolumes, localIgnore = %s, 0 encounters found' % (localIgnore))
     return dateCounts,dateAgecounts,dateSitecounts,nenc
 
 
@@ -877,10 +880,11 @@ if __name__ == "__main__":
     (options,args) = parser.parse_args()
     SSlogging.info('espSS.py starting at %s. sdate=%s, edate=%s, ziplen=%d, outdir=%s' % (isoTime(),
     options.sdate,options.edate,options.ziplen,options.outdir))
+    nenc = 0
     if options.maketab or options.makevols or options.makevols:
         edv,edav,edsv,nenc = AgeencDateVolumes(startDT=options.sdate,endDT=options.edate,
            localIgnore=options.localignore,ziplen=options.ziplen)
-    if len(nenc == 0):
+    if nenc == 0:
         SSlogging.debug('espSS.py found no events - dates in future perhaps?')
         SSlogging.shutdown()
         sys.exit(1)
