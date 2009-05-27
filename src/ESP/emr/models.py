@@ -242,7 +242,7 @@ class Encounter(BasePatientRecord):
     '''
     # Date is encounter date
     #
-    icd9_codes = models.ManyToManyField(Icd9,  blank=True,  null=True)
+    icd9_codes = models.ManyToManyField(Icd9,  blank=True,  null=True, db_index=True)
     status = models.CharField(max_length=20, blank=True, null=True)
     closed_date = models.DateField(blank=True, null=True)
     site_name = models.CharField(max_length=100, blank=True, null=True)

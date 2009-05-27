@@ -166,7 +166,12 @@ class BaseHeuristic(object):
         # First we retrieve a list of object IDs for this 
         existing = HeuristicEvent.objects.filter(heuristic_name=self.name).values_list('object_id')
         existing = [int(item[0]) for item in existing] # Convert to a list of integers
-        for event in self.matches(begin_date, end_date).select_related():
+        for event in self.matches(begin_date, end_date):
+        #
+        # Disabled select_related() because matches will most often be in 
+        # existing list, and thus discarded not saved.
+        #
+        #for event in self.matches(begin_date, end_date).select_related():
             if event.id in existing:
                 log.debug('BaseHeuristic event "%s" already exists for %s #%s' % (self.name, event._meta.object_name, event.id))
                 continue
@@ -493,19 +498,32 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
         # First, we return a list of patient & order date pairs, where the sum
         # of direct and indirect bilirubin tests ordered on the same day is 
         # greater than 1.5.
-        #
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # TODO: Confirm filter() on following line works correctly -- cannot test
-        # now because emr_laborder is not yet populated.
         relevant = self.relevant_labs(begin_date, end_date).filter(order_date__isnull=False)
         vqs = relevant.values('patient', 'order_date') # returns ValueQuerySet
         vqs = vqs.annotate(calc_bil=Sum('result_float'))
         vqs = vqs.filter(calc_bil__gt=1.5)
-        # Next we loop thru the patient/order-date list, fetch the relevant 
-        # (direct + indirect) > 1.5, just in case there is a funky situation
-        # where, e.g., the patient has had two indirect bilirubin tests ordered
-        # on the same day.
+        # Now we retrieve the matches -- this is a huuuuuuge query: it takes a 
+        # long time just for Django to build it, and even longer for the DB to 
+        # execute it.  But is there a better solution?  Note that generate_cases()
         matches = LabResult.objects.filter(pk__isnull=True) # Lx QuerySet that matches nothing
         for item in vqs:
             matches = matches | relevant.filter(patient=item['patient'], order_date=item['order_date']) 
         return matches
+    
+    def newmatches(self, begin_date=None, end_date=None):
+        log.debug('Looking for high calculated bilirubin scores')
+        # First, we return a list of patient & order date pairs, where the sum
+        # of direct and indirect bilirubin tests ordered on the same day is 
+        # greater than 1.5.
+        relevant = self.relevant_labs(begin_date, end_date).filter(order_date__isnull=False)
+        vqs = relevant.values('patient', 'order_date') # returns ValueQuerySet
+        vqs = vqs.annotate(calc_bil=Sum('result_float'))
+        vqs = vqs.filter(calc_bil__gt=1.5)
+        # Now, instead of returning a QuerySet -- which would require a hugely
+        # complex, slow query -- we go and fetch the individual matches into a 
+        match_ids = set()
+        for item in vqs:
+            match_ids = match_ids | set(relevant.filter(patient=item['patient'], order_date=item['order_date']).values_list('id', flat=True))
+            print len(match_ids)
+        #return matches
+    
