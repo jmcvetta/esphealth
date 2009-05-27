@@ -4,6 +4,8 @@ Please look at http://esphealth.org/trac/ESP/wiki/ESPSS
 to get some idea of the background
 
 Most Recent Changes First:
+26 May 2009: how to proceed for Katherine? Best to have individual daily files or to append each day?
+19 May 2009: added optionparser
 18 May 2009: added all encounter/date/zip reports. filter by zips > 10 encounters over entire period
              Needed for the new espss/ssmap django app.
 7 May 2009: specification stampede overwhelms valiant programmer - now with site zip amalgamation
@@ -143,6 +145,7 @@ cclassifier = 'ESPSSApril2009'
 ageChunksize = 5 #
 
 import os, sys, django, time, datetime
+from optparse import OptionParser
 sys.path.insert(0, '/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
@@ -813,7 +816,7 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5):
         for z in zk:
             allsz.setdefault(z,0) # keep trac of site zips
             allsz[z] += 1
-    rzk = [x for x in allrz.keys() if x > limit]
+    rzk = [x for x in allrz.keys() if x > limit] # ignore very rarely reported zips
     szk = [x for x in allsz.keys() if x > limit]
     for d in dk: # now make report with empty days and zips!
         dd = encDateAgeVols.get(d,{})
@@ -853,28 +856,25 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) >= 3:
-        sdate = sys.argv[1]
-        edate = sys.argv[2]
-    else:
-        SSlogging.info('## supply sdate and edate as command line parameters to change the default dates')
-        today = datetime.datetime.now()
-        yesterday = today - datetime.timedelta(days=1)
-        sdate= '%d%02d%02d' % (yesterday.year,yesterday.month,yesterday.day)
-        edate= '%d%02d%02d' % (today.year,today.month,today.day)
-    if len(sys.argv) >= 4:
-        ziplen = int(sys.argv[3])
-    else:
-        ziplen = 5
-        print '## supply ziplen (eg 3 or 5) as the third parameter to change from default %d' % ziplen
-    if len(sys.argv) >= 5:
-        outdir = sys.argv[4]
-    else:
-        outdir = '/home/ESP/SS'
-        print '## supply the output directory path as the fourth parameter to change from default %s' % outdir
+    progname = os.path.basename(sys.argv[0])
+    edef = (today - datetime.timedelta(1)).strftime('%Y%m%d')
+    sdef = (today - datetime.timedelta(2)).strftime('%Y%m%d')
+    parser = OptionParser(usage=u, version="%prog 0.01")
+    a = parser.add_option
+    a("-s","--sdate",dest="sdate",default=sdef)
+    a("-e","--edate",dest="edate",default=edef)
+    a("-o","--outdir",dest="outdir",default='/home/ESP/SS')
+    a("-z","--ziplen",dest="ziplen",default='5')
+    a("-t","--tab", action="store_true", dest="maketab",default=False)
+    a("-a","--amds", action="store_true", dest="makeamds",default=False)
+    a("-i","--ignorex", action="store_false", dest="localignore",default=True)
+    a("-v","--vols", action="store_true", dest="makevols",default=False)
+    (options,args) = parser.parse_args()
     SSlogging.info('espSS.py starting at %s. sdate=%s, edate=%s, ziplen=%d, outdir=%s' % (isoTime(),sdate,edate,ziplen,outdir))
-    #generateTab(ziplen=ziplen,sdate=sdate,edate=edate,outdir=outdir)
-    #generateAMDS(ziplen=3,minCount=0,sdate=sdate,edate=edate,outdir=outdir)
-    #generateAMDS(ziplen=5,minCount=0,sdate=sdate,edate=edate,outdir=outdir)
-    makeEncVols(sdate='20060701',edate='20200101',outdir=outdir,ziplen=5)
+    if options.tab:
+        generateTab(ziplen=ziplen,sdate=sdate,edate=edate,outdir=outdir)
+    if options.amds:
+        generateAMDS(ziplen=ziplen,minCount=0,sdate=sdate,edate=edate,outdir=outdir)    
+    if options.vols:
+        makeEncVols(sdate=sdate,edate=edate,outdir=outdir,ziplen=ziplen)
 

@@ -13,7 +13,6 @@ ESP/esp/views.py -text
 ESP/httpdconf/djangomedia/README -text
 ESP/httpdconf/djangomedia/media/ESPMay2006Talk.htm -text
 ESP/httpdconf/httpd.conf.esp.sample -text
-ESP/localsettings.py -text
 ESP/localsettings.py.sample -text
 ESP/localsettings.pyc -text
 ESP/manage.py -text
@@ -32,7 +31,6 @@ ESP/sendMsgs/org/openuri/www/Bcdc_elrSoapStub.class -text
 ESP/sendMsgs/org/openuri/www/Bcdc_elrSoapStub.java -text
 ESP/sendMsgs/sendMsg.bat -text
 ESP/sendMsgs/sendMsg.java -text
-ESP/settings.py -text
 ESP/settings.py.sample -text
 ESP/settings.pyc -text
 ESP/ssmap/__init__.py -text

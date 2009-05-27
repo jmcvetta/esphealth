@@ -414,7 +414,7 @@ def loadEnc(sdate='20060701',edate='20200101',ziplen=5):
     for z in bk:
         s = '%s\t%d' % (z,badzips[z])
         f.write(s)
-        f.write(n)
+        f.write('\n')
         sslogging.info( s )
     f.close()
     

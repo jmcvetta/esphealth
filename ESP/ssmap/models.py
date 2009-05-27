@@ -1,7 +1,17 @@
+"""
+models for espss
+note that we use a lot of strings as primary keys - inefficient but makes it easier during
+development - may want to revert to more usual record numbers as primary key and do the
+relevant lookups in the apps.
+
+"""
+
+
 from django.db import models
 import datetime
 from django.contrib.auth.models import User 
 import string
+
 
 class eventdate(models.Model):
     """cheap way to get all events on any date
@@ -37,8 +47,8 @@ class geoplace(models.Model):
     la = models.DecimalField(max_digits=9, decimal_places=6)
     lo = models.DecimalField(max_digits=9, decimal_places=6)
     zipcode = models.CharField(max_length=10,db_index=True)
-    address = models.TextField()
-    narrative = models.TextField()
+    address = models.TextField(null=True)  
+    narrative = models.TextField(null=True)  
 
     def zip3(self):
         return self.zipcode[:3]
@@ -49,11 +59,25 @@ class geoplace(models.Model):
     def __unicode__(self):
       return '%s: la %f lo %f zip %s add %s narr %s' % (self.place,self.la,self.lo,
             self.zipcode, self.address, self.narrative[:60] ) 
-   
+
+class encType(models.Model):
+   """ classes of encounter totals stored in the enc table
+   eg atriusres, atriussite
+   """   
+   enctype = models.CharField(max_length=20,primary_key=True)
+   narrative = models.TextField(null=True)    
+
+   def __unicode__(self):
+      return '%s: %s' % (self.enctype,self.narrative[:60])
+
+
 class enc(models.Model):
-   """ store total encounters for this place
+   """ store total encounters for this place and event class
+   note that we need to distinguish event classes because (eg) atrius data by residential
+   zip will overlap atrius data by site zip
    broken down by age
    """
+   etype = models.ForeignKey('encType')
    edate = models.ForeignKey('eventDate')
    place = models.ForeignKey('geoplace')
    agecounts = models.TextField() # use this to store age counts eg
