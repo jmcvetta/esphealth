@@ -4,6 +4,8 @@ Please look at http://esphealth.org/trac/ESP/wiki/ESPSS
 to get some idea of the background
 
 Most Recent Changes First:
+26 May 2009: how to proceed for Katherine? Best to have individual daily files or to append each day?
+19 May 2009: added optionparser
 18 May 2009: added all encounter/date/zip reports. filter by zips > 10 encounters over entire period
              Needed for the new espss/ssmap django app.
 7 May 2009: specification stampede overwhelms valiant programmer - now with site zip amalgamation
@@ -143,6 +145,7 @@ cclassifier = 'ESPSSApril2009'
 ageChunksize = 5 #
 
 import os, sys, django, time, datetime
+from optparse import OptionParser
 sys.path.insert(0, '/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
@@ -424,7 +427,7 @@ def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
 
 
 def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='ESPSS',ziplen=3,
-    encAgeDateVols=None,doid=None,requ=None,minCount=0,crtime=None,localIgnore=False):
+    encDateAgeVols=None,doid=None,requ=None,minCount=0,crtime=None,localIgnore=False):
     """crude generator for xls for a period and 
     genesis at http://esphealth.org/trac/ESP/wiki/ESPSS
     rml april 27 2009 swine flu season?
@@ -562,7 +565,8 @@ def makeAMDS(sdate=None,edate=None,syndrome=None,encDateVols=None,cclassifier='E
 # end makeAMDS
 
 
-def generateAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3,outdir='./'):
+def generateAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3,outdir='./',
+     encDateVols={},encDateAgeVols={},encDateSiteVols={},localIgnore=True):
     """ test stub for AMDS xml generator
     On Thu, Apr 23, 2009 at 11:54 PM, Lee, Brian A. (CDC/CCHIS/NCPHI)
     (CTR) <fya1@cdc.gov> wrote:
@@ -584,8 +588,8 @@ def generateAMDS(sdate='20090401',edate='20090431',minCount=0,ziplen=3,outdir='.
     syndromes.sort()
     for syndrome in syndromes: # get ready to write AMDS XML as a list of strings
         res = makeAMDS(sdate=sdate,edate=edate,syndrome=syndrome,minCount=minCount,
-          encDateVols=dateZip,encAgeDateVols=dateZipAge,cclassifier=cclassifier,
-          doid=doid,requ=requ,crtime=crtime,localIgnore=False,ziplen=ziplen)
+          encDateVols=encDateVols,encDateAgeVols=encDateAgeVols,cclassifier=cclassifier,
+          doid=doid,requ=requ,crtime=crtime,localIgnore=localIgnore,ziplen=ziplen)
         if len(res) > 0:
             fname = fproto % (thisSite,ziplen,syndrome,sdate,edate)
             f = open(fname,'w')
@@ -745,45 +749,46 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
 # end makeTab  
 
 
-def generateTab(sdate='20090401',edate='20090431',ziplen=5,outdir='./'):
+def generateTab(sdate='20090401',edate='20090431',ziplen=5,outdir='./',
+    localIgnore=True,encDateVols={},encDateAgeVols={},encDateSiteVols={}):
     """ test wrapper for simple aggregate 
     date synd zip n nall pct
     and unit record tab delim generator
     date zip_residence zip_practice syndrome temp syndN allencN syndPct 
     """
-    for i,localIgnore in enumerate((True,False)):
-        ignoreMode = ['Excl','All'][i]
-        encDateVols,encDateAgeVols,encDateSiteVols = AgeencDateVolumes(startDT=sdate,endDT=edate,
-           localIgnore=localIgnore,ziplen=ziplen)
-        fproto = os.path.join(outdir,'ESP%s_SyndAgg_zip%s_%s_%s_%s_%s.xls')
-        lfproto = os.path.join(outdir,'ESP%s_SyndInd_zip%s_%s_%s_%s_%s.xls')
-        syndromes = syndDefs.keys() # syndromes
-        syndromes.sort()
-        for syndrome in syndromes: # get ready to write tab delimited data as a list of strings
-            res,sres,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=encDateVols,
-               encDateAgeVols=encDateAgeVols,encDateSiteVols=encDateSiteVols,localIgnore=localIgnore)
-            fname = fproto % (thisSite,'%d_Res' % ziplen,ignoreMode,syndrome,sdate,edate)
-            f = open(fname,'w') 
-            f.write('\n'.join(res))
+    ignoreMode = 'All'
+    if localIgnore:
+        ignoreMode='Excl'
+    fproto = os.path.join(outdir,'ESP%s_SyndAgg_zip%s_%s_%s_%s_%s.xls')
+    lfproto = os.path.join(outdir,'ESP%s_SyndInd_zip%s_%s_%s_%s_%s.xls')
+    syndromes = syndDefs.keys() # syndromes
+    syndromes.sort()
+    for syndrome in syndromes: # get ready to write tab delimited data as a list of strings
+        res,sres,lres = makeTab(sdate=sdate,edate=edate,syndrome=syndrome,encDateVols=encDateVols,
+           encDateAgeVols=encDateAgeVols,encDateSiteVols=encDateSiteVols,localIgnore=localIgnore)
+        fname = fproto % (thisSite,'%d_Res' % ziplen,ignoreMode,syndrome,sdate,edate)
+        f = open(fname,'w') 
+        f.write('\n'.join(res))
+        f.write('\n')
+        f.close()
+        SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
+        fname = fproto % (thisSite,'%d_Site' % ziplen,ignoreMode,syndrome,sdate,edate)
+        f = open(fname,'w') 
+        f.write('\n'.join(sres))
+        f.write('\n')
+        f.close()
+        SSlogging.debug('## wrote %d rows to %s' % (len(sres),fname))
+        if len(lres) > 1: # makeTab only returns header row except for ILI at present 
+            fname = lfproto % (thisSite,ziplen,ignoreMode,syndrome,sdate,edate)
+            f = open(fname,'w')
+            f.write('\n'.join(lres))
             f.write('\n')
             f.close()
-            SSlogging.debug('## wrote %d rows to %s' % (len(res),fname))
-            fname = fproto % (thisSite,'%d_Site' % ziplen,ignoreMode,syndrome,sdate,edate)
-            f = open(fname,'w') 
-            f.write('\n'.join(sres))
-            f.write('\n')
-            f.close()
-            SSlogging.debug('## wrote %d rows to %s' % (len(sres),fname))
-            if len(lres) > 1: # makeTab only returns header row except for ILI at present 
-                fname = lfproto % (thisSite,ziplen,ignoreMode,syndrome,sdate,edate)
-                f = open(fname,'w')
-                f.write('\n'.join(lres))
-                f.write('\n')
-                f.close()
-                SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
-        del encDateVols,encDateAgeVols,encDateSiteVols   
+            SSlogging.debug('## wrote %d rows to %s' % (len(lres),fname))
+  
 
-def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5):
+def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5,
+     encDateVols={},encDateAgeVols={},encDateSiteVols={}):
     """ need volumes for espss over all time
     write site and residential total encs by age
     eg date zip all 0 5..80 85
@@ -793,8 +798,6 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5):
     fproto = os.path.join(outdir,'ESP%s_AllEnc_zip%d_%s_%s.xls')
     localIgnore = 1
     ziplen = 5
-    encDateVols,encDateAgeVols,encDateSiteVols = AgeencDateVolumes(startDT=sdate,endDT=edate,
-           localIgnore=localIgnore,ziplen=ziplen)
     ages = [x for x in range(0,90,5)]
     agess = ['%d' % x for x in ages]
     head = ['edate','zip','all'] + agess
@@ -813,7 +816,7 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5):
         for z in zk:
             allsz.setdefault(z,0) # keep trac of site zips
             allsz[z] += 1
-    rzk = [x for x in allrz.keys() if x > limit]
+    rzk = [x for x in allrz.keys() if x > limit] # ignore very rarely reported zips
     szk = [x for x in allsz.keys() if x > limit]
     for d in dk: # now make report with empty days and zips!
         dd = encDateAgeVols.get(d,{})
@@ -850,31 +853,41 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5):
     f.close()
     
             
-
+u = """espss.py
+usage: python espss.py -s[startdate as 20090101] -e[enddate] -z [ziplen] 
+-o [outdir] -t [tabreps] -a [amdsreps] -i [do not ignore local exclusions] -v [make vols file]"""
 
 if __name__ == "__main__":
-    if len(sys.argv) >= 3:
-        sdate = sys.argv[1]
-        edate = sys.argv[2]
-    else:
-        SSlogging.info('## supply sdate and edate as command line parameters to change the default dates')
-        today = datetime.datetime.now()
-        yesterday = today - datetime.timedelta(days=1)
-        sdate= '%d%02d%02d' % (yesterday.year,yesterday.month,yesterday.day)
-        edate= '%d%02d%02d' % (today.year,today.month,today.day)
-    if len(sys.argv) >= 4:
-        ziplen = int(sys.argv[3])
-    else:
-        ziplen = 5
-        print '## supply ziplen (eg 3 or 5) as the third parameter to change from default %d' % ziplen
-    if len(sys.argv) >= 5:
-        outdir = sys.argv[4]
-    else:
-        outdir = '/home/ESP/SS'
-        print '## supply the output directory path as the fourth parameter to change from default %s' % outdir
-    SSlogging.info('espSS.py starting at %s. sdate=%s, edate=%s, ziplen=%d, outdir=%s' % (isoTime(),sdate,edate,ziplen,outdir))
-    #generateTab(ziplen=ziplen,sdate=sdate,edate=edate,outdir=outdir)
-    #generateAMDS(ziplen=3,minCount=0,sdate=sdate,edate=edate,outdir=outdir)
-    #generateAMDS(ziplen=5,minCount=0,sdate=sdate,edate=edate,outdir=outdir)
-    makeEncVols(sdate='20060701',edate='20200101',outdir=outdir,ziplen=5)
+    progname = os.path.basename(sys.argv[0])
+    today = datetime.datetime.now()
+    edef = (today - datetime.timedelta(1)).strftime('%Y%m%d')
+    sdef = (today - datetime.timedelta(2)).strftime('%Y%m%d')
+    parser = OptionParser(usage=u, version="%prog 0.01")
+    a = parser.add_option
+    a("-s","--sdate",dest="sdate",default=sdef)
+    a("-e","--edate",dest="edate",default=edef)
+    a("-o","--outdir",dest="outdir",default='/home/ESP/SS')
+    a("-z","--ziplen",dest="ziplen",default=5,type="int")
+    a("-t","--tab", action="store_true", dest="maketab",default=False)
+    a("-a","--amds", action="store_true", dest="makeamds",default=False)
+    a("-i","--ignorex", action="store_false", dest="localignore",default=True)
+    a("-v","--vols", action="store_true", dest="makevols",default=False)
+    (options,args) = parser.parse_args()
+    SSlogging.info('espSS.py starting at %s. sdate=%s, edate=%s, ziplen=%d, outdir=%s' % (isoTime(),
+    options.sdate,options.edate,options.ziplen,options.outdir))
+    if options.maketab or options.makevols or options.makevols:
+        edv,edav,edsv = AgeencDateVolumes(startDT=options.sdate,endDT=options.edate,
+           localIgnore=options.localignore,ziplen=options.ziplen)
+    if options.maketab:
+        generateTab(ziplen=options.ziplen,sdate=options.sdate,localIgnore=options.localignore,
+         edate=options.edate,outdir=options.outdir,encDateVols=edv,
+         encDateAgeVols=edav,encDateSiteVols=edsv)
+    if options.makeamds:
+        generateAMDS(ziplen=options.ziplen,minCount=0,sdate=options.sdate,
+         edate=options.edate,outdir=options.outdir,encDateVols=edv,
+         encDateAgeVols=edav,encDateSiteVols=edsv)    
+    if options.makevols:
+        makeEncVols(sdate=options.sdate,edate=options.edate,
+         outdir=options.outdir,ziplen=options.ziplen,
+          encDateVols=edv,encDateAgeVols=edav,encDateSiteVols=edsv)
 
