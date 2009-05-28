@@ -7,11 +7,8 @@ from ESP.esp import models
 
 
 class CaseAdmin(admin.ModelAdmin):
-    list_filter = ('caseWorkflow',)
-    #ordering = ('updated_timestamp', 'created_timestamp')
-    #list_display = ['provider', 'workflow_state', 'updated_timestamp', 'notes']
     ordering = ('caseLastUpDate', 'casecreatedDate')
-    list_display = ['caseProvider', 'caseWorkflow', 'caseLastUpDate',]
+    list_display = ['caseProvider', 'caseLastUpDate',]
 
 class EncOptions(admin.ModelAdmin):
     list_display = ('EncPatient', 'EncEncounter_Date','EncMedical_Record_Number')
