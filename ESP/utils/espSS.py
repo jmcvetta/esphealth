@@ -852,7 +852,7 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5,
     f.write('\n'.join(['\t'.join(x) for x in sres]))
     f.write('\n')
     f.close()
-    fname = fproto % (thisSite,ziplen,'Excl','Res')
+    fname = fproto % (thisSite,ziplen,'Excl','Res',sdate,edate)
     f = open(fname,'w')
     f.write('\n'.join(['\t'.join(x) for x in rres]))
     f.write('\n')
