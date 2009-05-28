@@ -54,7 +54,7 @@ def compare(condition):
     q_obj = ~Q(caseDemog__in=pids)
     for case in OldCase.objects.filter(caseRule=rule).filter(q_obj).order_by('pk'):
         print '~' * 80
-        print 'Case #%s' % case.pk
+        print 'Case #%s'.center(80) % case.pk
         if case.caseEncID:
             encids = case.caseEncID.split(',')
         else:
@@ -68,12 +68,13 @@ def compare(condition):
         else:
             icd9s = []
         for enc in Encounter.objects.filter(pk__in=encids):
-            print '\t %s -- %s' % (enc, enc.date)
-            print '\t\t ICD9s: %s' % enc.icd9_codes.all()
+            print '%s -- %s' % (enc, enc.date)
+            print '\t ICD9s: %s' % enc.icd9_codes.all()
         for lab in LabResult.objects.filter(pk__in=lxids):
-            print '\t %s -- %s' % (lab, lab.date)
-            print '\t\t %s (%s)' % (lab.native_name, lab.native_code)
-            print '\t\t %s' % lab.result_string
+            print '%s -- %s' % (lab, lab.date)
+            print '\t %s (%s)' % (lab.native_name, lab.native_code)
+            print '\t Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
+                
     #
     # Find cases found by identifyCases.py but not by Nodis
     #
@@ -85,19 +86,21 @@ def compare(condition):
     pids = OldCase.objects.filter(caseRule=rule).values_list('caseDemog_id', flat=True)
     q_obj = ~Q(patient__in=pids)
     for case in NewCase.objects.filter(condition=condition).filter(q_obj).order_by('pk'):
+        print 
         print '~' * 80
-        print 'Case #%s' % case.pk
+        print 'Case #%s'.center(80) % case.pk
+        print '~' * 80
         for event in case.events.all():
-            print '\t %s' % event
+            print '%s' % event
             if type(event.content_object) == Encounter:
                 enc = event.content_object
-                print '\t\t %s -- %s' % (enc, enc.date)
-                print '\t\t ICD9s: %s' % enc.icd9_codes.all()
+                print '\t %s -- %s' % (enc, enc.date)
+                print '\t ICD9s: %s' % enc.icd9_codes.all()
             elif type(event.content_object) == LabResult:
                 lab = event.content_object
-                print '\t\t %s -- %s' % (lab, lab.date)
-                print '\t\t %s (%s)' % (lab.native_name, lab.native_code)
-                print '\t\t %s' % lab.result_string
+                print '\t %s -- %s' % (lab, lab.date)
+                print '\t %s (%s)' % (lab.native_name, lab.native_code)
+                print '\t Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
             else:
                 print '\t %s' % event.content_object
             
@@ -119,4 +122,6 @@ def main():
 if __name__ == '__main__':
     #main()
     compare('Acute Hepatitis A')
+    compare('Acute Hepatitis B')
+    compare('Acute Hepatitis C')
     #print connection.queries
