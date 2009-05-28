@@ -46,6 +46,8 @@ def main():
         help='Update cases')
     parser.add_option('-a', '--all', action='store_true', dest='all', 
         help='Generate generate new cases and update existing cases')
+    parser.add_option('--disease', action='store', dest='disease', type='string',
+        metavar='NAME', help='Generate new cases for disease NAME only')
     parser.add_option('--begin', action='store', dest='begin', type='string', 
         metavar='DATE', help='Analyze time window beginning at DATE')
     parser.add_option('--end', action='store', dest='end', type='string', 
@@ -66,6 +68,19 @@ def main():
     if options.all: # '--all' is exactly equivalent to '--cases --update-cases'
         options.cases = True
         options.update = True
+    if options.update and options.disease:
+        msg = '\nUpdating cases by specific disease is not yet supported.\n'
+        sys.stderr.write(msg)
+        parser.print_help()
+        sys.exit()
+    if options.disease:
+        dis = Disease.get_disease_by_name(options.disease)
+        if not dis:
+            msg = '\nNo disease registered with name "%s".\n' % options.disease
+            sys.stderr.write(msg)
+            sys.exit()
+        dis.generate_cases()
+        sys.exit()
     if options.cases:
         Disease.generate_all_cases(begin_date=options.begin, end_date=options.end)
     if options.update:
