@@ -12,6 +12,7 @@
 '''
 
 
+import sys
 import datetime
 
 from django.db import connection
@@ -45,16 +46,17 @@ def compare(condition):
     #
     # Find cases found by identifyCases.py but not by Nodis
     #
+    print
+    print
     print '=' * 80
     print condition.upper() + ' -- Cases found by identifyCases.py but not by Nodis'
     print '=' * 80
-    print 
-    print
     pids = NewCase.objects.filter(condition=condition).values_list('patient_id', flat=True)
     q_obj = ~Q(caseDemog__in=pids)
     for case in OldCase.objects.filter(caseRule=rule).filter(q_obj).order_by('pk'):
         print '~' * 80
-        print 'Case #%s'.center(80) % case.pk
+        case_str = 'Old Case #%s (%s)' % (case.pk, condition)
+        print case_str.center(80) 
         if case.caseEncID:
             encids = case.caseEncID.split(',')
         else:
@@ -78,17 +80,18 @@ def compare(condition):
     #
     # Find cases found by identifyCases.py but not by Nodis
     #
+    print
+    print
     print '=' * 80
     print condition.upper() + ' -- Cases found by Nodis but not by identifyCases.py'
     print '=' * 80
-    print 
-    print
     pids = OldCase.objects.filter(caseRule=rule).values_list('caseDemog_id', flat=True)
     q_obj = ~Q(patient__in=pids)
     for case in NewCase.objects.filter(condition=condition).filter(q_obj).order_by('pk'):
         print 
         print '~' * 80
-        print 'Case #%s'.center(80) % case.pk
+        case_str = 'Nodis Case #%s (%s)' % (case.pk, condition)
+        print case_str.center(80) 
         print '~' * 80
         for event in case.events.all():
             print '%s' % event
@@ -115,13 +118,20 @@ def compare(condition):
 
 
 def main():
+    print '+' * 80
+    print '+' + ' ' * 78 + '+'
+    print '+' + 'Nodis Case Comparison Report'.center(78) + '+'
+    gen_str = 'Generated %s' % datetime.datetime.today().strftime('%d %b %Y %H:%M')
+    print '+' + gen_str.center(78)+ '+'
+    print '+' + ' ' * 78 + '+'
+    print '+' * 80
     for condition in NewCase.objects.values_list('condition', flat=True).distinct():
         compare(condition)
 
 
 if __name__ == '__main__':
-    #main()
-    compare('Acute Hepatitis A')
-    compare('Acute Hepatitis B')
-    compare('Acute Hepatitis C')
+    main()
+    #compare('Acute Hepatitis A')
+    #compare('Acute Hepatitis B')
+    #compare('Acute Hepatitis C')
     #print connection.queries
