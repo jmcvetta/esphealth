@@ -235,7 +235,7 @@ hep_b_2 = DiseaseDefinition(
     )
 
 hep_b_3 = DiseaseDefinition(
-    name = 'Hepatitis B Component 3',
+    name = 'Hepatitis B Definition 3',
     version = 1,
     window = 1, # Not applicable, since only one primary event
     require = [
