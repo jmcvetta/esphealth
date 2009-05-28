@@ -72,7 +72,7 @@ class EventTimeWindow(object):
         assert isinstance(window, datetime.timedelta)
         self.__window = window
         self.__events = events
-        self.past_events = [] # Past events
+        self.past_events = [] # Past events that validate this windo
     
     def _get_start_date(self):
         return self.__events[-1].date - self.__window
@@ -94,9 +94,12 @@ class EventTimeWindow(object):
             self.__events.sort(lambda x,y: (x.date-y.date).days) # Sort by date
         else:
             raise OutOfWindow
+    
+    def all_events(self):
+        return self.events + self.past_events
         
     def __repr__(self):
-        return 'Window %s - %s (%s events)' % (self.start, self.end, len(self.events))
+        return 'Window %s - %s (%s events)' % (self.start, self.end, len(self.all_events())
  
 
 
@@ -220,7 +223,7 @@ class DiseaseCriterion(object):
                     start = win.start - self.require_past_window
                     events = h.get_events().filter(patient__pk=patient_pk, date__gte=start, date__lt=end)
                     if events:
-                        win.past_events += [events]
+                        win.past_events += events
                         log.debug('Window %s matches require_past %s' % (win, h))
                         valid_windows.append(win)
                     t_windows = list(valid_windows)
@@ -405,7 +408,7 @@ class DiseaseDefinition(object):
         case.condition = self.name
         #case.workflow_state = self.condition.ruleInitCaseStatus
         case.save()
-        case.events = etw.events
+        case.events = etw.all_events()
         case = self.update_reportable_events(case)
         case.save()
         log.info('Created new %s case #%s for patient #%s based on %s' % (self.name, case.pk, patient.pk, etw))
