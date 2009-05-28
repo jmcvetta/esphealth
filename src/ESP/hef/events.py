@@ -381,7 +381,7 @@ hep_c_elisa = StringMatchLabHeuristic(
     name =          'hep_c_elisa', 
     verbose_name =  'Hepatitis C ELISA = "REACTIVE"', 
     loinc_nums =    ['16128-1',],
-    strings =       ['reactiv'],
+    strings =       ['reactiv', 'positiv'],
     abnormal_flag = True,  # appropriate here?
     match_type =    'istartswith',
     )
@@ -390,7 +390,7 @@ no_hep_c_elisa = StringMatchLabHeuristic(
     name =          'no_hep_c_elisa', 
     verbose_name =  'Hepatitis C ELISA = "REACTIVE"', 
     loinc_nums =    ['16128-1',],
-    strings =       ['reactiv'],
+    strings =       ['reactiv', 'positiv'],
     abnormal_flag = True,  # appropriate here?
     match_type =    'istartswith',
     exclude = True,
