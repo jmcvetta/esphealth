@@ -74,7 +74,7 @@ def compare(condition):
             print '\t ICD9s: %s' % enc.icd9_codes.all()
         for lab in LabResult.objects.filter(pk__in=lxids):
             print '%s -- %s' % (lab, lab.date)
-            print '\t %s (%s)' % (lab.native_name, lab.native_code)
+            print '\t %-25s LOINC: %-10s Native Code: %s' % (lab.native_name, lab.loinc_num(), lab.native_code)
             print '\t Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
                 
     #
@@ -90,7 +90,7 @@ def compare(condition):
     for case in NewCase.objects.filter(condition=condition).filter(q_obj).order_by('pk'):
         print 
         print '~' * 80
-        case_str = 'Nodis Case #%s (%s)' % (case.pk, condition)
+        case_str = 'Nodis Case #%s (%s)' % (case.pk, case.definition)
         print case_str.center(80) 
         print '~' * 80
         for event in case.events.all():
@@ -102,7 +102,7 @@ def compare(condition):
             elif type(event.content_object) == LabResult:
                 lab = event.content_object
                 print '\t %s -- %s' % (lab, lab.date)
-                print '\t %s (%s)' % (lab.native_name, lab.native_code)
+                print '\t %-25s LOINC: %-10s Native Code: %s' % (lab.native_name, lab.loinc_num(), lab.native_code)
                 print '\t Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
             else:
                 print '\t %s' % event.content_object
