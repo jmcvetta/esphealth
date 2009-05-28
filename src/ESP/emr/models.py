@@ -21,6 +21,7 @@ from ESP.conf.models import Loinc
 from ESP.conf.models import Ndc
 from ESP.conf.models import Cpt
 from ESP.conf.models import Icd9
+from ESP.conf.models import NativeCode
 from ESP.utils.utils import log
 
 
@@ -210,10 +211,23 @@ class LabResult(BasePatientRecord):
     # Manager
     objects = LabResultManager()
     # 
+    
     class Meta:
         verbose_name = 'Lab Test Result'
+        
     def __str__(self):
         return 'Lab Result #%s' % self.pk
+    
+    def loinc_num(self):
+        '''
+        Returns LOINC number (not Loinc object!) for this test if it is mapped
+        to one, else returns None.
+        '''
+        nc = NativeCode.objects.filter(native_code=self.native_code)
+        if nc:
+            return nc[0].loinc.loinc_num
+        else:
+            return None
 
 
 class Prescription(BasePatientRecord):
