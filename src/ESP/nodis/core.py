@@ -68,10 +68,11 @@ class EventTimeWindow(object):
     '''
     A potential case.
     '''
-    def __init__(self, window, events=[]):
+    def __init__(self, window, definition, events=[]):
         assert isinstance(window, datetime.timedelta)
         self.__window = window
         self.__events = events
+        self.definition = definition # Name of definition that generated this ETW
         self.past_events = [] # Past events that validate this windo
     
     def _get_start_date(self):
@@ -170,7 +171,7 @@ class DiseaseDefinition(object):
                 if not found_window:
                     # This event didn't fit in any existing window, so 
                     # create a new window for it.
-                    win = EventTimeWindow(self.window, events=[event])
+                    win = EventTimeWindow(self.window, definition=self.name, events=[event])
                     log.debug('Created %s for event %s' % (win, event))
                     t_windows.append(win)
         log.debug('Possible time windows: %s' % t_windows)
@@ -406,6 +407,7 @@ class Disease(object):
         case.provider = etw.events[0].content_object.provider
         case.date = etw.start
         case.condition = self.name
+        case.definition = etw.definition
         #case.workflow_state = self.condition.ruleInitCaseStatus
         case.save()
         case.events = etw.all_events()
