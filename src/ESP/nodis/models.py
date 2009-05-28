@@ -28,6 +28,7 @@ class Case(models.Model):
     condition = models.CharField(max_length=100, blank=False, db_index=True)
     provider = models.ForeignKey(Provider, blank=False)
     date = models.DateField(blank=False, db_index=True)
+    definition = models.CharField(max_length=100, blank=False)
     #workflow_state = models.CharField(max_length=20, choices=WORKFLOW_STATES, default='AR', 
         #blank=False, db_index=True )
     # Timestamps:

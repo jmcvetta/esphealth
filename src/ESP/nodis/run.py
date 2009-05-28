@@ -21,7 +21,7 @@ from django.db import connection
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
-from ESP.nodis.core import DiseaseDefinition
+from ESP.nodis.core import Disease
 from ESP.nodis import defs  # Register definitions
 
     
@@ -67,9 +67,9 @@ def main():
         options.cases = True
         options.update = True
     if options.cases:
-        DiseaseDefinition.generate_all_cases(begin_date=options.begin, end_date=options.end)
+        Disease.generate_all_cases(begin_date=options.begin, end_date=options.end)
     if options.update:
-        DiseaseDefinition.update_all_cases(begin_date=options.begin, end_date=options.end)
+        Disease.update_all_cases(begin_date=options.begin, end_date=options.end)
     if not (options.cases or options.update):
         parser.print_help()
 

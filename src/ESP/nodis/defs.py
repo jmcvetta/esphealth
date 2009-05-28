@@ -11,8 +11,8 @@
 '''
 
 from ESP.settings import DEFAULT_REPORTABLE_ICD9S
-from ESP.nodis.core import DiseaseCriterion
 from ESP.nodis.core import DiseaseDefinition
+from ESP.nodis.core import Disease
 from ESP.hef.events import jaundice
 from ESP.hef.events import fever
 from ESP.hef.events import alt_2x
@@ -52,8 +52,8 @@ from ESP.hef.events import no_hep_c_elisa
 #
 #-------------------------------------------------------------------------------
 
-chlamydia_crit_1 = DiseaseCriterion(
-    name = 'Chlamydia Criterion 1',
+chlamydia_def_1 = DiseaseDefinition(
+    name = 'Chlamydia Definition 1',
     version = 1,
     window = 30, # Not applicable, since only one primary event
     require = [
@@ -61,9 +61,9 @@ chlamydia_crit_1 = DiseaseCriterion(
         ],
     )
 
-chlamydia = DiseaseDefinition(
+chlamydia = Disease(
     name = 'Chlamydia',
-    criteria = [chlamydia_crit_1,],
+    definitions = [chlamydia_def_1,],
     icd9s = [
         '788.7',
         '099.40',
@@ -106,8 +106,8 @@ chlamydia = DiseaseDefinition(
 #
 #-------------------------------------------------------------------------------
 
-gonorrhea_crit_1 = DiseaseCriterion(
-    name = 'Gonorrhea Criterion 1',
+gonorrhea_def_1 = DiseaseDefinition(
+    name = 'Gonorrhea Definition 1',
     version = 1,
     window = 30,
     require = [
@@ -115,9 +115,9 @@ gonorrhea_crit_1 = DiseaseCriterion(
         ],
     )
 
-gonorrhea = DiseaseDefinition(
+gonorrhea = Disease(
     name = 'Gonorrhea',
-    criteria = [gonorrhea_crit_1,],
+    definitions = [gonorrhea_def_1,],
     icd9s = [
         '788.7',
         '099.40',
@@ -162,8 +162,8 @@ gonorrhea = DiseaseDefinition(
 #
 #-------------------------------------------------------------------------------
 
-hep_a_crit_1 = DiseaseCriterion(
-    name = 'Acute Hepatitis A Criterion 1',
+hep_a_def_1 = DiseaseDefinition(
+    name = 'Acute Hepatitis A Definition 1',
     version = 1,
     window = 30,
     require = [
@@ -172,9 +172,9 @@ hep_a_crit_1 = DiseaseCriterion(
         ]
     )
  
-acute_hep_a = DiseaseDefinition(
+acute_hep_a = Disease(
     name = 'Acute Hepatitis A',
-    criteria = [hep_a_crit_1,],
+    definitions = [hep_a_def_1,],
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     icd9_days_after = 14,
@@ -207,8 +207,8 @@ Acute Hepatitis B definitions:
     AND NOT (hep_b_surface OR hep_b_viral_dna OR jaundice) EVER IN PAST
 '''
     
-hep_b_1 = DiseaseCriterion(
-    name = 'Acute Hepatitis B Criterion 1',
+hep_b_1 = DiseaseDefinition(
+    name = 'Acute Hepatitis B Definition 1',
     version = 1,
     window = 14, # days
     require = [
@@ -217,8 +217,8 @@ hep_b_1 = DiseaseCriterion(
         ]
     )
 
-hep_b_2 = DiseaseCriterion(
-    name = 'Acute Hepatitis B Criterion 2',
+hep_b_2 = DiseaseDefinition(
+    name = 'Acute Hepatitis B Definition 2',
     version = 1,
     window = 21, # days
     require = [
@@ -234,7 +234,7 @@ hep_b_2 = DiseaseCriterion(
         ],
     )
 
-hep_b_3 = DiseaseCriterion(
+hep_b_3 = DiseaseDefinition(
     name = 'Hepatitis B Component 3',
     version = 1,
     window = 1, # Not applicable, since only one primary event
@@ -254,9 +254,9 @@ hep_b_3 = DiseaseCriterion(
     )
 
 
-hep_b = DiseaseDefinition(
+hep_b = Disease(
     name = 'Acute Hepatitis B',
-    criteria = [hep_b_1, hep_b_2, hep_b_3],
+    definitions = [hep_b_1, hep_b_2, hep_b_3],
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     icd9_days_after = 14,
@@ -278,8 +278,8 @@ hep_b = DiseaseDefinition(
     lab_days_after = 14,
     )
 
-hep_c_1 = DiseaseCriterion(
-    name = 'Acute Hepatitis C Criterion 1',
+hep_c_1 = DiseaseDefinition(
+    name = 'Acute Hepatitis C Definition 1',
     version = 1,
     window = 28, # 28 days
     require = [
@@ -299,8 +299,8 @@ hep_c_1 = DiseaseCriterion(
         ]
     )
 
-hep_c_2 = DiseaseCriterion(
-    name = 'Acute Hepatitis C Criterion 2',
+hep_c_2 = DiseaseDefinition(
+    name = 'Acute Hepatitis C Definition 2',
     version = 1,
     window = 28, # 28 days
     require = [
@@ -319,8 +319,8 @@ hep_c_2 = DiseaseCriterion(
         ]
     )
 
-hep_c_3 = DiseaseCriterion(
-    name = 'Acute Hepatitis C Criterion 3',
+hep_c_3 = DiseaseDefinition(
+    name = 'Acute Hepatitis C Definition 3',
     version = 1,
     window = 1, # Not relevant, since only 1 require
     require = [
@@ -332,8 +332,8 @@ hep_c_3 = DiseaseCriterion(
         ]
     )
 
-hep_c_4 = DiseaseCriterion(
-    name = 'Acute Hepatitis C Criterion 4',
+hep_c_4 = DiseaseDefinition(
+    name = 'Acute Hepatitis C Definition 4',
     version = 1,
     window = 1, # Not relevant, since only 1 require
     require = [
@@ -345,9 +345,9 @@ hep_c_4 = DiseaseCriterion(
         ]
     )
 
-hep_c = DiseaseDefinition(
+hep_c = Disease(
     name = 'Acute Hepatitis C',
-    criteria = [hep_c_1, hep_c_2, hep_c_3, hep_c_4],
+    definitions = [hep_c_1, hep_c_2, hep_c_3, hep_c_4],
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     icd9_days_after = 14,

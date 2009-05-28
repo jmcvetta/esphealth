@@ -103,16 +103,16 @@ class EventTimeWindow(object):
  
 
 
-class DiseaseCriterion(object):
+class DiseaseDefinition(object):
     '''
     One set of rules for algorithmically defining a disease.  Satisfying a 
-    single disease criterion is sufficient to indicate a case of that disease, 
-    but a given disease may have arbitrarily many criteria.
+    single disease definition is sufficient to indicate a case of that disease, 
+    but a given disease may have arbitrarily many definitions.
     '''
     def __init__(self,  name, version, window, require, require_past = [], require_past_window = None,
         exclude = [], exclude_past = []):
         '''
-        @param name: Name of this criterion
+        @param name: Name of this definition
         @type name: String
         @param version: Definition version
         @type version: Integer
@@ -122,7 +122,7 @@ class DiseaseCriterion(object):
         @type require:  List of tuples of HeuristicEvent instances.  The tuples 
             are AND'ed together, and each item in a tuple is OR'ed.
         @param require_past: Events that must have occurred in the past, but 
-            not within this criterion's time window
+            not within this definition's time window
         @type require_past: List of tuples.  See above.
         @param require_past_window: require_past events must have occurred 
             prior to 'window', but less than this many days in the past
@@ -149,7 +149,7 @@ class DiseaseCriterion(object):
     
     def __match_plausible_patient(self, patient_pk):
         '''
-        For a given plausible (meeting match()'s screening criteria) patient, 
+        For a given plausible (meeting match()'s screening definitions) patient, 
         identified by db primary key, return EventTimeWindow objects matching
         disease requirements.
         '''
@@ -178,7 +178,7 @@ class DiseaseCriterion(object):
         # For each remaining set of requirements, see if we can fit the 
         # the required events into one of our time windows.  If no events fit
         # in a given window, that window does not fulfill this disease 
-        # criterion.
+        # definition.
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for req in self.require[1:]:
             new_windows = [] # EventWindows containing events for this req
@@ -298,13 +298,13 @@ class DiseaseCriterion(object):
 
 
  
-class DiseaseDefinition(object):
+class Disease(object):
     '''
     '''
     
     def __init__(self, 
         name, 
-        criteria,
+        definitions,
         # Reporting
         icd9s = [],
         icd9_days_before = 14,
@@ -323,8 +323,8 @@ class DiseaseDefinition(object):
             forming part of a disease's definition are reported.
         @param name:             Name of this disease definition
         @type name:              String
-        @param criteria:         Criteria used to identify cases of this disease
-        @type criteria:          [DiseaseCriterion, DiseaseCriterion, ...]
+        @param definitions:         Criteria used to identify cases of this disease
+        @type definitions:          [DiseaseDefinition, DiseaseDefinition, ...]
         @param time_window:      Events occurring within the specified time 
             window will be grouped into a single case.  If zero, all events
             will be considered part of the same case.
@@ -350,7 +350,7 @@ class DiseaseDefinition(object):
         @type med_days_after:    Integer
         '''
         self.name = name
-        self.criteria = criteria
+        self.definitions = definitions
         self.icd9s = icd9s
         self.icd9_days_before = datetime.timedelta(days=icd9_days_before)
         self.icd9_days_after = datetime.timedelta(days=icd9_days_after)
@@ -382,7 +382,7 @@ class DiseaseDefinition(object):
             self.__registry[self.name] = self
     
     @classmethod
-    def get_all_definitions(cls):
+    def get_all_diseases(cls):
         '''
         Returns a list of all registered disease definitions.
         '''
@@ -426,8 +426,8 @@ class DiseaseDefinition(object):
         bound_event_pks = [item[0] for item in bound_event_pks]
         log.debug('number of bound_events: %s' % len(bound_event_pks))
         matches = {}
-        for criterion in self.criteria:
-            matches = criterion.matches(matches=matches)
+        for d in self.definitions:
+            matches = d.matches(matches=matches)
         for pid in matches:
             for etw in matches[pid]:
                 bound = False
@@ -460,7 +460,7 @@ class DiseaseDefinition(object):
         '''
         counter = {}# Counts how many total new records have been created
         total = 0
-        for definition in cls.get_all_definitions():
+        for definition in cls.get_all_diseases():
             counter[definition.name] = definition.generate_cases()
         log.info('=' * 80)
         log.info('New Cases Generated')
@@ -530,7 +530,7 @@ class DiseaseDefinition(object):
         @type end_date:    datetime.date
         '''
         log.info('Updating reportable events for existing cases.')
-        for definition in cls.get_all_definitions():
+        for definition in cls.get_all_diseases():
             q_obj = Q(condition=definition.name)
             if begin_date:
                 q_obj = q_obj & Q(date__gte=begin_date)
