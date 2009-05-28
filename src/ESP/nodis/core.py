@@ -99,7 +99,7 @@ class EventTimeWindow(object):
         return self.events + self.past_events
         
     def __repr__(self):
-        return 'Window %s - %s (%s events)' % (self.start, self.end, len(self.all_events())
+        return 'Window %s - %s (%s events)' % (self.start, self.end, len(self.all_events()))
  
 
 
