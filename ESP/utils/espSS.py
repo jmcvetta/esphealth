@@ -822,6 +822,8 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5,
             allsz[z] += 1
     rzk = [x for x in allrz.keys() if x > limit] # ignore very rarely reported zips
     szk = [x for x in allsz.keys() if x > limit]
+    rzk.sort()
+    szk.sort()
     for d in dk: # now make report with empty days and zips!
         dd = encDateAgeVols.get(d,{})
         for z in rzk: # for all useable zips
