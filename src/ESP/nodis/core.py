@@ -207,7 +207,6 @@ class DiseaseDefinition(object):
                 for win in t_windows:
                     events = h.get_events().filter(patient__pk=patient_pk, date__lt=win.start)
                     if events:
-                        win.past_events += [events]
                         log.debug('Window %s was excluded by past event %s' % (win, h))
                     else:
                         valid_windows.append(win)
@@ -275,7 +274,7 @@ class DiseaseDefinition(object):
             pids_this_item = set()
             for h in item: # One or more BaseHeuristic instances
                 s = set(h.get_events().values_list('patient_id', flat=True))
-                pids_this_item = pids_this_req | s 
+                pids_this_item = pids_this_item | s 
                 log.debug('%50s: %s' % (h, len(pids_this_item)) )
             pids = pids - pids_this_item
         log.debug('Plausible %50s: %s' % (self.name, len(pids)) )
@@ -393,6 +392,14 @@ class Disease(object):
         [result.extend([cls.__registry[k]]) for k in keys]
         log.debug('All Disease Definition instances: %s' % result)
         return result
+    
+    @classmethod
+    def get_disease_by_name(cls, name):
+        '''
+        Returns a Disease object matching the specified name, or None if no
+        match is found.
+        '''
+        return cls.__registry.get(name, None)
     
     def new_case(self, etw):
         '''
