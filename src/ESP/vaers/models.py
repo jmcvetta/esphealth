@@ -114,9 +114,23 @@ class AdverseEvent(models.Model):
             'url':'http://%s%s' % (current_site, self.verification_url()),
             'misdirected_email_contact':settings.EMAIL_SENDER
             }
+
+        templates = {
+            'default':'email_messages/notify_case.txt',
+            'confirm':'email_messages/notify_category_three.txt'
+            }
+
         
-        t = get_template('email_messages/notify_case.txt')
-        msg = t.render(Context(params))
+        msg = get_template(templates[self.category]).render(Context(params))
+
+
+        # In case it is a fake event, the notification should include
+        # a warning.  That message is in the template notify_demo.txt
+        # and is prepended to the real message.
+        if self.is_fake(): 
+            demo_warning_msg = get_template('email_messages/notify_demo.txt').render({}) 
+            msg = demo_warning_msg + msg
+            
         send_mail(settings.EMAIL_SUBJECT, msg,
                   settings.EMAIL_SENDER, 
                   [recipient],
