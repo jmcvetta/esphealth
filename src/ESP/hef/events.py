@@ -13,6 +13,11 @@ from ESP.hef.hef import EncounterHeuristic, StringMatchLabHeuristic, HighNumeric
 from ESP.hef.hef import FeverHeuristic, CalculatedBilirubinHeuristic
 
 
+
+POSITIVE_STRINGS = ['reactiv', 'pos', 'detec']
+NEGATIVE_STRINGS = ['non', 'neg', 'not', 'nr']
+
+
 # These definitions do not necessarily *need* to be assigned to variables.  The mere
 # act of instantiating a BaseHeuristic instance causes that instance to be
 # registered with the heuristics framework, and therefore to be called by
@@ -62,7 +67,7 @@ gonorrhea = StringMatchLabHeuristic(
     name =          'gonorrhea', 
     verbose_name =  'Gonorrhea', 
     loinc_nums =    GONORRHEA_LOINCS,
-    strings =       ['positiv', 'detect'], 
+    strings =       POSITIVE_STRINGS,
     abnormal_flag = True, 
     match_type =    'istartswith',
     )
@@ -72,7 +77,7 @@ chlamydia = StringMatchLabHeuristic(
     name =          'chlamydia', 
     verbose_name =  'Chlamydia', 
     loinc_nums =    CHLAMYDIA_LOINCS,
-    strings =       ['positiv', 'detect'], 
+    strings =       POSITIVE_STRINGS,
     abnormal_flag = True, 
     match_type =    'istartswith',
     )
@@ -124,61 +129,56 @@ hep_a_igm_ab = StringMatchLabHeuristic(
     name='hep_a_igm_ab',
     verbose_name='IgM antibody to Hepatitis A = "REACTIVE" (may be truncated)',
     loinc_nums=['22314-9'],
-    strings=['reactiv'],
+    strings = POSITIVE_STRINGS,
     )
 
 no_hep_a_igm_ab = StringMatchLabHeuristic(
     name='no_hep_a_igm_ab',
     verbose_name='IgM antibody to Hepatitis A = "REACTIVE" (may be truncated)',
     loinc_nums=['22314-9'],
-    strings=['reactiv'],
-    exclude = True,
+    strings = NEGATIVE_STRINGS,
     )
 
 hep_b_igm_ab = StringMatchLabHeuristic(
     name='hep_b_igm_ab',
     verbose_name='IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['31204-1'],
-    strings=['reactiv'],
+    strings = POSITIVE_STRINGS,
     )
 
 no_hep_b_igm_ab = StringMatchLabHeuristic(
     name='no_hep_b_igm_ab',
     verbose_name='IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['31204-1'],
-    strings=['reactiv'],
-    exclude = True,
+    strings = NEGATIVE_STRINGS,
     )
 
 no_hep_b_core_ab = StringMatchLabHeuristic(
-    # We're only looking for the negative here
     name='no_hep_b_core_ab',
-    verbose_name='General antibody to Hepatitis B Core Antigen',
+    verbose_name='NEGATIVE: General antibody to Hepatitis B Core Antigen',
     loinc_nums = ['16933-4'],
-    strings=['reactiv'],
-    exclude = True,
+    strings = NEGATIVE_STRINGS,
     )
 
 hep_b_surface = StringMatchLabHeuristic(
     name='hep_b_surface',
     verbose_name='Hepatitis B Surface Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['5195-3'],
-    strings=['reactiv'],
+    strings = POSITIVE_STRINGS,
     )
 
 no_hep_b_surface = StringMatchLabHeuristic(
     name = 'no_hep_b_surface',
     verbose_name = 'EXCLUDE: Hepatitis B Surface Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['5195-3'],
-    strings = ['reactiv'],
-    exclude = True,
+    strings = NEGATIVE_STRINGS,
     )
 
 hep_b_e_antigen = StringMatchLabHeuristic(
     name = 'hep_b_e_antigen',
     verbose_name = 'Hepatitis B "e" Antigen = "REACTIVE" (may be truncated)',
     loinc_nums = ['13954-3'],
-    strings=['reactiv'],
+    strings = POSITIVE_STRINGS,
     )
 
 #
@@ -198,7 +198,7 @@ hep_b_viral_dna = StringMatchLabHeuristic(
     name = 'hep_b_viral_dna',
     verbose_name = 'Hepatitis B Viral DNA',
     loinc_nums = ['13126-8', '16934', '5009-6'],
-    strings = ['positiv', 'detect'],
+    strings = POSITIVE_STRINGS,
     )
 hep_b_viral_dna_part2 = HighNumericLabHeuristic(
     name = 'hep_b_viral_dna',
@@ -220,14 +220,14 @@ hep_e_ab = StringMatchLabHeuristic(
     name = 'hep_a_ab',
     verbose_name = 'Hepatitis E antibody',
     loinc_nums = ['14212-5'],
-    strings = ['reactiv'],
+    strings = POSITIVE_STRINGS,
     )
 
 hep_c_ab = StringMatchLabHeuristic(
     name = 'hep_c_ab',
     verbose_name = 'Hepatitis C antibody = "REACTIVE" (may be truncated)',
     loinc_nums = ['16128-1'],
-    strings = ['reactiv'],
+    strings = POSITIVE_STRINGS,
     )
 
 total_bilirubin_high = HighNumericLabHeuristic(
@@ -261,22 +261,21 @@ hep_c_riba = StringMatchLabHeuristic(
     name = 'hep_c_riba',
     verbose_name = 'Hepatitis C RIBA = "POSITIVE"',
     loinc_nums = ['5199-5'],
-    strings = ['positiv'],
+    strings = POSITIVE_STRINGS,
     )
 
 no_hep_c_riba = StringMatchLabHeuristic(
     name = 'no_hep_c_riba',
     verbose_name = 'Hepatitis C RIBA = "POSITIVE"',
     loinc_nums = ['5199-5'],
-    strings = ['positiv'],
-    exclude = True,
+    strings = NEGATIVE_STRINGS,
     )
 
 hep_c_rna = StringMatchLabHeuristic(
     name = 'hep_c_rna',
     verbose_name = 'Hepatitis C RNA',
     loinc_nums = ['6422-0'],
-    strings = ['detected'],
+    strings = POSITIVE_STRINGS,
     )
 HighNumericLabHeuristic(
     name = 'hep_c_rna',
@@ -325,8 +324,7 @@ no_hep_c_rna = StringMatchLabHeuristic(
     name = 'no_hep_c_rna',
     verbose_name = 'Hepatitis C RNA',
     loinc_nums = ['6422-0'],
-    strings = ['detected'],
-    exclude = True,
+    strings = NEGATIVE_STRINGS,
     )
 HighNumericLabHeuristic(
     name = 'no_hep_c_rna',
@@ -381,7 +379,7 @@ hep_c_elisa = StringMatchLabHeuristic(
     name =          'hep_c_elisa', 
     verbose_name =  'Hepatitis C ELISA = "REACTIVE"', 
     loinc_nums =    ['16128-1',],
-    strings =       ['reactiv', 'positiv'],
+    strings =       POSITIVE_STRINGS,
     abnormal_flag = True,  # appropriate here?
     match_type =    'istartswith',
     )
@@ -390,7 +388,7 @@ no_hep_c_elisa = StringMatchLabHeuristic(
     name =          'no_hep_c_elisa', 
     verbose_name =  'Hepatitis C ELISA = "REACTIVE"', 
     loinc_nums =    ['16128-1',],
-    strings =       ['reactiv', 'positiv'],
+    strings =       POSITIVE_STRINGS,
     abnormal_flag = True,  # appropriate here?
     match_type =    'istartswith',
     exclude = True,
