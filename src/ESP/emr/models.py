@@ -199,7 +199,7 @@ class LabResult(BasePatientRecord):
     ref_low = models.FloatField('Reference Low', blank=True, null=True, db_index=True)
     ref_high = models.FloatField('Reference High', blank=True, null=True, db_index=True)
     ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
-    ref_range = models.CharField('Reference Range (raw string', max_length=255, blank=True, null=True)
+    ref_range = models.CharField('Reference Range (raw string)', max_length=255, blank=True, null=True)
     # Result
     abnormal_flag = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     result_float = models.FloatField('Test results (numeric)', blank=True, null=True, db_index=True)
