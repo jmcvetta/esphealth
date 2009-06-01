@@ -68,11 +68,22 @@ class EventTimeWindow(object):
     '''
     A potential case.
     '''
-    def __init__(self, window, definition, events=[]):
+    def __init__(self, window, definition, def_version, events=[]):
+        '''
+        @param window: Number of days in this time window
+        @type window: Int
+        @param definition: Name of disease definition that generated this window
+        @type definition: String
+        @param def_version: Version of disease definition that generated this window
+        @type def_version: Int
+        @param events: Events that defined this window
+        @type events: List of HeuristicEvent objects
+        '''
         assert isinstance(window, datetime.timedelta)
         self.__window = window
         self.__events = events
         self.definition = definition # Name of definition that generated this ETW
+        self.def_version = def_version
         self.past_events = [] # Past events that validate this windo
     
     def _get_start_date(self):
