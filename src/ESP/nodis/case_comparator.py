@@ -51,7 +51,7 @@ def print_nodis_case_summary(case, phi=False):
     '''
     print 
     print '~' * 80
-    case_str = 'Nodis Case #%s (%s)' % (case.pk, case.definition)
+    case_str = 'Nodis Case #%s: %s (v%s)' % (case.pk, case.definition, case.def_version)
     print case_str.center(80) 
     print '~' * 80
     if phi:
@@ -85,13 +85,17 @@ def compare(condition, print_phi=False):
     print
     print
     print '=' * 80
-    print condition.upper() + ' -- Cases found by identifyCases.py but not by Nodis (%s)' % count
+    print condition.upper() + ' -- %s cases found by identifyCases.py but not by Nodis' % count
     print '=' * 80
     for case in i_cases.order_by('pk'):
         print '~' * 80
         case_str = 'Old Case #%s (%s)' % (case.pk, condition)
         print case_str.center(80) 
         print '~' * 80
+        if print_phi:
+            print 'Patient #%s' % case.patient.pk
+            print '\t Name: %s' % case.patient.name
+            print '\t MRN: %s' % case.patient.mrn
         if case.caseEncID:
             encids = case.caseEncID.split(',')
         else:
@@ -122,7 +126,7 @@ def compare(condition, print_phi=False):
     print
     print
     print '=' * 80
-    print condition.upper() + ' -- Cases found by Nodis but not by identifyCases.py (%s)' % count
+    print condition.upper() + ' -- %s cases found by Nodis but not by identifyCases.py' % count
     print '=' * 80
     for case in n_cases.order_by('pk'):
         print_nodis_case_summary(case, phi=print_phi)
