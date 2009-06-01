@@ -171,7 +171,8 @@ class DiseaseDefinition(object):
                 if not found_window:
                     # This event didn't fit in any existing window, so 
                     # create a new window for it.
-                    win = EventTimeWindow(self.window, definition=self.name, events=[event])
+                    win = EventTimeWindow(self.window, definition=self.name, 
+                        def_version=self.version, events=[event])
                     log.debug('Created %s for event %s' % (win, event))
                     t_windows.append(win)
         log.debug('Possible time windows: %s' % t_windows)
@@ -415,6 +416,7 @@ class Disease(object):
         case.date = etw.start
         case.condition = self.name
         case.definition = etw.definition
+        case.def_version = etw.def_version
         #case.workflow_state = self.condition.ruleInitCaseStatus
         case.save()
         case.events = etw.all_events()
