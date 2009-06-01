@@ -46,17 +46,20 @@ def compare(condition):
     #
     # Find cases found by identifyCases.py but not by Nodis
     #
-    print
-    print
-    print '=' * 80
-    print condition.upper() + ' -- Cases found by identifyCases.py but not by Nodis'
-    print '=' * 80
     pids = NewCase.objects.filter(condition=condition).values_list('patient_id', flat=True)
     q_obj = ~Q(caseDemog__in=pids)
-    for case in OldCase.objects.filter(caseRule=rule).filter(q_obj).order_by('pk'):
+    i_cases = OldCase.objects.filter(caseRule=rule).filter(q_obj)
+    count = i_cases.count()
+    print
+    print
+    print '=' * 80
+    print condition.upper() + ' -- Cases found by identifyCases.py but not by Nodis (%s)' % count
+    print '=' * 80
+    for case in i_cases.order_by('pk'):
         print '~' * 80
         case_str = 'Old Case #%s (%s)' % (case.pk, condition)
         print case_str.center(80) 
+        print '~' * 80
         if case.caseEncID:
             encids = case.caseEncID.split(',')
         else:
@@ -80,14 +83,16 @@ def compare(condition):
     #
     # Find cases found by identifyCases.py but not by Nodis
     #
-    print
-    print
-    print '=' * 80
-    print condition.upper() + ' -- Cases found by Nodis but not by identifyCases.py'
-    print '=' * 80
     pids = OldCase.objects.filter(caseRule=rule).values_list('caseDemog_id', flat=True)
     q_obj = ~Q(patient__in=pids)
-    for case in NewCase.objects.filter(condition=condition).filter(q_obj).order_by('pk'):
+    n_cases = NewCase.objects.filter(condition=condition).filter(q_obj)
+    count = n_cases.count()
+    print
+    print
+    print '=' * 80
+    print condition.upper() + ' -- Cases found by Nodis but not by identifyCases.py (%s)' % count
+    print '=' * 80
+    for case in n_cases.order_by('pk'):
         print 
         print '~' * 80
         case_str = 'Nodis Case #%s (%s)' % (case.pk, case.definition)
