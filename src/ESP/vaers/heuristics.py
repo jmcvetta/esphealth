@@ -21,6 +21,18 @@ import rules
 
 LAB_TESTS_NAMES = rules.VAERS_LAB_RESULTS.keys()
 
+USAGE_MSG = '''\
+%prog [options]
+
+    One or more of '-lx', '-f', '-d' or '-a' must be specified.
+    
+    DATE variables are specified in this format: '17-Mar-2009'
+'''
+
+
+
+
+
 
 class AdverseEventHeuristic(BaseHeuristic):
     def __init__(self, name, verbose_name=None):
@@ -350,11 +362,70 @@ def init_vaers_heuristics():
     
 
 
-if __name__ == '__main__':
-    init_vaers_heuristics()
-    today = datetime.datetime.today()
-    a_month_ago = today - datetime.timedelta(days=30)
-    BaseHeuristic.generate_all_events(begin_date=EPOCH, end_date=today)
+
+
+
+
+def main():
+    # 
+    # TODO: We need a lockfile or some othermeans to prevent multiple 
+    # instances running at once.
+    #
+    parser = optparse.OptionParser(usage=USAGE_MSG)
     
+    parser.add_option('-f', '--fever', action='store_true', dest='fever',
+                      help='Run Fever Heuristics')
+    parser.add_option('-d', '--diagnostics', action='store_true', 
+                      dest='diagnostics', help='Run Diagnostics Heuristics')
+    parser.add_option('-l', '--lx', action='store_true', dest='lx', 
+                      help='Run Lab Results Heuristics')
+
+    parser.add_option('-a', '--all', action='store_true', dest='all', 
+        help='Generate new patients and immunization history')
+
+
+
+    parser.add_option('--begin', action='store', dest='begin', type='string', 
+                      metavar='DATE', help='Only events occurring after date')
+    parser.add_option('--end', action='store', dest='end', type='string', 
+                      metavar='DATE', help='Only events occurring before date')
+    (options, args) = parser.parse_args()
+    
+
+    #
+    # Date Parser
+    #
+    def parse_date(date_string):
+        date_format = '%d-%b-%Y'
+        return datetime.datetime.strptime(date_string, date_format).date()
+
+    begin_date = parse_date(options.begin) if options.begin else datetime.datetime.today()
+
+    end_date = parse_date(options.end) if options.end else EPOCH
+
+
+    if options.all:
+        options.fever = True
+        options.diagnostics = True
+        options.lx = True
+
+    if not (options.fever or options.diagnostics or options.lx):
+        parser.print_help()
+        import sys
+        sys.exit()
+
+
+    if options.fever: fever_heuristic()
+    if options.diagnostics: diagnostic_heuristics()
+    if options.lx: lab_heuristics()
+
+
+    BaseHeuristic.generate_all_events(begin_date=begin_date, 
+                                      end_date=end_date)
+
+
+
+if __name__ == '__main__':
+    main()
     
         

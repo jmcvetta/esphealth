@@ -1,6 +1,7 @@
 import datetime
 import random
 
+import optparse
 
 from ESP.conf.common import EPOCH
 from ESP.conf.models import Icd9
@@ -17,6 +18,37 @@ ICD9_EVENT_PCT = 15
 LX_EVENT_PCT = 15
 IGNORE_FOR_REOCCURRENCE_PCT = 20
 IGNORE_FOR_HISTORY_PCT = 60
+
+   
+USAGE_MSG = '''\
+%prog [options]
+    Either '-p', '-i' or '-a' must be specified.
+'''
+
+
+def main():
+    # 
+    # TODO: We need a lockfile or some othermeans to prevent multiple 
+    # instances running at once.
+    #
+    parser = optparse.OptionParser(usage=USAGE_MSG)
+    parser.add_option('-p', '--patients', action='store_true', 
+                      dest='patients', help='Generate new Patient Population')
+    parser.add_option('-i', '--immunizations', action='store_true', dest='i',
+                      help='Create Immunization History for Patients')
+
+    parser.add_option('-a', '--all', action='store_true', dest='all', 
+        help='Generate new patients and immunization history')
+
+    (options, args) = parser.parse_args()
+
+    if options.all:
+        fake_world()
+    else:
+        parser.print_help()
+        print 'Right now, only --all is implemented.'
+        import sys
+        sys.exit()
 
 
 def clear():
@@ -288,4 +320,4 @@ class ImmunizationHistory(object):
 
 
 if __name__ == '__main__':
-    fake_world()
+    main()
