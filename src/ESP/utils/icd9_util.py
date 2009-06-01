@@ -1,4 +1,11 @@
-icd = """'01000'	'PRIM TB COMPLEX-UNSPEC'
+from ESP.conf.models import Icd9
+from ESP.utils.utils import log
+
+
+# This is the raw ICD9 data, without decimal places, that Ross found somewhere 
+# on the interwebs:
+RAW_DATA = \
+"""'01000'	'PRIM TB COMPLEX-UNSPEC'
 '01001'	'PRIM TB COMPLEX-NO EXAM'
 '01002'	'PRIM TB COMPLEX-EXM UNKN'
 '01003'	'PRIM TB COMPLEX-MICRO DX'
@@ -13729,3 +13736,59 @@ icd = """'01000'	'PRIM TB COMPLEX-UNSPEC'
 'E8497'	'ACCID IN RESIDENT INSTIT'
 'E8498'	'ACCIDENT IN PLACE NEC'
 'E8499'	'ACCIDENT IN PLACE NOS'"""
+
+
+def icd9_generator():
+    '''
+    See http://www.hcup-us.ahrq.gov/toolssoftware/mhsa/mhsa.jsp#representation 
+    for rules on representation of ICD9 codes with implicit decimals.
+    '''
+    n = 1
+    for line in RAW_DATA.split('\n'):
+        log.debug('Raw data line: %s' % line)
+        if n % 10000 == 0:
+            log.info('Generated %s ICD9 codes.' % n)
+        n += 1
+        line = line.replace("'",'')
+        code_str, name = line.split('\t')
+        code_str = code_str.strip()
+        letter = None
+        right = None
+        try:
+            # Convert to Integer first, to check for presence of letter; then 
+            # back to String so we can left pad w/ zeros
+            left = int(code_str[:3])
+            left = str(left).zfill(3)
+            right = code_str[3:]
+            code = '%s.%s' % (left, right)
+        except ValueError:
+            letter = code_str[:1]
+            if letter == 'V':
+                # Left code on V's are 2-digit
+                left = int(code_str[1:3])
+                right = code_str[3:]
+                pass
+            elif letter == 'E':
+                # Left code on E's are 3-digit
+                left = int(code_str[1:4])
+                right = code_str[4:]
+            else:
+                print code_str
+                raise 'WTF?'
+            left = str(left).zfill(3)
+            code = '%s%s.%s' % (letter, left, right)
+        log.debug('code: %s' % code)
+        yield (code, name)
+
+
+def populate_db():
+    for (code, name) in icd9_generator():
+        Icd9(code=code, name=name).save()
+
+def main():
+    for i in icd9_generator():
+        print i
+        
+
+if __name__ == '__main__':
+    main()
