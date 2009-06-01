@@ -14,6 +14,7 @@
 
 import sys
 import datetime
+import optparse
 
 from django.db import connection
 from django.db.models import Q
@@ -41,7 +42,38 @@ RULE_MAP = {
 }
 
 
-def compare(condition):
+def print_nodis_case_summary(case, phi=False):
+    '''
+    @param case: Case to summarize
+    @type case: Nodis Case object
+    @param phi: Include PHI in summary?
+    @type phi: Boolean
+    '''
+    print 
+    print '~' * 80
+    case_str = 'Nodis Case #%s (%s)' % (case.pk, case.definition)
+    print case_str.center(80) 
+    print '~' * 80
+    if phi:
+        print 'Patient #%s' % case.patient.pk
+        print '\t Name: %s' % case.patient.name
+        print '\t MRN: %s' % case.patient.mrn
+    for event in case.events.all():
+        print '%s' % event
+        if type(event.content_object) == Encounter:
+            enc = event.content_object
+            print '\t %s -- %s' % (enc, enc.date)
+            print '\t ICD9s: %s' % enc.icd9_codes.all()
+        elif type(event.content_object) == LabResult:
+            lab = event.content_object
+            print '\t %s -- %s' % (lab, lab.date)
+            print '\t %-25s LOINC: %-10s Native Code: %s' % (lab.native_name, lab.loinc_num(), lab.native_code)
+            print '\t Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
+        else:
+            print '\t %s' % event.content_object
+
+
+def compare(condition, print_phi=False):
     rule = RULE_MAP[condition]
     #
     # Find cases found by identifyCases.py but not by Nodis
@@ -81,7 +113,7 @@ def compare(condition):
             print '\t Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
                 
     #
-    # Find cases found by identifyCases.py but not by Nodis
+    # Find cases found by Nodis but not by identifyCases.py
     #
     pids = OldCase.objects.filter(caseRule=rule).values_list('caseDemog_id', flat=True)
     q_obj = ~Q(patient__in=pids)
@@ -93,36 +125,14 @@ def compare(condition):
     print condition.upper() + ' -- Cases found by Nodis but not by identifyCases.py (%s)' % count
     print '=' * 80
     for case in n_cases.order_by('pk'):
-        print 
-        print '~' * 80
-        case_str = 'Nodis Case #%s (%s)' % (case.pk, case.definition)
-        print case_str.center(80) 
-        print '~' * 80
-        for event in case.events.all():
-            print '%s' % event
-            if type(event.content_object) == Encounter:
-                enc = event.content_object
-                print '\t %s -- %s' % (enc, enc.date)
-                print '\t ICD9s: %s' % enc.icd9_codes.all()
-            elif type(event.content_object) == LabResult:
-                lab = event.content_object
-                print '\t %s -- %s' % (lab, lab.date)
-                print '\t %-25s LOINC: %-10s Native Code: %s' % (lab.native_name, lab.loinc_num(), lab.native_code)
-                print '\t Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
-            else:
-                print '\t %s' % event.content_object
-            
-#        for enc in case.encounters.all():
-#            print '\t %s -- %s' % (enc, enc.date)
-#            print '\t\t ICD9s: %s' % enc.icd9_codes.all()
-#        for lab in case.lab_results.all():
-#            print '\t %s -- %s' % (lab, lab.date)
-#            print '\t\t %s (%s)' % (lab.native_name, lab.native_code)
-#            print '\t\t %s' % lab.result_string
+        print_nodis_case_summary(case, phi=print_phi)
     
 
-
 def main():
+    parser = optparse.OptionParser()
+    parser.add_option('--phi', action='store_true', dest='phi', default=False, 
+        help='Include PHI in summary')
+    (options, args) = parser.parse_args()
     print '+' * 80
     print '+' + ' ' * 78 + '+'
     print '+' + 'Nodis Case Comparison Report'.center(78) + '+'
@@ -130,8 +140,17 @@ def main():
     print '+' + gen_str.center(78)+ '+'
     print '+' + ' ' * 78 + '+'
     print '+' * 80
+    if options.phi:
+        phi_str = 'NOTICE: This report includes protected health information.'
+        print
+        print 
+        print '!' * 80
+        print '!' + ' ' * 78 + '!'
+        print '!' + phi_str.center(78) + '!'
+        print '!' + ' ' * 78 + '!'
+        print '!' * 80
     for condition in NewCase.objects.values_list('condition', flat=True).distinct():
-        compare(condition)
+        compare(condition, print_phi=options.phi)
 
 
 if __name__ == '__main__':
