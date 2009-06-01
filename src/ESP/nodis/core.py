@@ -451,6 +451,8 @@ class Disease(object):
                     break 
                 else:
                     self.new_case(etw)
+                    # Add new events to list of bound events, to avoid duplicate cases.
+                    bound_event_pks += [event.pk for event in etw.events]
                     counter += 1
         log.debug('Generated %s new cases of %s' % (counter, self.name))
         return counter
