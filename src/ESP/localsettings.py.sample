@@ -16,7 +16,7 @@ import logging
 #                                   Database
 #
 #===============================================================================
-DATABASE_ENGINE = 'mysql' # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_ENGINE = 'postgresql_psycopg2' # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
 DATABASE_NAME = 'esp'
 DATABASE_USER = 'esp'
 DATABASE_PASSWORD = ''

@@ -42,6 +42,8 @@ EMAIL_PORT = localsettings.EMAIL_PORT
 EMAIL_USE_TLS = localsettings.EMAIL_USE_TLS
 
 SECRET_KEY = localsettings.SECRET_KEY
+if not SECRET_KEY:
+    raise AssertionError('You must provide a value for SECRET_KEY in localsettings.py')
 
 NLP_SEARCH = localsettings.NLP_SEARCH
 NLP_EXCLUDE = localsettings.NLP_EXCLUDE
@@ -128,31 +130,7 @@ REPORT_LX_DAYS_BEFORE = localsettings.REPORT_LX_DAYS_BEFORE
 REPORT_LX_DAYS_AFTER = localsettings.REPORT_LX_DAYS_AFTER
 REPORT_ICD9_DAYS_BEFORE = localsettings.REPORT_ICD9_DAYS_BEFORE
 REPORT_ICD9_DAYS_AFTER = localsettings.REPORT_ICD9_DAYS_AFTER
-
-# Default set of ICD9 codes to report
-DEFAULT_REPORTABLE_ICD9S = [
-    '780.6A', 
-    '782.4', 
-    '783.0', 
-    '780.79B', 
-    '789.00', 
-    '789.01', 
-    '789.02', 
-    '789.03', 
-    '789.04', 
-    '789.05', 
-    '789.06', 
-    '789.07', 
-    '789.08', 
-    '789.09', 
-    '787.01',
-    '787.02',
-    '787.03',
-    '787.91',
-    ]
-
-
-
+DEFAULT_REPORTABLE_ICD9S = localsettings.DEFAULT_REPORTABLE_ICD9S
 
 
 #===============================================================================
