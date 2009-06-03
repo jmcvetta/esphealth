@@ -167,6 +167,9 @@ class Hl7MessageLoader(object):
             patient.first_name  = pid_seg[5][1]
             patient.middle_name = pid_seg[5][2]
             patient.last_name = pid_seg[5][0]
+        elif len(pid_seg[5]) == 2:
+            patient.first_name  = pid_seg[5][1]
+            patient.last_name = pid_seg[5][0]
         else:
             log.warning('PID segment in file does not contain patient name in a format we can understand:\n\t %s' % pid_seg[5])
         dob = pid_seg[8]
