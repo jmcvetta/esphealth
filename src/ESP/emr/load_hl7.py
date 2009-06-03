@@ -168,7 +168,7 @@ class Hl7MessageLoader(object):
             patient.middle_name = pid_seg[5][2]
             patient.last_name = pid_seg[5][0]
         else:
-            log.warning('PID segment does not contain patient name in a format we can understand.')
+            log.warning('PID segment in file does not contain patient name in a format we can understand:\n\t %s' % pid_seg[5])
         dob = pid_seg[8]
         if len(dob) == 6: # Partially deidentified -- only year & month
             dob = datetime.date(year=dob[0:4], month=dob[4:6], day=01) # Default to 1st of month
