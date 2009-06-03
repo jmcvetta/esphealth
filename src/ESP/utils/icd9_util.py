@@ -13791,4 +13791,4 @@ def main():
         
 
 if __name__ == '__main__':
-    main()
+    populate_db()
