@@ -162,9 +162,6 @@ class Hl7MessageLoader(object):
         if not len(pid_seg) >= 9:
             raise CannotParseHl7('PID segment has only %s fields' % len(pid_seg))
         patient_id_num = pid_seg[3][0]
-        print '+' * 80
-        print patient_id_num
-        print '+' * 80
         patient, is_new_patient = Patient.objects.get_or_create(patient_id_num=patient_id_num)
         if len(pid_seg[5]) >= 3:
             patient.first_name  = pid_seg[5][1]
@@ -278,7 +275,7 @@ class Hl7MessageLoader(object):
             log.debug('NEW PROVIDER')
             log.debug('Provider ID #: %s' % npi)
             log.debug('Name: %s, %s' % (last, first))
-        self.patient.provider = provider # Set patient's PCP
+        self.patient.pcp = provider # Set patient's PCP
         self.patient.save()
         log.debug('Provider #%s set as PCP for patient #%s' % (provider.pk, self.patient.pk))
         
