@@ -162,6 +162,9 @@ class Hl7MessageLoader(object):
         if not len(pid_seg) >= 9:
             raise CannotParseHl7('PID segment has only %s fields' % len(pid_seg))
         patient_id_num = pid_seg[3][0]
+        print '+' * 80
+        print patient_id_num
+        print '+' * 80
         patient, is_new_patient = Patient.objects.get_or_create(patient_id_num=patient_id_num)
         if len(pid_seg[5]) >= 3:
             patient.first_name  = pid_seg[5][1]
@@ -236,6 +239,8 @@ class Hl7MessageLoader(object):
         #
         self.seg_types = set( [seg[0][0] for seg in self.message] ) - set( ['MSH', 'PID', 'PV1'] ) # What kind of segments do we have?
         log.debug('Payload segments: %s' % self.seg_types)
+        if hl7.segment('PD1', self.message):
+            self.pcp()
         mt = self.msg_type[0]
         if mt in ['ORU']:
             self.make_lab()
@@ -247,6 +252,36 @@ class Hl7MessageLoader(object):
         if mt in ['VXU']:
             self.make_immunization()
     
+    def pcp(self):
+        '''
+        Create/update Primary Care Physician info.  At North Adams, we are 
+        extracting this from PD1 segment.
+        '''
+        seg = hl7.segment('PD1', self.message)
+        npi = seg[4][0]
+        last = seg[4][1]
+        first = seg[4][2]
+        provider, is_new_provider = Provider.objects.get_or_create(provider_id_num=npi)
+        provider.first_name = first
+        provider.last_name = last
+        provider.updated_by = UPDATED_BY
+        provider.save()
+        if POPULATE_OLD_SCHEMA:
+            oldprov = OldProvider.objects.get_or_create(pk=provider.pk)[0]
+            oldprov.provCode = npi
+            oldprov.provFirst_Name = first
+            oldprov.provLast_Name = last
+            oldprov.save()
+            self.old_provider = oldprov
+        self.provider = provider
+        if is_new_provider:
+            log.debug('NEW PROVIDER')
+            log.debug('Provider ID #: %s' % npi)
+            log.debug('Name: %s, %s' % (last, first))
+        self.patient.provider = provider # Set patient's PCP
+        self.patient.save()
+        log.debug('Provider #%s set as PCP for patient #%s' % (provider.pk, self.patient.pk))
+        
     def make_prescription(self):
         for rxo in hl7.segments('RXO', self.message):
             pre = Prescription(patient=self.patient, provider=self.provider, updated_by=UPDATED_BY)
