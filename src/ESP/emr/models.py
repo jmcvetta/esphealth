@@ -188,7 +188,7 @@ class LabResult(BasePatientRecord):
     #
     # Coding
     native_code = models.CharField(max_length=30, blank=True, null=True, db_index=True)
-    native_name = models.CharField(max_length=255, blank=True, null=True)
+    native_name = models.CharField(max_length=255, blank=True, null=True, db_index=True)
     # Order
     #order = models.ForeignKey(LabOrder, blank=True, null=True)
     order_date = models.DateField(blank=True, null=True, db_index=True)
