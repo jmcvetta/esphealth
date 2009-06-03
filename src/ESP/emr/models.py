@@ -105,7 +105,6 @@ class Patient(BaseMedicalRecord):
     '''
     patient_id_num = models.CharField('Patient ID #', unique=True, max_length=20, 
         blank=True, null=True, db_index=True)
-    provider_id_num = models.CharField('Provider ID #', max_length=20, blank=True, null=True, db_index=True)
     mrn = models.CharField('Medical Record ', max_length=20, blank=True, null=True, db_index=True)
     last_name = models.CharField('Last Name', max_length=199, blank=True, null=True)
     first_name = models.CharField('First Name', max_length=199, blank=True, null=True)
