@@ -598,7 +598,7 @@ def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilte
         
     wf_display = ""
     if wf and wf <> '*':
-        objs = objs.filter(caseWorkflow=wf)
+        objs = objs.filter(caseworkflow=wf)
         wf_display = dict(choices.WORKFLOW_STATES)[wf]
 
         
@@ -620,7 +620,7 @@ def casesearch(request, inprod="1", wf="*", cfilter="*", mrnfilter="*",rulefilte
         objs = map(lambda x:x[0], finalobjs)
         #objs =objs.select_related().order_by('caseLxID')
     elif orderby == 'sortwf':
-        objs =objs.select_related().order_by('caseWorkflow','esp_demog.DemogLast_Name')
+        objs =objs.select_related().order_by('caseworkflow','esp_demog.DemogLast_Name')
     elif orderby=='sortname':
         objs = objs.select_related().order_by('esp_demog.DemogLast_Name', 'esp_demog.DemogFirst_Name')
     elif orderby == 'sortmrn':
@@ -1277,19 +1277,19 @@ def updateWorkflow(request,object_id,newwf=''):
     else:
         cmt=''
 
-   # if acase.caseWorkflow <> newwf:
+   # if acase.caseworkflow <> newwf:
     wf = CaseWorkflow(workflowDate=datetime.datetime.now(),
                          workflowState=newwf,
                          workflowChangedBy=request.user.username,
                          workflowComment = cmt)
     acase.caseworkflow_set.add(wf)
-    acase.caseWorkflow = newwf
+    acase.caseworkflow = newwf
     acase.caseLastUpDate = datetime.datetime.now()
     acase.save()
         
     ###########Go to a confirm page
     msg='The workflow state of this case has been successfully changed to "%s"!' % dict(choices.WORKFLOW_STATES)[newwf]
-    arcase = Case.objects.filter(caseWorkflow='AR')
+    arcase = Case.objects.filter(caseworkflow='AR')
     if arcase:
         nextcaseid=arcase[0].id
     else:
@@ -1363,13 +1363,13 @@ def json_case_grid(request, status):
     # Limit Cases by Status
     #
     if status == 'await':
-        cases = cases.filter(caseWorkflow='AR')
+        cases = cases.filter(caseworkflow='AR')
     elif status == 'under':
-        cases = cases.filter(caseWorkflow='UR')
+        cases = cases.filter(caseworkflow='UR')
     elif status == 'queued':
-        cases = cases.filter(caseWorkflow='Q')
+        cases = cases.filter(caseworkflow='Q')
     elif status == 'sent':
-        cases = cases.filter(caseWorkflow='S')
+        cases = cases.filter(caseworkflow='S')
     #
     # Search Cases
     #
