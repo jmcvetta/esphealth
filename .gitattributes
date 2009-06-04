@@ -236,6 +236,8 @@ src/ESP/templates/pages/vaers/present.html -text
 src/ESP/templates/pages/vaers/report.html -text
 src/ESP/templates/pages/vaers/vaers.html -text
 src/ESP/templates/widgets/fixture_builder.json -text
+src/ESP/templates/widgets/vaers/case_grid.html -text
+src/ESP/templates/widgets/vaers/case_grid.json -text
 src/ESP/templates/widgets/vaers/case_table.html -text
 src/ESP/templates/widgets/vaers/feedback_form.html -text
 src/ESP/urls.py -text

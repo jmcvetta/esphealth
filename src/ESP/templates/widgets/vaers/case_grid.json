@@ -1,0 +1,8 @@
+{ "page": {{ page }}, "total": {{ total }}, "rows": [{% for case in cases %}
+    { id:"case.id", cell:[
+	"{{ case.provider.full_name }}", 
+	"{{ case.date|date:"M d, Y" }}",
+	"{{ case.matching_rule_explain }}",
+	"{{ case.get_category_display }}",
+	"<button onClick=\"notify(this, '{% url vaers.views.notify id=case.id %}');\">Get Details</button><span></span>"
+    ]}{% ifnotequal forloop.last True %},{% endifnotequal %}{% endfor %}]}
