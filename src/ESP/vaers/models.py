@@ -80,6 +80,44 @@ class AdverseEvent(models.Model):
 
     fake_q = Q(immunizations__ImmName='FAKE')
 
+
+    def temporal_report(self):
+        results = []
+        for imm in self.immunizations.all():
+            patient = imm.ImmPatient
+            results.append({
+                    'id':imm.ImmRecId,
+                    'vaccine_date': imm.date, 
+                    'event_date':self.date,
+                    'days_to_event':(self.date - imm.date).days,
+                    'immunization_name':imm.ImmName, 
+                    'event_description':self.matching_rule_explain,
+                    'patient_age':patient._get_age(formatted=True),
+                    'patient_gender':patient.DemogGender
+                    })
+
+        return results
+
+    
+    def render_temporal_report(self):
+        buf = []
+        for result in self.temporal_report():
+            buf.append(
+                '\t'.join([str(x) for x in [
+                            result['id'], result['vaccine_date'], 
+                            result['event_date'], result['days_to_event'],
+                            result['immunization_name'], 
+                            result['event_description'],  
+                            result['patient_age'], result['patient_gender']
+                            ]]))
+                          
+
+        return '\n'.join(buf)
+
+                
+
+            
+
     def is_fake(self):
         should_be_fake = any(
             [imm.is_fake() for imm in self.immunizations.all()])
