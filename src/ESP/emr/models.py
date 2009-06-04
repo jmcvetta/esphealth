@@ -184,15 +184,13 @@ class LabResult(BasePatientRecord):
     '''
     Result data for a lab test
     '''
-    # Date (from base class) is result date
+    # Date (from base class) is order date
     #
     # Coding
     native_code = models.CharField(max_length=30, blank=True, null=True, db_index=True)
     native_name = models.CharField(max_length=255, blank=True, null=True, db_index=True)
-    # Order
-    #order = models.ForeignKey(LabOrder, blank=True, null=True)
-    order_date = models.DateField(blank=True, null=True, db_index=True)
     order_num = models.CharField(max_length=128, blank=True, null=True)
+    result_date = models.DateField(blank=True, null=True, db_index=True)
     status = models.CharField('Result Status', max_length=50, blank=True, null=True)
     #result_id_num = models.CharField('Result Id #', max_length=100, blank=True, null=True)
     # Reference
