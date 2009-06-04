@@ -116,15 +116,16 @@ class EncounterManager(models.Manager):
            
 class Provider(models.Model):
     
+    q_fake = Q(provCode__startswith='FAKE')
 
     # Some methods to deal with mock/fake data
     @staticmethod
     def fakes():
-        Provider.objects
+        return Provider.objects.filter(Provider.q_fake)
 
     @staticmethod
     def delete_fakes():
-        Provider.objects.filter(provCode__startswith='FAKE').delete()
+        Provider.objects.filter(Provider.q_fake).delete()
 
     @staticmethod
     def make_fakes(how_many):
@@ -134,7 +135,7 @@ class Provider(models.Model):
     @staticmethod
     def make_mock(save_on_db=False):
         p = Provider(
-            provCode = 'FAKE-%05d' % randomizer.string(length=8),
+            provCode = 'FAKE-%05d' % random.randrange(1, 100000),
             provLast_Name = randomizer.first_name(),
             provFirst_Name = randomizer.last_name(),
             provMiddle_Initial = random.choice(string.uppercase),
@@ -197,7 +198,7 @@ class Demog(models.Model):
         Demog.objects.filter(Demog.fake_q).delete()
             
     @staticmethod
-    def make_fakes(how_many):
+    def make_fakes(how_many, save_on_db=True):
         for i in xrange(how_many):
             Demog.make_mock(save_on_db=save_on_db)
 
@@ -206,14 +207,29 @@ class Demog(models.Model):
         return Demog.objects.filter(Demog.fake_q)
 
     @staticmethod
+    def delete_fakes():
+        Demog.fakes().delete()
+
+    @staticmethod
     def make_mock(save_on_db=False):
+
+        # Common, random attributes
         phone_number = randomizer.phone_number()
         address = randomizer.address()
         city = randomizer.city()
         identifier = randomizer.string(length=8)
-        
+
+
+        # A Fake Patient must have a fake provider. If we have one on
+        # the DB, we get a random one. Else, we'll have to create them
+        # ourselves.
+        if Provider.fakes().count() > 0:        
+            provider = Provider.fakes().order_by('?')[0]
+        else:
+            provider = Provider.make_mock(save_on_db=save_on_db)
         
         p = Demog(
+            DemogProvider = provider,
             DemogPatient_Identifier = 'FAKE-%s' % identifier,
             DemogMedical_Record_Number = 'FAKE-%s' % identifier,
             DemogLast_Name = randomizer.last_name(),
@@ -570,11 +586,11 @@ class Lx(models.Model):
     # delete
     LxLoinc = models.CharField('LOINC code', max_length=20, blank=True, null=True, db_index=True)
     result_float = models.FloatField(blank=True, null=True, db_index=True)
-    result_string = models.CharField(max_length=2000, blank=True, null=True, db_index=True)
+    result_string = models.CharField(max_length=1000, blank=True, null=True, db_index=True)
     # delete
     LxTest_results = models.CharField('Test results', max_length=1000, blank=True, null=True, db_index=True)
     # rename: impression
-    LxImpression = models.TextField('Impression for Imaging only', max_length=2000, blank=True, null=True)
+    LxImpression = models.TextField('Impression for Imaging only', max_length=1000, blank=True, null=True)
     # rename: comment
     LxComment = models.TextField('Comments',  blank=True,  null=True, )
     def _get_patient(self):
@@ -596,11 +612,11 @@ class Lx(models.Model):
         
     def _set_loinc(self, value):
         try:
-            mapping = NativeToLoincMap.objects.get(loinc=value)
+            mapping = NativeCode.objects.get(loinc=value)
             self.native_code = mapping.native_code
             self.native_name = mapping.native_name
         except:
-            raise ValueError, "Not a valid Loinc used for attribution"
+            raise ValueError, "%s is not a valid Loinc" % value
 
     
     patient = property(_get_patient)
@@ -1116,7 +1132,7 @@ class Allergy(models.Model):
     AllCode = models.CharField('Allergy ID (Code)',max_length=200,blank=True,null=True)
     AllName = models.CharField('Allergy Name',max_length=255,blank=True,null=True)
     AllStatus = models.CharField('Allergy status',max_length=50,blank=True,null=True)
-    AllDesc = models.TextField('Allergy Description',max_length=2000,blank=True,null=True)
+    AllDesc = models.TextField('Allergy Description',max_length=1000,blank=True,null=True)
     AllDateEntered = models.CharField('Date Entered',max_length=20,blank=True,null=True)
     lastUpDate = models.DateTimeField('Last Updated date',auto_now=True,db_index=True)
     createdDate = models.DateTimeField('Date Created', auto_now_add=True)
