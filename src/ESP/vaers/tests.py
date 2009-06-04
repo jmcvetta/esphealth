@@ -9,7 +9,7 @@ MESSAGE_DIR = os.path.realpath(os.path.join(
         os.path.dirname(__file__), '..', 'messages'))
 
 # Models
-from ESP.conf.models import Icd9, Loinc, NativeToLoincMap
+from ESP.conf.models import Icd9, Loinc, NativeCode
 from ESP.esp.models import Demog, Immunization, Lx, Enc
 from ESP.vaers.models import AdverseEvent
 
@@ -38,15 +38,15 @@ class TestLoincCodes(unittest.TestCase):
         for loinc in self.codes:
             try:
                 self.assert_(Loinc.objects.get(loinc_num=loinc))
-            except:
-                self.assert_(False, 'Loinc %s not found in table' % loinc)
+            except Exception, why:
+                self.assert_(False, 'Testing LOINC"%s": %s' % (loinc, why))
 
     def testNativeCodeTable(self):
         for loinc in self.codes:
             try:
-                self.assert_(NativeToLoincMap.objects.get(native_code=loinc))
-            except:
-                self.assert_(False, 'Code %s not found in NativetoLoinc Map' % loinc)
+                self.assert_(NativeCode.objects.get(native_code=loinc))
+            except Exception, why:
+                self.assert_(False, 'Testing NativeCode "%s": %s' % (loinc, why))
 
 
 class TestFake(unittest.TestCase):
