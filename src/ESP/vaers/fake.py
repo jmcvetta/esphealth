@@ -1,6 +1,5 @@
 import datetime
 import random
-
 import optparse
 
 from ESP.conf.common import EPOCH
@@ -10,7 +9,6 @@ from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
 from ESP.utils import randomizer
 from ESP.utils import utils
 
-
 from rules import TIME_WINDOW_POST_EVENT, VAERS_LAB_RESULTS
 
 FEVER_EVENT_PCT = 40
@@ -19,12 +17,10 @@ LX_EVENT_PCT = 15
 IGNORE_FOR_REOCCURRENCE_PCT = 20
 IGNORE_FOR_HISTORY_PCT = 60
 
-   
 USAGE_MSG = '''\
 %prog [options]
     Either '-p', '-i' or '-a' must be specified.
 '''
-
 
 def main():
     # 
@@ -32,8 +28,8 @@ def main():
     # instances running at once.
     #
     parser = optparse.OptionParser(usage=USAGE_MSG)
-    parser.add_option('-p', '--patients', action='store_true', 
-                      dest='patients', help='Generate new Patient Population')
+    parser.add_option('-p', '--patients', action='store_true', dest='patients',
+                      help='Generate new Patient Population')
     parser.add_option('-i', '--immunizations', action='store_true', dest='i',
                       help='Create Immunization History for Patients')
 
@@ -43,7 +39,7 @@ def main():
     (options, args) = parser.parse_args()
 
     if options.all:
-        fake_world()
+        massive_immunization_action()
     else:
         parser.print_help()
         print 'Right now, only --all is implemented.'
@@ -55,7 +51,7 @@ def clear():
     for klass in [Immunization, Enc, Lx, AdverseEvent]:
         klass.delete_fakes()
 
-def fake_world():
+def massive_immunization_action():
     clear()
     for patient in Demog.fakes():
         history = ImmunizationHistory(patient)
@@ -92,13 +88,6 @@ def fake_world():
                 if random.randrange(100) <= IGNORE_FOR_HISTORY_PCT:
                     ev.cause_negative_lx_for_lkv(loinc, criterium)
                     
-                
-
-                
-    
-
-
-
 class Vaers(object):
 
     def __init__(self, immunization):
@@ -110,34 +99,23 @@ class Vaers(object):
         self.matching_lab_result = None
         self.last_lab_result = None # Last Lx done before the immunization
 
-
-
     def _encounter(self):
         days_after =  datetime.timedelta(days=random.randrange(
                 0, TIME_WINDOW_POST_EVENT))
-
         when = self.immunization_date+days_after
         return Enc.make_mock(self.patient, when=when)
 
     def _lab_result(self, loinc):
         days_after =  datetime.timedelta(days=random.randrange(
                 0, TIME_WINDOW_POST_EVENT))
-
         when = self.immunization_date+days_after
         return  Lx.make_mock(loinc, self.patient, when=when)
-       
-
-
-
-
 
     def make_post_immunization_encounter(self):
         encounter = self._encounter()
         encounter.EncTemperature = randomizer.body_temperature() 
         encounter.save()
         self.matching_encounter = encounter
-
-
 
     def cause_fever(self):
         encounter = self._encounter()
@@ -154,9 +132,6 @@ class Vaers(object):
         
         self.matching_encounter = encounter
 
-        
-
-
     def cause_icd9_ignored_for_history(self, code):
         maximum_days_ago =  (self.immunization_date - 
                              self.patient.date_of_birth).days
@@ -169,8 +144,6 @@ class Vaers(object):
         past_encounter.save()
         past_encounter.reported_icd9_list.add(code)
         past_encounter.save()
-
-
         
     def cause_icd9_ignored_for_reoccurrence(self, code, max_period):
         maximum_days_ago = min(
@@ -213,7 +186,6 @@ class Vaers(object):
         lx.native_code = loinc
         lx.result_float = float(value)
         lx.save()
-
         self.matching_lab_result = lx
 
     def cause_negative_lx_for_lkv(self, loinc, criterium):
@@ -228,8 +200,8 @@ class Vaers(object):
         strings to calculate a value for LKV that, given the value of
         the current lx, make the current lx be a negative case.
 
-        Once the proper value for lkv is found, we create a mock Lx with that value.
-        
+        Once the proper value for lkv is found, we create a mock Lx
+        with that value.
         '''
 
         # We are supposed to have add the positive case first.
@@ -247,8 +219,6 @@ class Vaers(object):
             lkv_equation = regex.match(baseline)
             op, coefficient = lkv_equation.group(2), float(lkv_equation.group(3))
         except:
-            import pdb
-            pdb.set_trace()
             raise ValueError, 'Could not create a negative %s lx based on rules from %s' % (loinc, criterium)
 
         # Now that we have all the terms of the inequation, we solve it
@@ -266,7 +236,6 @@ class Vaers(object):
         # give it a value that make the inequation true.
         lkv = (current_value - 0.1) if comparator == '>' else (current_value + 0.1) 
         
-
         # Now that we have the value, we create the Lx corresponding
         # to the "Last" one. It has to be before the immunization.
         earliest = max(self.patient.date_of_birth, EPOCH)
@@ -284,9 +253,7 @@ class Vaers(object):
 
 
 class ImmunizationHistory(object):
-
     IMMUNIZATIONS_PER_PATIENT = 10
-    
 
     def __init__(self, patient):
         self.patient = patient
@@ -317,7 +284,5 @@ class ImmunizationHistory(object):
         # If everything is ok, give patient the vaccine
         return Immunization.make_mock(vaccine, self.patient, when)
         
-
-
 if __name__ == '__main__':
     main()
