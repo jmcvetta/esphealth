@@ -89,11 +89,23 @@ class EncounterManager(models.Manager):
             # MySQL is a little bit less insane, using STR_TO_DATE funcion
             date_cmp_select = "DATEDIFF(STR_TO_DATE(%s, '%s'), STR_TO_DATE(%s, '%s'))"
             params = (enc_date_field, timestamp, imm_date_field, timestamp)
-        else:
-            raise NotImplementedError, 'Implemented only for Sqlite and MySQL (So far)'
+            
+        elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
+            date_cmp_select = "date %s - date %s"
+            params = (enc_date_field, imm_date_field)
 
-        max_days = ' '.join([date_cmp_select % params, '<=', str(days_after)])
-        same_day = (date_cmp_select % params) + ' >= 0'
+        else:
+            raise NotImplementedError, 'Implemented only for PostgreSQL, mySQL and Sqlite'
+
+        
+        if DATABASE_ENGINE in ('mysql', 'sqlite3'):
+            max_days = ' '.join([date_cmp_select % params, '<=', str(days_after)])
+            same_day = (date_cmp_select % params) + ' >= 0'
+        elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
+            max_days = ' '.join([date_cmp_select % params, "<= interval '%s days'" % str(days_after)])
+            same_day = (date_cmp_select % params) + " >= interval '0 days'"
+        else:
+            raise NotImplementedError, 'Implemented for Postgres, MySQL and sqlite.'
 
 
         # This is our minimum WHERE clause
@@ -510,11 +522,24 @@ class LxManager(models.Manager):
             # MySQL is a little bit less insane, using STR_TO_DATE funcion
             date_cmp_select = "DATEDIFF(STR_TO_DATE(%s, '%s'), STR_TO_DATE(%s, '%s'))"
             params = (lx_date_field, timestamp, imm_date_field, timestamp)
-        else:
-            raise NotImplementedError, 'Implemented only for Sqlite and MySQL (So far)'
 
-        max_days = ' '.join([date_cmp_select % params, '<=', str(days_after)])
-        same_day = (date_cmp_select % params) + ' >= 0'
+        elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
+            date_cmp_select = "date %s - date %s"
+            params = (lx_date_field, imm_date_field)
+
+        else:
+            raise NotImplementedError, 'Implemented only for PostgreSQL, mySQL and Sqlite'
+
+
+        if DATABASE_ENGINE in ('mysql', 'sqlite3'):
+            max_days = ' '.join([date_cmp_select % params, '<=', str(days_after)])
+            same_day = (date_cmp_select % params) + ' >= 0'
+        elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
+            max_days = ' '.join([date_cmp_select % params, "<= interval '%s days'" % str(days_after)])
+            same_day = (date_cmp_select % params) + " >= interval '0 days'"
+        else:
+            raise NotImplementedError, 'Implemented for Postgres, MySQL and sqlite.'
+            
 
 
         # This is our minimum WHERE clause
