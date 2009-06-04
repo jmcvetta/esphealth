@@ -31,6 +31,8 @@ class HeuristicEvent(models.Model):
     content_type = models.ForeignKey(ContentType, db_index=True)
     object_id = models.PositiveIntegerField(db_index=True)
     content_object = generic.GenericForeignKey('content_type', 'object_id')
+    definition = models.CharField(max_length=100, blank=False)
+    def_version = models.IntegerField(blank=False)
     
     class Meta:
         unique_together = ['heuristic_name', 'date', 'patient', 'content_type', 'object_id']
