@@ -1,5 +1,25 @@
 var DemoNotificationEmail = null;
 
+function makeGrid(elem, page_url){
+    elem.flexigrid({
+	striped:true,
+	width: 700,
+	height: 'auto',
+	url: page_url,
+	dataType: 'json',
+	colModel: [
+	    {display:"Provider", name:"provider", sortable:false},
+	    {display:"Event Date", name:"date", sortable:true},
+	    {display:"Event Description", name:"description"},
+	    {display:"Action", name:"action", sortable:true},
+	    {display:"Details", name:"details"}
+	],
+	usepager:true,
+	title: "Cases",
+
+    });
+}
+
 
 function Paginator(elem, page_url){
     var currentPage = 1;
