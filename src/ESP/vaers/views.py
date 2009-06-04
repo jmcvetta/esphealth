@@ -5,6 +5,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.http import HttpResponseNotFound, HttpResponseForbidden
 from django.http import HttpResponseNotAllowed, Http404
 from django.core.urlresolvers import reverse
+from django.core.paginator import Paginator
 from django.shortcuts import render_to_response
 
 from django.views.generic.simple import direct_to_template
@@ -15,7 +16,7 @@ from ESP.esp.models import Lx, Demog, Immunization
 from ESP.vaers.utils import send_notifications
 from ESP.vaers.forms import CaseConfirmForm
 
-from ESP.utils.utils import log
+from ESP.utils.utils import log, Flexigrid
 
 
 import datetime
@@ -35,14 +36,20 @@ def list_cases(request):
     # This is a ajax call. Our response contains only the result page.
 
     # Page may be passed in the query string and must be a positive number
-    page = max(int(request.POST.get('page', 1)), 1)
+    
+    grid = Flexigrid(request)
+    page = grid.page
     
 
     # Complete query and present results
-    cases = AdverseEvent.paginated(page=page)
-    return direct_to_template(request, WIDGET_TEMPLATE_DIR +'case_table.html',
+    cases = AdverseEvent.paginated(page=int(page))
+    total = AdverseEvent.objects.all().count()
+    return direct_to_template(request, WIDGET_TEMPLATE_DIR +'case_grid.json',
                               {'cases':cases,
-                               'page':page})
+                               'total':total,
+                               'page':page},
+                              mimetype='application/json'
+                              )
 
 
 
@@ -66,7 +73,9 @@ def notify(request, id):
         return direct_to_template(request, PAGE_TEMPLATE_DIR + 'notify.html')
 
 def report(request):
-    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'report.html')
+    cases = AdverseEvent.objects.all()
+    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'report.html',
+                              {'cases':cases})
 
                               
 
@@ -112,11 +121,7 @@ def case_details(request, id):
     if case.category == 'auto': 
         return HttpResponseForbidden('This case will be automatically reported')
     
-    try:
-        provider = case.provider()
-    except:
-        import pdb
-        pdb.set_trace()
+    provider = case.provider()
     if not provider: return HttpResponseForbidden('Not for your eyes')
     
     authorized_id = request.COOKIES.get('confirmed_id', None)
