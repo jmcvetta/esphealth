@@ -30,11 +30,11 @@ USAGE_MSG = '''\
 '''
 
 class AdverseEventHeuristic(BaseHeuristic):
-    def __init__(self, name, verbose_name=None):
-        self.name = name
-        self.verbose_name = verbose_name
+    def __init__(self, event_name, verbose_name=None):
+        self.event_name = event_name
+        self.def_name = verbose_name
         self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
-        self._register(name)            
+        self._register(event_name)            
             
 class VaersFeverHeuristic(AdverseEventHeuristic):
     def __init__(self):
@@ -43,7 +43,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
             'VAERS Fever', verbose_name='Fever reaction to immunization')
 
     def matches(self, begin_date=None, end_date=None):
-        # log.info('Getting matches for %s' % self.name)
+        # log.info('Getting matches for %s' % self.event_name)
         begin_date = begin_date or EPOCH
         end_date = end_date or datetime.date.today()
 
@@ -55,7 +55,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
                     
 
     def generate_events(self, begin_date=None, end_date=None):
-        log.info('Generating events for %s' % self.name)
+        log.info('Generating events for %s' % self.event_name)
         matches = self.matches(begin_date=begin_date, end_date=end_date)
         encounter_type = ContentType.objects.get_for_model(EncounterEvent)
 
@@ -101,7 +101,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
         
 
 class DiagnosisHeuristic(AdverseEventHeuristic):
-    def __init__(self, name, icd9s, category, verbose_name=None, **kwargs):
+    def __init__(self, event_name, icd9s, category, verbose_name=None, **kwargs):
         '''
         @type icd9s: [<Icd9>, <Icd9>, <Icd9>, ...]
         @type discarding_icd9: [<Icd9>, <Icd9>, <Icd9>, ...]
@@ -109,16 +109,17 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         @type verbose_name: String
         '''
                  
+        self.event_name = event_name
         self.icd9s = icd9s
         self.category = category
         self.discarding_icd9s = kwargs.pop('discarding_icd9s', [])
         self.ignored_if_past_occurrence = kwargs.pop(
             'ignored_if_past_occurrence', None)
         
-        super(DiagnosisHeuristic, self).__init__(name, verbose_name=verbose_name)
+        super(DiagnosisHeuristic, self).__init__(event_name, verbose_name=verbose_name)
             
     def matches(self, begin_date=None, end_date=None):
- #       log.info('Getting matches for %s' % self.name)
+ #       log.info('Getting matches for %s' % self.event_name)
         begin_date = begin_date or EPOCH
         end_date = end_date or datetime.date.today()
         
@@ -142,7 +143,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
 
 
     def generate_events(self, begin_date=None, end_date=None):
-        log.info('Generating events for %s' % self.name)
+        log.info('Generating events for %s' % self.event_name)
         counter = 0
         matches = self.matches(begin_date=begin_date, end_date=end_date)
         encounter_type = ContentType.objects.get_for_model(EncounterEvent)
@@ -153,7 +154,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
                 # Create event instance
                 ev, created = EncounterEvent.objects.get_or_create(
                     encounter=e, date=e.date, category=self.category,
-                    defaults={'matching_rule_explain':self.verbose_name,
+                    defaults={'matching_rule_explain':self.def_name,
                               'content_type':encounter_type}
                     )
 
@@ -183,13 +184,13 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
 
 
 class VaersLxHeuristic(AdverseEventHeuristic):
-    def __init__(self, name, loinc, criterium, verbose_name=None):
-        self.name = name
-        self.verbose_name = verbose_name
+    def __init__(self, event_name, loinc, criterium, verbose_name=None):
+        self.event_name = event_name
+        self.def_name = verbose_name
         self.loinc = loinc
         self.criterium = criterium
-        self.verbose_name = verbose_name
-        self._register(name)
+        self.def_name = verbose_name
+        self._register(event_name)
         self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
 
     def matches(self, begin_date=None, end_date=None):
@@ -233,16 +234,14 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         comparator, baseline = self.criterium['exclude_if']
 
         candidates = LabResult.objects.following_vaccination(
-            days, loinc=self.loinc).filter(date__gte=begin, date__lte=end)
+            days, loinc=self.loinc).filter(result_date__gte=begin, result_date__lte=end)
         
-        
-
         return [c for c in candidates if is_trigger_value(c, trigger) and not 
                 excluded_due_to_history(c, comparator, baseline)]
 
     
     def generate_events(self, begin_date=None, end_date=None):
-        log.info('Generating events for %s' % self.name)
+        log.info('Generating events for %s' % self.event_name)
         counter = 0
         matches = self.matches(begin_date=begin_date, end_date=end_date)
 
@@ -251,12 +250,12 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         for lab_result in matches:
             try:
                 result = lab_result.result_float or lab_result.result_string
-                rule_explain = 'Lab Result for %s resulting in %s'% (self.name, result)
+                rule_explain = 'Lab Result for %s resulting in %s'% (self.event_name, result)
             
                 ev, created = LabResultEvent.objects.get_or_create(
                     lab_result=lab_result,
                     category=self.criterium['category'],
-                    date=lab_result.date,
+                    date=lab_result.result_date,
                     defaults = {'matching_rule_explain': rule_explain,
                                 'content_type':lab_type}
                     )
@@ -303,12 +302,13 @@ def make_diagnosis_heuristic(name):
 
 def make_lab_heuristics(loinc):
     rule = rules.VAERS_LAB_RESULTS[loinc]
-
     name = rule['name']
-    verbose_name = 'Lab Result testing for %s showing adverse reaction to immunization' % name
+
+    def verbose_name(criterium):
+        return 'Lab Result for %s with value above/below the trigger of %s %s' % (name, criterium['trigger'], criterium['unit'])
 
     return [
-        VaersLxHeuristic(name, loinc, criterium, verbose_name=verbose_name)
+        VaersLxHeuristic(name, loinc, criterium, verbose_name=verbose_name(criterium))
         for criterium in rule['criteria']]
         
 

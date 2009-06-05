@@ -25,7 +25,7 @@ from rules import VAERS_DIAGNOSTICS, VAERS_LAB_RESULTS, TIME_WINDOW_POST_EVENT
 from fake import ImmunizationHistory, Vaers, clear
 
 FEVER_HEURISTIC = heuristics.fever_heuristic()
-DIAGNOSTICS_HEURISTICS = dict([(h.name, h) for h in heuristics.diagnostic_heuristics()])
+DIAGNOSTICS_HEURISTICS = dict([(h.event_name, h) for h in heuristics.diagnostic_heuristics()])
 LAB_HEURISTICS = heuristics.lab_heuristics()
 
 

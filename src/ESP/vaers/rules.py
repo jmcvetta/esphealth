@@ -167,21 +167,23 @@ VAERS_LAB_RESULTS = {
 
     '2951-2':{
         'name':'Sodium',
-        'criteria':[{
+        'criteria':
+            [{
                 'trigger':'X>150',
                 'unit':'mmol/L',
                 'exclude_if':('<','LKV+5'),
                 'category':'confirm'
                 },
-                    {
+             {
                 'trigger':'X<130',
                 'unit':'mmol/L',
                 'exclude_if':('>','LKV-5'),
                 'category':'confirm'
-                }]
+                }
+             ]
         }
     }
-        
+
 
 
 VAERS_DIAGNOSTICS = {
