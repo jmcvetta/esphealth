@@ -363,3 +363,29 @@ class NativeCode(models.Model):
     class Meta:
         verbose_name = 'Native Code to LOINC Map'
 
+
+class Vaccine(models.Model):
+
+    code = models.IntegerField(unique=True)
+    short_name = models.CharField(max_length=60)
+    name = models.CharField(max_length=300)
+
+    @staticmethod
+    def random():
+        return Vaccine.objects.exclude(short_name='UNK').order_by('?')[0]
+
+    def __unicode__(self):
+        return '%s (%s)'% (self.short_name, self.name)
+    
+
+class ImmunizationManufacturer(models.Model):
+    code = models.CharField(max_length=3)
+    full_name = models.CharField(max_length=200)
+    active = models.BooleanField(default=True)
+    use_instead = models.ForeignKey('self', null=True)
+
+    def __unicode__(self):
+        return self.full_name
+                         
+    
+

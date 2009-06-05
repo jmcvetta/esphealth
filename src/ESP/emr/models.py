@@ -9,20 +9,24 @@
 @license: LGPL
 '''
 
+import string
+import random
+import datetime
 
 from django.db import models
+from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
 from ESP.emr import choices
+from ESP.conf.common import EPOCH
 from ESP.conf.models import SourceSystem
-from ESP.conf.models import NativeCode
-from ESP.conf.models import Loinc
-from ESP.conf.models import Ndc
-from ESP.conf.models import Cpt
-from ESP.conf.models import Icd9
-from ESP.conf.models import NativeCode
-from ESP.utils.utils import log
+from ESP.conf.models import Loinc, Ndc, Cpt, Icd9, NativeCode
+from ESP.conf.models import Vaccine
+from ESP.utils import randomizer
+from ESP.utils.utils import log, date_from_str
+from ESP.localsettings import DATABASE_ENGINE
+
 
 
 #class Provenance(models.Model):
@@ -91,9 +95,53 @@ class Provider(BaseMedicalRecord):
     area_code = models.CharField('Primary Department Phone Areacode',max_length=20,blank=True,null=True)
     telephone = models.CharField('Primary Department Phone Number',max_length=50,blank=True,null=True)
     
+    
+    q_fake = Q(provider_id_num__startswith='FAKE')
+
+    # Some methods to deal with mock/fake data
+    @staticmethod
+    def fakes():
+        return Provider.objects.filter(Provider.q_fake)
+
+    @staticmethod
+    def delete_fakes():
+        Provider.fakes().delete()
+
+    @staticmethod
+    def make_fakes(how_many):
+        for i in xrange(0, how_many):
+            Provider.make_mock(save_on_db=True)
+            
+    @staticmethod
+    def make_mock(save_on_db=False):
+        code = 'FAKE-%05d' % random.randrange(1, 100000)
+        
+        if Provider.objects.filter(provider_id_num=code).count() == 1:
+            return Provider.objects.get(provider_id_num=code)
+        else:        
+            p = Provider(
+                provider_id_num = code,
+                last_name = randomizer.first_name(),
+                first_name = randomizer.last_name(),
+                middle_initial = random.choice(string.uppercase),
+                title = 'Fake Dr.',
+                dept_id_num = 'Department of Wonderland',
+                dept_address_1 = randomizer.address(),
+                dept_zip = randomizer.zip_code(),
+                telephone = randomizer.phone_number()
+                )
+            
+            if save_on_db: p.save()
+            return p
+
+    
+    def is_fake(self):
+        return self.provider_id_num.startswith('FAKE')
+
     def _get_name(self):
         return u'%s, %s %s %s' % (self.last_name, self.title, self.first_name, self.middle_initial)
     name = property(_get_name)
+    full_name = property(_get_name)
     
     def __unicode__(self):
         return self.name
@@ -120,7 +168,7 @@ class Patient(BaseMedicalRecord):
     areacode = models.CharField('Home Phone Area Code', max_length=20, blank=True, null=True)
     tel = models.CharField('Home Phone Number', max_length=100, blank=True, null=True)
     tel_ext = models.CharField('Home Phone Extension', max_length=50, blank=True, null=True)
-    dob = models.CharField('Date of Birth', max_length=20, blank=True, null=True)
+    dob = models.DateField('Date of Birth', blank=True, null=True)
     gender = models.CharField('Gender', max_length=20, blank=True, null=True)
     race = models.CharField('Race', max_length=20, blank=True, null=True)
     home_language = models.CharField('Home Language', max_length=20, blank=True, null=True)
@@ -132,10 +180,148 @@ class Patient(BaseMedicalRecord):
     death_date = models.CharField('Date of death', max_length=200, blank=True, null=True)
     death_indicator = models.CharField('Death_Indicator', max_length=30, blank=True, null=True)
     occupation = models.CharField('Occupation', max_length=199, blank=True, null=True)
+
+
+    q_fake = Q(patient_id_num__startswith='FAKE')
+
+    @staticmethod
+    def fakes():
+        return Patient.objects.filter(Patient.q_fake)
+
+
+    @staticmethod
+    def clear():
+        Patient.fakes().delete()
+            
+    @staticmethod
+    def make_fakes(how_many, save_on_db=True):
+        for i in xrange(how_many):
+            Patient.make_mock(save_on_db=save_on_db)
+
+
+    @staticmethod
+    def delete_fakes():
+        Patient.fakes().delete()
+
+    @staticmethod
+    def make_mock(save_on_db=False):
+
+        # Common, random attributes
+        phone_number = randomizer.phone_number()
+        address = randomizer.address()
+        city = randomizer.city()
+        identifier = randomizer.string(length=8)
+
+
+        # A Fake Patient must have a fake provider. If we have one on
+        # the DB, we get a random one. Else, we'll have to create them
+        # ourselves.
+        if Provider.fakes().count() > 0:        
+            provider = Provider.fakes().order_by('?')[0]
+        else:
+            provider = Provider.make_mock(save_on_db=save_on_db)
+        
+        p = Patient(
+            pcp = provider,
+            patient_id_num = 'FAKE-%s' % identifier,
+            mrn = 'FAKE-MRN-%s' % identifier,
+            last_name = randomizer.last_name(),
+            first_name = randomizer.first_name(),
+            suffix = '',
+            country = 'Fakeland',
+            city = city[0],
+            state = city[1],
+            zip = randomizer.zip_code(),
+            address1 = address,
+            address2 = '',
+            middle_name = random.choice(string.uppercase),
+            dob = randomizer.date_of_birth(as_string=False),
+            gender = randomizer.gender(),
+            race = randomizer.race(),
+            areacode = phone_number.split('-')[0],
+            tel = phone_number[4:],
+            tel_ext = '',
+            ssn = randomizer.ssn(),
+            marital_stat = randomizer.marital_status(),
+            religion = '',
+            aliases = '',
+            home_language = '',
+            mother_mrn = '',
+            death_date = '',
+            death_indicator = '',
+            occupation = ''
+            )
+        
+        if save_on_db: p.save()
+        return p
+
+    @staticmethod
+    def random(fake=True):
+        '''Returns a random fake user. If fake is False, returns a
+        completely random user'''
+        objs = Patient.objects
+        query = objs.filter(Patient.q_fake) if fake else objs.all()
+        return query.order_by('?')[0]
+        
+
+    def has_history_of(self, icd9s, begin_date=None, end_date=None):
+        '''
+        returns a boolean if the patient has any of the icd9s code 
+        in their history of encounters.
+        '''
+        begin_date = begin_date or self.dob or EPOCH
+        end_date = end_date or datetime.date.today()
+
+        return Encounter.objects.filter(patient=self).filter(
+            date__gte=begin_date, date__lt=end_date
+            ).filter(icd9_codes__in=icd9s).count() != 0
     
     def _get_name(self):
         return u'%s, %s %s' % (self.last_name, self.first_name, self.middle_name)
+
+    def _get_age_str(self):
+        '''Returns patient's age as a string'''
+        if not self.date_of_birth: return None
+        
+        today = datetime.datetime.today() 
+        days = today.day - self.date_of_birth.day
+        months = today.month - self.date_of_birth.month
+        years = today.year - self.date_of_birth.year
+        
+        if days < 0:
+            months -= 1
+            
+        if months < 0:
+            years -= 1
+            months += 12
+                
+        if years > 0:
+            return str(years) 
+        else:
+            return '%d Months' % months
+        
+    def _get_dob(self):
+        '''Here just because dob still needs to be changed from a
+        CharField to a DateField. Dump This afterwards.'''
+        try:
+            self.dob.day
+            return self.dob
+        except:
+            return date_from_str(self.dob)
+
+    
+    def _set_dob(self, value):
+        try:
+            self.dob = value
+            assert self.dob.day == value.day
+        except:
+            self.dob = str_from_date(value)
+
+    date_of_birth = property(_get_dob, _set_dob)
+
+
     name = property(_get_name)
+    full_name = property(_get_name)
     
     def __str__(self):
         return self.name
@@ -165,6 +351,94 @@ class BasePatientRecord(BaseMedicalRecord):
 
 
 class LabResultManager(models.Manager):
+    def following_vaccination(self, days_after, loinc=None, begin_date=None, end_date=None):
+
+        begin_date = begin_date or EPOCH
+        end_date = end_date or datetime.date.today()
+
+        lab_result_meta = LabResult.objects.model._meta
+        patient_meta = Patient.objects.model._meta
+        imm_meta = Immunization.objects.model._meta
+        
+        # Get PKs from patients, lab results, immunizations
+        # We will need them to construct a correct WHERE clause
+        ppk =  '%s.%s' % (patient_meta.db_table, patient_meta.pk.name) 
+        lab_result_pk = '%s.%s' % (lab_result_meta.db_table, lab_result_meta.pk.name) 
+
+        lab_result_fk = '%s.%s' % (lab_result_meta.db_table, 
+                            lab_result_meta.get_field('patient').attname) 
+        imm_fk = '%s.%s' % (imm_meta.db_table, 
+                            imm_meta.get_field('patient').attname)
+
+        patient_in_encounter = '%s=%s' % (ppk, lab_result_fk) #Patient.id=Encounter.EncounterPatient_id
+        patient_in_immunization = '%s=%s' % (ppk, imm_fk) #Patient.id = Imm.ImmPatient_id
+
+
+        # Get "Full Name" for OrderDate and ImmunizationDate fields
+        lab_result_date_field = '%s.%s' % (lab_result_meta.db_table, 'date')
+        imm_date_field = '%s.%s' % (imm_meta.db_table, 'date')
+
+
+         
+        # Let's construct the date comparison string. Basically, what
+        # we want is to compare between the dates of two different
+        # fields, in two different models. There is a good chance that
+        # Django's F() Objects can do this, but this code was handling
+        # string-to-date transformations before and the whole process
+        # was even messier.
+
+        
+        # We start by getting the proper date comparison function, depending on the database.
+        if DATABASE_ENGINE == 'sqlite3':
+            date_cmp_select = 'julianday(%s) - julianday(%s)'
+            params = (lab_result_date_field, imm_date_field)
+        elif DATABASE_ENGINE == 'mysql':
+            date_cmp_select = "DATEDIFF(%s, %s)"
+            params = (lab_result_date_field, imm_date_field)
+        elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
+            date_cmp_select = "date(%s) - date(%s)"
+            params = (lab_result_date_field, imm_date_field)
+        else:
+            raise NotImplementedError, 'Implemented only for PostgreSQL, mySQL and Sqlite'
+
+        # Now, we get the comparison string and put it together with
+        # the expected value. This is also dependent on the database
+        # engine. Mysql and Sqlite compare dates and return integers,
+        # postgres returns a "interval" type. 
+        if DATABASE_ENGINE in ('mysql', 'sqlite3'):
+            max_days = '%s <= %d ' % (date_cmp_select % params, days_after)
+            same_day = (date_cmp_select % params) + ' >= 0'
+        elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
+            max_days = "%s <= interval '%d days'" % (date_cmp_select % params, days_after)
+            same_day = (date_cmp_select % params) + " >= interval '0 days'"
+        else:
+            raise NotImplementedError, 'Implemented for Postgres, MySQL and sqlite.'
+
+        # This is our minimum WHERE clause
+        where_clauses = [patient_in_encounter, patient_in_immunization, 
+                         max_days, same_day]
+
+        
+        # begin_date and end_date are the dates that are give the date
+        # range of the encounters we are looking for. Luckily, all of
+        # the DB Engines agree on this one. We can compare a date
+        # field with a string in the format 'YYYY-MM-DD'.
+        where_clauses.append("%s >= '%s'" % (imm_date_field, begin_date.strftime('%Y-%m-%d')))
+        where_clauses.append("%s <= '%s'" % (imm_date_field, end_date.strftime('%Y-%m-%d')))
+
+
+        # To find an specific lab result.    
+        qs = self.filter_loincs([loinc]) if loinc else self
+
+        return qs.extra(
+            tables = [patient_meta.db_table, imm_meta.db_table],
+            where = where_clauses
+            )
+    
+
+
+
+
     @classmethod
     def filter_loincs(self, loinc_nums, **kwargs):
         '''
@@ -211,10 +485,46 @@ class LabResult(BasePatientRecord):
     
     class Meta:
         verbose_name = 'Lab Test Result'
-        
-    def __str__(self):
-        return 'Lab Result #%s' % self.pk
+
+
+    q_fake = Q(patient__patient_id_num__startswith='FAKE')
+
+    @staticmethod
+    def fakes():
+        return LabResult.objects.filter(LabResult.q_fake)
     
+    @staticmethod
+    def delete_fakes():
+        LabResult.fakes().delete()
+
+    @staticmethod
+    def make_mock(loinc, patient, when=None, save_on_db=True):
+        when = when or datetime.date.today()
+
+        order_date = when - datetime.timedelta(
+            days=random.randrange(1, 10))
+
+        # Make sure the patient was alive for the order...
+        order_date = max(order_date, patient.dob)
+        lx = LabResult(patient=patient, order_date=order_date, date=when)
+        if save_on_db: lx.save()
+        return lx
+
+
+    def previous(self):
+        try:
+            return LabResult.objects.filter(patient=self.patient, 
+                                            native_code=self.native_code
+                                            ).exclude(date__gte=self.date
+                                                      ).latest('date')
+        except:
+            return None
+
+
+    def last_known_value(self, loinc, since=None):
+        last = self.previous()                                     
+        return (last and (last.result_float or last.result_string)) or None
+
     def loinc_num(self):
         '''
         Returns LOINC number (not Loinc object!) for this test if it is mapped
@@ -226,7 +536,34 @@ class LabResult(BasePatientRecord):
         else:
             return None
 
+    def _get_loinc(self):
+        try:
+            return NativeCode.objects.get(native_code=self.native_code, 
+                                          native_name=self.native_name)
+        except:
+            return None
+        
+    def _set_loinc(self, value):
+        try:
+            mapping = NativeCode.objects.get(loinc=value)
+            self.native_code = mapping.native_code
+            self.native_name = mapping.native_name
+        except:
+            raise ValueError, "%s is not a valid Loinc" % value
 
+    loinc = property(_get_loinc, _set_loinc)
+
+
+    def __str__(self):
+        return 'Lab Result #%s' % self.pk
+    
+    def __unicode__(self):
+        return u'Lab Result #%s' % self.pk
+    
+    
+    
+    
+    
 class Prescription(BasePatientRecord):
     '''
     A prescribed medication
@@ -246,13 +583,101 @@ class Prescription(BasePatientRecord):
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
 
-    
+
+class EncounterManager(models.Manager):
+    def following_vaccination(self, days_after, begin_date=None, end_date=None):
+
+        begin_date = begin_date or EPOCH
+        end_date = end_date or datetime.date.today()
+        
+        encounter_meta = Encounter.objects.model._meta
+        patient_meta = Patient.objects.model._meta
+        imm_meta = Immunization.objects.model._meta
+        
+        # Get PKs from patients, encounters, immunizations
+        # We will need them to construct a correct WHERE clause
+        ppk =  '%s.%s' % (patient_meta.db_table, patient_meta.pk.name) 
+        enc_pk = '%s.%s' % (encounter_meta.db_table, encounter_meta.pk.name) 
+
+        enc_fk = '%s.%s' % (encounter_meta.db_table, 
+                            encounter_meta.get_field('patient').attname) 
+        imm_fk = '%s.%s' % (imm_meta.db_table, 
+                            imm_meta.get_field('patient').attname)
+
+        #Patient.id=Encounter.patient_id
+        patient_in_encounter = '%s=%s' % (ppk, enc_fk) 
+
+        #Patient.id = Immunization.patient_id
+        patient_in_immunization = '%s=%s' % (ppk, imm_fk) 
+
+        # Get "Full Name" for date fields
+        enc_date_field = '%s.%s' % (encounter_meta.db_table, 'date')
+        imm_date_field = '%s.%s' % (imm_meta.db_table, 'date')
+
+
+     
+        # Let's construct the date comparison string. Basically, what
+        # we want is to compare between the dates of two different
+        # fields, in two different models. There is a good chance that
+        # Django's F() Objects can do this, but this code was handling
+        # string-to-date transformations before and the whole process
+        # was even messier.
+
+        
+        # We started by getting the proper date comparison function, depending on the database.
+        if DATABASE_ENGINE == 'sqlite3':
+            date_cmp_select = 'julianday(%s) - julianday(%s)'
+            params = (enc_date_field, imm_date_field)
+        elif DATABASE_ENGINE == 'mysql':
+            date_cmp_select = "DATEDIFF(%s, %s)"
+            params = (enc_date_field, imm_date_field)
+        elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
+            date_cmp_select = "date(%s) - date(%s)"
+            params = (enc_date_field, imm_date_field)
+        else:
+            raise NotImplementedError, 'Implemented only for PostgreSQL, mySQL and Sqlite'
+
+        
+        # Now, we get the comparison string and put it together with
+        # the expected value. This is also dependent on the database
+        # engine. Mysql and Sqlite compare dates and return integers,
+        # postgres returns a "interval" type. 
+        if DATABASE_ENGINE in ('mysql', 'sqlite3'):
+            max_days = '%s <= %d ' % (date_cmp_select % params, days_after)
+            same_day = (date_cmp_select % params) + ' >= 0'
+        elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
+            max_days = "%s <= interval '%d days'" % (date_cmp_select % params, days_after)
+            same_day = (date_cmp_select % params) + " >= interval '0 days'"
+        else:
+            raise NotImplementedError, 'Implemented for Postgres, MySQL and sqlite.'
+
+
+        # This is our minimum WHERE clause
+        where_clauses = [patient_in_encounter, patient_in_immunization, 
+                         max_days, same_day]
+
+
+        # begin_date and end_date are the dates that are give the date
+        # range of the encounters we are looking for. Luckily, all of
+        # the DB Engines agree on this one. We can compare a date
+        # field with a string in the format 'YYYY-MM-DD'.
+        where_clauses.append("%s >= '%s'" % (imm_date_field, begin_date.strftime('%Y-%m-%d')))
+        where_clauses.append("%s <= '%s'" % (imm_date_field, end_date.strftime('%Y-%m-%d')))
+
+
+        return self.extra(
+            tables = [patient_meta.db_table, imm_meta.db_table],
+            where = where_clauses
+            )    
+
+
 class Encounter(BasePatientRecord):
     '''
     A encounter between provider and patient
     '''
     # Date is encounter date
     #
+    objects = EncounterManager()
     icd9_codes = models.ManyToManyField(Icd9,  blank=True,  null=True, db_index=True)
     status = models.CharField(max_length=20, blank=True, null=True)
     closed_date = models.DateField(blank=True, null=True)
@@ -272,6 +697,63 @@ class Encounter(BasePatientRecord):
     bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True)
     o2_stat = models.FloatField(max_length=50, blank=True, null=True)
     peak_flow = models.FloatField(max_length=50, blank=True, null=True)
+
+    q_fake = Q(patient__patient_id_num__startswith='FAKE')
+
+    @staticmethod
+    def fakes():
+        return Encounter.objects.filter(Encounter.q_fake)
+
+    @staticmethod
+    def delete_fakes():
+        Encounter.fakes().delete()
+
+    @staticmethod
+    def make_fakes(how_many, **kw):
+        now = datetime.datetime.now()
+        start = kw.get('start_date', None)
+        interval = kw.get('interval', None)
+        
+        for patient in Patient.fakes():
+            when = start or patient.dob
+            for i in xrange(0, how_many):
+                next_encounter_interval = interval or random.randrange(0, 180)
+                when += datetime.timedelta(days=next_encounter_interval)
+                if when < now: 
+                    Encounter.make_mock(patient, save_on_db=True, when=when)
+            
+    @staticmethod
+    def make_mock(patient, save_on_db=False, **kw):
+        when = kw.get('when', datetime.datetime.now())
+        
+        try:
+            provider = patient.pcp
+        except:
+            provider = Provider.make_mock(save_on_db=True)
+
+        e = Encounter(patient=patient, provider=provider, mrn=patient.mrn, 
+                      status='FAKE', date=when, closed_date=when)
+        
+        if save_on_db: e.save()
+        return e
+
+    def is_fake(self):
+        return self.status == 'FAKE'
+
+    def is_reoccurrence(self, month_period=12):
+        '''
+        returns a boolean indicating if this encounters shows any icd9
+        code that has been registered for this patient in last
+        month_period time.
+        '''
+        
+        earliest = self.date-datetime.timedelta(days=30*month_period)
+        
+        return Encounter.objects.filter(
+            date__lt=self.date, date__gte=earliest, 
+            patient=self.patient, icd9_codes__in=self.icd9_codes.all()
+            ).count() > 0
+                
     
     def __str__(self):
         return 'Encounter #%s' % self.pk
@@ -291,3 +773,49 @@ class Immunization(BasePatientRecord):
     lot = models.TextField('Lot Number', max_length=500, blank=True, null=True)
     visit_date = models.DateField('Date of Visit', blank=True, null=True)
 
+    q_fake = Q(name='FAKE')
+
+    @staticmethod
+    def vaers_candidates(patient, event, days_prior):
+        '''Given an encounter that is considered an adverse event,
+        returns a queryset that represents the possible immunizations
+        that have caused it'''
+        
+        earliest_date = event.date - datetime.timedelta(days=days_prior)
+        
+        return Immunization.objects.filter(
+            date__gte=earliest_date, date__lte=event.date,
+            patient=patient
+            )
+    
+    @staticmethod
+    def fakes():
+        return Immunization.objects.filter(Immunization.q_fake)
+    
+    @staticmethod
+    def delete_fakes():
+        Immunization.fakes().delete()
+
+
+    @staticmethod
+    def make_mock(vaccine, patient, date):
+        return Immunization.objects.create(
+            patient=patient, imm_id_num='FAKE-%s' % patient.id,
+            date=date, visit_date=date,
+            imm_type=vaccine.code, dose='3.1415 pi', 
+            name='FAKE', manufacturer='FAKE', lot='FAKE'
+            )
+
+    def is_fake(self):
+        return self.name == 'FAKE'
+
+    def vaccine_type(self):
+        try:
+            vaccine = Vaccine.objects.get(code=self.imm_type)
+            return vaccine.name
+        except:
+            return 'Unknown Vaccine'
+
+    def  __unicode__(self):
+        return u"Patient with Immunization Record %s received %s on %s" % (
+            self.imm_id_num, self.vaccine_type(), self.date)    

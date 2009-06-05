@@ -91,7 +91,7 @@ class EncounterManager(models.Manager):
             params = (enc_date_field, timestamp, imm_date_field, timestamp)
             
         elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
-            date_cmp_select = "date %s - date %s"
+            date_cmp_select = "date(%s) - date(%s)"
             params = (enc_date_field, imm_date_field)
 
         else:
@@ -338,34 +338,30 @@ class Demog(models.Model):
             return None
     date_of_birth = property(_get_date_of_birth)
         
-    def _get_age(self, formatted=False):
+    def _get_age_str(self):
         '''
-        Returns patient's age as a datetime.timedelta instance
+        Returns patient's age as a string 
         '''
-        if not formatted:  
-            return datetime.datetime.today() - self.date_of_birth
+        if not self.date_of_birth: return None
         
-        if formatted:
-            if not self.date_of_birth: return None
-            
-            today = datetime.datetime.today() 
-            days = today.day - self.date_of_birth.day
-            months = today.month - self.date_of_birth.month
-            years = today.year - self.date_of_birth.year
-            
-            if days < 0:
-                months -= 1
-            
-            if months < 0:
-                years -= 1
-                months += 12
-
-            if years > 0:
-                return str(years) 
-            else:
-                return '%d Months' % months
+        today = datetime.datetime.today() 
+        days = today.day - self.date_of_birth.day
+        months = today.month - self.date_of_birth.month
+        years = today.year - self.date_of_birth.year
         
-    age = property(_get_age)
+        if days < 0:
+            months -= 1
+            
+        if months < 0:
+            years -= 1
+            months += 12
+                
+        if years > 0:
+            return str(years) 
+        else:
+            return '%d Months' % months
+        
+    age = property(_get_age_str)
 
     def has_history_of(self, icd9s, begin_date=None, end_date=None):
         '''
@@ -524,7 +520,7 @@ class LxManager(models.Manager):
             params = (lx_date_field, timestamp, imm_date_field, timestamp)
 
         elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
-            date_cmp_select = "date %s - date %s"
+            date_cmp_select = "date(%s) - date (%s)"
             params = (lx_date_field, imm_date_field)
 
         else:
@@ -1099,34 +1095,6 @@ class VAERSadditions(models.Model):
         
         return u"%s" % (self.VAERPatient.DemogPatient_Identifier)
 
-
-class Vaccine(models.Model):
-
-    @staticmethod
-    def random():
-        return Vaccine.objects.exclude(short_name='UNK').order_by('?')[0]
-
-    code = models.IntegerField(unique=True)
-    short_name = models.CharField(max_length=60)
-    name = models.CharField(max_length=300)
-
-    def __unicode__(self):
-        return '%s (%s)'% (self.short_name, self.name)
-
-
-        
-    
-
-class ImmunizationManufacturer(models.Model):
-    code = models.CharField(max_length=3)
-    full_name = models.CharField(max_length=200)
-    active = models.BooleanField(default=True)
-    use_instead = models.ForeignKey('self', null=True)
-
-    def __unicode__(self):
-        return self.full_name
-                         
-    
 
 
 

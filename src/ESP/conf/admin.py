@@ -1,9 +1,6 @@
 from django.contrib import admin
 
-from ESP.conf.models import Format
-from ESP.conf.models import Dest
-from ESP.conf.models import NativeCode
-from ESP.conf.models import SourceSystem
+from ESP.conf import models
 
 
 class FormatOptions(admin.ModelAdmin):
@@ -20,7 +17,9 @@ class SourceSystemAdmin(admin.ModelAdmin):
     list_display = ['name', 'software']
 
 
-admin.site.register(Format, FormatOptions)
-admin.site.register(Dest, DestOptions)
-admin.site.register(NativeCode, NativeToLoincMapAdmin)
-admin.site.register(SourceSystem, SourceSystemAdmin)
+admin.site.register(models.Format, FormatOptions)
+admin.site.register(models.Dest, DestOptions)
+admin.site.register(models.NativeCode, NativeToLoincMapAdmin)
+admin.site.register(models.SourceSystem, SourceSystemAdmin)
+admin.site.register(models.Vaccine)
+admin.site.register(models.ImmunizationManufacturer)

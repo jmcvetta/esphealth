@@ -88,6 +88,3 @@ admin.site.register(Demog, DemogOptions)
 admin.site.register(CaseWorkflow, CaseWorkflowOptions)
 admin.site.register(Rule, RuleAdmin)
 admin.site.register(Hl7InputFile, Hl7InputFileAdmin)
-
-admin.site.register(Vaccine)
-admin.site.register(ImmunizationManufacturer)
