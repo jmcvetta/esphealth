@@ -168,7 +168,11 @@ class Patient(BaseMedicalRecord):
     areacode = models.CharField('Home Phone Area Code', max_length=20, blank=True, null=True)
     tel = models.CharField('Home Phone Number', max_length=100, blank=True, null=True)
     tel_ext = models.CharField('Home Phone Extension', max_length=50, blank=True, null=True)
-    dob = models.DateField('Date of Birth', blank=True, null=True)
+
+    # Was CharField: delete.
+    dob = models.DateField('Date of Birth (May Erase)', blank=True, null=True)
+
+    date_of_birth = models.DateField('Date of Birth', blank=True, null=True)
     gender = models.CharField('Gender', max_length=20, blank=True, null=True)
     race = models.CharField('Race', max_length=20, blank=True, null=True)
     home_language = models.CharField('Home Language', max_length=20, blank=True, null=True)
@@ -281,12 +285,12 @@ class Patient(BaseMedicalRecord):
 
     def _get_age_str(self, precision='years', with_units=False):
         '''Returns patient's age as a string'''
-        if not self.dob: return None
+        if not self.date_of_birth: return None
         
         today = datetime.date.today() 
-        days = today.day - self.dob.day
-        months = today.month - self.dob.month
-        years = today.year - self.dob.year
+        days = today.day - self.date_of_birth.day
+        months = today.month - self.date_of_birth.month
+        years = today.year - self.date_of_birth.year
         
         if days < 0:
             months -= 1
@@ -299,19 +303,21 @@ class Patient(BaseMedicalRecord):
         d = {
             'years': years,
             'months': (12*years) + months,
-            'days':(today - self.dob).days
+            'days':(today - self.date_of_birth).days
             }
 
         return ' '.join([str(d[precision]), 
                          str(precision) if with_units else ''])
         
-
-
     name = property(_get_name)
     full_name = property(_get_name)
     
     def __str__(self):
         return self.name
+
+    def __unicode__(self):
+        return unicode(self.full_name)
+
     
 
 
