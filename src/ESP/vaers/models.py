@@ -1,4 +1,5 @@
 #-*- coding:utf-8 -*-
+import datetime
 
 from django.db import models
 from django.db.models import signals, Q
@@ -13,6 +14,8 @@ from ESP.emr.models import Patient, Immunization, Encounter, LabResult, Provider
 from ESP.esp.choices import WORKFLOW_STATES
 from ESP.conf.models import Icd9, Loinc
 
+
+from utils import make_clustering_event_report_file
 import settings
 
 
@@ -33,6 +36,19 @@ def adverse_event_digest(**kw):
                                   event.category)
         event.digest = hashlib.sha224(clear_msg).hexdigest()
         event.save()
+
+
+class AdverseEventManager(models.Manager):
+    def cases_to_report(self):
+        now = datetime.datetime.now()
+        week_ago = now - datetime.timedelta(days=7)
+        
+        auto = Q(category='auto')
+        confirmed = Q(category='confirm', state='Q')
+        to_report_by_default = Q(category='default', state='AR', 
+                                 created_on__lte=week_ago)
+
+        return self.filter(auto | confirmed | to_report_by_default)
 
 
 class AdverseEvent(models.Model):
@@ -76,6 +92,31 @@ class AdverseEvent(models.Model):
         #cases.
         return AdverseEvent.fakes()[floor:ceiling]
 
+    @staticmethod
+    def send_notifications():
+        now = datetime.datetime.now()
+        three_days_ago = now - datetime.timedelta(days=3)
+
+        # Category 3 (cases that need clinicians confirmation for report)
+        must_confirm = Q(category='confirm') 
+
+        # Category 2 (cases that are reported by default, i.e, no comment
+        # from the clinician after 72 hours since the detection.
+        may_receive_comments = Q(category='default', created_on__gte=three_days_ago)
+        cases_to_notify = AdverseEvent.objects.filter(must_confirm|may_receive_comments)
+
+
+        for case in cases_to_notify:
+            try:
+                case.mail_notification()
+            except Exception, why:
+                print 'Failed to send in case %s.\nReason: %s' % (case.id, why)
+
+
+            
+
+
+
     
 
     fake_q = Q(immunizations__name='FAKE')
@@ -110,7 +151,6 @@ class AdverseEvent(models.Model):
                             result['event_description'],  
                             result['patient_age'], result['patient_gender']
                             ]]))
-                          
 
         return '\n'.join(buf)
 
@@ -191,6 +231,27 @@ class AdverseEvent(models.Model):
 class EncounterEvent(AdverseEvent):
     encounter = models.ForeignKey(Encounter)
 
+    @staticmethod
+    def write_fever_clustering_file_report():
+        fever_events = EncounterEvent.objects.filter(
+            matching_rule_explain__startswith='Fever')
+
+        make_clustering_event_report_file(
+            'clustering_fever_events.txt', fever_events)
+
+    @staticmethod
+    def write_diagnostics_clustering_file_report():
+        diagnostics_events = EncounterEvent.objects.exclude(
+            matching_rule_explain__startswith='Fever')
+
+        make_clustering_event_report_file(
+            'clustering_diagnostics_events.txt', diagnostics_events)
+
+
+        
+
+            
+
     def __unicode__(self):
         return u"Encounter Event %s: Patient %s, %s on %s" % (
             self.id, self.encounter.patient.full_name(), 
@@ -199,6 +260,11 @@ class EncounterEvent(AdverseEvent):
 
 class LabResultEvent(AdverseEvent):
     lab_result = models.ForeignKey(LabResult)
+
+    @staticmethod
+    def write_clustering_file_report():
+        make_clustering_event_report_file(
+            'clustering_lx_events.txt', LabResultEvent.objects.all())
     
     def __unicode__(self):
         return u"LabResult Event %s: Patient %s, %s on %s" % (
