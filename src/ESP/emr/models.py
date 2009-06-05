@@ -24,7 +24,7 @@ from ESP.conf.models import SourceSystem
 from ESP.conf.models import Loinc, Ndc, Cpt, Icd9, NativeCode
 from ESP.conf.models import Vaccine
 from ESP.utils import randomizer
-from ESP.utils.utils import log, date_from_str
+from ESP.utils.utils import log, date_from_str, str_from_date
 from ESP.localsettings import DATABASE_ENGINE
 
 
@@ -374,8 +374,8 @@ class LabResultManager(models.Manager):
         patient_in_immunization = '%s=%s' % (ppk, imm_fk) #Patient.id = Imm.ImmPatient_id
 
 
-        # Get "Full Name" for OrderDate and ImmunizationDate fields
-        lab_result_date_field = '%s.%s' % (lab_result_meta.db_table, 'date')
+        # Get "Full Name" for ResultDate and ImmunizationDate fields
+        lab_result_date_field = '%s.%s' % (lab_result_meta.db_table, 'result_date')
         imm_date_field = '%s.%s' % (imm_meta.db_table, 'date')
 
 
@@ -506,7 +506,7 @@ class LabResult(BasePatientRecord):
 
         # Make sure the patient was alive for the order...
         order_date = max(order_date, patient.dob)
-        lx = LabResult(patient=patient, order_date=order_date, date=when)
+        lx = LabResult(patient=patient, date=order_date, result_date=when)
         if save_on_db: lx.save()
         return lx
 
@@ -782,7 +782,7 @@ class Immunization(BasePatientRecord):
         that have caused it'''
         
         earliest_date = event.date - datetime.timedelta(days=days_prior)
-        
+                
         return Immunization.objects.filter(
             date__gte=earliest_date, date__lte=event.date,
             patient=patient
