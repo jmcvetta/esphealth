@@ -279,11 +279,11 @@ class Patient(BaseMedicalRecord):
     def _get_name(self):
         return u'%s, %s %s' % (self.last_name, self.first_name, self.middle_name)
 
-    def _get_age_str(self):
+    def _get_age_str(self, precision='years', with_units=False):
         '''Returns patient's age as a string'''
         if not self.date_of_birth: return None
         
-        today = datetime.datetime.today() 
+        today = datetime.date.today() 
         days = today.day - self.date_of_birth.day
         months = today.month - self.date_of_birth.month
         years = today.year - self.date_of_birth.year
@@ -295,10 +295,15 @@ class Patient(BaseMedicalRecord):
             years -= 1
             months += 12
                 
-        if years > 0:
-            return str(years) 
-        else:
-            return '%d Months' % months
+            
+        d = {
+            'years': years,
+            'months': (12*years) + months,
+            'days':(today - self.date_of_birth).days
+            }
+
+        return ' '.join([str(d[precision]), 
+                         str(precision) if with_units else ''])
         
     def _get_dob(self):
         '''Here just because dob still needs to be changed from a
