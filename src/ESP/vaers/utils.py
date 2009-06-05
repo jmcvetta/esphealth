@@ -1,8 +1,4 @@
 from django.contrib.sites.models import Site
-from django.core.mail import send_mail
-from django.core.urlresolvers import reverse
-from django.template.loader import get_template
-from django.template import Context
 from django.db.models import Q
 
 from ESP.vaers.models import AdverseEvent
@@ -22,33 +18,11 @@ def send_notifications():
     may_receive_comments = Q(category='default', created_on__gte=three_days_ago)
 
     cases_to_notify = AdverseEvent.objects.filter(must_confirm|may_receive_comments)
-    current_site = Site.objects.get_current()
+
 
     for case in cases_to_notify:
         try:
-            provider = case.patient.DemogProvider
-            patient_name = ' '.join([case.patient.DemogFirst_Name, 
-                                     case.patient.DemogLast_Name])
-            immunization = case.immunization
-            imm_date = datetime.datetime.strptime(immunization.ImmDate, 
-                                                  '%Y%m%d')
-            params = {
-                'provider':provider,
-                'patient_name': patient_name,
-                'immunization': immunization,
-                'immunization_date': imm_date,
-                'url':'http://%s%s' % (current_site, reverse(
-                        'verify_case', kwargs={'key':case.digest})),
-                'misdirected_email_contact':settings.VAERS_EMAIL_SENDER
-                }
-            
-            t = get_template('email_messages/notify_case.txt')
-            msg = t.render(Context(params))
-            send_mail(settings.VAERS_EMAIL_SUBJECT, msg,
-                      settings.VAERS_EMAIL_SENDER, 
-                      [settings.VAERS_EMAIL_RECIPIENT],
-                      fail_silently=False)
-
+            case.mail_notification()
         except Exception, why:
             print 'Failed to send in case %s.\nReason: %s' % (case.id, why)
 

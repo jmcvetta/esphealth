@@ -3,17 +3,20 @@
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import HttpResponseNotFound, HttpResponseForbidden
+from django.http import HttpResponseNotAllowed, Http404
 from django.core.urlresolvers import reverse
+from django.core.paginator import Paginator
 from django.shortcuts import render_to_response
 
 from django.views.generic.simple import direct_to_template
 from django.contrib.sites.models import Site
 
-from ESP.vaers.models import AdverseEvent, LabResultEvent, ProviderComment
-from ESP.esp.models import Lx, Demog, Immunization
+from ESP.vaers.models import AdverseEvent, ProviderComment
 from ESP.vaers.utils import send_notifications
 from ESP.vaers.forms import CaseConfirmForm
-from ESP.vaers import reports
+
+from ESP.utils.utils import log, Flexigrid
+
 
 import datetime
 
@@ -21,17 +24,69 @@ PAGE_TEMPLATE_DIR = 'pages/vaers/'
 WIDGET_TEMPLATE_DIR = 'widgets/vaers/'
 
 def index(request):
-    return HttpResponse('ok')
+     # Complete query and present results
+    cases = AdverseEvent.paginated()
+    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'home.html',
+                              {'cases':cases,
+                               'page':1
+                               })
+
+def list_cases(request):
+    # This is a ajax call. Our response contains only the result page.
+
+    # Page may be passed in the query string and must be a positive number
+    
+    grid = Flexigrid(request)
+    page = grid.page
+    
+
+    # Complete query and present results
+    cases = AdverseEvent.paginated(page=int(page))
+    total = AdverseEvent.objects.all().count()
+    return direct_to_template(request, WIDGET_TEMPLATE_DIR +'case_grid.json',
+                              {'cases':cases,
+                               'total':total,
+                               'page':page},
+                              mimetype='application/json'
+                              )
+
+
+
+def detect(request):
+    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'detect.html')
+
+def notify(request, id):
+
+    case = AdverseEvent.by_id(id)
+    if request.method == 'POST' and case:
+        try:
+            assert case.is_fake()
+            email = request.POST.get('email', None)
+            case.mail_notification(email_address=email)
+            result = 'Successfully sent report on case %s to %s' % (
+                case.id, email)
+            return HttpResponse(result)
+        except Exception, why:
+            log.warn('Exception during email notification: %s' % why)
+    else:
+        return direct_to_template(request, PAGE_TEMPLATE_DIR + 'notify.html')
+
+def report(request):
+    cases = AdverseEvent.objects.all()
+    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'report.html',
+                              {'cases':cases})
+
+                              
 
 
 def verify(request, key):
 
-    case = AdverseEvent.objects.by_digest(key)
-    if not case: return HttpResponseNotFound('Case not found')
+    case = AdverseEvent.by_digest(key)
+    if not case: raise Http404
+
     if case.category == 'auto': 
         return HttpResponseForbidden('This case will be automatically reported')
-
-    provider = case.patient.DemogProvider
+    provider = case.provider()
     if not provider: return HttpResponseForbidden('Not for your eyes')
 
 
@@ -56,27 +111,27 @@ def verify(request, key):
 
 
 def case_details(request, id):
+    
+    case = AdverseEvent.by_id(id)
+    if not case: raise Http404
 
-    case = AdverseEvent.objects.by_id(id)
-    if not case: return HttpResponseNotFound('Case not found')
+
+
     if case.category == 'auto': 
         return HttpResponseForbidden('This case will be automatically reported')
-
-    provider = case.patient.DemogProvider
+    
+    provider = case.provider()
     if not provider: return HttpResponseForbidden('Not for your eyes')
     
     authorized_id = request.COOKIES.get('confirmed_id', None)
-
+    
     if not (authorized_id and int(authorized_id)==provider.id):
         return HttpResponseForbidden('You have not confirmed you are the care '\
                                          'provider for this patient. Please go '\
                                          'back to the confirmation step.')
 
 
-    if request.method == 'POST':
-        form = CaseConfirmForm(request.POST) 
-    else:
-        form =CaseConfirmForm()
+    form = CaseConfirmForm(request.POST) if request.method == 'POST' else CaseConfirmForm()
 
     
     if request.method == 'POST' and form.is_valid():
@@ -99,20 +154,11 @@ def case_details(request, id):
         return HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
             
     else:
-        parse_date = datetime.datetime.strptime # Just a shorter name. 
-        case.immunization.date = parse_date(case.immunization.ImmDate, '%Y%m%d')
-        encounter_date = getattr(case, 'encounter', None) and parse_date(
-            case.encounter.EncEncounter_Date, '%Y%m%d')
-        lab_result_date = getattr(case, 'lab_result', None) and parse_date(
-            case.lab_result.LxDate_of_result, '%Y%m%d')
-
         comments = ProviderComment.objects.filter(author=provider,
                                                   event=case).order_by('-created_on')
 
         return direct_to_template(request, PAGE_TEMPLATE_DIR + 'present.html', {
                 'case':case,
-                'encounter_date': encounter_date,
-                'lab_result_date': lab_result_date,
                 'comments':comments,
                 'form':form
                 })

@@ -1,198 +1,189 @@
 #-*- coding:utf-8 -*-
 
-from ESP.esp.models import Vaccine, ImmunizationManufacturer
-from ESP.conf.models import Icd9
-
+from ESP.conf.models import Icd9, Vaccine, ImmunizationManufacturer
 from ESP.vaers.models import DiagnosticsEventRule
 
 # Constants defined in the VAERS documents.
 TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
-TIME_WINDOW_POST_EVENT = 7 # One week to report
+TIME_WINDOW_POST_EVENT = 30 # One week to report
 
 VAERS_LAB_RESULTS = {
-    'hemoglobin':[{
+    '718-7':{
+        'name':'Hemoglobin',
+        'criteria':[{
             'trigger':'X<10',
             'unit':'g/L',
             'exclude_if':('>','LKV*0.8'),
             'category':'confirm'
-            }],
-    
-    'hb':[{
-            'trigger':'X<10',
-            'unit':'g/L',
-            'exclude_if':('>','LKV*0.8'),
-            'category':'confirm'
-            }],
-    
-    'wbc':[{
+            }]
+        },
+
+    '26464-8':{
+        'name':'WBC Count',
+        'criteria':[{
             'trigger':'X<3.5',
             'unit':'x109/L',
             'exclude_if':('>','LKV*0.7'),
             'category':'confirm'
-            }],
+            }]
+        },
 
-    'white blood':[{
-            'trigger':'X<3.5',
-            'unit':'x109/L',
-            'exclude_if':('>','LKV*0.7'),
-            'category':'confirm'
-            }],
-
-    'neutrophil':[{
+ 
+    '26499-4':{
+        'name':'Neutrophils',
+        'criteria':[{
             'trigger':'X<2000',
             'unit':'x109/L',
             'exclude_if':('>','LKV*0.7'),
             'category':'confirm'
-            }],
+            }]
+        },
 
-    'eos':[{
+    '26449-9':{
+        'name':'Eosinophils',
+        'criteria':[{
             'trigger':'X>600',
             'unit':'x109/L',
             'exclude_if':('<','LKV*1.2'),
             'category':'confirm'
-            }],
+            }]
+        },
 
-    'lymph':[{
+    '26474-7':{
+        'name':'Lymphocytes',
+        'criteria':[{
             'trigger':'X<1000',
             'unit':'x109/L',
             'exclude_if':('>','LKV*0.7'),
             'category':'confirm'
-            }],
+            }]
+        },
 
-    'platelet':[{
+    '26515-7':{
+        'name':'Platelet count',
+        'criteria':[{
             'trigger':'X<150',
             'unit':'x109/L',
             'exclude_if':('>','LKV*0.7'),
             'category':'confirm'
-            }],
+            }]
+        },
 
-    'plt count':[{
-            'trigger':'X<100',
-            'unit':'x109/L',
-            'exclude_if':('>','LKV*0.7'),
-            'category':'default'
-            }],
 
-    'creatinine':[{
+    '2160-0':{
+        'name':'Creatinine',
+        'criteria':[{
             'trigger':'X>1.5',
             'unit':'mg/dL',
             'exclude_if':('<','LKV*1.3'),
             'category':'confirm'
-            }],
+            }]
+        },
 
-    'alt':[{
+    '1742-6':{
+        'name':'ALT',
+        'criteria':[{
             'trigger':'X>120',
             'unit':'IU/L',
             'exclude_if':('<','LKV*1.3'),
             'category':'confirm'
-     }],
+     }]
+        },
 
-    'alanine':[{
-            'trigger':'X>120',
-            'unit':'IU/L',
-            'exclude_if':('<','LKV*1.3'),
-            'category':'confirm'
-            }],
 
-    'sgpt':[{
-            'trigger':'X>120',
-            'unit':'IU/L',
-            'exclude_if':('<','LKV*1.3'),
-            'category':'confirm'
-            }],
 
-    'ast':[{
+    '1920-8':{
+        'name':'AST',
+        'criteria':[{
             'trigger':'X>100',
             'unit':'IU/L',
             'exclude_if':('<','LKV*1.3'),
             'category':'confirm'
-            }],
+            }]
+        },
 
-    'aspartate':[{
-            'trigger':'X>100',
-            'unit':'IU/L',
-            'exclude_if':('<','LKV*1.3'),
-            'category':'confirm'
-            }],
+    
 
-    'sgot':[{
-            'trigger':'X>100',
-            'unit':'IU/L',
-            'exclude_if':('<','LKV*1.3'),
-            'category':'confirm'
-            }],
-
-    'bili':[{
+    '33899-6':{
+        'name':'Bilirubin',
+        'criteria':[{
             'trigger':'X>2.0',
             'unit':'mg/dL',
             'exclude_if':('<','LKV*1.2'),
             'category':'confirm'
-            }],
+            }]
+        },
 
-    'alk':[{
+    '6768-6':{
+        'name':'ALK',
+        'criteria':[{
             'trigger':'X>200',
             'unit':'IU/L',
             'exclude_if':('<','LKV*1.3'),
             'category':'confirm'
-            }],
+            }]
+        },
 
-    'ptt':[{
+    '14979-9':{
+        'name':'PTT',
+        'criteria':[{
             'trigger':'X>60',
             'unit':'s',
             'exclude_if':('<','LKV*1.3'),
             'category':'confirm'
-            }],
+            }]
+        },
 
-    'thromboplastin':[{
-            'trigger':'X>60',
-            'unit':'s',
-            'exclude_if':('<','LKV*1.3'),
-            'category':'confirm'
-            }],
 
-    'creatine kinase':[{
+    '2157-6':{
+        'name':'Creatine kinase',
+        'criteria':[{
             'trigger':'X>500',
             'unit':'U/L',
             'exclude_if':('<','LKV*1.3'),
             'category':'confirm'
-            }],
+            }]
+        },
 
-    'ck':[{
-            'trigger':'X>500',
-            'unit':'U/L',
-            'exclude_if':('<','LKV*1.3'),
-            'category':'confirm'
-            }],
-
-    'glucose':[{
+    '2345-7':{
+        'name':'Glucose',
+        'criteria':[{
             'trigger':'X>200',
             'unit':'mg/dL',
             'exclude_if':('<','LKV*2.0'),
             'category':'confirm'
-            }],
+            }]
+        },
 
-    'potassium':[{
+    '2823-3':{
+        'name':'Potassium',
+        'criteria':[{
             'trigger':'X>5.5',
             'unit':'mmol/L',
             'exclude_if':('<','LKV+0.5'),
             'category':'confirm'
-            }],
+            }]
+        },
 
-    'sodium':[
-        {
-            'trigger':'X>150',
-            'unit':'mmol/L',
-            'exclude_if':('<','LKV+5'),
-            'category':'confirm'
-            },
-        {
-            'trigger':'X<130',
-            'unit':'mmol/L',
-            'exclude_if':('>','LKV-5'),
-            'category':'confirm'
-            }
-        ]
+    '2951-2':{
+        'name':'Sodium',
+        'criteria':
+            [{
+                'trigger':'X>150',
+                'unit':'mmol/L',
+                'exclude_if':('<','LKV+5'),
+                'category':'confirm'
+                },
+             {
+                'trigger':'X<130',
+                'unit':'mmol/L',
+                'exclude_if':('>','LKV-5'),
+                'category':'confirm'
+                }
+             ]
+        }
     }
+
 
 
 VAERS_DIAGNOSTICS = {
@@ -517,7 +508,7 @@ def define_active_rules():
 
 
     # Deactivating ALL Rules and replacing them with the current set
-    DiagnosticsEventRule.objects.deactivate_all()
+    DiagnosticsEventRule.deactivate_all()
 
 
     for k, v in VAERS_DIAGNOSTICS.items():

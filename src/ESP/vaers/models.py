@@ -2,12 +2,18 @@
 
 from django.db import models
 from django.db.models import signals, Q
+from django.core.mail import send_mail
+from django.core.urlresolvers import reverse
+from django.template import Context
+from django.template.loader import get_template
+from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
-
-from ESP.esp.models import Demog, Immunization, Enc, Lx, Provider
+from ESP.emr.models import Patient, Immunization, Encounter, LabResult, Provider
 from ESP.esp.choices import WORKFLOW_STATES
-from ESP.conf.models import Icd9
+from ESP.conf.models import Icd9, Loinc
+
+import settings
 
 
 ADVERSE_EVENT_CATEGORIES = [
@@ -20,112 +26,184 @@ ADVERSE_EVENT_CATEGORIES = [
 def adverse_event_digest(**kw):
     import hashlib
     event = kw.get('instance')
+
     if not event.digest:
-        clear_msg = '%s%s%s%s' % (event.id, event.patient, 
-                                  event.immunization.id, event.category)
+        clear_msg = '%s%s%s%s' % (event.id, event.immunizations, 
+                                  event.matching_rule_explain, 
+                                  event.category)
         event.digest = hashlib.sha224(clear_msg).hexdigest()
         event.save()
 
 
-
-class AdverseEventManager(models.Manager):
-
-    def by_id(self, key):
-        try:
-            return self.get(id=key)
-        except:
-            return None
-        
-    def by_digest(self, key):
-        try:
-            return self.get(digest=key)
-        except:
-            return None
-
 class AdverseEvent(models.Model):
-    content_type = models.ForeignKey(ContentType, editable=False, null=True)
-    immunization = models.ForeignKey(Immunization)
+    immunizations = models.ManyToManyField(Immunization)
     matching_rule_explain = models.CharField(max_length=200)
     category = models.CharField(max_length=20, choices=ADVERSE_EVENT_CATEGORIES)
     digest = models.CharField(max_length=200, null=True)
     state = models.SlugField(max_length=2, choices=WORKFLOW_STATES, default='AR')
-
+    date = models.DateField()
     created_on = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    
+    # To provide polymorphic lookups. Take a look at:
+    # http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
+    content_type = models.ForeignKey(ContentType)
 
-    fake_q = Q(immunization__ImmPatient__DemogFirst_Name__startswith='FAKE')
+    @staticmethod    
+    def by_id(id):
+        try:
+            klass = AdverseEvent.objects.get(id=id).content_type
+            return klass.model_class().objects.get(id=id)
+        except:
+            return None
 
-    @classmethod
-    def fakes(cls):
-        return cls.objects.filter(AdverseEvent.fake_q)
-
-    @classmethod
-    def delete_fakes(cls):
-        cls.objects.filter(AdverseEvent.fake_q).delete()
-
-
-    def save(self):
-        if(not self.content_type):
-            klass = self.__class__
-            self.content_type = ContentType.objects.get_for_model(klass)
-        self.save_base()
-
-
-
-class FeverEvent(AdverseEvent):
-    temperature = models.FloatField('Temperature')
-    encounter = models.ForeignKey(Enc)
-
-    explain_string = 'Patient with %3.1fF fever'
+    @staticmethod    
+    def by_digest(key):
+        try:
+            klass = AdverseEvent.objects.get(digest=key).content_type
+            return klass.model_class().objects.get(digest=key)
+        except:
+            return None
 
     @staticmethod
-    def make_fake(immunization, encounter):
+    def paginated(page=1, results_per_page=100):
+        # Set limits for query
+        floor = max(page-1, 0)*results_per_page
+        ceiling = floor+results_per_page
 
-        assert encounter.is_fake()
-        assert immunization.is_fake()
-        assert immunization.ImmPatient.is_fake()
+        #We are only getting the fake ones. There is no possible case
+        #in our application where we need paginated results for real
+        #cases.
+        return AdverseEvent.fakes()[floor:ceiling]
 
-        temp = randomizer.fever_temperature() 
-        
-        return FeverEvent.objects.create(
-            immunization=immunization,
-            temperature=temp, 
-            matching_rule_explain = FeverEvent.explain_string % temp
-            )
+    
+
+    fake_q = Q(immunizations__name='FAKE')
+
+
+    def temporal_report(self):
+        results = []
+        for imm in self.immunizations.all():
+            patient = imm.patient
+            results.append({
+                    'id':imm.imm_id_num,
+                    'vaccine_date': imm.date, 
+                    'event_date':self.date,
+                    'days_to_event':(self.date - imm.date).days,
+                    'immunization_name':imm.name, 
+                    'event_description':self.matching_rule_explain,
+                    'patient_age':patient._get_age_str(),
+                    'patient_gender':patient.gender
+                    })
+
+        return results
+
+    
+    def render_temporal_report(self):
+        buf = []
+        for result in self.temporal_report():
+            buf.append(
+                '\t'.join([str(x) for x in [
+                            result['id'], result['vaccine_date'], 
+                            result['event_date'], result['days_to_event'],
+                            result['immunization_name'], 
+                            result['event_description'],  
+                            result['patient_age'], result['patient_gender']
+                            ]]))
+                          
+
+        return '\n'.join(buf)
+
+                
+
             
 
-class DiagnosticsEvent(AdverseEvent):
-    encounter = models.ForeignKey(Enc)
-    icd9 = models.ForeignKey(Icd9)   
+    def is_fake(self):
+        should_be_fake = any(
+            [imm.is_fake() for imm in self.immunizations.all()])
+        really_fake = all(
+            [imm.is_fake() for imm in self.immunizations.all()])
 
-    explain_string = 'Patient diagnosed with %s'
+        if should_be_fake and not really_fake:
+            raise ValueError, 'Not all immunizations in this encounter are fake. Why?'
+
+        return really_fake
+
+    def patient(self):
+        return self.immunizations.all()[0].patient
+
+    def provider(self):
+        return self.patient().pcp
+
+    def verification_url(self):
+        return reverse('verify_case', kwargs={'key':self.digest})
+
+
+    def mail_notification(self, email_address=None):
+        from django.contrib.sites.models import Site
+        current_site = Site.objects.get_current()
+
+        recipient = email_address or settings.EMAIL_RECIPIENT
+
+        params = {
+            'case': self,
+            'provider': self.provider(),
+            'patient': self.patient(),
+            'url':'http://%s%s' % (current_site, self.verification_url()),
+            'misdirected_email_contact':settings.EMAIL_SENDER
+            }
+
+        templates = {
+            'default':'email_messages/notify_case.txt',
+            'confirm':'email_messages/notify_category_three.txt'
+            }
+
+        
+        msg = get_template(templates[self.category]).render(Context(params))
+
+
+        # In case it is a fake event, the notification should include
+        # a warning.  That message is in the template notify_demo.txt
+        # and is prepended to the real message.
+        if self.is_fake(): 
+            demo_warning_msg = get_template('email_messages/notify_demo.txt').render({}) 
+            msg = demo_warning_msg + msg
+            
+        send_mail(settings.EMAIL_SUBJECT, msg,
+                  settings.EMAIL_SENDER, 
+                  [recipient],
+                  fail_silently=False)
+
+
+            
 
     @staticmethod
-    def make_fake(immunization, encounter, icd9):
+    def fakes():
+        return AdverseEvent.objects.filter(AdverseEvent.fake_q)
 
-        assert encounter.is_fake()
-        assert immunization.is_fake()
-        assert immunization.ImmPatient.is_fake()
-        
-        explain_rule = DiagnosticsEvent.explain_string % icd9.name
+    @staticmethod
+    def delete_fakes():
+        AdverseEvent.fakes().delete()
 
-        return DiagnosticsEvent.objects.create(
-            immunization=immunization, matching_rule_explain = explain_rule,
-            encounter=encounter, icd9=icd9
-            )
+    
 
+    
+class EncounterEvent(AdverseEvent):
+    encounter = models.ForeignKey(Encounter)
+
+    def __unicode__(self):
+        return u"Encounter Event %s: Patient %s, %s on %s" % (
+            self.id, self.encounter.patient.full_name(), 
+            self.matching_rule_explain, self.date)
 
 
 class LabResultEvent(AdverseEvent):
-    lab_result = models.ForeignKey(Lx)
-
-
-ADVERSE_EVENT_CLASSES = {
-    'fever':FeverEvent,
-    'diagnostics':DiagnosticsEvent,
-    'lab_result': LabResultEvent
-    }
-
+    lab_result = models.ForeignKey(LabResult)
+    
+    def __unicode__(self):
+        return u"LabResult Event %s: Patient %s, %s on %s" % (
+            self.id, self.lab_result.patient.full_name(), 
+            self.matching_rule_explain, self.date)
 
 
 
@@ -139,8 +217,7 @@ class ProviderComment(models.Model):
 
 
 
-signals.post_save.connect(adverse_event_digest, sender=DiagnosticsEvent)
-signals.post_save.connect(adverse_event_digest, sender=FeverEvent)
+signals.post_save.connect(adverse_event_digest, sender=EncounterEvent)
 signals.post_save.connect(adverse_event_digest, sender=LabResultEvent)
 
 
@@ -148,8 +225,7 @@ signals.post_save.connect(adverse_event_digest, sender=LabResultEvent)
 
 class Rule(models.Model):
     name = models.CharField(max_length=100)
-    category = models.CharField(max_length=60,
-                                choices=ADVERSE_EVENT_CATEGORIES)
+    category = models.CharField(max_length=60, choices=ADVERSE_EVENT_CATEGORIES)
     in_use = models.BooleanField(default=False)
     
     def activate(self):
@@ -162,18 +238,20 @@ class Rule(models.Model):
             self.in_use = False
             self.save()
     
+    @classmethod
+    def deactivate_all(cls):
+        cls.objects.all().update(in_use=False)
 
 
 
-class DiagnosticsEventManager(models.Manager):
-    def deactivate_all(self):
-        self.all().update(in_use=False)
         
 class DiagnosticsEventRule(Rule):
 
     @staticmethod
     def all_active():
         return DiagnosticsEventRule.objects.filter(in_use=True)
+
+
     
     @staticmethod
     def by_name(name, only_if_active=True):
@@ -185,7 +263,7 @@ class DiagnosticsEventRule(Rule):
     def random():
         return DiagnosticsEventRule.objects.order_by('?')[0]
  
-    objects = DiagnosticsEventManager()
+
     source = models.CharField(max_length=30, null=True)
     ignored_if_past_occurrence = models.PositiveIntegerField(null=True)
     heuristic_defining_codes = models.ManyToManyField(
@@ -194,8 +272,22 @@ class DiagnosticsEventRule(Rule):
         Icd9, related_name='discarding_icd9_code_set')
 
     
+    def __unicode__(self):
+        return unicode(self.name)
+
+class LabResultEventRule(Rule):
+    @staticmethod
+    def all_active():
+        return LabResultEventRule.objects.filter(in_use=True)
     
+    @staticmethod
+    def by_name(name, only_if_active=True):
+        q = LabResultEventRule.objects.filter(name=name)
+        if only_if_active: q = q.filter(in_use=True)
+        return q
 
-class LxEventRule(Rule):
-    lab_result = models.ForeignKey(Lx)
+    @staticmethod
+    def random():
+        return LabResultEventRule.objects.order_by('?')[0]
 
+    loinc = models.ForeignKey(Loinc)
