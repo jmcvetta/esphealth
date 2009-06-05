@@ -1,5 +1,6 @@
 #-*- coding:utf-8 -*-
 import datetime
+import os
 
 from django.db import models
 from django.db.models import signals, Q
@@ -232,20 +233,20 @@ class EncounterEvent(AdverseEvent):
     encounter = models.ForeignKey(Encounter)
 
     @staticmethod
-    def write_fever_clustering_file_report():
+    def write_fever_clustering_file_report(folder):
         fever_events = EncounterEvent.objects.filter(
             matching_rule_explain__startswith='Patient had')
 
         make_clustering_event_report_file(
-            'clustering_fever_events.txt', fever_events)
+            os.path.join(folder, 'clustering_fever_events.txt'), fever_events)
 
     @staticmethod
-    def write_diagnostics_clustering_file_report():
+    def write_diagnostics_clustering_file_report(folder):
         diagnostics_events = EncounterEvent.objects.exclude(
             matching_rule_explain__startswith='Patient had')
 
         make_clustering_event_report_file(
-            'clustering_diagnostics_events.txt', diagnostics_events)
+            os.path.join(folder, 'clustering_diagnostics_events.txt'), diagnostics_events)
 
 
         
@@ -262,9 +263,9 @@ class LabResultEvent(AdverseEvent):
     lab_result = models.ForeignKey(LabResult)
 
     @staticmethod
-    def write_clustering_file_report():
+    def write_clustering_file_report(folder):
         make_clustering_event_report_file(
-            'clustering_lx_events.txt', LabResultEvent.objects.all())
+            os.path.join(folder, 'clustering_lx_events.txt'), LabResultEvent.objects.all())
     
     def __unicode__(self):
         return u"LabResult Event %s: Patient %s, %s on %s" % (
