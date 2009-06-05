@@ -1,9 +1,8 @@
-from django.contrib.sites.models import Site
-from django.db.models import Q
-
-from ESP import settings
 
 import datetime
+
+from django.contrib.sites.models import Site
+from django.db.models import Q
 
 def make_clustering_event_report_file(filename, events):
     f = open(filename, 'w')
