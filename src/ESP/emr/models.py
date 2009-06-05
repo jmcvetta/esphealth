@@ -281,12 +281,12 @@ class Patient(BaseMedicalRecord):
 
     def _get_age_str(self, precision='years', with_units=False):
         '''Returns patient's age as a string'''
-        if not self.date_of_birth: return None
+        if not self.dob: return None
         
         today = datetime.date.today() 
-        days = today.day - self.date_of_birth.day
-        months = today.month - self.date_of_birth.month
-        years = today.year - self.date_of_birth.year
+        days = today.day - self.dob.day
+        months = today.month - self.dob.month
+        years = today.year - self.dob.year
         
         if days < 0:
             months -= 1
@@ -299,30 +299,12 @@ class Patient(BaseMedicalRecord):
         d = {
             'years': years,
             'months': (12*years) + months,
-            'days':(today - self.date_of_birth).days
+            'days':(today - self.dob).days
             }
 
         return ' '.join([str(d[precision]), 
                          str(precision) if with_units else ''])
         
-    def _get_dob(self):
-        '''Here just because dob still needs to be changed from a
-        CharField to a DateField. Dump This afterwards.'''
-        try:
-            self.dob.day
-            return self.dob
-        except:
-            return date_from_str(self.dob)
-
-    
-    def _set_dob(self, value):
-        try:
-            self.dob = value
-            assert self.dob.day == value.day
-        except:
-            self.dob = str_from_date(value)
-
-    date_of_birth = property(_get_dob, _set_dob)
 
 
     name = property(_get_name)
@@ -356,7 +338,8 @@ class BasePatientRecord(BaseMedicalRecord):
 
 
 class LabResultManager(models.Manager):
-    def following_vaccination(self, days_after, loinc=None, begin_date=None, end_date=None):
+    def following_vaccination(self, days_after, loinc=None, include_same_day=False,
+                              begin_date=None, end_date=None):
 
         begin_date = begin_date or EPOCH
         end_date = end_date or datetime.date.today()
@@ -379,8 +362,8 @@ class LabResultManager(models.Manager):
         patient_in_immunization = '%s=%s' % (ppk, imm_fk) #Patient.id = Imm.ImmPatient_id
 
 
-        # Get "Full Name" for ResultDate and ImmunizationDate fields
-        lab_result_date_field = '%s.%s' % (lab_result_meta.db_table, 'result_date')
+        # Get "Full Name" for order date and immunization Date fields
+        lab_result_date_field = '%s.%s' % (lab_result_meta.db_table, 'date')
         imm_date_field = '%s.%s' % (imm_meta.db_table, 'date')
 
 
@@ -410,10 +393,13 @@ class LabResultManager(models.Manager):
         # the expected value, so we create the time window constraint
         max_days = '%s <= %s' % (date_cmp_select % params, str(days_after))
         same_day = (date_cmp_select % params) + ' >= 0'
+        next_day = (date_cmp_select % params) + ' >= 1'
+
+        when_to_start = (same_day and include_same_day) or next_day
 
         # This is our minimum WHERE clause
         where_clauses = [patient_in_encounter, patient_in_immunization, 
-                         max_days, same_day]
+                         max_days, when_to_start]
 
         
         # begin_date and end_date are the dates that are give the date
@@ -582,7 +568,8 @@ class Prescription(BasePatientRecord):
 
 
 class EncounterManager(models.Manager):
-    def following_vaccination(self, days_after, begin_date=None, end_date=None):
+    def following_vaccination(self, days_after, include_same_day=False,
+                              begin_date=None, end_date=None):
 
         begin_date = begin_date or EPOCH
         end_date = end_date or datetime.date.today()
@@ -639,10 +626,14 @@ class EncounterManager(models.Manager):
         # the expected value, so we create the time window constraint
         max_days = '%s <= %s' % (date_cmp_select % params, str(days_after))
         same_day = (date_cmp_select % params) + ' >= 0'
+        next_day = (date_cmp_select % params) + ' >= 1'
+
+        when_to_start = (same_day and include_same_day) or next_day
 
         # This is our minimum WHERE clause
         where_clauses = [patient_in_encounter, patient_in_immunization, 
-                         max_days, same_day]
+                         max_days, when_to_start]
+
 
 
         # begin_date and end_date are the dates that are give the date

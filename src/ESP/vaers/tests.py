@@ -10,7 +10,7 @@ MESSAGE_DIR = os.path.realpath(os.path.join(
 
 # Models
 from ESP.conf.models import Icd9, Loinc, NativeCode
-from ESP.esp.models import Demog, Immunization, Lx, Enc
+from ESP.emr.models import Patient, Immunization, LabResult, Encounter
 from ESP.vaers.models import AdverseEvent
 
 
@@ -54,20 +54,20 @@ class TestFake(unittest.TestCase):
         clear()
 
     def testAllPatientsHaveProviders(self):
-        for patient in Demog.fakes():
-            provider = patient.DemogProvider
+        for patient in Patient.fakes():
+            provider = patient.pcp
             self.assert_(provider, 'Does not have a provider')
             self.assert_(provider.is_fake(), 'Provider is not fake')
     
     def testAddVaccination(self):
-        random_patient = Demog.fakes().order_by('?')[0]
+        random_patient = Patient.fakes().order_by('?')[0]
         history = ImmunizationHistory(random_patient)
         imm = history.add_immunization()
         self.assert_(Immunization.objects.count() == 1)
-        self.assert_(imm.ImmPatient == random_patient)
+        self.assert_(imm.patient == random_patient)
 
     def testImmunizationIsCandidate(self):
-        random_patient = Demog.fakes().order_by('?')[0]
+        random_patient = Patient.fakes().order_by('?')[0]
         history = ImmunizationHistory(random_patient)
         imm = history.add_immunization()
         ev = Vaers(imm)
@@ -78,24 +78,19 @@ class TestFake(unittest.TestCase):
         earliest_date = ev.matching_encounter.date - datetime.timedelta(days=TIME_WINDOW_POST_EVENT)
         
         candidates = Immunization.objects.filter(
-            ImmPatient=random_patient,
-            ImmDate__gte=earliest_date.strftime('%Y%m%d'),
-            ImmDate__lte=ev.matching_encounter.date.strftime('%Y%m%d')
+            patient=random_patient,
+            date__gte=earliest_date,
+            date__lte=ev.matching_encounter.date
             )
 
         self.assert_(imm in candidates)
         
 
 
-        
-        
-
-
-
 class TestClearing(unittest.TestCase):
     def testClear(self):
         clear()
-        for klass in [Immunization, Enc, Lx, AdverseEvent]:
+        for klass in [Immunization, Encounter, LabResult, AdverseEvent]:
             self.failIf(klass.fakes().count() != 0)
 
         
@@ -115,7 +110,7 @@ class TestRuleEngine(unittest.TestCase):
             # Cause an adverse reaction to one random "victim".
 
             # Find proper patient, immunization and code
-            victim = Demog.random()
+            victim = Patient.random()
             imm = ImmunizationHistory(victim).add_immunization()
             code = random.choice(rule.heuristic_defining_codes.all())
             
@@ -143,7 +138,7 @@ class TestRuleEngine(unittest.TestCase):
             # Cause an adverse reaction to one random "victim".
 
             # Find proper patient, immunization and code
-            victim = Demog.random()
+            victim = Patient.random()
             imm = ImmunizationHistory(victim).add_immunization()
             code = Icd9.objects.exclude(code__in=rule.heuristic_defining_codes.all()).order_by('?')[0]
             
@@ -171,7 +166,7 @@ class TestRuleEngine(unittest.TestCase):
             # Cause an adverse reaction to one random "victim".
 
             # Find proper patient, immunization and code
-            victim = Demog.random()
+            victim = Patient.random()
             imm = ImmunizationHistory(victim).add_immunization()
             code = random.choice(rule.heuristic_defining_codes.all())
             
@@ -214,7 +209,7 @@ class TestRuleEngine(unittest.TestCase):
             # Cause an adverse reaction to one random "victim".
 
             # Find proper patient, immunization and code
-            victim = Demog.random()
+            victim = Patient.random()
             imm = ImmunizationHistory(victim).add_immunization()
             code = random.choice(rule.heuristic_defining_codes.all())
             
@@ -245,7 +240,7 @@ class TestRuleEngine(unittest.TestCase):
         heuristic = FEVER_HEURISTIC
         
         # Find proper patient, immunization and code
-        victim = Demog.random()
+        victim = Patient.random()
         imm = ImmunizationHistory(victim).add_immunization()
                 
         # Create the adverse event
@@ -266,7 +261,7 @@ class TestRuleEngine(unittest.TestCase):
         heuristic = FEVER_HEURISTIC
         
         # Find proper patient, immunization and code
-        victim = Demog.random()
+        victim = Patient.random()
         imm = ImmunizationHistory(victim).add_immunization()
                 
         # Create the adverse event
@@ -284,7 +279,7 @@ class TestRuleEngine(unittest.TestCase):
         for heuristic in LAB_HEURISTICS:
             loinc = heuristic.loinc
             # Find patient and apply immunization
-            victim = Demog.random()
+            victim = Patient.random()
             imm = ImmunizationHistory(victim).add_immunization()
 
             # Create the adverse event
@@ -308,7 +303,7 @@ class TestRuleEngine(unittest.TestCase):
         for heuristic in LAB_HEURISTICS:
             clear()
             # Find patient and apply immunization
-            victim = Demog.random()
+            victim = Patient.random()
             imm = ImmunizationHistory(victim).add_immunization()
 
             # To check if the negative detection is ok, we will add
@@ -343,7 +338,7 @@ class TestRuleEngine(unittest.TestCase):
         for heuristic in LAB_HEURISTICS:
             loinc = heuristic.loinc
             # Find patient and apply immunization
-            victim = Demog.random()
+            victim = Patient.random()
             imm = ImmunizationHistory(victim).add_immunization()
 
             # Create the adverse event

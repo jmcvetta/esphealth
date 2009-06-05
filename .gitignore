@@ -2,6 +2,7 @@
 /.pydevproject
 src/ESP/*.db
 src/ESP/.ropeproject
+src/ESP/assets
 src/ESP/localsettings.py
 src/ESP/messages
 src/ESP/vaers/*.pyc

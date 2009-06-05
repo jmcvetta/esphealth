@@ -234,7 +234,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         comparator, baseline = self.criterium['exclude_if']
 
         candidates = LabResult.objects.following_vaccination(
-            days, loinc=self.loinc).filter(result_date__gte=begin, result_date__lte=end)
+            days, loinc=self.loinc).filter(date__gte=begin, date__lte=end)
         
         return [c for c in candidates if is_trigger_value(c, trigger) and not 
                 excluded_due_to_history(c, comparator, baseline)]
@@ -255,7 +255,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 ev, created = LabResultEvent.objects.get_or_create(
                     lab_result=lab_result,
                     category=self.criterium['category'],
-                    date=lab_result.result_date,
+                    date=lab_result.date,
                     defaults = {'matching_rule_explain': rule_explain,
                                 'content_type':lab_type}
                     )
