@@ -402,17 +402,9 @@ class LabResultManager(models.Manager):
             raise NotImplementedError, 'Implemented only for PostgreSQL, mySQL and Sqlite'
 
         # Now, we get the comparison string and put it together with
-        # the expected value. This is also dependent on the database
-        # engine. Mysql and Sqlite compare dates and return integers,
-        # postgres returns a "interval" type. 
-        if DATABASE_ENGINE in ('mysql', 'sqlite3'):
-            max_days = '%s <= %d ' % (date_cmp_select % params, days_after)
-            same_day = (date_cmp_select % params) + ' >= 0'
-        elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
-            max_days = "%s <= interval '%d days'" % (date_cmp_select % params, days_after)
-            same_day = (date_cmp_select % params) + " >= interval '0 days'"
-        else:
-            raise NotImplementedError, 'Implemented for Postgres, MySQL and sqlite.'
+        # the expected value, so we create the time window constraint
+        max_days = '%s <= %s' % (date_cmp_select % params, str(days_after))
+        same_day = (date_cmp_select % params) + ' >= 0'
 
         # This is our minimum WHERE clause
         where_clauses = [patient_in_encounter, patient_in_immunization, 
@@ -639,18 +631,9 @@ class EncounterManager(models.Manager):
 
         
         # Now, we get the comparison string and put it together with
-        # the expected value. This is also dependent on the database
-        # engine. Mysql and Sqlite compare dates and return integers,
-        # postgres returns a "interval" type. 
-        if DATABASE_ENGINE in ('mysql', 'sqlite3'):
-            max_days = '%s <= %d ' % (date_cmp_select % params, days_after)
-            same_day = (date_cmp_select % params) + ' >= 0'
-        elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
-            max_days = "%s <= interval '%d days'" % (date_cmp_select % params, days_after)
-            same_day = (date_cmp_select % params) + " >= interval '0 days'"
-        else:
-            raise NotImplementedError, 'Implemented for Postgres, MySQL and sqlite.'
-
+        # the expected value, so we create the time window constraint
+        max_days = '%s <= %s' % (date_cmp_select % params, str(days_after))
+        same_day = (date_cmp_select % params) + ' >= 0'
 
         # This is our minimum WHERE clause
         where_clauses = [patient_in_encounter, patient_in_immunization, 
