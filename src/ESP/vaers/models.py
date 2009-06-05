@@ -234,7 +234,7 @@ class EncounterEvent(AdverseEvent):
     @staticmethod
     def write_fever_clustering_file_report():
         fever_events = EncounterEvent.objects.filter(
-            matching_rule_explain__startswith='Fever')
+            matching_rule_explain__startswith='Patient had')
 
         make_clustering_event_report_file(
             'clustering_fever_events.txt', fever_events)
@@ -242,7 +242,7 @@ class EncounterEvent(AdverseEvent):
     @staticmethod
     def write_diagnostics_clustering_file_report():
         diagnostics_events = EncounterEvent.objects.exclude(
-            matching_rule_explain__startswith='Fever')
+            matching_rule_explain__startswith='Patient had')
 
         make_clustering_event_report_file(
             'clustering_diagnostics_events.txt', diagnostics_events)
