@@ -4,7 +4,8 @@ import optparse
 
 from ESP.conf.common import EPOCH
 from ESP.conf.models import Icd9
-from ESP.esp.models import Demog, Enc, Immunization, Vaccine, Lx
+from ESP.emr.models import Patient, Encounter, Immunization, LabResult
+from ESP.conf.models import Vaccine
 from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
 from ESP.utils import randomizer
 from ESP.utils import utils
@@ -48,12 +49,12 @@ def main():
 
 
 def clear():
-    for klass in [Immunization, Enc, Lx, AdverseEvent]:
+    for klass in [Immunization, Encounter, LabResult, AdverseEvent]:
         klass.delete_fakes()
 
 def massive_immunization_action():
     clear()
-    for patient in Demog.fakes():
+    for patient in Patient.fakes():
         history = ImmunizationHistory(patient)
         for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
             imm = history.add_immunization()
@@ -92,72 +93,72 @@ class Vaers(object):
 
     def __init__(self, immunization):
         self.immunization = immunization
-        self.patient = immunization.ImmPatient
-        self.immunization_date = utils.date_from_str(immunization.ImmDate)
+        self.patient = immunization.patient
+        self.immunization_date = immunization.date
 
         self.matching_encounter = None
         self.matching_lab_result = None
-        self.last_lab_result = None # Last Lx done before the immunization
+        self.last_lab_result = None # Last LabResult done before the immunization
 
     def _encounter(self):
         days_after =  datetime.timedelta(days=random.randrange(
                 0, TIME_WINDOW_POST_EVENT))
         when = self.immunization_date+days_after
-        return Enc.make_mock(self.patient, when=when)
+        return Encounter.make_mock(self.patient, when=when)
 
     def _lab_result(self, loinc):
         days_after =  datetime.timedelta(days=random.randrange(
                 0, TIME_WINDOW_POST_EVENT))
         when = self.immunization_date+days_after
-        return  Lx.make_mock(loinc, self.patient, when=when)
+        return  LabResult.make_mock(loinc, self.patient, when=when)
 
     def make_post_immunization_encounter(self):
         encounter = self._encounter()
-        encounter.EncTemperature = randomizer.body_temperature() 
+        encounter.temperature = randomizer.body_temperature() 
         encounter.save()
         self.matching_encounter = encounter
 
     def cause_fever(self):
         encounter = self._encounter()
-        encounter.EncTemperature = randomizer.fever_temperature() 
+        encounter.temperature = randomizer.fever_temperature() 
         encounter.save()
         self.matching_encounter = encounter
 
     def cause_icd9(self, code):
         encounter = self._encounter()
         encounter.save()
-        encounter.EncTemperature = randomizer.body_temperature() 
-        encounter.reported_icd9_list.add(code)
+        encounter.temperature = randomizer.body_temperature() 
+        encounter.icd9_codes.add(code)
         encounter.save()
         
         self.matching_encounter = encounter
 
     def cause_icd9_ignored_for_history(self, code):
         maximum_days_ago =  (self.immunization_date - 
-                             self.patient.date_of_birth).days
+                             self.patient.dob).days
 
         when = self.immunization_date - datetime.timedelta(
             days=random.randrange(0, maximum_days_ago))
 
-        past_encounter = Enc.make_mock(self.patient, when=when)
-        past_encounter.EncTemperature = randomizer.body_temperature()
+        past_encounter = Encounter.make_mock(self.patient, when=when)
+        past_encounter.temperature = randomizer.body_temperature()
         past_encounter.save()
-        past_encounter.reported_icd9_list.add(code)
+        past_encounter.icd9_codes.add(code)
         past_encounter.save()
         
     def cause_icd9_ignored_for_reoccurrence(self, code, max_period):
         maximum_days_ago = min(
-            (self.immunization_date - self.patient.date_of_birth).days,
+            (self.immunization_date - self.patient.dob).days,
             max_period * 30
             )
 
         when = self.immunization_date - datetime.timedelta(
             days=random.randrange(0, maximum_days_ago))
 
-        past_encounter = Enc.make_mock(self.patient, when=when)
-        past_encounter.EncTemperature = randomizer.body_temperature()
+        past_encounter = Encounter.make_mock(self.patient, when=when)
+        past_encounter.temperature = randomizer.body_temperature()
         past_encounter.save()
-        past_encounter.reported_icd9_list.add(code)
+        past_encounter.icd9_codes.add(code)
         past_encounter.save()
 
     def cause_positive_lab_result(self, loinc, criterium):
@@ -200,7 +201,7 @@ class Vaers(object):
         strings to calculate a value for LKV that, given the value of
         the current lx, make the current lx be a negative case.
 
-        Once the proper value for lkv is found, we create a mock Lx
+        Once the proper value for lkv is found, we create a mock LabResult
         with that value.
         '''
 
@@ -236,14 +237,14 @@ class Vaers(object):
         # give it a value that make the inequation true.
         lkv = (current_value - 0.1) if comparator == '>' else (current_value + 0.1) 
         
-        # Now that we have the value, we create the Lx corresponding
+        # Now that we have the value, we create the LabResult corresponding
         # to the "Last" one. It has to be before the immunization.
-        earliest = max(self.patient.date_of_birth, EPOCH)
+        earliest = max(self.patient.dob, EPOCH)
         max_days = (self.immunization.date - earliest).days
         days_ago = random.randrange(1, max_days) if max_days > 1 else 1
         when = self.immunization.date - datetime.timedelta(days=days_ago)
 
-        last_lx = Lx.make_mock(loinc, self.patient, when=when)
+        last_lx = LabResult.make_mock(loinc, self.patient, when=when)
 
         # And now we add the values for lkv
         last_lx.result_float = lkv
@@ -260,7 +261,7 @@ class ImmunizationHistory(object):
         self.clear()
         
     def clear(self):
-        Immunization.objects.filter(ImmPatient=self.patient).delete()
+        Immunization.objects.filter(patient=self.patient).delete()
 
     def add_immunization(self):
         ''' Gives a completely random vaccine to a patient in a
@@ -274,11 +275,11 @@ class ImmunizationHistory(object):
 
         today = datetime.date.today()
 
-        interval = today - (max(self.patient.date_of_birth, EPOCH))
+        interval = today - (max(self.patient.dob, EPOCH))
         days_ago = random.randrange(0, interval.days)
         
         when = today - datetime.timedelta(days=days_ago)
-        assert (self.patient.date_of_birth <= when <= today)
+        assert (self.patient.dob <= when <= today)
         assert (EPOCH <= when <= today)
 
         # If everything is ok, give patient the vaccine

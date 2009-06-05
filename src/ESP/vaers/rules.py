@@ -1,8 +1,6 @@
 #-*- coding:utf-8 -*-
 
-from ESP.esp.models import Vaccine, ImmunizationManufacturer
-from ESP.conf.models import Icd9
-
+from ESP.conf.models import Icd9, Vaccine, ImmunizationManufacturer
 from ESP.vaers.models import DiagnosticsEventRule
 
 # Constants defined in the VAERS documents.

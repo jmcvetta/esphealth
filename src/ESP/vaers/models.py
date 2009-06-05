@@ -9,7 +9,7 @@ from django.template.loader import get_template
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
-from ESP.esp.models import Demog, Immunization, Enc, Lx, Provider
+from ESP.emr.models import Patient, Immunization, Encounter, LabResult, Provider
 from ESP.esp.choices import WORKFLOW_STATES
 from ESP.conf.models import Icd9, Loinc
 
@@ -78,22 +78,22 @@ class AdverseEvent(models.Model):
 
     
 
-    fake_q = Q(immunizations__ImmName='FAKE')
+    fake_q = Q(immunizations__name='FAKE')
 
 
     def temporal_report(self):
         results = []
         for imm in self.immunizations.all():
-            patient = imm.ImmPatient
+            patient = imm.patient
             results.append({
-                    'id':imm.ImmRecId,
+                    'id':imm.imm_id_num,
                     'vaccine_date': imm.date, 
                     'event_date':self.date,
                     'days_to_event':(self.date - imm.date).days,
-                    'immunization_name':imm.ImmName, 
+                    'immunization_name':imm.name, 
                     'event_description':self.matching_rule_explain,
-                    'patient_age':patient._get_age(formatted=True),
-                    'patient_gender':patient.DemogGender
+                    'patient_age':patient._get_age_str(),
+                    'patient_gender':patient.gender
                     })
 
         return results
@@ -130,10 +130,10 @@ class AdverseEvent(models.Model):
         return really_fake
 
     def patient(self):
-        return self.immunizations.all()[0].ImmPatient
+        return self.immunizations.all()[0].patient
 
     def provider(self):
-        return self.patient().DemogProvider
+        return self.patient().pcp
 
     def verification_url(self):
         return reverse('verify_case', kwargs={'key':self.digest})
@@ -189,20 +189,20 @@ class AdverseEvent(models.Model):
 
     
 class EncounterEvent(AdverseEvent):
-    encounter = models.ForeignKey(Enc)
+    encounter = models.ForeignKey(Encounter)
 
     def __unicode__(self):
         return u"Encounter Event %s: Patient %s, %s on %s" % (
-            self.id, self.encounter.EncPatient.full_name(), 
+            self.id, self.encounter.patient.full_name(), 
             self.matching_rule_explain, self.date)
 
 
 class LabResultEvent(AdverseEvent):
-    lab_result = models.ForeignKey(Lx)
+    lab_result = models.ForeignKey(LabResult)
     
     def __unicode__(self):
-        return u"Lx Event %s: Patient %s, %s on %s" % (
-            self.id, self.lab_result.LxPatient.full_name(), 
+        return u"LabResult Event %s: Patient %s, %s on %s" % (
+            self.id, self.lab_result.patient.full_name(), 
             self.matching_rule_explain, self.date)
 
 
@@ -225,8 +225,7 @@ signals.post_save.connect(adverse_event_digest, sender=LabResultEvent)
 
 class Rule(models.Model):
     name = models.CharField(max_length=100)
-    category = models.CharField(max_length=60,
-                                choices=ADVERSE_EVENT_CATEGORIES)
+    category = models.CharField(max_length=60, choices=ADVERSE_EVENT_CATEGORIES)
     in_use = models.BooleanField(default=False)
     
     def activate(self):

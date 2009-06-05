@@ -11,8 +11,7 @@ from django.shortcuts import render_to_response
 from django.views.generic.simple import direct_to_template
 from django.contrib.sites.models import Site
 
-from ESP.vaers.models import AdverseEvent, LabResultEvent, ProviderComment
-from ESP.esp.models import Lx, Demog, Immunization
+from ESP.vaers.models import AdverseEvent, ProviderComment
 from ESP.vaers.utils import send_notifications
 from ESP.vaers.forms import CaseConfirmForm
 

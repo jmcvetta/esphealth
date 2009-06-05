@@ -10,11 +10,11 @@ from django.contrib.contenttypes.models import ContentType
 from ESP.hef.hef import BaseHeuristic
 from ESP.conf.common import EPOCH
 from ESP.conf.models import Icd9
-from ESP.esp.models import Demog, Immunization, Enc, Lx
+from ESP.emr.models import Immunization, Encounter, LabResult
 from ESP.vaers.models import AdverseEvent
 from ESP.vaers.models import EncounterEvent, LabResultEvent
 from ESP.vaers.models import DiagnosticsEventRule
-from ESP.utils.utils import log, date_from_str
+from ESP.utils.utils import log
 
 import rules
 
@@ -29,11 +29,6 @@ USAGE_MSG = '''\
     DATE variables are specified in this format: '17-Mar-2009'
 '''
 
-
-
-
-
-
 class AdverseEventHeuristic(BaseHeuristic):
     def __init__(self, name, verbose_name=None):
         self.name = name
@@ -41,16 +36,11 @@ class AdverseEventHeuristic(BaseHeuristic):
         self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
         self._register(name)            
             
-    
-
-
 class VaersFeverHeuristic(AdverseEventHeuristic):
     def __init__(self):
         self.category = 'default'
         super(VaersFeverHeuristic, self).__init__(
             'VAERS Fever', verbose_name='Fever reaction to immunization')
-
-
 
     def matches(self, begin_date=None, end_date=None):
         # log.info('Getting matches for %s' % self.name)
@@ -58,15 +48,11 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
         end_date = end_date or datetime.date.today()
 
         # Can't use string to compare temperature
-        encounters = Enc.objects.following_vaccination(
+        return Encounter.objects.following_vaccination(
             rules.TIME_WINDOW_POST_EVENT, begin_date=begin_date, 
-            end_date=end_date).exclude(EncTemperature='')
+            end_date=end_date).filter(temperature__gte=rules.TEMP_TO_REPORT)
 
-        return [e for e in encounters if 
-                float(e.EncTemperature) >= rules.TEMP_TO_REPORT]
                     
-            
-            
 
     def generate_events(self, begin_date=None, end_date=None):
         log.info('Generating events for %s' % self.name)
@@ -78,7 +64,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
 
         for e in matches:
             date = e.date
-            fever_message = rule_explain % float(e.EncTemperature)
+            fever_message = rule_explain % float(e.temperature)
 
             try:
                 # Create event instance
@@ -96,10 +82,9 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
 
                 # Register which immunizations may be responsible for the event
                 immunizations = Immunization.vaers_candidates(
-                    e.EncPatient, ev, self.time_post_immunization)
+                    e.patient, ev, self.time_post_immunization)
                 
                 assert len(immunizations) > 0 
-
 
                 for imm in immunizations:
                     ev.immunizations.add(imm)
@@ -111,7 +96,6 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
                 log.warn('Deleting event %s' % ev)
                 ev.delete()
                 counter -= 1
-            
 
         return counter
         
@@ -138,15 +122,15 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         begin_date = begin_date or EPOCH
         end_date = end_date or datetime.date.today()
         
-        candidates = Enc.objects.following_vaccination(
+        candidates = Encounter.objects.following_vaccination(
             rules.TIME_WINDOW_POST_EVENT, 
             begin_date=begin_date, end_date=end_date).filter(
-            reported_icd9_list__in=self.icd9s)
+            icd9_codes__in=self.icd9s)
 
 
         if self.discarding_icd9s:
             candidates = [x for x in candidates if not 
-                          x.EncPatient.has_history_of(self.discarding_icd9s, 
+                          x.patient.has_history_of(self.discarding_icd9s, 
                                                       end_date=end_date)]
 
         if self.ignored_if_past_occurrence:
@@ -180,7 +164,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
 
                 # Register which immunizations may be responsible for the event
                 immunizations = Immunization.vaers_candidates(
-                    e.EncPatient, ev, self.time_post_immunization)
+                    e.patient, ev, self.time_post_immunization)
                 
                 assert len(immunizations) > 0
                 for imm in immunizations:
@@ -194,13 +178,9 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
                 log.warn('Deleting event %s' % ev)
                 ev.delete()
                 counter -= 1
-                
-                
-
-                            
-
 
         return counter
+
 
 class VaersLxHeuristic(AdverseEventHeuristic):
     def __init__(self, name, loinc, criterium, verbose_name=None):
@@ -214,8 +194,8 @@ class VaersLxHeuristic(AdverseEventHeuristic):
 
     def matches(self, begin_date=None, end_date=None):
         
-        begin = (begin_date or EPOCH).strftime('%Y%m%d')
-        end = (end_date or datetime.date.today()).strftime('%Y%m%d')
+        begin = begin_date or EPOCH
+        end = end_date or datetime.date.today()
         days = rules.TIME_WINDOW_POST_EVENT
 
         def is_trigger_value(lx, trigger):
@@ -252,10 +232,8 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         trigger = self.criterium['trigger']
         comparator, baseline = self.criterium['exclude_if']
 
-     
-
-        candidates = Lx.objects.following_vaccination(days, loinc=self.loinc).filter(
-            LxDate_of_result__gte=begin, LxDate_of_result__lte=end)
+        candidates = LabResult.objects.following_vaccination(
+            days, loinc=self.loinc).filter(date__gte=begin, date__lte=end)
         
         
 
@@ -272,15 +250,13 @@ class VaersLxHeuristic(AdverseEventHeuristic):
 
         for lab_result in matches:
             try:
-                
                 result = lab_result.result_float or lab_result.result_string
-                date = date_from_str(lab_result.LxDate_of_result)
                 rule_explain = 'Lab Result for %s resulting in %s'% (self.name, result)
             
                 ev, created = LabResultEvent.objects.get_or_create(
                     lab_result=lab_result,
                     category=self.criterium['category'],
-                    date=date,
+                    date=lab_result.date,
                     defaults = {'matching_rule_explain': rule_explain,
                                 'content_type':lab_type}
                     )
@@ -292,7 +268,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
 
                 # Register which immunizations may be responsible for the event
                 immunizations = Immunization.vaers_candidates(
-                    lab_result.LxPatient, ev, self.time_post_immunization)
+                    lab_result.patient, ev, self.time_post_immunization)
 
                 assert len(immunizations) > 0
 
