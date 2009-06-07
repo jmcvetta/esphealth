@@ -31,6 +31,11 @@ ESP/ssmap/__init__.py -text
 ESP/ssmap/admin.py -text
 ESP/ssmap/models.py -text
 ESP/ssmap/views.py -text
+ESP/static/cVerticalMapTypeControl.js -text
+ESP/static/espheader.png -text
+ESP/static/espss.jpg -text
+ESP/static/mapiconmaker.js -text
+ESP/static/mapstyle.css -text
 ESP/templates/404.html -text
 ESP/templates/admin/login.html -text
 ESP/templates/arrow.GIF -text
