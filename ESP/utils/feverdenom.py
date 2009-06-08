@@ -70,7 +70,7 @@ def AgeFevers(startDT='20090301',endDT='20090331'):
         if age == -999:
             dob = e.get('dob',None)
             ed = e.get('EncEncounter_Date',None)
-            age = makeAge(dob=dob,edate=ed,ageChunksize=ageChunksize)
+            age = makeAge(dob=dob,edate=ed,chunk=ageChunksize)
             demage[did] = age # cache
         t = e.get('EncTemperature',None)
         if t > '':
