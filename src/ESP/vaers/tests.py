@@ -84,6 +84,39 @@ class TestFake(unittest.TestCase):
             )
 
         self.assert_(imm in candidates)
+
+    def testCanFindEncounters(self):
+        for patient in Patient.fakes():
+            history = ImmunizationHistory(patient)
+            imm = history.add_immunization()
+            ev = Vaers(imm)
+            rule = DiagnosticsEventRule.random()
+            code = random.choice(rule.heuristic_defining_codes.all())
+            ev.cause_icd9(code)
+            
+        
+        expected_encounters = Encounter.objects.following_vaccination(TIME_WINDOW_POST_EVENT)
+        self.assert_(expected_encounters.count() == Patient.fakes().count(),
+                     'Not all created encounters were returned in the query')
+
+            
+
+    
+    def testCanFindLabResults(self):
+        for patient in Patient.fakes():
+            history = ImmunizationHistory(patient)
+            imm = history.add_immunization()
+            ev = Vaers(imm)
+            loinc = random.choice(VAERS_LAB_RESULTS.keys())
+            criterium = VAERS_LAB_RESULTS[loinc]['criteria'][0]
+            ev.cause_positive_lab_result(loinc, criterium)
+
+        expected_lab_results = LabResult.objects.following_vaccination(
+            TIME_WINDOW_POST_EVENT)
+
+        self.assert_(expected_lab_results.count() == Patient.fakes().count(),
+                     'Not all created lab results were returned in the query')
+
         
 
 
@@ -175,6 +208,10 @@ class TestRuleEngine(unittest.TestCase):
             ev.cause_icd9(code)
 
             matches = heuristic.matches()
+
+            if len(matches) != 1: 
+                pdb.set_trace()
+                heuristic.matches()
   
             # So far, the heuristic should detect as a positive
             self.assert_(len(matches) == 1, 'Expected to find one match, got %d' % len(matches))
@@ -230,8 +267,13 @@ class TestRuleEngine(unittest.TestCase):
                 rule.heuristic_discarding_codes.all())
             ev.cause_icd9_ignored_for_history(discarding_code)
 
+            
 
             matches = heuristic.matches()
+
+
+            if len(matches) != 0: pdb.set_trace()
+
             self.assert_(len(matches) == 0,  'Expected to find no match, got %d' % len(matches))
             self.assert_(ev.matching_encounter not in matches, 'heuristic match found encounter that should not be a match')
 
@@ -293,7 +335,9 @@ class TestRuleEngine(unittest.TestCase):
             matches = heuristic.matches()
 
 
-
+            if len(matches) != 1: 
+                pdb.set_trace()
+                heuristic.matches()
 
             # So far, the heuristic should detect as a positive
             self.assert_(len(matches) == 1, 'Expected to find one match, got %d' % len(matches))
@@ -321,6 +365,8 @@ class TestRuleEngine(unittest.TestCase):
                         ev.cause_positive_lab_result(loinc, criterium)
 
             matches = heuristic.matches()
+
+            if len(matches) != 0: pdb.set_trace()
 
             # Assert that our heuristic can not find anything. There
             # should not be anything to find.

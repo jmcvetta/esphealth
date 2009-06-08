@@ -102,13 +102,13 @@ class Vaers(object):
 
     def _encounter(self):
         days_after =  datetime.timedelta(days=random.randrange(
-                0, TIME_WINDOW_POST_EVENT))
+                1, TIME_WINDOW_POST_EVENT))
         when = self.immunization_date+days_after
         return Encounter.make_mock(self.patient, when=when)
 
     def _lab_result(self, loinc):
         days_after =  datetime.timedelta(days=random.randrange(
-                0, TIME_WINDOW_POST_EVENT))
+                1, TIME_WINDOW_POST_EVENT))
         when = self.immunization_date+days_after
         return  LabResult.make_mock(loinc, self.patient, when=when)
 
@@ -135,10 +135,10 @@ class Vaers(object):
 
     def cause_icd9_ignored_for_history(self, code):
         maximum_days_ago =  (self.immunization_date - 
-                             self.patient.dob).days
+                             self.patient.date_of_birth).days
 
         when = self.immunization_date - datetime.timedelta(
-            days=random.randrange(0, maximum_days_ago))
+            days=random.randrange(1, maximum_days_ago))
 
         past_encounter = Encounter.make_mock(self.patient, when=when)
         past_encounter.temperature = randomizer.body_temperature()
@@ -148,12 +148,12 @@ class Vaers(object):
         
     def cause_icd9_ignored_for_reoccurrence(self, code, max_period):
         maximum_days_ago = min(
-            (self.immunization_date - self.patient.dob).days,
+            (self.immunization_date - self.patient.date_of_birth).days,
             max_period * 30
             )
 
         when = self.immunization_date - datetime.timedelta(
-            days=random.randrange(0, maximum_days_ago))
+            days=random.randrange(1, maximum_days_ago))
 
         past_encounter = Encounter.make_mock(self.patient, when=when)
         past_encounter.temperature = randomizer.body_temperature()
@@ -239,7 +239,7 @@ class Vaers(object):
         
         # Now that we have the value, we create the LabResult corresponding
         # to the "Last" one. It has to be before the immunization.
-        earliest = max(self.patient.dob, EPOCH)
+        earliest = max(self.patient.date_of_birth, EPOCH)
         max_days = (self.immunization.date - earliest).days
         days_ago = random.randrange(1, max_days) if max_days > 1 else 1
         when = self.immunization.date - datetime.timedelta(days=days_ago)
@@ -275,11 +275,11 @@ class ImmunizationHistory(object):
 
         today = datetime.date.today()
 
-        interval = today - (max(self.patient.dob, EPOCH))
+        interval = today - (max(self.patient.date_of_birth, EPOCH))
         days_ago = random.randrange(0, interval.days)
         
         when = today - datetime.timedelta(days=days_ago)
-        assert (self.patient.dob <= when <= today)
+        assert (self.patient.date_of_birth <= when <= today)
         assert (EPOCH <= when <= today)
 
         # If everything is ok, give patient the vaccine

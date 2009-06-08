@@ -168,10 +168,6 @@ class Patient(BaseMedicalRecord):
     areacode = models.CharField('Home Phone Area Code', max_length=20, blank=True, null=True)
     tel = models.CharField('Home Phone Number', max_length=100, blank=True, null=True)
     tel_ext = models.CharField('Home Phone Extension', max_length=50, blank=True, null=True)
-
-    # Was CharField: delete.
-    dob = models.DateField('Date of Birth (May Erase)', blank=True, null=True)
-
     date_of_birth = models.DateField('Date of Birth', blank=True, null=True)
     gender = models.CharField('Gender', max_length=20, blank=True, null=True)
     race = models.CharField('Race', max_length=20, blank=True, null=True)
@@ -273,7 +269,7 @@ class Patient(BaseMedicalRecord):
         returns a boolean if the patient has any of the icd9s code 
         in their history of encounters.
         '''
-        begin_date = begin_date or self.dob or EPOCH
+        begin_date = begin_date or self.date_of_birth or EPOCH
         end_date = end_date or datetime.date.today()
 
         return Encounter.objects.filter(patient=self).filter(
@@ -490,12 +486,13 @@ class LabResult(BasePatientRecord):
     def make_mock(loinc, patient, when=None, save_on_db=True):
         when = when or datetime.date.today()
 
-        order_date = when - datetime.timedelta(
-            days=random.randrange(1, 10))
+        result_date = when + datetime.timedelta(
+            days=random.randrange(1, 30))
 
         # Make sure the patient was alive for the order...
-        order_date = max(order_date, patient.dob)
-        lx = LabResult(patient=patient, date=order_date, result_date=when)
+        order_date = max(when, patient.date_of_birth)
+        lx = LabResult(patient=patient, date=order_date, result_date=
+                       result_date)
         if save_on_db: lx.save()
         return lx
 
@@ -700,7 +697,7 @@ class Encounter(BasePatientRecord):
         interval = kw.get('interval', None)
         
         for patient in Patient.fakes():
-            when = start or patient.dob
+            when = start or patient.date_of_birth
             for i in xrange(0, how_many):
                 next_encounter_interval = interval or random.randrange(0, 180)
                 when += datetime.timedelta(days=next_encounter_interval)
@@ -762,9 +759,8 @@ class Immunization(BasePatientRecord):
 
     @staticmethod
     def vaers_candidates(patient, event, days_prior):
-        '''Given an encounter that is considered an adverse event,
-        returns a queryset that represents the possible immunizations
-        that have caused it'''
+        '''Given an adverse event, returns a queryset that represents
+        the possible immunizations that have caused it'''
         
         earliest_date = event.date - datetime.timedelta(days=days_prior)
                 
