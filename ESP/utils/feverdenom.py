@@ -101,7 +101,7 @@ def count(startDT=None,endDT=None):
     res = [h,]
     for a in ak:
         t = tot.get(a,1)
-        nno = notemp[a].get(a,0)
+        nno = notemp.get(a,0)
         nhot = fevertemp.get(a,0)
         nnot = normtemp.get(a,0)
         row = ['%d' % a,'%3.2f' % (nnot+nhot)/t,'%3.2f' % nhot/t,'%3.2f' % nnot/t,t]
