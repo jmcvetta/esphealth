@@ -99,6 +99,7 @@ ESP/utils/espSS.py -text
 ESP/utils/espSSconfATRIUS.py -text
 ESP/utils/esp_urls.py -text
 ESP/utils/espmanager.py -text
+ESP/utils/feverdenom.py -text
 ESP/utils/hl7XML.py -text
 ESP/utils/hl7_to_etl.py -text
 ESP/utils/identifyCases.py -text
