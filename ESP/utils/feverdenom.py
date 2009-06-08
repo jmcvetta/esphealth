@@ -64,12 +64,12 @@ def AgeFevers(startDT='20090301',endDT='20090331'):
     allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT,
         EncEncounter_Date__lte=endDT).extra(select=esel).values('EncPatient','dob',
         'EncEncounter_Date','EncTemperature').iterator() # yes - this works well to minimize ram
-    for e in allenc:
+    for i,e in enumerate(allenc):
         did = e['EncPatient'] # demog
-        age = demage.get(did,-999)
-        if age == -999:
-            dob = e.get('dob',None)
-            ed = e.get('EncEncounter_Date',None)
+        age = demage.get(did,'not')
+        if age == 'not':
+            dob = e.get('dob')
+            ed = e.get('EncEncounter_Date')
             age = makeAge(dob=dob,edate=ed,chunk=ageChunksize)
             demage[did] = age # cache
         if age <> None:
@@ -77,17 +77,21 @@ def AgeFevers(startDT='20090301',endDT='20090331'):
             if t > '':
                 try:
                     t = float(t)
+                    if (i+1) % 100 == 0:
+			print 't=',t
+                    if t < 100.4:
+                       normtemp.setdefault(age,0)
+                       normtemp[age] += 1
+                    elif t >= 100.4:
+                       fevertemp.setdefault(age,0)
+                       fevertemp[age] += 1
+                    else:
+		       print 'wtf? t=',t
                 except:
                     t = None
-            if t == None:
+            if t == None :
                 notemp.setdefault(age,0)
                 notemp[age] += 1
-            elif t < 100.4:
-                normtemp.setdefault(age,0)
-                normtemp[age] += 1
-            else:
-                fevertemp.setdefault(age,0)
-                fevertemp[age] += 1
             tot.setdefault(age,0)
             tot[age] += 1
     return notemp,normtemp,fevertemp,tot
@@ -99,18 +103,23 @@ def count(startDT=None,endDT=None):
     ak.sort()
     h = 'Age\tMeasuref\tFeverf\tnoFeverf\ttotenc'
     res = [h,]
+    print 'notemp',notemp
+    print 'normtemp',normtemp
+    print 'fevertemp',fevertemp
+    print 'tot',tot
     for a in ak:
-        t = tot.get(a,1)
+        t = float(tot.get(a,1))
         nno = notemp.get(a,0)
         nhot = fevertemp.get(a,0)
         nnot = normtemp.get(a,0)
-        row = ['%d' % a,'%3.2f' % (nnot+nhot)/t,'%3.2f' % nhot/t,'%3.2f' % nnot/t,t]
+        row = ['%d' % a,'%3.2f' % ((nnot+nhot)/t),'%3.2f' % (nhot/t),'%3.2f' % (nnot/t),'%d' % t]
         res.append('\t'.join(row))
     print '\n'.join(res)
     f = open('fevercounts.xls','w')
     f.write('\n'.join(res))
     f.write('\t')
     f.close()
+
 
 if __name__ == "__main__":
     count('20060701','20060730')
