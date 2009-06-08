@@ -78,7 +78,7 @@ def AgeFevers(startDT='20090301',endDT='20090331'):
                 try:
                     t = float(t)
                     if (i+1) % 100 == 0:
-			print 't=',t
+                        print 't=',t
                     if t < 100.4:
                        normtemp.setdefault(age,0)
                        normtemp[age] += 1
@@ -86,7 +86,7 @@ def AgeFevers(startDT='20090301',endDT='20090331'):
                        fevertemp.setdefault(age,0)
                        fevertemp[age] += 1
                     else:
-		       print 'wtf? t=',t
+                       print 'wtf? t=',t
                 except:
                     t = None
             if t == None :
@@ -112,7 +112,7 @@ def count(startDT=None,endDT=None):
         nno = notemp.get(a,0)
         nhot = fevertemp.get(a,0)
         nnot = normtemp.get(a,0)
-        row = ['%d' % a,'%3.2f' % ((nnot+nhot)/t),'%3.2f' % (nhot/t),'%3.2f' % (nnot/t),'%d' % t]
+        row = ['%d' % a,'%3.5f' % ((nnot+nhot)/t),'%3.5f' % (nhot/t),'%3.5f' % (nnot/t),'%d' % t]
         res.append('\t'.join(row))
     print '\n'.join(res)
     f = open('fevercounts.xls','w')
