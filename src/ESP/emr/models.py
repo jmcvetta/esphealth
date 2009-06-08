@@ -511,21 +511,9 @@ class LabResult(BasePatientRecord):
         last = self.previous()                                     
         return (last and (last.result_float or last.result_string)) or None
 
-    def loinc_num(self):
-        '''
-        Returns LOINC number (not Loinc object!) for this test if it is mapped
-        to one, else returns None.
-        '''
-        nc = NativeCode.objects.filter(native_code=self.native_code)
-        if nc:
-            return nc[0].loinc.loinc_num
-        else:
-            return None
-
     def _get_loinc(self):
         try:
-            return NativeCode.objects.get(native_code=self.native_code, 
-                                          native_name=self.native_name)
+            return NativeCode.objects.get(native_code=self.native_code)
         except:
             return None
         
@@ -533,11 +521,19 @@ class LabResult(BasePatientRecord):
         try:
             mapping = NativeCode.objects.get(loinc=value)
             self.native_code = mapping.native_code
-            self.native_name = mapping.native_name
+            if not mapping.native_name:
+                self.native_name = mapping.native_name
         except:
             raise ValueError, "%s is not a valid Loinc" % value
 
     loinc = property(_get_loinc, _set_loinc)
+
+    def loinc_num(self):
+        '''
+        Returns LOINC number (not Loinc object!) for this test if it is mapped
+        to one, else returns None.
+        '''
+        return self.loinc and self.loinc_num or None
 
 
     def __str__(self):
