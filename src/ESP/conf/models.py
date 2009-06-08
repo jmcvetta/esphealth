@@ -346,6 +346,15 @@ class SourceSystem(models.Model):
         return self.name
 
 
+class NativeNameCache(models.Model):
+    '''
+    Cache table for storing list of all distinct LabResult native_name 
+    and native_code values.
+    '''
+    native_name = models.CharField(max_length=255, blank=True, null=True)
+    native_code = models.CharField(max_length=100, unique=True, blank=False)
+
+
 class NativeCode(models.Model):
     '''
     A mapping from a native code (for a lab result, etc) to a Loinc number
@@ -364,20 +373,6 @@ class NativeCode(models.Model):
         verbose_name = 'Native Code to LOINC Map'
 
 
-class Vaccine(models.Model):
-
-    code = models.IntegerField(unique=True)
-    short_name = models.CharField(max_length=60)
-    name = models.CharField(max_length=300)
-
-    @staticmethod
-    def random():
-        return Vaccine.objects.exclude(short_name='UNK').order_by('?')[0]
-
-    def __unicode__(self):
-        return '%s (%s)'% (self.short_name, self.name)
-    
-
 class ImmunizationManufacturer(models.Model):
     code = models.CharField(max_length=3)
     full_name = models.CharField(max_length=200)
@@ -387,5 +382,19 @@ class ImmunizationManufacturer(models.Model):
     def __unicode__(self):
         return self.full_name
                          
+
+class Vaccine(models.Model):
+    '''
+    A vaccine drug
+    '''
+    code = models.IntegerField(unique=True)
+    short_name = models.CharField(max_length=60)
+    name = models.CharField(max_length=300)
     
+    @staticmethod
+    def random():
+        return Vaccine.objects.exclude(short_name='UNK').order_by('?')[0]
+
+    def __unicode__(self):
+        return '%s (%s)'% (self.short_name, self.name)
 

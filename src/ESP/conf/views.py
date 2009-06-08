@@ -11,6 +11,7 @@ Views
 
 
 import re
+import sys
 
 from django import forms as django_forms, http
 from django.contrib.auth import login
@@ -33,8 +34,32 @@ from django.http import HttpResponse, HttpResponseRedirect
 from ESP.settings import NLP_SEARCH, NLP_EXCLUDE
 from ESP.settings import ROWS_PER_PAGE
 from ESP.conf.models import NativeCode
+from ESP.conf.models import NativeNameCache
 from ESP.emr.models import LabResult
+from ESP.hef.hef import BaseHeuristic
+from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
+
+
+def refresh_native_name_cache():
+    '''
+    Update the cache of lab result native_name and native_code values
+    '''
+    log.debug('Flushing old native_name cache')
+    NativeNameCache.objects.all().delete()
+    log.debug('Populating cache table with distinct native_name values')
+    for item in LabResult.objects.values_list('native_name', 'native_code').distinct():
+        NativeNameCache(**item)
+    count = NativeNameCache.objects.all().count()
+    log.debug('There are %s distinct native_name + native_code values in LabResult table' % count)
+
+
+def unmapped_hef_loincs():
+    '''
+    '''
+    necessary_loincs = set(BaseHeuristic.get_all_loincs())
+    mapped_loincs = set(NativeCode.objects.values_list('loinc', flat=True))
+    return necessary_loincs - mapped_loincs
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
