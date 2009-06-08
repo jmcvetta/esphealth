@@ -72,23 +72,24 @@ def AgeFevers(startDT='20090301',endDT='20090331'):
             ed = e.get('EncEncounter_Date',None)
             age = makeAge(dob=dob,edate=ed,chunk=ageChunksize)
             demage[did] = age # cache
-        t = e.get('EncTemperature',None)
-        if t > '':
-            try:
-                t = float(t)
-            except:
-                t = None
-        if t == None:
-            notemp.setdefault(age,0)
-            notemp[age] += 1
-        elif t < 100.4:
-            normtemp.setdefault(age,0)
-            normtemp[age] += 1
-        else:
-            fevertemp.setdefault(age,0)
-            fevertemp[age] += 1
-        tot.setdefault(age,0)
-        tot[age] += 1
+        if age <> None:
+            t = e.get('EncTemperature',None)
+            if t > '':
+                try:
+                    t = float(t)
+                except:
+                    t = None
+            if t == None:
+                notemp.setdefault(age,0)
+                notemp[age] += 1
+            elif t < 100.4:
+                normtemp.setdefault(age,0)
+                normtemp[age] += 1
+            else:
+                fevertemp.setdefault(age,0)
+                fevertemp[age] += 1
+            tot.setdefault(age,0)
+            tot[age] += 1
     return notemp,normtemp,fevertemp,tot
 
 
