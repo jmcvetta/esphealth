@@ -520,8 +520,8 @@ class Disease(object):
             case.encounters = sets.Set(case.encounters.all()) | sets.Set(encounters)
         if self.lab_loinc_nums:
             lab_q = Q(patient=patient)
-            lab_q = lab_q & Q(order_date__gte=(date - self.lab_days_before))
-            lab_q = lab_q & Q(order_date__lte=(date + self.lab_days_after))
+            lab_q = lab_q & Q(date__gte=(date - self.lab_days_before))
+            lab_q = lab_q & Q(date__lte=(date + self.lab_days_after))
             log.debug('lab_q: %s' % lab_q)
             labs = LabResult.objects.filter_loincs(self.lab_loinc_nums).filter(lab_q)
             # Some of these lab results will be for the same test (ie same 

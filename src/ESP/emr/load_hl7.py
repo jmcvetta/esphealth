@@ -394,8 +394,8 @@ class Hl7MessageLoader(object):
             result = LabResult(patient=self.patient, provider=self.provider, updated_by=UPDATED_BY)
             # Set (result) date and order date to the same thing, since we do 
             # not have separate order date info.
-            result.date = resdate if resdate else None
-            result.order_date = order_date if order_date else None
+            result.date = order_date if order_date else None
+            result.result_date = resdate if resdate else None
             result.order_num = order_num if order_num else None
             result.native_code = native_code if native_code else None
             result.native_name = native_name if native_name else None
