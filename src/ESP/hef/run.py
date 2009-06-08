@@ -76,7 +76,12 @@ def main():
         for name in BaseHeuristic.list_heuristic_names():
             print name
     elif options.event:
-        BaseHeuristic.generate_events_by_name(name=options.event, begin_date=options.begin, end_date=options.end)
+        try:
+            BaseHeuristic.generate_events_by_name(name=options.event, begin_date=options.begin, end_date=options.end)
+        except KeyError:
+            print >> sys.stderr
+            print >> sys.stderr, 'Unknown heuristic name: "%s".  Aborting run.' % options.event
+            print >> sys.stderr
     else:
         BaseHeuristic.generate_all_events(begin_date=options.begin, end_date=options.end)
     

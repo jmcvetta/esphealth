@@ -31,7 +31,7 @@ USAGE_MSG = '''\
 
 class AdverseEventHeuristic(BaseHeuristic):
     def __init__(self, event_name, verbose_name=None):
-        self.event_name = event_name
+        self.heuristic_name = event_name
         self.def_name = verbose_name
         self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
         self._register(event_name)            
@@ -43,7 +43,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
             'VAERS Fever', verbose_name='Fever reaction to immunization')
 
     def matches(self, begin_date=None, end_date=None):
-        # log.info('Getting matches for %s' % self.event_name)
+        # log.info('Getting matches for %s' % self.heuristic_name)
         begin_date = begin_date or EPOCH
         end_date = end_date or datetime.date.today()
 
@@ -55,7 +55,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
                     
 
     def generate_events(self, begin_date=None, end_date=None):
-        log.info('Generating events for %s' % self.event_name)
+        log.info('Generating events for %s' % self.heuristic_name)
         matches = self.matches(begin_date=begin_date, end_date=end_date)
         encounter_type = ContentType.objects.get_for_model(EncounterEvent)
 
@@ -109,7 +109,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         @type verbose_name: String
         '''
                  
-        self.event_name = event_name
+        self.heuristic_name = event_name
         self.icd9s = icd9s
         self.category = category
         self.discarding_icd9s = kwargs.pop('discarding_icd9s', [])
@@ -119,7 +119,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         super(DiagnosisHeuristic, self).__init__(event_name, verbose_name=verbose_name)
             
     def matches(self, begin_date=None, end_date=None):
- #       log.info('Getting matches for %s' % self.event_name)
+ #       log.info('Getting matches for %s' % self.heuristic_name)
         begin_date = begin_date or EPOCH
         end_date = end_date or datetime.date.today()
         
@@ -143,7 +143,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
 
 
     def generate_events(self, begin_date=None, end_date=None):
-        log.info('Generating events for %s' % self.event_name)
+        log.info('Generating events for %s' % self.heuristic_name)
         counter = 0
         matches = self.matches(begin_date=begin_date, end_date=end_date)
         encounter_type = ContentType.objects.get_for_model(EncounterEvent)
@@ -185,7 +185,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
 
 class VaersLxHeuristic(AdverseEventHeuristic):
     def __init__(self, event_name, loinc, criterium, verbose_name=None):
-        self.event_name = event_name
+        self.heuristic_name = event_name
         self.def_name = verbose_name
         self.loinc = loinc
         self.criterium = criterium
@@ -241,7 +241,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
 
     
     def generate_events(self, begin_date=None, end_date=None):
-        log.info('Generating events for %s' % self.event_name)
+        log.info('Generating events for %s' % self.heuristic_name)
         counter = 0
         matches = self.matches(begin_date=begin_date, end_date=end_date)
 
@@ -250,7 +250,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         for lab_result in matches:
             try:
                 result = lab_result.result_float or lab_result.result_string
-                rule_explain = 'Lab Result for %s resulting in %s'% (self.event_name, result)
+                rule_explain = 'Lab Result for %s resulting in %s'% (self.heuristic_name, result)
             
                 ev, created = LabResultEvent.objects.get_or_create(
                     lab_result=lab_result,
