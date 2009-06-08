@@ -52,20 +52,12 @@ def main():
         metavar='NAME', help='Generate events for heuristic NAME only')
     parser.add_option('--list', action='store_true', dest='list', 
         help='List all registered heuristics')
-    parser.add_option('--begin', action='store', dest='begin', type='string', 
-        metavar='DATE', help='Analyze time window beginning at DATE')
-    parser.add_option('--end', action='store', dest='end', type='string', 
-        metavar='DATE', help='Analyze time window ending at DATE')
+    parser.add_option('--incremental', action='store_true', dest='incremental', 
+        help='Examine only new data to generate events. (Default)', default=True)
+    parser.add_option('--full', action='store_false', dest='incremental',
+        help='Examine *all* data to generate events')
     (options, args) = parser.parse_args()
     log.debug('options: %s' % options)
-    #
-    # Date Parser
-    #
-    date_format = '%d-%b-%Y'
-    if options.begin:
-        options.begin = datetime.datetime.strptime(options.begin, date_format).date()
-    if options.end:
-        options.end = datetime.datetime.strptime(options.end, date_format).date()
     # 
     # Main
     #
@@ -77,13 +69,13 @@ def main():
             print name
     elif options.event:
         try:
-            BaseHeuristic.generate_events_by_name(name=options.event, begin_date=options.begin, end_date=options.end)
+            BaseHeuristic.generate_events_by_name(name=options.event, incremental=options.incremental)
         except KeyError:
             print >> sys.stderr
             print >> sys.stderr, 'Unknown heuristic name: "%s".  Aborting run.' % options.event
             print >> sys.stderr
     else:
-        BaseHeuristic.generate_all_events(begin_date=options.begin, end_date=options.end)
+        BaseHeuristic.generate_all_events(incremental=options.incremental)
     
 
 if __name__ == '__main__':

@@ -13,8 +13,24 @@ from django.db import models
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
+from ESP.hef.choices import HEF_RUN_STATUS
 from ESP.conf.models import Loinc
 from ESP.emr.models import Patient
+
+
+class Run(models.Model):
+    '''
+    HEF run status.  Each time a heuristic particular is run and HeuristicEvent objects
+    are generated, a new instance is created.  The 'timestamp' field is
+    automatically set to current time, and 'status' is set to 'r'.  Upon
+    successful completion of the run, status is updated to 's'.  
+    '''
+    heuristic_name = models.CharField(max_length=127, null=False, blank=False, db_index=True)
+    timestamp = models.DateTimeField(blank=False, auto_now_add=True)
+    status = models.CharField(max_length=1, blank=False, choices=HEF_RUN_STATUS, default='r')
+    
+    def __str__(self):
+        return '<HEF Run #%s: %s: %s: %s>' % (self.pk, self.heuristic_name, self.status, self.timestamp)
 
 
 class HeuristicEvent(models.Model):

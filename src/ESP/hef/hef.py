@@ -22,6 +22,7 @@ from django.db import connection
 from django.db.models import Q
 from django.db.models import F
 from django.db.models import Sum
+from django.db.models import Max
 from django.db.models.query import QuerySet
 from django.contrib.contenttypes.models import ContentType
 
@@ -30,8 +31,8 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.conf.models import NativeCode
-#from ESP.conf.models import Rule
 from ESP.hef.models import HeuristicEvent
+from ESP.hef.models import Run
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
@@ -160,13 +161,13 @@ class BaseHeuristic(object):
                 pass # Skip heuristics w/ no LOINCs defined
         return loincs
     
-    def matches(self, begin_date=None, end_date=None):
+    def matches(self, begin_timestamp=None):
         '''
         Return a QuerySet of matches for this heuristic
         '''
         raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseHeuristic.')
         
-    def generate_events(self, incremental=True, begin_date=None, end_date=None):
+    def generate_events(self, incremental=True):
         '''
         Generate HeuristicEvent records for each item returned by
         matches, if it does not already have one.
@@ -174,6 +175,22 @@ class BaseHeuristic(object):
         '''
         log.info('Generating events for heuristic "%s".' % self.heuristic_name)
         counter = 0 # Counts how many new records have been created
+        #
+        # Incremental processing
+        #
+        if incremental:
+            log.debug('Incremental processing requested.')
+            runs = Run.objects.filter(heuristic_name=self.heuristic_name, status='s')
+            begin_timestamp = runs.aggregate(ts=Max('timestamp'))['ts'] # aggregate() returns dict
+        else:
+            log.debug('Incremental processing NOT requested.')
+            begin_timestamp = None
+        log.debug('begin_timestamp: %s' % begin_timestamp)
+        self.run = Run(heuristic_name=self.heuristic_name) # New Run object for this run
+        self.run.save()
+        log.debug('Generated new Run object for this run: %s' % self.run)
+        #
+        #
         # First we retrieve a list of object IDs for this 
         existing = HeuristicEvent.objects.filter(heuristic_name=self.heuristic_name).values_list('object_id')
         existing = [int(item[0]) for item in existing] # Convert to a list of integers
@@ -181,8 +198,7 @@ class BaseHeuristic(object):
         # Disabled select_related() because matches will most often be in 
         # existing list, and thus discarded not saved.
         #
-        for event in self.matches(begin_date, end_date):
-        #for event in self.matches(begin_date, end_date).select_related():
+        for event in self.matches(begin_timestamp):
             if event.id in existing:
                 log.debug('BaseHeuristic event "%s" already exists for %s #%s' % (self.heuristic_name, event._meta.object_name, event.id))
                 continue
@@ -206,29 +222,31 @@ class BaseHeuristic(object):
         for item in connection.queries:
             log.debug('\n\t%8s    %s' % (item['time'], item['sql']))
         connection.queries = []
+        # If we made it this far, run has succeeded
+        log.debug('Setting run #%s status to "s" (success).' % self.run.pk)
+        self.run.status = 's'
+        self.run.save()
         return counter
     
     @classmethod
-    def generate_all_events(cls, begin_date=None, end_date=None):
+    def generate_all_events(cls, incremental=True):
         '''
         Generate HeuristicEvent records for every registered BaseHeuristic 
             instance.
-        @param begin_date: Beginning of time window to examine
-        @type begin_date:  datetime.date
-        @param end_date:   End of time window to examine
-        @type end_date:    datetime.date
+        @param begin_timestamp: Beginning of time window to examine
+        @type begin_timestamp:  datetime.datetime
         @return:           Integer number of new records created
         '''
         counter = 0 # Counts how many total new records have been created
         for heuristic in cls.get_all_heuristics():
-            counter += heuristic.generate_events()
+            counter += heuristic.generate_events(incremental=incremental)
         log.info('Generated %s TOTAL new events.' % counter)
         return counter
     
     @classmethod
-    def generate_events_by_name(cls, name, begin_date=None, end_date=None):
+    def generate_events_by_name(cls, name, incremental=True):
         for heuristic in cls.get_heuristics_by_name(name):
-            heuristic.generate_events(begin_date, end_date)
+            heuristic.generate_events(incremental=incremental)
     
     def get_events(self):
         '''
@@ -236,16 +254,6 @@ class BaseHeuristic(object):
         this heuristic.
         '''
         return HeuristicEvent.objects.filter(heuristic_name=self.heuristic_name)
-    
-    def make_date_str(self, date):
-        '''
-        Returns a string representing a datetime.date object (kludge for old 
-        ESP data model)
-        '''
-        if type(date) == types.StringType:
-            log.debug('String given as date -- no conversion')
-            return date
-        return util.str_from_date(date)
     
     def __repr__(self):
         return '<BaseHeuristic: %s>' % self.def_name
@@ -270,20 +278,18 @@ class LabHeuristic(BaseHeuristic):
             def_version = def_version,
             )
     
-    def relevant_labs(self, begin_date=None, end_date=None):
+    def relevant_labs(self, begin_timestamp=None):
         '''
         Return all lab results relevant to this heuristic, whether or not they 
         indicate positive.
-            @type begin_date: datetime.date
+            @type begin_timestamp: datetime.datedatetime
             @type end_date:   datetime.date
         '''
         log.debug('Get lab results relevant to "%s".' % self.heuristic_name)
-        log.debug('Time window: %s to %s' % (begin_date, end_date))
+        log.debug('Beginning timestamp: %s' % begin_timestamp)
         qs = LabResult.objects.filter_loincs(self.loinc_nums)
-        if begin_date:
-            qs = qs.filter(date__gte=begin_date)
-        if end_date:
-            qs = qs.filter(date__lte=end_date)
+        if begin_timestamp:
+            qs = qs.filter(updated_timestamp__gte=begin_timestamp)
         return qs
 
 
@@ -311,16 +317,14 @@ class HighNumericLabHeuristic(LabHeuristic):
             loinc_nums = loinc_nums,
             )
     
-    def matches(self, begin_date=None, end_date=None):
+    def matches(self, begin_timestamp=None):
         '''
         If record has a reference high, and a ratio has been specified, compare
         test result against that reference.  If a record does not have a
         reference high, and a default_high has been specified, compare result
         against that default 'high' value.
-        @type begin_date: datetime.date
-        @type end_date:   datetime.date
         '''
-        relevant_labs = self.relevant_labs(begin_date, end_date)
+        relevant_labs = self.relevant_labs(begin_timestamp)
         no_ref_q = Q(ref_high=None)
         if self.default_high:
             static_comp_q = no_ref_q & Q(result_float__gt=self.default_high)
@@ -366,14 +370,9 @@ class StringMatchLabHeuristic(LabHeuristic):
             loinc_nums = loinc_nums,
             )
     
-    def matches(self, begin_date=None, end_date=None):
+    def matches(self, begin_timestamp=None):
         '''
         Compare record's result field against strings.
-            #
-        @param begin_date: Beginning of time window to examine
-        @type begin_date:  datetime.date
-        @param end_date:   End of time window to examine
-        @type end_date:    datetime.date
         '''
         if self.match_type == 'istartswith':
             pos_q = Q(result_string__istartswith=self.strings[0])
@@ -387,9 +386,9 @@ class StringMatchLabHeuristic(LabHeuristic):
             raise NotImplementedError('The only match type supported at this time is "istartswith".')
         log.debug('pos_q: %s' % pos_q)
         if self.exclude:
-            result = self.relevant_labs(begin_date, end_date).exclude(pos_q)
+            result = self.relevant_labs(begin_timestamp).exclude(pos_q)
         else:
-            result = self.relevant_labs(begin_date, end_date).filter(pos_q)
+            result = self.relevant_labs(begin_timestamp).filter(pos_q)
         return result
 
 
@@ -424,30 +423,22 @@ class EncounterHeuristic(BaseHeuristic):
         return enc_q
     enc_q = property(__get_enc_q)
 
-    def encounters(self, begin_date=None, end_date=None):
+    def encounters(self, begin_timestamp):
         '''
         Return all lab results relevant to this heuristic, whether or not they 
         indicate positive.
-            @type begin_date: datetime.date
-            @type end_date:   datetime.date
             @type patient:    Demog
             @type queryset:   QuerySet
         '''
         log.debug('Get encounters relevant to "%s".' % self.heuristic_name)
         qs = Encounter.objects.all()
-        if begin_date :
-            begin = self.make_date_str(begin_date)
-            qs = qs.filter(date__gte=begin)
-        if end_date:
-            end = self.make_date_str(end_date)
-            qs = qs.filter(date__lte=end)
-        elif begin_date or end_date:
-            raise 'If you specify either begin_date or end_date, you must also specify the other.'
+        if begin_timestamp :
+            qs = qs.filter(updated_timestamp__gte=begin_timestamp)
         qs = qs.filter(self.enc_q)
         return qs
     
-    def matches(self, begin_date=None, end_date=None):
-        return self.encounters(begin_date, end_date)
+    def matches(self, begin_timestamp=None):
+        return self.encounters(begin_timestamp)
 
 
 class FeverHeuristic(BaseHeuristic):
@@ -465,11 +456,9 @@ class FeverHeuristic(BaseHeuristic):
             def_version = def_version,
             )
     
-    def matches(self, begin_date=None, end_date=None, queryset=None):
+    def matches(self, begin_timestamp=None, queryset=None):
         '''
         Return all encounters indicating fever.
-            @type begin_date: datetime.date
-            @type end_date:   datetime.date
             @type queryset:   QuerySet
         '''
         log.debug('Get encounters matching "%s".' % self.heuristic_name)
@@ -477,12 +466,8 @@ class FeverHeuristic(BaseHeuristic):
         for code in self.icd9s:
             enc_q = enc_q | Q(icd9_codes__code=code)
         qs = Encounter.objects.all()
-        if begin_date :
-            begin = self.make_date_str(begin_date)
-            qs = qs.filter(date__gte=begin)
-        if end_date:
-            end = self.make_date_str(end_date)
-            qs = qs.filter(date__lte=end)
+        if begin_timestamp:
+            qs = qs.filter(updated_timestamp__gte=begin_timestamp)
         # Either encounter has the 'fever' ICD9, or it records a high temp
         q_obj = enc_q | Q(temperature__gt=self.temperature)
         log.debug('q_obj: %s' % q_obj)
@@ -504,12 +489,12 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
             def_version = 1,
             )
         
-    def matches(self, begin_date=None, end_date=None):
+    def matches(self, begin_timestamp=None):
         log.debug('Looking for high calculated bilirubin scores')
         # First, we return a list of patient & order date pairs, where the sum
         # of direct and indirect bilirubin tests ordered on the same day is 
         # greater than 1.5.
-        relevant = self.relevant_labs(begin_date, end_date)
+        relevant = self.relevant_labs(begin_timestamp)
         vqs = relevant.values('patient', 'date') # returns ValueQuerySet
         vqs = vqs.annotate(calc_bil=Sum('result_float'))
         vqs = vqs.filter(calc_bil__gt=1.5)
@@ -521,12 +506,12 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
             matches = matches | relevant.filter(patient=item['patient'], date=item['date']) 
         return matches
     
-    def newmatches(self, begin_date=None, end_date=None):
+    def newmatches(self, begin_timestamp=None):
         log.debug('Looking for high calculated bilirubin scores')
         # First, we return a list of patient & order date pairs, where the sum
         # of direct and indirect bilirubin tests ordered on the same day is 
         # greater than 1.5.
-        relevant = self.relevant_labs(begin_date, end_date).filter(date__isnull=False)
+        relevant = self.relevant_labs(begin_timestamp).filter(date__isnull=False)
         vqs = relevant.values('patient', 'date') # returns ValueQuerySet
         vqs = vqs.annotate(calc_bil=Sum('result_float'))
         vqs = vqs.filter(calc_bil__gt=1.5)
