@@ -55,16 +55,21 @@ def AgeFevers(startDT='20090301',endDT='20090331'):
     normtemp = {}
     fevertemp = {}
     tot =  {}
+    demage = {}
 
     esel = {'dob':
             'select DemogDate_of_Birth from esp_demog where esp_demog.id = esp_enc.EncPatient_id'}
     # an extra select dict to speed up the foreign key lookup - note real SQL table and column names!
 
     allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT,
-        EncEncounter_Date__lte=endDT).extra(select=esel).values_list('dob',
+        EncEncounter_Date__lte=endDT).extra(select=esel).values_list('EncPatient','dob',
         'EncEncounter_Date','EncTemperature').iterator() # yes - this works well to minimize ram
     for e in allenc:
-        age = makeAge(dob=e.dob,edate=e.EncEncounter_Date,ageChunksize=ageChunksize)
+        d = e.EncPatient # demog
+        age = demage.get(d,-999)
+        if age == -999:
+            age = makeAge(dob=e.dob,edate=e.EncEncounter_Date,ageChunksize=ageChunksize)
+            demage[d] = age # cache
         t = None
         if e.EncTemperature > '':
             try:
@@ -105,7 +110,7 @@ def count(startDT=None,endDT=None):
     f.close()
 
 if __name__ == "__main__":
-    count('20060701','20090607')
+    count('20060701','20060730')
 
 
 
