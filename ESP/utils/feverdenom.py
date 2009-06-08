@@ -65,13 +65,14 @@ def AgeFevers(startDT='20090301',endDT='20090331'):
         EncEncounter_Date__lte=endDT).extra(select=esel).values('EncPatient','dob',
         'EncEncounter_Date','EncTemperature').iterator() # yes - this works well to minimize ram
     for e in allenc:
-        d = e['EncPatient'] # demog
-        age = demage.get(d,-999)
+        did = e['EncPatient'] # demog
+        age = demage.get(did,-999)
         if age == -999:
-            age = makeAge(dob=e.dob,edate=e.EncEncounter_Date,ageChunksize=ageChunksize)
-            demage[d] = age # cache
+            dob = e.get('dob',None)
+            age = makeAge(dob=dob,edate=e.EncEncounter_Date,ageChunksize=ageChunksize)
+            demage[did] = age # cache
         t = e.get('EncTemperature',None)
-        if e['EncTemperature'] > '':
+        if t > '':
             try:
                 t = float(t)
             except:
