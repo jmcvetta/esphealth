@@ -100,10 +100,10 @@ def count(startDT=None,endDT=None):
     h = 'Age\tMeasuref\tFeverf\tnoFeverf\ttotenc'
     res = [h,]
     for a in ak:
-        t = tot[a]
-        nno = notemp[a]
-        nhot = fevertemp[a]
-        nnot = normtemp[a]
+        t = tot.get(a,1)
+        nno = notemp[a].get(a,0)
+        nhot = fevertemp.get(a,0)
+        nnot = normtemp.get(a,0)
         row = ['%d' % a,'%3.2f' % (nnot+nhot)/t,'%3.2f' % nhot/t,'%3.2f' % nnot/t,t]
         res.append('\t'.join(row))
     print '\n'.join(res)
