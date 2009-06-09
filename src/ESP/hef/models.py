@@ -38,8 +38,11 @@ class HeuristicEvent(models.Model):
     An interesting medical event
     '''
     heuristic_name = models.CharField(max_length=127, null=False, blank=False, db_index=True)
-    date = models.DateField(blank=False, db_index=True)
+    date = models.DateField('Date event occured', blank=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
+    timestamp = models.DateTimeField('Time event was created in db', blank=False, auto_now_add=True)
+    definition = models.CharField(max_length=100, blank=False)
+    def_version = models.IntegerField(blank=False)
     #
     # Standard generic relation support
     #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
@@ -47,8 +50,6 @@ class HeuristicEvent(models.Model):
     content_type = models.ForeignKey(ContentType, db_index=True)
     object_id = models.PositiveIntegerField(db_index=True)
     content_object = generic.GenericForeignKey('content_type', 'object_id')
-    definition = models.CharField(max_length=100, blank=False)
-    def_version = models.IntegerField(blank=False)
     
     class Meta:
         unique_together = ['heuristic_name', 'date', 'patient', 'content_type', 'object_id']
