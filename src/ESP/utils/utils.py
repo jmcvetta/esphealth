@@ -138,7 +138,10 @@ def str_from_date(date):
     if date == None:
         return None
     assert isinstance(date, datetime.date)
-    return date.strftime('%Y%m%d')
+    try:
+        return date.strftime('%Y%m%d')
+    except ValueError: # ValueError: year=1898 is before 1900; the datetime strftime() methods require year >= 1900
+        return datetime.date(1900,1,1).strftime('%Y%m%d')
         
 
 
