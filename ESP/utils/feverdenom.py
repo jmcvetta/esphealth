@@ -121,7 +121,7 @@ def count(startDT=None,endDT=None):
 
 
 if __name__ == "__main__":
-    count('20060701','20060730')
+    count('20060701','20090531')
 
 
 
