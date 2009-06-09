@@ -74,11 +74,9 @@ def AgeFevers(startDT='20090301',endDT='20090331'):
             demage[did] = age # cache
         if age <> None:
             t = e.get('EncTemperature',None)
-            if t > '':
+            if t.strip() > '':
                 try:
                     t = float(t)
-                    if (i+1) % 100 == 0:
-                        print 't=',t
                     if t < 100.4:
                        normtemp.setdefault(age,0)
                        normtemp[age] += 1
@@ -89,7 +87,7 @@ def AgeFevers(startDT='20090301',endDT='20090331'):
                        print 'wtf? t=',t
                 except:
                     t = None
-            if t == None :
+            else:
                 notemp.setdefault(age,0)
                 notemp[age] += 1
             tot.setdefault(age,0)
@@ -113,7 +111,7 @@ def count(startDT=None,endDT=None):
         nhot = fevertemp.get(a,0)
         nnot = normtemp.get(a,0)
         row = ['%d' % a,'%3.5f' % ((nnot+nhot)/t),'%3.5f' % (nhot/t),'%3.5f' % (nnot/t),'%d' % t,
-               '%3.5f' % (nno/t), '%3.5f' % (nhot/(nhot+nnot)) ]
+               '%3.5f' % (nno/t), '%3.5f' % (nhot/float(nhot+nnot)) ]
         res.append('\t'.join(row))
     print '\n'.join(res)
     f = open('fevercounts.xls','w')
