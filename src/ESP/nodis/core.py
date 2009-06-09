@@ -286,13 +286,6 @@ class DiseaseDefinition(object):
                         valid_windows.append(win)
                     t_windows = list(valid_windows)
             log.debug('Remaining valid time windows: %s' % t_windows)
-        # DEBUG:
-        #for win in t_windows:
-            #print '+' * 80
-            #print win
-            #for e in win.events:
-                #print '\t%s' % e
-        # /DEBUG
         return t_windows
             
 
