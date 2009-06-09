@@ -110,8 +110,8 @@ def count(startDT=None,endDT=None):
         nno = notemp.get(a,0)
         nhot = fevertemp.get(a,0)
         nnot = normtemp.get(a,0)
-        row = ['%d' % a,'%3.5f' % ((nnot+nhot)/t),'%3.5f' % (nhot/t),'%3.5f' % (nnot/t),'%d' % t,
-               '%3.5f' % (nno/t), '%3.5f' % (nhot/float(nhot+nnot)) ]
+        row = ['%d' % a,'%3.5f' % ((nnot+nhot)/t),'%3.5f' % (nhot/t),'%3.5f' % (nnot/t),
+               '%3.5f' % (nno/t), '%3.5f' % (nhot/float(nhot+nnot)),'%d' % t ]
         res.append('\t'.join(row))
     print '\n'.join(res)
     f = open('fevercounts.xls','w')
