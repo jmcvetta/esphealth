@@ -1,5 +1,5 @@
 # some data structures for developing
-# esp:ss 
+# esp:ss
 # NOTE - the site exclusion complexitiesre ATRIUS specific and will need to be
 # completely adjusted for the kinds of exclusions required to satisfy the local
 # DPH - here, we're excluding all the specialty practices to try to make ILI reporting more like
@@ -10,790 +10,790 @@
 # syndrome defs 5 15 06 clean.xls eg
 # atrius sites updated april 29 2009
 
-localSiteSites="""Asterisk	Zip	 count(EncEncounter_SiteName) | EncEncounter_SiteName                                        | EncEncounter_Site |												
-		+------------------------------+--------------------------------------------------------------+-------------------+												
-*		|                       141532 |                                                              | 16                |												
-*		|                            1 | Adult Cardiology - Warwick                                   | 823611            |												
-*		|                        84627 | Adult Telecomm                                               | 2004701           |												
-*		|                            7 | Anatomical Pathology                                         | 351901            |												
-*		|                            1 | Arbour IP                                                    | 342101            |												
-*		|                            6 | Arbour OP                                                    | 342102            |												
-*		|                        21048 | Atrius Health Women''s Center                                | 672601            |												
-*		|                           28 | Bedford Internal Medicine                                    | 401801            |												
-*		|                          419 | BILLING OPERATIONS GROUP                                     | 27                |												
-*		|                          183 | Boston Case Management                                       | 088501            |												
-*		|                           11 | Boston Dental                                                | 080901            |												
-*		|                            8 | Boston Extended Care Facility Rounding                       | 088601            |												
-*		|                           82 | Boston Intensive Home Based Program                          | 088602            |												
-*		|                            8 | Boston Pharmacy                                              | 088701            |												
-*		|                        11426 | Boston Physical Therapy Combined                             | 083501            |												
-*		|                         1576 | Boston Podiatry                                              | 083601            |												
-*		|                          177 | Boston Radiology                                             | 083901            |												
-*		|                            1 | Braintree Administration                                     | 061601            |												
-*		|                         3427 | Braintree Allergy                                            | 060201            |												
-*		|                        54134 | Braintree Annex Behavioral Health                            | 505501            |												
-*		|                         2165 | Braintree Annex Educational Assessment Center                | 505502            |												
-*		|                          341 | Braintree Annex Educational Testing and Consultation Service | 505502            |												
-*		|                        23949 | Braintree Anticoagulation Program                            | 061804            |												
-*		|                         2490 | Braintree Behavioral Health                                  | 065501            |												
-*		|                         3401 | Braintree Cardiology, Combined                               | 065701            |												
-*		|                          515 | Braintree Case Management                                    | 068501            |												
-*		|                            2 | Braintree Cashier                                            | 069301            |												
-*		|                         2459 | Braintree Complex Chronic Care                               | 060401            |												
-*		|                         1663 | Braintree Dental                                             | 060901            |												
-*		|                        22008 | Braintree Dermatology                                        | 061001            |												
-*		|                            3 | Braintree Developmental Consultation Services                | 066301            |												
-*		|                           25 | Braintree Ear, Nose and Throat                               | 061201            |												
-*		|                            3 | Braintree ECF Rounding                                       | 068601            |												
-*		|                           12 | Braintree Endocrinology                                      | 061101            |												
-	02184	|                         7992 | Braintree Family Medicine                                    | 061805            |												
-	02184	|                       149903 | Braintree Internal Medicine A                                | 061801            |												
-	02184	|                       134275 | Braintree Internal Medicine B                                | 061802            |												
-*		|                        96119 | Braintree Internal Medicine C                                | 061803            |												
-*		|                         1011 | Braintree Laboratory                                         | 061901            |												
-*		|                          442 | Braintree Main Reception                                     | 069401            |												
-*		|                           67 | Braintree Maternal Home Care                                 | 068301            |												
-*		|                            1 | Braintree Medical Records                                    | 068001            |												
-*		|                        11549 | Braintree MH Combined                                        | 065501            |												
-*		|                          375 | Braintree MRI                                                | 063902            |												
-*		|                         4710 | Braintree Neurology, Combined                                | 062401            |												
-*		|                         3915 | Braintree Nutrition                                          | 062501            |												
-*		|                        12051 | Braintree Obstetrics and Gynecology                          | 062601            |												
-*		|                        12955 | Braintree Ophthalmology                                      | 062901            |												
-*		|                            2 | Braintree Optical Services                                   | 069701            |												
-*		|                        11057 | Braintree Optometry                                          | 063001            |												
-*		|                        26433 | Braintree Orthopedics, Combined                              | 065601            |												
-	02184	|                          117 | Braintree Pediatric Asthma                                   | 067701            |												
-	02184	|                       143624 | Braintree Pediatrics                                         | 063401            |												
-*		|                          778 | Braintree Pharmacy                                           | 068701            |												
-*		|                        16879 | Braintree Physical Therapy, Combined                         | 063501            |												
-*		|                         4631 | Braintree Podiatry                                           | 063601            |												
-*		|                          432 | Braintree Pulmonary Medicine                                 | 063801            |												
-*		|                          178 | Braintree Radiology                                          | 063901            |												
-*		|                        15515 | Braintree Rheumatology                                       | 064001            |												
-*		|                           99 | Braintree Spine Unit                                         | 065602            |												
-*		|                        13234 | Braintree Surgery, General                                   | 064301            |												
-*		|                            1 | Braintree Travel Medicine                                    | 069801            |												
-	02184	|                          141 | Braintree Urgent Care, After Hours, Adult                    | 064701            |												
-	02184	|                          106 | Braintree Urgent Care, After Hours, Pediatrics               | 064801            |												
-	02184	|                        23623 | Braintree Urgent Care, Weekend/Holiday, Adult                | 066401            |												
-	02184	|                        18737 | Braintree Urgent Care, Weekend/Holiday, Pediatric            | 066501            |												
-*		|                           56 | Braintree Urology Gynecology                                 | 062602            |												
-*		|                            5 | Braintree Visual Services                                    | 065401            |												
-*		|                           13 | Braintree Women''s Health Services                           | 067901            |												
-*		|                            2 | Braintree Women's Health Services                            | 067901            |												
-*		|                            1 | Burlington Administration                                    | 241601            |												
-*		|                         1289 | Burlington Allergy                                           | 240201            |												
-*		|                          744 | Burlington Anticoagulation Program                           | 241803            |												
-*		|                         1369 | Burlington Behavioral Health                                 | 245501            |												
-*		|                          152 | Burlington Case Management                                   | 248501            |												
-*		|                            1 | Burlington Cashier                                           | 249301            |												
-*		|                         3971 | Burlington Dermatology                                       | 241001            |												
-*		|                        18469 | Burlington Fertility and Endocrinology                       | 241301            |												
-*		|                          684 | Burlington Gastroenterology                                  | 241401            |												
-*		|                           15 | Burlington Genetics                                          | 241501            |												
-	01803	|                        77737 | Burlington Internal Medicine A                               | 241801            |												
-*		|                          529 | Burlington Laboratory                                        | 241901            |												
-*		|                           27 | Burlington Main Reception                                    | 249401            |												
-*		|                           69 | Burlington Maternal Fetal Medicine                           | 242604            |												
-*		|                          522 | Burlington MH,Combined                                       | 245501            |												
-*		|                            1 | Burlington Neurology Combined                                | 242401            |												
-*		|                          286 | Burlington Nutrition                                         | 242501            |												
-*		|                        41489 | Burlington Obstetrics and Gynecology                         | 242601            |												
-	01803	|                       127881 | Burlington Pediatrics                                        | 243401            |												
-*		|                            9 | Burlington Pharmacy                                          | 248701            |												
-*		|                         6905 | Burlington Physical Therapy Combined                         | 243501            |												
-*		|                            1 | Burlington Resource Department                               | 240101            |												
-*		|                         5663 | Burlington Urology Gynecology                                | 242603            |												
-*		|                        26485 | Burlington Vulvar Specialty                                  | 242602            |												
-*		|                        15388 | Cambridge Anticoagulation Program                            | 021803            |												
-*		|                         7894 | Cambridge Behavioral Health                                  | 025501            |												
-*		|                          111 | Cambridge Case Management                                    | 028501            |												
-*		|                            1 | Cambridge Cashier                                            | 029301            |												
-*		|                            2 | Cambridge Chiropractic Medicine                              | 028801            |												
-*		|                          232 | Cambridge Complex Chronic Care                               | 020401            |												
-*		|                        11645 | Cambridge Dermatology                                        | 021001            |												
-*		|                         7123 | Cambridge Ear, Nose and Throat                               | 021201            |												
-*		|                           35 | Cambridge ECF Rounding                                       | 028601            |												
-*		|                         4084 | Cambridge Endocrinology                                      | 021101            |												
-*		|                        11112 | Cambridge Gastroenterology                                   | 021401            |												
-*		|                           38 | Cambridge Intensive Home Based Program                       | 028602            |												
-	02138	|                       110068 | Cambridge Internal Medicine 1                                | 021801            |												
-	02138	|                        99483 | Cambridge Internal Medicine 2                                | 021802            |												
-*		|                          307 | Cambridge Laboratory                                         | 021901            |												
-*		|                            2 | Cambridge Main Desk                                          | 029401            |												
-*		|                          491 | Cambridge Medical Records                                    | 028001            |												
-*		|                        29402 | Cambridge MH,Combined                                        | 025501            |												
-*		|                         1606 | Cambridge Nephrology                                         | 022301            |												
-*		|                         1070 | Cambridge Nutrition                                          | 022501            |												
-*		|                        29479 | Cambridge Obstetrics and Gynecology                          | 022601            |												
-*		|                            1 | Cambridge Orthopedics, Combined                              | 025601            |												
-*		|                            1 | Cambridge Parking                                            | 029501            |												
-	02138	|                        48607 | Cambridge Pediatrics                                         | 023401            |												
-*		|                           10 | Cambridge Radiology                                          | 023901            |												
-*		|                         4856 | Cambridge Surgery, General                                   | 024301            |												
-	02138	|                            5 | Cambridge Urgent Care, After Hours, Adult                    | 024701            |												
-*		|                            1 | Cash Receipts Department                                     | 26                |												
-*		|                            2 | Chelmsford Administration                                    | 131601            |												
-*		|                         4325 | Chelmsford Allergy                                           | 130201            |												
-*		|                        22158 | Chelmsford Anticoagulation Program                           | 131803            |												
-*		|                        10238 | Chelmsford Behavioral Health                                 | 135501            |												
-*		|                         8803 | Chelmsford Cardiology                                        | 130401            |												
-*		|                         1253 | Chelmsford Case Management                                   | 138501            |												
-*		|                         1289 | Chelmsford Complex Chronic Care                              | 130402            |												
-*		|                          997 | Chelmsford Contact Lens                                      | 130701            |												
-*		|                         3045 | Chelmsford Dental                                            | 130901            |												
-*		|                        17316 | Chelmsford Dermatology                                       | 131001            |												
-*		|                            1 | Chelmsford Developmental Consultation Services               | 136301            |												
-*		|                          984 | Chelmsford Ear, Nose and Throat                              | 131201            |												
-*		|                          228 | Chelmsford ECF ROUNDING                                      | 138601            |												
-*		|                            9 | Chelmsford Employee Health                                   | 133402            |												
-*		|                         5249 | Chelmsford Endocrinology                                     | 131101            |												
-*		|                         8260 | Chelmsford Gastroenterology                                  | 131401            |												
-*		|                          653 | Chelmsford Intensive Home Based Program                      | 138602            |												
-	01824	|                       295368 | Chelmsford Internal Medicine A                               | 131801            |												
-*		|                         2370 | Chelmsford Laboratory                                        | 131901            |												
-*		|                          120 | Chelmsford Main Desk                                         | 139401            |												
-*		|                            2 | Chelmsford Maternal Home Care                                | 138301            |												
-*		|                        66177 | Chelmsford Medical Records                                   | 138001            |												
-*		|                        41514 | Chelmsford MH-Combined                                       | 135501            |												
-*		|                         2063 | Chelmsford Nephrology                                        | 132301            |												
-*		|                         4831 | Chelmsford Neurolgy Adult                                    | 135901            |												
-*		|                         1327 | Chelmsford Nutrition                                         | 132501            |												
-*		|                        43109 | Chelmsford Obstetrics and Gynecology                         | 132601            |												
-*		|                        10381 | Chelmsford Ophthalmology                                     | 132901            |												
-*		|                        15513 | Chelmsford Optometry                                         | 133001            |												
-*		|                        14423 | Chelmsford Orthopedic Combined                               | 135601            |												
-	01824	|                       101248 | Chelmsford Pediatrics                                        | 133401            |												
-*		|                        10589 | Chelmsford Physical Therapy Combined                         | 133501            |												
-*		|                         2768 | Chelmsford Podiatry                                          | 133601            |												
-*		|                          930 | Chelmsford Pulmonary Medicine                                | 133801            |												
-*		|                          177 | Chelmsford Radiology                                         | 133901            |												
-*		|                            1 | Chelmsford Resource Department                               | 130101            |												
-*		|                          168 | Chelmsford Rheumatology                                      | 134001            |												
-*		|                         1607 | Chelmsford Speech Therapy                                    | 134101            |												
-*		|                         9413 | Chelmsford Surgery                                           | 134301            |												
-*		|                            3 | Chelmsford Translators                                       | 136901            |												
-*		|                            2 | Chelmsford Ultrasound                                        | 139101            |												
-	01824	|                           48 | Chelmsford Urgent Care Combined                              | 134901            |												
-	01824	|                        13796 | Chelmsford Urgent Care Pedi, After Hours                     | 134801            |												
-	01824	|                        10271 | Chelmsford Urgent Care Weekend Combined                      | 136101            |												
-*		|                         5007 | Chelmsford Urology                                           | 135301            |												
-*		|                          206 | Chelmsford Visual Services                                   | 135401            |												
-*		|                           28 | Clinical Pathology                                           | 351902            |												
-*		|                          408 | Concord Anticoagulation Program                              | 391806            |												
-*		|                          345 | Concord Case Management                                      | 398501            |												
-*		|                          284 | Concord Complex Chronic Care                                 | 390401            |												
-*		|                          377 | Concord Hillside Emerson Hospital Urological Gynecology      | 392601            |												
-	01742	|                         1942 | Concord Internal Medicine 1                                  | 391804            |												
-	01742	|                       109581 | Concord Internal Medicine A                                  | 391801            |												
-	01742	|                       104969 | Concord Internal Medicine B                                  | 391802            |												
-	01742	|                        84860 | Concord Internal Medicine D                                  | 391803            |												
-*		|                         1680 | Concord Laboratory                                           | 391901            |												
-*		|                         4373 | Concord Main Desk                                            | 399401            |												
-*		|                        46438 | Concord Medical Records                                      | 398001            |												
-*		|                         7365 | Concord MH-Combined                                          | 395501            |												
-	01742	|                       161753 | Concord Pediatrics                                           | 393401            |												
-*		|                         1640 | Concord Special Care Unit                                    | 391805            |												
-*		|                         1740 | Copley Anticoagulation Program                               | 141803            |												
-*		|                         1905 | Copley Behavioral Health                                     | 145501            |												
-*		|                           17 | Copley Case Management                                       | 148501            |												
-*		|                            5 | Copley ECF Rounding                                          | 148601            |												
-*		|                            1 | Copley Genetics                                              | 141501            |												
-*		|                            4 | Copley Infectious Disease                                    | 145801            |												
-*		|                           19 | Copley Intensive Home Based Program                          | 148602            |												
-	02116	|                       157148 | Copley Internal Med. A                                       | 141801            |												
-*		|                            6 | Copley Internal Medicine B                                   | 141802            |												
-*		|                          395 | Copley Laboratory                                            | 141901            |												
-*		|                           12 | Copley Main Desk                                             | 149401            |												
-*		|                          136 | Copley MH-Combined                                           | 145501            |												
-*		|                            4 | Copley Nutrition                                             | 142501            |												
-*		|                        45569 | Copley Obstetrics and Gynecology                             | 142601            |												
-*		|                            3 | Copley Pediatric Asthma Program                              | 147701            |												
-	02116	|                        49146 | Copley Pediatrics                                            | 143401            |												
-*		|                          291 | Copley Pharmacy                                              | 148701            |												
-*		|                            5 | Copley Radiology                                             | 143901            |												
-*		|                            3 | Copley Rheumatology                                          | 144001            |												
-*		|                         1026 | Copley Uterine Artery Embolization                           | 142603            |												
-*		|                           10 | Copley Vulvar Specialty                                      | 142602            |												
-*		|                            5 | Dedham Administration                                        | 701601            |												
-*		|                         8753 | Dedham Allergy                                               | 700201            |												
-*		|                           21 | Dedham Anticoagulation                                       | 701802            |												
-*		|                        23680 | Dedham Dermatology                                           | 701001            |												
-*		|                        18665 | Dedham Ears, Nose and Throat                                 | 701201            |												
-*		|                          150 | Dedham Endocrinology                                         | 701101            |												
-*		|                         1577 | Dedham Gastroenterology                                      | 701401            |												
-*		|                            1 | Dedham Information Systems                                   | 701602            |												
-	02026	|                       350425 | Dedham Internal Medicine                                     | 701801            |												
-*		|                        31499 | Dedham Laboratory                                            | 701901            |												
-*		|                        32876 | Dedham Medical Associates Obstetrics and Gynecology          | 042602            |												
-*		|                        81229 | Dedham Medical Records                                       | 708001            |												
-*		|                        43423 | Dedham Ophthalmology                                         | 702901            |												
-*		|                        31331 | Dedham Orthopedics, Combined                                 | 705601            |												
-	02026	|                       140722 | Dedham Pediatrics                                            | 703401            |												
-*		|                        10299 | Dedham Physiatry                                             | 705602            |												
-*		|                        17051 | Dedham Physical Therapy, Combined                            | 703501            |												
-*		|                         3039 | Dedham Podiatry                                              | 703601            |												
-*		|                         2131 | Dedham Radiology                                             | 703901            |												
-*		|                         4242 | Dedham Rheumatology                                          | 704001            |												
-*		|                         6305 | Dedham Surgery                                               | 704301            |												
-*		|                        16289 | Dedham Urology                                               | 705301            |												
-*		|                          971 | Dedham Vein & Aesthetic                                      | 701701            |												
-*		|                           17 | Dermatology - Providence                                     | 811431            |												
-*		|                            1 | Dermatology - Warwick                                        | 821431            |												
-*		|                            1 | Dermatology-Lincoln Ctr                                      | 851431            |												
-*		|                        31637 | DMA Norwood Obstetrics and Gynecology                        | 042605            |												
-*		|                            8 | Emergency Services-BWH                                       | 2001801           |												
-*		|                            5 | Family Practice - Plainville                                 | 831181            |												
-*		|                            1 | Family Practice - Swansea                                    | 841181            |												
-*		|                          130 | Faulkner Anticoagulation Program                             | 471802            |												
-*		|                            2 | Faulkner Cardiology                                          | 010402            |												
-*		|                           28 | Faulkner Case Management                                     | 478501            |												
-*		|                           53 | Faulkner Complex Chronic Care                                | 470401            |												
-	02130	|                        73897 | Faulkner Internal Medicine                                   | 471801            |												
-*		|                            2 | Faulkner Laboratory                                          | 471901            |												
-*		|                        12967 | Faulkner Neurology                                           | 105902            |												
-*		|                           55 | Faulkner Podiatry                                            | 103602            |												
-*		|                         6551 | Faulkner Surgery                                             | 104302            |												
-	01701	|                       118247 | Framingham Adult Medicine                                    | 721801            |												
-*		|                          486 | Framingham Allergy                                           | 720201            |												
-*		|                         4899 | Framingham Cardiology                                        | 720401            |												
-*		|                        30212 | Framingham Laboratory                                        | 721901            |												
-*		|                         4618 | Framingham Medical Records                                   | 728001            |												
-*		|                         1443 | Framingham Obstatrics and Gynecology                         | 722601            |												
-*		|                        29597 | Framingham Obstetrics and Gynecology                         | 722601            |												
-*		|                            2 | Framingham Orthopedics                                       | 725601            |												
-	01701	|                        11949 | Framingham Pediatrics                                        | 723401            |												
-*		|                          825 | Framingham Podiatry                                          | 723601            |												
-*		|                        11189 | Framingham Practice                                          | 723401            |												
-*		|                            1 | Franklin Street Obstetrics and Gynecology                    | 792601            |												
-*		|                            4 | Granite Cardiology                                           | 650401            |												
-*		|                            4 | Granite Coumadin                                             | 651804            |												
-*		|                            1 | Granite Gastroenterology                                     | 651401            |												
-	02169	|                            1 | Granite Internal Medicine - 2F                               | 651803            |												
-	02169	|                           13 | Granite Internal Medicine - 3A                               | 651801            |												
-	01451	|                        29264 | Harvard Pediatrics                                           | 463401            |												
-*		|                            9 | HVMA Clinical Assessment and Support Team                    | 358501            |												
-*		|                         1481 | HVMA Division of Medicine at Brigham and Womens              | 351801            |												
-*		|                         2222 | HVMA Division of Medicine at Mount Auburn Hospital           | 351802            |												
-*		|                          971 | HVMA Pediatrics at Children''s Hospital                      | 363401            |												
-*		|                          989 | HVMA Pediatrics at Children's Hospital                       | 363401            |												
-*		|                            3 | HVMA Utilization Management and Clinical Programs            | 28                |												
-*		|                          882 | Intensive Home Based Program                                 | 108602            |												
-*		|                          597 | Internal Medicine - Providence                               | 811101            |												
-*		|                            1 | Internal Medicine - Warwick                                  | 821101            |												
-*		|                         4994 | Kenmore - Infusion Unit                                      | 019201            |												
-*		|                            1 | Kenmore - Travel Medicine                                    | 019801            |												
-*		|                           16 | Kenmore Administration                                       | 011601            |												
-*		|                         4081 | Kenmore Allergy                                              | 010201            |												
-*		|                          576 | Kenmore Allergy, Pediatrics                                  | 010202            |												
-*		|                            4 | Kenmore Andrology                                            | 019601            |												
-*		|                        37054 | Kenmore Anticoagulation Program                              | 011805            |												
-*		|                            3 | Kenmore Audiology                                            | 010301            |												
-*		|                         7185 | Kenmore Behavioral Health                                    | 015501            |												
-*		|                        29180 | Kenmore BH Combined                                          | 015501            |												
-*		|                          194 | Kenmore BH F & E                                             | 015502            |												
-*		|                           47 | Kenmore BH Palliative Care                                   | 015503            |												
-*		|                           30 | Kenmore Bone Density                                         | 013905            |												
-*		|                        17289 | Kenmore Cardiology Testing                                   | 010601            |												
-*		|                        51849 | Kenmore Cardiology, Adult                                    | 010401            |												
-*		|                         2511 | Kenmore Cardiology, Pediatrics                               | 010501            |												
-*		|                         4213 | Kenmore Case Management                                      | 018501            |												
-*		|                            1 | Kenmore Cashier                                              | 019301            |												
-*		|                        38049 | Kenmore Complex Chronic Care                                 | 010403            |												
-*		|                         9459 | Kenmore Dental                                               | 010901            |												
-*		|                        25012 | Kenmore Dermatology                                          | 011001            |												
-*		|                           89 | Kenmore Diagnostic Technology Center CT Scan                 | 013903            |												
-*		|                          169 | Kenmore Diagnostic Technology Center MRI                     | 013902            |												
-*		|                            1 | Kenmore Diagnostic Technology Center Nuclear Medicine        | 013904            |												
-*		|                            2 | Kenmore Diagnostic Technology Center Ultrasound              | 013906            |												
-*		|                        23947 | Kenmore Ears, Nose and Throat                                | 011201            |												
-*		|                         1535 | Kenmore ECF Rounding                                         | 018601            |												
-*		|                        54359 | Kenmore Endocrinology                                        | 011101            |												
-*		|                           72 | Kenmore Endocrinology Complex Chronic Care                   | 011103            |												
-*		|                         1979 | Kenmore Endocrinology OB/Gyn                                 | 011102            |												
-*		|                        18023 | Kenmore Endoscopy Suite                                      | 011403            |												
-*		|                        31730 | Kenmore Fertility and Endocrinology                          | 011301            |												
-*		|                            2 | Kenmore Flex Sig Program                                     | 011402            |												
-*		|                        58495 | Kenmore Gastroenterology                                     | 011401            |												
-*		|                         3313 | Kenmore Genetics                                             | 011501            |												
-*		|                        17557 | Kenmore Hand Orthopedics                                     | 017501            |												
-*		|                         2275 | Kenmore Health Management Resources                          | 011806            |												
-*		|                          602 | Kenmore Intensive Home Based Program                         | 018602            |												
-	02215	|                       201894 | Kenmore Internal Medicine 4                                  | 011802            |												
-	02215	|                       194746 | Kenmore Internal Medicine 6E                                 | 011804            |												
-*		|                          839 | Kenmore Laboratory                                           | 011901            |												
-*		|                            1 | Kenmore Main Desk 1st Floor                                  | 019403            |												
-*		|                            1 | Kenmore Main Desk 4th Floor                                  | 019402            |												
-*		|                            2 | Kenmore Main Desk 5th Floor                                  | 019401            |												
-*		|                            9 | Kenmore Mammogram                                            | 012001            |												
-*		|                         7441 | Kenmore Mammography                                          | 012001            |												
-*		|                          857 | Kenmore Maternal Fetal Medicine                              | 012605            |												
-*		|                         4032 | Kenmore Medical Records                                      | 018001            |												
-*		|                            4 | Kenmore Menopause                                            | 011302            |												
-*		|                         2147 | Kenmore Menopause Consultation                               | 012604            |												
-*		|                           14 | Kenmore Mental Health Child                                  | 012201            |												
-*		|                         1228 | Kenmore MH Adult                                             | 012102            |												
-*		|                         1287 | Kenmore MH-Internal Medicine                                 | 011807            |												
-*		|                        13893 | Kenmore Nephrology                                           | 012301            |												
-*		|                          898 | Kenmore Neurology Testing                                    | 016801            |												
-*		|                        12041 | Kenmore Neurology, Adult                                     | 015901            |												
-*		|                         3292 | Kenmore Nutrition                                            | 012501            |												
-*		|                          668 | Kenmore ObGyn Urgent Care                                    | 012603            |												
-*		|                        57788 | Kenmore Obstetrics and Gynecology                            | 012602            |												
-*		|                        10313 | Kenmore Occupational Therapy                                 | 012701            |												
-*		|                        94849 | Kenmore Oncology                                             | 012801            |												
-*		|                        48790 | Kenmore Ophthalmology                                        | 012901            |												
-*		|                            3 | Kenmore Optical Services                                     | 019701            |												
-*		|                        16603 | Kenmore Optometry/Optical Service                            | 013001            |												
-*		|                        37247 | Kenmore Orthopedics, Combined                                | 015601            |												
-*		|                            2 | Kenmore Orthopedics, Pediatrics                              | 013201            |												
-*		|                            7 | Kenmore Pain                                                 | 013301            |												
-*		|                          344 | Kenmore Palliative Care                                      | 010001            |												
-	02215	|                       105046 | Kenmore Pediatrics A                                         | 013401            |												
-*		|                            1 | Kenmore Pharmacy                                             | 018701            |												
-*		|                        19688 | Kenmore Physical Therapy, Combined                           | 013501            |												
-*		|                         7873 | Kenmore Podiatry                                             | 013601            |												
-*		|                         8422 | Kenmore Pulmonary Medicine                                   | 013801            |												
-*		|                        11618 | Kenmore Radiology                                            | 013901            |												
-*		|                         5047 | Kenmore Rheumatology                                         | 014001            |												
-*		|                         4015 | Kenmore Speech Therapy                                       | 014101            |												
-*		|                          835 | Kenmore Spine Unit                                           | 015602            |												
-*		|                        28645 | Kenmore Surgery                                              | 014301            |												
-*		|                            2 | Kenmore Ultrasound                                           | 019101            |												
-	02215	|                            1 | Kenmore Urgent Care, After Hours, Adult                      | 014701            |												
-	02215	|                            1 | Kenmore Urgent Care, After Hours, Pediatrics                 | 014801            |												
-	02215	|                        41789 | Kenmore Urgent Care, Day, Adult                              | 015001            |												
-	02215	|                        22638 | Kenmore Urgent Care, Weekend/Holiday, Adult                  | 016401            |												
-	02215	|                        10274 | Kenmore Urgent Care, Weekend/Holiday, Pediatrics             | 016501            |												
-*		|                        10343 | Kenmore Urology                                              | 015301            |												
-*		|                            1 | Kingston Administration                                      | 771601            |												
-*		|                            1 | Kingston Allergy                                             | 770201            |												
-*		|                         3416 | Kingston Behavioral Health                                   | 775501            |												
-	02364	|                         4419 | Kingston Family Practice                                     | 771802            |												
-	02364	|                       204172 | Kingston Internal Medicine                                   | 771801            |												
-*		|                            5 | Kingston Laboratory                                          | 771901            |												
-*		|                        11568 | Kingston Medical Records                                     | 778001            |												
-*		|                        11472 | Kingston Obstetrics and Gynecology                           | 772601            |												
-*		|                         2795 | Kingston Orthopedics                                         | 775601            |												
-	02364	|                        59975 | Kingston Pediatrics                                          | 773401            |												
-*		|                          732 | Kingston Podiatry                                            | 773601            |												
-*		|                          650 | Kingston Radiology                                           | 773901            |												
-*		|                            2 | Kingston Surgery                                             | 774301            |												
-	02364	|                         4641 | Kingston Urgent Care                                         | 775001            |												
-*		|                           29 | Lab Administration                                           | 351903            |												
-	02189	|                           60 | Libbey Parkway Internal Medicine                             | 681801            |												
-*		|                            1 | Libbey Parkway Laboratory                                    | 681901            |												
-*		|                         1267 | Lynnfield Medical Associates Anticoagulation Program         | 431802            |												
-*		|                           67 | Lynnfield Medical Associates Case Management                 | 438501            |												
-	01960	|                       292048 | Lynnfield Medical Associates Internal Medicine               | 431801            |												
-*		|                            2 | Medford Administration                                       | 051601            |												
-*		|                         4493 | Medford Allergy                                              | 050201            |												
-*		|                        24904 | Medford Anticoagulation Program                              | 051803            |												
-*		|                         8875 | Medford Behavioral Health                                    | 055501            |												
-*		|                            1 | Medford Bone Density                                         | 053902            |												
-*		|                         3508 | Medford Cardiology, Combined                                 | 055701            |												
-*		|                          446 | Medford Case Management                                      | 058501            |												
-*		|                            9 | Medford Cashier                                              | 059301            |												
-*		|                         2022 | Medford Complex Chronic Care                                 | 050401            |												
-*		|                        15400 | Medford Dermatology                                          | 051001            |												
-*		|                         3845 | Medford Ears, Nose and Throat                                | 051201            |												
-*		|                          179 | Medford ECF Rounding                                         | 058601            |												
-*		|                            1 | Medford Endocrinology                                        | 051101            |												
-*		|                        18739 | Medford Gastroenterology                                     | 051401            |												
-*		|                          448 | Medford Intensive Home Based Program                         | 058602            |												
-*		|                          245 | Medford Internal Medicine Anti Coag Program                  | 051802            |												
-	02155	|                       303134 | Medford Internal Medicine B                                  | 051801            |												
-*		|                          400 | Medford Laboratory                                           | 051901            |												
-*		|                            4 | Medford Main Desk                                            | 059401            |												
-*		|                           34 | Medford Mammogram                                            | 052001            |												
-*		|                           20 | Medford Mammography                                          | 052001            |												
-*		|                            1 | Medford Maternal Home Care                                   | 058301            |												
-*		|                        44987 | Medford Medical Records                                      | 058001            |												
-*		|                          323 | Medford Menopause Consultation                               | 052603            |												
-*		|                        38581 | Medford MH,Combined                                          | 055501            |												
-*		|                         1042 | Medford Nephrology                                           | 052301            |												
-*		|                         2078 | Medford Nutrition                                            | 052501            |												
-*		|                        34170 | Medford Obstetrics and Gynecology                            | 052601            |												
-*		|                        11408 | Medford Ophthalmology                                        | 052901            |												
-*		|                        11393 | Medford Optometry/Optical Services                           | 053001            |												
-*		|                          639 | Medford Orthopedics, Combined                                | 055601            |												
-	02155	|                        74872 | Medford Pediatrics                                           | 053401            |												
-*		|                         6208 | Medford Podiatry                                             | 053601            |												
-*		|                          452 | Medford Radiology                                            | 053901            |												
-*		|                           22 | Medford Rheumatology                                         | 054001            |												
-*		|                         2309 | Medford Speech Therapy                                       | 054101            |												
-*		|                         6413 | Medford Surgery, General                                     | 054301            |												
-	02155	|                          947 | Medford Urgent Care, Day, Adult                              | 055001            |												
-*		|                         5101 | Medford Urology                                              | 055301            |												
-*		|                          343 | Medford Urology Gynecology                                   | 052602            |												
-*		|                           57 | Medical Billing Department                                   | 25                |												
-*		|                            2 | Medical Billing Department-Chelmsford                        | 30                |												
-*		|                           10 | Medical Billing Department-Riverside                         | 25                |												
-*		|                           11 | Meeting House Road OB/GYN Laboratory                         | 482604            |												
-*		|                        15872 | Meeting House Road Obstetrics and Gynecology                 | 482601            |												
-*		|                            2 | Mental Health - Providence                                   | 811501            |												
-*		|                           81 | Milford Medical Records                                      | 738001            |												
-	01757	|                        27198 | Milford Pediatrics                                           | 733401            |												
-*		|                           99 | Milford Podiatry                                             | 733601            |												
-*		|                            7 | Natick Medical Records                                       | 748001            |												
-*		|                        16095 | Natick Obstetrics and Gynecology                             | 742601            |												
-*		|                         2574 | Norwell Administration                                       | 781601            |												
-*		|                         5514 | Norwell Allergy                                              | 780201            |												
-*		|                          509 | Norwell Behavioral Health                                    | 785501            |												
-*		|                            1 | Norwell Call Center                                          | 781603            |												
-*		|                        14852 | Norwell Dermatology                                          | 781001            |												
-	02061	|                        53868 | Norwell Family Practice                                      | 781802            |												
-*		|                            2 | Norwell Information Systems                                  | 781602            |												
-	02061	|                       292452 | Norwell Internal Medicine                                    | 781801            |												
-*		|                           10 | Norwell Laboratory                                           | 781901            |												
-*		|                        95458 | Norwell Medical Records                                      | 788001            |												
-*		|                        19110 | Norwell Obstetrics and Gynecology                            | 782601            |												
-*		|                        14508 | Norwell Orthopedics                                          | 785601            |												
-	02061	|                       159423 | Norwell Pediatrics                                           | 783401            |												
-*		|                         7689 | Norwell Podiatry                                             | 783601            |												
-*		|                           18 | Norwell Radiology                                            | 783901            |												
-*		|                         8029 | Norwell Surgery                                              | 784301            |												
-	02061	|                        34135 | Norwell Urgent Care                                          | 785001            |												
-*		|                            4 | Norwood Administration                                       | 711601            |												
-*		|                         3519 | Norwood Dermatology                                          | 711001            |												
-*		|                            1 | Norwood Information Systems                                  | 711602            |												
-	02062	|                       206118 | Norwood Internal Medicine                                    | 711801            |												
-*		|                        16998 | Norwood Laboratory                                           | 711901            |												
-*		|                           98 | Norwood Medical Records                                      | 718001            |												
-	02062	|                       126443 | Norwood Pediatrics                                           | 713401            |												
-*		|                            1 | Norwood Radiology                                            | 713901            |												
-*		|                            1 | Obstetrics and Gynecology - Providence                       | 811301            |												
-*		|                            1 | Obstetrics and Gynecology - Swansea                          | 841301            |												
-*		|                            2 | Obstetrics/Gynecology - Lincoln Center                       | 851301            |												
-*		|                            1 | Optometry - Warwick                                          | 821661            |												
-*		|                            1 | Orthopedics - Providence                                     | 813731            |												
-*		|                         2741 | Peabody Allergy                                              | 070201            |												
-*		|                        17242 | Peabody Anticaogulation Program                              | 071803            |												
-*		|                         5251 | Peabody Behavioral Health                                    | 075501            |												
-*		|                          298 | Peabody Cardiology                                           | 070402            |												
-*		|                          393 | Peabody Case Management                                      | 078501            |												
-*		|                          928 | Peabody Complex Chronic Care                                 | 070401            |												
-*		|                         2315 | Peabody Dental                                               | 070901            |												
-*		|                         3828 | Peabody Dermatology                                          | 071001            |												
-*		|                         2216 | Peabody Ears, Nose and Throat                                | 071201            |												
-*		|                         4066 | Peabody Endocrinolgy Department                              | 071101            |												
-*		|                            2 | Peabody Extended Care Facility Rounding                      | 078601            |												
-*		|                         2948 | Peabody General Surgery                                      | 074301            |												
-*		|                            3 | Peabody Infectious Disease                                   | 075801            |												
-	01960	|                       154418 | Peabody Internal Medicine A                                  | 071801            |												
-*		|                         1540 | Peabody Laboratory                                           | 071901            |												
-*		|                            5 | Peabody Mammography                                          | 072001            |												
-*		|                           32 | Peabody Medical Records                                      | 078001            |												
-*		|                        22269 | Peabody MH-Combined                                          | 075501            |												
-*		|                            5 | Peabody Neonatology                                          | 078401            |												
-*		|                         2134 | Peabody Neurology                                            | 075901            |												
-*		|                         1306 | Peabody Nutrition                                            | 072501            |												
-*		|                         8106 | Peabody Obstetrics and Gynecology                            | 072601            |												
-*		|                         6246 | Peabody Ophthalmology                                        | 072901            |												
-*		|                         7749 | Peabody Optometry                                            | 073001            |												
-*		|                         9557 | Peabody Orthopedics                                          | 075601            |												
-	01960	|                        49328 | Peabody Pediatrics                                           | 073401            |												
-*		|                           17 | Peabody Pharmacy                                             | 078701            |												
-*		|                         8839 | Peabody Physical Therapy Combined                            | 073501            |												
-*		|                           33 | Peabody Radiology                                            | 073901            |												
-*		|                            2 | Peabody Resource Department                                  | 070101            |												
-*		|                        13304 | Peabody Rheumatology                                         | 074001            |												
-*		|                            7 | Peabody Ultrasound                                           | 079101            |												
-	01960	|                        15035 | Peabody Urgent Care Weekends, Combined                       | 076101            |												
-	01960	|                          270 | Peabody Urgent Care Weekends, Pediatrics                     | 076501            |												
-	01960	|                            1 | Peabody Urgent Care, After Hours, Combined                   | 074901            |												
-*		|                          173 | Peabody Urology                                              | 075301            |												
-*		|                        46743 | Pediatric Telecomm - Children''s Hospital                    | 2014801           |												
-*		|                        19606 | Pediatric Telecomm - Children's Hospital                     | 2014801           |												
-*		|                            6 | Pediatrics - Lincoln Center                                  | 851201            |												
-*		|                            1 | Post Office Square Administration                            | 081601            |												
-*		|                            4 | Post Office Square Adult Cardiology                          | 080401            |												
-*		|                        13002 | Post Office Square Allergy                                   | 080201            |												
-*		|                         4190 | Post Office Square Anticoagulation Program                   | 081803            |												
-*		|                        10127 | Post Office Square Behavioral Health                         | 085501            |												
-*		|                            2 | Post Office Square Cashier                                   | 089301            |												
-*		|                         6777 | Post Office Square Contact Lens                              | 080701            |												
-*		|                        11168 | Post Office Square Dermatology                               | 081001            |												
-*		|                            1 | Post Office Square Ear, Nose, and Throat                     | 081201            |												
-	02109	|                       101114 | Post Office Square Internal Medicine 5                       | 081801            |												
-	02109	|                       122571 | Post Office Square Internal Medicine 6                       | 081802            |												
-	02109	|                         1756 | Post Office Square Internal Medicine 7                       | 081804            |												
-*		|                          677 | Post Office Square Laboratory                                | 081901            |												
-*		|                            3 | Post Office Square Main Desk                                 | 089401            |												
-*		|                            4 | Post Office Square Medical Records                           | 088001            |												
-*		|                        38447 | Post Office Square MH                                        | 085501            |												
-*		|                          935 | Post Office Square Nutrition                                 | 082501            |												
-*		|                        42349 | Post Office Square Obstetrics and Gynecology                 | 082601            |												
-*		|                            2 | Post Office Square Ophthalmology                             | 082901            |												
-*		|                         1433 | Post Office Square Optmetry                                  | 083001            |												
-*		|                         4919 | Post Office Square Optometry                                 | 083001            |												
-*		|                         5670 | Post Office Square Orthopedics Combined                      | 085601            |												
-*		|                         1827 | Post Office Square Surgery                                   | 084301            |												
-	02109	|                            2 | Post Office Square Urgent Care                               | 085001            |												
-*		|                            6 | Post Office Square Visual Services                           | 085401            |												
-*		|                            3 | Post Office Square Vulvar Specialty                          | 082602            |												
-*		|                            3 | Quincy Administration                                        | 031601            |												
-*		|                         6761 | Quincy Allergy                                               | 030201            |												
-*		|                         5179 | Quincy Anticoagulation Program                               | 031802            |												
-*		|                         8550 | Quincy Behavioral Health                                     | 035501            |												
-*		|                           72 | Quincy BH-Internal Medicine                                  | 035503            |												
-*		|                         1846 | Quincy Cardiology, Combined                                  | 035701            |												
-*		|                          726 | Quincy Case Management                                       | 038501            |												
-*		|                            1 | Quincy Cashier                                               | 039301            |												
-*		|                         2058 | Quincy Complex Chronic Care                                  | 030401            |												
-*		|                          610 | Quincy Contact Lens                                          | 030701            |												
-*		|                        18892 | Quincy Dermatology                                           | 031001            |												
-*		|                         3954 | Quincy Ears, Nose and Throat                                 | 031201            |												
-*		|                            3 | Quincy ECF Rounding                                          | 038601            |												
-*		|                         7619 | Quincy Fertility and Endocrinology                           | 031301            |												
-*		|                          179 | Quincy Flexible Sigmoidoscopy                                | 031402            |												
-*		|                        19872 | Quincy Gastroenterology                                      | 031401            |												
-*		|                          899 | Quincy Health Promotion                                      | 037801            |												
-	02169	|                       187597 | Quincy Internal Medicine                                     | 031801            |												
-*		|                          220 | Quincy Laboratory                                            | 031901            |												
-*		|                           23 | Quincy Mammogram                                             | 032001            |												
-*		|                           27 | Quincy Mammography                                           | 032001            |												
-*		|                          247 | Quincy Maternal Fetal Medicine                               | 032607            |												
-*		|                        31329 | Quincy MH-Combined                                           | 035501            |												
-*		|                          124 | Quincy MH-Internal Medicine                                  | 035503            |												
-*		|                            1 | Quincy Neonatology                                           | 038401            |												
-*		|                           66 | Quincy Nutrition                                             | 032501            |												
-*		|                        66851 | Quincy Obstetrics and Gynecology                             | 032605            |												
-*		|                            4 | Quincy Oncology                                              | 032801            |												
-*		|                         4085 | Quincy Ophthalmology                                         | 032901            |												
-*		|                        11105 | Quincy Optometry/Optical Services                            | 033001            |												
-*		|                         9532 | Quincy Orthopedics, Combined                                 | 035601            |												
-	02169	|                        75750 | Quincy Pediatrics                                            | 033401            |												
-*		|                            2 | Quincy Pharmacy                                              | 038701            |												
-*		|                            1 | Quincy Podiatry                                              | 033601            |												
-*		|                         1546 | Quincy Pulmonary                                             | 033801            |												
-*		|                          816 | Quincy Radiology                                             | 033901            |												
-*		|                            1 | Quincy Special Procedures Unit                               | 037901            |												
-*		|                         2396 | Quincy Speech Therapy                                        | 034101            |												
-*		|                         3495 | Quincy Surgery, General                                      | 034301            |												
-*		|                            3 | Quincy Ultrasound                                            | 039101            |												
-*		|                         5635 | Quincy Urology                                               | 035301            |												
-*		|                         3454 | Quincy Urology Gynecology                                    | 032606            |												
-*		|                           43 | Quincy Uterine Artery Embolization                           | 032608            |												
-*		|                            1 | Radiology - Warwick                                          | 822201            |												
-*		|                           14 | Riverside Healthy Living                                     | 307801            |												
-*		|                        36208 | Somerville Adult Orthopedics                                 | 153101            |												
-*		|                        36448 | Somerville Adult Physical Therapy                            | 156601            |												
-*		|                        12537 | Somerville Allergy                                           | 150201            |												
-*		|                         3579 | Somerville Anticoagulation Program                           | 151802            |												
-*		|                         3705 | Somerville Behavioral Health                                 | 155501            |												
-*		|                         1372 | Somerville Cardiology, Combined                              | 155701            |												
-*		|                           46 | Somerville Case Management                                   | 158501            |												
-*		|                         1100 | Somerville Complex Chronic Care                              | 150401            |												
-*		|                        10636 | Somerville Contact Lens                                      | 150701            |												
-*		|                            2 | Somerville Conversion                                        | 159999            |												
-*		|                            1 | Somerville Dental                                            | 150901            |												
-*		|                        11995 | Somerville Dermatology                                       | 151001            |												
-*		|                         6876 | Somerville Developmental Consultation Services               | 156301            |												
-*		|                            3 | Somerville Ears, Nose and Throat                             | 151201            |												
-*		|                           51 | Somerville ECF Rounding                                      | 158601            |												
-*		|                            1 | Somerville Gastroenterology                                  | 151401            |												
-*		|                        12384 | Somerville General Surgery                                   | 154301            |												
-*		|                           79 | Somerville Intensive Home Based Program                      | 158602            |												
-	02144	|                       140928 | Somerville Internal Medicine                                 | 151801            |												
-*		|                          224 | Somerville Laboratory                                        | 151901            |												
-*		|                        14937 | Somerville Laser Surgery                                     | 156201            |												
-*		|                          520 | Somerville Laser Vision Correction Program                   | 155401            |												
-*		|                            7 | Somerville Mammogram                                         | 152001            |												
-*		|                           75 | Somerville Mammography                                       | 152001            |												
-*		|                            1 | Somerville Maternal Home Care                                | 158301            |												
-*		|                          620 | Somerville Medical Records                                   | 158001            |												
-*		|                        15383 | Somerville MH, Combined                                      | 155501            |												
-*		|                            3 | Somerville Neonatology                                       | 158401            |												
-*		|                         8239 | Somerville Neurology, Combined                               | 152401            |												
-*		|                         2420 | Somerville Nutrition                                         | 152501            |												
-*		|                        32899 | Somerville Obstetrics and Gynecology                         | 152601            |												
-*		|                        19692 | Somerville Ophthalmology                                     | 152901            |												
-*		|                            4 | Somerville Optical Services                                  | 159701            |												
-*		|                        13786 | Somerville Optometry/Optical Service                         | 153001            |												
-*		|                            1 | Somerville Pediatric Asthma Program                          | 157701            |												
-*		|                          778 | Somerville Pediatric Immunizations                           | 150101            |												
-*		|                           23 | Somerville Pediatric Neurology                               | 156001            |												
-*		|                         1314 | Somerville Pediatric Physical Therapy                        | 156701            |												
-	02144	|                        47597 | Somerville Pediatrics                                        | 153401            |												
-*		|                         1145 | Somerville Radiology                                         | 153901            |												
-*		|                            4 | Somerville Resource Department                               | 150102            |												
-*		|                        10367 | Somerville Rheumatology                                      | 154001            |												
-*		|                          908 | Somerville Speech Therapy                                    | 154101            |												
-*		|                          542 | Somerville Spine Unit                                        | 153102            |												
-*		|                            8 | Somerville Translator Department                             | 156901            |												
-*		|                            2 | Somerville Ultrasound                                        | 159101            |												
-	02144	|                        26724 | Somerville Urgent Care, Weekend/Holiday, Adult               | 156401            |												
-	02144	|                        16410 | Somerville Urgent Care, Weekend/Holiday, Pediatrics          | 156501            |												
-*		|                         6000 | Somerville Urology                                           | 155301            |												
-*		|                          320 | Somerville Urology Gynecology                                | 152603            |												
-*		|                          258 | Southboro Administration                                     | 751602            |												
-	01772	|                       216714 | Southboro Adult Medicine                                     | 751801            |												
-*		|                         5944 | Southboro Allergy                                            | 750201            |												
-*		|                         8708 | Southboro Business Office                                    | 751601            |												
-*		|                            3 | Southboro Central Check In                                   | 759401            |												
-*		|                        26265 | Southboro Counseling Services                                | 755501            |												
-*		|                         5544 | Southboro Dermatology                                        | 751001            |												
-*		|                           99 | Southboro Ears Nose and Throat                               | 751201            |												
-*		|                           17 | Southboro Endocrinology                                      | 751101            |												
-*		|                            1 | Southboro Hospital                                           | 754301            |												
-*		|                        45072 | Southboro Laboratory                                         | 751901            |												
-*		|                          181 | Southboro Mammography                                        | 752001            |												
-*		|                        23056 | Southboro Medical of Framingham                              | 723401            |												
-*		|                        39895 | Southboro Medical Records                                    | 758001            |												
-*		|                        27254 | Southboro Obstetrics and Gynecology                          | 752601            |												
-*		|                          589 | Southboro Optical Shop                                       | 759701            |												
-*		|                           14 | Southboro Orthopedics                                        | 755601            |												
-	01772	|                       115799 | Southboro Pediatrics                                         | 753401            |												
-*		|                          379 | Southboro Plastic Surgery                                    | 751701            |												
-*		|                        10188 | Southboro Podiatry                                           | 753601            |												
-*		|                          189 | Southboro Radiology                                          | 753901            |												
-*		|                         6936 | Southboro Rheumatology                                       | 754001            |												
-	01772	|                         3472 | Southboro Urgent Care                                        | 755001            |												
-*		|                        13561 | Southboro Visual Services                                    | 755401            |												
-	01776	|                        15398 | Sudbury Internal Medicine                                    | 511801            |												
-*		|                            1 | Surgery - Providence                                         | 813751            |												
-*		|                            1 | Urgent Care - Providence                                     | 814711            |												
-*		|                            1 | Urgent Care - Warwick                                        | 824711            |												
-*		|                          260 | Watertown Allergy                                            | 120201            |												
-*		|                        19171 | Watertown Anticoagulation Program                            | 121803            |												
-*		|                         5630 | Watertown Behavioral Health                                  | 125501            |												
-*		|                         1699 | Watertown Case Management                                    | 128501            |												
-*		|                            1 | Watertown Cashier                                            | 129301            |												
-*		|                          309 | Watertown Complex Chronic Care                               | 120401            |												
-*		|                           39 | Watertown Dermatology                                        | 121002            |												
-*		|                           13 | Watertown ECF Rounding                                       | 128601            |												
-*		|                            3 | Watertown Hand Orthopedics                                   | 127501            |												
-*		|                           18 | Watertown Intensive Home Based Program                       | 128602            |												
-	02472	|                       162965 | Watertown Internal Medicine                                  | 121801            |												
-*		|                          171 | Watertown Laboratory                                         | 121901            |												
-*		|                           19 | Watertown Main Desk                                          | 129401            |												
-*		|                          843 | Watertown Menopause Consultation                             | 122602            |												
-*		|                        20291 | Watertown MH,Combined                                        | 125501            |												
-*		|                           12 | Watertown Neurology, Combined                                | 122401            |												
-*		|                         1047 | Watertown Nutrition                                          | 122501            |												
-*		|                        15801 | Watertown Obstetrics and Gynecology                          | 122601            |												
-*		|                         3436 | Watertown Optometry/Optical Service                          | 123001            |												
-*		|                         2790 | Watertown Orthopedics, Combined                              | 125601            |												
-*		|                            5 | Watertown Pediatric Asthma Program                           | 127701            |												
-	02472	|                        70528 | Watertown Pediatrics                                         | 123401            |												
-*		|                            2 | Watertown Pharmacy                                           | 128701            |												
-*		|                        11015 | Watertown Physical Therapy, Combined                         | 123501            |												
-*		|                         2205 | Watertown Podiatry                                           | 123601            |												
-*		|                            2 | Watertown Radiology                                          | 123901            |												
-*		|                           21 | Watertown Surgery, General                                   | 124301            |												
-	02472	|                            1 | Watertown Urgent Care, After Hours, Adult                    | 124701            |												
-*		|                        10799 | Wellesley Allergy                                            | 040201            |												
-*		|                            6 | Wellesley Andrology                                          | 049601            |												
-*		|                        24982 | Wellesley Anticoagulation Program                            | 041804            |												
-*		|                        15006 | Wellesley Behavioral Health                                  | 045501            |												
-*		|                            6 | Wellesley BH Palliative Care                                 | 045502            |												
-*		|                         4838 | Wellesley Cardiology, Combined                               | 045701            |												
-*		|                          566 | Wellesley Care Management                                    | 048501            |												
-*		|                          801 | Wellesley Complex Chronic Care                               | 040401            |												
-*		|                         2842 | Wellesley Cosmetic Surgery                                   | 041202            |												
-*		|                        25849 | Wellesley Dermatology                                        | 041001            |												
-*		|                        18813 | Wellesley Ear, Nose and Throat                               | 041201            |												
-*		|                           49 | Wellesley ECF Rounding                                       | 048601            |												
-*		|                         4671 | Wellesley Endocrinology                                      | 041101            |												
-*		|                        10449 | Wellesley Fertility and Endocrinology                        | 041301            |												
-*		|                         8004 | Wellesley Gastroenterology                                   | 041401            |												
-*		|                         6668 | Wellesley General Surgery                                    | 044301            |												
-*		|                         1199 | Wellesley Intensive Home Based Program                       | 048602            |												
-	02481	|                       113081 | Wellesley Internal Medicine A                                | 041801            |												
-	02481	|                       162985 | Wellesley Internal Medicine B                                | 041802            |												
-	02481	|                       112791 | Wellesley Internal Medicine C                                | 041803            |												
-*		|                          691 | Wellesley Laboratory                                         | 041901            |												
-*		|                           11 | Wellesley Main Reception                                     | 049401            |												
-*		|                           46 | Wellesley Mammography                                        | 042001            |												
-*		|                            1 | Wellesley Maternal Home Care                                 | 048301            |												
-*		|                            1 | Wellesley Medical Records                                    | 048001            |												
-*		|                            7 | Wellesley Menopause Consultation                             | 042604            |												
-*		|                            2 | Wellesley Mental Health - Adult                              | 042101            |												
-*		|                        56033 | Wellesley MH-Combined                                        | 045501            |												
-*		|                            3 | Wellesley Neonatology                                        | 048401            |												
-*		|                        17385 | Wellesley Neurology-Adult                                    | 045901            |												
-*		|                         2451 | Wellesley Nutrition                                          | 042501            |												
-*		|                        54948 | Wellesley Obstetrics and Gynecology                          | 042601            |												
-*		|                         7188 | Wellesley Ophthalmology                                      | 042901            |												
-*		|                        16044 | Wellesley Optometry/Optical Services                         | 043001            |												
-*		|                        26611 | Wellesley Orthopedics Combined                               | 045601            |												
-*		|                           43 | Wellesley Orthopedics, Pediatrics                            | 043201            |												
-*		|                            2 | Wellesley Palliative Care                                    | 040001            |												
-*		|                            2 | Wellesley Pediatric Asthma Program                           | 047701            |												
-	02481	|                       106546 | Wellesley Pediatrics                                         | 043401            |												
-*		|                            1 | Wellesley Physical Therapy Combined                          | 043501            |												
-*		|                         2813 | Wellesley Podiatry                                           | 043601            |												
-*		|                          495 | Wellesley Radiology                                          | 043901            |												
-*		|                            1 | Wellesley Resource Department                                | 040101            |												
-*		|                          609 | Wellesley Rheumatology                                       | 044001            |												
-*		|                         1582 | Wellesley Speech Therapy                                     | 044101            |												
-*		|                           60 | Wellesley Spine Unit                                         | 045602            |												
-	02481	|                         5452 | Wellesley Urgent Care - Adult After Hours                    | 044701            |												
-	02481	|                          512 | Wellesley Urgent Care - Pediatrics After Hours               | 044801            |												
-	02481	|                        25202 | Wellesley Urgent Care - Weekend Adult                        | 046401            |												
-	02481	|                        16706 | Wellesley Urgent Care - Weekend Pediatrics                   | 046501            |												
-*		|                         5306 | Wellesley Urology                                            | 045301            |												
-*		|                         1164 | Wellesley Urology Gynecology                                 | 042603            |												
-*		|                         4704 | Wentworth Urgent Care                                        | 015002            |												
-*		|                            1 | West Roxbury Administration                                  | 101601            |												
-*		|                         5074 | West Roxbury Allergy                                         | 100201            |												
-*		|                        24790 | West Roxbury Anticoagulation Program                         | 101803            |												
-*		|                         9529 | West Roxbury Behavioral Health                               | 105501            |												
-*		|                            2 | West Roxbury Cardiology B                                    | 100402            |												
-*		|                         2230 | West Roxbury Cardiology Department                           | 100401            |												
-*		|                          515 | West Roxbury Case Management                                 | 108501            |												
-*		|                         1393 | West Roxbury Complex Chronic Care                            | 100403            |												
-*		|                         9679 | West Roxbury Dermatology                                     | 101001            |												
-*		|                           60 | West Roxbury Ears, Nose and Throat                           | 101201            |												
-*		|                           35 | West Roxbury ECF Rounding                                    | 108601            |												
-*		|                        14067 | West Roxbury Endocrinology                                   | 101101            |												
-*		|                            1 | West Roxbury Fertility and Endocrinology                     | 101301            |												
-*		|                         4558 | West Roxbury Gastroenterology                                | 101401            |												
-*		|                         6396 | West Roxbury General Surgery                                 | 104301            |												
-	02467	|                       137436 | West Roxbury Internal Medicine A                             | 101801            |												
-	02467	|                       114224 | West Roxbury Internal Medicine B                             | 101802            |												
-*		|                          645 | West Roxbury Laboratory                                      | 101901            |												
-*		|                           15 | West Roxbury Main Desk                                       | 109401            |												
-*		|                          105 | West Roxbury Mammography                                     | 102001            |												
-*		|                          164 | West Roxbury Menopause Consultation                          | 102604            |												
-*		|                        37172 | West Roxbury MH Combined                                     | 105501            |												
-*		|                            3 | West Roxbury Neurology, Adult                                | 105901            |												
-*		|                         1850 | West Roxbury Nutrition                                       | 102501            |												
-*		|                        39358 | West Roxbury Obstetrics and Gynecology                       | 102601            |												
-*		|                        13746 | West Roxbury Ophthalmology                                   | 102901            |												
-*		|                            1 | West Roxbury Optical Services                                | 109701            |												
-*		|                        13375 | West Roxbury Optometry/Optical Services                      | 103001            |												
-*		|                        27353 | West Roxbury Orthopedics, Adult                              | 103101            |												
-*		|                            1 | West Roxbury Palliative Care                                 | 100001            |												
-*		|                            8 | West Roxbury Pediatric Asthma Program                        | 107701            |												
-	02467	|                        98397 | West Roxbury Pediatrics                                      | 103401            |												
-*		|                            3 | West Roxbury Pharmacy                                        | 108701            |												
-*		|                        19930 | West Roxbury Physical Therapy, Combined                      | 103501            |												
-*		|                         3007 | West Roxbury Podiatry                                        | 103601            |												
-*		|                         2396 | West Roxbury Pulmonary Medicine                              | 103801            |												
-*		|                          116 | West Roxbury Radiology                                       | 103901            |												
-*		|                            1 | West Roxbury Resource Department                             | 100101            |												
-*		|                         7371 | West Roxbury Rheumatology                                    | 104001            |												
-*		|                           87 | West Roxbury Special Procedures Unit                         | 107901            |												
-*		|                          735 | West Roxbury Spine Unit                                      | 103102            |												
-	02467	|                            2 | West Roxbury Urgent Care, After Hours, Pediatrics            | 104801            |												
-*		|                         4718 | West Roxbury Urology                                         | 105301            |												
-*		|                         2540 | West Roxbury Urology Gynecology                              | 102603            |												
-*		|                          487 | Westboro Counseling Services                                 | 765501            |												
-*		|                          767 | Westboro Laboratory                                          | 761901            |												
-*		|                            9 | Westboro Medical Records                                     | 768001            |												
-*		|                        13368 | Westboro Obstetrics and Gynecology                           | 762601            |												
-	01581	|                        45975 | Westboro Pediatrics                                          | 763401            |												
-*		|                            9 | WEYMOUTH WOODS BONE DENSITY                                  | 523903            |												
-*		|                          145 | Weymouth Woods CT Scan                                       | 523901            |												
-*		|                            3 | Weymouth Woods Lab                                           | 671901            |												
-*		|                          488 | WEYMOUTH WOODS MAMMOGRAPHY                                   | 522001            |												
-*		|                           51 | WEYMOUTH WOODS NUTRITION                                     | 522501            |												
-*		|                          235 | Weymouth Woods Radiology Oncology                            | 523902            |												
-*		|                          148 | WEYMOUTH WOODS ULTRASOUND                                    | 529101            |												
-*		|                            4 | WEYMOUTH WOODS ULTRASOUND KINGSTON                           | 529102            |												
+localSiteSites="""Asterisk	Zip	 count(EncEncounter_SiteName) | EncEncounter_SiteName                                        | EncEncounter_Site |
+		+------------------------------+--------------------------------------------------------------+-------------------+
+*		|                       141532 |                                                              | 16                |
+*		|                            1 | Adult Cardiology - Warwick                                   | 823611            |
+*		|                        84627 | Adult Telecomm                                               | 2004701           |
+*		|                            7 | Anatomical Pathology                                         | 351901            |
+*		|                            1 | Arbour IP                                                    | 342101            |
+*		|                            6 | Arbour OP                                                    | 342102            |
+*		|                        21048 | Atrius Health Women''s Center                                | 672601            |
+*		|                           28 | Bedford Internal Medicine                                    | 401801            |
+*		|                          419 | BILLING OPERATIONS GROUP                                     | 27                |
+*		|                          183 | Boston Case Management                                       | 088501            |
+*		|                           11 | Boston Dental                                                | 080901            |
+*		|                            8 | Boston Extended Care Facility Rounding                       | 088601            |
+*		|                           82 | Boston Intensive Home Based Program                          | 088602            |
+*		|                            8 | Boston Pharmacy                                              | 088701            |
+*		|                        11426 | Boston Physical Therapy Combined                             | 083501            |
+*		|                         1576 | Boston Podiatry                                              | 083601            |
+*		|                          177 | Boston Radiology                                             | 083901            |
+*		|                            1 | Braintree Administration                                     | 061601            |
+*		|                         3427 | Braintree Allergy                                            | 060201            |
+*		|                        54134 | Braintree Annex Behavioral Health                            | 505501            |
+*		|                         2165 | Braintree Annex Educational Assessment Center                | 505502            |
+*		|                          341 | Braintree Annex Educational Testing and Consultation Service | 505502            |
+*		|                        23949 | Braintree Anticoagulation Program                            | 061804            |
+*		|                         2490 | Braintree Behavioral Health                                  | 065501            |
+*		|                         3401 | Braintree Cardiology, Combined                               | 065701            |
+*		|                          515 | Braintree Case Management                                    | 068501            |
+*		|                            2 | Braintree Cashier                                            | 069301            |
+*		|                         2459 | Braintree Complex Chronic Care                               | 060401            |
+*		|                         1663 | Braintree Dental                                             | 060901            |
+*		|                        22008 | Braintree Dermatology                                        | 061001            |
+*		|                            3 | Braintree Developmental Consultation Services                | 066301            |
+*		|                           25 | Braintree Ear, Nose and Throat                               | 061201            |
+*		|                            3 | Braintree ECF Rounding                                       | 068601            |
+*		|                           12 | Braintree Endocrinology                                      | 061101            |
+	02184	|                         7992 | Braintree Family Medicine                                    | 061805            |
+	02184	|                       149903 | Braintree Internal Medicine A                                | 061801            |
+	02184	|                       134275 | Braintree Internal Medicine B                                | 061802            |
+	02184	|                        96119 | Braintree Internal Medicine C                                | 061803            |
+*		|                         1011 | Braintree Laboratory                                         | 061901            |
+*		|                          442 | Braintree Main Reception                                     | 069401            |
+*		|                           67 | Braintree Maternal Home Care                                 | 068301            |
+*		|                            1 | Braintree Medical Records                                    | 068001            |
+*		|                        11549 | Braintree MH Combined                                        | 065501            |
+*		|                          375 | Braintree MRI                                                | 063902            |
+*		|                         4710 | Braintree Neurology, Combined                                | 062401            |
+*		|                         3915 | Braintree Nutrition                                          | 062501            |
+*		|                        12051 | Braintree Obstetrics and Gynecology                          | 062601            |
+*		|                        12955 | Braintree Ophthalmology                                      | 062901            |
+*		|                            2 | Braintree Optical Services                                   | 069701            |
+*		|                        11057 | Braintree Optometry                                          | 063001            |
+*		|                        26433 | Braintree Orthopedics, Combined                              | 065601            |
+	02184	|                          117 | Braintree Pediatric Asthma                                   | 067701            |
+	02184	|                       143624 | Braintree Pediatrics                                         | 063401            |
+*		|                          778 | Braintree Pharmacy                                           | 068701            |
+*		|                        16879 | Braintree Physical Therapy, Combined                         | 063501            |
+*		|                         4631 | Braintree Podiatry                                           | 063601            |
+*		|                          432 | Braintree Pulmonary Medicine                                 | 063801            |
+*		|                          178 | Braintree Radiology                                          | 063901            |
+*		|                        15515 | Braintree Rheumatology                                       | 064001            |
+*		|                           99 | Braintree Spine Unit                                         | 065602            |
+*		|                        13234 | Braintree Surgery, General                                   | 064301            |
+*		|                            1 | Braintree Travel Medicine                                    | 069801            |
+	02184	|                          141 | Braintree Urgent Care, After Hours, Adult                    | 064701            |
+	02184	|                          106 | Braintree Urgent Care, After Hours, Pediatrics               | 064801            |
+	02184	|                        23623 | Braintree Urgent Care, Weekend/Holiday, Adult                | 066401            |
+	02184	|                        18737 | Braintree Urgent Care, Weekend/Holiday, Pediatric            | 066501            |
+*		|                           56 | Braintree Urology Gynecology                                 | 062602            |
+*		|                            5 | Braintree Visual Services                                    | 065401            |
+*		|                           13 | Braintree Women''s Health Services                           | 067901            |
+*		|                            2 | Braintree Women's Health Services                            | 067901            |
+*		|                            1 | Burlington Administration                                    | 241601            |
+*		|                         1289 | Burlington Allergy                                           | 240201            |
+*		|                          744 | Burlington Anticoagulation Program                           | 241803            |
+*		|                         1369 | Burlington Behavioral Health                                 | 245501            |
+*		|                          152 | Burlington Case Management                                   | 248501            |
+*		|                            1 | Burlington Cashier                                           | 249301            |
+*		|                         3971 | Burlington Dermatology                                       | 241001            |
+*		|                        18469 | Burlington Fertility and Endocrinology                       | 241301            |
+*		|                          684 | Burlington Gastroenterology                                  | 241401            |
+*		|                           15 | Burlington Genetics                                          | 241501            |
+	01803	|                        77737 | Burlington Internal Medicine A                               | 241801            |
+*		|                          529 | Burlington Laboratory                                        | 241901            |
+*		|                           27 | Burlington Main Reception                                    | 249401            |
+*		|                           69 | Burlington Maternal Fetal Medicine                           | 242604            |
+*		|                          522 | Burlington MH,Combined                                       | 245501            |
+*		|                            1 | Burlington Neurology Combined                                | 242401            |
+*		|                          286 | Burlington Nutrition                                         | 242501            |
+*		|                        41489 | Burlington Obstetrics and Gynecology                         | 242601            |
+	01803	|                       127881 | Burlington Pediatrics                                        | 243401            |
+*		|                            9 | Burlington Pharmacy                                          | 248701            |
+*		|                         6905 | Burlington Physical Therapy Combined                         | 243501            |
+*		|                            1 | Burlington Resource Department                               | 240101            |
+*		|                         5663 | Burlington Urology Gynecology                                | 242603            |
+*		|                        26485 | Burlington Vulvar Specialty                                  | 242602            |
+*		|                        15388 | Cambridge Anticoagulation Program                            | 021803            |
+*		|                         7894 | Cambridge Behavioral Health                                  | 025501            |
+*		|                          111 | Cambridge Case Management                                    | 028501            |
+*		|                            1 | Cambridge Cashier                                            | 029301            |
+*		|                            2 | Cambridge Chiropractic Medicine                              | 028801            |
+*		|                          232 | Cambridge Complex Chronic Care                               | 020401            |
+*		|                        11645 | Cambridge Dermatology                                        | 021001            |
+*		|                         7123 | Cambridge Ear, Nose and Throat                               | 021201            |
+*		|                           35 | Cambridge ECF Rounding                                       | 028601            |
+*		|                         4084 | Cambridge Endocrinology                                      | 021101            |
+*		|                        11112 | Cambridge Gastroenterology                                   | 021401            |
+*		|                           38 | Cambridge Intensive Home Based Program                       | 028602            |
+	02138	|                       110068 | Cambridge Internal Medicine 1                                | 021801            |
+	02138	|                        99483 | Cambridge Internal Medicine 2                                | 021802            |
+*		|                          307 | Cambridge Laboratory                                         | 021901            |
+*		|                            2 | Cambridge Main Desk                                          | 029401            |
+*		|                          491 | Cambridge Medical Records                                    | 028001            |
+*		|                        29402 | Cambridge MH,Combined                                        | 025501            |
+*		|                         1606 | Cambridge Nephrology                                         | 022301            |
+*		|                         1070 | Cambridge Nutrition                                          | 022501            |
+*		|                        29479 | Cambridge Obstetrics and Gynecology                          | 022601            |
+*		|                            1 | Cambridge Orthopedics, Combined                              | 025601            |
+*		|                            1 | Cambridge Parking                                            | 029501            |
+	02138	|                        48607 | Cambridge Pediatrics                                         | 023401            |
+*		|                           10 | Cambridge Radiology                                          | 023901            |
+*		|                         4856 | Cambridge Surgery, General                                   | 024301            |
+	02138	|                            5 | Cambridge Urgent Care, After Hours, Adult                    | 024701            |
+*		|                            1 | Cash Receipts Department                                     | 26                |
+*		|                            2 | Chelmsford Administration                                    | 131601            |
+*		|                         4325 | Chelmsford Allergy                                           | 130201            |
+*		|                        22158 | Chelmsford Anticoagulation Program                           | 131803            |
+*		|                        10238 | Chelmsford Behavioral Health                                 | 135501            |
+*		|                         8803 | Chelmsford Cardiology                                        | 130401            |
+*		|                         1253 | Chelmsford Case Management                                   | 138501            |
+*		|                         1289 | Chelmsford Complex Chronic Care                              | 130402            |
+*		|                          997 | Chelmsford Contact Lens                                      | 130701            |
+*		|                         3045 | Chelmsford Dental                                            | 130901            |
+*		|                        17316 | Chelmsford Dermatology                                       | 131001            |
+*		|                            1 | Chelmsford Developmental Consultation Services               | 136301            |
+*		|                          984 | Chelmsford Ear, Nose and Throat                              | 131201            |
+*		|                          228 | Chelmsford ECF ROUNDING                                      | 138601            |
+*		|                            9 | Chelmsford Employee Health                                   | 133402            |
+*		|                         5249 | Chelmsford Endocrinology                                     | 131101            |
+*		|                         8260 | Chelmsford Gastroenterology                                  | 131401            |
+*		|                          653 | Chelmsford Intensive Home Based Program                      | 138602            |
+	01824	|                       295368 | Chelmsford Internal Medicine A                               | 131801            |
+*		|                         2370 | Chelmsford Laboratory                                        | 131901            |
+*		|                          120 | Chelmsford Main Desk                                         | 139401            |
+*		|                            2 | Chelmsford Maternal Home Care                                | 138301            |
+*		|                        66177 | Chelmsford Medical Records                                   | 138001            |
+*		|                        41514 | Chelmsford MH-Combined                                       | 135501            |
+*		|                         2063 | Chelmsford Nephrology                                        | 132301            |
+*		|                         4831 | Chelmsford Neurolgy Adult                                    | 135901            |
+*		|                         1327 | Chelmsford Nutrition                                         | 132501            |
+*		|                        43109 | Chelmsford Obstetrics and Gynecology                         | 132601            |
+*		|                        10381 | Chelmsford Ophthalmology                                     | 132901            |
+*		|                        15513 | Chelmsford Optometry                                         | 133001            |
+*		|                        14423 | Chelmsford Orthopedic Combined                               | 135601            |
+	01824	|                       101248 | Chelmsford Pediatrics                                        | 133401            |
+*		|                        10589 | Chelmsford Physical Therapy Combined                         | 133501            |
+*		|                         2768 | Chelmsford Podiatry                                          | 133601            |
+*		|                          930 | Chelmsford Pulmonary Medicine                                | 133801            |
+*		|                          177 | Chelmsford Radiology                                         | 133901            |
+*		|                            1 | Chelmsford Resource Department                               | 130101            |
+*		|                          168 | Chelmsford Rheumatology                                      | 134001            |
+*		|                         1607 | Chelmsford Speech Therapy                                    | 134101            |
+*		|                         9413 | Chelmsford Surgery                                           | 134301            |
+*		|                            3 | Chelmsford Translators                                       | 136901            |
+*		|                            2 | Chelmsford Ultrasound                                        | 139101            |
+	01824	|                           48 | Chelmsford Urgent Care Combined                              | 134901            |
+	01824	|                        13796 | Chelmsford Urgent Care Pedi, After Hours                     | 134801            |
+	01824	|                        10271 | Chelmsford Urgent Care Weekend Combined                      | 136101            |
+*		|                         5007 | Chelmsford Urology                                           | 135301            |
+*		|                          206 | Chelmsford Visual Services                                   | 135401            |
+*		|                           28 | Clinical Pathology                                           | 351902            |
+*		|                          408 | Concord Anticoagulation Program                              | 391806            |
+*		|                          345 | Concord Case Management                                      | 398501            |
+*		|                          284 | Concord Complex Chronic Care                                 | 390401            |
+*		|                          377 | Concord Hillside Emerson Hospital Urological Gynecology      | 392601            |
+	01742	|                         1942 | Concord Internal Medicine 1                                  | 391804            |
+	01742	|                       109581 | Concord Internal Medicine A                                  | 391801            |
+	01742	|                       104969 | Concord Internal Medicine B                                  | 391802            |
+	01742	|                        84860 | Concord Internal Medicine D                                  | 391803            |
+*		|                         1680 | Concord Laboratory                                           | 391901            |
+*		|                         4373 | Concord Main Desk                                            | 399401            |
+*		|                        46438 | Concord Medical Records                                      | 398001            |
+*		|                         7365 | Concord MH-Combined                                          | 395501            |
+	01742	|                       161753 | Concord Pediatrics                                           | 393401            |
+*		|                         1640 | Concord Special Care Unit                                    | 391805            |
+*		|                         1740 | Copley Anticoagulation Program                               | 141803            |
+*		|                         1905 | Copley Behavioral Health                                     | 145501            |
+*		|                           17 | Copley Case Management                                       | 148501            |
+*		|                            5 | Copley ECF Rounding                                          | 148601            |
+*		|                            1 | Copley Genetics                                              | 141501            |
+*		|                            4 | Copley Infectious Disease                                    | 145801            |
+*		|                           19 | Copley Intensive Home Based Program                          | 148602            |
+	02116	|                       157148 | Copley Internal Med. A                                       | 141801            |
+*		|                            6 | Copley Internal Medicine B                                   | 141802            |
+*		|                          395 | Copley Laboratory                                            | 141901            |
+*		|                           12 | Copley Main Desk                                             | 149401            |
+*		|                          136 | Copley MH-Combined                                           | 145501            |
+*		|                            4 | Copley Nutrition                                             | 142501            |
+*		|                        45569 | Copley Obstetrics and Gynecology                             | 142601            |
+*		|                            3 | Copley Pediatric Asthma Program                              | 147701            |
+	02116	|                        49146 | Copley Pediatrics                                            | 143401            |
+*		|                          291 | Copley Pharmacy                                              | 148701            |
+*		|                            5 | Copley Radiology                                             | 143901            |
+*		|                            3 | Copley Rheumatology                                          | 144001            |
+*		|                         1026 | Copley Uterine Artery Embolization                           | 142603            |
+*		|                           10 | Copley Vulvar Specialty                                      | 142602            |
+*		|                            5 | Dedham Administration                                        | 701601            |
+*		|                         8753 | Dedham Allergy                                               | 700201            |
+*		|                           21 | Dedham Anticoagulation                                       | 701802            |
+*		|                        23680 | Dedham Dermatology                                           | 701001            |
+*		|                        18665 | Dedham Ears, Nose and Throat                                 | 701201            |
+*		|                          150 | Dedham Endocrinology                                         | 701101            |
+*		|                         1577 | Dedham Gastroenterology                                      | 701401            |
+*		|                            1 | Dedham Information Systems                                   | 701602            |
+	02026	|                       350425 | Dedham Internal Medicine                                     | 701801            |
+*		|                        31499 | Dedham Laboratory                                            | 701901            |
+*		|                        32876 | Dedham Medical Associates Obstetrics and Gynecology          | 042602            |
+*		|                        81229 | Dedham Medical Records                                       | 708001            |
+*		|                        43423 | Dedham Ophthalmology                                         | 702901            |
+*		|                        31331 | Dedham Orthopedics, Combined                                 | 705601            |
+	02026	|                       140722 | Dedham Pediatrics                                            | 703401            |
+*		|                        10299 | Dedham Physiatry                                             | 705602            |
+*		|                        17051 | Dedham Physical Therapy, Combined                            | 703501            |
+*		|                         3039 | Dedham Podiatry                                              | 703601            |
+*		|                         2131 | Dedham Radiology                                             | 703901            |
+*		|                         4242 | Dedham Rheumatology                                          | 704001            |
+*		|                         6305 | Dedham Surgery                                               | 704301            |
+*		|                        16289 | Dedham Urology                                               | 705301            |
+*		|                          971 | Dedham Vein & Aesthetic                                      | 701701            |
+*		|                           17 | Dermatology - Providence                                     | 811431            |
+*		|                            1 | Dermatology - Warwick                                        | 821431            |
+*		|                            1 | Dermatology-Lincoln Ctr                                      | 851431            |
+*		|                        31637 | DMA Norwood Obstetrics and Gynecology                        | 042605            |
+*		|                            8 | Emergency Services-BWH                                       | 2001801           |
+*		|                            5 | Family Practice - Plainville                                 | 831181            |
+*		|                            1 | Family Practice - Swansea                                    | 841181            |
+*		|                          130 | Faulkner Anticoagulation Program                             | 471802            |
+*		|                            2 | Faulkner Cardiology                                          | 010402            |
+*		|                           28 | Faulkner Case Management                                     | 478501            |
+*		|                           53 | Faulkner Complex Chronic Care                                | 470401            |
+	02130	|                        73897 | Faulkner Internal Medicine                                   | 471801            |
+*		|                            2 | Faulkner Laboratory                                          | 471901            |
+*		|                        12967 | Faulkner Neurology                                           | 105902            |
+*		|                           55 | Faulkner Podiatry                                            | 103602            |
+*		|                         6551 | Faulkner Surgery                                             | 104302            |
+	01701	|                       118247 | Framingham Adult Medicine                                    | 721801            |
+*		|                          486 | Framingham Allergy                                           | 720201            |
+*		|                         4899 | Framingham Cardiology                                        | 720401            |
+*		|                        30212 | Framingham Laboratory                                        | 721901            |
+*		|                         4618 | Framingham Medical Records                                   | 728001            |
+*		|                         1443 | Framingham Obstatrics and Gynecology                         | 722601            |
+*		|                        29597 | Framingham Obstetrics and Gynecology                         | 722601            |
+*		|                            2 | Framingham Orthopedics                                       | 725601            |
+	01701	|                        11949 | Framingham Pediatrics                                        | 723401            |
+*		|                          825 | Framingham Podiatry                                          | 723601            |
+*		|                        11189 | Framingham Practice                                          | 723401            |
+*		|                            1 | Franklin Street Obstetrics and Gynecology                    | 792601            |
+*		|                            4 | Granite Cardiology                                           | 650401            |
+*		|                            4 | Granite Coumadin                                             | 651804            |
+*		|                            1 | Granite Gastroenterology                                     | 651401            |
+	02169	|                            1 | Granite Internal Medicine - 2F                               | 651803            |
+	02169	|                           13 | Granite Internal Medicine - 3A                               | 651801            |
+	01451	|                        29264 | Harvard Pediatrics                                           | 463401            |
+*		|                            9 | HVMA Clinical Assessment and Support Team                    | 358501            |
+*		|                         1481 | HVMA Division of Medicine at Brigham and Womens              | 351801            |
+*		|                         2222 | HVMA Division of Medicine at Mount Auburn Hospital           | 351802            |
+*		|                          971 | HVMA Pediatrics at Children''s Hospital                      | 363401            |
+*		|                          989 | HVMA Pediatrics at Children's Hospital                       | 363401            |
+*		|                            3 | HVMA Utilization Management and Clinical Programs            | 28                |
+*		|                          882 | Intensive Home Based Program                                 | 108602            |
+*		|                          597 | Internal Medicine - Providence                               | 811101            |
+*		|                            1 | Internal Medicine - Warwick                                  | 821101            |
+*		|                         4994 | Kenmore - Infusion Unit                                      | 019201            |
+*		|                            1 | Kenmore - Travel Medicine                                    | 019801            |
+*		|                           16 | Kenmore Administration                                       | 011601            |
+*		|                         4081 | Kenmore Allergy                                              | 010201            |
+*		|                          576 | Kenmore Allergy, Pediatrics                                  | 010202            |
+*		|                            4 | Kenmore Andrology                                            | 019601            |
+*		|                        37054 | Kenmore Anticoagulation Program                              | 011805            |
+*		|                            3 | Kenmore Audiology                                            | 010301            |
+*		|                         7185 | Kenmore Behavioral Health                                    | 015501            |
+*		|                        29180 | Kenmore BH Combined                                          | 015501            |
+*		|                          194 | Kenmore BH F & E                                             | 015502            |
+*		|                           47 | Kenmore BH Palliative Care                                   | 015503            |
+*		|                           30 | Kenmore Bone Density                                         | 013905            |
+*		|                        17289 | Kenmore Cardiology Testing                                   | 010601            |
+*		|                        51849 | Kenmore Cardiology, Adult                                    | 010401            |
+*		|                         2511 | Kenmore Cardiology, Pediatrics                               | 010501            |
+*		|                         4213 | Kenmore Case Management                                      | 018501            |
+*		|                            1 | Kenmore Cashier                                              | 019301            |
+*		|                        38049 | Kenmore Complex Chronic Care                                 | 010403            |
+*		|                         9459 | Kenmore Dental                                               | 010901            |
+*		|                        25012 | Kenmore Dermatology                                          | 011001            |
+*		|                           89 | Kenmore Diagnostic Technology Center CT Scan                 | 013903            |
+*		|                          169 | Kenmore Diagnostic Technology Center MRI                     | 013902            |
+*		|                            1 | Kenmore Diagnostic Technology Center Nuclear Medicine        | 013904            |
+*		|                            2 | Kenmore Diagnostic Technology Center Ultrasound              | 013906            |
+*		|                        23947 | Kenmore Ears, Nose and Throat                                | 011201            |
+*		|                         1535 | Kenmore ECF Rounding                                         | 018601            |
+*		|                        54359 | Kenmore Endocrinology                                        | 011101            |
+*		|                           72 | Kenmore Endocrinology Complex Chronic Care                   | 011103            |
+*		|                         1979 | Kenmore Endocrinology OB/Gyn                                 | 011102            |
+*		|                        18023 | Kenmore Endoscopy Suite                                      | 011403            |
+*		|                        31730 | Kenmore Fertility and Endocrinology                          | 011301            |
+*		|                            2 | Kenmore Flex Sig Program                                     | 011402            |
+*		|                        58495 | Kenmore Gastroenterology                                     | 011401            |
+*		|                         3313 | Kenmore Genetics                                             | 011501            |
+*		|                        17557 | Kenmore Hand Orthopedics                                     | 017501            |
+*		|                         2275 | Kenmore Health Management Resources                          | 011806            |
+*		|                          602 | Kenmore Intensive Home Based Program                         | 018602            |
+	02215	|                       201894 | Kenmore Internal Medicine 4                                  | 011802            |
+	02215	|                       194746 | Kenmore Internal Medicine 6E                                 | 011804            |
+*		|                          839 | Kenmore Laboratory                                           | 011901            |
+*		|                            1 | Kenmore Main Desk 1st Floor                                  | 019403            |
+*		|                            1 | Kenmore Main Desk 4th Floor                                  | 019402            |
+*		|                            2 | Kenmore Main Desk 5th Floor                                  | 019401            |
+*		|                            9 | Kenmore Mammogram                                            | 012001            |
+*		|                         7441 | Kenmore Mammography                                          | 012001            |
+*		|                          857 | Kenmore Maternal Fetal Medicine                              | 012605            |
+*		|                         4032 | Kenmore Medical Records                                      | 018001            |
+*		|                            4 | Kenmore Menopause                                            | 011302            |
+*		|                         2147 | Kenmore Menopause Consultation                               | 012604            |
+*		|                           14 | Kenmore Mental Health Child                                  | 012201            |
+*		|                         1228 | Kenmore MH Adult                                             | 012102            |
+*		|                         1287 | Kenmore MH-Internal Medicine                                 | 011807            |
+*		|                        13893 | Kenmore Nephrology                                           | 012301            |
+*		|                          898 | Kenmore Neurology Testing                                    | 016801            |
+*		|                        12041 | Kenmore Neurology, Adult                                     | 015901            |
+*		|                         3292 | Kenmore Nutrition                                            | 012501            |
+*		|                          668 | Kenmore ObGyn Urgent Care                                    | 012603            |
+*		|                        57788 | Kenmore Obstetrics and Gynecology                            | 012602            |
+*		|                        10313 | Kenmore Occupational Therapy                                 | 012701            |
+*		|                        94849 | Kenmore Oncology                                             | 012801            |
+*		|                        48790 | Kenmore Ophthalmology                                        | 012901            |
+*		|                            3 | Kenmore Optical Services                                     | 019701            |
+*		|                        16603 | Kenmore Optometry/Optical Service                            | 013001            |
+*		|                        37247 | Kenmore Orthopedics, Combined                                | 015601            |
+*		|                            2 | Kenmore Orthopedics, Pediatrics                              | 013201            |
+*		|                            7 | Kenmore Pain                                                 | 013301            |
+*		|                          344 | Kenmore Palliative Care                                      | 010001            |
+	02215	|                       105046 | Kenmore Pediatrics A                                         | 013401            |
+*		|                            1 | Kenmore Pharmacy                                             | 018701            |
+*		|                        19688 | Kenmore Physical Therapy, Combined                           | 013501            |
+*		|                         7873 | Kenmore Podiatry                                             | 013601            |
+*		|                         8422 | Kenmore Pulmonary Medicine                                   | 013801            |
+*		|                        11618 | Kenmore Radiology                                            | 013901            |
+*		|                         5047 | Kenmore Rheumatology                                         | 014001            |
+*		|                         4015 | Kenmore Speech Therapy                                       | 014101            |
+*		|                          835 | Kenmore Spine Unit                                           | 015602            |
+*		|                        28645 | Kenmore Surgery                                              | 014301            |
+*		|                            2 | Kenmore Ultrasound                                           | 019101            |
+	02215	|                            1 | Kenmore Urgent Care, After Hours, Adult                      | 014701            |
+	02215	|                            1 | Kenmore Urgent Care, After Hours, Pediatrics                 | 014801            |
+	02215	|                        41789 | Kenmore Urgent Care, Day, Adult                              | 015001            |
+	02215	|                        22638 | Kenmore Urgent Care, Weekend/Holiday, Adult                  | 016401            |
+	02215	|                        10274 | Kenmore Urgent Care, Weekend/Holiday, Pediatrics             | 016501            |
+*		|                        10343 | Kenmore Urology                                              | 015301            |
+*		|                            1 | Kingston Administration                                      | 771601            |
+*		|                            1 | Kingston Allergy                                             | 770201            |
+*		|                         3416 | Kingston Behavioral Health                                   | 775501            |
+	02364	|                         4419 | Kingston Family Practice                                     | 771802            |
+	02364	|                       204172 | Kingston Internal Medicine                                   | 771801            |
+*		|                            5 | Kingston Laboratory                                          | 771901            |
+*		|                        11568 | Kingston Medical Records                                     | 778001            |
+*		|                        11472 | Kingston Obstetrics and Gynecology                           | 772601            |
+*		|                         2795 | Kingston Orthopedics                                         | 775601            |
+	02364	|                        59975 | Kingston Pediatrics                                          | 773401            |
+*		|                          732 | Kingston Podiatry                                            | 773601            |
+*		|                          650 | Kingston Radiology                                           | 773901            |
+*		|                            2 | Kingston Surgery                                             | 774301            |
+	02364	|                         4641 | Kingston Urgent Care                                         | 775001            |
+*		|                           29 | Lab Administration                                           | 351903            |
+	02189	|                           60 | Libbey Parkway Internal Medicine                             | 681801            |
+*		|                            1 | Libbey Parkway Laboratory                                    | 681901            |
+*		|                         1267 | Lynnfield Medical Associates Anticoagulation Program         | 431802            |
+*		|                           67 | Lynnfield Medical Associates Case Management                 | 438501            |
+	01960	|                       292048 | Lynnfield Medical Associates Internal Medicine               | 431801            |
+*		|                            2 | Medford Administration                                       | 051601            |
+*		|                         4493 | Medford Allergy                                              | 050201            |
+*		|                        24904 | Medford Anticoagulation Program                              | 051803            |
+*		|                         8875 | Medford Behavioral Health                                    | 055501            |
+*		|                            1 | Medford Bone Density                                         | 053902            |
+*		|                         3508 | Medford Cardiology, Combined                                 | 055701            |
+*		|                          446 | Medford Case Management                                      | 058501            |
+*		|                            9 | Medford Cashier                                              | 059301            |
+*		|                         2022 | Medford Complex Chronic Care                                 | 050401            |
+*		|                        15400 | Medford Dermatology                                          | 051001            |
+*		|                         3845 | Medford Ears, Nose and Throat                                | 051201            |
+*		|                          179 | Medford ECF Rounding                                         | 058601            |
+*		|                            1 | Medford Endocrinology                                        | 051101            |
+*		|                        18739 | Medford Gastroenterology                                     | 051401            |
+*		|                          448 | Medford Intensive Home Based Program                         | 058602            |
+*		|                          245 | Medford Internal Medicine Anti Coag Program                  | 051802            |
+	02155	|                       303134 | Medford Internal Medicine B                                  | 051801            |
+*		|                          400 | Medford Laboratory                                           | 051901            |
+*		|                            4 | Medford Main Desk                                            | 059401            |
+*		|                           34 | Medford Mammogram                                            | 052001            |
+*		|                           20 | Medford Mammography                                          | 052001            |
+*		|                            1 | Medford Maternal Home Care                                   | 058301            |
+*		|                        44987 | Medford Medical Records                                      | 058001            |
+*		|                          323 | Medford Menopause Consultation                               | 052603            |
+*		|                        38581 | Medford MH,Combined                                          | 055501            |
+*		|                         1042 | Medford Nephrology                                           | 052301            |
+*		|                         2078 | Medford Nutrition                                            | 052501            |
+*		|                        34170 | Medford Obstetrics and Gynecology                            | 052601            |
+*		|                        11408 | Medford Ophthalmology                                        | 052901            |
+*		|                        11393 | Medford Optometry/Optical Services                           | 053001            |
+*		|                          639 | Medford Orthopedics, Combined                                | 055601            |
+	02155	|                        74872 | Medford Pediatrics                                           | 053401            |
+*		|                         6208 | Medford Podiatry                                             | 053601            |
+*		|                          452 | Medford Radiology                                            | 053901            |
+*		|                           22 | Medford Rheumatology                                         | 054001            |
+*		|                         2309 | Medford Speech Therapy                                       | 054101            |
+*		|                         6413 | Medford Surgery, General                                     | 054301            |
+	02155	|                          947 | Medford Urgent Care, Day, Adult                              | 055001            |
+*		|                         5101 | Medford Urology                                              | 055301            |
+*		|                          343 | Medford Urology Gynecology                                   | 052602            |
+*		|                           57 | Medical Billing Department                                   | 25                |
+*		|                            2 | Medical Billing Department-Chelmsford                        | 30                |
+*		|                           10 | Medical Billing Department-Riverside                         | 25                |
+*		|                           11 | Meeting House Road OB/GYN Laboratory                         | 482604            |
+*		|                        15872 | Meeting House Road Obstetrics and Gynecology                 | 482601            |
+*		|                            2 | Mental Health - Providence                                   | 811501            |
+*		|                           81 | Milford Medical Records                                      | 738001            |
+	01757	|                        27198 | Milford Pediatrics                                           | 733401            |
+*		|                           99 | Milford Podiatry                                             | 733601            |
+*		|                            7 | Natick Medical Records                                       | 748001            |
+*		|                        16095 | Natick Obstetrics and Gynecology                             | 742601            |
+*		|                         2574 | Norwell Administration                                       | 781601            |
+*		|                         5514 | Norwell Allergy                                              | 780201            |
+*		|                          509 | Norwell Behavioral Health                                    | 785501            |
+*		|                            1 | Norwell Call Center                                          | 781603            |
+*		|                        14852 | Norwell Dermatology                                          | 781001            |
+	02061	|                        53868 | Norwell Family Practice                                      | 781802            |
+*		|                            2 | Norwell Information Systems                                  | 781602            |
+	02061	|                       292452 | Norwell Internal Medicine                                    | 781801            |
+*		|                           10 | Norwell Laboratory                                           | 781901            |
+*		|                        95458 | Norwell Medical Records                                      | 788001            |
+*		|                        19110 | Norwell Obstetrics and Gynecology                            | 782601            |
+*		|                        14508 | Norwell Orthopedics                                          | 785601            |
+	02061	|                       159423 | Norwell Pediatrics                                           | 783401            |
+*		|                         7689 | Norwell Podiatry                                             | 783601            |
+*		|                           18 | Norwell Radiology                                            | 783901            |
+*		|                         8029 | Norwell Surgery                                              | 784301            |
+	02061	|                        34135 | Norwell Urgent Care                                          | 785001            |
+*		|                            4 | Norwood Administration                                       | 711601            |
+*		|                         3519 | Norwood Dermatology                                          | 711001            |
+*		|                            1 | Norwood Information Systems                                  | 711602            |
+	02062	|                       206118 | Norwood Internal Medicine                                    | 711801            |
+*		|                        16998 | Norwood Laboratory                                           | 711901            |
+*		|                           98 | Norwood Medical Records                                      | 718001            |
+	02062	|                       126443 | Norwood Pediatrics                                           | 713401            |
+*		|                            1 | Norwood Radiology                                            | 713901            |
+*		|                            1 | Obstetrics and Gynecology - Providence                       | 811301            |
+*		|                            1 | Obstetrics and Gynecology - Swansea                          | 841301            |
+*		|                            2 | Obstetrics/Gynecology - Lincoln Center                       | 851301            |
+*		|                            1 | Optometry - Warwick                                          | 821661            |
+*		|                            1 | Orthopedics - Providence                                     | 813731            |
+*		|                         2741 | Peabody Allergy                                              | 070201            |
+*		|                        17242 | Peabody Anticaogulation Program                              | 071803            |
+*		|                         5251 | Peabody Behavioral Health                                    | 075501            |
+*		|                          298 | Peabody Cardiology                                           | 070402            |
+*		|                          393 | Peabody Case Management                                      | 078501            |
+*		|                          928 | Peabody Complex Chronic Care                                 | 070401            |
+*		|                         2315 | Peabody Dental                                               | 070901            |
+*		|                         3828 | Peabody Dermatology                                          | 071001            |
+*		|                         2216 | Peabody Ears, Nose and Throat                                | 071201            |
+*		|                         4066 | Peabody Endocrinolgy Department                              | 071101            |
+*		|                            2 | Peabody Extended Care Facility Rounding                      | 078601            |
+*		|                         2948 | Peabody General Surgery                                      | 074301            |
+*		|                            3 | Peabody Infectious Disease                                   | 075801            |
+	01961	|                       154418 | Peabody Internal Medicine A                                  | 071801            |
+*		|                         1540 | Peabody Laboratory                                           | 071901            |
+*		|                            5 | Peabody Mammography                                          | 072001            |
+*		|                           32 | Peabody Medical Records                                      | 078001            |
+*		|                        22269 | Peabody MH-Combined                                          | 075501            |
+*		|                            5 | Peabody Neonatology                                          | 078401            |
+*		|                         2134 | Peabody Neurology                                            | 075901            |
+*		|                         1306 | Peabody Nutrition                                            | 072501            |
+*		|                         8106 | Peabody Obstetrics and Gynecology                            | 072601            |
+*		|                         6246 | Peabody Ophthalmology                                        | 072901            |
+*		|                         7749 | Peabody Optometry                                            | 073001            |
+*		|                         9557 | Peabody Orthopedics                                          | 075601            |
+	01961	|                        49328 | Peabody Pediatrics                                           | 073401            |
+*		|                           17 | Peabody Pharmacy                                             | 078701            |
+*		|                         8839 | Peabody Physical Therapy Combined                            | 073501            |
+*		|                           33 | Peabody Radiology                                            | 073901            |
+*		|                            2 | Peabody Resource Department                                  | 070101            |
+*		|                        13304 | Peabody Rheumatology                                         | 074001            |
+*		|                            7 | Peabody Ultrasound                                           | 079101            |
+	01961	|                        15035 | Peabody Urgent Care Weekends, Combined                       | 076101            |
+	01961	|                          270 | Peabody Urgent Care Weekends, Pediatrics                     | 076501            |
+	01961	|                            1 | Peabody Urgent Care, After Hours, Combined                   | 074901            |
+*		|                          173 | Peabody Urology                                              | 075301            |
+*		|                        46743 | Pediatric Telecomm - Children''s Hospital                    | 2014801           |
+*		|                        19606 | Pediatric Telecomm - Children's Hospital                     | 2014801           |
+*		|                            6 | Pediatrics - Lincoln Center                                  | 851201            |
+*		|                            1 | Post Office Square Administration                            | 081601            |
+*		|                            4 | Post Office Square Adult Cardiology                          | 080401            |
+*		|                        13002 | Post Office Square Allergy                                   | 080201            |
+*		|                         4190 | Post Office Square Anticoagulation Program                   | 081803            |
+*		|                        10127 | Post Office Square Behavioral Health                         | 085501            |
+*		|                            2 | Post Office Square Cashier                                   | 089301            |
+*		|                         6777 | Post Office Square Contact Lens                              | 080701            |
+*		|                        11168 | Post Office Square Dermatology                               | 081001            |
+*		|                            1 | Post Office Square Ear, Nose, and Throat                     | 081201            |
+	02109	|                       101114 | Post Office Square Internal Medicine 5                       | 081801            |
+	02109	|                       122571 | Post Office Square Internal Medicine 6                       | 081802            |
+	02109	|                         1756 | Post Office Square Internal Medicine 7                       | 081804            |
+*		|                          677 | Post Office Square Laboratory                                | 081901            |
+*		|                            3 | Post Office Square Main Desk                                 | 089401            |
+*		|                            4 | Post Office Square Medical Records                           | 088001            |
+*		|                        38447 | Post Office Square MH                                        | 085501            |
+*		|                          935 | Post Office Square Nutrition                                 | 082501            |
+*		|                        42349 | Post Office Square Obstetrics and Gynecology                 | 082601            |
+*		|                            2 | Post Office Square Ophthalmology                             | 082901            |
+*		|                         1433 | Post Office Square Optmetry                                  | 083001            |
+*		|                         4919 | Post Office Square Optometry                                 | 083001            |
+*		|                         5670 | Post Office Square Orthopedics Combined                      | 085601            |
+*		|                         1827 | Post Office Square Surgery                                   | 084301            |
+	02109	|                            2 | Post Office Square Urgent Care                               | 085001            |
+*		|                            6 | Post Office Square Visual Services                           | 085401            |
+*		|                            3 | Post Office Square Vulvar Specialty                          | 082602            |
+*		|                            3 | Quincy Administration                                        | 031601            |
+*		|                         6761 | Quincy Allergy                                               | 030201            |
+*		|                         5179 | Quincy Anticoagulation Program                               | 031802            |
+*		|                         8550 | Quincy Behavioral Health                                     | 035501            |
+*		|                           72 | Quincy BH-Internal Medicine                                  | 035503            |
+*		|                         1846 | Quincy Cardiology, Combined                                  | 035701            |
+*		|                          726 | Quincy Case Management                                       | 038501            |
+*		|                            1 | Quincy Cashier                                               | 039301            |
+*		|                         2058 | Quincy Complex Chronic Care                                  | 030401            |
+*		|                          610 | Quincy Contact Lens                                          | 030701            |
+*		|                        18892 | Quincy Dermatology                                           | 031001            |
+*		|                         3954 | Quincy Ears, Nose and Throat                                 | 031201            |
+*		|                            3 | Quincy ECF Rounding                                          | 038601            |
+*		|                         7619 | Quincy Fertility and Endocrinology                           | 031301            |
+*		|                          179 | Quincy Flexible Sigmoidoscopy                                | 031402            |
+*		|                        19872 | Quincy Gastroenterology                                      | 031401            |
+*		|                          899 | Quincy Health Promotion                                      | 037801            |
+	02170	|                       187597 | Quincy Internal Medicine                                     | 031801            |
+*		|                          220 | Quincy Laboratory                                            | 031901            |
+*		|                           23 | Quincy Mammogram                                             | 032001            |
+*		|                           27 | Quincy Mammography                                           | 032001            |
+*		|                          247 | Quincy Maternal Fetal Medicine                               | 032607            |
+*		|                        31329 | Quincy MH-Combined                                           | 035501            |
+*		|                          124 | Quincy MH-Internal Medicine                                  | 035503            |
+*		|                            1 | Quincy Neonatology                                           | 038401            |
+*		|                           66 | Quincy Nutrition                                             | 032501            |
+*		|                        66851 | Quincy Obstetrics and Gynecology                             | 032605            |
+*		|                            4 | Quincy Oncology                                              | 032801            |
+*		|                         4085 | Quincy Ophthalmology                                         | 032901            |
+*		|                        11105 | Quincy Optometry/Optical Services                            | 033001            |
+*		|                         9532 | Quincy Orthopedics, Combined                                 | 035601            |
+	02170	|                        75750 | Quincy Pediatrics                                            | 033401            |
+*		|                            2 | Quincy Pharmacy                                              | 038701            |
+*		|                            1 | Quincy Podiatry                                              | 033601            |
+*		|                         1546 | Quincy Pulmonary                                             | 033801            |
+*		|                          816 | Quincy Radiology                                             | 033901            |
+*		|                            1 | Quincy Special Procedures Unit                               | 037901            |
+*		|                         2396 | Quincy Speech Therapy                                        | 034101            |
+*		|                         3495 | Quincy Surgery, General                                      | 034301            |
+*		|                            3 | Quincy Ultrasound                                            | 039101            |
+*		|                         5635 | Quincy Urology                                               | 035301            |
+*		|                         3454 | Quincy Urology Gynecology                                    | 032606            |
+*		|                           43 | Quincy Uterine Artery Embolization                           | 032608            |
+*		|                            1 | Radiology - Warwick                                          | 822201            |
+*		|                           14 | Riverside Healthy Living                                     | 307801            |
+*		|                        36208 | Somerville Adult Orthopedics                                 | 153101            |
+*		|                        36448 | Somerville Adult Physical Therapy                            | 156601            |
+*		|                        12537 | Somerville Allergy                                           | 150201            |
+*		|                         3579 | Somerville Anticoagulation Program                           | 151802            |
+*		|                         3705 | Somerville Behavioral Health                                 | 155501            |
+*		|                         1372 | Somerville Cardiology, Combined                              | 155701            |
+*		|                           46 | Somerville Case Management                                   | 158501            |
+*		|                         1100 | Somerville Complex Chronic Care                              | 150401            |
+*		|                        10636 | Somerville Contact Lens                                      | 150701            |
+*		|                            2 | Somerville Conversion                                        | 159999            |
+*		|                            1 | Somerville Dental                                            | 150901            |
+*		|                        11995 | Somerville Dermatology                                       | 151001            |
+*		|                         6876 | Somerville Developmental Consultation Services               | 156301            |
+*		|                            3 | Somerville Ears, Nose and Throat                             | 151201            |
+*		|                           51 | Somerville ECF Rounding                                      | 158601            |
+*		|                            1 | Somerville Gastroenterology                                  | 151401            |
+*		|                        12384 | Somerville General Surgery                                   | 154301            |
+*		|                           79 | Somerville Intensive Home Based Program                      | 158602            |
+	02144	|                       140928 | Somerville Internal Medicine                                 | 151801            |
+*		|                          224 | Somerville Laboratory                                        | 151901            |
+*		|                        14937 | Somerville Laser Surgery                                     | 156201            |
+*		|                          520 | Somerville Laser Vision Correction Program                   | 155401            |
+*		|                            7 | Somerville Mammogram                                         | 152001            |
+*		|                           75 | Somerville Mammography                                       | 152001            |
+*		|                            1 | Somerville Maternal Home Care                                | 158301            |
+*		|                          620 | Somerville Medical Records                                   | 158001            |
+*		|                        15383 | Somerville MH, Combined                                      | 155501            |
+*		|                            3 | Somerville Neonatology                                       | 158401            |
+*		|                         8239 | Somerville Neurology, Combined                               | 152401            |
+*		|                         2420 | Somerville Nutrition                                         | 152501            |
+*		|                        32899 | Somerville Obstetrics and Gynecology                         | 152601            |
+*		|                        19692 | Somerville Ophthalmology                                     | 152901            |
+*		|                            4 | Somerville Optical Services                                  | 159701            |
+*		|                        13786 | Somerville Optometry/Optical Service                         | 153001            |
+*		|                            1 | Somerville Pediatric Asthma Program                          | 157701            |
+*		|                          778 | Somerville Pediatric Immunizations                           | 150101            |
+*		|                           23 | Somerville Pediatric Neurology                               | 156001            |
+*		|                         1314 | Somerville Pediatric Physical Therapy                        | 156701            |
+	02144	|                        47597 | Somerville Pediatrics                                        | 153401            |
+*		|                         1145 | Somerville Radiology                                         | 153901            |
+*		|                            4 | Somerville Resource Department                               | 150102            |
+*		|                        10367 | Somerville Rheumatology                                      | 154001            |
+*		|                          908 | Somerville Speech Therapy                                    | 154101            |
+*		|                          542 | Somerville Spine Unit                                        | 153102            |
+*		|                            8 | Somerville Translator Department                             | 156901            |
+*		|                            2 | Somerville Ultrasound                                        | 159101            |
+	02144	|                        26724 | Somerville Urgent Care, Weekend/Holiday, Adult               | 156401            |
+	02144	|                        16410 | Somerville Urgent Care, Weekend/Holiday, Pediatrics          | 156501            |
+*		|                         6000 | Somerville Urology                                           | 155301            |
+*		|                          320 | Somerville Urology Gynecology                                | 152603            |
+*		|                          258 | Southboro Administration                                     | 751602            |
+	01772	|                       216714 | Southboro Adult Medicine                                     | 751801            |
+*		|                         5944 | Southboro Allergy                                            | 750201            |
+*		|                         8708 | Southboro Business Office                                    | 751601            |
+*		|                            3 | Southboro Central Check In                                   | 759401            |
+*		|                        26265 | Southboro Counseling Services                                | 755501            |
+*		|                         5544 | Southboro Dermatology                                        | 751001            |
+*		|                           99 | Southboro Ears Nose and Throat                               | 751201            |
+*		|                           17 | Southboro Endocrinology                                      | 751101            |
+*		|                            1 | Southboro Hospital                                           | 754301            |
+*		|                        45072 | Southboro Laboratory                                         | 751901            |
+*		|                          181 | Southboro Mammography                                        | 752001            |
+*		|                        23056 | Southboro Medical of Framingham                              | 723401            |
+*		|                        39895 | Southboro Medical Records                                    | 758001            |
+*		|                        27254 | Southboro Obstetrics and Gynecology                          | 752601            |
+*		|                          589 | Southboro Optical Shop                                       | 759701            |
+*		|                           14 | Southboro Orthopedics                                        | 755601            |
+	01772	|                       115799 | Southboro Pediatrics                                         | 753401            |
+*		|                          379 | Southboro Plastic Surgery                                    | 751701            |
+*		|                        10188 | Southboro Podiatry                                           | 753601            |
+*		|                          189 | Southboro Radiology                                          | 753901            |
+*		|                         6936 | Southboro Rheumatology                                       | 754001            |
+	01772	|                         3472 | Southboro Urgent Care                                        | 755001            |
+*		|                        13561 | Southboro Visual Services                                    | 755401            |
+	01776	|                        15398 | Sudbury Internal Medicine                                    | 511801            |
+*		|                            1 | Surgery - Providence                                         | 813751            |
+*		|                            1 | Urgent Care - Providence                                     | 814711            |
+*		|                            1 | Urgent Care - Warwick                                        | 824711            |
+*		|                          260 | Watertown Allergy                                            | 120201            |
+*		|                        19171 | Watertown Anticoagulation Program                            | 121803            |
+*		|                         5630 | Watertown Behavioral Health                                  | 125501            |
+*		|                         1699 | Watertown Case Management                                    | 128501            |
+*		|                            1 | Watertown Cashier                                            | 129301            |
+*		|                          309 | Watertown Complex Chronic Care                               | 120401            |
+*		|                           39 | Watertown Dermatology                                        | 121002            |
+*		|                           13 | Watertown ECF Rounding                                       | 128601            |
+*		|                            3 | Watertown Hand Orthopedics                                   | 127501            |
+*		|                           18 | Watertown Intensive Home Based Program                       | 128602            |
+	02472	|                       162965 | Watertown Internal Medicine                                  | 121801            |
+*		|                          171 | Watertown Laboratory                                         | 121901            |
+*		|                           19 | Watertown Main Desk                                          | 129401            |
+*		|                          843 | Watertown Menopause Consultation                             | 122602            |
+*		|                        20291 | Watertown MH,Combined                                        | 125501            |
+*		|                           12 | Watertown Neurology, Combined                                | 122401            |
+*		|                         1047 | Watertown Nutrition                                          | 122501            |
+*		|                        15801 | Watertown Obstetrics and Gynecology                          | 122601            |
+*		|                         3436 | Watertown Optometry/Optical Service                          | 123001            |
+*		|                         2790 | Watertown Orthopedics, Combined                              | 125601            |
+*		|                            5 | Watertown Pediatric Asthma Program                           | 127701            |
+	02472	|                        70528 | Watertown Pediatrics                                         | 123401            |
+*		|                            2 | Watertown Pharmacy                                           | 128701            |
+*		|                        11015 | Watertown Physical Therapy, Combined                         | 123501            |
+*		|                         2205 | Watertown Podiatry                                           | 123601            |
+*		|                            2 | Watertown Radiology                                          | 123901            |
+*		|                           21 | Watertown Surgery, General                                   | 124301            |
+	02472	|                            1 | Watertown Urgent Care, After Hours, Adult                    | 124701            |
+*		|                        10799 | Wellesley Allergy                                            | 040201            |
+*		|                            6 | Wellesley Andrology                                          | 049601            |
+*		|                        24982 | Wellesley Anticoagulation Program                            | 041804            |
+*		|                        15006 | Wellesley Behavioral Health                                  | 045501            |
+*		|                            6 | Wellesley BH Palliative Care                                 | 045502            |
+*		|                         4838 | Wellesley Cardiology, Combined                               | 045701            |
+*		|                          566 | Wellesley Care Management                                    | 048501            |
+*		|                          801 | Wellesley Complex Chronic Care                               | 040401            |
+*		|                         2842 | Wellesley Cosmetic Surgery                                   | 041202            |
+*		|                        25849 | Wellesley Dermatology                                        | 041001            |
+*		|                        18813 | Wellesley Ear, Nose and Throat                               | 041201            |
+*		|                           49 | Wellesley ECF Rounding                                       | 048601            |
+*		|                         4671 | Wellesley Endocrinology                                      | 041101            |
+*		|                        10449 | Wellesley Fertility and Endocrinology                        | 041301            |
+*		|                         8004 | Wellesley Gastroenterology                                   | 041401            |
+*		|                         6668 | Wellesley General Surgery                                    | 044301            |
+*		|                         1199 | Wellesley Intensive Home Based Program                       | 048602            |
+	02481	|                       113081 | Wellesley Internal Medicine A                                | 041801            |
+	02481	|                       162985 | Wellesley Internal Medicine B                                | 041802            |
+	02481	|                       112791 | Wellesley Internal Medicine C                                | 041803            |
+*		|                          691 | Wellesley Laboratory                                         | 041901            |
+*		|                           11 | Wellesley Main Reception                                     | 049401            |
+*		|                           46 | Wellesley Mammography                                        | 042001            |
+*		|                            1 | Wellesley Maternal Home Care                                 | 048301            |
+*		|                            1 | Wellesley Medical Records                                    | 048001            |
+*		|                            7 | Wellesley Menopause Consultation                             | 042604            |
+*		|                            2 | Wellesley Mental Health - Adult                              | 042101            |
+*		|                        56033 | Wellesley MH-Combined                                        | 045501            |
+*		|                            3 | Wellesley Neonatology                                        | 048401            |
+*		|                        17385 | Wellesley Neurology-Adult                                    | 045901            |
+*		|                         2451 | Wellesley Nutrition                                          | 042501            |
+*		|                        54948 | Wellesley Obstetrics and Gynecology                          | 042601            |
+*		|                         7188 | Wellesley Ophthalmology                                      | 042901            |
+*		|                        16044 | Wellesley Optometry/Optical Services                         | 043001            |
+*		|                        26611 | Wellesley Orthopedics Combined                               | 045601            |
+*		|                           43 | Wellesley Orthopedics, Pediatrics                            | 043201            |
+*		|                            2 | Wellesley Palliative Care                                    | 040001            |
+*		|                            2 | Wellesley Pediatric Asthma Program                           | 047701            |
+	02481	|                       106546 | Wellesley Pediatrics                                         | 043401            |
+*		|                            1 | Wellesley Physical Therapy Combined                          | 043501            |
+*		|                         2813 | Wellesley Podiatry                                           | 043601            |
+*		|                          495 | Wellesley Radiology                                          | 043901            |
+*		|                            1 | Wellesley Resource Department                                | 040101            |
+*		|                          609 | Wellesley Rheumatology                                       | 044001            |
+*		|                         1582 | Wellesley Speech Therapy                                     | 044101            |
+*		|                           60 | Wellesley Spine Unit                                         | 045602            |
+	02481	|                         5452 | Wellesley Urgent Care - Adult After Hours                    | 044701            |
+	02481	|                          512 | Wellesley Urgent Care - Pediatrics After Hours               | 044801            |
+	02481	|                        25202 | Wellesley Urgent Care - Weekend Adult                        | 046401            |
+	02481	|                        16706 | Wellesley Urgent Care - Weekend Pediatrics                   | 046501            |
+*		|                         5306 | Wellesley Urology                                            | 045301            |
+*		|                         1164 | Wellesley Urology Gynecology                                 | 042603            |
+	02115	|                         4704 | Wentworth Urgent Care                                        | 015002            |
+*		|                            1 | West Roxbury Administration                                  | 101601            |
+*		|                         5074 | West Roxbury Allergy                                         | 100201            |
+*		|                        24790 | West Roxbury Anticoagulation Program                         | 101803            |
+*		|                         9529 | West Roxbury Behavioral Health                               | 105501            |
+*		|                            2 | West Roxbury Cardiology B                                    | 100402            |
+*		|                         2230 | West Roxbury Cardiology Department                           | 100401            |
+*		|                          515 | West Roxbury Case Management                                 | 108501            |
+*		|                         1393 | West Roxbury Complex Chronic Care                            | 100403            |
+*		|                         9679 | West Roxbury Dermatology                                     | 101001            |
+*		|                           60 | West Roxbury Ears, Nose and Throat                           | 101201            |
+*		|                           35 | West Roxbury ECF Rounding                                    | 108601            |
+*		|                        14067 | West Roxbury Endocrinology                                   | 101101            |
+*		|                            1 | West Roxbury Fertility and Endocrinology                     | 101301            |
+*		|                         4558 | West Roxbury Gastroenterology                                | 101401            |
+*		|                         6396 | West Roxbury General Surgery                                 | 104301            |
+	02467	|                       137436 | West Roxbury Internal Medicine A                             | 101801            |
+	02467	|                       114224 | West Roxbury Internal Medicine B                             | 101802            |
+*		|                          645 | West Roxbury Laboratory                                      | 101901            |
+*		|                           15 | West Roxbury Main Desk                                       | 109401            |
+*		|                          105 | West Roxbury Mammography                                     | 102001            |
+*		|                          164 | West Roxbury Menopause Consultation                          | 102604            |
+*		|                        37172 | West Roxbury MH Combined                                     | 105501            |
+*		|                            3 | West Roxbury Neurology, Adult                                | 105901            |
+*		|                         1850 | West Roxbury Nutrition                                       | 102501            |
+*		|                        39358 | West Roxbury Obstetrics and Gynecology                       | 102601            |
+*		|                        13746 | West Roxbury Ophthalmology                                   | 102901            |
+*		|                            1 | West Roxbury Optical Services                                | 109701            |
+*		|                        13375 | West Roxbury Optometry/Optical Services                      | 103001            |
+*		|                        27353 | West Roxbury Orthopedics, Adult                              | 103101            |
+*		|                            1 | West Roxbury Palliative Care                                 | 100001            |
+*		|                            8 | West Roxbury Pediatric Asthma Program                        | 107701            |
+	02467	|                        98397 | West Roxbury Pediatrics                                      | 103401            |
+*		|                            3 | West Roxbury Pharmacy                                        | 108701            |
+*		|                        19930 | West Roxbury Physical Therapy, Combined                      | 103501            |
+*		|                         3007 | West Roxbury Podiatry                                        | 103601            |
+*		|                         2396 | West Roxbury Pulmonary Medicine                              | 103801            |
+*		|                          116 | West Roxbury Radiology                                       | 103901            |
+*		|                            1 | West Roxbury Resource Department                             | 100101            |
+*		|                         7371 | West Roxbury Rheumatology                                    | 104001            |
+*		|                           87 | West Roxbury Special Procedures Unit                         | 107901            |
+*		|                          735 | West Roxbury Spine Unit                                      | 103102            |
+	02467	|                            2 | West Roxbury Urgent Care, After Hours, Pediatrics            | 104801            |
+*		|                         4718 | West Roxbury Urology                                         | 105301            |
+*		|                         2540 | West Roxbury Urology Gynecology                              | 102603            |
+*		|                          487 | Westboro Counseling Services                                 | 765501            |
+*		|                          767 | Westboro Laboratory                                          | 761901            |
+*		|                            9 | Westboro Medical Records                                     | 768001            |
+*		|                        13368 | Westboro Obstetrics and Gynecology                           | 762601            |
+	01581	|                        45975 | Westboro Pediatrics                                          | 763401            |
+*		|                            9 | WEYMOUTH WOODS BONE DENSITY                                  | 523903            |
+*		|                          145 | Weymouth Woods CT Scan                                       | 523901            |
+*		|                            3 | Weymouth Woods Lab                                           | 671901            |
+*		|                          488 | WEYMOUTH WOODS MAMMOGRAPHY                                   | 522001            |
+*		|                           51 | WEYMOUTH WOODS NUTRITION                                     | 522501            |
+*		|                          235 | Weymouth Woods Radiology Oncology                            | 523902            |
+*		|                          148 | WEYMOUTH WOODS ULTRASOUND                                    | 529101            |
+*		|                            4 | WEYMOUTH WOODS ULTRASOUND KINGSTON                           | 529102            |
 """.split('\n')
 localSiteAllSites = [x.split('|') for x in localSiteSites[2:] if len(x.split('|')) > 3] # drop header
 localSiteAllSites = [[x[2].strip(),x[3].strip(),x[0].strip()] for x in localSiteAllSites] # name,code,ignore
@@ -806,18 +806,18 @@ localSiteUseDict = dict(zip(localSiteUseCodes,localSiteUse)) # can lookup - use 
 localSiteExcludeCodes = [x[1] for x in localSiteAllSites if (x[2] == '*')] # used for volume cleaning
 localSiteZ = [x[2] for x in localSiteUse]
 localSiteZips = dict(zip(localSiteUseCodes,localSiteZ))
- 
+
 # atrius sites list code,name,ignore
 
 # MDPH definition of ILI
 """
-2) One of the following under the conditions specified:	
-a) Measured fever of at least 100F (in temperature field of database)	
-OR, if and only if there is no valid measured temperature of any magnitude,	
-b) ICD9 code of 780.6 (fever)	
-Note febrile convulsion added sometimes? 
-ICD9 code 780.31 (Febrile Convulsions)			
-"""	
+2) One of the following under the conditions specified:
+a) Measured fever of at least 100F (in temperature field of database)
+OR, if and only if there is no valid measured temperature of any magnitude,
+b) ICD9 code of 780.6 (fever)
+Note febrile convulsion added sometimes?
+ICD9 code 780.31 (Febrile Convulsions)
+"""
 ILIdef="""079.3	RHINOVIRUS INFECT NOS
 079.89	OTHER SPECIFIED VIRAL INFECTION
 079.99	UNSPECIFIED VIRAL INFECTION
@@ -853,37 +853,37 @@ ILIdef = [x.split('\t') for x in ILIdef]
 ILIdef = [[x[0],True] for x in ILIdef] # always want a fever
 
 HAEMdef="""	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus	FeverReq
-HEM	287.1	PLATELET DISORDER	129	1	77	1	
-HEM	287.2	NONTHROMBOCYTOPENIC PURPU	30	7	60	1	
-HEM	287.8	HEMORRHAGIC COND NEC	0	0	3	1	
-HEM	287.9	HEMORRHAGIC CONDITIONS UN	96	9	56	1	
-HEM	790.01	HEMATOCRIT, PRECIPITOUS D	2	0	1	1	
-HEM	790.92	ABNORMAL COAGULATION PROF	166	0	72	1							
-HEM	286.9	COAGULATION DEFECTS-UNSPE	1468	0	391	2	
-HEM	287.3	THROMBOCYTOPENIA	941	110	828	2	
-HEM	287.4	THROMBOCYTOPENIA SECONDAR	0	0	147	2	
-HEM	287.5	THROMBOCYTOPENIA  UNSPEC.	612	37	314	2	
-HEM	459.0	HEMORRHAGE  NOS	1120	0	36	2	
+HEM	287.1	PLATELET DISORDER	129	1	77	1
+HEM	287.2	NONTHROMBOCYTOPENIC PURPU	30	7	60	1
+HEM	287.8	HEMORRHAGIC COND NEC	0	0	3	1
+HEM	287.9	HEMORRHAGIC CONDITIONS UN	96	9	56	1
+HEM	790.01	HEMATOCRIT, PRECIPITOUS D	2	0	1	1
+HEM	790.92	ABNORMAL COAGULATION PROF	166	0	72	1
+HEM	286.9	COAGULATION DEFECTS-UNSPE	1468	0	391	2
+HEM	287.3	THROMBOCYTOPENIA	941	110	828	2
+HEM	287.4	THROMBOCYTOPENIA SECONDAR	0	0	147	2
+HEM	287.5	THROMBOCYTOPENIA  UNSPEC.	612	37	314	2
+HEM	459.0	HEMORRHAGE  NOS	1120	0	36	2
 HEM	578.0	HEMATEMESIS	1017	7	123	2	*
 HEM	578.1	MELENA	1377	0	2346	2	*
 HEM	578.9	GASTROINTESTINAL HEMORRHA	22191	0	1608	2	*
-HEM	782.7	ECCHYMOSIS,SPONTANEOUS,NO	1110	3	92	2	
+HEM	782.7	ECCHYMOSIS,SPONTANEOUS,NO	1110	3	92	2
 HEM	784.7	EPISTAXIS	16613	0	1613	2	*
 HEM	784.8	HEMORRHAGE FROM THROAT	56	0	9	2	*
-HEM	786.3	HEMOPTYSIS	2277	68	313	2	*						
-HEM	061	DENGUE	1	0	18	3	
-HEM	065.0	CRIMEAN HEMORRHAGIC FEV	0	0	0	3	
-HEM	065.1	OMSK HEMORRHAGIC FEVER	0	0	0	3	
-HEM	065.2	KYASANUR FOREST DISEASE	0	0	0	3	
-HEM	065.3	TICK-BORNE HEM FEVER NEC	0	0	4	3	
-HEM	065.4	MOSQUITO-BORNE HEM FEVER	0	0	1	3	
-HEM	065.8	ARTHROPOD HEM FEVER NEC	0	0	0	3	
-HEM	065.9	ARTHROPOD HEM FEVER NOS	0	0	0	3	
-HEM	077.4	EPIDEM HEM CONJUNCTIVIT	0	0	5	3	
-HEM	078.6	HEM NEPHROSONEPHRITIS	0	0	2	3	
-HEM	078.7	ARENAVIRAL HEM FEVER	0	0	0	3	
-HEM	084.8	BLACKWATER FEVER	0	0	0	3	
-HEM	100.0	LEPTOSPIROSIS, ICTOHEMORRHAGICA				3	
+HEM	786.3	HEMOPTYSIS	2277	68	313	2	*
+HEM	061	DENGUE	1	0	18	3
+HEM	065.0	CRIMEAN HEMORRHAGIC FEV	0	0	0	3
+HEM	065.1	OMSK HEMORRHAGIC FEVER	0	0	0	3
+HEM	065.2	KYASANUR FOREST DISEASE	0	0	0	3
+HEM	065.3	TICK-BORNE HEM FEVER NEC	0	0	4	3
+HEM	065.4	MOSQUITO-BORNE HEM FEVER	0	0	1	3
+HEM	065.8	ARTHROPOD HEM FEVER NEC	0	0	0	3
+HEM	065.9	ARTHROPOD HEM FEVER NOS	0	0	0	3
+HEM	077.4	EPIDEM HEM CONJUNCTIVIT	0	0	5	3
+HEM	078.6	HEM NEPHROSONEPHRITIS	0	0	2	3
+HEM	078.7	ARENAVIRAL HEM FEVER	0	0	0	3
+HEM	084.8	BLACKWATER FEVER	0	0	0	3
+HEM	100.0	LEPTOSPIROSIS, ICTOHEMORRHAGICA				3
 HEM	283.11	HEMOLYTIC-UREMIC SYNDROME	4	0	6	3	""".split('\n')
 HAEMdef = [x.split('\t') for x in HAEMdef[1:]] # ignore header
 HAEMdef = [[x[1].strip(),(x[7].strip()=='*')] for x in HAEMdef]
@@ -1011,26 +1011,26 @@ NEUROdef = [x.split('\t') for x in NEUROdef[1:]] # ignore header
 NEUROdef = [[x[1].strip(),False] for x in NEUROdef] # no fevers needed
 
 RASHdef = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus	FeverReq
-RASH	050.9	SMALLPOX NOS	0	0	0	1	
-RASH	051.0	COWPOX	0	0	0	1	
-RASH	052.7	VARICELLA COMPLICAT NEC	0	0	11	1	
-RASH	052.8	VARICELLA W/UNSPECIFIED C	0	0	31	1	
-RASH	052.9	VARICELLA NOS	2468	0	306	1	
+RASH	050.9	SMALLPOX NOS	0	0	0	1
+RASH	051.0	COWPOX	0	0	0	1
+RASH	052.7	VARICELLA COMPLICAT NEC	0	0	11	1
+RASH	052.8	VARICELLA W/UNSPECIFIED C	0	0	31	1
+RASH	052.9	VARICELLA NOS	2468	0	306	1
 RASH	057.8	EXANTHEMATA VIRAL OTHER S	105	30	44	1	*
 RASH	057.9	EXANTHEM VIRAL, UNSPECIFI	1322	54	561	1	*
-RASH	695.0	ERYTHEMA TOXIC	23	0	5	1	
-RASH	695.1	ERYTHEMA MULTIFORME	477	0	54	1	
-RASH	695.2	ERYTHEMA NODOSUM	94	0	72	1	
+RASH	695.0	ERYTHEMA TOXIC	23	0	5	1
+RASH	695.1	ERYTHEMA MULTIFORME	477	0	54	1
+RASH	695.2	ERYTHEMA NODOSUM	94	0	72	1
 RASH	695.89	ERYTHEMATOUS CONDITIONS O	112	0	29	1	*
 RASH	695.9	ERYTHEMATOUS CONDITION  N	738	0	17	1	*
 RASH	051.2	DERMATITIS PUSTULAR, CONT	6	0	7	3	*
-RASH	051.9	PARAVACCINIA NOS	0	0	0	3	
-RASH	055.79	MEASLES COMPLICATION NEC	0	0	0	3	
-RASH	055.8	MEASLES COMPLICATION NOS	0	0	0	3	
-RASH	055.9	MEASLES UNCOMPLICATED	14	0	2	3	
-RASH	056.79	RUBELLA COMPLICATION NEC	0	0	0	3	
-RASH	056.8	RUBELLA COMPLICATION  NOS	1	0	0	3	
-RASH	056.9	RUBELLA UNCOMPLICATED	97	0	0	3	
+RASH	051.9	PARAVACCINIA NOS	0	0	0	3
+RASH	055.79	MEASLES COMPLICATION NEC	0	0	0	3
+RASH	055.8	MEASLES COMPLICATION NOS	0	0	0	3
+RASH	055.9	MEASLES UNCOMPLICATED	14	0	2	3
+RASH	056.79	RUBELLA COMPLICATION NEC	0	0	0	3
+RASH	056.8	RUBELLA COMPLICATION  NOS	1	0	0	3
+RASH	056.9	RUBELLA UNCOMPLICATED	97	0	0	3
 RASH	083.2	RICKETTSIALPOX	0	0	0	3	""".split('\n')
 RASHdef = [x.split('\t') for x in RASHdef[1:]] # ignore header
 RASHdef = [[x[1].strip(),(x[7].strip()=='*')] for x in RASHdef]
