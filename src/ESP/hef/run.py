@@ -35,10 +35,6 @@ from ESP.utils.utils import log
     
 USAGE_MSG = '''\
 %prog [options]
-
-    One or more of '-e', '-c', '-u', or '-a' must be specified.
-    
-    DATE variables are specified in this format: '17-Mar-2009'\
 '''
 
 
@@ -47,7 +43,7 @@ def main():
     # TODO: We need a lockfile or some othermeans to prevent multiple 
     # instances running at once.
     #
-    parser = optparse.OptionParser(usage=USAGE_MSG)
+    parser = optparse.OptionParser()
     parser.add_option('--heuristic', action='store', dest='event', type='string',
         metavar='NAME', help='Generate events for heuristic NAME only')
     parser.add_option('--list', action='store_true', dest='list', 
