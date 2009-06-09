@@ -513,7 +513,7 @@ class LabResult(BasePatientRecord):
 
     def _get_loinc(self):
         try:
-            return NativeCode.objects.get(native_code=self.native_code)
+            return NativeCode.objects.get(native_code=self.native_code).loinc
         except:
             return None
         
@@ -533,7 +533,7 @@ class LabResult(BasePatientRecord):
         Returns LOINC number (not Loinc object!) for this test if it is mapped
         to one, else returns None.
         '''
-        return self.loinc and self.loinc_num or None
+        return (self.loinc and self.loinc.loinc_num) or None
 
 
     def __str__(self):
