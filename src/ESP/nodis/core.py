@@ -159,12 +159,58 @@ class DiseaseDefinition(object):
         self.exclude = exclude
         self.exclude_past = exclude_past
     
+    def __get_plausible_pids(self, begin_date=None, end_date=None):
+        '''
+        Returns a list of pids identifying plausible patients -- those who at
+            least potentially *could* have the disease
+        @param matches: A match dictionary, in the same format as this 
+            function returns.  New matches are added to this dictionary, and 
+            the combined dict returned.
+        @type matches:  {Demog: [EventTimeWindow, EventTimeWindow, ...], ...}
+        @return:        {Demog: [EventTimeWindow, EventTimeWindow, ...], ...}
+        '''
+        log.info('Finding plausible patients for %s' % self.name)
+        #
+        # Examine only the time slice specified
+        #
+        all_events = HeuristicEvent.objects.all()
+        if begin_date:
+            all_events = all_events.filter(date__gte=begin_date)
+        if end_date:
+            all_events = all_events.filter(date__lte=end_date)
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # First we do some simple queries and set arithmetic to generate a list
+        # of patients who *could* have the disease.
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #
+        # 'pids' are patient IDs -- db primary keys
+        for req in (self.require + self.require_past):
+            pids_this_req = set()
+            for h in req: # One or more BaseHeuristic instances
+                s = set(h.get_events().values_list('patient_id', flat=True))
+                pids_this_req = pids_this_req | s 
+                log.debug('%50s: %s' % (h, len(pids_this_req)) )
+            try:
+                pids = pids & pids_this_req
+            except UnboundLocalError:
+                pids = pids_this_req
+        for item in self.exclude:
+            pids_this_item = set()
+            for h in item: # One or more BaseHeuristic instances
+                s = set(h.get_events().values_list('patient_id', flat=True))
+                pids_this_item = pids_this_item | s 
+                log.debug('%50s: %s' % (h, len(pids_this_item)) )
+            pids = pids - pids_this_item
+        log.debug('Plausible %50s: %s' % (self.name, len(pids)) )
+        return pids
+    
     def __match_plausible_patient(self, patient_pk):
         '''
         For a given plausible (meeting match()'s screening definitions) patient, 
         identified by db primary key, return EventTimeWindow objects matching
         disease requirements.
         '''
+        log.debug('Examining plausible patient #%s to detect %s' % (patient_pk, self.name))
         t_windows = [] # [EventTimeWindow, EventTimeWindow, ...]
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Create all possible time windows from first set of required events
@@ -249,52 +295,14 @@ class DiseaseDefinition(object):
         # /DEBUG
         return t_windows
             
+
     def matches(self, begin_date=None, end_date=None, matches={}):
-        '''
-        @param matches: A match dictionary, in the same format as this 
-            function returns.  New matches are added to this dictionary, and 
-            the combined dict returned.
-        @type matches:  {Demog: [EventTimeWindow, EventTimeWindow, ...], ...}
-        @return:        {Demog: [EventTimeWindow, EventTimeWindow, ...], ...}
-        '''
-        log.info('Finding matches for %s' % self.name)
-        #
-        # Examine only the time slice specified
-        #
-        all_events = HeuristicEvent.objects.all()
-        if begin_date:
-            all_events = all_events.filter(date__gte=begin_date)
-        if end_date:
-            all_events = all_events.filter(date__lte=end_date)
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # First we do some simple queries and set arithmetic to generate a list
-        # of patients who *could* have the disease.
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #
-        # 'pids' are patient IDs -- db primary keys
-        for req in (self.require + self.require_past):
-            pids_this_req = set()
-            for h in req: # One or more BaseHeuristic instances
-                s = set(h.get_events().values_list('patient_id', flat=True))
-                pids_this_req = pids_this_req | s 
-                log.debug('%50s: %s' % (h, len(pids_this_req)) )
-            try:
-                pids = pids & pids_this_req
-            except UnboundLocalError:
-                pids = pids_this_req
-        for item in self.exclude:
-            pids_this_item = set()
-            for h in item: # One or more BaseHeuristic instances
-                s = set(h.get_events().values_list('patient_id', flat=True))
-                pids_this_item = pids_this_item | s 
-                log.debug('%50s: %s' % (h, len(pids_this_item)) )
-            pids = pids - pids_this_item
-        log.debug('Plausible %50s: %s' % (self.name, len(pids)) )
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Now that we have screened for patients who are plausible disease
         # candidates, we individually examine them to see if they match the 
         # full battery of requirements.
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        pids = self.__get_plausible_pids(begin_date, end_date)
         for pid in list(pids):
             wins = self.__match_plausible_patient(pid)
             if wins:
@@ -437,9 +445,6 @@ class Disease(object):
         return case
     
     def generate_cases(self):
-        '''
-        Calls the user-supplied case factory with appropriate arguments
-        '''
         counter = 0            # Number of new cases generated
         log.info('Generating cases for %s' % self.name)
         existing_cases = Case.objects.filter(condition=self.name)
