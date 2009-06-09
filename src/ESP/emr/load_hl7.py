@@ -181,6 +181,7 @@ class Hl7MessageLoader(object):
         patient.updated_by = UPDATED_BY
         patient.mrn = patient_id_num # Patient ID # is same as their Medical Record Number
         patient.gender = gender
+        patient.date_of_birth = dob
         patient.save()
         if POPULATE_OLD_SCHEMA:
             demog = Demog.objects.get_or_create(pk=patient.pk)[0]
@@ -189,7 +190,7 @@ class Hl7MessageLoader(object):
             demog.DemogFirst_Name = patient.first_name
             demog.DemogMiddle_Initial = patient.middle_name
             demog.DemogLast_Name = patient.last_name
-            demog.Date_of_Birth = str_from_date(patient.dob)
+            demog.Date_of_Birth = str_from_date(patient.date_of_birth)
             demog.DemogGender = patient.gender
             demog.save()
             self.demog = demog
@@ -198,7 +199,7 @@ class Hl7MessageLoader(object):
             log.debug('NEW PATIENT')
             log.debug('\t Patient ID #: %s' % patient_id_num)
             log.debug('\t Name (l, f m): "%s, %s %s"' % (patient.last_name, patient.first_name, patient.middle_name))
-            log.debug('\t DoB: %s' % patient.dob)
+            log.debug('\t DoB: %s' % patient.date_of_birth)
             log.debug('\t Gender: %s' % patient.gender)
         #
         # PV1
