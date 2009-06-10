@@ -112,7 +112,9 @@ class BaseHeuristic(object):
         keys = cls.__registry.keys()
         keys.sort()
         [result.extend(cls.__registry[key]) for key in keys]
-        log.debug('All BaseHeuristic instances: %s' % result)
+        log.debug('All BaseHeuristic instances: %s')
+        for item in result:
+            log.debug('    %s' % item)
         return result
     
     @classmethod
@@ -173,7 +175,7 @@ class BaseHeuristic(object):
         matches, if it does not already have one.
         @return: Integer number of new records created
         '''
-        log.info('Generating events for heuristic "%s".' % self.heuristic_name)
+        log.info('Generating events for "%s".' % self.def_name)
         counter = 0 # Counts how many new records have been created
         #
         # Incremental processing
