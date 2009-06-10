@@ -537,10 +537,10 @@ class LabResult(BasePatientRecord):
 
 
     def __str__(self):
-        return 'Lab Result #%s' % self.pk
+        return 'Lab Result # %s' % self.pk
     
     def __unicode__(self):
-        return u'Lab Result #%s' % self.pk
+        return u'Lab Result # %s' % self.pk
     
     
     
@@ -734,7 +734,7 @@ class Encounter(BasePatientRecord):
                 
     
     def __str__(self):
-        return 'Encounter #%s' % self.pk
+        return 'Encounter # %s' % self.pk
             
 
 class Immunization(BasePatientRecord):
