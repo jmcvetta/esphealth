@@ -278,16 +278,19 @@ class LabHeuristic(BaseHeuristic):
             def_version = def_version,
             )
     
-    def relevant_labs(self, begin_timestamp=None):
+    def relevant_labs(self, begin_timestamp=None, loinc_nums=None):
         '''
         Return all lab results relevant to this heuristic, whether or not they 
         indicate positive.
+            @type loinc_nums: [String, String, ...]
             @type begin_timestamp: datetime.datedatetime
             @type end_date:   datetime.date
         '''
         log.debug('Get lab results relevant to "%s".' % self.heuristic_name)
         log.debug('Beginning timestamp: %s' % begin_timestamp)
-        qs = LabResult.objects.filter_loincs(self.loinc_nums)
+        if not loinc_nums:
+            loinc_nums = self.loinc_nums
+        qs = LabResult.objects.filter_loincs(loinc_nums)
         if begin_timestamp:
             qs = qs.filter(updated_timestamp__gte=begin_timestamp)
         return qs
@@ -489,7 +492,7 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
             def_version = 1,
             )
         
-    def matches(self, begin_timestamp=None):
+    def old_matches(self, begin_timestamp=None):
         log.debug('Looking for high calculated bilirubin scores')
         # First, we return a list of patient & order date pairs, where the sum
         # of direct and indirect bilirubin tests ordered on the same day is 
@@ -506,12 +509,12 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
             matches = matches | relevant.filter(patient=item['patient'], date=item['date']) 
         return matches
     
-    def newmatches(self, begin_timestamp=None):
+    def matches(self, begin_timestamp=None):
         log.debug('Looking for high calculated bilirubin scores')
         # First, we return a list of patient & order date pairs, where the sum
         # of direct and indirect bilirubin tests ordered on the same day is 
         # greater than 1.5.
-        relevant = self.relevant_labs(begin_timestamp).filter(date__isnull=False)
+        relevant = self.relevant_labs(begin_timestamp=begin_timestamp)
         vqs = relevant.values('patient', 'date') # returns ValueQuerySet
         vqs = vqs.annotate(calc_bil=Sum('result_float'))
         vqs = vqs.filter(calc_bil__gt=1.5)
@@ -520,6 +523,18 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
         match_ids = set()
         for item in vqs:
             match_ids = match_ids | set(relevant.filter(patient=item['patient'], date=item['date']).values_list('id', flat=True))
-            print len(match_ids)
-        #return matches
+        log.debug('Number of match IDs: %s' % len(match_ids))
+        matches = relevant.filter(id__in=match_ids)
+        return matches
     
+    def newer_matches(self, begin_timestamp=None):
+        log.debug('Looking for high calculated bilirubin scores')
+        direct_loinc = ['29760-6']
+        indirect_loinc = ['14630-8']
+        # {patient: {date: [result, pk]}}
+        d = self.relevant_labs(begin_timestamp=begin_timestamp, loinc_nums=direct_loinc)
+        d_patients = d.values_list('patient', flat=True)
+        i = self.relevant_labs(begin_timestamp=begin_timestamp, loinc_nums=direct_loinc)
+        i_patients = i.values_list('patient', flat=True)
+        plausible_patients = d_patients.filter(patient__in=i_patients)
+        print plausible_patients[0]
