@@ -182,19 +182,19 @@ class BaseHeuristic(object):
         #
         if incremental:
             log.debug('Incremental processing requested.')
-            runs = Run.objects.filter(heuristic_name=self.heuristic_name, status='s')
+            runs = Run.objects.filter(def_name=self.def_name, status='s')
             begin_timestamp = runs.aggregate(ts=Max('timestamp'))['ts'] # aggregate() returns dict
         else:
             log.debug('Incremental processing NOT requested.')
             begin_timestamp = None
         log.debug('begin_timestamp: %s' % begin_timestamp)
-        self.run = Run(heuristic_name=self.heuristic_name) # New Run object for this run
+        self.run = Run(def_name=self.def_name) # New Run object for this run
         self.run.save()
         log.debug('Generated new Run object for this run: %s' % self.run)
         #
         #
         # First we retrieve a list of object IDs for this 
-        existing = HeuristicEvent.objects.filter(heuristic_name=self.heuristic_name).values_list('object_id')
+        existing = HeuristicEvent.objects.filter(definition=self.def_name).values_list('object_id')
         existing = [int(item[0]) for item in existing] # Convert to a list of integers
         #
         # Disabled select_related() because matches will most often be in 

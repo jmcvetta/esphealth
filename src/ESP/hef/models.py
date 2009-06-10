@@ -25,12 +25,12 @@ class Run(models.Model):
     automatically set to current time, and 'status' is set to 'r'.  Upon
     successful completion of the run, status is updated to 's'.  
     '''
-    heuristic_name = models.CharField(max_length=127, null=False, blank=False, db_index=True)
+    def_name = models.CharField(max_length=255, null=False, blank=False, db_index=True)
     timestamp = models.DateTimeField(blank=False, auto_now_add=True)
     status = models.CharField(max_length=1, blank=False, choices=HEF_RUN_STATUS, default='r')
     
     def __str__(self):
-        return '<HEF Run #%s: %s: %s: %s>' % (self.pk, self.heuristic_name, self.status, self.timestamp)
+        return '<HEF Run #%s: %s: %s: %s>' % (self.pk, self.def_name, self.status, self.timestamp)
 
 
 class HeuristicEvent(models.Model):
