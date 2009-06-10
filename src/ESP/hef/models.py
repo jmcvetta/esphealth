@@ -41,7 +41,7 @@ class HeuristicEvent(models.Model):
     date = models.DateField('Date event occured', blank=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
     timestamp = models.DateTimeField('Time event was created in db', blank=False, auto_now_add=True)
-    definition = models.CharField(max_length=100, blank=False)
+    definition = models.CharField(max_length=100, blank=False, db_index=True)
     def_version = models.IntegerField(blank=False)
     #
     # Standard generic relation support
