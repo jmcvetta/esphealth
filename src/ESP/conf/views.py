@@ -49,8 +49,8 @@ def refresh_native_name_cache():
     log.debug('Flushing old native_name cache')
     NativeNameCache.objects.all().delete()
     log.debug('Populating cache table with distinct native_name values')
-    for item in LabResult.objects.values_list('native_name', 'native_code').distinct():
-        NativeNameCache(**item)
+    for item in LabResult.objects.values('native_name', 'native_code').distinct():
+        NativeNameCache(**item).save()
     count = NativeNameCache.objects.all().count()
     log.debug('There are %s distinct native_name + native_code values in LabResult table' % count)
 
@@ -88,9 +88,12 @@ def foobar():
 
 
 @login_required
-def code_mapping(request):
+def map_code(request, loinc_num=None, native_code=None):
     values = {'title': 'Code Mapping'}
-    return render_to_response('conf/code_maintenance.html', values, context_instance=RequestContext(request))
+    values['loinc_num'] = loinc_num
+    values['native_code'] = native_code
+    values['form'] 
+    return render_to_response('conf/map_code.html', values, context_instance=RequestContext(request))
 
 
 class LoincMap:
@@ -101,7 +104,6 @@ class LoincMap:
         self.loinc_num = loinc_num
         self.required_by = required_by
         self.native_codes = native_codes
-        
         
 
 @login_required
