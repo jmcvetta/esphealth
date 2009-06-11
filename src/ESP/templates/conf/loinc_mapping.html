@@ -1,0 +1,76 @@
+{% extends 'esp/espbase.html' %}
+{% load esplib %}
+
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
+{% endblock %}
+
+
+{% block extrascript %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+        });
+    </script>
+{% endblock %}
+
+
+
+{% block content %}
+
+<h1 align='center'>
+    LOINC Mapping Report
+</h1>
+
+
+<h2>Unmapped</h2>
+
+<table id="unmapped_loincs">
+    <tr>
+        <th width='100pt'>LOINC</th>
+        <th width='300pt'>Required by Heuristic</th>
+    </tr>
+    {% for item in unmapped %}
+    <tr>
+        <td>{{ item.loinc_num }}</td>
+        <td>
+        {% for req in item.required_by %}
+            {{ req }}
+            <br>
+        {% endfor %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+<h2>Mapped</h2>
+
+<table id="mapped_loincs">
+    <tr>
+        <th width='100pt'>LOINC</th>
+        <th width='300pt'>Required by Heuristic</th>
+        <th width='300pt'>Native Codes</th>
+    </tr>
+    {% for item in mapped %}
+    <tr>
+        <td>{{ item.loinc_num }}</td>
+        <td>
+        {% for req in item.required_by %}
+            {{ req }}
+            <br>
+        {% endfor %}
+        </td>
+        <td>
+        {% for code in item.native_codes %}
+            {{ code }}
+            <br>
+        {% endfor %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

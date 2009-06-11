@@ -37,6 +37,7 @@ from ESP.conf.models import NativeCode
 from ESP.conf.models import NativeNameCache
 from ESP.emr.models import LabResult
 from ESP.hef.hef import BaseHeuristic
+from ESP.hef import events # Required to register hef events
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
 
@@ -54,9 +55,25 @@ def refresh_native_name_cache():
     log.debug('There are %s distinct native_name + native_code values in LabResult table' % count)
 
 
-def unmapped_hef_loincs():
+def get_required_loincs():
     '''
+    Returns a dictionary mapping a required LOINC number to the heuristic 
+    definition(s) that require it.
     '''
+    required_loincs = {}
+    for heuristic in BaseHeuristic.get_all_heuristics():
+        try:
+            for l in heuristic.loinc_nums:
+                try:
+                    required_loincs[l] += [heuristic.def_name]
+                except KeyError:
+                    required_loincs[l] = [heuristic.def_name]
+        except AttributeError:
+            pass # Skip heuristics w/ no LOINCs defined
+    return required_loincs
+    
+    
+def foobar():
     necessary_loincs = set(BaseHeuristic.get_all_loincs())
     mapped_loincs = set(NativeCode.objects.values_list('loinc', flat=True))
     return necessary_loincs - mapped_loincs
@@ -71,8 +88,45 @@ def unmapped_hef_loincs():
 
 
 @login_required
-def code_maintenance(request):
-    values = {'title': 'Code Maintenance'}
+def code_mapping(request):
+    values = {'title': 'Code Mapping'}
+    return render_to_response('conf/code_maintenance.html', values, context_instance=RequestContext(request))
+
+
+class LoincMap:
+    '''
+    Convenience data structure for loinc_mapping()
+    '''
+    def __init__(self, loinc_num, required_by, native_codes=None):
+        self.loinc_num = loinc_num
+        self.required_by = required_by
+        self.native_codes = native_codes
+        
+        
+
+@login_required
+def loinc_mapping(request):
+    values = {'title': 'Required LOINC Codes'}
+    mapped_loinc_nums = set(NativeCode.objects.values_list('loinc', flat=True))
+    mapped = []
+    unmapped = []
+    required_loincs = get_required_loincs()
+    print required_loincs
+    for loinc_num in required_loincs:
+        native_codes = NativeCode.objects.filter(loinc=loinc_num).values_list('native_code', flat=True)
+        if native_codes:
+            #native_codes = [m.native_code for m in mappings]
+            #print native_codes
+            lm = LoincMap(loinc_num, required_loincs[loinc_num], native_codes=native_codes)
+            mapped += [lm]
+        else:
+            unmapped += [LoincMap(loinc_num, required_loincs[loinc_num])]
+    values['mapped'] = mapped
+    values['unmapped'] = unmapped
+    return render_to_response('conf/required_loincs.html', values, context_instance=RequestContext(request))
+
+
+def foo():
     search_re = re.compile(r'|'.join(NLP_SEARCH))
     exclude_re = re.compile(r'|'.join(NLP_EXCLUDE))
     mapped_codes = NativeCode.objects.values_list('native_code', flat=True)

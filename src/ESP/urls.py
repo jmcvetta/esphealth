@@ -9,8 +9,6 @@ from django.contrib import admin
 
 from ESP.settings import MEDIA_ROOT, MEDIA_URL
 from ESP.esp.views import index, esplogin
-from ESP.conf.views import code_maintenance
-from ESP.conf.views import json_code_grid
 
 
 admin.autodiscover()
@@ -34,9 +32,13 @@ urlpatterns = patterns(
 #    (r'^admin/doc/', include('django.contrib.admindocs.urls'),
 
     url(r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIA_ROOT}),
+    
+    # Configuration
+    url(r'^conf/', include('ESP.conf.urls')),
+    
     #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #
-    url(r'^codes', code_maintenance),
-    url(r'^json_code_grid', json_code_grid, name='json_code_grid'),
+    #url(r'^codes', code_maintenance),
+    #url(r'^json_code_grid', json_code_grid, name='json_code_grid'),
 )
