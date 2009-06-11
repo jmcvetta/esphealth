@@ -52,7 +52,7 @@ class HeuristicEvent(models.Model):
     content_object = generic.GenericForeignKey('content_type', 'object_id')
     
     class Meta:
-        unique_together = ['heuristic_name', 'date', 'patient', 'content_type', 'object_id']
+        unique_together = ['definition', 'date', 'patient', 'content_type', 'object_id']
     
     def __str__(self):
         #msg = '%-15s %-12s Patient #%-20s' % (self.heuristic_name, self.date, self.patient.id)

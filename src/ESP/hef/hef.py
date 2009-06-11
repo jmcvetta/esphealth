@@ -133,7 +133,6 @@ class BaseHeuristic(object):
         names.sort()
         return names
     
-    
     @classmethod
     def get_all_loincs(cls):
         '''
