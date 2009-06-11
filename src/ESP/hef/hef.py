@@ -330,14 +330,19 @@ class HighNumericLabHeuristic(LabHeuristic):
         against that default 'high' value.
         '''
         relevant_labs = self.relevant_labs(begin_timestamp)
-        no_ref_q = Q(ref_high=None)
+        no_ref_q = Q(ref_high=None) # Record has null value for ref_high
         if self.default_high:
-            static_comp_q = no_ref_q & Q(result_float__gt=self.default_high)
-            pos_q = static_comp_q
+            # Query to compare result_float against self.default_high
+            def_high_q = Q(result_float__gt=self.default_high)
+            pos_q = def_high_q
         if self.ratio:
+            # Query to compare non-null ref_high against self.ratio
             ref_comp_q = ~no_ref_q & Q(result_float__gt=F('ref_high') * self.ratio)
             pos_q = ref_comp_q
         if self.default_high and self.ratio:
+            # Query to compare records with non-null ref_high against 
+            # self.ratio, and records with null ref_high against self.default
+            static_comp_q = no_ref_q & def_high_q
             pos_q = (ref_comp_q | static_comp_q)
         log.debug('pos_q: %s' % pos_q)
         result = relevant_labs.filter(pos_q)

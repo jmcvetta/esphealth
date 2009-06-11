@@ -223,7 +223,7 @@ HighNumericLabHeuristic(
     loinc_nums = ['16934-2'],
     default_high = 100,
     )
-hep_b_viral_dna_part3 = HighNumericLabHeuristic(
+HighNumericLabHeuristic(
     heuristic_name = 'hep_b_viral_dna',
     def_name = 'Hep B Viral DNA Event Definition 3',
     def_version = 1,
