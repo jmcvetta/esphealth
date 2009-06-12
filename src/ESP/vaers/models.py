@@ -5,6 +5,7 @@ import os
 from django.db import models
 from django.db.models import signals, Q
 from django.core.mail import send_mail
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.core.urlresolvers import reverse
 from django.template import Context
 from django.template.loader import get_template
@@ -195,26 +196,22 @@ class AdverseEvent(models.Model):
             }
 
         templates = {
-            'default':'email_messages/notify_case.txt',
-            'confirm':'email_messages/notify_category_three.txt'
+            'default':'email_messages/notify_category_two',
+            'confirm':'email_messages/notify_category_three'
             }
 
         
-        msg = get_template(templates[self.category]).render(Context(params))
+        html_template = templates[self.category] + '.html'
+        text_template = templates[self.category] + '.txt'
+        
+        html_msg = get_template(html_template).render(Context(params))
+        text_msg = get_template(text_template).render(Context(params))
 
-
-        # In case it is a fake event, the notification should include
-        # a warning.  That message is in the template notify_demo.txt
-        # and is prepended to the real message.
-        if self.is_fake(): 
-            demo_warning_msg = get_template('email_messages/notify_demo.txt').render({}) 
-            msg = demo_warning_msg + msg
-            
-        send_mail(settings.EMAIL_SUBJECT, msg,
-                  settings.EMAIL_SENDER, 
-                  [recipient],
-                  fail_silently=False)
-
+        msg = EmailMessage(settings.EMAIL_SUBJECT, html_msg, 
+                           settings.EMAIL_SENDER, 
+                           [recipient])
+        msg.content_subtype = "html"  # Main content is now text/html
+        msg.send()
 
             
 
