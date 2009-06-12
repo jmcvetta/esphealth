@@ -9,8 +9,13 @@ class FormatOptions(admin.ModelAdmin):
 class DestOptions(admin.ModelAdmin):
     ordering = ('destVerDate', 'destName')
 
+class LoincAdmin(admin.ModelAdmin):
+    ordering = ('loinc_num',)
+    search_fields = ('loinc_num', 'long_common_name', 'shortname')
+
 class NativeToLoincMapAdmin(admin.ModelAdmin):
     list_display = ['native_code', 'native_name', 'loinc', ]
+    raw_id_fields = ['loinc']
     save_on_top = True
 
 class SourceSystemAdmin(admin.ModelAdmin):
@@ -23,3 +28,4 @@ admin.site.register(models.NativeCode, NativeToLoincMapAdmin)
 admin.site.register(models.SourceSystem, SourceSystemAdmin)
 admin.site.register(models.Vaccine)
 admin.site.register(models.ImmunizationManufacturer)
+admin.site.register(models.Loinc, LoincAdmin)
