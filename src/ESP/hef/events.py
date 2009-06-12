@@ -509,3 +509,16 @@ lyme_pcr = StringMatchLabHeuristic(
     match_type = 'istartswith',
     )
     
+lyme_diagnosis = EncounterHeuristic(
+    heuristic_name = 'lyme_diagnosis', 
+    def_name = 'Lyme Disease Diagnosis Event Definition 1',
+    def_version = 1,
+    icd9s = ['088.81'],
+    )
+
+rash = EncounterHeuristic(
+    heuristic_name = 'rash', 
+    def_name = 'Rash Event Definition 1',
+    def_version = 1,
+    icd9s = ['782.1'],
+    )
