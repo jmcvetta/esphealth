@@ -411,7 +411,7 @@ lyme_3 = DiseaseDefinition(
     require = [
         (rash,),
         (lyme_elisa,),
-        (doxycycline),
+        (doxycycline,),
         ],
     )
 
