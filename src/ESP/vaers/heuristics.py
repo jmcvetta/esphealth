@@ -31,10 +31,11 @@ USAGE_MSG = '''\
 
 class AdverseEventHeuristic(BaseHeuristic):
     def __init__(self, event_name, verbose_name=None):
-        self.heuristic_name = event_name
-        self.def_name = verbose_name
         self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
-        self._register(event_name)            
+        super(AdverseEventHeuristic, self).__init__(event_name, 
+                                                    verbose_name, 1)
+
+        
             
 class VaersFeverHeuristic(AdverseEventHeuristic):
     def __init__(self):
@@ -54,8 +55,10 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
 
                     
 
-    def generate_events(self, begin_date=None, end_date=None):
+    def generate_events(self, incremental=True, **kw):
         log.info('Generating events for %s' % self.heuristic_name)
+        begin_date = kw.pop('begin_date', None)
+        end_date = kw.pop('end_date', None)
         matches = self.matches(begin_date=begin_date, end_date=end_date)
         encounter_type = ContentType.objects.get_for_model(EncounterEvent)
 
@@ -142,9 +145,11 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         return candidates
 
 
-    def generate_events(self, begin_date=None, end_date=None):
+    def generate_events(self, incremental=True, **kw):
         log.info('Generating events for %s' % self.heuristic_name)
         counter = 0
+        begin_date=kw.pop('begin_date', None)
+        end_date = kw.pop('end_date', None)
         matches = self.matches(begin_date=begin_date, end_date=end_date)
         encounter_type = ContentType.objects.get_for_model(EncounterEvent)
 
@@ -190,7 +195,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         self.loinc = loinc
         self.criterium = criterium
         self.def_name = verbose_name
-        self._register(event_name)
+#        self._register(event_name)
         self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
 
     def matches(self, begin_date=None, end_date=None):
@@ -240,9 +245,12 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 excluded_due_to_history(c, comparator, baseline)]
 
     
-    def generate_events(self, begin_date=None, end_date=None):
+    def generate_events(self, incremental=True, **kw):
         log.info('Generating events for %s' % self.heuristic_name)
         counter = 0
+        begin_date=kw.pop('begin_date', None)
+        end_date = kw.pop('end_date', None)
+
         matches = self.matches(begin_date=begin_date, end_date=end_date)
 
         lab_type = ContentType.objects.get_for_model(LabResultEvent)
@@ -396,8 +404,7 @@ def main():
     if options.lx: lab_heuristics()
 
 
-    BaseHeuristic.generate_all_events(begin_date=begin_date, 
-                                      end_date=end_date)
+    BaseHeuristic.generate_all_events()
 
 
 
