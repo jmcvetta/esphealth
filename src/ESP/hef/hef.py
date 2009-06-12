@@ -304,16 +304,20 @@ class HighNumericLabHeuristic(LabHeuristic):
     '''
     
     def __init__(self, heuristic_name, def_name, def_version, loinc_nums, 
-        ratio=None, default_high=None, exclude=False):
+        ratio=None, default_high=None, comparison='>', exclude=False):
         '''
         @param ratio:        Match on result > ratio * reference_high
         @type ratio:         Integer
         @param default_high: If no reference high, match on result > default_high
         @type default_high:  Integer
         '''
+        # TODO: comparison should *not* have a default argument -- but that requires
+        # updating all existing HighNumericLabHeuristic definitions.
         assert ratio or default_high
+        assert comparison in ['>', '>=',]
         self.default_high = default_high
         self.ratio = ratio
+        self.comparison = comparison
         LabHeuristic.__init__(self,
             heuristic_name = heuristic_name,
             def_name = def_name,
@@ -332,11 +336,21 @@ class HighNumericLabHeuristic(LabHeuristic):
         no_ref_q = Q(ref_high=None) # Record has null value for ref_high
         if self.default_high:
             # Query to compare result_float against self.default_high
-            def_high_q = Q(result_float__gt=self.default_high)
+            if self.comparison == '>':
+                def_high_q = Q(result_float__gt=self.default_high)
+            elif self.comparison == '>=':
+                def_high_q = Q(result_float__gte=self.default_high)
+            else:
+                raise RuntimeError('Invalid comparison operator: %s' % self.comparison)
             pos_q = def_high_q
         if self.ratio:
             # Query to compare non-null ref_high against self.ratio
-            ref_comp_q = ~no_ref_q & Q(result_float__gt=F('ref_high') * self.ratio)
+            if self.comparison == '>':
+                ref_comp_q = ~no_ref_q & Q(result_float__gt=F('ref_high') * self.ratio)
+            elif self.comparison == '>=':
+                ref_comp_q = ~no_ref_q & Q(result_float__gte=F('ref_high') * self.ratio)
+            else:
+                raise RuntimeError('Invalid comparison operator: %s' % self.comparison)
             pos_q = ref_comp_q
         if self.default_high and self.ratio:
             # Query to compare records with non-null ref_high against 
