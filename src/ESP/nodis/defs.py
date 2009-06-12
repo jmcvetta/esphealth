@@ -410,6 +410,7 @@ lyme_3 = DiseaseDefinition(
     window = 14,
     require = [
         (rash,),
+        # TODO: This should look for any ELISA order, not just one with a positive result!
         (lyme_elisa,),
         (doxycycline,),
         ],
