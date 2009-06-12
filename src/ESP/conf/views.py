@@ -125,7 +125,7 @@ def loinc_mapping(request):
             unmapped += [LoincMap(loinc_num, required_loincs[loinc_num])]
     values['mapped'] = mapped
     values['unmapped'] = unmapped
-    return render_to_response('conf/required_loincs.html', values, context_instance=RequestContext(request))
+    return render_to_response('conf/loinc_mapping.html', values, context_instance=RequestContext(request))
 
 
 def foo():
