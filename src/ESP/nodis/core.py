@@ -254,6 +254,10 @@ class DiseaseDefinition(object):
                             continue
                     if found_event:
                         new_windows.append(win)
+            discarded = set(t_windows) - set(new_windows)
+            if discarded:
+                log.debug('Discarding following windows, because they did meet requirement %s' % str(req))
+                [log.debug('    %s' % w) for w in discarded]
             t_windows = list(new_windows)
             log.debug('Remaining valid time windows: %s' % t_windows)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
