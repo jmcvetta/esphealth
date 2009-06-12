@@ -564,6 +564,9 @@ class Prescription(BasePatientRecord):
     status = models.CharField('Order Status', max_length=20, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
+    
+    def __str__(self):
+        return self.name
 
 
 class EncounterManager(models.Manager):
