@@ -44,6 +44,18 @@ from ESP.hef.events import hep_c_elisa
 from ESP.hef.events import hep_c_riba
 from ESP.hef.events import hep_c_rna
 from ESP.hef.events import no_hep_c_elisa
+#
+# Lyme Disease
+#
+from ESP.hef.events import lyme_elisa
+from ESP.hef.events import lyme_igg
+from ESP.hef.events import lyme_igm
+from ESP.hef.events import lyme_pcr
+from ESP.hef.events import lyme_diagnosis
+from ESP.hef.events import rash
+from ESP.hef.events import doxycycline
+from ESP.hef.events import lyme_other_antibiotics
+
 
 
 #===============================================================================
@@ -369,5 +381,77 @@ hep_c = Disease(
         ],
     lab_days_before = 28,
     lab_days_after = 28,
+    )
+
+
+lyme_1 = DiseaseDefinition(
+    name = 'Lyme Disease Definition 1',
+    version = 1,
+    window = 30,
+    require = [
+        (lyme_elisa, lyme_igg, lyme_igm, lyme_pcr),
+        (lyme_diagnosis, doxycycline, lyme_other_antibiotics),
+        ],
+    )
+
+lyme_2 = DiseaseDefinition(
+    name = 'Lyme Disease Definition 2',
+    version = 1,
+    window = 14,
+    require = [
+        (lyme_diagnosis,),
+        (doxycycline, lyme_other_antibiotics),
+        ],
+    )
+
+lyme_3 = DiseaseDefinition(
+    name = 'Lyme Disease Definition 3',
+    version = 1,
+    window = 14,
+    require = [
+        (rash, lyme_elisa, doxycycline),
+        ],
+    )
+
+
+lyme = Disease(
+    name = 'Lyme Disease',
+    definitions = [lyme_1, lyme_2, lyme_3,],
+    icd9s = [
+        '782.1',
+        '711.8',
+        '320.7',
+        '351.0',
+        '723.4',
+        '724.4',
+        '422.0',
+        '426.0',
+        '426.12',
+        '426.13',
+        '780.6',
+        ],
+    icd9_days_before = 30,
+    icd9_days_after = 30,
+    fever = True,
+    lab_loinc_nums = [
+        '5061-7',
+        '31155-5',
+        '16481-4',
+        '16482-2',
+        '23982-2',
+        '29898-4',
+        '4991-6',
+        ],
+    lab_days_before = 30,
+    lab_days_after = 30,
+    med_names = [
+        'doxycycline',
+        'amoxicillin',
+        'cefuroxime',
+        'ceftriaxone',
+        'cefotaxime',
+        ],
+    med_days_before = 30,
+    med_days_after = 30,
     )
 
