@@ -558,3 +558,30 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
         i_patients = i.values_list('patient', flat=True)
         plausible_patients = d_patients.filter(patient__in=i_patients)
         print plausible_patients[0]
+
+
+class MedicationHeuristic(BaseHeuristic):
+    
+    def __init__(self, heuristic_name, def_name, def_version, drugs):
+        '''
+        @param drugs:  Generate events when drug(s) are prescribed
+        @type drugs:   [String, String, ...]
+        '''
+        assert drugs
+        self.drugs = drugs
+        BaseHeuristic.__init__(self,
+            heuristic_name = heuristic_name,
+            def_name = def_name,
+            def_version = def_version,
+            )
+
+    def matches(self, begin_timestamp=None):
+        log.debug('Generating %s event for following drugs:' % self.heuristic_name)
+        [log.debug('    %s' % d) for d in self.drugs]
+        qs = Prescription.objects.all()
+        if begin_timestamp:
+            qs = qs.filter(updated_timestamp__gte=begin_timestamp)
+        q_obj = Q(name__icontains=self.drugs[0])
+        for drug_name in self.drugs[1:]:
+            q_obj = q_obj | Q(name__icontains=drug_name)
+        return qs.filter(q_obj)
