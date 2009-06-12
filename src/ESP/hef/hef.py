@@ -168,7 +168,7 @@ class BaseHeuristic(object):
         '''
         raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseHeuristic.')
         
-    def generate_events(self, incremental=True):
+    def generate_events(self, incremental=True, **kw):
         '''
         Generate HeuristicEvent records for each item returned by
         matches, if it does not already have one.
@@ -230,7 +230,7 @@ class BaseHeuristic(object):
         return counter
     
     @classmethod
-    def generate_all_events(cls, incremental=True):
+    def generate_all_events(cls, incremental=True, **kw):
         '''
         Generate HeuristicEvent records for every registered BaseHeuristic 
             instance.
