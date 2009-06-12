@@ -297,22 +297,22 @@ class LabHeuristic(BaseHeuristic):
         return qs
 
 
-class HighNumericLabHeuristic(LabHeuristic):
+class NumericLabHeuristic(LabHeuristic):
     '''
     Matches labs results with high numeric scores, as determined by a ratio to 
     that result's reference high, with fall back to a default high value.
     '''
     
     def __init__(self, heuristic_name, def_name, def_version, loinc_nums, 
-        ratio=None, default_high=None, comparison='>', exclude=False):
+        comparison, ratio=None, default_high=None, exclude=False):
         '''
+        @param comparison:   Operator to use for numerical comparison (currently only '>' and '>=' supported)
+        @type comparison:    String
         @param ratio:        Match on result > ratio * reference_high
         @type ratio:         Integer
         @param default_high: If no reference high, match on result > default_high
         @type default_high:  Integer
         '''
-        # TODO: comparison should *not* have a default argument -- but that requires
-        # updating all existing HighNumericLabHeuristic definitions.
         assert ratio or default_high
         assert comparison in ['>', '>=',]
         self.default_high = default_high

@@ -9,7 +9,7 @@
 @license: LGPL
 '''
 
-from ESP.hef.hef import EncounterHeuristic, StringMatchLabHeuristic, HighNumericLabHeuristic
+from ESP.hef.hef import EncounterHeuristic, StringMatchLabHeuristic, NumericLabHeuristic
 from ESP.hef.hef import FeverHeuristic, CalculatedBilirubinHeuristic
 
 
@@ -88,47 +88,52 @@ chlamydia = StringMatchLabHeuristic(
     match_type = 'istartswith',
     )
 
-alt_2x = HighNumericLabHeuristic(
+alt_2x = NumericLabHeuristic(
     heuristic_name = 'alt_2x',
     def_name = 'ALT 2x Event Definition 1',
     def_version = 1,
     loinc_nums=['1742-6'],
+    comparison = '>',
     ratio=2,
     default_high=132,
     )
 
-alt_5x = HighNumericLabHeuristic(
+alt_5x = NumericLabHeuristic(
     heuristic_name = 'alt_5x',
     def_name = 'ALT 5x Event Definition 1',
     def_version = 1,
     loinc_nums=['1742-6'],
+    comparison = '>',
     ratio=5,
     default_high=330,
     )
 
-ast_2x = HighNumericLabHeuristic(
+ast_2x = NumericLabHeuristic(
     heuristic_name = 'ast_2x',
     def_name = 'AST 2x Event Definition 1',
     def_version = 1,
     loinc_nums=['1920-8'],
+    comparison = '>',
     ratio=2,
     default_high=132,
     )
 
-ast_5x = HighNumericLabHeuristic(
+ast_5x = NumericLabHeuristic(
     heuristic_name = 'ast_5x',
     def_name = 'AST 5x Event Definition 1',
     def_version = 1,
     loinc_nums=['1920-8'],
+    comparison = '>',
     ratio=5,
     default_high=330,
     )
 
-alt_400 = HighNumericLabHeuristic(
+alt_400 = NumericLabHeuristic(
     heuristic_name = 'alt_400',
     def_name = 'ALT >400 Event Definition 1',
     def_version = 1,
     loinc_nums=['1742-6'],
+    comparison = '>',
     default_high=400,
     )
 
@@ -216,18 +221,20 @@ hep_b_viral_dna = StringMatchLabHeuristic(
     loinc_nums = ['13126-8', '16934', '5009-6'],
     strings = POSITIVE_STRINGS,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'hep_b_viral_dna',
     def_name = 'Hep B Viral DNA Event Definition 2',
     def_version = 1,
     loinc_nums = ['16934-2'],
+    comparison = '>',
     default_high = 100,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'hep_b_viral_dna',
     def_name = 'Hep B Viral DNA Event Definition 3',
     def_version = 1,
     loinc_nums = ['5009-6'],
+    comparison = '>',
     default_high = 160,
     )
 
@@ -247,31 +254,34 @@ hep_c_ab = StringMatchLabHeuristic(
     strings = POSITIVE_STRINGS,
     )
 
-total_bilirubin_high = HighNumericLabHeuristic(
+total_bilirubin_high = NumericLabHeuristic(
     heuristic_name = 'total_bilirubin_high',
     def_name = 'High Total Bilirubin Event Definition 1',
     def_version = 1,
     loinc_nums = ['33899-6'],
+    comparison = '>',
     default_high = 1.5,
     )
 
 high_calc_bilirubin = CalculatedBilirubinHeuristic()
 
-hep_c_signal_cutoff = HighNumericLabHeuristic(
+hep_c_signal_cutoff = NumericLabHeuristic(
     heuristic_name = 'hep_c_signal_cutoff',
     def_name = 'Hep C Signal Cutoff Event Definition 1',
     def_version = 1,
     loinc_nums = ['MDPH-144',],
+    comparison = '>',
     default_high = 3.8,
     )
 
-no_hep_c_signal_cutoff = HighNumericLabHeuristic(
+no_hep_c_signal_cutoff = NumericLabHeuristic(
     # This is the exactly the same as hep_c_signal_cutoff above, but with 'exclude'
     # flag set.
     heuristic_name = 'hep_c_signal_cutoff',
     def_name = 'No Hep C Signal Cutoff Event Definition 1',
     def_version = 1,
     loinc_nums = ['MDPH-144',],
+    comparison = '>',
     default_high = 3.8,
     exclude = True,
     )
@@ -299,46 +309,52 @@ hep_c_rna = StringMatchLabHeuristic(
     loinc_nums = ['6422-0'],
     strings = POSITIVE_STRINGS,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'hep_c_rna',
     def_name = 'Hep C RNA Event Definition 2',
     def_version = 1,
     loinc_nums = ['10676-5'],
+    comparison = '>',
     default_high = 100,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'hep_c_rna',
     def_name = 'Hep C RNA Event Definition 3',
     def_version = 1,
     loinc_nums = ['38180-6'],
+    comparison = '>',
     default_high = 2.79,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'hep_c_rna',
     def_name = 'Hep C RNA Event Definition 4',
     def_version = 1,
     loinc_nums = ['34704-7'],
+    comparison = '>',
     default_high = 50,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'hep_c_rna',
     def_name = 'Hep C RNA Event Definition 5',
     def_version = 1,
     loinc_nums = ['11259-9'],
+    comparison = '>',
     default_high = 10,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'hep_c_rna',
     def_name = 'Hep C RNA Event Definition 6',
     def_version = 1,
     loinc_nums = ['20416-4'],
+    comparison = '>',
     default_high = 0.70,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'hep_c_rna',
     def_name = 'Hep C RNA Event Definition 7',
     def_version = 1,
     loinc_nums = ['34703-9'],
+    comparison = '>',
     default_high = 500,
     )
 
@@ -349,51 +365,57 @@ no_hep_c_rna = StringMatchLabHeuristic(
     loinc_nums = ['6422-0'],
     strings = NEGATIVE_STRINGS,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'no_hep_c_rna',
     def_name = 'No Hep C RNA Event Definition 2',
     def_version = 1,
     loinc_nums = ['10676-5'],
+    comparison = '>',
     default_high = 100,
     exclude = True,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'no_hep_c_rna',
     def_name = 'No Hep C RNA Event Definition 3',
     def_version = 1,
     loinc_nums = ['38180-6'],
+    comparison = '>',
     default_high = 2.79,
     exclude = True,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'no_hep_c_rna',
     def_name = 'No Hep C RNA Event Definition 4',
     def_version = 1,
     loinc_nums = ['34704-7'],
+    comparison = '>',
     default_high = 50,
     exclude = True,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'no_hep_c_rna',
     def_name = 'No Hep C RNA Event Definition 5',
     def_version = 1,
     loinc_nums = ['11259-9'],
+    comparison = '>',
     default_high = 10,
     exclude = True,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'no_hep_c_rna',
     def_name = 'No Hep C RNA Event Definition 6',
     def_version = 1,
     loinc_nums = ['20416-4'],
+    comparison = '>',
     default_high = 0.70,
     exclude = True,
     )
-HighNumericLabHeuristic(
+NumericLabHeuristic(
     heuristic_name = 'no_hep_c_rna',
     def_name = 'No Hep C RNA Event Definition 7',
     def_version = 1,
     loinc_nums = ['34703-9'],
+    comparison = '>',
     default_high = 500,
     exclude = True,
     )
@@ -424,7 +446,7 @@ no_hep_c_elisa = StringMatchLabHeuristic(
 # Lyme Disease  --  experimental
 #
 
-lyme_elisa = HighNumericLabHeuristic(
+lyme_elisa = NumericLabHeuristic(
     heuristic_name='lyme_elisa', 
     def_name='Lyme ELISA Event Definition 1',
     def_version = 1,
@@ -444,7 +466,7 @@ StringMatchLabHeuristic(
 #
 # TODO: lyme_igg will also need a new event class for "IMBLOT B.BURG 49736" lab
 #
-lyme_igg = HighNumericLabHeuristic(
+lyme_igg = NumericLabHeuristic(
     heuristic_name = 'lyme_igg',
     def_name = 'Lyme IGG Event Definition 1 (EIA)',
     def_version = 1,
@@ -461,7 +483,7 @@ StringMatchLabHeuristic(
     match_type = 'istartswith',
     )
 
-lyme_igm = HighNumericLabHeuristic(
+lyme_igm = NumericLabHeuristic(
     heuristic_name = 'lyme_igm',
     def_name = 'Lyme IGM Event Definition 1 (EIA)',
     def_version = 1,
