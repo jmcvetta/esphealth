@@ -419,3 +419,71 @@ no_hep_c_elisa = StringMatchLabHeuristic(
     exclude = True,
     )
 
+
+#
+# Lyme Disease  --  experimental
+#
+
+lyme_elisa = HighNumericLabHeuristic(
+    heuristic_name='lyme_elisa', 
+    def_name='Lyme ELISA Event Definition 1',
+    def_version = 1,
+    loinc_nums = ['5061-7'],
+    comparison = '>=',
+    default_high = 1.1,
+    )
+StringMatchLabHeuristic(
+    heuristic_name='lyme_elisa', 
+    def_name='Lyme ELISA Event Definition 2',
+    def_version = 1,
+    loinc_nums = ['31155-5'],
+    strings = POSITIVE_STRINGS,
+    match_type = 'istartswith',
+    )
+
+#
+# TODO: lyme_igg will also need a new event class for "IMBLOT B.BURG 49736" lab
+#
+lyme_igg = HighNumericLabHeuristic(
+    heuristic_name = 'lyme_igg',
+    def_name = 'Lyme IGG Event Definition 1 (EIA)',
+    def_version = 1,
+    loinc_nums = ['16481-4'],
+    comparison = '>=',
+    default_high = 1,
+    )
+StringMatchLabHeuristic(
+    heuristic_name='lyme_igg',
+    def_name = 'Lyme IGG Event Definition 2 (WB)',
+    def_version = 1,
+    loinc_nums = ['29898-4'],
+    strings = POSITIVE_STRINGS,
+    match_type = 'istartswith',
+    )
+
+lyme_igm = HighNumericLabHeuristic(
+    heuristic_name = 'lyme_igm',
+    def_name = 'Lyme IGM Event Definition 1 (EIA)',
+    def_version = 1,
+    loinc_nums = ['16482-2'],
+    comparison = '>=',
+    default_high = 1,
+    )
+StringMatchLabHeuristic(
+    heuristic_name = 'lyme_igm',
+    def_name = 'Lyme IGM Event Definition 2 (WB)',
+    def_version = 1,
+    loinc_nums = ['23982-2'],
+    strings = POSITIVE_STRINGS,
+    match_type = 'istartswith',
+    )
+
+lyme_pcr = StringMatchLabHeuristic(
+    heuristic_name = 'lyme_pcr',
+    def_name = 'Lyme PCR Event Definition 1',
+    def_version = 1,
+    loinc_nums = ['4991-6'],
+    strings = POSITIVE_STRINGS,
+    match_type = 'istartswith',
+    )
+    
