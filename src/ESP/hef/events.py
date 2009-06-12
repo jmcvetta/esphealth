@@ -9,8 +9,12 @@
 @license: LGPL
 '''
 
-from ESP.hef.hef import EncounterHeuristic, StringMatchLabHeuristic, NumericLabHeuristic
-from ESP.hef.hef import FeverHeuristic, CalculatedBilirubinHeuristic
+from ESP.hef.hef import EncounterHeuristic
+from ESP.hef.hef import StringMatchLabHeuristic
+from ESP.hef.hef import NumericLabHeuristic
+from ESP.hef.hef import MedicationHeuristic
+from ESP.hef.hef import FeverHeuristic
+from ESP.hef.hef import CalculatedBilirubinHeuristic
 
 
 
@@ -521,4 +525,18 @@ rash = EncounterHeuristic(
     def_name = 'Rash Event Definition 1',
     def_version = 1,
     icd9s = ['782.1'],
+    )
+
+doxycycline = MedicationHeuristic(
+    heuristic_name = 'doxycycline',
+    def_name = 'Doxycycline Event Definition 1',
+    def_version = 1,
+    drugs = ['doxycycline'],
+    )
+
+lyme_other_antibiotics = MedicationHeuristic(
+    heuristic_name = 'lyme_other_antibiotics',
+    def_name = 'Lyme Disease Non-Doxycycline Antibiotics Event Definition 1',
+    def_version = 1,
+    drugs = ['Amoxicillin', 'Cefuroxime', 'Ceftriaxone', 'Cefotaxime'],
     )
