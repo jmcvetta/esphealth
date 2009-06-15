@@ -48,6 +48,7 @@ from ESP.hef.events import no_hep_c_elisa
 # Lyme Disease
 #
 from ESP.hef.events import lyme_elisa
+from ESP.hef.events import lyme_elisa_ordered
 from ESP.hef.events import lyme_igg
 from ESP.hef.events import lyme_igm
 from ESP.hef.events import lyme_pcr
@@ -410,8 +411,7 @@ lyme_3 = DiseaseDefinition(
     window = 14,
     require = [
         (rash,),
-        # TODO: This should look for any ELISA order, not just one with a positive result!
-        (lyme_elisa,),
+        (lyme_elisa_ordered,),
         (doxycycline,),
         ],
     )
