@@ -11,7 +11,7 @@ List LOINCs Utility
 @license: LGPL
 '''
 
-from ESP.hef.hef import BaseHeuristic
+from ESP.hef.core import BaseHeuristic
 from ESP.hef.events import * # Needed for all events to be registered
 
 

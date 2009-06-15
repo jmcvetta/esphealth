@@ -9,12 +9,12 @@
 @license: LGPL
 '''
 
-from ESP.hef.hef import EncounterHeuristic
-from ESP.hef.hef import StringMatchLabHeuristic
-from ESP.hef.hef import NumericLabHeuristic
-from ESP.hef.hef import MedicationHeuristic
-from ESP.hef.hef import FeverHeuristic
-from ESP.hef.hef import CalculatedBilirubinHeuristic
+from ESP.hef.core import EncounterHeuristic
+from ESP.hef.core import StringMatchLabHeuristic
+from ESP.hef.core import NumericLabHeuristic
+from ESP.hef.core import MedicationHeuristic
+from ESP.hef.core import FeverHeuristic
+from ESP.hef.core import CalculatedBilirubinHeuristic
 
 
 

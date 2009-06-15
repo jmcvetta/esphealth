@@ -7,7 +7,7 @@ import datetime
 from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
 
-from ESP.hef.hef import BaseHeuristic
+from ESP.hef.core import BaseHeuristic
 from ESP.conf.common import EPOCH
 from ESP.conf.models import Icd9
 from ESP.emr.models import Immunization, Encounter, LabResult
