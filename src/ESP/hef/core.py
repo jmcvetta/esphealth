@@ -17,6 +17,7 @@ import types
 import sys
 import optparse
 import re
+import string
 
 from django.db import connection
 from django.db.models import Q
@@ -576,7 +577,7 @@ class MedicationHeuristic(BaseHeuristic):
             )
 
     def matches(self, begin_timestamp=None):
-        log.debug('Generating %s event for following drugs:' % self.heuristic_name)
+        log.debug('Finding matches for following drugs:')
         [log.debug('    %s' % d) for d in self.drugs]
         qs = Prescription.objects.all()
         if begin_timestamp:
@@ -585,3 +586,62 @@ class MedicationHeuristic(BaseHeuristic):
         for drug_name in self.drugs[1:]:
             q_obj = q_obj | Q(name__icontains=drug_name)
         return qs.filter(q_obj)
+
+
+class WesternBlotHeuristic(LabHeuristic):
+    '''
+    Generates events from western blot test results.
+        http://en.wikipedia.org/wiki/Western_blot
+    '''
+    
+    def __init__(self, heuristic_name, def_name, def_version, loinc_nums, 
+        interesting_bands, band_count):
+        '''
+        @param interesting_bands: Which (numbered) bands are interesting for this test?
+        @type interesting_bands: [Int, Int, ...]
+        @param band_count: Minimum count of interesting bands for test to be positive?
+        @type band_count: Int
+        '''
+        assert len(interesting_bands) > 0
+        assert band_count
+        self.interesting_bands = interesting_bands
+        self.band_count = band_count
+        LabHeuristic.__init__(self,
+            heuristic_name = heuristic_name,
+            def_name = def_name,
+            def_version = def_version,
+            loinc_nums = loinc_nums,
+            )
+        
+    def matches(self, begin_timestamp=None):
+        # Find potential positives -- tests whose results contain at least one 
+        # of the interesting band numbers.
+        relevant_labs = self.relevant_labs(begin_timestamp)
+        q_obj = Q(result_string__icontains=str(self.interesting_bands[0]))
+        for band in self.interesting_bands[1:]:
+            q_obj = q_obj | Q(result_string__icontains=str(band))
+        potential_positives = relevant_labs.filter(q_obj)
+        log.debug('Found %s potential positive lab results.' % potential_positives.count())
+        # Examine result strings of each potential positive.  If it has enough 
+        # interesting bands, add its pk to the match list
+        match_pks = [] 
+        for item in potential_positives.values('pk', 'result_string'):
+            # We might need smarter splitting logic if we ever get differently
+            # formatted result strings.
+            count = 0 # Counter of interesting bands in this result
+            result_bands = item['result_string'].replace(' ', '').split(',')
+            pk = item['pk']
+            for band in result_bands:
+                try:
+                    band = int(band)
+                except ValueError:
+                    log.warning('Could not cast band "%s" from lab # %s into an integer.' % (band, pk))
+                    continue
+                if band in self.interesting_bands:
+                    count += 1 
+                # If we reach the band_count threshold, we have a positive result.  No need to look further.
+                if count >= self.band_count:
+                    match_pks.append(pk)
+                    break
+        log.debug('Found %s actual positive lab results.' % len(match_pks))
+        return LabResult.objects.filter(pk__in=match_pks)

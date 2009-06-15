@@ -15,6 +15,7 @@ from ESP.hef.core import NumericLabHeuristic
 from ESP.hef.core import MedicationHeuristic
 from ESP.hef.core import FeverHeuristic
 from ESP.hef.core import CalculatedBilirubinHeuristic
+from ESP.hef.core import WesternBlotHeuristic
 
 
 
@@ -485,6 +486,14 @@ StringMatchLabHeuristic(
     loinc_nums = ['29898-4'],
     strings = POSITIVE_STRINGS,
     match_type = 'istartswith',
+    )
+WesternBlotHeuristic(
+    heuristic_name = 'lyme_igg',
+    def_name = 'Lyme Western Blot Event Definition 1',
+    def_version = 1,
+    loinc_nums = ['29898-4',], # Can we get a different LOINC for this, not used by string tests?
+    interesting_bands = [18, 21, 28, 30, 39, 41, 45, 58, 66, 93],
+    band_count = 5,
     )
 
 lyme_igm = NumericLabHeuristic(
