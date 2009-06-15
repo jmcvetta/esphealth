@@ -16,6 +16,7 @@ from ESP.hef.core import MedicationHeuristic
 from ESP.hef.core import FeverHeuristic
 from ESP.hef.core import CalculatedBilirubinHeuristic
 from ESP.hef.core import WesternBlotHeuristic
+from ESP.hef.core import LabOrderedHeuristic
 
 
 
@@ -466,6 +467,13 @@ StringMatchLabHeuristic(
     loinc_nums = ['31155-5'],
     strings = POSITIVE_STRINGS,
     match_type = 'istartswith',
+    )
+
+lyme_elisa_ordered = LabOrderedHeuristic(
+    heuristic_name = 'lyme_elisa_ordered',
+    def_name = 'Lyme ELISA Test Order Event Definition 1',
+    def_version = 1,
+    loinc_nums = ['5061-7', '31155-5'],
     )
 
 #

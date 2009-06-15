@@ -417,6 +417,14 @@ class StringMatchLabHeuristic(LabHeuristic):
         return result
 
 
+class LabOrderedHeuristic(LabHeuristic):
+    '''
+    Matches any *order* for a lab test with specified LOINC(s)
+    '''
+    
+    def matches(self, begin_timestamp=None):
+        return self.relevant_labs(begin_timestamp=begin_timestamp)
+
 
 class EncounterHeuristic(BaseHeuristic):
     '''
