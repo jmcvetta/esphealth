@@ -159,7 +159,7 @@ class DiseaseDefinition(object):
         self.exclude = exclude
         self.exclude_past = exclude_past
     
-    def __get_plausible_pids(self, begin_date=None, end_date=None):
+    def __get_plausible_pids(self):
         '''
         Returns a list of pids identifying plausible patients -- those who at
             least potentially *could* have the disease
@@ -170,20 +170,13 @@ class DiseaseDefinition(object):
         @return:        {Demog: [EventTimeWindow, EventTimeWindow, ...], ...}
         '''
         log.info('Finding plausible patients for %s' % self.name)
-        #
-        # Examine only the time slice specified
-        #
-        all_events = HeuristicEvent.objects.all()
-        if begin_date:
-            all_events = all_events.filter(date__gte=begin_date)
-        if end_date:
-            all_events = all_events.filter(date__lte=end_date)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # First we do some simple queries and set arithmetic to generate a list
         # of patients who *could* have the disease.
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #
         # 'pids' are patient IDs -- db primary keys
+        all_events = HeuristicEvent.objects.all()
         for req in (self.require + self.require_past):
             pids_this_req = set()
             for h in req: # One or more BaseHeuristic instances
@@ -251,6 +244,7 @@ class DiseaseDefinition(object):
                             log.debug('Event %s fits in %s' % (e, win))
                             found_event = True
                         except OutOfWindow:
+                            log.debug('Event %s does NOT fit in %s' % (e, win))
                             continue
                     if found_event:
                         new_windows.append(win)
@@ -293,13 +287,13 @@ class DiseaseDefinition(object):
         return t_windows
             
 
-    def matches(self, begin_date=None, end_date=None, matches={}):
+    def matches(self, matches={}):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Now that we have screened for patients who are plausible disease
         # candidates, we individually examine them to see if they match the 
         # full battery of requirements.
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        pids = self.__get_plausible_pids(begin_date, end_date)
+        pids = self.__get_plausible_pids()
         for pid in list(pids):
             wins = self.__match_plausible_patient(pid)
             if wins:
@@ -490,14 +484,9 @@ class Disease(object):
     
     
     @classmethod
-    def generate_all_cases(cls, begin_date=None, end_date=None):
+    def generate_all_cases(cls):
         '''
         Generates cases for all registered disease definitions.
-            #
-        @param begin_date: Beginning of time window to examine
-        @type begin_date:  datetime.date
-        @param end_date:   End of time window to examine
-        @type end_date:    datetime.date
         @return:           Integer number of new records created
         '''
         counter = {}# Counts how many total new records have been created
@@ -563,21 +552,13 @@ class Disease(object):
         return case
     
     @classmethod
-    def update_all_cases(cls, begin_date=None, end_date=None):
+    def update_all_cases(cls):
         '''
         Updates reportable events for all existing cases
-        @param begin_date: Analyze cases with dates greater than begin_date
-        @type begin_date:  datetime.date
-        @param end_date:   Analyze cases with dates less than end_date
-        @type end_date:    datetime.date
         '''
         log.info('Updating reportable events for existing cases.')
         for definition in cls.get_all_diseases():
             q_obj = Q(condition=definition.name)
-            if begin_date:
-                q_obj = q_obj & Q(date__gte=begin_date)
-            if end_date:
-                q_obj = q_obj & Q(date__lte=end_date)
             existing_cases = Case.objects.filter(q_obj)
             for case in existing_cases:
                 definition.update_reportable_events(case)
