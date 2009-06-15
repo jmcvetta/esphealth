@@ -74,7 +74,7 @@ chlamydia_def_1 = DiseaseDefinition(
     )
 
 chlamydia = Disease(
-    name = 'Chlamydia',
+    name = 'chlamydia',
     definitions = [chlamydia_def_1,],
     icd9s = [
         '788.7',
@@ -128,7 +128,7 @@ gonorrhea_def_1 = DiseaseDefinition(
     )
 
 gonorrhea = Disease(
-    name = 'Gonorrhea',
+    name = 'gonorrhea',
     definitions = [gonorrhea_def_1,],
     icd9s = [
         '788.7',
@@ -185,7 +185,7 @@ hep_a_def_1 = DiseaseDefinition(
     )
  
 acute_hep_a = Disease(
-    name = 'Acute Hepatitis A',
+    name = 'acute_hep_a',
     definitions = [hep_a_def_1,],
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
@@ -267,7 +267,7 @@ hep_b_3 = DiseaseDefinition(
 
 
 hep_b = Disease(
-    name = 'Acute Hepatitis B',
+    name = 'acute_hep_b',
     definitions = [hep_b_1, hep_b_2, hep_b_3],
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
@@ -358,7 +358,7 @@ hep_c_4 = DiseaseDefinition(
     )
 
 hep_c = Disease(
-    name = 'Acute Hepatitis C',
+    name = 'acute_hep_c',
     definitions = [hep_c_1, hep_c_2, hep_c_3, hep_c_4],
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
@@ -418,7 +418,7 @@ lyme_3 = DiseaseDefinition(
 
 
 lyme = Disease(
-    name = 'Lyme Disease',
+    name = 'lyme',
     definitions = [lyme_1, lyme_2, lyme_3,],
     icd9s = [
         '782.1',

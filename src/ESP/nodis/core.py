@@ -366,6 +366,14 @@ class Disease(object):
         @param med_days_after:   How many days after case to search for medicines
         @type med_days_after:    Integer
         '''
+        assert name 
+        assert ' ' not in name # No spaces allowed in disease name
+        assert icd9_days_before
+        assert icd9_days_after
+        assert lab_days_before
+        assert lab_days_after
+        assert med_days_before
+        assert med_days_after
         self.name = name
         self.definitions = definitions
         self.icd9s = icd9s
@@ -378,16 +386,6 @@ class Disease(object):
         self.med_names = med_names
         self.med_days_before = datetime.timedelta(days=med_days_before)
         self.med_days_after = datetime.timedelta(days=med_days_after)
-        #
-        # Sanity checks
-        #
-        assert self.name 
-        assert self.icd9_days_before
-        assert self.icd9_days_after
-        assert self.lab_days_before
-        assert self.lab_days_after
-        assert self.med_days_before
-        assert self.med_days_after
         #self.condition = Rule.objects.get(ruleName=self.name)
         self._register()
     
@@ -471,6 +469,24 @@ class Disease(object):
                     counter += 1
         log.debug('Generated %s new cases of %s' % (counter, self.name))
         return counter
+    
+    def purge_db(self):
+        '''
+        Remove all cases of this disease from the database
+        '''
+        all_cases = Case.objects.filter(condition=self.name)
+        count = all_cases.count()
+        log.warning('Purging all %s cases of %s from the database!' % (count, self.name))
+        all_cases.delete()
+        
+        
+    def regenerate(self):
+        '''
+        Purges all existing cases from db, then calls generate_cases()
+        '''
+        log.info('Regenerating cases for %s' % self.name)
+        self.purge_db()
+        self.generate_cases()
     
     
     @classmethod

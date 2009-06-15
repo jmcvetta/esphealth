@@ -46,22 +46,12 @@ def main():
         help='Update cases')
     parser.add_option('-a', '--all', action='store_true', dest='all', 
         help='Generate generate new cases and update existing cases')
+    parser.add_option('--regenerate', action='store_true', dest='regenerate', 
+        help='Purge and regenerate cases')
     parser.add_option('--disease', action='store', dest='disease', type='string',
         metavar='NAME', help='Generate new cases for disease NAME only')
-    parser.add_option('--begin', action='store', dest='begin', type='string', 
-        metavar='DATE', help='Analyze time window beginning at DATE')
-    parser.add_option('--end', action='store', dest='end', type='string', 
-        metavar='DATE', help='Analyze time window ending at DATE')
     (options, args) = parser.parse_args()
     log.debug('options: %s' % options)
-    #
-    # Date Parser
-    #
-    date_format = '%d-%b-%Y'
-    if options.begin:
-        options.begin = datetime.datetime.strptime(options.begin, date_format).date()
-    if options.end:
-        options.end = datetime.datetime.strptime(options.end, date_format).date()
     #
     # Main Control block
     #
@@ -74,18 +64,23 @@ def main():
         parser.print_help()
         sys.exit()
     if options.disease:
-        dis = Disease.get_disease_by_name(options.disease)
-        if not dis:
+        diseases = [Disease.get_disease_by_name(options.disease)]
+        if not diseases:
             msg = '\nNo disease registered with name "%s".\n' % options.disease
             sys.stderr.write(msg)
             sys.exit()
-        dis.generate_cases()
-        sys.exit()
+    else:
+        diseases = Disease.get_all_diseases()
     if options.cases:
-        Disease.generate_all_cases(begin_date=options.begin, end_date=options.end)
+        for dis in diseases:
+            dis.generate_cases()
     if options.update:
-        Disease.update_all_cases(begin_date=options.begin, end_date=options.end)
-    if not (options.cases or options.update):
+        for dis in diseases:
+            dis.update_reportable_events()
+    if options.regenerate:
+        for dis in diseases:
+            dis.regenerate()
+    if not (options.cases or options.update or options.regenerate):
         parser.print_help()
 
 
