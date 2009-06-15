@@ -133,6 +133,7 @@ src/ESP/kettle/pdi_3_1_0.pg.sql -text
 src/ESP/localsettings.py.sample -text
 src/ESP/nodis/__init__.py -text
 src/ESP/nodis/case_comparator.py -text
+src/ESP/nodis/case_report.py -text
 src/ESP/nodis/core.py -text
 src/ESP/nodis/defs.py -text
 src/ESP/nodis/experiment.ini -text
