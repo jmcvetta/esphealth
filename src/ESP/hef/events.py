@@ -452,8 +452,8 @@ no_hep_c_elisa = StringMatchLabHeuristic(
 # Lyme Disease  --  experimental
 #
 
-lyme_elisa = NumericLabHeuristic(
-    heuristic_name='lyme_elisa', 
+lyme_elisa_pos = NumericLabHeuristic(
+    heuristic_name='lyme_elisa_pos', 
     def_name='Lyme ELISA Event Definition 1',
     def_version = 1,
     loinc_nums = ['5061-7'],
@@ -461,7 +461,7 @@ lyme_elisa = NumericLabHeuristic(
     default_high = 1.1,
     )
 StringMatchLabHeuristic(
-    heuristic_name='lyme_elisa', 
+    heuristic_name='lyme_elisa_pos', 
     def_name='Lyme ELISA Event Definition 2',
     def_version = 1,
     loinc_nums = ['31155-5'],
