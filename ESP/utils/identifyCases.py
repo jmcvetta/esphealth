@@ -20,6 +20,7 @@
 #
 
 import os, sys, django, datetime
+import re
 sys.path.insert(0, '/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
@@ -1356,6 +1357,7 @@ def updatingSyphilis(cond):
     
 ###################################    
 def syphilis_2(cond):
+    denominator_regex = re.compile(r'.*\d+:(?P<denominator>\d+).*') # Extracts denominator from lab results
     condicd9s = ConditionIcd9.objects.filter(CondiRule__ruleName__icontains=cond,CondiSend=True)
     drugmaps = ConditionDrugName.objects.filter(CondiRule__ruleName__icontains=cond,CondiSend=True)
             
@@ -1375,7 +1377,11 @@ def syphilis_2(cond):
                                 Q(LxLoinc__in=['20507-0']) ,
                                 Q(LxTest_results__contains='1:'))
         for onerpr in rpr_lxs:
-            denominator = string.split(onerpr.LxTest_results, ':')[1].strip()
+            match = denominator_regex.match(onerpr.LxTest_results)
+            if not match:
+                iclogging.error('Could not extract denominator from lab # %s result "%s"' % (onerpr.pk, onerpr.LxTest_results))
+                continue
+            denominator = int(match.group('denominator')) # Cast should always work, since regex extracts only numbers
             if int(denominator)>=8:
                 ##it is a case
                 relatedlxids.append(onerpr.id)
