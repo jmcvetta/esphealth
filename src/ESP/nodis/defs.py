@@ -47,7 +47,7 @@ from ESP.hef.events import no_hep_c_elisa
 #
 # Lyme Disease
 #
-from ESP.hef.events import lyme_elisa
+from ESP.hef.events import lyme_elisa_pos
 from ESP.hef.events import lyme_elisa_ordered
 from ESP.hef.events import lyme_igg
 from ESP.hef.events import lyme_igm
@@ -390,7 +390,7 @@ lyme_1 = DiseaseDefinition(
     version = 1,
     window = 30,
     require = [
-        (lyme_elisa, lyme_igg, lyme_igm, lyme_pcr),
+        (lyme_elisa_pos, lyme_igg, lyme_igm, lyme_pcr),
         (lyme_diagnosis, doxycycline, lyme_other_antibiotics),
         ],
     )
