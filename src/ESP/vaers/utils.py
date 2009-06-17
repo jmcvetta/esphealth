@@ -14,3 +14,18 @@ def make_clustering_event_report_file(filename, events):
         f.write('\n')
     f.close()
 
+
+def send_event_alert(**kw):
+    '''Send newly found adverse events'''
+    tests_only = kw.pop('test', False)
+    yesterday = datetime.date.today - datetime.timedelta(days=1)
+    for ev in AdverseEvent.objects.filter(created_on__gt=yesterday):
+        if tests_only and ev.is_fake(): 
+            ev.mail_notification()
+
+
+
+if __name__ == '__main__':
+    send_event_alert(test=True)
+    
+

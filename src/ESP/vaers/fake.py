@@ -4,7 +4,7 @@ import optparse
 
 from ESP.conf.common import EPOCH
 from ESP.conf.models import Icd9
-from ESP.emr.models import Patient, Encounter, Immunization, LabResult
+from ESP.emr.models import Provider, Patient, Encounter, Immunization, LabResult
 from ESP.conf.models import Vaccine
 from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
 from ESP.utils import randomizer
@@ -29,9 +29,9 @@ def main():
     # instances running at once.
     #
     parser = optparse.OptionParser(usage=USAGE_MSG)
-    parser.add_option('-p', '--patients', action='store_true', dest='patients',
-                      help='Generate new Patient Population')
-    parser.add_option('-i', '--immunizations', action='store_true', dest='i',
+    parser.add_option('-p', '--providers', action='store_true', dest='providers',
+                      help='Add Testers as Fake Providers')
+    parser.add_option('-i', '--imm', action='store_true', dest='immunizations',
                       help='Create Immunization History for Patients')
 
     parser.add_option('-a', '--all', action='store_true', dest='all', 
@@ -39,11 +39,29 @@ def main():
 
     (options, args) = parser.parse_args()
 
+
+    clear()
+
+    if options.providers:
+        Provider.delete_fakes()
+        providers_for_testing()
+        for provider in Provider.fakes():
+            patient = Patient.make_mock()
+            patient.pcp = provider
+            patient.save()
+            history = ImmunizationHistory(patient)
+            for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
+                imm = history.add_immunization()
+                check_for_reactions(imm)
+
+    if options.immunizations:
+        pass
+                
     if options.all:
         massive_immunization_action()
-    else:
+
+    if not (options.providers or options.immunizations or options.all):
         parser.print_help()
-        print 'Right now, only --all is implemented.'
         import sys
         sys.exit()
 
@@ -52,42 +70,46 @@ def clear():
     for klass in [Immunization, Encounter, LabResult, AdverseEvent]:
         klass.delete_fakes()
 
+def check_for_reactions(imm):
+    # Should we cause a fever event?
+    if random.randrange(100) <= FEVER_EVENT_PCT:
+        ev = Vaers(imm)
+        ev.cause_fever()
+    # Or a icd9 Event?
+    elif random.randrange(100) <= ICD9_EVENT_PCT:
+        ev = Vaers(imm)
+        rule = DiagnosticsEventRule.random()
+        code = random.choice(rule.heuristic_defining_codes.all())
+        ev.cause_icd9(code)
+        
+        # Maybe it's one that should be ignored?
+        if random.randrange(100) <= IGNORE_FOR_REOCCURRENCE_PCT:
+            ev.cause_icd9_ignored_for_reoccurrence(code, 12)
+        elif random.randrange(100) <= IGNORE_FOR_HISTORY_PCT:
+            if len(rule.heuristic_discarding_codes.all()) > 0:
+                discarding_code = random.choice(
+                    rule.heuristic_discarding_codes.all())
+                ev.cause_icd9_ignored_for_history(discarding_code)
+
+    # Or a lab result event?
+    elif random.randrange(100) <= LX_EVENT_PCT:
+        ev = Vaers(imm)
+        loinc = random.choice(VAERS_LAB_RESULTS.keys())
+        lx = VAERS_LAB_RESULTS[loinc]
+        criterium = random.choice(lx['criteria'])
+        ev.cause_positive_lab_result(loinc, criterium)
+        # Maybe it's one that should be ignored?
+        if random.randrange(100) <= IGNORE_FOR_HISTORY_PCT:
+            ev.cause_negative_lx_for_lkv(loinc, criterium)
+
+
 def massive_immunization_action():
-    clear()
     for patient in Patient.fakes():
         history = ImmunizationHistory(patient)
         for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
             imm = history.add_immunization()
-            # Should we cause a fever event?
-            if random.randrange(100) <= FEVER_EVENT_PCT:
-                ev = Vaers(imm)
-                ev.cause_fever()
-            # Or a icd9 Event?
-            elif random.randrange(100) <= ICD9_EVENT_PCT:
-                ev = Vaers(imm)
-                rule = DiagnosticsEventRule.random()
-                code = random.choice(rule.heuristic_defining_codes.all())
-                ev.cause_icd9(code)
-
-                # Maybe it's one that should be ignored?
-                if random.randrange(100) <= IGNORE_FOR_REOCCURRENCE_PCT:
-                    ev.cause_icd9_ignored_for_reoccurrence(code, 12)
-                elif random.randrange(100) <= IGNORE_FOR_HISTORY_PCT:
-                    if len(rule.heuristic_discarding_codes.all()) > 0:
-                        discarding_code = random.choice(
-                            rule.heuristic_discarding_codes.all())
-                        ev.cause_icd9_ignored_for_history(discarding_code)
-
-            # Or a lab result event?
-            elif random.randrange(100) <= LX_EVENT_PCT:
-                ev = Vaers(imm)
-                loinc = random.choice(VAERS_LAB_RESULTS.keys())
-                lx = VAERS_LAB_RESULTS[loinc]
-                criterium = random.choice(lx['criteria'])
-                ev.cause_positive_lab_result(loinc, criterium)
-                # Maybe it's one that should be ignored?
-                if random.randrange(100) <= IGNORE_FOR_HISTORY_PCT:
-                    ev.cause_negative_lx_for_lkv(loinc, criterium)
+            check_for_reactions(imm)
+        
                     
 class Vaers(object):
 
@@ -272,9 +294,7 @@ class ImmunizationHistory(object):
         vaccine = Vaccine.random()
 
         # Find a random date
-
         today = datetime.date.today()
-
         interval = today - (max(self.patient.date_of_birth, EPOCH))
         days_ago = random.randrange(0, interval.days)
         
@@ -285,5 +305,20 @@ class ImmunizationHistory(object):
         # If everything is ok, give patient the vaccine
         return Immunization.make_mock(vaccine, self.patient, when)
         
+
+def providers_for_testing():
+    michael_klompas = Provider.make_mock()
+    michael_klompas.first_name = 'Michael'
+    michael_klompas.last_name = 'Klompas'
+    michael_klompas.save()
+
+    michael_lee = Provider.make_mock()
+    michael_lee.first_name = 'Michael'
+    michael_lee.last_name = 'Lee'
+    michael_lee.save()
+    
+    
+    
+
 if __name__ == '__main__':
     main()
