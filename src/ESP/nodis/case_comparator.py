@@ -174,7 +174,7 @@ def main():
         print '!' + phi_str.center(78) + '!'
         print '!' + ' ' * 78 + '!'
         print '!' * 80
-    for condition in NewCase.objects.values_list('condition', flat=True).distinct():
+    for condition in NewCase.objects.filter(condition__in=RULE_MAP).values_list('condition', flat=True).distinct():
         compare(condition, print_phi=options.phi)
 
 
