@@ -1,4 +1,6 @@
-EMAIL_RECIPIENT = 'lullis@gmail.com'
+from ESP import localsettings
+
+EMAIL_RECIPIENT = localsettings.VAERS_NOTIFICATION_RECIPIENT
 EMAIL_SUBJECT = 'Testing VAERS NOTIFICATION'
-EMAIL_SENDER = 'raphael.lullis@harvard.channing.edu'
+EMAIL_SENDER = 'noreply@esphealth.org'
 
