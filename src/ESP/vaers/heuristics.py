@@ -4,10 +4,11 @@
 import optparse
 import datetime
 
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.contrib.contenttypes.models import ContentType
 
 from ESP.hef.core import BaseHeuristic
+from ESP.hef.models import Run
 from ESP.conf.common import EPOCH
 from ESP.conf.models import Icd9
 from ESP.emr.models import Immunization, Encounter, LabResult
@@ -43,10 +44,18 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
         super(VaersFeverHeuristic, self).__init__(
             'VAERS Fever', verbose_name='Fever reaction to immunization')
 
-    def matches(self, begin_date=None, end_date=None):
-        # log.info('Getting matches for %s' % self.heuristic_name)
-        begin_date = begin_date or EPOCH
-        end_date = end_date or datetime.date.today()
+    def matches(self, **kw):
+        incremental = kw.get('incremental', False)
+        
+        if incremental:
+            last_run = Run.objects.filter(
+                def_name=self.def_name, status='s').aggregate(
+                ts=Max('timestamp'))['ts']
+        else:
+            last_run = EPOCH
+        
+        begin_date = kw.get('begin_date', None) or last_run
+        end_date = kw.get('end_date', None) or datetime.date.today()
 
         # Can't use string to compare temperature
         return Encounter.objects.following_vaccination(
@@ -55,11 +64,23 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
 
                     
 
-    def generate_events(self, incremental=True, **kw):
+    def generate_events(self, **kw):
         log.info('Generating events for %s' % self.heuristic_name)
-        begin_date = kw.pop('begin_date', None)
-        end_date = kw.pop('end_date', None)
-        matches = self.matches(begin_date=begin_date, end_date=end_date)
+
+        incremental = kw.get('incremental', False)
+        
+        if incremental:
+            last_run = Run.objects.filter(
+                def_name=self.def_name, status='s').aggregate(
+                ts=Max('timestamp'))['ts']
+        else:
+            last_run = EPOCH
+        
+        begin_date = kw.get('begin_date', None) or last_run
+        end_date = kw.get('end_date', None) or datetime.date.today()
+
+        
+        matches = self.matches(**kw)
         encounter_type = ContentType.objects.get_for_model(EncounterEvent)
 
         counter = 0
@@ -78,9 +99,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
                     )
             
                 if created: counter += 1
-            
                 ev.save()
-
                 ev.immunizations.clear()
 
                 # Register which immunizations may be responsible for the event
@@ -88,7 +107,6 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
                     e.patient, ev, self.time_post_immunization)
                 
                 assert len(immunizations) > 0 
-
                 for imm in immunizations:
                     ev.immunizations.add(imm)
 
@@ -121,11 +139,19 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         
         super(DiagnosisHeuristic, self).__init__(event_name, verbose_name=verbose_name)
             
-    def matches(self, begin_date=None, end_date=None):
- #       log.info('Getting matches for %s' % self.heuristic_name)
-        begin_date = begin_date or EPOCH
-        end_date = end_date or datetime.date.today()
+    def matches(self, **kw):
+        incremental = kw.get('incremental', False)
         
+        if incremental:
+            last_run = Run.objects.filter(
+                def_name=self.def_name, status='s').aggregate(
+                ts=Max('timestamp'))['ts']
+        else:
+            last_run = EPOCH
+        
+        begin_date = kw.get('begin_date', None) or last_run
+        end_date = kw.get('end_date', None) or datetime.date.today()
+
         candidates = Encounter.objects.following_vaccination(
             rules.TIME_WINDOW_POST_EVENT, 
             begin_date=begin_date, end_date=end_date).filter(
@@ -145,12 +171,23 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         return candidates
 
 
-    def generate_events(self, incremental=True, **kw):
+    def generate_events(self, **kw):
         log.info('Generating events for %s' % self.heuristic_name)
         counter = 0
-        begin_date=kw.pop('begin_date', None)
-        end_date = kw.pop('end_date', None)
-        matches = self.matches(begin_date=begin_date, end_date=end_date)
+
+        incremental = kw.get('incremental', False)
+        
+        if incremental:
+            last_run = Run.objects.filter(
+                def_name=self.def_name, status='s').aggregate(
+                ts=Max('timestamp'))['ts']
+        else:
+            last_run = EPOCH
+        
+        begin_date = kw.get('begin_date', None) or last_run
+        end_date = kw.get('end_date', None) or datetime.date.today()
+
+        matches = self.matches(**kw)
         encounter_type = ContentType.objects.get_for_model(EncounterEvent)
 
         for e in matches:
@@ -198,10 +235,20 @@ class VaersLxHeuristic(AdverseEventHeuristic):
 #        self._register(event_name)
         self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
 
-    def matches(self, begin_date=None, end_date=None):
+    def matches(self, **kw):
         
-        begin = begin_date or EPOCH
-        end = end_date or datetime.date.today()
+        incremental = kw.get('incremental', False)
+        
+        if incremental:
+            last_run = Run.objects.filter(
+                def_name=self.def_name, status='s').aggregate(
+                ts=Max('timestamp'))['ts']
+        else:
+            last_run = EPOCH
+        
+        begin_date = kw.get('begin_date', None) or last_run
+        end_date = kw.get('end_date', None) or datetime.date.today()
+
         days = rules.TIME_WINDOW_POST_EVENT
 
         def is_trigger_value(lx, trigger):
@@ -245,13 +292,23 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 excluded_due_to_history(c, comparator, baseline)]
 
     
-    def generate_events(self, incremental=True, **kw):
+    def generate_events(self, **kw):
         log.info('Generating events for %s' % self.heuristic_name)
         counter = 0
-        begin_date=kw.pop('begin_date', None)
-        end_date = kw.pop('end_date', None)
 
-        matches = self.matches(begin_date=begin_date, end_date=end_date)
+        incremental = kw.get('incremental', False)
+        
+        if incremental:
+            last_run = Run.objects.filter(
+                def_name=self.def_name, status='s').aggregate(
+                ts=Max('timestamp'))['ts']
+        else:
+            last_run = EPOCH
+
+        begin_date = kw.get('begin_date', None) or last_run
+        end_date = kw.get('end_date', None) or datetime.date.today()
+
+        matches = self.matches(**kw)
 
         lab_type = ContentType.objects.get_for_model(LabResultEvent)
 
@@ -404,7 +461,7 @@ def main():
     if options.lx: lab_heuristics()
 
 
-    BaseHeuristic.generate_all_events()
+    BaseHeuristic.generate_all_events(incremental=True)
 
 
 
