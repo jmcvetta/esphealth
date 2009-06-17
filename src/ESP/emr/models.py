@@ -277,7 +277,10 @@ class Patient(BaseMedicalRecord):
             ).filter(icd9_codes__in=icd9s).count() != 0
     
     def _get_name(self):
-        return u'%s, %s %s' % (self.last_name, self.first_name, self.middle_name)
+        if self.middle_name:
+            return u'%s, %s %s' % (self.last_name, self.first_name, self.middle_name)
+        else:
+            return u'%s, %s' % (self.last_name, self.first_name)
 
     def _get_age_str(self, precision='years', with_units=False):
         '''Returns patient's age as a string'''
