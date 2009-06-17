@@ -252,14 +252,6 @@ hep_e_ab = StringMatchLabHeuristic(
     strings = POSITIVE_STRINGS,
     )
 
-hep_c_ab = StringMatchLabHeuristic(
-    heuristic_name = 'hep_c_ab',
-    def_name = 'Hep C AB Event Definition 1',
-    def_version = 1,
-    loinc_nums = ['16128-1'],
-    strings = POSITIVE_STRINGS,
-    )
-
 total_bilirubin_high = NumericLabHeuristic(
     heuristic_name = 'total_bilirubin_high',
     def_name = 'High Total Bilirubin Event Definition 1',
