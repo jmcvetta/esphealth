@@ -76,7 +76,7 @@ def main():
             dis.generate_cases()
     if options.update:
         for dis in diseases:
-            dis.update_reportable_events()
+            dis.update_all_cases()
     if options.regenerate:
         for dis in diseases:
             dis.regenerate()
