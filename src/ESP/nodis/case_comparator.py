@@ -35,12 +35,12 @@ BEGIN_COMPARE_DATE = datetime.date(2009, 1, 1)
 
 # This is needed because Rule is not table set up in dev db
 RULE_MAP = {
-    'Chlamydia': 1,
-    'Gonorrhea': 2,
-    'Acute Hepatitis B': 4,
-    'Acute Hepatitis A': 5,
-    'Acute Hepatitis C': 6,
-    'Chronic Hepatitis B': 7,
+    'chlamydia': 1,
+    'gonorrhea': 2,
+    'acute_hep_b': 4,
+    'acute_hep_a': 5,
+    'acute_hep_c': 6,
+    'chronic_hep_b': 7,
 }
 
 
