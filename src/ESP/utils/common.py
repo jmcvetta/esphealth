@@ -9,9 +9,7 @@ FIRST_NAMES = ['Bill', 'Mary', 'Jim', 'Donna', 'Patricia',
                ]
 
 
-LAST_NAMES = ['Bazfar', 'Barfoo', 'Hoobaz', 'Sotbar', 'Farbaz', 
-              'Zotbaz', 'Smith', 'Jones', 'Fitz', 'Wong', 'Wright', 
-              'Ngyin', 'Miller']
+LAST_NAMES = ['Xb', 'Xbal', 'Xbalidocious']
 
 
 SITES = ['Brookline Ave', 'West Roxbury', 'Matapan', 'Sydney', 'Kansas']
