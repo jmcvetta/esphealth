@@ -275,7 +275,7 @@ hep_c_signal_cutoff = NumericLabHeuristic(
 no_hep_c_signal_cutoff = NumericLabHeuristic(
     # This is the exactly the same as hep_c_signal_cutoff above, but with 'exclude'
     # flag set.
-    heuristic_name = 'hep_c_signal_cutoff',
+    heuristic_name = 'no_hep_c_signal_cutoff',
     def_name = 'No Hep C Signal Cutoff Event Definition 1',
     def_version = 1,
     loinc_nums = ['MDPH-144',],
