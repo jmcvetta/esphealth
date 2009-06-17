@@ -74,12 +74,98 @@ def print_nodis_case_summary(case, phi=False):
         else:
             print '\t %s' % event.content_object
 
-
-def compare(condition, print_phi=False):
-    rule = RULE_MAP[condition]
+def display_old_case_long(case, print_phi):
     # These are needed for heuristic event lookups below
     enc_type = ContentType.objects.get_for_model(Encounter)
     lab_type = ContentType.objects.get_for_model(LabResult)
+    print
+    print '~' * 80
+    case_str = 'Old Case #%s (%s)' % (case.pk, condition)
+    print case_str.center(80) 
+    print '~' * 80
+    if print_phi:
+        print 'Patient #%s' % case.patient.pk
+        print '\t Name: %s' % case.patient.name
+        print '\t MRN: %s' % case.patient.mrn
+    if case.caseEncID:
+        encids = case.caseEncID.split(',')
+    else:
+        encids = []
+    if case.caseLxID:
+        lxids = case.caseLxID.split(',')
+    else:
+        lxids = []
+    if case.caseICD9:
+        icd9s = case.caseICD9.split(',')
+    else:
+        icd9s = []
+    for enc in Encounter.objects.filter(pk__in=encids):
+        print '%s -- %s' % (enc, enc.date)
+        print '    ICD9s:'
+        for i in enc.icd9_codes.all():
+            print '        %s' % i
+        print '    Matching Heuristic Event(s):'
+        hefs = HeuristicEvent.objects.filter(content_type=enc_type, object_id=enc.id)
+        if not hefs:
+            print '        NO MATCHING EVENTS'
+        else:
+            for e in hefs:
+                print '        %s' % e
+    for lab in LabResult.objects.filter(pk__in=lxids):
+        print '%s -- %s' % (lab, lab.date)
+        print '    %-25s LOINC: %-10s Native Code: %s' % (lab.native_name, lab.loinc_num(), lab.native_code)
+        print '    Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
+        hefs = HeuristicEvent.objects.filter(content_type=lab_type, object_id=lab.id)
+        if not hefs:
+            print '        NO MATCHING EVENTS'
+        else:
+            for e in hefs:
+                print '        %s' % e
+
+def display_old_case_short(case, print_phi):
+    # These are needed for heuristic event lookups below
+    enc_type = ContentType.objects.get_for_model(Encounter)
+    lab_type = ContentType.objects.get_for_model(LabResult)
+    if case.caseEncID:
+        encids = case.caseEncID.split(',')
+    else:
+        encids = []
+    if case.caseLxID:
+        lxids = case.caseLxID.split(',')
+    else:
+        lxids = []
+    if case.caseICD9:
+        icd9s = case.caseICD9.split(',')
+    else:
+        icd9s = []
+    print
+    print 'OLD CASE # %s' % case.pk
+    for enc in Encounter.objects.filter(pk__in=encids):
+        hefs = HeuristicEvent.objects.filter(content_type=enc_type, object_id=enc.id).order_by('date')
+        if not hefs:
+            print '  NO EVENT: %s -- %s' % (enc, enc.date)
+            for i in enc.icd9_codes.all():
+                print '    %s' % i
+        else:
+            for e in hefs:
+                values = {'event': e.heuristic_name, 'date': e.date, 'pk': e.pk}
+                print '  %(event)-20s %(date)-12s   # %(pk)s' % values
+    for lab in LabResult.objects.filter(pk__in=lxids):
+        hefs = HeuristicEvent.objects.filter(content_type=lab_type, object_id=lab.id).order_by('date')
+        if not hefs:
+            print '  NO EVENT: %s -- %s' % (lab, lab.date)
+            print '    %-25s LOINC: %-10s Native Code: %s' % (lab.native_name, lab.loinc_num(), lab.native_code)
+            print '    Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
+        else:
+            for e in hefs:
+                values = {'event': e.heuristic_name, 'date': e.date, 'pk': e.pk}
+                print '  %(event)-20s %(date)-12s   # %(pk)s' % values
+        
+    
+                
+
+def compare(condition, options):
+    rule = RULE_MAP[condition]
     #
     # Find cases found by identifyCases.py but not by Nodis
     #
@@ -93,50 +179,12 @@ def compare(condition, print_phi=False):
     print condition.upper() + ' -- %s cases found by identifyCases.py but not by Nodis' % count
     print '=' * 80
     for case in i_cases.order_by('pk'):
-        print
-        print '~' * 80
-        case_str = 'Old Case #%s (%s)' % (case.pk, condition)
-        print case_str.center(80) 
-        print '~' * 80
-        if print_phi:
-            print 'Patient #%s' % case.patient.pk
-            print '\t Name: %s' % case.patient.name
-            print '\t MRN: %s' % case.patient.mrn
-        if case.caseEncID:
-            encids = case.caseEncID.split(',')
+        if options.missed:
+            display_old_case_short(case, options.phi)
         else:
-            encids = []
-        if case.caseLxID:
-            lxids = case.caseLxID.split(',')
-        else:
-            lxids = []
-        if case.caseICD9:
-            icd9s = case.caseICD9.split(',')
-        else:
-            icd9s = []
-        for enc in Encounter.objects.filter(pk__in=encids):
-            print '%s -- %s' % (enc, enc.date)
-            print '    ICD9s:'
-            for i in enc.icd9_codes.all():
-                print '        %s' % i
-            print '    Matching Heuristic Event(s):'
-            hefs = HeuristicEvent.objects.filter(content_type=enc_type, object_id=enc.id)
-            if not hefs:
-                print '        NO MATCHING EVENTS'
-            else:
-                for e in hefs:
-                    print '        %s' % e
-        for lab in LabResult.objects.filter(pk__in=lxids):
-            print '%s -- %s' % (lab, lab.date)
-            print '    %-25s LOINC: %-10s Native Code: %s' % (lab.native_name, lab.loinc_num(), lab.native_code)
-            print '    Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
-            hefs = HeuristicEvent.objects.filter(content_type=lab_type, object_id=lab.id)
-            if not hefs:
-                print '        NO MATCHING EVENTS'
-            else:
-                for e in hefs:
-                    print '        %s' % e
-                
+            display_old_case_long(case, options.phi)
+    if options.missed:
+        return
     #
     # Find cases found by Nodis but not by identifyCases.py
     #
@@ -150,13 +198,15 @@ def compare(condition, print_phi=False):
     print condition.upper() + ' -- %s cases found by Nodis but not by identifyCases.py' % count
     print '=' * 80
     for case in n_cases.order_by('pk'):
-        print_nodis_case_summary(case, phi=print_phi)
+        print_nodis_case_summary(case, phi=options.phi)
     
 
 def main():
     parser = optparse.OptionParser()
     parser.add_option('--phi', action='store_true', dest='phi', default=False, 
         help='Include PHI in summary')
+    parser.add_option('--missed', action='store_true', dest='missed', default=False,
+        help='Summarize cases missed by Nodis')
     (options, args) = parser.parse_args()
     print '+' * 80
     print '+' + ' ' * 78 + '+'
@@ -175,7 +225,7 @@ def main():
         print '!' + ' ' * 78 + '!'
         print '!' * 80
     for condition in NewCase.objects.filter(condition__in=RULE_MAP).values_list('condition', flat=True).distinct():
-        compare(condition, print_phi=options.phi)
+        compare(condition, options=options)
 
 
 if __name__ == '__main__':
