@@ -74,7 +74,7 @@ def print_nodis_case_summary(case, phi=False):
         else:
             print '\t %s' % event.content_object
 
-def display_old_case_long(case, print_phi):
+def display_old_case_long(case, condition, print_phi):
     # These are needed for heuristic event lookups below
     enc_type = ContentType.objects.get_for_model(Encounter)
     lab_type = ContentType.objects.get_for_model(LabResult)
@@ -122,7 +122,7 @@ def display_old_case_long(case, print_phi):
             for e in hefs:
                 print '        %s' % e
 
-def display_old_case_short(case, print_phi):
+def display_old_case_short(case, condition, print_phi):
     # These are needed for heuristic event lookups below
     enc_type = ContentType.objects.get_for_model(Encounter)
     lab_type = ContentType.objects.get_for_model(LabResult)
@@ -139,7 +139,15 @@ def display_old_case_short(case, print_phi):
     else:
         icd9s = []
     print
-    print 'OLD CASE # %s' % case.pk
+    print 
+    print '~' * 80
+    case_str = 'Old Case # %s (%s)' % (case.pk, condition)
+    print case_str
+    if print_phi:
+        p = case.patient
+        pat_str = 'Patient # %-10s %-30s %12s' % (p.pk, p.name, p.mrn)
+        print pat_str.center(80)
+    print '~' * 80
     for enc in Encounter.objects.filter(pk__in=encids):
         hefs = HeuristicEvent.objects.filter(content_type=enc_type, object_id=enc.id).order_by('date')
         if not hefs:
@@ -149,7 +157,7 @@ def display_old_case_short(case, print_phi):
         else:
             for e in hefs:
                 values = {'event': e.heuristic_name, 'date': e.date, 'pk': e.pk}
-                print '  %(event)-20s %(date)-12s   # %(pk)s' % values
+                print '  %(event)-25s %(date)-12s   # %(pk)s' % values
     for lab in LabResult.objects.filter(pk__in=lxids):
         hefs = HeuristicEvent.objects.filter(content_type=lab_type, object_id=lab.id).order_by('date')
         if not hefs:
@@ -159,7 +167,7 @@ def display_old_case_short(case, print_phi):
         else:
             for e in hefs:
                 values = {'event': e.heuristic_name, 'date': e.date, 'pk': e.pk}
-                print '  %(event)-20s %(date)-12s   # %(pk)s' % values
+                print '  %(event)-25s %(date)-12s   # %(pk)s' % values
         
     
                 
@@ -180,9 +188,9 @@ def compare(condition, options):
     print '=' * 80
     for case in i_cases.order_by('pk'):
         if options.missed:
-            display_old_case_short(case, options.phi)
+            display_old_case_short(case, condition, options.phi)
         else:
-            display_old_case_long(case, options.phi)
+            display_old_case_long(case, condition, options.phi)
     if options.missed:
         return
     #
