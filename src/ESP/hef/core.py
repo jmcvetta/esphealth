@@ -320,6 +320,7 @@ class NumericLabHeuristic(LabHeuristic):
         self.default_high = default_high
         self.ratio = ratio
         self.comparison = comparison
+        self.exclude = exclude
         LabHeuristic.__init__(self,
             heuristic_name = heuristic_name,
             def_name = def_name,
@@ -360,7 +361,10 @@ class NumericLabHeuristic(LabHeuristic):
             static_comp_q = no_ref_q & def_high_q
             pos_q = (ref_comp_q | static_comp_q)
         log.debug('pos_q: %s' % pos_q)
-        result = relevant_labs.filter(pos_q)
+        if self.exclude:
+            result = relevant_labs.exclude(pos_q)
+        else:
+            result = relevant_labs.filter(pos_q)
         return result
 
 
