@@ -235,7 +235,7 @@ class Patient(BaseMedicalRecord):
             address1 = address,
             address2 = '',
             middle_name = random.choice(string.uppercase),
-            dob = randomizer.date_of_birth(as_string=False),
+            date_of_birth = randomizer.date_of_birth(as_string=False),
             gender = randomizer.gender(),
             race = randomizer.race(),
             areacode = phone_number.split('-')[0],
