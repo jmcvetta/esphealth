@@ -310,7 +310,7 @@ class DiseaseDefinition(object):
         names = []
         for req in self.require + self.require_past + self.exclude:
             names += [event.heuristic_name for event in req]
-        return names
+        return set(names)
                 
     
         
@@ -428,7 +428,7 @@ class Disease(object):
         names = []
         for d in self.definitions:
             names.extend(d.get_all_event_names())
-        return names
+        return set(names)
     
     def new_case(self, etw):
         '''
