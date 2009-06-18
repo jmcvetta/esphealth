@@ -43,9 +43,8 @@ def main():
     clear()
 
     if options.providers:
-        Provider.delete_fakes()
-        providers_for_testing()
-        for provider in Provider.fakes():
+        testers = providers_for_testing()
+        for provider in testers:
             patient = Patient.make_mock()
             patient.pcp = provider
             patient.save()
@@ -317,7 +316,7 @@ def providers_for_testing():
     michael_lee.last_name = 'Lee'
     michael_lee.save()
     
-    
+    return michael_klompas, michael_lee
     
 
 if __name__ == '__main__':
