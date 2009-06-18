@@ -25,8 +25,8 @@ import smtplib
 VERSION = '0.2'
 DO_VALIDATE = 1 # set to zero to avoid the validation step
 REJECT_INVALID = 1 # don't process if any errors - usually are missing provider so ignore
-emailToList = ['rerla@channing.harvard.edu','rexua@channing.harvard.edu','mklompas@partners.org','julie_dunn@hphc.org',
-'jason.mcvetta@channing.harvard.edu','raphael.lullis@channing.harvard.edu']
+emailToList = ['rerla@channing.harvard.edu','rexua@channing.harvard.edu','mklompas@partners.org',
+'julie_dunn@harvardpilgrim.org','jason.mcvetta@channing.harvard.edu','raphael.lullis@channing.harvard.edu']
 
 today=datetime.datetime.now().strftime('%Y%m%d')
 
