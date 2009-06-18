@@ -22,9 +22,11 @@ from django.contrib.contenttypes.models import ContentType
 
 from ESP.esp.models import Case as OldCase
 from ESP.nodis.models import Case as NewCase
+from ESP.nodis.core import Disease
 from ESP.emr.models import Encounter
 from ESP.emr.models import LabResult
 from ESP.hef.models import HeuristicEvent
+from ESP.nodis import defs # Load disease definitions
 
 
 
@@ -124,20 +126,34 @@ def display_old_case_long(case, condition, print_phi):
 
 def display_old_case_short(case, condition, print_phi):
     # These are needed for heuristic event lookups below
+    disease = Disease.get_disease_by_name(condition)
     enc_type = ContentType.objects.get_for_model(Encounter)
     lab_type = ContentType.objects.get_for_model(LabResult)
     if case.caseEncID:
-        encids = case.caseEncID.split(',')
+        encids = [int(id) for id in case.caseEncID.split(',')]
     else:
         encids = []
+    case_encs = Encounter.objects.filter(pk__in=encids).order_by('date')
     if case.caseLxID:
-        lxids = case.caseLxID.split(',')
+        lxids = [int(id) for id in case.caseLxID.split(',')]
     else:
         lxids = []
+    case_labs = LabResult.objects.filter(pk__in=lxids).order_by('date')
     if case.caseICD9:
         icd9s = case.caseICD9.split(',')
     else:
         icd9s = []
+    # Case date is lowest date among labs & encounters
+    case_date = sorted(list(case_labs) + list(case_encs) , key=lambda x: x.date)[0].date
+    # Get relevant events
+    begin = case_date - datetime.timedelta(400)
+    end = case_date + datetime.timedelta(30)
+    q_obj = Q(date__gte=begin, date__lte=end, patient=case.patient)
+    q_obj = q_obj & Q(heuristic_name__in=disease.get_all_event_names())
+    relevant_events = HeuristicEvent.objects.filter(q_obj).order_by('date')
+    #
+    #
+    #
     print
     print 
     print '~' * 80
@@ -148,26 +164,36 @@ def display_old_case_short(case, condition, print_phi):
         pat_str = 'Patient # %-10s %-30s %12s' % (p.pk, p.name, p.mrn)
         print pat_str.center(80)
     print '~' * 80
-    for enc in Encounter.objects.filter(pk__in=encids):
-        hefs = HeuristicEvent.objects.filter(content_type=enc_type, object_id=enc.id).order_by('date')
-        if not hefs:
-            print '  NO EVENT: %s -- %s' % (enc, enc.date)
-            for i in enc.icd9_codes.all():
-                print '    %s' % i
+    enc_event_pks = []
+    lab_event_pks = []
+    for event in relevant_events:
+        attached = False # Event is attached to this case
+        if event.content_type == enc_type:
+            enc_event_pks.append(event.pk)
+            if event.object_id in encids:
+                attached = True
+        elif event.content_type == lab_type:
+            lab_event_pks.append(event.pk)
+            if event.object_id in lxids:
+                attached = True
+        values = {'name': event.heuristic_name, 'date': event.date, 'pk': event.pk}
+        if attached:
+            print ' +  %(name)-25s %(date)-12s   # %(pk)s' % values
         else:
-            for e in hefs:
-                values = {'event': e.heuristic_name, 'date': e.date, 'pk': e.pk}
-                print '  %(event)-25s %(date)-12s   # %(pk)s' % values
-    for lab in LabResult.objects.filter(pk__in=lxids):
-        hefs = HeuristicEvent.objects.filter(content_type=lab_type, object_id=lab.id).order_by('date')
-        if not hefs:
-            print '  NO EVENT: %s -- %s' % (lab, lab.date)
-            print '    %-25s LOINC: %-10s Native Code: %s' % (lab.native_name, lab.loinc_num(), lab.native_code)
-            print '    Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
-        else:
-            for e in hefs:
-                values = {'event': e.heuristic_name, 'date': e.date, 'pk': e.pk}
-                print '  %(event)-25s %(date)-12s   # %(pk)s' % values
+            print '    %(name)-25s %(date)-12s   # %(pk)s' % values
+    attached_he_pks = [] # List of primary keys for heuristic events attached to this case
+    unattached_encids = set(encids) - set(enc_event_pks)
+    unattached_lxids = set(lxids) - set(lab_event_pks)
+    for enc in Encounter.objects.filter(pk__in=unattached_encids):
+        print '    NO EVENT: %s -- %s' % (enc, enc.date)
+        for i in enc.icd9_codes.all():
+            print '      %s' % i
+    for lab in LabResult.objects.filter(pk__in=unattached_lxids):
+        print '    NO EVENT: Lab Result      %10s     # %-12s' % (lab.date, lab.pk)
+        print '      %-25s LOINC: %-10s Native Code: %s' % (lab.native_name, lab.loinc_num(), lab.native_code)
+        print '      Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
+    
+    
         
     
                 
@@ -218,7 +244,10 @@ def main():
     (options, args) = parser.parse_args()
     print '+' * 80
     print '+' + ' ' * 78 + '+'
-    print '+' + 'Nodis Case Comparison Report'.center(78) + '+'
+    print '+' + 'Nodis Case Validation Report'.center(78) + '+'
+    if options.missed:
+        miss_str = 'Missing Cases Summary'
+        print '+' + miss_str.center(78)+ '+'
     gen_str = 'Generated %s' % datetime.datetime.today().strftime('%d %b %Y %H:%M')
     print '+' + gen_str.center(78)+ '+'
     print '+' + ' ' * 78 + '+'
