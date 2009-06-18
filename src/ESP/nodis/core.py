@@ -303,6 +303,16 @@ class DiseaseDefinition(object):
                     matches[pid] = wins
         return matches
     
+    def get_all_event_names(self):
+        '''
+        Returns a list of the names of all heuristic events that appear in this definition
+        '''
+        names = []
+        for req in self.require + self.require_past + self.exclude:
+            names += [event.heuristic_name for event in req]
+        return names
+                
+    
         
             
             
@@ -409,6 +419,16 @@ class Disease(object):
         match is found.
         '''
         return cls.__registry.get(name, None)
+    
+    def get_all_event_names(self):
+        '''
+        Return list of names of all heuristic events included in this 
+        disease's definition(s).
+        '''
+        names = []
+        for d in self.definitions:
+            names.extend(d.get_all_event_names())
+        return names
     
     def new_case(self, etw):
         '''
