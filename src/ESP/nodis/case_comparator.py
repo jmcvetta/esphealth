@@ -164,32 +164,34 @@ def display_old_case_short(case, condition, print_phi):
         pat_str = 'Patient # %-10s %-30s %12s' % (p.pk, p.name, p.mrn)
         print pat_str.center(80)
     print '~' * 80
+    print '    EVENT TYPE                DATE           EVENT_ID      OBJECT_ID'
+    print '    ' + '-' * 65
     enc_event_pks = []
     lab_event_pks = []
     for event in relevant_events:
         attached = False # Event is attached to this case
         if event.content_type == enc_type:
-            enc_event_pks.append(event.pk)
+            enc_event_pks.append(event.object_id)
             if event.object_id in encids:
                 attached = True
         elif event.content_type == lab_type:
-            lab_event_pks.append(event.pk)
+            lab_event_pks.append(event.object_id)
             if event.object_id in lxids:
                 attached = True
-        values = {'name': event.heuristic_name, 'date': event.date, 'pk': event.pk}
+        values = {'name': event.heuristic_name, 'date': event.date, 'pk': event.pk, 'oid': event.object_id}
         if attached:
-            print ' +  %(name)-25s %(date)-12s   # %(pk)s' % values
+            print ' +  %(name)-25s %(date)-12s   # %(pk)-10s  # %(oid)s' % values
         else:
-            print '    %(name)-25s %(date)-12s   # %(pk)s' % values
+            print '    %(name)-25s %(date)-12s   # %(pk)-10s  # %(oid)s' % values
     attached_he_pks = [] # List of primary keys for heuristic events attached to this case
     unattached_encids = set(encids) - set(enc_event_pks)
     unattached_lxids = set(lxids) - set(lab_event_pks)
     for enc in Encounter.objects.filter(pk__in=unattached_encids):
-        print '    NO EVENT: %s -- %s' % (enc, enc.date)
+        print '    NO EVENT: Encounter       %10s                   # %-12s' % (enc.date, enc.pk)
         for i in enc.icd9_codes.all():
             print '      %s' % i
     for lab in LabResult.objects.filter(pk__in=unattached_lxids):
-        print '    NO EVENT: Lab Result      %10s     # %-12s' % (lab.date, lab.pk)
+        print '    NO EVENT: Lab Result      %10s                   # %-12s' % (lab.date, lab.pk)
         print '      %-25s LOINC: %-10s Native Code: %s' % (lab.native_name, lab.loinc_num(), lab.native_code)
         print '      Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
     
