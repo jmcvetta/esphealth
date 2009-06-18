@@ -118,18 +118,17 @@ class Provider(BaseMedicalRecord):
         
         if Provider.objects.filter(provider_id_num=code).count() == 1:
             return Provider.objects.get(provider_id_num=code)
-        else:        
-            p = Provider(
-                provider_id_num = code,
-                last_name = randomizer.first_name(),
-                first_name = randomizer.last_name(),
-                middle_initial = random.choice(string.uppercase),
-                title = 'Fake Dr.',
-                dept_id_num = 'Department of Wonderland',
-                dept_address_1 = randomizer.address(),
-                dept_zip = randomizer.zip_code(),
-                telephone = randomizer.phone_number()
-                )
+        else:
+            try:
+                p = Provider(
+                    provider_id_num = code,
+                    last_name = randomizer.first_name(),
+                    first_name = randomizer.last_name()
+                    )
+            except:
+                import pdb
+                pdb.set_trace()
+                
             
             if save_on_db: p.save()
             return p
