@@ -175,6 +175,14 @@ no_hep_b_igm_ab = StringMatchLabHeuristic(
     strings = NEGATIVE_STRINGS,
     )
 
+hep_b_core_ab = StringMatchLabHeuristic(
+    heuristic_name = 'hep_b_core_ab',
+    def_name = 'No Hep B Core Event Definition 1',
+    def_version = 1,
+    loinc_nums = ['16933-4'],
+    strings = POSITIVE_STRINGS,
+    )
+
 no_hep_b_core_ab = StringMatchLabHeuristic(
     heuristic_name = 'no_hep_b_core_ab',
     def_name = 'No Hep B Core Event Definition 1',
