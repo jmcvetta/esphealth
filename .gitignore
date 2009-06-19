@@ -1,9 +1,16 @@
 /.project
 /.pydevproject
 src/ESP/*.db
+src/ESP/*.pyc
 src/ESP/.ropeproject
 src/ESP/assets
+src/ESP/conf/*.pyc
+src/ESP/emr/*.pyc
+src/ESP/esp/*.pyc
+src/ESP/hef/*.pyc
 src/ESP/localsettings.py
 src/ESP/messages
+src/ESP/nodis/*.pyc
+src/ESP/utils/*.pyc
 src/ESP/vaers/*.pyc
 src/ESP/vaers/fixtures/lab_results.sql

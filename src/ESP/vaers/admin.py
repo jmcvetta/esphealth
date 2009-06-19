@@ -1,6 +1,6 @@
 from django.contrib import admin
-from vaers.models import EncounterEvent, LabResultEvent
-from vaers.models import DiagnosticsEventRule
+from ESP.vaers.models import EncounterEvent, LabResultEvent
+from ESP.vaers.models import DiagnosticsEventRule
 
 class EncounterEventAdmin(admin.ModelAdmin):
     date_hierarchy = 'date'

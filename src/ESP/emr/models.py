@@ -12,6 +12,7 @@
 import string
 import random
 import datetime
+import sys
 
 from django.db import models
 from django.db.models import Q
@@ -125,7 +126,7 @@ class Provider(BaseMedicalRecord):
                 first_name = randomizer.last_name()
                 )
             
-            if save_on_db: p.save(force_insert=True)
+            if save_on_db: p.save()
             return p
 
     

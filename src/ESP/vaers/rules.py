@@ -5,7 +5,7 @@ from ESP.vaers.models import DiagnosticsEventRule
 
 # Constants defined in the VAERS documents.
 TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
-TIME_WINDOW_POST_EVENT = 30 # One week to report
+TIME_WINDOW_POST_EVENT = 60 # Period of time between immunization and event
 
 VAERS_LAB_RESULTS = {
     '718-7':{
