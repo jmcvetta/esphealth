@@ -114,15 +114,7 @@ class AdverseEvent(models.Model):
             except Exception, why:
                 print 'Failed to send in case %s.\nReason: %s' % (case.id, why)
 
-
-            
-
-
-
-    
-
     fake_q = Q(immunizations__name='FAKE')
-
 
     def temporal_report(self):
         results = []
@@ -140,7 +132,6 @@ class AdverseEvent(models.Model):
                     })
 
         return results
-
     
     def render_temporal_report(self):
         buf = []
