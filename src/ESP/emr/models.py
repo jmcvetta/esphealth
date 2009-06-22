@@ -328,7 +328,7 @@ class BasePatientRecord(BaseMedicalRecord):
     patient = models.ForeignKey(Patient, blank=True, null=True) 
     provider = models.ForeignKey(Provider, blank=True, null=True) 
     # Meaning of date (e.g. order date or result date?) should be specified in child classes
-    date = models.DateField(blank=False)
+    date = models.DateField(blank=False, db_index=True)
     # Does it make sense to have an MRN field on every patient record table?  
     # Will all patient records have their own individual MRN?
     mrn = models.CharField('Medical Record Number', max_length=50, blank=True, null=True)
