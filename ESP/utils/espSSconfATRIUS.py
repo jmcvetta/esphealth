@@ -885,7 +885,7 @@ HEM	078.6	HEM NEPHROSONEPHRITIS	0	0	2	3
 HEM	078.7	ARENAVIRAL HEM FEVER	0	0	0	3
 HEM	084.8	BLACKWATER FEVER	0	0	0	3
 HEM	100.0	LEPTOSPIROSIS, ICTOHEMORRHAGICA				3
-HEM	283.11	HEMOLYTIC-UREMIC SYNDROME	4	0	6	3	""".split('\n')
+HEM	283.11	HEMOLYTIC-UREMIC SYNDROME	4	0	6	3		""".split('\n')
 HAEMdef = [x.split('\t') for x in HAEMdef[1:]] # ignore header
 HAEMdef = [[x[1].strip(),(x[7].strip()=='*')] for x in HAEMdef]
 
