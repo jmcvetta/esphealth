@@ -9,6 +9,7 @@
 # mostly from Katherine Yih provided spreadsheets
 # syndrome defs 5 15 06 clean.xls eg
 # atrius sites updated april 29 2009
+# and again jun 23
 
 localSiteSites="""Asterisk	Zip	 count(EncEncounter_SiteName) | EncEncounter_SiteName                                        | EncEncounter_Site |
 		+------------------------------+--------------------------------------------------------------+-------------------+
