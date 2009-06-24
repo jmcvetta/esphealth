@@ -90,6 +90,7 @@ src/ESP/conf/fixtures/conf-test-native-codes.json -text
 src/ESP/conf/fixtures/icd9.json -text
 src/ESP/conf/fixtures/immunization_manufacturers.json -text
 src/ESP/conf/fixtures/vaccines.json -text
+src/ESP/conf/forms.py -text
 src/ESP/conf/models.py -text
 src/ESP/conf/tests.py -text
 src/ESP/conf/urls.py -text
@@ -210,6 +211,7 @@ src/ESP/templates/admin/login.html -text
 src/ESP/templates/arrow.GIF -text
 src/ESP/templates/base.html -text
 src/ESP/templates/conf/code_maintenance.html -text
+src/ESP/templates/conf/code_map.html -text
 src/ESP/templates/conf/loinc_mapping.html -text
 src/ESP/templates/default-bg-reverse.gif -text
 src/ESP/templates/default-bg.gif -text
