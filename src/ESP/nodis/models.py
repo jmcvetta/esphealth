@@ -52,6 +52,9 @@ class Case(models.Model):
     
     class Meta:
         permissions = [ ('view_phi', 'Can view protected health information'), ]
+    
+    def __str__(self):
+        return '%s # %s' % (self.condition, self.pk)
 
 
 class NodisCaseWorkflow(models.Model):
