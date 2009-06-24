@@ -76,10 +76,11 @@ def print_tab(disease, options):
     @type options: optparse.Values instance
     '''
     columns = [
-        'date',
-        'last_name',
-        'first_name',
-        'mrn',
+        'Nodis Case Number',
+        'Date',
+        'Last Name',
+        'First Name',
+        'MRN',
         ]
     event_names = disease.get_all_event_names()
     columns.extend(event_names)
@@ -88,9 +89,15 @@ def print_tab(disease, options):
     for c in columns:
         header[c] = c
     writer.writerow(header)
-    for case in disease.get_cases():
+    for case in disease.get_cases().order_by('-date'):
         p = case.patient
-        values = {'date': str(case.date), 'last_name': p.last_name, 'first_name': p.first_name, 'mrn': p.mrn}
+        values = {
+            'Nodis Case Number': case.pk,
+            'Date': str(case.date), 
+            'Last Name': p.last_name, 
+            'First Name': p.first_name, 
+            'MRN': p.mrn
+            }
         events = {}
         for e in case.events.all():
             hn = e.heuristic_name
