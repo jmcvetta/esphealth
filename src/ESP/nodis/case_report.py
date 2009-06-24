@@ -45,35 +45,30 @@ RULE_MAP = {
 }
 
 
-def print_nodis_case_summary(case, phi=False):
+def print_nodis_case_summary(case, options):
     '''
     @param case: Case to summarize
     @type case: Nodis Case object
     @param phi: Include PHI in summary?
     @type phi: Boolean
     '''
+    print
     print 
     print '~' * 80
-    case_str = 'Nodis Case # %s: %s (v%s)' % (case.pk, case.definition, case.def_version)
-    print case_str.center(80) 
+    case_str = 'Old Case # %s (%s)' % (case.pk, options.disease)
+    print case_str
+    if options.phi:
+        p = case.patient
+        pat_str = 'Patient # %-10s %-30s %12s' % (p.pk, p.name, p.mrn)
+        print pat_str.center(80)
     print '~' * 80
-    if phi:
-        print 'Patient # %s' % case.patient.pk
-        print '    Name: %s' % case.patient.name
-        print '    MRN: %s' % case.patient.mrn
-    for event in case.events.all():
-        print '%s -- %s' % (event, event.definition)
-        if type(event.content_object) == Encounter:
-            enc = event.content_object
-            print '    %s -- %s' % (enc, enc.date)
-            print '    ICD9s: %s' % enc.icd9_codes.all()
-        elif type(event.content_object) == LabResult:
-            lab = event.content_object
-            print '    %s -- %s' % (lab, lab.date)
-            print '    %-25s LOINC: %-10s Native Code: %s' % (lab.native_name, lab.loinc_num(), lab.native_code)
-            print '    Result: %-30s \t Reference High: %s' % (lab.result_string, lab.ref_high)
-        else:
-            print '    %s' % event.content_object
+    print '    EVENT TYPE                DATE           EVENT_ID      OBJECT_ID'
+    print '    ' + '-' * 65
+    for event in case.events.all().order_by('date'):
+        values = {'name': event.heuristic_name, 'date': event.date, 'pk': event.pk, 'oid': event.object_id}
+        print ' +  %(name)-25s %(date)-12s   # %(pk)-10s  # %(oid)s' % values
+    
+    
 
 
 def main():
@@ -126,7 +121,7 @@ def main():
         print dis.name.upper() + ' -- %s cases found by Nodis' % cases.count()
         print '=' * 80
         for case in cases.order_by('pk'):
-            print_nodis_case_summary(case, phi=options.phi)
+            print_nodis_case_summary(case, options=options)
         
 
 

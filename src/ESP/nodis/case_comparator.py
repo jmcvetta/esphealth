@@ -78,6 +78,7 @@ def print_nodis_case_summary(case, phi=False):
         else:
             print '\t %s' % event.content_object
 
+
 def display_old_case_long(case, condition, print_phi):
     # These are needed for heuristic event lookups below
     enc_type = ContentType.objects.get_for_model(Encounter)
