@@ -20,6 +20,7 @@ from django.db import connection
 from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
 
+from ESP.utils.utils import log
 from ESP.esp.models import Case as OldCase
 from ESP.nodis.models import Case as NewCase
 from ESP.nodis.core import Disease
@@ -42,6 +43,7 @@ RULE_MAP = {
     'acute_hep_b': 4,
     'acute_hep_a': 5,
     'acute_hep_c': 6,
+    'exp_acute_hep_c': 6,
     'chronic_hep_b': 7,
 }
 
@@ -151,9 +153,6 @@ def display_old_case_short(case, condition, print_phi):
     q_obj = Q(date__gte=begin, date__lte=end, patient=case.patient)
     q_obj = q_obj & Q(heuristic_name__in=disease.get_all_event_names())
     relevant_events = HeuristicEvent.objects.filter(q_obj).order_by('date')
-    #
-    #
-    #
     print
     print 
     print '~' * 80
@@ -263,6 +262,7 @@ def main():
         print '!' + phi_str.center(78) + '!'
         print '!' + ' ' * 78 + '!'
         print '!' * 80
+    #compare('exp_acute_hep_c', options=options)
     for condition in NewCase.objects.filter(condition__in=RULE_MAP).values_list('condition', flat=True).distinct():
         compare(condition, options=options)
 

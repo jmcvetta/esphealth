@@ -24,6 +24,7 @@ from ESP.hef.events import hep_b_igm_ab
 from ESP.hef.events import hep_b_surface
 from ESP.hef.events import hep_b_viral_dna
 from ESP.hef.events import hep_b_igm_ab
+from ESP.hef.events import hep_b_core_ab
 from ESP.hef.events import chronic_hep_b
 from ESP.hef.events import no_hep_b_surface
 from ESP.hef.events import high_calc_bilirubin
@@ -34,6 +35,7 @@ from ESP.hef.events import CHLAMYDIA_LOINCS
 from ESP.hef.events import GONORRHEA_LOINCS
 from ESP.hef.events import hep_a_igm_ab
 from ESP.hef.events import hep_c_elisa
+from ESP.hef.events import hep_c_signal_cutoff
 from ESP.hef.events import no_hep_c_signal_cutoff
 from ESP.hef.events import no_hep_c_riba
 from ESP.hef.events import no_hep_c_rna
@@ -469,5 +471,69 @@ lyme = Disease(
         ],
     med_days_before = 30,
     med_days_after = 30,
+    )
+
+
+#===============================================================================
+#
+# REVISED EXPERIMENTAL Hepatitis C
+#
+#-------------------------------------------------------------------------------
+
+exp_hep_c_1 = DiseaseDefinition(
+    name = 'Experimental Acute Hepatitis C Definition 1',
+    version = 1,
+    window = 28, # 28 days
+    require = [
+        (jaundice, alt_400,), # Symptoms
+        (hep_c_elisa, hep_c_rna, hep_c_riba, hep_c_signal_cutoff ), # Blood tests
+        ],
+    exclude = [
+        (hep_a_igm_ab, hep_b_igm_ab, hep_b_core_ab,), # Hep A & B
+        (chronic_hep_b,), # If you have chronic, you don't have acute
+        ],
+    exclude_past = [
+        (hep_a_igm_ab, hep_b_igm_ab, hep_b_core_ab,), # Hep A & B
+        (chronic_hep_b, hep_c_elisa, hep_c_riba, hep_c_rna,),  # Indicators of chronic Hep C
+        ]
+    )
+
+exp_hep_c_2 = DiseaseDefinition(
+    name = 'Experimental Acute Hepatitis C Definition 2',
+    version = 1,
+    window = 1, # Not relevant, since only 1 require
+    require = [
+        (hep_c_elisa, hep_c_rna, hep_c_riba, hep_c_signal_cutoff ), # Blood tests positive
+        ],
+    require_past_window = 365, # 12 months
+    require_past = [
+        (no_hep_c_elisa, no_hep_c_rna, no_hep_c_riba, no_hep_c_signal_cutoff ), # Blood tests negative
+        ]
+    )
+
+exp_hep_c = Disease(
+    name = 'exp_acute_hep_c',
+    definitions = [exp_hep_c_1, exp_hep_c_2],
+    icd9s = DEFAULT_REPORTABLE_ICD9S,
+    icd9_days_before = 14,
+    icd9_days_after = 14,
+    fever = True,
+    lab_loinc_nums = [
+        '16128-1',
+        'MDPH-144',
+        '6422-0',
+        '10676-5',
+        '34704-7',
+        '38180-6',
+        '5012-0',
+        '11259-9',
+        '20416-4',
+        '34703-9',
+        '1742-6',
+        '31204-1',
+        '22314-9',
+        ],
+    lab_days_before = 28,
+    lab_days_after = 28,
     )
 
