@@ -49,27 +49,33 @@ def main():
     parser.add_option('--list', action='store_true', dest='list', 
         help='List all registered heuristics')
     parser.add_option('--incremental', action='store_true', dest='incremental', 
-        help='Examine only new data to generate events. (Default)', default=True)
-    parser.add_option('--full', action='store_false', dest='incremental',
-        help='Examine *all* data to generate events')
+        help='Examine only new data to generate events.', default=False)
+    parser.add_option('--full', action='store_false', dest='full',
+        help='Examine *all* data to generate events', default=False)
     (options, args) = parser.parse_args()
     log.debug('options: %s' % options)
     # 
     # Main
     #
-    if options.event and options.list:
-        sys.stderr.write('\nERROR: --list and --heuristic are mutually incompatible.\n\n')
+    if options.event and (options.list, options.incremental, options.full):
+        sys.stderr.write('\nERROR: --list must be used by itself.\n\n')
         parser.print_help()
+        sys.exit()
     elif options.list:
         for name in BaseHeuristic.list_heuristic_names():
             print name
-    elif options.event:
+    if (options.full and options.incremental) or not (options.full or options.incremental):
+        sys.stderr.write('\nERROR: You must choose either --full or --incremental.\n\n')
+        parser.print_help()
+        sys.exit()
+    if options.event:
         try:
             BaseHeuristic.generate_events_by_name(name=options.event, incremental=options.incremental)
         except KeyError:
             print >> sys.stderr
             print >> sys.stderr, 'Unknown heuristic name: "%s".  Aborting run.' % options.event
             print >> sys.stderr
+            sys.exit()
     else:
         BaseHeuristic.generate_all_events(incremental=options.incremental)
     
