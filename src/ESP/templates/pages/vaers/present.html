@@ -13,7 +13,7 @@
 <h2>Adverse Event to Vaccination Report</h2>
 
 <p>Please confirm if <span class="patient_name">
-{{ case.patient.DemogFirst_Name }} {{ case.patient.DemogLast_Name }}</span>'s case should be reported as an adverse event.<br />
+{{ case.patient.full_name }}</span>'s case should be reported as an adverse event.<br />
 ESP VAERS has
 identified this case and the recommended action is
 to <span class="msg_case_category">{{ case.get_category_display}}.</span></p>
@@ -40,14 +40,14 @@ safety investigators:</p>
   {% if case.encounter %}
   <tr>
     <th>Date of encounter that indicated Adverse Event</th>
-    <td>{{ encounter_date|date:"M d, Y"}}</td>
+    <td>{{ case.encounter.date|date:"M d, Y"}}</td>
   </tr>
   <tr>
     <th>Icd9 Codes</th>
     <td>
       <ul>
-	{% for icd9 in case.encounter.icd9_reported_list.all %}
-	<li>{{ icd9.icd9Code }} ({{ icd9.icd9Long }})</li>
+	{% for icd9 in case.encounter.icd9_codes.all %}
+	<li>{{ icd9.code }} ({{ icd9.name }})</li>
 	{% endfor %}
       </ul>
     </td>
@@ -63,7 +63,7 @@ safety investigators:</p>
     <td>
       <ul class="lx_summary">
 	<li>Lab Test: {{ case.lab_result.native_name }}</li>
-	<li>Order: #{{ case.lab_result.LxOrder_Id_Num|default:"N/A" }}</li>
+	<li>Order: #{{ case.lab_result.order_num|default:"N/A" }}</li>
 	<li>Results Obtained on {{ case.lab_result.result_date|date:"M d, Y"}}</li>
 	<li>Results: {{ case.lab_result.result_float|default:"N/A"}}</li>
       </ul>
