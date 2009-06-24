@@ -257,6 +257,9 @@ class Patient(BaseMedicalRecord):
         objs = Patient.objects
         query = objs.filter(Patient.q_fake) if fake else objs.all()
         return query.order_by('?')[0]
+
+    def is_fake(self):
+        return self.patient_id_num.startswith('FAKE')
         
 
     def has_history_of(self, icd9s, begin_date=None, end_date=None):
@@ -310,7 +313,7 @@ class Patient(BaseMedicalRecord):
         return self.name
 
     def __unicode__(self):
-        return unicode(self.full_name)
+        return u'%s' % self.full_name
 
     
 
@@ -787,12 +790,15 @@ class Immunization(BasePatientRecord):
     def is_fake(self):
         return self.name == 'FAKE'
 
-    def vaccine_type(self):
+    def _get_vaccine(self):
         try:
-            vaccine = Vaccine.objects.get(code=self.imm_type)
-            return vaccine.name
+            return Vaccine.objects.get(code=self.imm_type)
         except:
-            return 'Unknown Vaccine'
+            return None
+    vaccine = property(_get_vaccine)
+
+    def vaccine_type(self):
+        return (self.vaccine and self.vaccine.name) or 'Unknown Vaccine'
 
     def  __unicode__(self):
         return u"Patient with Immunization Record %s received %s on %s" % (

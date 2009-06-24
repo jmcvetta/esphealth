@@ -4,29 +4,27 @@ import datetime
 import random
 import pdb
 
-# Store messages in the messages folder, on parent level.
-MESSAGE_DIR = os.path.realpath(os.path.join(
-        os.path.dirname(__file__), '..', 'messages'))
+from django.db.models import Max
 
 # Models
 from ESP.conf.models import Icd9, Loinc, NativeCode
 from ESP.emr.models import Patient, Immunization, LabResult, Encounter
 from ESP.vaers.models import AdverseEvent
 
-
 from ESP.vaers.models import DiagnosticsEventRule
 
-# Modules that we are using and/or testing
-import fake
-import heuristics
-
-
+from heuristics import lab_heuristics, diagnostic_heuristics, fever_heuristic
 from rules import VAERS_DIAGNOSTICS, VAERS_LAB_RESULTS, TIME_WINDOW_POST_EVENT
 from fake import ImmunizationHistory, Vaers, clear
 
+# Store messages in the messages folder, on parent level.
+MESSAGE_DIR = os.path.realpath(os.path.join(
+        os.path.dirname(__file__), '..', 'messages'))
+
 FEVER_HEURISTIC = heuristics.fever_heuristic()
-DIAGNOSTICS_HEURISTICS = dict([(h.heuristic_name, h) for h in heuristics.diagnostic_heuristics()])
-LAB_HEURISTICS = heuristics.lab_heuristics()
+DIAGNOSTICS_HEURISTICS = dict([
+        (h.heuristic_name, h) for h in diagnostic_heuristics()])
+LAB_HEURISTICS = lab_heuristics()
 
 
 
@@ -47,6 +45,61 @@ class TestLoincCodes(unittest.TestCase):
                 self.assert_(NativeCode.objects.get(native_code=loinc))
             except Exception, why:
                 self.assert_(False, 'Testing NativeCode "%s": %s' % (loinc, why))
+
+
+class TestDeidentification(unittest.TestCase):
+    
+    def setUp(self):
+        
+
+        self.most_recent = AdverseEvent.objects.aggregate(recent=Max('created_on'))['recent']
+
+
+        event_ids = [x.id for x in AdverseEvent.objects.order_by('?')[:20]]
+        events = [AdverseEvent.by_id(x) for x in event_ids]
+        deidentified_events = [x.deidentified() for x in events]
+        self.event_pairs = zip(events, deidentified_events)
+
+    
+    def tearDown(self):
+        for elem in [Patient, Immunization, Encounter, LabResult]:
+            elem.objects.filter(
+                created_timestamp__gt=self.most_recent).delete()
+            
+
+        AdverseEvent.objects.filter(created_on__gt=self.most_recent).delete()
+        
+
+    def testPatientIdentity(self):
+        for event, fake_ev in self.event_pairs:
+            self.assert_(type(fake_ev.patient()) is not None)
+            self.failIf(fake_ev.patient() == event.patient())
+        
+
+    def testDelta(self):
+        for event, fake_ev in self.event_pairs:
+            try:
+                event_delta = event.date - fake_ev.date
+                patient_dob_delta = event.patient().date_of_birth - fake_ev.patient().date_of_birth
+                imm_dates = zip(event.immunizations.all(), 
+                                fake_ev.immunizations.all())
+                imm_deltas = [x.date-y.date for x, y in imm_dates]
+                
+                self.assert_(all([x==event_delta for x in imm_deltas]), 
+                             'Event and immunizations do not have same time delta')
+                self.assert_(event_delta == patient_dob_delta, 
+                             'Patient and event do not have same time delta')
+            except Exception, why:
+                import pdb
+                pdb.set_trace()
+
+    def testDeidentified(self):
+        for event, fake_ev in self.event_pairs:
+            self.assert_(fake_ev.is_fake(), 'Deidentified event is not fake')
+            self.assert_(fake_ev.patient().is_fake(), 
+                         'Deidentified patient is not fake')
+
+    
 
 
 class TestFake(unittest.TestCase):
@@ -227,12 +280,6 @@ class TestRuleEngine(unittest.TestCase):
             self.assert_(ev.matching_encounter not in matches)
 
 
-        
-            
-                         
-
-
-
     def testDiagnosticsNegativeByHistory(self):
         relevant = [v for v in VAERS_DIAGNOSTICS.values() 
                     if v.get('ignore_codes', None)]
@@ -408,11 +455,6 @@ class TestRuleEngine(unittest.TestCase):
 
             matches = heuristic.matches()
 
-            if len(matches):
-                import pdb
-                pdb.set_trace()
-                heuristic.matches()
-
             # Now, no match should show up.
             self.assert_(len(matches) == 0, 'Expected to find no match, got %d' % len(matches))
             self.assert_(ev.matching_lab_result not in matches, 'Lab Result in matches')
@@ -423,8 +465,18 @@ class TestRuleEngine(unittest.TestCase):
     
 
 if __name__ == '__main__':
-    clear()
-    unittest.main()
+#    clear()
+#    unittest.main()
+
+    deidentify_suite = unittest.TestLoader().loadTestsFromTestCase(
+        TestDeidentification)
+
+    unittest.TextTestRunner(verbosity=2).run(
+        deidentify_suite
+        )
+
+
+    
     
 
 

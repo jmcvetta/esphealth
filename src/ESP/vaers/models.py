@@ -1,5 +1,6 @@
 #-*- coding:utf-8 -*-
 import datetime
+import random
 import os
 
 from django.db import models
@@ -15,6 +16,7 @@ from django.contrib.contenttypes.models import ContentType
 from ESP.emr.models import Patient, Immunization, Encounter, LabResult, Provider
 from ESP.esp.choices import WORKFLOW_STATES
 from ESP.conf.models import Icd9, Loinc
+from ESP.conf.common import DEIDENTIFICATION_TIMEDELTA
 
 
 from utils import make_clustering_event_report_file
@@ -66,6 +68,15 @@ class AdverseEvent(models.Model):
     # To provide polymorphic lookups. Take a look at:
     # http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
     content_type = models.ForeignKey(ContentType)
+
+    @staticmethod
+    def fakes():
+        return AdverseEvent.objects.filter(AdverseEvent.fake_q)
+
+    @staticmethod
+    def delete_fakes():
+        AdverseEvent.fakes().delete()
+
 
     @staticmethod    
     def by_id(id):
@@ -147,10 +158,6 @@ class AdverseEvent(models.Model):
 
         return '\n'.join(buf)
 
-                
-
-            
-
     def is_fake(self):
         should_be_fake = any(
             [imm.is_fake() for imm in self.immunizations.all()])
@@ -170,7 +177,6 @@ class AdverseEvent(models.Model):
 
     def verification_url(self):
         return reverse('verify_case', kwargs={'key':self.digest})
-
 
     def mail_notification(self, email_address=None):
         from django.contrib.sites.models import Site
@@ -204,15 +210,33 @@ class AdverseEvent(models.Model):
         msg.content_subtype = "html"  # Main content is now text/html
         msg.send()
 
-            
 
-    @staticmethod
-    def fakes():
-        return AdverseEvent.objects.filter(AdverseEvent.fake_q)
 
-    @staticmethod
-    def delete_fakes():
-        AdverseEvent.fakes().delete()
+    def _deidentify_patient(self, days_to_shift):
+        # From patient personal data, we can get rid of
+        # everything, except for date of birth. Vaers Reports are
+        # dependant on the patient's age.
+        
+        fake_patient = Patient.make_mock()
+        new_dob = self.patient().date_of_birth - datetime.timedelta(days=days_to_shift)
+        fake_patient.date_of_birth = new_dob
+        fake_patient.save()
+        return fake_patient
+
+        
+        
+    def _deidentified_immunizations(self, patient, days_to_shift):
+        assert days_to_shift > 0
+        assert patient.is_fake()
+
+        deidentified = []
+        for imm in self.immunizations.all():
+            new_date = imm.date - datetime.timedelta(days=days_to_shift)
+            fake_imm = Immunization.make_mock(imm.vaccine, patient, new_date)
+            fake_imm.save()
+            deidentified.append(fake_imm)
+
+        return deidentified
 
     
 
@@ -236,14 +260,52 @@ class EncounterEvent(AdverseEvent):
         make_clustering_event_report_file(
             os.path.join(folder, 'clustering_diagnostics_events.txt'), diagnostics_events)
 
+    def _deidentified_encounter(self, patient, days_to_shift):
+        fake_encounter = Encounter.make_mock(patient, save_on_db=True)
+        fake_encounter.date = self.encounter.date - datetime.timedelta(days=days_to_shift)
+        fake_encounter.temperature = self.encounter.temperature
+        for code in self.encounter.icd9_codes.all():
+            fake_encounter.icd9_codes.add(code) 
 
+        return fake_encounter
+
+
+    def deidentified(self):
+        '''
+        Returns an event that is derived from "real" data, but
+        containing no identifiable information about patients. 
+        '''
+        # A patient's date of birth is crucial in identification, but
+        # is necessary for VAERS reports (age). To keep information
+        # accurate, we shift the patient date of birth by a random
+        # delta (DEIDENTIFICATION_TIMEDELTA), and do the same to all
+        # date-related information in the event.
         
+
+        days_to_shift = random.randrange(1, DEIDENTIFICATION_TIMEDELTA)
+        deidentified_patient = self._deidentify_patient(days_to_shift)
+
+        fake_ev = EncounterEvent(
+            encounter = self._deidentified_encounter(
+                deidentified_patient, days_to_shift),
+            content_type = ContentType.objects.get_for_model(EncounterEvent)
+            )
+
+        fake_ev.date = self.date - datetime.timedelta(days=days_to_shift)
+        fake_ev.save()
+        for imm in self._deidentified_immunizations(deidentified_patient, 
+                                                    days_to_shift):
+            fake_ev.immunizations.add(imm)
+            
+
+        fake_ev.save()
+        return fake_ev
 
             
 
     def __unicode__(self):
         return u"Encounter Event %s: Patient %s, %s on %s" % (
-            self.id, self.encounter.patient.full_name(), 
+            self.id, self.encounter.patient.full_name, 
             self.matching_rule_explain, self.date)
 
 
@@ -254,6 +316,47 @@ class LabResultEvent(AdverseEvent):
     def write_clustering_file_report(folder):
         make_clustering_event_report_file(
             os.path.join(folder, 'clustering_lx_events.txt'), LabResultEvent.objects.all())
+
+    def _deidentified_lx(self, patient, days_to_shift):
+        fake_lx = LabResult.make_mock()
+        fake_lx.date = self.lab_result.date - datetime.timedelta(days=days_to_shift)
+        fake_lx.result_float = self.lab_result.result_float
+        fake_lx.result_string = self.lab_result.result_string
+        fake_lx.unit = self.lab_result.unit
+        fake_lx.patient = patient
+        return fake_lx
+
+    def deidentified(self):
+        '''
+        Returns an event that is derived from "real" data, but
+        containing no identifiable information about patients. 
+        '''
+        # A patient's date of birth is crucial in identification, but
+        # is necessary for VAERS reports (age). To keep information
+        # accurate, we shift the patient date of birth by a random
+        # delta ( DEIDENTIFICATION_TIMEDELTA), and do the same to all
+        # date-related information in the event.
+        
+        lx_type = ContentType.objects.get_for_model(LabResultEvent)
+        fake_ev = LabResultEvent()
+        fake_ev.content_type = lx_type
+        days_to_shift = random.randrange(1, DEIDENTIFICATION_TIMEDELTA)
+        deidentified_patient = self._deidentify_patient(days_to_shift)
+
+        fake_ev.lab_result = self._deidentified_lx(
+            deidentified_patient, days_to_shift)
+        
+        
+        fake_ev.save()
+
+        for imm in self._deidentified_immunizations(
+            deidentified_patient, days_to_shift):
+            fake_ev.immunizations.add(imm)
+            
+        fake_ev.save()
+        return fake_ev
+
+
     
     def __unicode__(self):
         return u"LabResult Event %s: Patient %s, %s on %s" % (
@@ -277,7 +380,6 @@ signals.post_save.connect(adverse_event_digest, sender=LabResultEvent)
 
 
 
-
 class Rule(models.Model):
     name = models.CharField(max_length=100)
     category = models.CharField(max_length=60, choices=ADVERSE_EVENT_CATEGORIES)
@@ -296,17 +398,12 @@ class Rule(models.Model):
     @classmethod
     def deactivate_all(cls):
         cls.objects.all().update(in_use=False)
-
-
-
         
 class DiagnosticsEventRule(Rule):
 
     @staticmethod
     def all_active():
         return DiagnosticsEventRule.objects.filter(in_use=True)
-
-
     
     @staticmethod
     def by_name(name, only_if_active=True):
@@ -318,17 +415,16 @@ class DiagnosticsEventRule(Rule):
     def random():
         return DiagnosticsEventRule.objects.order_by('?')[0]
  
-
     source = models.CharField(max_length=30, null=True)
     ignored_if_past_occurrence = models.PositiveIntegerField(null=True)
     heuristic_defining_codes = models.ManyToManyField(
         Icd9, related_name='defining_icd9_code_set')
     heuristic_discarding_codes = models.ManyToManyField(
         Icd9, related_name='discarding_icd9_code_set')
-
     
     def __unicode__(self):
         return unicode(self.name)
+
 
 class LabResultEventRule(Rule):
     @staticmethod

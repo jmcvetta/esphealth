@@ -219,3 +219,7 @@ def str_to_list(str):
             continue
         result += [int(item)]
     return result
+
+
+def to_sql(model_instance):
+    pass

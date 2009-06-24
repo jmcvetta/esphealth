@@ -1,9 +1,7 @@
-
 import datetime
 
 from django.contrib.sites.models import Site
 from django.db.models import Q
-
 
 def make_clustering_event_report_file(filename, events):
     f = open(filename, 'w')
@@ -26,8 +24,6 @@ def send_event_alert(**kw):
             ev.mail_notification()
 
 
-
 if __name__ == '__main__':
     send_event_alert(test=True)
     
-
