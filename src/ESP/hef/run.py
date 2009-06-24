@@ -64,6 +64,7 @@ def main():
     elif options.list:
         for name in BaseHeuristic.list_heuristic_names():
             print name
+        sys.exit()
     if (options.full and options.incremental) or not (options.full or options.incremental):
         sys.stderr.write('\nERROR: You must choose either --full or --incremental.\n\n')
         parser.print_help()
