@@ -109,25 +109,20 @@ class Provider(BaseMedicalRecord):
         Provider.fakes().delete()
 
     @staticmethod
-    def make_fakes(how_many):
-        for i in xrange(0, how_many):
-            Provider.make_mock(save_on_db=True)
-            
-    @staticmethod
-    def make_mock(save_on_db=False):
-        code = 'FAKE-%05d' % random.randrange(1, 100000)
+    def make_fakes(save_on_db=True):
+        if Provider.fakes().count() > 0: return
         
-        if Provider.objects.filter(provider_id_num=code).count() == 1:
-            return Provider.objects.get(provider_id_num=code)
-        else:
-            p = Provider(
-                provider_id_num = code,
-                last_name = randomizer.first_name(),
-                first_name = randomizer.last_name()
-                )
-            
+        import fake
+        for p in fake.PROVIDERS:
+            p.provider_id_num = 'FAKE-%05d' % random.randrange(1, 100000)
             if save_on_db: p.save()
-            return p
+
+    @staticmethod
+    def get_mock():
+        if Provider.fakes().count() == 0:        
+            Provider.make_fakes()
+        return Provider.fakes().order_by('?')[0]
+
 
     
     def is_fake(self):
@@ -211,10 +206,11 @@ class Patient(BaseMedicalRecord):
         # A Fake Patient must have a fake provider. If we have one on
         # the DB, we get a random one. Else, we'll have to create them
         # ourselves.
-        if Provider.fakes().count() > 0:        
-            provider = Provider.fakes().order_by('?')[0]
-        else:
-            provider = Provider.make_mock(save_on_db=save_on_db)
+        if Provider.fakes().count() == 0:        
+            Provider.make_fakes()
+        
+        provider = Provider.fakes().order_by('?')[0]
+        
         
         p = Patient(
             pcp = provider,
@@ -707,11 +703,7 @@ class Encounter(BasePatientRecord):
     @staticmethod
     def make_mock(patient, save_on_db=False, **kw):
         when = kw.get('when', datetime.datetime.now())
-        
-        try:
-            provider = patient.pcp
-        except:
-            provider = Provider.make_mock(save_on_db=True)
+        provider = Provider.get_mock()
 
         e = Encounter(patient=patient, provider=provider, mrn=patient.mrn, 
                       status='FAKE', date=when, closed_date=when)
