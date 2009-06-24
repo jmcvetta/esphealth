@@ -420,6 +420,13 @@ class Disease(object):
         '''
         return cls.__registry.get(name, None)
     
+    def get_cases(self):
+        '''
+        Returns all cases of this disease currently existing in db.  Does NOT 
+        generate any new cases.
+        '''
+        return Case.objects.filter(condition=self.name)
+    
     def get_all_event_names(self):
         '''
         Return list of names of all heuristic events included in this 
