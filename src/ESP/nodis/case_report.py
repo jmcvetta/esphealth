@@ -15,6 +15,7 @@
 import sys
 import datetime
 import optparse
+import csv
 
 from django.db import connection
 from django.db.models import Q
@@ -67,7 +68,44 @@ def print_nodis_case_summary(case, options):
     for event in case.events.all().order_by('date'):
         values = {'name': event.heuristic_name, 'date': event.date, 'pk': event.pk, 'oid': event.object_id}
         print ' +  %(name)-25s %(date)-12s   # %(pk)-10s  # %(oid)s' % values
-    
+
+ 
+def print_tab(disease, options):
+    '''
+    @type disease: ESP.nodis.core.Disease
+    @type options: optparse.Values instance
+    '''
+    columns = [
+        'date',
+        'last_name',
+        'first_name',
+        'mrn',
+        ]
+    event_names = disease.get_all_event_names()
+    columns.extend(event_names)
+    writer = csv.DictWriter(sys.stdout, columns, dialect='excel-tab')
+    header = {}
+    for c in columns:
+        header[c] = c
+    writer.writerow(header)
+    for case in disease.get_cases():
+        p = case.patient
+        values = {'date': str(case.date), 'last_name': p.last_name, 'first_name': p.first_name, 'mrn': p.mrn}
+        events = {}
+        for e in case.events.all():
+            hn = e.heuristic_name
+            if hn in events:
+                if not e.date in events[hn]:
+                    events[hn] += [e.date]
+            else:
+                events[hn] = [e.date]
+        for name in event_names:
+            if name in events:
+                values[name] = ', '.join([str(d) for d in events[name]])
+            else:
+                values[name] = 'N'
+        writer.writerow(values)
+                
     
 
 
@@ -79,9 +117,15 @@ def main():
         metavar='NAME', help='Generate case report for disease NAME')
     parser.add_option('--phi', action='store_true', dest='phi', default=False, 
         help='Include PHI in summary')
+    parser.add_option('--tab', action='store_true', dest='tab', default=False,
+        help='Produce output, including PHI, in tab-delimited format')
     (options, args) = parser.parse_args()
     if options.all and options.disease:
         print >> sys.stderr, 'Cannot specify both --all and --disease.  Aborting.'
+        parser.print_help()
+        sys.exit()
+    if options.tab and not options.disease:
+        print >> sys.stderr, 'Must specify --disease when using --tab flag.  Aborting.'
         parser.print_help()
         sys.exit()
     if not (options.all or options.disease):
@@ -97,6 +141,9 @@ def main():
         diseases = [dis]
     else:
         diseases = Disease.get_all_diseases()
+    if options.tab:
+        print_tab(disease=dis, options=options)
+        sys.exit()
     print '+' * 80
     print '+' + ' ' * 78 + '+'
     print '+' + 'Nodis Case Report'.center(78) + '+'
