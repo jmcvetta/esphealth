@@ -40,7 +40,7 @@ class AdverseEventHeuristic(BaseHeuristic):
             
 class VaersFeverHeuristic(AdverseEventHeuristic):
     def __init__(self):
-        self.category = 'default'
+        self.category = 'auto'
         super(VaersFeverHeuristic, self).__init__(
             'VAERS Fever', verbose_name='Fever reaction to immunization')
 
