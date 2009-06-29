@@ -2,6 +2,7 @@
 import datetime
 import random
 import os
+import pickle
 
 from django.db import models
 from django.db.models import signals, Q
@@ -18,10 +19,8 @@ from ESP.esp.choices import WORKFLOW_STATES
 from ESP.conf.models import Icd9, Loinc
 from ESP.conf.common import DEIDENTIFICATION_TIMEDELTA
 
-
 from utils import make_clustering_event_report_file
 import settings
-
 
 ADVERSE_EVENT_CATEGORIES = [
     ('auto', 'report automatically to CDC'),
@@ -56,6 +55,8 @@ class AdverseEventManager(models.Manager):
 
 
 class AdverseEvent(models.Model):
+
+    # Model Fields
     immunizations = models.ManyToManyField(Immunization)
     matching_rule_explain = models.CharField(max_length=200)
     category = models.CharField(max_length=20, choices=ADVERSE_EVENT_CATEGORIES)
@@ -69,6 +70,8 @@ class AdverseEvent(models.Model):
     # http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
     content_type = models.ForeignKey(ContentType)
 
+    PICKLE_DIR = os.path.join(os.path.dirname(__file__), 'fixtures', 'pickle')
+   
     @staticmethod
     def fakes():
         return AdverseEvent.objects.filter(AdverseEvent.fake_q)
@@ -76,7 +79,6 @@ class AdverseEvent(models.Model):
     @staticmethod
     def delete_fakes():
         AdverseEvent.fakes().delete()
-
 
     @staticmethod    
     def by_id(id):
@@ -106,6 +108,30 @@ class AdverseEvent(models.Model):
         return AdverseEvent.fakes()[floor:ceiling]
 
     @staticmethod
+    def pickle_deidentified():
+        for ev in AdverseEvent.objects.all():
+            event = AdverseEvent.by_id(ev.id)
+            deidentified_ev = event.deidentified()['event']
+            deidentified_ev.to_pickle_fixture(ev.id)
+
+    @staticmethod
+    def unpickled():
+        event_dir = AdverseEvent.PICKLE_DIR
+        files = [os.path.join(event_dir, f) for f in os.listdir(event_dir)]
+
+        events = []
+        for f in files:
+            event_file = open(f, 'rb')
+            events.append(pickle.load(event_file))
+            event_file.close()
+
+        return events
+                
+        
+        
+
+
+    @staticmethod
     def send_notifications():
         now = datetime.datetime.now()
         three_days_ago = now - datetime.timedelta(days=3)
@@ -124,6 +150,13 @@ class AdverseEvent(models.Model):
                 case.mail_notification()
             except Exception, why:
                 print 'Failed to send in case %s.\nReason: %s' % (case.id, why)
+                
+    def to_pickle_fixture(self, key):
+        outfile = open(os.path.join(AdverseEvent.PICKLE_DIR, 'vaers_event.%s.py' % key), 'w')
+        pickle.dump(self, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+        outfile.close()
+
+
 
     fake_q = Q(immunizations__name='FAKE')
 
@@ -159,18 +192,7 @@ class AdverseEvent(models.Model):
         return '\n'.join(buf)
 
     def is_fake(self):
-        should_be_fake = any(
-            [imm.is_fake() for imm in self.immunizations.all()])
-        really_fake = all(
-            [imm.is_fake() for imm in self.immunizations.all()])
-
-        if should_be_fake and not really_fake:
-            raise ValueError, 'Not all immunizations in this encounter are fake. Why?'
-
-        return really_fake
-
-    def patient(self):
-        return self.immunizations.all()[0].patient
+        return self.patient().is_fake()
 
     def provider(self):
         return self.patient().pcp
@@ -196,7 +218,6 @@ class AdverseEvent(models.Model):
             'default':'email_messages/notify_category_two',
             'confirm':'email_messages/notify_category_three'
             }
-
         
         html_template = templates[self.category] + '.html'
         text_template = templates[self.category] + '.txt'
@@ -209,18 +230,15 @@ class AdverseEvent(models.Model):
                            [recipient])
         msg.content_subtype = "html"  # Main content is now text/html
         msg.send()
-
-
-
+        
     def _deidentify_patient(self, days_to_shift):
         # From patient personal data, we can get rid of
         # everything, except for date of birth. Vaers Reports are
         # dependant on the patient's age.
         
-        fake_patient = Patient.make_mock()
+        fake_patient = Patient.make_mock(save_on_db=False)
         new_dob = self.patient().date_of_birth - datetime.timedelta(days=days_to_shift)
         fake_patient.date_of_birth = new_dob
-        fake_patient.save()
         return fake_patient
 
         
@@ -233,7 +251,6 @@ class AdverseEvent(models.Model):
         for imm in self.immunizations.all():
             new_date = imm.date - datetime.timedelta(days=days_to_shift)
             fake_imm = Immunization.make_mock(imm.vaccine, patient, new_date)
-            fake_imm.save()
             deidentified.append(fake_imm)
 
         return deidentified
@@ -261,13 +278,14 @@ class EncounterEvent(AdverseEvent):
             os.path.join(folder, 'clustering_diagnostics_events.txt'), diagnostics_events)
 
     def _deidentified_encounter(self, patient, days_to_shift):
-        fake_encounter = Encounter.make_mock(patient, save_on_db=True)
+        fake_encounter = Encounter.make_mock(patient, save_on_db=False)
         fake_encounter.date = self.encounter.date - datetime.timedelta(days=days_to_shift)
-        fake_encounter.temperature = self.encounter.temperature
-        for code in self.encounter.icd9_codes.all():
-            fake_encounter.icd9_codes.add(code) 
+        fake_encounter.temperature = self.encounter.temperature        
+        fake_encounter.pk = self.encounter.pk
+        return fake_encounter, self.encounter.icd9_codes.all()
 
-        return fake_encounter
+    def patient(self):
+        return self.encounter.patient
 
 
     def deidentified(self):
@@ -285,22 +303,20 @@ class EncounterEvent(AdverseEvent):
         days_to_shift = random.randrange(1, DEIDENTIFICATION_TIMEDELTA)
         deidentified_patient = self._deidentify_patient(days_to_shift)
 
-        fake_ev = EncounterEvent(
-            encounter = self._deidentified_encounter(
-                deidentified_patient, days_to_shift),
-            content_type = ContentType.objects.get_for_model(EncounterEvent)
-            )
-
+        fake_ev = EncounterEvent()
+        fake_ev.category = self.category
+        fake_ev.matching_rule_explain = self.matching_rule_explain
+        fake_ev.content_type = ContentType.objects.get_for_model(EncounterEvent)
+        fake_ev.encounter, icd9_codes = self._deidentified_encounter(
+            deidentified_patient, days_to_shift)
         fake_ev.date = self.date - datetime.timedelta(days=days_to_shift)
-        fake_ev.save()
-        for imm in self._deidentified_immunizations(deidentified_patient, 
-                                                    days_to_shift):
-            fake_ev.immunizations.add(imm)
-            
-
-        fake_ev.save()
-        return fake_ev
-
+        immunizations = self._deidentified_immunizations(deidentified_patient, 
+                                                    days_to_shift)
+        return {
+            'event': fake_ev, 
+            'immunizations':immunizations, 
+            'encounter_codes':icd9_codes
+            }
             
 
     def __unicode__(self):
@@ -317,8 +333,12 @@ class LabResultEvent(AdverseEvent):
         make_clustering_event_report_file(
             os.path.join(folder, 'clustering_lx_events.txt'), LabResultEvent.objects.all())
 
+    def patient(self):
+        return self.lab_result.patient
+
+
     def _deidentified_lx(self, patient, days_to_shift):
-        fake_lx = LabResult.make_mock()
+        fake_lx = LabResult.make_mock(save_on_db=False)
         fake_lx.date = self.lab_result.date - datetime.timedelta(days=days_to_shift)
         fake_lx.result_float = self.lab_result.result_float
         fake_lx.result_string = self.lab_result.result_string
@@ -337,24 +357,20 @@ class LabResultEvent(AdverseEvent):
         # delta ( DEIDENTIFICATION_TIMEDELTA), and do the same to all
         # date-related information in the event.
         
-        lx_type = ContentType.objects.get_for_model(LabResultEvent)
         fake_ev = LabResultEvent()
-        fake_ev.content_type = lx_type
+        fake_ev.content_type = ContentType.objects.get_for_model(LabResultEvent)
         days_to_shift = random.randrange(1, DEIDENTIFICATION_TIMEDELTA)
         deidentified_patient = self._deidentify_patient(days_to_shift)
 
-        fake_ev.lab_result = self._deidentified_lx(
-            deidentified_patient, days_to_shift)
+        fake_ev.lab_result = self._deidentified_lx(deidentified_patient, 
+                                                   days_to_shift)
+        immunizations = self._deidentified_immunizations(deidentified_patient, 
+                                                         days_to_shift)
         
-        
-        fake_ev.save()
-
-        for imm in self._deidentified_immunizations(
-            deidentified_patient, days_to_shift):
-            fake_ev.immunizations.add(imm)
-            
-        fake_ev.save()
-        return fake_ev
+        return {
+            'event':fake_ev,
+            'immunzations':immunizations
+            }
 
 
     

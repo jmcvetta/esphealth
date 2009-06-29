@@ -72,9 +72,10 @@ class BaseMedicalRecord(models.Model):
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False, db_index=True)
     updated_by = models.CharField(max_length=100, blank=False)
+
     class Meta:
         abstract = True
-    
+
 
 class Provider(BaseMedicalRecord):
     '''
@@ -764,21 +765,18 @@ class Immunization(BasePatientRecord):
     @staticmethod
     def fakes():
         return Immunization.objects.filter(Immunization.q_fake)
-    
+
     @staticmethod
     def delete_fakes():
         Immunization.fakes().delete()
 
-
     @staticmethod
     def make_mock(vaccine, patient, date):
-        return Immunization.objects.create(
-            patient=patient, imm_id_num='FAKE-%s' % patient.id,
-            date=date, visit_date=date,
-            imm_type=vaccine.code, dose='3.1415 pi', 
-            name='FAKE', manufacturer='FAKE', lot='FAKE'
-            )
-
+        return Immunization(patient=patient, 
+                            date=date, visit_date=date,
+                            imm_type=vaccine.code, name='FAKE'
+                            )
+            
     def is_fake(self):
         return self.name == 'FAKE'
 
@@ -793,5 +791,5 @@ class Immunization(BasePatientRecord):
         return (self.vaccine and self.vaccine.name) or 'Unknown Vaccine'
 
     def  __unicode__(self):
-        return u"Patient with Immunization Record %s received %s on %s" % (
-            self.imm_id_num, self.vaccine_type(), self.date)    
+        return u"Immunization on %s received %s on %s" % (
+            self.patient.full_name, self.vaccine_type(), self.date)

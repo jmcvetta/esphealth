@@ -21,7 +21,7 @@ from fake import ImmunizationHistory, Vaers, clear
 MESSAGE_DIR = os.path.realpath(os.path.join(
         os.path.dirname(__file__), '..', 'messages'))
 
-FEVER_HEURISTIC = heuristics.fever_heuristic()
+FEVER_HEURISTIC = fever_heuristic()
 DIAGNOSTICS_HEURISTICS = dict([
         (h.heuristic_name, h) for h in diagnostic_heuristics()])
 LAB_HEURISTICS = lab_heuristics()
@@ -50,56 +50,53 @@ class TestLoincCodes(unittest.TestCase):
 class TestDeidentification(unittest.TestCase):
     
     def setUp(self):
-        
-
-        self.most_recent = AdverseEvent.objects.aggregate(recent=Max('created_on'))['recent']
-
-
-        event_ids = [x.id for x in AdverseEvent.objects.order_by('?')[:20]]
+        event_ids = [x.id for x in AdverseEvent.objects.order_by('?')][:20]
         events = [AdverseEvent.by_id(x) for x in event_ids]
         deidentified_events = [x.deidentified() for x in events]
         self.event_pairs = zip(events, deidentified_events)
+        self.most_recent = AdverseEvent.objects.aggregate(recent=Max('date'))['recent']
+
+    def tearDown(self):
+        AdverseEvent.objects.filter(date__gt=self.most_recent).delete()
 
     
-    def tearDown(self):
-        for elem in [Patient, Immunization, Encounter, LabResult]:
-            elem.objects.filter(
-                created_timestamp__gt=self.most_recent).delete()
-            
-
-        AdverseEvent.objects.filter(created_on__gt=self.most_recent).delete()
-        
-
     def testPatientIdentity(self):
         for event, fake_ev in self.event_pairs:
-            self.assert_(type(fake_ev.patient()) is not None)
-            self.failIf(fake_ev.patient() == event.patient())
+            fake_event, fake_immunizations = fake_ev['event'], fake_ev['immunizations']
+            self.assert_(type(fake_event.patient()) is not None)
+            self.failIf(fake_event.patient() == event.patient())
         
 
     def testDelta(self):
         for event, fake_ev in self.event_pairs:
-            try:
-                event_delta = event.date - fake_ev.date
-                patient_dob_delta = event.patient().date_of_birth - fake_ev.patient().date_of_birth
-                imm_dates = zip(event.immunizations.all(), 
-                                fake_ev.immunizations.all())
-                imm_deltas = [x.date-y.date for x, y in imm_dates]
+            fake_event, fake_immunizations = fake_ev['event'], fake_ev['immunizations']
+            event_delta = event.date - fake_event.date
+            patient_dob_delta = event.patient().date_of_birth - fake_event.patient().date_of_birth
+            imm_dates = zip(event.immunizations.all(), fake_immunizations)
+            imm_deltas = [x.date-y.date for x, y in imm_dates]
                 
-                self.assert_(all([x==event_delta for x in imm_deltas]), 
-                             'Event and immunizations do not have same time delta')
-                self.assert_(event_delta == patient_dob_delta, 
-                             'Patient and event do not have same time delta')
-            except Exception, why:
-                import pdb
-                pdb.set_trace()
+            self.assert_(all([x==event_delta for x in imm_deltas]), 
+                         'Event and immunizations do not have same time delta')
+            self.assert_(event_delta == patient_dob_delta, 
+                         'Patient and event do not have same time delta')
+
 
     def testDeidentified(self):
         for event, fake_ev in self.event_pairs:
-            self.assert_(fake_ev.is_fake(), 'Deidentified event is not fake')
-            self.assert_(fake_ev.patient().is_fake(), 
+            fake_event, fake_immunizations = fake_ev['event'], fake_ev['immunizations']
+            self.assert_(fake_event.is_fake(), 'Deidentified event is not fake')
+            self.assert_(fake_event.patient().is_fake(), 
                          'Deidentified patient is not fake')
 
+    def testDeserialization(self):
+        AdverseEvent.pickle_deidentified()
+        events = AdverseEvent.unpickled()
+        self.assert_(len(events) == len(self.event_pairs))
+
+
+
     
+            
 
 
 class TestFake(unittest.TestCase):
