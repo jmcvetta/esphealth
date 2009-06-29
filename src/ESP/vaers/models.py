@@ -71,6 +71,8 @@ class AdverseEvent(models.Model):
     content_type = models.ForeignKey(ContentType)
 
     PICKLE_DIR = os.path.join(os.path.dirname(__file__), 'fixtures', 'pickle')
+    
+    VAERS_FEVER_TEMPERATURE = 100.4
    
     @staticmethod
     def fakes():
@@ -255,9 +257,59 @@ class AdverseEvent(models.Model):
 
         return deidentified
 
-    
 
-    
+    def deidentified(self):
+        '''
+        Returns an event that is derived from "real" data, but
+        containing no identifiable information about patients. 
+        '''
+        # A patient's date of birth is crucial in identification, but
+        # is necessary for VAERS reports (age). To keep information
+        # accurate, we shift the patient date of birth by a random
+        # delta (DEIDENTIFICATION_TIMEDELTA), and do the same to all
+        # date-related information in the event.
+        
+
+        days_to_shift = random.randrange(1, DEIDENTIFICATION_TIMEDELTA)
+        deidentified_patient = self._deidentify_patient(days_to_shift)
+        
+
+        my_content_type = ContentType.objects.get_for_model(self.__class__)
+        date = self.date - datetime.timedelta(days=days_to_shift)
+        immunizations = self._deidentified_immunizations(
+            deidentified_patient, days_to_shift)
+        
+        data = {
+            'event':{
+                'type': str(my_content_type),
+                'category': self.category,
+                'date': str(date),
+                'matching_rule_explain':self.matching_rule_explain
+                },
+            'patient':{
+                'first_name': deidentified_patient.first_name,
+                'last_name': deidentified_patient.last_name,
+                'date_of_birth':str(deidentified_patient.date_of_birth)
+                },
+            'immunizations': [{
+                    'date':str(i.date)
+                    } for i in immunizations]
+            }
+
+        return self.complete_deidentification(data, 
+                                              days_to_shift=days_to_shift)
+
+
+    def render_json_fixture(self):
+        from simplejson import dumps as to_json
+        return get_template('fixture_builders/adverse_event.json').render(
+            Context(dict(
+                    [(k, to_json(v)) for k, v in self.deidentified().items()]
+                    )))
+
+
+            
+            
 class EncounterEvent(AdverseEvent):
     encounter = models.ForeignKey(Encounter)
 
@@ -277,47 +329,28 @@ class EncounterEvent(AdverseEvent):
         make_clustering_event_report_file(
             os.path.join(folder, 'clustering_diagnostics_events.txt'), diagnostics_events)
 
-    def _deidentified_encounter(self, patient, days_to_shift):
-        fake_encounter = Encounter.make_mock(patient, save_on_db=False)
-        fake_encounter.date = self.encounter.date - datetime.timedelta(days=days_to_shift)
-        fake_encounter.temperature = self.encounter.temperature        
-        fake_encounter.pk = self.encounter.pk
-        return fake_encounter, self.encounter.icd9_codes.all()
+    def _deidentified_encounter(self, days_to_shift):
+        codes = [{'code':x.code} for x in self.encounter.icd9_codes.all()]
+        date = self.encounter.date - datetime.timedelta(days=days_to_shift)
+        return {
+            'date':str(date),
+            'temperature':self.encounter.temperature,
+            'icd9_codes':codes
+            }
+    
 
     def patient(self):
         return self.encounter.patient
 
-
-    def deidentified(self):
-        '''
-        Returns an event that is derived from "real" data, but
-        containing no identifiable information about patients. 
-        '''
-        # A patient's date of birth is crucial in identification, but
-        # is necessary for VAERS reports (age). To keep information
-        # accurate, we shift the patient date of birth by a random
-        # delta (DEIDENTIFICATION_TIMEDELTA), and do the same to all
-        # date-related information in the event.
+    def complete_deidentification(self, data, **kw):
+        days_to_shift = kw.pop('days_to_shift', None)
+        if not days_to_shift: 
+            raise ValueError, 'Must indicate days_to_shift'
         
+        data['encounter'] = self._deidentified_encounter(days_to_shift)
 
-        days_to_shift = random.randrange(1, DEIDENTIFICATION_TIMEDELTA)
-        deidentified_patient = self._deidentify_patient(days_to_shift)
+        return data
 
-        fake_ev = EncounterEvent()
-        fake_ev.category = self.category
-        fake_ev.matching_rule_explain = self.matching_rule_explain
-        fake_ev.content_type = ContentType.objects.get_for_model(EncounterEvent)
-        fake_ev.encounter, icd9_codes = self._deidentified_encounter(
-            deidentified_patient, days_to_shift)
-        fake_ev.date = self.date - datetime.timedelta(days=days_to_shift)
-        immunizations = self._deidentified_immunizations(deidentified_patient, 
-                                                    days_to_shift)
-        return {
-            'event': fake_ev, 
-            'immunizations':immunizations, 
-            'encounter_codes':icd9_codes
-            }
-            
 
     def __unicode__(self):
         return u"Encounter Event %s: Patient %s, %s on %s" % (
@@ -337,42 +370,22 @@ class LabResultEvent(AdverseEvent):
         return self.lab_result.patient
 
 
-    def _deidentified_lx(self, patient, days_to_shift):
-        fake_lx = LabResult.make_mock(save_on_db=False)
-        fake_lx.date = self.lab_result.date - datetime.timedelta(days=days_to_shift)
-        fake_lx.result_float = self.lab_result.result_float
-        fake_lx.result_string = self.lab_result.result_string
-        fake_lx.unit = self.lab_result.unit
-        fake_lx.patient = patient
-        return fake_lx
-
-    def deidentified(self):
-        '''
-        Returns an event that is derived from "real" data, but
-        containing no identifiable information about patients. 
-        '''
-        # A patient's date of birth is crucial in identification, but
-        # is necessary for VAERS reports (age). To keep information
-        # accurate, we shift the patient date of birth by a random
-        # delta ( DEIDENTIFICATION_TIMEDELTA), and do the same to all
-        # date-related information in the event.
-        
-        fake_ev = LabResultEvent()
-        fake_ev.content_type = ContentType.objects.get_for_model(LabResultEvent)
-        days_to_shift = random.randrange(1, DEIDENTIFICATION_TIMEDELTA)
-        deidentified_patient = self._deidentify_patient(days_to_shift)
-
-        fake_ev.lab_result = self._deidentified_lx(deidentified_patient, 
-                                                   days_to_shift)
-        immunizations = self._deidentified_immunizations(deidentified_patient, 
-                                                         days_to_shift)
-        
+    def _deidentified_lx(self, days_to_shift):
+        date = self.lab_result.date - datetime.timedelta(days=days_to_shift)
         return {
-            'event':fake_ev,
-            'immunzations':immunizations
+            'date':date,
+            'result_float':self.lab_result.result_float,
+            'result_string':self.lab_result.result_string,
+            'unit': self.lab_result.unit
             }
 
-
+    def complete_deidentification(self, data, **kw):
+        days_to_shift = kw.pop('days_to_shift', None)
+        if not days_to_shift: 
+            raise ValueError, 'Must indicate days_to_shift'
+        
+        data['lab_result'] = self._deidentified_encounter(days_to_shift)
+        return data
     
     def __unicode__(self):
         return u"LabResult Event %s: Patient %s, %s on %s" % (

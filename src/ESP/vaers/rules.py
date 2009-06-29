@@ -1,10 +1,10 @@
 #-*- coding:utf-8 -*-
 
 from ESP.conf.models import Icd9, Vaccine, ImmunizationManufacturer
-from ESP.vaers.models import DiagnosticsEventRule
+from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
 
 # Constants defined in the VAERS documents.
-TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
+TEMP_TO_REPORT = AdverseEvent.VAERS_FEVER_TEMPERATURE # degrees are F in our records, 38C = 100.4F
 TIME_WINDOW_POST_EVENT = 60 # Period of time between immunization and event
 
 VAERS_LAB_RESULTS = {
