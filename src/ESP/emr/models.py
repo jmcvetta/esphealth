@@ -818,11 +818,13 @@ class Immunization(BasePatientRecord):
         Immunization.fakes().delete()
 
     @staticmethod
-    def make_mock(vaccine, patient, date):
-        return Immunization(patient=patient, 
-                            date=date, visit_date=date,
-                            imm_type=vaccine.code, name='FAKE'
-                            )
+    def make_mock(vaccine, patient, date, save_on_db=False):
+        i = Immunization(patient=patient, 
+                         date=date, visit_date=date,
+                         imm_type=vaccine.code, name='FAKE'
+                         )
+        if save_on_db: i.save()
+        return i
             
     def is_fake(self):
         return self.name == 'FAKE'
