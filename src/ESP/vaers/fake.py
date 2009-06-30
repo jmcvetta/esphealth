@@ -24,13 +24,11 @@ USAGE_MSG = '''\
 '''
 
 def main():
-    # 
-    # TODO: We need a lockfile or some othermeans to prevent multiple 
-    # instances running at once.
-    #
     parser = optparse.OptionParser(usage=USAGE_MSG)
-    parser.add_option('-p', '--providers', action='store_true', dest='providers',
-                      help='Add Testers as Fake Providers')
+    parser.add_option('-c', '--clear', action='store_true', dest='clear',
+                      help='Clear all fake Entities from the Database')
+    parser.add_option('-p', '--patients', action='store_true', dest='patients',
+                      help='Create Population of Patients')
     parser.add_option('-i', '--imm', action='store_true', dest='immunizations',
                       help='Create Immunization History for Patients')
 
@@ -40,33 +38,34 @@ def main():
     (options, args) = parser.parse_args()
 
 
-    clear()
+    if options.clear: clear()
 
-    if options.providers:
-        testers = providers_for_testing()
-        for provider in testers:
+    if options.patients:
+        Provider.make_fakes()
+        for provider in Provider.fakes():
             patient = Patient.make_mock()
             patient.pcp = provider
             patient.save()
+
+    if options.immunizations:
+        for patient in Patient.fakes():
             history = ImmunizationHistory(patient)
             for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
                 imm = history.add_immunization()
                 check_for_reactions(imm)
-
-    if options.immunizations:
-        pass
+                
                 
     if options.all:
         massive_immunization_action()
 
-    if not (options.providers or options.immunizations or options.all):
+    if not (options.patients or options.immunizations or options.all):
         parser.print_help()
         import sys
         sys.exit()
 
 
 def clear():
-    for klass in [Immunization, Encounter, LabResult, AdverseEvent]:
+    for klass in [Patient, Immunization, Encounter, LabResult, AdverseEvent]:
         klass.delete_fakes()
 
 def check_for_reactions(imm):
@@ -103,6 +102,7 @@ def check_for_reactions(imm):
 
 
 def massive_immunization_action():
+    Patient.make_fakes(2000)
     for patient in Patient.fakes():
         history = ImmunizationHistory(patient)
         for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
@@ -285,9 +285,11 @@ class ImmunizationHistory(object):
         Immunization.objects.filter(patient=self.patient).delete()
 
     def add_immunization(self):
-        ''' Gives a completely random vaccine to a patient in a
+        '''
+        Gives a completely random vaccine to a patient in a
         completely random date between his date_of_birth and
-        today()'''
+        today()
+        '''
         
         # Find a vaccine
         vaccine = Vaccine.random()
@@ -302,22 +304,8 @@ class ImmunizationHistory(object):
         assert (EPOCH <= when <= today)
 
         # If everything is ok, give patient the vaccine
-        return Immunization.make_mock(vaccine, self.patient, when)
+        return Immunization.make_mock(vaccine, self.patient, when, save_on_db=True)
         
-
-def providers_for_testing():
-    michael_klompas = Provider.make_mock()
-    michael_klompas.first_name = 'Michael'
-    michael_klompas.last_name = 'Klompas'
-    michael_klompas.save()
-
-    michael_lee = Provider.make_mock()
-    michael_lee.first_name = 'Michael'
-    michael_lee.last_name = 'Lee'
-    michael_lee.save()
-    
-    return michael_klompas, michael_lee
-    
 
 if __name__ == '__main__':
     main()

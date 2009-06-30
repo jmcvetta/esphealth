@@ -9,7 +9,7 @@ from django.db.models import Max
 # Models
 from ESP.conf.models import Icd9, Loinc, NativeCode
 from ESP.emr.models import Patient, Immunization, LabResult, Encounter
-from ESP.vaers.models import AdverseEvent
+from ESP.vaers.models import AdverseEvent, EncounterEvent, LabResultEvent
 
 from ESP.vaers.models import DiagnosticsEventRule
 
@@ -50,48 +50,23 @@ class TestLoincCodes(unittest.TestCase):
 class TestDeidentification(unittest.TestCase):
     
     def setUp(self):
-        event_ids = [x.id for x in AdverseEvent.objects.order_by('?')][:20]
-        events = [AdverseEvent.by_id(x) for x in event_ids]
-        deidentified_events = [x.deidentified() for x in events]
-        self.event_pairs = zip(events, deidentified_events)
-        self.most_recent = AdverseEvent.objects.aggregate(recent=Max('date'))['recent']
+        self.encounter_events = EncounterEvent.objects.order_by('?')[:20]
+        self.lx_events = LabResultEvent.objects.order_by('?')[:20]
 
     def tearDown(self):
-        AdverseEvent.objects.filter(date__gt=self.most_recent).delete()
-
+        pass
     
     def testPatientIdentity(self):
-        for event, fake_ev in self.event_pairs:
-            fake_event, fake_immunizations = fake_ev['event'], fake_ev['immunizations']
-            self.assert_(type(fake_event.patient()) is not None)
-            self.failIf(fake_event.patient() == event.patient())
-        
+        pass
 
     def testDelta(self):
-        for event, fake_ev in self.event_pairs:
-            fake_event, fake_immunizations = fake_ev['event'], fake_ev['immunizations']
-            event_delta = event.date - fake_event.date
-            patient_dob_delta = event.patient().date_of_birth - fake_event.patient().date_of_birth
-            imm_dates = zip(event.immunizations.all(), fake_immunizations)
-            imm_deltas = [x.date-y.date for x, y in imm_dates]
-                
-            self.assert_(all([x==event_delta for x in imm_deltas]), 
-                         'Event and immunizations do not have same time delta')
-            self.assert_(event_delta == patient_dob_delta, 
-                         'Patient and event do not have same time delta')
-
+        pass
 
     def testDeidentified(self):
-        for event, fake_ev in self.event_pairs:
-            fake_event, fake_immunizations = fake_ev['event'], fake_ev['immunizations']
-            self.assert_(fake_event.is_fake(), 'Deidentified event is not fake')
-            self.assert_(fake_event.patient().is_fake(), 
-                         'Deidentified patient is not fake')
+        pass
 
-    def testDeserialization(self):
-        AdverseEvent.pickle_deidentified()
-        events = AdverseEvent.unpickled()
-        self.assert_(len(events) == len(self.event_pairs))
+    def testMakeFixtures(self):
+        AdverseEvent.make_deidentified_fixtures()
 
 
 

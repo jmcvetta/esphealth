@@ -70,8 +70,7 @@ class AdverseEvent(models.Model):
     # http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
     content_type = models.ForeignKey(ContentType)
 
-    PICKLE_DIR = os.path.join(os.path.dirname(__file__), 'fixtures', 'pickle')
-    
+    FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'fixtures', 'events')
     VAERS_FEVER_TEMPERATURE = 100.4
    
     @staticmethod
@@ -110,11 +109,11 @@ class AdverseEvent(models.Model):
         return AdverseEvent.fakes()[floor:ceiling]
 
     @staticmethod
-    def pickle_deidentified():
+    def make_deidentified_fixtures():
         for ev in AdverseEvent.objects.all():
             event = AdverseEvent.by_id(ev.id)
-            deidentified_ev = event.deidentified()['event']
-            deidentified_ev.to_pickle_fixture(ev.id)
+            event.make_deidentified_fixture()
+
 
     @staticmethod
     def unpickled():
@@ -129,10 +128,6 @@ class AdverseEvent(models.Model):
 
         return events
                 
-        
-        
-
-
     @staticmethod
     def send_notifications():
         now = datetime.datetime.now()
@@ -146,16 +141,15 @@ class AdverseEvent(models.Model):
         may_receive_comments = Q(category='default', created_on__gte=three_days_ago)
         cases_to_notify = AdverseEvent.objects.filter(must_confirm|may_receive_comments)
 
-
         for case in cases_to_notify:
             try:
                 case.mail_notification()
             except Exception, why:
                 print 'Failed to send in case %s.\nReason: %s' % (case.id, why)
                 
-    def to_pickle_fixture(self, key):
-        outfile = open(os.path.join(AdverseEvent.PICKLE_DIR, 'vaers_event.%s.py' % key), 'w')
-        pickle.dump(self, outfile, protocol=pickle.HIGHEST_PROTOCOL)
+    def make_deidentified_fixture(self):
+        outfile = open(os.path.join(AdverseEvent.FIXTURE_DIR, 'vaers_event.%s.json' % self.id), 'w')
+        outfile.write(self.render_json_fixture())
         outfile.close()
 
 
@@ -373,10 +367,10 @@ class LabResultEvent(AdverseEvent):
     def _deidentified_lx(self, days_to_shift):
         date = self.lab_result.date - datetime.timedelta(days=days_to_shift)
         return {
-            'date':date,
+            'date':str(date),
             'result_float':self.lab_result.result_float,
             'result_string':self.lab_result.result_string,
-            'unit': self.lab_result.unit
+            'unit': self.lab_result.ref_unit
             }
 
     def complete_deidentification(self, data, **kw):
@@ -384,7 +378,7 @@ class LabResultEvent(AdverseEvent):
         if not days_to_shift: 
             raise ValueError, 'Must indicate days_to_shift'
         
-        data['lab_result'] = self._deidentified_encounter(days_to_shift)
+        data['lab_result'] = self._deidentified_lx(days_to_shift)
         return data
     
     def __unicode__(self):
