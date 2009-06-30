@@ -464,11 +464,9 @@ class LabResult(BasePatientRecord):
     comment = models.TextField('Comments',  blank=True,  null=True, )
     # Manager
     objects = LabResultManager()
-    # 
     
     class Meta:
         verbose_name = 'Lab Test Result'
-
 
     q_fake = Q(patient__patient_id_num__startswith='FAKE')
 
@@ -483,17 +481,14 @@ class LabResult(BasePatientRecord):
     @staticmethod
     def make_mock(loinc, patient, when=None, save_on_db=True):
         when = when or datetime.date.today()
-
         result_date = when + datetime.timedelta(
             days=random.randrange(1, 30))
-
         # Make sure the patient was alive for the order...
         order_date = max(when, patient.date_of_birth)
         lx = LabResult(patient=patient, date=order_date, result_date=
                        result_date)
         if save_on_db: lx.save()
         return lx
-
 
     def previous(self):
         try:
@@ -503,7 +498,6 @@ class LabResult(BasePatientRecord):
                                                       ).latest('date')
         except:
             return None
-
 
     def last_known_value(self, loinc, since=None):
         last = self.previous()                                     
@@ -533,15 +527,34 @@ class LabResult(BasePatientRecord):
         '''
         return (self.loinc and self.loinc.loinc_num) or None
 
-
     def __str__(self):
         return 'Lab Result # %s' % self.pk
     
     def __unicode__(self):
         return u'Lab Result # %s' % self.pk
     
+    def str_line(self):
+        '''
+        Returns a single-line string representation of the Case instance
+        '''
+        values = self.__dict__
+        values['short_name'] = self.native_name[:15] if self.native_name else 'N/A'
+        values['res'] = self.result_string[:20] if self.result_string else ''
+        return '%(date)-10s    %(id)-8s    %(short_name)-15s    %(native_code)-11s    %(res)-20s' % values
     
-    
+    @classmethod
+    def str_line_header(cls):
+        '''
+        Returns a header describing the fields returned by str_line()
+        '''
+        values = {
+            'date': 'DATE', 
+            'id': 'LAB #', 
+            'short_name': 'TEST NAME', 
+            'native_code': 'CODE',
+            'res': 'RESULT',
+            }
+        return '%(date)-10s    %(id)-8s    %(short_name)-15s    %(native_code)-11s    %(res)-20s' % values
     
     
 class Prescription(BasePatientRecord):
@@ -566,6 +579,25 @@ class Prescription(BasePatientRecord):
     def __str__(self):
         return self.name
 
+    def str_line(self):
+        '''
+        Returns a single-line string representation of the Case instance
+        '''
+        values = self.__dict__
+        return '%(date)-10s    %(id)-8s    %(name)-30s' % values
+    
+    @classmethod
+    def str_line_header(cls):
+        '''
+        Returns a header describing the fields returned by str_line()
+        '''
+        values = {
+            'date': 'DATE', 
+            'id': 'RX #', 
+            'name': 'DRUG NAME'
+            }
+        return '%(date)-10s    %(id)-8s    %(name)-30s' % values
+    
 
 class EncounterManager(models.Manager):
     def following_vaccination(self, days_after, include_same_day=False,
@@ -729,9 +761,24 @@ class Encounter(BasePatientRecord):
             patient=self.patient, icd9_codes__in=self.icd9_codes.all()
             ).count() > 0
                 
-    
     def __str__(self):
         return 'Encounter # %s' % self.pk
+    
+    def str_line(self):
+        '''
+        Returns a single-line string representation of the Case instance
+        '''
+        values = self.__dict__ 
+        values['icd9s'] = ', '.join([i.code for i in self.icd9_codes.all().order_by('code')])
+        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(icd9s)-30s' % values
+    
+    @classmethod
+    def str_line_header(cls):
+        '''
+        Returns a header describing the fields returned by str_line()
+        '''
+        values = {'date': 'DATE', 'id': 'ENC #', 'temperature': 'TEMP (F)', 'icd9s': 'ICD9 CODES'}
+        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(icd9s)-30s' % values
             
 
 class Immunization(BasePatientRecord):

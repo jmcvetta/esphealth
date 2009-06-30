@@ -60,5 +60,20 @@ class HeuristicEvent(models.Model):
         #msg += '    %s' % self.content_object
         #return msg
         return 'HeuristicEvent #%s (%s %s)' % (self.pk, self.heuristic_name, self.date)
+    
+    def str_line(self):
+        '''
+        Returns a single-line string representation of the object
+        '''
+        values = self.__dict__
+        return '%(date)-10s    %(id)-8s    %(heuristic_name)-30s    %(object_id)-10s' % values
+    
+    @classmethod
+    def str_line_header(cls):
+        '''
+        Returns a header describing the fields returned by str_line()
+        '''
+        values = {'date': 'DATE', 'id': 'EVENT #', 'heuristic_name': 'EVENT', 'object_id': 'OBJECT #'}
+        return '%(date)-10s    %(id)-8s    %(heuristic_name)-30s    %(object_id)-10s' % values
 
 

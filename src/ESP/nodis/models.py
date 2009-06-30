@@ -55,6 +55,21 @@ class Case(models.Model):
     
     def __str__(self):
         return '%s # %s' % (self.condition, self.pk)
+    
+    def str_line(self):
+        '''
+        Returns a single-line string representation of the Case instance
+        '''
+        values = self.__dict__
+        return '%(date)-10s    %(id)-8s    %(condition)-30s' % values
+    
+    @classmethod
+    def str_line_header(cls):
+        '''
+        Returns a header describing the fields returned by str_line()
+        '''
+        values = {'date': 'DATE', 'id': 'CASE #', 'condition': 'CONDITION'}
+        return '%(date)-10s    %(id)-8s    %(condition)-30s' % values
 
 
 class NodisCaseWorkflow(models.Model):
