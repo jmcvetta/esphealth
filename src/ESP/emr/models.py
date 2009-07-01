@@ -833,7 +833,7 @@ class Immunization(BasePatientRecord):
         try:
             return Vaccine.objects.get(code=self.imm_type)
         except:
-            return None
+            return Vaccine.objects.get(short_name='unknown')
     vaccine = property(_get_vaccine)
 
     def vaccine_type(self):

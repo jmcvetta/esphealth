@@ -66,8 +66,16 @@ class TestDeidentification(unittest.TestCase):
         pass
 
     def testMakeFixtures(self):
-        AdverseEvent.make_deidentified_fixtures()
+        for ev in self.encounter_events:
+            ev.make_deidentified_fixture()
+            
+        for ev in self.lx_events:
+            ev.make_deidentified_fixture()
+            
 
+    def testBuildFromFixture(self):
+        AdverseEvent.build_from_fixture()
+        
 
 
     

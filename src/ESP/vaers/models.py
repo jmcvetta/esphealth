@@ -116,17 +116,76 @@ class AdverseEvent(models.Model):
 
 
     @staticmethod
-    def unpickled():
-        event_dir = AdverseEvent.PICKLE_DIR
-        files = [os.path.join(event_dir, f) for f in os.listdir(event_dir)]
+    def build_from_fixture():
+        import simplejson
+        event_dir = AdverseEvent.FIXTURE_DIR
 
-        events = []
-        for f in files:
-            event_file = open(f, 'rb')
-            events.append(pickle.load(event_file))
-            event_file.close()
+        for f in [os.path.join(event_dir, f) for f in os.listdir(event_dir) 
+                  if os.path.basename(f).startswith('vaers')]:
+            fixture_file = open(f, 'rb')
+            data = simplejson.loads(fixture_file.read().strip())
+            event_data, patient_data = data['event'], data['patient']
+            immunizations = data['immunizations']
+            encounter = data.get('encounter')
+            lab_result = data.get('lab_result')
 
-        return events
+            if not (encounter or lab_result): 
+                raise ValueError, 'Not an Encounter Event nor LabResultEvent'
+            
+            
+            patient = Patient(
+                first_name=patient_data['first_name'],
+                last_name=patient_data['last_name'],
+                date_of_birth=patient_data['date_of_birth']
+                )
+                
+            patient.save()
+
+            if encounter: 
+                encounter_type = ContentType.objects.get_for_model(EncounterEvent)
+                event = EncounterEvent(content_type=encounter_type)
+                event_encounter = Encounter(
+                    patient=patient, date = encounter['date'],
+                    temperature = encounter['temperature'])
+                event_encounter.save()
+                event.encounter = event_encounter
+
+                for code in encounter['icd9_codes']:
+                    try:
+                        icd9_code = Icd9.objects.get(code=code['code'])
+                        event.encounter.icd9_codes.add(icd9_code)
+                    except:
+                        import pdb
+                        pdb.set_trace()
+                
+            if lab_result: 
+                lx_type = ContentType.objects.get_for_model(LabResultEvent)
+                event = LabResultEvent(content_type=lx_type)
+                event_lx = LabResult(patient=patient, date=lab_result['date'],
+                                     result_float=lab_result['result_float'],
+                                     result_string=lab_result['result_string'],
+                                     ref_unit=lab_result['unit'])
+                event_lx.loinc = lab_result['loinc']
+                event_lx.save()
+                event.lab_result = event_lx
+
+
+            event.date = event_data['date']
+            event.category = event_data['category']
+            event.matching_rule_explain = event_data['matching_rule_explain']
+            event.save()
+
+            
+
+            for immunization in [Immunization.objects.create(
+                    patient=patient, date=imm['date']) for imm in immunizations]:
+                event.immunizations.add(immunization)
+                
+            
+
+            fixture_file.close()
+
+        
                 
     @staticmethod
     def send_notifications():
@@ -295,11 +354,8 @@ class AdverseEvent(models.Model):
 
 
     def render_json_fixture(self):
-        from simplejson import dumps as to_json
-        return get_template('fixture_builders/adverse_event.json').render(
-            Context(dict(
-                    [(k, to_json(v)) for k, v in self.deidentified().items()]
-                    )))
+        import simplejson
+        return simplejson.dumps(self.deidentified())
 
 
             
@@ -367,6 +423,7 @@ class LabResultEvent(AdverseEvent):
     def _deidentified_lx(self, days_to_shift):
         date = self.lab_result.date - datetime.timedelta(days=days_to_shift)
         return {
+            'loinc':self.lab_result.loinc.loinc_num,
             'date':str(date),
             'result_float':self.lab_result.result_float,
             'result_string':self.lab_result.result_string,
