@@ -89,6 +89,7 @@ src/ESP/conf/common.py -text
 src/ESP/conf/fixtures/conf-test-native-codes.json -text
 src/ESP/conf/fixtures/icd9.json -text
 src/ESP/conf/fixtures/immunization_manufacturers.json -text
+src/ESP/conf/fixtures/initial_data.json -text
 src/ESP/conf/fixtures/vaccines.json -text
 src/ESP/conf/forms.py -text
 src/ESP/conf/models.py -text
@@ -107,6 +108,7 @@ src/ESP/emr/admin.py -text
 src/ESP/emr/choices.py -text
 src/ESP/emr/dadmin.py -text
 src/ESP/emr/fake.py -text
+src/ESP/emr/fixtures/initial_data.json -text
 src/ESP/emr/load_hl7.py -text
 src/ESP/emr/models.py -text
 src/ESP/emr/views.py -text
@@ -281,6 +283,7 @@ src/ESP/vaers/diagnostics.py -text
 src/ESP/vaers/fake.py -text
 src/ESP/vaers/fixtures/encounters.sql -text
 src/ESP/vaers/fixtures/immunizations.sql -text
+src/ESP/vaers/fixtures/initial_data.json -text
 src/ESP/vaers/fixtures/lab_results.sql -text
 src/ESP/vaers/forms.py -text
 src/ESP/vaers/heuristics.py -text
