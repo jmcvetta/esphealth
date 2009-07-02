@@ -50,7 +50,7 @@ def main():
         help='List all registered heuristics')
     parser.add_option('--incremental', action='store_true', dest='incremental', 
         help='Examine only new data to generate events.', default=False)
-    parser.add_option('--full', action='store_false', dest='full',
+    parser.add_option('--full', action='store_true', dest='full',
         help='Examine *all* data to generate events', default=False)
     (options, args) = parser.parse_args()
     log.debug('options: %s' % options)
