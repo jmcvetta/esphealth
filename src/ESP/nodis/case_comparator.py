@@ -157,7 +157,7 @@ def display_old_case_short(case, condition, print_phi):
     print
     print 
     print '~' * 80
-    case_str = 'Old Case # %s (%s)' % (case.pk, condition)
+    case_str = 'Old Case # %s  --  %s  --  Patient # %s)' % (case.pk, condition, case.patient.pk)
     print case_str
     if print_phi:
         p = case.patient
