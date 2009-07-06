@@ -44,20 +44,20 @@ def main():
     # instances running at once.
     #
     parser = optparse.OptionParser()
+    parser.add_option('--incremental', action='store_true', dest='incremental', 
+        help='Generate events (new data only)', default=False)
+    parser.add_option('--full', action='store_false', dest='full',
+        help='Generate events (ALL data)', default=False)
     parser.add_option('--heuristic', action='store', dest='event', type='string',
         metavar='NAME', help='Generate events for heuristic NAME only')
     parser.add_option('--list', action='store_true', dest='list', 
-        help='List all registered heuristics')
-    parser.add_option('--incremental', action='store_true', dest='incremental', 
-        help='Examine only new data to generate events.', default=False)
-    parser.add_option('--full', action='store_true', dest='full',
-        help='Examine *all* data to generate events', default=False)
+        help='List names of all registered heuristics')
     (options, args) = parser.parse_args()
     log.debug('options: %s' % options)
     # 
     # Main
     #
-    if options.event and (options.list, options.incremental, options.full):
+    if options.list and (options.event, options.incremental, options.full):
         sys.stderr.write('\nERROR: --list must be used by itself.\n\n')
         parser.print_help()
         sys.exit()
