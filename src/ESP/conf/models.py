@@ -373,15 +373,6 @@ class NativeCode(models.Model):
         verbose_name = 'Native Code to LOINC Map'
 
 
-class ImmunizationManufacturer(models.Model):
-    code = models.CharField(max_length=3)
-    full_name = models.CharField(max_length=200)
-    active = models.BooleanField(default=True)
-    use_instead = models.ForeignKey('self', null=True)
-
-    def __unicode__(self):
-        return self.full_name
-                         
 
 class Vaccine(models.Model):
     '''
@@ -397,4 +388,28 @@ class Vaccine(models.Model):
 
     def __unicode__(self):
         return '%s (%s)'% (self.short_name, self.name)
+
+class ImmunizationManufacturer(models.Model):
+    code = models.CharField(max_length=3)
+    full_name = models.CharField(max_length=200)
+    active = models.BooleanField(default=True)
+    use_instead = models.ForeignKey('self', null=True)
+    
+    vaccines_produced = models.ManyToManyField(Vaccine)
+
+    def __unicode__(self):
+        return self.full_name
+
+
+
+class NativeVaccine(models.Model):
+    code = models.IntegerField(primary_key=True)
+    name = models.CharField(max_length=200)
+    canonical_code = models.ForeignKey(Vaccine, null=True)
+
+class NativeManufacturer(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    canonical_code = models.ForeignKey(ImmunizationManufacturer, null=True)
+
+
 
