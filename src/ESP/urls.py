@@ -36,6 +36,9 @@ urlpatterns = patterns(
     # Configuration
     url(r'^conf/', include('ESP.conf.urls')),
     
+    # Nodis
+    url(r'^nodis/', include('ESP.nodis.urls')),
+    
     #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #
