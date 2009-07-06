@@ -11,6 +11,7 @@ urlpatterns = patterns(
     (r'^detect$', views.detect),
     (r'^notify/(?P<id>\d+)/$', views.notify),
     (r'^report$', views.report),
+    (r'^map$', views.map),
     
     url(r'^verify/(?P<key>\w*)/$', views.verify, name='verify_case'),
     url(r'^case/(?P<id>\d+)/$', views.case_details, name='present_case'),

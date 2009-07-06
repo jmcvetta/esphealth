@@ -90,7 +90,10 @@ src/ESP/conf/fixtures/conf-test-native-codes.json -text
 src/ESP/conf/fixtures/icd9.json -text
 src/ESP/conf/fixtures/immunization_manufacturers.json -text
 src/ESP/conf/fixtures/initial_data.json -text
+src/ESP/conf/fixtures/native_manufacturers.sql -text
+src/ESP/conf/fixtures/native_vaccines.sql -text
 src/ESP/conf/fixtures/vaccines.json -text
+src/ESP/conf/fixtures/vaccines.sql -text
 src/ESP/conf/forms.py -text
 src/ESP/conf/models.py -text
 src/ESP/conf/tests.py -text
@@ -250,6 +253,7 @@ src/ESP/templates/pages/vaers/collect_feedback.html -text
 src/ESP/templates/pages/vaers/detect.html -text
 src/ESP/templates/pages/vaers/home.html -text
 src/ESP/templates/pages/vaers/identify.html -text
+src/ESP/templates/pages/vaers/map.html -text
 src/ESP/templates/pages/vaers/notify.html -text
 src/ESP/templates/pages/vaers/present.html -text
 src/ESP/templates/pages/vaers/report.html -text

@@ -12,9 +12,8 @@ from django.views.generic.simple import direct_to_template
 from django.contrib.sites.models import Site
 
 from ESP.vaers.models import AdverseEvent, ProviderComment
-#from ESP.vaers.utils import send_notifications
 from ESP.vaers.forms import CaseConfirmForm
-
+from ESP.conf.models import NativeVaccine, Vaccine
 from ESP.utils.utils import log, Flexigrid
 
 
@@ -75,6 +74,13 @@ def report(request):
     cases = AdverseEvent.objects.all()
     return direct_to_template(request, PAGE_TEMPLATE_DIR + 'report.html',
                               {'cases':cases})
+
+def map(request):
+    unmapped_vaccines = NativeVaccine.objects.filter(canonical_code__isnull=True)
+    canonical_vaccines = Vaccine.objects.exclude(short_name__in=['unknown', 'RESERVED - do not use', 'no vaccine administered'])
+    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'map.html',
+                              {'vaccines':unmapped_vaccines,
+                               'canonical_vaccines':canonical_vaccines})
 
                               
 
