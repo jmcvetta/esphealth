@@ -134,6 +134,7 @@ class AdverseEvent(models.Model):
             
             
             patient = Patient(
+                patient_id_num=patient_data['identifier'],
                 first_name=patient_data['first_name'],
                 last_name=patient_data['last_name'],
                 date_of_birth=patient_data['date_of_birth']
@@ -342,7 +343,13 @@ class AdverseEvent(models.Model):
             'patient':{
                 'first_name': deidentified_patient.first_name,
                 'last_name': deidentified_patient.last_name,
-                'date_of_birth':str(deidentified_patient.date_of_birth)
+                'date_of_birth':str(deidentified_patient.date_of_birth),
+                'identifier':deidentified_patient.patient_id_num
+                },
+            'provider':{
+                'first_name':deidentified_patient.pcp.first_name,
+                'last_name':deidentified_patient.pcp.last_name,
+                'identifier':deidentified_patient.pcp.provider_id_num
                 },
             'immunizations': [{
                     'date':str(i.date)
