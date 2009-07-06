@@ -418,10 +418,6 @@ class LabResultManager(models.Manager):
             where = where_clauses
             )
     
-
-
-
-
     @classmethod
     def filter_loincs(self, loinc_nums, **kwargs):
         '''
