@@ -51,6 +51,7 @@ from ESP.hef.events import no_hep_c_elisa
 #
 from ESP.hef.events import lyme_elisa_pos
 from ESP.hef.events import lyme_elisa_ordered
+from ESP.hef.events import lyme_test_ordered
 from ESP.hef.events import lyme_igg
 from ESP.hef.events import lyme_igm
 from ESP.hef.events import lyme_pcr
@@ -426,8 +427,8 @@ lyme_3 = DiseaseDefinition(
     window = 14,
     require = [
         (rash,),
-        (lyme_elisa_ordered,),
-        (doxycycline,),
+        (lyme_test_ordered,),
+        (doxycycline, lyme_other_antibiotics),
         ],
     )
 

@@ -476,9 +476,13 @@ lyme_elisa_ordered = LabOrderedHeuristic(
     loinc_nums = ['5061-7', '31155-5'],
     )
 
-#
-# TODO: lyme_igg will also need a new event class for "IMBLOT B.BURG 49736" lab
-#
+lyme_test_ordered = LabOrderedHeuristic(
+    heuristic_name = 'lyme_test_ordered',
+    def_name = 'Lyme Test Order Event Definition 1',
+    def_version = 1,
+    loinc_nums = ['5061-7', '31155-5', '16481-4', '29898-4', '16482-2', '23982-2', '4991-6'],
+    )
+
 lyme_igg = NumericLabHeuristic(
     heuristic_name = 'lyme_igg',
     def_name = 'Lyme IGG Event Definition 1 (EIA)',
