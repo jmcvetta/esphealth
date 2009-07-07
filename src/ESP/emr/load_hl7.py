@@ -324,11 +324,13 @@ class Hl7MessageLoader(object):
             name = rxa[5][1]
             imm_date = self.datetime_from_string(rxa[3][0])
             imm_type = rxa[5][0]
+            manufacturer = rxa[15][0]
             lot = rxa[16][0]
             imm = Immunization(patient=self.patient, provider=self.provider, updated_by=UPDATED_BY)
             imm.name = name if name else None
             imm.date = imm_date if imm_date else None
             imm.imm_type = imm_type if imm_type else None
+            imm.manufacturer = manufacturer if manufacturer else None
             imm.lot = lot if lot else None
             imm.save()
             if POPULATE_OLD_SCHEMA:
@@ -337,6 +339,7 @@ class Hl7MessageLoader(object):
                 oldimm.ImmName = imm.name
                 oldimm.ImmDate = str_from_date(imm.date)
                 oldimm.ImmType = imm.imm_type
+                oldimm.ImmManuf = imm.manufacturer
                 oldimm.ImmLot = imm.lot
                 oldimm.save()
             log.debug('NEW IMMUNIZATION')
