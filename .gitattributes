@@ -253,10 +253,12 @@ src/ESP/templates/pages/vaers/collect_feedback.html -text
 src/ESP/templates/pages/vaers/detect.html -text
 src/ESP/templates/pages/vaers/home.html -text
 src/ESP/templates/pages/vaers/identify.html -text
-src/ESP/templates/pages/vaers/map.html -text
+src/ESP/templates/pages/vaers/map_manufacturer.html -text
+src/ESP/templates/pages/vaers/map_vaccine.html -text
 src/ESP/templates/pages/vaers/notify.html -text
 src/ESP/templates/pages/vaers/present.html -text
 src/ESP/templates/pages/vaers/report.html -text
+src/ESP/templates/pages/vaers/vaccine_index.html -text
 src/ESP/templates/pages/vaers/vaers.html -text
 src/ESP/templates/widgets/fixture_builder.json -text
 src/ESP/templates/widgets/vaers/case_grid.html -text
@@ -301,6 +303,10 @@ src/ESP/vaers/settings.py -text
 src/ESP/vaers/tests.py -text
 src/ESP/vaers/urls.py -text
 src/ESP/vaers/utils.py -text
+src/ESP/vaers/vaccine/__init__.py -text
+src/ESP/vaers/vaccine/forms.py -text
+src/ESP/vaers/vaccine/urls.py -text
+src/ESP/vaers/vaccine/views.py -text
 src/ESP/vaers/views.py -text
 src/hl7/__init__.py -text
 src/hl7/core.py -text

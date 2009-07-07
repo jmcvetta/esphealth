@@ -386,8 +386,12 @@ class Vaccine(models.Model):
     def random():
         return Vaccine.objects.exclude(short_name='UNK').order_by('?')[0]
 
+    @staticmethod
+    def acceptable_mapping_values():
+        return Vaccine.objects.exclude(short_name__in=['unknown', 'RESERVED - do not use', 'no vaccine administered'])
+
     def __unicode__(self):
-        return '%s (%s)'% (self.short_name, self.name)
+        return u'%s (%s)'% (self.short_name, self.name)
 
 class ImmunizationManufacturer(models.Model):
     code = models.CharField(max_length=3)
@@ -407,9 +411,17 @@ class NativeVaccine(models.Model):
     name = models.CharField(max_length=200)
     canonical_code = models.ForeignKey(Vaccine, null=True)
 
+    def __unicode__(self):
+        return u'%s' % self.name
+
+
 class NativeManufacturer(models.Model):
     name = models.CharField(max_length=100, unique=True)
     canonical_code = models.ForeignKey(ImmunizationManufacturer, null=True)
+
+    def __unicode__(self):
+        return u'%s' % self.name
+
 
 
 

@@ -73,17 +73,7 @@ def notify(request, id):
 def report(request):
     cases = AdverseEvent.objects.all()
     return direct_to_template(request, PAGE_TEMPLATE_DIR + 'report.html',
-                              {'cases':cases})
-
-def map(request):
-    unmapped_vaccines = NativeVaccine.objects.filter(canonical_code__isnull=True)
-    canonical_vaccines = Vaccine.objects.exclude(short_name__in=['unknown', 'RESERVED - do not use', 'no vaccine administered'])
-    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'map.html',
-                              {'vaccines':unmapped_vaccines,
-                               'canonical_vaccines':canonical_vaccines})
-
-                              
-
+                              {'cases':cases})                             
 
 def verify(request, key):
 
