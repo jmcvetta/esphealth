@@ -46,7 +46,7 @@ def main():
     parser = optparse.OptionParser()
     parser.add_option('--incremental', action='store_true', dest='incremental', 
         help='Generate events (new data only)', default=False)
-    parser.add_option('--full', action='store_false', dest='full',
+    parser.add_option('--full', action='store_true', dest='full',
         help='Generate events (ALL data)', default=False)
     parser.add_option('--heuristic', action='store', dest='event', type='string',
         metavar='NAME', help='Generate events for heuristic NAME only')
