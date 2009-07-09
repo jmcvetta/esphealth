@@ -45,13 +45,14 @@ def main():
     #
     usage_str = '%prog [options] [NAME, NAME, ...] \n'
     usage_str += '\n'
-    usage_str += 'Runs heuristic NAME if specified; otherwise, runs all heuristics\n'
+    usage_str += 'Runs heuristic NAME if specified; otherwise, runs all heuristics.\n'
+    usage_str += 'Either --full or --incremental must be specified.\n'
     usage_str += '\n'
-    parser = optparse.OptionParser()
-    parser.add_option('--incremental', action='store_true', dest='incremental', 
-        help='Generate events (new data only)', default=False)
+    parser = optparse.OptionParser(usage=usage_str)
     parser.add_option('--full', action='store_true', dest='full',
         help='Generate events (ALL data)', default=False)
+    parser.add_option('--incremental', action='store_true', dest='incremental', 
+        help='Generate events (new data only)', default=False)
     parser.add_option('--list', action='store_true', dest='list', 
         help='List names of all registered heuristics')
     (options, args) = parser.parse_args()
