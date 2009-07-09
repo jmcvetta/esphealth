@@ -264,7 +264,7 @@ def main():
         print '!' + ' ' * 78 + '!'
         print '!' * 80
     #compare('exp_acute_hep_c', options=options)
-    for condition in NewCase.objects.filter(condition__in=RULE_MAP).values_list('condition', flat=True).distinct():
+    for condition in RULE_MAP:
         compare(condition, options=options)
 
 
