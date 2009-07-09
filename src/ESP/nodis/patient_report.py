@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python
 '''
                                   ESP Health
                          Notifiable Diseases Framework
@@ -99,6 +99,9 @@ def main():
     parser.add_option('--phi', action='store_true', dest='phi', default=False, 
         help='Include PHI in report')
     (options, args) = parser.parse_args()
+    if not args:
+        parser.print_help()
+        sys.exit()
     if options.summary:
         values = {'mrn': 'MRN', 'name': 'NAME', 'condition': 'CONDITION', 'date': 'DATE', 'id': 'Patient #'}
         print '-' * 80
