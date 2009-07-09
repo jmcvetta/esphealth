@@ -43,13 +43,15 @@ def main():
     # TODO: We need a lockfile or some othermeans to prevent multiple 
     # instances running at once.
     #
+    usage_str = '%prog [options] [NAME, NAME, ...] \n'
+    usage_str += '\n'
+    usage_str += 'Runs heuristic NAME if specified; otherwise, runs all heuristics\n'
+    usage_str += '\n'
     parser = optparse.OptionParser()
     parser.add_option('--incremental', action='store_true', dest='incremental', 
         help='Generate events (new data only)', default=False)
     parser.add_option('--full', action='store_true', dest='full',
         help='Generate events (ALL data)', default=False)
-    parser.add_option('--heuristic', action='store', dest='event', type='string',
-        metavar='NAME', help='Generate events for heuristic NAME only')
     parser.add_option('--list', action='store_true', dest='list', 
         help='List names of all registered heuristics')
     (options, args) = parser.parse_args()
@@ -57,7 +59,7 @@ def main():
     # 
     # Main
     #
-    if options.list and (options.event, options.incremental, options.full):
+    if options.list and (options.incremental or options.full):
         sys.stderr.write('\nERROR: --list must be used by itself.\n\n')
         parser.print_help()
         sys.exit()
@@ -69,14 +71,12 @@ def main():
         sys.stderr.write('\nERROR: You must choose either --full or --incremental.\n\n')
         parser.print_help()
         sys.exit()
-    if options.event:
-        try:
-            BaseHeuristic.generate_events_by_name(name=options.event, incremental=options.incremental)
-        except KeyError:
-            print >> sys.stderr
-            print >> sys.stderr, 'Unknown heuristic name: "%s".  Aborting run.' % options.event
-            print >> sys.stderr
-            sys.exit()
+    if args:
+        for name in args:
+            try:
+                BaseHeuristic.generate_events_by_name(name=name, incremental=options.incremental)
+            except KeyError:
+                print >> sys.stderr, 'Unknown heuristic name: "%s"' % name
     else:
         BaseHeuristic.generate_all_events(incremental=options.incremental)
     
