@@ -145,9 +145,9 @@ class Patient(BaseMedicalRecord):
     patient_id_num = models.CharField('Patient ID #', unique=True, max_length=20, 
         blank=True, null=True, db_index=True)
     mrn = models.CharField('Medical Record ', max_length=20, blank=True, null=True, db_index=True)
-    last_name = models.CharField('Last Name', max_length=199, blank=True, null=True)
-    first_name = models.CharField('First Name', max_length=199, blank=True, null=True)
-    middle_name = models.CharField('Middle Name', max_length=199, blank=True, null=True)
+    last_name = models.CharField('Last Name', max_length=200, blank=True, null=True)
+    first_name = models.CharField('First Name', max_length=200, blank=True, null=True)
+    middle_name = models.CharField('Middle Name', max_length=200, blank=True, null=True)
     suffix = models.CharField('Suffix', max_length=199, blank=True, null=True)
     pcp = models.ForeignKey(Provider, verbose_name='Primary Care Physician', blank=True, null=True)
     address1 = models.CharField('Address1', max_length=200, blank=True, null=True)
@@ -160,25 +160,23 @@ class Patient(BaseMedicalRecord):
     tel = models.CharField('Home Phone Number', max_length=100, blank=True, null=True)
     tel_ext = models.CharField('Home Phone Extension', max_length=50, blank=True, null=True)
     date_of_birth = models.DateField('Date of Birth', blank=True, null=True)
+    date_of_death = models.DateField('Date of death', blank=True, null=True)
     gender = models.CharField('Gender', max_length=20, blank=True, null=True)
     race = models.CharField('Race', max_length=20, blank=True, null=True)
     home_language = models.CharField('Home Language', max_length=20, blank=True, null=True)
     ssn = models.CharField('SSN', max_length=20, blank=True, null=True)
     marital_stat = models.CharField('Marital Status', max_length=20, blank=True, null=True)
-    religion = models.CharField('Religion', max_length=20, blank=True, null=True)
+    religion = models.CharField('Religion', max_length=100, blank=True, null=True)
     aliases = models.CharField('Aliases', max_length=250, blank=True, null=True)
     mother_mrn = models.CharField('Mother Medical Record Number', max_length=20, blank=True, null=True)
-    death_date = models.CharField('Date of death', max_length=200, blank=True, null=True)
-    death_indicator = models.CharField('Death_Indicator', max_length=30, blank=True, null=True)
-    occupation = models.CharField('Occupation', max_length=199, blank=True, null=True)
-
-
+    #death_indicator = models.CharField('Death_Indicator', max_length=30, blank=True, null=True)
+    occupation = models.CharField('Occupation', max_length=200, blank=True, null=True)
+    
     q_fake = Q(patient_id_num__startswith='FAKE')
 
     @staticmethod
     def fakes():
         return Patient.objects.filter(Patient.q_fake)
-
 
     @staticmethod
     def clear():
@@ -189,30 +187,23 @@ class Patient(BaseMedicalRecord):
         for i in xrange(how_many):
             Patient.make_mock(save_on_db=save_on_db)
 
-
     @staticmethod
     def delete_fakes():
         Patient.fakes().delete()
 
     @staticmethod
     def make_mock(save_on_db=False):
-
         # Common, random attributes
         phone_number = randomizer.phone_number()
         address = randomizer.address()
         city = randomizer.city()
         identifier = randomizer.string(length=8)
-
-
         # A Fake Patient must have a fake provider. If we have one on
         # the DB, we get a random one. Else, we'll have to create them
         # ourselves.
         if Provider.fakes().count() == 0:        
             Provider.make_fakes()
-        
         provider = Provider.fakes().order_by('?')[0]
-        
-        
         p = Patient(
             pcp = provider,
             patient_id_num = 'FAKE-%s' % identifier,
@@ -243,7 +234,6 @@ class Patient(BaseMedicalRecord):
             death_indicator = '',
             occupation = ''
             )
-        
         if save_on_db: p.save()
         return p
 
@@ -257,7 +247,6 @@ class Patient(BaseMedicalRecord):
 
     def is_fake(self):
         return self.patient_id_num.startswith('FAKE')
-        
 
     def has_history_of(self, icd9s, begin_date=None, end_date=None):
         '''
@@ -266,7 +255,6 @@ class Patient(BaseMedicalRecord):
         '''
         begin_date = begin_date or self.date_of_birth or EPOCH
         end_date = end_date or datetime.date.today()
-
         return Encounter.objects.filter(patient=self).filter(
             date__gte=begin_date, date__lt=end_date
             ).filter(icd9_codes__in=icd9s).count() != 0
@@ -280,29 +268,22 @@ class Patient(BaseMedicalRecord):
     def _get_age_str(self, precision='years', with_units=False):
         '''Returns patient's age as a string'''
         if not self.date_of_birth: return None
-        
         today = datetime.date.today() 
         days = today.day - self.date_of_birth.day
         months = today.month - self.date_of_birth.month
         years = today.year - self.date_of_birth.year
-        
         if days < 0:
             months -= 1
-            
         if months < 0:
             years -= 1
             months += 12
-                
-            
         d = {
             'years': years,
             'months': (12*years) + months,
             'days':(today - self.date_of_birth).days
             }
-
         return ' '.join([str(d[precision]), 
                          str(precision) if with_units else ''])
-        
     name = property(_get_name)
     full_name = property(_get_name)
     
