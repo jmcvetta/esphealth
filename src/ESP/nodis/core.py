@@ -64,6 +64,12 @@ class OutOfWindow(ValueError):
     '''
     pass
 
+class InvalidRequirement(ValueError):
+    '''
+    Could not understand this requirement.
+    '''
+    pass
+
 
 class EventTimeWindow(object):
     '''
@@ -119,23 +125,27 @@ class Requirement(object):
     '''
     A group of required heuristics, forming part of a Disease Definition.
     '''
-    def __init__(self, requirements, operator, exclusions = None, window = None):
+    def __init__(self, reqs, operator, exclusions = None, window = None):
         '''
         @param requirements: Heuristics & Requirements needed for this Requirement
         @type requirements:  List (composed of Heuristic names and Requirement instances)
         '''
         operator = operator.lower()
-        assert requirements
+        assert reqs
         assert operator in ('and', 'or')
         assert isinstance(window, int) or not window
         self.operator = operator
         self.window = window
         valid_heuristic_names = BaseHeuristic.list_heuristic_names()
-        for req in requirements:
-            assert isinstance(req, Requirement) or req in valid_heuristic_names
+        print reqs
+        for req in reqs:
+            if not (isinstance(req, Requirement) or req in valid_heuristic_names):
+                raise InvalidRequirement(req)
+        if not exclusions:
+            exclusions = []
         for name in exclusions:
             assert name in valid_heuristic_names
-        self.reqs = requirements
+        self.reqs = reqs
         self.exclusions = exclusions
 
     def plausible_patients(self):
