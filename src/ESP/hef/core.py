@@ -316,7 +316,8 @@ class NumericLabHeuristic(LabHeuristic):
         @type default_high:  Integer
         '''
         assert ratio or default_high
-        assert comparison in ['>', '>=', ]
+        comparison = comparison.strip()
+        assert comparison in ['>', '>=', '<', '<=']
         self.default_high = default_high
         self.ratio = ratio
         self.comparison = comparison.strip()
@@ -337,21 +338,30 @@ class NumericLabHeuristic(LabHeuristic):
         '''
         relevant_labs = self.relevant_labs(begin_timestamp)
         no_ref_q = Q(ref_high = None) # Record has null value for ref_high
+        comparison = self.comparison.strip()
         if self.default_high:
             # Query to compare result_float against self.default_high
-            if self.comparison == '>':
+            if comparison == '>':
                 def_high_q = Q(result_float__gt = self.default_high)
-            elif self.comparison == '>=':
+            elif comparison == '>=':
                 def_high_q = Q(result_float__gte = self.default_high)
+            elif comparison == '<':
+                def_high_q = Q(result_float__lt = self.default_high)
+            elif comparison == '<=':
+                def_high_q = Q(result_float__lte = self.default_high)
             else:
                 raise RuntimeError('Invalid comparison operator: %s' % self.comparison)
             pos_q = def_high_q
         if self.ratio:
             # Query to compare non-null ref_high against self.ratio
-            if self.comparison == '>':
+            if comparison == '>':
                 ref_comp_q = ~no_ref_q & Q(result_float__gt = F('ref_high') * self.ratio)
-            elif self.comparison == '>=':
+            elif comparison == '>=':
                 ref_comp_q = ~no_ref_q & Q(result_float__gte = F('ref_high') * self.ratio)
+            elif comparison == '<':
+                ref_comp_q = ~no_ref_q & Q(result_float__lt = F('ref_high') * self.ratio)
+            elif comparison == '<=':
+                ref_comp_q = ~no_ref_q & Q(result_float__lte = F('ref_high') * self.ratio)
             else:
                 raise RuntimeError('Invalid comparison operator: %s' % self.comparison)
             pos_q = ref_comp_q
