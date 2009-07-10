@@ -167,7 +167,7 @@ class Patient(BaseMedicalRecord):
     ssn = models.CharField('SSN', max_length=20, blank=True, null=True)
     marital_stat = models.CharField('Marital Status', max_length=20, blank=True, null=True)
     religion = models.CharField('Religion', max_length=100, blank=True, null=True)
-    aliases = models.CharField('Aliases', max_length=250, blank=True, null=True)
+    aliases = models.TextField('Aliases', blank=True, null=True)
     mother_mrn = models.CharField('Mother Medical Record Number', max_length=20, blank=True, null=True)
     #death_indicator = models.CharField('Death_Indicator', max_length=30, blank=True, null=True)
     occupation = models.CharField('Occupation', max_length=200, blank=True, null=True)
