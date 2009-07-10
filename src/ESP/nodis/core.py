@@ -35,6 +35,7 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
+from ESP.hef.core import BaseHeuristic
 from ESP.hef.models import HeuristicEvent
 from ESP.conf.models import Rule
 from ESP.nodis.models import Case
@@ -68,7 +69,7 @@ class EventTimeWindow(object):
     '''
     A potential case.
     '''
-    def __init__(self, window, definition, def_version, events=[]):
+    def __init__(self, window, definition, def_version, events = []):
         '''
         @param window: Number of days in this time window
         @type window: Int
@@ -85,34 +86,94 @@ class EventTimeWindow(object):
         self.definition = definition # Name of definition that generated this ETW
         self.def_version = def_version
         self.past_events = [] # Past events that validate this windo
-    
+
     def _get_start_date(self):
         return self.__events[-1].date - self.__window
     start = property(_get_start_date)
-    
+
     def _get_end_date(self):
         return self.__events[0].date + self.__window
     end = property(_get_end_date)
-    
+
     def _get_events(self):
         return self.__events
     events = property(_get_events)
-    
+
     def add_event(self, event):
         if len(self.__events) == 0:
             self.__events = [event]
         elif (event.date >= self.start) and (event.date <= self.end):
             self.__events += [event]
-            self.__events.sort(lambda x,y: (x.date-y.date).days) # Sort by date
+            self.__events.sort(lambda x, y: (x.date - y.date).days) # Sort by date
         else:
             raise OutOfWindow
-    
+
     def all_events(self):
         return self.events + self.past_events
-        
+
     def __repr__(self):
         return 'Window %s - %s (%s events)' % (self.start, self.end, len(self.all_events()))
- 
+
+
+class Requirement(object):
+    '''
+    A group of required heuristics, forming part of a Disease Definition.
+    '''
+    def __init__(self, requirements, operator, exclusions = None, window = None):
+        '''
+        @param requirements: Heuristics & Requirements needed for this Requirement
+        @type requirements:  List (composed of Heuristic names and Requirement instances)
+        '''
+        operator = operator.lower()
+        assert requirements
+        assert operator in ('and', 'or')
+        assert isinstance(window, int) or not window
+        self.operator = operator
+        self.window = window
+        valid_heuristic_names = BaseHeuristic.list_heuristic_names()
+        for req in requirements:
+            assert isinstance(req, Requirement) or req in valid_heuristic_names
+        for name in exclusions:
+            assert name in valid_heuristic_names
+        self.reqs = requirements
+        self.exclusions = exclusions
+
+    def plausible_patients(self):
+        '''
+        Return patients who could plausibly meet all requirements.
+        '''
+        for req in self.reqs:
+            if isinstance(req, Requirement):
+                patients = req.plausible_patients()
+            elif isinstance(req, str):
+                patients = Patient.objects.filter(heuristicevent__heuristic_name = req)
+            else:
+                raise TypeError('Invalid requirement type: %s' % type(req))
+            try:
+	            if self.operator == ('and'):
+	                plausible = plausible & patients
+	            else: # operator == 'or'
+	                plausible = plausible | patients
+            except UnboundLocalError:
+                plausible = patients
+        return plausible
+
+    def plausible_events(self, patients = None):
+        '''
+        Return events which might plausible fulfill the Requirement
+        '''
+        if not patients:
+            patients = self.plausible_patients()
+        names = []
+        for req in self.reqs:
+            if isinstance(req, str):
+                names.append(req)
+        events = HeuristicEvent.objects.filter(heuristic_name__in = names, patient__in = patients)
+        return events
+
+
+
+
 
 
 class DiseaseDefinition(object):
@@ -121,7 +182,7 @@ class DiseaseDefinition(object):
     single disease definition is sufficient to indicate a case of that disease, 
     but a given disease may have arbitrarily many definitions.
     '''
-    def __init__(self,  name, version, window, require, require_past = [], require_past_window = None,
+    def __init__(self, name, version, window, require, require_past = [], require_past_window = None,
         exclude = [], exclude_past = []):
         '''
         @param name: Name of this definition
@@ -158,7 +219,7 @@ class DiseaseDefinition(object):
         self.require_past = require_past
         self.exclude = exclude
         self.exclude_past = exclude_past
-    
+
     def __get_plausible_pids(self):
         '''
         Returns a list of pids identifying plausible patients -- those who at
@@ -180,9 +241,9 @@ class DiseaseDefinition(object):
         for req in (self.require + self.require_past):
             pids_this_req = set()
             for h in req: # One or more BaseHeuristic instances
-                s = set(h.get_events().values_list('patient_id', flat=True))
-                pids_this_req = pids_this_req | s 
-                log.debug('%50s: %s' % (h, len(pids_this_req)) )
+                s = set(h.get_events().values_list('patient_id', flat = True))
+                pids_this_req = pids_this_req | s
+                log.debug('%50s: %s' % (h, len(pids_this_req)))
             try:
                 pids = pids & pids_this_req
             except UnboundLocalError:
@@ -190,13 +251,13 @@ class DiseaseDefinition(object):
         for item in self.exclude:
             pids_this_item = set()
             for h in item: # One or more BaseHeuristic instances
-                s = set(h.get_events().values_list('patient_id', flat=True))
-                pids_this_item = pids_this_item | s 
-                log.debug('%50s: %s' % (h, len(pids_this_item)) )
+                s = set(h.get_events().values_list('patient_id', flat = True))
+                pids_this_item = pids_this_item | s
+                log.debug('%50s: %s' % (h, len(pids_this_item)))
             pids = pids - pids_this_item
-        log.debug('Plausible %50s: %s' % (self.name, len(pids)) )
+        log.debug('Plausible %50s: %s' % (self.name, len(pids)))
         return pids
-    
+
     def __match_plausible_patient(self, patient_pk):
         '''
         For a given plausible (meeting match()'s screening definitions) patient, 
@@ -209,7 +270,7 @@ class DiseaseDefinition(object):
         # Create all possible time windows from first set of required events
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for h in self.require[0]: # Create EventTimeWindows for first req
-            for event in h.get_events().filter(patient__pk=patient_pk):
+            for event in h.get_events().filter(patient__pk = patient_pk):
                 found_window = False # Did we find an existing window for this event?
                 for win in t_windows:
                     try:
@@ -221,8 +282,8 @@ class DiseaseDefinition(object):
                 if not found_window:
                     # This event didn't fit in any existing window, so 
                     # create a new window for it.
-                    win = EventTimeWindow(self.window, definition=self.name, 
-                        def_version=self.version, events=[event])
+                    win = EventTimeWindow(self.window, definition = self.name,
+                        def_version = self.version, events = [event])
                     log.debug('Created %s for event %s' % (win, event))
                     t_windows.append(win)
         log.debug('Possible time windows: %s' % t_windows)
@@ -235,7 +296,7 @@ class DiseaseDefinition(object):
         for req in self.require[1:]:
             new_windows = [] # EventWindows containing events for this req
             for h in req: # h is HeuristicEvent type
-                events = h.get_events().filter(patient__pk=patient_pk)
+                events = h.get_events().filter(patient__pk = patient_pk)
                 for win in t_windows:
                     found_event = False # Did we find event that fits this window?
                     for e in events:
@@ -261,7 +322,7 @@ class DiseaseDefinition(object):
             valid_windows = [] # EventWindows matching all requirements
             for h in req: # h is HeuristicEvent type
                 for win in t_windows:
-                    events = h.get_events().filter(patient__pk=patient_pk, date__lt=win.start)
+                    events = h.get_events().filter(patient__pk = patient_pk, date__lt = win.start)
                     if events:
                         log.debug('Window %s was excluded by past event %s' % (win, h))
                     else:
@@ -277,7 +338,7 @@ class DiseaseDefinition(object):
                 for win in t_windows:
                     end = win.start
                     start = win.start - self.require_past_window
-                    events = h.get_events().filter(patient__pk=patient_pk, date__gte=start, date__lt=end)
+                    events = h.get_events().filter(patient__pk = patient_pk, date__gte = start, date__lt = end)
                     if events:
                         win.past_events += events
                         log.debug('Window %s matches require_past %s' % (win, h))
@@ -285,9 +346,9 @@ class DiseaseDefinition(object):
                     t_windows = list(valid_windows)
             log.debug('Remaining valid time windows: %s' % t_windows)
         return t_windows
-            
 
-    def matches(self, matches={}):
+
+    def matches(self, matches = {}):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Now that we have screened for patients who are plausible disease
         # candidates, we individually examine them to see if they match the 
@@ -302,7 +363,7 @@ class DiseaseDefinition(object):
                 except KeyError:
                     matches[pid] = wins
         return matches
-    
+
     def get_all_event_names(self):
         '''
         Returns a list of the names of all heuristic events that appear in this definition
@@ -311,30 +372,30 @@ class DiseaseDefinition(object):
         for req in self.require + self.require_past + self.exclude:
             names += [event.heuristic_name for event in req]
         return set(names)
-                
-    
-        
-            
-            
 
 
- 
+
+
+
+
+
+
 class Disease(object):
     '''
     '''
-    
-    def __init__(self, 
-        name, 
+
+    def __init__(self,
+        name,
         definitions,
         # Reporting
         icd9s = [],
         icd9_days_before = 14,
         icd9_days_after = 14,
-        fever = True, 
-        lab_loinc_nums = [], 
+        fever = True,
+        lab_loinc_nums = [],
         lab_days_before = 14,
         lab_days_after = 14,
-        med_names = [], 
+        med_names = [],
         med_days_before = 14,
         med_days_after = 14,
         ):
@@ -370,7 +431,7 @@ class Disease(object):
         @param med_days_after:   How many days after case to search for medicines
         @type med_days_after:    Integer
         '''
-        assert name 
+        assert name
         assert ' ' not in name # No spaces allowed in disease name
         assert icd9_days_before
         assert icd9_days_after
@@ -381,25 +442,25 @@ class Disease(object):
         self.name = name
         self.definitions = definitions
         self.icd9s = icd9s
-        self.icd9_days_before = datetime.timedelta(days=icd9_days_before)
-        self.icd9_days_after = datetime.timedelta(days=icd9_days_after)
+        self.icd9_days_before = datetime.timedelta(days = icd9_days_before)
+        self.icd9_days_after = datetime.timedelta(days = icd9_days_after)
         self.fever = fever
         self.lab_loinc_nums = lab_loinc_nums
-        self.lab_days_before = datetime.timedelta(days=lab_days_before)
-        self.lab_days_after = datetime.timedelta(days=lab_days_after)
+        self.lab_days_before = datetime.timedelta(days = lab_days_before)
+        self.lab_days_after = datetime.timedelta(days = lab_days_after)
         self.med_names = med_names
-        self.med_days_before = datetime.timedelta(days=med_days_before)
-        self.med_days_after = datetime.timedelta(days=med_days_after)
+        self.med_days_before = datetime.timedelta(days = med_days_before)
+        self.med_days_after = datetime.timedelta(days = med_days_after)
         #self.condition = Rule.objects.get(ruleName=self.name)
         self._register()
-    
+
     __registry = {} # Class variable
     def _register(self):
         if self.name in self.__registry:
             raise DiseaseDefinitionAlreadyRegistered('A disease definition with the name "%s" is already registered.' % self.name)
         else:
             self.__registry[self.name] = self
-    
+
     @classmethod
     def get_all_diseases(cls):
         '''
@@ -411,7 +472,7 @@ class Disease(object):
         [result.extend([cls.__registry[k]]) for k in keys]
         log.debug('All Disease Definition instances: %s' % result)
         return result
-    
+
     @classmethod
     def get_disease_by_name(cls, name):
         '''
@@ -419,14 +480,14 @@ class Disease(object):
         match is found.
         '''
         return cls.__registry.get(name, None)
-    
+
     def get_cases(self):
         '''
         Returns all cases of this disease currently existing in db.  Does NOT 
         generate any new cases.
         '''
-        return Case.objects.filter(condition=self.name)
-    
+        return Case.objects.filter(condition = self.name)
+
     def get_all_event_names(self):
         '''
         Return list of names of all heuristic events included in this 
@@ -436,7 +497,7 @@ class Disease(object):
         for d in self.definitions:
             names.extend(d.get_all_event_names())
         return set(names)
-    
+
     def new_case(self, etw):
         '''
         Creates, saves, and returns a new Case object.
@@ -459,30 +520,30 @@ class Disease(object):
         case.save()
         log.info('Created new %s case #%s for patient #%s based on %s' % (self.name, case.pk, patient.pk, etw))
         return case
-    
+
     def generate_cases(self):
         counter = 0            # Number of new cases generated
         log.info('Generating cases for %s' % self.name)
-        existing_cases = Case.objects.filter(condition=self.name)
+        existing_cases = Case.objects.filter(condition = self.name)
         # Primary keys of events already bound to a Case object:
-        bound_event_pks = HeuristicEvent.objects.filter(case__in=existing_cases).values_list('pk') # ValuesListQuerySet
+        bound_event_pks = HeuristicEvent.objects.filter(case__in = existing_cases).values_list('pk') # ValuesListQuerySet
         bound_event_pks = [item[0] for item in bound_event_pks]
         log.debug('number of bound_events: %s' % len(bound_event_pks))
         matches = {}
         for d in self.definitions:
-            matches = d.matches(matches=matches)
+            matches = d.matches(matches = matches)
         for pid in matches:
             for etw in matches[pid]:
                 bound = False
                 for event in etw.events:
                     if event.pk in bound_event_pks:
-                        log.debug('Event #%s is already bound to a case' % event.pk) 
+                        log.debug('Event #%s is already bound to a case' % event.pk)
                         bound = True
                         break # Event already attached to a case
                 if bound:
                     # Ignore this match, as it appears to be already bound.  Note this will cause
                     # problems if events can validly be bound to more than one case of the same disease.
-                    break 
+                    break
                 else:
                     self.new_case(etw)
                     # Add new events to list of bound events, to avoid duplicate cases.
@@ -490,17 +551,17 @@ class Disease(object):
                     counter += 1
         log.debug('Generated %s new cases of %s' % (counter, self.name))
         return counter
-    
+
     def purge_db(self):
         '''
         Remove all cases of this disease from the database
         '''
-        all_cases = Case.objects.filter(condition=self.name)
+        all_cases = Case.objects.filter(condition = self.name)
         count = all_cases.count()
         log.warning('Purging all %s cases of %s from the database!' % (count, self.name))
         all_cases.delete()
-        
-        
+
+
     def regenerate(self):
         '''
         Purges all existing cases from db, then calls generate_cases()
@@ -508,8 +569,8 @@ class Disease(object):
         log.info('Regenerating cases for %s' % self.name)
         self.purge_db()
         self.generate_cases()
-    
-    
+
+
     @classmethod
     def generate_all_cases(cls):
         '''
@@ -529,7 +590,7 @@ class Disease(object):
         log.info('TOTAL: %s' % total)
         log.info('=' * 80)
         return total
-    
+
     def update_reportable_events(self, case):
         '''
         Updates the reportable events for a given case, based on rules defined
@@ -541,21 +602,21 @@ class Disease(object):
         patient = case.patient
         date = case.date
         if self.icd9s:
-            enc_q = Q(icd9_codes__code=self.icd9s[0])
+            enc_q = Q(icd9_codes__code = self.icd9s[0])
             for code in self.icd9s[1:]:
-                enc_q = enc_q | Q(icd9_codes__code=code)
-            if self.fever: 
-                enc_q = enc_q | Q(temperature__gte=100.4)
-            enc_q = enc_q & Q(patient=patient)
-            enc_q = enc_q & Q(date__gte=(date - self.icd9_days_before))
-            enc_q = enc_q & Q(date__lte=(date + self.icd9_days_after))
+                enc_q = enc_q | Q(icd9_codes__code = code)
+            if self.fever:
+                enc_q = enc_q | Q(temperature__gte = 100.4)
+            enc_q = enc_q & Q(patient = patient)
+            enc_q = enc_q & Q(date__gte = (date - self.icd9_days_before))
+            enc_q = enc_q & Q(date__lte = (date + self.icd9_days_after))
             log.debug('enc_q: %s' % enc_q)
             encounters = Encounter.objects.filter(enc_q)
             case.encounters = sets.Set(case.encounters.all()) | sets.Set(encounters)
         if self.lab_loinc_nums:
-            lab_q = Q(patient=patient)
-            lab_q = lab_q & Q(date__gte=(date - self.lab_days_before))
-            lab_q = lab_q & Q(date__lte=(date + self.lab_days_after))
+            lab_q = Q(patient = patient)
+            lab_q = lab_q & Q(date__gte = (date - self.lab_days_before))
+            lab_q = lab_q & Q(date__lte = (date + self.lab_days_after))
             log.debug('lab_q: %s' % lab_q)
             labs = LabResult.objects.filter_loincs(self.lab_loinc_nums).filter(lab_q)
             # Some of these lab results will be for the same test (ie same 
@@ -565,19 +626,19 @@ class Disease(object):
             # here.
             case.lab_results = sets.Set(case.lab_results.all()) | sets.Set(labs)
         if self.med_names:
-            med_q = Q(name__icontains=self.med_names[0])
+            med_q = Q(name__icontains = self.med_names[0])
             for name in self.med_names[1:]:
-                med_q = med_q | Q(name__icontains=name)
-            med_q = med_q & Q(patient=patient)
-            med_q = med_q & Q(date__gte=(date - self.med_days_before))
-            med_q = med_q & Q(date__lte=(date + self.med_days_after))
+                med_q = med_q | Q(name__icontains = name)
+            med_q = med_q & Q(patient = patient)
+            med_q = med_q & Q(date__gte = (date - self.med_days_before))
+            med_q = med_q & Q(date__lte = (date + self.med_days_after))
             log.debug('med_q: %s' % med_q)
             medications = Prescription.objects.filter(med_q)
             case.medications = sets.Set(case.medications.all()) | sets.Set(medications)
         # Support for reporting immunizations has not yet been implemented
         case.save()
         return case
-    
+
     @classmethod
     def update_all_cases(cls):
         '''
@@ -585,7 +646,7 @@ class Disease(object):
         '''
         log.info('Updating reportable events for existing cases.')
         for definition in cls.get_all_diseases():
-            q_obj = Q(condition=definition.name)
+            q_obj = Q(condition = definition.name)
             existing_cases = Case.objects.filter(q_obj)
             for case in existing_cases:
                 definition.update_reportable_events(case)
