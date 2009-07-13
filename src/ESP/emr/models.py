@@ -426,12 +426,17 @@ class LabResult(BasePatientRecord):
     order_num = models.CharField(max_length=128, blank=True, null=True)
     result_date = models.DateField(blank=True, null=True, db_index=True)
     status = models.CharField('Result Status', max_length=50, blank=True, null=True)
-    #result_id_num = models.CharField('Result Id #', max_length=100, blank=True, null=True)
-    # Reference
-    ref_low = models.FloatField('Reference Low', blank=True, null=True, db_index=True)
-    ref_high = models.FloatField('Reference High', blank=True, null=True, db_index=True)
+    result_num = models.CharField('Result Id #', max_length=100, blank=True, null=True)
+    # 
+    # In some EMR data sets, reference pos & high, and neg & low, may come from
+    # the same field depending whether the value is a string or a number.
+    #
+    ref_pos = models.CharField('Reference Positive Value', max_length=100, blank=True, null=True)
+    ref_neg = models.CharField('Reference Negative Value', max_length=100, blank=True, null=True)
+    ref_high = models.FloatField('Reference High Value', blank=True, null=True, db_index=True)
+    ref_low = models.FloatField('Reference Low Value', blank=True, null=True, db_index=True)
     ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
-    ref_range = models.CharField('Reference Range (raw string)', max_length=255, blank=True, null=True)
+    #ref_range = models.CharField('Reference Range (raw string)', max_length=255, blank=True, null=True)
     # Result
     abnormal_flag = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     result_float = models.FloatField('Test results (numeric)', blank=True, null=True, db_index=True)
