@@ -16,7 +16,6 @@ from django.conf.urls.defaults import include
 from django.contrib import admin
 
 from ESP.settings import MEDIA_ROOT, MEDIA_URL
-from ESP.esp.views import index, esplogin
 
 
 urlpatterns = patterns('ESP.nodis.views',
