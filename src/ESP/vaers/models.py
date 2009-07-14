@@ -258,9 +258,17 @@ class AdverseEvent(models.Model):
 
     def mail_notification(self, email_address=None):
         from django.contrib.sites.models import Site
+        from ESP.settings import ADMINS, DEBUG
+
         current_site = Site.objects.get_current()
 
         recipient = email_address or settings.EMAIL_RECIPIENT
+
+        if DEBUG:
+            admins_address = [x[1] for x in ADMINS]
+            who_to_send = admins_address + [recipient]
+        else:
+            who_to_send = [recipient]
 
         params = {
             'case': self,
@@ -281,9 +289,11 @@ class AdverseEvent(models.Model):
         html_msg = get_template(html_template).render(Context(params))
         text_msg = get_template(text_template).render(Context(params))
 
+        
+        
         msg = EmailMessage(settings.EMAIL_SUBJECT, html_msg, 
                            settings.EMAIL_SENDER, 
-                           [recipient])
+                           who_to_send)
         msg.content_subtype = "html"  # Main content is now text/html
         msg.send()
         
