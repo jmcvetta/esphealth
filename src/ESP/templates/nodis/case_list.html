@@ -11,7 +11,7 @@
             $('#case_table').flexigrid({
                 striped: true,
                 height: 'auto',
-                url: '{% url json_case_grid %}{{ status }}/',
+                url: '{% url nodis_case_grid %}{{ status }}/',
                 dataType: 'json',
                 singleSelect: true,
                 {% if perms.esp.view_phi %}
