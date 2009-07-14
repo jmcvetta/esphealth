@@ -416,7 +416,7 @@ class NativeVaccine(models.Model):
 
 
 class NativeManufacturer(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=200, unique=True)
     canonical_code = models.ForeignKey(ImmunizationManufacturer, null=True)
 
     def __unicode__(self):
