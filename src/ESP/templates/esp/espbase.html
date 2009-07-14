@@ -40,11 +40,11 @@ User</td></tr>
 		
 		<tr class="{% cycle rowcolors %}"><td><a href="{% url esp.views.index %}">ESP Home</a></td></tr>
 		<tr class="{% cycle rowcolors %}"><td><a href="{% url vaers.views.index %}">Vaers Home</a></td></tr>
-		<tr class="{% cycle rowcolors %}"><td><a href="{% url cases_all %}">ALL Cases</a></td></tr>
-		<tr class="{% cycle rowcolors %}"><td><a href="{% url cases_awaiting_review %}">Cases Awaiting Review</a></td></tr>
-		<tr class="{% cycle rowcolors %}"><td><a href="{% url cases_under_review %}">Cases Under Review</a></td></tr>
-		<tr class="{% cycle rowcolors %}"><td><a href="{% url cases_queued %}">Cases Queued</a></td></tr> 
-		<tr class="{% cycle rowcolors %}"><td><a href="{% url cases_sent %}">Cases Sent</a></td></tr>
+		<tr class="{% cycle rowcolors %}"><td><a href="{% url nodis_cases_all %}">ALL Cases</a></td></tr>
+		<tr class="{% cycle rowcolors %}"><td><a href="{% url nodis_cases_awaiting_review %}">Cases Awaiting Review</a></td></tr>
+		<tr class="{% cycle rowcolors %}"><td><a href="{% url nodis_cases_under_review %}">Cases Under Review</a></td></tr>
+		<tr class="{% cycle rowcolors %}"><td><a href="{% url nodis_cases_queued %}">Cases Queued</a></td></tr> 
+		<tr class="{% cycle rowcolors %}"><td><a href="{% url nodis_cases_sent %}">Cases Sent</a></td></tr>
 		{% comment %}
 		<tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/search/1/FP////">Cases: False Positive</a></td></tr>
 		<tr class="{% cycle rowcolors %}"><td><a href="{{SITEROOT}}/cases/sent/">Case Report Archive</a></td></tr>
