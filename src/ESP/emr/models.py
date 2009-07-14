@@ -287,6 +287,11 @@ class Patient(BaseMedicalRecord):
     name = property(_get_name)
     full_name = property(_get_name)
     
+    def _get_address(self):
+        return u'%s %s %s, %s, %s' % (self.address1, self.address2, self.city, self.state, self.zip)
+        
+    address = property(_get_address)
+            
     def __str__(self):
         return self.name
 
