@@ -1,0 +1,439 @@
+{% extends "espbase.html" %}
+
+{% load esplib %}
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ static_css_folder }}flexigrid/flexigrid.css" />
+    <style type="text/css">
+        #transmit {
+            border: thick groove #800000;
+        }
+    </style>
+{% endblock %}
+
+{% block extrascript %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('#show_non_rep').click( function() {
+                $('#toggle_show').show(); // Non-rep data is shown by default
+                $('#toggle_hide').hide(); // Non-rep data is shown by default
+                $('#non_reportable_data').show();
+            });
+            $('#hide_non_rep').click( function() {
+                $('#toggle_show').hide(); // Non-rep data is shown by default
+                $('#toggle_hide').show(); // Non-rep data is shown by default
+                $('#non_reportable_data').hide();
+            });
+            $('#hide_non_rep').click(); // Hide non-reportable data by default
+            $('#patient_info').flexigrid({
+                title: 'Patient Information',
+                height: 'auto',
+            });
+            $('#rep_lxs').flexigrid({
+                title: 'Laboratory Results (Reportable)',
+                resizable: false,
+                height: 'auto',
+            });
+            $('#all_lxs').flexigrid({
+                title: 'Laboratory Results (Non-Reportable)',
+                resizable: true,
+                rp: 10,
+            });
+            $('#rep_encs').flexigrid({
+                title: 'Encounters (Reportable)',
+                resizable: false,
+                height: 'auto',
+            });
+            $('#all_encs').flexigrid({
+                title: 'Encounters (Non-Reportable)',
+                resizable: true,
+                rp: 10,
+            });
+            $('#rep_rxs').flexigrid({
+                title: 'Prescriptions (Reportable)',
+                resizable: false,
+                height: 'auto',
+            });
+            $('#all_rxs').flexigrid({
+                title: 'Prescriptions (Non-Reportable)',
+                resizable: true,
+                rp: 10,
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+
+
+{# do we need these? #}
+{% comment %}
+{% if wfmsg %}
+     <br>
+     {% ifequal nextcaseid "" %}All cases have been reviewed
+     {%else%} <a href="{{SITEROOT}}/cases/{{inprod}}/{{nextcaseid }}/R/">Next case for Review</a>
+     {% endifequal %}
+     <br>
+     <center>
+     <h3><font color="blue"> {{wfmsg}}</font></h3>
+      </center>
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+{% endcomment %}
+
+
+<h1 style="float:left;">
+    Suspected Condition: {{ condition }}
+</h1>
+<form action="{{SITEROOT}}/cases/{{ cobject.id }}/updatewf/Q/" method="post" style="float: right;">
+    <input type="submit" name="submit" value="Confirmed Case, Transmit to Health Department" id="transmit">
+</form>
+
+<hr>
+<p>&nbsp;</p>
+
+<p id="toggle_hide">
+    <a href="#" id="show_non_rep">Show Non-Reportable Data</a>
+    |
+    <b>Hide Non-Reportable Data</b>
+</p>
+<p id="toggle_show">
+    <b>Show Non-Reportable Data</b>
+    |
+    <a href="#" id="hide_non_rep">Hide Non-Reportable Data</a>
+</p>
+
+<hr>
+<p>&nbsp;</p>
+
+<table id="patient_info">
+    <tr>
+        <th>Case ID</th>
+        {% if perms.esp.view_phi %}
+        <th>Patient Name &amp; MRN</th>
+        <th>Age &amp; DOB</th>
+        {% else %}
+        <th>Age</th>
+        {% endif %}
+        <th>Gender</th>
+        <th>Pregnancy</th>
+        <th>Workflow State</th>
+        <th>Comments</th>
+        <th>Created Date</th>
+        <th>Last Updated</th>
+        <th>Case Definition</th>
+        <th>Query ID</th></tr>
+    </tr>
+    <tr>
+        <td>{{ case.id }}</td>
+        {% if perms.esp.view_phi %}
+        <td>{{ case.showPatient }}</td> 
+        <td>
+            Age: {{ age }}
+            <hr>
+            DOB: {{ dob }}
+        </td>
+        {% else %}
+        <td>{{ age }}</td>
+        {% endif %}
+        <td>{{ case.patient.gender }}</td>
+        <td>{{ case.pregnant }}</td>
+        <td>n/a</td>
+        <td> {{ case.comments }}</td>
+        <td>{{ created }}</td>
+        <td> {{ updated }}</td>
+        <td>n/a</td>
+        <td>n/a</td>
+    </tr>
+</table>
+
+
+<p>&nbsp;</p>
+
+{% if rep_lxs %}
+<table id="rep_lxs">
+    <tr>
+        <th>Date Ordered</th>
+        <th>Result Date</th>
+        <th>Test Code (native)</th>
+        <th>Test Name (native)</th>
+        <th>Test Results</th>
+        <th>Abnormal Flag</th>
+        <th>Normal Range</th>
+        <th>Comment</th>
+        <th>OrderID</th>
+        <th>Clinician</th>
+    </tr>
+    {% for lx in rep_lxs %}
+    <tr>
+        <td>{{ lx.date }}</td>
+        <td>{{ lx.result_date }}</td>
+        <td>{{ lx.native_code }} ({{ lx.LxLoinc }})</td>
+        <td>{{ lx.native_name }}</td>
+        <td>{{ lx.result_string }}</td>
+        <td>{{ lx.abnormal_flag }} </td>
+        <td>{{ lx.ref_neg}}  -  {{ lx.ref_pos}}</td>
+        <td>
+            {% if lab.LxComment %}
+            <a href="{% url lab_detail lx.id %}">
+                {{ lx.getPartNote }}...
+            </a>
+            {% endif %}
+        </td>
+        <td>{{ lx.order_num }}</td>
+        <td>
+            <a href="{% url provider_detail lx.provider.pk %}">
+                {{ lx.provider.name }}
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<p>&nbsp;</p>
+{% endif %}
+
+{% if rep_encs %}
+<table id="rep_encs">
+    <tr>
+        <th>Date</th>
+        <th>ICD9 Codes</td>
+        <th>Site</td>
+        <th>Pregnancy</th>
+        <th>Temperature</th>
+        <th>Clinician</th>
+    </tr>
+    {% for enc in rep_encs %}
+    <tr>
+        <td>{{ enc.date }} </td>
+        <td>{{ enc.icd9_codes_str }}</td>
+        <td>{{ enc.site_name }}</td>
+        <td>
+            {{ enc.pregnancy_status }}
+            {% if enc.pregnancy_status  %}
+            <hr>
+            EDC: {{enc.edc}}
+            {% endif %}
+        </td>
+        <td>{{ enc.temperature }}</td>
+        <td>
+            <a href="{% url provider_detail enc.provider.pk %}">
+            {{enc.provider.name}}
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<p>&nbsp;</p>
+{% endif %}
+
+{% if rep_rxs %}
+<table id="rep_rxs">
+    <tr>
+        <th>Date Ordered</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Route</th>
+        <th>Dose</th>
+        <th>Frequency</th>
+        <th>Quantity</th>
+        <th>NDC</th>
+        <th>Clinician</th>
+    </tr>
+    {% for rx in rep_rxs %}
+    <tr>
+        <td>{{ rx.date }}</td>
+        <td>{{ rx.name }}</td>
+        <td>{{ rx.directions }}</td>
+        <td>{{ rx.route }}</td>
+        <td>{{ rx.dose }}</td>
+        <td>{{ rx.frequency }}
+        <td>{{ rx.quantity }}</td>
+        <td>{{rx.code}}</td>
+        <td>
+            <a href="{% url provider_detail rx.provider.pk %}">
+                {{ rx.provider.name }}
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<p>&nbsp;</p>
+{% endif %}
+
+
+<div id="non_reportable_data">
+
+    <h1>
+        Non-Reportable Data
+        <br>
+        &nbsp;
+        <hr />
+    </h1>
+
+    {% if all_lxs %}
+    <table id="all_lxs">
+        <tr>
+            <th>Date Ordered</th>
+            <th>Result Date</th>
+            <th>Test Code (native)</th>
+            <th>Test Name (native)</th>
+            <th>Test Results</th>
+            <th>Abnormal Flag</th>
+            <th>Normal Range</th>
+            <th>Comment</th>
+            <th>OrderID</th>
+            <th>Clinician</th>
+        </tr>
+        {% for lx in all_lxs %}
+        <tr>
+            <td>{{ lx.date }}</td>
+            <td>{{ lx.result_date }}</td>
+            <td>{{ lx.native_code }} ({{ lx.LxLoinc }})</td>
+            <td>{{ lx.native_name }}</td>
+            <td>{{ lx.result_string }}</td>
+            <td>{{ lx.abnormal_flag }} </td>
+            <td>{{ lx.ref_neg}}  -  {{ lx.ref_pos}}</td>
+            <td>
+                {% if lab.comment %}
+                <a href="{% url lab_detail lx.id %}">
+                    {{ lx.getPartNote }}...
+                </a>
+                {% endif %}
+            </td>
+            <td>{{ lx.order_num }}</td>
+            <td>
+                <a href="{% url provider_detail lx.provider.pk %}">
+                    {{ lx.provider.name }}
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p>&nbsp;</p>
+    {% endif %}
+
+    {% if all_encs %}
+    <table id="all_encs">
+        <tr>
+            <th>Pertinent to Condition</th>
+            <th>Date</th>
+            <th>ICD9 Codes</td>
+            <th>Site</td>
+            <th>Pregnancy</th>
+            <th>Temperature</th>
+            <th>Clinician</th>
+        </tr>
+        {% for enc in all_encs %}
+        <tr>
+            <td>{{ enc.date }} </td>
+            <td>{{ enc.icd9_codes_str }}</td>
+            <td>{{ enc.site_name }}</td>
+            <td>
+                {{ enc.pregnancy_status|default:"No" }}
+                {% if enc.pregnancy_status %}
+                <hr>
+                EDC: {{e.edc}}
+                {% endif %}
+            </td>
+            <td>{{ enc.temperature }}</td>
+            <td>
+                <a href="{% url provider_detail enc.provider.pk %}">
+                {{enc.provider.name}}
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p>&nbsp;</p>
+    {% endif %}
+
+    {% if all_rxs %}
+    <table id="all_rxs">
+        <tr>
+            <th>Date Ordered</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Route</th>
+            <th>Dose</th>
+            <th>Frequency</th>
+            <th>Quantity</th>
+            <th>NDC</th>
+            <th>Clinician</th>
+        </tr>
+        {% for rx in all_rxs %}
+        <tr>
+            <td>{{ rx.date }}</td>
+            <td>{{ rx.name }}</td>
+            <td>{{ rx.directions }}</td>
+            <td>{{ rx.route }}</td>
+            <td>{{ rx.dose }}</td>
+            <td>{{ rx.frequency }}
+            <td>{{ rx.quantity }}</td>
+            <td>{{rx.code}}</td>
+            <td>
+                <a href="{% url provider_detail rx.provider.pk %}">
+                    {{ rx.provider.name }}
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p>&nbsp;</p>
+    {% endif %}
+
+</div> {# non_reportable_data #}
+
+
+
+
+
+
+{% if wf %}
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+<tr class="{% cycle row1, row2 as rowcolors %}">
+<td colspan = "5" align = "center" bgcolor="white">
+<font size="+1" color="#800000">Case Workflow History & Update</font></td></tr>
+ <tr><th>Edit Comment Link</th><th>Last Updated</th><th>Workflow State</th><th>Changed By</th><th>Comment</th></tr>
+     {% for w in wf %}
+
+   <tr class="{% cycle row1,row2 %}" valign="center"><td valign=middle align="center">
+        <font size="+1"><a href="{{SITEROOT}}/workflows/{{ w.id }}/">{{ w.id }}</a></font></td>
+      <td valign=middle> {{ w.workflowDate }}</td>
+      <td valign=middle> {{ w.workflowState}}</td>
+      <td valign=middle> {{ w.workflowChangedBy}}</td>
+      <td valign=middle><pre> {{w.workflowComment}}</pre></td>
+   </tr>
+
+     {% endfor %}
+ </table>
+{% endif %}
+<br>
+
+{% ifequal inprod "1" %}
+<form action="{{SITEROOT}}/cases/{{ cobject.id }}/updatewf/" method="post">
+<table cellspacing="1" cellpadding="0" border="1" width="900">
+ <tr bgcolor="#800000">
+ <td  valign="middle"> <b><font color=white> 1. Change workflow to:</font></td>
+ <td  valign="middle"> <SELECT NAME="NewWorkflow" size=4>
+              {% for thiswf in wfstate %}
+              {% ifnotequal cobject.caseWorkflow thiswf.0 %} <OPTION value={{thiswf.0}}> {{thiswf.1}}</OPTION> {% endifnotequal %}           {% endfor %} </SELECT>
+ </td>
+ </tr>
+ <tr bgcolor="#800000">
+  <td valign="middle"> <b><font color=white> 2. Add Comments:</font></td>
+  <td  valign="middle"> <textarea name="Comment" rows=4 cols=50 > </textarea></td>
+ </tr>
+  <tr bgcolor="#800000">
+  <td align="center" colspan=2>
+    <br><input type="submit" name="submit" value="Update workflow, add comment" >
+ </td>
+</tr>
+ </table>
+</form>
+{% endifequal %}
+
+
+
+
+{% endblock %}
+
