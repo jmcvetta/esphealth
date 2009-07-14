@@ -139,7 +139,7 @@
         <td>{{ case.patient.gender }}</td>
         <td>{{ case.pregnant }}</td>
         <td>n/a</td>
-        <td> {{ case.comments }}</td>
+        <td> {{ case.comments|default:"-" }}</td>
         <td>{{ created }}</td>
         <td> {{ updated }}</td>
         <td>n/a</td>
@@ -178,6 +178,8 @@
             <a href="{% url lab_detail lx.id %}">
                 {{ lx.getPartNote }}...
             </a>
+	    {% else %}
+            	-
             {% endif %}
         </td>
         <td>{{ lx.order_num }}</td>
@@ -298,6 +300,8 @@
                 <a href="{% url lab_detail lx.id %}">
                     {{ lx.getPartNote }}...
                 </a>
+                {% else %}
+			-
                 {% endif %}
             </td>
             <td>{{ lx.order_num }}</td>
@@ -315,7 +319,6 @@
     {% if all_encs %}
     <table id="all_encs">
         <tr>
-            <th>Pertinent to Condition</th>
             <th>Date</th>
             <th>ICD9 Codes</td>
             <th>Site</td>
@@ -326,7 +329,7 @@
         {% for enc in all_encs %}
         <tr>
             <td>{{ enc.date }} </td>
-            <td>{{ enc.icd9_codes_str }}</td>
+            <td>{{ enc.icd9_codes_str|default:"-" }}</td>
             <td>{{ enc.site_name }}</td>
             <td>
                 {{ enc.pregnancy_status|default:"No" }}
