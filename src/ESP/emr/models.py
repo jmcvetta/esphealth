@@ -162,6 +162,7 @@ class Patient(BaseMedicalRecord):
     date_of_birth = models.DateField('Date of Birth', blank=True, null=True)
     date_of_death = models.DateField('Date of death', blank=True, null=True)
     gender = models.CharField('Gender', max_length=20, blank=True, null=True)
+    pregnant = models.BooleanField('Patient is pregnant?', blank=False)
     race = models.CharField('Race', max_length=20, blank=True, null=True)
     home_language = models.CharField('Home Language', max_length=20, blank=True, null=True)
     ssn = models.CharField('SSN', max_length=20, blank=True, null=True)
@@ -289,8 +290,37 @@ class Patient(BaseMedicalRecord):
     
     def _get_address(self):
         return u'%s %s %s, %s, %s' % (self.address1, self.address2, self.city, self.state, self.zip)
-        
     address = property(_get_address)
+    
+    def _get_age(self):
+        '''
+        Returns patient's age as a TimeDelta
+        '''
+        if not self.date_of_birth: return None
+        return datetime.date.today() - self.date_of_birth
+    age = property(_get_age)
+    
+    def _get_age_str(self):
+        '''
+        Returns patient's age as a string 
+        '''
+        if not self.date_of_birth: return None
+        today = datetime.datetime.today() 
+        days = today.day - self.date_of_birth.day
+        months = today.month - self.date_of_birth.month
+        years = today.year - self.date_of_birth.year
+        if days < 0:
+            months -= 1
+                
+        if months < 0:
+            years -= 1
+            months += 12
+        if years > 0:
+            return str(years) 
+        else:
+            return '%d Months' % months
+    age_str = property(_get_age_str)
+
             
     def __str__(self):
         return self.name
@@ -766,6 +796,10 @@ class Encounter(BasePatientRecord):
         '''
         values = {'date': 'DATE', 'id': 'ENC #', 'temperature': 'TEMP (F)', 'icd9s': 'ICD9 CODES'}
         return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(icd9s)-30s' % values
+    
+    def _get_icd9_codes_str(self):
+        return ', '.join(self.icd9_codes.all().order_by('code'))
+    icd9_codes_str = property(_get_icd9_codes_str)
             
 
 class Immunization(BasePatientRecord):
