@@ -19,6 +19,9 @@ from ESP.settings import MEDIA_ROOT, MEDIA_URL
 
 
 urlpatterns = patterns('ESP.nodis.views',
+    #
+    # Case List
+    #
     url(r'^cases/$', 'case_list', {'status': 'all'}, name='nodis_case_list'),
     url(r'^cases/json/$', 'json_case_grid', {'status': 'all'}, name='nodis_case_grid'),
     url(r'^cases/json/all/$', 'json_case_grid', {'status': 'all'}),
@@ -26,4 +29,9 @@ urlpatterns = patterns('ESP.nodis.views',
     url(r'^cases/json/under/$', 'json_case_grid', {'status': 'under'}),
     url(r'^cases/json/queued/$', 'json_case_grid', {'status': 'queued'}),
     url(r'^cases/json/sent/$', 'json_case_grid', {'status': 'sent'}),
+    #
+    # Case Detail
+    #
+    url(r'^cases/view/(?P<case_id>\d+)/$', 'case_detail', name='nodis_case_detail'),
+    url(r'^provider/(?P<provider_id>\w+)/$', 'provider_detail', name='provider_detail'),
 )

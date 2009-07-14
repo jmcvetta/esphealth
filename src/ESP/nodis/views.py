@@ -28,6 +28,7 @@ from django.forms.models import formset_factory
 from django.forms.models import modelformset_factory
 from django.forms.util import ErrorList
 from django.shortcuts import render_to_response
+from django.shortcuts import get_object_or_404
 from django.template import RequestContext
 from django.utils.translation import ugettext
 from django.utils.translation import ugettext_lazy as _
@@ -44,7 +45,11 @@ from ESP.settings import ROWS_PER_PAGE
 from ESP.settings import DATE_FORMAT
 from ESP.conf.models import NativeCode
 from ESP.conf.models import NativeNameCache
+from ESP.emr.models import Patient
+from ESP.emr.models import Provider
+from ESP.emr.models import Encounter
 from ESP.emr.models import LabResult
+from ESP.emr.models import Prescription
 from ESP.hef.core import BaseHeuristic
 from ESP.hef import events # Required to register hef events
 from ESP.nodis.models import Case
@@ -147,7 +152,7 @@ def json_case_grid(request, status):
         row = {}
         case_date = case.date.strftime(DATE_FORMAT)
         row['id'] = case.id
-        href = urlresolvers.reverse('case_detail', kwargs={'case_id': int(case.id)})
+        href = urlresolvers.reverse('nodis_case_detail', kwargs={'case_id': int(case.id)})
         case_id_link = '%s <a href="' % case.pk  + href + '">(view)</a>'
         if view_phi:
             patient = case.patient
@@ -191,60 +196,50 @@ def case_detail(request, case_id):
     Detailed case view with workflow history
     '''
     case = get_object_or_404(Case, pk=case_id)
-    wf = case.caseworkflow_set.all().order_by('-workflowDate')
-    patient = case.caseDemog
-    pid = patient.id
+    #wf = case.caseworkflow_set.all().order_by('-workflowDate')
+    wf = []
+    patient = case.patient
+    pid = patient.pk
     age = patient.age.days / 365 # Note that 365 is Int not Float, thus so is result
-    if age > 89:
+    if age >= 90:
         age = '90+'
-    dob = patient.date_of_birth.strftime(settings.DATE_FORMAT)
-    created = case.casecreatedDate.strftime(settings.DATE_FORMAT)
-    updated = case.caseLastUpDate.strftime(settings.DATE_FORMAT)
+    dob = patient.date_of_birth.strftime(DATE_FORMAT)
+    created = case.created_timestamp.strftime(DATE_FORMAT)
+    updated = case.updated_timestamp.strftime(DATE_FORMAT)
     #
     # Reportable Info
     #
-    if case.caseEncID:
-        rep_encs = Enc.objects.extra(where=['id IN (%s)' % case.caseEncID])
-    else:
-        rep_encs = []
-    if case.caseLxID:
-        rep_lxs = Lx.objects.extra(where=['id IN (%s)' % case.caseLxID])
-    else:
-        rep_lxs = []
-    if case.caseRxID:
-        rep_rxs = Rx.objects.extra(where=['id IN (%s)' % case.caseRxID])
-    else:
-        rep_rxs = []
     #
     # Non-Reportable Info
     #
-    all_encs = Enc.objects.filter(EncPatient__id__exact=pid)
-    all_encs = sets.Set(all_encs) - sets.Set(rep_encs)
-    all_lxs = Lx.objects.filter(LxPatient__id__exact=pid)
-    all_lxs = sets.Set(all_lxs) - sets.Set(rep_lxs)
-    all_rxs = Rx.objects.filter(RxPatient__id__exact=pid)
-    all_rxs = sets.Set(all_rxs) - sets.Set(rep_lxs)
+    other_enc = set(Encounter.objects.filter(patient=patient)) - set(case.encounters.all())
+    other_lab = set(LabResult.objects.filter(patient=patient)) - set(case.lab_results.all())
+    other_rx = set(Prescription.objects.filter(patient=patient)) - set(case.medications.all())
     values = {
         "request":request,
         "case": case,
         'pid': pid,
-        'condition': case.getCondition().ruleName,
+        'condition': case.condition,
         'age': age,
         'dob': dob,
         "wf": wf,
-        "wfstate": choices.WORKFLOW_STATES[:-1], # ??
+        "wfstate": 'n/a', # FIXME: Implement this!
         'created': created,
         'updated': updated,
-        'all_encs': all_encs,
-        'all_lxs': all_lxs,
-        'all_rxs': all_rxs,
-        'rep_encs': rep_encs,
-        'rep_lxs': rep_lxs,
-        'rep_rxs': rep_rxs,
+        'all_encs': other_enc,
+        'all_lxs': other_lab,
+        'all_rxs': other_rx,
+        'rep_encs': case.encounters.all(),
+        'rep_lxs': case.lab_results.all(),
+        'rep_rxs': case.medications.all(),
         'inprod': '1', # Ugh
         }
     return render_to_response('nodis/case_detail.html', values, context_instance=RequestContext(request))
 
+@login_required
+def provider_detail(request, provider_id):
+    values = {'provider': Provider.objects.get(pk=provider_id) }
+    return render_to_response('nodis/provider_detail.html', values, context_instance=RequestContext(request))
 
 @login_required
 def show_ext_loinc_maps(request):
