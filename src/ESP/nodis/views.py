@@ -153,27 +153,31 @@ def json_case_grid(request, status):
             patient = case.patient
             row['cell'] =  [
                 case_id_link,
-                case.caseRule.ruleName, 
+                case.condition,
                 case_date,
-                case.provider.provPrimary_Dept,
+                case.provider.dept,
                 # Begin PHI
                 patient.name,
                 patient.mrn,
-                case.getAddress(),
+                patient.address,
                 # End PHI
-                case.get_workflow_state_display(),
-                case.updated_timestamp,
-                case.getPrevcases()
+                #case.get_workflow_state_display(),
+                'n/a',
+                case.updated_timestamp.strftime(DATE_FORMAT),
+                #case.getPrevcases()
+                'n/a',
                 ]
         else:
             row['cell'] =  [
                 case_id_link,
                 case.condition,
                 case_date,
-                case.provider.provPrimary_Dept,
-                case.get_workflow_state_display(),
+                case.provider.dept,
+                #case.get_workflow_state_display(),
+                'n/a',
                 last_update,
-                case.getPrevcases()
+                #case.getPrevcases()
+                'n/a',
                 ]
         rows += [row]
     json = flexi.json(rows, use_paginator=False, page_count=p.count)
