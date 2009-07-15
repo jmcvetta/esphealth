@@ -69,7 +69,7 @@ class BaseMedicalRecord(models.Model):
     '''
     Abstract base class for a medical record
     '''
-    provenance = models.ForeignKey(Provenance, blank=False)
+    #provenance = models.ForeignKey(Provenance, blank=False)
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False, db_index=True)
     updated_by = models.CharField(max_length=100, blank=False)
