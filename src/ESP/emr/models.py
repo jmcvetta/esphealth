@@ -30,18 +30,7 @@ from ESP.localsettings import DATABASE_ENGINE
 
 
 
-#class Provenance(models.Model):
-#    '''
-#    Answers the question "Where did this data come from?"
-#    '''
-#    provenance_id = models.AutoField(primary_key=True)
-#    file_name = models.CharField(max_length=500, blank=True, null=True)
-#    file_date = models.DateField('Timestamp on file', blank=True, null=True)
-#    hostname = models.CharField('Host from which data was loaded', max_length=255, blank=True)
-#    batch_timestamp = models.DateTimeField(auto_now_add=True, blank=True, null=True)
-#    
-#    class Meta:
-#        unique_together = ['file_name', 'file_date', 'hostname']
+
 
 
 class Hl7Message(models.Model):
@@ -56,6 +45,19 @@ class Hl7Message(models.Model):
     message = models.TextField('Status Message', blank=True, null=True)
 
 
+class Provenance(models.Model):
+    '''
+    Answers the question "Where did this data come from?"
+    '''
+    provenance_id = models.AutoField(primary_key=True)
+    timestamp = models.DateTimeField(auto_now_add=True, blank=False)
+    filename = models.CharField(max_length=500, blank=False)
+    hostname = models.CharField('Host on which data was loaded', max_length=255, blank=False)
+    comment = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        unique_together = ['file_name', 'file_date', 'hostname']
+
 #===============================================================================
 #
 #--- ~~~ Medical Records ~~~
@@ -67,8 +69,7 @@ class BaseMedicalRecord(models.Model):
     '''
     Abstract base class for a medical record
     '''
-    #system = models.ForeignKey(SourceSystem, db_index=True, blank=False)
-    #provenance = models.ForeignKey(Provenance, blank=True)
+    provenance = models.ForeignKey(Provenance, blank=False)
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False, db_index=True)
     updated_by = models.CharField(max_length=100, blank=False)
