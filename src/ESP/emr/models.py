@@ -19,7 +19,8 @@ from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
-from ESP.emr import choices
+from ESP.emr.choices import DATA_SOURCE
+from ESP.emr.choices import HL7_MESSAGE_LOAD_STATUS
 from ESP.conf.common import EPOCH
 from ESP.conf.models import SourceSystem
 from ESP.conf.models import Loinc, Ndc, Cpt, Icd9, NativeCode
@@ -40,7 +41,7 @@ class Hl7Message(models.Model):
     '''
     filename = models.CharField(max_length=255, blank=False, unique=True, db_index=True)
     timestamp = models.DateTimeField(blank=False)
-    status = models.CharField(max_length=1, choices=choices.HL7_MESSAGE_LOAD_STATUS, 
+    status = models.CharField(max_length=1, choices=HL7_MESSAGE_LOAD_STATUS, 
         blank=False, db_index=True)
     message = models.TextField('Status Message', blank=True, null=True)
 
@@ -51,12 +52,14 @@ class Provenance(models.Model):
     '''
     provenance_id = models.AutoField(primary_key=True)
     timestamp = models.DateTimeField(auto_now_add=True, blank=False)
+    source = models.CharField(max_length=25, blank=False, choices=DATA_SOURCE)
     filename = models.CharField(max_length=500, blank=False)
     hostname = models.CharField('Host on which data was loaded', max_length=255, blank=False)
     comment = models.TextField(blank=True, null=True)
     
     class Meta:
-        unique_together = ['file_name', 'file_date', 'hostname']
+        unique_together = ['timestamp', 'source', 'filename', 'hostname']
+
 
 #===============================================================================
 #

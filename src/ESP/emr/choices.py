@@ -10,9 +10,10 @@
 '''
 
 
-DATA_TRANSPORT = [
-    ('File', 'File'),
-    ('DB_Dump', 'DB Dump'),
+DATA_SOURCE = [
+    ('hl7_file', 'HL7 File'),
+    ('epic_file', 'EpicCare Extract File'),
+    # Add more as we get new sources
     ]
 
 FORMAT_TYPES = (
