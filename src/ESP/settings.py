@@ -41,6 +41,8 @@ EMAIL_HOST_PASSWORD = localsettings.EMAIL_HOST_PASSWORD
 EMAIL_PORT = localsettings.EMAIL_PORT
 EMAIL_USE_TLS = localsettings.EMAIL_USE_TLS
 
+SITE_NAME = localsettings.SITE_NAME
+
 SECRET_KEY = localsettings.SECRET_KEY
 if not SECRET_KEY:
     raise AssertionError('You must provide a value for SECRET_KEY in localsettings.py')

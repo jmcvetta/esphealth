@@ -272,7 +272,6 @@ src/ESP/templates/widgets/vaers/feedback_form.html -text
 src/ESP/urls.py -text
 src/ESP/utils/common.py -text
 src/ESP/utils/concordance.py -text
-src/ESP/utils/email_summary.py -text
 src/ESP/utils/fake_world.py -text
 src/ESP/utils/makeESPdm.py -text
 src/ESP/utils/metrics.py -text
@@ -283,6 +282,7 @@ src/ESP/utils/parsehl7.py -text
 src/ESP/utils/pd1.py -text
 src/ESP/utils/pv1.py -text
 src/ESP/utils/randomizer.py -text
+src/ESP/utils/status_report.py -text
 src/ESP/utils/update_icd9_encounters.py -text
 src/ESP/utils/update_loincs.py -text
 src/ESP/utils/update_lx.py -text

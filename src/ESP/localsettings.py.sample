@@ -36,7 +36,7 @@ ADMINS = (
 # Make your SECRET_KEY unique, and don't share it with anybody.  The unix
 # utility 'pwgen' is very useful for generating long random password strings.
 SECRET_KEY = ''
-LOCALSITE = '' # Name of your local site
+SITE_NAME = '' # Name of your local site
 
 
 #===============================================================================

@@ -4,7 +4,7 @@
 MESSAGE_TEMPLATE = '''
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ESP STATUS REPORT
+                               ESP STATUS REPORT
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Date:  %(date)s
@@ -34,16 +34,24 @@ Case Summary:
 
 
 import datetime
+import email
+from email.mime.text import MIMEText
+import smtplib
 
 from django.db.models import Max
 
+from ESP.settings import ADMINS
 from ESP.settings import DATE_FORMAT
 from ESP.settings import SITE_NAME
+from ESP.settings import EMAIL_HOST
+from ESP.settings import EMAIL_PORT
+from ESP.settings import EMAIL_SENDER
 from ESP.emr.models import Patient
 from ESP.emr.models import Hl7Message
 from ESP.nodis.models import Case
 from ESP.nodis import defs
 from ESP.nodis.core import Disease
+from ESP.utils.utils import log
 
 
 def new_cases(template):
@@ -69,14 +77,14 @@ def case_summary(template):
     '''
     out = []
     for dis in Disease.get_all_diseases():
-        condition = dis.namek
+        condition = dis.name
         count = Case.objects.filter(condition=condition).count()
         out += [template % (condition, count)]
     return '\n'.join(out)
     
     
 
-def main():
+def generate_message():
     lengths = [len(dis.name) for dis in Disease.get_all_diseases()]
     lengths.sort()
     output_template = '%%%ss: %%s' % str(lengths[-1] + 2)
@@ -88,7 +96,29 @@ def main():
     values['hl7_ts'] = Hl7Message.objects.filter(status='l').aggregate(max=Max('timestamp'))['max']
     values['hl7_num_l'] = Hl7Message.objects.filter(status='l').count()
     values['hl7_num_f'] = Hl7Message.objects.filter(status='f').count()
-    print MESSAGE_TEMPLATE % values
+    log.debug('values: %s' % values)
+    return MESSAGE_TEMPLATE % values
+
+
+def send_email(message):
+    msg = MIMEText(message)
+    msg['Subject'] = '%s ESP Status Report %s' % (SITE_NAME, datetime.datetime.now().strftime(DATE_FORMAT))
+    msg['From'] = EMAIL_SENDER
+    to = ', '.join( [row[1] for row in ADMINS] )
+    to = 'jason.mcvetta@channing.harvard.edu'
+    msg['To'] = to
+    smtp = smtplib.SMTP()
+    smtp.connect()
+    status = smtp.sendmail(EMAIL_SENDER, [row[1] for row in ADMINS], msg.as_string())
+    log.debug('status: %s' % status)
+    
+    
+
+def main():
+    msg = generate_message()
+    #send_email(message=msg)
+    print msg
+    
     
     
     
