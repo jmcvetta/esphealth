@@ -5,19 +5,29 @@
 '''
 
 
+from ESP.conf.choices import WORKFLOW_STATES
+from ESP.conf.models import Rule
+from ESP.emr.models import Encounter
+from ESP.emr.models import Immunization
+from ESP.emr.models import LabResult
+from ESP.emr.models import Patient
+from ESP.emr.models import Prescription
+from ESP.emr.models import Provider
+from ESP.hef.models import HeuristicEvent
+from django.db import models
 import datetime
 
-from django.db import models
 
-from ESP.emr.models import LabResult
-from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.emr.models import Immunization
-from ESP.emr.models import Provider
-from ESP.emr.models import Patient
-from ESP.hef.models import HeuristicEvent
-from ESP.conf.models import Rule
-from ESP.conf.choices import WORKFLOW_STATES
+
+
+STATUS_CHOICES = [
+    ('AR', 'Awaiting Review'),
+    ('UR', 'Under Review'),
+    ('RM', 'Review by MD'),
+    ('FP', 'False Positive - Do NOT Process'),
+    ('Q',  'Confirmed Case, Transmit to Health Department'), 
+    ('S',  'Transmitted to Health Department')
+    ]
 
 
 class Case(models.Model):
@@ -30,8 +40,7 @@ class Case(models.Model):
     date = models.DateField(blank=False, db_index=True)
     definition = models.CharField(max_length=100, blank=False)
     def_version = models.IntegerField(blank=False)
-    #workflow_state = models.CharField(max_length=20, choices=WORKFLOW_STATES, default='AR', 
-        #blank=False, db_index=True )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     # Timestamps:
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
@@ -70,15 +79,20 @@ class Case(models.Model):
         '''
         values = {'date': 'DATE', 'id': 'CASE #', 'condition': 'CONDITION'}
         return '%(date)-10s    %(id)-8s    %(condition)-30s' % values
+    
 
 
-class NodisCaseWorkflow(models.Model):
-    workflowCaseID = models.ForeignKey(Case)
-    workflowDate = models.DateTimeField('Activated',auto_now=True)
-    workflowState = models.CharField('Workflow State',choices=WORKFLOW_STATES,max_length=20 )
-    workflowChangedBy = models.CharField('Changed By', max_length=30)
-    workflowComment = models.TextField('Comments',blank=True,null=True)
+class CaseStatusHistory(models.Model):
+    '''
+    The current review status of a given Case
+    '''
+    case = models.ForeignKey(Case, blank=False)
+    timestamp = models.DateTimeField(auto_now=True, blank=False, db_index=True)
+    old_status = models.CharField(max_length=10, choices=STATUS_CHOICES, blank=False)
+    new_status = models.CharField(max_length=10, choices=STATUS_CHOICES, blank=False)
+    changed_by = models.CharField(max_length=30, blank=False)
+    comment = models.TextField(blank=True, null=True)
     
     def  __unicode__(self):
-        return u'%s %s %s' % (self.workflowCaseID, self.workflowDate, self.workflowState)
+        return u'%s %s %s' % (self.case, self.status, self.timestamp)
 
