@@ -38,7 +38,7 @@ from django.views.generic.simple import redirect_to, direct_to_template
 
 from ESP.settings import TOPDIR, CODEDIR
 from ESP.settings import MEDIA_URL
-from ESP.localsettings import LOCALSITE
+from ESP.localsettings import SITE_NAME as LOCALSITE
 from ESP.settings import DATE_FORMAT
 from ESP import settings
 from ESP.esp.models import *
