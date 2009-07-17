@@ -119,17 +119,24 @@ def getfilesByDay(files):
     return returndays
 
                                                                         
-def date_from_str(str):
+def date_from_str(timestamp):
     '''
-    Returns a datetime.date instance based on the string representation of a
-    date from LxOrderDate field.
+    Given a string in timestamp format (YYYYMMDD), returns the corresponding date.
+    If the string is only 6 characters long, assumes that is YYYYMM format and make day=1
     '''
-    assert type(str) in [types.StringType, types.UnicodeType]
-    year = int(str[0:4])
-    month = int(str[4:6])
-    day = int(str[6:8])
-    return datetime.date(year, month, day)
 
+    if len(timestamp) == 14:
+        format = '%Y%m%d%H%M%S'
+    elif len(timestamp) == 8:
+        format = '%Y%m%d'
+    elif len(timestamp) == 6: 
+        format = '%Y%m'
+    else:
+        raise ValueError, '%s can not be converted into a date' % str(timestamp)
+    
+    return datetime.datetime.strptime(timestamp, format)
+
+    
 
 def str_from_date(date):
     '''

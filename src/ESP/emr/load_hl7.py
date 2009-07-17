@@ -10,23 +10,8 @@
 @copyright: (c) 2009 Channing Laboratory
 @license: LGPL
 '''
-from ESP.utils.utils import date_from_str
 
 
-#
-# Default folder from which to read HL7 messages
-#
-INCOMING_DIR = '/home/ESP/NORTH_ADAMS/incomingHL7'
-
-#
-# Used to populate the 'updated_by' field on db records
-#
-UPDATED_BY = 'load_hl7.py'
-
-#
-# Populate tables in old schema (Demog, Lx, Rx, etc)?
-#
-POPULATE_OLD_SCHEMA = True
 
 
 import os
@@ -38,12 +23,13 @@ import sys
 import optparse
 import tempfile
 import operator
+import shutil
 
 from hl7 import hl7
 
-from ESP.settings import DEBUG
-from ESP.conf.models import NativeCode
-from ESP.conf.models import Icd9
+from ESP.settings import DEBUG, TOPDIR
+from ESP.conf.models import NativeVaccine, NativeManufacturer
+from ESP.conf.models import NativeCode, Icd9
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
@@ -53,7 +39,14 @@ from ESP.emr.models import Immunization
 from ESP.emr.models import Hl7Message
 from ESP.emr.choices import HL7_MESSAGE_LOAD_STATUS
 from ESP.utils.utils import log
-from ESP.utils.utils import str_from_date
+from ESP.utils.utils import str_from_date, date_from_str
+
+#
+# Populate tables in old schema (Demog, Lx, Rx, etc)?
+#
+POPULATE_OLD_SCHEMA = True
+
+
 
 if POPULATE_OLD_SCHEMA:
     from ESP.esp.models import Demog
@@ -63,6 +56,23 @@ if POPULATE_OLD_SCHEMA:
     from ESP.esp.models import Lxo
     from ESP.esp.models import Rx
     from ESP.esp.models import Immunization as OldImmunization
+
+
+
+#
+# Default folder from which to read HL7 messages
+#
+MESSAGES_DIR = os.path.join(TOPDIR, 'assets', 'hl7_messages')
+INCOMING_DIR = os.path.join(MESSAGES_DIR, 'incoming')
+ATTEMPTED_DIR = os.path.join(MESSAGES_DIR, 'attempted')
+PROCESSED_DIR = os.path.join(MESSAGES_DIR, 'processed')
+FAILED_DIR = os.path.join(MESSAGES_DIR, 'failed')
+SKIPPED_DIR = os.path.join(MESSAGES_DIR, 'skipped')
+
+#
+# Used to populate the 'updated_by' field on db records
+#
+UPDATED_BY = 'load_hl7.py'
 
 
 
@@ -102,13 +112,13 @@ class NoMSH(Hl7LoaderException):
 
 class NoPID(Hl7LoaderException):
     '''
-    HL7 message does not contain an MSH segment
+    HL7 message does not contain an PID segment
     '''
     pass
 
 class NoPV1(Hl7LoaderException):
     '''
-    HL7 message does not contain an MSH segment
+    HL7 message does not contain an PV1 segment
     '''
     pass
 
@@ -120,17 +130,13 @@ def record_file_status(filename, status, msg=None):
     @type   status: String
     '''
     assert status in [item[0] for item in HL7_MESSAGE_LOAD_STATUS] # Sanity check
-    try:
-        h = Hl7Message.objects.get(filename=filename)
-    except Hl7Message.DoesNotExist:
-        h = Hl7Message(filename=filename)
-    h.timestamp = datetime.datetime.now()
-    h.status = status
-    if msg:
-        h.message = msg
-    h.save()
-
-
+    h, created = Hl7Message.objects.get_or_create(
+        filename=filename,
+        defaults={
+            'timestamp':datetime.datetime.now(),
+            'status':status,
+                'message': msg
+            })
 
 class Hl7MessageLoader(object):
     
@@ -138,10 +144,12 @@ class Hl7MessageLoader(object):
     # dictionary lookup, instead of db lookup, each time we populate an Lx record.
     codemap = dict(NativeCode.objects.values_list('native_code', 'loinc__pk')) # Class variable
     
+
     def __init__(self, msg_string):
         #
         # MSH
         #
+
         self.msg_string = msg_string
         self.message = hl7.parse(msg_string) # parsed msg
         msh_seg = hl7.segment('MSH', self.message)
@@ -157,10 +165,11 @@ class Hl7MessageLoader(object):
         # PID
         #
         pid_seg = hl7.segment('PID', self.message)
+
         if not pid_seg:
             raise NoPID('No PID segment found')
-        if not len(pid_seg) >= 9:
-            raise CannotParseHl7('PID segment has only %s fields' % len(pid_seg))
+        if not len(pid_seg) >= 30:
+            raise CannotParseHl7('PID segment has %s fields, should have at least 30.' % len(pid_seg))
         patient_id_num = pid_seg[3][0]
         patient, is_new_patient = Patient.objects.get_or_create(patient_id_num=patient_id_num)
         if len(pid_seg[5]) >= 3:
@@ -170,19 +179,24 @@ class Hl7MessageLoader(object):
         elif len(pid_seg[5]) == 2:
             patient.first_name  = pid_seg[5][1]
             patient.last_name = pid_seg[5][0]
-        else:
+        else:    
             log.warning('PID segment in file does not contain patient name in a format we can understand:\n\t %s' % pid_seg[5])
-        dob = pid_seg[8]
-        if len(dob) == 6: # Partially deidentified -- only year & month
-            dob = datetime.date(year=dob[0:4], month=dob[4:6], day=01) # Default to 1st of month
-        else:
-            dob = None
-        gender = pid_seg[8]
+
+
+        date_of_death = pid_seg[29][0] or None
+        if date_of_death: 
+            patient.date_of_death = date_from_str(date_of_death)
+        patient.date_of_birth = date_from_str(pid_seg[7][0]) 
+        patient.gender = pid_seg[8][0]
+
         patient.updated_by = UPDATED_BY
         patient.mrn = patient_id_num # Patient ID # is same as their Medical Record Number
-        patient.gender = gender
-        patient.date_of_birth = dob
+
         patient.save()
+        
+
+        print 'after patient'
+
         if POPULATE_OLD_SCHEMA:
             demog = Demog.objects.get_or_create(pk=patient.pk)[0]
             demog.DemogPatient_Identifier = patient.patient_id_num
@@ -252,16 +266,15 @@ class Hl7MessageLoader(object):
             self.make_allergy()
         if mt in ['VXU']:
             self.make_immunization()
-    
+
     def pcp(self):
         '''
         Create/update Primary Care Physician info.  At North Adams, we are 
         extracting this from PD1 segment.
         '''
         seg = hl7.segment('PD1', self.message)
-        npi = seg[4][0]
-        last = seg[4][1]
-        first = seg[4][2]
+        npi, last, first = seg[4][:3]
+
         provider, is_new_provider = Provider.objects.get_or_create(provider_id_num=npi)
         provider.first_name = first
         provider.last_name = last
@@ -331,6 +344,17 @@ class Hl7MessageLoader(object):
             imm.date = imm_date if imm_date else None
             imm.imm_type = imm_type if imm_type else None
             imm.manufacturer = manufacturer if manufacturer else None
+
+            if imm_type:
+                native_vaccine, new = NativeVaccine.objects.get_or_create(
+                    code=imm_type, defaults={'name': name})
+
+            if manufacturer:
+                native_manuf, new = NativeManufacturer.objects.get_or_create(
+                        name=manufacturer)
+
+            
+
             imm.lot = lot if lot else None
             imm.save()
             if POPULATE_OLD_SCHEMA:
@@ -440,7 +464,6 @@ class Hl7MessageLoader(object):
     def make_encounter(self):
         encounter = Encounter(patient=self.patient, provider=self.provider, 
             updated_by = UPDATED_BY)
-        encounter.save()
         log.debug('Created new encounter: %s' % encounter)
         for dg1 in hl7.segments('DG1', self.message):
             # Discard segments where diagnosis is not coded in ICD9:
@@ -454,7 +477,9 @@ class Hl7MessageLoader(object):
                 name = '[Generated by load_hl7.py - may not be valid.]'
                 icd9_obj = Icd9(code=icd9_str, name=name)
                 icd9_obj.save()
-            encounter.date = self.datetime_from_string(dg1[5][0])
+            encounter.date = date_from_str(dg1[5][0])
+            if not encounter.pk: encounter.save()
+
             # We are going to presume (correctly?  falsely?) that the dates on all 
             # DG1 segments in the same message will be the same.  
             encounter.icd9_codes.add(icd9_obj)
@@ -465,7 +490,7 @@ class Hl7MessageLoader(object):
         #
         if self.msg_type == ['ADT', 'A01']:
             for obx in hl7.segments('OBX', self.message):
-                encounter.date = self.datetime_from_string(obx[-1][0])
+                encounter.date = date_from_str(obx[-1][0])
                 desc = obx[2][0].lower().strip() # lower() to match lowercase search strings below
                 value = obx[3][0].strip()
                 units = obx[4][0].lower().strip()
@@ -523,20 +548,21 @@ class Hl7MessageLoader(object):
                         log.warning('Could not convert weight units ("%s") to kilograms.' % units)
                         continue
                     encounter.weight = value
-        if encounter: # Ignore if it is still None
-            encounter.save() # Save just once, after all info has been added
-        if encounter and POPULATE_OLD_SCHEMA:
-            enc = Enc(pk=encounter.pk)
-            enc.EncPatient = self.demog
-            enc.EncEncounter_Provider = self.old_provider
-            enc.EncEncounter_Date = str_from_date(encounter.date)
-            enc.EncBPSys = encounter.bp_systolic
-            enc.EncBPDias = encounter.bp_diastolic
-            enc.EncTemperature = encounter.temperature
-            enc.EncHeight = encounter.height
-            enc.EncWeight = encounter.weight
-            enc.EncICD9_Codes = ','.join(encounter.icd9_codes.all().values_list('code', flat=True))
-            enc.save()
+
+                encounter.save()
+                if encounter and POPULATE_OLD_SCHEMA:
+                    enc = Enc(pk=encounter.pk)
+                    enc.createdDate = datetime.datetime.now()
+                    enc.EncPatient = self.demog
+                    enc.EncEncounter_Provider = self.old_provider
+                    enc.EncEncounter_Date = str_from_date(encounter.date)
+                    enc.EncBPSys = encounter.bp_systolic
+                    enc.EncBPDias = encounter.bp_diastolic
+                    enc.EncTemperature = encounter.temperature
+                    enc.EncHeight = encounter.height
+                    enc.EncWeight = encounter.weight
+                    enc.EncICD9_Codes = ','.join(encounter.icd9_codes.all().values_list('code', flat=True))
+                    enc.save()
         
     def __has_seg(self, seg_type_list):
         if (self.seg_types & set(seg_type_list)):
@@ -557,21 +583,44 @@ class Hl7MessageLoader(object):
 
     
 
+def check_folders_exist():
+    for folder in [INCOMING_DIR, PROCESSED_DIR, 
+                   ATTEMPTED_DIR, FAILED_DIR, SKIPPED_DIR]:
+        if not os.path.exists(folder): 
+            os.mkdir(folder)
 
 
-def oldmain():
-    all_files = os.listdir(HL7_FOLDER)
-    filename = random.choice(all_files)
-    m = open(os.path.join(HL7_FOLDER, filename)).read()
-    m = open(TESTMSG).read()
-    log.debug('Loading HL7 message file "%s"' % filename)
-    Hl7MessageLoader(m)
+
+def process_file(filename):
+    basename = os.path.basename(filename)
+    record_file_status(basename, 'a') # Status 'attempted'
     
+    log.info('Loading HL7 message: "%s"' % filename)
+    f = open(filename)
+    msg = f.read()
+
+    # We have the contents of file in memory.
+    # We can move to attempt folder
+    f.close()
+    shutil.move(filename, ATTEMPTED_DIR)
+
+    Hl7MessageLoader(msg).parse()
+
+
+    # If we got here and everything is ok, record that this file has
+    # been successfully processed.
+    record_file_status(basename, 'l') # Status 'loaded'
+    shutil.move(os.path.join(ATTEMPTED_DIR, basename), 
+                PROCESSED_DIR)
     
-    
+                
+
 def main():
-    # Set defaults:
-    input_folder = INCOMING_DIR
+    loaded_counter = 0
+    failure_counter = 0
+    folders = {}
+
+    
     parser = optparse.OptionParser()
     parser.add_option('--new', action='store_true', dest='new', 
         help='Process only new HL7 messages')
@@ -591,88 +640,59 @@ def main():
         help='Show which files would be loaded, but do not actually load them')
     options, args = parser.parse_args()
     log.debug('options: %s' % options)
-    #
+
     if options.input_folder:
-        assert os.path.isdir(options.input_folder) # Sanity check -- is really a folder?
-        input_folder = options.input_folder
-    all_files = set( os.listdir(input_folder) )
-    log.debug('combined HL7 file count: %s' % len(all_files))
+        folder = options.input_folder
+        assert os.path.isdir(folder) # Sanity check -- is really a folder?
+        folders[folder] = os.listdir(folder)
+
     if options.single_file:
         log.debug('Loading single file from command line:\n\t%s' % options.single_file)
         # Include only the one file specified on command line
-        input_folder, basename = os.path.split(options.single_file)
-        if Hl7Message.objects.filter(filename=basename, status='l'):
+        full_name = options.single_file
+        basename = os.path.basename(full_name)
+        if Hl7Message.objects.filter(filename=basename, status='l').count():
             sys.stderr.write('\nThis file has already been loaded into the database.  Aborting.\n\n')
-            sys.exit()
-        input_files = [basename]
-    elif options.all or (options.new and options.retry): # Implies both 'new' and 'retry'
-        # Include all files that have not yet been loaded
-        input_files = all_files - set( Hl7Message.objects.filter(status='l').values_list('filename', flat=True) )
-    elif options.retry:
-        # Include only those files that have previously failed 
-        input_files = all_files & set( Hl7Message.objects.filter(status='f').values_list('filename', flat=True) )
-    elif options.new:
-        # Include all files that have not loaded or failed
-        input_files = all_files - set( Hl7Message.objects.filter(status__in=('l', 'f')).values_list('filename', flat=True) )
-    else:
+        else:
+            process_file(full_name)
+            print 'File %s successfully loaded' % full_name
+        sys.exit()
+            
+
+
+    if options.all:
+        options.new = True
+        options.retry = True
+
+    if options.retry: folders[FAILED_DIR] = os.listdir(FAILED_DIR)
+    if options.new: folders[INCOMING_DIR] = os.listdir(INCOMING_DIR)
+
+    if options.dry_run:
+        for folder, files in folders.items():
+            for f in files: print os.path.abspath(os.path.join(folder, f))
+        sys.exit()
+            
+    if not options.retry and not options.new:
         sys.stderr.write('You must select either --new, --retry, or --all\n')
         parser.print_help()
         sys.exit()
-    log.debug('input file count: %s' % len(input_files))
-    files_by_month = {}
-    date_regex = re.compile(r'(\d{4})-(\d{1,2})-(\d{1,2})')
-    dated_input = [] # [(date, filename), (date, filename), ...]
-    for f in input_files:
-        m = date_regex.search(f)
-        if not m:
-            record_file_status(f, 's', msg='Could not parse file date stamp')
-            continue
-        year = int(m.group(1))
-        month = int(m.group(2))
-        day = int(m.group(3))
-        date = datetime.date(year, month, day)
-        dated_input += [(date, f),]
-    dated_input.sort() # Sort by date
-    input_files = [item[1] for item in dated_input]
-    if options.dry_run:
-        # Print file list then quit
-        for f in input_files:
-            print f
-        sys.exit()
-    log.info('Input folder: "%s"' % input_folder)
-    loaded_counter = 0
-    failure_counter = 0
-    for filename in input_files:
-        record_file_status(filename, 'a') # Status 'attempted'
-        log.info('Loading HL7 message: "%s"' % filename)
-        filepath = os.path.join(input_folder, filename)
-        msg = open(filepath).read()
-        if DEBUG:
-            exception_to_catch = Hl7LoaderException
-        else:
-            exception_to_catch = BaseException
-        try:
-            Hl7MessageLoader(msg).parse()
-        # 
-        # For debug we catch Hl7LoaderException, to draw attention to other 
-        # kinds of exception; but in production all exceptions should be 
-        # caught and logged, rather than allowing the program to crash.
-        #
-        #except BaseException, e:
-        except exception_to_catch, e:
-            failure_counter += 1
-            log_msg = str(e)
-            log.error(log_msg)
-            record_file_status(filename, 'f', log_msg) # Status 'failure'
-        else:
-            record_file_status(filename, 'l') # Status 'loaded'
-            loaded_counter += 1
-    log.info('Attempted: %s' % len(input_files) )
+        
+        
+    for folder, files in folders.items():
+        for f in files:
+            try:
+                process_file(os.path.join(folder, f))
+                loaded_counter += 1
+            except BaseException, why:
+                failure_counter += 1
+                log.error(why)
+                record_file_status(f, 'f', why) # Status 'failure'
+    
     log.info('Loaded:    %s' % loaded_counter)
     log.info('Failed:    %s' % failure_counter)
     
             
-
-
 if __name__ == '__main__':
+    check_folders_exist()
     main()
+
