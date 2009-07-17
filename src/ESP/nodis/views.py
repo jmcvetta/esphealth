@@ -53,6 +53,7 @@ from ESP.emr.models import Prescription
 from ESP.hef.core import BaseHeuristic
 from ESP.hef import events # Required to register hef events
 from ESP.nodis.models import Case
+from ESP.nodis.models import STATUS_CHOICES
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
 
@@ -85,26 +86,26 @@ def json_case_grid(request, status):
     # Limit Cases by Status
     #
     if status == 'await':
-        cases = cases.filter(caseworkflow='AR')
+        cases = cases.filter(status='AR')
     elif status == 'under':
-        cases = cases.filter(caseworkflow='UR')
+        cases = cases.filter(status='UR')
     elif status == 'queued':
-        cases = cases.filter(caseworkflow='Q')
+        cases = cases.filter(status='Q')
     elif status == 'sent':
-        cases = cases.filter(caseworkflow='S')
+        cases = cases.filter(status='S')
     #
     # Search Cases
     #
     # I would like also to be able to search by site, but we cannot do so in 
     # a tolerably efficient manner without changes to the data model.
     if flexi.query and flexi.qtype == 'condition':
-        cases = cases.filter(condition__ruleName__icontains=flexi.query)
+        cases = cases.filter(condition__icontains=flexi.query)
     # Search on PHI -- limited to users w/ correct permissions
     elif view_phi and flexi.query and flexi.qtype == 'name':
-        cases = cases.filter(patient__DemogLast_Name__icontains=flexi.query)
+        cases = cases.filter(patient__last_name__icontains=flexi.query)
     elif view_phi and flexi.query and flexi.qtype == 'mrn':
         # Is it sensible that MRN search is exact rather than contains?
-        cases = cases.filter(patient__DemogMedical_Record_Number__iexact=flexi.query)
+        cases = cases.filter(patient__mrn__iexact=flexi.query)
     #
     # Sort Cases
     #
@@ -114,27 +115,24 @@ def json_case_grid(request, status):
     elif flexi.sortname == 'last_updated':
         cases = cases.order_by('updated_timestamp')
     elif flexi.sortname == 'date_ordered':
-        #cases = cases.select_related().order_by('getLxOrderdate')
-        list = [(c.latest_lx_order_date(), c) for c in cases]
-        list.sort()
-        cases = [item[1] for item in list]
+        cases = cases.order_by('date')
     elif flexi.sortname == 'condition':
-        cases = cases.order_by('condition__ruleName')
-    elif flexi.sortname == 'site':
-        list = [(c.latest_lx_provider_site(), c) for c in cases]
-        list.sort()
-        cases = [item[1] for item in list]
+        cases = cases.order_by('condition')
+#    elif flexi.sortname == 'site':
+#        list = [(c.latest_lx_provider_site(), c) for c in cases]
+#        list.sort()
+#        cases = [item[1] for item in list]
     # Sort on PHI -- limited to users w/ correct permissions
     elif view_phi and flexi.sortname == 'name':
-        cases = cases.order_by('patient__DemogLast_Name')
+        cases = cases.order_by('patient__last_name', 'patient__first_name')
     elif view_phi and flexi.sortname == 'mrn':
-        cases = cases.order_by('patient__DemogMedical_Record_Number')
+        cases = cases.order_by('patient__mrn')
     elif view_phi and flexi.sortname == 'address':
-        list = [(c.getAddress(), c) for c in cases]
+        list = [(c.address, c) for c in cases]
         list.sort()
         cases = [item[1] for item in list]
     else: # sortname == 'id'
-         cases = cases.order_by('id')
+         cases = cases.order_by('pk')
     if flexi.sortorder == 'desc':
         # It should not be necessary to convert QuerySet to List in order to
         # do reverse(), but there appears to be a bug in Django requiring this
@@ -162,12 +160,11 @@ def json_case_grid(request, status):
                 case_date,
                 case.provider.dept,
                 # Begin PHI
-                patient.name,
+                patient.name.title(),
                 patient.mrn,
-                patient.address,
+                patient.address.title(),
                 # End PHI
-                #case.get_workflow_state_display(),
-                'n/a',
+                case.get_status_display(),
                 case.updated_timestamp.strftime(DATE_FORMAT),
                 #case.getPrevcases()
                 'n/a',
@@ -178,8 +175,7 @@ def json_case_grid(request, status):
                 case.condition,
                 case_date,
                 case.provider.dept,
-                #case.get_workflow_state_display(),
-                'n/a',
+                case.get_status_display(),
                 last_update,
                 #case.getPrevcases()
                 'n/a',
