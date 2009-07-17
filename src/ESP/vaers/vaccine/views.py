@@ -27,14 +27,19 @@ WIDGET_TEMPLATE_DIR = 'widgets/vaers/'
 def index(request):
     unmapped_vaccines = NativeVaccine.objects.filter(canonical_code__isnull=True)
     mapped_vaccines = NativeVaccine.objects.filter(canonical_code__isnull=False)
+
+    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'vaccines.html',
+                              {'unmapped_vaccines':unmapped_vaccines,
+                               'mapped_vaccines':mapped_vaccines})
+
+def manufacturers(request):
     unmapped_manufacturers = NativeManufacturer.objects.filter(canonical_code__isnull=True)
     mapped_manufacturers = NativeManufacturer.objects.filter(canonical_code__isnull=False)
-
     return direct_to_template(request, PAGE_TEMPLATE_DIR + 'vaccine_index.html',
-                              {'unmapped_vaccines':unmapped_vaccines,
-                               'mapped_vaccines':mapped_vaccines,
-                               'unmapped_manufacturers':unmapped_manufacturers,
+                              {'unmapped_manufacturers':unmapped_manufacturers,
                                'mapped_manufacturers':mapped_manufacturers})
+
+    
 
 
 def vaccine_detail(request, id):

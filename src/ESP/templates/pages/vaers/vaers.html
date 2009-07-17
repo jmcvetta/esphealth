@@ -16,7 +16,10 @@
     <a href="{% url vaers.views.index %}">Vaers Home</a>
   </li>
   <li class="{% cycle rowcolors %}">
-    <a href="{% url vaers.vaccine.views.index %}">Vaccine and Vaccine Manufacturers Mapping</a>
+    <a href="{% url vaers.vaccine.views.index %}">Vaccine Mapping</a>
+  </li>
+  <li class="{% cycle rowcolors %}">
+    <a href="{% url vaers.vaccine.views.manufacturers %}">Manufacturers Mapping</a>
   </li>
   <li class="{% cycle rowcolors %}">
     <a href="{% url vaers.views.detect %}">Run Vaers Heuristics</a>
