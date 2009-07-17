@@ -127,10 +127,14 @@
     <tr>
         <td>{{ case.id }}</td>
         {% if perms.esp.view_phi %}
-        <td>{{ case.showPatient }}</td> 
+        <td>
+            {{ case.patient.name }}
+            <br>
+            {{ case.patient.mrn }}
+        </td> 
         <td>
             Age: {{ age }}
-            <hr>
+            <br>
             DOB: {{ dob }}
         </td>
         {% else %}
