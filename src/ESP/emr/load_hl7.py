@@ -75,21 +75,6 @@ SKIPPED_DIR = os.path.join(MESSAGES_DIR, 'skipped')
 UPDATED_BY = 'load_hl7.py'
 
 
-
-HL7_FOLDER = '/home/rejmv/work/NORTH_ADAMS/incomingHL7/'
-#TESTMSG = '/home/rejmv/work/NORTH_ADAMS/incomingHL7/NADAMS_e76e1d24-0e4c-11de-a002-fb07a536f7cf_2009-3-11 10.57.13.hl7'
-#TESTMSG = '/home/rejmv/work/NORTH_ADAMS/incomingHL7/NADAMS_9da4c7c0-ca96-11dd-b49a-ea1688cfc655_2008-12-15 5.53.32.hl7'
-#TESTMSG = '/home/rejmv/work/NORTH_ADAMS/incomingHL7/38389d3c-39e2-11de-94b5-c0e83ccf8498_2009-5-5 22.4.23.hl7'
-#TESTMSG = '/home/rejmv/work/NORTH_ADAMS/incomingHL7/f51d44d4-39c5-11de-94b5-c0e83ccf8498_2009-5-5 18.42.5.hl7'
-#TESTMSG = '/home/rejmv/work/NORTH_ADAMS/incomingHL7/9465302c-39ca-11de-94b5-c0e83ccf8498_2009-5-5 19.15.10.hl7'
-#TESTMSG = '/home/rejmv/work/NORTH_ADAMS/incomingHL7/NADAMS_c0643514-10f8-11de-a002-fb07a536f7cf_2009-3-14 20.32.23.hl7'
-#TESTMSG = '/home/rejmv/work/NORTH_ADAMS/incomingHL7/d5b4c164-39f4-11de-94b5-c0e83ccf8498_2009-5-6 0.17.38.hl7'
-TESTMSG = '/home/rejmv/work/NORTH_ADAMS/incomingHL7/NADAMS_9014a784-0080-11de-a002-fb07a536f7cf_2009-2-21 20.31.44.hl7'
-
-
-
-
-
 class Hl7LoaderException(BaseException):
     '''
     Base exception for problems encountered while loading HL7 messages
@@ -583,13 +568,15 @@ class Hl7MessageLoader(object):
 
     
 
+def create_folder(fullpath):
+    if not os.path.exists(fullpath): 
+        os.mkdir(fullpath)
+
+
 def check_folders_exist():
     for folder in [INCOMING_DIR, PROCESSED_DIR, 
                    ATTEMPTED_DIR, FAILED_DIR, SKIPPED_DIR]:
-        if not os.path.exists(folder): 
-            os.mkdir(folder)
-
-
+        create_folder(folder)
 
 def process_file(filename):
     basename = os.path.basename(filename)
@@ -610,8 +597,24 @@ def process_file(filename):
     # If we got here and everything is ok, record that this file has
     # been successfully processed.
     record_file_status(basename, 'l') # Status 'loaded'
-    shutil.move(os.path.join(ATTEMPTED_DIR, basename), 
-                PROCESSED_DIR)
+
+
+    # Find the file datestamp and put in the proper archived folder
+    date = basename.split('_')[1].split()[0]
+    year, month, day = date.split('-')
+
+    # We are going to group files by day. So we need to create the
+    # folder (if it does not exist) for the year, month and day.
+    year_folder = os.path.join(PROCESSED_DIR, year)
+    create_folder(year_folder)    
+    month_folder = os.path.join(PROCESSED_DIR, year, month)
+    create_folder(month_folder)
+    day_folder = os.path.join(PROCESSED_DIR, year, month, day)
+    create_folder(day_folder)
+
+    # Now that we are sure the destination folder exists, we move the
+    # file.
+    shutil.move(os.path.join(ATTEMPTED_DIR, basename), day_folder)
     
                 
 
