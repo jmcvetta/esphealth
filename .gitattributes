@@ -144,6 +144,7 @@ src/ESP/media/css/base.css -text
 src/ESP/media/css/changelists.css -text
 src/ESP/media/css/global.css -text
 src/ESP/media/css/jqModal.css -text
+src/ESP/media/css/old-global.css -text
 src/ESP/media/css/vaers.css -text
 src/ESP/media/images/arrow.gif -text
 src/ESP/media/images/default-bg-reverse.gif -text
@@ -190,6 +191,14 @@ src/ESP/media/js/flexigrid/post.php -text
 src/ESP/media/js/flexigrid/post2.php -text
 src/ESP/media/js/flexigrid/sample1.html -text
 src/ESP/media/js/flexigrid/style.css -text
+src/ESP/media/js/jdMenu-1.4.1/ChangeLog.txt -text
+src/ESP/media/js/jdMenu-1.4.1/jdMenu.html -text
+src/ESP/media/js/jdMenu-1.4.1/jquery.bgiframe.js -text
+src/ESP/media/js/jdMenu-1.4.1/jquery.dimensions.js -text
+src/ESP/media/js/jdMenu-1.4.1/jquery.jdMenu.css -text
+src/ESP/media/js/jdMenu-1.4.1/jquery.jdMenu.js -text
+src/ESP/media/js/jdMenu-1.4.1/jquery.js -text
+src/ESP/media/js/jdMenu-1.4.1/jquery.positionBy.js -text
 src/ESP/media/js/jqModal.js -text
 src/ESP/media/js/jquery-1.3.1.js -text
 src/ESP/media/js/jquery-1.3.2.min.js -text
@@ -220,6 +229,7 @@ src/ESP/static/models.py -text
 src/ESP/static/tests.py -text
 src/ESP/static/views.py -text
 src/ESP/templates/404.html -text
+src/ESP/templates/about.html -text
 src/ESP/templates/admin/base_site.html -text
 src/ESP/templates/admin/index.html -text
 src/ESP/templates/admin/login.html -text
@@ -254,6 +264,7 @@ src/ESP/templates/espheader150.gif -text
 src/ESP/templates/espheader2.png -text
 src/ESP/templates/esplogo.gif -text
 src/ESP/templates/fixture_builders/adverse_event.json -text
+src/ESP/templates/login.html -text
 src/ESP/templates/nav-bg-grabber.gif -text
 src/ESP/templates/nav-bg-reverse.gif -text
 src/ESP/templates/nav-bg.gif -text
@@ -273,6 +284,7 @@ src/ESP/templates/pages/vaers/report.html -text
 src/ESP/templates/pages/vaers/vaccine_index.html -text
 src/ESP/templates/pages/vaers/vaccines.html -text
 src/ESP/templates/pages/vaers/vaers.html -text
+src/ESP/templates/status.html -text
 src/ESP/templates/widgets/fixture_builder.json -text
 src/ESP/templates/widgets/vaers/case_grid.html -text
 src/ESP/templates/widgets/vaers/case_grid.json -text
@@ -322,6 +334,7 @@ src/ESP/vaers/vaccine/forms.py -text
 src/ESP/vaers/vaccine/urls.py -text
 src/ESP/vaers/vaccine/views.py -text
 src/ESP/vaers/views.py -text
+src/ESP/views.py -text
 src/hl7/__init__.py -text
 src/hl7/core.py -text
 src/hl7/hl7.py -text

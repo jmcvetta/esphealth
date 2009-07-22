@@ -88,7 +88,7 @@ def case_summary(template):
     
     
 
-def generate_message():
+def populate_values():
     lengths = [len(dis.name) for dis in Disease.get_all_diseases()]
     lengths.sort()
     output_template = '%%%ss: %%s' % str(lengths[-1] + 2)
@@ -101,7 +101,11 @@ def generate_message():
     values['hl7_num_l'] = Hl7Message.objects.filter(status='l').count()
     values['hl7_num_f'] = Hl7Message.objects.filter(status='f').count()
     log.debug('values: %s' % values)
-    return MESSAGE_TEMPLATE % values
+    return values
+
+
+def generate_message():
+    template = MESSAGE_TEMPLATE % populate_values()
 
 
 def send_email(message):

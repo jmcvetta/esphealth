@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<p>Date:  {{ date }}
+<p>Site:  {{ localsite }}
+
+
+<hr>
+<h2>
+    HL7
+</h2>
+
+<p>Latest Successful HL7 timestamp:             {{ hl7_ts }}
+<p>Number of Successfully Loaded HL7 messages:  {{ hl7_num_l }}
+<p>Number of Failed HL7 messages:               {{ hl7_num_f }}
+
+
+<hr>
+<h2>
+    NODIS
+</h2>
+
+<p>New Cases Today: 
+<pre>
+{{ new_cases }}
+</pre>
+
+<p>Case Summary: 
+<pre>
+{{ case_summary }}
+</pre>
+
+{% endblock %}

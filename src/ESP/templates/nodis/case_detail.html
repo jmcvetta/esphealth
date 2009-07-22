@@ -1,6 +1,4 @@
-{% extends "espbase.html" %}
-
-{% load esplib %}
+{% extends "base.html" %}
 
 {% block extrastyle %}
     <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
@@ -12,6 +10,7 @@
 {% endblock %}
 
 {% block extrascript %}
+    <script type="text/javascript" src="{{ site_javascript_folder }}flexigrid/flexigrid.js"></script>
     <script type="text/javascript">
         $(document).ready(function() {
             $('#show_non_rep').click( function() {
