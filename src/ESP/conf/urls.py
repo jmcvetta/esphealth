@@ -16,11 +16,10 @@ from django.conf.urls.defaults import include
 from django.contrib import admin
 
 from ESP.settings import MEDIA_ROOT, MEDIA_URL
-from ESP.esp.views import index, esplogin
 
 
 urlpatterns = patterns('ESP.conf.views',
-    url(r'^codes/loinc/$', 'loinc_mapping'),
+    url(r'^codes/loinc/$', 'loinc_mapping', name='loinc_summary'),
     #url(r'^codes/native/$', 'native_mapping'),
     url(r'^codes/map/$', 'map_code'),
     url(r'^codes/map/loinc/(?P<loinc_num>\d+)/$', 'map_code', name='map_loinc'),

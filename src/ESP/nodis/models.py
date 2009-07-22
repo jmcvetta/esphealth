@@ -5,8 +5,10 @@
 '''
 
 
-from ESP.conf.choices import WORKFLOW_STATES
-from ESP.conf.models import Rule
+import datetime
+
+from django.db import models
+
 from ESP.emr.models import Encounter
 from ESP.emr.models import Immunization
 from ESP.emr.models import LabResult
@@ -14,10 +16,6 @@ from ESP.emr.models import Patient
 from ESP.emr.models import Prescription
 from ESP.emr.models import Provider
 from ESP.hef.models import HeuristicEvent
-from django.db import models
-import datetime
-
-
 
 
 STATUS_CHOICES = [
@@ -94,5 +92,9 @@ class CaseStatusHistory(models.Model):
     comment = models.TextField(blank=True, null=True)
     
     def  __unicode__(self):
-        return u'%s %s %s' % (self.case, self.status, self.timestamp)
+        return u'%s %s' % (self.case, self.timestamp)
+    
+    class Meta:
+        verbose_name = 'Case Status History'
+        verbose_name_plural = 'Case Status History'
 

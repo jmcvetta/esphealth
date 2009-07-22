@@ -6,9 +6,9 @@ from ESP.esp import models
 
 
 
-class CaseAdmin(admin.ModelAdmin):
-    ordering = ('caseLastUpDate', 'casecreatedDate')
-    list_display = ['caseProvider', 'caseLastUpDate',]
+#class CaseAdmin(admin.ModelAdmin):
+#    ordering = ('caseLastUpDate', 'casecreatedDate')
+#    list_display = ['caseProvider', 'caseLastUpDate',]
 
 class EncOptions(admin.ModelAdmin):
     list_display = ('EncPatient', 'EncEncounter_Date','EncMedical_Record_Number')
@@ -69,7 +69,7 @@ class Hl7InputFileAdmin(admin.ModelAdmin):
     list_filter = ['status',]
 
 
-admin.site.register(Case, CaseAdmin)
+#admin.site.register(Case, CaseAdmin)
 admin.site.register(SocialHistory)
 admin.site.register(Enc, EncOptions)
 admin.site.register(Allergy)

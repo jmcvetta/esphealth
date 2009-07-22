@@ -44,7 +44,7 @@ from ESP.settings import NLP_EXCLUDE
 from ESP.settings import ROWS_PER_PAGE
 from ESP.settings import DATE_FORMAT
 from ESP.conf.models import NativeCode
-from ESP.conf.models import NativeNameCache
+from ESP.emr.models import NativeNameCache
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
 from ESP.emr.models import Encounter
@@ -53,6 +53,7 @@ from ESP.emr.models import Prescription
 from ESP.hef.core import BaseHeuristic
 from ESP.hef import events # Required to register hef events
 from ESP.nodis.models import Case
+from ESP.nodis.models import CaseStatusHistory
 from ESP.nodis.models import STATUS_CHOICES
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
@@ -192,8 +193,7 @@ def case_detail(request, case_id):
     Detailed case view with workflow history
     '''
     case = get_object_or_404(Case, pk=case_id)
-    #wf = case.caseworkflow_set.all().order_by('-workflowDate')
-    wf = []
+    history = case.casestatushistory_set.all().order_by('-timestamp')
     patient = case.patient
     pid = patient.pk
     age = patient.age.days / 365 # Note that 365 is Int not Float, thus so is result
@@ -218,7 +218,7 @@ def case_detail(request, case_id):
         'condition': case.condition,
         'age': age,
         'dob': dob,
-        "wf": wf,
+        "history": history,
         "wfstate": 'n/a', # FIXME: Implement this!
         'created': created,
         'updated': updated,
@@ -232,96 +232,77 @@ def case_detail(request, case_id):
         }
     return render_to_response('nodis/case_detail.html', values, context_instance=RequestContext(request))
 
+
 @login_required
 def provider_detail(request, provider_id):
     values = {'provider': Provider.objects.get(pk=provider_id) }
     return render_to_response('nodis/provider_detail.html', values, context_instance=RequestContext(request))
 
-@login_required
-def show_ext_loinc_maps(request):
-    '''
-    Administrative screen to add/delete/update NativeCode objects
-    '''
-    values = {}
-    values['request'] = request # Needed for espbase.html
-    values['default_rp'] = ROWS_PER_PAGE
-    return render_to_response('nodis/show_ext_loinc_maps.html', values, context_instance=RequestContext(request))
-
 
 @login_required
-def json_ext_loinc_grid(request):
-    '''
-    '''
-    flexi = Flexigrid(request)
-    if flexi.sortorder == 'asc':
-        sortname = flexi.sortname
+def updateWorkflow(request,object_id,newwf=''):
+    acase = Case.objects.get(id__exact=object_id)
+    if not newwf:
+        newwf = request.POST['NewWorkflow']
+        cmt = request.POST['Comment']
     else:
-        sortname = '-%s' % flexi.sortname
-    maps = models.NativeCode.objects.select_related().all().order_by(sortname)
-    if flexi.query:
-        query_str = 'Q(%s__icontains="%s")' % (flexi.qtype, flexi.query)
-        q_obj = eval(query_str)
-        maps = maps.filter(q_obj)
-    rows = []
-    for m in maps:
-        row = {}
-        row['id'] = m.id
-        row['cell'] = [
-            m.id,
-            m.native_code,
-            m.native_name,
-            m.loinc.loinc_num,
-            m.loinc.name,
-            ]
-        rows += [row]
-    json = flexi.json(rows)
-    #return HttpResponse(json, mimetype='application/json')
-    return HttpResponse(json)
+        cmt=''
+   # if acase.caseworkflow <> newwf:
+    wf = CaseWorkflow(workflowDate=datetime.datetime.now(),
+                         workflowState=newwf,
+                         workflowChangedBy=request.user.username,
+                         workflowComment = cmt)
+    acase.caseworkflow_set.add(wf)
+    acase.caseworkflow = newwf
+    acase.caseLastUpDate = datetime.datetime.now()
+    acase.save()
+    ###########Go to a confirm page
+    msg='The workflow state of this case has been successfully changed to "%s"!' % dict(choices.WORKFLOW_STATES)[newwf]
+    arcase = Case.objects.filter(caseworkflow='AR')
+    if arcase:
+        nextcaseid=arcase[0].id
+    else:
+        nextcaseid=''
+    cinfo = {
+        "request":request,
+        'wfmsg': msg,
+        'inprod': 1,
+        'nextcaseid':nextcaseid
+        }
+    con = Context(cinfo)
+    return render_to_response('esp/case_detail.html',con)
+            
+
+@login_required
+def wfdetail(request, object_id):
+    """detailed workflow view
+    """
+    wf = get_object_or_404(CaseWorkflow, pk=object_id)
+    caseid = wf.workflowCaseID.id
+    cinfo = {"request":request,
+             "object":wf,
+             "caseid":caseid
+    }
+    c = Context(cinfo)
+    return render_to_response('esp/workflow_detail.html',c)
 
 
 @login_required
-def edit_ext_loinc_map(request, map_id=None, action=None):
-    '''
-    '''
-    values = {}
-    values['request'] = request # FIXME: Ugh, we really need to clean up espbase.html
-    log.debug('map_id: %s' % map_id)
-    log.debug('action: %s' % action)
-    if action == 'delete':
-        map_obj = get_object_or_404(models.NativeCode, pk=map_id)
-        map_obj.delete()
-        return redirect_to(request, urlresolvers.reverse('show_ext_loinc_maps'))
-    elif action == 'new':
-        values['loinc_name'] = '[Enter a LOINC code...]'
-        map_obj = models.NativeCode()
-        form = forms.ExtLoincForm()
-    else: # Edit
-        map_obj = get_object_or_404(models.NativeCode, pk=map_id)
-        data = {
-            'native_code': map_obj .native_code,
-            'native_name': map_obj.native_name,
-            'loinc_num': map_obj.loinc.loinc_num,
-            'notes': map_obj.notes,
-            }
-        values['loinc_name'] = map_obj.loinc.name
-        form = forms.ExtLoincForm(data)
-    if request.method == 'POST':
-        form = forms.ExtLoincForm(request.POST)
-        if form.is_valid():
-            loinc = models.Loinc.objects.get(pk=form.cleaned_data['loinc_num'])
-            map_obj.loinc = loinc
-            map_obj.native_code = form.cleaned_data['native_code']
-            map_obj.native_name = form.cleaned_data['native_name']
-            map_obj.notes = form.cleaned_data['notes']
-            map_obj.save()
-            return redirect_to(request, urlresolvers.reverse('show_ext_loinc_maps'))
-    values['form'] = form
-    return render_to_response('esp/edit_ext_loinc_map.html', values, context_instance=RequestContext(request))
-    
+def updateWorkflowComment(request,object_id):
+    """update caseworkflow comment only
+    workflowComment = meta.TextField('Comments',blank=True)
+     """
+    wf = CaseWorkflow.objects.get(id__exact=object_id)
+    caseid = wf.workflowCaseID.id
+    if request.POST['NewComment'].strip() > ' ':
+        nowd = datetime.datetime.now()
+        saveme = wf.workflowComment
+        newme = request.POST['NewComment']
+        wf.workflowDate=nowd
+        wf.workflowComment = '%s\nAdded at %s: %s' % (saveme, nowd.isoformat(), newme)
+        wf.save()
+    else:
+        print 'No change in workflow comment - not saved'
+        
+    return HttpResponseRedirect("cases/%s/F/" % caseid)
 
-@login_required
-def loinc_name_lookup(request):
-    loinc_num = request.REQUEST['loinc_num']
-    log.debug('loinc_num: %s' % loinc_num)
-    loinc = get_object_or_404(models.Loinc, pk=loinc_num)
-    return HttpResponse(loinc.name, mimetype='text/plain')

@@ -14,7 +14,7 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
 from ESP.hef.choices import HEF_RUN_STATUS
-from ESP.conf.models import Loinc
+from ESP.static.models import Loinc
 from ESP.emr.models import Patient
 
 

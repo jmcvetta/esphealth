@@ -38,7 +38,6 @@ from ESP.emr.models import Patient
 from ESP.emr.models import Provider
 from ESP.hef.core import BaseHeuristic
 from ESP.hef.models import HeuristicEvent
-from ESP.conf.models import Rule
 from ESP.nodis.models import Case
 
 
@@ -576,7 +575,6 @@ class Disease(object):
         self.med_names = med_names
         self.med_days_before = datetime.timedelta(days = med_days_before)
         self.med_days_after = datetime.timedelta(days = med_days_after)
-        #self.condition = Rule.objects.get(ruleName=self.name)
         self._register()
 
     __registry = {} # Class variable

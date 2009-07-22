@@ -22,9 +22,11 @@ from django.contrib.contenttypes import generic
 from ESP.emr.choices import DATA_SOURCE
 from ESP.emr.choices import HL7_MESSAGE_LOAD_STATUS
 from ESP.conf.common import EPOCH
-from ESP.conf.models import SourceSystem
-from ESP.conf.models import Loinc, Ndc, Cpt, Icd9, NativeCode
+from ESP.static.models import Loinc
+from ESP.static.models import Ndc
+from ESP.static.models import Icd9
 from ESP.conf.models import Vaccine
+from ESP.conf.models import NativeCode
 from ESP.utils import randomizer
 from ESP.utils.utils import log, date_from_str, str_from_date
 from ESP.localsettings import DATABASE_ENGINE
@@ -59,6 +61,16 @@ class Provenance(models.Model):
     
     class Meta:
         unique_together = ['timestamp', 'source', 'filename', 'hostname']
+
+
+class NativeNameCache(models.Model):
+    '''
+    Cache table for storing list of all distinct LabResult native_name 
+    and native_code values.  This isn't an EMR record; it is kept in 'emr' 
+    module for convenience.
+    '''
+    native_name = models.CharField(max_length=255, blank=True, null=True)
+    native_code = models.CharField(max_length=100, unique=True, blank=False)
 
 
 #===============================================================================
@@ -716,7 +728,6 @@ class Encounter(BasePatientRecord):
     site_name = models.CharField(max_length=100, blank=True, null=True)
     native_site_num = models.CharField('Site Id #', max_length=30, blank=True, null=True)
     native_encounter_num = models.CharField('Encounter Id #', max_length=20, blank=True, null=True)
-    #cpt = models.ForeignKey(Cpt,  blank=True,  null=True)
     event_type = models.CharField(max_length=20, blank=True, null=True)
     pregnancy_status = models.CharField(max_length=20, blank=True, null=True)
     edc = models.DateField('Expected date of confinement', blank=True, null=True) 
@@ -867,3 +878,5 @@ class Immunization(BasePatientRecord):
     def  __unicode__(self):
         return u"Immunization on %s received %s on %s" % (
             self.patient.full_name, self.vaccine_type(), self.date)
+
+

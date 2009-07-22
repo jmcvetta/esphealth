@@ -15,8 +15,9 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
 from ESP.emr.models import Patient, Immunization, Encounter, LabResult, Provider
-from ESP.esp.choices import WORKFLOW_STATES
-from ESP.conf.models import Icd9, Loinc
+from ESP.esp.choices import WORKFLOW_STATES # FIXME: 'esp' module is deprecated
+from ESP.static.models import Icd9
+from ESP.static.models import Loinc
 from ESP.conf.common import DEIDENTIFICATION_TIMEDELTA
 
 from utils import make_clustering_event_report_file

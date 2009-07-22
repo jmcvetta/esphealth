@@ -7,7 +7,8 @@ import pdb
 from django.db.models import Max
 
 # Models
-from ESP.conf.models import Icd9, Loinc, NativeCode
+from ESP.conf.models import NativeCode
+from ESP.static.models import Icd9, Loinc
 from ESP.emr.models import Patient, Immunization, LabResult, Encounter
 from ESP.vaers.models import AdverseEvent, EncounterEvent, LabResultEvent
 

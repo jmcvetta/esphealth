@@ -34,7 +34,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from ESP.settings import NLP_SEARCH, NLP_EXCLUDE
 from ESP.settings import ROWS_PER_PAGE
 from ESP.conf.models import NativeCode
-from ESP.conf.models import NativeNameCache
+from ESP.emr.models import NativeNameCache
 from ESP.emr.models import LabResult
 from ESP.hef.core import BaseHeuristic
 from ESP.hef import events # Required to register hef events
