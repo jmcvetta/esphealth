@@ -83,6 +83,7 @@ media/js/vaers.js -text
 pdi/esp_dev_pdi_3_1_0.pg.sql -text
 /readme -text
 src/ESP/backfill-by-month.sh -text
+src/ESP/batch-run.sh -text
 src/ESP/clean.db -text
 src/ESP/conf/__init__.py -text
 src/ESP/conf/admin.py -text
