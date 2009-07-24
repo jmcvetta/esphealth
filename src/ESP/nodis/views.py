@@ -212,6 +212,7 @@ def case_detail(request, case_id):
     other_lab = set(LabResult.objects.filter(patient=patient)) - set(case.lab_results.all())
     other_rx = set(Prescription.objects.filter(patient=patient)) - set(case.medications.all())
     values = {
+        'title': 'Detail Report: Case #%s' % case.pk,
         "request":request,
         "case": case,
         'pid': pid,
