@@ -75,6 +75,56 @@ class EventTimeWindow(object):
     '''
     A potential case.
     '''
+    def __init__(self, window, definition, def_version, events=[]):
+        '''
+        @param window: Number of days in this time window
+        @type window: Int
+        @param definition: Name of disease definition that generated this window
+        @type definition: String
+        @param def_version: Version of disease definition that generated this window
+        @type def_version: Int
+        @param events: Events that defined this window
+        @type events: List of HeuristicEvent objects
+        '''
+        assert isinstance(window, datetime.timedelta)
+        self.__window = window
+        self.__events = events
+        self.definition = definition # Name of definition that generated this ETW
+        self.def_version = def_version
+        self.past_events = [] # Past events that validate this windo
+
+    def _get_start_date(self):
+        return self.__events[-1].date - self.__window
+    start = property(_get_start_date)
+
+    def _get_end_date(self):
+        return self.__events[0].date + self.__window
+    end = property(_get_end_date)
+
+    def _get_events(self):
+        return self.__events
+    events = property(_get_events)
+
+    def add_event(self, event):
+        if len(self.__events) == 0:
+            self.__events = [event]
+        elif (event.date >= self.start) and (event.date <= self.end):
+            self.__events += [event]
+            self.__events.sort(lambda x, y: (x.date - y.date).days) # Sort by date
+        else:
+            raise OutOfWindow('Date outside window')
+
+    def all_events(self):
+        return self.events + self.past_events
+
+    def __repr__(self):
+        return 'Window %s - %s (%s events)' % (self.start, self.end, len(self.all_events()))
+
+
+class NewEventTimeWindow(object):
+    '''
+    A potential case (for use with Requirement class)
+    '''
     def __init__(self, window, events):
         '''
         @param window: Number of days in this time window
