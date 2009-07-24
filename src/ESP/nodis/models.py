@@ -23,6 +23,7 @@ STATUS_CHOICES = [
     ('UR', 'Under Review'),
     ('RM', 'Review by MD'),
     ('FP', 'False Positive - Do NOT Process'),
+    # Only fields before this point will be included in on-screen case status menu
     ('Q',  'Confirmed Case, Transmit to Health Department'), 
     ('S',  'Transmitted to Health Department')
     ]
@@ -38,7 +39,7 @@ class Case(models.Model):
     date = models.DateField(blank=False, db_index=True)
     definition = models.CharField(max_length=100, blank=False)
     def_version = models.IntegerField(blank=False)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='AR') # Is it sensible to have default here?
     # Timestamps:
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
