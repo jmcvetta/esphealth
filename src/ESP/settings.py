@@ -52,7 +52,7 @@ if not SECRET_KEY:
 NLP_SEARCH = localsettings.NLP_SEARCH
 NLP_EXCLUDE = localsettings.NLP_EXCLUDE
 
-SITE_ID = 2
+SITE_ID = 1
 TIME_ZONE = 'America/New_York'
 LANGUAGE_CODE = 'en-us'
 
