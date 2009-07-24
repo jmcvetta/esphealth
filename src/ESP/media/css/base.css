@@ -19,6 +19,15 @@
 	font-variant: small-caps;
 }
 
+#message_list {
+	background-color: yellow;
+	border: thick dotted blue;
+	padding-left: 2em;
+	padding-right: 2em;
+	padding-top: 1em;
+	padding-bottom: 1em;
+}
+
 #suspected_condition {
 	background-color: gray;
 	padding: 0.5em;
