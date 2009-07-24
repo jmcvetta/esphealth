@@ -5,5 +5,8 @@ def path_definitions(request):
         'site_domain':'',
         'site_static_folder':settings.MEDIA_URL,
         'site_javascript_folder': '%s/js/' % settings.MEDIA_URL,
-        'site_css_folder': '%s/css/' % settings.MEDIA_URL
+        'site_css_folder': '%s/css/' % settings.MEDIA_URL,
+        'site_image_folder': '%s/images/' % settings.MEDIA_URL,
+        'version': settings.VERSION,
+        'site_name': settings.SITE_NAME,
         }

@@ -147,7 +147,9 @@ src/ESP/media/css/global.css -text
 src/ESP/media/css/jqModal.css -text
 src/ESP/media/css/old-global.css -text
 src/ESP/media/css/vaers.css -text
+src/ESP/media/images/all_seeing_eye.png -text svneol=unset#unset
 src/ESP/media/images/arrow.gif -text
+src/ESP/media/images/caduceus.gif -text svneol=unset#unset
 src/ESP/media/images/default-bg-reverse.gif -text
 src/ESP/media/images/default-bg.gif -text
 src/ESP/media/images/django-logo-negative.png -text
