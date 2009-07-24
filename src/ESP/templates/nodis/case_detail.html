@@ -2,11 +2,6 @@
 
 {% block extrastyle %}
     <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
-    <style type="text/css">
-        #transmit {
-            border: thick groove #800000;
-        }
-    </style>
 {% endblock %}
 
 {% block extrascript %}
@@ -61,7 +56,8 @@
             });
 	    $('#status_history_table').flexigrid({
 	    	title: 'Case Status History',
-		resizable: true,
+		resizable: false,
+                height: 'auto',
 	    });
         });
     </script>
@@ -70,18 +66,9 @@
 {% block content %}
 
 
-{# do we need these? #}
-{% comment %}
-{% if wfmsg %}
-     <br>
-     {% ifequal nextcaseid "" %}All cases have been reviewed
-     {%else%} <a href="{{SITEROOT}}/cases/{{inprod}}/{{nextcaseid }}/R/">Next case for Review</a>
-     {% endifequal %}
-     <br>
-     <center>
-     <h3><font color="blue"> {{wfmsg}}</font></h3>
-      </center>
+{# Do we need this? #}
 
+{% comment %}
 {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 {% endcomment %}
 
@@ -386,12 +373,11 @@
 </div> {# non_reportable_data #}
 
 
-{% if history %}
-
 <hr>
 
-<h2>Case History</h2>
+<h2>Case Status</h2>
 
+{% if history %}
 <table id="status_history_table">
 	<tr>
 		<th>Timestamp</th>
@@ -410,38 +396,22 @@
 	</tr>
 {% endfor %}
 </table>
-
 {% endif %}
 
+<p>&nbsp;</p>
 
-
-
-
-{% ifequal inprod "1" %}
-<form action="{{SITEROOT}}/cases/{{ cobject.id }}/updatewf/" method="post">
-<table cellspacing="1" cellpadding="0" border="1" width="900">
- <tr bgcolor="#800000">
- <td  valign="middle"> <b><font color=white> 1. Change workflow to:</font></td>
- <td  valign="middle"> <SELECT NAME="NewWorkflow" size=4>
-              {% for thiswf in wfstate %}
-              {% ifnotequal cobject.caseWorkflow thiswf.0 %} <OPTION value={{thiswf.0}}> {{thiswf.1}}</OPTION> {% endifnotequal %}           {% endfor %} </SELECT>
- </td>
- </tr>
- <tr bgcolor="#800000">
-  <td valign="middle"> <b><font color=white> 2. Add Comments:</font></td>
-  <td  valign="middle"> <textarea name="Comment" rows=4 cols=50 > </textarea></td>
- </tr>
-  <tr bgcolor="#800000">
-  <td align="center" colspan=2>
-    <br><input type="submit" name="submit" value="Update workflow, add comment" >
- </td>
-</tr>
- </table>
+<form id="status_form" method="POST" action="{% url nodis_case_update case.pk %}">
+	<table>
+	{{ status_form.as_table }}
+	</table>
+	<input type="submit" name="update_status" value="Update status and record comment" />
 </form>
-{% endifequal %}
 
+<p>&nbsp;</p>
 
-
+<form id="submit_positive_form" method="POST" action="{% url nodis_case_transmit case.pk %}">
+	<input type="submit" id="submit_positive" name="submit_positive" value="True positive case -- TRANSMIT TO HEALTH DEPARTMENT" />
+</form>
 
 {% endblock %}
 

@@ -54,7 +54,7 @@ from ESP.hef.core import BaseHeuristic
 from ESP.hef import events # Required to register hef events
 from ESP.nodis.models import Case
 from ESP.nodis.models import CaseStatusHistory
-from ESP.nodis.models import STATUS_CHOICES
+from ESP.nodis.forms import CaseStatusForm
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
 
@@ -177,7 +177,7 @@ def json_case_grid(request, status):
                 case_date,
                 case.provider.dept,
                 case.get_status_display(),
-                last_update,
+                case.updated_timestamp.strftime(DATE_FORMAT),
                 #case.getPrevcases()
                 'n/a',
                 ]
@@ -211,6 +211,9 @@ def case_detail(request, case_id):
     other_enc = set(Encounter.objects.filter(patient=patient)) - set(case.encounters.all())
     other_lab = set(LabResult.objects.filter(patient=patient)) - set(case.lab_results.all())
     other_rx = set(Prescription.objects.filter(patient=patient)) - set(case.medications.all())
+    data = {'status': case.status}
+    print data
+    status_form = CaseStatusForm(initial=data)
     values = {
         'title': 'Detail Report: Case #%s' % case.pk,
         "request":request,
@@ -220,7 +223,6 @@ def case_detail(request, case_id):
         'age': age,
         'dob': dob,
         "history": history,
-        "wfstate": 'n/a', # FIXME: Implement this!
         'created': created,
         'updated': updated,
         'all_encs': other_enc,
@@ -229,9 +231,66 @@ def case_detail(request, case_id):
         'rep_encs': case.encounters.all(),
         'rep_lxs': case.lab_results.all(),
         'rep_rxs': case.medications.all(),
-        'inprod': '1', # Ugh
+        'status_form': status_form,
         }
     return render_to_response('nodis/case_detail.html', values, context_instance=RequestContext(request))
+
+def case_status_update(request, case_id):
+    '''
+    Update the case status and comments.  This method should only ever be 
+    called from a form POST.
+    '''
+    if not request.method == 'POST':
+        msg = 'case_status_update() can only be called from a form POST'
+        request.user.message_set.create(message=msg)
+        return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
+    form = CaseStatusForm(request.POST)
+    if not form.is_valid():
+        msg = 'Invalid form -- no action taken'
+        request.user.message_set.create(message=msg)
+        return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
+    case = get_object_or_404(Case, pk=case_id)
+    new_status = form.cleaned_data['status']
+    comment = form.cleaned_data['comment']
+    if not comment: # I'd rather save a Null than a blank string in the DB
+        comment = None 
+        if new_status == case.status:
+            msg = 'You must either change the change the case status, make a comment, or both.'
+            request.user.message_set.create(message=msg)
+            return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
+    old_status = case.status
+    case.status = new_status
+    case.save()
+    log.debug('Updated status of case #%s: %s' % (case.pk, case.status))
+    hist = CaseStatusHistory(case=case, old_status=old_status, new_status=new_status, 
+        changed_by=request.user.username, comment=comment)
+    hist.save() # Add a history object
+    log.debug('Added new CaseStatusHistory object #%s for Case #%s.' % (hist.pk, case.pk))
+    msg = 'Case status updated.'
+    request.user.message_set.create(message=msg)
+    return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
+
+
+def case_queue_for_transmit(request, case_id):
+    '''
+    Change status of specified case to 'Q' -- queued for transmit to Health Dept.
+    '''
+    if not request.method == 'POST':
+        msg = 'case_queue_for_transmit() can only be called from a form POST'
+        request.user.message_set.create(message=msg)
+        return redirect_to(request, reverse('nodis_case_detail', args=[case_id]))
+    case = get_object_or_404(Case, pk=case_id)
+    old_status = case.status
+    case.status = 'Q'
+    case.save()
+    log.debug('Updated status of case #%s: %s' % (case.pk, case.status))
+    hist = CaseStatusHistory(case=case, old_status=old_status, new_status='Q', 
+        changed_by=request.user.username, comment='Queued for transmit from case detail screen.')
+    hist.save() # Add a history object
+    log.debug('Added new CaseStatusHistory object #%s for Case #%s.' % (hist.pk, case.pk))
+    msg = 'Case #%s has been queued for transmission to the Health Department' % case.pk
+    request.user.message_set.create(message=msg)
+    return redirect_to(request, reverse('nodis_cases_all'))
 
 
 @login_required

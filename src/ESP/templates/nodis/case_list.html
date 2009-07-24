@@ -16,7 +16,7 @@
                 singleSelect: true,
                 {% if perms.esp.view_phi %}
                     colModel: [
-                        {display: 'Case ID #', name: 'id', width: 50, sortable: true, align: 'left'},
+                        {display: 'Nodis Case ID', name: 'id', width: 75, sortable: true, align: 'left'},
                         {display: 'Condition', name: 'condition', width: 100, sortable: true, align: 'left'},
                         {display: 'Date', name: 'date_ordered', width: 75, sortable: true, align: 'left'},
                         {display: 'Provider Site', name: 'site', width: 150, sortable: true, align: 'left'},
@@ -38,7 +38,7 @@
                         ],
                 {% else %}
                     colModel: [
-                        {display: 'Case ID #', name: 'id', width: 50, sortable: true, align: 'left'},
+                        {display: 'Nodis Case ID', name: 'id', width: 50, sortable: true, align: 'left'},
                         {display: 'Condition', name: 'condition', width: 100, sortable: true, align: 'left'},
                         {display: 'Date', name: 'date_ordered', width: 100, sortable: true, align: 'left'},
                         {display: 'Provider Site', name: 'site', width: 200, sortable: true, align: 'left'},
