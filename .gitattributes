@@ -194,14 +194,6 @@ src/ESP/media/js/flexigrid/post.php -text
 src/ESP/media/js/flexigrid/post2.php -text
 src/ESP/media/js/flexigrid/sample1.html -text
 src/ESP/media/js/flexigrid/style.css -text
-src/ESP/media/js/jdMenu-1.4.1/ChangeLog.txt -text
-src/ESP/media/js/jdMenu-1.4.1/jdMenu.html -text
-src/ESP/media/js/jdMenu-1.4.1/jquery.bgiframe.js -text
-src/ESP/media/js/jdMenu-1.4.1/jquery.dimensions.js -text
-src/ESP/media/js/jdMenu-1.4.1/jquery.jdMenu.css -text
-src/ESP/media/js/jdMenu-1.4.1/jquery.jdMenu.js -text
-src/ESP/media/js/jdMenu-1.4.1/jquery.js -text
-src/ESP/media/js/jdMenu-1.4.1/jquery.positionBy.js -text
 src/ESP/media/js/jqModal.js -text
 src/ESP/media/js/jquery-1.3.1.js -text
 src/ESP/media/js/jquery-1.3.2.min.js -text
