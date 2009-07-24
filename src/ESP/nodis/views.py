@@ -196,10 +196,16 @@ def case_detail(request, case_id):
     history = case.casestatushistory_set.all().order_by('-timestamp')
     patient = case.patient
     pid = patient.pk
-    age = patient.age.days / 365 # Note that 365 is Int not Float, thus so is result
+    # patient.age is derived directly from patient.date_of_birth.  When the 
+    # latter is None, the former will also be None
+    try:
+        dob = patient.date_of_birth.strftime(DATE_FORMAT)
+        age = patient.age.days / 365 # Note that 365 is Int not Float, thus so is result
+    except AttributeError: 
+        age = None
+        dob = None
     if age >= 90:
         age = '90+'
-    dob = patient.date_of_birth.strftime(DATE_FORMAT)
     created = case.created_timestamp.strftime(DATE_FORMAT)
     updated = case.updated_timestamp.strftime(DATE_FORMAT)
     #
