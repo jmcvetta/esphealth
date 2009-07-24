@@ -39,10 +39,12 @@
 	<span id="version_site_user"> 
 		<br>
 		Version: {{ version }}
+    		{% if user.is_authenticated %}
 		<br>
 		Site: {{ site_name }}
 		<br>
 		User: {{ user }}
+		{% endif %}
 	</span>
         <h1>
 	<img src="{{ site_image_folder }}/caduceus.gif" alt="caduceus" border=0 />
@@ -52,6 +54,7 @@
     </div>
 
 
+    {% if user.is_authenticated %}
     <div id="navigation">
         <ul class='jd_menu'>
             <li><a href="{% url status %}">Status</a></li>
@@ -77,6 +80,9 @@
             {% endif %}
         </ul>
     </div>
+    {% else %}
+    <hr>
+    {% endif %}
 
     <div id="content">
         <h1 id="title">
