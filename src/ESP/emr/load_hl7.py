@@ -27,7 +27,7 @@ import shutil
 
 from hl7 import hl7
 
-from ESP.settings import DEBUG, TOPDIR
+from ESP.settings import DEBUG, TOPDIR, HL7_DIR
 from ESP.conf.models import NativeVaccine, NativeManufacturer
 from ESP.conf.models import NativeCode
 from ESP.static.models import Icd9
@@ -45,7 +45,7 @@ from ESP.utils.utils import str_from_date, date_from_str
 #
 # Populate tables in old schema (Demog, Lx, Rx, etc)?
 #
-POPULATE_OLD_SCHEMA = True
+POPULATE_OLD_SCHEMA = False
 
 
 
@@ -63,12 +63,11 @@ if POPULATE_OLD_SCHEMA:
 #
 # Default folder from which to read HL7 messages
 #
-MESSAGES_DIR = os.path.join(TOPDIR, 'assets', 'hl7_messages')
-INCOMING_DIR = os.path.join(MESSAGES_DIR, 'incoming')
-ATTEMPTED_DIR = os.path.join(MESSAGES_DIR, 'attempted')
-PROCESSED_DIR = os.path.join(MESSAGES_DIR, 'processed')
-FAILED_DIR = os.path.join(MESSAGES_DIR, 'failed')
-SKIPPED_DIR = os.path.join(MESSAGES_DIR, 'skipped')
+INCOMING_DIR = os.path.join(HL7_DIR, 'incoming')
+ATTEMPTED_DIR = os.path.join(HL7_DIR, 'attempted')
+PROCESSED_DIR = os.path.join(HL7_DIR, 'processed')
+FAILED_DIR = os.path.join(HL7_DIR, 'failed')
+SKIPPED_DIR = os.path.join(HL7_DIR, 'skipped')
 
 #
 # Used to populate the 'updated_by' field on db records

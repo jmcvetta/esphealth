@@ -45,6 +45,8 @@ EMAIL_USE_TLS = localsettings.EMAIL_USE_TLS
 
 SITE_NAME = localsettings.SITE_NAME
 
+HL7_DIR = localsettings.HL7_DIR
+
 SECRET_KEY = localsettings.SECRET_KEY
 if not SECRET_KEY:
     raise AssertionError('You must provide a value for SECRET_KEY in localsettings.py')
