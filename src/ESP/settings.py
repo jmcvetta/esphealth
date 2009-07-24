@@ -17,6 +17,8 @@ import logging
 import localsettings
 
 
+VERSION = '0.9 beta'
+
 TOPDIR = os.path.dirname(__file__)
 CODEDIR = TOPDIR
 
