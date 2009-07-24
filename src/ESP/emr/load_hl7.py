@@ -29,7 +29,8 @@ from hl7 import hl7
 
 from ESP.settings import DEBUG, TOPDIR
 from ESP.conf.models import NativeVaccine, NativeManufacturer
-from ESP.conf.models import NativeCode, Icd9
+from ESP.conf.models import NativeCode
+from ESP.static.models import Icd9
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
