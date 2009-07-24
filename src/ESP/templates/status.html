@@ -3,17 +3,7 @@
 
 {% block content %}
 <p>Date:  {{ date }}
-<p>Site:  {{ localsite }}
-
-
-<hr>
-<h2>
-    HL7
-</h2>
-
-<p>Latest Successful HL7 timestamp:             {{ hl7_ts }}
-<p>Number of Successfully Loaded HL7 messages:  {{ hl7_num_l }}
-<p>Number of Failed HL7 messages:               {{ hl7_num_f }}
+<br>Site:  {{ localsite }}
 
 
 <hr>
@@ -30,5 +20,15 @@
 <pre>
 {{ case_summary }}
 </pre>
+
+
+<hr>
+<h2>
+    HL7
+</h2>
+
+<p>Latest Successful HL7 timestamp:             {{ hl7_ts }}
+<p>Number of Successfully Loaded HL7 messages:  {{ hl7_num_l }}
+<p>Number of Failed HL7 messages:               {{ hl7_num_f }}
 
 {% endblock %}
