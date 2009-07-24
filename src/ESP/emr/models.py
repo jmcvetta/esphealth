@@ -178,7 +178,7 @@ class Patient(BaseMedicalRecord):
     date_of_birth = models.DateField('Date of Birth', blank=True, null=True)
     date_of_death = models.DateField('Date of death', blank=True, null=True)
     gender = models.CharField('Gender', max_length=20, blank=True, null=True)
-    pregnant = models.BooleanField('Patient is pregnant?', blank=False)
+    pregnant = models.NullBooleanField('Patient is pregnant?', blank=True, null=True)
     race = models.CharField('Race', max_length=20, blank=True, null=True)
     home_language = models.CharField('Home Language', max_length=20, blank=True, null=True)
     ssn = models.CharField('SSN', max_length=20, blank=True, null=True)
