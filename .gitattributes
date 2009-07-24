@@ -92,7 +92,6 @@ src/ESP/conf/common.py -text
 src/ESP/conf/fixtures/conf-test-native-codes.json -text
 src/ESP/conf/fixtures/icd9.json -text
 src/ESP/conf/fixtures/immunization_manufacturers.json -text
-src/ESP/conf/fixtures/initial_data.json -text
 src/ESP/conf/fixtures/native_manufacturers.sql -text
 src/ESP/conf/fixtures/native_vaccines.sql -text
 src/ESP/conf/fixtures/vaccines.json -text
