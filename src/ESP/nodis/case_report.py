@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''
                                   ESP Health
-                          Heuristic Events Framework
+                         Notifiable Diseases Framework
                              Case Report Generator
 
 
