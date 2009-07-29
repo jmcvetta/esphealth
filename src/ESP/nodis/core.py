@@ -198,7 +198,7 @@ class Requirement(object):
         valid_heuristic_names = BaseHeuristic.list_heuristic_names()
         for req in reqs:
             if not (isinstance(req, Requirement) or req in valid_heuristic_names):
-                raise InvalidRequirement(req)
+                raise InvalidRequirement('%s [%s]' % (req, type(req)))
         if not exclusions:
             exclusions = []
         for name in exclusions:
@@ -219,10 +219,13 @@ class Requirement(object):
         '''
         Return patients who could plausibly meet all requirements.
         '''
+        log.debug('Requirements list: %s' % self.reqs)
         for req in self.reqs:
+            log.debug('Finding plausible patients for requirement "%s"' % req)
             if isinstance(req, Requirement):
                 patients = req.plausible_patients()
             elif isinstance(req, str):
+                log.debug('Building patient query')
                 patients = Patient.objects.filter(heuristicevent__heuristic_name = req)
             else:
                 raise TypeError('Invalid requirement type: %s' % type(req))
@@ -237,20 +240,33 @@ class Requirement(object):
                 plausible = patients
         return plausible
 
-    def plausible_events(self, patients = None):
+    def plausible_events(self, condition, patients = None):
         '''
         Return events which might plausibly fulfill the Requirement
         '''
         if not patients:
             patients = self.plausible_patients()
+        log.debug('Number of plausible patients to consider: %s' % patients.count())
         names = []
         for req in self.reqs:
             if isinstance(req, str):
                 names.append(req)
-        events = HeuristicEvent.objects.filter(heuristic_name__in = names, patient__in = patients)
+        log.debug('Requirement names: %s' % names)
+        cases_this_condition = Case.objects.filter(condition=condition)
+        event_q = ~Q(case__in=cases_this_condition) # Filter out cases_this_condition
+        event_q = event_q & Q(heuristic_name__in = names, patient__in = patients)
+        events = HeuristicEvent.objects.filter(event_q)
         return events
     
     def matches(self, condition, window, etws=None):
+        '''
+        @param condition: What condition do we want to match?
+        @type condition:  String
+        @param window: Time window we are searching, in days
+        @type window:  Int
+        @param etws: Limit search to these ETWs
+        @type etws:  List of EventTimeWindow instances
+        '''
         log.debug('Find matches for %s' % self.name)
         log.debug('    window:     %s' % window)
         log.debug('    etws:       %s' % etws)
@@ -262,25 +278,24 @@ class Requirement(object):
             log.debug('Limiting plausible patients to those in ETW set')
             etw_patient_pks= [etw.patient.pk for etw in etws]
             plausible = plausible.filter(pk__in=etw_patient_pks)
+        # If we are ANDing together the requirements, then we want to start 
+        # with that req that has fewest plausible events.  If we are ORing them
+        # together, the order doesn't matter.
         for req in self.reqs:
+            log.debug('Counting plausible events for requirement "%s"' % req)
             if isinstance(req, Requirement):
-                counts[req] = req.plausible_events(patients=plausible).count()
+                counts[req] = req.plausible_events(patients=plausible, condition=condition).count()
             elif isinstance(req, str):
                 counts[req] = HeuristicEvent.objects.filter(heuristic_name=req, patient__in=plausible).count()
             else: raise
+        sorted_counts = sorted(counts.items(), key=itemgetter(1))
+        log.debug('Count plausible events by requirement: %s' % pprint.pformat(sorted_counts))
+        sorted_reqs = [item[0] for item in sorted_counts]
         if etws:
             t_windows = etws
         else:
             t_windows = []
-        sorted_counts = sorted(counts.items(), key=itemgetter(1))
-        log.debug('Count plausible events by requirement: %s' % pprint.pformat(sorted_counts))
-#        req = sorted_counts[0][0]
-#        if isinstance(req, Requirement):
-#            t_windows = self.matches(window=window, etws=etws)
-#        elif isinstance(req, str):
-#            t_windows = self._get_etws(req, plausible, etws=etws)
-#        for req, count in sorted_counts[1:]:
-        for req, count in sorted_counts:
+        for req in sorted_reqs:
             log.debug('Requirement: %s' % req)
             if isinstance(req, Requirement):
                 if self.operator == 'and':
@@ -337,7 +352,7 @@ class Requirement(object):
                 # not constrained to a list of possible ETWs, so create a 
                 # new window for it.
                 bound_event_pks.add(event.pk)
-                win = EventTimeWindow(window, events=[event] )
+                win = NewEventTimeWindow(window, events=[event] )
                 log.debug('Created %s for event %s' % (win, event))
                 t_windows.append(win)
         return t_windows
