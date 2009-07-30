@@ -111,6 +111,7 @@ src/ESP/data/source_systems.txt -text
 src/ESP/emr/__init__.py -text
 src/ESP/emr/admin.py -text
 src/ESP/emr/choices.py -text
+src/ESP/emr/etl/load_epic.py -text
 src/ESP/emr/etl/load_hl7.py -text
 src/ESP/emr/fake.py -text
 src/ESP/emr/fixtures/demo.json -text
