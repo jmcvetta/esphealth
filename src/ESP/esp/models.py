@@ -33,15 +33,91 @@ from ESP.utils import randomizer
 from ESP.utils.utils import log
 from ESP.utils.utils import str_from_date
 from ESP.utils.utils import date_from_str
-from ESP.conf.models import Ndc 
-from ESP.conf.models import Icd9
-from ESP.conf.models import Loinc
-from ESP.conf.models import Cpt
-from ESP.conf.models import Rule
+from ESP.static.models import Ndc 
+from ESP.static.models import Icd9
+from ESP.static.models import Loinc
+#from ESP.static.models import Cpt
+#from ESP.conf.models import Rule
 from ESP.conf.models import NativeCode
 from ESP.emr.models import Patient as NewPatient
 from ESP.emr.models import Provider as NewProvider
 from ESP.localsettings import DATABASE_ENGINE
+
+
+FORMAT_TYPES = (
+    ('Text','Plain text representation'),
+    ('XML','eXtended Markup Language format'),
+    ('HL7', 'Health Level 7 markup'),
+    ('MADPHSimple', 'MADPH Simple markup (pipe delim simplifiedhl7)'),
+)
+
+DEST_TYPES = (
+    ('TextFile','Text file on the filesystem - path'),
+    ('PHIN-MS','PHINMS server URL'),
+    ('SOAP', 'SOAP service URL'),
+    ('XMLRPC', 'XML-RPC Server URL'),
+)
+
+WORKFLOW_STATES = [
+    ('AR','AWAITING REVIEW'),
+    ('UR','UNDER REVIEW'),
+    ('RM', 'REVIEW By MD'),
+    ('FP','FALSE POSITIVE - DO NOT PROCESS'),
+    ('Q','CONFIRMED CASE, TRANSMIT TO HEALTH DEPARTMENT'), 
+    ('S','TRANSMITTED TO HEALTH DEPARTMENT')
+    ]
+
+
+class Cpt(models.Model):
+    """cpt codes I found at www.tricare.osd.mil/tai/downloads/cpt_codes.xls
+    """
+    cptCode = models.CharField('CPT Code', max_length=10,db_index=True)
+    cptLong = models.TextField('Long name', max_length=500,)
+    cptShort = models.CharField('Short name', max_length=60,)
+    cptLastedit = models.DateTimeField('Last edited',editable=False,auto_now=True)
+
+    def __unicode__(self):
+        return u'%s %s' % (self.cptCode,self.cptShort)
+        
+
+class Rule(models.Model):
+    """case definition rule with destination and format 
+    """
+    ruleName = models.CharField('Rule Name', max_length=100,db_index=True)
+    ruleSQL = models.TextField('', blank=True, null=True)
+    ruleComments = models.TextField('Comments', blank=True, null=True)
+    ruleVerDate = models.DateTimeField('Last Edited date',auto_now=True)
+    rulecreatedDate = models.DateTimeField('Date Created', auto_now_add=True)
+    rulelastexecDate = models.DateTimeField('Date last executed', editable=False, blank=True, null=True)
+    ruleMsgFormat = models.CharField('Message Format', max_length=10, choices=FORMAT_TYPES,  blank=True, null=True)
+    ruleMsgDest = models.CharField('Destination for formatted messages', max_length=10, choices=DEST_TYPES,  blank=True, null=True)
+    ruleHL7Code = models.CharField('Code for HL7 messages with cases', max_length=10, blank=True, null=True)
+    ruleHL7Name = models.CharField('Condition name for HL7 messages with cases', max_length=30, blank=True, null=True)
+    ruleHL7CodeType = models.CharField('Code for HL7 code type', max_length=10, blank=True, null=True)
+    ruleExcludeCode = models.TextField('The exclusion list of (CPT, COMPT) when alerting', blank=True, null=True)
+    ruleinProd = models.BooleanField('this rule is in production or not', blank=True)
+    ruleInitCaseStatus  =models.CharField('Initial Case status', max_length=20,choices=WORKFLOW_STATES, blank=True)
+    
+
+    def gethtml_rulenote(self):
+        """
+        generate a list to rule note display
+        """
+        data=[]
+        lines = self.ruleComments.split('\\n')
+        for oneline in lines:
+            if lines.index(oneline)==0:
+                note=oneline
+                continue
+            items = oneline.split('|')
+            if lines.index(oneline)==1: header=items
+            else:
+                data.append(items)
+        return (note,header,data)
+    
+    def  __unicode__(self):
+        return u'%s' % self.ruleName 
+
 
 
 
