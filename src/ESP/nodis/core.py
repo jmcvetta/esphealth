@@ -64,6 +64,15 @@ class OutOfWindow(ValueError):
     '''
     pass
 
+
+class OutOfClump(ValueError):
+    '''
+    Raised when attempting to add an event to EventClump, where the 
+    event's date falls outside the window.
+    '''
+    pass
+
+
 class InvalidRequirement(ValueError):
     '''
     Could not understand this requirement.
@@ -121,11 +130,11 @@ class EventTimeWindow(object):
         return 'Window %s - %s (%s events)' % (self.start, self.end, len(self.all_events()))
 
 
-class NewEventTimeWindow(object):
+class EventClump(object):
     '''
     A potential case (for use with Requirement class)
     '''
-    def __init__(self, window, events):
+    def __init__(self, window, event):
         '''
         @param window: Number of days in this time window
         @type window: Int
@@ -133,16 +142,14 @@ class NewEventTimeWindow(object):
         @type definition: String
         @param def_version: Version of disease definition that generated this window
         @type def_version: Int
-        @param events: Events that defined this window
-        @type events: List of HeuristicEvent objects
+        @param event: Initial event to define window
+        @type event: HeuristicEvent 
         '''
-        assert window and events
+        assert window and event
         self.__window = datetime.timedelta(window)
-        self.__patient = events[0].patient
-        for event in events[1:]:
-            assert event.patient == self.__patient
-        self.__events = events
-        self.past_events = [] # Past events that validate this windo
+        self.__patient = event.patient
+        self.__event = event
+        self.past_events = [] # Past events that validate this window
 
     def _get_patient(self):
         return self.__patient
@@ -178,39 +185,134 @@ class NewEventTimeWindow(object):
         return 'Window %s - %s (%s events)' % (self.start, self.end, len(self.all_events()))
 
 
-class Requirement(object):
+class BaseRequirement(object):
     '''
-    A group of required heuristics, forming part of a Disease Definition.
+    One or more required heuristic events
     '''
-    def __init__(self, name, reqs, operator, exclusions = None, window = None):
+    pass
+
+
+class SingleEventRequirement(BaseRequirement):
+    '''
+    Only a single event is required.
+    '''
+    
+    def __init__(self, heuristic_name):
+        self.heuristic_name = heuristic_name
+        
+    def clumps(self, condition, days, patients=None, clumps=None):
+        if not clumps:
+            return self.all_clumps(condition=condition, days=days, patients=patients)
+        else:
+            return self.clumps_gen(condition=condition, days=days, patients=patients, clumps=clumps)
+
+    def clumps_gen(self, condition, days, patients=None, clumps=None):
+        existing_cases = Case.objects.filter(condition=condition)
+        for clump in clumps:
+            found = False
+            q_obj = Q(patient=clump.patient)
+            q_obj = q_obj & Q(heuristic_name=self.heuristic_name)
+            q_obj = q_obj & Q(date__gte=clump.start_date)
+            q_obj = q_obj & Q(date__lte=clump.end_date)
+            q_obj = q_obj & ~Q(case__in=existing_cases)
+            for event in HeuristicEvent.objects.filter(q_obj):
+                try:
+                    clump.add_event(event)
+                    found = True
+                    yield clump
+                except OutOfWindow:
+                    pass
+            
+    def all_clumps(self, condition, days, patients=None):
+        '''
+        Yield all clumps matching this requirement and unbound to existing cases
+            #
+        @param window: Time window with which to initialize EventClumps
+        @type window:  Integer (days)
+        @param patients: Examine these patients only.  If null, examine all patients.
+        @type patients:  List or QuerySet of Patient instances
+        '''
+        log.debug('Yielding %s-day EventClumps for "%s", condition %s' % (days, self.heuristic_name, condition))
+        existing_cases = Case.objects.filter(condition=condition)
+        q_obj = Q(heuristic_name=self.heuristic_name)
+        q_obj = q_obj & ~Q(case__in=existing_cases)
+        if patients:
+            q_obj = q_obj & Q(patient__in=patients)
+        for event in HeuristicEvent.objects.filter(q_obj):
+            yield EventClump(days, event)
+            
+    def plausible_patients(self):
+        return Patient.objects.filter(heuristicevent__heuristic_name=self.heuristic_name)
+    
+    def plausible_events(self, condition, patients = None):
+        '''
+        Return QuerySet of events which could plausibly meet this requirement
+        '''
+        q_obj = Q(case__condition=condition)
+        if patients:
+            q_obj = q_obj & Q(patient__in=patients)
+        return HeuristicEvent.objects.filter(q_obj)
+
+    
+    def __repr__(self):
+        return '<SingleEventRequirement: %s>' % self.heuristic_name
+
+            
+
+class Requirement(BaseRequirement):
+    '''
+    A complex group of required heuristics, forming part of a Disease Definition.
+    '''
+    def __init__(self, name, reqs, operator, exclusions=None):
         '''
         @param requirements: Heuristics & Requirements needed for this Requirement
         @type requirements:  List (composed of Heuristic names and Requirement instances)
         '''
         operator = operator.lower()
+        self.__sorted_condition_reqs = {}
         assert name
         assert reqs
         assert operator in ('and', 'or')
-        assert isinstance(window, int) or not window
         self.name = name
         self.operator = operator
-        self.window = window
         valid_heuristic_names = BaseHeuristic.list_heuristic_names()
+        self.reqs = []
         for req in reqs:
-            if not (isinstance(req, Requirement) or req in valid_heuristic_names):
+            if isinstance(req, Requirement):
+                self.reqs.append(req)
+            elif req in valid_heuristic_names: # Implies req is a string
+                req_obj = SingleEventRequirement(req)
+                self.reqs.append(req_obj)
+            else:
                 raise InvalidRequirement('%s [%s]' % (req, type(req)))
+        count = {} # Count of plausible events per req
+        # TODO:
+        #   Need to sort self.reqs from least to most plausible events
         if not exclusions:
             exclusions = []
         for name in exclusions:
             assert name in valid_heuristic_names
-        self.reqs = reqs
         self.exclusions = exclusions
         log.debug('Initializing new Requirement instance')
         log.debug('    name:        %s' % name)
         log.debug('    operator:    %s' % operator)
         log.debug('    reqs:        %s' % reqs)
-        log.debug('    window:      %s' % window)
         log.debug('    exclusions:  %s' % exclusions)
+    
+    def sorted_reqs(self, condition):
+        '''
+        Returns self.reqs sorted from least to most plausible events for condition.
+        '''
+        if not condition in self.__sorted_condition_reqs.keys():
+            log.debug('Counting plausible events for "%s", condition "%s"' % (self, condition))
+            plausible = self.plausible_patients()
+            count = {}
+            for req in self.reqs:
+                count[req] = req.plausible_events(patients=plausible, condition=condition).count()
+            log.debug('Count of plausible events by requirement: \n%s' % pprint.pformat(count))
+            sorted_reqs = [i[0] for i in sorted(count.items(), key=itemgetter(1))]
+            self.__sorted_condition_reqs[condition] = sorted_reqs
+        return self.__sorted_condition_reqs[condition]
     
     def __repr__(self):
         return '<Requirement: %s>' % self.name
@@ -222,13 +324,7 @@ class Requirement(object):
         log.debug('Requirements list: %s' % self.reqs)
         for req in self.reqs:
             log.debug('Finding plausible patients for requirement "%s"' % req)
-            if isinstance(req, Requirement):
-                patients = req.plausible_patients()
-            elif isinstance(req, str):
-                log.debug('Building patient query')
-                patients = Patient.objects.filter(heuristicevent__heuristic_name = req)
-            else:
-                raise TypeError('Invalid requirement type: %s' % type(req))
+            patients = req.plausible_patients()
             try:
                 if self.operator == ('and'):
                     plausible = plausible & patients
@@ -246,17 +342,65 @@ class Requirement(object):
         '''
         if not patients:
             patients = self.plausible_patients()
-        log.debug('Number of plausible patients to consider: %s' % patients.count())
-        names = []
+        log.debug('Number of plausible %s patients: %s' % (self, patients.count()))
         for req in self.reqs:
-            if isinstance(req, str):
-                names.append(req)
-        log.debug('Requirement names: %s' % names)
-        cases_this_condition = Case.objects.filter(condition=condition)
-        event_q = ~Q(case__in=cases_this_condition) # Filter out cases_this_condition
-        event_q = event_q & Q(heuristic_name__in = names, patient__in = patients)
-        events = HeuristicEvent.objects.filter(event_q)
+            events = req.plausible_events(condition=condition, patients=patients)
+            try:
+                if self.operator == ('and'):
+                    plausible = plausible & events
+                elif self.operator == ('or'):
+                    plausible = plausible | events
+                else:
+                    raise
+            except UnboundLocalError:
+                plausible = events
         return events
+    
+    def clumps(self, condition, days, patients=None, clumps=None):
+        if not clumps:
+            return self.all_clumps(condition=condition, days=days, patients=patients)
+        else:
+            return self.clumps_gen(condition=condition, days=days, patients=patients, clumps=clumps)
+            
+    def clumps_gen(self, condition, days, patients=None, clumps=None):
+        '''
+        Yield unbound clumps, optionally starting from a specified set of 
+        clumps, matching this requirement.  
+        '''
+        sorted_reqs = self.sorted_reqs(condition=condition)
+        log.debug('Checking clumps %s against req "%s"' % (clumps, self))
+        if self.operator == 'and':
+            for req in sorted_reqs:
+                new_clumps = req.clumps(condition=condition, days=days, patients=patients)
+                if new_clumps:
+                    clumps = new_clumps
+            yield clumps
+        elif self.operator == 'or':
+            found = False # Have we found any clumps?
+            for req in sorted_reqs:
+                new_clumps = req.clumps(condition=condition, days=days, patients=patients)
+                if new_clumps:
+                    found = True
+                    yield new_clumps
+    
+    def all_clumps(self, condition, days, patients=None):
+        '''
+        Yield all unbound clumps matching this requirement
+        '''
+        log.debug('Yielding all clumps for "%s"' % self )
+        sorted_reqs = self.sorted_reqs(condition=condition)
+        if self.operator == 'and':
+            # self.reqs is sorted by fewest plausible events
+            for clump in sorted_reqs[0].all_clumps(condition=condition, days=days, patients=patients): 
+                for req in self.reqs[1:]:
+                    clumps = req.clumps(condition=condition, days=days, patients=patients, clumps=clump)
+                yield clumps
+        elif self.operator == 'or':
+            for req in sorted_reqs:
+                for clump in req.all_clumps(condition=condition, days=days, patients=patients):
+                    yield clump
+                #yield req.all_clumps(condition=condition, days=days, patients=patients)
+    
     
     def matches(self, condition, window, etws=None):
         '''
