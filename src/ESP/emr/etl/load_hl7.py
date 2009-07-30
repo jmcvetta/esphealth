@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 '''
                                   ESP Health
-                              ETL Infrastructure
-                            HL7 to Database Loader
+                            EMR ETL Infrastructure
+                              HL7 Message Loader
 
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
-@organization: Channing Laboratory http://www.channing.harvard.edu
+@organization: Channing Laboratory - http://www.channing.harvard.edu
 @copyright: (c) 2009 Channing Laboratory
-@license: LGPL
+@license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
 
