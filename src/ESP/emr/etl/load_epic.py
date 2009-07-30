@@ -19,6 +19,7 @@ import pprint
 
 from ESP.settings import DATA_DIR
 from ESP.utils.utils import log
+from ESP.utils.utils import date_from_str
 from ESP.emr.models import Provenance
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
@@ -49,8 +50,8 @@ PATIENT_FIELDS = [
     'last_name',
     'first_name',
     'middle_name',
-    'address_1',
-    'address_2',
+    'address1',
+    'address2',
     'city',
     'state',
     'zip',
@@ -67,9 +68,15 @@ PATIENT_FIELDS = [
     'marital_stat',
     'religion',
     'aliases',
-    'mom',
+    'mother_mrn',
     'date_of_death',
     ]
+
+LABORDER_FIELDS = {}
+LABRESULT_FIELDS = {}
+ENCOUNTER_FIELDS = {}
+PRESCRIPTION_FIELDS = {}
+IMMUNIZATION_FIELDS = {}
 
     
 # 
@@ -119,20 +126,21 @@ def load_provider(reader, provenance):
         log.debug('Saved provider object: %s' % p)
         count += 1
     log.info('Loaded %s provider records')
+    provenance.status = 'l'
+    provenance.save()
     return count
 
 
 
 def load_patient(reader, provenance):
     count = 0
-    return 0
     for row in reader:
         try:
             p = Patient.objects.get(patient_id_num=row['patient_id_num'])
-        except Provider.DoesNotExist:
+        except Patient.DoesNotExist:
             p = Patient(patient_id_num=row['patient_id_num'])
         if row['provider_id_num']:
-            provider = Provider.objects.get_or_create(provider_id_num=row['provider_id_num'])
+            provider = Provider.objects.get_or_create(provider_id_num=row['provider_id_num'])[0]
         else:
             log.debug('Provider field is empty -- using UNKNOWN provider')
             provider = unknown_provider
@@ -142,7 +150,6 @@ def load_patient(reader, provenance):
         p.last_name = row['last_name']
         p.first_name = row['first_name']
         p.middle_name = row['middle_name']
-        p.suffix = row['suffix']
         p.pcp = provider
         p.address1 = row['address1']
         p.address2 = row['address2']
@@ -153,10 +160,11 @@ def load_patient(reader, provenance):
         p.areacode = row['areacode']
         p.tel = row['tel']
         p.tel_ext = row['tel_ext']
-        p.date_of_birth = row['date_of_birth']
-        p.date_of_death = row['date_of_death']
+        if row['date_of_birth']:
+            p.date_of_birth = date_from_str(row['date_of_birth'])
+        if row['date_of_death']:
+            p.date_of_death = date_from_str(row['date_of_death'])
         p.gender = row['gender']
-        p.pregnant = row['pregnant']
         p.race = row['race']
         p.home_language = row['home_language']
         p.ssn = row['ssn']
@@ -168,6 +176,8 @@ def load_patient(reader, provenance):
         log.debug('Saved patient object: %s' % p)
         count += 1
     log.info('Loaded %s patient records')
+    provenance.status = 'l'
+    provenance.save()
     return count
 
 
@@ -198,23 +208,14 @@ def main():
     #
     dir_contents = os.listdir(incoming_dir)
     dir_contents.sort()
-    filetype = {
-        'epicimm': [],
-        'epicmed': [],
-        'epicmem': [],
-        'epicord': [],
-        'epicpro': [],
-        'epicres': [],
-        'epicvis': [],
-        }
-    loaders = {
-        'epicpro': load_provider,
-        'epicmem': load_patient,
-        'epicord': load_laborder,
-        'epicres': load_labresult,
-        'epicvis': load_encounter,
-        'epicmed': load_prescription,
-        'epicimm': load_immunization,
+    conf = {
+        'epicpro': (load_provider, PROVIDER_FIELDS),
+        'epicmem': (load_patient, PATIENT_FIELDS),
+        'epicord': (load_laborder, LABORDER_FIELDS),
+        'epicres': (load_labresult, LABRESULT_FIELDS),
+        'epicvis': (load_encounter, ENCOUNTER_FIELDS),
+        'epicmed': (load_prescription, PRESCRIPTION_FIELDS),
+        'epicimm': (load_immunization, IMMUNIZATION_FIELDS),
         }
     load_order = [
         'epicpro',
@@ -236,13 +237,15 @@ def main():
             continue
         if Provenance.objects.filter(source=filename, status='l'):
             log.warning('File "%s" has already been loaded; skipping' % filename)
+            continue
         filetype[filename.split('.')[0]] += [filename]
     log.debug('Files to load by type: \n%s' % pprint.pformat(filetype))
     #
     # Load data
     #
     for ft in load_order:
-        load_function = loaders[ft]
+        load_function = conf[ft][0]
+        field_names = conf[ft][1]
         for filename in filetype[ft]:
             prov = Provenance.objects.get_or_create(timestamp=timestamp, 
                 source=filename, 
@@ -252,10 +255,8 @@ def main():
             prov.save()
             filepath = os.path.join(incoming_dir, filename)
             log.debug('Loading file "%s"' % filepath)
-            reader = csv.DictReader(open(filepath), fieldnames=PROVIDER_FIELDS, dialect='epic')
+            reader = csv.DictReader(open(filepath), fieldnames=field_names, dialect='epic')
             record_count[ft] += load_function(reader, prov)
-            prov.status = 'l'
-            prov.save()
     print record_count
 
 
