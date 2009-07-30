@@ -51,7 +51,7 @@ from ESP.settings import EMAIL_HOST
 from ESP.settings import EMAIL_PORT
 from ESP.settings import EMAIL_SENDER
 from ESP.emr.models import Patient
-from ESP.emr.models import Hl7Message
+#from ESP.emr.models import Hl7Message
 from ESP.nodis.models import Case
 from ESP.nodis import defs
 from ESP.nodis.core import Disease
@@ -97,9 +97,9 @@ def populate_values():
     values['localsite'] = SITE_NAME
     values['case_summary'] = case_summary(template=output_template)
     values['new_cases'] = new_cases(template=output_template)
-    values['hl7_ts'] = Hl7Message.objects.filter(status='l').aggregate(max=Max('timestamp'))['max']
-    values['hl7_num_l'] = Hl7Message.objects.filter(status='l').count()
-    values['hl7_num_f'] = Hl7Message.objects.filter(status='f').count()
+    #values['hl7_ts'] = Hl7Message.objects.filter(status='l').aggregate(max=Max('timestamp'))['max']
+    #values['hl7_num_l'] = Hl7Message.objects.filter(status='l').count()
+    #values['hl7_num_f'] = Hl7Message.objects.filter(status='f').count()
     log.debug('values: %s' % values)
     return values
 

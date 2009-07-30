@@ -19,8 +19,9 @@ from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
+from ESP.settings import DATABASE_ENGINE
 from ESP.emr.choices import DATA_SOURCE
-from ESP.emr.choices import HL7_MESSAGE_LOAD_STATUS
+from ESP.emr.choices import LOAD_STATUS
 from ESP.conf.common import EPOCH
 from ESP.static.models import Loinc
 from ESP.static.models import Ndc
@@ -29,23 +30,22 @@ from ESP.conf.models import Vaccine
 from ESP.conf.models import NativeCode
 from ESP.utils import randomizer
 from ESP.utils.utils import log, date_from_str, str_from_date
-from ESP.localsettings import DATABASE_ENGINE
 
 
 
 
 
 
-class Hl7Message(models.Model):
-    '''
-    An HL7 file from which EMR data was loaded into the database.  Records when 
-    we tried to import the file, and the status of our attempt.
-    '''
-    filename = models.CharField(max_length=255, blank=False, unique=True, db_index=True)
-    timestamp = models.DateTimeField(blank=False)
-    status = models.CharField(max_length=1, choices=HL7_MESSAGE_LOAD_STATUS, 
-        blank=False, db_index=True)
-    message = models.TextField('Status Message', blank=True, null=True)
+#class Hl7Message(models.Model):
+#    '''
+#    An HL7 file from which EMR data was loaded into the database.  Records when 
+#    we tried to import the file, and the status of our attempt.
+#    '''
+#    filename = models.CharField(max_length=255, blank=False, unique=True, db_index=True)
+#    timestamp = models.DateTimeField(blank=False)
+#    status = models.CharField(max_length=1, choices=HL7_MESSAGE_LOAD_STATUS, 
+#        blank=False, db_index=True)
+#    message = models.TextField('Status Message', blank=True, null=True)
 
 
 class Provenance(models.Model):
@@ -54,13 +54,18 @@ class Provenance(models.Model):
     '''
     provenance_id = models.AutoField(primary_key=True)
     timestamp = models.DateTimeField(auto_now_add=True, blank=False)
-    source = models.CharField(max_length=25, blank=False, choices=DATA_SOURCE)
-    filename = models.CharField(max_length=500, blank=False)
+    # source will contain the filename, if data came from a file
+    source = models.CharField(max_length=500, blank=False, db_index=True)
     hostname = models.CharField('Host on which data was loaded', max_length=255, blank=False)
+    status = models.CharField(max_length=1, choices=LOAD_STATUS, 
+        blank=False, db_index=True)
     comment = models.TextField(blank=True, null=True)
     
     class Meta:
-        unique_together = ['timestamp', 'source', 'filename', 'hostname']
+        unique_together = ['timestamp', 'source', 'hostname']
+        
+    def __str__(self):
+        return '%s | %s | %s' % (self.source, self.timestamp, self.hostname)
 
 
 class NativeNameCache(models.Model):
@@ -84,7 +89,7 @@ class BaseMedicalRecord(models.Model):
     '''
     Abstract base class for a medical record
     '''
-    #provenance = models.ForeignKey(Provenance, blank=False)
+    provenance = models.ForeignKey(Provenance, blank=False)
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False, db_index=True)
     updated_by = models.CharField(max_length=100, blank=False)

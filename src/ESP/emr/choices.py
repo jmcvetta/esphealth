@@ -56,7 +56,7 @@ COMPARISONS = [
     ('s', 'Compare value with string result'),
    ]
 
-HL7_MESSAGE_LOAD_STATUS = [
+LOAD_STATUS = [
     ('s', 'Skipped'),
     ('a', 'Attempted'),
     ('l', 'Loaded'),
