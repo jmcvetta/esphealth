@@ -129,7 +129,7 @@ class BaseLoader(object):
         else:
             self.provenance.status = 'errors'
         self.provenance.save()
-        return count
+        return (valid, errors)
 
 class NotImplementedLoader(BaseLoader):
     
@@ -471,13 +471,15 @@ def main():
         ]
     loader = {}
     filetype = {}
-    record_count = {}
+    valid_count = {}
+    error_count = {}
     load_order = []
     for item in conf:
         load_order.append(item[0])
         loader[item[0]] = item[1]
         filetype[item[0]] = []
-        record_count[item[0]] = 0
+        valid_count[item[0]] = 0
+        error_count[item[0]] = 0
     for filepath in input_filepaths:
         path, filename = os.path.split(filepath)
         if Provenance.objects.filter(source=filename, status='loaded'):
@@ -492,8 +494,16 @@ def main():
         for filepath in filetype[ft]:
             loader_class = loader[ft]
             l = loader_class(filepath)
-            record_count[ft] += l.load()
-    pprint.pprint(record_count)
+            valid, error = l.load()
+            valid_count[ft] += valid
+            error_count[ft] += error
+    print '+' * 80
+    print 'Valid records loaded:'
+    pprint.pprint(valid_count)
+    print '-' * 80
+    print 'Errors:'
+    pprint.pprint(error_count)
+    
 
 
 if __name__ == '__main__':
