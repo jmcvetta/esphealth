@@ -181,7 +181,7 @@ class ProviderLoader(BaseLoader):
         p.area_code = row['area_code']
         p.telephone = row['telephone']
         p.save()
-        log.debug('Saved provider object: %s' % p)
+        log.info('Saved provider object: %s' % p)
 
 
 
@@ -246,7 +246,7 @@ class PatientLoader(BaseLoader):
         p.aliases = row['aliases']
         p.mother_mrn = row['mother_mrn']
         p.save()
-        log.debug('Saved patient object: %s' % p)
+        log.info('Saved patient object: %s' % p)
 
 
 class LabOrderLoader(NotImplementedLoader):    
@@ -313,7 +313,7 @@ class LabResultLoader(BaseLoader):
         l.specimen_num = row['specimen_id_num']
         l.impression = row['impression']
         l.save()
-        log.debug('Saved lab result object: %s' % l)
+        log.info('Saved lab result object: %s' % l)
 
 
 class EncounterLoader(BaseLoader):
@@ -395,7 +395,7 @@ class EncounterLoader(BaseLoader):
             i = Icd9.objects.get(code=code)
             e.icd9_codes.add(i)
         e.save()
-        log.debug('Saved encounter object: %s' % e)
+        log.info('Saved encounter object: %s' % e)
             
             
 
@@ -426,6 +426,9 @@ class PrescriptionLoader(BaseLoader):
 
 class ImmunizationLoader(BaseLoader):
     fields = []
+    def load_row(self, row):
+        pass
+
 
 
 
