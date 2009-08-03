@@ -123,7 +123,7 @@ class BaseLoader(object):
                 log.error('Caught ValueError: %s' % e)
                 log.error(pprint.pformat(row))
                 errors += 1
-        log.info('Loaded %s provider records with %s errors.' % (valid, errors))
+        log.debug('Loaded %s provider records with %s errors.' % (valid, errors))
         if not errors:
             self.provenance.status = 'loaded'
         else:
@@ -181,7 +181,7 @@ class ProviderLoader(BaseLoader):
         p.area_code = row['area_code']
         p.telephone = row['telephone']
         p.save()
-        log.info('Saved provider object: %s' % p)
+        log.debug('Saved provider object: %s' % p)
 
 
 
@@ -246,7 +246,7 @@ class PatientLoader(BaseLoader):
         p.aliases = row['aliases']
         p.mother_mrn = row['mother_mrn']
         p.save()
-        log.info('Saved patient object: %s' % p)
+        log.debug('Saved patient object: %s' % p)
 
 
 class LabOrderLoader(NotImplementedLoader):    
@@ -313,7 +313,7 @@ class LabResultLoader(BaseLoader):
         l.specimen_num = row['specimen_id_num']
         l.impression = row['impression']
         l.save()
-        log.info('Saved lab result object: %s' % l)
+        log.debug('Saved lab result object: %s' % l)
 
 
 class EncounterLoader(BaseLoader):
@@ -395,7 +395,7 @@ class EncounterLoader(BaseLoader):
             i = Icd9.objects.get(code=code)
             e.icd9_codes.add(i)
         e.save()
-        log.info('Saved encounter object: %s' % e)
+        log.debug('Saved encounter object: %s' % e)
             
             
 
