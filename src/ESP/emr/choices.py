@@ -57,8 +57,9 @@ COMPARISONS = [
    ]
 
 LOAD_STATUS = [
-    ('s', 'Skipped'),
-    ('a', 'Attempted'),
-    ('l', 'Loaded'),
-    ('f', 'Failure'),
+    ('skipped', 'Skipped'),
+    ('attempted', 'Attempted'),
+    ('errors', 'Errors - Partial Load'),
+    ('loaded', 'Loaded'),
+    ('failure', 'Failure'),
     ]
