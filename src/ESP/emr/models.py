@@ -57,7 +57,7 @@ class Provenance(models.Model):
     # source will contain the filename, if data came from a file
     source = models.CharField(max_length=500, blank=False, db_index=True)
     hostname = models.CharField('Host on which data was loaded', max_length=255, blank=False)
-    status = models.CharField(max_length=1, choices=LOAD_STATUS, 
+    status = models.CharField(max_length=10, choices=LOAD_STATUS, 
         blank=False, db_index=True)
     comment = models.TextField(blank=True, null=True)
     
@@ -498,6 +498,7 @@ class LabResult(BasePatientRecord):
     result_float = models.FloatField('Test results (numeric)', blank=True, null=True, db_index=True)
     result_string = models.TextField('Test results (textual)', max_length=2000, blank=True, null=True, db_index=True)
     # Wide fields
+    specimen_num = models.CharField(max_length=100, blank=True, null=True)
     impression = models.TextField('Impression (for imaging)', max_length=2000, blank=True, null=True)
     comment = models.TextField('Comments',  blank=True,  null=True, )
     # Manager
