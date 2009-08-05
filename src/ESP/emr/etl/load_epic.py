@@ -82,7 +82,9 @@ class BaseLoader(object):
             )[0]
         prov.save()
         self.provenance = prov
-        self.reader = csv.DictReader(open(filepath), fieldnames=self.fields, dialect='epic')
+        file = open(filepath)
+        self.line_count = len(file.readlines())
+        self.reader = csv.DictReader(file, fieldnames=self.fields, dialect='epic')
     
     def get_patient(self, patient_id_num):
         if not patient_id_num:
@@ -131,6 +133,9 @@ class BaseLoader(object):
         errors = 0 # Number of non-fatal errors encountered
         for row in self.reader:
             cur_row += 1 # Increment the counter
+            # The last line is a footer, so we skip it
+            if cur_row >= self.line_count:
+                break
             try:
                 self.load_row(row)
                 valid += 1
