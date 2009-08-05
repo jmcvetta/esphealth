@@ -1,8 +1,6 @@
 from django.contrib import admin
 
 from ESP.conf.models import NativeCode
-from ESP.conf.models import Vaccine
-from ESP.conf.models import ImmunizationManufacturer
 
 
 class NativeCodeAdmin(admin.ModelAdmin):
@@ -12,5 +10,3 @@ class NativeCodeAdmin(admin.ModelAdmin):
 
 
 admin.site.register(NativeCode, NativeCodeAdmin)
-admin.site.register(Vaccine)
-admin.site.register(ImmunizationManufacturer)
