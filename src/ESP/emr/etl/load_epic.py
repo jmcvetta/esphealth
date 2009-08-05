@@ -82,9 +82,10 @@ class BaseLoader(object):
             )[0]
         prov.save()
         self.provenance = prov
-        file = open(filepath)
-        self.line_count = len(file.readlines())
-        self.reader = csv.DictReader(file, fieldnames=self.fields, dialect='epic')
+        file_handle = open(filepath)
+        self.line_count = len(file_handle.readlines())
+        file_handle.seek(0) # Reset file position after counting lines
+        self.reader = csv.DictReader(file_handle, fieldnames=self.fields, dialect='epic')
     
     def get_patient(self, patient_id_num):
         if not patient_id_num:
