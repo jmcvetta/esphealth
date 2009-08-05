@@ -477,8 +477,8 @@ class LabResult(BasePatientRecord):
     # Date (from base class) is order date
     #
     # Coding
-    native_code = models.CharField(max_length=30, blank=True, null=True, db_index=True)
-    native_name = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    native_code = models.CharField('Native Test Code', max_length=30, blank=True, null=True, db_index=True)
+    native_name = models.CharField('Native Test Name', max_length=255, blank=True, null=True, db_index=True)
     order_num = models.CharField(max_length=128, blank=True, null=True)
     result_date = models.DateField(blank=True, null=True, db_index=True)
     status = models.CharField('Result Status', max_length=50, blank=True, null=True)
@@ -495,11 +495,11 @@ class LabResult(BasePatientRecord):
     #ref_range = models.CharField('Reference Range (raw string)', max_length=255, blank=True, null=True)
     # Result
     abnormal_flag = models.CharField(max_length=20, blank=True, null=True, db_index=True)
-    result_float = models.FloatField('Test results (numeric)', blank=True, null=True, db_index=True)
-    result_string = models.TextField('Test results (textual)', max_length=2000, blank=True, null=True, db_index=True)
+    result_float = models.FloatField('Numeric Test Result', blank=True, null=True, db_index=True)
+    result_string = models.TextField('Test Result', max_length=2000, blank=True, null=True, db_index=True)
     # Wide fields
-    specimen_num = models.CharField(max_length=100, blank=True, null=True)
-    impression = models.TextField('Impression (for imaging)', max_length=2000, blank=True, null=True)
+    specimen_num = models.CharField('Speciment ID Number', max_length=100, blank=True, null=True)
+    impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
     comment = models.TextField('Comments',  blank=True,  null=True, )
     # Manager
     objects = LabResultManager()
@@ -733,7 +733,7 @@ class Encounter(BasePatientRecord):
     closed_date = models.DateField(blank=True, null=True)
     site_name = models.CharField(max_length=100, blank=True, null=True)
     native_site_num = models.CharField('Site Id #', max_length=30, blank=True, null=True)
-    native_encounter_num = models.CharField('Encounter Id #', max_length=20, blank=True, null=True)
+    native_encounter_num = models.CharField('Encounter ID #', max_length=20, blank=True, null=True)
     event_type = models.CharField(max_length=20, blank=True, null=True)
     pregnancy_status = models.BooleanField(blank=False, default=False)
     edc = models.DateField('Expected date of confinement', blank=True, null=True) 
