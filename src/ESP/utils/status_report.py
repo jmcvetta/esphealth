@@ -51,6 +51,7 @@ from ESP.settings import EMAIL_HOST
 from ESP.settings import EMAIL_PORT
 from ESP.settings import EMAIL_SENDER
 from ESP.emr.models import Patient
+from ESP.emr.models import Provenance
 #from ESP.emr.models import Hl7Message
 from ESP.nodis.models import Case
 from ESP.nodis import defs
@@ -97,6 +98,8 @@ def populate_values():
     values['localsite'] = SITE_NAME
     values['case_summary'] = case_summary(template=output_template)
     values['new_cases'] = new_cases(template=output_template)
+    values['latest_prov'] = Provenance.objects.filter(status='loaded').order_by('-timestamp')[0].timestamp
+    values['last_ten_prov'] = Provenance.objects.order_by('-timestamp')[:10]
     #values['hl7_ts'] = Hl7Message.objects.filter(status='l').aggregate(max=Max('timestamp'))['max']
     #values['hl7_num_l'] = Hl7Message.objects.filter(status='l').count()
     #values['hl7_num_f'] = Hl7Message.objects.filter(status='f').count()

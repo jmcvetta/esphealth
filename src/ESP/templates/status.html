@@ -8,13 +8,15 @@
 
 <hr>
 <h2>
-    NODIS
+    Nodis
 </h2>
 
 <p>New Cases Today: 
-<pre>
-{{ new_cases }}
-</pre>
+<blockquote>
+    <pre>
+    {{ new_cases }}
+    </pre>
+</blockquote>
 
 <p>Case Summary: 
 <pre>
@@ -24,11 +26,29 @@
 
 <hr>
 <h2>
-    HL7
+    Data
 </h2>
 
-<p>Latest Successful HL7 timestamp:             {{ hl7_ts }}
-<p>Number of Successfully Loaded HL7 messages:  {{ hl7_num_l }}
-<p>Number of Failed HL7 messages:               {{ hl7_num_f }}
+<p>Latest Successful Data Load:             {{ latest_prov }}
+<p>Last Ten Data Loads:
+    <blockquote>
+    <table cellpadding=5 rules="all">
+        <tr>
+            <th>Timestamp</th>
+            <th>Source</th>
+            <th>Hostname</th>
+            <th>Status</th>
+        </tr>
+        {% for prov in last_ten_prov %}
+        <tr>
+            <td>{{ prov.timestamp }}</td>
+            <td>{{ prov.source }}</td>
+            <td>{{ prov.hostname }}</td>
+            <td>{{ prov.status }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    </blockquote>
+</p>
 
 {% endblock %}
