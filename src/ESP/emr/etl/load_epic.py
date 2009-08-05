@@ -20,6 +20,7 @@ import optparse
 import re
 import pprint
 
+from psycopg2 import IntegrityError
 from ESP.settings import DATA_DIR
 from ESP.utils.utils import log
 from ESP.utils.utils import date_from_str
@@ -66,6 +67,9 @@ class LoadException(BaseException):
 
 
 class BaseLoader(object):
+    
+    float_catcher = re.compile(r'(\d+\.?\d*)')
+    
     def __init__(self, filepath):
         assert os.path.isfile(filepath)
         path, filename = os.path.split(filepath)
@@ -104,26 +108,47 @@ class BaseLoader(object):
             p.save()
         return p
     
+    def float_or_none(self, string):
+        m = self.float_catcher.match(string)
+        if m.groups():
+            return float(m.groups()[0])
+        else:
+            return None
+    
+    def date_or_none(self, string):
+        try:
+            return date_from_str(string)
+        except ValueError:
+            return None
+    
     def load(self):
         # 
         # We can put error control here as it becomes necessary
         #
-        log.debug('Loading file "%s" with %s' % (self.filepath, self.__class__))
-        valid = 0
-        errors = 0
+        log.info('Loading file "%s" with %s' % (self.filepath, self.__class__))
+        cur_row = 0 # Row counter
+        valid = 0 # Number of valid records loaded
+        errors = 0 # Number of non-fatal errors encountered
         for row in self.reader:
+            cur_row += 1 # Increment the counter
             try:
                 self.load_row(row)
                 valid += 1
             except LoadException, e:
-                log.error('Caught LoadException: %s' % e)
+                log.error('Caught LoadException:')
+                log.error('  File: %s' % self.filename)
+                log.error('  Line: %s' % cur_row)
+                log.error('  Exception: \n%s' % e)
                 log.error(pprint.pformat(row))
                 errors += 1
             except ValueError, e:
-                log.error('Caught ValueError: %s' % e)
+                log.error('Caught ValueError:')
+                log.error('  File: %s' % self.filename)
+                log.error('  Line: %s' % cur_row)
+                log.error('  Exception: \n%s' % e)
                 log.error(pprint.pformat(row))
                 errors += 1
-        log.debug('Loaded %s provider records with %s errors.' % (valid, errors))
+        log.debug('Loaded %s records with %s errors.' % (valid, errors))
         if not errors:
             self.provenance.status = 'loaded'
         else:
@@ -138,7 +163,7 @@ class NotImplementedLoader(BaseLoader):
     
     def load(self):
         log.info('Loader not implemented for this data type')
-        return 0 # count of records loaded is always zero
+        return (0, 0) # count of records loaded is always zero
 
 
 class ProviderLoader(BaseLoader):
@@ -234,9 +259,9 @@ class PatientLoader(BaseLoader):
         p.tel = row['tel']
         p.tel_ext = row['tel_ext']
         if row['date_of_birth']:
-            p.date_of_birth = date_from_str(row['date_of_birth'])
+            p.date_of_birth = self.date_or_none(row['date_of_birth'])
         if row['date_of_death']:
-            p.date_of_death = date_from_str(row['date_of_death'])
+            p.date_of_death = self.date_or_none(row['date_of_death'])
         p.gender = row['gender']
         p.race = row['race']
         p.home_language = row['home_language']
@@ -287,7 +312,7 @@ class LabResultLoader(BaseLoader):
         l.mrn = row['medical_record_num']
         l.order_num = row['order_id_num']
         l.date = date_from_str(row['order_date'])
-        l.result_date = date_from_str(row['result_date'])
+        l.result_date = self.date_or_none(row['result_date'])
         l.native_code = native_code
         l.native_name = row['component_name']
         res = row['result_string']
@@ -353,18 +378,18 @@ class EncounterLoader(BaseLoader):
         e.date = date_from_str(row['encounter_date'])
         cd = row['closed_date']
         if cd:
-            e.closed_date = date_from_str(cd)
+            e.closed_date = self.date_or_none(cd)
         e.site_name = row['dept_name']
         edc = row['edc']
         if edc:
-            e.edc = date_from_str(edc)
+            e.edc = self.date_or_none(edc)
             e.pregnancy_status = True
         if row['temp']:
-            e.temperature = float(row['temp'])
+            e.temperature = self.float_or_none(row['temp'])
         raw_weight = row['weight']
         if raw_weight:
             try:
-                weight = float(raw_weight.split()[0])
+                weight = self.float_or_none(raw_weight.split()[0])
                 if 'lb' in raw_weight: # Convert LBs to Kg
                     e.weight = 0.45359237 * weight
             except ValueError:
@@ -373,26 +398,33 @@ class EncounterLoader(BaseLoader):
         if raw_height:
             match = self.feet_regex.match(raw_height)
             if match: # Need to convert from feet to cm
-                feet = float(match.groupdict()['feet'])
-                inches = float(match.groupdict()['inches'])
+                feet = self.float_or_none(match.groupdict()['feet'])
+                inches = self.float_or_none(match.groupdict()['inches'])
                 inches = inches + (feet * 12)
                 e.height = inches * 2.54
             else: # Assume height is in cm
                 try:
-                    e.height = float(raw_height.split()[0])
+                    e.height = self.float_or_none(raw_height.split()[0])
                 except ValueError:
                     log.warning('Cannot cast height to a number: %s' % raw_height)
         if row['bp_systolic']:
-            e.bp_systolic = float(row['bp_systolic']) 
+            e.bp_systolic = self.float_or_none(row['bp_systolic']) 
         if row['bp_diastolic']:
-            e.bp_diastolic = float(row['bp_diastolic'])
+            e.bp_diastolic = self.float_or_none(row['bp_diastolic'])
         if row['o2_stat']:
-            e.o2_stat = float(row['o2_stat'])
+            e.o2_stat = self.float_or_none(row['o2_stat'])
         if row['peak_flow']:
-            e.peak_flow = float(row['peak_flow'])
+            e.peak_flow = self.float_or_none(row['peak_flow'])
         e.save() # Must save before using ManyToMany relationship
         for code in row['icd9s'].split():
-            i = Icd9.objects.get(code=code)
+            try:
+                i = Icd9.objects.get(code__iexact=code)
+            except Icd9.DoesNotExist:
+                log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
+                i = Icd9()
+                i.code = code
+                i.name = 'Added by load_epic.py'
+                i.save()
             e.icd9_codes.add(i)
         e.save()
         log.debug('Saved encounter object: %s' % e)
@@ -403,10 +435,10 @@ class EncounterLoader(BaseLoader):
 class PrescriptionLoader(BaseLoader):
 
     fields = [
-        'ext_patient_id_num',
-        'ext_medical_record_num',
-        'ext_order_id_num',
-        'ext_provider_id_num',
+        'patient_id_num',
+        'medical_record_num',
+        'order_id_num',
+        'provider_id_num',
         'order_date',
         'status',
         'drug_name',
@@ -420,14 +452,53 @@ class PrescriptionLoader(BaseLoader):
     ]
 
     def load_row(self, row):
-        pass
+        p = Prescription()
+        p.provenance = self.provenance
+        p.updated_by = UPDATED_BY
+        p.patient = self.get_patient(row['patient_id_num'])
+        p.provider = self.get_provider(row['provider_id_num'])
+        p.order_num = row['order_id_num']
+        p.date = date_from_str(row['order_date'])
+        p.status = row['status']
+        p.name = row['drug_name']
+        p.code = row['ndc']
+        p.quantity = row['quantity']
+        p.refills = row['refills']
+        p.start_date = self.date_or_none(row['start_date'])
+        p.end_date = self.date_or_none(row['end_date'])
+        p.route = row['route']
+        p.save()
+        log.debug('Saved prescription object: %s' % p)
 
 
 
 class ImmunizationLoader(BaseLoader):
-    fields = []
+    
+    fields = [
+        'patient_id_num', 
+        'type', 
+        'name',
+        'date',
+        'dose',
+        'manufacturer',
+        'lot',
+        'imm_id_num',
+        ]
+    
     def load_row(self, row):
-        pass
+        i = Immunization()
+        i.provenance = self.provenance
+        i.updated_by = UPDATED_BY
+        i.patient = self.get_patient(row['patient_id_num'])
+        i.type = row['type']
+        i.name = row['name']
+        i.date = date_from_str(row['date'])
+        i.dose = row['dose']
+        i.manufacturer = row['manufacturer']
+        i.lot = row['lot']
+        i.imm_id_num = row['imm_id_num']
+        i.save()
+        log.debug('Saved immunization object: %s' % i)
 
 
 
@@ -482,7 +553,7 @@ def main():
         error_count[item[0]] = 0
     for filepath in input_filepaths:
         path, filename = os.path.split(filepath)
-        if Provenance.objects.filter(source=filename, status='loaded'):
+        if Provenance.objects.filter(source=filename, status__in=('loaded', 'errors')):
             log.warning('File "%s" has already been loaded; skipping' % filename)
             continue
         filetype[filename.split('.')[0]] += [filepath]
