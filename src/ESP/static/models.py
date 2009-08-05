@@ -181,3 +181,36 @@ class Ndc(models.Model):
         return self.trade_name
    
 
+
+class Vaccine(models.Model):
+    '''
+    A vaccine drug
+    '''
+    code = models.IntegerField(unique=True)
+    short_name = models.CharField(max_length=60)
+    name = models.CharField(max_length=300)
+    
+    @staticmethod
+    def random():
+        return Vaccine.objects.exclude(short_name='UNK').order_by('?')[0]
+
+    @staticmethod
+    def acceptable_mapping_values():
+        return Vaccine.objects.exclude(short_name__in=['unknown', 'RESERVED - do not use', 'no vaccine administered'])
+
+    def __unicode__(self):
+        return u'%s (%s)'% (self.short_name, self.name)
+
+
+class ImmunizationManufacturer(models.Model):
+    code = models.CharField(max_length=3)
+    full_name = models.CharField(max_length=200)
+    active = models.BooleanField(default=True)
+    use_instead = models.ForeignKey('self', null=True)
+    
+    vaccines_produced = models.ManyToManyField(Vaccine)
+
+    def __unicode__(self):
+        return self.full_name
+
+
