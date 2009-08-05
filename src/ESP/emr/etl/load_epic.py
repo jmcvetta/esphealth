@@ -168,7 +168,7 @@ class NotImplementedLoader(BaseLoader):
         pass
     
     def load(self):
-        log.info('Loader not implemented for this data type')
+        log.warning('Loader not implemented for this data type')
         return (0, 0) # count of records loaded is always zero
 
 
