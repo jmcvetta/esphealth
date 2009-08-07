@@ -63,6 +63,10 @@ class Provenance(models.Model):
     
     class Meta:
         unique_together = ['timestamp', 'source', 'hostname']
+
+    @staticmethod
+    def fake():
+        return Provenance.objects.get(source='Data Faker App')
         
     def __str__(self):
         return '%s | %s | %s' % (self.source, self.timestamp, self.hostname)
@@ -132,10 +136,12 @@ class Provider(BaseMedicalRecord):
 
     @staticmethod
     def make_fakes(save_on_db=True):
+        provenance = Provenance.fake()
         if Provider.fakes().count() > 0: return
         
         import fake
         for p in fake.PROVIDERS:
+            p.provenance = provenance
             p.provider_id_num = 'FAKE-%05d' % random.randrange(1, 100000)
             if save_on_db: p.save()
 
@@ -216,6 +222,7 @@ class Patient(BaseMedicalRecord):
     @staticmethod
     def make_mock(save_on_db=False):
         # Common, random attributes
+        provenance = Provenance.fake()
         phone_number = randomizer.phone_number()
         address = randomizer.address()
         city = randomizer.city()
@@ -227,6 +234,7 @@ class Patient(BaseMedicalRecord):
             Provider.make_fakes()
         provider = Provider.fakes().order_by('?')[0]
         p = Patient(
+            provenance=provenance,
             pcp = provider,
             patient_id_num = 'FAKE-%s' % identifier,
             mrn = 'FAKE-MRN-%s' % identifier,
@@ -252,8 +260,6 @@ class Patient(BaseMedicalRecord):
             aliases = '',
             home_language = '',
             mother_mrn = '',
-            death_date = '',
-            death_indicator = '',
             occupation = ''
             )
         if save_on_db: p.save()
@@ -280,6 +286,8 @@ class Patient(BaseMedicalRecord):
         return Encounter.objects.filter(patient=self).filter(
             date__gte=begin_date, date__lt=end_date
             ).filter(icd9_codes__in=icd9s).count() != 0
+
+    phone_number = property(lambda x: '(%s) %s' % (x.areacode, x.tel))
     
     def _get_name(self):
         if self.middle_name:
@@ -524,8 +532,8 @@ class LabResult(BasePatientRecord):
             days=random.randrange(1, 30))
         # Make sure the patient was alive for the order...
         order_date = max(when, patient.date_of_birth)
-        lx = LabResult(patient=patient, date=order_date, result_date=
-                       result_date)
+        lx = LabResult(patient=patient, provenance=Provenance.fake(), 
+                       date=order_date, result_date=result_date)
         if save_on_db: lx.save()
         return lx
 
@@ -776,8 +784,9 @@ class Encounter(BasePatientRecord):
         when = kw.get('when', datetime.datetime.now())
         provider = Provider.get_mock()
 
-        e = Encounter(patient=patient, provider=provider, mrn=patient.mrn, 
-                      status='FAKE', date=when, closed_date=when)
+        e = Encounter(patient=patient, provider=provider, provenance=Provenance.fake(),
+                      mrn=patient.mrn, status='FAKE', date=when, 
+                      closed_date=when)
         
         if save_on_db: e.save()
         return e
@@ -861,7 +870,7 @@ class Immunization(BasePatientRecord):
 
     @staticmethod
     def make_mock(vaccine, patient, date, save_on_db=False):
-        i = Immunization(patient=patient, 
+        i = Immunization(patient=patient, provenance=Provenance.fake(),
                          date=date, visit_date=date,
                          imm_type=vaccine.code, name='FAKE'
                          )
