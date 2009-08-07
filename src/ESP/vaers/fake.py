@@ -3,7 +3,7 @@ import random
 import optparse
 
 from ESP.conf.common import EPOCH
-from ESP.conf.models import Icd9
+from ESP.static.models import Icd9
 from ESP.emr.models import Provider, Patient, Encounter, Immunization, LabResult
 from ESP.conf.models import Vaccine
 from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
@@ -77,7 +77,12 @@ def check_for_reactions(imm):
     elif random.randrange(100) <= ICD9_EVENT_PCT:
         ev = Vaers(imm)
         rule = DiagnosticsEventRule.random()
-        code = random.choice(rule.heuristic_defining_codes.all())
+        try:
+            code = random.choice(rule.heuristic_defining_codes.all())
+        except Exception, why:
+            import pdb
+            pdb.set_trace()
+
         ev.cause_icd9(code)
         
         # Maybe it's one that should be ignored?
@@ -294,10 +299,15 @@ class ImmunizationHistory(object):
         # Find a vaccine
         vaccine = Vaccine.random()
 
-        # Find a random date
+        # Find a random date in the past
         today = datetime.date.today()
-        interval = today - (max(self.patient.date_of_birth, EPOCH))
-        days_ago = random.randrange(0, interval.days)
+
+        # Sanity check. If the patient was born "today", we can not put the immunization in the past.
+        if self.patient.date_of_birth >= today:
+            days_ago = 0
+        else:
+            interval = today - (max(self.patient.date_of_birth, EPOCH))
+            days_ago = random.randrange(0, interval.days)
         
         when = today - datetime.timedelta(days=days_ago)
         assert (self.patient.date_of_birth <= when <= today)

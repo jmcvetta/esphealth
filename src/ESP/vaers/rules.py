@@ -1,6 +1,6 @@
 #-*- coding:utf-8 -*-
 
-from ESP.conf.models import Icd9, Vaccine, ImmunizationManufacturer
+from ESP.static.models import Icd9, Vaccine, ImmunizationManufacturer
 from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
 
 # Constants defined in the VAERS documents.
@@ -503,6 +503,13 @@ def define_active_rules():
                 # DoesNotExist. It means we're dealing with an expression.
                 # We'll expand it, get the codes and add
                 codes = Icd9.expansion(code_expression)
+                if len(codes) == 0:
+                    for c in code_expression_list:
+                        try:
+                            Icd9.objects.get(code=c.strip())
+                        except:
+                            print c
+
                 for code in codes:
                     code_set.add(code)
 

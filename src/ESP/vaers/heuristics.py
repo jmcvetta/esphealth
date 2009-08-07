@@ -10,7 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from ESP.hef.core import BaseHeuristic
 from ESP.hef.models import Run
 from ESP.conf.common import EPOCH
-from ESP.conf.models import Icd9
+from ESP.static.models import Icd9
 from ESP.emr.models import Immunization, Encounter, LabResult
 from ESP.vaers.models import AdverseEvent
 from ESP.vaers.models import EncounterEvent, LabResultEvent
@@ -142,7 +142,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         if self.discarding_icd9s:
             candidates = [x for x in candidates if not 
                           x.patient.has_history_of(self.discarding_icd9s, 
-                                                      end_date=end_date)]
+                                                      end_date=end)]
 
         if self.ignored_if_past_occurrence:
             months = self.ignored_if_past_occurrence

@@ -6,6 +6,7 @@ from django.http import HttpResponseNotFound, HttpResponseForbidden
 from django.http import HttpResponseNotAllowed, Http404
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator
+from django.core.mail import mail_admins
 from django.shortcuts import render_to_response
 
 from django.views.generic.simple import direct_to_template
@@ -100,6 +101,8 @@ def verify(request, key):
         confirmed_id = request.POST.get('provider_confirmation', 0) and provider.id
         response = HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
         response.set_cookie('confirmed_id', confirmed_id)
+        mail_admins('ESP:VAERS - User confirmed identity on verification page',
+                    'User confirmed to be provider %s\n. Http Request information: %s' % (provider.full_name, request))
         return response
         
             
@@ -146,13 +149,17 @@ def case_details(request, id):
         comment = ProviderComment(author=provider, event=case,
                                   text=comment_text)
         comment.save()
+        mail_admins('ESP:VAERS - Provider changed case status',
+                    'Case %s. Provider %s \n.Http Request information: %s' % (case, provider, request))
 
         return HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
             
     else:
-        comments = ProviderComment.objects.filter(author=provider,
-                                                  event=case).order_by('-created_on')
-
+        comments = ProviderComment.objects.filter(
+            author=provider, event=case).order_by('-created_on')
+        mail_admins('ESP:VAERS - User viewed case report',
+                    'Case %s. Provider %s \n.Http Request information: %s' % (case, provider, request))
+            
         return direct_to_template(request, PAGE_TEMPLATE_DIR + 'present.html', {
                 'case':case,
                 'comments':comments,

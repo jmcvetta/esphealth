@@ -457,9 +457,12 @@ class LabResultEvent(AdverseEvent):
         return data
     
     def __unicode__(self):
-        return u"LabResult Event %s: Patient %s, %s on %s" % (
-            self.id, self.lab_result.patient.full_name(), 
-            self.matching_rule_explain, self.date)
+#        return u'LabResult Event %s: Patient %s, %s on %s' % (
+#            self.id, self.lab_result.patient.full_name(), 
+#            self.matching_rule_explain, self.date)
+
+        return u'LabResult Event %s' % self.id
+        
 
 
 

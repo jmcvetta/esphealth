@@ -15,13 +15,19 @@ MESSAGE_DIR = os.path.join(PARENT_DIR, 'messages')
 if PARENT_DIR not in sys.path: sys.path.append(PARENT_DIR)
 if LIB_DIR not in sys.path: sys.path.append(LIB_DIR)
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+from ESP.static.models import Vaccine, ImmunizationManufacturer
+from ESP.emr.models import Patient, Provider, Immunization
+from ESP.vaers.models import AdverseEvent
+
+from ESP.utils import utils
+
 
 from esp.models import *
-from esp.models import Vaccine, ImmunizationManufacturer
+
+
 
 from hl7.core import Field
-from hl7 import segments
+from hl7.segments import MSH, PID, NK1, ORC, OBR, OBX
 
 from rules import VACCINE_MAPPING, MANUFACTURER_MAPPING
 
@@ -151,9 +157,6 @@ class onehl7:
         self.sendfacility = institutionName
         self.case = onecase
 
-        self.demog = onecase.patient
-        
-        
     ###################################
     def build_seg(self, temp_d):
         seq = temp_d.keys()
@@ -214,7 +217,7 @@ class onehl7:
             }
         
         race = race_d.get(self.demog.DemogRace, race_d['OTHER'])
-        race =race + ['HL70005']
+        race = race + ['HL70005']
 
         address = [self.demog.DemogAddress1, self.demog.DemogAddress2, 
                    self.demog.DemogCity, self.demog.DemogState, 
@@ -246,7 +249,7 @@ class onehl7:
 
     
     def makeORC(self, provider):
-        orc = segments.ORC()
+        orc = ORC()
         orc.control = 'RE'
         orc.ordering_provider = Field('ordering_provider', 
                                       provider.provCode, provider.provTitle,
@@ -514,3 +517,77 @@ def make_report(event):
     
 
     return finalstr
+
+
+class AdverseReactionReport(object):
+    def __init__(self, event):
+        self.event = event
+
+
+    def make_MSH(self):
+        msh = MSH()
+
+        msh.receiving_facility = 'VAERS PROCESSOR'
+        msh.processing_id = 'T'
+        msh.accept_ack_type = 'NE'
+        msh.application_ack_type = 'AL'
+        msh.message_type = 'ORU^R01'
+        msh.sending_facility = 'HMVA FOR TEST'
+
+        return msh
+
+    def make_PID(self):
+        
+        patient = self.event.patient()
+        pid = PID()
+
+        pid.patient_name = [patient.last_name, patient.first_name]
+        pid.date_of_birth = utils.str_from_date(patient.date_of_birth)
+        pid.sex = patient.gender
+        pid.patient_address = [patient.address1, patient.address2, 
+                               patient.city, patient.state, patient.zip]
+        pid.home_phone = patient.phone_number
+        pid.primary_language = patient.home_language
+
+        return pid
+
+    def event_summary_OBR(self):
+        return OBR()
+
+    def vaccine_list_OBR(self):
+        return OBR()
+    
+    def prior_vaccination_OBR(self):
+        return OBR()
+
+    def previous_report_OBR(self):
+        return OBR()
+    
+    def children_detail_OBR(self):
+        return OBR()
+
+    def immunization_project_OBR(self):
+        return OBR()
+
+
+    def render(self):
+        return '\n'.join([str(x) for x in [
+                self.make_MSH(), self.make_PID(),
+                self.event_summary_OBR(), self.vaccine_list_OBR(),
+                self.prior_vaccination_OBR(), self.previous_report_OBR(),
+                self.children_detail_OBR(), self.immunization_project_OBR()
+                ]])
+
+
+
+
+if __name__ == '__main__':
+
+    ev = AdverseEvent.objects.order_by('?')[0]
+    event = AdverseEvent.by_id(ev.id)
+
+    report = AdverseReactionReport(event)
+    
+    print report.render()
+
+
