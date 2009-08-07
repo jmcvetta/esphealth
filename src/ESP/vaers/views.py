@@ -102,7 +102,7 @@ def verify(request, key):
         response = HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
         response.set_cookie('confirmed_id', confirmed_id)
         mail_admins('ESP:VAERS - User confirmed identity on verification page',
-                    'User confirmed to be provider %s\n. Http Request information: %s' % (provider.full_name, request))
+                    'User confirmed to be provider %s' % (provider.full_name))
         return response
         
             
@@ -150,7 +150,7 @@ def case_details(request, id):
                                   text=comment_text)
         comment.save()
         mail_admins('ESP:VAERS - Provider changed case status',
-                    'Case %s. Provider %s \n.Http Request information: %s' % (case, provider, request))
+                    'Case %s.\nProvider %s\n.' % (case, provider))
 
         return HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
             
@@ -158,7 +158,7 @@ def case_details(request, id):
         comments = ProviderComment.objects.filter(
             author=provider, event=case).order_by('-created_on')
         mail_admins('ESP:VAERS - User viewed case report',
-                    'Case %s. Provider %s \n.Http Request information: %s' % (case, provider, request))
+                    'Case %s.\nProvider %s \n.' % (case, provider))
             
         return direct_to_template(request, PAGE_TEMPLATE_DIR + 'present.html', {
                 'case':case,
