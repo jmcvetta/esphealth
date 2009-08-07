@@ -1,7 +1,9 @@
 @import url(global.css);
 @import url(changelists.css);
 
-
+body {
+    font-size: 12px;
+}
 
 #navigation {
     margin-bottom: 1em;

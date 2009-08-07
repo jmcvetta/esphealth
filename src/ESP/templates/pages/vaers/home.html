@@ -1,4 +1,4 @@
-{% extends "vaers.html" %}
+{% extends "base.html" %}
 {% block extrascript %}
 <script type="text/javascript" src="{{ site_javascript_folder }}vaers.js">
 </script>
@@ -9,6 +9,13 @@ $(document).ready(function() {
 });
 </script>
 {% endblock %}
+
+{% block extrastyle %}
+<link rel="stylesheet" type="text/css" href="{{ site_css_folder }}vaers.css" />
+<link rel="stylesheet" type="text/css" href="{{ site_javascript_folder }}flexigrid/css/flexigrid/flexigrid.css" />
+
+{% endblock %}
+
 
 
 {% block content %}
@@ -42,6 +49,7 @@ $(document).ready(function() {
 </div>
 
 {% include "widgets/vaers/case_grid.html" %} 
+
 
 {% endblock %}
 

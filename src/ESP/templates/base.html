@@ -20,6 +20,7 @@
     <script src="{{ site_javascript_folder}}/jdMenu-1.4.1/jquery.dimensions.js" type="text/javascript"></script>
     <script src="{{ site_javascript_folder}}/jdMenu-1.4.1/jquery.jdMenu.js" type="text/javascript"></script>
     <script src="{{ site_javascript_folder}}/jdMenu-1.4.1/jquery.positionBy.js" type="text/javascript"></script>
+    <script src="{{ site_javascript_folder }}flexigrid/flexigrid.js" type="text/javascript"></script>
 
     <script type="text/javascript">
         $(document).ready(function() {
@@ -67,7 +68,14 @@
                     <li><a href="{% url nodis_cases_sent %}">Cases - Sent</a></li>
                 </ul>
             </li>
-            <li><a href="{% url vaers.views.index %}">Vaers</a></li>
+            <li><a href="{% url vaers.views.index %}">Vaers &raquo;</a>
+	      <ul>
+		<li><a href="{% url vaers.vaccine.views.index %}">Vaccine Mapping</a></li>
+		<li><a href="{% url vaers.vaccine.views.manufacturers %}">Manufacturers Mapping</a></li>
+		<li><a href="{% url vaers.views.detect %}">Run Vaers Heuristics</a></li>
+		<li><a href="{% url vaers.views.report %}">Satscan Clustering Report</a></li>
+	      </ul>
+	    </li>
             <li>Administration &raquo;
                 <ul>
 		    {% if user.is_staff %}
