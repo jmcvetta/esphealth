@@ -73,12 +73,6 @@ def get_required_loincs():
     return required_loincs
     
     
-def foobar():
-    necessary_loincs = set(BaseHeuristic.get_all_loincs())
-    mapped_loincs = set(NativeCode.objects.values_list('loinc', flat=True))
-    return necessary_loincs - mapped_loincs
-
-
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # 
 # All views must pass "context_instance=RequestContext(request)" argument 
@@ -113,7 +107,6 @@ def loinc_mapping(request):
     mapped = []
     unmapped = []
     required_loincs = get_required_loincs()
-    print required_loincs
     for loinc_num in required_loincs:
         native_codes = NativeCode.objects.filter(loinc=loinc_num).values_list('native_code', flat=True)
         if native_codes:
@@ -126,27 +119,6 @@ def loinc_mapping(request):
     values['mapped'] = mapped
     values['unmapped'] = unmapped
     return render_to_response('conf/loinc_mapping.html', values, context_instance=RequestContext(request))
-
-
-def foo():
-    search_re = re.compile(r'|'.join(NLP_SEARCH))
-    exclude_re = re.compile(r'|'.join(NLP_EXCLUDE))
-    mapped_codes = NativeCode.objects.values_list('native_code', flat=True)
-    q_obj = ~Q(native_code__in=mapped_codes)
-    q_obj = q_obj & Q(native_code__isnull=False)
-    #native_names = LabResult.objects.filter(q_obj).values_list('native_code', 'native_name').distinct('native_code')
-    native_names = []
-    for item in native_names:
-        code, name = item
-        if not name:
-            continue # Skip null
-        uname = name.upper()
-        if exclude_re.match(uname):
-            continue # Excluded
-        if search_re.match(uname):
-            print '%-20s %s' % (code, name)
-    values['default_rp'] = ROWS_PER_PAGE
-    return render_to_response('conf/code_maintenance.html', values, context_instance=RequestContext(request))
 
 
 @login_required
