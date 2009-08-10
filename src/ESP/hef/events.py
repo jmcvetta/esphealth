@@ -20,7 +20,7 @@ from ESP.hef.core import LabOrderedHeuristic
 
 
 
-POSITIVE_STRINGS = ['reactiv', 'pos', 'detec']
+POSITIVE_STRINGS = ['reactiv', 'pos', 'detec', 'pres']
 NEGATIVE_STRINGS = ['non', 'neg', 'not', 'nr']
 
 
