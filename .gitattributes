@@ -90,6 +90,7 @@ src/ESP/conf/__init__.py -text
 src/ESP/conf/admin.py -text
 src/ESP/conf/choices.py -text
 src/ESP/conf/common.py -text
+src/ESP/conf/context_processors.py -text
 src/ESP/conf/fixtures/conf-test-native-codes.json -text
 src/ESP/conf/fixtures/icd9.json -text
 src/ESP/conf/fixtures/immunization_manufacturers.json -text
@@ -122,7 +123,6 @@ src/ESP/emr/sql/patient.postgresql.sql -text
 src/ESP/emr/views.py -text
 src/ESP/env-setup.sh -text
 src/ESP/esp/choices.py -text
-src/ESP/esp/context_processors.py -text
 src/ESP/esp/disabled-admin.py -text
 src/ESP/esp/fake.py -text
 src/ESP/esp/fixtures/auth.json -text
