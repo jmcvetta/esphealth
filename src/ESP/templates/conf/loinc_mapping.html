@@ -17,15 +17,17 @@
 
 {% block content %}
 
+<p align="center">{{ date }} &mdash; {{ site_name }}</p>
+
 <h2>Unmapped</h2>
 
-<table id="unmapped_loincs">
+<table id="unmapped_loincs" rules="rows" >
     <tr>
         <th width='100pt'>LOINC</th>
         <th width='300pt'>Required by Heuristic</th>
     </tr>
     {% for item in unmapped %}
-    <tr>
+    <tr valign="top">
         <td>{{ item.loinc_num }}</td>
         <td>
         {% for req in item.required_by %}
@@ -42,14 +44,14 @@
 
 <h2>Mapped</h2>
 
-<table id="mapped_loincs">
+<table id="mapped_loincs" rules="rows" >
     <tr>
         <th width='100pt'>LOINC</th>
         <th width='300pt'>Required by Heuristic</th>
         <th width='300pt'>Native Codes</th>
     </tr>
     {% for item in mapped %}
-    <tr>
+    <tr valign="top">
         <td>{{ item.loinc_num }}</td>
         <td>
         {% for req in item.required_by %}
