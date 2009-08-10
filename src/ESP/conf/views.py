@@ -102,7 +102,7 @@ class LoincMap:
 
 @login_required
 def loinc_mapping(request):
-    values = {'title': 'Required LOINC Codes'}
+    values = {'title': 'LOINC Mapping Report'}
     mapped_loinc_nums = set(NativeCode.objects.values_list('loinc', flat=True))
     mapped = []
     unmapped = []
