@@ -15,13 +15,16 @@ class Field(object):
     def __init__(self, name, *values, **kw):
         self.name = name
         default_value = str(kw.get('default', EMPTY))
-        self.value = '^'.join([str(v) for v in values]) or default_value
+        self.is_serial = kw.get('serial', False)
+        self.is_subsequence_indicator = kw.get('subsequence', False)
+        self.value = list(values) or default_value
 
-    def __repr__(self):
-        return self.value
-
+        
     def __str__(self):
-        return self.value
+        if type(self.value) is list:
+            return '^'.join([str(x) for x in self.value])
+        
+        return str(self.value)
 
     def __cmp__(self, value):
         '''
@@ -40,27 +43,90 @@ class Field(object):
 
 class Segment():
     Fields = []
+    PROTECTED_NAMES = ['_fields', '_sequence_field', '_subsequence_field']
     def __init__(self, **kw):
-        fields = dict([(f.name, f) for f in deepcopy(self.__class__.Fields)])
-        
-        for k, v in fields.items():
-            self.__dict__[k] = v
-                   
+              
+        self._fields = dict(
+            [(f.name, f) for f in deepcopy(self.__class__.Fields)])
+        self._sequence_field = None
+        self._subsequence_field = None
+
+
+        # Find the sequence and subsequence fields, if they exist.
+        for field in self._fields.values():
+            if field.is_serial: 
+                self._sequence_field = field.name
+            if field.is_subsequence_indicator: 
+                self._subsequence_field = field.name
+
+        # Set the values that were passed during initizalition
         for key, value in kw.items():
-            if key in fields:
-                self.__dict__[key] = value
+            if key in self._fields:
+                self._fields[key] = value
+
+        
 
     def __setattr__(self, name, value):
-        if name in self.__dict__:
+        '''
+        This allows us to set values from the Segment by the name of
+        the field. E.g.: aOBR.ordering_provider = 'John Smith'.
+        
+        Also, it allows us to define the sequence and subsequence
+        values always using the same name. For instance, in some
+        fields, the sequence number is called set_id, on others
+        sequence_number. To make things more uniform, trying to set
+        the attribute sequence_id will look for the correct field name
+        and set the value of the sequence.
+        '''
+
+        if name in Segment.PROTECTED_NAMES:
             self.__dict__[name] = value
+            return
+
+        if name in self._fields:
+            self._fields[name].value = value
+        elif name == 'sequence_id': 
+            self._fields[self._sequence_field].value = value
+        elif name == 'subsequence_id': 
+            self._fields[self._subsequence_field].value = value            
         else: raise NameError, '%s Not a valid field for %s' % (
             name, self.__class__.__name__)
-    
+
+
+    def __getattr__(self, name):
+        if name in Segment.PROTECTED_NAMES:
+            return self.__dict__[name]
+        else:
+            return self._fields[name].value
 
     def __str__(self):
 
         field_names = [f.name for f in self.__class__.Fields]
-        return '|'.join([str(self.__dict__[k]) for k in field_names])
+        values = [str(self._fields[k]) for k in field_names]
+        values.insert(0, self.__class__.__name__)
+        return '|'.join(values)
+
+
+class SegmentTree():
+    '''
+    Hl7 is a pipe-delimited, line-oriented text format. Despite that,
+    most of the messages require some format of tree like hierachy
+    between the segments. To keep the internal organization of the
+    segments, the class SegmentTree should be used to define a parent
+    segment and its children.
+    '''
+    def __init__(self, parent, children):
+        self.parent = parent
+        self.children = children if type(children) is list else [children]
+        
+        for idx, child in enumerate(self.children):
+            child.sequence_id = idx+1
+
+    def __str__(self):
+        parent_and_children = [self.parent] + self.children
+        return '\n'.join([str(x) for x in parent_and_children])
+            
+    
 
 
         
