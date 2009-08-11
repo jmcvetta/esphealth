@@ -120,8 +120,8 @@ INSTALLED_APPS = (
     'ESP.emr',
     'ESP.hef',
     'ESP.nodis',
-    'ESP.hef2',
-    'ESP.nodis2',
+    #'ESP.hef2',
+    #'ESP.nodis2',
     'ESP.vaers',
 )
 
