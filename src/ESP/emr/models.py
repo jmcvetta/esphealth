@@ -956,7 +956,7 @@ class Encounter(BasePatientRecord):
             'date':(self.date and self.date.isoformat()) or None,
             'closed_date':(self.closed_date and self.closed_date.isoformat()) or None,
             'event_type':self.event_type,
-            'edc':self.edc,
+            'edc':(self.edc and self.edc.isoformat()) or None,
             'measurements':{
                 'pregnancy':self.pregnancy_status,
                 'temperature':self.temperature,
