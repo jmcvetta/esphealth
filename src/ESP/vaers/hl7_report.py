@@ -57,7 +57,7 @@ class AdverseReactionReport(object):
         obx_patient_age.identifier = ['21612-7', 'Reported Patient Age', 'LN']
         age = self.event.patient().age_str
         if age.endswith('Months'):
-            obx_patient_age.value = age_str.split()[0]       
+            obx_patient_age.value = age.split()[0]       
             obx_patient_age.units = ['mo', 'month', 'ANSI']
         else:
             obx_patient_age.value = age  
