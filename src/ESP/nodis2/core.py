@@ -42,6 +42,7 @@ from ESP.nodis.models import Case
 
 
 
+
 class DiseaseDefinitionAlreadyRegistered(BaseException):
     '''
     A BaseDiseaseDefinition instance has already been registered with the same 
@@ -76,6 +77,13 @@ class OutOfClump(ValueError):
 class InvalidRequirement(ValueError):
     '''
     Could not understand this requirement.
+    '''
+    pass
+
+
+class InvalidHeuristic(ValueError):
+    '''
+    You specified a heuristic that is not registered with the system.
     '''
     pass
 
@@ -982,3 +990,31 @@ class Disease(object):
             existing_cases = Case.objects.filter(q_obj)
             for case in existing_cases:
                 definition.update_reportable_events(case)
+
+
+
+
+class BaseEventPattern(object):
+    '''
+    A pattern of one or more heuristic events  occuring within a specified 
+    time window
+    '''
+    pass
+
+
+class SimpleEventPattern(object):
+    '''
+    An event pattern consisting of only a single heuristic event type.
+    '''
+    
+    def __init__(self, heuristic):
+        from ESP.hef2 import events # Ensure events are loaded
+        if not heuristic in BaseHeuristic.list_heuristic_names():
+            raise InvalidHeuristic('Unknown heuristic: %s' % heuristic)
+        self.heuristic = heuristic
+    
+    def plausible_patients(self):
+        '''
+        Returns a QuerySet of Patient records which plausibly match this pattern
+        '''
+        return Patient.objects.filter(heuristicevent__heuristic_name=self.heuristic)
