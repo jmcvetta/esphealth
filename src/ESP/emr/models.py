@@ -350,6 +350,79 @@ class Patient(BaseMedicalRecord):
             return '%d Months' % months
     age_str = property(_get_age_str)
 
+    def immunizations(self):
+        return Immunization.objects.filter(patient=self)
+
+    def lab_results(self):
+        return LabResult.objects.filter(patient=self)
+
+    def encounters(self):
+        return Encounter.objects.filter(patient=self)
+
+    def prescriptions(self):
+        return Prescription.objects.filter(patient=self)
+
+
+    
+
+    def document_summary(self):
+        '''
+        The patient's self-contained register of all of records, in JSON-format
+        '''
+        import simplejson
+        from django.core.serializers.python import Serializer
+        
+        
+        name = {
+            'first_name':self.first_name,
+            'last_name':self.last_name
+            }
+
+        address = {
+            'street': ' '.join([self.address1, self.address2]),
+            'city': self.city,
+            'state':self.state,
+            'country':self.country,
+            'zip':self.zip
+            }
+
+        phones = [
+            {'areacode': self.areacode,
+             'phone':self.tel}]
+
+        profile = {
+            'date_of_birth': self.date_of_birth and self.date_of_birth.isoformat(),
+            'date_of_death': self.date_of_death and self.date_of_death.isoformat(),
+            'sex':self.gender,
+            'race':self.race,        
+            'home_language':self.home_language,
+            'marital_status':self.marital_stat,
+            'religion':self.religion,
+            'ocuppation':self.occupation
+            }
+
+        encounters = [e.document_summary() for e in self.encounters()]
+        prescriptions = [p.document_summary() for p in self.prescriptions()]
+        lab_results = [lx.document_summary() for lx in self.lab_results()]
+        immunizations = [imm.document_summary() for imm in self.immunizations()]
+
+        return simplejson.dumps({
+                'name':name,
+                'profile':profile,
+                'encounters':encounters,
+                'prescriptions':prescriptions,
+                'immunizations':immunizations
+                })
+
+
+
+        
+        
+        
+        
+        
+        
+
             
     def __str__(self):
         return self.name
@@ -602,6 +675,33 @@ class LabResult(BasePatientRecord):
             'res': 'RESULT',
             }
         return '%(date)-10s    %(id)-8s    %(short_name)-15s    %(native_code)-11s    %(res)-20s' % values
+
+
+    def document_summary(self):
+        return {
+            'order': { 
+                'code': self.order_num,
+                'date': self.date.isoformat()
+                },
+            'loinc': self.loinc_num,
+            'reference': {
+                'low':self.ref_low,
+                'high':self.ref_high,
+                'positive':self.ref_pos,
+                'negative':self.ref_neg,
+                'unit':self.ref_unit
+                },
+            'result':{
+                'code':self.result_num,
+                'date':self.result_date.isoformat(),
+                'status':self.status,
+                'abnormal':self.abnormal_flag,
+                'value': self.result_float or self.result_string,
+                'specimen': self.specimen_num,
+                'impression':self.impression,
+                'comment':self.comment
+                } 
+            }
     
     
 class Prescription(BasePatientRecord):
@@ -644,6 +744,28 @@ class Prescription(BasePatientRecord):
             'name': 'DRUG NAME'
             }
         return '%(date)-10s    %(id)-8s    %(name)-30s' % values
+
+
+    def document_summary(self):
+        return {
+            'order':{
+                'id':self.order_num,
+                'date':self.date.isoformat(),
+                'status':self.status
+                },
+            'provider':self.provider.pk,
+            'name':self.name,
+            'code':self.code,
+            'frequency':self.frequency,
+            'quantity':self.quantity,
+            'route':self.route,
+            'directions':self.directions,
+            'refills':self.refills,
+            'valid_dates':{
+                'start':self.start_date,
+                'end':self.end_date
+                }
+            }
     
 
 class EncounterManager(models.Manager):
@@ -830,6 +952,28 @@ class Encounter(BasePatientRecord):
     def _get_icd9_codes_str(self):
         return ', '.join(self.icd9_codes.all().order_by('code'))
     icd9_codes_str = property(_get_icd9_codes_str)
+
+
+    def document_summary(self):
+        return {
+            'site':self.site_name,
+            'provider':self.provider.pk,
+            'status':self.status,
+            'date':self.date.isoformat(),
+            'closed_date':self.closed_date.isoformat(),
+            'event_type':self.event_type,
+            'edc':self.edc,
+            'measurements':{
+                'pregnancy':self.pregnancy_status,
+                'temperature':self.temperature,
+                'weight':self.weight,
+                'height':self.height,
+                'bp_systolic':self.bp_systolic,
+                'bp_diastolic':self.bp_diastolic,
+                'o2_stat':self.o2_stat,
+                'peak_flow':self.peak_flow
+                }
+            }
             
 
 class Immunization(BasePatientRecord):
@@ -889,6 +1033,20 @@ class Immunization(BasePatientRecord):
 
     def vaccine_type(self):
         return (self.vaccine and self.vaccine.name) or 'Unknown Vaccine'
+
+
+    def document_summary(self):
+        return {
+            'date':self.date.isoformat(),
+            'vaccine':{
+                'name':self.vaccine_type(),
+                'code':(self.vaccine and self.vaccine.code) or None,
+                'lot':self.lot,
+                'manufacturer':self.manufacturer
+                },
+            'dose':self.dose
+            }
+
 
     def  __unicode__(self):
         return u"Immunization on %s received %s on %s" % (
