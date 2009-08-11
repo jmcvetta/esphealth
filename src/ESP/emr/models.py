@@ -410,23 +410,17 @@ class Patient(BaseMedicalRecord):
         lab_results = [lx.document_summary() for lx in self.lab_results()]
         immunizations = [imm.document_summary() for imm in self.immunizations()]
 
-        return simplejson.dumps({
-                'name':name,
-                'profile':profile,
-                'encounters':encounters,
-                'prescriptions':prescriptions,
-                'immunizations':immunizations
-                })
-
-
-
-        
-        
-        
-        
-        
-        
-
+        try:
+            r= simplejson.dumps({
+                    'name':name,
+                    'profile':profile,
+                    'encounters':encounters,
+                    'prescriptions':prescriptions,
+                    'immunizations':immunizations
+                    })
+        except:
+            import pdb
+            pdb.set_trace()
             
     def __str__(self):
         return self.name
