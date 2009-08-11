@@ -395,8 +395,8 @@ class Patient(BaseMedicalRecord):
              'phone':self.tel}]
 
         profile = {
-            'date_of_birth': self.date_of_birth and self.date_of_birth.isoformat(),
-            'date_of_death': self.date_of_death and self.date_of_death.isoformat(),
+            'date_of_birth': (self.date_of_birth and self.date_of_birth.isoformat()) or None,
+            'date_of_death': (self.date_of_death and self.date_of_death.isoformat()) or None,
             'sex':self.gender,
             'race':self.race,        
             'home_language':self.home_language,
@@ -697,7 +697,7 @@ class LabResult(BasePatientRecord):
                 },
             'result':{
                 'code':self.result_num,
-                'date':self.result_date.isoformat(),
+                'date':(self.result_date and self.result_date.isoformat()) or None,
                 'status':self.status,
                 'abnormal':self.abnormal_flag,
                 'value': self.result_float or self.result_string,
@@ -754,7 +754,7 @@ class Prescription(BasePatientRecord):
         return {
             'order':{
                 'id':self.order_num,
-                'date':self.date.isoformat(),
+                'date':(self.date and self.date.isoformat()) or None,
                 'status':self.status
                 },
             'provider':self.provider.pk,
@@ -963,7 +963,7 @@ class Encounter(BasePatientRecord):
             'site':self.site_name,
             'provider':self.provider.pk,
             'status':self.status,
-            'date':self.date.isoformat(),
+            'date':(self.date and self.date.isoformat()) or None,
             'closed_date':(self.closed_date and self.closed_date.isoformat()) or None,
             'event_type':self.event_type,
             'edc':self.edc,
@@ -1041,7 +1041,7 @@ class Immunization(BasePatientRecord):
 
     def document_summary(self):
         return {
-            'date':self.date.isoformat(),
+            'date':(self.date and self.date.isoformat()) or None,
             'vaccine':{
                 'name':self.vaccine_type(),
                 'code':(self.vaccine and self.vaccine.code) or None,
