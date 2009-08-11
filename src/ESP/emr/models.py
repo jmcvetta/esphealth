@@ -685,7 +685,7 @@ class LabResult(BasePatientRecord):
         return {
             'order': { 
                 'code': self.order_num,
-                'date': self.date.isoformat()
+                'date': (self.date and self.date.isoformat()) or None
                 },
             'loinc': self.loinc_num,
             'reference': {
