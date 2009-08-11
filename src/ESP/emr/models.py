@@ -316,10 +316,14 @@ class Patient(BaseMedicalRecord):
                          str(precision) if with_units else ''])
     name = property(_get_name)
     full_name = property(_get_name)
+
+
     
     def _get_address(self):
         return u'%s %s %s, %s, %s' % (self.address1, self.address2, self.city, self.state, self.zip)
     address = property(_get_address)
+
+    street_address = property(lambda x: (u'%s %s' % (x.address1, x.address2)).strip())
     
     def _get_age(self):
         '''
@@ -379,7 +383,7 @@ class Patient(BaseMedicalRecord):
             }
 
         address = {
-            'street': ' '.join([self.address1, self.address2]),
+            'street': self.street_address,
             'city': self.city,
             'state':self.state,
             'country':self.country,
