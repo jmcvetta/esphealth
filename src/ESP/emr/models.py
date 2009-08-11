@@ -410,17 +410,13 @@ class Patient(BaseMedicalRecord):
         lab_results = [lx.document_summary() for lx in self.lab_results()]
         immunizations = [imm.document_summary() for imm in self.immunizations()]
 
-        try:
-            r= simplejson.dumps({
-                    'name':name,
-                    'profile':profile,
-                    'encounters':encounters,
-                    'prescriptions':prescriptions,
-                    'immunizations':immunizations
-                    })
-        except:
-            import pdb
-            pdb.set_trace()
+        return simplejson.dumps({
+                'name':name,
+                'profile':profile,
+                'encounters':encounters,
+                'prescriptions':prescriptions,
+                'immunizations':immunizations
+                })
             
     def __str__(self):
         return self.name
@@ -760,8 +756,8 @@ class Prescription(BasePatientRecord):
             'directions':self.directions,
             'refills':self.refills,
             'valid_dates':{
-                'start':self.start_date,
-                'end':self.end_date
+                'start': (self.start_date and self.start_date.isoformat()) or None,
+                'end': (self.end_date and self.end_date.isoformat()) or None
                 }
             }
     
