@@ -2,7 +2,7 @@
 {% include "email_messages/notify_demo.txt" %}
 {% endif %}
 
-Dear Dr.  {{ provider.last_name }},
+Dear Dr. {{provider.first_name }} {{ provider.last_name }},
 
 
 Your patient {{ patient.full_name }} may have suffered a serious 

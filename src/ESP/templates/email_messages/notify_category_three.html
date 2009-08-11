@@ -7,7 +7,7 @@
     {% endif %}
     <p>
 
-    <p>Dear Dr.  {{ provider.last_name }},</p>
+    <p>Dear Dr. {{provider.first_name }} {{ provider.last_name }},</p>
     
     <p>Your patient {{ patient.full_name }} was recently noted to have 
     {{ case.matching_rule_explain }}.</p>

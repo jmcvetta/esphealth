@@ -5,7 +5,7 @@
     {% include "email_messages/notify_demo.html" %}
     {% endif %}
     
-    <p>Dear Dr. {{ provider.last_name }},</p>
+    <p>Dear Dr. {{provider.first_name }} {{ provider.last_name }},</p>
         
     <p>Your patient {{ patient.full_name }} may have suffered a serious 
     adverse effect from a recent vaccine. {{ patient.full_name }} was 
