@@ -964,7 +964,7 @@ class Encounter(BasePatientRecord):
             'provider':self.provider.pk,
             'status':self.status,
             'date':self.date.isoformat(),
-            'closed_date':self.closed_date.isoformat(),
+            'closed_date':(self.closed_date and self.closed_date.isoformat()) or None,
             'event_type':self.event_type,
             'edc':self.edc,
             'measurements':{
