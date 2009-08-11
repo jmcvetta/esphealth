@@ -251,6 +251,9 @@ class AdverseEvent(models.Model):
     def is_fake(self):
         return self.patient().is_fake()
 
+    def patient(self):
+        return self.immunizations.all()[0].patient
+
     def provider(self):
         return self.patient().pcp
 
