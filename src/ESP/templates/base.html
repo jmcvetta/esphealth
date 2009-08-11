@@ -79,7 +79,7 @@
             <li>Administration &raquo;
                 <ul>
 		    {% if user.is_staff %}
-                    <li><a href="{{ SITEROOT }}/admin">Database Administration</a></li>
+                    <li><a href="{{ SITEROOT }}/admin">Site Administration</a></li>
 		    {% endif %}
                     <li><a href="{% url loinc_summary %}">LOINC Mapping Report</a></li>
                 </ul>
