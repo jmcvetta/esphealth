@@ -994,6 +994,76 @@ class Disease(object):
 
 
 
+#---****************************************************************************************************
+
+
+
+
+class Window(object):
+    '''
+    A time window containing one or more events
+    '''
+    def __init__(self, days, events):
+        '''
+        @param days: Max number of days between events
+        @type days:  Int
+        @param events: Events to populate window
+        @type events:  List of HeuristicEvent instances
+        '''
+        assert isinstance(days, int)
+        self.delta = datetime.timedelta(days=days)
+        self.__events = []
+        self.__patient = None
+        for e in events:
+            assert isinstance(e, HeuristicEvent)
+            if not self.__patient:
+                self.__patient = e.patient
+            self._check_event(e)
+            self.__events += [e]
+            self.__events.sort(lambda x, y: (x.date - y.date).days) # Sort by date
+        log.debug('Initialized %s day window with %s events' % (days, len(events)))
+    
+    def _check_event(self, event):
+        '''
+        Raises OutOfWindow exception if event does not fit within this window
+        @type event:  HeuristicEvent instance
+        '''
+        if self.__events: # Cannot check date range if window has no events
+            if not (event.date >= self.start) and (event.date <= self.end):
+                raise OutOfWindow('Date outside window')
+        if not self.__patient == event.patient:
+            raise OutOfWindow('Patient does not match')
+        
+    def _get_start_date(self):
+        return self.__events[-1].date - self.delta
+    start = property(_get_start_date)
+
+    def _get_end_date(self):
+        return self.__events[0].date + self.delta
+    end = property(_get_end_date)
+
+    def _get_events(self):
+        return self.__events
+    events = property(_get_events)
+    
+    def _get_patient(self):
+        return self.__patient
+    patient = property(_get_patient)
+
+    def fit(self, event):
+        '''
+        Try to fit a new event into the window.  If it fits, a *new* Window 
+        instance containing new + old events is returned
+        '''
+        self._check_event(event)
+        new_events = self.events + [event]
+        return Window(days=self.delta.days, events=new_events)
+
+    def __repr__(self):
+        return 'Window %s - %s (%s events)' % (self.start, self.end, len(self.events))
+
+
+
 class BaseEventPattern(object):
     '''
     A pattern of one or more heuristic events  occuring within a specified 
@@ -1008,13 +1078,43 @@ class SimpleEventPattern(object):
     '''
     
     def __init__(self, heuristic):
-        from ESP.hef2 import events # Ensure events are loaded
+        from ESP.hef import events # Ensure events are loaded
         if not heuristic in BaseHeuristic.list_heuristic_names():
             raise InvalidHeuristic('Unknown heuristic: %s' % heuristic)
         self.heuristic = heuristic
     
+    def patients(self):
+        '''
+        Returns a QuerySet of Patient records which match this pattern
+        '''
+        return Patient.objects.filter(heuristicevent__heuristic_name=self.heuristic).distinct()
+    
+    def events(self):
+        return HeuristicEvent.objects.filter(heuristic_name=self.heuristic)
+
     def plausible_patients(self):
         '''
         Returns a QuerySet of Patient records which plausibly match this pattern
         '''
-        return Patient.objects.filter(heuristicevent__heuristic_name=self.heuristic)
+        return self.patients()
+
+    def matches(self, days, window=None):
+        '''
+        Iterator yielding Window instances matching this pattern.  If window is
+        specified, only matches fitting into window are yielded.
+        '''
+        if not window:
+            log.debug('No window specified, so yielding Windows for all events')
+            for e in self.events():
+                yield Window(days=days, events=[e])
+        else:
+            assert isinstance(window, Window)
+            log.debug('Yielding windows that match %s' % window)
+            q_obj = Q(heuristic_name=self.heuristic)
+            q_obj = q_obj & Q(patient=window.patient)
+            q_obj = q_obj & Q(date__gte=window.start)
+            q_obj = q_obj & Q(date__lte=window.end)
+            for event in HeuristicEvent.objects.filter(q_obj):
+                # Not doing error control here, because this query should
+                # never return an out-of-window event.
+                    yield window.fit(event)
