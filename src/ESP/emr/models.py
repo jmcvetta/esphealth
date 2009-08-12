@@ -389,6 +389,12 @@ class Patient(BaseMedicalRecord):
             'country':self.country,
             'zip':self.zip
             }
+        
+        provider = {
+            'name': self.pcp.full_name,
+            'code': self.pcp.provider_id_num,
+            'id': self.pcp.id
+            }
 
         phones = [
             {'areacode': self.areacode,
@@ -412,6 +418,7 @@ class Patient(BaseMedicalRecord):
 
         return simplejson.dumps({
                 'name':name,
+                'provider':provider,
                 'profile':profile,
                 'encounters':encounters,
                 'prescriptions':prescriptions,
