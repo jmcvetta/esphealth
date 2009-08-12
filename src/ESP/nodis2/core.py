@@ -80,6 +80,12 @@ class InvalidRequirement(ValueError):
     '''
     pass
 
+class InvalidPattern(ValueError):
+    '''
+    Could not understand this pat.
+    '''
+    pass
+
 
 class InvalidHeuristic(ValueError):
     '''
@@ -812,7 +818,11 @@ class Disease(object):
         [result.extend([cls.__registry[k]]) for k in keys]
         log.debug('All Disease Definition instances: %s' % result)
         return result
-
+    
+    @classmethod
+    def list_all_disease_names(cls):
+        return cls.__registry.keys()
+    
     @classmethod
     def get_disease_by_name(cls, name):
         '''
@@ -1072,9 +1082,11 @@ class BaseEventPattern(object):
     pass
 
 
-class SimpleEventPattern(object):
+class SimpleEventPattern(BaseEventPattern):
     '''
-    An event pattern consisting of only a single heuristic event type.
+    An event pattern consisting of only a single heuristic event type.  
+    Instances of this class will typically be created internally by 
+    ComplexEventPattern instances.
     '''
     
     def __init__(self, heuristic):
@@ -1089,32 +1101,132 @@ class SimpleEventPattern(object):
         '''
         return Patient.objects.filter(heuristicevent__heuristic_name=self.heuristic).distinct()
     
-    def events(self):
-        return HeuristicEvent.objects.filter(heuristic_name=self.heuristic)
-
     def plausible_patients(self):
         '''
         Returns a QuerySet of Patient records which plausibly match this pattern
         '''
         return self.patients()
+    
+    def plausible_events(self, patients=None):
+        q_obj = Q(heuristic_name=self.heuristic)
+        if patients:
+            q_obj = q_obj & Q(patient__in=patients)
+        return HeuristicEvent.objects.filter(q_obj)
+    
+    def matches(self, days, patients=None, exclude_bound=False):
+        '''
+        Iterator yielding Window instances matching this pattern.  Matches can 
+        be constrained to a given set of patients.  If a condition name is 
+        supplied as 'exclude_bound', events already bound to a case of said 
+        condition are not considered.
+        @type window: Window
+        @type patients: Patient QuerySet
+        @type exclude_bound: String
+        '''
+        if exclude_bound: # Sanity check
+            assert exclude_bound in Disease.list_all_disease_names()
+            exclusion_q = ~Q(case__condition=exclude_bound) # Note negation of this Q object
+        log.debug('No window specified, so yielding Windows for all events')
+        all_events = self.plausible_events(patients=patients)
+        if exclude_bound:
+            all_events = all_events.fitler(exclusion_q)
+        for e in all_events:
+            yield Window(days=days, events=[e])
+                
+    def match_window(self, window, exclude_bound=False):
+        if exclude_bound: # Sanity check
+            assert exclude_bound in Disease.list_all_disease_names()
+            exclusion_q = ~Q(case__condition=exclude_bound) # Note negation of this Q object
+        assert isinstance(window, Window)
+        log.debug('Yielding windows that match %s' % window)
+        q_obj = Q(heuristic_name=self.heuristic)
+        q_obj = q_obj & Q(patient=window.patient)
+        q_obj = q_obj & Q(date__gte=window.start)
+        q_obj = q_obj & Q(date__lte=window.end)
+        if exclude_bound:
+            q_obj = q_obj & exclusion_q
+        for event in HeuristicEvent.objects.filter(q_obj):
+            # Not doing error control here, because this query should
+            # never return an out-of-window event.
+            yield window.fit(event)
+    
+    def __repr__(self):
+        return 'SimpleEventPattern: %s' % self.heuristic
 
-    def matches(self, days, window=None):
+
+class ComplexEventPattern(BaseEventPattern):
+    '''
+    An event pattern composed of one or more SimpleEventPattern or 
+    ComplexEventPattern instances.  
+    '''
+    def __init__(self, operator, patterns, exclusions=[]):
+        self.exclusions = []
+        operator = operator.lower()
+        self.__sorted_condition_reqs = {}
+        assert operator in ('and', 'or')
+        self.operator = operator
+        valid_heuristic_names = BaseHeuristic.list_heuristic_names()
+        self.patterns = []
+        for pat in patterns:
+            if isinstance(pat, ComplexEventPattern):
+                self.patterns.append(pat)
+            elif pat in valid_heuristic_names: # Implies req is a string
+                pat_obj = SimpleEventPattern(heuristic=pat)
+                self.patterns.append(pat_obj)
+            else:
+                raise InvalidRequirement('%s [%s]' % (pat, type(pat)))
+        count = {} # Count of plausible events per req
+        for name in exclusions:
+            assert name in valid_heuristic_names
+            self.exclusions.append(name)
+        log.debug('Initializing new ComplexEventPattern instance')
+        log.debug('    operator:    %s' % operator)
+        log.debug('    patterns:    %s' % patterns)
+        log.debug('    exclusions:  %s' % exclusions)
+    
+    def plausible_patients(self):
         '''
-        Iterator yielding Window instances matching this pattern.  If window is
-        specified, only matches fitting into window are yielded.
+        Returns a QuerySet of Patient records which plausibly match this pattern
         '''
-        if not window:
-            log.debug('No window specified, so yielding Windows for all events')
-            for e in self.events():
-                yield Window(days=days, events=[e])
-        else:
-            assert isinstance(window, Window)
-            log.debug('Yielding windows that match %s' % window)
-            q_obj = Q(heuristic_name=self.heuristic)
-            q_obj = q_obj & Q(patient=window.patient)
-            q_obj = q_obj & Q(date__gte=window.start)
-            q_obj = q_obj & Q(date__lte=window.end)
-            for event in HeuristicEvent.objects.filter(q_obj):
-                # Not doing error control here, because this query should
-                # never return an out-of-window event.
-                    yield window.fit(event)
+        plausible = self.patterns[0].plausible_patients()
+        for pat in self.patterns[1:]:
+            if self.operator == 'and':
+                plausible = plausible & pat.plausible_patients()
+            else: # 'or'
+                plausible = plausible | pat.plausible_patients()
+        return plausible
+    
+    def plausible_events(self, patients=None):
+        patients = self.plausible_patients()
+        plausible = self.patterns[0].plausible_events(patients=patients)
+        for pat in self.patterns[1:]:
+            if self.operator == 'and':
+                plausible = plausible & pat.plausible_events(patients=patients)
+            else: # 'or'
+                plausible = plausible | pat.plausible_events(patients=patients)
+        return plausible
+    
+    def sorted_patterns(self):
+        '''
+        Returns the patterns composing this ComplexEventPattern sorted from 
+        lowest to highest number of plausible events.
+        '''
+        log.debug('Sorting patterns by plausible event count')
+        plausible = self.plausible_patients()
+        count = {}
+        for pat in self.patterns:
+            count[pat] = pat.plausible_events(patients=plausible).count()
+        log.debug('Plausible events by pattern: \n%s' % pprint.pformat(count))
+        return [i[0] for i in sorted(count.items(), key=itemgetter(1))]
+
+    def matches(self, days, patients=None, exclude_bound=False):
+        if not patients:
+            patients = self.plausible_patients()
+        sorted_patterns = self.sorted_patterns()
+        for win in sorted_patterns[0].matches(patients=patients, exclude_bound=exclude_bound):
+            windows = [win]
+            for pattern in sorted_patterns[1:]:
+                new_windows = pattern.match_window
+        
+    def match_window(self, window, exclude_bound=False):
+        pass
