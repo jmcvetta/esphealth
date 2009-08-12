@@ -32,8 +32,8 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.conf.models import NativeCode
-from ESP.hef2.models import Event
-from ESP.hef2.models import Run
+from ESP.hef.models import HeuristicEvent
+from ESP.hef.models import Run
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
@@ -74,7 +74,7 @@ class BaseHeuristic(object):
 
     __registry = {} # Class variable
 
-    def __init__(self, name, version, description):
+    def __init__(self, heuristic_name, def_name, def_version):
         '''
         @param heuristic_name: Name of this heuristic (could be shared by several instances)
         @type heuristic_name: String
@@ -83,23 +83,26 @@ class BaseHeuristic(object):
         @param def_version: Version of definition
         @type def_version: Integer
         '''
-        self.name = name
-        self.version = version
-        self.description = description
+        assert heuristic_name
+        assert def_name
+        assert def_version
+        self.heuristic_name = heuristic_name
+        self.def_name = def_name
+        self.def_version = def_version
         #
         # Register this heuristic
         #
         registry = self.__registry # For convenience
-        if name in registry:
-            if self.def_name in [item.def_name for item in registry[name]]:
-                log.error('Event definition "%s" is already registered for event type "%s".' % (self.def_name, name))
-                raise HeuristicAlreadyRegistered('A BaseHeuristic instance is already registered with name "%s".' % name)
+        if heuristic_name in registry:
+            if self.def_name in [item.def_name for item in registry[heuristic_name]]:
+                log.error('Event definition "%s" is already registered for event type "%s".' % (self.def_name, heuristic_name))
+                raise HeuristicAlreadyRegistered('A BaseHeuristic instance is already registered with heuristic_name "%s".' % heuristic_name)
             else:
-                log.debug('Registering additional heuristic for name "%s".' % name)
-                registry[name] += [self]
+                log.debug('Registering additional heuristic for heuristic_name "%s".' % heuristic_name)
+                registry[heuristic_name] += [self]
         else:
-            log.debug('Registering heuristic with name "%s".' % name)
-            registry[name] = [self]
+            log.debug('Registering heuristic with heuristic_name "%s".' % heuristic_name)
+            registry[heuristic_name] = [self]
 
     @classmethod
     def get_all_heuristics(cls):
@@ -116,14 +119,14 @@ class BaseHeuristic(object):
         return result
 
     @classmethod
-    def get_heuristic_by_name(cls, name):
+    def get_heuristics_by_name(cls, name):
         '''
         Given a string naming a heuristic, returns the appropriate BaseHeuristic instance
         '''
         return cls.__registry[name]
 
     @classmethod
-    def list_names(cls):
+    def list_heuristic_names(cls):
         '''
         Returns a sorted list of strings naming all registered BaseHeuristic instances
         '''
@@ -191,7 +194,7 @@ class BaseHeuristic(object):
         #
         #
         # First we retrieve a list of object IDs for this 
-        existing = Event.objects.filter(definition = self.def_name).values_list('object_id')
+        existing = HeuristicEvent.objects.filter(definition = self.def_name).values_list('object_id')
         existing = [int(item[0]) for item in existing] # Convert to a list of integers
         #
         # Disabled select_related() because matches will most often be in 
