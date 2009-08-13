@@ -134,6 +134,7 @@ class BaseLoader(object):
         cur_row = 0 # Row counter
         valid = 0 # Number of valid records loaded
         errors = 0 # Number of non-fatal errors encountered
+        error_strings = []
         for row in self.reader:
             cur_row += 1 # Increment the counter
             # The last line is a footer, so we skip it
@@ -149,6 +150,8 @@ class BaseLoader(object):
                 log.error('  Exception: \n%s' % e)
                 log.error(pprint.pformat(row))
                 errors += 1
+                err_str = '%s: %s' % (cur_row, e)
+                error_strings += [err_str]
             except ValueError, e:
                 log.error('Caught ValueError:')
                 log.error('  File: %s' % self.filename)
@@ -156,11 +159,14 @@ class BaseLoader(object):
                 log.error('  Exception: \n%s' % e)
                 log.error(pprint.pformat(row))
                 errors += 1
+                err_str = '%s: %s' % (cur_row, e)
+                error_strings += [err_str]
         log.debug('Loaded %s records with %s errors.' % (valid, errors))
         if not errors:
             self.provenance.status = 'loaded'
         else:
             self.provenance.status = 'errors'
+            self.provenance.comment = '\n'.join(error_strings)
         self.provenance.save()
         return (valid, errors)
 
@@ -542,8 +548,8 @@ def main():
         help='Load an individual message file')
     parser.add_option('--input', action='store', dest='input_folder', default=INCOMING_DIR,
         metavar='FOLDER', help='Folder from which to read incoming HL7 messages')
-    parser.add_option('--dry-run', action='store_true', dest='dry_run', default=False,
-        help='Show which files would be loaded, but do not actually load them')
+    parser.add_option('--no-archive', action='store_false', dest='archive', default=True, 
+        help='Do NOT archive files after they have been loaded')
     options, args = parser.parse_args()
     log.debug('options: %s' % options)
     #
@@ -618,6 +624,9 @@ def main():
                 else:
                     log.info('File "%s" loaded successfully.' % filepath)
                     disposition = 'success'
+            except KeyboardInterrupt:
+                log.critical('Keyboard interrupt: exiting immediately.')
+                sys.exit(-255)
             except BaseException, e: # Unhandled exception!
                 log.critical('Unhandled exception loading file "%s":' % filepath)
                 log.critical('\t%s' % e)
@@ -625,7 +634,8 @@ def main():
                 l.provenance.comment = str(e)
                 l.provenance.save()
                 disposition = 'failure'
-            move_file(filepath, disposition)
+            if options.archive:
+                move_file(filepath, disposition)
     #
     # Print job summary
     #
