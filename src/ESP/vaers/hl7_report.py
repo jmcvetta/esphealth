@@ -37,6 +37,7 @@ class AdverseReactionReport(object):
         patient = self.event.patient()
         pid = PID()
 
+        pid.alternate_patient_id = [patient.patient_id_num]
         pid.patient_name = [patient.last_name, patient.first_name]
         pid.date_of_birth = utils.str_from_date(patient.date_of_birth)
         pid.sex = patient.gender
