@@ -45,7 +45,8 @@ EMAIL_USE_TLS = localsettings.EMAIL_USE_TLS
 
 SITE_NAME = localsettings.SITE_NAME
 
-DATA_DIR = '/srv/esp'
+DATA_DIR = localsettings.DATA_DIR
+HL7_DIR = os.path.join(DATA_DIR, 'hl7')
 
 SECRET_KEY = localsettings.SECRET_KEY
 if not SECRET_KEY:
@@ -121,7 +122,7 @@ INSTALLED_APPS = (
     'ESP.hef',
     'ESP.nodis',
     #'ESP.hef2',
-    #'ESP.nodis2',
+    'ESP.nodis2',
     'ESP.vaers',
 )
 

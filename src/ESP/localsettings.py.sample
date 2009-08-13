@@ -37,7 +37,7 @@ ADMINS = (
 # utility 'pwgen' is very useful for generating long random password strings.
 SECRET_KEY = ''
 SITE_NAME = '' # Name of your local site
-HL7_DIR = '/srv/esp/hl7'
+DATA_DIR = '/srv/esp'
 
 
 #===============================================================================
