@@ -23,6 +23,10 @@ from ESP.conf.common import DEIDENTIFICATION_TIMEDELTA
 from utils import make_clustering_event_report_file
 import settings
 
+HL7_MESSAGES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
+                                'assets', 'hl7_messages')
+
+
 ADVERSE_EVENT_CATEGORIES = [
     ('auto', 'report automatically to CDC'),
     ('default', 'report case to CDC if no comment from clinician within 72 hours'),
@@ -377,6 +381,15 @@ class AdverseEvent(models.Model):
     def render_json_fixture(self):
         import simplejson
         return simplejson.dumps(self.deidentified())
+
+    def render_hl7_message(self):
+        from hl7_report import AdverseReactionReport
+        return AdverseReactionReport(self).render()
+
+    def save_hl7_message_file(self):
+        outfile = open(os.path.join(HL7_MESSAGES_DIR, 'report.%07d.hl7' % self.id), 'w')
+        outfile.write(self.render_hl7_message())
+        outfile.close()
 
 
             

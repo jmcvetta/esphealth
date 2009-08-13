@@ -150,9 +150,7 @@ class AdverseReactionReport(object):
 
 if __name__ == '__main__':
 
-    ev = AdverseEvent.objects.order_by('?')[0]
-    event = AdverseEvent.by_id(ev.id)
-
-    report = AdverseReactionReport(event)
-    
-    print report.render()
+    events = AdverseEvent.objects.order_by('?')[:50]
+    for ev in events:
+        event = AdverseEvent.by_id(ev.id)
+        event.save_hl7_message_file()

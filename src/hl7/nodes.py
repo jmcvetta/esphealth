@@ -12,11 +12,14 @@ class VaccineDetail(object):
         vaccine_type.value = [immunization.vaccine.code, 
                               immunization.vaccine.name, 'CVX']
         
-        manufacturer = OBX()
-        manufacturer.value_type = 'CE'
-        manufacturer.identifier = ['30955-9&30957-5', 'Manufacturer', 'LN']
+        if immunization.vaccine_manufacturer:
+            manufacturer = OBX()
+            manufacturer.value_type = 'CE'
+            manufacturer.identifier = ['30955-9&30957-5', 'Manufacturer', 'LN']
         
-        manufacturer.value = [immunization.vaccine_manufacturer, 'MVX']
+            manufacturer.value = [immunization.vaccine_manufacturer, 'MVX']
+        else:
+            manufacturer = None
         
         self.vaccine_type = vaccine_type
         self.manufacturer = manufacturer
@@ -24,7 +27,7 @@ class VaccineDetail(object):
         for idx, seg in enumerate(self.segments):
             seg.subsequence_id = idx + 1
 
-    segments = property(lambda x: [x.vaccine_type, x.manufacturer])
+    segments = property(lambda x: [segment for segment in [x.vaccine_type, x.manufacturer] if segment is not None])
 
 class PriorVaccinationDetail(VaccineDetail):
     def __init__(self, immunization):
@@ -35,11 +38,15 @@ class PriorVaccinationDetail(VaccineDetail):
         self.vaccine_type.value = [immunization.vaccine.code, 
                                    immunization.vaccine.name, 'CVX']
         
-        self.manufacturer = OBX()
-        self.manufacturer.value_type = 'CE'
-        self.manufacturer.identifier = ['30961-7&30957-5', 'Manufacturer', 'LN']
-        self.manufacturer.value = [immunization.vaccine_manufacturer.code, 
-                                   immunization.vaccine_manufacturer.full_name, 'MVX']
+
+        if immunization.vaccine_manufacturer:
+            self.manufacturer = OBX()
+            self.manufacturer.value_type = 'CE'
+            self.manufacturer.identifier = ['30961-7&30957-5', 'Manufacturer', 'LN']
+            self.manufacturer.value = [immunization.vaccine_manufacturer.code, 
+                                       immunization.vaccine_manufacturer.full_name, 'MVX']
+        else:
+            self.manufacturer = None
         
         self.date_given = OBX()
         self.date_given.value_type = 'TS'
@@ -50,7 +57,7 @@ class PriorVaccinationDetail(VaccineDetail):
         for idx, seg in enumerate(self.segments):
             seg.subsequence_id = idx + 1
 
-    segments = property(lambda x: [x.vaccine_type, x.manufacturer, x.date_given])
+    segments = property(lambda x: [segment for segment in [x.vaccine_type, x.manufacturer, x.date_given] if segment is not None])
 
 
 
