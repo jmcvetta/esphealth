@@ -26,8 +26,8 @@ from ESP.conf.common import EPOCH
 from ESP.static.models import Loinc
 from ESP.static.models import Ndc
 from ESP.static.models import Icd9
-from ESP.conf.models import Vaccine
-from ESP.conf.models import NativeCode
+from ESP.static.models import Vaccine, ImmunizationManufacturer
+from ESP.conf.models import NativeCode, NativeManufacturer
 from ESP.utils import randomizer
 from ESP.utils.utils import log, date_from_str, str_from_date
 
@@ -1034,6 +1034,15 @@ class Immunization(BasePatientRecord):
 
     def vaccine_type(self):
         return (self.vaccine and self.vaccine.name) or 'Unknown Vaccine'
+
+    def _get_manufacturer(self):
+        try:
+            native = NativeManufacturer.objects.get(name=self.manufacturer)
+            return ImmunizationManufacturer.objects.get(code=native.canonical_code)
+        except:
+            return None
+
+    vaccine_manufacturer = property(_get_manufacturer)
 
 
     def document_summary(self):

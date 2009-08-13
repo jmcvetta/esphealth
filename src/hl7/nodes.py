@@ -16,7 +16,7 @@ class VaccineDetail(object):
         manufacturer.value_type = 'CE'
         manufacturer.identifier = ['30955-9&30957-5', 'Manufacturer', 'LN']
         
-        manufacturer.value = [immunization.manufacturer, 'MVX']
+        manufacturer.value = [immunization.vaccine_manufacturer, 'MVX']
         
         self.vaccine_type = vaccine_type
         self.manufacturer = manufacturer
@@ -38,7 +38,7 @@ class PriorVaccinationDetail(VaccineDetail):
         self.manufacturer = OBX()
         self.manufacturer.value_type = 'CE'
         self.manufacturer.identifier = ['30961-7&30957-5', 'Manufacturer', 'LN']
-        self.manufacturer.value = [immunization.manufacturer, 'MVX']
+        self.manufacturer.value = [immunization.vaccine_manufacturer, 'MVX']
         
         self.date_given = OBX()
         self.date_given.value_type = 'TS'
