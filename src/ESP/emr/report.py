@@ -27,7 +27,5 @@ if __name__ == '__main__':
             f.write(patient.document_summary())
             f.close()
         except Exception, why:
-            import pdb
-            pdb.set_trace()
             print 'Could not process information for patient %d. Reason: %s' % (patient.pk, why)
         
