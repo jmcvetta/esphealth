@@ -1037,8 +1037,7 @@ class Immunization(BasePatientRecord):
 
     def _get_manufacturer(self):
         try:
-            native = NativeManufacturer.objects.get(name=self.manufacturer)
-            return ImmunizationManufacturer.objects.get(code=native.canonical_code)
+            return NativeManufacturer.objects.get(name=self.manufacturer).canonical_code
         except:
             return None
 

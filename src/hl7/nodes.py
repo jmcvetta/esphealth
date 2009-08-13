@@ -38,7 +38,8 @@ class PriorVaccinationDetail(VaccineDetail):
         self.manufacturer = OBX()
         self.manufacturer.value_type = 'CE'
         self.manufacturer.identifier = ['30961-7&30957-5', 'Manufacturer', 'LN']
-        self.manufacturer.value = [immunization.vaccine_manufacturer, 'MVX']
+        self.manufacturer.value = [immunization.vaccine_manufacturer.code, 
+                                   immunization.vaccine_manufacturer.full_name, 'MVX']
         
         self.date_given = OBX()
         self.date_given.value_type = 'TS'
