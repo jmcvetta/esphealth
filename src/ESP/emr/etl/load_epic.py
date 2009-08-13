@@ -19,6 +19,7 @@ import datetime
 import optparse
 import re
 import pprint
+import shutil
 
 from psycopg2 import IntegrityError
 from ESP.settings import DATA_DIR
@@ -42,8 +43,9 @@ from ESP.emr.models import Immunization
 global UPDATED_BY, INCOMING_DIR, ARCHIVE_DIR, ERROR_DIR, TIMESTAMP, UNKNOWN_PROVIDER
 UPDATED_BY = 'load_epic.py'
 INCOMING_DIR = os.path.join(DATA_DIR, 'epic', 'incoming')
-ARCHIVE_DIR = os.path.join(DATA_DIR, 'epic', 'archive')
-ERROR_DIR = os.path.join(DATA_DIR, 'epic', 'error')
+ARCHIVE_DIR = os.path.join(DATA_DIR, 'epic', 'archive') # Successfully loaded files
+ERROR_DIR = os.path.join(DATA_DIR, 'epic', 'error') # Files loaded with (handled) errors
+FAILURE_DIR = os.path.join(DATA_DIR, 'epic', 'error') # Files that failed to load (w/ unhandled exception)
 TIMESTAMP = datetime.datetime.now()
 UNKNOWN_PROVIDER = Provider.objects.get(provider_id_num='UNKNOWN')
 
@@ -507,9 +509,34 @@ class ImmunizationLoader(BaseLoader):
         log.debug('Saved immunization object: %s' % i)
 
 
+def move_file(filepath, disposition):
+    '''
+    Dispose of a file after attempting to load it.
+    @param filepath: Full path to file
+    @type filepath:  String
+    @param disposition: What to do with this file?
+    @type disposition:  String - ('success', 'errors', 'failure')
+    '''
+    if disposition == 'success':
+        year = str(datetime.datetime.now().year)
+        month = datetime.datetime.now().strftime('%b')
+        folder = os.path.join(ARCHIVE_DIR, year, month)
+        if not os.path.exists(folder): 
+            os.makedirs(folder)
+            log.debug('Created new folder: %s' % folder)
+    elif disposition == 'errors':
+        folder = ERROR_DIR
+    elif disposition == 'failure':
+        folder = FAILURE_DIR
+    else:
+        raise 'This should never happen -- something is badly horked up'
+    shutil.move(filepath, folder)
 
 
 def main():
+    #
+    # Parse command line options
+    #
     parser = optparse.OptionParser()
     parser.add_option('--file', action='store', dest='single_file', metavar='FILEPATH', 
         help='Load an individual message file')
@@ -520,7 +547,14 @@ def main():
     options, args = parser.parse_args()
     log.debug('options: %s' % options)
     #
-    # Retrieve files
+    # Ensure all required folders exist
+    #
+    for folder in [ARCHIVE_DIR, ERROR_DIR, FAILURE_DIR]:
+        if not os.path.exists(folder): 
+            os.makedirs(folder)
+            log.debug('Created new folder: %s' % folder)
+    #
+    # Sort files by type
     #
     input_filepaths = []
     if options.single_file:
@@ -562,7 +596,10 @@ def main():
         if Provenance.objects.filter(source=filename, status__in=('loaded', 'errors')):
             log.warning('File "%s" has already been loaded; skipping' % filename)
             continue
-        filetype[filename.split('.')[0]] += [filepath]
+        try:
+            filetype[filename.split('.')[0]] += [filepath]
+        except KeyError:
+            log.warning('Unrecognized file type: "%s"' % filename)
     log.debug('Files to load by type: \n%s' % pprint.pformat(filetype))
     #
     # Load data
@@ -571,9 +608,27 @@ def main():
         for filepath in filetype[ft]:
             loader_class = loader[ft]
             l = loader_class(filepath)
-            valid, error = l.load()
-            valid_count[ft] += valid
-            error_count[ft] += error
+            try:
+                valid, error = l.load()
+                valid_count[ft] += valid
+                error_count[ft] += error
+                if error:
+                    log.info('File "%s" loaded with %s errors' % (filepath, error))
+                    disposition = 'errors'
+                else:
+                    log.info('File "%s" loaded successfully.' % filepath)
+                    disposition = 'success'
+            except BaseException, e: # Unhandled exception!
+                log.critical('Unhandled exception loading file "%s":' % filepath)
+                log.critical('\t%s' % e)
+                l.provenance.status = 'failure'
+                l.provenance.comment = str(e)
+                l.provenance.save()
+                disposition = 'failure'
+            move_file(filepath, disposition)
+    #
+    # Print job summary
+    #
     print '+' * 80
     print 'Valid records loaded:'
     pprint.pprint(valid_count)
