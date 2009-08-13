@@ -4,6 +4,7 @@ from ESP.static.models import Vaccine, ImmunizationManufacturer
 from ESP.emr.models import Patient, Provider, Immunization
 from ESP.vaers.models import AdverseEvent
 from ESP.utils import utils
+from ESP.localsettings import SITE_NAME
 
 from hl7.core import Field, SegmentTree
 from hl7.segments import MSH, PID, ORC, OBR, OBX
@@ -11,6 +12,8 @@ from hl7.nodes import VaccineDetail, PriorVaccinationDetail
 from hl7.nodes import VaersProjectIdentification
 
 from rules import VACCINE_MAPPING, MANUFACTURER_MAPPING
+
+
 
 UNKNOWN_VACCINE = Vaccine.objects.get(short_name='unknown')
 UNKNOWN_MANUFACTURER = ImmunizationManufacturer.objects.get(code='UNK')
@@ -28,7 +31,7 @@ class AdverseReactionReport(object):
         msh.accept_ack_type = 'NE'
         msh.application_ack_type = 'AL'
         msh.message_type = ['ORU', 'R01']
-        msh.sending_facility = 'HMVA FOR TEST'
+        msh.sending_facility = SITE_NAME
 
         return msh
 
