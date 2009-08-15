@@ -23,7 +23,7 @@ import shutil
 
 from django.db import transaction
 
-from psycopg2 import IntegrityError
+from psycopg2 import Error as Psycopg2Error
 from ESP.settings import DATA_DIR
 from ESP.utils.utils import log
 from ESP.utils.utils import date_from_str
@@ -143,9 +143,12 @@ class BaseLoader(object):
             if cur_row >= self.line_count:
                 break
             try:
+                sid = transaction.savepoint()
                 self.load_row(row)
+                transaction.savepoint_commit(sid)
                 valid += 1
             except LoadException, e:
+                transaction.savepoint_rollback(sid)
                 log.error('Caught LoadException:')
                 log.error('  File: %s' % self.filename)
                 log.error('  Line: %s' % cur_row)
@@ -155,7 +158,18 @@ class BaseLoader(object):
                 err_str = '%s: %s' % (cur_row, e)
                 error_strings += [err_str]
             except ValueError, e:
+                transaction.savepoint_rollback(sid)
                 log.error('Caught ValueError:')
+                log.error('  File: %s' % self.filename)
+                log.error('  Line: %s' % cur_row)
+                log.error('  Exception: \n%s' % e)
+                log.error(pprint.pformat(row))
+                errors += 1
+                err_str = '%s: %s' % (cur_row, e)
+                error_strings += [err_str]
+            except Psycopg2Error, e:
+                transaction.savepoint_rollback(sid)
+                log.error('Caught database error:')
                 log.error('  File: %s' % self.filename)
                 log.error('  Line: %s' % cur_row)
                 log.error('  Exception: \n%s' % e)
@@ -171,20 +185,6 @@ class BaseLoader(object):
             self.provenance.comment = '\n'.join(error_strings)
         self.provenance.save()
         return (valid, errors)
-    
-    def save_model(self):
-        '''
-        Wraps self.model.save() in transaction control
-        '''
-        try:
-            sid = transaction.savepoint()
-            self.model.save()
-            transaction.savepoint_commit(sid)
-            log.debug('Saved object: %s' % self.model)
-        except IntegrityError, e:
-            log.error('Save failed with "%s"' % e)
-            transaction.savepoint_rollback(sid)
-            raise LoadException(e)
 
 class NotImplementedLoader(BaseLoader):
     
@@ -217,8 +217,8 @@ class ProviderLoader(BaseLoader):
     
     def load_row(self, row):
         pin = row['provider_id_num']
-        #if not pin:
-            #raise LoadException('Record has blank provider_id_num, which is required')
+        if not pin:
+            raise LoadException('Record has blank provider_id_num, which is required')
         p = self.get_provider(pin)
         p.provenance = self.provenance
         p.updated_by = UPDATED_BY
@@ -235,8 +235,8 @@ class ProviderLoader(BaseLoader):
         p.dept_zip = row['dept_zip']
         p.area_code = row['area_code']
         p.telephone = row['telephone']
-        self.model = p
-        self.save_model()
+        p.save()
+        log.debug('Saved provider object: %s' % p)
 
 
 
@@ -300,8 +300,8 @@ class PatientLoader(BaseLoader):
         p.religion = row['religion']
         p.aliases = row['aliases']
         p.mother_mrn = row['mother_mrn']
-        self.model = p
-        self.save_model()
+        p.save()
+        log.debug('Saved patient object: %s' % p)
 
 
 class LabOrderLoader(NotImplementedLoader):    
@@ -367,8 +367,8 @@ class LabResultLoader(BaseLoader):
         l.comment = row['note']
         l.specimen_num = row['specimen_id_num']
         l.impression = row['impression']
-        self.model = l
-        self.save_model()
+        l.save()
+        log.debug('Saved lab result object: %s' % l)
 
 
 class EncounterLoader(BaseLoader):
@@ -456,8 +456,8 @@ class EncounterLoader(BaseLoader):
                 i.name = 'Added by load_epic.py'
                 i.save()
             e.icd9_codes.add(i)
-        self.model = e
-        self.save_model()
+        e.save()
+        log.debug('Saved encounter object: %s' % e)
             
             
 
@@ -497,8 +497,8 @@ class PrescriptionLoader(BaseLoader):
         p.start_date = self.date_or_none(row['start_date'])
         p.end_date = self.date_or_none(row['end_date'])
         p.route = row['route']
-        self.model = p
-        self.save_model()
+        p.save()
+        log.debug('Saved prescription object: %s' % p)
 
 
 
@@ -527,8 +527,8 @@ class ImmunizationLoader(BaseLoader):
         i.manufacturer = row['manufacturer']
         i.lot = row['lot']
         i.imm_id_num = row['imm_id_num']
-        self.model = i
-        self.save_model()
+        i.save()
+        log.debug('Saved immunization object: %s' % i)
 
 
 def move_file(filepath, disposition):
