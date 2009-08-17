@@ -53,6 +53,11 @@ TIMESTAMP = datetime.datetime.now()
 UNKNOWN_PROVIDER = Provider.objects.get(provider_id_num='UNKNOWN')
 
 
+def utf_8_encoder(unicode_csv_data):
+    for line in unicode_csv_data:
+        yield line.encode('utf-8')
+
+
 class EpicDialect(csv.Dialect):
     """Describe the usual properties of EpicCare extract files."""
     delimiter = '^'
@@ -90,7 +95,7 @@ class BaseLoader(object):
         file_handle = open(filepath)
         self.line_count = len(file_handle.readlines())
         file_handle.seek(0) # Reset file position after counting lines
-        self.reader = csv.DictReader(file_handle, fieldnames=self.fields, dialect='epic')
+        self.reader = csv.DictReader(utf_8_encoder(file_handle), fieldnames=self.fields, dialect='epic')
     
     def get_patient(self, patient_id_num):
         if not patient_id_num:
