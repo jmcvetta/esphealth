@@ -103,7 +103,7 @@ class Loinc(models.Model):
 
 class Icd9(models.Model):
     code = models.CharField('ICD9 Code', max_length=10, primary_key=True)
-    name = models.CharField('Name', max_length=50,)
+    name = models.CharField('Name', max_length=100,)
 
     def __unicode__(self):
         return u'%s %s' % (self.code, self.name)
