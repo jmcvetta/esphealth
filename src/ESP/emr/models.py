@@ -192,7 +192,8 @@ class Patient(BaseMedicalRecord):
     state = models.CharField('State', max_length=20, blank=True, null=True)
     zip = models.CharField('Zip', max_length=20, blank=True, null=True)
     country = models.CharField('Country', max_length=20, blank=True, null=True)
-    areacode = models.CharField('Home Phone Area Code', max_length=20, blank=True, null=True)
+    # Large max_length value for area code because Atrius likes to put descriptive text into that field
+    areacode = models.CharField('Home Phone Area Code', max_length=50, blank=True, null=True)
     tel = models.CharField('Home Phone Number', max_length=100, blank=True, null=True)
     tel_ext = models.CharField('Home Phone Extension', max_length=50, blank=True, null=True)
     date_of_birth = models.DateField('Date of Birth', blank=True, null=True)
