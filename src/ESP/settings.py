@@ -122,7 +122,7 @@ INSTALLED_APPS = (
     'ESP.hef',
     'ESP.nodis',
     #'ESP.hef2',
-    'ESP.nodis2',
+    #'ESP.nodis2',
     'ESP.vaers',
 )
 
