@@ -1133,22 +1133,28 @@ class SimpleEventPattern(BaseEventPattern):
         for e in all_events:
             yield Window(days=days, events=[e])
                 
-    def match_window(self, window, exclude_bound=False):
+    def match_windows(self, windows, exclude_bound=False):
+        #
+        # Maybe this should be an iterator??
+        #
         if exclude_bound: # Sanity check
             assert exclude_bound in Disease.list_all_disease_names()
             exclusion_q = ~Q(case__condition=exclude_bound) # Note negation of this Q object
-        assert isinstance(window, Window)
-        log.debug('Yielding windows that match %s' % window)
-        q_obj = Q(heuristic_name=self.heuristic)
-        q_obj = q_obj & Q(patient=window.patient)
-        q_obj = q_obj & Q(date__gte=window.start)
-        q_obj = q_obj & Q(date__lte=window.end)
-        if exclude_bound:
-            q_obj = q_obj & exclusion_q
-        for event in HeuristicEvent.objects.filter(q_obj):
-            # Not doing error control here, because this query should
-            # never return an out-of-window event.
-            yield window.fit(event)
+        new_windows = []
+        for window in windows:
+            assert isinstance(window, Window)
+            log.debug('Yielding windows that match %s' % window)
+            q_obj = Q(heuristic_name=self.heuristic)
+            q_obj = q_obj & Q(patient=window.patient)
+            q_obj = q_obj & Q(date__gte=window.start)
+            q_obj = q_obj & Q(date__lte=window.end)
+            if exclude_bound:
+                q_obj = q_obj & exclusion_q
+            for event in HeuristicEvent.objects.filter(q_obj):
+                # Not doing error control here, because this query should
+                # never return an out-of-window event.
+                new_windows.append(window.fit(event))
+        return new_windows
     
     def __repr__(self):
         return 'SimpleEventPattern: %s' % self.heuristic
@@ -1223,10 +1229,25 @@ class ComplexEventPattern(BaseEventPattern):
         if not patients:
             patients = self.plausible_patients()
         sorted_patterns = self.sorted_patterns()
-        for win in sorted_patterns[0].matches(patients=patients, exclude_bound=exclude_bound):
-            windows = [win]
+        first_pattern = sorted_patterns[0]
+        #
+        # Start with the pattern that will return the smallest number 
+        # of Window objectss -- since, if self.operator == 'and', all other 
+        # patterns will need to match only against those.
+        #
+        # Loop through those primary windows, checking them against all other 
+        # required patterns.  Each call to pattern.match_windows() may return 
+        # zero, one, or more Window objects.
+        # 
+        for primary_window in first_pattern.matches(patients=patients, exclude_bound=exclude_bound):
+            windows = [primary_window]
             for pattern in sorted_patterns[1:]:
-                new_windows = pattern.match_window
+                new_windows = pattern.match_windows(windows=windows, exclude_bound=exclude_bound)
+                if self.operator == 'and':
+                    windows = new_windows
+                else: # self.operator == 'or'
+                    windows.extend(new_windows)
+        return windows
         
-    def match_window(self, window, exclude_bound=False):
+    def match_windows(self, window, exclude_bound=False):
         pass
