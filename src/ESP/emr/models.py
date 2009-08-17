@@ -72,6 +72,18 @@ class Provenance(models.Model):
         return '%s | %s | %s' % (self.source, self.timestamp, self.hostname)
 
 
+class EtlError(models.Model):
+    '''
+    An ETL error, usually corresponding with a single bad line in a data file.
+    '''
+    timestamp = models.DateTimeField(auto_now_add=True, blank=False)
+    provenance = models.ForeignKey(Provenance, blank=False)
+    line = models.IntegerField('Line Number', blank=False)
+    err_msg = models.CharField(max_length=512, blank=False)
+    data = models.TextField()
+    
+
+
 class NativeNameCache(models.Model):
     '''
     Cache table for storing list of all distinct LabResult native_name 
@@ -119,9 +131,9 @@ class Provider(BaseMedicalRecord):
     dept_city = models.CharField('Primary Department City',max_length=20,blank=True,null=True)
     dept_state = models.CharField('Primary Department State',max_length=20,blank=True,null=True)
     dept_zip = models.CharField('Primary Department Zip',max_length=20,blank=True,null=True)
-    area_code = models.CharField('Primary Department Phone Areacode',max_length=20,blank=True,null=True)
+    # Large max_length value for area code because Atrius likes to put descriptive text into that field
+    area_code = models.CharField('Primary Department Phone Areacode',max_length=50,blank=True,null=True)
     telephone = models.CharField('Primary Department Phone Number',max_length=50,blank=True,null=True)
-    
     
     q_fake = Q(provider_id_num__startswith='FAKE')
 
@@ -138,7 +150,6 @@ class Provider(BaseMedicalRecord):
     def make_fakes(save_on_db=True):
         provenance = Provenance.fake()
         if Provider.fakes().count() > 0: return
-        
         import fake
         for p in fake.PROVIDERS:
             p.provenance = provenance
@@ -150,8 +161,6 @@ class Provider(BaseMedicalRecord):
         if Provider.fakes().count() == 0:        
             Provider.make_fakes()
         return Provider.fakes().order_by('?')[0]
-
-
     
     def is_fake(self):
         return self.provider_id_num.startswith('FAKE')

@@ -29,6 +29,7 @@ from ESP.utils.utils import log
 from ESP.utils.utils import date_from_str
 from ESP.static.models import Icd9
 from ESP.emr.models import Provenance
+from ESP.emr.models import EtlError
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
 from ESP.emr.models import LabResult
@@ -136,53 +137,38 @@ class BaseLoader(object):
         cur_row = 0 # Row counter
         valid = 0 # Number of valid records loaded
         errors = 0 # Number of non-fatal errors encountered
-        error_strings = []
         for row in self.reader:
             cur_row += 1 # Increment the counter
             # The last line is a footer, so we skip it
             if cur_row >= self.line_count:
                 break
+            sid = transaction.savepoint()
             try:
-                sid = transaction.savepoint()
                 self.load_row(row)
                 transaction.savepoint_commit(sid)
                 valid += 1
-            except LoadException, e:
+            except (LoadException, ValueError, Psycopg2Error) as e:
                 transaction.savepoint_rollback(sid)
-                log.error('Caught LoadException:')
+                log.error('Caught Exception:')
                 log.error('  File: %s' % self.filename)
                 log.error('  Line: %s' % cur_row)
                 log.error('  Exception: \n%s' % e)
                 log.error(pprint.pformat(row))
                 errors += 1
-                err_str = '%s: %s' % (cur_row, e)
-                error_strings += [err_str]
-            except ValueError, e:
-                transaction.savepoint_rollback(sid)
-                log.error('Caught ValueError:')
-                log.error('  File: %s' % self.filename)
-                log.error('  Line: %s' % cur_row)
-                log.error('  Exception: \n%s' % e)
-                log.error(pprint.pformat(row))
-                errors += 1
-                err_str = '%s: %s' % (cur_row, e)
-                error_strings += [err_str]
-            except Psycopg2Error, e:
-                transaction.savepoint_rollback(sid)
-                log.error('Caught database error:')
-                log.error('  File: %s' % self.filename)
-                log.error('  Line: %s' % cur_row)
-                log.error('  Exception: \n%s' % e)
-                log.error(pprint.pformat(row))
-                errors += 1
-                err_str = '%s: %s' % (cur_row, e)
-                error_strings += [err_str]
+                #
+                # Log ETL errors to db
+                #
+                err = EtlError()
+                err.provenance = self.provenance
+                err.line = cur_row
+                err.err_msg = str(e)
+                err.data = pprint.pformat(row)
+                err.save()
         log.debug('Loaded %s records with %s errors.' % (valid, errors))
         if not errors:
             self.provenance.status = 'loaded'
         else:
             self.provenance.status = 'errors'
-            self.provenance.comment = '\n'.join(error_strings)
         self.provenance.save()
         return (valid, errors)
 
