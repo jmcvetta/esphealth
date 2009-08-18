@@ -22,6 +22,10 @@ DATABASE_USER = 'esp'
 DATABASE_PASSWORD = ''
 DATABASE_HOST = 'localhost'
 DATABASE_PORT = ''
+DATABASE_OPTIONS = {
+    # Make PostgreSQL recover gracefully from caught exceptions
+    "autocommit": True,
+}
 
 
 #===============================================================================
