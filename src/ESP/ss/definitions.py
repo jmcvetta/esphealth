@@ -810,6 +810,12 @@ localSiteExcludeCodes = [x[1] for x in localSiteAllSites if (x[2] == '*')] # use
 localSiteZ = [x[2] for x in localSiteUse]
 localSiteZips = dict(zip(localSiteUseCodes,localSiteZ))
 
+
+## Fever codes
+# List of icd9 codes that indicate a fever event, regardless of measured temperature
+ICD9_FEVER_CODES = ['780.6','780.31']
+
+
 # atrius sites list code,name,ignore
 
 # MDPH definition of ILI
@@ -821,7 +827,7 @@ b) ICD9 code of 780.6 (fever)
 Note febrile convulsion added sometimes?
 ICD9 code 780.31 (Febrile Convulsions)
 """
-ILIdef="""079.3	RHINOVIRUS INFECT NOS
+influenza_like_illness="""079.3	RHINOVIRUS INFECT NOS
 079.89	OTHER SPECIFIED VIRAL INFECTION
 079.99	UNSPECIFIED VIRAL INFECTION
 460	NASOPHARYNGITIS, ACUTE
@@ -852,10 +858,10 @@ ILIdef="""079.3	RHINOVIRUS INFECT NOS
 487.8	INFLUENZA W/OTHR MANIFEST
 784.1	PAIN IN THROAT
 786.2	COUGH""".split('\n')
-ILIdef = [x.split('\t') for x in ILIdef]
-ILIdef = [[x[0],True] for x in ILIdef] # always want a fever
+influenza_like_illness = [x.split('\t') for x in influenza_like_illness]
+influenza_like_illness = [[x[0],True] for x in influenza_like_illness] # always want a fever
 
-HAEMdef="""	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus	FeverReq
+haematological="""	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus	FeverReq
 HEM	287.1	PLATELET DISORDER	129	1	77	1	x	x
 HEM	287.2	NONTHROMBOCYTOPENIC PURPU	30	7	60	1	x	x
 HEM	287.8	HEMORRHAGIC COND NEC	0	0	3	1	x	x
@@ -888,10 +894,10 @@ HEM	078.7	ARENAVIRAL HEM FEVER	0	0	0	3	x	x
 HEM	084.8	BLACKWATER FEVER	0	0	0	3	x	x
 HEM	100.0	LEPTOSPIROSIS, ICTOHEMORRHAGICA				3	x
 HEM	283.11	HEMOLYTIC-UREMIC SYNDROME	4	0	6	3	x	x	""".split('\n')
-HAEMdef = [x.split('\t') for x in HAEMdef[1:]] # ignore header
-HAEMdef = [[x[1].strip(),(x[7].strip()=='*')] for x in HAEMdef]
+haematological = [x.split('\t') for x in haematological[1:]] # ignore header
+haematological = [[x[1].strip(),(x[7].strip()=='*')] for x in haematological]
 
-LESIONSdef = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus
+lesions = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus
 LESION	911.4	Superficial inj/trunk, insect bite non-veno, no infect				3
 LESION	911.5	Superficial inj/trunk, insect bite non-veno, infection				3
 LESION	912.4	Superficial inj/shoulder/upper arm, insect bite non-veno, no infect				3
@@ -908,17 +914,21 @@ LESION	918	Superficial inj/eyelids, periocular area, insect bite 				3
 LESION	919.4	Superficial inj/other,multiple,unspec insect bite non-veno, no infect				3
 LESION	919.5	Superficial inj/other, multiple, unspec insect bite non-veno, infection				3
 LESION	E906.4	Bite of non-venomous arthropod/insect bite NOS				3""".split('\n')
-LESIONSdef = [x.split('\t') for x in LESIONSdef[1:]] # ignore header
-LESIONSdef = [[x[1].strip(),False] for x in LESIONSdef]
+lesions = [x.split('\t') for x in lesions[1:]] # ignore header
+lesions = [[x[1].strip(),False] for x in lesions]
 
-LYMPHdef = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus	FeverReq
+
+
+lymphatic = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus	FeverReq
 LYMPH	289.3	LYMPHADENITIS NOS	1498	0	1044	1	*
 LYMPH	683	ADENITIS, GANGRENOUS, ACU	275	0	429	1	*
 LYMPH	785.6	LYMPH NODE ENLARGEMENT	2294	0	1208	1	*""".split('\n')
-LYMPHdef = [x.split('\t') for x in LYMPHdef[1:]] # ignore header
-LYMPHdef = [[x[1].strip(),(x[7].strip()=='*')] for x in LYMPHdef]
+lymphatic = [x.split('\t') for x in lymphatic[1:]] # ignore header
+lymphatic = [[x[1].strip(),(x[7].strip()=='*')] for x in lymphatic]
 
-LGIdef = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus	Lower GI
+
+
+lower_gi = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus	Lower GI
 GI-lower	005.89	FOOD POISONING, OTHER BAC	3	0	0	1	L
 GI-lower	005.9	FOOD POISONING      NOS	507	3	49	1	L
 GI-lower	008.49	INTEST. INFECT BY OTHER B	2	1	0	1	L
@@ -937,10 +947,12 @@ GI-lower	558.9	GASTROENTERITIS/COLITIS N	61130	1923	8581	1	L
 GI-lower	569.9	INTESTINAL DISORDER  NOS	113	10	50	1	L
 GI-lower	787.91	DIARRHEA	17448	568	4343	1	L
 GI-lower	787.4	PERISTALSIS, VISIBLE	7	0	0	3	L""".split('\n')
-LGIdef = [x.split('\t') for x in LGIdef[1:]] # ignore header
-LGIdef = [[x[1].strip(),False] for x in LGIdef] # no fevers needed
+lower_gi = [x.split('\t') for x in lower_gi[1:]] # ignore header
+lower_gi = [[x[1].strip(),False] for x in lower_gi] # no fevers needed
 
-UGIdef = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus	Upper GI
+
+
+upper_gi = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus	Upper GI
 GI-upper	078.82	EPIDEMIC VOMITING SYND	0	0	32	1	U
 GI-upper	535.00	GASTRITIS, ACUTE	16708	351	1277	1	U
 GI-upper	535.01	GASTRITIS, WITH HEMORRHAG	0	7	39	1	U
@@ -954,10 +966,12 @@ GI-upper	536.2	VOMITING PERSISTENT	563	15	283	1	U
 GI-upper	787.01	NAUSEA WITH VOMITING	14583	723	4050	1	U
 GI-upper	787.02	NAUSEA ALONE	31307	48	1017	1	U
 GI-upper	787.03	VOMITING ALONE	51291	62	797	1	U""".split('\n')
-UGIdef = [x.split('\t') for x in UGIdef[1:]] # ignore header
-UGIdef = [[x[1].strip(),False] for x in UGIdef] # no fevers needed
+upper_gi = [x.split('\t') for x in upper_gi[1:]] # ignore header
+upper_gi = [[x[1].strip(),False] for x in upper_gi] # no fevers needed
 
-NEUROdef = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus
+
+
+neurological = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus
 NEURO	047.8	MENINGITIS, VIRAL NEC	0	0	3	1
 NEURO	047.9	MENINGITIS VIRAL NOS	156	1	27	1
 NEURO	048	DIS ENTEROVIRAL OF CNS, NEC	0	0	0	1
@@ -1010,10 +1024,11 @@ NEURO	352.5	HYPOGLOSSAL NERVE (12TH) DISORDERS				3
 NEURO	374.31	PARALYTIC PTOSIS	0	0	5	3
 NEURO	378.50	PARALYTIC STRABISMUS, UNSPEC				3
 NEURO	378.56	EXTERNAL OPTHALMOPLEGIA				3""".split('\n')
-NEUROdef = [x.split('\t') for x in NEUROdef[1:]] # ignore header
-NEUROdef = [[x[1].strip(),False] for x in NEUROdef] # no fevers needed
+neurological = [x.split('\t') for x in neurological[1:]] # ignore header
+neurological = [[x[1].strip(),False] for x in neurological] # no fevers needed
 
-RASHdef = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus	FeverReq	x
+
+rash = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus	FeverReq	x
 RASH	050.9	SMALLPOX NOS	0	0	0	1	x
 RASH	051.0	COWPOX	0	0	0	1	x
 RASH	052.7	VARICELLA COMPLICAT NEC	0	0	11	1	x
@@ -1035,10 +1050,10 @@ RASH	056.79	RUBELLA COMPLICATION NEC	0	0	0	3	x
 RASH	056.8	RUBELLA COMPLICATION  NOS	1	0	0	3	x
 RASH	056.9	RUBELLA UNCOMPLICATED	97	0	0	3	x
 RASH	083.2	RICKETTSIALPOX	0	0	0	3	x""".split('\n')
-RASHdef = [x.split('\t') for x in RASHdef[1:]] # ignore header
-RASHdef = [[x[1].strip(),(x[7].strip()=='*')] for x in RASHdef]
+rash = [x.split('\t') for x in rash[1:]] # ignore header
+rash = [[x[1].strip(),(x[7].strip()=='*')] for x in rash]
 
-RESPdef = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus
+respiratory = """	ICD9CM	ICD9DESCR	EMA	Hrvd	NCA	Consensus
 RESP	020.3	PRIMARY PNEUMONIC PLAGUE	0	0	0	1
 RESP	020.4	SECONDARY PNEUMON PLAGUE	0	0	0	1
 RESP	020.5	PNEUMONIC PLAGUE NOS	0	0	0	1
@@ -1148,8 +1163,8 @@ RESP	484.1	PNEUM W CYTOMEG INCL DIS	0	1	4	3
 RESP	484.3	PNEUMONIA IN WHOOP COUGH	0	0	2	3
 RESP	484.6	PNEUMONIA IN ASPERGILLOSI	0	0	2	3
 RESP	484.7	PNEUM IN OTH SYS MYCOSES	0	0	0	3""".split('\n')
-RESPdef = [x.split('\t') for x in RESPdef[1:]] # ignore header
-RESPdef = [[x[1].strip(),False] for x in RESPdef] # no fevers needed
+respiratory = [x.split('\t') for x in respiratory[1:]] # ignore header
+respiratory = [[x[1].strip(),False] for x in respiratory] # no fevers needed
 
 
 

@@ -5,22 +5,112 @@ from django.db.models import Q
 from ESP.hef.core import BaseHeuristic, EncounterHeuristic
 from ESP.hef.models import Run
 from ESP.static.models import Icd9
-
 from ESP.utils.utils import log
 
+from ESP.ss.models import NonSpecialistVisitEvent
 
-class InfluenzaHeuristic(EncounterHeuristic):
+
+from definitions import ICD9_FEVER_CODES
+from definitions import influenza_like_illness, haematological, lesions, lymphatic, lower_gi
+from definitions import upper_gi, neurological, rash, respiratory
+
+# According to the specs, all of the syndromes have their specific
+# lists of icd9 codes that are always required as part of the
+# definition. They could've been simply defined as encounter
+# heuristics, except for the fact that some might require a fever
+# measurement, and ILI always required a fever to be reported. (Either
+# through an icd9 code indicating fever, or through a measured
+# temperature).
+
+# So, we're creating two classes for Syndromic
+# Surveillance. InfluenzaHeuristic is for events that are defined by a
+# set of icd9 and always a fever. SyndromeHeuristic is for events that
+# have a set of icd9s and that a fever *may* be required, depending on
+# the icd9 code.
+
+# The definitions that rely only on a set of icd9s (no fever) are just
+# instantiated as regular EncounterHeuristics.
+
+
+class SyndromeHeuristic(EncounterHeuristic):
+    def generate_events(self, incremental=True, **kw):
+        for encounter in self.matches():
+            try:
+                site = Site.objects.get(code=encounter.native_site_num)
+            except:
+                site = None
+                
+            NonSpecialistVisitEvent.objects.get_or_create(
+                heuristic_name = self.heuristic_name,
+                date = encounter.date,
+                patient = encounter.patient,
+                definition = self.def_name,
+                def_version = self.def_version,
+                patient_zip_code = encounter.patient.zip_code,
+                reporting_site = site
+                )
+
+class InfluenzaHeuristic(SyndromeHeuristic):
     FEVER_TEMPERATURE = 100.0 # Temperature in Fahrenheit
     def matches(self, begin_timestamp=None):
-        q_fever = Q(temperature__gte=InfluenzaHeuristic.FEVER_TEMPERATURE)
-        q_unmeasured_temperature = Q(temperature__isnull=True)
+        q_measured_fever = Q(temperature__gte=InfluenzaHeuristic.FEVER_TEMPERATURE)
+        q_unmeasured_fever = Q(temperature__isnull=True, icd9_codes__in=ICD9_FEVER_CODES)
         q_codes = Q(icd9_codes__in=self.icd9s)
         
+        # Make it really readable. 
+        # (icd9 code + measured fever) or (icd9 code + icd9code for fever)
+        # Logically: (a&b)+(a&c) = a&(b+c)
+        influenza = (q_codes & (q_measured_fever | q_unmeasured_fever))
+        return self.encounters(begin_timestamp).filter(influenza)
 
-        return self.encounters(begin_timestamp).filter(
-            q_fever | (q_unmeasured_temperature & q_codes))
+                
+class OptionalFeverSyndromeHeuristic(SyndromeHeuristic):
+    FEVER_TEMPERATURE = 100.0
+    def __init__(self, heuristic_name, def_name, def_version, icd9_fever_map):
+        # The only reason why we are overriding __init__ is because
+        # each the heuristic depends on the icd9 as well as if a fever
+        # is required for that icd9.
+        super(OptionalFeverSyndromeHeuristic, self).__init__(heuristic_name, def_name, 
+                                                def_version, icd9_fever_map.keys())
+        self.required_fevers = icd9_fever_map
+
+    def matches(self, begin_timestamp=None):
+        icd9_requiring_fever = [code for code, required in self.required_fevers.items() if required]
+        icd9_non_fever = [code for code, required in self.required_fevers.items() if not required]
+
+        
+        q_measured_fever = Q(temperature__gte=OptionalFeverSyndromeHeuristic.FEVER_TEMPERATURE)
+        q_unmeasured_fever = Q(temperature__isnull=True, icd9_codes__in=ICD9_FEVER_CODES)
+
+        q_fever_requiring_codes = Q(icd9_codes__in=icd9_requiring_fever)
+    
+        fever_requiring = (q_fever_requiring_codes & (q_measured_fever | q_unmeasured_fever))
+        non_fever_requiring = Q(icd9_codes__in=icd9_non_fever)
+        
+        return self.encounters(begin_timestamp).filter(fever_requiring | non_fever_requiring)
+            
 
 
 
+ili_syndrome = InfluenzaHeuristic(
+    'influenza like illness', 'ILI', 1, dict(influenza_like_illness).keys())
 
+haematological_syndrome = OptionalFeverSyndromeHeuristic(
+    'Haematological', 'haematological', 1, dict(haematological))
+lymphatic_syndrome = OptionalFeverSyndromeHeuristic(
+    'Lymphatic', 'lymphatic', 1, dict(lymphatic))
+rash_syndrome = OptionalFeverSyndromeHeuristic(
+    'Rash', 'rash', 1, dict(rash))
+
+
+lesions_syndrome = EncounterHeuristic(
+    'Lesions', 'lesions', 1, dict(lesions).keys())
+respiratory_syndrome_syndrome = EncounterHeuristic(
+    'Respiratory', 'respiratory', 1, dict(respiratory).keys())
+lower_gi_syndrome = EncounterHeuristic(
+    'Lower GI', 'lower gi', 1, dict(lower_gi).keys())
+upper_gi_syndrome = EncounterHeuristic(
+    'Upper GI', 'uppper gi', 1, dict(upper_gi).keys())
+neuro_syndrome = EncounterHeuristic(
+    'Neurological', 'neurological', 1, dict(neurological).keys())
 

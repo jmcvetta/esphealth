@@ -17,8 +17,8 @@ from ESP.hef.models import HeuristicEvent
 
     
 class Site(models.Model):
+    code = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=200, unique=True)
-    region = models.CharField(max_length=20, db_index=True)
     zip_code = models.CharField(max_length=9)
 
 class Locality(models.Model):
@@ -34,8 +34,12 @@ class Locality(models.Model):
     def __unicode__(self):
         return u'%s - %s, %s (%s)' % (self.locality, self.city, self.state, self.zip_code)
 
-class SyndromeEvent(HeuristicEvent):
-    reporting_site = models.ForeignKey(Site)
+class NonSpecialistVisitEvent(HeuristicEvent):
+    reporting_site = models.ForeignKey(Site, null=True)
+    patient_zip_code = models.CharField(max_length=9, null=True)
+
+
+
 
     
 

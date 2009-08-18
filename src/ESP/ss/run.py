@@ -162,8 +162,12 @@ sendEmailToList = ['raphael.lullis@gmail.com']
 # (potentially empty) list of icd9 codes that also require a fever to be counted as cases.
 # the definition of fever is painful as it involves a lot of missing temp data
 #
-from definitions import btzipdict,localSiteUseDict,localSiteLookup,localSiteExcludeCodes,localSiteUseCodes, \
-localSiteZips, ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef
+from definitions import localSiteUseDict, localSiteLookup, 
+from definitions import localSiteExcludeCodes, localSiteUseCodes, localSiteZips
+from definitions import btzipdict
+from definitions import influenza_like_illness, haematological, lesions, lymphatic, lower_gi
+from definitions import upper_gi, neurological, rash, respiratory
+
 # these are a defining group of [icd,feverreq] lists, and they are instantiated from
 # long strings cut and paste from the 
 # original specification, subject to text processing into dicts and lists 
