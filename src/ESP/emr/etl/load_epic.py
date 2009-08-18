@@ -85,11 +85,11 @@ class BaseLoader(object):
         path, filename = os.path.split(filepath)
         self.filename = filename
         self.filepath = filepath
-        prov = Provenance.objects.get_or_create(timestamp=TIMESTAMP, 
+        prov, created = Provenance.objects.get_or_create(timestamp=TIMESTAMP, 
             source=filename, 
             hostname=socket.gethostname(),
             status='attempted',
-            )[0]
+            )
         prov.save()
         self.provenance = prov
         file_handle = open(filepath)
