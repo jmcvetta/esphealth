@@ -339,8 +339,8 @@ class LabResultLoader(BaseLoader):
         res = row['result_string']
         l.result_string = res
         try:
-            l.res_float = float(res)
-        except:
+            l.result_float = float(res.replace(',', '')) # Strip commas for values like "1,000,000"
+        except ValueError:
             pass # Not every result string is supposed to convert to a float, so this is okay
         l.ref_neg = row['ref_low']
         l.ref_pos = row['ref_high']
