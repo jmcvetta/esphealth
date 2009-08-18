@@ -124,6 +124,7 @@ INSTALLED_APPS = (
     #'ESP.hef2',
     #'ESP.nodis2',
     'ESP.vaers',
+    'ESP.ss'
 )
 
 
