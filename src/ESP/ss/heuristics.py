@@ -44,18 +44,23 @@ class SyndromeHeuristic(EncounterHeuristic):
             except:
                 site = None
                 
-            NonSpecialistVisitEvent.objects.get_or_create(
-                heuristic_name = self.heuristic_name,
-                date = encounter.date,
-                patient = encounter.patient,
-                definition = self.def_name,
-                def_version = self.def_version,
-                patient_zip_code = encounter.patient.zip,
-                reporting_site = site,
-                defaults = {
-                    'content_type':event_type
-                    }
-                )
+            try:
+                NonSpecialistVisitEvent.objects.get_or_create(
+                    heuristic_name = self.heuristic_name,
+                    date = encounter.date,
+                    patient = encounter.patient,
+                    definition = self.def_name,
+                    def_version = self.def_version,
+                    patient_zip_code = encounter.patient.zip,
+                    reporting_site = site,
+                    defaults = {
+                        'content_type':event_type
+                        }
+                    )
+            except:
+                import pdb
+                pdb.set_trace()
+    
 
 
     def counts_by_site_zip(self, zip_code=None, date=None):
