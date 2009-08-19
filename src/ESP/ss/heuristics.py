@@ -3,6 +3,7 @@ import datetime
 from django.db.models import Q, Count
 from django.contrib.contenttypes.models import ContentType
 
+from ESP.emr.models import Encounter
 from ESP.hef.core import BaseHeuristic, EncounterHeuristic
 from ESP.hef.models import Run
 from ESP.static.models import Icd9
@@ -51,12 +52,13 @@ class SyndromeHeuristic(EncounterHeuristic):
                     patient = encounter.patient,
                     definition = self.def_name,
                     def_version = self.def_version,
-                    patient_zip_code = encounter.patient.zip,
+                    patient_zip_code = encounter.patient.zip[:10],
                     reporting_site = site,
+                    object_id = encounter.id,
                     defaults = {
-                        'content_type':encounter_type,
-                        'object_id':encounter.id
+                        'content_type':encounter_type
                         }
+                    )
             except:
                 import pdb
                 pdb.set_trace()

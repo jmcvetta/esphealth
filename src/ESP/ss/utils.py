@@ -41,11 +41,6 @@ def make_non_specialty_clinics():
             zip_code = site[0]
             )
         
-
-
-
-
-
 if __name__ == '__main__':
     make_non_specialty_clinics()
     make_localities()
