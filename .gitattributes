@@ -127,7 +127,6 @@ src/ESP/emr/views.py -text
 src/ESP/env-setup.sh -text
 src/ESP/esp/choices.py -text
 src/ESP/esp/disabled-admin.py -text
-src/ESP/esp/fake.py -text
 src/ESP/esp/fixtures/auth.json -text
 src/ESP/esp/fixtures/immunization_manufacturers.json -text
 src/ESP/esp/fixtures/vaccines.json -text
