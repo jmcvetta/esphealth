@@ -46,7 +46,7 @@ class SyndromeHeuristic(EncounterHeuristic):
                 patient = encounter.patient,
                 definition = self.def_name,
                 def_version = self.def_version,
-                patient_zip_code = encounter.patient.zip_code,
+                patient_zip_code = encounter.patient.zip,
                 reporting_site = site
                 )
 

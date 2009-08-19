@@ -907,11 +907,11 @@ def main():
 
 
 if __name__ == "__main__":
-    neuro = heuristics.neuro_syndrome
-    print 'generating events'
-    neuro.generate_events()
+    rash = heuristics.rash_syndrome
+    print 'generating events for %s' % rash.heuristic_name
+    rash.generate_events()
 
-    print 'testing counts_by_zip'
-    print neuro.counts_by_site_zip()
+    print 'generating counts_by_zip for %s' % rash.heuristic_name
+    print rash.counts_by_site_zip()
     
     
