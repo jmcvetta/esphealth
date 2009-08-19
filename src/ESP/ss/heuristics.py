@@ -1,13 +1,13 @@
 import datetime
 
-from django.db.models import Q
+from django.db.models import Q, Count
 
 from ESP.hef.core import BaseHeuristic, EncounterHeuristic
 from ESP.hef.models import Run
 from ESP.static.models import Icd9
 from ESP.utils.utils import log
 
-from ESP.ss.models import NonSpecialistVisitEvent
+from ESP.ss.models import NonSpecialistVisitEvent, Site
 
 
 from definitions import ICD9_FEVER_CODES
@@ -49,6 +49,17 @@ class SyndromeHeuristic(EncounterHeuristic):
                 patient_zip_code = encounter.patient.zip_code,
                 reporting_site = site
                 )
+
+
+    def counts_by_site_zip(self, zip_code=None, date=None):
+        events = NonSpecialistVisitEvent.objects.filter(
+            heuristic_name=self.heuristic_name)
+
+        if zip_code: 
+            events = events.filter(reporting_site__zip_code=zip_code)
+        if date: events = events.filter(date=date)
+
+        return events.annotate(total=Count('reporting_site__zip_code'))
 
 class InfluenzaHeuristic(SyndromeHeuristic):
     FEVER_TEMPERATURE = 100.0 # Temperature in Fahrenheit
@@ -103,14 +114,14 @@ rash_syndrome = OptionalFeverSyndromeHeuristic(
     'Rash', 'rash', 1, dict(rash))
 
 
-lesions_syndrome = EncounterHeuristic(
+lesions_syndrome = SyndromeHeuristic(
     'Lesions', 'lesions', 1, dict(lesions).keys())
-respiratory_syndrome_syndrome = EncounterHeuristic(
+respiratory_syndrome = SyndromeHeuristic(
     'Respiratory', 'respiratory', 1, dict(respiratory).keys())
-lower_gi_syndrome = EncounterHeuristic(
+lower_gi_syndrome = SyndromeHeuristic(
     'Lower GI', 'lower gi', 1, dict(lower_gi).keys())
-upper_gi_syndrome = EncounterHeuristic(
+upper_gi_syndrome = SyndromeHeuristic(
     'Upper GI', 'uppper gi', 1, dict(upper_gi).keys())
-neuro_syndrome = EncounterHeuristic(
+neuro_syndrome = SyndromeHeuristic(
     'Neurological', 'neurological', 1, dict(neurological).keys())
 

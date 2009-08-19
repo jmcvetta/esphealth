@@ -1,3 +1,5 @@
+import heuristics
+
 """
 welcome to espSS.py
 Please look at http://esphealth.org/trac/ESP/wiki/ESPSS
@@ -162,7 +164,7 @@ sendEmailToList = ['raphael.lullis@gmail.com']
 # (potentially empty) list of icd9 codes that also require a fever to be counted as cases.
 # the definition of fever is painful as it involves a lot of missing temp data
 #
-from definitions import localSiteUseDict, localSiteLookup, 
+from definitions import localSiteUseDict, localSiteLookup
 from definitions import localSiteExcludeCodes, localSiteUseCodes, localSiteZips
 from definitions import btzipdict
 from definitions import influenza_like_illness, haematological, lesions, lymphatic, lower_gi
@@ -182,7 +184,8 @@ from definitions import upper_gi, neurological, rash, respiratory
 
 
 
-defList = [ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef]
+defList = [influenza_like_illness, haematological, lesions, lymphatic, lower_gi, 
+           upper_gi, neurological, rash, respiratory]
 nameList = ['ILI','Haematological','Lesions','Lymphatic','Lower GI','Upper GI',
 'Neurological','Rashes','Respiratory']
 syndDefs = dict(zip(nameList,defList))
@@ -863,7 +866,7 @@ u = """espss.py
 usage: python espss.py -s[startdate as 20090101] -e[enddate] -z [ziplen] 
 -o [outdir] -t [tabreps] -a [amdsreps] -i [do not ignore local exclusions] -v [make vols file]"""
 
-if __name__ == "__main__":
+def main():
     today = datetime.datetime.now()
     edef = (today - datetime.timedelta(1)).strftime('%Y%m%d')
     sdef = (today - datetime.timedelta(2)).strftime('%Y%m%d')
@@ -901,3 +904,14 @@ if __name__ == "__main__":
          outdir=options.outdir,ziplen=options.ziplen,
           encDateVols=edv,encDateAgeVols=edav,encDateSiteVols=edsv)
 
+
+
+if __name__ == "__main__":
+    neuro = heuristics.neuro_syndrome
+    print 'generating events'
+    neuro.generate_events()
+
+    print 'testing counts_by_zip'
+    print neuro.counts_by_site_zip()
+    
+    

@@ -12,7 +12,7 @@
 
 from django.db import models
 
-
+from ESP.emr.models import Encounter
 from ESP.hef.models import HeuristicEvent
 
     
@@ -20,6 +20,27 @@ class Site(models.Model):
     code = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=200, unique=True)
     zip_code = models.CharField(max_length=9)
+
+    def encounters(self, **kw):
+        ''' 
+        Returns a list of all encounters that took place at this Site.
+        kw may contain specific filters, like icd9 codes or dates.
+        '''
+
+        date = kw.pop('date', None)
+        at_site = Encounter.objects.filter(
+            native_site_num = self.code)
+
+        encounters = at_site        
+        if date:
+            encounters = encounters.filter(date=date)
+
+        return encounters
+
+    def volume(self, date):
+        ''' total count of encounters had at clinic on a given day '''
+        return self.encounters(date=date).count()
+
 
 class Locality(models.Model):
     zip_code = models.CharField(max_length=9, db_index=True)
@@ -37,7 +58,6 @@ class Locality(models.Model):
 class NonSpecialistVisitEvent(HeuristicEvent):
     reporting_site = models.ForeignKey(Site, null=True)
     patient_zip_code = models.CharField(max_length=9, null=True)
-
 
 
 
