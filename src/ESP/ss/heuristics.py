@@ -36,7 +36,7 @@ from definitions import upper_gi, neurological, rash, respiratory
 class SyndromeHeuristic(EncounterHeuristic):
     def generate_events(self, incremental=True, **kw):
 
-        event_type = ContentType.objects.get_for_model(NonSpecialistVisitEvent)
+        encounter_type = ContentType.objects.get_for_model(Encounter)
 
         for encounter in self.matches():
             try:
@@ -54,9 +54,9 @@ class SyndromeHeuristic(EncounterHeuristic):
                     patient_zip_code = encounter.patient.zip,
                     reporting_site = site,
                     defaults = {
-                        'content_type':event_type
+                        'content_type':encounter_type,
+                        'object_id':encounter.id
                         }
-                    )
             except:
                 import pdb
                 pdb.set_trace()
