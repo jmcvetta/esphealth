@@ -83,7 +83,6 @@ media/js/jquery.livequery.js -text
 media/js/vaers.js -text
 pdi/esp_dev_pdi_3_1_0.pg.sql -text
 /readme -text
-src/ESP/backfill-by-month.sh -text
 src/ESP/batch-run.sh -text
 src/ESP/cache/__init__.py -text
 src/ESP/cache/models.py -text
