@@ -66,7 +66,15 @@ class Provenance(models.Model):
 
     @staticmethod
     def fake():
-        return Provenance.objects.get(source='Data Faker App')
+        data_faker = 'Data Faker App'
+        try:
+            return Provenance.objects.get(source=data_faker)
+        except:
+            return Provenance.objects.create(
+                source=data_faker, status='loaded', hostname='fake',
+                comment='Data Faker App add data that should be used ' \
+                    'for testing and development purposes only')
+                
         
     def __str__(self):
         return '%s | %s | %s' % (self.source, self.timestamp, self.hostname)
