@@ -59,7 +59,7 @@ class SyndromeHeuristic(EncounterHeuristic):
                         'content_type':encounter_type
                         }
                     )
-            except:
+            except Exception, why:
                 import pdb
                 pdb.set_trace()
     
