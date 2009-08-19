@@ -95,7 +95,7 @@ class BaseLoader(object):
         file_handle = open(filepath)
         self.line_count = len(file_handle.readlines())
         file_handle.seek(0) # Reset file position after counting lines
-        self.reader = csv.DictReader(utf_8_encoder(file_handle), fieldnames=self.fields, dialect='epic')
+        self.reader = csv.DictReader(file_handle, fieldnames=self.fields, dialect='epic')
     
     def get_patient(self, patient_id_num):
         if not patient_id_num:
@@ -207,15 +207,18 @@ class ProviderLoader(BaseLoader):
         ]
     
     def load_row(self, row):
+        if not ''.join([i[1] for i in row.items()]): # Concatenate all fields
+            log.debug('Empty row encountered -- skipping')
+            return
         pin = row['provider_id_num']
         if not pin:
             raise LoadException('Record has blank provider_id_num, which is required')
         p = self.get_provider(pin)
         p.provenance = self.provenance
         p.updated_by = UPDATED_BY
-        p.last_name = row['last_name']
-        p.first_name = row['first_name']
-        p.middle_name = row['middle_name']
+        p.last_name = unicode(row['last_name'])
+        p.first_name = unicode(row['first_name'])
+        p.middle_name = unicode(row['middle_name'])
         p.title = row['title']
         p.dept_id_num = row['dept_id_num']
         p.dept = row['dept']
@@ -266,9 +269,9 @@ class PatientLoader(BaseLoader):
         p.provenance = self.provenance
         p.updated_by = UPDATED_BY
         p.mrn = row['mrn']
-        p.last_name = row['last_name']
-        p.first_name = row['first_name']
-        p.middle_name = row['middle_name']
+        p.last_name = unicode(row['last_name'])
+        p.first_name = unicode(row['first_name'])
+        p.middle_name = unicode(row['middle_name'])
         p.pcp = self.get_provider(row['provider_id_num'])
         p.address1 = row['address1']
         p.address2 = row['address2']
@@ -530,19 +533,17 @@ def move_file(filepath, disposition):
     @param disposition: What to do with this file?
     @type disposition:  String - ('success', 'errors', 'failure')
     '''
-    if disposition == 'success':
-        year = str(datetime.datetime.now().year)
-        month = datetime.datetime.now().strftime('%b')
-        folder = os.path.join(ARCHIVE_DIR, year, month)
-        if not os.path.exists(folder): 
-            os.makedirs(folder)
-            log.debug('Created new folder: %s' % folder)
-    elif disposition == 'errors':
-        folder = ERROR_DIR
-    elif disposition == 'failure':
+    if disposition == 'failure':
         folder = FAILURE_DIR
-    else:
-        raise 'This should never happen -- something is badly horked up'
+    else: # 'success' and 'errors'
+        #year = str(datetime.datetime.now().year)
+        #month = datetime.datetime.now().strftime('%b')
+        #folder = os.path.join(ARCHIVE_DIR, year, month)
+        #if not os.path.exists(folder): 
+            #os.makedirs(folder)
+            #log.debug('Created new folder: %s' % folder)
+        folder = ARCHIVE_DIR
+    log.info('Moving file "%s" to %s' % (filepath, folder))
     shutil.move(filepath, folder)
 
 
@@ -632,7 +633,7 @@ def main():
                     log.info('File "%s" loaded successfully.' % filepath)
                     disposition = 'success'
             except KeyboardInterrupt:
-                log.critical('Keyboard interrupt: exiting immediately.')
+                log.critical('Keyboard interrupt: exiting.')
                 sys.exit(-255)
             except BaseException, e: # Unhandled exception!
                 log.critical('Unhandled exception loading file "%s":' % filepath)
