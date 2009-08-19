@@ -1,6 +1,7 @@
 import datetime
 
 from django.db.models import Q, Count
+from django.contrib.contenttypes.models import ContentType
 
 from ESP.hef.core import BaseHeuristic, EncounterHeuristic
 from ESP.hef.models import Run
@@ -34,6 +35,9 @@ from definitions import upper_gi, neurological, rash, respiratory
 
 class SyndromeHeuristic(EncounterHeuristic):
     def generate_events(self, incremental=True, **kw):
+
+        event_type = ContentType.objects.get_for_model(NonSpecialistVisitEvent)
+
         for encounter in self.matches():
             try:
                 site = Site.objects.get(code=encounter.native_site_num)
@@ -47,7 +51,10 @@ class SyndromeHeuristic(EncounterHeuristic):
                 definition = self.def_name,
                 def_version = self.def_version,
                 patient_zip_code = encounter.patient.zip,
-                reporting_site = site
+                reporting_site = site,
+                defaults = {
+                    'content_type':event_type
+                    }
                 )
 
 
