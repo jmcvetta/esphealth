@@ -1249,5 +1249,28 @@ class ComplexEventPattern(BaseEventPattern):
                     windows.extend(new_windows)
         return windows
         
-    def match_windows(self, window, exclude_bound=False):
-        pass
+    def match_window(self, reference, exclude_bound=False):
+        '''
+        Returns set of zero or more windows, falling within a reference window,
+        that match this pattern.
+        @param reference: Reference window
+        @type reference: Window instance
+        @return: set of Window instances
+        '''
+        sorted_patterns = self.sorted_patterns()
+        # Queue up the reference window to be checked against patterns.  We use 
+        # a set instead of a list to avoid double-adding the reference window
+        # when evaluating with 'or' operator.
+        queue = set(reference) 
+        for pattern in sorted_patterns:
+            # When operator is 'or', even if the previous pattern didn't match 
+            # anything, we're still going to try matching the remaining patterns 
+            # against the reference window.
+            if self.operator == 'or':
+                queue.update(reference)
+            matched_windows = set()
+            for win in queue:
+                matched_windows.update(pattern.match_windows(win, exclude_bound=exclude_bound))
+            queue = matched_windows
+        return queue
+    
