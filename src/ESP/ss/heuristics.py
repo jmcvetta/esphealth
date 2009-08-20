@@ -26,19 +26,17 @@ from definitions import upper_gi, neurological, rash, respiratory
 
 # So, we're creating two classes for Syndromic
 # Surveillance. InfluenzaHeuristic is for events that are defined by a
-# set of icd9 and always a fever. SyndromeHeuristic is for events that
+# set of icd9 and always a fever. OptionFeverHeuristic is for events that
 # have a set of icd9s and that a fever *may* be required, depending on
 # the icd9 code.
 
 # The definitions that rely only on a set of icd9s (no fever) are just
-# instantiated as regular EncounterHeuristics.
+# instantiated as regular SyndromeHeuristics.
 
 
 class SyndromeHeuristic(EncounterHeuristic):
     def generate_events(self, incremental=True, **kw):
-
         encounter_type = ContentType.objects.get_for_model(Encounter)
-
         for encounter in self.matches():
             try:
                 site = Site.objects.get(code=encounter.native_site_num)
@@ -74,6 +72,38 @@ class SyndromeHeuristic(EncounterHeuristic):
         if date: events = events.filter(date=date)
 
         return events.annotate(total=Count('reporting_site__zip_code'))
+
+    def counts_by_age_range(self, lower, upper=150, **kw):
+        '''
+        returns the count of occurances of this event, that occur with
+        patients only on the date range defined by lower and upper.
+        Can also break it by zip code and by date.
+        '''
+        
+        
+        locality_zip_code = kw.get('locality_zip_code', None)
+        site_zip_code = kw.get('site_zip_code', None)
+
+        today = datetime.date.today()
+        
+        younger_date = datetime.date(year=(today.year - abs(lower)), 
+                                     month=today.month, day=today.day)
+        older_date = datetime.date(year=(today.year - abs(upper)), 
+                                   month=today.month, day=today.day)
+
+        events = NonSpecialistVisitEvent.objects.filter(
+            heuristic_name=self.heuristic_name, 
+            patient__date_of_birth__gte=younger_date,
+            patient__date_of_birth__lt=older_date)
+
+        if locality_zip_code:
+            events = events.filter(patient_zip_code=locality_zip_code)
+
+        if site_zip_code:
+            events = events.filter(reporting_site__zip_code=site_zip_code)
+
+        return events.count()
+
 
 class InfluenzaHeuristic(SyndromeHeuristic):
     FEVER_TEMPERATURE = 100.0 # Temperature in Fahrenheit
@@ -117,25 +147,39 @@ class OptionalFeverSyndromeHeuristic(SyndromeHeuristic):
 
 
 
-ili_syndrome = InfluenzaHeuristic(
-    'influenza like illness', 'ILI', 1, dict(influenza_like_illness).keys())
-
-haematological_syndrome = OptionalFeverSyndromeHeuristic(
+ili = InfluenzaHeuristic('influenza like illness', 'ILI', 1, 
+                         dict(influenza_like_illness).keys())
+    
+haematological = OptionalFeverSyndromeHeuristic(
     'Haematological', 'haematological', 1, dict(haematological))
-lymphatic_syndrome = OptionalFeverSyndromeHeuristic(
-    'Lymphatic', 'lymphatic', 1, dict(lymphatic))
-rash_syndrome = OptionalFeverSyndromeHeuristic(
-    'Rash', 'rash', 1, dict(rash))
+
+lymphatic = OptionalFeverSyndromeHeuristic('Lymphatic', 'lymphatic', 
+                                           1, dict(lymphatic))
+
+rash = OptionalFeverSyndromeHeuristic('Rash', 'rash', 1, dict(rash))
+    
+lesions = SyndromeHeuristic('Lesions', 'lesions', 1, dict(lesions).keys())
+respiratory = SyndromeHeuristic('Respiratory', 'respiratory', 1, 
+                                dict(respiratory).keys())
+
+lower_gi = SyndromeHeuristic('Lower GI', 'lower gi', 1, 
+                             dict(lower_gi).keys())
+
+upper_gi = SyndromeHeuristic('Upper GI', 'uppper gi', 1, dict(upper_gi).keys())
+
+neuro = SyndromeHeuristic('Neurological', 'neurological', 1, dict(neurological).keys())
 
 
-lesions_syndrome = SyndromeHeuristic(
-    'Lesions', 'lesions', 1, dict(lesions).keys())
-respiratory_syndrome = SyndromeHeuristic(
-    'Respiratory', 'respiratory', 1, dict(respiratory).keys())
-lower_gi_syndrome = SyndromeHeuristic(
-    'Lower GI', 'lower gi', 1, dict(lower_gi).keys())
-upper_gi_syndrome = SyndromeHeuristic(
-    'Upper GI', 'uppper gi', 1, dict(upper_gi).keys())
-neuro_syndrome = SyndromeHeuristic(
-    'Neurological', 'neurological', 1, dict(neurological).keys())
+def syndrome_heuristics():
+    return {
+        'ili':ili,
+        'haemotological':haematological,
+        'lymphatic':lymphatic,
+        'rash':rash,
+        'lesions':lesions,
+        'respiratory':respiratory,
+        'lower_gi':lower_gi,
+        'upper_gi':upper_gi,
+        'neuro':neuro
+    }
 

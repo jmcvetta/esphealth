@@ -21,6 +21,16 @@ class Site(models.Model):
     name = models.CharField(max_length=200, unique=True)
     zip_code = models.CharField(max_length=10)
 
+    @staticmethod
+    def volume_by_zip(zip_code, date):
+        ''' 
+        Returns the total amount of encounters of a given day that
+        took place in the clinics that have a given zip code.
+        '''
+        sites = Site.objects.filter(zip_code=zip_code)
+        return Encounter.objects.filter(
+            date=date, native_site_num__in=[str(x.id) for x in sites]).count()
+
     def encounters(self, **kw):
         ''' 
         Returns a list of all encounters that took place at this Site.
