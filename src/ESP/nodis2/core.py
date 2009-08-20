@@ -37,8 +37,9 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
-from ESP.hef.core import BaseHeuristic
-from ESP.hef.models import HeuristicEvent
+from ESP.hef2 import events
+from ESP.hef2.core import BaseHeuristic
+from ESP.hef2.models import HeuristicEvent
 from ESP.nodis.models import Case
 
 

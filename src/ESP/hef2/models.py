@@ -39,7 +39,8 @@ class HeuristicEvent(models.Model):
     '''
     heuristic_name = models.CharField(max_length=127, null=False, blank=False, db_index=True)
     date = models.DateField('Date event occured', blank=False, db_index=True)
-    patient = models.ForeignKey(Patient, blank=False, db_index=True)
+    # FIXME: Remove related_name when hef2 graduates to be new hef version
+    patient = models.ForeignKey(Patient, blank=False, db_index=True, related_name='hef2_event_set')
     timestamp = models.DateTimeField('Time event was created in db', blank=False, auto_now_add=True)
     definition = models.CharField(max_length=100, blank=False, db_index=True)
     def_version = models.IntegerField(blank=False)
@@ -47,7 +48,8 @@ class HeuristicEvent(models.Model):
     # Standard generic relation support
     #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
     #
-    content_type = models.ForeignKey(ContentType, db_index=True)
+    # FIXME: Remove related_name when hef2 graduates to be new hef version
+    content_type = models.ForeignKey(ContentType, db_index=True, related_name='hef2_event_set')
     object_id = models.PositiveIntegerField(db_index=True)
     content_object = generic.GenericForeignKey('content_type', 'object_id')
     
