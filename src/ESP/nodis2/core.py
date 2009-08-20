@@ -23,6 +23,7 @@ from django.db import connection
 from django.db.models import Q
 from django.db.models import F
 from django.db.models import Sum
+from django.db.models import Model
 from django.db.models.query import QuerySet
 from django.contrib.contenttypes.models import ContentType
 
@@ -1133,28 +1134,36 @@ class SimpleEventPattern(BaseEventPattern):
         for e in all_events:
             yield Window(days=days, events=[e])
                 
-    def match_windows(self, windows, exclude_bound=False):
-        #
-        # Maybe this should be an iterator??
-        #
-        if exclude_bound: # Sanity check
-            assert exclude_bound in Disease.list_all_disease_names()
-            exclusion_q = ~Q(case__condition=exclude_bound) # Note negation of this Q object
-        new_windows = []
-        for window in windows:
-            assert isinstance(window, Window)
-            log.debug('Yielding windows that match %s' % window)
-            q_obj = Q(heuristic_name=self.heuristic)
-            q_obj = q_obj & Q(patient=window.patient)
-            q_obj = q_obj & Q(date__gte=window.start)
-            q_obj = q_obj & Q(date__lte=window.end)
-            if exclude_bound:
-                q_obj = q_obj & exclusion_q
-            for event in HeuristicEvent.objects.filter(q_obj):
-                # Not doing error control here, because this query should
-                # never return an out-of-window event.
-                new_windows.append(window.fit(event))
-        return new_windows
+    def match_window(self, reference, exclude=False):
+        '''
+        Returns set of zero or more windows, falling within a reference window,
+        that match this pattern.
+        @param reference: Reference window
+        @type reference: Window instance
+        @param exclude: Exclude events already bound to this model instance
+        @type exclude: django.db.models.Model instance, which has this field:
+            events = models.ManyToManyField(HeuristicEvent)
+        @return: set of Window instances
+        '''
+        assert isinstance(reference, Window)
+        matched_windows = set()
+        log.debug('Yielding windows that match %s' % reference)
+        q_obj = Q(heuristic_name=self.heuristic)
+        q_obj = q_obj & Q(patient=reference.patient)
+        q_obj = q_obj & Q(date__gte=reference.start)
+        q_obj = q_obj & Q(date__lte=reference.end)
+        if exclude:
+            assert isinstance(exclude, Model) # Sanity checks
+            assert hasattr(exclude, 'events')
+            bound_events = exclude.events.all()
+            bound_event_ids = bound_events.values_list('id', flat=True)
+            q_obj = q_obj & ~Q(id__in=bound_event_ids)
+        for event in  HeuristicEvent.objects.filter(q_obj):
+            # Not doing error control here, because this query should
+            # never return an out-of-window event.
+            win = reference.fit(event)
+            matched_windows.add(win)
+        return matched_windows
     
     def __repr__(self):
         return 'SimpleEventPattern: %s' % self.heuristic
@@ -1249,12 +1258,15 @@ class ComplexEventPattern(BaseEventPattern):
                     windows.extend(new_windows)
         return windows
         
-    def match_window(self, reference, exclude_bound=False):
+    def match_window(self, reference, exclude=False):
         '''
         Returns set of zero or more windows, falling within a reference window,
         that match this pattern.
         @param reference: Reference window
         @type reference: Window instance
+        @param exclude: Exclude events already bound to this model instance
+        @type exclude: django.db.models.Model instance, which has this field:
+            events = models.ManyToManyField(HeuristicEvent)
         @return: set of Window instances
         '''
         sorted_patterns = self.sorted_patterns()
@@ -1270,7 +1282,7 @@ class ComplexEventPattern(BaseEventPattern):
                 queue.update(reference)
             matched_windows = set()
             for win in queue:
-                matched_windows.update(pattern.match_windows(win, exclude_bound=exclude_bound))
+                matched_windows.update(pattern.match_windows(win, exclude=exclude))
             queue = matched_windows
         return queue
     
