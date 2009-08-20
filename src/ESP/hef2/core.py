@@ -32,8 +32,8 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.conf.models import NativeCode
-from ESP.hef.models import HeuristicEvent
-from ESP.hef.models import Run
+from ESP.hef2.models import HeuristicEvent
+from ESP.hef2.models import Run
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
