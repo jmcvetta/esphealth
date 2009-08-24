@@ -14,13 +14,16 @@ class MSH(Segment):
         Field('time'),
         Field('security'),
         Field('message_type'),
+        Field('message_control_id'),
         Field('processing_id'),
         Field('version', default=VERSION),
         Field('sequence_number'),
         Field('continuation_number'),
         Field('application_ack_type'),
         Field('accept_ack_type'),
-        Field('country_code')
+        Field('country_code'),
+        Field('charset'),
+        Field('principal_language_of_message')
         ]
 
 
@@ -178,6 +181,7 @@ class OBX(Segment):
         Field('abnormal_flags'),
         Field('probability'),
         Field('nature_of_abnormal_result'),
+        Field('observation_result_status'),
         Field('date_last_observed_normal_values'),
         Field('user_defined_access_checks'),
         Field('date'),

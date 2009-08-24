@@ -26,11 +26,13 @@ class AdverseReactionReport(object):
     def make_MSH(self):
         msh = MSH()
 
+        msh.receiving_application = 'Atrius'
         msh.receiving_facility = 'VAERS PROCESSOR'
         msh.processing_id = 'T'
         msh.accept_ack_type = 'NE'
         msh.application_ack_type = 'AL'
         msh.message_type = ['ORU', 'R01']
+        msh.message_control_id = 'Atrius'
         msh.sending_facility = SITE_NAME
 
         return msh
@@ -66,29 +68,35 @@ class AdverseReactionReport(object):
         else:
             obx_patient_age.value = age  
             obx_patient_age.units = ['yr', 'year', 'ANSI']
+        obx_patient_age.observation_result_status = 'F'
+
 
         obx_form = OBX()
         obx_form.value_type = 'TS'
         obx_form.identifier = ['30947-6', 'Date form completed', 'LN']
         obx_form.value = utils.str_from_date(self.event.last_updated)
+        obx_form.observation_result_status = 'F'
 
         obx_treatment = OBX()
         obx_treatment.value_type = 'FT'
         obx_treatment.identifier = ['30948-4', 'Vaccination adverse events and treatment, if any', 'LN']
         obx_treatment.subsequence_id = 1
         obx_treatment.value = self.event.matching_rule_explain
+        obx_treatment_value.observation_result_status = 'F'
         
         obx_vaccination = OBX()
         obx_vaccination.value_type = 'TS'
         obx_vaccination.identifier = ['30952-6', 'Date of vaccination', 'LN']
         obx_vaccination.value = utils.str_from_date(
             max([x.date for x in self.event.immunizations.all()]))
+        obx_vaccination.observation_result_status = 'F'
 
         obx_date = OBX()
         obx_date.value_type = 'TS'
         obx_date.identifier = ['30953-4', 'Adverse event onset date and time',
                                'LN']
         obx_date.value = utils.str_from_date(self.event.date)
+        obx_date.observation_result_status = 'F'
 
         observation_results = [obx_patient_age, obx_form, obx_treatment, 
                                obx_vaccination, obx_date]
