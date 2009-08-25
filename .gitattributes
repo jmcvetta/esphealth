@@ -316,6 +316,7 @@ src/ESP/templates/nav-bg.gif -text
 src/ESP/templates/nodis/case_detail.html -text
 src/ESP/templates/nodis/case_list.html -text
 src/ESP/templates/nodis/provider_detail.html -text
+src/ESP/templates/pages/ss/home.html -text
 src/ESP/templates/pages/vaers/collect_feedback.html -text
 src/ESP/templates/pages/vaers/detect.html -text
 src/ESP/templates/pages/vaers/home.html -text
@@ -331,6 +332,7 @@ src/ESP/templates/pages/vaers/vaccines.html -text
 src/ESP/templates/pages/vaers/vaers.html -text
 src/ESP/templates/status.html -text
 src/ESP/templates/widgets/fixture_builder.json -text
+src/ESP/templates/widgets/ss/day_map_report.html -text
 src/ESP/templates/widgets/vaers/case_grid.html -text
 src/ESP/templates/widgets/vaers/case_grid.json -text
 src/ESP/templates/widgets/vaers/case_table.html -text

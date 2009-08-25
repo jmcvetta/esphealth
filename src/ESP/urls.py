@@ -26,6 +26,10 @@ urlpatterns = patterns(
     
     # Vaers
     url(r'^vaers/', include('ESP.vaers.urls')),
+
+    # Syndromic Surveillance
+    url(r'^syndrome/', include('ESP.ss.urls')),
+
     
     # Login and Logout
     url(r'^login/?$', login, {'template_name': 'login.html'}, name='login'),
