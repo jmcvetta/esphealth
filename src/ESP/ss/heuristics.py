@@ -11,10 +11,9 @@ from ESP.utils.utils import log
 
 from ESP.ss.models import NonSpecialistVisitEvent, Site
 
-
 from definitions import ICD9_FEVER_CODES
-from definitions import influenza_like_illness, haematological, lesions, lymphatic, lower_gi
-from definitions import upper_gi, neurological, rash, respiratory
+from definitions import influenza_like_illness, haematological, lesions, rash
+from definitions import lymphatic, lower_gi, upper_gi, neurological, respiratory
 
 # According to the specs, all of the syndromes have their specific
 # lists of icd9 codes that are always required as part of the
@@ -46,11 +45,12 @@ class SyndromeHeuristic(EncounterHeuristic):
             try:
                 NonSpecialistVisitEvent.objects.get_or_create(
                     heuristic_name = self.heuristic_name,
+                    encounter = encounter,
                     date = encounter.date,
                     patient = encounter.patient,
                     definition = self.def_name,
                     def_version = self.def_version,
-                    patient_zip_code = encounter.patient.zip[:10],
+                    patient_zip_code = encounter.patient.zip[:10].strip(),
                     reporting_site = site,
                     object_id = encounter.id,
                     defaults = {
@@ -63,15 +63,17 @@ class SyndromeHeuristic(EncounterHeuristic):
     
 
 
-    def counts_by_site_zip(self, zip_code=None, date=None):
-        events = NonSpecialistVisitEvent.objects.filter(
-            heuristic_name=self.heuristic_name)
-
-        if zip_code: 
-            events = events.filter(reporting_site__zip_code=zip_code)
-        if date: events = events.filter(date=date)
-
-        return events.annotate(total=Count('reporting_site__zip_code'))
+    def from_site_zip(self, zip_code):
+        return NonSpecialistVisitEvent.objects.filter(
+            heuristic_name=self.heuristic_name,
+            reporting_site__zip_code=zip_code)
+    
+    def from_locality(self, zip_code):
+        return NonSpecialistVisitEvent.objects.filter(
+            heuristic_name=self.heuristic_name,
+            patient_zip_code=zip_code)
+    
+        
 
     def counts_by_age_range(self, lower, upper=150, **kw):
         '''
@@ -80,21 +82,24 @@ class SyndromeHeuristic(EncounterHeuristic):
         Can also break it by zip code and by date.
         '''
         
-        
+        date = kw.get('date', None)
         locality_zip_code = kw.get('locality_zip_code', None)
         site_zip_code = kw.get('site_zip_code', None)
 
         today = datetime.date.today()
         
-        younger_date = datetime.date(year=(today.year - abs(lower)), 
+        younger_patient_date = datetime.date(year=(today.year - abs(lower)), 
                                      month=today.month, day=today.day)
-        older_date = datetime.date(year=(today.year - abs(upper)), 
+        older_patient_date = datetime.date(year=(today.year - abs(upper)), 
                                    month=today.month, day=today.day)
 
         events = NonSpecialistVisitEvent.objects.filter(
             heuristic_name=self.heuristic_name, 
-            patient__date_of_birth__gte=younger_date,
-            patient__date_of_birth__lt=older_date)
+            patient__date_of_birth__gte=older_patient_date,
+            patient__date_of_birth__lt=younger_patient_date)
+
+        if date:
+            events = events.filter(date=date)
 
         if locality_zip_code:
             events = events.filter(patient_zip_code=locality_zip_code)

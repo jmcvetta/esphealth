@@ -11,6 +11,8 @@ src/ESP/hef/*.pyc
 src/ESP/localsettings.py
 src/ESP/messages
 src/ESP/nodis/*.pyc
+src/ESP/ss/assets
+src/ESP/ss/assets/*
 src/ESP/utils/*.pyc
 src/ESP/vaers/*.pyc
 src/ESP/vaers/assets

@@ -10,12 +10,27 @@
 
 '''
 
+import datetime
+
 from django.db import models
+from django.db.models import Q
 
 from ESP.emr.models import Encounter
 from ESP.hef.models import HeuristicEvent
 
+
+def age_group_filter(lower, upper=150):
+    today = datetime.date.today()
+    younger_patient_date = datetime.date(year=(today.year - abs(lower)), 
+                                         month=today.month, day=today.day)
+    older_patient_date = datetime.date(year=(today.year - abs(upper)), 
+                                       month=today.month, day=today.day)
     
+    born_before = Q(patient__date_of_birth__gte=older_patient_date)
+    born_after = Q(patient__date_of_birth__lt=younger_patient_date)
+    
+    return born_before & born_after
+
 class Site(models.Model):
     code = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=200, unique=True)
@@ -30,6 +45,21 @@ class Site(models.Model):
         sites = Site.objects.filter(zip_code=zip_code)
         return Encounter.objects.filter(
             date=date, native_site_num__in=[str(x.id) for x in sites]).count()
+
+    @staticmethod
+    def encounters_by_zip(zip_code):
+        ''' 
+        Returns a QuerySet for encounters from all sites with a given zip code
+        '''
+        sites = Site.objects.filter(zip_code=zip_code)
+        return Encounter.objects.filter(
+            native_site_num__in=[str(x.id) for x in sites])
+
+    @staticmethod
+    def age_group_aggregate(zip_code, date, lower, upper=90):
+        return Site.encounters_by_zip(zip_code).filter(
+            age_group_filter(lower, upper)
+            ).filter(date=date).count()
 
     def encounters(self, **kw):
         ''' 
@@ -81,6 +111,25 @@ class Locality(models.Model):
         ''' total count of encounters had at locality on a given day '''
         return self.encounters(date=date).count()
 
+    def at_age_group(self, lower, upper=150):
+        '''
+        returns the count of encounters at the site of this event, filtering by the age of the patients.
+        '''
+        
+        date = kw.get('date', None)
+
+        today = datetime.date.today()
+        younger_patient_date = datetime.date(year=(today.year - abs(lower)), 
+                                     month=today.month, day=today.day)
+        older_patient_date = datetime.date(year=(today.year - abs(upper)), 
+                                   month=today.month, day=today.day)
+
+        
+        return self.encounters(date=date).filter(
+            patient__date_of_birth__gte=older_patient_date,
+            patient__date_of_birth__lt=younger_patient_date)
+
+
     
     def __unicode__(self):
         return u'%s - %s, %s (%s)' % (self.locality, self.city, self.state, self.zip_code)
@@ -88,3 +137,4 @@ class Locality(models.Model):
 class NonSpecialistVisitEvent(HeuristicEvent):
     reporting_site = models.ForeignKey(Site, null=True)
     patient_zip_code = models.CharField(max_length=10, null=True)
+    encounter = models.ForeignKey(Encounter)
