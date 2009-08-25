@@ -26,6 +26,9 @@ class AdverseReactionReport(object):
     def make_MSH(self):
         msh = MSH()
 
+        # Most of these values should be parameters from the
+        # function. For now they are defined here simpy because we
+        # have no other recipient except for Atrius Health.
         msh.receiving_application = 'Atrius'
         msh.receiving_facility = 'VAERS PROCESSOR'
         msh.processing_id = 'T'
