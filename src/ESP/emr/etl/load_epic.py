@@ -9,7 +9,11 @@
 @copyright: (c) 2009 Channing Laboratory
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
-from ESP.utils.utils import str_from_date
+
+
+#EPIC_ENCODING = 'iso-8859-1'
+EPIC_ENCODING = 'windows-1252'
+
 
 import csv
 import sys
@@ -20,10 +24,12 @@ import optparse
 import re
 import pprint
 import shutil
+import codecs
+from psycopg2 import Error as Psycopg2Error
 
 from django.db import transaction
 
-from psycopg2 import Error as Psycopg2Error
+from ESP.utils.utils import str_from_date
 from ESP.settings import DATA_DIR
 from ESP.utils.utils import log
 from ESP.utils.utils import date_from_str
@@ -38,7 +44,6 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 
 
-
     
 # 
 # Set global values that will be used by all functions
@@ -51,11 +56,6 @@ ERROR_DIR = os.path.join(DATA_DIR, 'epic', 'error') # Files loaded with (handled
 FAILURE_DIR = os.path.join(DATA_DIR, 'epic', 'error') # Files that failed to load (w/ unhandled exception)
 TIMESTAMP = datetime.datetime.now()
 UNKNOWN_PROVIDER = Provider.objects.get(provider_id_num='UNKNOWN')
-
-
-def utf_8_encoder(unicode_csv_data):
-    for line in unicode_csv_data:
-        yield line.encode('utf-8')
 
 
 class EpicDialect(csv.Dialect):
@@ -73,7 +73,6 @@ class LoadException(BaseException):
     '''
     Raised when there is a problem loading data into db
     '''
-    pass
 
 
 class BaseLoader(object):
@@ -95,11 +94,13 @@ class BaseLoader(object):
         file_handle = open(filepath)
         self.line_count = len(file_handle.readlines())
         file_handle.seek(0) # Reset file position after counting lines
-        self.reader = csv.DictReader(file_handle, fieldnames=self.fields, dialect='epic')
+        stream_reader = codecs.getreader(EPIC_ENCODING)
+        stream = stream_reader(file_handle)
+        self.reader = csv.DictReader(stream, fieldnames=self.fields, dialect='epic')
     
     def get_patient(self, patient_id_num):
         if not patient_id_num:
-            raise LoadError('Called get_patient() with empty patient_id_num')
+            raise LoadException('Called get_patient() with empty patient_id_num')
         try:
             p = Patient.objects.get(patient_id_num=patient_id_num)
         except Patient.DoesNotExist:
@@ -271,9 +272,9 @@ class PatientLoader(BaseLoader):
         p.provenance = self.provenance
         p.updated_by = UPDATED_BY
         p.mrn = row['mrn']
-        p.last_name = unicode(row['last_name'])
-        p.first_name = unicode(row['first_name'])
-        p.middle_name = unicode(row['middle_name'])
+        p.last_name = row['last_name']
+        p.first_name = row['first_name']
+        p.middle_name = row['middle_name']
         p.pcp = self.get_provider(row['provider_id_num'])
         p.address1 = row['address1']
         p.address2 = row['address2']
