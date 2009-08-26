@@ -656,13 +656,13 @@ class BaseEventPattern(object):
     
     def plausible_patients(self):
         '''
-        Returns a QuerySet of Patient records which plausibly match this pattern
+        Returns a QuerySet of Patient records which may plausibly match this pattern
         '''
         raise NotImplementedError
         
     def plausible_events(self, patients=None):
         '''
-        Returns a QuerySet of HeuristicEvent records which plausibly match this pattern
+        Returns a QuerySet of HeuristicEvent records which may plausibly match this pattern
         '''
         raise NotImplementedError
         
