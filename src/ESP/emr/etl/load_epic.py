@@ -123,7 +123,7 @@ class BaseLoader(object):
     
     def float_or_none(self, string):
         m = self.float_catcher.match(string)
-        if m.groups():
+        if m and m.groups():
             return float(m.groups()[0])
         else:
             return None
@@ -143,6 +143,8 @@ class BaseLoader(object):
         valid = 0 # Number of valid records loaded
         errors = 0 # Number of non-fatal errors encountered
         for row in self.reader:
+            if not row:
+                continue # Skip None objects
             cur_row += 1 # Increment the counter
             # The last line is a footer, so we skip it
             if cur_row >= self.line_count:
@@ -152,7 +154,7 @@ class BaseLoader(object):
                 self.load_row(row)
                 transaction.savepoint_commit(sid)
                 valid += 1
-            except (LoadException, ValueError, Psycopg2Error) as e:
+            except (LoadException, ValueError, Psycopg2Error), e:
                 transaction.savepoint_rollback(sid)
                 log.error('Caught Exception:')
                 log.error('  File: %s' % self.filename)
