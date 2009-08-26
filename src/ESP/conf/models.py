@@ -36,7 +36,7 @@ class NativeCode(models.Model):
     native_code = models.CharField(max_length=100, unique=True, blank=False)
     native_name = models.CharField(max_length=255, blank=True, null=True)
     # Loinc can be null to indicate an external code that maps to nothing
-    loinc = models.ForeignKey(Loinc, blank=True, null=True)
+    loinc = models.ForeignKey(Loinc, blank=False)
     notes = models.TextField(blank=True, null=True)
     class Meta:
         verbose_name = 'Native Code to LOINC Map'
