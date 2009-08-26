@@ -40,6 +40,9 @@ class NativeCode(models.Model):
     notes = models.TextField(blank=True, null=True)
     class Meta:
         verbose_name = 'Native Code to LOINC Map'
+    
+    def __str__(self):
+        return '%s --> %s' % (self.native_code, self.loinc.loinc_num)
 
 
 
