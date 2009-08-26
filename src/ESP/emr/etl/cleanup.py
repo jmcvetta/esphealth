@@ -165,8 +165,8 @@ def main():
         for case in bad_cases:
             print case
         print
-        decision = raw_input('Please confirm that it is okay to delete these cases by typing YES:\n')
-        if not decision == 'YES':
+        decision = raw_input('Please confirm that it is okay to delete these cases by typing DELETE:\n')
+        if not decision == 'DELETE':
             print
             print 'You have NOT given permission to delete cases bound to records with bad provenance.'
             print 'Therefore we cannot delete said records, either.  Exiting now.'
@@ -182,6 +182,7 @@ def main():
     for rec_type in record_types:
         to_be_deleted = rec_type.objects.filter(prov_stat_q)
         log.debug('Deleting %s %s records' % (to_be_deleted.count(), rec_type))
+        to_be_deleted.delete()
     
 
 
