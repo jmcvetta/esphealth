@@ -39,6 +39,7 @@ provenance.
 # 11    Permission not given to delete (unsent) cases bound to bad events
 # 12    Initial permission to proceed not granted
 # 13    Bad command line options
+# 14    No matching provenance entries found.  Nothing to do.
 #
 #-------------------------------------------------------------------------------
 
@@ -100,6 +101,21 @@ def main():
             bad_options('Unable to locate a provenance record with id %s' % options.provenance)
         print 'Provenance entry to be deleted: %s' % prov_objs[0]
     #
+    # Generate a Q object to filter the provenance entries we want to delete
+    #
+    if options.status:
+        prov_stat_q = Q(provenance__status=options.status)
+        bad_prov = Provenance.objects.filter(status=options.status)
+    else: # options.provenance
+        prov_stat_q = Q(provenance__id=options.provenance)
+        bad_prov = Provenance.objects.filter(pk=options.provenance)
+    log.debug('prov_stat_q: %s' % prov_stat_q)
+    if not bad_prov.count():
+        print
+        print 'No matching provenance entries found.  Nothing to do.'
+        print
+        sys.exit(14)
+    #
     # Have user confirm script is being run safely
     #
     print
@@ -115,13 +131,6 @@ def main():
         print 'Not okay to proceed.  Exiting now.'
         print
         sys.exit(12)
-    #
-    # Generate a Q object to filter the provenance entries we want to delete
-    #
-    if options.status:
-        prov_stat_q = Q(provenance__status=options.status)
-    else: # options.provenance
-        prov_stat_q = Q(provenance__id=options.provenance)
     #
     # Discover "bad" cases -- those based on events with bad provenance
     #
@@ -175,14 +184,16 @@ def main():
         print 
         print 'Deleting all records and cases with bad provenance.'
     else:
+        print 'No cases will be affected by this action.  Deleting all records with bad provenance.'
         print
-        print 'Deleting all records with bad provenance.'
     print 'Please wait -- this may take a few minutes.'
     print
     for rec_type in record_types:
         to_be_deleted = rec_type.objects.filter(prov_stat_q)
         log.debug('Deleting %s %s records' % (to_be_deleted.count(), rec_type))
         to_be_deleted.delete()
+    log.debug('Deleting %s provenance entries' % bad_prov.count())
+    bad_prov.delete()
     
 
 
