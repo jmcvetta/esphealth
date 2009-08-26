@@ -38,13 +38,15 @@ provenance.
 # 10    Sent cases already bound to bad events
 # 11    Permission not given to delete (unsent) cases bound to bad events
 # 12    Initial permission to proceed not granted
+# 13    Bad command line options
 #
 #-------------------------------------------------------------------------------
 
 
 import sys
 import optparse
-import readline
+import readline # Used behind the scenes by raw_input() for enhanced line editing
+import pprint
 
 from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
@@ -58,15 +60,45 @@ from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 
 
+def bad_options(msg):
+    log.error(msg)
+    sys.stderr.write('\n')
+    sys.stderr.write(msg)
+    sys.stderr.write('\n')
+    sys.stderr.write('Exiting now.')
+    sys.stderr.write('\n')
+    sys.stderr.write('\n')
+    sys.exit(13)
+    
+
 
 def main():
     parser = optparse.OptionParser()
     parser.add_option('--status', action='store', dest='status', metavar='STATUS',
         help="Purge records whose provenance status matches STATUS.  Possible " + \
-        "values are 'failure' and 'attempted'.")
+        "values are 'failure' and 'attempted'.", default=None)
     parser.add_option('--provenance', action='store', dest='provenance', metavar='ID', 
-        help='Purge records with provenance_id = ID')
+        help='Purge records with provenance_id = ID', default=None)
     options, args = parser.parse_args()
+    log.debug('options: %s' % pprint.pformat(options))
+    if not (options.status or options.provenance):
+        bad_options('You must specify either --status or --provenance')
+    if (options.status and options.provenance):
+        bad_options( 'You cannot specify both --status and --provenance')
+    if options.status:
+        if not options.status in ['failure', 'attempted']:
+            bad_options("Status must be either 'failure' or 'attempted.'")
+        print 'Provenance status to be deleted: %s' % options.status
+    if options.provenance:
+        try:
+            int(options.provenance)
+        except ValueError:
+            bad_options('Provenance ID must be an integer.  However, you supplied "%s".' % options.provenance)
+        prov_objs = Provenance.objects.filter(pk=options.provenance)
+        log.debug('prov_objs: %s' % prov_objs)
+        if not prov_objs:
+            bad_options('Unable to locate a provenance record with id %s' % options.provenance)
+        print 'Provenance entry to be deleted: %s' % prov_objs[0]
     #
     # Have user confirm script is being run safely
     #
@@ -83,15 +115,21 @@ def main():
         print 'Not okay to proceed.  Exiting now.'
         print
         sys.exit(12)
-
-
-def delete_by_status(options):
+    #
+    # Generate a Q object to filter the provenance entries we want to delete
+    #
+    if options.status:
+        prov_stat_q = Q(provenance__status=options.status)
+    else: # options.provenance
+        prov_stat_q = Q(provenance__id=options.provenance)
     #
     # Discover "bad" cases -- those based on events with bad provenance
     #
     record_types = [LabResult, Encounter, Prescription]
+    print
+    print 'Running safety checks...  (this may take a few minutes)'
+    print
     log.debug('Searching for cases with bad provenance.')
-    prov_stat_q = Q(provenance__status=options.status)
     bad_events = None
     rec_type = Prescription
     for rec_type in record_types:
@@ -136,15 +174,17 @@ def delete_by_status(options):
             sys.exit(11)
         print 
         print 'Deleting all records and cases with bad provenance.'
-        print
     else:
         print
-        print 'Deleting all records with bad provenance'
-        print
+        print 'Deleting all records with bad provenance.'
+    print 'Please wait -- this may take a few minutes.'
+    print
     for rec_type in record_types:
         to_be_deleted = rec_type.objects.filter(prov_stat_q)
         log.debug('Deleting %s %s records' % (to_be_deleted.count(), rec_type))
     
+
+
         
 
 if __name__ == '__main__':
