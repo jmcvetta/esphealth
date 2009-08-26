@@ -31,6 +31,7 @@ from django.contrib.contenttypes.models import ContentType
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
+from ESP.utils.utils import log_query
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
@@ -712,6 +713,7 @@ class SimpleEventPattern(BaseEventPattern):
         return Patient.objects.filter(heuristicevent__heuristic_name=self.heuristic).distinct()
     
     def plausible_events(self, patients=None):
+        log.debug('Building plausible events query for %s' % self)
         q_obj = Q(heuristic_name=self.heuristic)
         if patients:
             q_obj = q_obj & Q(patient__in=patients)
@@ -795,6 +797,7 @@ class ComplexEventPattern(BaseEventPattern):
         return plausible
     
     def plausible_events(self, patients=None):
+        log.debug('Building plausible events query for %s' % self)
         patients = self.plausible_patients()
         plausible = self.patterns[0].plausible_events(patients=patients)
         for pat in self.patterns[1:]:
@@ -802,6 +805,7 @@ class ComplexEventPattern(BaseEventPattern):
                 plausible = plausible & pat.plausible_events(patients=patients)
             else: # 'or'
                 plausible = plausible | pat.plausible_events(patients=patients)
+        log_query(plausible)
         return plausible
     
     def sorted_patterns(self):
@@ -832,12 +836,12 @@ class ComplexEventPattern(BaseEventPattern):
             #
             # Starting with these reference windows, we loop through each 
             # remaining pattern.  Any windows matching all patterns are yeilded.
-            for ref_win in first_pattern.matches(patients=patients, exclude=exclude):
+            for ref_win in first_pattern.generate_windows(days=days, patients=patients, exclude=exclude):
                 queue = set([ref_win])
                 for pattern in sorted_patterns[1:]:
                     matched_windows = set()
                     for win in queue:
-                        matched_windows.update(pattern.match_windows(win, exclude=exclude))
+                        matched_windows.update(pattern.match_window(win, exclude=exclude))
                     queue = matched_windows
                 # Any windows remaining in the queue at this point have 
                 # matched all patterns.
@@ -855,16 +859,16 @@ class ComplexEventPattern(BaseEventPattern):
         # Queue up the reference window to be checked against patterns.  We use 
         # a set instead of a list to avoid double-adding the reference window
         # when evaluating with 'or' operator.
-        queue = set(reference) 
+        queue = set([reference]) 
         for pattern in sorted_patterns:
             # When operator is 'or', even if the previous pattern didn't match 
             # anything, we're still going to try matching the remaining patterns 
             # against the reference window.
             if self.operator == 'or':
-                queue.update(reference)
+                queue.update([reference])
             matched_windows = set()
             for win in queue:
-                matched_windows.update(pattern.match_windows(win, exclude=exclude))
+                matched_windows.update(pattern.match_window(win, exclude=exclude))
             queue = matched_windows
         return queue
     

@@ -20,6 +20,7 @@ import types
 
 from django.db.models import Q
 from django.core.paginator import Paginator
+from django.db.models.query import QuerySet
 
 from ESP import settings
 
@@ -48,6 +49,16 @@ def __get_logger():
 log = __get_logger()
 #===============================================================================
 
+def log_query(qs):
+    '''
+    Log the SQL query that will be use to evaluate a queryset.
+    @param qs: QuerySet to evaluate
+    @type qs:  QuerySet instance
+    '''
+    assert isinstance(qs, QuerySet)
+    statement, args = qs.query.as_sql()
+    sql = statement % args
+    log.debug(sql)
 
 
 filenlist = ['epicmem.esp.','epicpro.esp.','epicvis.esp.','epicord.esp.','epicres.esp.','epicmed.esp.','epicimm.esp.']
