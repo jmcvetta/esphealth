@@ -11,6 +11,7 @@ from ESP.nodis.models import CaseStatusHistory
 
 class CaseAdmin(admin.ModelAdmin):
     list_display = ['pk', 'condition', 'patient', 'date']
+    raw_id_fields = ['patient', 'provider', 'events', 'encounters', 'lab_results', 'medications', 'immunizations']
     
 
 class CaseStatusHistoryAdmin(admin.ModelAdmin):
