@@ -32,7 +32,7 @@ no_hep_b_surf = ComplexEventPattern(
         'hep_b_surface_neg',
         ],
     operator = 'and',
-    exclusions = [
+    exclude = [
         'hep_b_igm_order',
         ]
     )
@@ -59,9 +59,9 @@ hep_c_1 = ComplexEventPattern(
         'hep_c_rna_neg',           # 6 positive (if done)
         ],
     exclude_past = [
-        'hep_c_elisa',   # no prior positive 3 or 5 or 6
-        'hep_c_riba',    # "
-        'hep_c_rna',     # "
+        'hep_c_elisa_pos',   # no prior positive 3 or 5 or 6
+        'hep_c_riba_pos',    # "
+        'hep_c_rna_pos',     # "
         'chronic_hep_b', # no ICD9 (070.54 or 070.70) ever prior to this encounter
         ],
     operator = 'and',
