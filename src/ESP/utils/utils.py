@@ -49,15 +49,18 @@ def __get_logger():
 log = __get_logger()
 #===============================================================================
 
-def log_query(qs):
+def log_query(purpose, qs):
     '''
     Log the SQL query that will be use to evaluate a queryset.
+    @param purpose: Description of this query's purpose
+    @type purpose:  String
     @param qs: QuerySet to evaluate
     @type qs:  QuerySet instance
     '''
     assert isinstance(qs, QuerySet)
     statement, args = qs.query.as_sql()
     sql = statement % args
+    log.debug(purpose)
     log.debug(sql)
 
 
