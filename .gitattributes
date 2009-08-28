@@ -1,15 +1,5 @@
 * text=auto !eol
 /LICENSE -text
-NORTH_ADAMS/NorthAdamsLocal-LOINCmapMay2008.redacted.xls -text
-NORTH_ADAMS/NorthAdamsLocal-LOINCmapMay2008.xls -text
-NORTH_ADAMS/loinc-code-map.transformation.ktr -text
-NORTH_ADAMS/preLoaderData/esp_conditiondrugname.txt -text
-NORTH_ADAMS/preLoaderData/esp_conditionicd9.txt -text
-NORTH_ADAMS/preLoaderData/esp_conditionloinc.txt -text
-NORTH_ADAMS/preLoaderData/esp_conditionndc.txt -text
-NORTH_ADAMS/preLoaderData/esp_config.txt -text
-NORTH_ADAMS/preLoaderData/esp_cptloincmap.txt -text
-NORTH_ADAMS/preLoaderData/esp_rule.txt -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
 doc/ESP-architecture.png -text svneol=unset#unset
