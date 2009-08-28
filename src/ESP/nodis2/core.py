@@ -694,6 +694,14 @@ class BaseEventPattern(object):
         @return: set of Window instances
         '''
         raise NotImplementedError
+    
+    def __get_string_hash(self):
+        '''
+        Returns a string that uniquely represents this pattern.  Cf the integer 
+        returned by __hash__().
+        '''
+        raise NotImplementedError
+    string_hash = property(__get_string_hash)
 
 
 class SimpleEventPattern(BaseEventPattern):
@@ -702,6 +710,10 @@ class SimpleEventPattern(BaseEventPattern):
     Instances of this class typically will be created internally by 
     ComplexEventPattern instances.
     '''
+    
+    # Class variable
+    # {heuristic: {plausible_patient_qs: event_id_list}}
+    __cache = {} 
     
     def __init__(self, heuristic):
         from ESP.hef import events # Ensure events are loaded
@@ -734,6 +746,7 @@ class SimpleEventPattern(BaseEventPattern):
                 
     def match_window(self, reference, exclude=False):
         assert isinstance(reference, Window)
+        events = self.get_events(reference.patient)
         matched_windows = set()
         log.debug('Yielding windows that match %s' % reference)
         q_obj = Q(heuristic_name=self.heuristic)
@@ -752,6 +765,9 @@ class SimpleEventPattern(BaseEventPattern):
             win = reference.fit(event)
             matched_windows.add(win)
         return matched_windows
+        
+    def __get_string_hash(self):
+        return '[%s]' % self.heuristic
     
     def __repr__(self):
         return 'SimpleEventPattern: %s' % self.heuristic
@@ -789,13 +805,32 @@ class ComplexEventPattern(BaseEventPattern):
         count = {} # Count of plausible events per req
         for name in require_past + exclude_past:
             if not name in valid_heuristic_names:
-                raise InvalidRequirement('%s [%s]' % (pat, type(pat)))
+                log.error('"%s" not in valid hueristic names:' % name)
+                log.error('\t%s' % valid_heuristic_names)
+                raise InvalidRequirement('%s [%s]' % (name, type(name)))
         self.require_past = require_past
         self.exclude_past = exclude_past
         log.debug('Initializing new ComplexEventPattern instance')
         log.debug('    operator:    %s' % operator)
         log.debug('    patterns:    %s' % patterns)
-        log.debug('    exclusions:  %s' % exclusions)
+        log.debug('    require_past:  %s' % require_past)
+        log.debug('    exclude:  %s' % exclude)
+        log.debug('    exclude_past:  %s' % exclude_past)
+    
+    def __get_string_hash(self):
+        op_delim = '_%s_' % self.operator
+        h = op_delim.join([str(pat.string_hash) for pat in self.patterns])
+        h = '[%s]' % h
+        if self.require_past:
+            h += '_require_past_'
+            h += '[%s]' % op_delim.join([str(pat) for pat in self.require_past])
+        if self.exclude:
+            h += '_exclude_'
+            h += '[%s]' % op_delim.join([str(pat.string_hash) for pat in self.exclude])
+        if self.exclude_past:
+            h += '_exclude_past_'
+            h += '[%s]' % op_delim.join([str(pat) for pat in self.exclude_past])
+        return h
     
     def plausible_patients(self):
         plausible = self.patterns[0].plausible_patients()
@@ -815,7 +850,8 @@ class ComplexEventPattern(BaseEventPattern):
                 plausible = plausible & pat.plausible_events(patients=patients)
             else: # 'or'
                 plausible = plausible | pat.plausible_events(patients=patients)
-        log_query(plausible)
+        purpose = 'Querying plausible events for %s' % self
+        log_query(purpose, plausible)
         return plausible
     
     def sorted_patterns(self):
