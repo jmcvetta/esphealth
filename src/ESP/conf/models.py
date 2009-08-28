@@ -33,7 +33,7 @@ class NativeCode(models.Model):
     # code table per ESP installation.  More work will be required if your 
     # installation must comprehend multiple, potentially overlapping, external 
     # code sources
-    native_code = models.CharField(max_length=100, unique=True, blank=False)
+    native_code = models.CharField(max_length=100, blank=False)
     native_name = models.CharField(max_length=255, blank=True, null=True)
     # Loinc can be null to indicate an external code that maps to nothing
     loinc = models.ForeignKey(Loinc, blank=False)
