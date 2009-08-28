@@ -48,12 +48,22 @@ no_hep_b = ComplexEventPattern(
 
 hep_c_1 = ComplexEventPattern(
     patterns = [
-        'hep_c_elisa_pos',
-        'hep_a_igm_neg',
-        jaundice_alt400,
-        no_hep_b
+        jaundice_alt400,    # (1 or 2)
+        'hep_c_elisa_pos',  # 3 positive
+        'hep_a_igm_neg',    # 7 negative
+        no_hep_b,           # (8 negative or 9 non-reactive)
+        ],
+    exclude = [
+        'hep_c_signal_cutoff_neg', # 4 positive (if done)
+        'hep_c_riba_neg',          # 5 positive (if done)
+        'hep_c_rna_neg',           # 6 positive (if done)
+        ],
+    exclude_past = [
+        'hep_c_elisa',   # no prior positive 3 or 5 or 6
+        'hep_c_riba',    # "
+        'hep_c_rna',     # "
+        'chronic_hep_b', # no ICD9 (070.54 or 070.70) ever prior to this encounter
         ],
     operator = 'and',
     )
-
 

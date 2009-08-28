@@ -762,14 +762,14 @@ class ComplexEventPattern(BaseEventPattern):
     An event pattern composed of one or more SimpleEventPattern or 
     ComplexEventPattern instances.  
     '''
-    def __init__(self, operator, patterns, exclusions=[]):
-        self.exclusions = []
+    def __init__(self, operator, patterns, require_past=[], exclude=[], exclude_past=[]):
         operator = operator.lower()
         self.__sorted_condition_reqs = {}
         assert operator in ('and', 'or')
         self.operator = operator
         valid_heuristic_names = BaseHeuristic.list_heuristic_names()
         self.patterns = []
+        self.exclude = []
         for pat in patterns:
             if isinstance(pat, ComplexEventPattern):
                 self.patterns.append(pat)
@@ -778,10 +778,20 @@ class ComplexEventPattern(BaseEventPattern):
                 self.patterns.append(pat_obj)
             else:
                 raise InvalidRequirement('%s [%s]' % (pat, type(pat)))
+        for pat in exclude:
+            if isinstance(pat, ComplexEventPattern):
+                self.exclude.append(pat)
+            elif pat in valid_heuristic_names: # Implies req is a string
+                pat_obj = SimpleEventPattern(heuristic=pat)
+                self.exclude.append(pat_obj)
+            else:
+                raise InvalidRequirement('%s [%s]' % (pat, type(pat)))
         count = {} # Count of plausible events per req
-        for name in exclusions:
-            assert name in valid_heuristic_names
-            self.exclusions.append(name)
+        for name in require_past + exclude_past:
+            if not name in valid_heuristic_names:
+                raise InvalidRequirement('%s [%s]' % (pat, type(pat)))
+        self.require_past = require_past
+        self.exclude_past = exclude_past
         log.debug('Initializing new ComplexEventPattern instance')
         log.debug('    operator:    %s' % operator)
         log.debug('    patterns:    %s' % patterns)
