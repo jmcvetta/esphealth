@@ -3,6 +3,7 @@
 src/ESP/*.db
 src/ESP/*.pyc
 src/ESP/.ropeproject
+src/ESP/Atrius
 src/ESP/assets
 src/ESP/conf/*.pyc
 src/ESP/emr/*.pyc

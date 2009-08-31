@@ -29,13 +29,13 @@ class AdverseReactionReport(object):
         # Most of these values should be parameters from the
         # function. For now they are defined here simpy because we
         # have no other recipient except for Atrius Health.
-        msh.receiving_application = 'Atrius'
+        msh.receiving_application = 'VAERS HL7 Processor'
         msh.receiving_facility = 'VAERS PROCESSOR'
         msh.processing_id = 'T'
         msh.accept_ack_type = 'NE'
         msh.application_ack_type = 'AL'
         msh.message_type = ['ORU', 'R01']
-        msh.message_control_id = 'Atrius'
+        msh.message_control_id = SITE_NAME
         msh.sending_facility = SITE_NAME
 
         return msh
@@ -85,7 +85,7 @@ class AdverseReactionReport(object):
         obx_treatment.identifier = ['30948-4', 'Vaccination adverse events and treatment, if any', 'LN']
         obx_treatment.subsequence_id = 1
         obx_treatment.value = self.event.matching_rule_explain
-        obx_treatment_value.observation_result_status = 'F'
+        obx_treatment.observation_result_status = 'F'
         
         obx_vaccination = OBX()
         obx_vaccination.value_type = 'TS'
