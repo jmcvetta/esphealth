@@ -42,8 +42,10 @@ from ESP.hef2 import events
 from ESP.hef2.core import BaseHeuristic
 from ESP.hef2.models import HeuristicEvent
 from ESP.nodis.models import Case
+from ESP.nodis.models import CaseEvents
 
 
+CACHE_WARNING_THRESHOLD = 100
 
 
 class DiseaseDefinitionAlreadyRegistered(BaseException):
@@ -606,6 +608,7 @@ class Window(object):
             self._check_event(e)
             self.__events += [e]
             self.__events.sort(lambda x, y: (x.date - y.date).days) # Sort by date
+        self.past_events = [] 
         log.debug('Initialized %s day window with %s events' % (days, len(events)))
     
     def _check_event(self, event):
@@ -711,9 +714,12 @@ class SimpleEventPattern(BaseEventPattern):
     ComplexEventPattern instances.
     '''
     
-    # Class variable
-    # {heuristic: {plausible_patient_qs: event_id_list}}
-    __cache = {} 
+    # Class variables
+    #
+    # {heuristic: {patient_pk: {date: event_pk}}}
+    __dated_events_cache = {} 
+    # {heuristic: {condition: event_pk_set}}
+    __excluded_events_cache = {}
     
     def __init__(self, heuristic):
         from ESP.hef import events # Ensure events are loaded
@@ -731,37 +737,80 @@ class SimpleEventPattern(BaseEventPattern):
             q_obj = q_obj & Q(patient__in=patients)
         return HeuristicEvent.objects.filter(q_obj)
     
-    def generate_windows(self, days, patients=None, exclude=False):
+    def generate_windows(self, days, patients=None, exclude_condition=None):
         log.debug('Generating windows for %s' % self)
         events = self.plausible_events(patients=patients)
-        if exclude:
-            assert isinstance(exclude, Model) # Sanity checks
-            assert hasattr(exclude, 'events')
-            bound_events = exclude.events.all()
-            bound_event_ids = bound_events.values_list('id', flat=True)
-            q_obj = ~Q(id__in=bound_event_ids)
+        if exclude_condition:
+            assert isinstance(exclude_condition, str) # Sanity checks
+            cases = Case.objects.filter(condition=exclude_condition)
+            pks = CaseEvents.objects.filter(case__in=cases).values_list('pk', flat=True).distinct()
+            q_obj = ~Q(pk__in=pks)
             events = events.filter(q_obj)
         for e in events:
             yield Window(days=days, events=[e])
                 
-    def match_window(self, reference, exclude=False):
+    def _get_dated_events(self, patient):
+        '''
+        Return event primary keys matching this heuristic for patient, 
+            organized by date.
+        @param patient: Patient for whom we want to retrieve events
+        @type patient:  Patient object
+        @return: {date: pk}  Dictionary matching dates to event primary keys
+        '''
+        log.debug('Retrieve dated %s events for patient %s' % (self.heuristic, patient))
+        if not self.heuristic in self.__dated_events_cache:
+            self.__dated_events_cache[self.heuristic] = {}
+        cache = self.__dated_events_cache[self.heuristic]
+        if patient not in cache:
+            values = HeuristicEvent.objects.filter(heuristic_name=self.heuristic, patient=patient).values('pk', 'date')
+            log_query('Patient not found in cache -- querying database:', values)
+            patient_dates = {}
+            for val in values:
+                patient_dates[val['date']] = val['pk']
+            cache[patient] = patient_dates
+            if len(cache) >= CACHE_WARNING_THRESHOLD:
+                log.warning('More than %s patients cached:  %s' % (CACHE_WARNING_THRESHOLD, len(cache)))
+        return cache[patient]
+    
+    def _get_excluded_event_pks(self, exclude_condition):
+        '''
+        @param exclude_condition: Condition to exclude
+        @type exclude_condition:  String
+        @return: Set of integers (primary keys of excluded events)
+        '''
+        log.debug('Retrieve excluded event PKs for %s' % exclude_condition)
+        if not self.heuristic in self.__excluded_events_cache:
+            self.__excluded_events_cache[self.heuristic] = {}
+        cache = self.__dated_events_cache[self.heuristic]
+        if exclude_condition not in cache:
+            cases = Case.objects.filter(condition=exclude_condition)
+            pks = CaseEvents.objects.filter(case__in=cases).values_list('pk', flat=True).distinct()
+            log_query('Excluded condition not found in cache -- querying database:', pks)
+            pks = set(pks)
+            cache[exclude_condition] = pks
+            if len(cache) >= CACHE_WARNING_THRESHOLD:
+                log.warning('More than %s excluded conditions cached:  %s' % (CACHE_WARNING_THRESHOLD, len(cache)))
+        return cache[exclude_condition]
+        
+    def match_window(self, reference, exclude_condition=None):
         assert isinstance(reference, Window)
-        events = self.get_events(reference.patient)
+        dated_events = self._get_dated_events(reference.patient)
+        #
+        # Exclude bound events
+        #
+        if exclude_condition:
+            ex_pks = self._get_excluded_event_pks(exclude_condition)
+            for date in dated_events:
+                pk = dated_events[date]
+                if pk in ex_pks:
+                    del dated_events[date]
         matched_windows = set()
-        log.debug('Yielding windows that match %s' % reference)
-        q_obj = Q(heuristic_name=self.heuristic)
-        q_obj = q_obj & Q(patient=reference.patient)
-        q_obj = q_obj & Q(date__gte=reference.start)
-        q_obj = q_obj & Q(date__lte=reference.end)
-        if exclude:
-            assert isinstance(exclude, Model) # Sanity checks
-            assert hasattr(exclude, 'events')
-            bound_events = exclude.events.all()
-            bound_event_ids = bound_events.values_list('id', flat=True)
-            q_obj = q_obj & ~Q(id__in=bound_event_ids)
-        for event in  HeuristicEvent.objects.filter(q_obj):
-            # Not doing error control here, because this query should
-            # never return an out-of-window event.
+        for event_date in dated_events:
+            # If date is outside window, skip it
+            if (event_date > reference.end) or (event_date < reference.start):
+                continue
+            event_pk = dated_events[event_date]
+            event = HeuristicEvent.objects.get(pk=event_pk)
             win = reference.fit(event)
             matched_windows.add(win)
         return matched_windows
@@ -780,7 +829,7 @@ class ComplexEventPattern(BaseEventPattern):
     '''
     def __init__(self, operator, patterns, require_past=[], exclude=[], exclude_past=[]):
         operator = operator.lower()
-        self.__sorted_condition_reqs = {}
+        self.__sorted_pattern_cache = None
         assert operator in ('and', 'or')
         self.operator = operator
         valid_heuristic_names = BaseHeuristic.list_heuristic_names()
@@ -839,6 +888,8 @@ class ComplexEventPattern(BaseEventPattern):
                 plausible = plausible & pat.plausible_patients()
             else: # 'or'
                 plausible = plausible | pat.plausible_patients()
+        for heuristic in self.require_past:
+            plausible = plausible & Patient.objects.filter(heuristicevent__heuristic_name=heuristic).distinct()
         return plausible
     
     def plausible_events(self, patients=None):
@@ -857,17 +908,22 @@ class ComplexEventPattern(BaseEventPattern):
     def sorted_patterns(self):
         '''
         Returns the patterns composing this ComplexEventPattern sorted from 
-        lowest to highest number of plausible events.
+        lowest to highest number of plausible patients
         '''
-        log.debug('Sorting patterns by plausible event count')
-        plausible = self.plausible_patients()
-        count = {}
-        for pat in self.patterns:
-            count[pat] = pat.plausible_events(patients=plausible).count()
-        log.debug('Plausible events by pattern: \n%s' % pprint.pformat(count))
-        return [i[0] for i in sorted(count.items(), key=itemgetter(1))]
+        if not self.__sorted_pattern_cache:
+            #log.debug('Sorting patterns by plausible event count')
+            log.debug('Sorting patterns by plausible patient count')
+            plausible = self.plausible_patients()
+            count = {}
+            for pat in self.patterns:
+                #count[pat] = pat.plausible_events(patients=plausible).count()
+                count[pat] = pat.plausible_patients().count()
+            #log.debug('Plausible events by pattern: \n%s' % pprint.pformat(count))
+            log.debug('Plausible patients by pattern: \n%s' % pprint.pformat(count))
+            self.__sorted_pattern_cache = [i[0] for i in sorted(count.items(), key=itemgetter(1))]
+        return self.__sorted_pattern_cache
 
-    def generate_windows(self, days, patients=None, exclude=None):
+    def generate_windows(self, days, patients=None, exclude_condition=None):
         if not patients:
             patients = self.plausible_patients()
         if self.operator == 'and':
@@ -882,25 +938,29 @@ class ComplexEventPattern(BaseEventPattern):
             #
             # Starting with these reference windows, we loop through each 
             # remaining pattern.  Any windows matching all patterns are yeilded.
-            for ref_win in first_pattern.generate_windows(days=days, patients=patients, exclude=exclude):
+            for ref_win in first_pattern.generate_windows(days=days, patients=patients, exclude_condition=exclude_condition):
                 queue = set([ref_win])
                 for pattern in sorted_patterns[1:]:
                     matched_windows = set()
                     for win in queue:
-                        matched_windows.update(pattern.match_window(win, exclude=exclude))
+                        matched_windows.update(pattern.match_window(win, exclude_condition=exclude_condition))
                     queue = matched_windows
                 # Any windows remaining in the queue at this point have 
                 # matched all patterns.
                 for win in queue:
-                    yield win
+                    win = self._check_constaints(win)
+                    if win:
+                        yield win
         elif self.operator == 'or':
             for pattern in self.patterns:
-                for win in pattern.generate_windows(days=days, patients=patients, exclude=exclude):
-                    yield win
+                for win in pattern.generate_windows(days=days, patients=patients, exclude_condition=exclude_condition):
+                    win = self._check_constaints(win)
+                    if win:
+                        yield win
         else:
             raise 'Invalid self.operator -- WTF?!'
     
-    def match_window(self, reference, exclude=False):
+    def match_window(self, reference, exclude_condition=None):
         sorted_patterns = self.sorted_patterns()
         # Queue up the reference window to be checked against patterns.  We use 
         # a set instead of a list to avoid double-adding the reference window
@@ -914,7 +974,54 @@ class ComplexEventPattern(BaseEventPattern):
                 queue.update([reference])
             matched_windows = set()
             for win in queue:
-                matched_windows.update(pattern.match_window(win, exclude=exclude))
+                matched_windows.update(pattern.match_window(win, exclude_condition=exclude_condition))
             queue = matched_windows
-        return queue
+        valid = set()
+        for win in queue:
+            win = self._check_constaints(win)
+            if win:
+                valid.add(win)
+        return valid
+    
+    def _check_constaints(self, win):
+        '''
+        Checks a Window object against 'require_past', 'exclude', and
+        'exclude_past' constraints.  Returns window if all constraints are
+        passed; otherwise returns False.  If a 'require_past' constraint is
+        passed, relevant past events are added to the Window object's
+        past_events list.
+        @param win: Window to check
+        @type win:  Window instance
+        '''
+        if self.exclude_past:
+            exclude_q = Q(patient=win.patient, heuristic_name__in=self.exclude_past, date__lt=win.start)
+            query = HeuristicEvent.objects.filter(exclude_q)
+            log_query('Check exclude_past', query)
+            if  query.count() > 0:
+                log.debug('Patient %s excluded by %s past events' % (win.patient, query.count()))
+                return False
+        if self.require_past:
+            require_q = Q(patient=win.patient, heuristic_name__in=self.require_past, date__lt=win.start)
+            query = HeuristicEvent.objects.filter(require_q)
+            log_query('Check require_past', query)
+            if query.count() == 0:
+                log.debug('Patient %s excluded by lack of required past events' % win.patient)
+                return False
+            else:
+                win.past_events += [e for e in HeuristicEvent.objects.filter(require_q)]
+        #
+        # Since self.exclude can include ComplexEventPatterns, it is by far the
+        # most computationally expensive constraint check.  So we test it only 
+        # after all other constraints have passed.
+        #
+        for pat in self.exclude:
+            # If any pattern matches, this constraint fails
+            if pat.match_window(win):
+                log.debug('Patient %s excluded by pattern %s' % (win.patient, pat))
+                return False
+        #
+        # If we made it this far, we have passed all constraints.  
+        #
+        log.debug('Patient %s passes constraint checks' % win.patient)
+        return win
     
