@@ -24,8 +24,8 @@ def main():
     parser = OptionParser(usage=usage_msg)
     parser.add_option('-b', '--begin', dest='begin_date', default=yesterday.strftime('%Y%m%d'))
     parser.add_option('-e', '--end', dest='end_date', default=today.strftime('%Y%m%d'))
-    parser.add_option('-f', '--find-events', dest='events', default=False)
-    parser.add_option('-r', '--reports', dest='reports', default=True)
+    parser.add_option('-f', '--find-events', action='store_true', dest='events')
+    parser.add_option('-r', '--reports', action='store_true', dest='reports')
     
 
     options, args = parser.parse_args()
@@ -37,19 +37,28 @@ def main():
         end_date = date_from_str(options.end_date)
     except:
         log.error('Invalid dates')
-        sys.exit(-1)
+        sys.exit(-2)
+        
+
 
         
-        
     if options.events:
-        for heuristic in syndrome_heuristics():
+        for heuristic in syndrome_heuristics().values():
+            log.info('Generating events for %s' % heuristic.heuristic_name)
             heuristic.generate_events()
             
     if options.reports:
         current_day = begin_date
-        while current_day < today:
+        log.info('Creating reports from %s until %s' % (current_day, end_date))
+        while current_day < end_date:
+            log.info('Creating reports for %s' % current_day)
             reports.day_report(current_day)
             current_day += datetime.timedelta(1)
+
+
+    if not (options.events or options.reports):
+        print usage_msg
+        sys.exit(-1)
 
 
 

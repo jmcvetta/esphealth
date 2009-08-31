@@ -34,7 +34,7 @@ def age_group_filter(lower, upper=150):
 class Site(models.Model):
     code = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=200, unique=True)
-    zip_code = models.CharField(max_length=10)
+    zip_code = models.CharField(max_length=10, db_index=True)
 
     @staticmethod
     def volume_by_zip(zip_code, date):
@@ -44,7 +44,7 @@ class Site(models.Model):
         '''
         sites = Site.objects.filter(zip_code=zip_code)
         return Encounter.objects.filter(
-            date=date, native_site_num__in=[str(x.id) for x in sites]).count()
+            date=date, native_site_num__in=[str(x.code) for x in sites]).count()
 
     @staticmethod
     def encounters_by_zip(zip_code):
@@ -53,7 +53,7 @@ class Site(models.Model):
         '''
         sites = Site.objects.filter(zip_code=zip_code)
         return Encounter.objects.filter(
-            native_site_num__in=[str(x.id) for x in sites])
+            native_site_num__in=[str(x.code) for x in sites])
 
     @staticmethod
     def age_group_aggregate(zip_code, date, lower, upper=90):
@@ -111,9 +111,9 @@ class Locality(models.Model):
         ''' total count of encounters had at locality on a given day '''
         return self.encounters(date=date).count()
 
-    def at_age_group(self, lower, upper=150):
+    def at_age_group(self, lower, upper=150, **kw):
         '''
-        returns the count of encounters at the site of this event, filtering by the age of the patients.
+        returns the encounters at the site of this event, filtering by the age of the patients.
         '''
         
         date = kw.get('date', None)

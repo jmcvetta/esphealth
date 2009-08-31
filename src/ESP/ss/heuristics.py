@@ -58,9 +58,8 @@ class SyndromeHeuristic(EncounterHeuristic):
                         }
                     )
             except Exception, why:
-                import pdb
-                pdb.set_trace()
-    
+                # There is not much to do if some of the information is bad, so we just skip it.
+                pass
 
 
     def from_site_zip(self, zip_code):

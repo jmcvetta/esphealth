@@ -3,8 +3,7 @@
 
 import os
 
-from ESP.utils.utils import str_from_date
-
+from ESP.utils.utils import str_from_date, log
 from ESP.ss.models import Site, Locality, NonSpecialistVisitEvent
 from heuristics import syndrome_heuristics
 
@@ -37,13 +36,16 @@ def total_residential_encounters_report(date):
     outfile = open(os.path.join(REPORT_FOLDER, ENCOUNTERS_BY_RESIDENTIAL_ZIP_FILENAME % (timestamp, timestamp)), 'w')
 
     outfile.write('\t'.join(header))
-    for local in Locality.objects.all():
+    for local in Locality.objects.order_by('zip_code'):
         volume = local.volume(date)
-        counts_by_age = [local.at_age_group(age, age+AGE_GROUP_INTERVAL, 
-                                            date=date) for age in AGE_GROUPS]
+        if not volume: continue
+        counts_by_age = [str(x) for x in [local.at_age_group(age, age+AGE_GROUP_INTERVAL, date=date).count()
+                         for age in AGE_GROUPS]]
 
-        summary = [timestamp, local.zip_code, volume]
-        outfile.write('\t'.join(summary + counts_by_age))
+        summary = [timestamp, local.zip_code, str(volume)]
+        line = '\t'.join(summary + counts_by_age)
+        print line
+        outfile.write(line)
 
     outfile.close()
             
@@ -54,14 +56,19 @@ def total_site_encounters_report(date):
     outfile = open(os.path.join(REPORT_FOLDER, ENCOUNTERS_BY_SITE_ZIP_FILENAME % (timestamp, timestamp)), 'w')
 
     outfile.write('\t'.join(header))
-    zip_codes = Site.objects.values_list('zip_code', flat=True).distinct()
+    zip_codes = Site.objects.values_list('zip_code', flat=True).distinct().order_by('zip_code')
 
     for zip_code in zip_codes:
         volume = Site.volume_by_zip(zip_code, date)
-        counts_by_age = [Site.age_group_aggregate(zip_code, date, age, age+AGE_GROUP_INTERVAL) for age in AGE_GROUPS]
+        if not volume: continue
+        counts_by_age = [str(x) for x in [Site.age_group_aggregate(zip_code, date, age, age+AGE_GROUP_INTERVAL) 
+                         for age in AGE_GROUPS]]
 
-        summary = [timestamp, zip_code, volume]
-        outfile.write('\t'.join(summary + counts_by_age))
+        summary = [timestamp, zip_code, str(volume)]
+        line = '\t'.join(summary + counts_by_age)
+        print line
+        outfile.write(line)
+        
 
     outfile.close()
 
@@ -73,16 +80,24 @@ def aggregate_residential_report(syndrome, date):
     timestamp = str_from_date(date)
     outfile = open(os.path.join(REPORT_FOLDER, AGGREGATE_BY_RESIDENTIAL_ZIP_FILENAME % (
             syndrome.heuristic_name, timestamp, timestamp)), 'w')
-    for local in Locality.objects.all():
-        syndrome_count = syndrome.from_locality(local.zip_code).filter(date=date).count()
-        total = local.volume(date)
-        pct_syndrome = count/total
 
-        outfile.write('\t'.join([timestamp, local.zip_code, syndrome.heuristic_name, syndrome_count, total, pct_syndrome]))
+    outfile.write('\t'.join(header))
+
+    for local in Locality.objects.order_by('zip_code'):
+        total = local.volume(date)
+        if not total: continue
+        syndrome_count = syndrome.from_locality(local.zip_code).filter(date=date).count()
+        pct_syndrome = 0 if total == 0 else syndrome_count/total
+
+        line = '\t'.join([str(x) for x in [timestamp, local.zip_code, syndrome.heuristic_name, syndrome_count, total, pct_syndrome]])
+        print line
+        outfile.write(line)
 
     outfile.close()
 
 def aggregate_site_report(syndrome, date):
+
+    log.info('Aggregate site report')
     header = ['encounter date', 'zip', 'syndrome', 'syndrome events', 
               'total encounters', 'pct syndrome']
 
@@ -92,13 +107,17 @@ def aggregate_site_report(syndrome, date):
 
     outfile.write('\t'.join(header))
 
-    site_zips = Site.objects.values_list('zip_code', flat=True).distinct()
+    site_zips = Site.objects.values_list('zip_code', flat=True).distinct().order_by('zip_code')
     for zip_code in site_zips:
-        syndrome_count = syndrome.from_site_zip(zip_code).filter(date=date).count()
         total = Site.volume_by_zip(zip_code, date)
-        pct_syndrome = count/total
+        if not total: continue
 
-        outfile.write('\t'.join([timestamp, zip_code, syndrome.heuristic_name, syndrome_count, total, pct_syndrome]))
+        syndrome_count = syndrome.from_site_zip(zip_code).filter(date=date).count()
+        pct_syndrome = 0 if total == 0 else syndrome_count/total
+
+        line = '\t'.join([str(x) for x in [timestamp, zip_code, syndrome.heuristic_name, syndrome_count, total, pct_syndrome]])
+        print line
+        outfile.write(line)
 
     outfile.close()
 
@@ -116,7 +135,7 @@ def detailed_site_report(syndrome, date):
     outfile.write('\t'.join(header))
     
     for ev in NonSpecialistVisitEvent.objects.filter(
-        heuristic_name=syndrome.heuristic_name, date=date):
+        heuristic_name=syndrome.heuristic_name, date=date).order_by('patient_zip_code'):
 
         patient_age = int(ev.patient.age/365.25)
         patient_age_group = int(patient_age/AGE_GROUP_INTERVAL)*AGE_GROUP_INTERVAL
