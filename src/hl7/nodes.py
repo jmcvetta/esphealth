@@ -56,7 +56,7 @@ class PriorVaccinationDetail(VaccineDetail):
         self.date_given.value_type = 'TS'
         self.date_given.identifier = ['30961-7&31035-9', 'Date given^LN']
         self.date_given.value = utils.str_from_date(immunization.date)
-        self.date_given.obversation_result_status = 'F'
+        self.date_given.observation_result_status = 'F'
 
 
         for idx, seg in enumerate(self.segments):
