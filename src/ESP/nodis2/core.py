@@ -41,8 +41,7 @@ from ESP.emr.models import Provider
 from ESP.hef2 import events
 from ESP.hef2.core import BaseHeuristic
 from ESP.hef2.models import HeuristicEvent
-from ESP.nodis.models import Case
-from ESP.nodis.models import CaseEvents
+from ESP.nodis2.models import Case
 
 
 CACHE_WARNING_THRESHOLD = 100
