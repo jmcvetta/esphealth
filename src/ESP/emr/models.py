@@ -931,6 +931,15 @@ class Encounter(BasePatientRecord):
         if save_on_db: e.save()
         return e
 
+
+    @staticmethod
+    def volume(date, **kw):
+        '''
+        Returns the total of encounters occurred on a given date.
+        Extra parameters can be passed on **kw.
+        '''
+        return Encounter.objects.filter(date=date).filter(**kw).count()
+
     def is_fake(self):
         return self.status == 'FAKE'
 

@@ -1,3 +1,8 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+from ESP.emr.models import Patient
+
 from ESP.ss.models import Site, Locality
 from ESP.ss.definitions import btzip, localSiteSites
 
@@ -20,8 +25,6 @@ def make_localities():
             zip_code = code[2]
             l = Locality.objects.get(zip_code=zip_code)
             print 'Locations %s and %s have the same zip code' % (l, code)
-            
-
 
 def make_non_specialty_clinics():
     # Some really twisted list comprehension magic to get a

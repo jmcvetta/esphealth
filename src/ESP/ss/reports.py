@@ -19,7 +19,7 @@ INDIVIDUAL_BY_SYNDROME_FILENAME = 'ESPAtrius_SyndInd_zip5_Site_Excl_%s_%s_%s.xls
 MINIMUM_RESIDENTIAL_CASE_THRESHOLD = 5
 
 AGE_GROUP_INTERVAL = 5
-AGE_GROUP_CAP = 80    
+AGE_GROUP_CAP = 90    
 
 AGE_GROUPS = xrange(0, AGE_GROUP_CAP, AGE_GROUP_INTERVAL)
 
@@ -33,9 +33,11 @@ AGE_GROUPS = xrange(0, AGE_GROUP_CAP, AGE_GROUP_INTERVAL)
 def total_residential_encounters_report(date):
     header = ['encounter date', 'zip', 'total'] + [str(x) for x in AGE_GROUPS]
     timestamp = str_from_date(date)
-    outfile = open(os.path.join(REPORT_FOLDER, ENCOUNTERS_BY_RESIDENTIAL_ZIP_FILENAME % (timestamp, timestamp)), 'w')
+    filename = os.path.join(REPORT_FOLDER, ENCOUNTERS_BY_RESIDENTIAL_ZIP_FILENAME % (timestamp, timestamp))
+    log.debug('Writing file %s' % filename)
+    outfile = open(filename, 'w')
 
-    outfile.write('\t'.join(header))
+    outfile.write('\t'.join(header) + '\n')
     for local in Locality.objects.order_by('zip_code'):
         volume = local.volume(date)
         if not volume: continue
@@ -44,10 +46,11 @@ def total_residential_encounters_report(date):
 
         summary = [timestamp, local.zip_code, str(volume)]
         line = '\t'.join(summary + counts_by_age)
-        print line
-        outfile.write(line)
+        log.debug(line)
+        outfile.write(line + '\n')
 
     outfile.close()
+
             
         
 def total_site_encounters_report(date):
@@ -55,7 +58,7 @@ def total_site_encounters_report(date):
     timestamp = str_from_date(date)
     outfile = open(os.path.join(REPORT_FOLDER, ENCOUNTERS_BY_SITE_ZIP_FILENAME % (timestamp, timestamp)), 'w')
 
-    outfile.write('\t'.join(header))
+    outfile.write('\t'.join(header) + '\n')
     zip_codes = Site.objects.values_list('zip_code', flat=True).distinct().order_by('zip_code')
 
     for zip_code in zip_codes:
@@ -66,8 +69,8 @@ def total_site_encounters_report(date):
 
         summary = [timestamp, zip_code, str(volume)]
         line = '\t'.join(summary + counts_by_age)
-        print line
-        outfile.write(line)
+        log.debug(line)
+        outfile.write(line + '\n')
         
 
     outfile.close()
@@ -81,7 +84,7 @@ def aggregate_residential_report(syndrome, date):
     outfile = open(os.path.join(REPORT_FOLDER, AGGREGATE_BY_RESIDENTIAL_ZIP_FILENAME % (
             syndrome.heuristic_name, timestamp, timestamp)), 'w')
 
-    outfile.write('\t'.join(header))
+    outfile.write('\t'.join(header) + '\n')
 
     for local in Locality.objects.order_by('zip_code'):
         total = local.volume(date)
@@ -91,7 +94,7 @@ def aggregate_residential_report(syndrome, date):
 
         line = '\t'.join([str(x) for x in [timestamp, local.zip_code, syndrome.heuristic_name, syndrome_count, total, pct_syndrome]])
         print line
-        outfile.write(line)
+        outfile.write(line + '\n')
 
     outfile.close()
 
@@ -105,7 +108,7 @@ def aggregate_site_report(syndrome, date):
     outfile = open(os.path.join(REPORT_FOLDER, AGGREGATE_BY_SITE_ZIP_FILENAME % (
             syndrome.heuristic_name, timestamp, timestamp)), 'w')
 
-    outfile.write('\t'.join(header))
+    outfile.write('\t'.join(header) + '\n')
 
     site_zips = Site.objects.values_list('zip_code', flat=True).distinct().order_by('zip_code')
     for zip_code in site_zips:
@@ -117,7 +120,7 @@ def aggregate_site_report(syndrome, date):
 
         line = '\t'.join([str(x) for x in [timestamp, zip_code, syndrome.heuristic_name, syndrome_count, total, pct_syndrome]])
         print line
-        outfile.write(line)
+        outfile.write(line + '\n')
 
     outfile.close()
 
@@ -132,7 +135,7 @@ def detailed_site_report(syndrome, date):
     timestamp = str_from_date(date)
     outfile = open(os.path.join(REPORT_FOLDER, INDIVIDUAL_BY_SYNDROME_FILENAME % (
             syndrome.heuristic_name, timestamp, timestamp)), 'w')
-    outfile.write('\t'.join(header))
+    outfile.write('\t'.join(header) + '\n')
     
     for ev in NonSpecialistVisitEvent.objects.filter(
         heuristic_name=syndrome.heuristic_name, date=date).order_by('patient_zip_code'):
@@ -156,7 +159,7 @@ def detailed_site_report(syndrome, date):
                         ev.patient_zip_code, ev.reporting_site.zip_code, 
                         patient_age_group, icd9_codes, 
                         ev.encounter.temperature,
-                        count_by_locality_and_age, count_by_site_and_age]]))
+                        count_by_locality_and_age, count_by_site_and_age, '\n']]))
 
 
     outfile.close()
@@ -177,6 +180,7 @@ def day_report(date):
         aggregate_site_report(heuristic, date)
         aggregate_residential_report(heuristic, date)
         detailed_site_report(heuristic, date)
+
 
 
 

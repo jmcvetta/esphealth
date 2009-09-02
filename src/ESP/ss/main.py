@@ -26,6 +26,7 @@ def main():
     parser.add_option('-e', '--end', dest='end_date', default=today.strftime('%Y%m%d'))
     parser.add_option('-f', '--find-events', action='store_true', dest='events')
     parser.add_option('-r', '--reports', action='store_true', dest='reports')
+    parser.add_option('-c', '--encounter-counts', action='store_true', dest='total_counts')
     
 
     options, args = parser.parse_args()
@@ -55,8 +56,13 @@ def main():
             reports.day_report(current_day)
             current_day += datetime.timedelta(1)
 
+    if options.total_counts:
+        log.info('Creating Encounter Count report for %s' % begin_date)
+        reports.total_residential_encounters_report(begin_date)
+        
 
-    if not (options.events or options.reports):
+
+    if not (options.events or options.reports or options.total_counts):
         print usage_msg
         sys.exit(-1)
 

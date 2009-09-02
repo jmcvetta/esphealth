@@ -61,7 +61,12 @@ class Site(models.Model):
             age_group_filter(lower, upper)
             ).filter(date=date).count()
 
-    def encounters(self, **kw):
+    @staticmethod
+    def site_ids():
+        return [str(x) for x in Site.objects.values_list('code', flat=True)]
+
+
+    def encounters(self, acute_only=True, **kw):
         ''' 
         Returns a list of all encounters that took place at this Site.
         kw may contain specific filters, like icd9 codes or dates.
@@ -75,6 +80,9 @@ class Site(models.Model):
         if date:
             encounters = encounters.filter(date=date)
 
+        if acute_only:
+            encounters = encounters.filter(native_site_num__in=Site.site_ids())
+
         return encounters
 
     def volume(self, date):
@@ -83,27 +91,31 @@ class Site(models.Model):
 
 
 class Locality(models.Model):
-    zip_code = models.CharField(max_length=9, db_index=True)
+    zip_code = models.CharField(max_length=10, db_index=True)
     locality = models.CharField(max_length=50, db_index=True)
     city = models.CharField(max_length=50, db_index=True)
     state = models.CharField(max_length=2)
-    region_code = models.CharField(max_length=5)
-    region_name = models.CharField(max_length=20)
+    region_code = models.CharField(max_length=5, null=True)
+    region_name = models.CharField(max_length=20, null=True)
     is_official = models.BooleanField(default=True)
 
-    def encounters(self, **kw):
+    def encounters(self, acute_only=True, **kw):
         ''' 
         Returns a list of all encounters that took place at this Site.
         kw may contain specific filters, like icd9 codes or dates.
         '''
 
         date = kw.pop('date', None)
+
         at_locality = Encounter.objects.filter(
             patient__zip=self.zip_code)
 
         encounters = at_locality
         if date:
             encounters = encounters.filter(date=date)
+
+        if acute_only:
+            encounters = encounters.filter(native_site_num__in=Site.site_ids())
 
         return encounters
 
@@ -129,10 +141,10 @@ class Locality(models.Model):
             patient__date_of_birth__gte=older_patient_date,
             patient__date_of_birth__lt=younger_patient_date)
 
-
     
     def __unicode__(self):
         return u'%s - %s, %s (%s)' % (self.locality, self.city, self.state, self.zip_code)
+
 
 class NonSpecialistVisitEvent(HeuristicEvent):
     reporting_site = models.ForeignKey(Site, null=True)
