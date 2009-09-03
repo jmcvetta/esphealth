@@ -1,6 +1,6 @@
 import datetime
 
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Max
 from django.contrib.contenttypes.models import ContentType
 
 from ESP.emr.models import Encounter
@@ -35,8 +35,25 @@ from definitions import lymphatic, lower_gi, upper_gi, neurological, respiratory
 
 class SyndromeHeuristic(EncounterHeuristic):
     def generate_events(self, incremental=True, **kw):
+
+        #
+        # Incremental processing
+        #
+        if incremental:
+            log.debug('Incremental processing requested.')
+            runs = Run.objects.filter(def_name = self.def_name, status = 's')
+            begin_timestamp = runs.aggregate(ts = Max('timestamp'))['ts'] # aggregate() returns dict
+        else:
+            log.debug('Incremental processing NOT requested.')
+            begin_timestamp = None
+        log.debug('begin_timestamp: %s' % begin_timestamp)
+
+        counter = 0
         encounter_type = ContentType.objects.get_for_model(Encounter)
-        for encounter in self.matches():
+
+
+
+        for encounter in self.matches(begin_timestamp=begin_timestamp):
             try:
                 site = Site.objects.get(code=encounter.native_site_num)
             except:
@@ -50,16 +67,27 @@ class SyndromeHeuristic(EncounterHeuristic):
                     patient = encounter.patient,
                     definition = self.def_name,
                     def_version = self.def_version,
-                    patient_zip_code = encounter.patient.zip[:10].strip(),
+                    patient_zip_code = encounter.patient.zip[:5].strip(),
                     reporting_site = site,
                     object_id = encounter.id,
                     defaults = {
                         'content_type':encounter_type
                         }
                     )
+
+                counter +=1 
+
             except Exception, why:
-                # There is not much to do if some of the information is bad, so we just skip it.
-                pass
+                # There is not much to do if some of the information is bad, so we just log and skip it.
+                log.error('Error %s making event from %s' % (why, encounter))
+
+
+        self.run = Run(def_name = self.def_name) # New Run object for this run
+        self.run.save()
+        log.debug('Generated new Run object for this run: %s' % self.run)
+
+
+        return counter
 
 
     def from_site_zip(self, zip_code):
@@ -111,7 +139,7 @@ class SyndromeHeuristic(EncounterHeuristic):
 
 class InfluenzaHeuristic(SyndromeHeuristic):
     FEVER_TEMPERATURE = 100.0 # Temperature in Fahrenheit
-    def matches(self, begin_timestamp=None):
+    def matches(self, begin_timestamp=None, **kw):        
         q_measured_fever = Q(temperature__gte=InfluenzaHeuristic.FEVER_TEMPERATURE)
         q_unmeasured_fever = Q(temperature__isnull=True, icd9_codes__in=ICD9_FEVER_CODES)
         q_codes = Q(icd9_codes__in=self.icd9s)
@@ -120,6 +148,8 @@ class InfluenzaHeuristic(SyndromeHeuristic):
         # (icd9 code + measured fever) or (icd9 code + icd9code for fever)
         # Logically: (a&b)+(a&c) = a&(b+c)
         influenza = (q_codes & (q_measured_fever | q_unmeasured_fever))
+        
+        
         return self.encounters(begin_timestamp).filter(influenza)
 
                 
@@ -133,7 +163,8 @@ class OptionalFeverSyndromeHeuristic(SyndromeHeuristic):
                                                 def_version, icd9_fever_map.keys())
         self.required_fevers = icd9_fever_map
 
-    def matches(self, begin_timestamp=None):
+    def matches(self, begin_timestamp=None, **kw):
+        
         icd9_requiring_fever = [code for code, required in self.required_fevers.items() if required]
         icd9_non_fever = [code for code, required in self.required_fevers.items() if not required]
 

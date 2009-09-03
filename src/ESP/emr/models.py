@@ -933,12 +933,12 @@ class Encounter(BasePatientRecord):
 
 
     @staticmethod
-    def volume(date, **kw):
+    def volume(date, *args, **kw):
         '''
         Returns the total of encounters occurred on a given date.
-        Extra parameters can be passed on **kw.
+        Extra named parameters can be passed on **kw, or Q objects on *args.        
         '''
-        return Encounter.objects.filter(date=date).filter(**kw).count()
+        return Encounter.objects.filter(date=date).filter(*args).filter(**kw).count()
 
     def is_fake(self):
         return self.status == 'FAKE'

@@ -3,8 +3,10 @@
 
 import os
 
+from ESP.emr.models import Encounter
 from ESP.utils.utils import str_from_date, log
 from ESP.ss.models import Site, Locality, NonSpecialistVisitEvent
+from ESP.ss.models import age_group_filter
 from heuristics import syndrome_heuristics
 
 
@@ -35,18 +37,31 @@ def total_residential_encounters_report(date):
     timestamp = str_from_date(date)
     filename = os.path.join(REPORT_FOLDER, ENCOUNTERS_BY_RESIDENTIAL_ZIP_FILENAME % (timestamp, timestamp))
     log.debug('Writing file %s' % filename)
+
+
+    # Find the residential zip codes that had any event and will be part of the report.
+    # If the list is empty, there is nothing to report.
+    zip_codes = NonSpecialistVisitEvent.objects.filter(date=date).values_list(
+        'patient_zip_code', flat=True).distinct().order_by('patient_zip_code')
+
     outfile = open(filename, 'w')
-
     outfile.write('\t'.join(header) + '\n')
-    for local in Locality.objects.order_by('zip_code'):
-        volume = local.volume(date)
-        if not volume: continue
-        counts_by_age = [str(x) for x in [local.at_age_group(age, age+AGE_GROUP_INTERVAL, date=date).count()
-                         for age in AGE_GROUPS]]
 
-        summary = [timestamp, local.zip_code, str(volume)]
-        line = '\t'.join(summary + counts_by_age)
-        log.debug(line)
+    log.info('Total Zip codes: %d' % len(zip_codes))
+
+    for zip_code in zip_codes:
+        counts_by_age = [Encounter.volume(date, age_group_filter(age, age+AGE_GROUP_INTERVAL), patient__zip=zip_code)
+                         for age in AGE_GROUPS]
+
+        volume = sum(counts_by_age)
+        
+        log.info('volume: %d' % volume)
+
+        if not volume: continue
+
+        summary = [timestamp, zip_code, str(volume)]
+        line = '\t'.join(summary + [str(x) for x in counts_by_age])
+        log.info(line)
         outfile.write(line + '\n')
 
     outfile.close()
@@ -59,16 +74,17 @@ def total_site_encounters_report(date):
     outfile = open(os.path.join(REPORT_FOLDER, ENCOUNTERS_BY_SITE_ZIP_FILENAME % (timestamp, timestamp)), 'w')
 
     outfile.write('\t'.join(header) + '\n')
-    zip_codes = Site.objects.values_list('zip_code', flat=True).distinct().order_by('zip_code')
+    zip_codes = NonSpecialistVisitEvent.objects.filter(date=date).values_list(
+        'reporting_site__zip_code', flat=True).distinct().order_by('zip_code')
 
     for zip_code in zip_codes:
-        volume = Site.volume_by_zip(zip_code, date)
+        counts_by_age = [Site.age_group_aggregate(zip_code, date, age, age+AGE_GROUP_INTERVAL) 
+                         for age in AGE_GROUPS]
+        volume = sum(counts_by_age)
         if not volume: continue
-        counts_by_age = [str(x) for x in [Site.age_group_aggregate(zip_code, date, age, age+AGE_GROUP_INTERVAL) 
-                         for age in AGE_GROUPS]]
 
         summary = [timestamp, zip_code, str(volume)]
-        line = '\t'.join(summary + counts_by_age)
+        line = '\t'.join(summary + [str(x) for x in counts_by_age])
         log.debug(line)
         outfile.write(line + '\n')
         

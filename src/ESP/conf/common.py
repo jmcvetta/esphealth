@@ -2,5 +2,5 @@
 
 import datetime
 
-EPOCH = datetime.date(2007, 01, 01)
+EPOCH = datetime.date(2002, 01, 01)
 DEIDENTIFICATION_TIMEDELTA = 60
