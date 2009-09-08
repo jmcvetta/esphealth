@@ -35,6 +35,7 @@ provenance.
 #
 #-------------------------------------------------------------------------------
 #
+# 5     One or more cases are bound to events with bad provenance, but operator input is disabled.
 # 10    Sent cases already bound to bad events
 # 11    Permission not given to delete (unsent) cases bound to bad events
 # 12    Initial permission to proceed not granted
@@ -80,6 +81,8 @@ def main():
         "values are 'failure' and 'attempted'.", default=None)
     parser.add_option('--provenance', action='store', dest='provenance', metavar='ID', 
         help='Purge records with provenance_id = ID', default=None)
+    parser.add_option('--no-prompt', action='store_false', dest='prompt', default=True,
+        help='Do not prompt user for input.  Will abort if cases are bound to selected provenances.')
     options, args = parser.parse_args()
     log.debug('options: %s' % pprint.pformat(options))
     if not (options.status or options.provenance):
@@ -115,22 +118,25 @@ def main():
         print 'No matching provenance entries found.  Nothing to do.'
         print
         sys.exit(14)
-    #
-    # Have user confirm script is being run safely
-    #
-    print
-    print 'This script requires exclusive write access to the database.  Please ensure'
-    print 'none of the following scripts are running at the same time:'
-    print '    emr/etl/load_epic.py'
-    print '    emr/etl/load_hl7.py'
-    print '    hef/run.py'
-    print '    nodis/run.py'
-    print
-    decision = raw_input('Type OKAY to proceed:\n')
-    if not decision == 'OKAY':
-        print 'Not okay to proceed.  Exiting now.'
+    if options.prompt:
+        #
+        # Have user confirm script is being run safely
+        #
         print
-        sys.exit(12)
+        print 'This script requires exclusive write access to the database.  Please ensure'
+        print 'none of the following scripts are running at the same time:'
+        print '    emr/etl/load_epic.py'
+        print '    emr/etl/load_hl7.py'
+        print '    hef/run.py'
+        print '    nodis/run.py'
+        print
+        decision = raw_input('Type OKAY to proceed:\n')
+        if not decision == 'OKAY':
+            print 'Not okay to proceed.  Exiting now.'
+            print
+            sys.exit(12)
+    else:
+        log.debug('Not prompting user to ensure exclusive db access, per --no-input option.')
     #
     # Discover "bad" cases -- those based on events with bad provenance
     #
@@ -165,24 +171,32 @@ def main():
             print case
         sys.exit(10)
     if bad_cases:
-        print
-        print 'WARNING:'
-        print
-        print 'The following cases, which have NOT been sent to the Department of Public Health,'
-        print 'are bound to to one or more events with bad provenance.'
-        print
-        for case in bad_cases:
-            print case
-        print
-        decision = raw_input('Please confirm that it is okay to delete these cases by typing DELETE:\n')
-        if not decision == 'DELETE':
+        if options.prompt:
             print
-            print 'You have NOT given permission to delete cases bound to records with bad provenance.'
-            print 'Therefore we cannot delete said records, either.  Exiting now.'
+            print 'WARNING:'
             print
-            sys.exit(11)
-        print 
-        print 'Deleting all records and cases with bad provenance.'
+            print 'The following cases, which have NOT been sent to the Department of Public Health,'
+            print 'are bound to to one or more events with bad provenance.'
+            print
+            for case in bad_cases:
+                print case
+            print
+            decision = raw_input('Please confirm that it is okay to delete these cases by typing DELETE:\n')
+            if not decision == 'DELETE':
+                print
+                print 'You have NOT given permission to delete cases bound to records with bad provenance.'
+                print 'Therefore we cannot delete said records, either.  Exiting now.'
+                print
+                sys.exit(11)
+            print 
+            print 'Deleting all records and cases with bad provenance.'
+        else:
+            log.critical('One or more cases are bound to events with bad provenance, but operator input is disabled.')
+            for case in bad_cases:
+                log.debug('Bad case: %s' % case)
+            log.critical('Aborting.')
+            print 'One or more cases are bound to events with bad provenance -- aborting.'
+            sys.exit(5)
     else:
         print 'No cases will be affected by this action.  Deleting all records with bad provenance.'
         print
