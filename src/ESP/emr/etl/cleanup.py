@@ -107,7 +107,7 @@ def main():
         prov_stat_q = Q(provenance__status=options.status)
         bad_prov = Provenance.objects.filter(status=options.status)
     else: # options.provenance
-        prov_stat_q = Q(provenance__id=options.provenance)
+        prov_stat_q = Q(provenance__provenance_id=options.provenance)
         bad_prov = Provenance.objects.filter(pk=options.provenance)
     log.debug('prov_stat_q: %s' % prov_stat_q)
     if not bad_prov.count():
