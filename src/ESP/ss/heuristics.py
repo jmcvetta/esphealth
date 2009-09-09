@@ -84,8 +84,8 @@ class SyndromeHeuristic(EncounterHeuristic):
 
         self.run = Run(def_name = self.def_name) # New Run object for this run
         self.run.save()
-        log.debug('Generated new Run object for this run: %s' % self.run)
-
+        log.info('Generated new Run object for this run: %s' % self.run)
+        log.info('%s events detected' % counter)
 
         return counter
 
@@ -182,27 +182,27 @@ class OptionalFeverSyndromeHeuristic(SyndromeHeuristic):
 
 
 
-ili = InfluenzaHeuristic('influenza like illness', 'ILI', 1, 
+ili = InfluenzaHeuristic('ILI syndrome 1', 'ILI', 1, 
                          dict(influenza_like_illness).keys())
     
 haematological = OptionalFeverSyndromeHeuristic(
-    'Haematological', 'haematological', 1, dict(haematological))
+    'Haematological Syndrome 1', 'haematological', 1, dict(haematological))
 
-lymphatic = OptionalFeverSyndromeHeuristic('Lymphatic', 'lymphatic', 
+lymphatic = OptionalFeverSyndromeHeuristic('Lymphatic Syndrome 1', 'lymphatic', 
                                            1, dict(lymphatic))
 
-rash = OptionalFeverSyndromeHeuristic('Rash', 'rash', 1, dict(rash))
+rash = OptionalFeverSyndromeHeuristic('Rash Syndrome 1', 'rash', 1, dict(rash))
     
-lesions = SyndromeHeuristic('Lesions', 'lesions', 1, dict(lesions).keys())
-respiratory = SyndromeHeuristic('Respiratory', 'respiratory', 1, 
+lesions = SyndromeHeuristic('Lesions Syndrome 1', 'lesions', 1, dict(lesions).keys())
+respiratory = SyndromeHeuristic('Respiratory Syndrome 1', 'respiratory', 1, 
                                 dict(respiratory).keys())
 
-lower_gi = SyndromeHeuristic('Lower GI', 'lower gi', 1, 
+lower_gi = SyndromeHeuristic('Lower GI Syndrome 1', 'lower gi', 1, 
                              dict(lower_gi).keys())
 
-upper_gi = SyndromeHeuristic('Upper GI', 'uppper gi', 1, dict(upper_gi).keys())
+upper_gi = SyndromeHeuristic('Upper GI Syndrome 1', 'upper gi', 1, dict(upper_gi).keys())
 
-neuro = SyndromeHeuristic('Neurological', 'neurological', 1, dict(neurological).keys())
+neuro = SyndromeHeuristic('Neurological Syndrome 1', 'neurological', 1, dict(neurological).keys())
 
 
 def syndrome_heuristics():
