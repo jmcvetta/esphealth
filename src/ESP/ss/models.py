@@ -16,7 +16,7 @@ from django.db import models
 from django.db.models import Q
 
 from ESP.emr.models import Encounter
-from ESP.hef.models import HeuristicEvent
+from ESP.hef.models import Event
 
 
 def age_group_filter(lower, upper=150):
@@ -146,7 +146,7 @@ class Locality(models.Model):
         return u'%s - %s, %s (%s)' % (self.locality, self.city, self.state, self.zip_code)
 
 
-class NonSpecialistVisitEvent(HeuristicEvent):
+class NonSpecialistVisitEvent(Event):
     reporting_site = models.ForeignKey(Site, null=True)
     patient_zip_code = models.CharField(max_length=10, null=True)
     encounter = models.ForeignKey(Encounter)

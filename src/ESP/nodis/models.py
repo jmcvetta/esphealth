@@ -15,7 +15,7 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Patient
 from ESP.emr.models import Prescription
 from ESP.emr.models import Provider
-from ESP.hef.models import HeuristicEvent
+from ESP.hef.models import Event
 
 
 STATUS_CHOICES = [
@@ -47,7 +47,7 @@ class Case(models.Model):
     #
     # Events that define this case
     #
-    events = models.ManyToManyField(HeuristicEvent, blank=False) # The events that caused this case to be generated
+    events = models.ManyToManyField(Event, blank=False) # The events that caused this case to be generated
     #
     # Reportable Information
     #

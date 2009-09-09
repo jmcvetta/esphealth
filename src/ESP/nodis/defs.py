@@ -12,10 +12,9 @@
 
 import pprint
 from django.db import connection
-from ESP.hef2 import events
-from ESP.hef2.core import BaseHeuristic
-#from ESP.hef2.models import HeuristicEvent
-from ESP.nodis2.core import ComplexEventPattern
+from ESP.hef import events
+from ESP.hef.core import BaseHeuristic
+from ESP.nodis.core import ComplexEventPattern
 from ESP.emr.models import Patient
 
 

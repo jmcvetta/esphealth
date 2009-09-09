@@ -18,8 +18,8 @@ import optparse
 from django.db import connection
 
 
-from ESP.hef2.core import BaseHeuristic
-from ESP.hef2.events import * # Load all HeuristicEvent definitions
+from ESP.hef.core import BaseHeuristic
+from ESP.hef.events import * # Load all Event definitions
 from ESP import settings
 from ESP.utils.utils import log
 
@@ -65,7 +65,7 @@ def main():
         parser.print_help()
         sys.exit()
     elif options.list:
-        for name in BaseHeuristic.list_heuristic_names():
+        for name in BaseHeuristic.list_heuristics():
             print name
         sys.exit()
     if (options.full and options.incremental) or not (options.full or options.incremental):

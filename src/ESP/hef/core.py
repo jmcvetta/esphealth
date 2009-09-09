@@ -32,8 +32,8 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.conf.models import NativeCode
-from ESP.hef2.models import HeuristicEvent
-from ESP.hef2.models import Run
+from ESP.hef.models import Event
+from ESP.hef.models import Run
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
@@ -74,35 +74,35 @@ class BaseHeuristic(object):
 
     __registry = {} # Class variable
 
-    def __init__(self, heuristic_name, def_name, def_version):
+    def __init__(self, name, def_name, def_version):
         '''
-        @param heuristic_name: Name of this heuristic (could be shared by several instances)
-        @type heuristic_name: String
+        @param heuristic: Name of this heuristic (could be shared by several instances)
+        @type heuristic: String
         @param def_name: Name of the definition used (unique to instance)
         @type def_name: String
         @param def_version: Version of definition
         @type def_version: Integer
         '''
-        assert heuristic_name
+        assert name
         assert def_name
         assert def_version
-        self.heuristic_name = heuristic_name
+        self.name = name
         self.def_name = def_name
         self.def_version = def_version
         #
         # Register this heuristic
         #
         registry = self.__registry # For convenience
-        if heuristic_name in registry:
-            if self.def_name in [item.def_name for item in registry[heuristic_name]]:
-                log.error('Event definition "%s" is already registered for event type "%s".' % (self.def_name, heuristic_name))
-                raise HeuristicAlreadyRegistered('A BaseHeuristic instance is already registered with heuristic_name "%s".' % heuristic_name)
+        if name in registry:
+            if self.def_name in [item.def_name for item in registry[name]]:
+                log.error('Event definition "%s" is already registered for event type "%s".' % (self.def_name, name))
+                raise HeuristicAlreadyRegistered('A BaseHeuristic instance is already registered with heuristic "%s".' % name)
             else:
-                log.debug('Registering additional heuristic for heuristic_name "%s".' % heuristic_name)
-                registry[heuristic_name] += [self]
+                log.debug('Registering additional heuristic for heuristic "%s".' % name)
+                registry[name] += [self]
         else:
-            log.debug('Registering heuristic with heuristic_name "%s".' % heuristic_name)
-            registry[heuristic_name] = [self]
+            log.debug('Registering heuristic with heuristic "%s".' % name)
+            registry[name] = [self]
 
     @classmethod
     def get_all_heuristics(cls):
@@ -126,7 +126,7 @@ class BaseHeuristic(object):
         return cls.__registry[name]
 
     @classmethod
-    def list_heuristic_names(cls):
+    def list_heuristics(cls):
         '''
         Returns a sorted list of strings naming all registered BaseHeuristic instances
         '''
@@ -171,7 +171,7 @@ class BaseHeuristic(object):
 
     def generate_events(self, incremental = True, **kw):
         '''
-        Generate HeuristicEvent records for each item returned by
+        Generate Event records for each item returned by
         matches, if it does not already have one.
         @return: Integer number of new records created
         '''
@@ -194,7 +194,7 @@ class BaseHeuristic(object):
         #
         #
         # First we retrieve a list of object IDs for this 
-        existing = HeuristicEvent.objects.filter(definition = self.def_name).values_list('object_id')
+        existing = Event.objects.filter(definition = self.def_name).values_list('object_id')
         existing = [int(item[0]) for item in existing] # Convert to a list of integers
         #
         # Disabled select_related() because matches will most often be in 
@@ -202,11 +202,11 @@ class BaseHeuristic(object):
         #
         for event in self.matches(begin_timestamp):
             if event.id in existing:
-                log.debug('BaseHeuristic event "%s" already exists for %s #%s' % (self.heuristic_name, event._meta.object_name, event.id))
+                log.debug('BaseHeuristic event "%s" already exists for %s #%s' % (self.name, event._meta.object_name, event.id))
                 continue
             content_type = ContentType.objects.get_for_model(event)
-            obj, created = HeuristicEvent.objects.get_or_create(
-                heuristic_name = self.heuristic_name,
+            obj, created = Event.objects.get_or_create(
+                heuristic = self.name,
                 definition = self.def_name,
                 def_version = self.def_version,
                 date = event.date,
@@ -215,12 +215,12 @@ class BaseHeuristic(object):
                 object_id = event.pk,
                 )
             if created:
-                log.info('Creating new heuristic event "%s" for %s #%s' % (self.heuristic_name, event._meta.object_name, event.id))
+                log.info('Creating new heuristic event "%s" for %s #%s' % (self.name, event._meta.object_name, event.id))
                 obj.save()
                 counter += 1
             else:
                 log.debug('Did not create heuristic event - found matching event #%s' % obj.id)
-        log.info('Generated %s new events for "%s".' % (counter, self.heuristic_name))
+        log.info('Generated %s new events for "%s".' % (counter, self.name))
         for item in connection.queries:
             log.debug('\n\t%8s    %s' % (item['time'], item['sql']))
         connection.queries = []
@@ -233,7 +233,7 @@ class BaseHeuristic(object):
     @classmethod
     def generate_all_events(cls, incremental = True, **kw):
         '''
-        Generate HeuristicEvent records for every registered BaseHeuristic 
+        Generate Event records for every registered BaseHeuristic 
             instance.
         @param begin_timestamp: Beginning of time window to examine
         @type begin_timestamp:  datetime.datetime
@@ -252,11 +252,11 @@ class BaseHeuristic(object):
 
     def get_events(self):
         '''
-        Returns a QuerySet of all existing HeuristicEvent objects generated by
+        Returns a QuerySet of all existing Event objects generated by
         this heuristic.
         '''
-        log.debug('Getting all events for heuristic name %s' % self.heuristic_name)
-        return HeuristicEvent.objects.filter(heuristic_name = self.heuristic_name)
+        log.debug('Getting all events for heuristic name %s' % self.name)
+        return Event.objects.filter(name = self.name)
 
     def __repr__(self):
         return '<BaseHeuristic: %s>' % self.def_name
@@ -268,7 +268,7 @@ class LabHeuristic(BaseHeuristic):
     are used as components of DiseaseDefinitions
     '''
 
-    def __init__(self, heuristic_name, def_name, def_version, loinc_nums):
+    def __init__(self, name, def_name, def_version, loinc_nums):
         '''
         @param loinc_nums:   LOINC numbers for lab results this heuristic will examine
         @type loinc_nums:    [String, String, String, ...]
@@ -276,7 +276,7 @@ class LabHeuristic(BaseHeuristic):
         assert loinc_nums
         self.loinc_nums = loinc_nums
         BaseHeuristic.__init__(self,
-            heuristic_name = heuristic_name,
+            name = name,
             def_name = def_name,
             def_version = def_version,
             )
@@ -289,7 +289,7 @@ class LabHeuristic(BaseHeuristic):
             @type begin_timestamp: datetime.datedatetime
             @type end_date:   datetime.date
         '''
-        log.debug('Get lab results relevant to "%s".' % self.heuristic_name)
+        log.debug('Get lab results relevant to "%s".' % self.name)
         log.debug('Beginning timestamp: %s' % begin_timestamp)
         if not loinc_nums:
             loinc_nums = self.loinc_nums
@@ -305,7 +305,7 @@ class NumericLabHeuristic(LabHeuristic):
     that result's reference high, with fall back to a default high value.
     '''
 
-    def __init__(self, heuristic_name, def_name, def_version, loinc_nums,
+    def __init__(self, name, def_name, def_version, loinc_nums,
         comparison, ratio = None, default_high = None, exclude = False):
         '''
         @param comparison:   Operator to use for numerical comparison (currently only '>' and '>=' supported)
@@ -323,7 +323,7 @@ class NumericLabHeuristic(LabHeuristic):
         self.comparison = comparison.strip()
         self.exclude = exclude
         LabHeuristic.__init__(self,
-            heuristic_name = heuristic_name,
+            name = name,
             def_name = def_name,
             def_version = def_version,
             loinc_nums = loinc_nums,
@@ -383,7 +383,7 @@ class StringMatchLabHeuristic(LabHeuristic):
     Matches labs with results containing specified strings
     '''
 
-    def __init__(self, heuristic_name, def_name, def_version, loinc_nums, strings = [],
+    def __init__(self, name, def_name, def_version, loinc_nums, strings = [],
         abnormal_flag = False, match_type = 'istartswith', exclude = False):
         '''
         @param strings:       Strings to match against
@@ -403,7 +403,7 @@ class StringMatchLabHeuristic(LabHeuristic):
         self.match_type = match_type
         self.exclude = exclude
         LabHeuristic.__init__(self,
-            heuristic_name = heuristic_name,
+            name = name,
             def_name = def_name,
             def_version = def_version,
             loinc_nums = loinc_nums,
@@ -445,7 +445,7 @@ class EncounterHeuristic(BaseHeuristic):
     Abstract base class for encounter heuristics, concrete instances of which
     are used as components of DiseaseDefinitions
     '''
-    def __init__(self, heuristic_name, def_name, def_version, icd9s):
+    def __init__(self, name, def_name, def_version, icd9s):
         '''
         @type name:         String
         @type icd9s:        [String, String, String, ...]
@@ -455,7 +455,7 @@ class EncounterHeuristic(BaseHeuristic):
         assert icd9s
         self.icd9s = icd9s
         BaseHeuristic.__init__(self,
-            heuristic_name = heuristic_name,
+            name = name,
             def_name = def_name,
             def_version = def_version,
             )
@@ -477,7 +477,7 @@ class EncounterHeuristic(BaseHeuristic):
             @type patient:    Demog
             @type queryset:   QuerySet
         '''
-        log.debug('Get encounters relevant to "%s".' % self.heuristic_name)
+        log.debug('Get encounters relevant to "%s".' % self.name)
         qs = Encounter.objects.all()
         if begin_timestamp :
             qs = qs.filter(updated_timestamp__gte = begin_timestamp)
@@ -493,12 +493,12 @@ class FeverHeuristic(BaseHeuristic):
     Abstract base class for encounter heuristics, concrete instances of which
     are used as components of DiseaseDefinitions
     '''
-    def __init__(self, heuristic_name, def_name, def_version, temperature = None, icd9s = []):
+    def __init__(self, name, def_name, def_version, temperature = None, icd9s = []):
         assert (icd9s or temperature)
         self.temperature = temperature
         self.icd9s = icd9s
         BaseHeuristic.__init__(self,
-            heuristic_name = heuristic_name,
+            name = name,
             def_name = def_name,
             def_version = def_version,
             )
@@ -508,7 +508,7 @@ class FeverHeuristic(BaseHeuristic):
         Return all encounters indicating fever.
             @type queryset:   QuerySet
         '''
-        log.debug('Get encounters matching "%s".' % self.heuristic_name)
+        log.debug('Get encounters matching "%s".' % self.name)
         enc_q = Q()
         for code in self.icd9s:
             enc_q = enc_q | Q(icd9_codes__code = code)
@@ -531,7 +531,7 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
     def __init__(self):
         self.loinc_nums = ['29760-6', '14630-8']
         BaseHeuristic.__init__(self,
-            heuristic_name = 'high_calc_bilirubin',
+            name = 'high_calc_bilirubin',
             def_name = 'High Calculated Bilirubin Event Definition 1',
             def_version = 1,
             )
@@ -586,7 +586,7 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
 
 class MedicationHeuristic(BaseHeuristic):
 
-    def __init__(self, heuristic_name, def_name, def_version, drugs):
+    def __init__(self, name, def_name, def_version, drugs):
         '''
         @param drugs:  Generate events when drug(s) are prescribed
         @type drugs:   [String, String, ...]
@@ -594,7 +594,7 @@ class MedicationHeuristic(BaseHeuristic):
         assert drugs
         self.drugs = drugs
         BaseHeuristic.__init__(self,
-            heuristic_name = heuristic_name,
+            name = name,
             def_name = def_name,
             def_version = def_version,
             )
@@ -617,7 +617,7 @@ class WesternBlotHeuristic(LabHeuristic):
         http://en.wikipedia.org/wiki/Western_blot
     '''
 
-    def __init__(self, heuristic_name, def_name, def_version, loinc_nums,
+    def __init__(self, name, def_name, def_version, loinc_nums,
         interesting_bands, band_count):
         '''
         @param interesting_bands: Which (numbered) bands are interesting for this test?
@@ -630,7 +630,7 @@ class WesternBlotHeuristic(LabHeuristic):
         self.interesting_bands = interesting_bands
         self.band_count = band_count
         LabHeuristic.__init__(self,
-            heuristic_name = heuristic_name,
+            name = name,
             def_name = def_name,
             def_version = def_version,
             loinc_nums = loinc_nums,

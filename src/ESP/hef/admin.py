@@ -6,11 +6,11 @@
 
 from django.contrib import admin
 
-from ESP.hef.models import HeuristicEvent
+from ESP.hef.models import Event
 
 
-class HeuristicEventAdmin(admin.ModelAdmin):
-    list_display = ['heuristic_name', 'date', 'patient', 'content_object']
+class EventAdmin(admin.ModelAdmin):
+    list_display = ['heuristic', 'date', 'patient', 'content_object']
 
 
-admin.site.register(HeuristicEvent, HeuristicEventAdmin)
+admin.site.register(Event, EventAdmin)

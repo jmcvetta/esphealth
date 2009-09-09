@@ -206,8 +206,6 @@ src/ESP/nodis/case_comparator.py -text
 src/ESP/nodis/case_report.py -text
 src/ESP/nodis/core.py -text
 src/ESP/nodis/defs.py -text
-src/ESP/nodis/experiment.ini -text
-src/ESP/nodis/experimenter.py -text
 src/ESP/nodis/forms.py -text
 src/ESP/nodis/models.py -text
 src/ESP/nodis/patient_report.py -text

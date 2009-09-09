@@ -55,7 +55,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from ESP.utils.utils import log
 from ESP.nodis.models import Case
-from ESP.hef.models import HeuristicEvent
+from ESP.hef.models import Event
 from ESP.emr.models import Provenance
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
@@ -150,7 +150,7 @@ def main():
     for rec_type in record_types:
         content_type = ContentType.objects.get_for_model(rec_type)
         bad_records = rec_type.objects.filter(prov_stat_q)
-        new_bad_events = HeuristicEvent.objects.filter(content_type=content_type, object_id__in=bad_records)
+        new_bad_events = Event.objects.filter(content_type=content_type, object_id__in=bad_records)
         try:
             bad_events = bad_events | new_bad_events
         except TypeError:

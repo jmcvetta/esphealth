@@ -38,10 +38,10 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
-from ESP.hef2 import events
-from ESP.hef2.core import BaseHeuristic
-from ESP.hef2.models import HeuristicEvent
-from ESP.nodis2.models import Case
+from ESP.hef import events
+from ESP.hef.core import BaseHeuristic
+from ESP.hef.models import Event
+from ESP.nodis.models import Case
 
 
 CACHE_WARNING_THRESHOLD = 100
@@ -114,7 +114,7 @@ class DiseaseDefinition(object):
         @param window: Time window in days
         @type window: Integer
         @param require: Events that must have occurred within 'window' days of one another
-        @type require:  List of tuples of HeuristicEvent instances.  The tuples 
+        @type require:  List of tuples of Event instances.  The tuples 
             are AND'ed together, and each item in a tuple is OR'ed.
         @param require_past: Events that must have occurred in the past, but 
             not within this definition's time window
@@ -159,7 +159,7 @@ class DiseaseDefinition(object):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #
         # 'pids' are patient IDs -- db primary keys
-        all_events = HeuristicEvent.objects.all()
+        all_events = Event.objects.all()
         for req in (self.require + self.require_past):
             pids_this_req = set()
             for h in req: # One or more BaseHeuristic instances
@@ -217,7 +217,7 @@ class DiseaseDefinition(object):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for req in self.require[1:]:
             new_windows = [] # EventWindows containing events for this req
-            for h in req: # h is HeuristicEvent type
+            for h in req: # h is Event type
                 events = h.get_events().filter(patient__pk = patient_pk)
                 for win in t_windows:
                     found_event = False # Did we find event that fits this window?
@@ -242,7 +242,7 @@ class DiseaseDefinition(object):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for req in self.exclude_past:
             valid_windows = [] # EventWindows matching all requirements
-            for h in req: # h is HeuristicEvent type
+            for h in req: # h is Event type
                 for win in t_windows:
                     events = h.get_events().filter(patient__pk = patient_pk, date__lt = win.start)
                     if events:
@@ -256,7 +256,7 @@ class DiseaseDefinition(object):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         for req in self.require_past:
             valid_windows = [] # EventWindows matching all requirements
-            for h in req: # h is HeuristicEvent type
+            for h in req: # h is Event type
                 for win in t_windows:
                     end = win.start
                     start = win.start - self.require_past_window
@@ -292,7 +292,7 @@ class DiseaseDefinition(object):
         '''
         names = []
         for req in self.require + self.require_past + self.exclude:
-            names += [event.heuristic_name for event in req]
+            names += [event.heuristic for event in req]
         return set(names)
 
 
@@ -451,7 +451,7 @@ class Disease(object):
         log.info('Generating cases for %s' % self.name)
         existing_cases = Case.objects.filter(condition = self.name)
         # Primary keys of events already bound to a Case object:
-        bound_event_pks = HeuristicEvent.objects.filter(case__in = existing_cases).values_list('pk') # ValuesListQuerySet
+        bound_event_pks = Event.objects.filter(case__in = existing_cases).values_list('pk') # ValuesListQuerySet
         bound_event_pks = [item[0] for item in bound_event_pks]
         log.debug('number of bound_events: %s' % len(bound_event_pks))
         matches = {}
@@ -594,14 +594,14 @@ class Window(object):
         @param days: Max number of days between events
         @type days:  Int
         @param events: Events to populate window
-        @type events:  List of HeuristicEvent instances
+        @type events:  List of Event instances
         '''
         assert isinstance(days, int)
         self.delta = datetime.timedelta(days=days)
         self.__events = []
         self.__patient = None
         for e in events:
-            assert isinstance(e, HeuristicEvent)
+            assert isinstance(e, Event)
             if not self.__patient:
                 self.__patient = e.patient
             self._check_event(e)
@@ -613,7 +613,7 @@ class Window(object):
     def _check_event(self, event):
         '''
         Raises OutOfWindow exception if event does not fit within this window
-        @type event:  HeuristicEvent instance
+        @type event:  Event instance
         '''
         if self.__events: # Cannot check date range if window has no events
             if not (event.date >= self.start) and (event.date <= self.end):
@@ -643,7 +643,7 @@ class Window(object):
             instance containing new + old events is returned.  If window does
             not fit, OutOfWindow exception is raised.
         @param event: Try to fit event into window
-        @type event:  HeuristicEvent
+        @type event:  Event
         '''
         self._check_event(event)
         new_events = self.events + [event]
@@ -681,7 +681,7 @@ class BaseEventPattern(object):
         
     def plausible_events(self, patients=None):
         '''
-        Returns a QuerySet of HeuristicEvent records which may plausibly match this pattern
+        Returns a QuerySet of Event records which may plausibly match this pattern
         '''
         raise NotImplementedError
         
@@ -696,7 +696,7 @@ class BaseEventPattern(object):
         @type patients:  ESP.emr.models.Patient QuerySet
         @param exclude: Exclude events already bound to this model
         @type exclude:  django.db.models.Model instance, which has this field:
-            events = models.ManyToManyField(HeuristicEvent)
+            events = models.ManyToManyField(Event)
         '''
         raise NotImplementedError
 
@@ -708,7 +708,7 @@ class BaseEventPattern(object):
         @type reference: Window instance
         @param exclude: Exclude events already bound to this model instance
         @type exclude: django.db.models.Model instance, which has this field:
-            events = models.ManyToManyField(HeuristicEvent)
+            events = models.ManyToManyField(Event)
         @return: set of Window instances
         '''
         raise NotImplementedError
@@ -738,19 +738,19 @@ class SimpleEventPattern(BaseEventPattern):
     
     def __init__(self, heuristic):
         from ESP.hef import events # Ensure events are loaded
-        if not heuristic in BaseHeuristic.list_heuristic_names():
+        if not heuristic in BaseHeuristic.list_heuristics():
             raise InvalidHeuristic('Unknown heuristic: %s' % heuristic)
         self.heuristic = heuristic
     
     def plausible_patients(self):
-        return Patient.objects.filter(heuristicevent__heuristic_name=self.heuristic).distinct()
+        return Patient.objects.filter(event__heuristic=self.heuristic).distinct()
     
     def plausible_events(self, patients=None):
         log.debug('Building plausible events query for %s' % self)
-        q_obj = Q(heuristic_name=self.heuristic)
+        q_obj = Q(heuristic=self.heuristic)
         if patients:
             q_obj = q_obj & Q(patient__in=patients)
-        return HeuristicEvent.objects.filter(q_obj)
+        return Event.objects.filter(q_obj)
     
     def generate_windows(self, days, patients=None, exclude_condition=None):
         log.debug('Generating windows for %s' % self)
@@ -777,7 +777,7 @@ class SimpleEventPattern(BaseEventPattern):
             self.__dated_events_cache[self.heuristic] = {}
         cache = self.__dated_events_cache[self.heuristic]
         if patient not in cache:
-            values = HeuristicEvent.objects.filter(heuristic_name=self.heuristic, patient=patient).values('pk', 'date')
+            values = Event.objects.filter(heuristic=self.heuristic, patient=patient).values('pk', 'date')
             log_query('Patient not found in cache -- querying database:', values)
             patient_dates = {}
             for val in values:
@@ -825,7 +825,7 @@ class SimpleEventPattern(BaseEventPattern):
             if (event_date > reference.end) or (event_date < reference.start):
                 continue
             event_pk = dated_events[event_date]
-            event = HeuristicEvent.objects.get(pk=event_pk)
+            event = Event.objects.get(pk=event_pk)
             win = reference.fit(event)
             matched_windows.add(win)
         return matched_windows
@@ -847,7 +847,7 @@ class ComplexEventPattern(BaseEventPattern):
         self.__sorted_pattern_cache = None
         assert operator in ('and', 'or')
         self.operator = operator
-        valid_heuristic_names = BaseHeuristic.list_heuristic_names()
+        valid_heuristic_names = BaseHeuristic.list_heuristics()
         self.patterns = []
         self.exclude = []
         for pat in patterns:
@@ -904,7 +904,7 @@ class ComplexEventPattern(BaseEventPattern):
             else: # 'or'
                 plausible = plausible | pat.plausible_patients()
         for heuristic in self.require_past:
-            plausible = plausible & Patient.objects.filter(heuristicevent__heuristic_name=heuristic).distinct()
+            plausible = plausible & Patient.objects.filter(event__heuristic=heuristic).distinct()
         log_query('Plausible patients for %s' % self, plausible)
         return plausible
     
@@ -1010,21 +1010,21 @@ class ComplexEventPattern(BaseEventPattern):
         @type win:  Window instance
         '''
         if self.exclude_past:
-            exclude_q = Q(patient=win.patient, heuristic_name__in=self.exclude_past, date__lt=win.start)
-            query = HeuristicEvent.objects.filter(exclude_q)
+            exclude_q = Q(patient=win.patient, heuristic__in=self.exclude_past, date__lt=win.start)
+            query = Event.objects.filter(exclude_q)
             log_query('Check exclude_past', query)
             if  query.count() > 0:
                 log.debug('Patient %s excluded by %s past events' % (win.patient, query.count()))
                 return False
         if self.require_past:
-            require_q = Q(patient=win.patient, heuristic_name__in=self.require_past, date__lt=win.start)
-            query = HeuristicEvent.objects.filter(require_q)
+            require_q = Q(patient=win.patient, heuristic__in=self.require_past, date__lt=win.start)
+            query = Event.objects.filter(require_q)
             log_query('Check require_past', query)
             if query.count() == 0:
                 log.debug('Patient %s excluded by lack of required past events' % win.patient)
                 return False
             else:
-                win.past_events += [e for e in HeuristicEvent.objects.filter(require_q)]
+                win.past_events += [e for e in Event.objects.filter(require_q)]
         #
         # Since self.exclude can include ComplexEventPatterns, it is by far the
         # most computationally expensive constraint check.  So we test it only 
