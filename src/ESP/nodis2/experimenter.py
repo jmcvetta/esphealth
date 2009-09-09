@@ -1,3 +1,4 @@
+from ESP.nodis2.defs import chlamydia
 import datetime
 import pprint
 import types
@@ -30,12 +31,13 @@ from ESP.hef2 import events
 from ESP.hef2.core import BaseHeuristic
 from ESP.hef2.models import HeuristicEvent
 from ESP.nodis.models import Case
+from ESP.nodis2.defs import chlamydia
 
 
 
 
 def main():
-    pass
+    print chlamydia.plausible_patients()
 
 
 if __name__ == '__main__':
