@@ -49,7 +49,7 @@ class Case(models.Model):
     #
     events = models.ManyToManyField(HeuristicEvent, blank=False) # The events that caused this case to be generated
     #
-    # Reportable Events
+    # Reportable Information
     #
     encounters = models.ManyToManyField(Encounter, blank=True, null=True)
     lab_results = models.ManyToManyField(LabResult, blank=True, null=True)

@@ -19,6 +19,40 @@ from ESP.nodis2.core import ComplexEventPattern
 from ESP.emr.models import Patient
 
 
+#-------------------------------------------------------------------------------
+#
+# Chlamydia
+#
+#-------------------------------------------------------------------------------
+
+chlamydia = ComplexEventPattern(
+    patterns = [
+        'chlamydia_pos',
+        ],
+    operator = 'and',
+    )
+
+
+#-------------------------------------------------------------------------------
+#
+# Gonorrhea
+#
+#-------------------------------------------------------------------------------
+
+gonorrhea = ComplexEventPattern(
+    patterns = [
+        'gonorrhea_pos',
+        ],
+    operator = 'and',
+    )
+
+
+#-------------------------------------------------------------------------------
+#
+# Hepatitis A/B/C
+#
+#-------------------------------------------------------------------------------
+
 jaundice_alt400 = ComplexEventPattern(
     patterns = [
         'jaundice',
