@@ -132,16 +132,6 @@ src/ESP/hef/models.py -text
 src/ESP/hef/run.py -text
 src/ESP/hef/tests.py -text
 src/ESP/hef/views.py -text
-src/ESP/hef2/__init__.py -text
-src/ESP/hef2/admin.py -text
-src/ESP/hef2/choices.py -text
-src/ESP/hef2/core.py -text
-src/ESP/hef2/events.py -text
-src/ESP/hef2/list_loincs.py -text
-src/ESP/hef2/models.py -text
-src/ESP/hef2/run.py -text
-src/ESP/hef2/tests.py -text
-src/ESP/hef2/views.py -text
 src/ESP/kettle/pdi_3_1_0.pg.sql -text
 src/ESP/localsettings.py.sample -text
 src/ESP/media/css/base.css -text

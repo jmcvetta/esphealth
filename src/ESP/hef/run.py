@@ -18,8 +18,8 @@ import optparse
 from django.db import connection
 
 
-from ESP.hef.core import BaseHeuristic
-from ESP.hef.events import * # Load all HeuristicEvent definitions
+from ESP.hef2.core import BaseHeuristic
+from ESP.hef2.events import * # Load all HeuristicEvent definitions
 from ESP import settings
 from ESP.utils.utils import log
 
