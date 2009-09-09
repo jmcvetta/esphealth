@@ -640,11 +640,27 @@ class Window(object):
     def fit(self, event):
         '''
         Try to fit a new event into the window.  If it fits, a *new* Window 
-        instance containing new + old events is returned
+            instance containing new + old events is returned.  If window does
+            not fit, OutOfWindow exception is raised.
+        @param event: Try to fit event into window
+        @type event:  HeuristicEvent
         '''
         self._check_event(event)
         new_events = self.events + [event]
         return Window(days=self.delta.days, events=new_events)
+    
+    def merge(self, other):
+        '''
+        Try to merge all events another window into this window.  If window 
+            does not fit, OutOfWindow exception is raised.
+        @param other: Window to be merged with this one
+        @type other:  Window instance
+        '''
+        win = other
+        for event in other.events:
+            win = self.fit(event)
+        return win
+        
 
     def __repr__(self):
         return 'Window %s - %s (%s events)' % (self.start, self.end, len(self.events))
@@ -889,6 +905,7 @@ class ComplexEventPattern(BaseEventPattern):
                 plausible = plausible | pat.plausible_patients()
         for heuristic in self.require_past:
             plausible = plausible & Patient.objects.filter(heuristicevent__heuristic_name=heuristic).distinct()
+        log_query('Plausible patients for %s' % self, plausible)
         return plausible
     
     def plausible_events(self, patients=None):
@@ -1023,4 +1040,33 @@ class ComplexEventPattern(BaseEventPattern):
         #
         log.debug('Patient %s passes constraint checks' % win.patient)
         return win
+    
+    def __process_stack(self, stack):
+        # This is an internal convenience method.  Do not under any 
+        # circumstances depend on its api staying constant.
+        cur_win = stack.pop(0)
+        distinct_windows = []
+        while stack:
+            for win in stack:
+                try:
+                    cur_win = cur_win.merge(win)
+                except OutOfWindow:
+                    pass # FIXME!
+            
+        for win in stack[1:]:
+            try:
+                cur_win = cur_win.merge(win)
+            except OutOfWindow:
+                pass # FIXME!
+                
+    
+    def generate_distinct_windows(self, days, repeat_after_days, exclude_condition=None):
+        stack = []
+        last_patient = None
+        for win in self.generate_windows(days=days, exclude=exclude_condition):
+            if win.patient == last_patient:
+                stack += [win]
+            else:
+                pass # Merge windows and yield
+                stack = [win] # Start a fresh stack
     
