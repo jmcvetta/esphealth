@@ -191,12 +191,11 @@ StringMatchLabHeuristic(
     )
 
 #--- hep_b_igm_order 
-StringMatchLabHeuristic(
+LabOrderedHeuristic(
     heuristic_name = 'hep_b_igm_order',
     def_name = 'Hep B IgM Order Event Definition 1',
     def_version = 1,
     loinc_nums = ['31204-1'],
-    strings = POSITIVE_STRINGS,
     )
 
 #--- hep_b_core_pos 
