@@ -146,7 +146,7 @@ ageChunksize = 5 #
 
 import os, sys, django, time, datetime
 from optparse import OptionParser
-sys.path.insert(0, '/home/ESP/')
+sys.path.insert(0, '/home/espss')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
