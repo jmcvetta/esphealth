@@ -856,7 +856,8 @@ class Condition(object):
         @param case: The case to update
         @type case:  Case instance
         '''
-        log.debug('Updating reportable events for case %s' % case)
+        log.debug('Updating case %s' % case)
+        counter = 0
         patient = case.patient
         date = case.date
         if self.recur_after == -1:
@@ -876,7 +877,9 @@ class Condition(object):
                 enc_q = enc_q & Q(date__lte = end_date)
             log.debug('enc_q: %s' % enc_q)
             encounters = Encounter.objects.filter(enc_q)
-            case.encounters = sets.Set(case.encounters.all()) | sets.Set(encounters)
+            new_encounters = sets.Set(case.encounters.all()) | sets.Set(encounters)
+            counter += ( len(new_encounters) - len(case.encounters.all()) )
+            case.encounters = new_encounters
         if self.lab_loinc_nums:
             lab_q = Q(patient = patient)
             lab_q = lab_q & Q(date__gte = (date - self.lab_days_before))
@@ -889,7 +892,9 @@ class Condition(object):
             # It's probably better to handle that in the case management UI,
             # where we could potentially show a history for each test, than 
             # here.
-            case.lab_results = sets.Set(case.lab_results.all()) | sets.Set(labs)
+            new_labs = sets.Set(case.lab_results.all()) | sets.Set(labs)
+            counter += ( len(new_labs) - len(case.lab_results.all()) )
+            case.lab_results = new_labs
         if self.med_names:
             med_q = Q(name__icontains = self.med_names[0])
             for name in self.med_names[1:]:
@@ -900,10 +905,13 @@ class Condition(object):
                 med_q = med_q & Q(date__lte = end_date)
             log.debug('med_q: %s' % med_q)
             medications = Prescription.objects.filter(med_q)
-            case.medications = sets.Set(case.medications.all()) | sets.Set(medications)
+            new_meds = sets.Set(case.medications.all()) | sets.Set(medications)
+            counter += ( len(new_meds) - len(case.medications.call()) )
+            case.medications = new_meds
         # Support for reporting immunizations has not yet been implemented
         case.save()
-        return case
+        log.debug('Updated case %s with %s new records' % (case, counter))
+        return counter
 
     @classmethod
     def update_all_cases(cls):
