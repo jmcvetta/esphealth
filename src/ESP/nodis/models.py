@@ -29,6 +29,15 @@ STATUS_CHOICES = [
     ]
 
 
+class Pattern(models.Model):
+    '''
+    Hash of the ComplexEventPattern used to generate a particular case
+    '''
+    hash = models.CharField(max_length=512, blank=False, null=False, unique=True, db_index=True)
+    name = models.CharField(max_length=64, blank=True, null=True, db_index=True)
+    created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
+    
+
 class Case(models.Model):
     '''
     A case of (reportable) disease
@@ -37,8 +46,7 @@ class Case(models.Model):
     condition = models.CharField(max_length=100, blank=False, db_index=True)
     provider = models.ForeignKey(Provider, blank=False)
     date = models.DateField(blank=False, db_index=True)
-    definition = models.CharField(max_length=100, blank=False)
-    def_version = models.IntegerField(blank=False)
+    pattern = models.ForeignKey(Pattern, blank=False, db_index=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='AR') # Is it sensible to have default here?
     # Timestamps:
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
