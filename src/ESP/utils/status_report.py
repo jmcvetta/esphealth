@@ -55,7 +55,7 @@ from ESP.emr.models import Provenance
 #from ESP.emr.models import Hl7Message
 from ESP.nodis.models import Case
 from ESP.nodis import defs
-from ESP.nodis.core import Disease
+from ESP.nodis.core import Condition
 from ESP.utils.utils import log
 
 
@@ -81,16 +81,15 @@ def case_summary(template):
     Returns string containing count of cases by condition.
     '''
     out = []
-    for dis in Disease.get_all_diseases():
-        condition = dis.name
-        count = Case.objects.filter(condition=condition).count()
-        out += [template % (condition, count)]
+    for con in Condition.list_all_condition_names():
+        count = Case.objects.filter(condition=con).count()
+        out += [template % (con, count)]
     return '\n'.join(out)
     
     
 
 def populate_values():
-    lengths = [len(dis.name) for dis in Disease.get_all_diseases()]
+    lengths = [len(con) for con in Condition.list_all_condition_names()]
     lengths.sort()
     output_template = '%%%ss: %%s' % str(lengths[-1] + 2)
     values = {}
