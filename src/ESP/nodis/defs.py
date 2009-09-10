@@ -11,10 +11,14 @@
 '''
 
 import pprint
+
 from django.db import connection
+
+from ESP.settings import DEFAULT_REPORTABLE_ICD9S
 from ESP.hef import events
 from ESP.hef.core import BaseHeuristic
 from ESP.nodis.core import ComplexEventPattern
+from ESP.nodis.core import Condition
 from ESP.emr.models import Patient
 
 
@@ -80,6 +84,7 @@ no_hep_b = ComplexEventPattern(
     )
 
 hep_c_1 = ComplexEventPattern(
+    name = 'Acute Hepatitis C pattern #1', # Name is optional, but desirable on top-level patterns
     patterns = [
         jaundice_alt400,    # (1 or 2)
         'hep_c_elisa_pos',  # 3 positive
@@ -99,4 +104,32 @@ hep_c_1 = ComplexEventPattern(
         ],
     operator = 'and',
     )
+
+
+hep_c = Condition(
+    name = 'acute_hep_c',
+    patterns = [hep_c_1, ],
+    match_window = 28, # days
+    recur_after = -1, # Never recur
+    icd9s = DEFAULT_REPORTABLE_ICD9S,
+    icd9_days_before = 14,
+    fever = True,
+    lab_loinc_nums = [
+        '16128-1',
+        'MDPH-144',
+        '6422-0',
+        '10676-5',
+        '34704-7',
+        '38180-6',
+        '5012-0',
+        '11259-9',
+        '20416-4',
+        '34703-9',
+        '1742-6',
+        '31204-1',
+        '22314-9',
+        ],
+    lab_days_before = 28,
+    )
+
 
