@@ -277,15 +277,15 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
             ageCounts.setdefault(age,0)
             ageCounts[age] += 1
             z = z[:zl] # corresponding zip
-            dz = dateAgecounts.setdefault(thisd,{})
-            az = dateAgecounts[thisd].setdefault(z,{})
-            naz = dateAgecounts[thisd][z].setdefault(age,0)
-            dateAgecounts[thisd][z][age] += 1
-            dz = dateCounts.setdefault(thisd,{})
+            dz = dateAgecounts.setdefault(thisd,{}) # date zip totals or empty dict
+            az = dateAgecounts[thisd].setdefault(z,{}) # date,zip totals
+            naz = dateAgecounts[thisd][z].setdefault(age,0) # date,zip,age totals
+            dateAgecounts[thisd][z][age] += 1 # countme
+            dz = dateCounts.setdefault(thisd,{}) # one level up 
             az = dateCounts[thisd].setdefault(z,0)
             dateCounts[thisd][z] += 1
             siteZip = localSiteZips.get(siteCode,'Unknown')
-            dateSitecounts.setdefault(thisd,{})
+            dateSitecounts.setdefault(thisd,{}) # counts by sitezip rather than residential zip
             dateSitecounts[thisd].setdefault(siteZip,{}) # eeesh.
             dateSitecounts[thisd][siteZip].setdefault(age,0)
             dateSitecounts[thisd][siteZip][age] += 1
@@ -798,7 +798,7 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5,
     eg date zip all 0 5..80 85
     limit to zips with > 10 cases over entire period arbitrarily
     """
-    limit = 10
+    limit = 0
     fproto = os.path.join(outdir,'ESP%s_AllEnc_zip%d_%s_%s_%s_%s.xls')
     localIgnore = 1
     ziplen = 5
@@ -820,9 +820,9 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5,
         for z in zk:
             allsz.setdefault(z,0) # keep trac of site zips
             allsz[z] += 1
-    rzk = [x for x in allrz.keys() if x > limit] # ignore very rarely reported zips
-    szk = [x for x in allsz.keys() if x > limit]
-    rzk.sort()
+    rzk = allrz.keys()
+    szk = allsz.keys()
+    rzk.sort() # zip lists for entire duration of report
     szk.sort()
     for d in dk: # now make report with empty days and zips!
         dd = encDateAgeVols.get(d,{})
