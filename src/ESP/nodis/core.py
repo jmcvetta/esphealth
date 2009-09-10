@@ -670,13 +670,12 @@ class Condition(object):
     all_conditions = property(__get_all_conditions)
     
     @classmethod
-    def __get_all_condition_names(cls):
+    def list_all_condition_names(cls):
         '''
         Get name of all registered conditions
         @return: List of strings
         '''
         return cls.__registry.keys()
-    all_condition_names = property(__get_all_condition_names)
     
     @classmethod
     def get_condition(cls, name):
