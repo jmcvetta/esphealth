@@ -260,9 +260,10 @@ class SimpleEventPattern(BaseEventPattern):
         events = self.plausible_events(patients=patients)
         if exclude_condition:
             assert isinstance(exclude_condition, str) # Sanity checks
-            cases = Case.objects.filter(condition=exclude_condition)
-            pks = CaseEvents.objects.filter(case__in=cases).values_list('pk', flat=True).distinct()
-            q_obj = ~Q(pk__in=pks)
+            #cases = Case.objects.filter(condition=exclude_condition)
+            #pks = CaseEvents.objects.filter(case__in=cases).values_list('pk', flat=True).distinct()
+            ex_pks = self._get_excluded_event_pks(exclude_condition=exclude_condition)
+            q_obj = ~Q(pk__in=ex_pks)
             events = events.filter(q_obj)
         for e in events:
             yield Window(days=days, events=[e])
@@ -299,10 +300,10 @@ class SimpleEventPattern(BaseEventPattern):
         log.debug('Retrieve excluded event PKs for %s' % exclude_condition)
         if not self.heuristic in self.__excluded_events_cache:
             self.__excluded_events_cache[self.heuristic] = {}
-        cache = self.__dated_events_cache[self.heuristic]
+        cache = self.__excluded_events_cache[self.heuristic]
         if exclude_condition not in cache:
             cases = Case.objects.filter(condition=exclude_condition)
-            pks = CaseEvents.objects.filter(case__in=cases).values_list('pk', flat=True).distinct()
+            pks = Event.objects.filter(case__in=cases).values_list('pk', flat=True).distinct()
             log_query('Excluded condition not found in cache -- querying database:', pks)
             pks = set(pks)
             cache[exclude_condition] = pks
@@ -755,7 +756,7 @@ class Condition(object):
                 queue = self.__update_case_queue(queue, window, pattern)
         return queue.values()
     
-    def __update_case_queue(self, queue, window):
+    def __update_case_queue(self, queue, window, pattern):
         '''
         Update queue with window, if window is newer than any case for the 
         same patient already in queue, or if no cases for said patient are
@@ -764,11 +765,11 @@ class Condition(object):
         patient = window.patient
         # If patient has no windows in queue, add this one and return
         if patient not in queue:
-            queue[patient] = window
+            queue[patient] = (window, pattern)
             return queue
         # Determine if this window is newer than queued window
-        if queue[patient].date > window.date:
-            queue[patient] = window
+        if queue[patient][0].start > window.start:
+            queue[patient] = (window, pattern)
         return queue
                     
     def __overlaps_existing(self, window):
@@ -792,7 +793,7 @@ class Condition(object):
         delta = datetime.timedelta(days=self.recur_after)
         for date in self.__existing[window.patient]:
             recur_after_date = date + delta
-            if (window.date >= date) and (window.date < recur_after_date):
+            if (window.start >= date) and (window.start < recur_after_date):
                 return True
         # Window did not overlap any existing case
         return False
