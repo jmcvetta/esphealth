@@ -656,7 +656,7 @@ class Condition(object):
             self.__registry[self.name] = self
 
     @classmethod
-    def __get_all_conditions(cls):
+    def all_conditions(cls):
         '''
         Get all registered conditions
         @return: List of Condition instances
@@ -667,7 +667,6 @@ class Condition(object):
         [result.extend([cls.__registry[k]]) for k in keys]
         log.debug('All Disease Definition instances: %s' % result)
         return result
-    all_conditions = property(__get_all_conditions)
     
     @classmethod
     def list_all_condition_names(cls):
@@ -801,6 +800,7 @@ class Condition(object):
         '''
         Refreshes cache of existing cases
         '''
+        self.__existing[None] = None # Populate the dictionary to avoid repeat calls
         log.debug('Populating cache of existing %s cases' % self.name)
         self.__existing = {}
         for item in Case.objects.filter(condition=self.name).values_list('patient', 'date'):
@@ -837,7 +837,7 @@ class Condition(object):
         '''
         counter = {}# Counts how many total new records have been created
         total = 0
-        for definition in cls.get_all_diseases():
+        for definition in cls.all_conditions():
             counter[definition.name] = definition.generate_cases()
         log.info('=' * 80)
         log.info('New Cases Generated')
@@ -905,7 +905,7 @@ class Condition(object):
             log.debug('med_q: %s' % med_q)
             medications = Prescription.objects.filter(med_q)
             new_meds = sets.Set(case.medications.all()) | sets.Set(medications)
-            counter += ( len(new_meds) - len(case.medications.call()) )
+            counter += ( len(new_meds) - len(case.medications.all()) )
             case.medications = new_meds
         # Support for reporting immunizations has not yet been implemented
         case.save()
