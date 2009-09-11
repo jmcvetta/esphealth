@@ -15,7 +15,9 @@ import pprint
 from django.db import connection
 
 from ESP.settings import DEFAULT_REPORTABLE_ICD9S
-from ESP.hef import events
+from ESP.hef import events # Load events
+from ESP.hef.events import CHLAMYDIA_LOINCS
+from ESP.hef.events import GONORRHEA_LOINCS
 from ESP.hef.core import BaseHeuristic
 from ESP.nodis.core import ComplexEventPattern
 from ESP.nodis.core import Condition
@@ -28,12 +30,51 @@ from ESP.emr.models import Patient
 #
 #-------------------------------------------------------------------------------
 
-chlamydia = ComplexEventPattern(
+chlamydia_1 = ComplexEventPattern(
+    name = 'Chlamydia pattern #1',
     patterns = [
         'chlamydia_pos',
         ],
     operator = 'and',
     )
+
+chlamydia = Condition(
+    name = 'chlamydia',
+    patterns = [chlamydia_1,],
+    match_window = 1, # Irrelevant -- single test is match
+    recur_after = 28, # New cases after 28 days
+    icd9s = [
+        '788.7',
+        '099.40',
+        '597.80',
+        '780.6A',
+        '616.0',
+        '616.10',
+        '623.5',
+        '789.07',
+        '789.04',
+        '789.09',
+        '789.03',
+        '789.00',
+        ],
+    icd9_days_before = 14,
+    fever = True,
+    med_names = [
+        'azithromycin',
+        'levofloxacin',
+        'ofloxacin',
+        'ciprofloxacin',
+        'doxycycline',
+        'eryrthromycin',
+        'amoxicillin',
+        'EES',
+        ],
+    med_days_before = 7,
+    # Report both Chlamydia and Gonorrhea labs
+    lab_loinc_nums = CHLAMYDIA_LOINCS + GONORRHEA_LOINCS,
+    lab_days_before = 30,
+    )
+
 
 
 #-------------------------------------------------------------------------------
@@ -42,11 +83,50 @@ chlamydia = ComplexEventPattern(
 #
 #-------------------------------------------------------------------------------
 
-gonorrhea = ComplexEventPattern(
+gonorrhea_1 = ComplexEventPattern(
+    name = 'Gonorrhea pattern #1',
     patterns = [
         'gonorrhea_pos',
         ],
     operator = 'and',
+    )
+
+gonorrhea = Condition(
+    name = 'gonorrhea',
+    patterns = [gonorrhea_1,],
+    match_window = 1, # Irrelevant -- single test is match
+    recur_after = 28, # New cases after 28 days
+    icd9s = [
+        '788.7',
+        '099.40',
+        '597.80',
+        '616.0',
+        '616.10',
+        '623.5',
+        '789.07',
+        '789.04',
+        '789.09',
+        '789.03',
+        '789.00',
+        ],
+    icd9_days_before = 14,
+    fever = True,
+    lab_loinc_nums = GONORRHEA_LOINCS, 
+    lab_days_before = 28,
+    med_names = [
+        'amoxicillin',
+        'cefixime',
+        'cefotaxime',
+        'cefpodoxime',
+        'ceftizoxime',
+        'ceftriaxone',
+        'gatifloxacin',
+        'levofloxacin',
+        'ofloxacin',
+        'spectinomycin',
+        'moxifloxacin',
+        ],
+    med_days_before = 7,
     )
 
 
