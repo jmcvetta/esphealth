@@ -28,7 +28,7 @@ urlpatterns = patterns(
     url(r'^vaers/', include('ESP.vaers.urls')),
 
     # Syndromic Surveillance
-    url(r'^syndrome/', include('ESP.ss.urls')),
+    url(r'^ss/', include('ESP.ss.urls')),
 
     
     # Login and Logout

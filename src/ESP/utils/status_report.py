@@ -90,6 +90,7 @@ def case_summary(template):
 
 def populate_values():
     lengths = [len(con) for con in Condition.list_all_condition_names()]
+    if not lengths: return {}  # Empty dict
     lengths.sort()
     output_template = '%%%ss: %%s' % str(lengths[-1] + 2)
     values = {}

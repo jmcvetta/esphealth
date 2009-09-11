@@ -1,3 +1,20 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+SYNDROME_NAMES = {
+        'ili': 'Influenza-Like Illness',
+        'haemotological': 'Haematological',
+        'lymphatic': 'Lymphatic',
+        'rash': 'Rash',
+        'lesions': 'Lesions',
+        'respiratory': 'Respiratory',
+        'lower_gi': 'Lower GI',
+        'upper_gi': 'Upper_GI',
+        'neuro': 'Neurorological'
+        }
+
+
+
 # some data structures for developing
 # esp:ss
 # NOTE - the site exclusion complexitiesre ATRIUS specific and will need to be

@@ -3,10 +3,7 @@
 
 <head>
     <title>
-        {% if title %}
-        {{ title }} -
-        {% endif %}
-        Electronic Support for Public Health
+        {% if title %}{{ title }} -{% endif %} Electronic Support for Public Health
     </title>
 
     <link href="{{ site_css_folder }}base.css" rel="stylesheet" type="text/css" />
@@ -95,9 +92,7 @@
     {% endif %}
 
     <div id="content">
-        <h1 id="title">
-            {{ title }}
-        </h1>
+        <h1 id="title">{{ title }}</h1>
 
 	{% if messages %}
 	<div id="messages">

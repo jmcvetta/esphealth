@@ -44,7 +44,7 @@ def main():
     if options.events:
         for heuristic in syndrome_heuristics().values():
             log.info('Generating events for %s' % heuristic.heuristic_name)
-            heuristic.generate_events(begin_date=begin_date, end_date=end_date)
+            heuristic.generate_events(incremental=False, begin_date=begin_date, end_date=end_date)
             
     if options.reports:
         current_day = begin_date

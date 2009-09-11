@@ -199,6 +199,7 @@ src/ESP/media/js/jqModal.js -text
 src/ESP/media/js/jquery-1.3.1.js -text
 src/ESP/media/js/jquery-1.3.2.min.js -text
 src/ESP/media/js/jquery.livequery.js -text
+src/ESP/media/js/syndrome_map.js -text
 src/ESP/media/js/vaers.js -text
 src/ESP/nodis/__init__.py -text
 src/ESP/nodis/admin.py -text
@@ -227,6 +228,7 @@ src/ESP/ss/main.py -text
 src/ESP/ss/models.py -text
 src/ESP/ss/reports.py -text
 src/ESP/ss/run.py -text
+src/ESP/ss/settings.py -text
 src/ESP/ss/urls.py -text
 src/ESP/ss/utils.py -text
 src/ESP/ss/views.py -text

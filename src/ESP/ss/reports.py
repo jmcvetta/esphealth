@@ -38,11 +38,8 @@ def total_residential_encounters_report(date):
     filename = os.path.join(REPORT_FOLDER, ENCOUNTERS_BY_RESIDENTIAL_ZIP_FILENAME % (timestamp, timestamp))
     log.debug('Writing file %s' % filename)
 
-
-    # Find the residential zip codes that had any event and will be part of the report.
-    # If the list is empty, there is nothing to report.
-    zip_codes = NonSpecialistVisitEvent.objects.filter(date=date).values_list(
-        'patient_zip_code', flat=True).distinct().order_by('patient_zip_code')
+    zip_codes = Encounter.objects.filter(date=date).values_list(
+        'patient__zip', flat=True).distinct().order_by('patient__zip')
 
     outfile = open(filename, 'w')
     outfile.write('\t'.join(header) + '\n')
@@ -56,8 +53,6 @@ def total_residential_encounters_report(date):
         volume = sum(counts_by_age)
         
         log.info('volume: %d' % volume)
-
-        if not volume: continue
 
         summary = [timestamp, zip_code, str(volume)]
         line = '\t'.join(summary + [str(x) for x in counts_by_age])
@@ -85,7 +80,7 @@ def total_site_encounters_report(date):
 
         summary = [timestamp, zip_code, str(volume)]
         line = '\t'.join(summary + [str(x) for x in counts_by_age])
-        log.debug(line)
+        log.info(line)
         outfile.write(line + '\n')
         
 

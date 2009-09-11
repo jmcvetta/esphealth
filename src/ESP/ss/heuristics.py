@@ -15,6 +15,7 @@ from definitions import ICD9_FEVER_CODES
 from definitions import influenza_like_illness, haematological, lesions, rash
 from definitions import lymphatic, lower_gi, upper_gi, neurological, respiratory
 
+
 # According to the specs, all of the syndromes have their specific
 # lists of icd9 codes that are always required as part of the
 # definition. They could've been simply defined as encounter
@@ -217,4 +218,6 @@ def syndrome_heuristics():
         'upper_gi':upper_gi,
         'neuro':neuro
     }
+
+
 
