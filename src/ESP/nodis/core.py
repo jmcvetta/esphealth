@@ -319,7 +319,7 @@ class SimpleEventPattern(BaseEventPattern):
         #
         if exclude_condition:
             ex_pks = self._get_excluded_event_pks(exclude_condition)
-            for date in dated_events:
+            for date in dated_events.keys():
                 pk = dated_events[date]
                 if pk in ex_pks:
                     del dated_events[date]
@@ -841,6 +841,8 @@ class Condition(object):
                 self.__existing[patient] += [date]
             else:
                 self.__existing[patient] = [date]
+        if len(self.__existing) > CACHE_WARNING_THRESHOLD:
+            log.warning('Cache size exceeds warning threshold: %s' % len(self.__existing))
 
     def purge_db(self):
         '''
