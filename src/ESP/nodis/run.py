@@ -21,7 +21,7 @@ from django.db import connection
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
-from ESP.nodis.core import Disease
+from ESP.nodis.core import Condition
 from ESP.nodis import defs  # Register definitions
 
     
@@ -48,8 +48,8 @@ def main():
         help='Generate generate new cases and update existing cases')
     parser.add_option('--regenerate', action='store_true', dest='regenerate', 
         help='Purge and regenerate cases')
-    parser.add_option('--disease', action='store', dest='disease', type='string',
-        metavar='NAME', help='Generate new cases for disease NAME only')
+    parser.add_option('--condition', action='store', dest='condition', type='string',
+        metavar='NAME', help='Generate new cases for condition NAME only')
     (options, args) = parser.parse_args()
     log.debug('options: %s' % options)
     #
@@ -63,37 +63,28 @@ def main():
         sys.stderr.write(msg)
         parser.print_help()
         sys.exit()
-    if options.disease:
-        diseases = [Disease.get_disease_by_name(options.disease)]
-        if not diseases:
+    if options.condition:
+        conditions = [Condition.get_condition(options.disease)]
+        if not conditions:
             msg = '\nNo disease registered with name "%s".\n' % options.disease
             sys.stderr.write(msg)
             sys.exit()
     else:
-        diseases = Disease.get_all_diseases()
+        conditions = Condition.all_conditions()
     if options.cases:
-        for dis in diseases:
-            dis.generate_cases()
+        for c in conditions:
+            c.generate_cases()
     if options.update:
-        for dis in diseases:
-            dis.update_all_cases()
+        for c in conditions:
+            c.update_all_cases()
     if options.regenerate:
-        for dis in diseases:
-            dis.regenerate()
+        for c in conditions:
+            c.regenerate()
     if not (options.cases or options.update or options.regenerate):
         parser.print_help()
 
 
-def experiment():
-    #defs.hep_b_1.matches()
-    #defs.hep_b_2.matches()
-    print defs.hep_b_3.matches()
-    #defs.gonorrhea_crit_1.matches()
-    #defs.hep_b.generate_cases()
-
-
 if __name__ == '__main__':
     main()
-    #experiment()
     print 'Total Number of DB Queries: %s' % len(connection.queries)
     #pprint.pprint(connection.queries)
