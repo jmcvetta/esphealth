@@ -59,9 +59,7 @@ def log_query(purpose, qs):
     '''
     assert isinstance(qs, QuerySet)
     statement, args = qs.query.as_sql()
-    print args
     quoted_args = tuple(["'%s'" % a for a in args])
-    print quoted_args
     sql = statement % quoted_args
     log.debug(purpose)
     log.debug(sql)
