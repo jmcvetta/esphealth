@@ -347,7 +347,23 @@ class ComplexEventPattern(BaseEventPattern):
     An event pattern composed of one or more SimpleEventPattern or 
     ComplexEventPattern instances.  
     '''
-    def __init__(self, operator, patterns, name=None, require_past=[], exclude=[], exclude_past=[]):
+    def __init__(self, operator, patterns, name=None, require_past=[], require_past_window=None, exclude=[], exclude_past=[]):
+        '''
+        @param operator: Logical operator for combining patterns 
+        @type operator:  String ('and' or 'or')
+        @param patterns: Patterns to search for
+        @type patterns:  String naming heuristic event, or ComplexEventPattern instance
+        @param name: Name of this pattern (optional)
+        @type name:  String
+        @param require_past: Require these events in past
+        @type require_past:  String naming a heuristic event
+        @param require_past_window: Optionally limit require_past look back to this many days before event window
+        @type require_past_window:  Integer (number of days)
+        @param exclude: Exclude this pattern within match window
+        @type exclude:  String naming heuristic event, or ComplexEventPattern instance
+        @param exclude_past: Exclude these events in past
+        @type exclude_past:  String naming a heuristic event
+        '''
         operator = operator.lower()
         self.__sorted_pattern_cache = None
         assert operator in ('and', 'or')
@@ -379,12 +395,17 @@ class ComplexEventPattern(BaseEventPattern):
                 log.error('\t%s' % valid_heuristic_names)
                 raise InvalidPattern('%s [%s]' % (name, type(name)))
         self.require_past = require_past
+        if require_past_window:
+            self.require_past_window = datetime.timedelta(days=require_past_window)
+        else:
+            self.require_past_window = None
         self.exclude_past = exclude_past
         self.__pattern_obj = None # Cache 
         log.debug('Initializing new ComplexEventPattern instance')
         log.debug('    operator:    %s' % operator)
         log.debug('    patterns:    %s' % patterns)
         log.debug('    require_past:  %s' % require_past)
+        log.debug('    require_past_window:  %s' % require_past_window)
         log.debug('    exclude:  %s' % exclude)
         log.debug('    exclude_past:  %s' % exclude_past)
     
@@ -403,6 +424,8 @@ class ComplexEventPattern(BaseEventPattern):
                 h += '(%s)' % op_delim.join([pat.string_hash for pat in self.require_past])
             else:
                 h += '%s' % self.require_past[0]
+        if self.require_past_window:
+            h += ' WITHIN %s DAYS ' % self.require_past_window.days
         if self.exclude_past:
             h += ' EXCLUDE PAST '
             if len(self.exclude_past) > 1:
@@ -414,8 +437,11 @@ class ComplexEventPattern(BaseEventPattern):
     string_hash = property(__get_string_hash)
     
     def plausible_patients(self):
-        plausible = self.patterns[0].plausible_patients()
-        for pat in self.patterns[1:]:
+        plausible = None
+        for pat in self.patterns:
+            if not plausible:
+                plausible = pat.plausible_patients()
+                continue
             if self.operator == 'and':
                 plausible = plausible & pat.plausible_patients()
             else: # 'or'
@@ -428,8 +454,11 @@ class ComplexEventPattern(BaseEventPattern):
     def plausible_events(self, patients=None):
         log.debug('Building plausible events query for %s' % self)
         patients = self.plausible_patients()
-        plausible = self.patterns[0].plausible_events(patients=patients)
-        for pat in self.patterns[1:]:
+        plausible = None
+        for pat in self.patterns:
+            if not plausible:
+                plausible = pat.plausible_events(patients=patients)
+                continue
             if self.operator == 'and':
                 plausible = plausible & pat.plausible_events(patients=patients)
             else: # 'or'
@@ -535,6 +564,9 @@ class ComplexEventPattern(BaseEventPattern):
                 return False
         if self.require_past:
             require_q = Q(patient=win.patient, heuristic__in=self.require_past, date__lt=win.start)
+            if self.require_past_window:
+                lookback_start = win.start - self.require_past_window
+                require_q = Q(date__gte=lookback_start)
             query = Event.objects.filter(require_q)
             log_query('Check require_past', query)
             if query.count() == 0:
@@ -583,7 +615,6 @@ class Condition(object):
     def __init__(self,
         name,
         patterns,
-        match_window,
         recur_after,
         # Reporting
         icd9s = [],
@@ -600,8 +631,9 @@ class Condition(object):
             forming part of a disease's definition are reported.
         @param name:             Name of this disease definition
         @type name:              String
-        @param patterns:         Condition is defined as matching one or more pattern
-        @type patterns:          List of BaseEventPattern child instances
+        @param patterns:         Patterns and match windows that define this condition
+        @type patterns:          List of (BaseEventPattern, Integer) tuples, 
+                                 where integer is length (in days) of match window
         @param match_window:     Length (in days) of window in which pattern(s) must match
         @type match_window:      Integer
         @param recur_after:      Matches at least this many days after last case, count as 
@@ -623,19 +655,19 @@ class Condition(object):
         @type med_days_before:   Integer
         '''
         assert name
-        assert isinstance(match_window, int)
         assert isinstance(recur_after, int)
         assert ' ' not in name # No spaces allowed in disease name
         assert icd9_days_before
         assert lab_days_before
         assert med_days_before
         self.name = name
-        self.match_window = match_window
         self.recur_after = recur_after
-        self.patterns = []
-        for pat in patterns:
+        self.patterns = {}
+        for pat, days in patterns:
+            if not isinstance(days, int):
+                raise InvalidPattern('Match window must be an integer; but you specified "%s"' % days)
             if isinstance(pat, BaseEventPattern):
-                self.patterns.append(pat)
+                self.patterns[pat] = days
             else:
                 raise InvalidPattern('Pattern not an instance of BaseEventPattern: %s' % pat)
         self.icd9s = icd9s
@@ -747,7 +779,7 @@ class Condition(object):
         #
         queue = {} # {Patient: (Window, ComplexEventPattern), ...}
         for pattern in self.patterns:
-            for window in pattern.generate_windows(days=self.match_window, exclude_condition=self.name):
+            for window in pattern.generate_windows(days=self.patterns[pattern], exclude_condition=self.name):
                 p = window.patient
                 if self.__overlaps_existing(window):
                     continue
