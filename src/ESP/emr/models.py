@@ -565,7 +565,7 @@ class LabResultManager(models.Manager):
         log.debug('Querying lab results by LOINC')
         log.debug('LOINCs: %s' % loinc_nums)
         native_codes = NativeCode.objects.filter(loinc__in=loinc_nums).values_list('native_code', flat=True)
-        log.debug('Native Codes: %s' % native_codes)
+        #log.debug('Native Codes: %s' % native_codes)
         return LabResult.objects.filter(native_code__in=native_codes, **kwargs)
 
     
