@@ -166,9 +166,26 @@ class Window(object):
             win = self.fit(event)
         return win
         
-
     def __repr__(self):
         return 'Window %s - %s (%s events)' % (self.start, self.end, len(self.events))
+        
+    def overlaps(self, dates, recurance_interval):
+        '''
+        Test whether window overlaps a set of reference dates
+        @param reference: Dates to check for overlap
+        @type reference: Iterable set of datetime.date objects
+        @param recurance_interval: Number of days from case until a condition can recur
+        @type recurance_interval:  Integer
+        @return: Boolean
+        '''
+        log.debug('Checking window %s for overlap' % window)
+        log.debug('Reference dates: %s' % reference)
+        delta = datetime.timedelta(days=recurance_interval)
+        for d in dates:
+            recur_date = d + delta
+            if (window.start >= d) and (window.start < recur_date):
+                return True
+        return False
 
 
 
@@ -778,55 +795,44 @@ class Condition(object):
         #
         #
         queue = {} # {Patient: (Window, ComplexEventPattern), ...}
+        plausible = None # Plausible patients for all patterns combined
+        #
+        # We will loop over the list of all plausible patients for all patterns combined, 
+        # so we need only consider one patient at a time
+        #
         for pattern in self.patterns:
-            for window in pattern.generate_windows(days=self.patterns[pattern], exclude_condition=self.name):
-                p = window.patient
-                if self.__overlaps_existing(window):
-                    continue
-                queue = self.__update_case_queue(queue, window, pattern)
-        return queue.values()
-    
-    def __update_case_queue(self, queue, window, pattern):
-        '''
-        Update queue with window, if window is newer than any case for the 
-        same patient already in queue, or if no cases for said patient are
-        in queue.  
-        '''
-        patient = window.patient
-        # If patient has no windows in queue, add this one and return
-        if patient not in queue:
-            queue[patient] = (window, pattern)
-            return queue
-        # Determine if this window is newer than queued window
-        if queue[patient][0].start > window.start:
-            queue[patient] = (window, pattern)
-        return queue
-                    
-    def __overlaps_existing(self, window):
-        '''
-        Does a given window overlap any existing windows?
-        @param window: Check this window for overlap with existing cases
-        @type window:  Window instance
-        @return: Boolean
-        '''
-        log.debug('Checking %s for overlap with existing cases of %s' % (window, self.name))
-        # If cache of existing cases is empty, populate it
-        if not self.__existing: 
-            self.populate_existing_case_cache()
-        # If no existing cases for patient, no overlap is possible
-        if not window.patient in self.__existing:
-            return False
-        # If a case already exists, and the condition cannot recur, then all future cases overlap
-        if self.recur_after == -1:
-            return True
-        # If patient has existing cases, we test each case date for overlap
-        delta = datetime.timedelta(days=self.recur_after)
-        for date in self.__existing[window.patient]:
-            recur_after_date = date + delta
-            if (window.start >= date) and (window.start < recur_after_date):
-                return True
-        # Window did not overlap any existing case
-        return False
+            if not plausible:
+                plausible = pattern.plausible_patients()
+            else:
+                plausible += pattern.plausible_patients()
+        for patient in plausible.order_by('pk'):
+            queue = []
+            existing_cases = Case.objects.filter(condition=self.name, patient=patient)
+            existing_case_dates = existing_cases.values('date', flat=True)
+            if existing_case_dates and (self.recur_after == -1):
+                # Case already exists, and condition cannot recur -- all future cases overlap
+                continue
+            #
+            # For each patient, we will examine try to match each pattern
+            #
+            for pattern in self.patterns:
+                for window in pattern.generate_windows(days=self.patterns[pattern],  
+                    patients=[patient],  exclude_condition=self.name):
+                    if window.overlaps(existing_case_dates, self.recur_after):
+                        continue # 
+                    else:
+                        queue.append(window)
+            #
+            queue.sort(lambda x, y: (x.date - y.date).days) # Sort by date
+            valid_windows = [queue[0]]
+            #
+            for win in queue:
+                if window.overlaps(valid_windows, self.recur_after):
+                    continue 
+                else:
+                    valid_windows.append(win)
+            for win in valid_windows:
+                yield win
     
     def populate_existing_case_cache(self):
         '''
@@ -957,7 +963,6 @@ class Condition(object):
             existing_cases = Case.objects.filter(q_obj)
             for case in existing_cases:
                 definition.update_case(case)
-
 
 
 
