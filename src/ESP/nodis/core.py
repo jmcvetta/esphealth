@@ -826,6 +826,7 @@ class Condition(object):
             #
             # For each patient, queue up windows that match any pattern
             #
+            window_patterns = {} # {Window: ComplexEventPattern}
             for pattern in self.patterns:
                 for window in pattern.generate_windows(days=self.patterns[pattern],  
                     patients=[patient],  exclude_condition=self.name):
@@ -835,16 +836,20 @@ class Condition(object):
                     else:
                         log.debug('Window added to queue')
                         queue.append(window)
-            #
+                        window_patterns[window] = pattern
             if not queue:
                 continue # no windows for this patient
             queue.sort(lambda x, y: (x.start - y.start).days) # Sort by date
-            valid_windows = [queue[0]]
+            if self.recur_after == -1:
+                log.debug('Disease cannot recur, so limiting queue to the earliest window')
+                queue = [queue[0]]
+            else:
+                log.debug('Examining queue')
             #
             # Winnow down queue to a list of valid windows
             #
-            log.debug('Examining queue')
-            for win in queue:
+            valid_windows = [queue[0]]
+            for win in queue[1:]:
                 log.debug('valid windows: %s' % valid_windows)
                 log.debug('examining window: %s' % win)
                 if window.overlaps([w.start for w in valid_windows], self.recur_after):
@@ -858,7 +863,7 @@ class Condition(object):
             # Yield valid windows -- in date order :)
             #
             for win in valid_windows:
-                yield win
+                yield (win, window_patterns[win])
     
     def purge_db(self):
         '''
