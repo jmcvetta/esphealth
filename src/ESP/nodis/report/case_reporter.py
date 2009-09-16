@@ -1,7 +1,7 @@
 '''
                                   ESP Health
                          Notifiable Diseases Framework
-                                Case Exporter
+                                 Case Reporter
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
 @organization: Channing Laboratory http://www.channing.harvard.edu
