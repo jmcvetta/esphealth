@@ -282,47 +282,27 @@ class SimpleEventPattern(BaseEventPattern):
         monitor_heap()
         return qs
     
-    def plausible_events(self, patients=None):
+    def plausible_events(self, patients=None, exclude_condition=None):
+        #
+        # TODO: Performance can be improved by handling exclude_condition here
+        #
         log.debug('Building plausible events query for %s' % self)
         q_obj = Q(heuristic=self.heuristic)
         if patients:
             q_obj = q_obj & Q(patient__in=patients)
+        if exclude_condition:
+            q_obj = q_obj & ~Q(case__condition=exclude_condition)
+        events = Event.objects.filter(q_obj)
+        log_query('Querying plausible events for %s' % self, events)
         monitor_heap()
-        return Event.objects.filter(q_obj)
+        return events
     
     def generate_windows(self, days, patients=None, exclude_condition=None):
         log.debug('Generating windows for %s' % self)
-        events = self.plausible_events(patients=patients)
-        if exclude_condition:
-            assert isinstance(exclude_condition, str) # Sanity checks
-            #cases = Case.objects.filter(condition=exclude_condition)
-            #pks = CaseEvents.objects.filter(case__in=cases).values_list('pk', flat=True).distinct()
-            ex_pks = self._get_excluded_event_pks(exclude_condition=exclude_condition)
-            q_obj = ~Q(pk__in=ex_pks)
-            events = events.filter(q_obj)
+        events = self.plausible_events(patients=patients, exclude_condition=exclude_condition)
         for e in events:
             yield Window(days=days, events=[e])
                 
-    def _get_excluded_event_pks(self, exclude_condition):
-        '''
-        @param exclude_condition: Condition to exclude
-        @type exclude_condition:  String
-        @return: Set of integers (primary keys of excluded events)
-        '''
-        log.debug('Retrieve excluded event PKs for %s' % exclude_condition)
-        if not self.heuristic in self.__excluded_events_cache:
-            self.__excluded_events_cache[self.heuristic] = {}
-        cache = self.__excluded_events_cache[self.heuristic] # {patient_pk: {date: event_pk}}
-        if exclude_condition not in cache:
-            cases = Case.objects.filter(condition=exclude_condition)
-            pks = Event.objects.filter(case__in=cases).values_list('pk', flat=True).distinct()
-            log_query('Excluded condition not found in cache -- querying database:', pks)
-            pks = set(pks)
-            cache[exclude_condition] = pks
-            if len(cache) >= CACHE_WARNING_THRESHOLD:
-                log.warning('More than %s excluded conditions cached:  %s' % (CACHE_WARNING_THRESHOLD, len(cache)))
-        return cache[exclude_condition]
-        
     def match_window(self, reference, exclude_condition=None):
         assert isinstance(reference, Window)
         #
@@ -343,15 +323,6 @@ class SimpleEventPattern(BaseEventPattern):
             if len(cache) >= CACHE_WARNING_THRESHOLD:
                 log.warning('More than %s patients cached:  %s' % (CACHE_WARNING_THRESHOLD, len(cache)))
         dated_events = cache[patient]
-        #
-        # Exclude bound events
-        #
-        if exclude_condition:
-            ex_pks = self._get_excluded_event_pks(exclude_condition)
-            for date in dated_events.keys():
-                pk = dated_events[date]
-                if pk in ex_pks:
-                    del dated_events[date]
         matched_windows = set()
         for event_date in dated_events:
             # If date is outside window, skip it
@@ -481,18 +452,18 @@ class ComplexEventPattern(BaseEventPattern):
         monitor_heap()
         return plausible
     
-    def plausible_events(self, patients=None):
+    def plausible_events(self, patients=None, exclude_condition=None):
         log.debug('Building plausible events query for %s' % self)
         patients = self.plausible_patients(exclude_condition)
         plausible = None
         for pat in self.patterns:
             if not plausible:
-                plausible = pat.plausible_events(patients=patients)
+                plausible = pat.plausible_events(patients=patients, exclude_condition=exclude_condition)
                 continue
             if self.operator == 'and':
-                plausible = plausible & pat.plausible_events(patients=patients)
+                plausible = plausible & pat.plausible_events(patients=patients, exclude_condition=exclude_condition)
             else: # 'or'
-                plausible = plausible | pat.plausible_events(patients=patients)
+                plausible = plausible | pat.plausible_events(patients=patients, exclude_condition=exclude_condition)
         purpose = 'Querying plausible events for %s' % self
         log_query(purpose, plausible)
         monitor_heap()
@@ -607,6 +578,7 @@ class ComplexEventPattern(BaseEventPattern):
                 return False
             else:
                 log.debug('Patient %s has required past events' % win.patient)
+                log.debug('Adding events to window')
                 win.past_events += [e for e in Event.objects.filter(require_q)]
         #
         # Since self.exclude can include ComplexEventPatterns, it is by far the
@@ -836,11 +808,10 @@ class Condition(object):
         # PostgreSQL.  Have not tested it with other databases.
         #
         plausible_pks = plausible.values_list('pk', flat=True)
-        log_query('Plausible patient pks for %s' % self.name, plausible_pks)
         plausible_patients = Patient.objects.filter(pk__in=plausible_pks).order_by('pk')
         log_query('Plausible patients for Condition %s' % self.name, plausible_patients)
         for patient in plausible_patients:
-            log.debug('Patient: %s' % patient)
+            log.debug('Patient #%s: %s' % (patient.pk, patient))
             queue = []
             existing_cases = Case.objects.filter(condition=self.name, patient=patient)
             existing_case_dates = existing_cases.values_list('date', flat=True)
