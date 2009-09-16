@@ -579,6 +579,8 @@ class ComplexEventPattern(BaseEventPattern):
             if  query.count() > 0:
                 log.debug('Patient %s excluded by %s past events' % (win.patient, query.count()))
                 return False
+            else:
+                log.debug('Patient %s has not excluded by past events' % win.patient)
         if self.require_past:
             require_q = Q(patient=win.patient, heuristic__in=self.require_past, date__lt=win.start)
             if self.require_past_window:
@@ -590,6 +592,7 @@ class ComplexEventPattern(BaseEventPattern):
                 log.debug('Patient %s excluded by lack of required past events' % win.patient)
                 return False
             else:
+                log.debug('Patient %s has required past events' % win.patient)
                 win.past_events += [e for e in Event.objects.filter(require_q)]
         #
         # Since self.exclude can include ComplexEventPatterns, it is by far the
