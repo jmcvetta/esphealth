@@ -122,7 +122,7 @@ class Window(object):
             self._check_event(e)
             self.__events += [e]
             self.__events.sort(lambda x, y: (x.date - y.date).days) # Sort by date
-        self.past_events = [] 
+        self.past_events = None
         log.debug('Initialized %s day window with %s events' % (days, len(events)))
     
     def _check_event(self, event):
@@ -283,9 +283,6 @@ class SimpleEventPattern(BaseEventPattern):
         return qs
     
     def plausible_events(self, patients=None, exclude_condition=None):
-        #
-        # TODO: Performance can be improved by handling exclude_condition here
-        #
         log.debug('Building plausible events query for %s' % self)
         q_obj = Q(heuristic=self.heuristic)
         if patients:
@@ -579,7 +576,10 @@ class ComplexEventPattern(BaseEventPattern):
             else:
                 log.debug('Patient %s has required past events' % win.patient)
                 log.debug('Adding events to window')
-                win.past_events += [e for e in Event.objects.filter(require_q)]
+                if win.past_events:
+                    win.past_events = win.past_events | Event.objects.filter(require_q)
+                else:
+                    win.past_events = Event.objects.filter(require_q)
         #
         # Since self.exclude can include ComplexEventPatterns, it is by far the
         # most computationally expensive constraint check.  So we test it only 
