@@ -7,7 +7,7 @@
 @author: Jason McVetta <jason.mcvetta@gmail.com>
 @organization: Channing Laboratory http://www.channing.harvard.edu
 @copyright: (c) 2009 Channing Laboratory
-@license: LGPL
+@license: LGPL - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
 
