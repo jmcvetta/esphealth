@@ -8,6 +8,7 @@ ESP Health core    LGPL
 Django             MIT
 Flexigrid          MIT / GPL (dual)
 jdMenu             MIT / GPL (dual)
+Guppy              MIT
 
 
 
@@ -73,4 +74,16 @@ jdMenu:
     and GPL (GPL-LICENSE.txt) licenses.
 
     http://jdsharp.us/
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Guppy:
+
+    Copyright (C) 2005 -- 2008 Sverker Nilsson, S. Nilsson Computer System AB
+
+    The right is granted to copy, use, modify and redistribute this code
+    according to the rules in what is commonly referred to as an MIT license.
+
+    *** USE AT YOUR OWN RISK AND BE AWARE THAT THIS IS AN EARLY RELEASE ***
 

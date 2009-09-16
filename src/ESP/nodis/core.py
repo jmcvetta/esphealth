@@ -48,7 +48,17 @@ from ESP.hef.models import Event
 from ESP.nodis.models import Case
 from ESP.nodis.models import Pattern
 
+HEAPY = True
+HEAPFILE = '/tmp/heapy.dat'
 
+if HEAPY:
+    from guppy import hpy
+    HEAP = hpy().heap()
+
+
+def monitor_heap():
+    if HEAPY:
+        HEAP.stat.dump(HEAPFILE)
 
 
 #-------------------------------------------------------------------------------
@@ -269,6 +279,7 @@ class SimpleEventPattern(BaseEventPattern):
             q_obj = q_obj & ~Q(event__case__condition=exclude_condition)
         qs = Patient.objects.filter(q_obj).distinct()
         log_query('Plausible patients for %s, exclude %s' % (self, exclude_condition), qs)
+        monitor_heap()
         return qs
     
     def plausible_events(self, patients=None):
@@ -276,6 +287,7 @@ class SimpleEventPattern(BaseEventPattern):
         q_obj = Q(heuristic=self.heuristic)
         if patients:
             q_obj = q_obj & Q(patient__in=patients)
+        monitor_heap()
         return Event.objects.filter(q_obj)
     
     def generate_windows(self, days, patients=None, exclude_condition=None):
@@ -466,6 +478,7 @@ class ComplexEventPattern(BaseEventPattern):
         for heuristic in self.require_past:
             plausible = plausible & Patient.objects.filter(event__heuristic=heuristic).distinct()
         log_query('Plausible patients for ComplexEventPattern "%s", exclude %s' % (self, exclude_condition), plausible)
+        monitor_heap()
         return plausible
     
     def plausible_events(self, patients=None):
@@ -482,6 +495,7 @@ class ComplexEventPattern(BaseEventPattern):
                 plausible = plausible | pat.plausible_events(patients=patients)
         purpose = 'Querying plausible events for %s' % self
         log_query(purpose, plausible)
+        monitor_heap()
         return plausible
     
     def sorted_patterns(self, exclude_condition=None):
@@ -839,6 +853,7 @@ class Condition(object):
             for pattern in self.patterns:
                 for window in pattern.generate_windows(days=self.patterns[pattern],  
                     patients=[patient],  exclude_condition=self.name):
+                    monitor_heap()
                     if window.overlaps(existing_case_dates, self.recur_after):
                         log.debug('Window overlaps with existing case')
                         continue # 
