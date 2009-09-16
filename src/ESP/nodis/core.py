@@ -594,7 +594,7 @@ class ComplexEventPattern(BaseEventPattern):
                 log.debug('Patient %s excluded by %s past events' % (win.patient, query.count()))
                 return False
             else:
-                log.debug('Patient %s has not excluded by past events' % win.patient)
+                log.debug('Patient %s was not excluded by past events' % win.patient)
         if self.require_past:
             require_q = Q(patient=win.patient, heuristic__in=self.require_past, date__lt=win.start)
             if self.require_past_window:
@@ -613,6 +613,7 @@ class ComplexEventPattern(BaseEventPattern):
         # most computationally expensive constraint check.  So we test it only 
         # after all other constraints have passed.
         #
+        log.debug('Check exclude')
         for pat in self.exclude:
             # If any pattern matches, this constraint fails
             if pat.match_window(win):
