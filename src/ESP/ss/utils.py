@@ -13,7 +13,7 @@ def make_localities():
     for code in btzip:
         try:
             Locality.objects.create(
-                zip_code = code[2],
+                zip_code = code[2][:5].strip(),
                 locality = code[3],
                 city = code[5],
                 state = 'MA',
@@ -39,9 +39,9 @@ def make_non_specialty_clinics():
 
     for site in site_matrix:
         Site.objects.create(
-            code = site[3],
-            name = site[2],
-            zip_code = site[0]
+            code = site[3].strip(),
+            name = site[2].strip(),
+            zip_code = site[0].strip()[:5]
             )
         
 if __name__ == '__main__':

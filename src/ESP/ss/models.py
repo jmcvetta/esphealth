@@ -32,7 +32,7 @@ def age_group_filter(lower, upper=150):
     return born_before & born_after
 
 class Site(models.Model):
-    code = models.IntegerField(primary_key=True)
+    code = models.CharField(max_length=20, primary_key=True)
     name = models.CharField(max_length=200, unique=True)
     zip_code = models.CharField(max_length=10, db_index=True)
 
@@ -44,7 +44,7 @@ class Site(models.Model):
         '''
         sites = Site.objects.filter(zip_code=zip_code)
         return Encounter.objects.filter(
-            date=date, native_site_num__in=[str(x.code) for x in sites]).count()
+            date=date, native_site_num__in=[x.code for x in sites]).count()
 
     @staticmethod
     def encounters_by_zip(zip_code):
@@ -53,7 +53,7 @@ class Site(models.Model):
         '''
         sites = Site.objects.filter(zip_code=zip_code)
         return Encounter.objects.filter(
-            native_site_num__in=[str(x.code) for x in sites])
+            native_site_num__in=[x.code for x in sites])
 
     @staticmethod
     def age_group_aggregate(zip_code, date, lower, upper=90):
@@ -63,7 +63,7 @@ class Site(models.Model):
 
     @staticmethod
     def site_ids():
-        return [str(x) for x in Site.objects.values_list('code', flat=True)]
+        return Site.objects.values_list('code', flat=True)
 
 
     def encounters(self, acute_only=True, **kw):
