@@ -281,6 +281,7 @@ class PatientLoader(BaseLoader):
         p.city = row['city']
         p.state = row['state']
         p.zip = row['zip']
+        p.zip5 = p._calculate_zip5()
         p.country = row['country']
         p.areacode = row['areacode']
         p.tel = row['tel']

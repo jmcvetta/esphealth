@@ -198,6 +198,7 @@ class Patient(BaseMedicalRecord):
     city = models.CharField('City', max_length=50, blank=True, null=True)
     state = models.CharField('State', max_length=20, blank=True, null=True)
     zip = models.CharField('Zip', max_length=20, blank=True, null=True, db_index=True)
+    zip5 = models.CharField('5-digit zip', max_length=5, null=True, db_index=True)
     country = models.CharField('Country', max_length=20, blank=True, null=True)
     # Large max_length value for area code because Atrius likes to put descriptive text into that field
     areacode = models.CharField('Home Phone Area Code', max_length=50, blank=True, null=True)
@@ -290,8 +291,28 @@ class Patient(BaseMedicalRecord):
         query = objs.filter(Patient.q_fake) if fake else objs.all()
         return query.order_by('?')[0]
 
+    def _calculate_zip5(self):
+        # Trivial case. If zip is empty or None, we are making 00000 as unknown zip5.
+        if not self.zip: return '00000'
+
+        try:
+            # we try to cast to int to make sure that the string is digits-only
+            sliced = '%05d' % int(self.zip.strip().split('-')[0])
+            # There are lots of zip codes with 8 or 9 digits with no
+            # dash as separator. So we check if the string is 8 or 9
+            # digits long, which might indicate a valid zip code. If
+            # it doesn't, we set it as unknown.
+            if len(sliced) in [5, 8, 9]:            
+                return sliced[:5]
+            else:
+                return '00000'
+        except:
+            return '00000'
+
+
     def is_fake(self):
         return self.patient_id_num.startswith('FAKE')
+        
 
     def has_history_of(self, icd9s, begin_date=None, end_date=None):
         '''
