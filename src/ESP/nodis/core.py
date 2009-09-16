@@ -195,9 +195,11 @@ class BaseEventPattern(object):
     time window
     '''
     
-    def plausible_patients(self):
+    def plausible_patients(self, exclude_condition=None):
         '''
         Returns a QuerySet of Patient records which may plausibly match this pattern
+        @param exclude_condition: Exclude events already bound to cases of this condition
+        @type exclude_condition:  String naming a Condition
         '''
         raise NotImplementedError
         
@@ -251,19 +253,23 @@ class SimpleEventPattern(BaseEventPattern):
     
     # Class variables
     #
-    # {heuristic: {patient_pk: {date: event_pk}}}
-    __dated_events_cache = {} 
     # {heuristic: {condition: event_pk_set}}
     __excluded_events_cache = {}
     
     def __init__(self, heuristic):
+        self.__dated_events_cache = {} 
         from ESP.hef import events # Ensure events are loaded
         if not heuristic in BaseHeuristic.list_heuristics():
             raise InvalidHeuristic('Unknown heuristic: %s' % heuristic)
         self.heuristic = heuristic
     
-    def plausible_patients(self):
-        return Patient.objects.filter(event__heuristic=self.heuristic).distinct()
+    def plausible_patients(self, exclude_condition=None):
+        q_obj = Q(event__heuristic=self.heuristic)
+        if exclude_condition:
+            q_obj = q_obj & ~Q(event__case__condition=exclude_condition)
+        qs = Patient.objects.filter(q_obj).distinct()
+        log_query('Plausible patients for %s, exclude %s' % (self, exclude_condition), qs)
+        return qs
     
     def plausible_events(self, patients=None):
         log.debug('Building plausible events query for %s' % self)
@@ -285,29 +291,6 @@ class SimpleEventPattern(BaseEventPattern):
         for e in events:
             yield Window(days=days, events=[e])
                 
-    def _get_dated_events(self, patient):
-        '''
-        Return event primary keys matching this heuristic for patient, 
-            organized by date.
-        @param patient: Patient for whom we want to retrieve events
-        @type patient:  Patient object
-        @return: {date: pk}  Dictionary matching dates to event primary keys
-        '''
-        log.debug('Retrieve dated %s events for patient %s' % (self.heuristic, patient))
-        if not self.heuristic in self.__dated_events_cache:
-            self.__dated_events_cache[self.heuristic] = {}
-        cache = self.__dated_events_cache[self.heuristic]
-        if patient not in cache:
-            values = Event.objects.filter(heuristic=self.heuristic, patient=patient).values('pk', 'date')
-            log_query('Patient not found in cache -- querying database:', values)
-            patient_dates = {}
-            for val in values:
-                patient_dates[val['date']] = val['pk']
-            cache[patient] = patient_dates
-            if len(cache) >= CACHE_WARNING_THRESHOLD:
-                log.warning('More than %s patients cached:  %s' % (CACHE_WARNING_THRESHOLD, len(cache)))
-        return cache[patient]
-    
     def _get_excluded_event_pks(self, exclude_condition):
         '''
         @param exclude_condition: Condition to exclude
@@ -317,7 +300,7 @@ class SimpleEventPattern(BaseEventPattern):
         log.debug('Retrieve excluded event PKs for %s' % exclude_condition)
         if not self.heuristic in self.__excluded_events_cache:
             self.__excluded_events_cache[self.heuristic] = {}
-        cache = self.__excluded_events_cache[self.heuristic]
+        cache = self.__excluded_events_cache[self.heuristic] # {patient_pk: {date: event_pk}}
         if exclude_condition not in cache:
             cases = Case.objects.filter(condition=exclude_condition)
             pks = Event.objects.filter(case__in=cases).values_list('pk', flat=True).distinct()
@@ -330,7 +313,24 @@ class SimpleEventPattern(BaseEventPattern):
         
     def match_window(self, reference, exclude_condition=None):
         assert isinstance(reference, Window)
-        dated_events = self._get_dated_events(reference.patient)
+        #
+        # Get dated events
+        #
+        patient = reference.patient
+        cache = self.__dated_events_cache
+        if patient not in cache:
+            values = Event.objects.filter(heuristic=self.heuristic, patient=patient).values('pk', 'date')
+            if exclude_condition:
+                q_obj = ~Q(case__condition=exclude_condition)
+                values = values.filter()
+            log_query('get dated events for patient %s exclude condition %s' % (patient, exclude_condition), values)
+            patient_dates = {}
+            for val in values:
+                patient_dates[val['date']] = val['pk']
+            cache[patient] = patient_dates
+            if len(cache) >= CACHE_WARNING_THRESHOLD:
+                log.warning('More than %s patients cached:  %s' % (CACHE_WARNING_THRESHOLD, len(cache)))
+        dated_events = cache[patient]
         #
         # Exclude bound events
         #
@@ -453,24 +453,24 @@ class ComplexEventPattern(BaseEventPattern):
         return h
     string_hash = property(__get_string_hash)
     
-    def plausible_patients(self):
+    def plausible_patients(self, exclude_condition=None):
         plausible = None
         for pat in self.patterns:
             if not plausible:
-                plausible = pat.plausible_patients()
+                plausible = pat.plausible_patients(exclude_condition)
                 continue
             if self.operator == 'and':
-                plausible = plausible & pat.plausible_patients()
+                plausible = plausible & pat.plausible_patients(exclude_condition)
             else: # 'or'
-                plausible = plausible | pat.plausible_patients()
+                plausible = plausible | pat.plausible_patients(exclude_condition)
         for heuristic in self.require_past:
             plausible = plausible & Patient.objects.filter(event__heuristic=heuristic).distinct()
-        log_query('Plausible patients for %s' % self, plausible)
+        log_query('Plausible patients for ComplexEventPattern "%s", exclude %s' % (self, exclude_condition), plausible)
         return plausible
     
     def plausible_events(self, patients=None):
         log.debug('Building plausible events query for %s' % self)
-        patients = self.plausible_patients()
+        patients = self.plausible_patients(exclude_condition)
         plausible = None
         for pat in self.patterns:
             if not plausible:
@@ -484,7 +484,7 @@ class ComplexEventPattern(BaseEventPattern):
         log_query(purpose, plausible)
         return plausible
     
-    def sorted_patterns(self):
+    def sorted_patterns(self, exclude_condition=None):
         '''
         Returns the patterns composing this ComplexEventPattern sorted from 
         lowest to highest number of plausible patients
@@ -492,11 +492,11 @@ class ComplexEventPattern(BaseEventPattern):
         if not self.__sorted_pattern_cache:
             #log.debug('Sorting patterns by plausible event count')
             log.debug('Sorting patterns by plausible patient count')
-            plausible = self.plausible_patients()
+            plausible = self.plausible_patients(exclude_condition)
             count = {}
             for pat in self.patterns:
                 #count[pat] = pat.plausible_events(patients=plausible).count()
-                count[pat] = pat.plausible_patients().count()
+                count[pat] = pat.plausible_patients(exclude_condition).count()
             #log.debug('Plausible events by pattern: \n%s' % pprint.pformat(count))
             log.debug('Plausible patients by pattern: \n%s' % pprint.pformat(count))
             self.__sorted_pattern_cache = [i[0] for i in sorted(count.items(), key=itemgetter(1))]
@@ -504,11 +504,11 @@ class ComplexEventPattern(BaseEventPattern):
 
     def generate_windows(self, days, patients=None, exclude_condition=None):
         if not patients:
-            patients = self.plausible_patients()
+            patients = self.plausible_patients(exclude_condition)
         if self.operator == 'and':
             # Order does not matter with 'or' operator, so only 'and' operator 
             # needs to perform expensive pattern sort.
-            sorted_patterns = self.sorted_patterns()
+            sorted_patterns = self.sorted_patterns(exclude_condition)
             first_pattern = sorted_patterns[0]
             #
             # All patterns must be matched, so we start with the pattern which 
@@ -540,7 +540,7 @@ class ComplexEventPattern(BaseEventPattern):
             raise 'Invalid self.operator -- WTF?!'
     
     def match_window(self, reference, exclude_condition=None):
-        sorted_patterns = self.sorted_patterns()
+        sorted_patterns = self.sorted_patterns(exclude_condition)
         # Queue up the reference window to be checked against patterns.  We use 
         # a set instead of a list to avoid double-adding the reference window
         # when evaluating with 'or' operator.
@@ -621,6 +621,12 @@ class ComplexEventPattern(BaseEventPattern):
             self.__pattern_obj = pat
         return self.__pattern_obj
     pattern_obj = property(__get_pattern_object)
+    
+    def __str__(self):
+        if self.name:
+            return self.name
+        else:
+            return self.string_hash
         
 
 
@@ -803,9 +809,9 @@ class Condition(object):
         log.debug('Finding plausible patients for %s' % self.name)
         for pattern in self.patterns:
             if not plausible:
-                plausible = pattern.plausible_patients()
+                plausible = pattern.plausible_patients(exclude_condition=self.name)
             else:
-                plausible = plausible | pattern.plausible_patients()
+                plausible = plausible | pattern.plausible_patients(exclude_condition=self.name)
         # 
         # HACK: Finding plausible patient PKs first, then filtering Patient by 
         # pk in a separate step, makes django produce efficient queries on 
@@ -814,7 +820,7 @@ class Condition(object):
         plausible_pks = plausible.values_list('pk', flat=True)
         log_query('Plausible patient pks for %s' % self.name, plausible_pks)
         plausible_patients = Patient.objects.filter(pk__in=plausible_pks).order_by('pk')
-        log_query('Plausible patients for %s' % self.name, plausible_patients)
+        log_query('Plausible patients for Condition %s' % self.name, plausible_patients)
         for patient in plausible_patients:
             log.debug('Patient: %s' % patient)
             queue = []
