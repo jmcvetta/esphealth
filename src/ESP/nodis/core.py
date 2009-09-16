@@ -178,12 +178,12 @@ class Window(object):
         @type recurance_interval:  Integer
         @return: Boolean
         '''
-        log.debug('Checking window %s for overlap' % window)
-        log.debug('Reference dates: %s' % reference)
+        log.debug('Checking window %s for overlap' % self)
+        log.debug('Reference dates: %s' % dates)
         delta = datetime.timedelta(days=recurance_interval)
         for d in dates:
             recur_date = d + delta
-            if (window.start >= d) and (window.start < recur_date):
+            if (self.start >= d) and (self.start < recur_date):
                 return True
         return False
 
@@ -800,56 +800,66 @@ class Condition(object):
         # We will loop over the list of all plausible patients for all patterns combined, 
         # so we need only consider one patient at a time
         #
+        log.debug('Finding plausible patients for %s' % self.name)
         for pattern in self.patterns:
             if not plausible:
                 plausible = pattern.plausible_patients()
             else:
-                plausible += pattern.plausible_patients()
-        for patient in plausible.order_by('pk'):
+                plausible = plausible | pattern.plausible_patients()
+        # 
+        # HACK: Finding plausible patient PKs first, then filtering Patient by 
+        # pk in a separate step, makes django produce efficient queries on 
+        # PostgreSQL.  Have not tested it with other databases.
+        #
+        plausible_pks = plausible.values_list('pk', flat=True)
+        log_query('Plausible patient pks for %s' % self.name, plausible_pks)
+        plausible_patients = Patient.objects.filter(pk__in=plausible_pks).order_by('pk')
+        log_query('Plausible patients for %s' % self.name, plausible_patients)
+        for patient in plausible_patients:
+            log.debug('Patient: %s' % patient)
             queue = []
             existing_cases = Case.objects.filter(condition=self.name, patient=patient)
-            existing_case_dates = existing_cases.values('date', flat=True)
+            existing_case_dates = existing_cases.values_list('date', flat=True)
             if existing_case_dates and (self.recur_after == -1):
-                # Case already exists, and condition cannot recur -- all future cases overlap
+                log.debug('Case already exists, and condition cannot recur -- all future cases overlap')
                 continue
             #
-            # For each patient, we will examine try to match each pattern
+            # For each patient, queue up windows that match any pattern
             #
             for pattern in self.patterns:
                 for window in pattern.generate_windows(days=self.patterns[pattern],  
                     patients=[patient],  exclude_condition=self.name):
                     if window.overlaps(existing_case_dates, self.recur_after):
+                        log.debug('Window overlaps with existing case')
                         continue # 
                     else:
+                        log.debug('Window added to queue')
                         queue.append(window)
             #
-            queue.sort(lambda x, y: (x.date - y.date).days) # Sort by date
+            if not queue:
+                continue # no windows for this patient
+            queue.sort(lambda x, y: (x.start - y.start).days) # Sort by date
             valid_windows = [queue[0]]
             #
+            # Winnow down queue to a list of valid windows
+            #
+            log.debug('Examining queue')
             for win in queue:
-                if window.overlaps(valid_windows, self.recur_after):
+                log.debug('valid windows: %s' % valid_windows)
+                log.debug('examining window: %s' % win)
+                if window.overlaps([w.start for w in valid_windows], self.recur_after):
+                    log.debug('Window overlaps valid window')
                     continue 
                 else:
+                    log.debug('Window %s added to valid windows' % win)
                     valid_windows.append(win)
+            log.debug('Yielding these valid windows: %s' % valid_windows)
+            #
+            # Yield valid windows -- in date order :)
+            #
             for win in valid_windows:
                 yield win
     
-    def populate_existing_case_cache(self):
-        '''
-        Refreshes cache of existing cases
-        '''
-        self.__existing[None] = None # Populate the dictionary to avoid repeat calls
-        log.debug('Populating cache of existing %s cases' % self.name)
-        self.__existing = {}
-        for item in Case.objects.filter(condition=self.name).values_list('patient', 'date'):
-            patient, date = item
-            if patient in self.__existing:
-                self.__existing[patient] += [date]
-            else:
-                self.__existing[patient] = [date]
-        if len(self.__existing) > CACHE_WARNING_THRESHOLD:
-            log.warning('Cache size exceeds warning threshold: %s' % len(self.__existing))
-
     def purge_db(self):
         '''
         Remove all cases of this disease from the database
