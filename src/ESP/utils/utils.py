@@ -17,6 +17,7 @@ import time
 import logging
 import simplejson
 import types
+import sqlparse
 
 from django.db.models import Q
 from django.core.paginator import Paginator
@@ -61,8 +62,9 @@ def log_query(purpose, qs):
     statement, args = qs.query.as_sql()
     quoted_args = tuple(["'%s'" % a for a in args])
     sql = statement % quoted_args
+    formatted = '\n' + sqlparse.format(sql, reindent=True)
     log.debug(purpose)
-    log.debug(sql)
+    log.debug(formatted)
 
 
 filenlist = ['epicmem.esp.','epicpro.esp.','epicvis.esp.','epicord.esp.','epicres.esp.','epicmed.esp.','epicimm.esp.']

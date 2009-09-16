@@ -9,6 +9,7 @@ Django             MIT
 Flexigrid          MIT / GPL (dual)
 jdMenu             MIT / GPL (dual)
 Guppy              MIT
+python-sqlparse    BSD
 
 
 
@@ -86,4 +87,15 @@ Guppy:
     according to the rules in what is commonly referred to as an MIT license.
 
     *** USE AT YOUR OWN RISK AND BE AWARE THAT THIS IS AN EARLY RELEASE ***
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+python-sqlparse:
+
+    Copyright (C) 2008 Andi Albrecht, albrecht.andi@gmail.com
+
+    This module is part of python-sqlparse and is released under the BSD
+    License: http://www.opensource.org/licenses/bsd-license.php.
+
 

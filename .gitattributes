@@ -453,3 +453,13 @@ src/hl7/messages.py -text
 src/hl7/nodes.py -text
 src/hl7/segments.py -text
 src/hl7/test.py -text
+src/sqlparse/__init__.py -text
+src/sqlparse/engine/__init__.py -text
+src/sqlparse/engine/filter.py -text
+src/sqlparse/engine/grouping.py -text
+src/sqlparse/filters.py -text
+src/sqlparse/formatter.py -text
+src/sqlparse/keywords.py -text
+src/sqlparse/lexer.py -text
+src/sqlparse/sql.py -text
+src/sqlparse/tokens.py -text
