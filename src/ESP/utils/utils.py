@@ -62,7 +62,7 @@ def log_query(purpose, qs):
     statement, args = qs.query.as_sql()
     quoted_args = tuple(["'%s'" % a for a in args])
     sql = statement % quoted_args
-    formatted = '\n' + sqlparse.format(sql, reindent=True)
+    formatted = '\n' + sqlparse.format(sql, reindent=True, indent_tabs=True)
     log.debug(purpose)
     log.debug(formatted)
 
