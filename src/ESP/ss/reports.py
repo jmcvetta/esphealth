@@ -5,7 +5,7 @@ import os
 
 from ESP.emr.models import Encounter
 from ESP.utils.utils import str_from_date, log
-from ESP.ss.models import Site, Locality, NonSpecialistVisitEvent
+from ESP.ss.models import Site, NonSpecialistVisitEvent
 from ESP.ss.models import age_group_filter
 from heuristics import syndrome_heuristics
 

@@ -971,7 +971,7 @@ class Encounter(BasePatientRecord):
         month_period time.
         '''
         
-        earliest = self.date-datetime.timedelta(days=30*month_period)
+        earliest = self.date - datetime.timedelta(days=30*month_period)
         
         return Encounter.objects.filter(
             date__lt=self.date, date__gte=earliest, 

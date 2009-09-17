@@ -85,10 +85,6 @@ class Site(models.Model):
 
         return encounters
 
-    def volume(self, date):
-        ''' total count of encounters had at clinic on a given day '''
-        return self.encounters(date=date).count()
-
 
 class Locality(models.Model):
     zip_code = models.CharField(max_length=10, db_index=True)
@@ -98,49 +94,6 @@ class Locality(models.Model):
     region_code = models.CharField(max_length=5, null=True)
     region_name = models.CharField(max_length=20, null=True)
     is_official = models.BooleanField(default=True)
-
-    def encounters(self, acute_only=True, **kw):
-        ''' 
-        Returns a list of all encounters that took place at this Site.
-        kw may contain specific filters, like icd9 codes or dates.
-        '''
-
-        date = kw.pop('date', None)
-
-        at_locality = Encounter.objects.filter(
-            patient__zip=self.zip_code)
-
-        encounters = at_locality
-        if date:
-            encounters = encounters.filter(date=date)
-
-        if acute_only:
-            encounters = encounters.filter(native_site_num__in=Site.site_ids())
-
-        return encounters
-
-    def volume(self, date):
-        ''' total count of encounters had at locality on a given day '''
-        return self.encounters(date=date).count()
-
-    def at_age_group(self, lower, upper=150, **kw):
-        '''
-        returns the encounters at the site of this event, filtering by the age of the patients.
-        '''
-        
-        date = kw.get('date', None)
-
-        today = datetime.date.today()
-        younger_patient_date = datetime.date(year=(today.year - abs(lower)), 
-                                     month=today.month, day=today.day)
-        older_patient_date = datetime.date(year=(today.year - abs(upper)), 
-                                   month=today.month, day=today.day)
-
-        
-        return self.encounters(date=date).filter(
-            patient__date_of_birth__gte=older_patient_date,
-            patient__date_of_birth__lt=younger_patient_date)
-
     
     def __unicode__(self):
         return u'%s - %s, %s (%s)' % (self.locality, self.city, self.state, self.zip_code)

@@ -24,9 +24,10 @@ def main():
     parser = OptionParser(usage=usage_msg)
     parser.add_option('-b', '--begin', dest='begin_date', default=yesterday.strftime('%Y%m%d'))
     parser.add_option('-e', '--end', dest='end_date', default=today.strftime('%Y%m%d'))
-    parser.add_option('-f', '--find-events', action='store_true', dest='events')
-    parser.add_option('-s', '--syndrome', dest='syndrome', default='all')
     parser.add_option('-c', '--encounter-counts', action='store_true', dest='total_counts')
+    parser.add_option('-f', '--find-events', action='store_true', dest='events')
+    parser.add_option('-r', '--reports', action='store_true', dest='reports')
+    parser.add_option('-s', '--syndrome', dest='syndrome', default='all')
     
     options, args = parser.parse_args()
 
@@ -37,12 +38,6 @@ def main():
         log.error('Invalid dates')
         sys.exit(-2)
         
-    if options.events:
-        for heuristic in syndrome_heuristics().values():
-            log.info('Generating events for %s' % heuristic.name)
-            heuristic.generate_events(incremental=False, begin_date=begin_date, end_date=end_date)
-            
-
     heuristics = []
     if options.syndrome == 'all':
         heuristics = syndrome_heuristics().values()
@@ -50,13 +45,19 @@ def main():
         heuristic = syndrome_heuristics().get(options.syndrome, None)
         if heuristic: heuristics.append(heuristic)
 
-    for h in heuristics:
-        current_day = begin_date
-        log.info('Creating reports from %s until %s' % (current_day, end_date))
-        while current_day <= end_date:
-            log.info('Creating reports for %s syndrome on %s' % (h.name, current_day))
-            h.make_reports(current_day)
-            current_day += datetime.timedelta(1)
+    if options.events:
+        for heuristic in heuristics:
+            log.info('Generating events for %s' % heuristic.name)
+            heuristic.generate_events(incremental=False, begin_date=begin_date, end_date=end_date)
+
+    if options.reports:
+        for heuristic in heuristics:
+            current_day = begin_date
+            log.info('Creating reports from %s until %s' % (current_day, end_date))
+            while current_day <= end_date:
+                log.info('Creating reports for %s syndrome on %s' % (heuristic.name, current_day))
+                heuristic.make_reports(current_day)
+                current_day += datetime.timedelta(1)
 
     if options.total_counts:
         current_day = begin_date
