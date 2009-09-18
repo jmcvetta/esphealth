@@ -1,9 +1,4 @@
-{% comment %}
-pd['get_long_date'] = strftime("%Y-%m-%d %H:%M:%S")
-pd['get_short_date'] = strftime("%Y-%m-%d")
-{% endcomment %}
-
-MSH|^~\\&||MetroHealth System Laboratory^36D0336261^CLIA|OHDOH|OH|{{ long_date }}||ORU^ R01|{{ short_date}}{{ lab_seq_num }}|T|2.3.1
+MSH|^~\\&||MetroHealth System Laboratory^36D0336261^CLIA|OHDOH|OH|{% now "Y-m-d H:i:s" %}||ORU^ R01|{{ case.date|date:"Y-m-d" }}{{ lab_seq_num }}|T|2.3.1
 PID|1||{{ patient.mrn }}^^^^^||{{ patient.last_name }}^{{ patient.first_name }}^{{ patient.middle_name}}^{{ suffix }}||{{ date_of_birth }}|{{ gender }}||{{ race }}|{{ address1 }}^{{ address2 }}^{{ city }}^{{state }}^{{ zip }}^{{ country }}^||^^^^^{{ areacode }}^{{ tel }}^{{ tel_ext }}|||||||||||||||||| |
 NK1||||||
 ORC|||||||||||||||||||||MetroHealth System|||||
