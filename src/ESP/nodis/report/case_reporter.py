@@ -36,6 +36,10 @@ from django.template.loader import get_template
 from ESP.settings import DEFAULT_HL7_TEMPLATE
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
+from ESP.emr.models import LabResult
+from ESP.emr.models import Encounter
+from ESP.emr.models import Prescription
+from ESP.emr.models import Immunization
 from ESP.nodis import defs
 from ESP.nodis.core import Condition
 from ESP.nodis.models import Case
@@ -55,10 +59,14 @@ def main():
     usage_msg += "    Conditions can be 'all' or one of the following:\n"
     usage_msg += '        ' + ', '.join(all_conditions)
     parser = optparse.OptionParser(usage=usage_msg)
+    parser.add_option('-s', action='store_true', dest='stdout', 
+        help='Print output to STDOUT (no files created)')
     parser.add_option('-o', action='store', metavar='FOLDER', dest='output',
         default=CASE_REPORT_OUTPUT_FOLDER, help='Output case report file(s) to FOLDER')
     parser.add_option('-t', action='store', metavar='TEMPLATE', dest='template', 
         default=CASE_REPORT_TEMPLATE, help='Use TEMPLATE to generate HL7 messages')
+    parser.add_option('--sample', action='store_true', dest='sample', default=False, 
+        help='Report only a single sample case')
     parser.add_option('--individual', action='store_false', dest='one_file',
         default=False, help='Export each cases to an individual file (default)')
     parser.add_option('--one-file', action='store_true', dest='one_file',
@@ -112,13 +120,15 @@ def main():
     #
     q_obj = Q(condition__in=report_conditions)
     q_obj = q_obj & Q(status=options.status)
-    cases = Case.objects.filter(q_obj)
-    log_query('Filtered cases', cases)
+    cases = Case.objects.filter(q_obj).order_by('pk')
     if not cases:
         print 
         print 'No cases found matching your specifications.  No output generated.'
         print
         sys.exit(11)
+    log_query('Filtered cases', cases)
+    if options.sample: # Report only a single, random sample case
+        cases = [cases[0]]
     #
     # Produce output
     #
@@ -126,8 +136,47 @@ def main():
         raise NotImplementedError('This functionality has not yet been implemented.')
     else:
         for case in cases:
-            print render_to_string(template_name, case)
-        
+            matched_labs = []
+            matched_encounters = []
+            matched_prescriptions = []
+            matched_immunizations = []
+            for event in case.events.all():
+                content = event.content_object
+                if isinstance(content, LabResult):
+                    matched_labs.append(content)
+                if isinstance(content, Encounter):
+                    matched_encounters.append(content)
+                if isinstance(content, Prescription):
+                    matched_prescriptions.append(content)
+                if isinstance(content, Immunization):
+                    matched_immunizations.append(content)
+            values = {
+                'case': case,
+                'patient': case.patient,
+                'matched_labs': matched_labs,
+                'matched_encounters': matched_encounters,
+                'matched_prescriptions': matched_prescriptions,
+                'matched_immunizations': matched_immunizations,
+                'all_labs': case.lab_results.all(),
+                'all_encounters': case.encounters.all(),
+                'all_prescriptions': case.medications.all(),
+                'all_immunizations': case.immunizations.all(),
+                }
+            log.debug('values for template: \n%s' % pprint.pformat(values))
+            msg = render_to_string(template_name, values)
+            # Remove blank lines -- allows us to have neater templates
+            msg = msg.replace('\n\n', '\n')
+            report_message(msg, options)
+
+
+def report_message(msg, options):        
+    '''
+    Report message according to options
+    '''
+    if options.stdout:
+        print msg
+    else:
+        raise NotImplementedError()
 
 
 if __name__ == '__main__':
