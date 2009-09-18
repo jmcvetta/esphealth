@@ -123,7 +123,7 @@ def main():
                 print >> sys.stderr, '    %s' % stat
             sys.exit(102)
     log.debug('status: %s' % options.status)
-    template_name = os.path.join('nodis', 'reports', options.template)
+    template_name = os.path.join('nodis', 'report', options.template)
     try:
         get_template(template_name)
     except TemplateDoesNotExist:
