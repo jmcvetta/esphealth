@@ -7,7 +7,7 @@ MSH|^~\\&||MetroHealth System Laboratory^36D0336261^CLIA|OHDOH|OH|{{ long_date }
 PID|1||{{ patient.mrn }}^^^^^||{{ patient.last_name }}^{{ patient.first_name }}^{{ patient.middle_name}}^{{ suffix }}||{{ date_of_birth }}|{{ gender }}||{{ race }}|{{ address1 }}^{{ address2 }}^{{ city }}^{{state }}^{{ zip }}^{{ country }}^||^^^^^{{ areacode }}^{{ tel }}^{{ tel_ext }}|||||||||||||||||| |
 NK1||||||
 ORC|||||||||||||||||||||MetroHealth System|||||
-{% for lab in lab_results %}
-OBR|1||$specimen_num|^^^{{ lab.native_code }}^{{ lab.native_name}}^L|||{{ lab.date}}||||||||||||||||||{{ lab.status }}
+{% for lab in matched_labs %}
+OBR|1||{{ lab.specimen_num }}|^^^{{ lab.native_code }}^{{ lab.native_name}}^L|||{{ lab.date}}||||||||||||||||||{{ lab.status }}
 OBX|1|NM|^^^{{ lab.native_code }}^{{ lab.native_name }}^L|1|{{ lab.result_string }}|{{ lab.ref_unit }}^^ISO|{{ lab.ref_low }}-{{ lab.ref_low }}|||||{{ lab.status }}||||{{ lab.date }}|
 {% endfor %}
