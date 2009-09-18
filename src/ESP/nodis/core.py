@@ -48,7 +48,7 @@ from ESP.hef.models import Event
 from ESP.nodis.models import Case
 from ESP.nodis.models import Pattern
 
-HEAPY = True
+HEAPY = False
 HEAPFILE = '/tmp/heapy.dat'
 
 if HEAPY:
