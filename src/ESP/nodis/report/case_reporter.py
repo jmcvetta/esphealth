@@ -21,19 +21,22 @@ EXIT CODES
 
 CASE_REPORT_OUTPUT_FOLDER = '/tmp/'
 CASE_REPORT_TEMPLATE = 'odh_hl7.txt'
+CASE_REPORT_FILENAME_FORMAT = '%(timestamp)s-%(serial)s.hl7'
 
 
 import optparse
 import sys
 import pprint
 import os
+import cStringIO as StringIO
+import datetime
+import re
 
 from django.db.models import Q
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.template.loader import get_template
 
-from ESP.settings import DEFAULT_HL7_TEMPLATE
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 from ESP.emr.models import LabResult
@@ -49,7 +52,14 @@ from ESP.nodis.models import STATUS_CHOICES
 
 def main():
     report_conditions = [] # Names of conditions for which we will export cases
-    #
+    timestamp = datetime.datetime.now().strftime('%Y-%b-%d-%H:%M:%s')
+    serial_number = 0 # Serial number of case reported for this timestamp
+    filename_values = { 
+        # Used to populate file name template -- serial is updated below
+        'timestamp': timestamp,
+        'serial': serial_number,
+        }
+#
     # Parse command line for options
     #
     all_conditions = Condition.list_all_condition_names()
@@ -59,14 +69,14 @@ def main():
     usage_msg += "    Conditions can be 'all' or one of the following:\n"
     usage_msg += '        ' + ', '.join(all_conditions)
     parser = optparse.OptionParser(usage=usage_msg)
-    parser.add_option('-s', action='store_true', dest='stdout', 
-        help='Print output to STDOUT (no files created)')
-    parser.add_option('-o', action='store', metavar='FOLDER', dest='output',
+    parser.add_option('-o', action='store', metavar='FOLDER', dest='output_folder',
         default=CASE_REPORT_OUTPUT_FOLDER, help='Output case report file(s) to FOLDER')
     parser.add_option('-t', action='store', metavar='TEMPLATE', dest='template', 
         default=CASE_REPORT_TEMPLATE, help='Use TEMPLATE to generate HL7 messages')
-    parser.add_option('--sample', action='store_true', dest='sample', default=False, 
-        help='Report only a single sample case')
+    parser.add_option('-f', action='store', dest='format', metavar='FORMAT', default=CASE_REPORT_FILENAME_FORMAT,
+        help='Create file names using FORMAT.  Default: %s' % CASE_REPORT_FILENAME_FORMAT)
+    parser.add_option('--stdout', action='store_true', dest='stdout', 
+        help='Print output to STDOUT (no files created)')
     parser.add_option('--individual', action='store_false', dest='one_file',
         default=False, help='Export each cases to an individual file (default)')
     parser.add_option('--one-file', action='store_true', dest='one_file',
@@ -75,7 +85,13 @@ def main():
         help='Export only cases with this status ("Q" by default)')
     parser.add_option('--no-sent-status', action='store_false', dest='sent_status', default=True,
         help='Do NOT set case status to "S" after export')
+    parser.add_option('--sample', action='store_true', dest='sample', default=False, 
+        help='Report only first case matching criteria; do NOT set status to sent')
     options, args = parser.parse_args()
+    if options.sample: # '--sample' implies '--no-sent-status'
+        options.sent_status = False
+    if options.one_file:
+        output_file = StringIO.StringIO()
     #
     # Sanity check options
     #
@@ -130,53 +146,72 @@ def main():
     if options.sample: # Report only a single, random sample case
         cases = [cases[0]]
     #
-    # Produce output
+    # Build message string
     #
+    for case in cases:
+        serial_number += 1 # Increment serial number for this case
+        matched_labs = []
+        matched_encounters = []
+        matched_prescriptions = []
+        matched_immunizations = []
+        for event in case.events.all():
+            content = event.content_object
+            if isinstance(content, LabResult):
+                matched_labs.append(content)
+            if isinstance(content, Encounter):
+                matched_encounters.append(content)
+            if isinstance(content, Prescription):
+                matched_prescriptions.append(content)
+            if isinstance(content, Immunization):
+                matched_immunizations.append(content)
+        values = {
+            'case': case,
+            'patient': case.patient,
+            'matched_labs': matched_labs,
+            'matched_encounters': matched_encounters,
+            'matched_prescriptions': matched_prescriptions,
+            'matched_immunizations': matched_immunizations,
+            'all_labs': case.lab_results.all(),
+            'all_encounters': case.encounters.all(),
+            'all_prescriptions': case.medications.all(),
+            'all_immunizations': case.immunizations.all(),
+            }
+        log.debug('values for template: \n%s' % pprint.pformat(values))
+        case_report = render_to_string(template_name, values)
+        # Remove blank lines -- allows us to have neater templates
+        case_report = re.sub("\n\s*\n*", "\n", case_report)
+        #
+        # Report message
+        #
+        log.debug('Message to report:\n%s' % case_report)
+        if options.stdout: # Print case reports to STDOUT
+            log.debug('Printing message to stdout')
+            print case_report
+        elif options.one_file: # All reports in one big file
+            log.debug('Adding case #%s report to single output file' % case.pk)
+            output_file.write(case_report)
+            pass
+        else: # Produce an individual file for every case report [default]
+            filename_values['serial'] = serial_number
+            filename = options.format % filename_values
+            filepath = os.path.join(options.output_folder, filename)
+            file = open(filepath, 'w')
+            file.write(case_report)
+            file.close()
+            log.info('Wrote case #%s report to file: %s' % (case.pk, filepath))
+        if options.sent_status:
+            case.status = 'S'
+            case.save()
+            log.debug("Set status to 'S' for case #%s" % case.pk)
     if options.one_file:
-        raise NotImplementedError('This functionality has not yet been implemented.')
-    else:
-        for case in cases:
-            matched_labs = []
-            matched_encounters = []
-            matched_prescriptions = []
-            matched_immunizations = []
-            for event in case.events.all():
-                content = event.content_object
-                if isinstance(content, LabResult):
-                    matched_labs.append(content)
-                if isinstance(content, Encounter):
-                    matched_encounters.append(content)
-                if isinstance(content, Prescription):
-                    matched_prescriptions.append(content)
-                if isinstance(content, Immunization):
-                    matched_immunizations.append(content)
-            values = {
-                'case': case,
-                'patient': case.patient,
-                'matched_labs': matched_labs,
-                'matched_encounters': matched_encounters,
-                'matched_prescriptions': matched_prescriptions,
-                'matched_immunizations': matched_immunizations,
-                'all_labs': case.lab_results.all(),
-                'all_encounters': case.encounters.all(),
-                'all_prescriptions': case.medications.all(),
-                'all_immunizations': case.immunizations.all(),
-                }
-            log.debug('values for template: \n%s' % pprint.pformat(values))
-            msg = render_to_string(template_name, values)
-            # Remove blank lines -- allows us to have neater templates
-            msg = msg.replace('\n\n', '\n')
-            report_message(msg, options)
+        filename = options.format % filename_values
+        filepath = os.path.join(options.output_folder, filename)
+        file = open(filepath, 'w')
+        file.write(output_file.getvalue())
+        file.close()
+        # serial_number is equal to the number of cases reported
+        log.info('Wrote single report for all %s cases to file: %s' % (serial_number, filepath))
 
-
-def report_message(msg, options):        
-    '''
-    Report message according to options
-    '''
-    if options.stdout:
-        print msg
-    else:
-        raise NotImplementedError()
 
 
 if __name__ == '__main__':
