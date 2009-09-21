@@ -85,8 +85,8 @@ def main():
         help='Export only cases with this status ("Q" by default)')
     parser.add_option('--no-sent-status', action='store_false', dest='sent_status', default=True,
         help='Do NOT set case status to "S" after export')
-    parser.add_option('--sample', action='store_true', dest='sample', default=False, 
-        help='Report only first case matching criteria; do NOT set status to sent')
+    parser.add_option('--sample', action='store', dest='sample', metavar='NUM', type='int', 
+        help='Report only first NUM cases matching criteria; do NOT set status to sent')
     options, args = parser.parse_args()
     if options.sample: # '--sample' implies '--no-sent-status'
         options.sent_status = False
@@ -144,7 +144,7 @@ def main():
         sys.exit(11)
     log_query('Filtered cases', cases)
     if options.sample: # Report only a single, random sample case
-        cases = [cases[0]]
+        cases = cases[0:options.sample]
     #
     # Build message string
     #
