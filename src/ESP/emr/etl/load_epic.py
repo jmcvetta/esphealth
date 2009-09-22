@@ -94,9 +94,7 @@ class BaseLoader(object):
         file_handle = open(filepath)
         self.line_count = len(file_handle.readlines())
         file_handle.seek(0) # Reset file position after counting lines
-        stream_reader = codecs.getreader(EPIC_ENCODING)
-        stream = stream_reader(file_handle)
-        self.reader = csv.DictReader(stream, fieldnames=self.fields, dialect='epic')
+        self.reader = csv.DictReader(file_handle, fieldnames=self.fields, dialect='epic')
     
     def get_patient(self, patient_id_num):
         if not patient_id_num:
@@ -155,7 +153,7 @@ class BaseLoader(object):
                 self.load_row(row)
                 transaction.savepoint_commit(sid)
                 valid += 1
-            except (LoadException, ValueError, Psycopg2Error), e:
+            except (LoadException, ValueError, UnicodeEncodeError, Psycopg2Error), e:
                 transaction.savepoint_rollback(sid)
                 log.error('Caught Exception:')
                 log.error('  File: %s' % self.filename)
