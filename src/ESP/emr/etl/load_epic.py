@@ -329,8 +329,16 @@ class LabResultLoader(BaseLoader):
     
     def load_row(self, row):
         native_code = row['cpt']
-        if row['component']:
-            native_code = native_code + '--' + row['component']
+        component = row['component']
+        if component:
+            # We only use first 20 characters of component, since some lab 
+            # results (always types unimportant to ESP) have quite long 
+            # component values, yet we need the native_code field to be a 
+            # reasonable width for indexing.  
+            if len(component) > 20:
+                log.warning('Component field is greater than 20 characters, and will be truncated to form native_code:')
+                log.warning('    %s' % component)
+            native_code = native_code + '--' + component[0:20] 
         l = LabResult()
         l.provenance = self.provenance
         l.patient = self.get_patient(row['patient_id_num'])
