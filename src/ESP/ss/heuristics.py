@@ -149,7 +149,7 @@ class SyndromeHeuristic(EncounterHeuristic):
         self.aggregate_residential_report(date)
         self.detailed_site_report(date)
 
-    def aggregate_site_report(self, date):
+    def aggregate_site_report(self, date, exclude_duplicates=True):
         log.debug('Aggregate site report for %s on %s' % (self.name, date))
         header = ['encounter date', 'zip', 'syndrome', 'syndrome events', 
               'total encounters', 'pct syndrome']
@@ -162,7 +162,7 @@ class SyndromeHeuristic(EncounterHeuristic):
 
         site_zips = Site.objects.values_list('zip_code', flat=True).distinct().order_by('zip_code')
         for zip_code in site_zips:
-            total = Site.volume_by_zip(zip_code, date)
+            total = Site.volume_by_zip(zip_code, date, exclude_duplicates=exclude_duplicates)
             syndrome_count = NonSpecialistVisitEvent.objects.filter(
                 date=date, heuristic=self.name, reporting_site__zip_code=zip_code).count()
 
@@ -179,7 +179,7 @@ class SyndromeHeuristic(EncounterHeuristic):
 
         
 
-    def aggregate_residential_report(self, date):
+    def aggregate_residential_report(self, date, exclude_duplicates=True):
 
         ''' 
         For this report, we need - for a given date:
@@ -204,15 +204,18 @@ class SyndromeHeuristic(EncounterHeuristic):
         for zip_code in zip_codes:
             non_specialty_encounters = Encounter.objects.filter(
                 date=date, patient__zip5=zip_code, native_site_num__in=Site.site_ids())
-            total_patients = non_specialty_encounters.values_list('patient', flat=True).distinct().count()
+            if exclude_duplicates:
+                total = non_specialty_encounters.values_list('patient', flat=True).distinct().count()
+            else:
+                total = non_specialty_encounters.count()
             syndrome_patients = NonSpecialistVisitEvent.objects.filter(
                 heuristic=self.name, date=date, patient_zip_code=zip_code).count()
 
-            if not (total_patients and syndrome_patients): continue
+            if not (total and syndrome_patients): continue
 
-            pct_syndrome = 100*(float(syndrome_patients)/float(total_patients))
+            pct_syndrome = 100*(float(syndrome_patients)/float(total))
 
-            line = '\t'.join([str(x) for x in [timestamp, zip_code, self.name, syndrome_patients, total_patients, '%1.3f' % pct_syndrome]])
+            line = '\t'.join([str(x) for x in [timestamp, zip_code, self.name, syndrome_patients, total, '%1.3f' % pct_syndrome]])
             log.debug(line)
             outfile.write(line + '\n')
 

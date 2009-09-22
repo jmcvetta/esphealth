@@ -37,23 +37,24 @@ class Site(models.Model):
     zip_code = models.CharField(max_length=10, db_index=True)
 
     @staticmethod
-    def volume_by_zip(zip_code, date):
+    def volume_by_zip(zip_code, date, exclude_duplicates=True):
         ''' 
-        Returns the total amount of encounters of a given day that
-        took place in the clinics that have a given zip code.
+        Returns the volume in a given day in the clinics that have a
+        given zip code, by checking how many encounters were
+        recorded. If exclude_duplicates is True, the count is reduced
+        to only the number of patients.
         '''
-        sites = Site.objects.filter(zip_code=zip_code)
-        return Encounter.objects.filter(
-            date=date, native_site_num__in=[x.code for x in sites]).count()
-
+        count = Encounter.objects.filter(
+            date=date, native_site_num__in=Site.ids(zip_code)).values_list('patient')
+        return count.distinct().count() if exclude_duplicates else count.count()
+        
     @staticmethod
     def encounters_by_zip(zip_code):
         ''' 
         Returns a QuerySet for encounters from all sites with a given zip code
         '''
-        sites = Site.objects.filter(zip_code=zip_code)
         return Encounter.objects.filter(
-            native_site_num__in=[x.code for x in sites])
+            native_site_num__in=Site.ids(zip_code))
 
     @staticmethod
     def age_group_aggregate(zip_code, date, lower, upper=90):
@@ -62,8 +63,9 @@ class Site(models.Model):
             ).filter(date=date).count()
 
     @staticmethod
-    def site_ids():
-        return Site.objects.values_list('code', flat=True)
+    def site_ids(zip_code=None):
+        sites = Site.objects.filter(zip_code=zip_code) if zip_code else Site.objects.all() 
+        return sites.values_list('code', flat=True)
 
 
     def encounters(self, acute_only=True, **kw):

@@ -95,18 +95,16 @@ class Report(object):
     def compare_encounter_counts(self):
         pass
 
-
-    def _compare_aggregate_residential(self, syndrome):
-        
+    def _compare_aggregate_file(self, syndrome, filename):
         # Get the contents of the file corresponding to date and syndrome
         date_str = str_from_date(self.date)
         
         try:
             old_lines = open(os.path.join(Report.OLD_REPORT_FOLDER, 
-                                          Report.AGGREGATE_BY_RESIDENTIAL_ZIP_FILENAME % (syndrome.name, date_str, date_str)
+                                          filename % (syndrome.name, date_str, date_str)
                                           )).readlines()[1:]
             new_lines = open(os.path.join(Report.NEW_REPORT_FOLDER, 
-                                          Report.AGGREGATE_BY_RESIDENTIAL_ZIP_FILENAME % (syndrome.name, date_str, date_str)
+                                          filename % (syndrome.name, date_str, date_str)
                                           )).readlines()[1:]
         except Exception, why:
             return {'etc':why}
@@ -166,20 +164,15 @@ class Report(object):
         if disparities: result['disparities'] = disparities
 
         return result
+
+
+
+    def _compare_aggregate_residential(self, syndrome):
+        return self._compare_aggregate_file(syndrome, Report.AGGREGATE_BY_RESIDENTIAL_ZIP_FILENAME)        
     
-                    
-                                
-
-        
-
-
     def _compare_aggregate_site(self, syndrome):
-        pass
+        return self._compare_aggregate_file(syndrome, Report.AGGREGATE_BY_SITE_ZIP_FILENAME)
 
-
-    def compare_syndrome_reports(self, syndrome):
-        self._compare_aggregate_residential(syndrome)
-        
 
         
         
