@@ -45,7 +45,7 @@ class Site(models.Model):
         to only the number of patients.
         '''
         count = Encounter.objects.filter(
-            date=date, native_site_num__in=Site.ids(zip_code)).values_list('patient')
+            date=date, native_site_num__in=Site.site_ids(zip_code)).values_list('patient')
         return count.distinct().count() if exclude_duplicates else count.count()
         
     @staticmethod
@@ -54,7 +54,7 @@ class Site(models.Model):
         Returns a QuerySet for encounters from all sites with a given zip code
         '''
         return Encounter.objects.filter(
-            native_site_num__in=Site.ids(zip_code))
+            native_site_num__in=Site.site_ids(zip_code))
 
     @staticmethod
     def age_group_aggregate(zip_code, date, lower, upper=90):
