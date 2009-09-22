@@ -148,20 +148,21 @@ class BaseHeuristic(object):
         return loincs
 
     @classmethod
-    def get_all_loincs_by_event(cls):
+    def get_required_loincs(cls):
         '''
-        Returns a list of all LOINC numbers for registered heuristics
+        Returns a dictionary associated each LOINC number required by 
+        registered heuristics, with the heuristic(s) that require it.
         '''
-        loincs = {}
+        required_loincs = {}
         for heuristic in cls.get_all_heuristics():
-            try:
-                try:
-                    loincs[heuristic] += set(heuristic.loinc_nums)
-                except KeyError:
-                    loincs[heuristic] = set(heuristic.loinc_nums)
-            except AttributeError:
-                pass # Skip heuristics w/ no LOINCs defined
-        return loincs
+            if not hasattr(heuristic, 'loinc_nums'):
+                continue # Skip heuristics w/ no LOINCs defined
+            for loinc in heuristic.loinc_nums:
+                if loinc in required_loincs:
+                    required_loincs[loinc].add(heuristic)
+                else:
+                    required_loincs[loinc] = set([heuristic])
+        return required_loincs 
 
     def matches(self, begin_timestamp = None):
         '''
