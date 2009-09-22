@@ -5,6 +5,8 @@ URLs for entire ESP Health django project
 from django.conf.urls.defaults import patterns
 from django.conf.urls.defaults import url
 from django.conf.urls.defaults import include
+from django.conf.urls.defaults import handler404
+from django.conf.urls.defaults import handler500
 from django.contrib import admin
 from django.views.generic.simple import direct_to_template
 from django.contrib.auth.views import login
