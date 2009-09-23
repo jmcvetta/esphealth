@@ -232,6 +232,7 @@ src/ESP/ss/models.py -text
 src/ESP/ss/reports.py -text
 src/ESP/ss/run.py -text
 src/ESP/ss/settings.py -text
+src/ESP/ss/tests.py -text
 src/ESP/ss/urls.py -text
 src/ESP/ss/utils.py -text
 src/ESP/ss/views.py -text

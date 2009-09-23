@@ -140,6 +140,8 @@ class Report(object):
 
 
         disparities = {}
+        syndrome_count_disparities = []
+        encounter_count_disparities = []
         for zip_code in intersection:
             try:
                 new_count, old_count = new[zip_code], old[zip_code]
@@ -147,12 +149,11 @@ class Report(object):
                 else:
                     if new_count[0] != old_count[0]:
                         disparities[zip_code] = 'Syndrome Count do not match. New: %s. Old : %s' % (new_count[0], old_count[0])
-                        continue
-
+                        syndrome_count_disparities.append(zip_code)
                     # If the encounter count differs by more than 10%, we add to our list of errors.
-                    if not (0.9 < float(new_count[1])/float(old_count[1]) < 1.1):
-                        disparities[zip_code] = 'Encounter code is too different. New: %s. Old : %s' % (new_count[1], old_count[1])
-                        continue
+                    if new_count[1] != old_count[1]:
+                        disparities[zip_code] = 'Encounter code do not match. New: %s. Old : %s' % (new_count[1], old_count[1])
+                        encounter_count_disparities.append(zip_code)
             except Exception, why:
                 import pdb; pdb.set_trace()
                         
@@ -161,6 +162,8 @@ class Report(object):
         result = {}
         if missing_in_old: result['missing_in_old'] = missing_in_old
         if missing_in_new: result['missing_in_new'] = missing_in_new
+        if syndrome_count_disparities: result['syndrome'] = syndrome_count_disparities
+        if encounter_count_disparities: result['encounters'] = encounter_count_disparities
         if disparities: result['disparities'] = disparities
 
         return result
