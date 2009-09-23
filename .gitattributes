@@ -1,4 +1,5 @@
 * text=auto !eol
+ESP/case_exporter.py -text
 ESP/esp/admin.py -text
 ESP/httpdconf/djangomedia/README -text
 ESP/httpdconf/djangomedia/media/ESPMay2006Talk.htm -text
