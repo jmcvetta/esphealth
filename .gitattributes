@@ -216,6 +216,7 @@ src/ESP/nodis/report/lyme_broad_report.py -text
 src/ESP/nodis/run.py -text
 src/ESP/nodis/tests.py -text
 src/ESP/nodis/urls.py -text
+src/ESP/nodis/validator.py -text
 src/ESP/nodis/views.py -text
 src/ESP/sendMsgs/bcdc.jar -text
 src/ESP/sendMsgs/org/openuri/www/Bcdc_elr.class -text
