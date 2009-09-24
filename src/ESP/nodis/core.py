@@ -33,6 +33,7 @@ from django.contrib.contenttypes.models import ContentType
 
 
 from ESP import settings
+from ESP.hef import events # Ensure events are loaded
 from ESP.utils import utils as util
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
@@ -252,6 +253,12 @@ class BaseEventPattern(object):
         returned by __hash__().
         '''
         raise NotImplementedError
+    
+    def __get_relevant_loincs(self):
+        '''
+        Returns the set of LOINC numbers required any component of this pattern
+        '''
+        raise NotImplementedError
 
 
 class SimpleEventPattern(BaseEventPattern):
@@ -268,7 +275,6 @@ class SimpleEventPattern(BaseEventPattern):
     
     def __init__(self, heuristic):
         self.__dated_events_cache = {} 
-        from ESP.hef import events # Ensure events are loaded
         if not heuristic in BaseHeuristic.list_heuristics():
             raise InvalidHeuristic('Unknown heuristic: %s' % heuristic)
         self.heuristic = heuristic
@@ -337,7 +343,15 @@ class SimpleEventPattern(BaseEventPattern):
     
     def __repr__(self):
         return 'SimpleEventPattern: %s' % self.heuristic
-
+    
+    def __get_relevant_loincs(self):
+        loincs = set()
+        for h in BaseHeuristic.get_heuristics_by_name(self.heuristic):
+            if not hasattr(h, 'loinc_nums'):
+                continue
+            loincs |= set(h.loinc_nums)
+        return loincs
+    relevant_loincs = property(__get_relevant_loincs)
 
 class ComplexEventPattern(BaseEventPattern):
     '''
@@ -617,6 +631,13 @@ class ComplexEventPattern(BaseEventPattern):
             return self.name
         else:
             return self.string_hash
+    
+    def __get_relevant_loincs(self):
+        loincs = set()
+        for pat in self.patterns:
+            loincs |= pat.relevant_loincs
+        return loincs
+    relevant_loincs = property(__get_relevant_loincs)
         
 
 
@@ -974,6 +995,18 @@ class Condition(object):
             existing_cases = Case.objects.filter(q_obj)
             for case in existing_cases:
                 definition.update_case(case)
+    
+    def __get_relevant_loincs(self):
+        '''
+        Returns the set of LOINC numbers required by any pattern defining this 
+        condition
+        '''
+        loincs = set()
+        for pat in self.patterns:
+            loincs |= pat.relevant_loincs
+        return loincs
+    relevant_loincs = property(__get_relevant_loincs)
+        
 
 
 
