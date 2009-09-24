@@ -151,7 +151,7 @@ def date_from_str(timestamp):
     else:
         raise ValueError, '%s can not be converted into a date' % str(timestamp)
     
-    return datetime.datetime.strptime(timestamp, format)
+    return datetime.datetime.strptime(timestamp, format).date()
 
     
 
