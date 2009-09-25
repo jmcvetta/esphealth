@@ -51,29 +51,98 @@ class TestReports(unittest.TestCase):
             report = Report(day)
             syndrome = syndrome_heuristics()['ili']
             results = report._compare_aggregate_residential(syndrome)
+
             
-            if 'encounters' in results:
-                for zip_code in results['encounters']: 
-                    when = str_from_date(day)
-                    sites = Site.site_ids(zip_code)
-                    for enc in legacy.encounters_from_clinics_on(sites, when):
-                        print enc
+            if 'disparities' in results:
+                for zip_code, d in results['disparities'].items():
+                    sites = Site.site_ids()
+                    encounters = d.get('encounters', None)
+                    if encounters:
+                        new_query = Encounter.objects.values_list('id', flat=True).filter(
+                            date=day, patient__zip5=zip_code, native_site_num__in=sites)
+                        if not new_query.count() == int(encounters['new']):
+                            print 'Different values in total count on %s for zip %s' % (day, zip_code)
+                            print new_query.count()
+                            print encounters['new']
+                            print encounters['old']
+
+                        old_ids = set(list(legacy.encounters_from_clinics_on(sites, day)))
+
+                        for item in (set(new_query) - old_ids):
+                            try:
+                                enc = Encounter.objects.get(id=item)
+                                print 'Encounter found only on new db: %s' % enc
+                            except Exception, why:
+                                pass
+                            
+                        for item in (old_ids - set(new_query)):
+                            try:
+                                enc = Encounter.objects.get(id=item)
+                                print 'Encounter found only on old db: %s' % enc
+                            except Exception, why:
+                                pass
+
+
+        
+            
 
 
     def testAggregateSite(self):
         for delta in xrange(7):
             day = DAY + datetime.timedelta(delta)
             report = Report(day)
+            syndrome = syndrome_heuristics()['ili']
+            results = report._compare_aggregate_site(syndrome)
 
-            for syndrome in syndrome_heuristics().values():
-                results = report._compare_aggregate_site(syndrome)
             
-                if 'encounters' in results:
-                    for zip_code in results['encounters']: 
-                        when = str_from_date(day)
-                        sites = Site.site_ids(zip_code)
-                        for enc in legacy.encounters_from_clinics_on(sites, when):
-                            print enc
+            if 'disparities' in results:
+                for zip_code, d in results['disparities'].items():
+                    sites = Site.site_ids(zip_code)
+                    encounters = d.get('encounters', None)
+                    if encounters:
+                        new_query = Encounter.objects.values_list('id', flat=True).filter(
+                            date=day, native_site_num__in=Site.site_ids(zip_code))
+
+                        if not new_query.count() == int(encounters['new']):
+                            print 'Different values in total count on %s for zip %s' % (day, zip_code)
+                            print new_query.count()
+                            print encounters['new']
+                            print encounters['old']
+
+
+                        
+                        old_ids = set(list(legacy.encounters_from_clinics_on(sites, day)))
+
+                        for item in (set(new_query) - old_ids):
+                            try:
+                                enc = Encounter.objects.get(id=item)
+                                print 'Encounter found only on new db: %s' % enc
+                            except Exception, why:
+                                pass
+
+                        for item in (old_ids - set(new_query)):
+                            try:
+                                enc = Encounter.objects.get(id=item)
+                                print 'Encounter found only on old db: %s' % enc
+                            except Exception, why:
+                                pass
+
+
+
+
+        for delta in xrange(7):
+            day = DAY + datetime.timedelta(delta)
+            report = Report(day)
+
+            # for syndrome in syndrome_heuristics().values():
+            #     results = report._compare_aggregate_site(syndrome)
+            
+            #     if 'encounters' in results:
+            #         for zip_code in results['encounters']: 
+            #             when = str_from_date(day)
+            #             sites = Site.site_ids(zip_code)
+            #             print legacy.encounters_from_clinics_on(sites, when)
+
                         
     def testEncounterCounts(self):
         pass

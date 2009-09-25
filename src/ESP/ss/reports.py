@@ -25,7 +25,7 @@ MINIMUM_RESIDENTIAL_CASE_THRESHOLD = 5
 
 class Report(object):
 
-    REPORTS_FOLDER = '/home/relul/code/channing/esp/trunk/src/ESP/assets/reports/'
+    REPORTS_FOLDER = os.path.join(os.path.dirname(__file__), 'assets')
     OLD_REPORT_FOLDER = os.path.join(REPORTS_FOLDER, 'archive')
     NEW_REPORT_FOLDER = os.path.join(REPORTS_FOLDER, 'new')
 
@@ -98,7 +98,7 @@ class Report(object):
     def _compare_aggregate_file(self, syndrome, filename):
         # Get the contents of the file corresponding to date and syndrome
         date_str = str_from_date(self.date)
-        
+
         try:
             old_lines = open(os.path.join(Report.OLD_REPORT_FOLDER, 
                                           filename % (syndrome.name, date_str, date_str)
@@ -147,13 +147,13 @@ class Report(object):
                 new_count, old_count = new[zip_code], old[zip_code]
                 if new_count == old_count: continue
                 else:
+                    disparities[zip_code] = {}
                     if new_count[0] != old_count[0]:
-                        disparities[zip_code] = 'Syndrome Count do not match. New: %s. Old : %s' % (new_count[0], old_count[0])
-                        syndrome_count_disparities.append(zip_code)
-                    # If the encounter count differs by more than 10%, we add to our list of errors.
+                        disparities[zip_code]['syndrome'] = {'new': new_count[0], 'old': old_count[0]}
+
                     if new_count[1] != old_count[1]:
-                        disparities[zip_code] = 'Encounter code do not match. New: %s. Old : %s' % (new_count[1], old_count[1])
-                        encounter_count_disparities.append(zip_code)
+                        disparities[zip_code]['encounters'] = {'new':new_count[1], 'old': old_count[1]}
+
             except Exception, why:
                 import pdb; pdb.set_trace()
                         
@@ -162,8 +162,6 @@ class Report(object):
         result = {}
         if missing_in_old: result['missing_in_old'] = missing_in_old
         if missing_in_new: result['missing_in_new'] = missing_in_new
-        if syndrome_count_disparities: result['syndrome'] = syndrome_count_disparities
-        if encounter_count_disparities: result['encounters'] = encounter_count_disparities
         if disparities: result['disparities'] = disparities
 
         return result

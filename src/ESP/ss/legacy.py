@@ -14,5 +14,5 @@ def encounters_from_clinics_on(site_list, date_str):
     elif l ==1: site_filter = "EncEncounter_Site = '%s'" % str(site_list[0])
     else: site_filter = 'EncEncounter_Site IN (%s)' % ', '.join(["'%s'" % x for x in site_list])
 
-    return db.select('esp_enc', where=' AND '.join([site_filter, "EncEncounter_Date = '%s'" % date_str]))
+    return db.select('esp_enc', what='id', where=' AND '.join([site_filter, "EncEncounter_Date = '%s'" % date_str]))
     
