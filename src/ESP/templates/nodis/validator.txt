@@ -41,13 +41,15 @@ Nodis date: {{ item.1.date }}
 MRN:       {{ item.0.mrn }}
 Condition: {{ item.0.condition }}
 Date:      {{ item.0.date }}
-Labs:
-{% if not item.1 %}    NONE{% endif %}{% for lab in item.1 %}
-    Lab #{{ lab.pk }}  Date: {{ lab.date }}
-        Native Code | Name: {{ lab.native_code }} | {{ lab.native_name }}
-        Result: {{ lab.result_string }}
-{% endfor %}
-
+{% if item.2 %}Events: {% for event in item.2 %}
+    #{{ event.pk }}  | {{ event.date }} | {{ event.heuristic }} {% endfor %}
+{% endif %}
+{% if item.1 %}Labs: {% for lab in item.1 %}
+    #{{ lab.pk }} | {{ lab.date }} | {{ lab.native_code }} | {{ lab.native_name }}
+        "{{ lab.result_string }}" | {{ lab.events.all|safeseq }} {% endfor %}
+{% endif %}
+{% if not item.1 or item.2 %}
+    NO EVENTS OR LAB RESULTS {% endif %}
 --------------------------------------------------------------------------------
 {% endfor %}
 {% if not missing %}

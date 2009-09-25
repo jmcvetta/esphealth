@@ -1,71 +1,176 @@
-================================================================================
+{% extends 'base.html' %}
 
-                             NODIS CASE VALIDATOR
+{% block content %}
 
-================================================================================
+<h2 align="center">
+    Summary
+</h2>
+
+<table>
+    <tr>
+        <th>Status
+        <th>Count
+        <th>Percentage
+    <tr>
+        <td>Exact
+        <td>{{ count_exact }}
+        <td>{{ percent_exact }}
+    <tr>
+        <td>Similar
+        <td>{{ count_similar }}
+        <td>{{ percent_similar }}
+    <tr>
+        <td>Missing
+        <td>{{ count_missing }}
+        <td>{{ percent_missing }}
+    <tr>
+        <td>New
+        <td>{{ count_new }}
+        <td>{{ percent_new }}
+    <tr>
+        <td><em>TOTAL</em>
+        <td>{{ total }}
+        <td>100
+</table>
 
 
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                Exact Match
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-{% for item in exact %}
-MRN:       {{ item.1.patient.mrn }}
-Condition: {{ item.1.condition }}
-Date:      {{ item.1.date }}
 
---------------------------------------------------------------------------------
-{% endfor %}
-{% if not exact %}
-*** NONE ***
+<hr>
+<h2 align="center">
+    Exact Match
+</h2>
+<hr>
+
+{% if exact %}
+    <table>
+        <tr>
+            <th>MRN
+            <th>Condition
+            <th>Date
+        {% for item in exact %}
+        <tr>
+            <td>{{ item.1.patient.mrn }}
+            <td>{{ item.1.condition }}
+            <td>{{ item.1.date }}
+        {% endfor %}
+    </table>
+{% else %}
+    <p><em>None</em></p>
 {% endif %}
 
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                              Similar Date Match
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-{% for item in similar %}
-MRN:        {{ item.1.patient.mrn }}
-Condition:  {{ item.1.condition }}
-Known Date: {{ item.0.date }}
-Nodis date: {{ item.1.date }}
 
---------------------------------------------------------------------------------
-{% endfor %}
-{% if not similar %}
-*** NONE ***
-{% endif %}
+<hr>
+<h2 align="center">
+    Similar Date Match
+</h2>
+<hr>
 
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                    Missing
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-{% for item in missing %}
-MRN:       {{ item.0.mrn }}
-Condition: {{ item.0.condition }}
-Date:      {{ item.0.date }}
-{% if item.2 %}Events: {% for event in item.2 %}
-    #{{ event.pk }}  | {{ event.date }} | {{ event.heuristic }} {% endfor %}
-{% endif %}
-{% if item.1 %}Labs: {% for lab in item.1 %}
-    #{{ lab.pk }} | {{ lab.date }} | {{ lab.native_code }} | {{ lab.native_name }}
-        "{{ lab.result_string }}" | {{ lab.events.all|safeseq }} {% endfor %}
-{% endif %}
-{% if not item.1 or item.2 %}
-    NO EVENTS OR LAB RESULTS {% endif %}
---------------------------------------------------------------------------------
-{% endfor %}
-{% if not missing %}
-*** NONE ***
+{% if similar %}
+    <table>
+        <tr>
+            <th>MRN
+            <th>Condition
+            <th>Known Date
+            <th>Nodis date
+        {% for item in similar %}
+        <tr>
+            <td>{{ item.1.patient.mrn }}
+            <td>{{ item.1.condition }}
+            <td>{{ item.0.date }}
+            <td>{{ item.1.date }}
+        {% endfor %}
+    </table>
+{% else %}
+    <p><em>None</em></p>
 {% endif %}
 
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                      New
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-{% for item in new %}
-MRN:       {{ item.patient.mrn }}
-Condition: {{ item.condition }}
-Date:      {{ item.date }}
 
---------------------------------------------------------------------------------
-{% endfor %}
-{% if not new %}
-*** NONE ***
+<hr>
+<h2 align="center">
+    Missing
+</h2>
+<hr>
+
+{% if missing %}
+
+    {% for item in missing %}
+        <p>MRN:       {{ item.0.mrn }}
+        <br>Condition: {{ item.0.condition }}
+        <br>Date:      {{ item.0.date }}
+
+        {% if item.2 %}
+        <p>Events: 
+        <table>
+            <tr>
+                <th>Event ID
+                <th>Date
+                <th>Heuristic
+            {% for event in item.2 %}
+            <tr>
+                <td>{{ event.pk }}
+                <td>{{ event.date }}
+                <td>{{ event.heuristic }} 
+            {% endfor %}
+        </table>
+        {% endif %}
+
+        {% if item.1 %}
+        <p>Labs: 
+        <table>
+            <tr>
+                <th>Lab ID
+                <th>Date
+                <th>Native Code
+                <th>Native Name
+                <th>Result
+                <th>Bound Events
+            {% for lab in item.1 %}
+            <tr>
+                <td>{{ lab.pk }}
+                <td>{{ lab.date }}
+                <td>{{ lab.native_code }}
+                <td>{{ lab.native_name }}
+                <td>{{ lab.result_string }}
+                <td>{{ lab.events.all|safeseq }}
+            {% endfor %}
+        </table>
+        {% endif %}
+
+        {% if not item.1 and not item.2 %}
+            <p><em>NO EVENTS OR LAB RESULTS </em>
+        {% endif %}
+
+    <hr>
+    {% endfor %}
+
+{% else %}
+    <p><em>None</em></p>
 {% endif %}
+
+
+
+<hr>
+<h2 align="center">
+    New
+</h2>
+<hr>
+
+{% if new %}
+    <table>
+        <tr>
+            <th>MRN
+            <th>Condition
+            <th>Date
+        {% for item in new %}
+        <tr>
+            <td>{{ item.patient.mrn }}
+            <td>{{ item.condition }}
+            <td>{{ item.date }}
+        {% endfor %}
+    </table>
+{% else %}
+    <p><em>None</em></p>
+{% endif %}
+
+
+{% endblock %}
