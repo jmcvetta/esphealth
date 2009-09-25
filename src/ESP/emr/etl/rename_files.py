@@ -19,7 +19,11 @@ def main():
     for filename in os.listdir(INPUT_DIR):
         log.debug('original filename: %s' % filename)
         monthly = False
-        first, second, third = filename.split('.')
+        try:
+            first, second, third = filename.split('.')
+        except ValueError:
+            log.error('Could not unpack filename: "%s".  Skipping.' % filename)
+            continue
         if len(third) == 10 and third[-2:] == '_m':
             monthly = True
             third = third[:-2]
