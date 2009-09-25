@@ -9,12 +9,15 @@ import os
 import shutil
 import re
 
+from ESP.utils.utils import log
+
 
 INPUT_DIR = '/srv/esp/epic/broken'
 OUTPUT_DIR = '/srv/esp/epic/incoming'
 
 def main():
     for filename in os.listdir(INPUT_DIR):
+        log.debug('original filename: %s' % filename)
         monthly = False
         first, second, third = filename.split('.')
         if len(third) == 10 and third[-2:] == '_m':
@@ -29,6 +32,7 @@ def main():
         year = third[4:]
         assert year[:3] == '200' # Sanity check -- everything is from 2006-9
         new_name = '%s.%s.%s-%s-%s' % (first, second, year, month, day)
+        log.debug('new filename: %s' % new_name)
         if monthly:
             new_name = new_name + '_m'
         src = os.path.join(INPUT_DIR, filename)
