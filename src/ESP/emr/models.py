@@ -623,6 +623,8 @@ class LabResult(BasePatientRecord):
     comment = models.TextField('Comments',  blank=True,  null=True, )
     # Manager
     objects = LabResultManager()
+    # HEF
+    events = generic.GenericRelation('hef.Event')
     
     class Meta:
         verbose_name = 'Lab Test Result'
@@ -761,6 +763,8 @@ class Prescription(BasePatientRecord):
     status = models.CharField('Order Status', max_length=20, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
+    # HEF
+    events = generic.GenericRelation('hef.Event')
     
     def __str__(self):
         return self.name
@@ -915,6 +919,8 @@ class Encounter(BasePatientRecord):
     bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True)
     o2_stat = models.FloatField(max_length=50, blank=True, null=True)
     peak_flow = models.FloatField(max_length=50, blank=True, null=True)
+    # HEF
+    events = generic.GenericRelation('hef.Event')
 
     q_fake = Q(patient__patient_id_num__startswith='FAKE')
 
@@ -1037,6 +1043,8 @@ class Immunization(BasePatientRecord):
     manufacturer = models.CharField('Manufacturer', max_length=100, blank=True, null=True)
     lot = models.TextField('Lot Number', max_length=500, blank=True, null=True)
     visit_date = models.DateField('Date of Visit', blank=True, null=True)
+    # HEF
+    events = generic.GenericRelation('hef.Event')
 
     q_fake = Q(name='FAKE')
 

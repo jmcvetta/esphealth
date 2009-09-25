@@ -13,6 +13,7 @@ provenance.
 @copyright: (c) 2009 Channing Laboratory
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
+from ESP.utils.utils import log_query
 
 
 #-------------------------------------------------------------------------------
@@ -112,7 +113,7 @@ def main():
     else: # options.provenance
         prov_stat_q = Q(provenance__provenance_id=options.provenance)
         bad_prov = Provenance.objects.filter(pk=options.provenance)
-    log.debug('prov_stat_q: %s' % prov_stat_q)
+    log_query('Bad provenance query:', bad_prov)
     if not bad_prov.count():
         print
         print 'No matching provenance entries found.  Nothing to do.'
@@ -204,9 +205,10 @@ def main():
     print
     for rec_type in record_types:
         to_be_deleted = rec_type.objects.filter(prov_stat_q)
+        log_query('To be deleted', to_be_deleted)
         log.debug('Deleting %s %s records' % (to_be_deleted.count(), rec_type))
         to_be_deleted.delete()
-    log.debug('Deleting %s provenance entries' % bad_prov.count())
+    log_query('Deleting %s provenance entries' % bad_prov.count(), bad_prov)
     bad_prov.delete()
     
 
