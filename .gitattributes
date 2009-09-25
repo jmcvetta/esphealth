@@ -286,6 +286,7 @@ src/ESP/templates/nodis/case_detail.html -text
 src/ESP/templates/nodis/case_list.html -text
 src/ESP/templates/nodis/provider_detail.html -text
 src/ESP/templates/nodis/report/odh_hl7.txt -text
+src/ESP/templates/nodis/validator.html -text
 src/ESP/templates/nodis/validator.txt -text
 src/ESP/templates/pages/ss/home.html -text
 src/ESP/templates/pages/vaers/collect_feedback.html -text
