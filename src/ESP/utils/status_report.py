@@ -98,7 +98,12 @@ def populate_values():
     values['localsite'] = SITE_NAME
     values['case_summary'] = case_summary(template=output_template)
     values['new_cases'] = new_cases(template=output_template)
-    values['latest_prov'] = Provenance.objects.filter(status='loaded').order_by('-timestamp')[0].timestamp
+    latest_qs = Provenance.objects.filter(status='loaded').order_by('-timestamp')
+    if latest_qs:
+        values['latest_prov'] = latest_qs[0].timestamp
+    else:
+        values['latest_prov'] = None
+        
     values['last_ten_prov'] = Provenance.objects.order_by('-timestamp')[:10]
     #values['hl7_ts'] = Hl7Message.objects.filter(status='l').aggregate(max=Max('timestamp'))['max']
     #values['hl7_num_l'] = Hl7Message.objects.filter(status='l').count()
