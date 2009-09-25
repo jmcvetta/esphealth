@@ -259,6 +259,12 @@ class BaseEventPattern(object):
         Returns the set of LOINC numbers required any component of this pattern
         '''
         raise NotImplementedError
+    
+    def __get_relevant_heuristics(self):
+        '''
+        Returns the set of heuristics required by any component of this pattern
+        '''
+        raise NotImplementedError
 
 
 class SimpleEventPattern(BaseEventPattern):
@@ -352,6 +358,11 @@ class SimpleEventPattern(BaseEventPattern):
             loincs |= set(h.loinc_nums)
         return loincs
     relevant_loincs = property(__get_relevant_loincs)
+    
+    def __get_relevant_heuristics(self):
+        return set([self.heuristic])
+    relevant_heuristics = property(__get_relevant_heuristics)
+
 
 class ComplexEventPattern(BaseEventPattern):
     '''
@@ -639,6 +650,12 @@ class ComplexEventPattern(BaseEventPattern):
         return loincs
     relevant_loincs = property(__get_relevant_loincs)
         
+    def __get_relevant_heuristics(self):
+        heuristics = set()
+        for pat in self.patterns:
+            heuristics |= pat.relevant_heuristics
+        return heuristics
+    relevant_heuristics = property(__get_relevant_heuristics)
 
 
 class Condition(object):
@@ -1008,5 +1025,15 @@ class Condition(object):
     relevant_loincs = property(__get_relevant_loincs)
         
 
-
+    def __get_relevant_heuristics(self):
+        '''
+        Returns the set of heuristics required by any pattern defining this 
+        condition
+        '''
+        heuristics = set()
+        for pat in self.patterns:
+            heuristics |= pat.relevant_heuristics
+        return heuristics
+    relevant_heuristics = property(__get_relevant_heuristics)
+        
 
