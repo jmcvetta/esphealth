@@ -37,6 +37,7 @@ from ESP.hef.models import Run
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
+from ESP.utils.utils import log_query
 
 
 
@@ -164,13 +165,16 @@ class BaseHeuristic(object):
                     required_loincs[loinc] = set([heuristic])
         return required_loincs 
 
-    def matches(self, begin_timestamp = None):
+    def matches(self, exclude_heuristic=None):
         '''
         Return a QuerySet of matches for this heuristic
+        @param exclude_heuristic: Exclude records already bound events of this 
+            heuristic type
+        @type exclude_heuristic: String
         '''
         raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseHeuristic.')
 
-    def generate_events(self, incremental = True, **kw):
+    def generate_events(self, **kw):
         '''
         Generate Event records for each item returned by
         matches, if it does not already have one.
@@ -178,33 +182,10 @@ class BaseHeuristic(object):
         '''
         log.info('Generating events for "%s".' % self.def_name)
         counter = 0 # Counts how many new records have been created
-        #
-        # Incremental processing
-        #
-        if incremental:
-            log.debug('Incremental processing requested.')
-            runs = Run.objects.filter(def_name = self.def_name, status = 's')
-            begin_timestamp = runs.aggregate(ts = Max('timestamp'))['ts'] # aggregate() returns dict
-        else:
-            log.debug('Incremental processing NOT requested.')
-            begin_timestamp = None
-        log.debug('begin_timestamp: %s' % begin_timestamp)
         self.run = Run(def_name = self.def_name) # New Run object for this run
         self.run.save()
         log.debug('Generated new Run object for this run: %s' % self.run)
-        #
-        #
-        # First we retrieve a list of object IDs for this 
-        existing = Event.objects.filter(definition = self.def_name).values_list('object_id')
-        existing = [int(item[0]) for item in existing] # Convert to a list of integers
-        #
-        # Disabled select_related() because matches will most often be in 
-        # existing list, and thus discarded not saved.
-        #
-        for event in self.matches(begin_timestamp):
-            if event.id in existing:
-                log.debug('BaseHeuristic event "%s" already exists for %s #%s' % (self.name, event._meta.object_name, event.id))
-                continue
+        for event in self.matches(exclude_heuristic=self.name).select_related():
             content_type = ContentType.objects.get_for_model(event)
             obj, created = Event.objects.get_or_create(
                 heuristic = self.name,
@@ -232,24 +213,22 @@ class BaseHeuristic(object):
         return counter
 
     @classmethod
-    def generate_all_events(cls, incremental = True, **kw):
+    def generate_all_events(cls, **kw):
         '''
         Generate Event records for every registered BaseHeuristic 
             instance.
-        @param begin_timestamp: Beginning of time window to examine
-        @type begin_timestamp:  datetime.datetime
         @return:           Integer number of new records created
         '''
         counter = 0 # Counts how many total new records have been created
         for heuristic in cls.get_all_heuristics():
-            counter += heuristic.generate_events(incremental = incremental)
+            counter += heuristic.generate_events()
         log.info('Generated %s TOTAL new events.' % counter)
         return counter
 
     @classmethod
-    def generate_events_by_name(cls, name, incremental = True):
+    def generate_events_by_name(cls, name):
         for heuristic in cls.get_heuristics_by_name(name):
-            heuristic.generate_events(incremental = incremental)
+            heuristic.generate_events()
 
     def get_events(self):
         '''
@@ -282,21 +261,23 @@ class LabHeuristic(BaseHeuristic):
             def_version = def_version,
             )
 
-    def relevant_labs(self, begin_timestamp = None, loinc_nums = None):
+    def relevant_labs(self, loinc_nums=None, exclude_heuristic=None):
         '''
         Return all lab results relevant to this heuristic, whether or not they 
         indicate positive.
-            @type loinc_nums: [String, String, ...]
-            @type begin_timestamp: datetime.datedatetime
-            @type end_date:   datetime.date
+        @type loinc_nums: [String, String, ...]
+        @param exclude_heuristic: Exclude records already bound events of this 
+            heuristic type
+        @type exclude_heuristic: String
         '''
         log.debug('Get lab results relevant to "%s".' % self.name)
-        log.debug('Beginning timestamp: %s' % begin_timestamp)
+        log.debug('Exclude Heuristic: %s' % exclude_heuristic)
         if not loinc_nums:
             loinc_nums = self.loinc_nums
         qs = LabResult.objects.filter_loincs(loinc_nums)
-        if begin_timestamp:
-            qs = qs.filter(updated_timestamp__gte = begin_timestamp)
+        if exclude_heuristic:
+            q_obj = ~Q(events__heuristic=exclude_heuristic)
+            qs = qs.filter(q_obj)
         return qs
 
 
@@ -330,14 +311,14 @@ class NumericLabHeuristic(LabHeuristic):
             loinc_nums = loinc_nums,
             )
 
-    def matches(self, begin_timestamp = None):
+    def matches(self, exclude_heuristic=None):
         '''
         If record has a reference high, and a ratio has been specified, compare
         test result against that reference.  If a record does not have a
         reference high, and a default_high has been specified, compare result
         against that default 'high' value.
         '''
-        relevant_labs = self.relevant_labs(begin_timestamp)
+        relevant_labs = self.relevant_labs(exclude_heuristic=exclude_heuristic)
         no_ref_q = Q(ref_high = None) # Record has null value for ref_high
         comparison = self.comparison.strip()
         if self.default_high:
@@ -376,6 +357,7 @@ class NumericLabHeuristic(LabHeuristic):
             result = relevant_labs.exclude(pos_q)
         else:
             result = relevant_labs.filter(pos_q)
+        log_query('Query for heuristic %s' % self.name, result)
         return result
 
 
@@ -410,7 +392,7 @@ class StringMatchLabHeuristic(LabHeuristic):
             loinc_nums = loinc_nums,
             )
 
-    def matches(self, begin_timestamp = None):
+    def matches(self, exclude_heuristic=None):
         '''
         Compare record's result field against strings.
         '''
@@ -426,9 +408,10 @@ class StringMatchLabHeuristic(LabHeuristic):
             raise NotImplementedError('The only match type supported at this time is "istartswith".')
         log.debug('pos_q: %s' % pos_q)
         if self.exclude:
-            result = self.relevant_labs(begin_timestamp).exclude(pos_q)
+            result = self.relevant_labs(exclude_heuristic=exclude_heuristic).exclude(pos_q)
         else:
-            result = self.relevant_labs(begin_timestamp).filter(pos_q)
+            result = self.relevant_labs(exclude_heuristic=exclude_heuristic).filter(pos_q)
+        log_query('Query for heuristic %s' % self.name, result)
         return result
 
 
@@ -437,8 +420,10 @@ class LabOrderedHeuristic(LabHeuristic):
     Matches any *order* for a lab test with specified LOINC(s)
     '''
 
-    def matches(self, begin_timestamp = None):
-        return self.relevant_labs(begin_timestamp = begin_timestamp)
+    def matches(self, exclude_heuristic=None):
+        result = self.relevant_labs(exclude_heuristic=exclude_heuristic)
+        log_query('Query for heuristic %s' % self.name, result)
+        return result
 
 
 class EncounterHeuristic(BaseHeuristic):
@@ -471,22 +456,24 @@ class EncounterHeuristic(BaseHeuristic):
         return enc_q
     enc_q = property(__get_enc_q)
 
-    def encounters(self, begin_timestamp):
+    def encounters(self, exclude_heuristic=None):
         '''
-        Return all lab results relevant to this heuristic, whether or not they 
-        indicate positive.
+        Return all encounters relevant to this heuristic
             @type patient:    Demog
             @type queryset:   QuerySet
         '''
         log.debug('Get encounters relevant to "%s".' % self.name)
         qs = Encounter.objects.all()
-        if begin_timestamp :
-            qs = qs.filter(updated_timestamp__gte = begin_timestamp)
+        if exclude_heuristic:
+            q_obj = ~Q(events__heuristic=exclude_heuristic)
+            qs = qs.filter(q_obj)
         qs = qs.filter(self.enc_q)
         return qs
 
-    def matches(self, begin_timestamp = None):
-        return self.encounters(begin_timestamp)
+    def matches(self, exclude_heuristic=None):
+        qs = self.encounters(exclude_heuristic=exclude_heuristic)
+        log_query('Query for heuristic %s' % self.name, qs)
+        return qs
 
 
 class FeverHeuristic(BaseHeuristic):
@@ -504,7 +491,7 @@ class FeverHeuristic(BaseHeuristic):
             def_version = def_version,
             )
 
-    def matches(self, begin_timestamp = None, queryset = None):
+    def matches(self, queryset=None, exclude_heuristic=None):
         '''
         Return all encounters indicating fever.
             @type queryset:   QuerySet
@@ -514,12 +501,14 @@ class FeverHeuristic(BaseHeuristic):
         for code in self.icd9s:
             enc_q = enc_q | Q(icd9_codes__code = code)
         qs = Encounter.objects.all()
-        if begin_timestamp:
-            qs = qs.filter(updated_timestamp__gte = begin_timestamp)
+        if exclude_heuristic:
+            q_obj = ~Q(events__heuristic=exclude_heuristic)
+            qs = qs.filter(q_obj)
         # Either encounter has the 'fever' ICD9, or it records a high temp
         q_obj = enc_q | Q(temperature__gt = self.temperature)
         log.debug('q_obj: %s' % q_obj)
         qs = qs.filter(q_obj)
+        log_query('Query for heuristic %s' % self.name, qs)
         return qs
 
 
@@ -538,6 +527,9 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
             )
 
     def old_matches(self, begin_timestamp = None):
+        #
+        # WTF: Why did I save this?
+        #
         log.debug('Looking for high calculated bilirubin scores')
         # First, we return a list of patient & order date pairs, where the sum
         # of direct and indirect bilirubin tests ordered on the same day is 
@@ -554,25 +546,35 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
             matches = matches | relevant.filter(patient = item['patient'], date = item['date'])
         return matches
 
-    def matches(self, begin_timestamp = None):
+    def matches(self, exclude_heuristic=None):
         log.debug('Looking for high calculated bilirubin scores')
         # First, we return a list of patient & order date pairs, where the sum
         # of direct and indirect bilirubin tests ordered on the same day is 
         # greater than 1.5.
-        relevant = self.relevant_labs(begin_timestamp = begin_timestamp)
+        relevant = self.relevant_labs(exclude_heuristic=exclude_heuristic)
         vqs = relevant.values('patient', 'date') # returns ValueQuerySet
         vqs = vqs.annotate(calc_bil = Sum('result_float'))
         vqs = vqs.filter(calc_bil__gt = 1.5)
+        #
         # Now, instead of returning a QuerySet -- which would require a hugely
         # complex, slow query -- we go and fetch the individual matches into a 
+        # set.  
+        #
+        # FIXME:  This looks slow & cumbersome -- we should do a big complex 
+        # query instead, as postgres handles those efficiently
         match_ids = set()
         for item in vqs:
-            match_ids = match_ids | set(relevant.filter(patient = item['patient'], date = item['date']).values_list('id', flat = True))
+            match_ids = match_ids | set(relevant.filter(patient = item['patient'], 
+                date = item['date']).values_list('id', flat = True))
         log.debug('Number of match IDs: %s' % len(match_ids))
         matches = relevant.filter(id__in = match_ids)
+        #log_query('Query for heuristic %s' % self.name, matches)
         return matches
 
     def newer_matches(self, begin_timestamp = None):
+        #
+        # WTF: Why did I save this?
+        #
         log.debug('Looking for high calculated bilirubin scores')
         direct_loinc = ['29760-6']
         indirect_loinc = ['14630-8']
@@ -600,16 +602,19 @@ class MedicationHeuristic(BaseHeuristic):
             def_version = def_version,
             )
 
-    def matches(self, begin_timestamp = None):
+    def matches(self, exclude_heuristic=None):
         log.debug('Finding matches for following drugs:')
         [log.debug('    %s' % d) for d in self.drugs]
         qs = Prescription.objects.all()
-        if begin_timestamp:
-            qs = qs.filter(updated_timestamp__gte = begin_timestamp)
+        if exclude_heuristic:
+            q_obj = ~Q(events__heuristic=exclude_heuristic)
+            qs = qs.filter(q_obj)
         q_obj = Q(name__icontains = self.drugs[0])
         for drug_name in self.drugs[1:]:
             q_obj = q_obj | Q(name__icontains = drug_name)
-        return qs.filter(q_obj)
+        qs = qs.filter(q_obj)
+        log_query('Query for heuristic %s' % self.name, qs)
+        return qs
 
 
 class WesternBlotHeuristic(LabHeuristic):
@@ -637,10 +642,10 @@ class WesternBlotHeuristic(LabHeuristic):
             loinc_nums = loinc_nums,
             )
 
-    def matches(self, begin_timestamp = None):
+    def matches(self, exclude_heuristic=None):
         # Find potential positives -- tests whose results contain at least one 
         # of the interesting band numbers.
-        relevant_labs = self.relevant_labs(begin_timestamp)
+        relevant_labs = self.relevant_labs(exclude_heuristic=exclude_heuristic)
         q_obj = Q(result_string__icontains = str(self.interesting_bands[0]))
         for band in self.interesting_bands[1:]:
             q_obj = q_obj | Q(result_string__icontains = str(band))

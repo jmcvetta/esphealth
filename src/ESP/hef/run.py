@@ -46,13 +46,8 @@ def main():
     usage_str = '%prog [options] [NAME, NAME, ...] \n'
     usage_str += '\n'
     usage_str += 'Runs heuristic NAME if specified; otherwise, runs all heuristics.\n'
-    usage_str += 'Either --full or --incremental must be specified.\n'
     usage_str += '\n'
     parser = optparse.OptionParser(usage=usage_str)
-    parser.add_option('--full', action='store_true', dest='full',
-        help='Generate events (ALL data)', default=False)
-    parser.add_option('--incremental', action='store_true', dest='incremental', 
-        help='Generate events (new data only)', default=False)
     parser.add_option('--list', action='store_true', dest='list', 
         help='List names of all registered heuristics')
     (options, args) = parser.parse_args()
@@ -60,26 +55,18 @@ def main():
     # 
     # Main
     #
-    if options.list and (options.incremental or options.full):
-        sys.stderr.write('\nERROR: --list must be used by itself.\n\n')
-        parser.print_help()
-        sys.exit()
-    elif options.list:
+    if options.list:
         for name in BaseHeuristic.list_heuristics():
             print name
-        sys.exit()
-    if (options.full and options.incremental) or not (options.full or options.incremental):
-        sys.stderr.write('\nERROR: You must choose either --full or --incremental.\n\n')
-        parser.print_help()
         sys.exit()
     if args:
         for name in args:
             try:
-                BaseHeuristic.generate_events_by_name(name=name, incremental=options.incremental)
+                BaseHeuristic.generate_events_by_name(name=name)
             except KeyError:
                 print >> sys.stderr, 'Unknown heuristic name: "%s"' % name
     else:
-        BaseHeuristic.generate_all_events(incremental=options.incremental)
+        BaseHeuristic.generate_all_events()
     
 
 if __name__ == '__main__':
