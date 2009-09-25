@@ -25,3 +25,4 @@ src/ESP/vaers/fixtures/events/*.json
 src/ESP/vaers/fixtures/lab_results.sql
 src/ESP/vaers/vaccine/*.pyc
 src/hl7/*.pyc
+src/web/*.pyc
