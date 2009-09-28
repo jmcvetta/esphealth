@@ -659,7 +659,7 @@ def main():
     for ft in load_order:
         for filepath in filetype[ft]:
             loader_class = loader[ft]
-            l = loader_class(filepath)
+            l = loader_class(filepath) # BaseLoader child instance
             try:
                 valid, error = l.load()
                 valid_count[ft] += valid

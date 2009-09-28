@@ -1,6 +1,12 @@
-{% extends 'base.html' %}
+<html>
+<head>
+    <title>ESP Validator Report</title>
+</head>
+</body>
 
-{% block content %}
+<h1 align="center">ESP Validator Report</h1>
+
+<p align="center"><i>{% now "r" %}</i></p>
 
 <h2 align="center">
     Summary
@@ -14,23 +20,23 @@
     <tr>
         <td>Exact
         <td>{{ count_exact }}
-        <td>{{ percent_exact }}
+        <td>{{ percent_exact|floatformat:3 }}%
     <tr>
         <td>Similar
         <td>{{ count_similar }}
-        <td>{{ percent_similar }}
+        <td>{{ percent_similar|floatformat:3 }}%
     <tr>
         <td>Missing
         <td>{{ count_missing }}
-        <td>{{ percent_missing }}
+        <td>{{ percent_missing|floatformat:3 }}%
     <tr>
         <td>New
         <td>{{ count_new }}
-        <td>{{ percent_new }}
+        <td>{{ percent_new|floatformat:3 }}%
     <tr>
         <td><em>TOTAL</em>
         <td>{{ total }}
-        <td>100
+        <td>100%
 </table>
 
 
@@ -98,8 +104,24 @@
         <br>Condition: {{ item.0.condition }}
         <br>Date:      {{ item.0.date }}
 
+        {% if item.3 %}
+        <h3>Other Cases: </h3>
+        <table>
+            <tr>
+                <th>Event ID
+                <th>Date
+                <th>Condition
+            {% for case in item.3 %}
+            <tr>
+                <td>{{ case.pk }}
+                <td>{{ case.date }}
+                <td>{{ case.condition }} 
+            {% endfor %}
+        </table>
+        {% endif %}
+
         {% if item.2 %}
-        <p>Events: 
+        <h3>Events: </h3>
         <table>
             <tr>
                 <th>Event ID
@@ -115,7 +137,7 @@
         {% endif %}
 
         {% if item.1 %}
-        <p>Labs: 
+        <h3>Labs: </h3>
         <table>
             <tr>
                 <th>Lab ID
@@ -161,11 +183,13 @@
             <th>MRN
             <th>Condition
             <th>Date
+            <th>Events
         {% for item in new %}
         <tr>
             <td>{{ item.patient.mrn }}
             <td>{{ item.condition }}
             <td>{{ item.date }}
+            <td>{{ item.events.all|join:"<br>" }}
         {% endfor %}
     </table>
 {% else %}
@@ -173,4 +197,3 @@
 {% endif %}
 
 
-{% endblock %}

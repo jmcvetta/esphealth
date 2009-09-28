@@ -12,7 +12,7 @@ Case Validator
 
 
 DATE_MARGIN = 5 # Cases can be +/- this many days offset
-LAB_MARGIN = 30 # Retrieve labs +/- this many days from date of missing case
+RELATED_MARGIN = 30 # Retrieve labs +/- this many days from date of missing case
 FILE_PATH = 'old_cases.csv'
 FILE_FIELDS = [
     'condition',
@@ -58,7 +58,7 @@ def validate(records):
     new = []
     conditions_in_file = set()
     date_delta = datetime.timedelta(days=DATE_MARGIN)
-    lab_delta = datetime.timedelta(days=LAB_MARGIN)
+    related_delta = datetime.timedelta(days=RELATED_MARGIN)
     for rec in records:
         condition = rec['condition'].lower().strip()
         mrn = rec['mrn'].strip()
@@ -70,8 +70,10 @@ def validate(records):
         log.debug('    Condition:  %s' % condition)
         log.debug('    MRN:        %s' % mrn)
         log.debug('    Date:       %s' % date)
-        cases = Case.objects.filter(patient__mrn=mrn, condition__iexact=condition)
-        exact_date_cases = cases.filter(date=date)
+        patient = Patient.objects.get(mrn=mrn)
+        cases = Case.objects.filter(patient=patient, condition__iexact=condition)
+        previous_day = date - datetime.timedelta(days=1)
+        exact_date_cases = cases.filter(date__gte=previous_day, date__lte=date)
         if exact_date_cases:
             log.debug('Exact case match found.')
             if len(exact_date_cases) > 1: 
@@ -88,22 +90,29 @@ def validate(records):
             similar.append((rec, similar_date_cases[0]))
             continue
         log.debug('No case match found')
+        #
+        # Related Events for Missing Case
+        #
         # At this point, case is missing.  Let's look for relevant events for 
         # this patient; and if none of those are found, we'll look for
         # relevant lab results.
-        begin = date - lab_delta
-        end = date + lab_delta
+        begin = date - related_delta
+        end = date + related_delta
+        case_q = Q(patient=patient, condition=condition)
+        cases = Case.objects.filter(case_q).order_by('date')
+        log.debug('Found %s relevant cases' % cases.count())
         heuristics = Condition.get_condition(condition).relevant_heuristics
         event_q  = Q(heuristic__in=heuristics)
-        event_q &= Q(patient__mrn=mrn)
+        event_q &= Q(patient=patient)
         event_q &= Q(date__gte=begin, date__lte=end)
         events = Event.objects.filter(event_q)
         log.debug('Found %s relevant events' % events.count())
         loincs = Condition.get_condition(condition).relevant_loincs
-        lab_q = Q(patient__mrn=mrn, date__gte=begin, date__lte=end)
+        lab_q = Q(patient=patient, date__gte=begin, date__lte=end)
         labs = LabResult.objects.filter_loincs(loincs).filter(lab_q)
         log.debug('Found %s relevant labs' % labs.count())
-        missing.append((rec, labs, events))
+        missing.append((rec, labs, events, cases))
+        #
     all_matched_case_pks = [item[1].pk for item in exact + similar]
     new_q = ~Q(pk__in=all_matched_case_pks)
     new_q &= Q(condition__in=conditions_in_file)
@@ -122,11 +131,11 @@ def main():
     options, args = parser.parse_args()
     if (options.text and options.html) or not (options.text or options.html):
         sys.stderr.write('You must select either --text OR --html \n\n')
-        parser.print_usage()
+        parser.print_help()
         sys.exit()
     if not options.file:
         sys.stderr.write('You must specify a file to validate against.')
-        parser.print_usage()
+        parser.print_help()
         sys.exit()
     filehandle = open(options.file)
     records = csv.DictReader(filehandle, FILE_FIELDS)
@@ -136,10 +145,10 @@ def main():
     count_missing = len(missing)
     count_new = new.count()
     total = count_exact + count_similar + count_missing + count_new
-    percent_exact = count_exact / total * 100.0
-    percent_similar = count_similar / total * 100.0
-    percent_missing = count_missing / total * 100.0
-    percent_new = count_new / total * 100.0
+    percent_exact = float(count_exact) / total * 100.0
+    percent_similar = float(count_similar) / total * 100.0
+    percent_missing = float(count_missing) / total * 100.0
+    percent_new = float(count_new) / total * 100.0
     values = {
         'exact': exact,
         'similar': similar,
@@ -155,6 +164,7 @@ def main():
         'percent_new': percent_new,
         'total': total,
         }
+    log.debug('Rendering template')
     if options.text:
         print render_to_string(TEXT_OUTPUT_TEMPLATE, values)
     elif options.html:
