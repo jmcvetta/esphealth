@@ -82,6 +82,20 @@ class BaseLoader(object):
     float_catcher = re.compile(r'(\d+\.?\d*)')
     
     def __init__(self, filepath):
+        # 
+        # Patient and Provider cache
+        #
+        # Note: this is a primitive cache, and all lookups for the duration of 
+        # the BaseLoader (child) instance's life.  Thus it can consume 
+        # considerable memory when loading a large data set.  For a set with 
+        # ~118k patients, Python consumed 1.1G.  However, caching (plus some 
+        # fine tuning of PostgreSQL, so YMMV) on that same data set showed a 
+        # 5x increase in load performance.  
+        # 
+        # If you cannot accept the cache's memory requirements, you can add
+        # a preference toggle -- or file a ticket w/ the project requesting
+        # the same.
+        #
         self.__patient_cache = {} # {patient_id_num: Patient instance}
         self.__provider_cache = {} # {provider_id_num: Provider instance}
         assert os.path.isfile(filepath)
@@ -183,7 +197,7 @@ class BaseLoader(object):
                 err.save()
             if ROW_LOG_COUNT and not (cur_row % ROW_LOG_COUNT):
                 now = datetime.datetime.now()
-                log.info('Loaded %s rows.  %s' % (cur_row, now))
+                log.info('Loaded %s of %s rows:  %s %s' % (cur_row, self.line_count, now, self.filename))
         log.debug('Loaded %s records with %s errors.' % (valid, errors))
         if not errors:
             self.provenance.status = 'loaded'
