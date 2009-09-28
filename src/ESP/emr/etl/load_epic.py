@@ -32,6 +32,7 @@ from django.db import transaction
 
 from ESP.utils.utils import str_from_date
 from ESP.settings import DATA_DIR
+from ESP.settings import DATE_FORMAT
 from ESP.utils.utils import log
 from ESP.utils.utils import date_from_str
 from ESP.static.models import Icd9
@@ -81,6 +82,8 @@ class BaseLoader(object):
     float_catcher = re.compile(r'(\d+\.?\d*)')
     
     def __init__(self, filepath):
+        self.__patient_cache = {} # {patient_id_num: Patient instance}
+        self.__provider_cache = {} # {provider_id_num: Provider instance}
         assert os.path.isfile(filepath)
         path, filename = os.path.split(filepath)
         self.filename = filename
@@ -100,26 +103,30 @@ class BaseLoader(object):
     def get_patient(self, patient_id_num):
         if not patient_id_num:
             raise LoadException('Called get_patient() with empty patient_id_num')
-        try:
-            p = Patient.objects.get(patient_id_num=patient_id_num)
-        except Patient.DoesNotExist:
-            p = Patient(patient_id_num=patient_id_num)
-            p.provenance = self.provenance
-            p.updated_by = UPDATED_BY
-            p.save()
-        return p
+        if not patient_id_num in self.__patient_cache:
+            try:
+                p = Patient.objects.get(patient_id_num=patient_id_num)
+            except Patient.DoesNotExist:
+                p = Patient(patient_id_num=patient_id_num)
+                p.provenance = self.provenance
+                p.updated_by = UPDATED_BY
+                p.save()
+            self.__patient_cache[patient_id_num] = p
+        return self.__patient_cache[patient_id_num]
     
     def get_provider(self, provider_id_num):
         if not provider_id_num:
             return UNKNOWN_PROVIDER
-        try:
-            p = Provider.objects.get(provider_id_num=provider_id_num)
-        except Provider.DoesNotExist:
-            p = Provider(provider_id_num=provider_id_num)
-            p.provenance = self.provenance
-            p.updated_by = UPDATED_BY
-            p.save()
-        return p
+        if not provider_id_num in self.__provider_cache:
+            try:
+                p = Provider.objects.get(provider_id_num=provider_id_num)
+            except Provider.DoesNotExist:
+                p = Provider(provider_id_num=provider_id_num)
+                p.provenance = self.provenance
+                p.updated_by = UPDATED_BY
+                p.save()
+            self.__provider_cache[provider_id_num] = p
+        return self.__provider_cache[provider_id_num]
     
     def float_or_none(self, string):
         m = self.float_catcher.match(string)
@@ -175,7 +182,8 @@ class BaseLoader(object):
                 err.data = pprint.pformat(row)
                 err.save()
             if ROW_LOG_COUNT and not (cur_row % ROW_LOG_COUNT):
-                log.info('Loaded %s rows' % cur_row)
+                now = datetime.datetime.now()
+                log.info('Loaded %s rows.  %s' % (cur_row, now))
         log.debug('Loaded %s records with %s errors.' % (valid, errors))
         if not errors:
             self.provenance.status = 'loaded'
