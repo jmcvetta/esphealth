@@ -153,7 +153,7 @@ class BaseLoader(object):
                 self.load_row(row)
                 transaction.savepoint_commit(sid)
                 valid += 1
-            except (LoadException, ValueError, UnicodeEncodeError, Psycopg2Error), e:
+            except BaseException, e:
                 transaction.savepoint_rollback(sid)
                 log.error('Caught Exception:')
                 log.error('  File: %s' % self.filename)
