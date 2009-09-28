@@ -13,6 +13,7 @@
 
 #EPIC_ENCODING = 'iso-8859-1'
 EPIC_ENCODING = 'windows-1252'
+ROW_LOG_COUNT = 10000  # Log progress every N rows.  'None' to disable.
 
 
 import csv
@@ -153,6 +154,9 @@ class BaseLoader(object):
                 self.load_row(row)
                 transaction.savepoint_commit(sid)
                 valid += 1
+            except KeyboardInterrupt, e:
+                # Allow keyboard interrupt to rise to next catch in main()
+                raise e
             except BaseException, e:
                 transaction.savepoint_rollback(sid)
                 log.error('Caught Exception:')
@@ -170,6 +174,8 @@ class BaseLoader(object):
                 err.err_msg = str(e)
                 err.data = pprint.pformat(row)
                 err.save()
+            if ROW_LOG_COUNT and not (cur_row % ROW_LOG_COUNT):
+                log.info('Loaded %s rows' % cur_row)
         log.debug('Loaded %s records with %s errors.' % (valid, errors))
         if not errors:
             self.provenance.status = 'loaded'
