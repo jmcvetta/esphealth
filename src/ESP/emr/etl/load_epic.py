@@ -493,19 +493,15 @@ class EncounterLoader(BaseLoader):
             e.peak_flow = self.float_or_none(row['peak_flow'])
         e.save() # Must save before using ManyToMany relationship
         for code in row['icd9s'].split():
-            try:
-                i = Icd9.objects.get(code__iexact=code)
-            except Icd9.DoesNotExist:
-                log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
-                i = Icd9()
-                i.code = code
-                i.name = 'Added by load_epic.py'
-                i.save()
-            e.icd9_codes.add(i)
+            e.icd9_codes.add(self.get_icd9(code))
         e.save()
         log.debug('Saved encounter object: %s' % e)
     
     def get_icd9(self, code):
+        '''
+        Given an ICD9 code, as a string, return an Icd9 model instance
+        '''
+        code = code.upper()
         if not code in self.__icd9_cache:
             try:
                 i = Icd9.objects.get(code__iexact=code)
