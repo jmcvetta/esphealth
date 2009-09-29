@@ -69,6 +69,10 @@ class EpicDialect(csv.Dialect):
     lineterminator = '\r\n'
     quoting = csv.QUOTE_MINIMAL
 csv.register_dialect("epic", EpicDialect)
+# Some Epic comments are _long_, so we have to increase default csv module 
+# field limit size, lest it barf out for the whole file when it hits a single 
+# too-long comment.
+csv.field_size_limit(1000000000) # <-- arbitrary big number
 
 
 class LoadException(BaseException):
