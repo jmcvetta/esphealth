@@ -58,9 +58,12 @@ from ESP.utils.utils import log
 from ESP.nodis.models import Case
 from ESP.hef.models import Event
 from ESP.emr.models import Provenance
+from ESP.emr.models import Patient
+from ESP.emr.models import Provider
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
+from ESP.emr.models import Immunization
 
 
 def bad_options(msg):
@@ -108,11 +111,10 @@ def main():
     # Generate a Q object to filter the provenance entries we want to delete
     #
     if options.status:
-        prov_stat_q = Q(provenance__status=options.status)
         bad_prov = Provenance.objects.filter(status=options.status)
     else: # options.provenance
-        prov_stat_q = Q(provenance__provenance_id=options.provenance)
         bad_prov = Provenance.objects.filter(pk=options.provenance)
+    prov_stat_q = Q(provenance__in=bad_prov)
     log_query('Bad provenance query:', bad_prov)
     if not bad_prov.count():
         print
@@ -138,17 +140,20 @@ def main():
             sys.exit(12)
     else:
         log.debug('Not prompting user to ensure exclusive db access, per --no-input option.')
+    # Patient & Provider data must be retained and marked as orphaned.  Other 
+    # EMR records should be purged.
+    persistent_models = [Provider, Patient]
+    purgeable_models = [LabResult, Encounter, Prescription, Immunization]
     #
     # Discover "bad" cases -- those based on events with bad provenance
     #
-    record_types = [LabResult, Encounter, Prescription]
     print
     print 'Running safety checks...  (this may take a few minutes)'
     print
     log.debug('Searching for cases with bad provenance.')
     bad_events = None
     rec_type = Prescription
-    for rec_type in record_types:
+    for rec_type in purgeable_models:
         content_type = ContentType.objects.get_for_model(rec_type)
         bad_records = rec_type.objects.filter(prov_stat_q)
         new_bad_events = Event.objects.filter(content_type=content_type, object_id__in=bad_records)
@@ -203,10 +208,21 @@ def main():
         print
     print 'Please wait -- this may take a few minutes.'
     print
-    for rec_type in record_types:
+    # Orphan Patient & Provider models
+    orphan_provenance = Provenance.objects.get(source='CLEANUP')
+    for rec_type in persistent_models:
+        orphans = rec_type.objects.filter(prov_stat_q)
+        log_query('To be orphaned', orphans)
+        log.debug('Orphaning %s %s records' % (orphans.count(), rec_type))
+        orphans.update(provenance=orphan_provenance)
+    for rec_type in purgeable_models:
         to_be_deleted = rec_type.objects.filter(prov_stat_q)
         log_query('To be deleted', to_be_deleted)
         log.debug('Deleting %s %s records' % (to_be_deleted.count(), rec_type))
+        #
+        # TODO: Django does this in a super-inefficient way.  Need to write a 
+        # PostgreSQL-specific optimization here using DELETE .. CASCADE.
+        #
         to_be_deleted.delete()
     log_query('Deleting %s provenance entries' % bad_prov.count(), bad_prov)
     bad_prov.delete()
