@@ -177,7 +177,8 @@ class BaseLoader(object):
             sid = transaction.savepoint()
             try:
                 for key in row:
-                    row[key] = row[key].decode(EPIC_ENCODING).encode('utf-8')
+                    if row[key]:
+                        row[key] = row[key].decode(EPIC_ENCODING).encode('utf-8')
                 self.load_row(row)
                 transaction.savepoint_commit(sid)
                 valid += 1
