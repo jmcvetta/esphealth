@@ -138,12 +138,19 @@ class Window(object):
             raise OutOfWindow('Patient does not match')
         
     def _get_start_date(self):
+        '''Start of the time window'''
         return self.__events[-1].date - self.delta
     start = property(_get_start_date)
 
     def _get_end_date(self):
+        '''End of the time window'''
         return self.__events[0].date + self.delta
     end = property(_get_end_date)
+    
+    def __get_date(self):
+        '''Return date of earliest event in window'''
+        return self.__events[0].date
+    date = property(__get_date)
 
     def _get_events(self):
         return self.__events
@@ -799,7 +806,7 @@ class Condition(object):
         case = Case()
         case.patient = window.patient
         case.provider = window.events[0].content_object.provider
-        case.date = window.start
+        case.date = window.date
         case.condition = self.name
         case.pattern = pattern.pattern_obj
         #case.workflow_state = self.condition.ruleInitCaseStatus
@@ -873,7 +880,7 @@ class Condition(object):
                         window_patterns[window] = pattern
             if not queue:
                 continue # no windows for this patient
-            queue.sort(lambda x, y: (x.start - y.start).days) # Sort by date
+            queue.sort(lambda x, y: (x.date - y.date).days) # Sort by date
             if self.recur_after == -1:
                 log.debug('Disease cannot recur, so limiting queue to the earliest window')
                 queue = [queue[0]]
@@ -886,7 +893,7 @@ class Condition(object):
             for win in queue[1:]:
                 log.debug('valid windows: %s' % valid_windows)
                 log.debug('examining window: %s' % win)
-                if window.overlaps([w.start for w in valid_windows], self.recur_after):
+                if window.overlaps([w.date for w in valid_windows], self.recur_after):
                     log.debug('Window overlaps valid window')
                     continue 
                 else:
@@ -1006,6 +1013,8 @@ class Condition(object):
         '''
         Updates reportable events for all __existing cases
         '''
+        log.WARNING('update_all_cases() is deprecated')
+        return
         log.info('Updating reportable events for __existing cases.')
         for definition in cls.get_all_diseases():
             q_obj = Q(condition = definition.name)
