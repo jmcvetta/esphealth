@@ -79,25 +79,25 @@ class LoadException(BaseException):
 
 class BaseLoader(object):
     
-    float_catcher = re.compile(r'(\d+\.?\d*)')
+    float_catcher = re.compile(r'(\d+\.?\d*)') 
+    #
+    # Caching Note
+    #
+    # Note: this is a primitive cache -- *all* lookups are cached, for the
+    # duration of the script's run.  Thus it can consume considerable memory
+    # when loading a large data set.  For a set with ~118k patients, Python
+    # consumed 1.1G.  However, caching (plus some fine tuning of PostgreSQL, so
+    # YMMV) on that same data set showed a 5x increase in load performance.  
+    # 
+    # If you cannot accept the cache's memory requirements, you can add
+    # a preference toggle -- or file a ticket w/ the project requesting
+    # the same.
+    #
+    __patient_cache = {} # {patient_id_num: Patient instance}
+    __provider_cache = {} # {provider_id_num: Pro
     
     def __init__(self, filepath):
-        # 
-        # Patient and Provider cache
-        #
-        # Note: this is a primitive cache, and all lookups for the duration of 
-        # the BaseLoader (child) instance's life.  Thus it can consume 
-        # considerable memory when loading a large data set.  For a set with 
-        # ~118k patients, Python consumed 1.1G.  However, caching (plus some 
-        # fine tuning of PostgreSQL, so YMMV) on that same data set showed a 
-        # 5x increase in load performance.  
-        # 
-        # If you cannot accept the cache's memory requirements, you can add
-        # a preference toggle -- or file a ticket w/ the project requesting
-        # the same.
-        #
-        self.__patient_cache = {} # {patient_id_num: Patient instance}
-        self.__provider_cache = {} # {provider_id_num: Provider instance}
+        #vider instance}
         assert os.path.isfile(filepath)
         path, filename = os.path.split(filepath)
         self.filename = filename
@@ -407,6 +407,9 @@ class EncounterLoader(BaseLoader):
     
     feet_regex = re.compile('(?P<feet>\d)\' *(?P<inches>\d{1,2})')
     
+    # Please see Caching Note on BaseLoader.
+    __icd9_cache = {} # {code: icd9_obj}
+    
     fields = [
         'patient_id_num',
         'medical_record_num',
@@ -490,6 +493,19 @@ class EncounterLoader(BaseLoader):
             e.icd9_codes.add(i)
         e.save()
         log.debug('Saved encounter object: %s' % e)
+    
+    def get_icd9(self, code):
+        if not code in self.__icd9_cache:
+            try:
+                i = Icd9.objects.get(code__iexact=code)
+            except Icd9.DoesNotExist:
+                log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
+                i = Icd9()
+                i.code = code
+                i.name = 'Added by load_epic.py'
+                i.save()
+            self.__icd9_cache[code] = i
+        return self.__icd9_cache[code]
             
             
 
