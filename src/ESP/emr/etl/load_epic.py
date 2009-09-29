@@ -174,11 +174,15 @@ class BaseLoader(object):
             # The last line is a footer, so we skip it
             if cur_row >= self.line_count:
                 break
+            # check this, too -- in case there are extra blank lines at end of file
+            if row['patient_id_num'].upper() == 'CONTROL TOTALS':
+                break
             sid = transaction.savepoint()
             try:
+                # Coerce to unicode
                 for key in row:
                     if row[key]:
-                        row[key] = row[key].decode(EPIC_ENCODING).encode('utf-8')
+                        row[key] = row[key].strip().decode(EPIC_ENCODING).encode('utf-8')
                 self.load_row(row)
                 transaction.savepoint_commit(sid)
                 valid += 1
@@ -363,8 +367,8 @@ class LabResultLoader(BaseLoader):
         ]
     
     def load_row(self, row):
-        native_code = row['cpt'].strip()
-        component = row['component'].strip()
+        native_code = row['cpt']
+        component = row['component']
         if component:
             # We only use first 20 characters of component, since some lab 
             # results (always types unimportant to ESP) have quite long 
