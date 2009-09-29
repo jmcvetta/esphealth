@@ -11,8 +11,8 @@
 '''
 
 
-#EPIC_ENCODING = 'iso-8859-1'
-EPIC_ENCODING = 'windows-1252'
+EPIC_ENCODING = 'iso-8859-15'
+#EPIC_ENCODING = 'windows-1252'
 ROW_LOG_COUNT = 10000  # Log progress every N rows.  'None' to disable.
 
 
@@ -176,6 +176,8 @@ class BaseLoader(object):
                 break
             sid = transaction.savepoint()
             try:
+                for key in row:
+                    row[key] = row[key].decode(EPIC_ENCODING).encode('utf-8')
                 self.load_row(row)
                 transaction.savepoint_commit(sid)
                 valid += 1
