@@ -859,7 +859,7 @@ class Condition(object):
             log.debug('Patient #%s: %s' % (patient.pk, patient))
             queue = []
             existing_cases = Case.objects.filter(condition=self.name, patient=patient)
-            existing_case_dates = existing_cases.values_list('date', flat=True)
+            existing_case_dates = set(existing_cases.values_list('date', flat=True))
             if existing_case_dates and (self.recur_after == -1):
                 log.debug('Case already exists, and condition cannot recur -- all future cases overlap')
                 continue
@@ -899,6 +899,7 @@ class Condition(object):
                 else:
                     log.debug('Window %s added to valid windows' % win)
                     valid_windows.append(win)
+                    existing_case_dates.add(win.date) # Does existing_case_dates need to be sorted?
             log.debug('Yielding these valid windows: %s' % valid_windows)
             #
             # Yield valid windows -- in date order :)
