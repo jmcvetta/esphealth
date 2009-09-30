@@ -12,7 +12,7 @@ Case Validator
 
 
 DATE_MARGIN = 5 # Cases can be +/- this many days offset
-RELATED_MARGIN = 30 # Retrieve labs +/- this many days from date of missing case
+RELATED_MARGIN = 365 # Retrieve labs +/- this many days from date of missing case
 FILE_PATH = 'old_cases.csv'
 FILE_FIELDS = [
     'condition',
@@ -70,7 +70,11 @@ def validate(records):
         log.debug('    Condition:  %s' % condition)
         log.debug('    MRN:        %s' % mrn)
         log.debug('    Date:       %s' % date)
-        patient = Patient.objects.get(mrn=mrn)
+        try:
+            patient = Patient.objects.get(mrn=mrn)
+        except Patient.DoesNotExist:
+            log.warning('No patient found for MRN: %s' % mrn)
+            continue
         cases = Case.objects.filter(patient=patient, condition__iexact=condition)
         previous_day = date - datetime.timedelta(days=1)
         exact_date_cases = cases.filter(date__gte=previous_day, date__lte=date)
@@ -105,18 +109,18 @@ def validate(records):
         event_q  = Q(heuristic__in=heuristics)
         event_q &= Q(patient=patient)
         event_q &= Q(date__gte=begin, date__lte=end)
-        events = Event.objects.filter(event_q)
+        events = Event.objects.filter(event_q).order_by('date')
         log.debug('Found %s relevant events' % events.count())
         loincs = Condition.get_condition(condition).relevant_loincs
         lab_q = Q(patient=patient, date__gte=begin, date__lte=end)
-        labs = LabResult.objects.filter_loincs(loincs).filter(lab_q)
+        labs = LabResult.objects.filter_loincs(loincs).filter(lab_q).order_by('date')
         log.debug('Found %s relevant labs' % labs.count())
         missing.append((rec, labs, events, cases))
         #
     all_matched_case_pks = [item[1].pk for item in exact + similar]
     new_q = ~Q(pk__in=all_matched_case_pks)
     new_q &= Q(condition__in=conditions_in_file)
-    new_cases = Case.objects.filter(new_q)
+    new_cases = Case.objects.filter(new_q).order_by('date')
     log.debug('Found %s new cases' % new_cases.count())
     return (exact, similar, missing, new_cases)
 
@@ -163,8 +167,9 @@ def main():
         'percent_missing': percent_missing,
         'percent_new': percent_new,
         'total': total,
+        'related_margin': RELATED_MARGIN,
         }
-    log.debug('Rendering template')
+    log.info('Rendering template')
     if options.text:
         print render_to_string(TEXT_OUTPUT_TEMPLATE, values)
     elif options.html:

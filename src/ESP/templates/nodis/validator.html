@@ -1,6 +1,34 @@
 <html>
 <head>
     <title>ESP Validator Report</title>
+
+    <style type="text/css">
+    table {
+        border-width: thin;
+        border-spacing: 0;
+        border-style: solid;
+        border-color: gray;
+        border-collapse: separate;
+        background-color: white;
+    }
+    table th {
+        border-width: thin;
+        padding: 0.5em;
+        border-style: solid;
+        border-color: gray;
+        background-color: white;
+        -moz-border-radius: ;
+    }
+    table td {
+        border-width: thin;
+        padding: 0.5em;
+        border-style: solid;
+        border-color: gray;
+        background-color: white;
+        -moz-border-radius: ;
+    }
+    </style>
+
 </head>
 </body>
 
@@ -18,21 +46,21 @@
         <th>Count
         <th>Percentage
     <tr>
-        <td>Exact
-        <td>{{ count_exact }}
-        <td>{{ percent_exact|floatformat:3 }}%
-    <tr>
-        <td>Similar
-        <td>{{ count_similar }}
-        <td>{{ percent_similar|floatformat:3 }}%
-    <tr>
-        <td>Missing
+        <td><a href="#missing">Missing</a>
         <td>{{ count_missing }}
         <td>{{ percent_missing|floatformat:3 }}%
     <tr>
-        <td>New
+        <td><a href="#new">New</a>
         <td>{{ count_new }}
         <td>{{ percent_new|floatformat:3 }}%
+    <tr>
+        <td><a href="#similar">Similar</a>
+        <td>{{ count_similar }}
+        <td>{{ percent_similar|floatformat:3 }}%
+    <tr>
+        <td><a href="#exact">Exact</a>
+        <td>{{ count_exact }}
+        <td>{{ percent_exact|floatformat:3 }}%
     <tr>
         <td><em>TOTAL</em>
         <td>{{ total }}
@@ -42,67 +70,20 @@
 
 
 <hr>
-<h2 align="center">
-    Exact Match
-</h2>
-<hr>
-
-{% if exact %}
-    <table>
-        <tr>
-            <th>MRN
-            <th>Condition
-            <th>Date
-        {% for item in exact %}
-        <tr>
-            <td>{{ item.1.patient.mrn }}
-            <td>{{ item.1.condition }}
-            <td>{{ item.1.date }}
-        {% endfor %}
-    </table>
-{% else %}
-    <p><em>None</em></p>
-{% endif %}
-
-
-<hr>
-<h2 align="center">
-    Similar Date Match
-</h2>
-<hr>
-
-{% if similar %}
-    <table>
-        <tr>
-            <th>MRN
-            <th>Condition
-            <th>Known Date
-            <th>Nodis date
-        {% for item in similar %}
-        <tr>
-            <td>{{ item.1.patient.mrn }}
-            <td>{{ item.1.condition }}
-            <td>{{ item.0.date }}
-            <td>{{ item.1.date }}
-        {% endfor %}
-    </table>
-{% else %}
-    <p><em>None</em></p>
-{% endif %}
-
-
-<hr>
-<h2 align="center">
-    Missing
-</h2>
+<span align="center">
+    <h2>
+        <a name="missing">Missing</a>
+    </h2>
+    <p><em>Showing all related cases, and labs &amp; events +/-{{ related_margin }} days of valid case</em></p>
+</span>
 <hr>
 
 {% if missing %}
 
     {% for item in missing %}
-        <p>MRN:       {{ item.0.mrn }}
+        <p>MRN:       <strong>{{ item.0.mrn }}</strong>
         <br>Condition: {{ item.0.condition }}
-        <br>Date:      {{ item.0.date }}
+        <br>Date:      <strong>{{ item.0.date }}</strong>
 
         {% if item.3 %}
         <h3>Other Cases: </h3>
@@ -153,13 +134,13 @@
                 <td>{{ lab.native_code }}
                 <td>{{ lab.native_name }}
                 <td>{{ lab.result_string }}
-                <td>{{ lab.events.all|safeseq }}
+                <td>{{ lab.events.all|join:"<br>" }}
             {% endfor %}
         </table>
         {% endif %}
 
         {% if not item.1 and not item.2 %}
-            <p><em>NO EVENTS OR LAB RESULTS </em>
+            <p><strong>NO EVENTS OR LAB RESULTS </strong>
         {% endif %}
 
     <hr>
@@ -170,10 +151,9 @@
 {% endif %}
 
 
-
 <hr>
 <h2 align="center">
-    New
+    <a name="new">New</a>
 </h2>
 <hr>
 
@@ -190,6 +170,57 @@
             <td>{{ item.condition }}
             <td>{{ item.date }}
             <td>{{ item.events.all|join:"<br>" }}
+        {% endfor %}
+    </table>
+{% else %}
+    <p><em>None</em></p>
+{% endif %}
+
+
+<hr>
+<h2 align="center">
+    <a name="similar">Similar Date Match</a>
+</h2>
+<hr>
+
+{% if similar %}
+    <table>
+        <tr>
+            <th>MRN
+            <th>Condition
+            <th>Known Date
+            <th>Nodis date
+        {% for item in similar %}
+        <tr>
+            <td>{{ item.1.patient.mrn }}
+            <td>{{ item.1.condition }}
+            <td>{{ item.0.date }}
+            <td>{{ item.1.date }}
+        {% endfor %}
+    </table>
+{% else %}
+    <p><em>None</em></p>
+{% endif %}
+
+
+
+<hr>
+<h2 align="center">
+    <a name="exact">Exact Match</a>
+</h2>
+<hr>
+
+{% if exact %}
+    <table>
+        <tr>
+            <th>MRN
+            <th>Condition
+            <th>Date
+        {% for item in exact %}
+        <tr>
+            <td>{{ item.1.patient.mrn }}
+            <td>{{ item.1.condition }}
+            <td>{{ item.1.date }}
         {% endfor %}
     </table>
 {% else %}
