@@ -201,7 +201,7 @@ class Window(object):
         delta = datetime.timedelta(days=recurance_interval)
         for d in dates:
             recur_date = d + delta
-            if (self.start >= d) and (self.start < recur_date):
+            if (self.date >= d) and (self.date < recur_date):
                 return True
         return False
 
@@ -814,7 +814,6 @@ class Condition(object):
         case.events = window.events
         case.save()
         log.info('Created new %s case #%s for patient #%s based on %s' % (self.name, case.pk, case.patient.pk, window))
-        self.update_case(case)
         return case
 
     def generate_cases(self):
@@ -952,6 +951,8 @@ class Condition(object):
         @param case: The case to update
         @type case:  Case instance
         '''
+        log.WARNING('update_case() is deprecated')
+        return
         log.debug('Updating case %s' % case)
         counter = 0
         patient = case.patient
