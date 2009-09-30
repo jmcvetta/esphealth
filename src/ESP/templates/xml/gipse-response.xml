@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIPSEQueryResponse>
+  <ResponseCharacteristics>
+    <RequestDateTime>{{ request.timestamp }}</RequestDateTime>
+    <ResponseDateTime>{{ response.timestamp }}</ResponseDateTime>
+    <RequestingUser>{{ request.user }}</RequestingUser>
+    <RequestingOrganization>CDC NCPHI Lab</RequestingOrganization>
+    {% for syndrome in syndromes %}
+    <DataSourceOID>ESP:SS-{{syndrome.name}}</DataSourceOID>
+    {% endfor %}
+  </ResponseCharacteristics>
+  <QueryCharacteristics>
+    <Dates start="{{ start_date|"Y-m-d" }} end="{{end_date|"Y-m-d" }}" interval="Day"/>
+    <SuppressValues smallestValueReported="0"/>
+    <Indicators>
+      {% for syndrome in syndromes %}
+      <Indicator classifier="ESP:SS" name="{{syndrome.name}}"/>
+      {% endfor %}
+    </Indicators>
+    <GeoRegions>
+      {% for zip_code in zip_codes %}
+      <GeoRegion type="zip5" value="{{ zip_code }}"/>
+      {% endfor %}
+    </GeoRegions>
+  </QueryCharacteristics>
+  <ObservationSet>
+    {% for day in days %}
+    {% for zip_code in zip_codes %}
+    {% for syndrome in syndromes %}
+    <Observation indicator= "{{ syndrome.name }}" location="{{zip_code}}" start="{{day|'Y-m-d'}}" value="{{syndrome.count day, zip_code}}" />
+    {% endfor %}
+    {% endfor %}
+    {% endfor %}
+  </ObservationSet>
+</GIPSEQueryResponse>

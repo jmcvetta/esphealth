@@ -143,6 +143,19 @@ class SyndromeHeuristic(EncounterHeuristic):
 
         return events.count()
 
+    def residential_count(date, zip_code):
+        '''For given date and zip_code, return the total count of events'''
+        return NonSpecialistVisitEvent.objects.filter(
+            date=date, patient_zip_code=zip_code, heuristic=self.name).count()
+
+    def site_count(date, zip_code):
+        '''For given date and zip_code, return the total count of events'''
+
+        sites = Site.objects.filter(zip_code=zip_code)
+        return NonSpecialistVisitEvent.objects.filter(
+            date=date, reporting_site__in=sites, heuristic=self.name).count()
+
+
 
     def make_reports(self, date):
         self.aggregate_site_report(date)
