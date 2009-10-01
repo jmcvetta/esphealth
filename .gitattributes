@@ -233,6 +233,8 @@ src/ESP/ss/models.py -text
 src/ESP/ss/reports.py -text
 src/ESP/ss/run.py -text
 src/ESP/ss/settings.py -text
+src/ESP/ss/templates/xml/gipse-metadata.xml -text
+src/ESP/ss/templates/xml/gipse-response.xml -text
 src/ESP/ss/tests.py -text
 src/ESP/ss/urls.py -text
 src/ESP/ss/utils.py -text
@@ -309,8 +311,6 @@ src/ESP/templates/widgets/vaers/case_grid.html -text
 src/ESP/templates/widgets/vaers/case_grid.json -text
 src/ESP/templates/widgets/vaers/case_table.html -text
 src/ESP/templates/widgets/vaers/feedback_form.html -text
-src/ESP/templates/xml/gipse-metadata.xml -text
-src/ESP/templates/xml/gipse-response.xml -text
 src/ESP/urls.py -text
 src/ESP/utils/common.py -text
 src/ESP/utils/concordance.py -text

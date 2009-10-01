@@ -87,21 +87,14 @@ class Site(models.Model):
 
         return encounters
 
-
-class Locality(models.Model):
-    zip_code = models.CharField(max_length=10, db_index=True)
-    locality = models.CharField(max_length=50, db_index=True)
-    city = models.CharField(max_length=50, db_index=True)
-    state = models.CharField(max_length=2)
-    region_code = models.CharField(max_length=5, null=True)
-    region_name = models.CharField(max_length=20, null=True)
-    is_official = models.BooleanField(default=True)
-    
-    def __unicode__(self):
-        return u'%s - %s, %s (%s)' % (self.locality, self.city, self.state, self.zip_code)
-
-
 class NonSpecialistVisitEvent(Event):
     reporting_site = models.ForeignKey(Site, null=True)
     patient_zip_code = models.CharField(max_length=10, null=True)
     encounter = models.ForeignKey(Encounter)
+
+    @staticmethod
+    def counts_by_site(start_date, end_date):
+        return NonSpecialistVisitEvent.objects.filter(date__gte=start_date, date__lte=end_date).values(
+            'date', 'heuristic', 'reporting_site__zip_code').annotate(count=Count('heuristic'))
+        
+        

@@ -29,6 +29,7 @@ def main():
     parser.add_option('-c', '--encounter-counts', action='store_true', dest='total_counts')
     parser.add_option('-f', '--find-events', action='store_true', dest='events')
     parser.add_option('-r', '--reports', action='store_true', dest='reports')
+    parser.add_option('-g', '--gipse', action='store_true', dest='gipse')
     parser.add_option('-s', '--syndrome', dest='syndrome', default='all')
     
     options, args = parser.parse_args()
@@ -60,6 +61,10 @@ def main():
                 log.info('Creating reports for %s syndrome on %s' % (heuristic.name, current_day))
                 heuristic.make_reports(current_day)
                 current_day += datetime.timedelta(1)
+
+    if options.gipse:
+        report = reports.Report()
+        report.gipse_report(begin_date, end_date)
 
     if options.total_counts:
         current_day = begin_date

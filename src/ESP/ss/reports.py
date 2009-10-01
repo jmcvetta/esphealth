@@ -3,10 +3,15 @@
 
 import os
 
+from django.template import Context
+from django.template.loader import get_template
+
 from ESP.emr.models import Encounter
 from ESP.utils.utils import str_from_date, log
 from ESP.ss.models import Site
 from ESP.ss.models import age_group_filter
+
+import settings
 
 REPORT_FOLDER = os.path.join(os.path.dirname(__file__), 'assets')
 
@@ -18,25 +23,58 @@ MINIMUM_RESIDENTIAL_CASE_THRESHOLD = 5
 
 #-----------------------------------------------------------------------------
 #
-#   Methods to generate Tab-delimited files for reports related to ALL
+#   Methods to generate Tab-delimited and XML files for reports related to ALL
 #   encounters
 #
 #-----------------------------------------------------------------------------
 
 class Report(object):
 
+
+    TEMPLATE_FOLDER = os.path.join(os.path.dirname(__file__), 'templates')
     REPORTS_FOLDER = os.path.join(os.path.dirname(__file__), 'assets')
     OLD_REPORT_FOLDER = os.path.join(REPORTS_FOLDER, 'archive')
     NEW_REPORT_FOLDER = os.path.join(REPORTS_FOLDER, 'new')
 
+    GIPSE_TEMPLATE = os.path.join(TEMPLATE_FOLDER, 'xml', 'gipse-response.xml')
+
     AGGREGATE_BY_RESIDENTIAL_ZIP_FILENAME = 'ESPAtrius_SyndAgg_zip5_Res_Excl_%s_%s_%s.xls'
     AGGREGATE_BY_SITE_ZIP_FILENAME = 'ESPAtrius_SyndAgg_zip5_Site_Excl_%s_%s_%s.xls'
     INDIVIDUAL_BY_SYNDROME_FILENAME = 'ESPAtrius_SyndInd_zip5_Site_Excl_%s_%s_%s.xls'
+    GIPSE_SITE_FILENAME = 'GIPSE_Response_Site_%s_%s.xml'
+    GIPSE_RESIDENTIAL_FILENAME = 'GIPSE_Response_Residential_%s_%s.xml'
 
 
     def __init__(self, date):
         self.date = date
 
+    def gipse_report(self, begin_date, end_date=None):
+        if not end_date: end_date = begin_date
+        assert end_date >= begin_date
+
+        filename = GIPSE_SITE_FILENAME % (str_from_date(begin_date), str_from_date(end_date))
+        outfile = open(os.path.join(Report.REPORTS_FOLDER, filename), 'w')
+
+
+        counts = NonSpecialistVisitEvent.counts_by_site(begin_date, end_date)
+        zip_codes = NonSpecialistVisitEvent.objects.filter(
+            date__gte=begin_date, date__lte=end_date).values_list('reporting_site__zip_code', 
+                                                                  flat=True).distinct()
+        syndromes = NonSpecialistVisitEvent.objects.filter(
+            date__gte=begin_date, date__lte=end_date).values_list('heuristic', flat=True).distinct()
+
+        params = {
+            'timestamp':datetime.datetime.now(),
+            'requesting_user':settings.GIPSE_REQUESTING_USER,
+            'heuristic_counts':counts,
+            'syndromes':syndromes,
+            'zip_codes':zip_codes}
+
+        msg = get_template(Report.GIPSE_TEMPLATE).render(Context(params))
+        log.info(msg)
+        outfile.write(msg)
+        outfile.close()
+        
     def total_residential_encounters(self):
         header = ['encounter date', 'zip', 'total'] + [str(x) for x in AGE_GROUPS]
         timestamp = str_from_date(self.date)

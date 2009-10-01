@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <GIPSEQueryResponse>
   <ResponseCharacteristics>
-    <RequestDateTime>{{ request.timestamp }}</RequestDateTime>
-    <ResponseDateTime>{{ response.timestamp }}</ResponseDateTime>
-    <RequestingUser>{{ request.user }}</RequestingUser>
+    <RequestDateTime>{{ timestamp.isoformat }}</RequestDateTime>
+    <ResponseDateTime>{{ timestamp.isoformat }}</ResponseDateTime>
+    <RequestingUser>{{ requesting_user }}</RequestingUser>
     <RequestingOrganization>CDC NCPHI Lab</RequestingOrganization>
     {% for syndrome in syndromes %}
-    <DataSourceOID>ESP:SS-{{syndrome.name}}</DataSourceOID>
+    <DataSourceOID>ESP:SS-{{syndrome}}</DataSourceOID>
     {% endfor %}
   </ResponseCharacteristics>
   <QueryCharacteristics>
@@ -14,7 +14,7 @@
     <SuppressValues smallestValueReported="0"/>
     <Indicators>
       {% for syndrome in syndromes %}
-      <Indicator classifier="ESP:SS" name="{{syndrome.name}}"/>
+      <Indicator classifier="ESP:SS" name="{{syndrome}}"/>
       {% endfor %}
     </Indicators>
     <GeoRegions>
@@ -24,12 +24,9 @@
     </GeoRegions>
   </QueryCharacteristics>
   <ObservationSet>
-    {% for day in days %}
-    {% for zip_code in zip_codes %}
-    {% for syndrome in syndromes %}
-    <Observation indicator= "{{ syndrome.name }}" location="{{zip_code}}" start="{{day|'Y-m-d'}}" value="{{syndrome.count day, zip_code}}" />
-    {% endfor %}
-    {% endfor %}
+    {% for count in heuristic_counts %}
+    <Observation indicator="{{ count.heuristic }}" location="{{count.zip_code}}" 
+		 start="{{count.date|'Y-m-d'}}" value="{{ counts.count}}" />
     {% endfor %}
   </ObservationSet>
 </GIPSEQueryResponse>
