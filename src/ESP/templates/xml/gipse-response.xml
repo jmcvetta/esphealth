@@ -10,7 +10,7 @@
     {% endfor %}
   </ResponseCharacteristics>
   <QueryCharacteristics>
-    <Dates start="{{ start_date|"Y-m-d" }} end="{{end_date|"Y-m-d" }}" interval="Day"/>
+    <Dates start="{{ start_date|"Y-m-d" }}" end="{{end_date|"Y-m-d" }}" interval="Day"/>
     <SuppressValues smallestValueReported="0"/>
     <Indicators>
       {% for syndrome in syndromes %}
