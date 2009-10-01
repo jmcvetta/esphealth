@@ -63,8 +63,8 @@ def main():
                 current_day += datetime.timedelta(1)
 
     if options.gipse:
-        report = reports.Report()
-        report.gipse_report(begin_date, end_date)
+        report = reports.Report(begin_date)
+        report.gipse_report(end_date=end_date)
 
     if options.total_counts:
         current_day = begin_date

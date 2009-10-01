@@ -48,20 +48,20 @@ class Report(object):
     def __init__(self, date):
         self.date = date
 
-    def gipse_report(self, begin_date, end_date=None):
-        if not end_date: end_date = begin_date
-        assert end_date >= begin_date
+    def gipse_report(self, end_date=None):
+        if not end_date: end_date = self.date
+        assert end_date >= self.date
 
-        filename = GIPSE_SITE_FILENAME % (str_from_date(begin_date), str_from_date(end_date))
+        filename = GIPSE_SITE_FILENAME % (str_from_date(self.date), str_from_date(end_date))
         outfile = open(os.path.join(Report.REPORTS_FOLDER, filename), 'w')
 
 
-        counts = NonSpecialistVisitEvent.counts_by_site(begin_date, end_date)
+        counts = NonSpecialistVisitEvent.counts_by_site(self.date, end_date)
         zip_codes = NonSpecialistVisitEvent.objects.filter(
-            date__gte=begin_date, date__lte=end_date).values_list('reporting_site__zip_code', 
+            date__gte=self.date, date__lte=end_date).values_list('reporting_site__zip_code', 
                                                                   flat=True).distinct()
         syndromes = NonSpecialistVisitEvent.objects.filter(
-            date__gte=begin_date, date__lte=end_date).values_list('heuristic', flat=True).distinct()
+            date__gte=self.date, date__lte=end_date).values_list('heuristic', flat=True).distinct()
 
         params = {
             'timestamp':datetime.datetime.now(),
