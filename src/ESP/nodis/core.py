@@ -124,7 +124,8 @@ class Window(object):
             self.__events += [e]
             self.__events.sort(lambda x, y: (x.date - y.date).days) # Sort by date
         self.past_events = None
-        log.debug('Initialized %s day window with %s events' % (days, len(events)))
+        win_size = (days * 2) + 1
+        log.debug('Initialized %s day window with %s events' % (win_size, len(events)))
     
     def _check_event(self, event):
         '''
@@ -185,23 +186,25 @@ class Window(object):
         return win
         
     def __repr__(self):
-        return 'Window %s - %s (%s events)' % (self.start, self.end, len(self.events))
+        return 'Window %s (%s events %s - %s)' % (id(self), len(self.__events), self.start, self.end)
         
     def overlaps(self, dates, recurance_interval):
         '''
-        Test whether window overlaps a set of reference dates
+        Test whether window overlaps a set of reference dates.  If the window
+        occurs on or after a date in the set, but before the recurance interval
+        has passed, then it is considered to overlap.  
         @param reference: Dates to check for overlap
         @type reference: Iterable set of datetime.date objects
         @param recurance_interval: Number of days from case until a condition can recur
         @type recurance_interval:  Integer
-        @return: Boolean
+        @return: Boolean -- True if window overlaps reference dates
         '''
         log.debug('Checking window %s for overlap' % self)
         log.debug('Reference dates: %s' % dates)
         delta = datetime.timedelta(days=recurance_interval)
-        for d in dates:
-            recur_date = d + delta
-            if (self.date >= d) and (self.date < recur_date):
+        for ref_date in dates:
+            recur_date = ref_date + delta
+            if (self.date >= ref_date) and (self.date <= recur_date):
                 return True
         return False
 
@@ -825,22 +828,12 @@ class Condition(object):
         log.info('Generated %s new cases of %s' % (counter, self.name))
         return counter
     
-    def find_case_windows(self):
+    def plausible_patients(self):
         '''
-        @return: (Window, ComplexEventPattern)
+        Returns a QuerySet instance of Patients who might plausibly have his condition
         '''
-        counter = 0
-        log.info('Finding cases of %s' % self.name)
-        #
-        #
-        #
-        queue = {} # {Patient: (Window, ComplexEventPattern), ...}
-        plausible = None # Plausible patients for all patterns combined
-        #
-        # We will loop over the list of all plausible patients for all patterns combined, 
-        # so we need only consider one patient at a time
-        #
         log.debug('Finding plausible patients for %s' % self.name)
+        plausible = None # Plausible patients for all patterns combined
         for pattern in self.patterns:
             if not plausible:
                 plausible = pattern.plausible_patients(exclude_condition=self.name)
@@ -854,20 +847,34 @@ class Condition(object):
         plausible_pks = plausible.values_list('pk', flat=True)
         plausible_patients = Patient.objects.filter(pk__in=plausible_pks).order_by('pk')
         log_query('Plausible patients for Condition %s' % self.name, plausible_patients)
-        for patient in plausible_patients:
+        return plausible_patients
+    
+    def find_case_windows(self):
+        '''
+        @return: (Window, ComplexEventPattern)
+        '''
+        counter = 0
+        log.info('Finding cases of %s' % self.name)
+        #
+        # We will loop over the list of all plausible patients for all patterns combined, 
+        # so we need only consider one patient at a time
+        #
+        queue = {} # {Patient: (Window, ComplexEventPattern), ...}
+        for patient in self.plausible_patients():
             log.debug('Patient #%s: %s' % (patient.pk, patient))
             queue = []
             existing_cases = Case.objects.filter(condition=self.name, patient=patient)
-            existing_case_dates = set(existing_cases.values_list('date', flat=True))
-            if existing_case_dates and (self.recur_after == -1):
+            if existing_cases and (self.recur_after == -1):
                 log.debug('Case already exists, and condition cannot recur -- all future cases overlap')
                 continue
+            existing_case_dates = set(existing_cases.values_list('date', flat=True))
             #
             # For each patient, queue up windows that match any pattern
             #
-            window_patterns = {} # {Window: ComplexEventPattern}
+            window_patterns = {} # {Window: ComplexEventPattern} -- keep track of what pattern generated a given window
             for pattern in self.patterns:
-                for window in pattern.generate_windows(days=self.patterns[pattern],  
+                days = self.patterns[pattern]
+                for window in pattern.generate_windows(days=days, 
                     patients=[patient],  exclude_condition=self.name):
                     monitor_heap()
                     if window.overlaps(existing_case_dates, self.recur_after):
@@ -880,25 +887,27 @@ class Condition(object):
             if not queue:
                 continue # no windows for this patient
             queue.sort(lambda x, y: (x.date - y.date).days) # Sort by date
+            log.debug('sorted queue: %s' % queue)
+            log.debug('sorted queue dates: %s' % [win.date for win in queue])
             if self.recur_after == -1:
                 log.debug('Disease cannot recur, so limiting queue to the earliest window')
                 queue = [queue[0]]
             else:
                 log.debug('Examining queue')
             #
-            # Winnow down queue to a list of valid windows
+            # Now we have a queue of cases that do not overlap existing (in db) 
+            # cases.  Let's winnow down that queue to a list of valid windows.
             #
             valid_windows = [queue[0]]
             for win in queue[1:]:
                 log.debug('valid windows: %s' % valid_windows)
                 log.debug('examining window: %s' % win)
-                if window.overlaps([w.date for w in valid_windows], self.recur_after):
+                if win.overlaps([w.date for w in valid_windows], self.recur_after):
                     log.debug('Window overlaps valid window')
                     continue 
                 else:
                     log.debug('Window %s added to valid windows' % win)
                     valid_windows.append(win)
-                    existing_case_dates.add(win.date) # Does existing_case_dates need to be sorted?
             log.debug('Yielding these valid windows: %s' % valid_windows)
             #
             # Yield valid windows -- in date order :)
