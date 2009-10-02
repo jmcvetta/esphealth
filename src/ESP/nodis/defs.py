@@ -40,7 +40,7 @@ chlamydia_1 = ComplexEventPattern(
 
 chlamydia = Condition(
     name = 'chlamydia',
-    patterns = [(chlamydia_1, 1)],
+    patterns = [(chlamydia_1, 0)],
     recur_after = 28, # New cases after 28 days
     icd9s = [
         '788.7',
