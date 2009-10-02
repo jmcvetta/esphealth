@@ -26,12 +26,11 @@ from ESP.nodis import defs  # Register definitions
 
     
 USAGE_MSG = '''\
-%prog [options]
+%prog [--regenerate] [conditions] 
 
-    One or more of '-c', '-u', or '-a' must be specified.
-    
-    DATE variables are specified in this format: '17-Mar-2009'\
+Where conditions are one or more of the following:
 '''
+USAGE_MSG += '\n'.join(['    %s' % c.name for c in Condition.all_conditions()])
 
 
 def main():
@@ -40,51 +39,31 @@ def main():
     # instances running at once.
     #
     parser = optparse.OptionParser(usage=USAGE_MSG)
-    parser.add_option('-c', '--cases', action='store_true', dest='cases',
-        help='Generate new cases')
-    parser.add_option('-u', '--update-cases', action='store_true', dest='update',
-        help='Update cases')
-    parser.add_option('-a', '--all', action='store_true', dest='all', 
-        help='Generate generate new cases and update existing cases')
     parser.add_option('--regenerate', action='store_true', dest='regenerate', 
         help='Purge and regenerate cases')
-    parser.add_option('--condition', action='store', dest='condition', type='string',
-        metavar='NAME', help='Generate new cases for condition NAME only')
     (options, args) = parser.parse_args()
     log.debug('options: %s' % options)
     #
     # Main Control block
     #
-    if options.all: # '--all' is exactly equivalent to '--cases --update-cases'
-        options.cases = True
-        options.update = True
-    if options.update and options.disease:
-        msg = '\nUpdating cases by specific disease is not yet supported.\n'
-        sys.stderr.write(msg)
-        parser.print_help()
-        sys.exit()
-    if options.condition:
-        conditions = [Condition.get_condition(options.disease)]
-        if not conditions:
-            msg = '\nNo disease registered with name "%s".\n' % options.disease
-            sys.stderr.write(msg)
-            sys.exit()
+    all_condition_names = [c.name for c in Condition.all_conditions()]
+    conditions = set()
+    if args: 
+        for name in args:
+            if name not in all_condition_names:
+                sys.stderr.write("Unknown condition: '%s'.  Exiting.\n" % name)
+            conditions.add(Condition.get_condition(name))
     else:
-        conditions = Condition.all_conditions()
-    if options.cases:
-        for c in conditions:
-            c.generate_cases()
-    if options.update:
-        for c in conditions:
-            c.update_all_cases()
-    if options.regenerate:
-        for c in conditions:
+        conditions = set(Condition.all_conditions())
+    for c in conditions:
+        if options.regenerate:
             c.regenerate()
-    if not (options.cases or options.update or options.regenerate):
-        parser.print_help()
+        else:
+            c.generate_cases()
 
 
 if __name__ == '__main__':
     main()
-    print 'Total Number of DB Queries: %s' % len(connection.queries)
-    #pprint.pprint(connection.queries)
+    if settings.DEBUG:
+        # Query count is only retained in DEBUG mode
+        print 'Total Number of DB Queries: %s' % len(connection.queries)
