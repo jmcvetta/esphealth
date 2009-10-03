@@ -11,7 +11,6 @@ Case Validator
 '''
 
 
-DATE_MARGIN = 5 # Cases can be +/- this many days offset
 RELATED_MARGIN = 365 # Retrieve labs +/- this many days from date of missing case
 FILE_PATH = 'old_cases.csv'
 FILE_FIELDS = [
@@ -57,10 +56,14 @@ def validate(records):
     missing = []
     new = []
     conditions_in_file = set()
-    date_delta = datetime.timedelta(days=DATE_MARGIN)
     related_delta = datetime.timedelta(days=RELATED_MARGIN)
     for rec in records:
         condition = rec['condition'].lower().strip()
+        condition_object = Condition.get_condition(condition)
+        if not condition_object:
+            log.warning('Invalid condition name: "%s".  Skipping.' % condition)
+            continue
+        date_delta = datetime.timedelta(days=condition_object.recur_after)
         mrn = rec['mrn'].strip()
         date = date_from_str(rec['date'].strip())
         if condition not in CONSIDER_CONDITIONS:
