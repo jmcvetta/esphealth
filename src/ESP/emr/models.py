@@ -13,6 +13,7 @@ import string
 import random
 import datetime
 import sys
+import re
 
 from django.db import models
 from django.db.models import Q
@@ -391,6 +392,14 @@ class Patient(BaseMedicalRecord):
         else:
             return '%d Months' % months
     age_str = property(_get_age_str)
+    
+    def __get_tel_numeric(self):
+        '''
+        Returns telephone number string containing only numeric characters
+        '''
+        return re.sub('[^0-9]', '', self.tel)
+    tel_numeric = property(__get_tel_numeric)
+        
 
     def immunizations(self):
         return Immunization.objects.filter(patient=self)
