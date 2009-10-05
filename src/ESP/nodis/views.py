@@ -54,6 +54,7 @@ from ESP.hef.core import BaseHeuristic
 from ESP.hef import events # Required to register hef events
 from ESP.nodis.models import Case
 from ESP.nodis.models import CaseStatusHistory
+from ESP.nodis.models import UnmappedLab
 from ESP.nodis.forms import CaseStatusForm
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
@@ -372,3 +373,16 @@ def updateWorkflowComment(request,object_id):
         
     return HttpResponseRedirect("cases/%s/F/" % caseid)
 
+
+@login_required
+def unmapped_labs_report(request):
+    '''
+    Display Unmapped Labs report generated from cache
+    '''
+    values = {
+        'title': 'Unmapped Lab Tests Report',
+        "request":request,
+        'unmapped': UnmappedLab.objects.all().order_by('native_name', 'native_code')
+        }
+    return render_to_response('nodis/unmapped_labs.html', values, context_instance=RequestContext(request))
+    

@@ -37,6 +37,8 @@ from ESP.hef import events # Ensure events are loaded
 from ESP.utils import utils as util
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
+from ESP.conf.models import NativeCode
+from ESP.conf.models import IgnoredCode
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
@@ -677,6 +679,7 @@ class Condition(object):
         name,
         patterns,
         recur_after,
+        test_name_search,
         # Reporting
         icd9s = [],
         icd9_days_before = 14,
@@ -718,6 +721,8 @@ class Condition(object):
         assert name
         assert isinstance(recur_after, int)
         assert ' ' not in name # No spaces allowed in disease name
+        assert isinstance(test_name_search, list)
+        self.test_name_search = test_name_search
         assert icd9_days_before
         assert lab_days_before
         assert med_days_before
@@ -1055,5 +1060,25 @@ class Condition(object):
             heuristics |= pat.relevant_heuristics
         return heuristics
     relevant_heuristics = property(__get_relevant_heuristics)
+    
+    @classmethod
+    def find_unmapped_labs(cls):
+        '''
+        '''
+        all_strings = set()
+        for c in Condition.all_conditions():
+            for string in c.test_name_search:
+                all_strings.add(string)
+        all_strings = list(all_strings)
+        mapped_codes = NativeCode.objects.values('native_code').distinct()
+        ignored_codes = IgnoredCode.objects.values('native_code').distinct()
+        q_obj = Q(native_name__icontains=all_strings[0])
+        for string in all_strings[1:]:
+            q_obj |= Q(native_name__icontains=string)
+        q_obj &= ~Q(native_code__in=mapped_codes)
+        q_obj &= ~Q(native_code__in=ignored_codes)
+        qs = LabResult.objects.filter(q_obj).values('native_code', 'native_name').distinct()
+        log_query('Test name search', qs)
+        return qs
         
 

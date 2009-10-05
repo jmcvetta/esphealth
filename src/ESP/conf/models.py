@@ -46,6 +46,13 @@ class NativeCode(models.Model):
         return '%s --> %s' % (self.native_code, self.loinc.loinc_num)
 
 
+class IgnoredCode(models.Model):
+    '''
+    Codes to be ignored by nodis.core.Condition.find_unmapped_tests()
+    '''
+    native_code = models.CharField(max_length=100, blank=False, unique=True)
+
+
 
 class NativeVaccine(models.Model):
     code = models.IntegerField(primary_key=True)

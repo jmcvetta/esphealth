@@ -42,6 +42,7 @@ chlamydia = Condition(
     name = 'chlamydia',
     patterns = [(chlamydia_1, 0)],
     recur_after = 28, # New cases after 28 days
+    test_name_search = ['chlam'],
     icd9s = [
         '788.7',
         '099.40',
@@ -94,6 +95,7 @@ gonorrhea = Condition(
     name = 'gonorrhea',
     patterns = [(gonorrhea_1, 1)],
     recur_after = 28, # New cases after 28 days
+    test_name_search = ['gon', 'gc'],
     icd9s = [
         '788.7',
         '099.40',
@@ -156,6 +158,7 @@ acute_hep_a = Condition(
     name = 'acute_hep_a',
     patterns = [(hep_a_1, 30)],
     recur_after = -1, # Never recur
+    test_name_search = ['hep'],
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     fever = True,
@@ -234,6 +237,7 @@ hep_b = Condition(
         (hep_b_3, 1), # Single present event -- match window is meaningless
     ],
     recur_after = -1, # Never recur
+    test_name_search = ['hep'],
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     fever = True,
@@ -314,6 +318,7 @@ hep_c = Condition(
     name = 'acute_hep_c',
     patterns = [(hep_c_1, 28)],
     recur_after = -1, # Never recur
+    test_name_search = ['hep'],
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     fever = True,
@@ -386,6 +391,7 @@ lyme = Condition(
         (lyme_3, 14),
         ],
     recur_after = 365, # 1 year
+    test_name_search = ['lyme'],
     icd9s = [
         '782.1',
         '711.8',
