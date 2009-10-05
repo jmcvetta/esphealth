@@ -382,7 +382,8 @@ def unmapped_labs_report(request):
     '''
     ignored = IgnoredCode.objects.values('native_code')
     mapped = NativeCode.objects.values('native_code').distinct()
-    q_obj = ~Q(native_code__in=ignored)
+    q_obj = Q(native_code__isnull=False)
+    q_obj &= ~Q(native_code__in=ignored)
     q_obj &= ~Q(native_code__in=mapped)
     unmapped = UnmappedLab.objects.filter(q_obj).order_by('native_name', 'native_code')
     values = {

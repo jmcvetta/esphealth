@@ -28,6 +28,7 @@ from django.db.models import Q
 from django.db.models import F
 from django.db.models import Sum
 from django.db.models import Model
+from django.db.models import Count
 from django.db.models.query import QuerySet
 from django.contrib.contenttypes.models import ContentType
 
@@ -1078,6 +1079,7 @@ class Condition(object):
         q_obj &= ~Q(native_code__in=mapped_codes)
         q_obj &= ~Q(native_code__in=ignored_codes)
         qs = LabResult.objects.filter(q_obj).values('native_code', 'native_name').distinct()
+        qs = qs.annotate(count=Count('id'))
         log_query('Test name search', qs)
         return qs
         

@@ -26,6 +26,7 @@ def main():
         ul = UnmappedLab()
         ul.native_code = item['native_code']
         ul.native_name = item['native_name']
+        ul.count = item['count']
         ul.save()
         log.debug('Added %s to unmapped labs cache' % item)
     count = UnmappedLab.objects.all().count()

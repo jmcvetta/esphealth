@@ -6,12 +6,14 @@
     <tr>
         <th>Native Name</th>
         <th>Native Code</th>
+        <th>Lab Record Count</th>
         <th></th>
     </tr>
     {% for item in unmapped %}
     <tr>
         <td>{{ item.native_name }}</td>
         <td>{{ item.native_code }}</td>
+        <td>{{ item.count }}</td>
         <td><a href="{% url ignore_code item.native_code %}">ignore</a></td>
     </tr>
     {% endfor %}

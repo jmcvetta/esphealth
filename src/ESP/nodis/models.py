@@ -116,3 +116,4 @@ class UnmappedLab(models.Model):
     '''
     native_code = models.CharField(max_length=100, blank=False)
     native_name = models.CharField(max_length=255, blank=False)
+    count = models.IntegerField(blank=False)
