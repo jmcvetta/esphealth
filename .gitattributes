@@ -208,6 +208,7 @@ src/ESP/nodis/case_comparator.py -text
 src/ESP/nodis/case_report.py -text
 src/ESP/nodis/core.py -text
 src/ESP/nodis/defs.py -text
+src/ESP/nodis/find_unmapped_labs.py -text
 src/ESP/nodis/forms.py -text
 src/ESP/nodis/models.py -text
 src/ESP/nodis/patient_report.py -text
@@ -288,6 +289,7 @@ src/ESP/templates/nodis/case_detail.html -text
 src/ESP/templates/nodis/case_list.html -text
 src/ESP/templates/nodis/provider_detail.html -text
 src/ESP/templates/nodis/report/odh_hl7.txt -text
+src/ESP/templates/nodis/unmapped_labs.html -text
 src/ESP/templates/nodis/validator.html -text
 src/ESP/templates/nodis/validator.txt -text
 src/ESP/templates/pages/ss/home.html -text

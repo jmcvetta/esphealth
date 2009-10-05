@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<table>
+    <tr>
+        <th>Native Name</th>
+        <th>Native Code</th>
+    </tr>
+    {% for item in unmapped %}
+    <tr>
+        <td>{{ item.native_name }}</td>
+        <td>{{ item.native_code }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+
+{% endblock %}
