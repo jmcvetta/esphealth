@@ -175,6 +175,7 @@ def main():
             'all_encounters': case.encounters.all(),
             'all_prescriptions': case.medications.all(),
             'all_immunizations': case.immunizations.all(),
+            'serial_number': serial_number,
             }
         log.debug('values for template: \n%s' % pprint.pformat(values))
         case_report = render_to_string(template_name, values)
