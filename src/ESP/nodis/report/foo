@@ -1,0 +1,67 @@
+'''
+                                  ESP Health
+                         Notifiable Diseases Framework
+                                 HL7 Exporter
+
+@author: Jason McVetta <jason.mcvetta@gmail.com>
+@organization: Channing Laboratory http://www.channing.harvard.edu
+@copyright: (c) 2009 Channing Laboratory
+@license: LGPL - http://www.gnu.org/licenses/lgpl-3.0.txt
+'''
+
+
+import optparse
+import sys
+import pprint
+
+from django.db.models import Q
+from django.template.loader import render_to_string
+
+from ESP.settings import DEFAULT_HL7_TEMPLATE
+from ESP.utils.utils import log
+from ESP.utils.utils import log_query
+from ESP.nodis import defs
+from ESP.nodis.core import Condition
+from ESP.nodis.models import Case
+
+
+def main():
+    report_conditions = [] # Names of conditions for which we will export cases
+    parser = optparse.OptionParser()
+    parser.add_option('-t', action='store', metavar='TEMPLATE', 
+        help='Use TEMPLATE to generate HL7 messages')
+    parser.add_option('--individual', action='store_false', dest='one_file',
+        default=False, help='Export each cases to an individual file (default)')
+    parser.add_option('--one-file', action='store_true', dest='one_file',
+        default=False, help='Export all cases to a one file')
+    parser.add_option('--status', action='store', dest='status', default='Q',
+        help='Export only cases with this status ("Q" by default)')
+    parser.add_option('--no-sent-status', action='store_false', dest='sent_status', default=True,
+        help='Do NOT set case status to "S" after export')
+    options, args = parser.parse_args()
+    all_conditions = Condition.list_all_condition_names()
+    all_conditions.sort()
+    for a in args:
+        if a.lower() == 'all':
+            report_conditions = all_conditions
+            break
+        if a in all_conditions:
+            report_conditions.append(a)
+        else:
+            print >> sys.stderr
+            print >> sys.stderr, 'Unrecognized condition: "%s".  Aborting.' % a
+            print >> sys.stderr
+            print >> sys.stderr, 'Valid conditions are:'
+            print >> sys.stderr, '    --------'
+            print >> sys.stderr, '    all (reports all conditions below)'
+            print >> sys.stderr, '    --------'
+            for con in all_conditions:
+                print >> sys.stderr, '    %s' % con
+    log.info('Exporting HL7 messages for %s' % report_conditions)
+    q_obj = Q(condition__in=report_conditions)
+    for con in report_conditions:
+        cases = Case
+
+
+if __name__ == '__main__':
+    main()

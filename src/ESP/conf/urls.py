@@ -26,5 +26,6 @@ urlpatterns = patterns('ESP.conf.views',
     url(r'^codes/map/$', 'map_code'),
     url(r'^codes/map/loinc/(?P<loinc_num>\d+)/$', 'map_code', name='map_loinc'),
     url(r'^codes/map/native/(?P<native_code>\d+)/$', 'map_code', name='map_native'),
+    url(r'^codes/ignore/(?P<native_code>.+)/$', 'ignore_code', name='ignore_code'),
     #url(r'^json_code_grid', json_code_grid, name='json_code_grid'),
 )

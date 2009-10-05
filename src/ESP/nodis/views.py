@@ -44,6 +44,7 @@ from ESP.settings import NLP_EXCLUDE
 from ESP.settings import ROWS_PER_PAGE
 from ESP.settings import DATE_FORMAT
 from ESP.conf.models import NativeCode
+from ESP.conf.models import IgnoredCode
 from ESP.emr.models import NativeNameCache
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
@@ -379,10 +380,15 @@ def unmapped_labs_report(request):
     '''
     Display Unmapped Labs report generated from cache
     '''
+    ignored = IgnoredCode.objects.values('native_code')
+    mapped = NativeCode.objects.values('native_code').distinct()
+    q_obj = ~Q(native_code__in=ignored)
+    q_obj &= ~Q(native_code__in=mapped)
+    unmapped = UnmappedLab.objects.filter(q_obj).order_by('native_name', 'native_code')
     values = {
         'title': 'Unmapped Lab Tests Report',
         "request":request,
-        'unmapped': UnmappedLab.objects.all().order_by('native_name', 'native_code')
+        'unmapped': unmapped,
         }
     return render_to_response('nodis/unmapped_labs.html', values, context_instance=RequestContext(request))
     

@@ -12,6 +12,7 @@ Views
 
 import re
 import sys
+import pprint
 
 from django import forms as django_forms, http
 from django.contrib.auth import login
@@ -34,6 +35,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from ESP.settings import NLP_SEARCH, NLP_EXCLUDE
 from ESP.settings import ROWS_PER_PAGE
 from ESP.conf.models import NativeCode
+from ESP.conf.models import IgnoredCode
 from ESP.emr.models import NativeNameCache
 from ESP.emr.models import LabResult
 from ESP.hef.core import BaseHeuristic
@@ -102,20 +104,29 @@ class LoincMap:
 
 @login_required
 def loinc_mapping(request):
+    '''
+    LOINC Mapping Report
+    '''
     values = {'title': 'LOINC Mapping Report'}
-    mapped_loinc_nums = set(NativeCode.objects.values_list('loinc', flat=True))
     mapped = []
     unmapped = []
     required_loincs = get_required_loincs()
     for loinc_num in required_loincs:
-        native_codes = NativeCode.objects.filter(loinc=loinc_num).values_list('native_code', flat=True)
-        if native_codes:
-            #native_codes = [m.native_code for m in mappings]
-            #print native_codes
-            lm = LoincMap(loinc_num, required_loincs[loinc_num], native_codes=native_codes)
-            mapped += [lm]
+        mappings = NativeCode.objects.filter(loinc=loinc_num)
+        if mappings:
+            native_code_lab_count = []
+            for code in mappings.values_list('native_code', flat=True):
+                count = LabResult.objects.filter(native_code=code).count()
+                native_code_lab_count.append( (code, count) )
+            log.debug('native_code_lab_count: \n%s' % pprint.pformat(native_code_lab_count))
+            lm = LoincMap(
+                loinc_num=loinc_num, 
+                required_by=required_loincs[loinc_num], 
+                native_codes=native_code_lab_count,
+                )
+            mapped.append(lm)
         else:
-            unmapped += [LoincMap(loinc_num, required_loincs[loinc_num])]
+            unmapped.append( LoincMap(loinc_num=loinc_num, required_by=required_loincs[loinc_num]) )
     values['mapped'] = mapped
     values['unmapped'] = unmapped
     return render_to_response('conf/loinc_mapping.html', values, context_instance=RequestContext(request))
@@ -174,3 +185,27 @@ def json_code_grid(request):
     #return HttpResponse(json, mimetype='application/json')
     return HttpResponse(json)
 
+
+@login_required
+def ignore_code(request, native_code):
+    '''
+    Display Unmapped Labs report generated from cache
+    '''
+    if request.method == 'POST':
+        ic_obj, created = IgnoredCode.objects.get_or_create(native_code=native_code.lower())
+        if created:
+            ic_obj.save()
+            msg = 'Native code "%s" has been added to the ignore list' % native_code
+        else:
+            msg = 'Native code "%s" is already on the ignore list' % native_code
+        request.user.message_set.create(message=msg)
+        log.debug(msg)
+        return redirect_to(request, reverse('unmapped_labs_report'))
+    else:
+        values = {
+            'title': 'Unmapped Lab Tests Report',
+            "request":request,
+            'native_code': native_code,
+            }
+        return render_to_response('conf/confirm_ignore_code.html', values, context_instance=RequestContext(request))
+    

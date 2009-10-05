@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<p>
+    <em>Are you sure you want to ignore native code {{ native_code }} when looking for relevant unmapped lab tests?</em>
+</p>
+
+<p>
+    <form method="POST" action="{% url ignore_code native_code %}">
+        <input type="submit" value='Yes, ignore "{{ native_code }}"!'>
+        <a href="{% url unmapped_labs_report %}">Cancel</a>
+    </form>
+</p>
+
+{% endblock %}
