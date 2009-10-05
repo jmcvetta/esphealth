@@ -64,7 +64,7 @@
     <tr>
         <td><em>TOTAL</em>
         <td>{{ total }}
-        <td>100%
+        <td>
 </table>
 
 
@@ -85,63 +85,67 @@
         <br>Condition: {{ item.0.condition }}
         <br>Date:      <strong>{{ item.0.date }}</strong>
 
-        {% if item.3 %}
-        <h3>Other Cases: </h3>
-        <table>
-            <tr>
-                <th>Case ID
-                <th>Date
-                <th>Condition
-            {% for case in item.3 %}
-            <tr>
-                <td>{{ case.pk }}
-                <td>{{ case.date }}
-                <td>{{ case.condition }} 
-            {% endfor %}
-        </table>
-        {% endif %}
+        <blockquote>
 
-        {% if item.2 %}
-        <h3>Events: </h3>
-        <table>
-            <tr>
-                <th>Event ID
-                <th>Date
-                <th>Heuristic
-            {% for event in item.2 %}
-            <tr>
-                <td>{{ event.pk }}
-                <td>{{ event.date }}
-                <td>{{ event.heuristic }} 
-            {% endfor %}
-        </table>
-        {% endif %}
+            {% if item.3 %}
+            <h3>Other Cases: </h3>
+            <table>
+                <tr>
+                    <th>Case ID
+                    <th>Date
+                    <th>Condition
+                {% for case in item.3 %}
+                <tr>
+                    <td>{{ case.pk }}
+                    <td>{{ case.date }}
+                    <td>{{ case.condition }} 
+                {% endfor %}
+            </table>
+            {% endif %}
 
-        {% if item.1 %}
-        <h3>Labs: </h3>
-        <table>
-            <tr>
-                <th>Lab ID
-                <th>Date
-                <th>Native Code
-                <th>Native Name
-                <th>Result
-                <th>Bound Events
-            {% for lab in item.1 %}
-            <tr>
-                <td>{{ lab.pk }}
-                <td>{{ lab.date }}
-                <td>{{ lab.native_code }}
-                <td>{{ lab.native_name }}
-                <td>{{ lab.result_string }}
-                <td>{{ lab.events.all|join:"<br>" }}
-            {% endfor %}
-        </table>
-        {% endif %}
+            {% if item.2 %}
+            <h3>Events: </h3>
+            <table>
+                <tr>
+                    <th>Event ID
+                    <th>Date
+                    <th>Heuristic
+                {% for event in item.2 %}
+                <tr>
+                    <td>{{ event.pk }}
+                    <td>{{ event.date }}
+                    <td>{{ event.heuristic }} 
+                {% endfor %}
+            </table>
+            {% endif %}
 
-        {% if not item.1 and not item.2 %}
-            <p><strong>NO EVENTS OR LAB RESULTS </strong>
-        {% endif %}
+            {% if item.1 %}
+            <h3>Labs: </h3>
+            <table>
+                <tr>
+                    <th>Lab ID
+                    <th>Date
+                    <th>Native Code
+                    <th>Native Name
+                    <th>Result
+                    <th>Bound Events
+                {% for lab in item.1 %}
+                <tr>
+                    <td>{{ lab.pk }}
+                    <td>{{ lab.date }}
+                    <td>{{ lab.native_code }}
+                    <td>{{ lab.native_name }}
+                    <td>{{ lab.result_string }}
+                    <td>{{ lab.events.all|join:"<br>" }}
+                {% endfor %}
+            </table>
+            {% endif %}
+
+            {% if not item.1 and not item.2 %}
+                <p><strong>NO EVENTS OR LAB RESULTS </strong>
+            {% endif %}
+
+        </blockquote>
 
     <hr>
     {% endfor %}
