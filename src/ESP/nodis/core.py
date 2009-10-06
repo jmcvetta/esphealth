@@ -1063,14 +1063,24 @@ class Condition(object):
     relevant_heuristics = property(__get_relevant_heuristics)
     
     @classmethod
-    def find_unmapped_labs(cls):
+    def all_test_name_search_strings(cls):
         '''
+        Returns a list of all suspicious strings to search for in lab names.
         '''
         all_strings = set()
         for c in Condition.all_conditions():
             for string in c.test_name_search:
                 all_strings.add(string)
         all_strings = list(all_strings)
+        return all_strings
+        
+    @classmethod
+    def find_unmapped_labs(cls):
+        '''
+        Returns a QuerySet of unmapped lab tests whose native name contains
+        a suspicious string.
+        '''
+        all_strings = self.all_test_name_search_strings()
         mapped_codes = NativeCode.objects.values('native_code').distinct()
         ignored_codes = IgnoredCode.objects.values('native_code').distinct()
         q_obj = Q(native_name__icontains=all_strings[0])

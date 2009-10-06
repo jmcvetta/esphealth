@@ -31,6 +31,16 @@
 
 {% block content %}
 
+<p>
+    Searching lab native names for these strings:
+    <ul>
+        {% for s in search_strings %}
+        <li>{{ s }}</li>
+        {% endfor %}
+    </ul>
+</p>
+
+<p>
 <table>
     <tr>
         <th>Native Name</th>
@@ -53,6 +63,7 @@
     </tr>
     {% endfor %}
 </table>
+</p>
 
 
 {% endblock %}

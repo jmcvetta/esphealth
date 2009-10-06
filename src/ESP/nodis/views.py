@@ -396,6 +396,7 @@ def unmapped_labs_report(request):
         'title': 'Unmapped Lab Tests Report',
         "request":request,
         'unmapped': unmapped,
+        'search_strings': Condition.all_test_name_search_strings(),
         }
     return render_to_response('nodis/unmapped_labs.html', values, context_instance=RequestContext(request))
     
