@@ -32,6 +32,7 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.conf.models import NativeCode
+from ESP.static.models import Loinc
 from ESP.hef.models import Event
 from ESP.hef.models import Run
 from ESP import settings
@@ -136,9 +137,11 @@ class BaseHeuristic(object):
         return names
 
     @classmethod
-    def get_all_loincs(cls):
+    def get_all_loincs(cls, choices=False):
         '''
         Returns a list of all LOINC numbers for registered heuristics
+        @param choices: If true, return a list of two-tuples suitable for use with a form ChoiceField
+        @type choices: Boolean
         '''
         loincs = set()
         for heuristic in cls.get_all_heuristics():
@@ -146,7 +149,20 @@ class BaseHeuristic(object):
                 loincs = loincs | set(heuristic.loinc_nums)
             except AttributeError:
                 pass # Skip heuristics w/ no LOINCs defined
-        return loincs
+        loincs = list(loincs)
+        loincs.sort()
+        if choices:
+            out = []
+            for loinc in loincs:
+                try:
+                    name = Loinc.objects.get(loinc_num=loinc).shortname
+                except Loinc.DoesNotExist:
+                    name = ''
+                label = '%-7s: %s' % (loinc, name)
+                out.append((loinc, label))
+            return out
+        else:
+            return loincs
 
     @classmethod
     def get_required_loincs(cls):
