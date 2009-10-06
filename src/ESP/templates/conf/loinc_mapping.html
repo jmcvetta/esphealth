@@ -49,6 +49,7 @@
         <th width='100pt'>LOINC</th>
         <th width='300pt'>Required by Heuristic</th>
         <th width='300pt'>Native Codes</th>
+        <th width='300pt'>Lab Results in DB</th>
     </tr>
     {% for item in mapped %}
     <tr valign="top">
@@ -61,7 +62,13 @@
         </td>
         <td>
         {% for code in item.native_codes %}
-            {{ code }}
+            {{ code.0 }}
+            <br>
+        {% endfor %}
+        </td>
+        <td>
+        {% for code in item.native_codes %}
+            {{ code.1 }}
             <br>
         {% endfor %}
         </td>
