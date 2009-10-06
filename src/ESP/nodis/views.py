@@ -392,11 +392,13 @@ def unmapped_labs_report(request):
     q_obj &= ~Q(native_code__in=ignored)
     q_obj &= ~Q(native_code__in=mapped)
     unmapped = UnmappedLab.objects.filter(q_obj).order_by('native_name', 'native_code')
+    strings = Condition.all_test_name_search_strings()
+    strings.sort()
     values = {
         'title': 'Unmapped Lab Tests Report',
         "request":request,
         'unmapped': unmapped,
-        'search_strings': Condition.all_test_name_search_strings(),
+        'search_strings': strings,
         }
     return render_to_response('nodis/unmapped_labs.html', values, context_instance=RequestContext(request))
     
