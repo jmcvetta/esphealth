@@ -1080,7 +1080,7 @@ class Condition(object):
         Returns a QuerySet of unmapped lab tests whose native name contains
         a suspicious string.
         '''
-        all_strings = self.all_test_name_search_strings()
+        all_strings = cls.all_test_name_search_strings()
         mapped_codes = NativeCode.objects.values('native_code').distinct()
         ignored_codes = IgnoredCode.objects.values('native_code').distinct()
         q_obj = Q(native_name__icontains=all_strings[0])
