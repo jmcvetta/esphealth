@@ -11,6 +11,7 @@ import pprint
 
 from ESP.esp.models import Case
 from ESP.esp.models import Lx
+from ESP.esp.models import Rx
 
 
 file = open('old_cases.csv', 'w')
@@ -28,7 +29,10 @@ for c in Case.objects.all().order_by('pk'):
         first = c.caseDemog.DemogFirst_Name
         last = c.caseDemog.DemogLast_Name
         mrn = c.caseDemog.DemogMedical_Record_Number
-        date = Lx.objects.filter(pk__in=c.caseLxID.split(',')).order_by('LxOrderDate')[0].LxOrderDate
+        if c.caseLxID:
+            date = Lx.objects.filter(pk__in=c.caseLxID.split(',')).order_by('LxOrderDate')[0].LxOrderDate
+        else:
+            date = Rx.objects.filter(pk__in=c.caseRxID.split(',')).order_by('RxOrderDate')[0].RxOrderDate
         line = [condition, date, mrn, last, first]
         writer.writerow(line)
     except KeyboardInterrupt:
