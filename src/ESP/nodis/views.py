@@ -399,7 +399,7 @@ def unmapped_labs_report(request):
     return render_to_response('nodis/unmapped_labs.html', values, context_instance=RequestContext(request))
     
 
-@login_required
+@user_passes_test(lambda u: u.is_staff)
 def map_native_code(request, native_code):
     '''
     Convenience screen to help users map native lab test codes to LOINC codes 

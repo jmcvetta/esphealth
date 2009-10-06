@@ -16,7 +16,9 @@ import pprint
 
 from django import forms as django_forms, http
 from django.contrib.auth import login
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User
 from django.core import serializers
 from django.core.paginator import Paginator
@@ -186,7 +188,7 @@ def json_code_grid(request):
     return HttpResponse(json)
 
 
-@login_required
+@user_passes_test(lambda u: u.is_staff)
 def ignore_code(request, native_code):
     '''
     Display Unmapped Labs report generated from cache
