@@ -19,6 +19,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
 from ESP.nodis.models import STATUS_CHOICES
+from ESP.hef.core import BaseHeuristic
+from ESP.static.models import Loinc
 
 
 
@@ -30,3 +32,6 @@ class CaseStatusForm(forms.Form):
     status = forms.ChoiceField(STATUS_CHOICES[:4], required=False)
     comment = forms.CharField(widget=forms.Textarea, required=False)
 
+
+class MapNativeCodeForm(forms.Form):
+    loinc = forms.ChoiceField(choices=BaseHeuristic.get_all_loincs(choices=True), required=True)

@@ -12,6 +12,7 @@ Notifiable Diseases Framework
 
 import re
 import sys
+import datetime
 
 from django import forms as django_forms
 from django import http
@@ -24,6 +25,7 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.db.models import Q
+from django.db.models import Count
 from django.forms.models import formset_factory
 from django.forms.models import modelformset_factory
 from django.forms.util import ErrorList
@@ -45,6 +47,7 @@ from ESP.settings import ROWS_PER_PAGE
 from ESP.settings import DATE_FORMAT
 from ESP.conf.models import NativeCode
 from ESP.conf.models import IgnoredCode
+from ESP.static.models import Loinc
 from ESP.emr.models import NativeNameCache
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
@@ -53,10 +56,12 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Prescription
 from ESP.hef.core import BaseHeuristic
 from ESP.hef import events # Required to register hef events
+from ESP.nodis.core import Condition
 from ESP.nodis.models import Case
 from ESP.nodis.models import CaseStatusHistory
 from ESP.nodis.models import UnmappedLab
 from ESP.nodis.forms import CaseStatusForm
+from ESP.nodis.forms import MapNativeCodeForm
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
 
@@ -392,4 +397,44 @@ def unmapped_labs_report(request):
         'unmapped': unmapped,
         }
     return render_to_response('nodis/unmapped_labs.html', values, context_instance=RequestContext(request))
+    
+
+@login_required
+def map_native_code(request, native_code):
+    '''
+    Convenience screen to help users map native lab test codes to LOINC codes 
+    used by Nodis.  This view is part of nodis because it depends on several
+    lower-level modules (conf, hef, & static).
+    '''
+    native_code = native_code.lower()
+    form = MapNativeCodeForm() # This may be overridden below
+    labs = LabResult.objects.filter(native_code=native_code)
+    native_names = labs.values_list('native_name', flat=True).distinct().order_by('native_name')
+    if request.method == 'POST':
+        form = MapNativeCodeForm(request.POST)
+        if form.is_valid():
+            loinc_num = form.cleaned_data['loinc']
+            loinc_obj = Loinc.objects.get(loinc_num=loinc_num)
+            nc, created = NativeCode.objects.get_or_create(native_code=native_code, loinc=loinc_obj)
+            if created:
+                nc.notes = 'Created via web UI by %s on %s' % (request.user, datetime.datetime.now())
+                nc.native_name = native_names[0]
+                nc.save()
+                msg = 'Mapped native code "%s" to LOINC %s' % (native_code, loinc_obj)
+            else:
+                msg = 'Native code "%s" was already mapped to LOINC %s' % (native_code, loinc_obj)
+            request.user.message_set.create(message=msg)
+            log.debug(msg)
+            return redirect_to(request, reverse('unmapped_labs_report'))
+    result_strings = labs.values('result_string').distinct().annotate(count=Count('id')).order_by('-count')
+    values = {
+        'title': 'Map native code to LOINC',
+        "request":request,
+        'native_code': native_code,
+        'native_names': native_names,
+        'result_strings': result_strings,
+        'form': form,
+        'count': labs.count()
+        }
+    return render_to_response('nodis/map_native_code.html', values, context_instance=RequestContext(request))
     

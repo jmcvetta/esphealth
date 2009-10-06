@@ -46,7 +46,8 @@ urlpatterns = patterns('ESP.nodis.views',
     url(r'^cases/transmit/(?P<case_id>\d+)/$', 'case_queue_for_transmit', name='nodis_case_transmit'),
     url(r'^provider/(?P<provider_id>\w+)/$', 'provider_detail', name='provider_detail'),
     #
-    # Unmapped Lab Tests Report
+    # Lab Tests 
     #
     url(r'^labs/unmapped/$', 'unmapped_labs_report', name='unmapped_labs_report'),
+    url(r'^labs/map/(?P<native_code>.+)/$', 'map_native_code', name='map_native_code'),
 )
