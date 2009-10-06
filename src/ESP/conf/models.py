@@ -51,6 +51,9 @@ class IgnoredCode(models.Model):
     Codes to be ignored by nodis.core.Condition.find_unmapped_tests()
     '''
     native_code = models.CharField(max_length=100, blank=False, unique=True)
+    
+    def __str__(self):
+        return self.native_code
 
 
 
