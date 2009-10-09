@@ -289,7 +289,7 @@ class SimpleEventPattern(BaseEventPattern):
     __excluded_events_cache = {}
     
     def __init__(self, heuristic):
-        self.__dated_events_cache = {} 
+        self.__events_cache = {}
         if not heuristic in BaseHeuristic.list_heuristics():
             raise InvalidHeuristic('Unknown heuristic: %s' % heuristic)
         self.heuristic = heuristic
@@ -323,35 +323,27 @@ class SimpleEventPattern(BaseEventPattern):
                 
     def match_window(self, reference, exclude_condition=None):
         assert isinstance(reference, Window)
-        #
-        # Get dated events
-        #
         patient = reference.patient
-        cache = self.__dated_events_cache
-        if patient not in cache:
-            values = Event.objects.filter(heuristic=self.heuristic, patient=patient).values('pk', 'date')
+        cache = self.__events_cache
+        key = (patient, exclude_condition)
+        if not key in cache:
+            q_obj = Q(patient=patient)
+            q_obj &= Q(heuristic=self.heuristic)
             if exclude_condition:
-                q_obj = ~Q(case__condition=exclude_condition)
-                values = values.filter(q_obj)
-            log_query('get dated %s events for patient %s exclude condition %s' % (self.heuristic, patient, exclude_condition), values)
-            patient_dates = {}
-            for val in values:
-                patient_dates[val['date']] = val['pk']
-            cache[patient] = patient_dates
-            if len(cache) >= CACHE_WARNING_THRESHOLD:
-                log.warning('More than %s patients cached:  %s' % (CACHE_WARNING_THRESHOLD, len(cache)))
-        dated_events = cache[patient]
+                q_obj &= ~Q(case__condition=exclude_condition)
+            qs = Event.objects.filter(q_obj)
+            log_query('Events for heuristic %s, patient %s, excluding %s' % (self.heuristic, patient, exclude_condition), qs)
+            cache[key] = qs
         matched_windows = set()
-        for event_date in dated_events:
-            event_pk = dated_events[event_date]
-            event = Event.objects.get(pk=event_pk)
+        event_qs = cache[key]
+        for event in event_qs:
             try:
                 win = reference.fit(event)
                 matched_windows.add(win)
             except OutOfWindow:
                 continue
         return matched_windows
-        
+    
     def __get_string_hash(self):
         return '%s' % self.heuristic
     string_hash = property(__get_string_hash)
@@ -481,6 +473,11 @@ class ComplexEventPattern(BaseEventPattern):
             plausible = plausible & Patient.objects.filter(event__heuristic=heuristic).distinct()
         log_query('Plausible patients for ComplexEventPattern "%s", exclude %s' % (self, exclude_condition), plausible)
         monitor_heap()
+        #
+        # DEBUG:  Remove me when done debugging!!!!!
+        #
+        last_name_q = ~Q(last_name__istartswith='xb')
+        plausible = plausible.filter(last_name_q)
         return plausible
     
     def plausible_events(self, patients=None, exclude_condition=None):
@@ -506,6 +503,11 @@ class ComplexEventPattern(BaseEventPattern):
         lowest to highest number of plausible patients
         '''
         if not self.__sorted_pattern_cache:
+            #
+            # FIXME: The sorted pattern cache doesn't take into account that
+            # exclude_condition may be different on different calls to this 
+            # method.
+            #
             #log.debug('Sorting patterns by plausible event count')
             log.debug('Sorting patterns by plausible patient count')
             plausible = self.plausible_patients(exclude_condition)
@@ -536,10 +538,11 @@ class ComplexEventPattern(BaseEventPattern):
             for ref_win in first_pattern.generate_windows(days=days, patients=patients, exclude_condition=exclude_condition):
                 queue = set([ref_win])
                 for pattern in sorted_patterns[1:]:
-                    log.debug('queue: %s' % queue)
-                    matched_windows = set()
+                    log.debug('Queue: %s' % queue)
+                    matched_windows = set() # Windows matching both a window from queue, and current pattern
                     for win in queue:
-                        matched_windows.update(pattern.match_window(win, exclude_condition=exclude_condition))
+                        new_matches = pattern.match_window(win, exclude_condition=exclude_condition)
+                        matched_windows.update(new_matches)
                     queue = matched_windows
                 log.debug('Complete unconstrained queue: %s' % queue)
                 # Any windows remaining in the queue at this point have 
@@ -561,23 +564,39 @@ class ComplexEventPattern(BaseEventPattern):
             raise 'Invalid self.operator -- WTF?!'
     
     def match_window(self, reference, exclude_condition=None):
-        sorted_patterns = self.sorted_patterns(exclude_condition)
-        # Queue up the reference window to be checked against patterns.  We use 
-        # a set instead of a list to avoid double-adding the reference window
-        # when evaluating with 'or' operator.
-        queue = set([reference]) 
+        '''
+        Returns set of zero or more windows, falling within a reference window,
+        that match this pattern.
+        '''
+        # Order matters with 'and' operator, because any pattern that does not 
+        # match, causes the entire complex pattern not to match.  So we start
+        # with that pattern which has the fewest possible matches, and thus is
+        # least likely to match.  With 'or' operator, order of patterns does not
+        # matter at all, so we don't waste DB resources counting their possible
+        # matches.
+        if self.operator == 'and':
+            sorted_patterns = self.sorted_patterns(exclude_condition)
+        else:
+            sorted_patterns = self.patterns
+        queue = set() # Windows that we will TRY to match.  
+        matched_windows = set() # Windows that DO match this complex pattern, before checking constraints
+        queue.add(reference) # Start by checking the reference window
         for pattern in sorted_patterns:
-            # When operator is 'or', even if the previous pattern didn't match 
-            # anything, we're still going to try matching the remaining patterns 
-            # against the reference window.
-            if self.operator == 'or':
-                queue.update([reference])
-            matched_windows = set()
+            new_matches = set() # New matches for this pattern
             for win in queue:
-                matched_windows.update(pattern.match_window(win, exclude_condition=exclude_condition))
-            queue = matched_windows
+                this_win_matches = pattern.match_window(win, exclude_condition=exclude_condition)
+                new_matches.update(this_win_matches)
+            if self.operator == 'and':
+                # Only windows that have matched everything so far will be considered for the next pass
+                queue = matched_windows = new_matches
+            else: # operator == 'or'
+                # The original reference window, as well as any windows that 
+                # have matched so far, will be considered for next pass
+                matched_windows |= new_matches
+                queue = matched_windows.copy()
+                queue.add(reference)
         valid = set()
-        for win in queue:
+        for win in matched_windows:
             win = self._check_constaints(win)
             if win:
                 valid.add(win)
