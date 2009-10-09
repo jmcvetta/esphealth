@@ -129,17 +129,23 @@ class Window(object):
         self.past_events = None
         win_size = (days * 2) + 1
         log.debug('Initialized %s day window with %s events' % (win_size, len(events)))
+        for e in events:
+            log.debug('    Event #%s' % e.pk)
     
     def _check_event(self, event):
         '''
         Raises OutOfWindow exception if event does not fit within this window
         @type event:  Event instance
         '''
+        out = False
         if self.__events: # Cannot check date range if window has no events
             if not (event.date >= self.start) and (event.date <= self.end):
-                raise OutOfWindow('Date outside window')
+                out = 'Date outside window'
         if not self.__patient == event.patient:
-            raise OutOfWindow('Patient does not match')
+            out = 'Patient does not match'
+        if out:
+            log.debug('Out of window: %s' % out)
+            raise OutOfWindow(out)
         
     def _get_start_date(self):
         '''Start of the time window'''
@@ -172,8 +178,10 @@ class Window(object):
         @param event: Try to fit event into window
         @type event:  Event
         '''
+        log.debug('Fitting event %s to %s' % (event.pk, self))
         self._check_event(event)
         new_events = self.events + [event]
+        log.debug('Returning new window')
         return Window(days=self.delta.days, events=new_events)
     
     def merge(self, other):
@@ -337,7 +345,7 @@ class SimpleEventPattern(BaseEventPattern):
             if exclude_condition:
                 q_obj = ~Q(case__condition=exclude_condition)
                 values = values.filter()
-            log_query('get dated events for patient %s exclude condition %s' % (patient, exclude_condition), values)
+            log_query('get dated %s events for patient %s exclude condition %s' % (self.heuristic, patient, exclude_condition), values)
             patient_dates = {}
             for val in values:
                 patient_dates[val['date']] = val['pk']
