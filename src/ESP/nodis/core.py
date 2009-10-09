@@ -206,6 +206,15 @@ class Window(object):
             if (self.date >= ref_date) and (self.date <= recur_date):
                 return True
         return False
+    
+    def __cmp__(self, other):
+        '''
+        Sort first by date.  If both windows have the same date, then sort by descending number of events
+        '''
+        if self.date == other.date:
+            return len(other.events) - len(self.events)
+        else:
+            return (self.date - other.date).days
 
 
 
@@ -905,14 +914,15 @@ class Condition(object):
                     monitor_heap()
                     if window.overlaps(existing_case_dates, self.recur_after):
                         log.debug('Window overlaps with existing case')
-                        continue # 
+                        continue 
                     else:
                         log.debug('Window added to queue')
                         queue.append(window)
                         window_patterns[window] = pattern
             if not queue:
                 continue # no windows for this patient
-            queue.sort(lambda x, y: (x.date - y.date).days) # Sort by date
+            #queue.sort(lambda x, y: (x.date - y.date).days) # Sort by date
+            queue.sort() # Sort by ascending date, then by descending number of bound events
             log.debug('sorted queue: %s' % queue)
             log.debug('sorted queue dates: %s' % [win.date for win in queue])
             if self.recur_after == -1:
