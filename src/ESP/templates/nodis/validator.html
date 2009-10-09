@@ -80,6 +80,21 @@
 
 {% if missing %}
 
+<h3>Missing Cases by Condition</h3>
+
+<table>
+    <tr>
+        <th>Condition
+        <th>Number of Cases Missing
+    {% for item in missing_summary %}
+    <tr>
+        <td>{{ item.0 }}
+        <td>{{ item.1 }}
+    {% endfor %}
+</table>
+
+<hr>
+
     {% for item in missing %}
         <p>MRN:       <strong>{{ item.0.mrn }}</strong>
         <br>Condition: {{ item.0.condition }}

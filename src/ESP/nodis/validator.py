@@ -22,7 +22,13 @@ FILE_FIELDS = [
     ]
 TEXT_OUTPUT_TEMPLATE = 'nodis/validator.txt'
 HTML_OUTPUT_TEMPLATE = 'nodis/validator.html'
-CONSIDER_CONDITIONS = ['chlamydia', 'gonorrhea']
+CONDITION_MAP = {
+    'chlamydia': 'chlamydia',
+    'gonorrhea': 'gonorrhea',
+    'acute hepatitis a': 'acute_hep_a',
+    'acute hepatitis b': 'acute_hep_b',
+    }
+#CONSIDER_CONDITIONS = ['chlamydia', 'gonorrhea', 'acute_hep_a', 'acute_hep_b']
     
 
 import optparse
@@ -58,7 +64,10 @@ def validate(records):
     conditions_in_file = set()
     related_delta = datetime.timedelta(days=RELATED_MARGIN)
     for rec in records:
-        condition = rec['condition'].lower().strip()
+        old_condition_string = rec['condition'].lower().strip()
+        if not old_condition_string in CONDITION_MAP:
+            continue
+        condition = CONDITION_MAP[old_condition_string]
         condition_object = Condition.get_condition(condition)
         if not condition_object:
             log.warning('Invalid condition name: "%s".  Skipping.' % condition)
@@ -66,8 +75,6 @@ def validate(records):
         date_delta = datetime.timedelta(days=condition_object.recur_after)
         mrn = rec['mrn'].strip()
         date = date_from_str(rec['date'].strip())
-        if condition not in CONSIDER_CONDITIONS:
-            continue
         conditions_in_file.add(condition)
         log.debug('Examining known case:')
         log.debug('    Condition:  %s' % condition)
@@ -156,6 +163,17 @@ def main():
     percent_similar = float(count_similar) / total * 100.0
     percent_missing = float(count_missing) / total * 100.0
     percent_new = float(count_new) / total * 100.0
+    missing_case_counts = {}
+    for item in missing:
+        con = item[0]['condition']
+        if con in missing_case_counts:
+            missing_case_counts[con] += 1
+        else:
+            missing_case_counts[con] = 1
+    missing_summary = []
+    for con in missing_case_counts:
+        missing_summary.append((con, missing_case_counts[con]))
+    missing_summary.sort()
     values = {
         'exact': exact,
         'similar': similar,
@@ -171,6 +189,7 @@ def main():
         'percent_new': percent_new,
         'total': total,
         'related_margin': RELATED_MARGIN,
+        'missing_summary': missing_summary,
         }
     log.info('Rendering template')
     if options.text:
