@@ -72,7 +72,6 @@ def validate(records):
         if not condition_object:
             log.warning('Invalid condition name: "%s".  Skipping.' % condition)
             continue
-        date_delta = datetime.timedelta(days=condition_object.recur_after)
         mrn = rec['mrn'].strip()
         date = date_from_str(rec['date'].strip())
         conditions_in_file.add(condition)
@@ -94,9 +93,17 @@ def validate(records):
                 log.warning('More than one exact case match!')
             exact.append((rec, exact_date_cases[0]))
             continue
-        begin_date = date - date_delta
-        end_date = date + date_delta
-        similar_date_cases = cases.filter(date__gte=begin_date, date__lte=end_date)
+        if condition_object.recur_after == -1: # does not recur
+            log.debug('Condition %s does not recur.  Any previous case will be considered similar.' % condition)
+            similar_date_cases = cases.filter(date__lte=date)
+        else:
+            recur_delta = datetime.timedelta(days=condition_object.recur_after)
+            begin_date = date - recur_delta
+            end_date = date + recur_delta
+            log.debug('recur delta: %s' % recur_delta)
+            log.debug('begin date: %s' % begin_date)
+            log.debug('end date: %s' % end_date)
+            similar_date_cases = cases.filter(date__gte=begin_date, date__lte=end_date)
         if similar_date_cases:
             log.debug('Found case with similar date: %s' % similar_date_cases[0].date)
             if len(exact_date_cases) > 1: 
