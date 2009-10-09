@@ -160,7 +160,7 @@
         <td>{{ lx.native_code }} ({{ lx.LxLoinc }})</td>
         <td>{{ lx.native_name }}</td>
         <td>{{ lx.result_string }}</td>
-        <td>{{ lx.abnormal_flag }} </td>
+        <td>{{ lx.abnormal_flag|default:"False" }} </td>
         <td>{{ lx.ref_neg}}  -  {{ lx.ref_pos}}</td>
         <td>{{ lx.order_num }}</td>
         <td>
