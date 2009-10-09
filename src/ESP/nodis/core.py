@@ -332,7 +332,7 @@ class SimpleEventPattern(BaseEventPattern):
             values = Event.objects.filter(heuristic=self.heuristic, patient=patient).values('pk', 'date')
             if exclude_condition:
                 q_obj = ~Q(case__condition=exclude_condition)
-                values = values.filter()
+                values = values.filter(q_obj)
             log_query('get dated %s events for patient %s exclude condition %s' % (self.heuristic, patient, exclude_condition), values)
             patient_dates = {}
             for val in values:
