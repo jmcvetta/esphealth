@@ -130,7 +130,10 @@ def validate(records):
         log.debug('Found %s relevant events' % events.count())
         loincs = Condition.get_condition(condition).relevant_loincs
         lab_q = Q(patient=patient, date__gte=begin, date__lte=end)
-        labs = LabResult.objects.filter_loincs(loincs).filter(lab_q).order_by('date')
+        labs = LabResult.objects.filter_loincs(loincs)
+        for test_name in condition_object.test_name_search:
+            labs |= LabResult.objects.filter(native_name__icontains=test_name)
+        labs = labs.filter(lab_q).order_by('date')
         log.debug('Found %s relevant labs' % labs.count())
         missing.append((rec, labs, events, cases))
         #
