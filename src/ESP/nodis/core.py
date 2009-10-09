@@ -127,10 +127,10 @@ class Window(object):
             self.__events += [e]
             self.__events.sort(lambda x, y: (x.date - y.date).days) # Sort by date
         self.past_events = None
-        win_size = (days * 2) + 1
-        log.debug('Initialized %s day window with %s events' % (win_size, len(events)))
+        win_size = self.end - self.start
+        log.debug('Initialized %s day window # %s with %s events' % (win_size.days, id(self), len(events)))
         for e in events:
-            log.debug('    Event #%s' % e.pk)
+            log.debug('    %s' % e)
     
     def _check_event(self, event):
         '''
@@ -181,21 +181,9 @@ class Window(object):
         log.debug('Fitting event %s to %s' % (event.pk, self))
         self._check_event(event)
         new_events = self.events + [event]
-        log.debug('Returning new window')
+        log.debug('Returning new window:')
         return Window(days=self.delta.days, events=new_events)
     
-    def merge(self, other):
-        '''
-        Try to merge all events another window into this window.  If window 
-            does not fit, OutOfWindow exception is raised.
-        @param other: Window to be merged with this one
-        @type other:  Window instance
-        '''
-        win = other
-        for event in other.events:
-            win = self.fit(event)
-        return win
-        
     def __repr__(self):
         return 'Window %s (%s events %s - %s)' % (id(self), len(self.__events), self.start, self.end)
         
@@ -355,13 +343,13 @@ class SimpleEventPattern(BaseEventPattern):
         dated_events = cache[patient]
         matched_windows = set()
         for event_date in dated_events:
-            # If date is outside window, skip it
-            if (event_date > reference.end) or (event_date < reference.start):
-                continue
             event_pk = dated_events[event_date]
             event = Event.objects.get(pk=event_pk)
-            win = reference.fit(event)
-            matched_windows.add(win)
+            try:
+                win = reference.fit(event)
+                matched_windows.add(win)
+            except OutOfWindow:
+                continue
         return matched_windows
         
     def __get_string_hash(self):
@@ -548,16 +536,21 @@ class ComplexEventPattern(BaseEventPattern):
             for ref_win in first_pattern.generate_windows(days=days, patients=patients, exclude_condition=exclude_condition):
                 queue = set([ref_win])
                 for pattern in sorted_patterns[1:]:
+                    log.debug('queue: %s' % queue)
                     matched_windows = set()
                     for win in queue:
                         matched_windows.update(pattern.match_window(win, exclude_condition=exclude_condition))
                     queue = matched_windows
+                log.debug('Complete unconstrained queue: %s' % queue)
                 # Any windows remaining in the queue at this point have 
                 # matched all patterns.
                 for win in queue:
                     win = self._check_constaints(win)
                     if win:
+                        log.debug('Yielding %s' % win)
                         yield win
+                    else:
+                        log.debug('Constraint check failed for %s' % win)
         elif self.operator == 'or':
             for pattern in self.patterns:
                 for win in pattern.generate_windows(days=days, patients=patients, exclude_condition=exclude_condition):
@@ -658,7 +651,7 @@ class ComplexEventPattern(BaseEventPattern):
         return self.__pattern_obj
     pattern_obj = property(__get_pattern_object)
     
-    def __str__(self):
+    def __repr__(self):
         if self.name:
             return self.name
         else:
@@ -830,7 +823,7 @@ class Condition(object):
         case.save()
         case.events = window.events
         case.save()
-        log.info('Created new %s case #%s for patient #%s based on %s' % (self.name, case.pk, case.patient.pk, window))
+        log.info('Created new %s case # %s for patient # %s based on %s' % (self.name, case.pk, case.patient.pk, window))
         return case
 
     def generate_cases(self):
@@ -875,7 +868,7 @@ class Condition(object):
         #
         queue = {} # {Patient: (Window, ComplexEventPattern), ...}
         for patient in self.plausible_patients():
-            log.debug('Patient #%s: %s' % (patient.pk, patient))
+            log.debug('Patient # %s: %s' % (patient.pk, patient))
             queue = []
             existing_cases = Case.objects.filter(condition=self.name, patient=patient)
             if existing_cases and (self.recur_after == -1):
@@ -1101,4 +1094,3 @@ class Condition(object):
         log_query('Test name search', qs)
         return qs
         
-
