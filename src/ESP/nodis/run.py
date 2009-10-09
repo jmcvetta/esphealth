@@ -47,14 +47,14 @@ def main():
     # Main Control block
     #
     all_condition_names = [c.name for c in Condition.all_conditions()]
-    conditions = set()
     if args: 
+        conditions = set()
         for name in args:
             if name not in all_condition_names:
                 sys.stderr.write("Unknown condition: '%s'.  Exiting.\n" % name)
             conditions.add(Condition.get_condition(name))
     else:
-        conditions = set(Condition.all_conditions())
+        conditions = Condition.all_conditions()
     for c in conditions:
         if options.regenerate:
             c.regenerate()
