@@ -18,7 +18,6 @@ EXCLUDE_XB_NAMES = False # Exclude patients whose names start with 'Xb' -- test 
 import datetime
 import pprint
 import types
-import sets
 import sys
 import optparse
 import re
@@ -1021,7 +1020,7 @@ class Condition(object):
                 enc_q = enc_q & Q(date__lte = end_date)
             log.debug('enc_q: %s' % enc_q)
             encounters = Encounter.objects.filter(enc_q)
-            new_encounters = sets.Set(case.encounters.all()) | sets.Set(encounters)
+            new_encounters = set(case.encounters.all()) | set(encounters)
             counter += ( len(new_encounters) - len(case.encounters.all()) )
             case.encounters = new_encounters
         if self.lab_loinc_nums:
@@ -1036,7 +1035,7 @@ class Condition(object):
             # It's probably better to handle that in the case management UI,
             # where we could potentially show a history for each test, than 
             # here.
-            new_labs = sets.Set(case.lab_results.all()) | sets.Set(labs)
+            new_labs = set(case.lab_results.all()) | set(labs)
             counter += ( len(new_labs) - len(case.lab_results.all()) )
             case.lab_results = new_labs
         if self.med_names:
@@ -1049,7 +1048,7 @@ class Condition(object):
                 med_q = med_q & Q(date__lte = end_date)
             log.debug('med_q: %s' % med_q)
             medications = Prescription.objects.filter(med_q)
-            new_meds = sets.Set(case.medications.all()) | sets.Set(medications)
+            new_meds = set(case.medications.all()) | set(medications)
             counter += ( len(new_meds) - len(case.medications.all()) )
             case.medications = new_meds
         # Support for reporting immunizations has not yet been implemented
