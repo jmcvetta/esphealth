@@ -212,13 +212,15 @@
             <th>MRN
             <th>Condition
             <th>Known Date
-            <th>Nodis date
+            <th>Nodis Date
+            <th>Nodis Case ID
         {% for item in similar %}
         <tr>
             <td>{{ item.1.patient.mrn }}
             <td>{{ item.1.condition }}
             <td>{{ item.0.date }}
             <td>{{ item.1.date }}
+            <td>{{ item.1.pk }}
         {% endfor %}
     </table>
 {% else %}

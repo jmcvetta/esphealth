@@ -61,7 +61,7 @@ def validate(records):
     similar = []
     missing = []
     new = []
-    no_mrn = [] # MRNs not present in new ESP db
+    no_mrn = set() # MRNs not present in new ESP db
     conditions_in_file = set()
     related_delta = datetime.timedelta(days=RELATED_MARGIN)
     for rec in records:
@@ -84,7 +84,7 @@ def validate(records):
             patient = Patient.objects.get(mrn=mrn)
         except Patient.DoesNotExist:
             log.warning('No patient found for MRN: %s' % mrn)
-            no_mrn.append(mrn)
+            no_mrn.add(mrn)
             continue
         cases = Case.objects.filter(patient=patient, condition__iexact=condition)
         previous_day = date - datetime.timedelta(days=1)
