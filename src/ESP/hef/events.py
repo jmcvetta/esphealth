@@ -480,7 +480,7 @@ StringMatchLabHeuristic(
 
 
 #
-# Lyme Disease  --  experimental
+# Lyme Disease
 #
 
 #--- lyme_elisa_pos 
@@ -593,4 +593,25 @@ MedicationHeuristic(
     def_name = 'Lyme Disease Non - Doxycycline Antibiotics Event Definition 1',
     def_version = 1,
     drugs = ['Amoxicillin', 'Cefuroxime', 'Ceftriaxone', 'Cefotaxime'],
+    )
+
+
+# 
+# Pelvic Inflamatory Disease (PID)
+#
+
+
+#--- pid_diagnosis
+EncounterHeuristic(
+    name = 'pid_diagnosis',
+    def_name = 'PID Diagnosis Event Definition 1',
+    def_version = 1,
+    icd9s = [
+        '614.0',
+        '614.2',
+        '614.3',
+        '614.5',
+        '614.9',
+        '099.56',
+        ],
     )

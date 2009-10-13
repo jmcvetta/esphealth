@@ -163,6 +163,7 @@ def main():
         sys.stderr.write('You must specify a file to validate against.')
         parser.print_help()
         sys.exit()
+    log.info('Validating Nodis database against file %s' % options.file)
     filehandle = open(options.file)
     records = csv.DictReader(filehandle, FILE_FIELDS)
     exact, similar, missing, new, no_mrn = validate(records)
