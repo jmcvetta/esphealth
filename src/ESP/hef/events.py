@@ -615,3 +615,39 @@ EncounterHeuristic(
         '099.56',
         ],
     )
+
+#--- tb_meds
+MedicationHeuristic(
+    name = 'tb_meds',
+    def_name = 'Tuberculosis Medications',
+    def_version = 1,
+    drugs = [
+        'Pyrazinamide',
+        'PZA',
+        'RIFAMPIN',
+        'RIFAMATE',
+        'ISONARIF',
+        ],
+    exclude = ['CAPZA',]
+    )
+
+#--- tb_diagnosis
+EncounterHeuristic(
+    name = 'tb_diagnosis',
+    def_name = 'Tuberculosis Diagnosis Event Definition 1',
+    def_version = 1,
+    icd9s = [
+        '010.',
+        '018.',
+        ],
+    match_style = 'istartswith',
+    )
+
+#--- tb_lab_order 
+LabOrderedHeuristic(
+    name = 'tb_lab_order',
+    def_name = 'Tuberculosis Lab Order Event Definition 1',
+    def_version = 1,
+    loinc_nums = ['11475-1', '11545-1', '17296-5'],
+    )
+
