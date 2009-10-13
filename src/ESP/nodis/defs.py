@@ -426,3 +426,61 @@ lyme = Condition(
         ],
     med_days_before = 30,
     )
+    
+
+#===============================================================================
+#
+# Pelvic Inflammatory Disease (PID)
+#
+#-------------------------------------------------------------------------------
+
+
+chlam_or_gon = ComplexEventPattern(
+    patterns = ['chlamydia_pos', 'gonorrhea_pos'],
+    operator = 'or'
+    )
+
+pid_1 = ComplexEventPattern(
+    patterns = [chlam_or_gon, 'pid_diagnosis'],
+    operator = 'and'
+    )
+
+
+pid = Condition(
+    name = 'pid',
+    patterns = [
+        (pid_1, 28),
+        ],
+    recur_after = 28, # 1 year
+    test_name_search = ['chlam', 'gon', 'gc'],
+    icd9s = [
+        '614.0',
+        '614.2',
+        '614.3',
+        '614.5',
+        '614.9',
+        '099.56',
+        ],
+    icd9_days_before = 30,
+    fever = False,
+    lab_loinc_nums = CHLAMYDIA_LOINCS + GONORRHEA_LOINCS,
+    lab_days_before = 30,
+    med_names = [
+        'ampicillin-sulbactam',
+        'amoxicillin-clavulinic acid',
+        'clindamycin',
+		'levofloxacin',
+		'ciprofloxacin',
+		'ofloxacin',
+		'cefotetan',
+		'cefoxitin',
+		'ceftriaxone',
+		'cefotaxime',
+		'cefitizoxine',
+		'doxycycline',
+		'gentamicin',
+		'metronidazole',
+		'azithromycin',
+        ],
+    med_days_before = 30,
+    )
