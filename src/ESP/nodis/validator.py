@@ -61,6 +61,7 @@ def validate(records):
     similar = []
     missing = []
     new = []
+    no_mrn = [] # MRNs not present in new ESP db
     conditions_in_file = set()
     related_delta = datetime.timedelta(days=RELATED_MARGIN)
     for rec in records:
@@ -83,6 +84,7 @@ def validate(records):
             patient = Patient.objects.get(mrn=mrn)
         except Patient.DoesNotExist:
             log.warning('No patient found for MRN: %s' % mrn)
+            no_mrn.append(mrn)
             continue
         cases = Case.objects.filter(patient=patient, condition__iexact=condition)
         previous_day = date - datetime.timedelta(days=1)
@@ -142,7 +144,7 @@ def validate(records):
     new_q &= Q(condition__in=conditions_in_file)
     new_cases = Case.objects.filter(new_q).order_by('date')
     log.debug('Found %s new cases' % new_cases.count())
-    return (exact, similar, missing, new_cases)
+    return (exact, similar, missing, new_cases, no_mrn)
 
 def main():
     parser = optparse.OptionParser()
@@ -163,16 +165,18 @@ def main():
         sys.exit()
     filehandle = open(options.file)
     records = csv.DictReader(filehandle, FILE_FIELDS)
-    exact, similar, missing, new = validate(records)
+    exact, similar, missing, new, no_mrn = validate(records)
     count_exact = len(exact)
     count_similar = len(similar)
     count_missing = len(missing)
     count_new = new.count()
-    total = count_exact + count_similar + count_missing + count_new
+    count_no_mrn = len(no_mrn)
+    total = count_exact + count_similar + count_missing + count_new + count_no_mrn
     percent_exact = float(count_exact) / total * 100.0
     percent_similar = float(count_similar) / total * 100.0
     percent_missing = float(count_missing) / total * 100.0
     percent_new = float(count_new) / total * 100.0
+    percent_no_mrn = float(count_no_mrn) / total * 100.0
     missing_case_counts = {}
     for item in missing:
         con = item[0]['condition']
@@ -196,6 +200,9 @@ def main():
         'percent_exact': percent_exact,
         'percent_similar': percent_similar,
         'percent_missing': percent_missing,
+        'no_mrn': no_mrn,
+        'count_no_mrn': count_no_mrn,
+        'percent_no_mrn': percent_no_mrn,
         'percent_new': percent_new,
         'total': total,
         'related_margin': RELATED_MARGIN,

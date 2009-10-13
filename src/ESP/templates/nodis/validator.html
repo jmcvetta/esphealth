@@ -62,9 +62,13 @@
         <td>{{ count_exact }}
         <td>{{ percent_exact|floatformat:3 }}%
     <tr>
+        <td><a href="#no_mrn">MRN Not Found</a>
+        <td>{{ count_no_mrn }}
+        <td>{{ percent_no_mrn|floatformat:3 }}%
+    <tr>
         <td><em>TOTAL</em>
         <td>{{ total }}
-        <td>
+        <td>&nbsp;
 </table>
 
 
@@ -242,6 +246,21 @@
             <td>{{ item.1.date }}
         {% endfor %}
     </table>
+{% else %}
+    <p><em>None</em></p>
+{% endif %}
+
+
+<hr>
+<h2 align="center">
+    <a name="no_mrn">MRN Not Found</a>
+</h2>
+<hr>
+
+{% if no_mrn %}
+    <p>
+    {{ no_mrn|join:"<br>" }}
+    </p>
 {% else %}
     <p><em>None</em></p>
 {% endif %}
