@@ -447,15 +447,16 @@ class EncounterHeuristic(BaseHeuristic):
     Abstract base class for encounter heuristics, concrete instances of which
     are used as components of DiseaseDefinitions
     '''
-    def __init__(self, name, def_name, def_version, icd9s):
+    def __init__(self, name, def_name, def_version, icd9s, match_style='iexact'):
         '''
         @type name:         String
         @type icd9s:        [String, String, String, ...]
-        @type verbose_name: String
-        @type match_style:  String (either 'icontains' or 'iexact')
+        @type match_style:  String (either 'iexact' or 'istartswith')
         '''
         assert icd9s
         self.icd9s = icd9s
+        assert match_style in ['iexact', 'istartswith']
+        self.match_style = match_style
         BaseHeuristic.__init__(self,
             name = name,
             def_name = def_name,
@@ -468,7 +469,12 @@ class EncounterHeuristic(BaseHeuristic):
         '''
         enc_q = Q()
         for code in self.icd9s:
-            enc_q = enc_q | Q(icd9_codes__code = code)
+            if self.match_style == 'iexact':
+                enc_q |= Q(icd9_codes__code__iexact = code)
+            elif self.match_style == 'istartswith':
+                enc_q |= Q(icd9_codes__code__istartswith = code)
+            else:
+                raise 'This should never happen.  Contact developers.'
         return enc_q
     enc_q = property(__get_enc_q)
 
@@ -605,13 +611,17 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
 
 class MedicationHeuristic(BaseHeuristic):
 
-    def __init__(self, name, def_name, def_version, drugs):
+    def __init__(self, name, def_name, def_version, drugs, exclude=[]):
         '''
         @param drugs:  Generate events when drug(s) are prescribed
         @type drugs:   [String, String, ...]
+        @param drugs:  Exclude drugs that contain these strings
+        @type drugs:   [String, String, ...]
         '''
         assert drugs
+        assert isinstance(exclude, list)
         self.drugs = drugs
+        self.exclude = exclude
         BaseHeuristic.__init__(self,
             name = name,
             def_name = def_name,
@@ -621,13 +631,16 @@ class MedicationHeuristic(BaseHeuristic):
     def matches(self, exclude_heuristic=None):
         log.debug('Finding matches for following drugs:')
         [log.debug('    %s' % d) for d in self.drugs]
+        [log.debug('    Exclude string: %s' % s) for s in self.exclude]
         qs = Prescription.objects.all()
         if exclude_heuristic:
             q_obj = ~Q(events__heuristic=exclude_heuristic)
             qs = qs.filter(q_obj)
         q_obj = Q(name__icontains = self.drugs[0])
         for drug_name in self.drugs[1:]:
-            q_obj = q_obj | Q(name__icontains = drug_name)
+            q_obj |= Q(name__icontains = drug_name)
+        for string in self.exclude:
+            q_obj &= ~Q(name__icontains=string)
         qs = qs.filter(q_obj)
         log_query('Query for heuristic %s' % self.name, qs)
         return qs
