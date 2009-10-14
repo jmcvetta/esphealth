@@ -10,13 +10,17 @@
 @license: LGPL 3.0 <http://www.gnu.org/licenses/lgpl-3.0.txt>
 '''
 
+from django.db import transaction
+
 from ESP.utils.utils import log
 from ESP.nodis.core import Condition
 from ESP.nodis.models import UnmappedLab
 from ESP.nodis import defs
 
 
+@transaction.commit_manually
 def main():
+    log.debug('Begin transaction')
     log.info('Purging and repopulating unmapped labs cache')
     # Clear the cache
     UnmappedLab.objects.all().delete()
@@ -31,6 +35,8 @@ def main():
         log.debug('Added %s to unmapped labs cache' % item)
     count = UnmappedLab.objects.all().count()
     log.info('Populated unmapped labs cache with %s items' % count)
+    transaction.commit()
+    log.debug('Transaction committed')
     
 
 if __name__ == '__main__':
