@@ -557,6 +557,8 @@ class ComplexEventPattern(BaseEventPattern):
                 log.debug('Complete unconstrained queue: %s' % queue)
                 # Any windows remaining in the queue at this point have 
                 # matched all patterns.
+                queue = list(queue)
+                queue.sort()
                 for win in queue:
                     win = self._check_constaints(win)
                     if win:
@@ -622,6 +624,7 @@ class ComplexEventPattern(BaseEventPattern):
         @param win: Window to check
         @type win:  Window instance
         '''
+        log.debug('Checking constraints on %s' % win)
         if self.exclude_past:
             exclude_q = Q(patient=win.patient, heuristic__in=self.exclude_past, date__lt=win.start)
             query = Event.objects.filter(exclude_q)
@@ -656,8 +659,10 @@ class ComplexEventPattern(BaseEventPattern):
         log.debug('Check exclude')
         for pat in self.exclude:
             # If any pattern matches, this constraint fails
-            if pat.match_window(win):
+            exclude_match = pat.match_window(win)
+            if exclude_match:
                 log.debug('Patient %s excluded by pattern %s' % (win.patient, pat))
+                log.debug('    Exclusion match: %s' % exclude_match)
                 return False
         #
         # If we made it this far, we have passed all constraints.  
