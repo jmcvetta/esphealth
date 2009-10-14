@@ -233,7 +233,7 @@ hep_b = Condition(
     name = 'acute_hep_b',
     patterns = [
         (hep_b_1, 14),
-        (hep_b_2, 21),
+        (hep_b_2, 14),
         (hep_b_3, 1), # Single present event -- match window is meaningless
     ],
     recur_after = -1, # Never recur
