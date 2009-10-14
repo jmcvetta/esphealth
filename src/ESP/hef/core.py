@@ -155,7 +155,7 @@ class BaseHeuristic(object):
             out = []
             for loinc in loincs:
                 try:
-                    name = Loinc.objects.get(loinc_num=loinc).shortname
+                    name = Loinc.objects.get(loinc_num=loinc).name[:100]
                 except Loinc.DoesNotExist:
                     name = ''
                 label = '%-7s: %s' % (loinc, name)
