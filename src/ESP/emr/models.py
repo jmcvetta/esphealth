@@ -621,7 +621,6 @@ class LabResult(BasePatientRecord):
     ref_high = models.FloatField('Reference High Value', blank=True, null=True, db_index=True)
     ref_low = models.FloatField('Reference Low Value', blank=True, null=True, db_index=True)
     ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
-    #ref_range = models.CharField('Reference Range (raw string)', max_length=255, blank=True, null=True)
     # Result
     abnormal_flag = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     result_float = models.FloatField('Numeric Test Result', blank=True, null=True, db_index=True)
@@ -711,6 +710,24 @@ class LabResult(BasePatientRecord):
         values['short_name'] = self.native_name[:15] if self.native_name else 'N/A'
         values['res'] = self.result_string[:20] if self.result_string else ''
         return '%(date)-10s    %(id)-8s    %(short_name)-15s    %(native_code)-11s    %(res)-20s' % values
+    
+    def __get_ref_range(self):
+        '''
+        Generate a reference range string
+        '''
+        if self.ref_low:
+            low = self.ref_low
+        else:
+            low = self.ref_neg
+        if self.ref_high:
+            high = self.ref_high
+        else:
+            high = self.ref_pos
+        if (high or low):
+            return '%s - %s' % (low, high)
+        else:
+            return None
+    ref_range = property(__get_ref_range)
     
     @classmethod
     def str_line_header(cls):

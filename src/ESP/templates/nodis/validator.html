@@ -147,6 +147,7 @@
                     <th>Native Code
                     <th>Native Name
                     <th>Result
+                    <th>Reference Range
                     <th>Bound Events
                 {% for lab in item.1 %}
                 <tr>
@@ -155,6 +156,7 @@
                     <td>{{ lab.native_code }}
                     <td>{{ lab.native_name }}
                     <td>{{ lab.result_string }}
+                    <td>{{ lab.ref_range|default:"-" }}
                     <td>{{ lab.events.all|join:"<br>" }}
                 {% endfor %}
             </table>
