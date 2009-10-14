@@ -226,7 +226,6 @@ def case_detail(request, case_id):
     other_lab = set(LabResult.objects.filter(patient=patient)) - set(case.lab_results.all())
     other_rx = set(Prescription.objects.filter(patient=patient)) - set(case.medications.all())
     data = {'status': case.status}
-    print data
     status_form = CaseStatusForm(initial=data)
     values = {
         'title': 'Detail Report: Case #%s' % case.pk,
@@ -376,7 +375,7 @@ def updateWorkflowComment(request,object_id):
         wf.workflowComment = '%s\nAdded at %s: %s' % (saveme, nowd.isoformat(), newme)
         wf.save()
     else:
-        print 'No change in workflow comment - not saved'
+        log.debug('No change in workflow comment - not saved')
         
     return HttpResponseRedirect("cases/%s/F/" % caseid)
 
