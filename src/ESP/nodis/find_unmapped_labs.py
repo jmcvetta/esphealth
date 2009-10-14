@@ -20,8 +20,8 @@ from ESP.nodis import defs
 
 @transaction.commit_manually
 def main():
+    log.info('Repopulating unmapped labs cache')
     log.debug('Begin transaction')
-    log.info('Purging and repopulating unmapped labs cache')
     # Clear the cache
     UnmappedLab.objects.all().delete()
     log.debug('Unmapped labs cache purged')
@@ -34,9 +34,9 @@ def main():
         ul.save()
         log.debug('Added %s to unmapped labs cache' % item)
     count = UnmappedLab.objects.all().count()
-    log.info('Populated unmapped labs cache with %s items' % count)
     transaction.commit()
     log.debug('Transaction committed')
+    log.info('Populated unmapped labs cache with %s items' % count)
     
 
 if __name__ == '__main__':
