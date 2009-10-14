@@ -348,7 +348,7 @@ StringMatchLabHeuristic(
     name = 'hep_c_rna_pos',
     def_name = 'Hep C RNA Event Definition 1',
     def_version = 1,
-    loinc_nums = ['6422-'],
+    loinc_nums = ['6422-0'],
     strings = POSITIVE_STRINGS,
     )
 NumericLabHeuristic(
