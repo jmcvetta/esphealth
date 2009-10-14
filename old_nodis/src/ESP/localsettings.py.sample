@@ -1,0 +1,123 @@
+'''
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                                   ESP Health
+                              Local Site Settings
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+'''
+
+
+import logging
+
+
+#===============================================================================
+#
+#                                   Database
+#
+#===============================================================================
+DATABASE_ENGINE = 'postgresql_psycopg2' # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+DATABASE_NAME = 'esp'
+DATABASE_USER = 'esp'
+DATABASE_PASSWORD = ''
+DATABASE_HOST = 'localhost'
+DATABASE_PORT = ''
+DATABASE_OPTIONS = {
+    # Make PostgreSQL recover gracefully from caught exceptions
+    "autocommit": True,
+}
+
+
+#===============================================================================
+#
+#                                   General
+#
+#===============================================================================
+DEBUG = True # Set this to False before running in production!
+ADMINS = (
+    ('Your Name', 'your_email@your_domain.com'),
+)
+# Make your SECRET_KEY unique, and don't share it with anybody.  The unix
+# utility 'pwgen' is very useful for generating long random password strings.
+SECRET_KEY = ''
+SITE_NAME = '' # Name of your local site
+DATA_DIR = '/srv/esp'
+
+
+#===============================================================================
+#
+#                                    Email
+#
+#===============================================================================
+EMAIL_SENDER = 'esp-noreply@your_domain.com'
+EMAIL_HOST = 'localhost'
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_PORT = ''
+EMAIL_USE_TLS = True
+
+
+#===============================================================================
+#
+#                         Natural Language Processing
+#
+#===============================================================================
+NLP_SEARCH = ['CHLAM','TRACH', 'GC','GON','HEP','HBV','ALT','SGPT','AST','SGOT','AMINOTRANS','BILI', 'HAV','HCV','RIBA']
+NLP_EXCLUDE = ['CAST', 'FASTING','YEAST','URINE','URO']
+
+
+#===============================================================================
+#
+#                               Case Generation
+#
+#===============================================================================
+REPORT_RX_DAYS_BEFORE = 7
+REPORT_RX_DAYS_AFTER = 14
+REPORT_LX_DAYS_BEFORE = 30
+REPORT_LX_DAYS_AFTER = 30
+REPORT_ICD9_DAYS_BEFORE = 14
+REPORT_ICD9_DAYS_AFTER = 14
+
+# Default set of ICD9 codes to report
+DEFAULT_REPORTABLE_ICD9S = [
+    '780.6A', 
+    '782.4', 
+    '783.0', 
+    '780.79B', 
+    '789.00', 
+    '789.01', 
+    '789.02', 
+    '789.03', 
+    '789.04', 
+    '789.05', 
+    '789.06', 
+    '789.07', 
+    '789.08', 
+    '789.09', 
+    '787.01',
+    '787.02',
+    '787.03',
+    '787.91',
+    ]
+
+
+#===============================================================================
+#
+#                                 VAERS
+#
+#===============================================================================
+VAERS_NOTIFICATION_RECIPIENT = 'someone@example.com'
+
+
+
+
+
+#===============================================================================
+#
+#                                   Logging
+#
+#===============================================================================
+LOG_FILE = '/path/to/esp/log'
+# WARNING: If you set the log level to DEBUG, *copious* info will be logged!
+LOG_LEVEL_CONSOLE = logging.INFO
+LOG_LEVEL_FILE = logging.INFO 

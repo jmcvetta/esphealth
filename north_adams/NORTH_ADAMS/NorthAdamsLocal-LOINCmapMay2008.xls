@@ -1,0 +1,35 @@
+Dept	AttrCode	AttrMnemonic	AttrName	LOINC	LOINC Name				
+LAB	L885.0245	AFB SOURCE	ACID FAST BACILLI SOURCE	ideally include in ESP's report to DPH but not needed for case identification					
+LAB	L885.0250	AFB STAIN	ACID FAST BACILLI STAIN	11545-1	Microscopic observation : PrId : Pt : xxx : Nom : Acid fast stain				
+LAB	L885.0255	AFB PRELIM	AFB  CULTURE PRELIMINARY	11475-1	Microorganism identified : PrId : Pt : xxx : Nom : Culture				
+LAB	L885.0260	AFP PRELIMIN	AFB  CULTURE PRELIMINARY	11475-1	Microorganism identified : PrId : Pt : xxx : Nom : Culture				
+MICRO	M600.0102	AFB VRL	AFB SMEAR	11545-1	Microscopic observation : PrId : Pt : xxx : Nom : Acid fast stain				
+LAB	L100.0590	ALT (GPT)	ALT (GPT)	1742-6	ALT SerPl-cCnc				
+LAB	L100.0580	AST (GOT)	AST (GOT)	1920-8	AST SerPl-cCnc				
+LAB	L100.0402	DBIL(DIM)	BILIRUBIN DIRECT (DIMENSION)	29760-6	Bilirubin.glucuronidated : SCnc:Pt:Ser/Plas:Qn				
+LAB	L100.0500	IBIL	BILIRUBIN INDIRECT (DIMENSION)	14630-8	Bilirubin.non-glucuronidated:SCnc:Pt:Ser/Plas:Qn				
+LAB	L100.0160	BILIP	BILIRUBIN PANEL	na	na				
+LAB	L100.0380	TBIL	BILIRUBIN TOTAL 	33899-6	Bilirubin.glucuronidated+bilirubin.non-glucuronidated:SCnc:Pt:Ser/Plas:Qn				
+LAB	L850.0890	CHLAMYDIA rRNA	CHLAMYDIA AG  rRNA	20993-2	C trach DNA XXX Ql Prb				
+LAB	L850.1130	CHLAMYDIA UR	CHLAMYDIA AG  rRNA URINE	20993-2	C trach DNA XXX Ql Prb				
+LAB	L850.0885	SOURCE	CHLAMYDIA rRNA SOURCE	ideally include in ESP's report to DPH but not needed for case identification					
+LAB	L850.0885	SOURCE	CHLAMYDIA rRNA SOURCE	ideally include in ESP's report to DPH but not needed for case identification					
+MICRO	M100.1900	CGC	CULTURE GC SCREEN	691-6	Neisseria gonorrhoeae : ACnc : Pt : Gen: Ord : organism specific culture	
+MICRO	M600.0202	TB VRL	CULTURE TB	11475-1	Microorganism identified : PrId : Pt : xxx : Nom : Culture	
+LAB	L850.1300	hSOD	HEP C RIBA hSOD	MDPH-144	Hepatitis C virus Ab:Pt:Ser:Ord:EIA Signal-to-cutoff ratio	I'm not sure about this one … will need to see test data to confirm
+LAB	L850.1260	HEP A IgM	HEPATITIS A IgM	22314-9	Hepatitis A virus Ab.IgM : ACnc : Pt : Ser : Ord :	
+LAB	L820.0815	HBSAG	HEPATITIS B SURFACE AG	5195-3	Hepatitis B virus surface Ag : ACnc : Pt : Ser : Ord :	
+LAB	L900.0995	HBSAG	HEPATITIS B SURFACE ANTIGEN	5195-3	Hepatitis B virus surface Ag : ACnc : Pt : Ser : Ord :	
+LAB	L850.1275	HEP C AB RIBA	HEPATITIS C AB BY RIBA	5199-5	Hepatitis C virus Ab : ACnc : Pt : Ser : Ord : IB	
+LAB	L850.1270	HEP C IgG AB	HEPATITIS C IgG ANTIBODY	16128-1	Hepatitis C virus Ab : ACnc : Pt : Ser : Ord :	
+LAB	L850.1030	HEP C RNa	HEPATITIS C RNA copies/mL	34704-7	Hepatitis C virus RNA : ACnc : Pt : Ser/Plas : Qn : Probe.amp.tar detection limit < 50 iu/ml	
+LAB	L850.1025	HEP C RNA	HEPATITIS C RNA IU/mL	5012-0	Hepatitis C virus RNA : ACnc : Pt : xxx : Ord : Probe.Amp.Tar	
+LAB	L850.1185	HEPP HEPB COR	HEPATITIS PROF HEP B CORE IGM	31204-1	Hepatitis B virus core Ab.IgM : ACnc : Pt : Ser : Ord :        	
+LAB	L850.1205	HEPP HEPC	HEPATITIS PROF HEP C AB	16128-1	Hepatitis C virus Ab : ACnc : Pt : Ser : Ord :	
+LAB	L850.1200	HEPP HBSAG	HEPATITIS PROFILE  HBSAG	5195-3	Hepatitis B virus surface Ag : ACnc : Pt : Ser : Ord :	
+LAB	L850.1175	HEPP HEP A IgM	HEPATITIS PROFILE HEP A IgM	22314-9	Hepatitis A virus Ab.IgM : ACnc : Pt : Ser : Ord :	
+LAB	L850.0895	NGONORRHOE	N.GONORRHOEAE (RRNA)	24111-7	Neisseria gonorrhoeae DNA : ACnc : Pt : xxx : Ord : Probe.Amp.Tar	
+LAB	L850.1125	NGONORR UR	N.GONORRHOEAE (RRNA) URINE	24111-7	Neisseria gonorrhoeae DNA : ACnc : Pt : xxx : Ord : Probe.Amp.Tar	
+LAB	L100.0391	NBIL  (CORD)	NEONATAL BILIRUBIN CORD	33899-6	Bilirubin.glucuronidated+bilirubin.non-glucuronidated:SCnc:Pt:Ser/Plas:Qn
+LAB	L100.0392	DBIL CORD	NEONATAL DIRECT BILIRUBIN CORD	29760-6	Bilirubin.glucuronidated : SCnc:Pt:Ser/Plas:Qn
+LAB	L100.0393	IBIL CORD	NEONATAL INDIRECT BILIRUBIN CORD	14630-8	Bilirubin.non-glucuronidated:SCnc:Pt:Ser/Plas:Qn

@@ -1,0 +1,11 @@
+{% extends "vaers.html" %}
+{% block content %}
+{% if message %}<div class="warning">{{message}}</div>{% endif %}
+
+<span>{{native_manufacturer.name}}</span>
+<form method="post" action="{% url vaers.vaccine.views.manufacturer_detail native_manufacturer.id %}">
+  {{ form.as_p }}
+  <button>Save</button>
+</form>
+{% endblock %}
+

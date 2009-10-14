@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
+{% endblock %}
+
+{% block extrascript %}
+    <script type="text/javascript" src="{{ site_javascript_folder }}flexigrid/flexigrid.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('#show_non_rep').click( function() {
+                $('#toggle_show').show(); // Non-rep data is shown by default
+                $('#toggle_hide').hide(); // Non-rep data is shown by default
+                $('#non_reportable_data').show();
+            });
+            $('#hide_non_rep').click( function() {
+                $('#toggle_show').hide(); // Non-rep data is shown by default
+                $('#toggle_hide').show(); // Non-rep data is shown by default
+                $('#non_reportable_data').hide();
+            });
+            $('#hide_non_rep').click(); // Hide non-reportable data by default
+            $('#patient_info').flexigrid({
+                title: 'Patient Information',
+                height: 'auto',
+		striped: true,
+            });
+            $('#rep_lxs').flexigrid({
+                title: 'Laboratory Results (Reportable)',
+                resizable: false,
+                height: 'auto',
+            });
+            $('#all_lxs').flexigrid({
+                title: 'Laboratory Results (Non-Reportable)',
+                resizable: true,
+                rp: 10,
+            });
+            $('#rep_encs').flexigrid({
+                title: 'Encounters (Reportable)',
+                resizable: false,
+                height: 'auto',
+            });
+            $('#all_encs').flexigrid({
+                title: 'Encounters (Non-Reportable)',
+                resizable: true,
+                rp: 10,
+            });
+            $('#rep_rxs').flexigrid({
+                title: 'Prescriptions (Reportable)',
+                resizable: false,
+                height: 'auto',
+            });
+            $('#all_rxs').flexigrid({
+                title: 'Prescriptions (Non-Reportable)',
+                resizable: true,
+                rp: 10,
+            });
+	    $('#status_history_table').flexigrid({
+	    	title: 'Case Status History',
+		resizable: false,
+                height: 'auto',
+	    });
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+
+
+{# Do we need this? #}
+
+{% comment %}
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+{% endcomment %}
+
+
+<p id="suspected_condition">
+    Suspected Condition: <strong>{{ condition }}</strong>
+</p>
+
+<hr>
+
+<p id="toggle_hide">
+    <a href="#" id="show_non_rep">Show Non-Reportable Data</a>
+    |
+    <b>Hide Non-Reportable Data</b>
+</p>
+<p id="toggle_show">
+    <b>Show Non-Reportable Data</b>
+    |
+    <a href="#" id="hide_non_rep">Hide Non-Reportable Data</a>
+</p>
+
+<hr>
+
+<h2>Reportable Data</h2>
+
+
+<table id="patient_info">
+    <tr>
+        <th>Nodis Case ID</th>
+        {% if perms.esp.view_phi %}
+        <th>Patient Name</th>
+	<th>Medical Record Number</th>
+        <th>Date of Birth</th>
+        <th>Age</th>
+        {% else %}
+        <th>Age</th>
+        {% endif %}
+        <th>Gender</th>
+        <th>Pregnancy</th>
+        <th>Case Status</th>
+        <th>Created Date</th>
+        <th>Last Updated</th>
+        <th>Case Definition</th>
+        <th>Comment</th>
+    </tr>
+    <tr>
+        <td>{{ case.id }}</td>
+        {% if perms.esp.view_phi %}
+        <td>{{ case.patient.name }}</td>
+        <td>{{ case.patient.mrn }}</td>
+        </td> 
+        <td>{{ dob }}</td>
+        <td>{{ age }}</td>
+        </td>
+        {% else %}
+        <td>{{ age }}</td>
+        {% endif %}
+        <td>{{ case.patient.gender }}</td>
+        <td>{{ case.pregnant|default:"-" }}</td>
+        <td>{{ case.get_status_display }}</td>
+        <td>{{ created }}</td>
+        <td> {{ updated }}</td>
+        <td>{{ case.definition }}</td>
+        <td> {{ case.comments|default:"-" }}</td>
+    </tr>
+</table>
+
+
+<p>&nbsp;</p>
+
+{% if rep_lxs %}
+<table id="rep_lxs">
+    <tr>
+        <th>Date Ordered</th>
+        <th>Result Date</th>
+        <th>Test Code (native)</th>
+        <th>Test Name (native)</th>
+        <th>Test Results</th>
+        <th>Abnormal Flag</th>
+        <th>Normal Range</th>
+        <th>OrderID</th>
+        <th>Clinician</th>
+        <th>Comment</th>
+    </tr>
+    {% for lx in rep_lxs %}
+    <tr>
+        <td>{{ lx.date }}</td>
+        <td>{{ lx.result_date }}</td>
+        <td>{{ lx.native_code }} ({{ lx.LxLoinc }})</td>
+        <td>{{ lx.native_name }}</td>
+        <td>{{ lx.result_string }}</td>
+        <td>{{ lx.abnormal_flag }} </td>
+        <td>{{ lx.ref_neg}}  -  {{ lx.ref_pos}}</td>
+        <td>{{ lx.order_num }}</td>
+        <td>
+            <a href="{% url provider_detail lx.provider.pk %}">
+                {{ lx.provider.name }}
+            </a>
+        </td>
+        <td>
+            {% if lab.LxComment %}
+            <a href="{% url lab_detail lx.id %}">
+                {{ lx.getPartNote }}...
+            </a>
+	    {% else %}
+            	-
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<p>&nbsp;</p>
+{% endif %}
+
+{% if rep_encs %}
+<table id="rep_encs">
+    <tr>
+        <th>Date</th>
+        <th>ICD9 Codes</td>
+        <th>Site</td>
+        <th>Pregnancy</th>
+        <th>Temperature</th>
+        <th>Clinician</th>
+    </tr>
+    {% for enc in rep_encs %}
+    <tr>
+        <td>{{ enc.date }} </td>
+        <td>{{ enc.icd9_codes_str }}</td>
+        <td>{{ enc.site_name }}</td>
+        <td>
+            {{ enc.pregnancy_status }}
+            {% if enc.pregnancy_status  %}
+            <hr>
+            EDC: {{enc.edc}}
+            {% endif %}
+        </td>
+        <td>{{ enc.temperature }}</td>
+        <td>
+            <a href="{% url provider_detail enc.provider.pk %}">
+            {{enc.provider.name}}
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<p>&nbsp;</p>
+{% endif %}
+
+{% if rep_rxs %}
+<table id="rep_rxs">
+    <tr>
+        <th>Date Ordered</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Route</th>
+        <th>Dose</th>
+        <th>Frequency</th>
+        <th>Quantity</th>
+        <th>NDC</th>
+        <th>Clinician</th>
+    </tr>
+    {% for rx in rep_rxs %}
+    <tr>
+        <td>{{ rx.date }}</td>
+        <td>{{ rx.name }}</td>
+        <td>{{ rx.directions }}</td>
+        <td>{{ rx.route }}</td>
+        <td>{{ rx.dose }}</td>
+        <td>{{ rx.frequency }}
+        <td>{{ rx.quantity }}</td>
+        <td>{{rx.code}}</td>
+        <td>
+            <a href="{% url provider_detail rx.provider.pk %}">
+                {{ rx.provider.name }}
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<p>&nbsp;</p>
+{% endif %}
+
+
+<div id="non_reportable_data">
+
+	<hr>
+
+    <h2>Non-Reportable Data</h2>
+
+    {% if all_lxs %}
+    <table id="all_lxs">
+        <tr>
+            <th>Date Ordered</th>
+            <th>Result Date</th>
+            <th>Test Code (native)</th>
+            <th>Test Name (native)</th>
+            <th>Test Results</th>
+            <th>Abnormal Flag</th>
+            <th>Normal Range</th>
+            <th>OrderID</th>
+            <th>Clinician</th>
+            <th>Comment</th>
+        </tr>
+        {% for lx in all_lxs %}
+        <tr>
+            <td>{{ lx.date }}</td>
+            <td>{{ lx.result_date }}</td>
+            <td>{{ lx.native_code }} ({{ lx.LxLoinc }})</td>
+            <td>{{ lx.native_name }}</td>
+            <td>{{ lx.result_string }}</td>
+            <td>{{ lx.abnormal_flag }} </td>
+            <td>{{ lx.ref_neg}}  -  {{ lx.ref_pos}}</td>
+            <td>{{ lx.order_num }}</td>
+            <td>
+                <a href="{% url provider_detail lx.provider.pk %}">
+                    {{ lx.provider.name }}
+                </a>
+            </td>
+            <td>
+                {% if lab.comment %}
+                <a href="{% url lab_detail lx.id %}">
+                    {{ lx.getPartNote }}...
+                </a>
+                {% else %}
+			-
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p>&nbsp;</p>
+    {% endif %}
+
+    {% if all_encs %}
+    <table id="all_encs">
+        <tr>
+            <th>Date</th>
+            <th>ICD9 Codes</td>
+            <th>Site</td>
+            <th>Pregnancy</th>
+            <th>Temperature</th>
+            <th>Clinician</th>
+        </tr>
+        {% for enc in all_encs %}
+        <tr>
+            <td>{{ enc.date }} </td>
+            <td>{{ enc.icd9_codes_str|default:"-" }}</td>
+            <td>{{ enc.site_name }}</td>
+            <td>
+                {{ enc.pregnancy_status|default:"No" }}
+                {% if enc.pregnancy_status %}
+                <hr>
+                EDC: {{e.edc}}
+                {% endif %}
+            </td>
+            <td>{{ enc.temperature }}</td>
+            <td>
+                <a href="{% url provider_detail enc.provider.pk %}">
+                {{enc.provider.name}}
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p>&nbsp;</p>
+    {% endif %}
+
+    {% if all_rxs %}
+    <table id="all_rxs">
+        <tr>
+            <th>Date Ordered</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Route</th>
+            <th>Dose</th>
+            <th>Frequency</th>
+            <th>Quantity</th>
+            <th>NDC</th>
+            <th>Clinician</th>
+        </tr>
+        {% for rx in all_rxs %}
+        <tr>
+            <td>{{ rx.date }}</td>
+            <td>{{ rx.name }}</td>
+            <td>{{ rx.directions }}</td>
+            <td>{{ rx.route }}</td>
+            <td>{{ rx.dose }}</td>
+            <td>{{ rx.frequency }}
+            <td>{{ rx.quantity }}</td>
+            <td>{{rx.code}}</td>
+            <td>
+                <a href="{% url provider_detail rx.provider.pk %}">
+                    {{ rx.provider.name }}
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p>&nbsp;</p>
+    {% endif %}
+
+</div> {# non_reportable_data #}
+
+
+<hr>
+
+<h2>Case Status</h2>
+
+{% if history %}
+<table id="status_history_table">
+	<tr>
+		<th>Timestamp</th>
+		<th>Old Status</th>
+		<th>New Status</th>
+		<th>Changed By</th>
+		<th>Comment</th>
+	</tr>
+{% for change in history %}
+	<tr>
+		<td>{{ change.timestamp }}</td>
+		<td>{{ change.get_old_status_display }}</td>
+		<td>{{ change.get_new_status_display }}</td>
+		<td>{{ change.changed_by }}</td>
+		<td>{{ change.comment }}</td>
+	</tr>
+{% endfor %}
+</table>
+{% endif %}
+
+<p>&nbsp;</p>
+
+<form id="status_form" method="POST" action="{% url nodis_case_update case.pk %}">
+	<table>
+	{{ status_form.as_table }}
+	</table>
+	<input type="submit" name="update_status" value="Update status and record comment" />
+</form>
+
+<p>&nbsp;</p>
+
+<form id="submit_positive_form" method="POST" action="{% url nodis_case_transmit case.pk %}">
+	<input type="submit" id="submit_positive" name="submit_positive" value="True positive case -- TRANSMIT TO HEALTH DEPARTMENT" />
+</form>
+
+{% endblock %}
+

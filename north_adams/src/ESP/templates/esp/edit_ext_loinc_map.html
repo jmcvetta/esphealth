@@ -1,0 +1,125 @@
+{% extends 'esp/espbase.html' %}
+{% load i18n %}
+
+{% block extrascript %}
+    <script type="text/javascript" src="/js/jquery-1.3.1.js"></script>
+    <script type="text/javascript">
+
+        function disable_code_fields() {
+            $('#id_ext_code').attr('disabled', true);
+            $('#id_ext_name').attr('disabled', true);
+            $('#id_notes').attr('disabled', true);
+        };
+
+        function enable_code_fields() {
+            $('#id_ext_code').removeAttr('disabled');
+            $('#id_ext_name').removeAttr('disabled');
+            $('#id_notes').removeAttr('disabled');
+        };
+
+        $(document).ready( function() {
+            $('#loinc_lookup')
+                .click( function() {
+                    var loinc_num = $('#id_loinc_num').val();
+                    if ( loinc_num ) {
+                        $('#loinc_name').load('{% url loinc_name_lookup %}', {loinc_num: loinc_num}, function(responseText, textStatus) {
+                            if ( textStatus == 'success' ) {
+                                $('.blurb').hide();
+                                $('#blurb_found').show();
+                                enable_code_fields();
+                                $('#id_ext_code').focus();
+                            } else {
+                                $('.blurb').hide();
+                                $('#blurb_not_found').show();
+                                disable_code_fields();
+                            };
+                        });
+                    } else {
+                        $('.blurb').hide();
+                        $('#blurb_enter_number').show();
+                        disable_code_fields();
+                    };
+                    return false;
+                })
+                .blur( function() {
+                    this.click();
+                })
+                .click()
+                ;
+            $('#cancel_button').click( function() {
+                location.href = "{% url show_ext_loinc_maps %}";
+            });
+            $('#id_loinc_num').focus();
+        });
+    </script>
+{% endblock %}
+
+
+
+{% block content %}
+
+<h1>
+    External Code to LOINC Mapping
+</h1>
+
+<p>
+    <span class="blurb" id="blurb_enter_number">{% trans 'Enter a LOINC number and click "Lookup".' %}</span>
+    <span class="blurb" id="blurb_not_found">{% trans 'LOINC number not found in database' %}</span>
+    <span class="blurb" id="blurb_found">{% trans 'Valid LOINC number found.  Enter external code information.' %}</span>
+</p>
+
+<form method="POST">
+    <table>
+        <tr>
+            <th>
+                <label for="id_loinc_num">LOINC Number </label>: 
+            </th>
+            <td>
+                {{ form.loinc_num }}
+                {{ form.loinc_num.errors }}
+                <input type="button" id="loinc_lookup" value="{% trans 'Lookup LOINC Number' %}" />
+            </td>
+        </tr>
+        <tr>
+            <th>
+                <label for="id_ext_code">LOINC Name</label>: 
+            </th>
+            <td>
+                <span id='loinc_name'></span>
+            </td>
+        </tr>
+        <tr>
+            <th>
+                <label for="id_ext_code">External Code Number</label>: 
+            </th>
+            <td>
+                {{ form.ext_code }}
+                {{ form.ext_code.errors }}
+            </td>
+        </tr>
+        <tr>
+            <th>
+                <label for="id_ext_name">External Code Name</label>: 
+            </th>
+            <td>
+                {{ form.ext_name }}
+                {{ form.ext_name.errors }}
+            </td>
+        </tr>
+        <tr>
+            <th>
+                <label for="id_notes">Notes</label>: 
+            </th>
+            <td>
+                {{ form.notes }}
+                {{ form.notes.errors }}
+            </td>
+        </tr>
+    </table>
+    <p>
+        <input type='button' id="cancel_button" value="{% trans 'Cancel' %}" />
+        <input type='submit' action='{{ form_action }}' method='POST' value="{% trans 'Save' %}"/>
+</form>
+
+
+{% endblock %} {# content #}

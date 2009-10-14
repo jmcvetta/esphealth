@@ -1,0 +1,48 @@
+{% extends "espbase.html" %}
+
+{% block content %}
+
+<h2><a href="javascript:history.go(-1)">Go Back</a></h2>
+
+{% if pcp %}
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<table cellspacing="10" cellpadding="3" border="1">
+<tr><td colspan = "2" align = "center" bgcolor="#800000"><font size="+1" color="lightyellow">Primary Care Provider Detail Record</font></td></tr>
+ <tr class="{% cycle row1,row2 as rowcolors %}">
+ <td width="30%">Internal ID</td><td>{{pcp.provCode}}</td></tr>
+ 
+ <tr class="{% cycle rowcolors %}">
+ <td width="30%">First_Name</td><td>{{pcp.provFirst_Name}}</td></tr>
+
+ <tr class="{% cycle rowcolors %}">
+ <td width="30%">Last_Name</td><td>{{pcp.provLast_Name}}</td></tr>
+
+ <tr class="{% cycle rowcolors %}">
+ <td width="30%">Tel:</td><td>{{pcp.provTel}}</td></tr>
+
+ <tr class="{% cycle rowcolors %}">
+ <td width="30%">Primary_Department</td><td>{{pcp.provPrimary_Dept}}</td></tr>
+
+ <tr class="{% cycle rowcolors %}">
+ <td width="30%">Primary_Department Address 1</td><td>{{pcp.provPrimary_Dept_Address_1}}</td></tr>
+
+ <tr class="{% cycle rowcolors %}">
+ <td width="30%">Primary_Department Address 2</td><td>{{pcp.provPrimary_Dept_Address_2}}</td></tr>
+
+ <tr class="{% cycle rowcolors %}">
+ <td width="30%">City</td><td>{{pcp.provPrimary_Dept_City}}</td></tr>
+
+ <tr class="{% cycle rowcolors %}">
+ <td width="30%">State</td><td>{{pcp.provPrimary_Dept_State}}</td></tr>
+
+ <tr class="{% cycle rowcolors %}">
+ <td width="30%">Zip</td><td>{{pcp.provPrimary_Dept_Zip}}</td></tr>
+
+</table>
+
+{% else %}
+    <p>No PCP record available.</p>
+{% endif %}
+{% endblock %}
