@@ -32,6 +32,7 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.conf.models import NativeCode
+from ESP.conf.models import CodeMap
 from ESP.static.models import Loinc
 from ESP.hef.models import Event
 from ESP.hef.models import Run
@@ -128,13 +129,18 @@ class BaseHeuristic(object):
         return cls.__registry[name]
 
     @classmethod
-    def list_heuristics(cls):
+    def list_heuristics(cls, choices=False):
         '''
         Returns a sorted list of strings naming all registered BaseHeuristic instances
+        @param choices: If true, return a list of two-tuples suitable for use with a form ChoiceField
+        @type choices: Boolean
         '''
         names = cls.__registry.keys()
         names.sort()
-        return names
+        if choices:
+            return [(n, n) for n in names]
+        else:
+            return names
 
     @classmethod
     def get_all_loincs(cls, choices=False):
@@ -181,12 +187,12 @@ class BaseHeuristic(object):
                     required_loincs[loinc] = set([heuristic])
         return required_loincs 
 
-    def matches(self, exclude_heuristic=None):
+    def matches(self, exclude_bound=True):
         '''
         Return a QuerySet of matches for this heuristic
-        @param exclude_heuristic: Exclude records already bound events of this 
-            heuristic type
-        @type exclude_heuristic: String
+        @param exclude_bound: Should we exclude labs that are already bound to 
+            an event of this heuristic type?
+        @type exclude_bound: Boolean
         '''
         raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseHeuristic.')
 
@@ -201,7 +207,7 @@ class BaseHeuristic(object):
         self.run = Run(def_name = self.def_name) # New Run object for this run
         self.run.save()
         log.debug('Generated new Run object for this run: %s' % self.run)
-        for event in self.matches(exclude_heuristic=self.name).select_related():
+        for event in self.matches().select_related():
             content_type = ContentType.objects.get_for_model(event)
             obj, created = Event.objects.get_or_create(
                 heuristic = self.name,
@@ -219,9 +225,6 @@ class BaseHeuristic(object):
             else:
                 log.debug('Did not create heuristic event - found matching event #%s' % obj.id)
         log.info('Generated %s new events for "%s".' % (counter, self.name))
-        for item in connection.queries:
-            log.debug('\n\t%8s    %s' % (item['time'], item['sql']))
-        connection.queries = []
         # If we made it this far, run has succeeded
         log.debug('Setting run #%s status to "s" (success).' % self.run.pk)
         self.run.status = 's'
@@ -277,22 +280,20 @@ class LabHeuristic(BaseHeuristic):
             def_version = def_version,
             )
 
-    def relevant_labs(self, loinc_nums=None, exclude_heuristic=None):
+    def relevant_labs(self, exclude_bound=True):
         '''
         Return all lab results relevant to this heuristic, whether or not they 
         indicate positive.
-        @type loinc_nums: [String, String, ...]
-        @param exclude_heuristic: Exclude records already bound events of this 
-            heuristic type
-        @type exclude_heuristic: String
+        @param exclude_bound: Should we exclude labs that are already bound to 
+            an event of this heuristic type?
+        @type exclude_bound: Boolean
         '''
         log.debug('Get lab results relevant to "%s".' % self.name)
-        log.debug('Exclude Heuristic: %s' % exclude_heuristic)
-        if not loinc_nums:
-            loinc_nums = self.loinc_nums
-        qs = LabResult.objects.filter_loincs(loinc_nums)
-        if exclude_heuristic:
-            q_obj = ~Q(events__heuristic=exclude_heuristic)
+        log.debug('    Exclude Bound: %s' % exclude_bound)
+        native_codes = CodeMap.objects.filter(heuristic=self.name).values('native_code')
+        qs = LabResult.objects.filter(native_code__in=native_codes)
+        if exclude_bound:
+            q_obj = ~Q(events__heuristic=self.name)
             qs = qs.filter(q_obj)
         return qs
 
@@ -327,54 +328,52 @@ class NumericLabHeuristic(LabHeuristic):
             loinc_nums = loinc_nums,
             )
 
-    def matches(self, exclude_heuristic=None):
+    def matches(self, exclude_bound=True):
         '''
         If record has a reference high, and a ratio has been specified, compare
         test result against that reference.  If a record does not have a
         reference high, and a default_high has been specified, compare result
         against that default 'high' value.
         '''
-        relevant_labs = self.relevant_labs(exclude_heuristic=exclude_heuristic)
-        no_ref_q = Q(ref_high = None) # Record has null value for ref_high
         comparison = self.comparison.strip()
-        if self.default_high:
-            # Query to compare result_float against self.default_high
-            if comparison == '>':
-                def_high_q = Q(result_float__gt = self.default_high)
+        has_ref_high = Q(ref_high__isnull=False) # Record does NOT have null value for ref_high
+        no_ref_high = Q(ref_high__isnull=True) # Record HAS null value for ref_high
+        pos_q = None 
+        for map in CodeMap.objects.filter(heuristic=self.name):
+            if not map.threshold:
+                log.critical('Unusable code map, no threshold supplied! - %s' % map)
+                continue
+            #
+            # Build query
+            #
+            if comparison == '>': 
+                q_obj = no_ref_high & Q(result_float__gt = float(map.threshold))
+                if self.ratio:
+                    q_obj |= has_ref_high & Q(result_float__gt = F('ref_high') * self.ratio)
             elif comparison == '>=':
-                def_high_q = Q(result_float__gte = self.default_high)
+                q_obj = no_ref_high & Q(result_float__gte = float(map.threshold))
+                if self.ratio:
+                    q_obj |= has_ref_high & Q(result_float__gte = F('ref_high') * self.ratio)
             elif comparison == '<':
-                def_high_q = Q(result_float__lt = self.default_high)
+                q_obj = no_ref_high & Q(result_float__lt = float(map.threshold))
+                if self.ratio:
+                    q_obj |= has_ref_high & Q(result_float__lt = F('ref_high') * self.ratio)
             elif comparison == '<=':
-                def_high_q = Q(result_float__lte = self.default_high)
+                q_obj = no_ref_high & Q(result_float__lte = float(map.threshold))
+                if self.ratio:
+                    q_obj |= has_ref_high & Q(result_float__lte = F('ref_high') * self.ratio)
             else:
                 raise RuntimeError('Invalid comparison operator: %s' % self.comparison)
-            pos_q = def_high_q
-        if self.ratio:
-            # Query to compare non-null ref_high against self.ratio
-            if comparison == '>':
-                ref_comp_q = ~no_ref_q & Q(result_float__gt = F('ref_high') * self.ratio)
-            elif comparison == '>=':
-                ref_comp_q = ~no_ref_q & Q(result_float__gte = F('ref_high') * self.ratio)
-            elif comparison == '<':
-                ref_comp_q = ~no_ref_q & Q(result_float__lt = F('ref_high') * self.ratio)
-            elif comparison == '<=':
-                ref_comp_q = ~no_ref_q & Q(result_float__lte = F('ref_high') * self.ratio)
+            q_obj &= Q(native_code=map.native_code)
+            if pos_q:
+                pos_q |= q_obj
             else:
-                raise RuntimeError('Invalid comparison operator: %s' % self.comparison)
-            pos_q = ref_comp_q
-        if self.default_high and self.ratio:
-            # Query to compare records with non-null ref_high against 
-            # self.ratio, and records with null ref_high against self.default
-            static_comp_q = no_ref_q & def_high_q
-            pos_q = (ref_comp_q | static_comp_q)
-        log.debug('pos_q: %s' % pos_q)
-        if self.exclude:
-            result = relevant_labs.exclude(pos_q)
-        else:
-            result = relevant_labs.filter(pos_q)
-        log_query('Query for heuristic %s' % self.name, result)
-        return result
+                pos_q = q_obj
+        if exclude_bound:
+            pos_q &= ~Q(events__heuristic=self.name)
+        labs = LabResult.objects.filter(pos_q)
+        log_query('Query for heuristic %s' % self.name, labs)
+        return labs
 
 
 class StringMatchLabHeuristic(LabHeuristic):
@@ -408,27 +407,24 @@ class StringMatchLabHeuristic(LabHeuristic):
             loinc_nums = loinc_nums,
             )
 
-    def matches(self, exclude_heuristic=None):
+    def matches(self, exclude_bound=True):
         '''
         Compare record's result field against strings.
         '''
+        labs = self.relevant_labs(exclude_bound=exclude_bound)
         if self.match_type == 'istartswith':
-            pos_q = Q(result_string__istartswith = self.strings[0])
+            q_obj = Q(result_string__istartswith = self.strings[0])
             for s in self.strings[1:]:
-                pos_q = pos_q | Q(result_string__istartswith = s)
+                q_obj = q_obj | Q(result_string__istartswith = s)
             if self.abnormal_flag:
                 msg = 'IMPORTANT: Support for abnormal-flag-based queries has not yet been implemented!\n'
                 msg += '    Our existing data has only nulls for that field, so I am not sure what the query should look like.'
                 log.critical(msg)
+            labs = labs.filter(q_obj)
         else:
             raise NotImplementedError('The only match type supported at this time is "istartswith".')
-        log.debug('pos_q: %s' % pos_q)
-        if self.exclude:
-            result = self.relevant_labs(exclude_heuristic=exclude_heuristic).exclude(pos_q)
-        else:
-            result = self.relevant_labs(exclude_heuristic=exclude_heuristic).filter(pos_q)
-        log_query('Query for heuristic %s' % self.name, result)
-        return result
+        log_query('Query for heuristic %s' % self.name, labs)
+        return labs
 
 
 class LabOrderedHeuristic(LabHeuristic):
@@ -436,8 +432,8 @@ class LabOrderedHeuristic(LabHeuristic):
     Matches any *order* for a lab test with specified LOINC(s)
     '''
 
-    def matches(self, exclude_heuristic=None):
-        result = self.relevant_labs(exclude_heuristic=exclude_heuristic)
+    def matches(self, exclude_bound=True):
+        result = self.relevant_labs(exclude_bound=exclude_bound)
         log_query('Query for heuristic %s' % self.name, result)
         return result
 
@@ -478,7 +474,7 @@ class EncounterHeuristic(BaseHeuristic):
         return enc_q
     enc_q = property(__get_enc_q)
 
-    def encounters(self, exclude_heuristic=None):
+    def encounters(self, exclude_bound=True):
         '''
         Return all encounters relevant to this heuristic
             @type patient:    Demog
@@ -486,14 +482,14 @@ class EncounterHeuristic(BaseHeuristic):
         '''
         log.debug('Get encounters relevant to "%s".' % self.name)
         qs = Encounter.objects.all()
-        if exclude_heuristic:
-            q_obj = ~Q(events__heuristic=exclude_heuristic)
+        if exclude_bound:
+            q_obj = ~Q(events__heuristic=self.name)
             qs = qs.filter(q_obj)
         qs = qs.filter(self.enc_q)
         return qs
 
-    def matches(self, exclude_heuristic=None):
-        qs = self.encounters(exclude_heuristic=exclude_heuristic)
+    def matches(self, exclude_bound=True):
+        qs = self.encounters(exclude_bound=exclude_bound)
         log_query('Query for heuristic %s' % self.name, qs)
         return qs
 
@@ -513,7 +509,7 @@ class FeverHeuristic(BaseHeuristic):
             def_version = def_version,
             )
 
-    def matches(self, queryset=None, exclude_heuristic=None):
+    def matches(self, queryset=None, exclude_bound=True):
         '''
         Return all encounters indicating fever.
             @type queryset:   QuerySet
@@ -523,8 +519,8 @@ class FeverHeuristic(BaseHeuristic):
         for code in self.icd9s:
             enc_q = enc_q | Q(icd9_codes__code = code)
         qs = Encounter.objects.all()
-        if exclude_heuristic:
-            q_obj = ~Q(events__heuristic=exclude_heuristic)
+        if exclude_bound:
+            q_obj = ~Q(events__heuristic=self.name)
             qs = qs.filter(q_obj)
         # Either encounter has the 'fever' ICD9, or it records a high temp
         q_obj = enc_q | Q(temperature__gt = self.temperature)
@@ -568,12 +564,12 @@ class CalculatedBilirubinHeuristic(LabHeuristic):
             matches = matches | relevant.filter(patient = item['patient'], date = item['date'])
         return matches
 
-    def matches(self, exclude_heuristic=None):
+    def matches(self, exclude_bound=True):
         log.debug('Looking for high calculated bilirubin scores')
         # First, we return a list of patient & order date pairs, where the sum
         # of direct and indirect bilirubin tests ordered on the same day is 
         # greater than 1.5.
-        relevant = self.relevant_labs(exclude_heuristic=exclude_heuristic)
+        relevant = self.relevant_labs(exclude_bound=exclude_bound)
         vqs = relevant.values('patient', 'date') # returns ValueQuerySet
         vqs = vqs.annotate(calc_bil = Sum('result_float'))
         vqs = vqs.filter(calc_bil__gt = 1.5)
@@ -628,13 +624,13 @@ class MedicationHeuristic(BaseHeuristic):
             def_version = def_version,
             )
 
-    def matches(self, exclude_heuristic=None):
+    def matches(self, exclude_bound=True):
         log.debug('Finding matches for following drugs:')
         [log.debug('    %s' % d) for d in self.drugs]
         [log.debug('    Exclude string: %s' % s) for s in self.exclude]
         qs = Prescription.objects.all()
-        if exclude_heuristic:
-            q_obj = ~Q(events__heuristic=exclude_heuristic)
+        if exclude_bound:
+            q_obj = ~Q(events__heuristic=self.name)
             qs = qs.filter(q_obj)
         q_obj = Q(name__icontains = self.drugs[0])
         for drug_name in self.drugs[1:]:
@@ -671,10 +667,10 @@ class WesternBlotHeuristic(LabHeuristic):
             loinc_nums = loinc_nums,
             )
 
-    def matches(self, exclude_heuristic=None):
+    def matches(self, exclude_bound=True):
         # Find potential positives -- tests whose results contain at least one 
         # of the interesting band numbers.
-        relevant_labs = self.relevant_labs(exclude_heuristic=exclude_heuristic)
+        relevant_labs = self.relevant_labs(exclude_bound=exclude_bound)
         q_obj = Q(result_string__icontains = str(self.interesting_bands[0]))
         for band in self.interesting_bands[1:]:
             q_obj = q_obj | Q(result_string__icontains = str(band))

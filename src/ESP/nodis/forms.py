@@ -33,5 +33,7 @@ class CaseStatusForm(forms.Form):
     comment = forms.CharField(widget=forms.Textarea, required=False)
 
 
-class MapNativeCodeForm(forms.Form):
-    loinc = forms.ChoiceField(choices=BaseHeuristic.get_all_loincs(choices=True), required=True)
+class CodeMapForm(forms.Form):
+    heuristic = forms.ChoiceField(choices=BaseHeuristic.list_heuristics(choices=True), required=True)
+    threshold = forms.FloatField(required=False)
+    notes = forms.CharField(widget=forms.Textarea, required=False)

@@ -46,6 +46,27 @@ class NativeCode(models.Model):
         return '%s --> %s' % (self.native_code, self.loinc.loinc_num)
 
 
+class CodeMap(models.Model):
+    '''
+    Map associating lab test native_code with a HEF event
+    '''
+    heuristic = models.SlugField(max_length=255, blank=False, db_index=True)
+    native_code = models.CharField(max_length=100, blank=False, db_index=True)
+    native_name = models.CharField(max_length=255, blank=True, null=True)
+    threshold = models.FloatField(help_text='Positive numeric threshold (if relevant)', blank=True, null=True)
+    output_code = models.CharField(max_length=100, blank=False, db_index=True)
+    notes = models.TextField(blank=True, null=True)
+    class Meta:
+        verbose_name = 'Code Map'
+        unique_together = ['native_code', 'heuristic']
+    
+    def __str__(self):
+        msg = '%s (%s) --> %s' % (self.native_name, self.native_code, self.heuristic)
+        if self.threshold:
+            msg += ' (threshold %s)' % self.threshold
+        return msg
+
+
 class IgnoredCode(models.Model):
     '''
     Codes to be ignored by nodis.core.Condition.find_unmapped_tests()

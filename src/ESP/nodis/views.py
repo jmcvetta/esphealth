@@ -47,6 +47,7 @@ from ESP.settings import NLP_EXCLUDE
 from ESP.settings import ROWS_PER_PAGE
 from ESP.settings import DATE_FORMAT
 from ESP.conf.models import NativeCode
+from ESP.conf.models import CodeMap
 from ESP.conf.models import IgnoredCode
 from ESP.static.models import Loinc
 from ESP.emr.models import NativeNameCache
@@ -62,7 +63,7 @@ from ESP.nodis.models import Case
 from ESP.nodis.models import CaseStatusHistory
 from ESP.nodis.models import UnmappedLab
 from ESP.nodis.forms import CaseStatusForm
-from ESP.nodis.forms import MapNativeCodeForm
+from ESP.nodis.forms import CodeMapForm
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
 
@@ -386,7 +387,7 @@ def unmapped_labs_report(request):
     Display Unmapped Labs report generated from cache
     '''
     ignored = IgnoredCode.objects.values('native_code')
-    mapped = NativeCode.objects.values('native_code').distinct()
+    mapped = CodeMap.objects.values('native_code').distinct()
     q_obj = Q(native_code__isnull=False)
     q_obj &= ~Q(native_code__in=ignored)
     q_obj &= ~Q(native_code__in=mapped)
@@ -410,28 +411,30 @@ def map_native_code(request, native_code):
     lower-level modules (conf, hef, & static).
     '''
     native_code = native_code.lower()
-    form = MapNativeCodeForm() # This may be overridden below
+    form = CodeMapForm() # This may be overridden below
     labs = LabResult.objects.filter(native_code=native_code)
     native_names = labs.values_list('native_name', flat=True).distinct().order_by('native_name')
     if request.method == 'POST':
-        form = MapNativeCodeForm(request.POST)
+        form = CodeMapForm(request.POST)
         if form.is_valid():
-            loinc_num = form.cleaned_data['loinc']
-            loinc_obj = Loinc.objects.get(loinc_num=loinc_num)
-            nc, created = NativeCode.objects.get_or_create(native_code=native_code, loinc=loinc_obj)
+            heuristic_name = form.cleaned_data['heuristic']
+            h_obj = BaseHeuristic.get_heuristics_by_name(heuristic_name)[0]
+            threshold = form.cleaned_data['threshold']
+            cm, created = CodeMap.objects.get_or_create(native_code=native_code, heuristic=heuristic_name)
+            cm.notes = form.cleaned_data['notes']
+            cm.native_name = native_names[0]
+            cm.threshold = threshold
+            cm.save()
             if created:
-                nc.notes = 'Created via web UI by %s on %s' % (request.user, datetime.datetime.now())
-                nc.native_name = native_names[0]
-                nc.save()
-                msg = 'Mapped native code "%s" to LOINC %s' % (native_code, loinc_obj)
+                msg = 'Saved code map: %s' % cm
             else:
-                msg = 'Native code "%s" was already mapped to LOINC %s' % (native_code, loinc_obj)
+                msg = 'Updated code map: %s' % cm
             request.user.message_set.create(message=msg)
             log.debug(msg)
             return redirect_to(request, reverse('unmapped_labs_report'))
     result_strings = labs.values('result_string').distinct().annotate(count=Count('id')).order_by('-count')
     values = {
-        'title': 'Map native code to LOINC',
+        'title': 'Map Native Code to Heuristic',
         "request":request,
         'native_code': native_code,
         'native_names': native_names,

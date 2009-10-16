@@ -1,20 +1,20 @@
 from django.contrib import admin
 
-from ESP.conf.models import NativeCode
+from ESP.conf.models import CodeMap
 from ESP.conf.models import IgnoredCode
 
 
-class NativeCodeAdmin(admin.ModelAdmin):
-    list_display = ['native_code', 'native_name', 'loinc', ]
-    search_fields = ['native_code', 'native_name']
-    raw_id_fields = ['loinc']
+class CodeMapAdmin(admin.ModelAdmin):
+    list_display = ['id', 'native_code', 'native_name', 'heuristic', 'threshold', 'output_code', 'notes']
+    list_filter = ['heuristic']
+    search_fields = ['native_code', 'native_name', 'output_code']
     save_on_top = True
-    ordering = ['native_code']
+    ordering = ['output_code', 'native_code', 'heuristic']
 
 class IgnoredCodeAdmin(admin.ModelAdmin):
     search_fields = ['native_code']
     ordering = ['native_code']
 
 
-admin.site.register(NativeCode, NativeCodeAdmin)
+admin.site.register(CodeMap, CodeMapAdmin)
 admin.site.register(IgnoredCode, IgnoredCodeAdmin)

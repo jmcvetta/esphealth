@@ -80,6 +80,7 @@ src/ESP/clean.db -text
 src/ESP/conf/__init__.py -text
 src/ESP/conf/admin.py -text
 src/ESP/conf/choices.py -text
+src/ESP/conf/code_map_migrator.py -text
 src/ESP/conf/common.py -text
 src/ESP/conf/context_processors.py -text
 src/ESP/conf/fixtures/conf-test-native-codes.json -text
