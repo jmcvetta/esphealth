@@ -10,18 +10,14 @@
 '''
 
 from ESP.hef.core import EncounterHeuristic
-from ESP.hef.core import StringMatchLabHeuristic
-from ESP.hef.core import NumericLabHeuristic
+from ESP.hef.core import LabResultHeuristic
+from ESP.hef.core import LabResultHeuristic
 from ESP.hef.core import MedicationHeuristic
 from ESP.hef.core import FeverHeuristic
 from ESP.hef.core import CalculatedBilirubinHeuristic
 from ESP.hef.core import WesternBlotHeuristic
 from ESP.hef.core import LabOrderedHeuristic
 
-
-
-POSITIVE_STRINGS = ['reactiv', 'pos', 'detec']
-NEGATIVE_STRINGS = ['non', 'neg', 'not', 'nr']
 
 
 # These definitions do not necessarily *need* to be assigned to variables.  The mere
@@ -77,117 +73,95 @@ EncounterHeuristic(
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #--- gonorrhea_pos 
-GONORRHEA_LOINCS = ['691-6', '23908-7', '24111-7', '36902-5'] # Re-used in disease definition
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'gonorrhea_pos',
     def_name = 'Gonorrhea Definition 1',
     def_version = 1,
-    loinc_nums = GONORRHEA_LOINCS,
-    strings = POSITIVE_STRINGS,
-    abnormal_flag = True,
-    match_type = 'istartswith',
+    result_type = 'positive',
     )
 
 #--- chlamydia_pos 
-CHLAMYDIA_LOINCS = ['4993-2', '6349-5', '16601-7', '20993-2', '21613-5', '36902-5', ] # Re-used in disease definition
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'chlamydia_pos',
     def_name = 'Chlamydia Event Definition 1',
     def_version = 1,
-    loinc_nums = CHLAMYDIA_LOINCS,
-    strings = POSITIVE_STRINGS,
-    abnormal_flag = True,
-    match_type = 'istartswith',
+    result_type = 'positive',
     )
 
 #--- alt_2x 
-NumericLabHeuristic(
+LabResultHeuristic(
     name = 'alt_2x',
     def_name = 'ALT 2x Event Definition 1',
     def_version = 1,
-    loinc_nums = ['1742-6'],
-    comparison = '>',
     ratio = 2,
-    default_high = 132,
+    result_type = 'positive',
     )
 
 #--- alt_5x 
-NumericLabHeuristic(
+LabResultHeuristic(
     name = 'alt_5x',
     def_name = 'ALT 5x Event Definition 1',
     def_version = 1,
-    loinc_nums = ['1742-6'],
-    comparison = '>',
     ratio = 5,
-    default_high = 330,
+    result_type = 'positive',
     )
 
 #--- ast_2x 
-NumericLabHeuristic(
+LabResultHeuristic(
     name = 'ast_2x',
     def_name = 'AST 2x Event Definition 1',
     def_version = 1,
-    loinc_nums = ['1920-8'],
-    comparison = '>',
     ratio = 2,
-    default_high = 132,
+    result_type = 'positive',
     )
 
 #--- ast_5x 
-NumericLabHeuristic(
+LabResultHeuristic(
     name = 'ast_5x',
     def_name = 'AST 5x Event Definition 1',
     def_version = 1,
-    loinc_nums = ['1920-8'],
-    comparison = '>',
     ratio = 5,
-    default_high = 330,
+    result_type = 'positive',
     )
 
 #--- alt_400 
-NumericLabHeuristic(
+LabResultHeuristic(
     name = 'alt_400',
     def_name = 'ALT >400 Event Definition 1',
     def_version = 1,
-    loinc_nums = ['1742-6'],
-    comparison = '>',
-    default_high = 400,
+    result_type = 'positive',
     )
 
 #--- hep_a_igm_pos 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_a_igm_pos',
     def_name = 'Hep A IgM Positive Event Definition 1',
     def_version = 1,
-    loinc_nums = ['22314-9'],
-    strings = POSITIVE_STRINGS,
+    result_type = 'positive',
     )
 
 #--- hep_a_igm_neg 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_a_igm_neg',
     def_name = 'Hep A IgM Negative Event Definition 1',
     def_version = 1,
-    loinc_nums = ['22314-9'],
-    strings = NEGATIVE_STRINGS,
+    result_type = 'negative',
     )
 
 #--- hep_b_igm_pos 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_b_igm_pos',
     def_name = 'Hep B IgM Positive Event Definition 1',
     def_version = 1,
-    loinc_nums = ['31204-1'],
-    strings = POSITIVE_STRINGS,
+    result_type = 'positive',
     )
 
 #--- hep_b_igm_neg 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_b_igm_neg',
     def_name = 'No Hep B IgM Negative Event Definition 1',
     def_version = 1,
-    loinc_nums = ['31204-1'],
-    strings = NEGATIVE_STRINGS,
+    result_type = 'negative',
     )
 
 #--- hep_b_igm_order 
@@ -195,52 +169,46 @@ LabOrderedHeuristic(
     name = 'hep_b_igm_order',
     def_name = 'Hep B IgM Order Event Definition 1',
     def_version = 1,
-    loinc_nums = ['31204-1'],
     )
 
 #--- hep_b_core_pos 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_b_core_pos',
     def_name = 'No Hep B Core Positive Definition 1',
     def_version = 1,
-    loinc_nums = ['16933-4'],
-    strings = POSITIVE_STRINGS,
+    result_type = 'positive',
     )
 
 #--- hep_b_core_neg 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_b_core_neg',
     def_name = 'Hep B Core Negative Event Definition 1',
     def_version = 1,
-    loinc_nums = ['16933-4'],
-    strings = NEGATIVE_STRINGS,
+    result_type = 'negative',
     )
 
 #--- hep_b_surface_pos 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_b_surface_pos',
     def_name = 'Hep B Surface Positive Event Definition 1',
     def_version = 1,
-    loinc_nums = ['5195-3'],
-    strings = POSITIVE_STRINGS,
+    result_type = 'positive',
     )
 
 #--- hep_b_surface_pos 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_b_surface_neg',
     def_name = 'Hep B Surface Negative Event Definition 1',
     def_version = 1,
-    loinc_nums = ['5195-3'],
-    strings = NEGATIVE_STRINGS,
+    result_type = 'negative',
     )
 
 #--- hep_b_e_antigen_pos 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_b_e_antigen_pos',
     def_name = 'Hep B "e" Antigen Positive Event Definition 1',
     def_version = 1,
-    loinc_nums = ['13954-3'],
-    strings = POSITIVE_STRINGS,
+    result_type = 'positive',
     )
 
 #
@@ -258,224 +226,94 @@ StringMatchLabHeuristic(
 
 
 #--- hep_b_viral_dna
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_b_viral_dna_pos',
     def_name = 'Hep B Viral DNA Positive Event Definition 1',
     def_version = 1,
-    loinc_nums = ['13126-8', '16934', '5009-6'],
-    strings = POSITIVE_STRINGS,
-    )
-NumericLabHeuristic(
-    name = 'hep_b_viral_dna_pos',
-    def_name = 'Hep B Viral DNA Positive Event Definition 2',
-    def_version = 1,
-    loinc_nums = ['16934-2'],
-    comparison = '>',
-    default_high = 100,
-    )
-NumericLabHeuristic(
-    name = 'hep_b_viral_dna_pos',
-    def_name = 'Hep B Viral DNA Positive Event Definition 3',
-    def_version = 1,
-    loinc_nums = ['5009-6'],
-    comparison = '>',
-    default_high = 160,
+    result_type = 'positive',
     )
 
 
 #--- hep_e_ab 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_e_ab_pos',
     def_name = 'Hep E Antibody Positive Event Definition 1',
     def_version = 1,
-    loinc_nums = ['14212-5'],
-    strings = POSITIVE_STRINGS,
+    result_type = 'positive',
     )
 
 #--- total_bilirubin_high 
-NumericLabHeuristic(
+LabResultHeuristic(
     name = 'total_bilirubin_high',
     def_name = 'High Total Bilirubin Event Definition 1',
     def_version = 1,
     loinc_nums = ['33899-6'],
-    comparison = '>',
     default_high = 1.5,
+    result_type = 'positive',
     )
 
 #--- high_calc_bilirubin 
 CalculatedBilirubinHeuristic()
 
 #--- hep_c_signal_cutoff 
-NumericLabHeuristic(
+LabResultHeuristic(
     name = 'hep_c_signal_cutoff_pos',
     def_name = 'Hep C Signal Cutoff Positive Event Definition 1',
     def_version = 1,
-    loinc_nums = ['MDPH-144', ],
-    comparison = '>',
-    default_high = 3.8,
+    result_type = 'positive',
     )
 
-NumericLabHeuristic(
-    # This is the exactly the same as hep_c_signal_cutoff above, but with 'exclude'
-    # flag set.
+LabResultHeuristic(
     name = 'hep_c_signal_cutoff_neg',
     def_name = 'Hep C Signal Cutoff Negative Event Definition 1',
     def_version = 1,
-    loinc_nums = ['MDPH-144', ],
-    comparison = '<=',
-    default_high = 3.8,
+    result_type = 'negative',
     )
 
 #--- hep_c_riba 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_c_riba_pos',
     def_name = 'Hep C RIBA Positive Event Definition 1',
     def_version = 1,
-    loinc_nums = ['5199-5'],
-    strings = POSITIVE_STRINGS,
+    result_type = 'positive',
     )
 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_c_riba_neg',
     def_name = 'Hep C RIBA Negative Event Definition 1',
     def_version = 1,
-    loinc_nums = ['5199-5'],
-    strings = NEGATIVE_STRINGS,
+    result_type = 'negative',
     )
 
 #--- hep_c_rna 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_c_rna_pos',
     def_name = 'Hep C RNA Event Definition 1',
     def_version = 1,
-    loinc_nums = ['6422-0'],
-    strings = POSITIVE_STRINGS,
-    )
-NumericLabHeuristic(
-    name = 'hep_c_rna_pos',
-    def_name = 'Hep C RNA Event Definition 2',
-    def_version = 1,
-    loinc_nums = ['10676-5'],
-    comparison = ' > ',
-    default_high = 100,
-    )
-NumericLabHeuristic(
-    name = 'hep_c_rna_pos',
-    def_name = 'Hep C RNA Event Definition 3',
-    def_version = 1,
-    loinc_nums = ['38180-6'],
-    comparison = ' > ',
-    default_high = 2.79,
-    )
-NumericLabHeuristic(
-    name = 'hep_c_rna_pos',
-    def_name = 'Hep C RNA Event Definition 4',
-    def_version = 1,
-    loinc_nums = ['34704-7'],
-    comparison = ' > ',
-    default_high = 50,
-    )
-NumericLabHeuristic(
-    name = 'hep_c_rna_pos',
-    def_name = 'Hep C RNA Event Definition 5',
-    def_version = 1,
-    loinc_nums = ['11259-9'],
-    comparison = ' > ',
-    default_high = 10,
-    )
-NumericLabHeuristic(
-    name = 'hep_c_rna_pos',
-    def_name = 'Hep C RNA Event Definition 6',
-    def_version = 1,
-    loinc_nums = ['20416-4'],
-    comparison = ' > ',
-    default_high = 0.70,
-    )
-NumericLabHeuristic(
-    name = 'hep_c_rna_pos',
-    def_name = 'Hep C RNA Positive Event Definition 7',
-    def_version = 1,
-    loinc_nums = ['34703-9'],
-    comparison = '>',
-    default_high = 500,
+    result_type = 'positive',
     )
 
 #--- no_hep_c_rna 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_c_rna_neg',
     def_name = 'Hep C RNA Negative Event Definition 1',
     def_version = 1,
-    loinc_nums = ['6422-0'],
-    strings = NEGATIVE_STRINGS,
-    )
-NumericLabHeuristic(
-    name = 'hep_c_rna_neg',
-    def_name = 'Hep C RNA Negative Event Definition 2',
-    def_version = 1,
-    loinc_nums = ['10676-5'],
-    comparison = '<=',
-    default_high = 100,
-    )
-NumericLabHeuristic(
-    name = 'hep_c_rna_neg',
-    def_name = 'Hep C RNA Negative Event Definition 3',
-    def_version = 1,
-    loinc_nums = ['38180-6'],
-    comparison = '<=',
-    default_high = 2.79,
-    )
-NumericLabHeuristic(
-    name = 'hep_c_rna_neg',
-    def_name = 'Hep C RNA Negative Event Definition 4',
-    def_version = 1,
-    loinc_nums = ['34704-7'],
-    comparison = ' <= ',
-    default_high = 50,
-    )
-NumericLabHeuristic(
-    name = 'hep_c_rna_neg',
-    def_name = 'Hep C RNA Negative Event Definition 5',
-    def_version = 1,
-    loinc_nums = ['11259-9'],
-    comparison = '<=',
-    default_high = 10,
-    )
-NumericLabHeuristic(
-    name = 'hep_c_rna_neg',
-    def_name = 'Hep C RNA Negative Event Definition 6',
-    def_version = 1,
-    loinc_nums = ['20416-4'],
-    comparison = '<=',
-    default_high = 0.70,
-    )
-NumericLabHeuristic(
-    name = 'hep_c_rna_neg',
-    def_name = 'Hep C RNA Negative Event Definition 7',
-    def_version = 1,
-    loinc_nums = ['34703-9'],
-    comparison = '<=',
-    default_high = 500,
+    result_type = 'negative',
     )
 
 #--- hep_c_elisa 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_c_elisa_pos',
     def_name = 'Hep C ELISA Positive Event Definition 1',
     def_version = 1,
-    loinc_nums = ['16128-1', ],
-    strings = POSITIVE_STRINGS,
-    abnormal_flag = True, # appropriate here?
-    match_type = 'istartswith',
+    result_type = 'positive',
     )
 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'hep_c_elisa_neg',
     def_name = 'Hep C ELISA Negative Event Definition 1',
     def_version = 1,
-    loinc_nums = ['16128-1', ],
-    strings = NEGATIVE_STRINGS,
-    abnormal_flag = True, # appropriate here?
-    match_type = 'istartswith',
+    result_type = 'negative',
     )
 
 
@@ -484,21 +322,11 @@ StringMatchLabHeuristic(
 #
 
 #--- lyme_elisa_pos 
-NumericLabHeuristic(
+LabResultHeuristic(
     name = 'lyme_elisa_pos',
     def_name = 'Lyme ELISA Positive Event Definition 1',
     def_version = 1,
-    loinc_nums = ['5061-7'],
-    comparison = ' >= ',
-    default_high = 1.1,
-    )
-StringMatchLabHeuristic(
-    name = 'lyme_elisa_pos',
-    def_name = 'Lyme ELISA Positive Event Definition 2',
-    def_version = 1,
-    loinc_nums = ['31155-5'],
-    strings = POSITIVE_STRINGS,
-    match_type = 'istartswith',
+    result_type = 'positive',
     )
 
 #--- lyme_elisa_ordered 
@@ -506,61 +334,37 @@ LabOrderedHeuristic(
     name = 'lyme_elisa_ordered',
     def_name = 'Lyme ELISA Test Order Event Definition 1',
     def_version = 1,
-    loinc_nums = ['5061-7', '31155-5'],
     )
 
 #--- lyme_igg 
-NumericLabHeuristic(
+LabResultHeuristic(
     name = 'lyme_igg_pos',
     def_name = 'Lyme IGG Event Positive Definition 1 (EIA)',
     def_version = 1,
-    loinc_nums = ['16481-4'],
-    comparison = ' >= ',
-    default_high = 1,
-    )
-StringMatchLabHeuristic(
-    name = 'lyme_igg_pos',
-    def_name = 'Lyme IGG Positive Event Definition 2 (WB)',
-    def_version = 1,
-    loinc_nums = ['29898-4'],
-    strings = POSITIVE_STRINGS,
-    match_type = 'istartswith',
+    result_type = 'positive',
     )
 WesternBlotHeuristic(
     name = 'lyme_igg_pos',
     def_name = 'Lyme Western Blot Positive Event Definition 1',
     def_version = 1,
-    loinc_nums = ['29898-4', ], # Can we get a different LOINC for this, not used by string tests?
     interesting_bands = [18, 21, 28, 30, 39, 41, 45, 58, 66, 93],
     band_count = 5,
     )
 
 #--- lyme_igm 
-NumericLabHeuristic(
+LabResultHeuristic(
     name = 'lyme_igm_pos',
     def_name = 'Lyme IGM Positive Event Definition 1 (EIA)',
     def_version = 1,
-    loinc_nums = ['16482-2'],
-    comparison = ' >= ',
-    default_high = 1,
-    )
-StringMatchLabHeuristic(
-    name = 'lyme_igm_pos',
-    def_name = 'Lyme IGM Positive Event Definition 2 (WB)',
-    def_version = 1,
-    loinc_nums = ['23982-2'],
-    strings = POSITIVE_STRINGS,
-    match_type = 'istartswith',
+    result_type = 'positive',
     )
 
 #--- lyme_pcr 
-StringMatchLabHeuristic(
+LabResultHeuristic(
     name = 'lyme_pcr_pos',
     def_name = 'Lyme PCR Positive Event Definition 1',
     def_version = 1,
-    loinc_nums = ['4991-6'],
-    strings = POSITIVE_STRINGS,
-    match_type = 'istartswith',
+    result_type = 'positive',
     )
 
 #--- lyme_diagnosis 
@@ -624,9 +428,9 @@ MedicationHeuristic(
     drugs = [
         'Pyrazinamide',
         'PZA',
-        'RIFAMPIN',
-        'RIFAMATE',
-        'ISONARIF',
+        #'RIFAMPIN',
+        #'RIFAMATE',
+        #'ISONARIF',
         ],
     exclude = ['CAPZA',]
     )
@@ -648,6 +452,5 @@ LabOrderedHeuristic(
     name = 'tb_lab_order',
     def_name = 'Tuberculosis Lab Order Event Definition 1',
     def_version = 1,
-    loinc_nums = ['11475-1', '11545-1', '17296-5'],
     )
 

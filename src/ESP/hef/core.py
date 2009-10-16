@@ -42,6 +42,10 @@ from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 
 
+POSITIVE_STRINGS = ['reactiv', 'pos', 'detec']
+NEGATIVE_STRINGS = ['non', 'neg', 'not', 'nr']
+
+
 
 #===============================================================================
 #
@@ -267,13 +271,11 @@ class LabHeuristic(BaseHeuristic):
     are used as components of DiseaseDefinitions
     '''
 
-    def __init__(self, name, def_name, def_version, loinc_nums):
+    def __init__(self, name, def_name, def_version):
         '''
         @param loinc_nums:   LOINC numbers for lab results this heuristic will examine
         @type loinc_nums:    [String, String, String, ...]
         '''
-        assert loinc_nums
-        self.loinc_nums = loinc_nums
         BaseHeuristic.__init__(self,
             name = name,
             def_name = def_name,
@@ -298,34 +300,32 @@ class LabHeuristic(BaseHeuristic):
         return qs
 
 
-class NumericLabHeuristic(LabHeuristic):
+class LabResultHeuristic(LabHeuristic):
     '''
     Matches labs results with high numeric scores, as determined by a ratio to 
     that result's reference high, with fall back to a default high value.
     '''
 
-    def __init__(self, name, def_name, def_version, loinc_nums,
-        comparison, ratio = None, default_high = None, exclude = False):
+    def __init__(self, name, def_name, def_version, result_type, 
+        ratio = None, loinc_nums=None, default_high=None):
         '''
+        @param strings:       Strings to match against
+        @type strings:          [String, String, String, ...]
         @param comparison:   Operator to use for numerical comparison (currently only '>' and '>=' supported)
         @type comparison:    String
         @param ratio:        Match on result > ratio * reference_high
         @type ratio:         Integer
-        @param default_high: If no reference high, match on result > default_high
-        @type default_high:  Integer
+        @loinc_nums:  Compatibility feature; unused
+        @default_high:  Compatibility feature; unused
         '''
-        assert ratio or default_high
-        comparison = comparison.strip()
-        assert comparison in ['>', '>=', '<', '<=']
-        self.default_high = default_high
+        result_type = result_type.strip()
+        assert result_type in ['positive', 'negative']
+        self.result_type = result_type
         self.ratio = ratio
-        self.comparison = comparison.strip()
-        self.exclude = exclude
         LabHeuristic.__init__(self,
             name = name,
             def_name = def_name,
             def_version = def_version,
-            loinc_nums = loinc_nums,
             )
 
     def matches(self, exclude_bound=True):
@@ -335,40 +335,45 @@ class NumericLabHeuristic(LabHeuristic):
         reference high, and a default_high has been specified, compare result
         against that default 'high' value.
         '''
-        comparison = self.comparison.strip()
         has_ref_high = Q(ref_high__isnull=False) # Record does NOT have null value for ref_high
         no_ref_high = Q(ref_high__isnull=True) # Record HAS null value for ref_high
         pos_q = None 
-        for map in CodeMap.objects.filter(heuristic=self.name):
-            if not map.threshold:
-                log.critical('Unusable code map, no threshold supplied! - %s' % map)
-                continue
-            #
-            # Build query
-            #
-            if comparison == '>': 
+        #
+        # Build numeric query
+        #
+        code_maps = CodeMap.objects.filter(heuristic=self.name)
+        for map in code_maps.filter(threshold__isnull=False):
+            if self.result_type == 'positive':
                 q_obj = no_ref_high & Q(result_float__gt = float(map.threshold))
                 if self.ratio:
                     q_obj |= has_ref_high & Q(result_float__gt = F('ref_high') * self.ratio)
-            elif comparison == '>=':
-                q_obj = no_ref_high & Q(result_float__gte = float(map.threshold))
-                if self.ratio:
-                    q_obj |= has_ref_high & Q(result_float__gte = F('ref_high') * self.ratio)
-            elif comparison == '<':
-                q_obj = no_ref_high & Q(result_float__lt = float(map.threshold))
-                if self.ratio:
-                    q_obj |= has_ref_high & Q(result_float__lt = F('ref_high') * self.ratio)
-            elif comparison == '<=':
+            else: # result_type == 'negative'
                 q_obj = no_ref_high & Q(result_float__lte = float(map.threshold))
                 if self.ratio:
                     q_obj |= has_ref_high & Q(result_float__lte = F('ref_high') * self.ratio)
-            else:
-                raise RuntimeError('Invalid comparison operator: %s' % self.comparison)
             q_obj &= Q(native_code=map.native_code)
             if pos_q:
                 pos_q |= q_obj
             else:
                 pos_q = q_obj
+        #
+        # Build string query
+        #
+        # When using ratio, we cannot rely on a test being "POSITIVE" from 
+        # lab, since we may be looking for higher value
+        if not self.ratio: 
+            native_codes = code_maps.values_list('native_code')
+            q_obj = Q(native_code__in=native_codes)
+            if self.result_type == 'positive':
+                strings = POSITIVE_STRINGS
+            else:
+                strings = NEGATIVE_STRINGS
+            for s in strings:
+                q_obj = q_obj | Q(result_string__istartswith = s)
+            pos_q |= q_obj
+        #
+        # Exclude labs that are already bound to an event
+        #
         if exclude_bound:
             pos_q &= ~Q(events__heuristic=self.name)
         labs = LabResult.objects.filter(pos_q)
@@ -648,7 +653,7 @@ class WesternBlotHeuristic(LabHeuristic):
         http://en.wikipedia.org/wiki/Western_blot
     '''
 
-    def __init__(self, name, def_name, def_version, loinc_nums,
+    def __init__(self, name, def_name, def_version, 
         interesting_bands, band_count):
         '''
         @param interesting_bands: Which (numbered) bands are interesting for this test?
@@ -664,7 +669,6 @@ class WesternBlotHeuristic(LabHeuristic):
             name = name,
             def_name = def_name,
             def_version = def_version,
-            loinc_nums = loinc_nums,
             )
 
     def matches(self, exclude_bound=True):
