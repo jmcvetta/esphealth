@@ -306,8 +306,7 @@ class LabResultHeuristic(LabHeuristic):
     that result's reference high, with fall back to a default high value.
     '''
 
-    def __init__(self, name, def_name, def_version, result_type, 
-        ratio = None, loinc_nums=None, default_high=None):
+    def __init__(self, name, def_name, def_version, result_type, ratio = 1):
         '''
         @param strings:       Strings to match against
         @type strings:          [String, String, String, ...]
@@ -315,8 +314,6 @@ class LabResultHeuristic(LabHeuristic):
         @type comparison:    String
         @param ratio:        Match on result > ratio * reference_high
         @type ratio:         Integer
-        @loinc_nums:  Compatibility feature; unused
-        @default_high:  Compatibility feature; unused
         '''
         result_type = result_type.strip()
         assert result_type in ['positive', 'negative']
@@ -347,14 +344,10 @@ class LabResultHeuristic(LabHeuristic):
                 q_obj = Q(result_float__gt = float(map.threshold))
                 if self.ratio:
                     q_obj |= has_ref_high & Q(result_float__gt = F('ref_high') * self.ratio)
-                else:
-                    q_obj |= has_ref_high & Q(result_float__gt = F('ref_high'))
             else: # result_type == 'negative'
                 q_obj = Q(result_float__lte = float(map.threshold))
                 if self.ratio:
                     q_obj |= has_ref_high & Q(result_float__lte = F('ref_high') * self.ratio)
-                else:
-                    q_obj |= has_ref_high & Q(result_float__lte = F('ref_high'))
             q_obj &= Q(native_code=map.native_code)
             if num_q:
                 num_q |= q_obj
@@ -366,7 +359,7 @@ class LabResultHeuristic(LabHeuristic):
         #
         # When using ratio, we cannot rely on a test being "POSITIVE" from 
         # lab, since we may be looking for higher value
-        if not self.ratio: 
+        if self.ratio != 1:
             strings_q = None
             if self.result_type == 'positive':
                 strings = POSITIVE_STRINGS

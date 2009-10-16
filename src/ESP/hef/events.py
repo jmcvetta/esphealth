@@ -129,6 +129,7 @@ LabResultHeuristic(
     name = 'alt_400',
     def_name = 'ALT >400 Event Definition 1',
     def_version = 1,
+    ratio = None,
     result_type = 'positive',
     )
 
@@ -247,8 +248,6 @@ LabResultHeuristic(
     name = 'total_bilirubin_high',
     def_name = 'High Total Bilirubin Event Definition 1',
     def_version = 1,
-    loinc_nums = ['33899-6'],
-    default_high = 1.5,
     result_type = 'positive',
     )
 
