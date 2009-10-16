@@ -337,11 +337,12 @@ class LabResultHeuristic(LabHeuristic):
         '''
         has_ref_high = Q(ref_high__isnull=False) # Record does NOT have null value for ref_high
         no_ref_high = Q(ref_high__isnull=True) # Record HAS null value for ref_high
-        pos_q = None 
+        code_maps = CodeMap.objects.filter(heuristic=self.name)
+        native_codes = code_maps.values_list('native_code')
         #
         # Build numeric query
         #
-        code_maps = CodeMap.objects.filter(heuristic=self.name)
+        num_q = None
         for map in code_maps.filter(threshold__isnull=False):
             if self.result_type == 'positive':
                 q_obj = no_ref_high & Q(result_float__gt = float(map.threshold))
@@ -352,25 +353,38 @@ class LabResultHeuristic(LabHeuristic):
                 if self.ratio:
                     q_obj |= has_ref_high & Q(result_float__lte = F('ref_high') * self.ratio)
             q_obj &= Q(native_code=map.native_code)
-            if pos_q:
-                pos_q |= q_obj
+            if num_q:
+                num_q |= q_obj
             else:
-                pos_q = q_obj
+                num_q = q_obj
+        pos_q = num_q
         #
         # Build string query
         #
         # When using ratio, we cannot rely on a test being "POSITIVE" from 
         # lab, since we may be looking for higher value
         if not self.ratio: 
-            native_codes = code_maps.values_list('native_code')
-            q_obj = Q(native_code__in=native_codes)
+            strings_q = None
             if self.result_type == 'positive':
                 strings = POSITIVE_STRINGS
             else:
                 strings = NEGATIVE_STRINGS
+            assert strings
             for s in strings:
-                q_obj = q_obj | Q(result_string__istartswith = s)
-            pos_q |= q_obj
+                q_obj = Q(result_string__istartswith = s)
+                if strings_q: 
+                    strings_q |= q_obj
+                else:
+                    strings_q = q_obj
+            if pos_q:
+                pos_q |= strings_q
+            else:
+                pos_q = q_obj
+        #
+        # Only look at relevant labs.  We do this for both numeric & string 
+        # subqueries, for faster overall query performance.
+        #
+        pos_q &= Q(native_code__in=native_codes)
         #
         # Exclude labs that are already bound to an event
         #
