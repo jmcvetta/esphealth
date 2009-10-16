@@ -336,7 +336,6 @@ class LabResultHeuristic(LabHeuristic):
         against that default 'high' value.
         '''
         has_ref_high = Q(ref_high__isnull=False) # Record does NOT have null value for ref_high
-        no_ref_high = Q(ref_high__isnull=True) # Record HAS null value for ref_high
         code_maps = CodeMap.objects.filter(heuristic=self.name)
         native_codes = code_maps.values_list('native_code')
         #
@@ -345,13 +344,17 @@ class LabResultHeuristic(LabHeuristic):
         num_q = None
         for map in code_maps.filter(threshold__isnull=False):
             if self.result_type == 'positive':
-                q_obj = no_ref_high & Q(result_float__gt = float(map.threshold))
+                q_obj = Q(result_float__gt = float(map.threshold))
                 if self.ratio:
                     q_obj |= has_ref_high & Q(result_float__gt = F('ref_high') * self.ratio)
+                else:
+                    q_obj |= has_ref_high & Q(result_float__gt = F('ref_high'))
             else: # result_type == 'negative'
-                q_obj = no_ref_high & Q(result_float__lte = float(map.threshold))
+                q_obj = Q(result_float__lte = float(map.threshold))
                 if self.ratio:
                     q_obj |= has_ref_high & Q(result_float__lte = F('ref_high') * self.ratio)
+                else:
+                    q_obj |= has_ref_high & Q(result_float__lte = F('ref_high'))
             q_obj &= Q(native_code=map.native_code)
             if num_q:
                 num_q |= q_obj
@@ -376,10 +379,11 @@ class LabResultHeuristic(LabHeuristic):
                     strings_q |= q_obj
                 else:
                     strings_q = q_obj
+            print strings_q       
             if pos_q:
                 pos_q |= strings_q
             else:
-                pos_q = q_obj
+                pos_q = strings_q
         #
         # Only look at relevant labs.  We do this for both numeric & string 
         # subqueries, for faster overall query performance.
