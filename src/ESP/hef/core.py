@@ -341,26 +341,35 @@ class LabResultHeuristic(LabHeuristic):
         #
         num_q = None
         for map in code_maps:
+            #
+            # Build numeric comparison queries
+            #
             thresh_q = None
             ratio_q = None
             if self.result_type == 'positive':
                 if map.threshold:
                     thresh_q = Q(result_float__gt = float(map.threshold))
-                if self.ratio:
+                if self.ratio == 1:
+                    ratio_q = has_ref_high & Q(result_float__gt = F('ref_high'))
+                elif self.ratio:
                     ratio_q = has_ref_high & Q(result_float__gt = F('ref_high') * self.ratio)
             else: # result_type == 'negative'
                 if map.threshold:
                     thresh_q = Q(result_float__lte = float(map.threshold))
                 if self.ratio:
                     ratio_q = has_ref_high & Q(result_float__lte = F('ref_high') * self.ratio)
+            # 
+            # Combine restrict numeric comparison(s) to relevant native_code.
+            #
+            q_obj = Q(native_code=map.native_code)
             if thresh_q and ratio_q:
-                q_obj = thresh_q | ratio_q
+                q_obj &= (thresh_q | ratio_q)
             elif thresh_q:
-                q_obj = thresh_q
+                q_obj &= thresh_q
             elif ratio_q:
-                q_obj = ratio_q
+                q_obj &= ratio_q
             else:
-                continue
+                continue # No query to build here
             if num_q:
                 num_q |= q_obj
             else:
@@ -370,7 +379,7 @@ class LabResultHeuristic(LabHeuristic):
         # Build string query
         #
         # When using ratio, we cannot rely on a test being "POSITIVE" from 
-        # lab, since we may be looking for higher value
+        # lab, since we may be looking for higher value.
         if (not self.ratio) or (self.ratio == 1):
             strings_q = None
             if self.result_type == 'positive':
@@ -384,7 +393,6 @@ class LabResultHeuristic(LabHeuristic):
                     strings_q |= q_obj
                 else:
                     strings_q = q_obj
-            print strings_q       
             if pos_q:
                 pos_q |= strings_q
             else:
