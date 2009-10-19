@@ -78,6 +78,7 @@ LabResultHeuristic(
     def_name = 'Gonorrhea Definition 1',
     def_version = 1,
     result_type = 'positive',
+    ratio = None, # This test should never have numeric results
     )
 
 #--- chlamydia_pos 
@@ -86,6 +87,7 @@ LabResultHeuristic(
     def_name = 'Chlamydia Event Definition 1',
     def_version = 1,
     result_type = 'positive',
+    ratio = None, # This test should never have numeric results
     )
 
 #--- alt_2x 

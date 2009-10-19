@@ -223,7 +223,7 @@ class BaseHeuristic(object):
                 object_id = event.pk,
                 )
             if created:
-                log.info('Creating new heuristic event "%s" for %s #%s' % (self.name, event._meta.object_name, event.id))
+                log.info('Creating new heuristic event "%s" for %s # %s' % (self.name, event._meta.object_name, event.id))
                 obj.save()
                 counter += 1
             else:
@@ -335,20 +335,32 @@ class LabResultHeuristic(LabHeuristic):
         has_ref_high = Q(ref_high__isnull=False) # Record does NOT have null value for ref_high
         code_maps = CodeMap.objects.filter(heuristic=self.name)
         native_codes = code_maps.values_list('native_code')
+        log.debug('Code maps: %s' % pprint.pformat(code_maps))
         #
         # Build numeric query
         #
         num_q = None
-        for map in code_maps.filter(threshold__isnull=False):
+        for map in code_maps:
+            thresh_q = None
+            ratio_q = None
             if self.result_type == 'positive':
-                q_obj = Q(result_float__gt = float(map.threshold))
+                if map.threshold:
+                    thresh_q = Q(result_float__gt = float(map.threshold))
                 if self.ratio:
-                    q_obj |= has_ref_high & Q(result_float__gt = F('ref_high') * self.ratio)
+                    ratio_q = has_ref_high & Q(result_float__gt = F('ref_high') * self.ratio)
             else: # result_type == 'negative'
-                q_obj = Q(result_float__lte = float(map.threshold))
+                if map.threshold:
+                    thresh_q = Q(result_float__lte = float(map.threshold))
                 if self.ratio:
-                    q_obj |= has_ref_high & Q(result_float__lte = F('ref_high') * self.ratio)
-            q_obj &= Q(native_code=map.native_code)
+                    ratio_q = has_ref_high & Q(result_float__lte = F('ref_high') * self.ratio)
+            if thresh_q and ratio_q:
+                q_obj = thresh_q | ratio_q
+            elif thresh_q:
+                q_obj = thresh_q
+            elif ratio_q:
+                q_obj = ratio_q
+            else:
+                continue
             if num_q:
                 num_q |= q_obj
             else:
@@ -359,7 +371,7 @@ class LabResultHeuristic(LabHeuristic):
         #
         # When using ratio, we cannot rely on a test being "POSITIVE" from 
         # lab, since we may be looking for higher value
-        if self.ratio != 1:
+        if (not self.ratio) or (self.ratio == 1):
             strings_q = None
             if self.result_type == 'positive':
                 strings = POSITIVE_STRINGS
@@ -531,9 +543,12 @@ class FeverHeuristic(BaseHeuristic):
             @type queryset:   QuerySet
         '''
         log.debug('Get encounters matching "%s".' % self.name)
-        enc_q = Q()
+        enc_q = None
         for code in self.icd9s:
-            enc_q = enc_q | Q(icd9_codes__code = code)
+            if enc_q:
+                enc_q |= Q(icd9_codes__code = code)
+            else:
+                enc_q = Q(icd9_codes__code = code)
         qs = Encounter.objects.all()
         if exclude_bound:
             q_obj = ~Q(events__heuristic=self.name)
