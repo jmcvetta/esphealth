@@ -37,3 +37,4 @@ class CodeMapForm(forms.Form):
     heuristic = forms.ChoiceField(choices=BaseHeuristic.list_heuristics(choices=True), required=True)
     threshold = forms.FloatField(required=False)
     notes = forms.CharField(widget=forms.Textarea, required=False)
+    output_code = forms.CharField(max_length=100, required=True)

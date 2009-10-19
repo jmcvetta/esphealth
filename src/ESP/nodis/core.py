@@ -38,7 +38,7 @@ from ESP.hef import events # Ensure events are loaded
 from ESP.utils import utils as util
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
-from ESP.conf.models import NativeCode
+from ESP.conf.models import CodeMap
 from ESP.conf.models import IgnoredCode
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
@@ -1108,6 +1108,7 @@ class Condition(object):
             for string in c.test_name_search:
                 all_strings.add(string)
         all_strings = list(all_strings)
+        log.debug('all test name strings: %s' % all_strings)
         return all_strings
         
     @classmethod
@@ -1117,7 +1118,8 @@ class Condition(object):
         a suspicious string.
         '''
         all_strings = cls.all_test_name_search_strings()
-        mapped_codes = NativeCode.objects.values('native_code').distinct()
+        mapped_codes = CodeMap.objects.values('native_code').distinct()
+        print mapped_codes
         ignored_codes = IgnoredCode.objects.values('native_code').distinct()
         q_obj = Q(native_name__icontains=all_strings[0])
         for string in all_strings[1:]:

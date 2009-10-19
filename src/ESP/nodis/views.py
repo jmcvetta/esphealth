@@ -1,6 +1,6 @@
 '''
                               ESP Health Project
-Notifiable Diseases Framework
+                         Notifiable Diseases Framework
                                      Views
 
 @authors: Jason McVetta <jason.mcvetta@gmail.com>
@@ -424,6 +424,7 @@ def map_native_code(request, native_code):
             cm.notes = form.cleaned_data['notes']
             cm.native_name = native_names[0]
             cm.threshold = threshold
+            cm.output_code = form.cleaned_data['output_code']
             cm.save()
             if created:
                 msg = 'Saved code map: %s' % cm
