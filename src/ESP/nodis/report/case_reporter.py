@@ -164,14 +164,20 @@ def main():
                 matched_prescriptions.append(content)
             if isinstance(content, Immunization):
                 matched_immunizations.append(content)
+        labs = case.lab_results.all()
+        if labs:
+            provider = labs[0].provider
+        else:
+            provider = None
         values = {
             'case': case,
             'patient': case.patient,
+            'provider': provider,
             'matched_labs': matched_labs,
             'matched_encounters': matched_encounters,
             'matched_prescriptions': matched_prescriptions,
             'matched_immunizations': matched_immunizations,
-            'all_labs': case.lab_results.all(),
+            'all_labs': labs,
             'all_encounters': case.encounters.all(),
             'all_prescriptions': case.medications.all(),
             'all_immunizations': case.immunizations.all(),
