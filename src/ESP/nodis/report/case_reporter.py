@@ -165,10 +165,9 @@ def main():
             if isinstance(content, Immunization):
                 matched_immunizations.append(content)
         labs = case.lab_results.all()
-        if labs:
-            provider = labs[0].provider
-        else:
-            provider = None
+        pprint.pprint(case.events.all())
+        # Case.events is blank=False, so this shouldn't ever thrown an index error.
+        provider = case.events.all().order_by('date')[0].content_object.provider
         values = {
             'case': case,
             'patient': case.patient,
@@ -177,10 +176,10 @@ def main():
             'matched_encounters': matched_encounters,
             'matched_prescriptions': matched_prescriptions,
             'matched_immunizations': matched_immunizations,
-            'all_labs': labs,
-            'all_encounters': case.encounters.all(),
-            'all_prescriptions': case.medications.all(),
-            'all_immunizations': case.immunizations.all(),
+            #'all_labs': labs,
+            #'all_encounters': case.encounters.all(),
+            #'all_prescriptions': case.medications.all(),
+            #'all_immunizations': case.immunizations.all(),
             'serial_number': serial_number,
             }
         log.debug('values for template: \n%s' % pprint.pformat(values))
