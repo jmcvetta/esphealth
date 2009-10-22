@@ -12,6 +12,7 @@ ESP/sendMsgs/org/openuri/www/Bcdc_elr.class -text
 ESP/sendMsgs/org/openuri/www/Bcdc_elrLocator.class -text
 ESP/sendMsgs/org/openuri/www/Bcdc_elrSoap.class -text
 ESP/sendMsgs/org/openuri/www/Bcdc_elrSoapStub.class -text
+ESP/settings.py -text
 ESP/settings.py.sample -text
 ESP/templates/404.html -text
 ESP/templates/admin/login.html -text

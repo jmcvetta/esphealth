@@ -1,4 +1,4 @@
-USESQLITE=0
+USESQLITE=True
 RUNFAKEDATA=0
 SITEROOT='/ESP'
 LOCALSITE='Prototype'
@@ -13,3 +13,8 @@ FTPSERVER = 'ftp.yoursite.com'
 
 
 EMAILSENDER='espuser@yoursite.com'
+
+
+ADMINS =  (
+    ('Your Name', 'yourname@yourdomain.com'),
+)
