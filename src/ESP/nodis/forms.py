@@ -34,7 +34,7 @@ class CaseStatusForm(forms.Form):
 
 
 class CodeMapForm(forms.Form):
-    heuristic = forms.ChoiceField(choices=BaseHeuristic.list_heuristics(choices=True), required=True)
+    heuristic = forms.ChoiceField(choices=BaseHeuristic.lab_heuristic_choices(), required=True)
     threshold = forms.FloatField(required=False)
     notes = forms.CharField(widget=forms.Textarea, required=False)
     output_code = forms.CharField(max_length=100, required=True)

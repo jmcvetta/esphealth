@@ -134,33 +134,22 @@ class BaseHeuristic(object):
         @type choices: Boolean
         '''
         all_names = set()
+        [all_names.update(set(cls.__registry[i].name_list)) for i in cls.__registry]
+        all_names = list(all_names)
+        all_names.sort()
+        return all_names
+    
+    @classmethod
+    def lab_heuristic_choices(cls):
         out = []
         for item in cls.__registry:
             heuristic = cls.__registry[item]
-            if choices:
-                for name in heuristic.name_list:
-                    out.append( (name, heuristic.long_name) )
-            else:
-                all_names |= set(heuristic.name_list)
-        if choices:
-            return out
-        else:
-            all_names = list(all_names)
-            all_names.sort()
-            return all_names
-                    
-            
-        names = cls.__registry.keys()
-        names.sort()
-        if choices:
-            out = []
-            for name in names:
-                
-                long_name = cls.__registry[name].long_name
-                out.append((name, long_name))
-            return out
-        else:
-            return names
+            if not isinstance(heuristic, BaseLabHeuristic):
+                continue
+            display = '%s --- %s' % (item, heuristic.long_name)
+            out.append( (item, display) )
+        out.sort()
+        return out
 
     @classmethod
     def get_all_loincs(cls, choices=False):
@@ -599,7 +588,7 @@ class CalculatedBilirubinHeuristic(BaseLabHeuristic):
         self.loinc_nums = ['29760-6', '14630-8']
         BaseHeuristic.__init__(self,
             name = 'high_calc_bilirubin',
-            long_name = 'High Calculated Bilirubin Event Definition 1',
+            long_name = 'High bilirubin (calculated)'
             )
 
     def matches(self, exclude_bound=True):
