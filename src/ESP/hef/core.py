@@ -352,11 +352,11 @@ class LabResultHeuristic(BaseLabHeuristic):
         '''
         assert result_type in ['positive', 'negative', 'order']
         if result_type == 'positive':
-            event_name = self.name + '_pos'
+            event_name = self.pos_name
         elif result_type == 'negative':
-            event_name = self.name + '_neg'
+            event_name = self.neg_name
         else: # result_type == 'order'
-            event_name = self.name + '_order'
+            event_name = self.order_name
             q_obj = ~Q(events__heuristic=event_name)
             result = self.relevant_labs(exclude_bound=False).filter(q_obj)
             log_query('Query for heuristic %s' % event_name, result)
@@ -445,23 +445,44 @@ class LabResultHeuristic(BaseLabHeuristic):
         '''
         Generate positive, and if defined negative, events
         '''
-        counter = BaseHeuristic.generate_events(self, run)
+        counter = BaseHeuristic.generate_events(self, run, name=self.pos_name, result_type='positive')
         if self.negative_events:
-            name = self.name + '_neg'
-            counter += BaseHeuristic.generate_events(self, run, name=name, result_type='negative')
+            counter += BaseHeuristic.generate_events(self, run, name=self.neg_name, result_type='negative')
         if self.order_events:
-            name = self.name + '_order'
-            counter += BaseHeuristic.generate_events(self, run, name=name, result_type='order')
+            counter += BaseHeuristic.generate_events(self, run, name=self.order_name, result_type='order')
         return counter
     
     def __get_name_list(self):
-        l = [self.name + '_pos']
+        l = [self.pos_name]
         if self.negative_events:
-            l.append(self.name + '_neg')
+            l.append(self.neg_name)
         if self.order_events:
-            l.append(self.name + '_order')
+            l.append(self.order_name)
         return l
     name_list = property(__get_name_list)
+    
+    #
+    # Event Names  
+    #
+    # This heuristic generates events with different names, depending on 
+    # whether the event indicates a positive test result, a negative test 
+    # result, or a test order.
+    #
+    
+    def __get_pos_name(self):
+        ''' Returns name for negative lab result heuristic event '''
+        return self.name + '_pos'
+    pos_name = property(__get_pos_name)
+    
+    def __get_neg_name(self):
+        ''' Returns name for positive lab result heuristic event '''
+        return self.name + '_neg'
+    neg_name = property(__get_neg_name)
+    
+    def __get_order_name(self):
+        ''' Returns name for lab order heuristic event '''
+        return self.name + '_order'
+    order_name = property(__get_order_name)
 
 
 class LabOrderedHeuristic(BaseLabHeuristic):
