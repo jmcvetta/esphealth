@@ -1,14 +1,5 @@
 import os,sys
-sys.path.insert(0, '/home/ESP/')
-# for esphealth.org sys.path.insert(0, '/home/ESP/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
-
-import django, datetime
-from ESP.esp.models import *
-from ESP.settings import TOPDIR,CODEDIR,LOCALSITE,FTPUSER,FTPPWD,FTPSERVER,EMAILSENDER,getLogging,getJavaInfo
-from ESP.utils import hl7XML
-import ESP.utils.utils as utils
-
+import datetime
 import string
 import shutil
 import StringIO
@@ -16,6 +7,13 @@ import traceback
 import smtplib
 
 from ftplib import FTP
+
+from ESP.esp.models import *
+from ESP.settings import TOPDIR,CODEDIR,LOCALSITE,FTPUSER,FTPPWD,FTPSERVER,EMAILSENDER,getLogging,getJavaInfo
+from ESP.utils import hl7XML
+import ESP.utils.utils as utils
+
+
 
 
 today=datetime.datetime.now().strftime('%Y%m%d')

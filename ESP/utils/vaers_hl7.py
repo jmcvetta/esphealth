@@ -2,10 +2,7 @@
 # for ESP VAERS
 # need to add MVX and CVX codes somehow..
 
-import os,sys,re
-sys.path.insert(0, '/home/ESP/')
-# for esphealth.org sys.path.insert(0, '/home/ESP/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+import os, sys, re
 
 
 

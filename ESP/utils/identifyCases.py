@@ -19,10 +19,7 @@
 # Most of the logic is amazingly simple when using the django ORM
 #
 
-import os, sys, django, datetime
-import re
-sys.path.insert(0, '/home/ESP/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+import os, sys, re, datetime
 
 
 from ESP.esp.models import *

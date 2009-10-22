@@ -1,19 +1,14 @@
-import os,sys
-sys.path.insert(0, '/home/ESP/')
-# for esphealth.org sys.path.insert(0, '/home/ESPNew/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
-
-import django, datetime,time
-from ESP.esp.models import *
-from django.db.models import Q
-from ESP.settings import *
-
+import os, sys
+import datetime, time
 
 import string
 import traceback
 import smtplib
-import datetime
 
+from django.db.models import Q
+
+from ESP.esp.models import *
+from ESP.settings import *
 
 
 filenlist = ['epicmem.esp.','epicpro.esp.','epicvis.esp.','epicord.esp.','epicres.esp.','epicmed.esp.','epicimm.esp.']

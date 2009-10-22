@@ -1,7 +1,5 @@
 from django.conf.urls.defaults import *
 from django.contrib import admin
-import sys
-sys.path.insert(0, '/home/ESP/')
 from ESP.settings import CODEDIR
 
 urlpatterns = patterns('',

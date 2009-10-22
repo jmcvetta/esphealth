@@ -23,32 +23,26 @@ overview (counts) of workflow states, changes by date etc onto home page
 last logged in, who's logged in
 
 """
-import os,sys
-sys.path.insert(0, '/home/ESP/')
+import os, sys
+import datetime, random, sha
+import string
 
 from django.template import Context, loader, Template
-from ESP.esp.models import *
-#from ESP.esp.forms import RegistrationForm 
 from django.http import HttpResponse,HttpResponseRedirect
 from django.shortcuts import render_to_response,get_object_or_404
 from django.core.paginator import Paginator, InvalidPage
-# svn 1.0 alpha has changed ObjectPaginator to Paginator - rml august 2008
-#from django.core.paginator import ObjectPaginator, InvalidPage
 from django.core.mail import send_mail
-
-import string
 from django.contrib.auth.decorators import login_required, user_passes_test
-from ESP.settings import SITEROOT,TOPDIR,LOCALSITE,CODEDIR
-#import ESP.utils.localconfig as localconfig
-
 from django.contrib.auth import authenticate, logout, login
-#from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.forms import PasswordResetForm, PasswordChangeForm
 from django import forms# ,oldforms # TODO fixme!
 from django.template import RequestContext
 from django.contrib.sites.models import Site
 from django.contrib.auth import REDIRECT_FIELD_NAME,SESSION_KEY, authenticate
-import datetime,random,sha
+
+
+from ESP.esp.models import *
+from ESP.settings import SITEROOT,TOPDIR,LOCALSITE,CODEDIR
 
 
 LOGIN_URL = '%s/accounts/login/' % SITEROOT

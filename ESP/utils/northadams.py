@@ -26,8 +26,14 @@ We need
 5) a new immunization record for each RXA in any VXU message
 
 """
+import os
 import datetime
+
+from ESP.settings import TOPDIR
+
 todaystr = datetime.datetime.now().strftime('%m%d%Y')
+
+
 
 sdelim = '|'
 sfdelim = '^'
@@ -62,7 +68,7 @@ etlnames = ['pcp','pid','allergies','enc',
 # this defines the output file names
 #outfilenames = ['esp_pcp','esp_demog','esp_enc','esp_allergy',
 #            'esp_lx','esp_lx','esp_imm','esp_prob','esp_rx']
-outfiledir = '/home/ESP/NORTH_ADAMS/incomingData/'
+outfiledir = os.path.join(TOPDIR, 'NORTH_ADAMS', 'incomingData')
 outfilenames = ['%s/epicpro.esp.%s' % (outfiledir,todaystr),
                 '%s/epicmem.esp.%s' % (outfiledir,todaystr),
                 '%s/epicall.esp.%s' % (outfiledir,todaystr),

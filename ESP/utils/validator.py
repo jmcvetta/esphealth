@@ -1,14 +1,13 @@
 import os,sys
-sys.path.insert(0, '/home/ESP/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
-import datetime
-from ESP.settings import TOPDIR
-import localconfig 
-
 import string,re
 import StringIO
 import traceback
 import logging
+import datetime
+
+from ESP.settings import TOPDIR
+import localconfig 
+
 
 
 ###############################

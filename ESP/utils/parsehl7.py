@@ -1,13 +1,12 @@
 import os, sys
-#from ESP.esp.models import *
-import xml.dom.minidom
-from xml.dom.minidom import Document
-import os, sys, django, datetime
-sys.path.insert(0, '/home/ESP/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
-#from ESP.esp.models import *
+import datetime, time
+import string
+import random
+from xml.dom import minidom
 
-import string, time,datetime,random
+import django
+
+
 from ESP.settings import getLogging
 plogging = getLogging('parsehl7.py_v0.1', debug=0)
 
@@ -136,7 +135,7 @@ def write2file(hl7file,demogs):
 
 ###################################
 def parse(hl7file):
-    doc  =  xml.dom.minidom.parse (hl7file )
+    doc  =  minidom.parse (hl7file )
     pt =  doc.childNodes[0]
     msgbtnode = getChildNode(pt.childNodes,'MESSAGEBATCH')
     msgnode = getChildNode(msgbtnode.childNodes,'MESSAGES')

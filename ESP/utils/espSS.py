@@ -144,16 +144,15 @@ thisRequestor = 'Ross Lazarus'
 cclassifier = 'ESPSSApril2009'  
 ageChunksize = 5 #
 
-import os, sys, django, time, datetime
+import os, sys, time, datetime
 from optparse import OptionParser
-sys.path.insert(0, '/home/ESP/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
+from django.db.models import Q
 
 from ESP.esp.models import *
-from django.db.models import Q
 from ESP.settings import *
 import utils
+
 SSlogging = getLogging('espSS_v%s' % myVersion, debug=0)
 #sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG',
 # 'jason.mcvetta@channing.harvard.edu', 'ross.lazarus@channing.harvard.edu']

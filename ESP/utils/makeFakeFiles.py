@@ -6,21 +6,17 @@
 # the folder containing the ESP directory
 
 import datetime,random,csv,sys,os
-# for esphealth testing sys.path.append('/home/ESPnew')
-sys.path.append('/home/ESP/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
-import django
-import os,sys
+
 from ESP.esp.models import *
 from ESP.settings import TOPDIR,LOCALSITE
 
-incomdir = os.path.join(TOPDIR,LOCALSITE,'incomingData/')
-if not os.path.isdir(incomdir):
-    os.makedirs(incomdir)
-            
-
+incomdir = os.path.join(TOPDIR, LOCALSITE, 'incomingData/')
 today = datetime.datetime.now().strftime('%m%d%Y')
-print 'today=%s' % today
+
+if not os.path.isdir(incomdir):
+    os.makedirs(incomdir)            
+
+
 
 
 

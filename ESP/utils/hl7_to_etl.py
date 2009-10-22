@@ -32,10 +32,12 @@ We need
 
 """
 import sys, os, datetime, time, logging
-from northadams import * # that's where all our configuration lives
-import utils
 import shutil
 import string
+
+from ESP.settings import TOPDIR
+from northadams import * # that's where all our configuration lives
+import utils
 
 prog = os.path.split(sys.argv[0])[-1]
 
@@ -410,13 +412,16 @@ def parseMessages(mlist=[],grammars={},incominghl7f=None):
                     mclasses[k][id] = sofar # replace with update
     return mclasses
 
+
+
 if __name__ == "__main__":
     setLogging(appname=prog)
     logging.info('##########Processing started at %s' % timenow())
 
-    hlfiles=os.listdir('/home/ESP/NORTH_ADAMS/incomingHL7/')
-    incomdir = '/home/ESP/NORTH_ADAMS/incomingHL7/'
-    todir = '/home/ESP/NORTH_ADAMS/archivedHL7/'
+    incomdir = os.path.join(TOPDIR, 'NORTH_ADAMS', 'incomingHL7')
+    todir = os.path.join(TOPDIR, 'NORTH_ADAMS', 'archivedHL7')
+    hlfiles=os.listdir(incomdir)
+
     for f in hlfiles:
         print 'PROCESS %s' % f
         tm = makeTests(incomdir+f)

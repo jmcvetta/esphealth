@@ -1,17 +1,15 @@
 # message handle
 import os,sys
-sys.path.insert(0, '/home/ESP/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
-
-
-import django, datetime
-from ESP.utils import hl7XML
-from ESP.esp.models import *
-from django.db.models import Q
-import ESP.utils.localconfig as localconfig
-from ESP.settings import TOPDIR
+import datetime
 import shutil
 import traceback
+
+from django.db.models import Q
+
+from ESP.settings import TOPDIR
+from ESP.utils import hl7XML, localconfig
+from ESP.esp.models import *
+
 
 ###
 today=datetime.datetime.now().strftime('%Y%m%d')
@@ -111,7 +109,6 @@ if __name__ == "__main__":
     for f in files:
         
         f = hl7dir + '/%s' % f
-        #javacmd="/home/ESP/ESP/sendMsgs/sendMsg.bat %s" % f
         javaruncmd = "%s -classpath %s %s %s >> %s" % (os.path.join(javadir, 'java'), javaclass, sendMsgcls, f,logfile )
         logging.info("Runs java command: %s" % javaruncmd)
         try:
