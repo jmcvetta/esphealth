@@ -1,6 +1,5 @@
 
 import MySQLdb,sys,os,glob,time,datetime
-sys.path.insert(0, '/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 from ESP.esp.models import *

@@ -3,17 +3,15 @@
 # of delimited files
 
 import os,sys,re
-sys.path.insert(0, '/home/ESP/ESP')
-# for esphealth.org sys.path.insert(0, '/home/ESPNew/')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 import django, datetime,time
-from esp.models import *
+from ESP.esp.models import *
 from django.db.models import Q
-from settings import *
+from ESP.settings import *
 from django.db import connection
 cursor = connection.cursor()
-import utils.utils as utils
+import ESP.utils.utils as utils
 
 import string,re,copy
 import shutil

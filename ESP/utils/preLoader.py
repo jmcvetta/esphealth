@@ -6,14 +6,13 @@
 ##preLoader is to load some data into ESP_conditionNDC table, ESP_conditionLOINC, ESP_CPTLOINCMAP table
 ##
 import os,sys
-sys.path.insert(0, '/home/ESP/')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
 import django, datetime
 from ESP.esp.models import *
 from django.db.models import Q
-from ESP.settings import TOPDIR,LOCALSITE, USESQLITE,getLogging,EMAILSENDER
+from ESP.settings import TOPDIR, CODEDIR, LOCALSITE, USESQLITE,getLogging,EMAILSENDER
 import string,csv
 import traceback
 import StringIO
@@ -21,8 +20,8 @@ import smtplib
 
 
 logging=''
-datadir = os.path.join(TOPDIR,LOCALSITE, 'preLoaderData/')
-print 'using ',datadir
+datadir = os.path.join(TOPDIR, LOCALSITE,  'preLoaderData/')
+print 'using ', datadir
 
 ###############################
 def getlines(fname):

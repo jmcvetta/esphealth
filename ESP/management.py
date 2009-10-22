@@ -1,7 +1,6 @@
 import datetime,csv,sys,os
-# for esphealth testing sys.path.append('/home/ESPnew')
 import string
-sys.path.insert(0, '/home/ESP/')
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 from django.dispatch import dispatcher

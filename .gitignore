@@ -1,2 +1,9 @@
 /.project
 /.pydevproject
+ESP/*.db
+ESP/*.pyc
+ESP/esp/*.pyc
+ESP/localsettings.py
+ESP/utils/*.pyc
+/logs
+prototype/logs
