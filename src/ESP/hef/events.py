@@ -11,12 +11,10 @@
 
 from ESP.hef.core import EncounterHeuristic
 from ESP.hef.core import LabResultHeuristic
-from ESP.hef.core import LabResultHeuristic
 from ESP.hef.core import MedicationHeuristic
 from ESP.hef.core import FeverHeuristic
 from ESP.hef.core import CalculatedBilirubinHeuristic
 from ESP.hef.core import WesternBlotHeuristic
-from ESP.hef.core import LabOrderedHeuristic
 
 
 
@@ -35,7 +33,7 @@ from ESP.hef.core import LabOrderedHeuristic
 #--- fever 
 FeverHeuristic(
     name = 'esp-fever',
-    long_name = 'ESP Fever Event Definition 1',
+    long_name = 'Fever (ESP definition)',
     temperature = 100.4,
     icd9s = ['780.6A', ],
     )
@@ -43,21 +41,21 @@ FeverHeuristic(
 #--- jaundice 
 EncounterHeuristic(
     name = 'jaundice',
-    long_name = 'Jaundice Event Definition 1',
+    long_name = 'Jaundice diagnosis',
     icd9s = ['782.4'],
     )
 
 #--- chronic_hep_b 
 EncounterHeuristic(
     name = 'chronic_hep_b',
-    long_name = 'Chronic Hep B Event Definition 1',
+    long_name = 'Chronic Hepatitis B diagnosis',
     icd9s = ['070.32'],
     )
 
 #--- chronic_hep_c 
 EncounterHeuristic(
     name = 'chronic_hep_c',
-    long_name = 'Chronic Hep C Event Definition 1',
+    long_name = 'Chronic Hepatitis C diagnosis',
     icd9s = ['070.54', '070.70', ],
     )
 
@@ -71,14 +69,14 @@ EncounterHeuristic(
 #--- gonorrhea_pos 
 LabResultHeuristic(
     name = 'gonorrhea',
-    long_name = 'Gonorrhea Test',
+    long_name = 'Gonorrhea test',
     ratio = None, # This test should never have numeric results
     )
 
 #--- chlamydia_pos 
 LabResultHeuristic(
     name = 'chlamydia',
-    long_name = 'Chlamydia Test',
+    long_name = 'Chlamydia test',
     ratio = None, # This test should never have numeric results
     )
 
@@ -135,21 +133,21 @@ LabResultHeuristic(
 #--- hep_b_core
 LabResultHeuristic(
     name = 'hep_b_core',
-    long_name = 'Hepatitis B Core AB',
+    long_name = 'Hepatitis B core antibody',
     negative_events = True,
     )
 
 #--- hep_b_surface
 LabResultHeuristic(
     name = 'hep_b_surface',
-    long_name = 'Hepatitis B Surface AB',
+    long_name = 'Hepatitis B surface antibody',
     negative_events = True,
     )
 
 #--- hep_b_e_antigen
 LabResultHeuristic(
     name = 'hep_b_e_antigen',
-    long_name = 'Hep B "e" Antigen',
+    long_name = 'Hep B "e" antigen',
     )
 
 
@@ -159,19 +157,19 @@ LabResultHeuristic(
 #--- hep_b_viral_dna
 LabResultHeuristic(
     name = 'hep_b_viral_dna',
-    long_name = 'Hep B Viral DNA',
+    long_name = 'Hep B viral DNA',
     )
 
 #--- hep_e_ab 
 LabResultHeuristic(
     name = 'hep_e_ab',
-    long_name = 'Hep E Antibody',
+    long_name = 'Hepatitis E antibody',
     )
 
 #--- total_bilirubin_high 
 LabResultHeuristic(
     name = 'total_bilirubin_high',
-    long_name = 'High Total Bilirubin',
+    long_name = 'High total bilirubin',
     )
 
 #--- high_calc_bilirubin 
@@ -180,28 +178,28 @@ CalculatedBilirubinHeuristic()
 #--- hep_c_signal_cutoff 
 LabResultHeuristic(
     name = 'hep_c_signal_cutoff',
-    long_name = 'Hep C Signal Cutoff',
+    long_name = 'Hepatitis C signal cutoff',
     negative_events = True,
     )
 
 #--- hep_c_riba 
 LabResultHeuristic(
     name = 'hep_c_riba',
-    long_name = 'Hep C RIBA',
+    long_name = 'Hepatitis C RIBA',
     negative_events = True,
     )
 
 #--- hep_c_rna 
 LabResultHeuristic(
     name = 'hep_c_rna',
-    long_name = 'Hep C RNA',
+    long_name = 'Hepatitis C RNA',
     negative_events = True,
     )
 
 #--- hep_c_elisa 
 LabResultHeuristic(
     name = 'hep_c_elisa',
-    long_name = 'Hep C ELISA',
+    long_name = 'Hepatitis C ELISA',
     negative_events = True,
     )
 
@@ -220,13 +218,13 @@ LabResultHeuristic(
 #--- lyme_igg 
 LabResultHeuristic(
     name = 'lyme_igg',
-    long_name = 'Lyme IGG Test',
+    long_name = 'Lyme IGG',
     )
 
 #--- lyme_igg_wb
 WesternBlotHeuristic(
     name = 'lyme_igg_wb',
-    long_name = 'Lyme Western Blot Positive Event Definition 1',
+    long_name = 'Lyme Western Blot',
     interesting_bands = [18, 21, 28, 30, 39, 41, 45, 58, 66, 93],
     band_count = 5,
     )
@@ -246,28 +244,28 @@ LabResultHeuristic(
 #--- lyme_diagnosis 
 EncounterHeuristic(
     name = 'lyme_diagnosis',
-    long_name = 'Lyme Disease Diagnosis Event Definition 1',
+    long_name = 'Lyme diagnosis',
     icd9s = ['088.81'],
     )
 
 #--- rash 
 EncounterHeuristic(
     name = 'rash',
-    long_name = 'Rash Event Definition 1',
+    long_name = 'Rash',
     icd9s = ['782.1'],
     )
 
 #--- doxycycline 
 MedicationHeuristic(
     name = 'doxycycline',
-    long_name = 'Doxycycline Event Definition 1',
+    long_name = 'Doxycycline',
     drugs = ['doxycycline'],
     )
 
 #--- lyme_other_antibiotics 
 MedicationHeuristic(
     name = 'lyme_other_antibiotics',
-    long_name = 'Lyme Disease Non - Doxycycline Antibiotics Event Definition 1',
+    long_name = 'Lyme disease antibiotics other than Doxycycline',
     drugs = ['Amoxicillin', 'Cefuroxime', 'Ceftriaxone', 'Cefotaxime'],
     )
 
@@ -280,7 +278,7 @@ MedicationHeuristic(
 #--- pid_diagnosis
 EncounterHeuristic(
     name = 'pid_diagnosis',
-    long_name = 'PID Diagnosis Event Definition 1',
+    long_name = 'PID diagnosis',
     icd9s = [
         '614.0',
         '614.2',
@@ -294,7 +292,7 @@ EncounterHeuristic(
 #--- tb_meds
 MedicationHeuristic(
     name = 'tb_meds',
-    long_name = 'Tuberculosis Medications',
+    long_name = 'Tuberculosis medications',
     drugs = [
         'Pyrazinamide',
         'PZA',
@@ -308,7 +306,7 @@ MedicationHeuristic(
 #--- tb_diagnosis
 EncounterHeuristic(
     name = 'tb_diagnosis',
-    long_name = 'Tuberculosis Diagnosis Event Definition 1',
+    long_name = 'Tuberculosis diagnosis',
     icd9s = [
         '010.',
         '018.',
@@ -319,7 +317,7 @@ EncounterHeuristic(
 #--- tb_lab
 LabResultHeuristic(
     name = 'tb_lab',
-    long_name = 'Tuberculosis Lab Order Event Definition 1',
+    long_name = 'Tuberculosis lab order',
     order_events = True,
     )
 
