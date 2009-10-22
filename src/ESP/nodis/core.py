@@ -299,7 +299,7 @@ class SimpleEventPattern(BaseEventPattern):
     
     def __init__(self, heuristic):
         self.__events_cache = {}
-        if not heuristic in BaseHeuristic.list_heuristics():
+        if not heuristic in BaseHeuristic.all_heuristic_names():
             raise InvalidHeuristic('Unknown heuristic: %s' % heuristic)
         self.heuristic = heuristic
     
@@ -400,7 +400,7 @@ class ComplexEventPattern(BaseEventPattern):
         self.__sorted_pattern_cache = None
         assert operator in ('and', 'or')
         self.operator = operator
-        valid_heuristic_names = BaseHeuristic.list_heuristics()
+        valid_heuristic_names = BaseHeuristic.all_heuristic_names()
         self.patterns = []
         self.name = name # Optional name
         self.exclude = []

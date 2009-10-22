@@ -126,7 +126,6 @@ src/ESP/esp/forms.py -text
 src/ESP/esp/urls.py -text
 src/ESP/hef/__init__.py -text
 src/ESP/hef/admin.py -text
-src/ESP/hef/choices.py -text
 src/ESP/hef/core.py -text
 src/ESP/hef/events.py -text
 src/ESP/hef/list_loincs.py -text

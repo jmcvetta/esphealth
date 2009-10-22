@@ -140,8 +140,8 @@ gonorrhea = Condition(
 jaundice_or_blood_2x = ComplexEventPattern(
     patterns = [
         'jaundice', 
-        'alt_2x', 
-        'ast_2x',
+        'alt_2x_pos', 
+        'ast_2x_pos',
         ],
     operator = 'or',
     )
@@ -192,7 +192,7 @@ Acute Hepatitis B definitions:
 
 
 jaundice_or_blood_5x = ComplexEventPattern(
-    patterns = ['jaundice', 'alt_5x', 'ast_5x',],
+    patterns = ['jaundice', 'alt_5x_pos', 'ast_5x_pos',],
     operator = 'or',
     )
     
@@ -203,7 +203,7 @@ hep_b_1 = ComplexEventPattern(
     )
 
 bilirubin = ComplexEventPattern(
-    patterns = ['total_bilirubin_high', 'high_calc_bilirubin'],
+    patterns = ['total_bilirubin_high_pos', 'high_calc_bilirubin'],
     operator = 'or'
     )
 
@@ -268,7 +268,7 @@ hep_b = Condition(
 jaundice_alt400 = ComplexEventPattern(
     patterns = [
         'jaundice',
-        'alt_400',
+        'alt_400_pos',
         ],
     operator = 'or'
     )
@@ -379,7 +379,7 @@ lyme_2 = ComplexEventPattern(
 
 lyme_3 = ComplexEventPattern(
     name = 'Lyme Disease Definition 3',
-    patterns = ['rash', 'lyme_elisa_ordered', 'doxycycline'],
+    patterns = ['rash', 'lyme_elisa_order', 'doxycycline'],
     operator = 'and'
     )
 

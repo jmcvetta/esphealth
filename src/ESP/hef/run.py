@@ -19,6 +19,7 @@ from django.db import connection
 
 
 from ESP.hef.core import BaseHeuristic
+from ESP.hef.models import Run
 from ESP.hef.events import * # Load all Event definitions
 from ESP import settings
 from ESP.utils.utils import log
@@ -59,14 +60,16 @@ def main():
         for name in BaseHeuristic.list_heuristics():
             print name
         sys.exit()
+    this_run = Run()
+    this_run.save()
     if args:
         for name in args:
             try:
-                BaseHeuristic.generate_events_by_name(name=name)
+                BaseHeuristic.generate_events_by_name(name=name, run=this_run)
             except KeyError:
                 print >> sys.stderr, 'Unknown heuristic name: "%s"' % name
     else:
-        BaseHeuristic.generate_all_events()
+        BaseHeuristic.generate_all_events(run=this_run)
     
 
 if __name__ == '__main__':
