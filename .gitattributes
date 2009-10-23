@@ -46,6 +46,7 @@ ESP/utils/vaers_hl7.py -text
 ESP/utils/xml2bar.py -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
+/django.wsgi -text
 doc/disease-protocols/Chlamydia.doc -text
 doc/disease-protocols/Combined_Hepatitis_B.doc -text
 doc/disease-protocols/Gonorrhea.doc -text
