@@ -128,7 +128,6 @@ src/ESP/hef/__init__.py -text
 src/ESP/hef/admin.py -text
 src/ESP/hef/core.py -text
 src/ESP/hef/events.py -text
-src/ESP/hef/list_loincs.py -text
 src/ESP/hef/models.py -text
 src/ESP/hef/run.py -text
 src/ESP/hef/tests.py -text
