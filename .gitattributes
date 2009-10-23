@@ -44,6 +44,7 @@ ESP/utils/parsehl7.py -text
 ESP/utils/utils.py -text
 ESP/utils/vaers_hl7.py -text
 ESP/utils/xml2bar.py -text
+/apache.conf -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
 /django.wsgi -text
