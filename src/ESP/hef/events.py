@@ -311,7 +311,7 @@ EncounterHeuristic(
         '010.',
         '018.',
         ],
-    match_style = 'istartswith',
+    match_style = 'startswith',
     )
 
 #--- tb_lab

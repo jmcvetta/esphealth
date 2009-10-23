@@ -490,7 +490,7 @@ class EncounterHeuristic(BaseHeuristic):
     Abstract base class for encounter heuristics, concrete instances of which
     are used as components of DiseaseDefinitions
     '''
-    def __init__(self, name, long_name, icd9s, match_style='iexact'):
+    def __init__(self, name, long_name, icd9s, match_style='exact'):
         '''
         @type name:         String
         @type icd9s:        [String, String, String, ...]
@@ -498,7 +498,7 @@ class EncounterHeuristic(BaseHeuristic):
         '''
         assert icd9s
         self.icd9s = icd9s
-        assert match_style in ['iexact', 'istartswith']
+        assert match_style in ['exact', 'startswith', 'iexact', 'istartswith']
         self.match_style = match_style
         BaseHeuristic.__init__(self,
             name = name,
@@ -511,12 +511,16 @@ class EncounterHeuristic(BaseHeuristic):
         '''
         enc_q = Q()
         for code in self.icd9s:
-            if self.match_style == 'iexact':
+            if self.match_style == 'exact':
+                enc_q |= Q(icd9_codes__code__exact = code)
+            elif self.match_style == 'iexact':
                 enc_q |= Q(icd9_codes__code__iexact = code)
+            elif self.match_style == 'startswith':
+                enc_q |= Q(icd9_codes__code__startswith = code)
             elif self.match_style == 'istartswith':
                 enc_q |= Q(icd9_codes__code__istartswith = code)
             else:
-                raise 'This should never happen.  Contact developers.'
+                raise RuntimeError('Match style "%s" requested.  This should never happen.  Contact developers.' % self.match_style)
         return enc_q
     enc_q = property(__get_enc_q)
 
