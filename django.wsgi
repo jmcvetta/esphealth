@@ -2,7 +2,7 @@ import os
 import sys
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
-sys.path.append('/opt/esp-prod/')
+sys.path.append('/opt/atrius-prod/')
 
 import django.core.handlers.wsgi
 application = django.core.handlers.wsgi.WSGIHandler()
