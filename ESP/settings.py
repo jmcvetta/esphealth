@@ -1,5 +1,6 @@
 
 import os
+import sys
 
 # Sample Django settings for esp project.
 # change these for your site
@@ -7,7 +8,15 @@ import os
 DEBUG = True # DO NOT leave this set for production!!
 # it exposes your entire site to anyone who can throw an error
 TEMPLATE_DEBUG = DEBUG
-import localsettings
+
+try:
+    import localsettings
+except:
+    msg = 'Unable to find localsettings.py -- cannot continue.\n'
+    sys.stderr.write(msg)
+    sys.exit(-255)
+
+
 
 SITEROOT = localsettings.SITEROOT
 CODEDIR = os.path.dirname(__file__)
@@ -32,17 +41,10 @@ EMAILSENDER=localsettings.EMAILSENDER
 
 
 USESQLITE=localsettings.USESQLITE
-if localsettings.USESQLITE:
-    DATABASE_ENGINE = 'sqlite3' # 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
-    DATABASE_NAME = os.path.join(CODEDIR, 'esp.db')             # Or path to database file if using sqlite3.
-    SITEROOT = ''
-else:
-    DATABASE_ENGINE = 'mysql' # 'postgresql', 'mysql', 'sqlite3' or 'ado_mssql'.
-    DATABASE_NAME = 'esp'             # Or path to database file if using sqlite3.
-    DATABASE_USER = localsettings.MYSQL_DB_USER             # Not used with sqlite3.
-    DATABASE_PASSWORD = localsettings.MYSQL_DB_PASSWORD        # Not used with sqlite3.
-    DATABASE_HOST = '127.0.0.1'             # Set to empty string for localhost. Not used with sqlite3.
-    DATABASE_PORT = 3306             # Set to empty string for default. Not used with sqlite3.
+DATABASE_ENGINE = localsettings.DATABASE_ENGINE
+DATABASE_NAME = localsettings.DATABASE_NAME
+DATABASE_USER = localsettings.DATABASE_USER
+DATABASE_PASSWORD = localsettings.DATABASE_PASSWORD
 
 # Local time zone for this installation. All choices can be found here:
 # http://www.postgresql.org/docs/current/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
