@@ -70,49 +70,35 @@ EncounterHeuristic(
 LabResultHeuristic(
     name = 'gonorrhea',
     long_name = 'Gonorrhea test',
-    ratio = None, # This test should never have numeric results
     )
 
 #--- chlamydia_pos 
 LabResultHeuristic(
     name = 'chlamydia',
     long_name = 'Chlamydia test',
-    ratio = None, # This test should never have numeric results
     )
 
 #--- alt_2x 
 LabResultHeuristic(
-    name = 'alt_2x',
-    long_name = 'Blood ALT level 2x threshold',
-    ratio = 2,
-    )
-
-#--- alt_5x 
-LabResultHeuristic(
-    name = 'alt_5x',
-    long_name = 'Blood ALT level 5x threshold',
-    ratio = 5,
+    name = 'alt',
+    long_name = 'Blood ALT level',
+    positive_events = False,
+    ratio_events = [2, 5],
     )
 
 #--- alt_400 
-LabResultHeuristic(
-    name = 'alt_400',
-    long_name = 'Blood ALT level >400',
-    ratio = None,
-    )
+#LabResultHeuristic(
+    #name = 'alt_400',
+    #long_name = 'Blood ALT level >400',
+    #ratio = None,
+    #)
 
 #--- ast_2x 
 LabResultHeuristic(
-    name = 'ast_2x',
-    long_name = 'Blood AST level 2x threshold',
-    ratio = 2,
-    )
-
-#--- ast_5x 
-LabResultHeuristic(
-    name = 'ast_5x',
-    long_name = 'Blood AST level 5x threshold',
-    ratio = 5,
+    name = 'ast',
+    long_name = 'Blood AST level',
+    positive_events = False,
+    ratio_events = [2, 5],
     )
 
 #--- hep_a_igm

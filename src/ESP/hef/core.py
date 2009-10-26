@@ -287,7 +287,7 @@ class BaseLabHeuristic(BaseHeuristic):
     are used as components of DiseaseDefinitions
     '''
 
-    def relevant_labs(self, exclude_bound=True):
+    def relevant_labs(self):
         '''
         Return all lab results relevant to this heuristic, whether or not they 
         indicate positive.
@@ -296,12 +296,8 @@ class BaseLabHeuristic(BaseHeuristic):
         @type exclude_bound: Boolean
         '''
         log.debug('Get lab results relevant to "%s".' % self.name)
-        log.debug('    Exclude Bound: %s' % exclude_bound)
         native_codes = CodeMap.objects.filter(heuristic=self.name).values('native_code')
         qs = LabResult.objects.filter(native_code__in=native_codes)
-        if exclude_bound:
-            q_obj = ~Q(events__heuristic=self.name)
-            qs = qs.filter(q_obj)
         return qs
 
 
@@ -311,7 +307,7 @@ class LabResultHeuristic(BaseLabHeuristic):
     that result's reference high, with fall back to a default high value.
     '''
 
-    def __init__(self, name, long_name,  ratio = 1, negative_events=False, order_events=False):
+    def __init__(self, name, long_name,  positive_events = True, negative_events=False, order_events=False, ratio_events=[]):
         '''
         @param name: Short name of this heuristic.  Should be suitable for use in a SlugField.
         @type  name: String
@@ -324,41 +320,81 @@ class LabResultHeuristic(BaseLabHeuristic):
         @param order_events: Should we also generate events for lab orders, regardless of result?
         @type  order_events: Boolean
         '''
-        self.ratio = ratio
+        self.positive_events = positive_events
         self.negative_events = negative_events
         self.order_events = order_events
+        self.ratio_events = ratio_events
+        assert (positive_events or negative_events or order_events or ratio_events)
+        for ratio in ratio_events:
+            assert isinstance(ratio, int) or isinstance(ratio, float)
         BaseLabHeuristic.__init__(self,
             name = name,
             long_name = long_name,
             )
+    
+    def ratio_name(self, ratio):
+        '''
+        Return the event name for specified ratio
+        @param ratio: Ratio used to generate this type of event
+        @type  ratio: Int or Float
+        '''
+        return '%s_%sx' % (self.name, ratio)
+    
+    def ratio_matches(self, ratio, exclude_bound=True):
+        '''
+        Return labs where result_float > ref_high * ratio
+        @param ratio: Ratio used to generate this type of event
+        @type  ratio: Int or Float
+        '''
+        has_ref_high = Q(ref_high__isnull=False) # Record does NOT have null value for ref_high
+        ratio_q = has_ref_high & Q(result_float__gt = F('ref_high') * float(ratio))
+        result = self.relevant_labs().filter(ratio_q)
+        if exclude_bound:
+            q_obj = ~Q(events__heuristic=self.ratio_name(ratio))
+            result = result.filter(q_obj)
+        log_query('Matches query for %s' % self.ratio_name(ratio), result)
+        return result
+    
+    def order_matches(self, exclude_bound=True):
+        '''
+        Return all matching labs, regardless of 
+        '''
+        result = self.relevant_labs()
+        if exclude_bound:
+            q_obj = ~Q(events__heuristic=self.order_name)
+            result = result.filter(q_obj)
+        log_query('Query for heuristic %s' % self.order_name, result)
+        return result
 
-    def matches(self, exclude_bound=True, result_type='positive'):
+    def matches(self, exclude_bound=True, result_type='positive', ratio=None):
         '''
         If record has a reference high, and a ratio has been specified, compare
         test result against that reference.  If a record does not have a
         reference high, and a default_high has been specified, compare result
         against that default 'high' value.
         '''
-        assert result_type in ['positive', 'negative', 'order']
+        assert result_type in ['positive', 'negative', 'order', 'ratio']
         if result_type == 'positive':
             event_name = self.pos_name
         elif result_type == 'negative':
             event_name = self.neg_name
-        else: # result_type == 'order'
-            event_name = self.order_name
-            q_obj = ~Q(events__heuristic=event_name)
-            result = self.relevant_labs(exclude_bound=False).filter(q_obj)
-            log_query('Query for heuristic %s' % event_name, result)
-            return result
+        elif result_type == 'order':
+            return self.order_matches(exclude_bound=exclude_bound)
+        else: # result_type == 'ratio'
+            assert ratio
+            return self.ratio_matches(ratio=ratio, exclude_bound=exclude_bound)
+        # 
+        # Everything below this point assumes we are looking for pos or neg match
+        #
         log.info('Finding matches for heuristic %s' % event_name)
-        has_ref_high = Q(ref_high__isnull=False) # Record does NOT have null value for ref_high
         code_maps = CodeMap.objects.filter(heuristic=self.name)
         native_codes = code_maps.values_list('native_code')
+        has_ref_high = Q(ref_high__isnull=False) # Record does NOT have null value for ref_high
         log.debug('Code maps: %s' % pprint.pformat(code_maps))
         #
         # Build numeric query
         #
-        num_q = None
+        pos_q = None
         for map in code_maps:
             #
             # Build numeric comparison queries
@@ -368,54 +404,44 @@ class LabResultHeuristic(BaseLabHeuristic):
             if result_type == 'positive':
                 if map.threshold:
                     thresh_q = Q(result_float__gt = float(map.threshold))
-                if self.ratio == 1:
-                    ratio_q = has_ref_high & Q(result_float__gt = F('ref_high'))
-                elif self.ratio:
-                    ratio_q = has_ref_high & Q(result_float__gt = F('ref_high') * self.ratio)
+                ratio_q = has_ref_high & Q(result_float__gt = F('ref_high'))
             else: # result_type == 'negative'
                 if map.threshold:
                     thresh_q = Q(result_float__lte = float(map.threshold))
-                if self.ratio:
-                    ratio_q = has_ref_high & Q(result_float__lte = F('ref_high') * self.ratio)
+                ratio_q = has_ref_high & Q(result_float__lte = F('ref_high'))
             # 
             # Combine restrict numeric comparison(s) to relevant native_code.
             #
             q_obj = Q(native_code=map.native_code)
-            if thresh_q and ratio_q:
+            if thresh_q:
                 q_obj &= (thresh_q | ratio_q)
-            elif thresh_q:
-                q_obj &= thresh_q
-            elif ratio_q:
+            else:
                 q_obj &= ratio_q
+            if pos_q:
+                pos_q |= q_obj
             else:
-                continue # No query to build here
-            if num_q:
-                num_q |= q_obj
-            else:
-                num_q = q_obj
-        pos_q = num_q
+                pos_q = q_obj
         #
         # Build string query
         #
         # When using ratio, we cannot rely on a test being "POSITIVE" from 
         # lab, since we may be looking for higher value.
-        if (not self.ratio) or (self.ratio == 1):
-            strings_q = None
-            if result_type == 'positive':
-                strings = POSITIVE_STRINGS
+        strings_q = None
+        if result_type == 'positive':
+            strings = POSITIVE_STRINGS
+        else:
+            strings = NEGATIVE_STRINGS
+        assert strings
+        for s in strings:
+            q_obj = Q(result_string__istartswith = s)
+            if strings_q: 
+                strings_q |= q_obj
             else:
-                strings = NEGATIVE_STRINGS
-            assert strings
-            for s in strings:
-                q_obj = Q(result_string__istartswith = s)
-                if strings_q: 
-                    strings_q |= q_obj
-                else:
-                    strings_q = q_obj
-            if pos_q:
-                pos_q |= strings_q
-            else:
-                pos_q = strings_q
+                strings_q = q_obj
+        if pos_q:
+            pos_q |= strings_q
+        else:
+            pos_q = strings_q
         #
         # Only look at relevant labs.  We do this for both numeric & string 
         # subqueries, for faster overall query performance.
@@ -434,11 +460,16 @@ class LabResultHeuristic(BaseLabHeuristic):
         '''
         Generate positive, and if defined negative, events
         '''
-        counter = BaseHeuristic.generate_events(self, run, name=self.pos_name, result_type='positive')
+        counter = 0
+        if self.positive_events:
+            counter += BaseHeuristic.generate_events(self, run, name=self.pos_name, result_type='positive')
         if self.negative_events:
             counter += BaseHeuristic.generate_events(self, run, name=self.neg_name, result_type='negative')
         if self.order_events:
             counter += BaseHeuristic.generate_events(self, run, name=self.order_name, result_type='order')
+        print self.ratio_events
+        for ratio in self.ratio_events:
+            counter += BaseHeuristic.generate_events(self, run, name=self.ratio_name(ratio), result_type='ratio', ratio=ratio)
         return counter
     
     def __get_name_list(self):
@@ -472,17 +503,6 @@ class LabResultHeuristic(BaseLabHeuristic):
         ''' Returns name for lab order heuristic event '''
         return self.name + '_order'
     order_name = property(__get_order_name)
-
-
-class LabOrderedHeuristic(BaseLabHeuristic):
-    '''
-    Matches any *order* for a lab test with specified LOINC(s)
-    '''
-
-    def matches(self, exclude_bound=True):
-        result = self.relevant_labs(exclude_bound=exclude_bound)
-        log_query('Query for heuristic %s' % self.name, result)
-        return result
 
 
 class EncounterHeuristic(BaseHeuristic):
@@ -600,7 +620,8 @@ class CalculatedBilirubinHeuristic(BaseLabHeuristic):
         # First, we return a list of patient & order date pairs, where the sum
         # of direct and indirect bilirubin tests ordered on the same day is 
         # greater than 1.5.
-        relevant = self.relevant_labs(exclude_bound=exclude_bound)
+        q_obj = ~Q(events__heuristic=self.name)
+        relevant = self.relevant_labs().filter(q_obj)
         vqs = relevant.values('patient', 'date') # returns ValueQuerySet
         vqs = vqs.annotate(calc_bil = Sum('result_float'))
         vqs = vqs.filter(calc_bil__gt = 1.5)
@@ -682,7 +703,8 @@ class WesternBlotHeuristic(BaseLabHeuristic):
     def matches(self, exclude_bound=True):
         # Find potential positives -- tests whose results contain at least one 
         # of the interesting band numbers.
-        relevant_labs = self.relevant_labs(exclude_bound=exclude_bound)
+        q_obj = ~Q(events__heuristic=self.name)
+        relevant_labs = self.relevant_labs().filter(q_obj)
         q_obj = Q(result_string__icontains = str(self.interesting_bands[0]))
         for band in self.interesting_bands[1:]:
             q_obj = q_obj | Q(result_string__icontains = str(band))
