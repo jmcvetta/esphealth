@@ -508,7 +508,6 @@ class LabResultHeuristic(BaseLabHeuristic):
             counter += BaseHeuristic.generate_events(self, run, name=self.neg_name, result_type='negative')
         if self.order_events:
             counter += BaseHeuristic.generate_events(self, run, name=self.order_name, result_type='order')
-        print self.ratio_events
         for ratio in self.ratio_events:
             counter += BaseHeuristic.generate_events(self, run, name=self.ratio_name(ratio), result_type='ratio', ratio=ratio)
         for threshold in self.fixed_threshold_events:
