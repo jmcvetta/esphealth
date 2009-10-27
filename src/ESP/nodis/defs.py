@@ -192,7 +192,7 @@ Acute Hepatitis B definitions:
 
 
 jaundice_or_blood_5x = ComplexEventPattern(
-    patterns = ['jaundice', 'alt_5x_pos', 'ast_5x_pos',],
+    patterns = ['jaundice', 'alt_5x', 'ast_5x',],
     operator = 'or',
     )
     
@@ -268,7 +268,7 @@ hep_b = Condition(
 jaundice_alt400 = ComplexEventPattern(
     patterns = [
         'jaundice',
-        'alt_400_pos',
+        'alt_400',
         ],
     operator = 'or'
     )
