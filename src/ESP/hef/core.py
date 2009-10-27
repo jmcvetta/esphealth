@@ -242,7 +242,7 @@ class BaseHeuristic(object):
                 log.debug('Did not create heuristic event - found matching event #%s' % obj.id)
                 log.debug('   heuristic: %s' % obj.heuristic)
                 log.debug('   date: %s' % obj.date)
-                log.debug('   patient: %s' % obj.patient)
+                log.debug('   patient #: %s' % obj.patient.pk)
                 log.debug('   content_type: %s' % obj.content_type)
                 log.debug('   object_id: %s' % obj.object_id)
         log.info('Generated %s new events for "%s".' % (counter, name))
