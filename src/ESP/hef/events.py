@@ -66,24 +66,25 @@ EncounterHeuristic(
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#--- gonorrhea_pos 
+#--- gonorrhea
 LabResultHeuristic(
     name = 'gonorrhea',
     long_name = 'Gonorrhea test',
     )
 
-#--- chlamydia_pos 
+#--- chlamydia
 LabResultHeuristic(
     name = 'chlamydia',
     long_name = 'Chlamydia test',
     )
 
-#--- alt_2x 
+#--- alt
 LabResultHeuristic(
     name = 'alt',
     long_name = 'Blood ALT level',
     positive_events = False,
     ratio_events = [2, 5],
+    fixed_threshold_events = [400],
     )
 
 #--- alt_400 
@@ -93,7 +94,7 @@ LabResultHeuristic(
     #ratio = None,
     #)
 
-#--- ast_2x 
+#--- ast
 LabResultHeuristic(
     name = 'ast',
     long_name = 'Blood AST level',

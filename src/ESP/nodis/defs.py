@@ -140,8 +140,8 @@ gonorrhea = Condition(
 jaundice_or_blood_2x = ComplexEventPattern(
     patterns = [
         'jaundice', 
-        'alt_2x_pos', 
-        'ast_2x_pos',
+        'alt_2x', 
+        'ast_2x',
         ],
     operator = 'or',
     )

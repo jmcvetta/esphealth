@@ -303,11 +303,11 @@ class BaseLabHeuristic(BaseHeuristic):
 
 class LabResultHeuristic(BaseLabHeuristic):
     '''
-    Matches labs results with high numeric scores, as determined by a ratio to 
-    that result's reference high, with fall back to a default high value.
+    All-singing, all-dancing heuristic for most lab types.
     '''
 
-    def __init__(self, name, long_name,  positive_events = True, negative_events=False, order_events=False, ratio_events=[]):
+    def __init__(self, name, long_name,  positive_events = True, negative_events=False, 
+        order_events=False, ratio_events=[], fixed_threshold_events=[]):
         '''
         @param name: Short name of this heuristic.  Should be suitable for use in a SlugField.
         @type  name: String
@@ -324,9 +324,12 @@ class LabResultHeuristic(BaseLabHeuristic):
         self.negative_events = negative_events
         self.order_events = order_events
         self.ratio_events = ratio_events
-        assert (positive_events or negative_events or order_events or ratio_events)
+        self.fixed_threshold_events = fixed_threshold_events
+        assert (positive_events or negative_events or order_events or ratio_events or fixed_threshold_events)
         for ratio in ratio_events:
             assert isinstance(ratio, int) or isinstance(ratio, float)
+        for threshold in fixed_threshold_events:
+            assert isinstance(threshold, int) or isinstance(threshold, float)
         BaseLabHeuristic.__init__(self,
             name = name,
             long_name = long_name,
@@ -365,24 +368,52 @@ class LabResultHeuristic(BaseLabHeuristic):
             result = result.filter(q_obj)
         log_query('Query for heuristic %s' % self.order_name, result)
         return result
+    
+    def fixed_threshold_name(self, threshold):
+        '''
+        Return the event name for specified threshold
+        @param ratio: Ratio used to generate this type of event
+        @type  ratio: Int or Float
+        '''
+        return '%s_%s' % (self.name, threshold)
+        
+    def fixed_threshold_matches(self, threshold, exclude_bound=True):
+        '''
+        Return labs where result_float > threshold
+        @param ratio: Ratio used to generate this type of event
+        @type  ratio: Int or Float
+        '''
+        qs = self.relevant_labs()
+        if exclude_bound:
+            q_obj = ~Q(events__heuristic=self.fixed_threshold_name(threshold))
+            qs = qs.filter(q_obj)
+        qs = qs.filter(result_float__gt=float(threshold))
+        log_query('Query for %s' % self.fixed_threshold_name(threshold), qs)
+        return qs
 
-    def matches(self, exclude_bound=True, result_type='positive', ratio=None):
+    def matches(self, exclude_bound=True, result_type='positive', ratio=None, threshold=None):
         '''
         If record has a reference high, and a ratio has been specified, compare
         test result against that reference.  If a record does not have a
         reference high, and a default_high has been specified, compare result
         against that default 'high' value.
         '''
-        assert result_type in ['positive', 'negative', 'order', 'ratio']
+        assert result_type in ['positive', 'negative', 'order', 'ratio', 'threshold']
         if result_type == 'positive':
             event_name = self.pos_name
         elif result_type == 'negative':
             event_name = self.neg_name
         elif result_type == 'order':
             return self.order_matches(exclude_bound=exclude_bound)
-        else: # result_type == 'ratio'
+        elif result_type == 'ratio':
             assert ratio
             return self.ratio_matches(ratio=ratio, exclude_bound=exclude_bound)
+        elif result_type == 'threshold':
+            assert threshold
+            return self.fixed_threshold_matches(threshold=threshold, exclude_bound=exclude_bound)
+        else:
+            raise RuntimeError('This should never happen.  Consult the developers.')
+        ################################################################################
         # 
         # Everything below this point assumes we are looking for pos or neg match
         #
@@ -470,6 +501,8 @@ class LabResultHeuristic(BaseLabHeuristic):
         print self.ratio_events
         for ratio in self.ratio_events:
             counter += BaseHeuristic.generate_events(self, run, name=self.ratio_name(ratio), result_type='ratio', ratio=ratio)
+        for threshold in self.fixed_threshold_events:
+            counter += BaseHeuristic.generate_events(self, run, name=self.fixed_threshold_name(threshold), result_type='threshold', threshold=threshold)
         return counter
     
     def __get_name_list(self):
@@ -478,6 +511,10 @@ class LabResultHeuristic(BaseLabHeuristic):
             l.append(self.neg_name)
         if self.order_events:
             l.append(self.order_name)
+        for ratio in self.ratio_events:
+            l.append(self.ratio_name(ratio))
+        for threshold in self.fixed_threshold_events:
+            l.append(self.fixed_threshold_name(threshold))
         return l
     name_list = property(__get_name_list)
     
