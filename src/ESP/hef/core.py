@@ -352,7 +352,6 @@ class LabResultHeuristic(BaseLabHeuristic):
         has_ref_high = Q(ref_high__isnull=False) # Record does NOT have NULL value for ref_high
         null_ref_high = Q(ref_high__isnull=True) # Record has NULL value for ref_high
         ratio_q = has_ref_high & Q(result_float__gt = F('ref_high') * float(ratio))
-        result = self.relevant_labs().filter(ratio_q)
         fallback_q = None # Fallback to comparison with 
         for map in CodeMap.objects.filter(heuristic=self.name).filter(threshold__isnull=False):
             q_obj = Q(native_code=map.native_code) & null_ref_high & Q(result_float__gt = map.threshold * float(ratio))
@@ -361,7 +360,9 @@ class LabResultHeuristic(BaseLabHeuristic):
             else:
                 fallback_q = q_obj
         if fallback_q:
-            result = result.filter(fallback_q)
+            result = self.relevant_labs().filter(ratio_q | fallback_q)
+        else:
+            result = self.relevant_labs().filter(ratio_q)
         if exclude_bound:
             q_obj = ~Q(events__heuristic=self.ratio_name(ratio))
             result = result.filter(q_obj)
