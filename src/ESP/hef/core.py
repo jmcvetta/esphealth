@@ -232,9 +232,27 @@ class BaseHeuristic(object):
     def __get_event_names(self):
         return set([self.name])
     event_names = property(__get_event_names)
+    
+    @classmethod
+    def get_heuristic_from_event_name(cls, event_name):
+        '''
+        Given an Event name, get the BaseHeuristic child instance that generates it.
+        '''
+        for i in cls.__registry:
+            heuristic = cls.__registry[i]
+            if event_name in heuristic.event_names:
+                return heuristic
 
     def __repr__(self):
         return '<BaseHeuristic: %s>' % self.name
+    
+    def __get_relevant_labs(self):
+        '''
+        Return a QuerySet of LabResult objects relevant to this heuristic.  
+        This is a null set for non-lab child classes.
+        '''
+        return LabResult.objects.none()
+    relevant_labs = property(__get_relevant_labs)
     
 
 
@@ -244,7 +262,7 @@ class BaseLabHeuristic(BaseHeuristic):
     are used as components of DiseaseDefinitions
     '''
 
-    def relevant_labs(self):
+    def __get_relevant_labs(self):
         '''
         Return all lab results relevant to this heuristic, whether or not they 
         indicate positive.
@@ -256,6 +274,7 @@ class BaseLabHeuristic(BaseHeuristic):
         native_codes = CodeMap.objects.filter(heuristic=self.name).values('native_code')
         qs = LabResult.objects.filter(native_code__in=native_codes)
         return qs
+    relevant_labs = property(__get_relevant_labs)
 
 
 class LabResultHeuristic(BaseLabHeuristic):
@@ -309,9 +328,9 @@ class LabResultHeuristic(BaseLabHeuristic):
             else:
                 fallback_q = q_obj
         if fallback_q:
-            result = self.relevant_labs().filter(ratio_q | fallback_q)
+            result = self.relevant_labs.filter(ratio_q | fallback_q)
         else:
-            result = self.relevant_labs().filter(ratio_q)
+            result = self.relevant_labs.filter(ratio_q)
         if exclude_bound:
             q_obj = ~Q(events__name=self.ratio_name(ratio))
             result = result.filter(q_obj)
@@ -322,7 +341,7 @@ class LabResultHeuristic(BaseLabHeuristic):
         '''
         Return all matching labs, regardless of 
         '''
-        result = self.relevant_labs()
+        result = self.relevant_labs
         if exclude_bound:
             q_obj = ~Q(events__name=self.order_name)
             result = result.filter(q_obj)
@@ -335,7 +354,7 @@ class LabResultHeuristic(BaseLabHeuristic):
         @param ratio: Ratio used to generate this type of event
         @type  ratio: Int or Float
         '''
-        qs = self.relevant_labs()
+        qs = self.relevant_labs
         if exclude_bound:
             q_obj = ~Q(events__name=self.fixed_threshold_name(threshold))
             qs = qs.filter(q_obj)
@@ -629,7 +648,7 @@ class CalculatedBilirubinHeuristic(BaseLabHeuristic):
         # of direct and indirect bilirubin tests ordered on the same day is 
         # greater than 1.5.
         q_obj = ~Q(events__name=self.name)
-        relevant = self.relevant_labs().filter(q_obj)
+        relevant = self.relevant_labs.filter(q_obj)
         vqs = relevant.values('patient', 'date') # returns ValueQuerySet
         vqs = vqs.annotate(calc_bil = Sum('result_float'))
         vqs = vqs.filter(calc_bil__gt = 1.5)
@@ -712,7 +731,7 @@ class WesternBlotHeuristic(BaseLabHeuristic):
         # Find potential positives -- tests whose results contain at least one 
         # of the interesting band numbers.
         q_obj = ~Q(events__name=self.name)
-        relevant_labs = self.relevant_labs().filter(q_obj)
+        relevant_labs = self.relevant_labs.filter(q_obj)
         q_obj = Q(result_string__icontains = str(self.interesting_bands[0]))
         for band in self.interesting_bands[1:]:
             q_obj = q_obj | Q(result_string__icontains = str(band))
