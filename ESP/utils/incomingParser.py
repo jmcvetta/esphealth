@@ -2,9 +2,10 @@
 # uses a generator for large file processing
 # of delimited files
 
+import pdb
+
 import os,sys
 import re
-
 import datetime, time
 import string, copy
 import shutil
@@ -30,8 +31,13 @@ cursor = connection.cursor()
 VERSION = '0.2'
 DO_VALIDATE = 1 # set to zero to avoid the validation step
 REJECT_INVALID = 1 # don't process if any errors - usually are missing provider so ignore
-emailToList = ['rerla@channing.harvard.edu','rexua@channing.harvard.edu','mklompas@partners.org',
-'julie_dunn@harvardpilgrim.org','jason.mcvetta@channing.harvard.edu','raphael.lullis@channing.harvard.edu']
+
+
+emailToList = [
+    'rerla@channing.harvard.edu', 'jason.mcvetta@channing.harvard.edu','raphael.lullis@channing.harvard.edu'
+#    'rexua@channing.harvard.edu'
+#    'mklompas@partners.org', 'julie_dunn@harvardpilgrim.org'
+    ]
 
 today=datetime.datetime.now().strftime('%Y%m%d')
 
@@ -169,9 +175,9 @@ def parseProvider(incomdir, filename):
         provider.lastUpDate = DBTIMESTR
 
         try:
-            logging.info('Updating Provider %s' % provider)
+            iplogging.info('Updating Provider %s' % provider)
             provider.save()
-        except:
+        except Exception, why:
             pdb.set_trace()
             
         provid = provider.pk
@@ -253,12 +259,10 @@ def parseDemog(incomdir, filename):
         patient.lastUpDate = DBTIMESTR    
 
         try:
-            logging.info('Get or create on patient %s' % pid)
             patient.save()
         except:
             pdb.set_trace()
-        
-        
+                
         demogid = patient.id
         demogdict[pid]=demogid
         
@@ -546,7 +550,7 @@ def parseLxOrd(incomdir,filename,demogdict, provdict):
             defaults = {'LxOrder_Id_Num': orderid, 
                         'LxLoinc': lxloinc, 
                         'LxOrdering_Provider':provider,
-                        'lastUpDate' = DBTIMESTR
+                        'lastUpDate': DBTIMESTR
                         })
             
                 
@@ -654,7 +658,7 @@ def parseLxRes(incomdir,filename,demogdict, provdict):
                 'LxImpression': impre,                
                 'LxLoinc': lxloinc, 
                 'LxOrdering_Provider_id':provider,
-                'lastUpDate' = DBTIMESTR
+                'lastUpDate':DBTIMESTR
                 })
      
             
@@ -739,7 +743,7 @@ def parseRx(incomdir,filename,demogdict,provdict):
                 'RxNational_Drug_Code' : ndc,
                 'RxQuantity' : qua,
                 'RxRefills' : ref,
-                'RxRoute' : route
+                'RxRoute' : route,
                 'RxDose': 'N/A',
                 'RxFrequency': 'N/A',
                 'RxStartDate' : sdate,
