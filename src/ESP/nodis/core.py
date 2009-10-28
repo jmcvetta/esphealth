@@ -272,15 +272,9 @@ class BaseEventPattern(object):
         '''
         raise NotImplementedError
     
-    def __get_relevant_loincs(self):
+    def __get_event_names(self):
         '''
-        Returns the set of LOINC numbers required any component of this pattern
-        '''
-        raise NotImplementedError
-    
-    def __get_relevant_heuristics(self):
-        '''
-        Returns the set of heuristics required by any component of this pattern
+        Returns the set of heuristics Event names required by any component of this pattern
         '''
         raise NotImplementedError
 
@@ -297,31 +291,29 @@ class SimpleEventPattern(BaseEventPattern):
     # {heuristic: {condition: event_pk_set}}
     __excluded_events_cache = {}
     
-    def __init__(self, heuristic):
+    def __init__(self, event_name):
         self.__events_cache = {}
-        if not heuristic in BaseHeuristic.all_heuristic_names():
-            raise InvalidHeuristic('Unknown heuristic: %s' % heuristic)
-        self.heuristic = heuristic
+        if not event_name in BaseHeuristic.all_event_names():
+            raise InvalidHeuristic('Unknown heuristic Event: %s' % event_name)
+        self.event_name = event_name
     
     def plausible_patients(self, exclude_condition=None):
-        q_obj = Q(event__heuristic=self.heuristic)
+        q_obj = Q(event__name=self.event_name)
         if exclude_condition:
             q_obj = q_obj & ~Q(event__case__condition=exclude_condition)
         qs = Patient.objects.filter(q_obj).distinct()
         log_query('Plausible patients for %s, exclude %s' % (self, exclude_condition), qs)
-        monitor_heap()
         return qs
     
     def plausible_events(self, patients=None, exclude_condition=None):
         log.debug('Building plausible events query for %s' % self)
-        q_obj = Q(heuristic=self.heuristic)
+        q_obj = Q(name=self.event_name)
         if patients:
             q_obj = q_obj & Q(patient__in=patients)
         if exclude_condition:
             q_obj = q_obj & ~Q(case__condition=exclude_condition)
         events = Event.objects.filter(q_obj)
         log_query('Querying plausible events for %s' % self, events)
-        monitor_heap()
         return events
     
     def generate_windows(self, days, patients=None, exclude_condition=None):
@@ -337,11 +329,11 @@ class SimpleEventPattern(BaseEventPattern):
         key = (patient, exclude_condition)
         if not key in cache:
             q_obj = Q(patient=patient)
-            q_obj &= Q(heuristic=self.heuristic)
+            q_obj &= Q(name=self.event_name)
             if exclude_condition:
                 q_obj &= ~Q(case__condition=exclude_condition)
             qs = Event.objects.filter(q_obj)
-            log_query('Events for heuristic %s, patient %s, excluding %s' % (self.heuristic, patient, exclude_condition), qs)
+            log_query('Events for heuristic event %s, patient %s, excluding %s' % (self.event_name, patient, exclude_condition), qs)
             cache[key] = qs
         matched_windows = set()
         event_qs = cache[key]
@@ -354,24 +346,16 @@ class SimpleEventPattern(BaseEventPattern):
         return matched_windows
     
     def __get_string_hash(self):
-        return '%s' % self.heuristic
+        return '%s' % self.event_name
     string_hash = property(__get_string_hash)
     
     def __repr__(self):
-        return 'SimpleEventPattern: %s' % self.heuristic
+        return 'SimpleEventPattern: %s' % self.event_name
     
-    def __get_relevant_loincs(self):
-        loincs = set()
-        for h in BaseHeuristic.get_heuristics_by_name(self.heuristic):
-            if not hasattr(h, 'loinc_nums'):
-                continue
-            loincs |= set(h.loinc_nums)
-        return loincs
-    relevant_loincs = property(__get_relevant_loincs)
-    
-    def __get_relevant_heuristics(self):
-        return set([self.heuristic])
-    relevant_heuristics = property(__get_relevant_heuristics)
+    def __get_event_names(self):
+        return set([self.event_name])
+    event_names = property(__get_event_names)
+        
 
 
 class ComplexEventPattern(BaseEventPattern):
@@ -384,47 +368,47 @@ class ComplexEventPattern(BaseEventPattern):
         @param operator: Logical operator for combining patterns 
         @type operator:  String ('and' or 'or')
         @param patterns: Patterns to search for
-        @type patterns:  String naming heuristic event, or ComplexEventPattern instance
+        @type patterns:  String naming heuristic Event, or ComplexEventPattern instance
         @param name: Name of this pattern (optional)
         @type name:  String
         @param require_past: Require these events in past
-        @type require_past:  String naming a heuristic event
+        @type require_past:  String naming a heuristic Event
         @param require_past_window: Optionally limit require_past look back to this many days before event window
         @type require_past_window:  Integer (number of days)
         @param exclude: Exclude this pattern within match window
-        @type exclude:  String naming heuristic event, or ComplexEventPattern instance
+        @type exclude:  String naming heuristic Event, or ComplexEventPattern instance
         @param exclude_past: Exclude these events in past
-        @type exclude_past:  String naming a heuristic event
+        @type exclude_past:  String naming a heuristic Event
         '''
         operator = operator.lower()
         self.__sorted_pattern_cache = None
         assert operator in ('and', 'or')
         self.operator = operator
-        valid_heuristic_names = BaseHeuristic.all_heuristic_names()
+        valid_event_names = BaseHeuristic.all_event_names()
         self.patterns = []
         self.name = name # Optional name
         self.exclude = []
         for pat in patterns:
             if isinstance(pat, ComplexEventPattern):
                 self.patterns.append(pat)
-            elif pat in valid_heuristic_names: # Implies req is a string
-                pat_obj = SimpleEventPattern(heuristic=pat)
+            elif pat in valid_event_names: # Implies req is a string
+                pat_obj = SimpleEventPattern(event_name=pat)
                 self.patterns.append(pat_obj)
             else:
                 raise InvalidPattern('%s [%s]' % (pat, type(pat)))
         for pat in exclude:
             if isinstance(pat, ComplexEventPattern):
                 self.exclude.append(pat)
-            elif pat in valid_heuristic_names: # Implies req is a string
-                pat_obj = SimpleEventPattern(heuristic=pat)
+            elif pat in valid_event_names: # Implies req is a string
+                pat_obj = SimpleEventPattern(event_name=pat)
                 self.exclude.append(pat_obj)
             else:
                 raise InvalidPattern('%s [%s]' % (pat, type(pat)))
         count = {} # Count of plausible events per req
         for name in require_past + exclude_past:
-            if not name in valid_heuristic_names:
-                log.error('"%s" not in valid hueristic names:' % name)
-                log.error('\t%s' % valid_heuristic_names)
+            if not name in  valid_event_names:
+                log.error('"%s" not in valid heuristic Event names:' % name)
+                log.error('\t%s' % valid_event_names)
                 raise InvalidPattern('%s [%s]' % (name, type(name)))
         self.require_past = require_past
         if require_past_window:
@@ -478,10 +462,9 @@ class ComplexEventPattern(BaseEventPattern):
                 plausible = plausible & pat.plausible_patients(exclude_condition)
             else: # 'or'
                 plausible = plausible | pat.plausible_patients(exclude_condition)
-        for heuristic in self.require_past:
-            plausible = plausible & Patient.objects.filter(event__heuristic=heuristic).distinct()
+        for event_name in self.require_past:
+            plausible = plausible & Patient.objects.filter(event__name=event_name).distinct()
         log_query('Plausible patients for ComplexEventPattern "%s", exclude %s' % (self, exclude_condition), plausible)
-        monitor_heap()
         if EXCLUDE_XB_NAMES:
 	        #
 	        # DEBUG:  Remove me when done debugging!!!!!
@@ -626,7 +609,7 @@ class ComplexEventPattern(BaseEventPattern):
         '''
         log.debug('Checking constraints on %s' % win)
         if self.exclude_past:
-            exclude_q = Q(patient=win.patient, heuristic__in=self.exclude_past, date__lt=win.start)
+            exclude_q = Q(patient=win.patient, name__in=self.exclude_past, date__lt=win.start)
             query = Event.objects.filter(exclude_q)
             log_query('Check exclude_past', query)
             if  query.count() > 0:
@@ -635,7 +618,7 @@ class ComplexEventPattern(BaseEventPattern):
             else:
                 log.debug('Patient %s was not excluded by past events' % win.patient)
         if self.require_past:
-            require_q = Q(patient=win.patient, heuristic__in=self.require_past, date__lt=win.start)
+            require_q = Q(patient=win.patient, name__in=self.require_past, date__lt=win.start)
             if self.require_past_window:
                 lookback_start = win.start - self.require_past_window
                 require_q = Q(date__gte=lookback_start)
@@ -698,12 +681,12 @@ class ComplexEventPattern(BaseEventPattern):
         return loincs
     relevant_loincs = property(__get_relevant_loincs)
         
-    def __get_relevant_heuristics(self):
-        heuristics = set()
+    def __get_event_names(self):
+        events = set()
         for pat in self.patterns:
-            heuristics |= pat.relevant_heuristics
-        return heuristics
-    relevant_heuristics = property(__get_relevant_heuristics)
+            events |= pat.event_names
+        return events
+    event_names = property(__get_event_names)
 
 
 class Condition(object):
@@ -827,7 +810,7 @@ class Condition(object):
 
     def get_all_event_names(self):
         '''
-        Return list of names of all heuristic events included in this 
+        Return list of names of all heuristic Events included in this 
         disease's definition(s).
         '''
         # 
@@ -1075,28 +1058,16 @@ class Condition(object):
             for case in existing_cases:
                 definition.update_case(case)
     
-    def __get_relevant_loincs(self):
-        '''
-        Returns the set of LOINC numbers required by any pattern defining this 
-        condition
-        '''
-        loincs = set()
-        for pat in self.patterns:
-            loincs |= pat.relevant_loincs
-        return loincs
-    relevant_loincs = property(__get_relevant_loincs)
-        
-
-    def __get_relevant_heuristics(self):
+    def __get_relevant_event_names(self):
         '''
         Returns the set of heuristics required by any pattern defining this 
         condition
         '''
-        heuristics = set()
+        names = set()
         for pat in self.patterns:
-            heuristics |= pat.relevant_heuristics
-        return heuristics
-    relevant_heuristics = property(__get_relevant_heuristics)
+            names |= pat.event_names
+        return 
+    relevant_event_names = property(__get_relevant_event_names)
     
     @classmethod
     def all_test_name_search_strings(cls):

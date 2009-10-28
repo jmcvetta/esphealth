@@ -41,7 +41,7 @@ class Event(models.Model):
     '''
     An interesting medical event
     '''
-    heuristic = models.SlugField(max_length=128, null=False, blank=False, db_index=True)
+    name = models.SlugField(max_length=128, null=False, blank=False, db_index=True)
     date = models.DateField('Date event occured', blank=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
     timestamp = models.DateTimeField('Time event was created in db', blank=False, auto_now_add=True)
@@ -55,24 +55,24 @@ class Event(models.Model):
     content_object = generic.GenericForeignKey('content_type', 'object_id')
     
     class Meta:
-        unique_together = ['heuristic', 'date', 'patient', 'content_type', 'object_id']
+        unique_together = ['name', 'date', 'patient', 'content_type', 'object_id']
     
     def __str__(self):
-        return 'Event # %s (%s %s)' % (self.pk, self.heuristic, self.date)
+        return 'Event # %s (%s %s)' % (self.pk, self.name, self.date)
     
     def str_line(self):
         '''
         Returns a single-line string representation of the object
         '''
         values = self.__dict__
-        return '%(date)-10s    %(id)-8s    %(heuristic)-30s    %(object_id)-10s' % values
+        return '%(date)-10s    %(id)-8s    %(name)-30s    %(object_id)-10s' % values
     
     @classmethod
     def str_line_header(cls):
         '''
         Returns a header describing the fields returned by str_line()
         '''
-        values = {'date': 'DATE', 'id': 'EVENT #', 'heuristic': 'EVENT', 'object_id': 'OBJECT #'}
-        return '%(date)-10s    %(id)-8s    %(heuristic)-30s    %(object_id)-10s' % values
+        values = {'date': 'DATE', 'id': 'EVENT #', 'name': 'EVENT', 'object_id': 'OBJECT #'}
+        return '%(date)-10s    %(id)-8s    %(name)-30s    %(object_id)-10s' % values
 
 
