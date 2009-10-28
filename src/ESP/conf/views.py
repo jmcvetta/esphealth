@@ -13,6 +13,7 @@ Views
 import re
 import sys
 import pprint
+import operator
 
 from django import forms as django_forms, http
 from django.contrib.auth import login
@@ -37,6 +38,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from ESP.settings import NLP_SEARCH, NLP_EXCLUDE
 from ESP.settings import ROWS_PER_PAGE
 from ESP.conf.models import NativeCode
+from ESP.conf.models import CodeMap
 from ESP.conf.models import IgnoredCode
 from ESP.emr.models import NativeNameCache
 from ESP.emr.models import LabResult
@@ -85,15 +87,6 @@ def get_required_loincs():
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-@login_required
-def map_code(request, loinc_num=None, native_code=None):
-    values = {'title': 'Code Mapping'}
-    values['loinc_num'] = loinc_num
-    values['native_code'] = native_code
-    values['form'] 
-    return render_to_response('conf/map_code.html', values, context_instance=RequestContext(request))
-
-
 class LoincMap:
     '''
     Convenience data structure for loinc_mapping()
@@ -133,59 +126,23 @@ def loinc_mapping(request):
     values['unmapped'] = unmapped
     return render_to_response('conf/loinc_mapping.html', values, context_instance=RequestContext(request))
 
-
 @login_required
-def json_code_grid(request):
-    '''
-    '''
-    flexi = Flexigrid(request)
-    if flexi.sortorder == 'asc':
-        sortname = flexi.sortname
-    else:
-        sortname = '-%s' % flexi.sortname
-#    maps = models.NativeCode.objects.select_related().all().order_by(sortname)
-#    if flexi.query:
-#        query_str = 'Q(%s__icontains="%s")' % (flexi.qtype, flexi.query)
-#        q_obj = eval(query_str)
-#        maps = maps.filter(q_obj)
-#    rows = []
-#    for m in maps:
-#        row = {}
-#        row['id'] = m.id
-#        row['cell'] = [
-#            m.id,
-#            m.native_code,
-#            m.native_name,
-#            m.loinc.loinc_num,
-#            m.loinc.name,
-#            ]
-#        rows += [row]
-    codes = LabResult.objects.all().values('native_code', 'native_name').distinct('native_code')
-    rows = []
-    for item in codes:
-        native_code = item['native_code']
-        native_name = item['native_name']
-        ignore = '-' # TODO: finish me!!
-        try:
-            loinc = NativeCode.objects.get(native_code=native_code).loinc
-            loinc_num = loinc.loinc_num
-            loinc_name = loinc.name
-        except NativeCode.DoesNotExist:
-            loinc_num = None
-            loinc_name = None
-        row = {}
-        row['id'] = native_code
-        row['cell'] = [
-            native_code,
-            native_name,
-            loinc_num,
-            loinc_name,
-            ignore,
-            ]
-        rows += [row]
-    json = flexi.json(rows)
-    #return HttpResponse(json, mimetype='application/json')
-    return HttpResponse(json)
+def code_mapping_report(request):
+    values = {'title': 'Code Mapping Report'}
+    mapped = []
+    unmapped = []
+    for heuristic in BaseHeuristic.lab_heuristics():
+        maps = CodeMap.objects.filter(heuristic=heuristic.name)
+        if not maps:
+            unmapped.append(heuristic)
+            continue
+        codes = maps.values_list('native_code', flat=True)
+        mapped.append( (heuristic, codes) )
+    mapped.sort(key=operator.itemgetter(1))
+    values['mapped'] = mapped
+    values['unmapped'] = unmapped
+    return render_to_response('conf/code_mapping_report.html', values, context_instance=RequestContext(request))
+
 
 
 @user_passes_test(lambda u: u.is_staff)

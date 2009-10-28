@@ -150,6 +150,15 @@ class BaseHeuristic(object):
             out.append( (item, display) )
         out.sort()
         return out
+    
+    @classmethod
+    def lab_heuristics(cls):
+        out = set()
+        for item in cls.__registry:
+            heuristic = cls.__registry[item]
+            if isinstance(heuristic, BaseLabHeuristic):
+                out.add(heuristic)
+        return out
 
     def matches(self, exclude_bound=True):
         '''
