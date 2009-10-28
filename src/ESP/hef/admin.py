@@ -10,7 +10,7 @@ from ESP.hef.models import Event
 
 
 class EventAdmin(admin.ModelAdmin):
-    list_display = ['heuristic', 'date', 'patient', 'content_object']
+    list_display = ['name', 'date', 'patient', 'content_object']
 
 
 admin.site.register(Event, EventAdmin)
