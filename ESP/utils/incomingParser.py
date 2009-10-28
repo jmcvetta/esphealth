@@ -2,23 +2,24 @@
 # uses a generator for large file processing
 # of delimited files
 
-import os,sys,re
-os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+import os,sys
+import re
 
-import django, datetime,time
-from ESP.esp.models import *
-from django.db.models import Q
-from ESP.settings import *
-from django.db import connection
-cursor = connection.cursor()
-import ESP.utils.utils as utils
-
-import string,re,copy
+import datetime, time
+import string, copy
 import shutil
 import StringIO
 import traceback
 import smtplib
 
+from django.db.models import Q
+from django.db import connection
+
+from ESP.esp.models import *
+from ESP.settings import *
+from ESP.utils import utils
+
+cursor = connection.cursor()
 
 VERSION = '0.2'
 DO_VALIDATE = 1 # set to zero to avoid the validation step

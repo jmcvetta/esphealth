@@ -19,7 +19,7 @@ import StringIO
 import smtplib
 
 
-logging=''
+logging= getLogging('preLoader.py_v0.1', debug=0)
 datadir = os.path.join(TOPDIR, LOCALSITE,  'preLoaderData/')
 print 'using ', datadir
 

@@ -1,4 +1,4 @@
-import os,sys
+import os, sys
 import datetime
 import string
 import shutil
@@ -9,9 +9,11 @@ import smtplib
 from ftplib import FTP
 
 from ESP.esp.models import *
-from ESP.settings import TOPDIR,CODEDIR,LOCALSITE,FTPUSER,FTPPWD,FTPSERVER,EMAILSENDER,getLogging,getJavaInfo
-from ESP.utils import hl7XML
-import ESP.utils.utils as utils
+from ESP.utils import hl7XML, utils
+from ESP.settings import TOPDIR, CODEDIR, LOCALSITE
+from ESP.settings import FTPUSER, FTPPWD, FTPSERVER, EMAILSENDER
+from ESP.settings import getLogging, getJavaInfo
+
 
 
 
