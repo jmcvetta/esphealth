@@ -1066,8 +1066,21 @@ class Condition(object):
         names = set()
         for pat in self.patterns:
             names |= pat.event_names
-        return 
+        return names
     relevant_event_names = property(__get_relevant_event_names)
+    
+    def __get_relevant_labs(self):
+        '''
+        Return QuerySet of all lab results that may be relevant to this Condition
+        '''
+        heuristics = set()
+        for event_name in self.relevant_event_names:
+            h = BaseHeuristic.get_heuristic_from_event_name(event_name)
+            heuristics.add(h)
+        heuristic_names = [h.name for h in heuristics]
+        codes = CodeMap.objects.filter(heuristic__in=heuristic_names).values('native_code')
+        return LabResult.objects.filter(native_code__in=codes)
+    relevant_labs = property(__get_relevant_labs)
     
     @classmethod
     def all_test_name_search_strings(cls):
