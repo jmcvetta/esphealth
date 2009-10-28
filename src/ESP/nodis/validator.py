@@ -124,15 +124,14 @@ def validate(records):
         case_q = Q(patient=patient, condition=condition)
         cases = Case.objects.filter(case_q).order_by('date')
         log.debug('Found %s relevant cases' % cases.count())
-        heuristics = Condition.get_condition(condition).relevant_heuristics
-        event_q  = Q(heuristic__in=heuristics)
+        event_names = condition_object.relevant_event_names
+        event_q  = Q(name__in=event_names)
         event_q &= Q(patient=patient)
         event_q &= Q(date__gte=begin, date__lte=end)
         events = Event.objects.filter(event_q).order_by('date')
         log.debug('Found %s relevant events' % events.count())
-        loincs = Condition.get_condition(condition).relevant_loincs
         lab_q = Q(patient=patient, date__gte=begin, date__lte=end)
-        labs = LabResult.objects.filter_loincs(loincs)
+        labs = condition_object.relevant_labs
         for test_name in condition_object.test_name_search:
             labs |= LabResult.objects.filter(native_name__icontains=test_name)
         labs = labs.filter(lab_q).order_by('date')
