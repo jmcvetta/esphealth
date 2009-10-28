@@ -127,7 +127,7 @@ def loinc_mapping(request):
     return render_to_response('conf/loinc_mapping.html', values, context_instance=RequestContext(request))
 
 @login_required
-def code_mapping_report(request):
+def heuristic_mapping_report(request):
     values = {'title': 'Code Mapping Report'}
     mapped = []
     unmapped = []
@@ -141,7 +141,7 @@ def code_mapping_report(request):
     mapped.sort(key=operator.itemgetter(1))
     values['mapped'] = mapped
     values['unmapped'] = unmapped
-    return render_to_response('conf/code_mapping_report.html', values, context_instance=RequestContext(request))
+    return render_to_response('conf/heuristic_mapping_report.html', values, context_instance=RequestContext(request))
 
 
 

@@ -254,8 +254,8 @@ src/ESP/templates/arrow.GIF -text
 src/ESP/templates/base.html -text
 src/ESP/templates/conf/code_maintenance.html -text
 src/ESP/templates/conf/code_map.html -text
-src/ESP/templates/conf/code_mapping_report.html -text
 src/ESP/templates/conf/confirm_ignore_code.html -text
+src/ESP/templates/conf/heuristic_mapping_report.html -text
 src/ESP/templates/conf/loinc_mapping.html -text
 src/ESP/templates/default-bg-reverse.gif -text
 src/ESP/templates/default-bg.gif -text
