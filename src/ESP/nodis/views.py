@@ -418,7 +418,7 @@ def map_native_code(request, native_code):
         form = CodeMapForm(request.POST)
         if form.is_valid():
             heuristic_name = form.cleaned_data['heuristic']
-            h_obj = BaseHeuristic.get_heuristics_by_name(heuristic_name)[0]
+            assert BaseHeuristic.get_heuristic(heuristic_name)
             threshold = form.cleaned_data['threshold']
             cm, created = CodeMap.objects.get_or_create(native_code=native_code, heuristic=heuristic_name)
             cm.notes = form.cleaned_data['notes']
