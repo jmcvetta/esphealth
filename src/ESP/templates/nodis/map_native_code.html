@@ -33,6 +33,7 @@
 {% block content %}
 
 <div style="float:right;">
+
     <h2>Result Strings</h2>
     <blockquote>
         <table>
@@ -48,6 +49,28 @@
             {% endfor %}
         </table>
     </blockquote>
+
+    <h2>Reference High Values</h2>
+    <blockquote>
+        <p>
+            Number of results <em>with</em> numeric result, but <em>without</em> 
+            reference high: 
+            <br>
+            {{ without_ref_high }} ({{ without_ref_high_percent|stringformat:"3.3f" }}%).
+        <table>
+            <tr>
+                <th>Reference High Value
+                <th>Lab Record Count
+            </tr>
+            {% for item in ref_pos_values %}
+            <tr>
+                <td>{{ item.ref_pos }}
+                <td>{{ item.count }}
+            </tr>
+            {% endfor %}
+        </table>
+    </blockquote>
+
 </div>
 
 <h2>Native Code</h2> 

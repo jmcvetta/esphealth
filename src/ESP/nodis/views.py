@@ -433,13 +433,21 @@ def map_native_code(request, native_code):
             request.user.message_set.create(message=msg)
             log.debug(msg)
             return redirect_to(request, reverse('unmapped_labs_report'))
-    result_strings = labs.values('result_string').distinct().annotate(count=Count('id')).order_by('-count')
+    result_strings = labs.values('result_string').distinct().annotate(count=Count('id')).order_by('-count')[:10]
+    ref_pos_values = labs.values('ref_pos').distinct().annotate(count=Count('id')).order_by('-count')[:10]
+    #comments = labs.values('comment').distinct().annotate(count=Count('id')).order_by('-count')[:10]
+    without_ref_high = labs.filter(result_float__isnull=False, ref_high__isnull=True).count()
+    without_ref_high_percent = float(without_ref_high) / float(labs.count())
     values = {
         'title': 'Map Native Code to Heuristic',
         "request":request,
         'native_code': native_code,
         'native_names': native_names,
         'result_strings': result_strings,
+        'ref_pos_values': ref_pos_values,
+        'without_ref_high': without_ref_high,
+        'without_ref_high_percent': without_ref_high_percent,
+        #'comments': comments,
         'form': form,
         'count': labs.count()
         }
