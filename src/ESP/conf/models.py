@@ -54,7 +54,7 @@ class CodeMap(models.Model):
     native_code = models.CharField(max_length=100, blank=False, db_index=True)
     native_name = models.CharField(max_length=255, blank=True, null=True)
     threshold = models.FloatField(help_text='Positive numeric threshold (if relevant)', blank=True, null=True)
-    output_code = models.CharField(max_length=100, blank=False, db_index=True)
+    output_code = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     notes = models.TextField(blank=True, null=True)
     class Meta:
         verbose_name = 'Code Map'
