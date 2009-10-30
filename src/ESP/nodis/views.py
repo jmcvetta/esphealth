@@ -61,7 +61,7 @@ from ESP.hef import events # Required to register hef events
 from ESP.nodis.core import Condition
 from ESP.nodis.models import Case
 from ESP.nodis.models import CaseStatusHistory
-from ESP.nodis.models import UnmappedLab
+from ESP.nodis.models import InterestingLab
 from ESP.nodis.forms import CaseStatusForm
 from ESP.nodis.forms import CodeMapForm
 from ESP.utils.utils import log
@@ -391,7 +391,7 @@ def unmapped_labs_report(request):
     q_obj = Q(native_code__isnull=False)
     q_obj &= ~Q(native_code__in=ignored)
     q_obj &= ~Q(native_code__in=mapped)
-    unmapped = UnmappedLab.objects.filter(q_obj).order_by('native_name', 'native_code')
+    unmapped = InterestingLab.objects.filter(q_obj).order_by('native_name', 'native_code')
     strings = Condition.all_test_name_search_strings()
     strings.sort()
     values = {

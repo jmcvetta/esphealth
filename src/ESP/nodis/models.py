@@ -108,11 +108,11 @@ class CaseStatusHistory(models.Model):
         verbose_name_plural = 'Case Status History'
 
 
-class UnmappedLab(models.Model):
+class InterestingLab(models.Model):
     '''
-    Cache of unmapped lab tests which contain suspicious strings in their 
-    names.  This must be cached for display in web UI report, because query 
-    can be time consuming.
+    Cache of lab tests which contain suspicious strings in their names.  This 
+    must be cached for display in web UI report, because query can be time 
+    consuming.
     '''
     native_code = models.CharField(max_length=100, blank=False)
     native_name = models.CharField(max_length=255, blank=False)

@@ -11,32 +11,43 @@
 '''
 
 from django.db import transaction
+from django.db.models import Q
+from django.db.models import Count
 
 from ESP.utils.utils import log
+from ESP.utils.utils import log_query
 from ESP.nodis.core import Condition
-from ESP.nodis.models import UnmappedLab
+from ESP.emr.models import LabResult
+from ESP.nodis.models import InterestingLab
 from ESP.nodis import defs
 
 
 @transaction.commit_manually
 def main():
-    log.info('Repopulating unmapped labs cache')
+    log.info('Repopulating interesting labs cache')
     log.debug('Begin transaction')
     # Clear the cache
-    UnmappedLab.objects.all().delete()
+    InterestingLab.objects.all().delete()
     log.debug('Unmapped labs cache purged')
     # Populate the cache
-    for item in Condition.find_unmapped_labs():
-        ul = UnmappedLab()
-        ul.native_code = item['native_code']
-        ul.native_name = item['native_name']
-        ul.count = item['count']
-        ul.save()
-        log.debug('Added %s to unmapped labs cache' % item)
-    count = UnmappedLab.objects.all().count()
+    all_strings = Condition.all_test_name_search_strings()
+    q_obj = Q(native_name__icontains=all_strings[0])
+    for string in all_strings[1:]:
+        q_obj |= Q(native_name__icontains=string)
+    qs = LabResult.objects.filter(q_obj).values('native_code', 'native_name').distinct()
+    qs = qs.annotate(count=Count('id'))
+    log_query('Test name search', qs)
+    for item in qs:
+        l = InterestingLab()
+        l.native_code = item['native_code']
+        l.native_name = item['native_name']
+        l.count = item['count']
+        l.save()
+        log.debug('Added %s to interesting labs cache' % item)
+    count = InterestingLab.objects.all().count()
     transaction.commit()
     log.debug('Transaction committed')
-    log.info('Populated unmapped labs cache with %s items' % count)
+    log.info('Populated interesting labs cache with %s items' % count)
     
 
 if __name__ == '__main__':
