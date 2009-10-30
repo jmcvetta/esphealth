@@ -36,6 +36,7 @@
 
     <h2>Result Strings</h2>
     <blockquote>
+        <p>10 most popular:
         <table>
             <tr>
                 <th>Result
@@ -51,12 +52,14 @@
     </blockquote>
 
     <h2>Reference High Values</h2>
+    <p>
+        Number of results <em>with</em> numeric result, but <em>without</em> 
+        reference high: 
+        <br>
+        {{ without_ref_high }} ({{ without_ref_high_percent|stringformat:"3.3f" }}%).
+    </p>
     <blockquote>
-        <p>
-            Number of results <em>with</em> numeric result, but <em>without</em> 
-            reference high: 
-            <br>
-            {{ without_ref_high }} ({{ without_ref_high_percent|stringformat:"3.3f" }}%).
+        <p>10 most popular:
         <table>
             <tr>
                 <th>Reference High Value
