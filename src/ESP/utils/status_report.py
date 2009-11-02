@@ -99,7 +99,7 @@ def populate_values():
     values['case_summary'] = case_summary(template=output_template)
     values['new_cases'] = new_cases(template=output_template)
     latest_qs = Provenance.objects.filter(status='loaded').order_by('-timestamp')
-    if latest_qs:
+    if latest_qs.count():
         values['latest_prov'] = latest_qs[0].timestamp
     else:
         values['latest_prov'] = None
