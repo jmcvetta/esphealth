@@ -151,7 +151,8 @@ def ignore_code(request, native_code):
     Display Unmapped Labs report generated from cache
     '''
     if request.method == 'POST':
-        ic_obj, created = IgnoredCode.objects.get_or_create(native_code=native_code.lower())
+        #ic_obj, created = IgnoredCode.objects.get_or_create(native_code=native_code.lower())
+        ic_obj, created = IgnoredCode.objects.get_or_create(native_code=native_code) # Why was this lower() before?
         if created:
             ic_obj.save()
             msg = 'Native code "%s" has been added to the ignore list' % native_code
