@@ -42,10 +42,14 @@ def main():
         l.native_code = item['native_code']
         l.native_name = item['native_name']
         l.count = item['count']
-        l.save()
-        log.debug('Added %s to interesting labs cache' % item)
+        try:
+            l.save()
+            transaction.commit()
+            log.debug('Added %s to interesting labs cache' % item)
+        except:
+            log.error('Could not save to interesting labs cache; skipping.')
+            transaction.rollback()
     count = InterestingLab.objects.all().count()
-    transaction.commit()
     log.debug('Transaction committed')
     log.info('Populated interesting labs cache with %s items' % count)
     
