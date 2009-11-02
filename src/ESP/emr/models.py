@@ -939,8 +939,8 @@ class Encounter(BasePatientRecord):
     temperature = models.FloatField('Temperature (C)', blank=True, null=True, db_index=True)
     # WTF: What is an icd9_qualifier?
     #icd9_qualifier = models.CharField(max_length=200, blank=True, null=True)
-    weight = models.FloatField('Weight (kg)', blank=True, null=True)
-    height = models.FloatField('Height (cm)', blank=True, null=True)
+    weight = models.FloatField('Weight (kg)', blank=True, null=True, db_index=True)
+    height = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
     bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True)
     bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True)
     o2_stat = models.FloatField(max_length=50, blank=True, null=True)
