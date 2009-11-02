@@ -135,7 +135,7 @@ class Hl7MessageLoader(object):
         #
         # Provenance
         #
-        prov, created = Provenance.objects.get_or_create(timestamp=TIMESTAMP, 
+        prov = Provenance(timestamp=TIMESTAMP, 
             source=self.basename, 
             hostname=HOSTNAME,
             )
@@ -726,9 +726,13 @@ def main():
         sys.stderr.write('You must select either --new, --retry, or --all\n')
         parser.print_help()
         sys.exit()
-        
+    
+    loaded_sources = Provenance.objects.filter(status='loaded')
     for folder, files in folders.items():
         for f in files:
+            if loaded_sources.filter(source=f).count():
+                log.debug('File already loaded, skipping:  %s' % f)
+                continue
             filepath = os.path.join(folder, f)
             res = Hl7MessageLoader(filepath=filepath, options=options).load()
             if res == 'loaded':
@@ -736,7 +740,7 @@ def main():
             elif res == 'failure':
                 failure_counter += 1
             else:
-                raise "WTF?!"
+                raise RuntimeError("WTF?!")
     log.info('Loaded:    %s' % loaded_counter)
     log.info('Failed:    %s' % failure_counter)
     
