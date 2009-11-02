@@ -293,7 +293,7 @@ no_hep_b = ComplexEventPattern(
     )
 
 hep_c_1 = ComplexEventPattern(
-    name = 'Acute Hepatitis C pattern #1', # Name is optional, but desirable on top-level patterns
+    name = 'Acute Hepatitis C pattern (a)', # Name is optional, but desirable on top-level patterns
     patterns = [
         jaundice_alt400,    # (1 or 2)
         'hep_c_elisa_pos',  # 3 positive
@@ -314,10 +314,52 @@ hep_c_1 = ComplexEventPattern(
     operator = 'and',
     )
 
+hep_c_2 = ComplexEventPattern(
+    name = 'Acute Hepatitis C pattern (b)',
+    patterns = [
+        jaundice_alt400,    # (1 or 2)
+        'hep_c_rna_pos',    # 6 positive
+        'hep_a_igm_neg',    # 7 negative
+        no_hep_b,           # (8 negative or 9 non-reactive)
+        ],
+    exclude = [
+        'hep_c_signal_cutoff_neg', # 4 positive (if done)
+        'hep_c_riba_neg',          # 5 positive (if done)
+        ],
+    exclude_past = [
+        'hep_c_elisa_pos',   # no prior positive 3 or 5 or 6
+        'hep_c_riba_pos',    # "
+        'hep_c_rna_pos',     # "
+        'chronic_hep_b', # no ICD9 (070.54 or 070.70) ever prior to this encounter
+        ],
+    operator = 'and',
+    )
+
+hep_c_3 = ComplexEventPattern(
+    name = 'Acute Hepatitis C pattern (c)',
+    patterns = ['hep_c_rna_pos'],
+    require_past = ['hep_c_elisa_neg'],
+    require_past_window = 365,
+    operator = 'and',
+    )
+
+hep_c_4 = ComplexEventPattern(
+    name = 'Acute Hepatitis C pattern (d)',
+    patterns = ['hep_c_elisa_pos'],
+    require_past = ['hep_c_elisa_neg'],
+    require_past_window = 365,
+    operator = 'and',
+    )
+
 
 hep_c = Condition(
     name = 'acute_hep_c',
-    patterns = [(hep_c_1, 28)],
+    patterns = [
+            (hep_c_1, 28),
+            (hep_c_2, 28),
+            (hep_c_3, 1), # Single event -- time window not meaningful
+            (hep_c_4, 1), # Single event -- time window not meaningful
+            ],
     recur_after = -1, # Never recur
     test_name_search = ['hep', 'alt', 'ast', 'tbil', 'bili'],
     icd9s = DEFAULT_REPORTABLE_ICD9S,
