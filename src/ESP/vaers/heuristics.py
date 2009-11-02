@@ -33,8 +33,7 @@ USAGE_MSG = '''\
 class AdverseEventHeuristic(BaseHeuristic):
     def __init__(self, event_name, verbose_name=None):
         self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
-        super(AdverseEventHeuristic, self).__init__(event_name, 
-                                                    verbose_name, 1)
+        super(AdverseEventHeuristic, self).__init__(event_name, verbose_name)
 
         
             
@@ -341,7 +340,7 @@ def make_lab_heuristics(loinc):
         return 'Lab Result for %s with value above/below the trigger of %s %s' % (name, criterium['trigger'], criterium['unit'])
 
     return [
-        VaersLxHeuristic(name, loinc, criterium, verbose_name=verbose_name(criterium))
+        VaersLxHeuristic(name + criterium['trigger'], loinc, criterium, verbose_name=verbose_name(criterium))
         for criterium in rule['criteria']]
         
 
@@ -370,15 +369,12 @@ def main():
     #
     parser = optparse.OptionParser(usage=USAGE_MSG)
     
-    parser.add_option('-f', '--fever', action='store_true', dest='fever',
-                      help='Run Fever Heuristics')
-    parser.add_option('-d', '--diagnostics', action='store_true', 
-                      dest='diagnostics', help='Run Diagnostics Heuristics')
-    parser.add_option('-l', '--lx', action='store_true', dest='lx', 
-                      help='Run Lab Results Heuristics')
-
+    parser.add_option('-f', '--fever', action='store_true', dest='fever', help='Run Fever Heuristics')
+    parser.add_option('-l', '--lx', action='store_true', dest='lx', help='Run Lab Results Heuristics')
+    parser.add_option('-d', '--diagnostics', action='store_true', dest='diagnostics', 
+                      help='Run Diagnostics Heuristics')
     parser.add_option('-a', '--all', action='store_true', dest='all', 
-        help='Generate new patients and immunization history')
+                      help='Generate new patients and immunization history')
 
 
 
