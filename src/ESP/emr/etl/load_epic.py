@@ -394,14 +394,14 @@ class LabResultLoader(BaseLoader):
             l.result_float = float(res.replace(',', '')) # Strip commas for values like "1,000,000"
         except ValueError:
             pass # Not every result string is supposed to convert to a float, so this is okay
-        l.ref_neg = row['ref_low']
-        l.ref_pos = row['ref_high']
+        l.ref_low_string = row['ref_low']
+        l.ref_high_string = row['ref_high']
         try:
-            l.ref_low = float(row['ref_low'])
+            l.ref_low_float = float(row['ref_low'])
         except:
             pass
         try:
-            l.ref_high = float(row['ref_high'])
+            l.ref_high_float = float(row['ref_high'])
         except:
             pass
         l.ref_unit = row['unit']

@@ -437,7 +437,7 @@ def map_native_code(request, native_code):
     result_strings = labs.values('result_string').distinct().annotate(count=Count('id')).order_by('-count')[:10]
     ref_pos_values = labs.values('ref_pos').distinct().annotate(count=Count('id')).order_by('-count')[:10]
     #comments = labs.values('comment').distinct().annotate(count=Count('id')).order_by('-count')[:10]
-    without_ref_high = labs.filter(result_float__isnull=False, ref_high__isnull=True).count()
+    without_ref_high = labs.filter(result_float__isnull=False, ref_high_float__isnull=True).count()
     without_ref_high_percent = float(without_ref_high) / float(labs.count()) * 100
     values = {
         'title': 'Map Native Code to Heuristic',

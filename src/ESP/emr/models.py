@@ -616,10 +616,10 @@ class LabResult(BasePatientRecord):
     # In some EMR data sets, reference pos & high, and neg & low, may come from
     # the same field depending whether the value is a string or a number.
     #
-    ref_pos = models.CharField('Reference Positive Value', max_length=100, blank=True, null=True)
-    ref_neg = models.CharField('Reference Negative Value', max_length=100, blank=True, null=True)
-    ref_high = models.FloatField('Reference High Value', blank=True, null=True, db_index=True)
-    ref_low = models.FloatField('Reference Low Value', blank=True, null=True, db_index=True)
+    ref_high_string = models.CharField('Reference Positive Value', max_length=100, blank=True, null=True)
+    ref_low_string = models.CharField('Reference Negative Value', max_length=100, blank=True, null=True)
+    ref_high_float = models.FloatField('Reference High Value', blank=True, null=True, db_index=True)
+    ref_low_float = models.FloatField('Reference Low Value', blank=True, null=True, db_index=True)
     ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
     # Result
     abnormal_flag = models.CharField(max_length=20, blank=True, null=True, db_index=True)
@@ -715,14 +715,14 @@ class LabResult(BasePatientRecord):
         '''
         Generate a reference range string
         '''
-        if self.ref_low:
-            low = self.ref_low
+        if self.ref_low_float:
+            low = self.ref_low_float
         else:
-            low = self.ref_neg
-        if self.ref_high:
-            high = self.ref_high
+            low = self.ref_low_string
+        if self.ref_high_float:
+            high = self.ref_high_float
         else:
-            high = self.ref_pos
+            high = self.ref_high_string
         if (high or low):
             return '%s - %s' % (low, high)
         else:
@@ -752,10 +752,10 @@ class LabResult(BasePatientRecord):
                 },
             'loinc': self.loinc_num,
             'reference': {
-                'low':self.ref_low,
-                'high':self.ref_high,
-                'positive':self.ref_pos,
-                'negative':self.ref_neg,
+                'low':self.ref_low_float,
+                'high':self.ref_high_float,
+                'positive':self.ref_high_string,
+                'negative':self.ref_low_string,
                 'unit':self.ref_unit
                 },
             'result':{

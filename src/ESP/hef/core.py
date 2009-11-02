@@ -298,7 +298,7 @@ class LabResultHeuristic(BaseLabHeuristic):
         @type  name: String
         @param long_name: Long display name for this heuristic
         @type  long_name: String
-        @param ratio: Match on result_float >= (ref_high * ratio)
+        @param ratio: Match on result_float >= (ref_high_float * ratio)
         @type  ratio: Integer
         @param negative_events: Should we also generate events for negative results?
         @type  negative_events: Boolean
@@ -322,13 +322,13 @@ class LabResultHeuristic(BaseLabHeuristic):
     
     def ratio_matches(self, ratio, exclude_bound=True):
         '''
-        Return labs where result_float > ref_high * ratio
+        Return labs where result_float > ref_high_float * ratio
         @param ratio: Ratio used to generate this type of event
         @type  ratio: Int or Float
         '''
-        has_ref_high = Q(ref_high__isnull=False) # Record does NOT have NULL value for ref_high
-        null_ref_high = Q(ref_high__isnull=True) # Record has NULL value for ref_high
-        ratio_q = has_ref_high & Q(result_float__gt = F('ref_high') * float(ratio))
+        has_ref_high = Q(ref_high_float__isnull=False) # Record does NOT have NULL value for ref_high_float
+        null_ref_high = Q(ref_high_float__isnull=True) # Record has NULL value for ref_high_float
+        ratio_q = has_ref_high & Q(result_float__gt = F('ref_high_float') * float(ratio))
         fallback_q = None # Fallback to comparison with 
         for map in CodeMap.objects.filter(heuristic=self.name).filter(threshold__isnull=False):
             q_obj = Q(native_code=map.native_code) & null_ref_high & Q(result_float__gt = map.threshold * float(ratio))
@@ -400,7 +400,7 @@ class LabResultHeuristic(BaseLabHeuristic):
         log.info('Finding matches for heuristic %s' % event_name)
         code_maps = CodeMap.objects.filter(heuristic=self.name)
         native_codes = code_maps.values_list('native_code')
-        has_ref_high = Q(ref_high__isnull=False) # Record does NOT have null value for ref_high
+        has_ref_high = Q(ref_high_float__isnull=False) # Record does NOT have null value for ref_high_float
         log.debug('Code maps: %s' % pprint.pformat(code_maps))
         #
         # Build numeric query
@@ -415,11 +415,11 @@ class LabResultHeuristic(BaseLabHeuristic):
             if result_type == 'positive':
                 if map.threshold:
                     thresh_q = Q(result_float__gt = float(map.threshold))
-                ratio_q = has_ref_high & Q(result_float__gt = F('ref_high'))
+                ratio_q = has_ref_high & Q(result_float__gt = F('ref_high_float'))
             else: # result_type == 'negative'
                 if map.threshold:
                     thresh_q = Q(result_float__lte = float(map.threshold))
-                ratio_q = has_ref_high & Q(result_float__lte = F('ref_high'))
+                ratio_q = has_ref_high & Q(result_float__lte = F('ref_high_float'))
             # 
             # Combine restrict numeric comparison(s) to relevant native_code.
             #
