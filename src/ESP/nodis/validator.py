@@ -27,6 +27,7 @@ CONDITION_MAP = {
     'gonorrhea': 'gonorrhea',
     'acute hepatitis a': 'acute_hep_a',
     'acute hepatitis b': 'acute_hep_b',
+    'acute hepatitis c': 'acute_hep_c',
     }
 #CONSIDER_CONDITIONS = ['chlamydia', 'gonorrhea', 'acute_hep_a', 'acute_hep_b']
     
