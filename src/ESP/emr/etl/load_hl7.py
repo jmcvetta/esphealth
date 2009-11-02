@@ -451,15 +451,19 @@ class Hl7MessageLoader(object):
                 res_float = float(match.group(1))
             else:
                 res_float = None
-            ref_low = None
-            ref_high = None
+            ref_low_string = None
+            ref_high_string = None
+            ref_low_float = None
+            ref_high_float = None
             if len(ref_range) == 2: # There must be both high and low
-                low_match = float_regex.match(ref_range[0])
+                ref_low_string = ref_range[0]
+                ref_high_string = ref_range[1]
+                low_match = float_regex.match(ref_low_string)
                 if low_match:
-                    ref_low = float(low_match.group(1))
-                high_match = float_regex.match(ref_range[1])
+                    ref_low_float = float(low_match.group(1))
+                high_match = float_regex.match(ref_high_string)
                 if high_match:
-                    ref_high = float(high_match.group(1))
+                    ref_high_float = float(high_match.group(1))
             result = LabResult(patient=self.patient, provider=self.provider)
             # Set (result) date and order date to the same thing, since we do 
             # not have separate order date info.
@@ -470,10 +474,12 @@ class Hl7MessageLoader(object):
             result.native_name = native_name if native_name else None
             result.result_string = result_string if result_string else None
             result.result_float = res_float if res_float else None
-            result.ref_low = ref_low if ref_low else None
-            result.ref_high = ref_high if ref_high else None
+            result.ref_low_string = ref_low_string if ref_low_string else None
+            result.ref_high_string = ref_high_string if ref_high_string else None
+            result.ref_low_float = ref_low_float if ref_low_float else None
+            result.ref_high_float = ref_high_float if ref_high_float else None
             result.ref_unit = ref_unit if ref_unit else None
-            result.ref_range = ref_range if ref_range else None
+            #result.ref_range = ref_range if ref_range else None
             result.abnormal_flag = abnormal_flag if abnormal_flag else None
             result.status = status if status else None
             result.provenance = self.provenance
@@ -490,8 +496,8 @@ class Hl7MessageLoader(object):
                 lx.native_name = result.native_name
                 lx.LxTest_results = result.result_string
                 lx.LxReference_Unit = result.ref_unit
-                lx.LxReference_Low = result.ref_low
-                lx.LxReference_High = result.ref_high
+                lx.LxReference_Low = result.ref_low_float
+                lx.LxReference_High = result.ref_high_float
                 lx.LxNormalAbnormal_Flag = result.abnormal_flag
                 lx.LxTest_status = result.status
                 lx.save()
@@ -499,7 +505,7 @@ class Hl7MessageLoader(object):
             log.debug('\t Date: %s' % result.date)
             log.debug('\t Native code (name): %s (%s)' % (result.native_code, result.native_name))
             log.debug('\t Lab result: %s %s (float: %s)' % (result.result_string, result.ref_unit, result.result_float))
-            log.debug('\t Reference range: %s - %s' % (result.ref_low, result.ref_high))
+            log.debug('\t Reference range: %s - %s' % (result.ref_low_float, result.ref_high_float))
             log.debug('\t Abnormal flag: %s' % result.abnormal_flag)
             log.debug('\t Status: %s' % result.status)
             
