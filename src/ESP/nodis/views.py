@@ -410,7 +410,8 @@ def map_native_code(request, native_code):
     used by Nodis.  This view is part of nodis because it depends on several
     lower-level modules (conf, hef, & static).
     '''
-    native_code = native_code.lower()
+    #native_code = native_code.lower()
+    native_code = native_code # Why was this .lower() before??
     form = CodeMapForm() # This may be overridden below
     labs = LabResult.objects.filter(native_code=native_code)
     native_names = labs.values_list('native_name', flat=True).distinct().order_by('native_name')
