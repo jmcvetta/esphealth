@@ -405,12 +405,14 @@
 	{{ status_form.as_table }}
 	</table>
 	<input type="submit" name="update_status" value="Update status and record comment" />
+        {% csrf_token %}
 </form>
 
 <p>&nbsp;</p>
 
 <form id="submit_positive_form" method="POST" action="{% url nodis_case_transmit case.pk %}">
 	<input type="submit" id="submit_positive" name="submit_positive" value="True positive case -- TRANSMIT TO HEALTH DEPARTMENT" />
+        {% csrf_token %}
 </form>
 
 {% endblock %}

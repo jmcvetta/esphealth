@@ -9,6 +9,7 @@
     <form method="POST" action="{% url ignore_code native_code %}">
         <input type="submit" value='Yes, ignore "{{ native_code }}"!'>
         <a href="{% url unmapped_labs_report %}">Cancel</a>
+    {% csrf_token %}
     </form>
 </p>
 

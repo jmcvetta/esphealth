@@ -6,6 +6,7 @@
 <form method="post" action="{% url vaers.vaccine.views.vaccine_detail native_vaccine.code %}">
   {{ form.as_p }}
   <button>Save</button>
+  {% csrf_token %}
 </form>
 {% endblock %}
 

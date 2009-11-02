@@ -3,6 +3,7 @@
   <form id="frm_feedback" method="POST" action="{{ action_url }}">
     <textarea >{{ instructions }}</textarea>
     <input type="submit" value="Submit" />
+  {% csrf_token %}
   </form>
 </div>
 

@@ -9,6 +9,7 @@
 	<input type="radio" name="provider_confirmation" value="confirmed">Yes</input>
 	<input type="radio" name="provider_confirmation" value="">No</input>
 	<input type="submit" value="Submit" />
+        {% csrf_token %}
       </form>
     </div>
 </div>

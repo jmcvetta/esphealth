@@ -98,6 +98,7 @@
         &nbsp;
         <a href="{% url ignore_code native_code %}">ignore</a>
     </p>
+    {% csrf_token %}
 </form>
 
 {% endblock %}
