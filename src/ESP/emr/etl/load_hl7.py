@@ -163,6 +163,8 @@ class Hl7MessageLoader(object):
                 # Move file
                 shutil.move(os.path.join(ATTEMPTED_DIR, self.basename), day_folder)
                 log.debug('Moved file %s to %s' % (self.basename, day_folder))
+        except KeyboardInterrupt, e:
+            raise e
         except BaseException as e:
             log.error('Caught Exception:')
             log.error('  File: %s' % self.basename)
