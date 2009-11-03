@@ -17,6 +17,7 @@ doc/specifications/PHIN_ELR_Implementation_Guide--HL7_2.3.1--21_May_2004.pdf -te
 doc/specifications/gipse.xsd -text
 etc/apache.conf -text
 etc/django.wsgi -text
+etc/esp-batch-run.sh -text
 media/css/base.css -text
 media/css/changelists.css -text
 media/css/global.css -text
