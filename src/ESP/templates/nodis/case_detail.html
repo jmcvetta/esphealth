@@ -2,11 +2,39 @@
 
 {% block extrastyle %}
     <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
+    <style type="text/css">
+    table {
+        border-width: thin;
+        border-spacing: 0;
+        border-style: solid;
+        border-color: gray;
+        border-collapse: separate;
+        background-color: white;
+    }
+    table th {
+        border-width: thin;
+        padding: 0.5em;
+        border-style: solid;
+        border-color: gray;
+        background-color: white;
+        -moz-border-radius: ;
+    }
+    table td {
+        border-width: thin;
+        padding: 0.5em;
+        border-style: solid;
+        border-color: gray;
+        background-color: white;
+        -moz-border-radius: ;
+    }
+    </style>
+
 {% endblock %}
 
 {% block extrascript %}
     <script type="text/javascript" src="{{ site_javascript_folder }}flexigrid/flexigrid.js"></script>
     <script type="text/javascript">
+    {% comment %}
         $(document).ready(function() {
             $('#show_non_rep').click( function() {
                 $('#toggle_show').show(); // Non-rep data is shown by default
@@ -60,6 +88,7 @@
                 height: 'auto',
 	    });
         });
+    {% endcomment %}
     </script>
 {% endblock %}
 
@@ -79,6 +108,7 @@
 
 <hr>
 
+{% comment %}
 <p id="toggle_hide">
     <a href="#" id="show_non_rep">Show Non-Reportable Data</a>
     |
@@ -89,11 +119,11 @@
     |
     <a href="#" id="hide_non_rep">Hide Non-Reportable Data</a>
 </p>
+{% endcomment %}
 
-<hr>
-
-<h2>Reportable Data</h2>
-
+<h2>
+    Patient Information
+</h2>
 
 <table id="patient_info">
     <tr>
@@ -136,11 +166,17 @@
     </tr>
 </table>
 
+<h2>
+    Case Events
+</h2>
 
-<p>&nbsp;</p>
+{% if case.lab_results %}
 
-{% if rep_lxs %}
-<table id="rep_lxs">
+<h3>
+    Lab Results
+</h3>
+
+<table id="lab_results">
     <tr>
         <th>Date Ordered</th>
         <th>Result Date</th>
@@ -153,39 +189,33 @@
         <th>Clinician</th>
         <th>Comment</th>
     </tr>
-    {% for lx in rep_lxs %}
+    {% for lab in case.lab_results %}
     <tr>
-        <td>{{ lx.date }}</td>
-        <td>{{ lx.result_date }}</td>
-        <td>{{ lx.native_code }} ({{ lx.LxLoinc }})</td>
-        <td>{{ lx.native_name }}</td>
-        <td>{{ lx.result_string }}</td>
-        <td>{{ lx.abnormal_flag|default:"False" }} </td>
-        <td>{{ lx.ref_neg}}  -  {{ lx.ref_pos}}</td>
-        <td>{{ lx.order_num }}</td>
+        <td>{{ lab.date }}</td>
+        <td>{{ lab.result_date }}</td>
+        <td>{{ lab.native_code }}</td>
+        <td>{{ lab.native_name }}</td>
+        <td>{{ lab.result_string }}</td>
+        <td>{{ lab.abnormal_flag|default:"-" }} </td>
+        <td>{{ lab.ref_low_string}}  -  {{ lx.ref_high_string}}</td>
+        <td>{{ lab.order_num }}</td>
         <td>
-            <a href="{% url provider_detail lx.provider.pk %}">
-                {{ lx.provider.name }}
+            <a href="{% url provider_detail lab.provider.pk %}">
+                {{ lab.provider.name }}
             </a>
         </td>
         <td>
-            {% if lab.LxComment %}
-            <a href="{% url lab_detail lx.id %}">
-                {{ lx.getPartNote }}...
-            </a>
-	    {% else %}
-            	-
-            {% endif %}
+            {{ lab.comment }}
         </td>
     </tr>
     {% endfor %}
 </table>
-<p>&nbsp;</p>
 {% endif %}
 
-{% if rep_encs %}
-<table id="rep_encs">
+{% if case.encounters %}
+<table id="encounters">
     <tr>
+        <th>DB ID #</th>
         <th>Date</th>
         <th>ICD9 Codes</td>
         <th>Site</td>
@@ -193,10 +223,20 @@
         <th>Temperature</th>
         <th>Clinician</th>
     </tr>
-    {% for enc in rep_encs %}
+    {% for enc in case.encounters.all %}
     <tr>
+        <td>{{ enc.pk }}</td>
         <td>{{ enc.date }} </td>
-        <td>{{ enc.icd9_codes_str }}</td>
+        <td>
+            {% for i in enc.icd9_codes %}
+                {{ i.code }} {{ i.name }}
+                {% if not forloop.last %}
+                <br>
+                {% endif %}
+            {% empty %}
+                -
+            {% endfor %}
+        </td>
         <td>{{ enc.site_name }}</td>
         <td>
             {{ enc.pregnancy_status }}
@@ -252,6 +292,7 @@
 {% endif %}
 
 
+{% comment %}
 <div id="non_reportable_data">
 
 	<hr>
@@ -372,6 +413,7 @@
 
 </div> {# non_reportable_data #}
 
+{% endcomment %}
 
 <hr>
 
