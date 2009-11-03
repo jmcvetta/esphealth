@@ -59,12 +59,27 @@ class Case(models.Model):
     #
     # Reportable Information
     #
-    encounters = models.ManyToManyField(Encounter, blank=True, null=True)
-    lab_results = models.ManyToManyField(LabResult, blank=True, null=True)
-    medications = models.ManyToManyField(Prescription, blank=True, null=True)
-    immunizations = models.ManyToManyField(Immunization, blank=True, null=True)
+    #encounters = models.ManyToManyField(Encounter, blank=True, null=True)
+    #lab_results = models.ManyToManyField(LabResult, blank=True, null=True)
+    #medications = models.ManyToManyField(Prescription, blank=True, null=True)
+    #immunizations = models.ManyToManyField(Immunization, blank=True, null=True)
     #
     notes = models.TextField(blank=True, null=True)
+    
+    #
+    # Events by class
+    #
+    def __get_lab_results(self):
+        return LabResult.objects.filter(events__case=self)
+    lab_results = property(__get_lab_results)
+    
+    def __get_encounters(self):
+        return Encounter.objects.filter(events__case=self)
+    encounters = property(__get_encounters)
+    
+    def __get_prescriptions(self):
+        return Prescription.objects.filter(events__case=self)
+    prescriptions = property(__get_prescriptions)
     
     class Meta:
         permissions = [ ('view_phi', 'Can view protected health information'), ]
