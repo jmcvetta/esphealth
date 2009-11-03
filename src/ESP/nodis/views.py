@@ -223,9 +223,9 @@ def case_detail(request, case_id):
     #
     # Non-Reportable Info
     #
-    other_enc = set(Encounter.objects.filter(patient=patient)) - set(case.encounters.all())
-    other_lab = set(LabResult.objects.filter(patient=patient)) - set(case.lab_results.all())
-    other_rx = set(Prescription.objects.filter(patient=patient)) - set(case.medications.all())
+    #other_enc = set(Encounter.objects.filter(patient=patient)) - set(case.encounters.all())
+    #other_lab = set(LabResult.objects.filter(patient=patient)) - set(case.lab_results.all())
+    #other_rx = set(Prescription.objects.filter(patient=patient)) - set(case.medications.all())
     data = {'status': case.status}
     status_form = CaseStatusForm(initial=data)
     values = {
@@ -239,12 +239,6 @@ def case_detail(request, case_id):
         "history": history,
         'created': created,
         'updated': updated,
-        'all_encs': other_enc,
-        'all_lxs': other_lab,
-        'all_rxs': other_rx,
-        'rep_encs': case.encounters.all(),
-        'rep_lxs': case.lab_results.all(),
-        'rep_rxs': case.medications.all(),
         'status_form': status_form,
         }
     return render_to_response('nodis/case_detail.html', values, context_instance=RequestContext(request))
