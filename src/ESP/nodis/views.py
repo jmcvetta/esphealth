@@ -56,6 +56,7 @@ from ESP.emr.models import Provider
 from ESP.emr.models import Encounter
 from ESP.emr.models import LabResult
 from ESP.emr.models import Prescription
+from ESP.emr.models import Immunization
 from ESP.hef.core import BaseHeuristic
 from ESP.hef import events # Required to register hef events
 from ESP.nodis.core import Condition
@@ -448,3 +449,21 @@ def map_native_code(request, native_code):
         }
     return render_to_response('nodis/map_native_code.html', values, context_instance=RequestContext(request))
     
+
+@login_required
+def all_records(request, patient_pk):
+    '''
+    Display all medical records on file for specified patient.
+    '''
+    patient = get_object_or_404(Patient, pk=patient_pk)
+    lab_results = LabResult.objects.filter(patient=patient).order_by('-date').select_related()
+    encounters = Encounter.objects.filter(patient=patient).order_by('-date').select_related()
+    prescriptions = Prescription.objects.filter(patient=patient).order_by('-date').select_related()
+    immunizations = Immunization.objects.filter(patient=patient).order_by('-date').select_related()
+    values = {
+        'lab_results': lab_results,
+        'prescriptions': prescriptions,
+        'encounters': encounters,
+        'immunizations': immunizations,
+        }
+    return render_to_response('nodis/all_records.html', values, context_instance=RequestContext(request))

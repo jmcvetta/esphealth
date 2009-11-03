@@ -36,61 +36,41 @@
 {% block extrascript %}
     <script type="text/javascript" src="{{ site_javascript_folder }}flexigrid/flexigrid.js"></script>
     <script type="text/javascript">
-    {% comment %}
         $(document).ready(function() {
-            $('#show_non_rep').click( function() {
+            $('#show_all').click( function() {
                 $('#toggle_show').show(); // Non-rep data is shown by default
                 $('#toggle_hide').hide(); // Non-rep data is shown by default
-                $('#non_reportable_data').show();
+                $('#all_records_wrapper').show();
+                $('#all_records_content').load('{% url all_records case.patient.pk %}', function() {
+                    $('#all_lab_results').flexigrid({
+                        title: 'Laboratory Results',
+                        resizable: true,
+                        rp: 15,
+                    });
+                    $('#all_encounters').flexigrid({
+                        title: 'Physician Encounters',
+                        resizable: true,
+                        rp: 10,
+                    });
+                    $('#all_prescriptions').flexigrid({
+                        title: 'Prescriptions',
+                        resizable: true,
+                        rp: 10,
+                    });
+                    $('#all_immunizations').flexigrid({
+                        title: 'Immunizations',
+                        resizable: true,
+                        rp: 10,
+                    });
+                });
             });
-            $('#hide_non_rep').click( function() {
+            $('#hide_all').click( function() {
                 $('#toggle_show').hide(); // Non-rep data is shown by default
                 $('#toggle_hide').show(); // Non-rep data is shown by default
-                $('#non_reportable_data').hide();
+                $('#all_records_wrapper').hide();
             });
-            $('#hide_non_rep').click(); // Hide non-reportable data by default
-            $('#patient_info').flexigrid({
-                title: 'Patient Information',
-                height: 'auto',
-		striped: true,
-            });
-            $('#rep_lxs').flexigrid({
-                title: 'Laboratory Results (Reportable)',
-                resizable: false,
-                height: 'auto',
-            });
-            $('#all_lxs').flexigrid({
-                title: 'Laboratory Results (Non-Reportable)',
-                resizable: true,
-                rp: 10,
-            });
-            $('#rep_encs').flexigrid({
-                title: 'Encounters (Reportable)',
-                resizable: false,
-                height: 'auto',
-            });
-            $('#all_encs').flexigrid({
-                title: 'Encounters (Non-Reportable)',
-                resizable: true,
-                rp: 10,
-            });
-            $('#rep_rxs').flexigrid({
-                title: 'Prescriptions (Reportable)',
-                resizable: false,
-                height: 'auto',
-            });
-            $('#all_rxs').flexigrid({
-                title: 'Prescriptions (Non-Reportable)',
-                resizable: true,
-                rp: 10,
-            });
-	    $('#status_history_table').flexigrid({
-	    	title: 'Case Status History',
-		resizable: false,
-                height: 'auto',
-	    });
+            $('#hide_all').click(); // Hide non-reportable data by default
         });
-    {% endcomment %}
     </script>
 {% endblock %}
 
@@ -110,18 +90,16 @@
 
 <hr>
 
-{% comment %}
 <p id="toggle_hide">
-    <a href="#" id="show_non_rep">Show Non-Reportable Data</a>
+    <a href="#" id="show_all">Show All Patient Records</a>
     |
-    <b>Hide Non-Reportable Data</b>
+    <b>Hide All Patient Records</b>
 </p>
 <p id="toggle_show">
-    <b>Show Non-Reportable Data</b>
+    <b>Show All Patient Records</b>
     |
-    <a href="#" id="hide_non_rep">Hide Non-Reportable Data</a>
+    <a href="#" id="hide_all">Hide All Patient Records</a>
 </p>
-{% endcomment %}
 
 <h2>
     Patient Information
@@ -330,6 +308,20 @@
 </table>
 <p>&nbsp;</p>
 {% endif %}
+
+<div id="all_records_wrapper">
+<h2>
+    All Patient Records
+</h2>
+
+<div id="all_records_content">
+<i>
+    <b>Loading...</b>
+    <br>(this may take a few minutes)
+</i>
+</div>
+
+</div>
 
 
 <hr>
