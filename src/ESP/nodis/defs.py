@@ -238,7 +238,7 @@ hep_b = Condition(
         (hep_b_3, 1), # Single present event -- match window is meaningless
     ],
     recur_after = -1, # Never recur
-    test_name_search = ['hep', 'alt', 'ast', 'tbil', 'bili'],
+    test_name_search = ['hep', 'alt', 'ast', 'tbil', 'bili', 'hb', 'core',],
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     fever = True,
@@ -361,7 +361,7 @@ hep_c = Condition(
             (hep_c_4, 1), # Single event -- time window not meaningful
             ],
     recur_after = -1, # Never recur
-    test_name_search = ['hep', 'alt', 'ast', 'tbil', 'bili'],
+    test_name_search = ['hep', 'alt', 'ast', 'tbil', 'bili', 'hc'],
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     fever = True,
