@@ -1030,7 +1030,7 @@ class Encounter(BasePatientRecord):
         return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(icd9s)-30s' % values
     
     def _get_icd9_codes_str(self):
-        return ', '.join(self.icd9_codes.all().order_by('code'))
+        return ', '.join(self.icd9_codes.order_by('code').values_list('code', flat=True))
     icd9_codes_str = property(_get_icd9_codes_str)
 
 
