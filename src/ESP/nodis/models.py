@@ -48,6 +48,7 @@ class Case(models.Model):
     date = models.DateField(blank=False, db_index=True)
     pattern = models.ForeignKey(Pattern, blank=False, db_index=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='AR') # Is it sensible to have default here?
+    notes = models.TextField(blank=True, null=True)
     # Timestamps:
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
@@ -56,15 +57,6 @@ class Case(models.Model):
     # Events that define this case
     #
     events = models.ManyToManyField(Event, blank=False) # The events that caused this case to be generated
-    #
-    # Reportable Information
-    #
-    #encounters = models.ManyToManyField(Encounter, blank=True, null=True)
-    #lab_results = models.ManyToManyField(LabResult, blank=True, null=True)
-    #medications = models.ManyToManyField(Prescription, blank=True, null=True)
-    #immunizations = models.ManyToManyField(Immunization, blank=True, null=True)
-    #
-    notes = models.TextField(blank=True, null=True)
     
     #
     # Events by class
