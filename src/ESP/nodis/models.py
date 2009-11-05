@@ -8,6 +8,7 @@
 import datetime
 
 from django.db import models
+from django.db.models import Q
 
 from ESP.emr.models import Encounter
 from ESP.emr.models import Immunization
@@ -62,15 +63,18 @@ class Case(models.Model):
     # Events by class
     #
     def __get_lab_results(self):
-        return LabResult.objects.filter(events__case=self)
+        e = self.events.all() | self.past_events.all()
+        return LabResult.objects.filter(events__in=e).order_by('date')
     lab_results = property(__get_lab_results)
     
     def __get_encounters(self):
-        return Encounter.objects.filter(events__case=self)
+        e = self.events.all() | self.past_events.all()
+        return Encounter.objects.filter(events__in=e).order_by('date')
     encounters = property(__get_encounters)
     
     def __get_prescriptions(self):
-        return Prescription.objects.filter(events__case=self)
+        e = self.events.all() | self.past_events.all()
+        return Prescription.objects.filter(events__in=e).order_by('date')
     prescriptions = property(__get_prescriptions)
     
     class Meta:

@@ -839,7 +839,8 @@ class Condition(object):
         #case.workflow_state = self.condition.ruleInitCaseStatus
         case.save()
         case.events = window.events
-        case.past_events = window.past_events
+        if window.past_events: # May be NoneType, so we can't rely on it being acceptable for ManyToManyField
+            case.past_events = window.past_events
         case.save()
         log.info('Created new %s case # %s for patient # %s based on %s' % (self.name, case.pk, case.patient.pk, window))
         return case
