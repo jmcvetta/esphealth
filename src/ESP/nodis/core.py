@@ -621,7 +621,7 @@ class ComplexEventPattern(BaseEventPattern):
             require_q = Q(patient=win.patient, name__in=self.require_past, date__lt=win.start)
             if self.require_past_window:
                 lookback_start = win.start - self.require_past_window
-                require_q = Q(date__gte=lookback_start)
+                require_q &= Q(date__gte=lookback_start)
             query = Event.objects.filter(require_q)
             log_query('Check require_past', query)
             if query.count() == 0:
