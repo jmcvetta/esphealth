@@ -57,7 +57,7 @@ class Case(models.Model):
     # Events that define this case
     #
     events = models.ManyToManyField(Event, blank=False) # The events that caused this case to be generated
-    
+    past_events = models.ManyToManyField(Event, blank=False, related_name='past_events') # The events that caused this case to be generated
     #
     # Events by class
     #
