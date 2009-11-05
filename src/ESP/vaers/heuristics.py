@@ -1,6 +1,6 @@
 # Adverse events are indicated though reports of fever, lab results
 # and icd9 codes that are present in patient encounters.
-
+import pdb
 import optparse
 import datetime
 
@@ -27,7 +27,7 @@ USAGE_MSG = '''\
 
     One or more of '-lx', '-f', '-d' or '-a' must be specified.
     
-    DATE variables are specified in this format: '17-Mar-2009'
+    DATE variables are specified in this format: 'YYYYMMDD'
 '''
 
 class AdverseEventHeuristic(BaseHeuristic):
@@ -46,23 +46,25 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
     def matches(self, **kw):
         incremental = kw.get('incremental', False)
         
-        last_run = Run.objects.filter(
-            def_name=self.def_name, 
-            status='s').aggregate(ts=Max('timestamp'))['ts']
+        last_run = Run.objects.filter(status='s').aggregate(ts=Max('timestamp'))['ts']
         
         begin = (incremental and last_run) or kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
 
-        # Can't use string to compare temperature
+        log.info('Finding fever events from %s to %s' % (begin, end))
+        
         return Encounter.objects.following_vaccination(
             rules.TIME_WINDOW_POST_EVENT, begin_date=begin, 
-            end_date=end).filter(temperature__gte=rules.TEMP_TO_REPORT)
+            end_date=end).filter(temperature__gte=rules.TEMP_TO_REPORT).distinct()
 
                     
 
     def generate_events(self, **kw):
-        log.info('Generating events for %s' % self.heuristic_name)
+        log.info('Generating events for %s' % self.name)
         matches = self.matches(**kw)
+        
+        log.info('Found %d matches' % matches.count())
+        
         encounter_type = ContentType.objects.get_for_model(EncounterEvent)
 
         counter = 0
@@ -112,7 +114,8 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         @type verbose_name: String
         '''
                  
-        self.heuristic_name = event_name
+        self.name = event_name
+        self.verbose_name = verbose_name
         self.icd9s = icd9s
         self.category = category
         self.discarding_icd9s = kwargs.pop('discarding_icd9s', [])
@@ -124,9 +127,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
     def matches(self, **kw):
         incremental = kw.get('incremental', False)
         
-        last_run = Run.objects.filter(
-            def_name=self.def_name, 
-            status='s').aggregate(ts=Max('timestamp'))['ts']
+        last_run = Run.objects.filter(status='s').aggregate(ts=Max('timestamp'))['ts']
 
         
         begin = (incremental and last_run) or kw.get('begin_date') or EPOCH
@@ -135,7 +136,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         candidates = Encounter.objects.following_vaccination(
             rules.TIME_WINDOW_POST_EVENT, 
             begin_date=begin, end_date=end).filter(
-            icd9_codes__in=self.icd9s)
+            icd9_codes__in=self.icd9s).distinct()
 
 
         if self.discarding_icd9s:
@@ -152,7 +153,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
 
 
     def generate_events(self, **kw):
-        log.info('Generating events for %s' % self.heuristic_name)
+        log.info('Generating events for %s' % self.name)
         counter = 0
 
         matches = self.matches(**kw)
@@ -163,7 +164,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
                 # Create event instance
                 ev, created = EncounterEvent.objects.get_or_create(
                     encounter=e, date=e.date, category=self.category,
-                    defaults={'matching_rule_explain':self.def_name,
+                    defaults={'matching_rule_explain':self.verbose_name,
                               'content_type':encounter_type}
                     )
                 
@@ -194,11 +195,9 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
 
 class VaersLxHeuristic(AdverseEventHeuristic):
     def __init__(self, event_name, loinc, criterium, verbose_name=None):
-        self.heuristic_name = event_name
-        self.def_name = verbose_name
+        self.name = event_name
         self.loinc = loinc
         self.criterium = criterium
-        self.def_name = verbose_name
         self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
 
         super(VaersLxHeuristic, self).__init__(event_name, verbose_name=verbose_name)
@@ -239,9 +238,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         
         incremental = kw.get('incremental', False)
         
-        last_run = Run.objects.filter(
-            def_name=self.def_name, 
-            status='s').aggregate(ts=Max('timestamp'))['ts']
+        last_run = Run.objects.filter(status='s').aggregate(ts=Max('timestamp'))['ts']
         
         begin = (incremental and last_run) or kw.get('begin_date') or EPOCH
         end = kw.get('end_date', None) or datetime.date.today()
@@ -253,25 +250,19 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         comparator, baseline = self.criterium['exclude_if']
 
         candidates = LabResult.objects.following_vaccination(
-            days, loinc=self.loinc).filter(date__gte=begin, date__lte=end)
+            days, loinc=self.loinc).filter(date__gte=begin, date__lte=end).distinct()
         
         return [c for c in candidates if is_trigger_value(c, trigger) and not 
                 excluded_due_to_history(c, comparator, baseline)]
 
     
     def generate_events(self, **kw):
-        log.info('Generating events for %s' % self.heuristic_name)
+        log.info('Generating events for %s' % self.name)
         counter = 0
 
         incremental = kw.get('incremental', False)
+        last_run = Run.objects.filter(status='s').aggregate(ts=Max('timestamp'))['ts'] or EPOCH
         
-        if incremental:
-            last_run = Run.objects.filter(
-                def_name=self.def_name, status='s').aggregate(
-                ts=Max('timestamp'))['ts']
-        else:
-            last_run = EPOCH
-
         begin_date = kw.get('begin_date', None) or last_run
         end_date = kw.get('end_date', None) or datetime.date.today()
 
@@ -282,7 +273,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         for lab_result in matches:
             try:
                 result = lab_result.result_float or lab_result.result_string
-                rule_explain = 'Lab Result for %s resulting in %s'% (self.heuristic_name, result)
+                rule_explain = 'Lab Result for %s resulting in %s'% (self.name, result)
             
                 ev, created = LabResultEvent.objects.get_or_create(
                     lab_result=lab_result,
@@ -389,12 +380,13 @@ def main():
     # Date Parser
     #
     def parse_date(date_string):
-        date_format = '%d-%b-%Y'
+        date_format = '%Y%m%d'
         return datetime.datetime.strptime(date_string, date_format).date()
 
-    begin_date = parse_date(options.begin) if options.begin else datetime.datetime.today()
 
-    end_date = parse_date(options.end) if options.end else EPOCH
+
+    begin_date = parse_date(options.begin) if options.begin else EPOCH
+    end_date = parse_date(options.end) if options.end else datetime.datetime.today()
 
 
     if options.all:
@@ -408,13 +400,10 @@ def main():
         sys.exit()
 
 
-    if options.fever: fever_heuristic()
-    if options.diagnostics: diagnostic_heuristics()
-    if options.lx: lab_heuristics()
-
-
-    BaseHeuristic.generate_all_events(incremental=True)
-
+    if options.fever: fever_heuristic().generate_events(begin_date=begin_date, end_date=end_date)
+    if options.diagnostics: [h.generate_events(begin_date=begin_date, end_date=end_date) 
+                             for h in diagnostic_heuristics()]
+    if options.lx: pass # lab_heuristics()
 
 
 if __name__ == '__main__':
