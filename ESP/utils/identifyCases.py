@@ -34,7 +34,7 @@ import copy
 
 ###For logging
 iclogging = getLogging('identifyCases.py_v0.1', debug=0)
-sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG','jason.mcvetta@channing.harvard.edu', 'ross.lazarus@channing.harvard.edu']
+sendEmailToList = ['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG','jason.mcvetta@channing.harvard.edu', 'ross.lazarus@channing.harvard.edu', 'raphael.lullis@channing.harvard.edu']
 
 case_dict={}
 

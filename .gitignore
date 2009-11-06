@@ -2,6 +2,7 @@
 /.pydevproject
 ESP/*.db
 ESP/*.pyc
+ESP/assets
 ESP/esp/*.pyc
 ESP/localsettings.py
 ESP/utils/*.pyc
