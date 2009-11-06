@@ -2,6 +2,8 @@
 # uses a generator for large file processing
 # of delimited files
 
+import pdb
+
 import os,sys
 import re
 
@@ -24,8 +26,8 @@ cursor = connection.cursor()
 VERSION = '0.2'
 DO_VALIDATE = 1 # set to zero to avoid the validation step
 REJECT_INVALID = 1 # don't process if any errors - usually are missing provider so ignore
-emailToList = ['rerla@channing.harvard.edu','rexua@channing.harvard.edu','mklompas@partners.org',
-'julie_dunn@harvardpilgrim.org','jason.mcvetta@channing.harvard.edu','raphael.lullis@channing.harvard.edu']
+emailToList = ['rerla@channing.harvard.edu', 'jason.mcvetta@channing.harvard.edu','raphael.lullis@channing.harvard.edu'] 
+#emailToLIst += ['rexua@channing.harvard.edu','mklompas@partners.org','julie_dunn@harvardpilgrim.org',]
 
 today=datetime.datetime.now().strftime('%Y%m%d')
 
@@ -101,13 +103,11 @@ def runSql(stmt,values=None):
             cursor.execute(stmt)
         else:
             cursor.execute(stmt,values)
-    except:
+    except Exception, why:
         errmsg = "ERROR: %s; VALUES == %s\n" % (stmt,str(values))
         iplogging.error(errmsg)
-        #cursor.execute("rollback;")
-       # sendoutemail(towho=emailToList,msg='SQL loading errors when running incomingParser.py;\n%s' % errmsg)
-        
-    #    sys.exit(1)
+        pdb.set_trace()
+
         
 ################################
 def parseProvider(incomdir, filename):
@@ -441,7 +441,6 @@ def parseEnc(incomdir, filename,demogdict,provdict):
         
         updateIcd9Fact(espencid, demogid, encd, icd9)
 
-#        espencid = updateDB('esp_enc',enc_str,values, espencid)
 
     movefile(incomdir, filename,filelines)    
 
@@ -456,7 +455,7 @@ def updateIcd9Fact(espencid, demogid, encdate, icd9):
             pass
         else: ##new one
             newrec = (onec,espencid,demogid,encdate, DBTIMESTR,DBTIMESTR)
-            insertsql = """insert into esp.esp_icd9fact (icd9Code,icd9Enc_Id,icd9Patient_Id,icd9encDate, lastUpDate,createdDate)
+            insertsql = """insert into esp_icd9fact (icd9Code,icd9Enc_Id,icd9Patient_Id,icd9encDate, lastUpDate,createdDate)
                    values (%s,%s,%s,%s, %s, %s)""" 
             runSql(insertsql,newrec)
 
