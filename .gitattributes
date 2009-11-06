@@ -64,3 +64,5 @@ prototype/preLoaderData/esp_cptloincmap.txt -text
 prototype/preLoaderData/esp_cptloincmap_original.txt -text
 prototype/preLoaderData/esp_rule.txt -text
 /readme -text
+scripts/run_ss.sh -text
+scripts/upload_ss_reports.sh -text
