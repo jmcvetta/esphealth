@@ -8,6 +8,12 @@ Case Validator
 @organization: Channing Laboratory http://www.channing.harvard.edu
 @copyright: (c) 2009 Channing Laboratory
 @license: LGPL - http://www.gnu.org/licenses/lgpl-3.0.txt
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+EXIT CODES
+
+10    Bad command line options
 '''
 
 
@@ -28,6 +34,9 @@ CONDITION_MAP = {
     'acute hepatitis a': 'acute_hep_a',
     'acute hepatitis b': 'acute_hep_b',
     'acute hepatitis c': 'acute_hep_c',
+    'pid': 'pid',
+    'active tuberculosis': 'tb',
+    'syphilis': 'syphilis',
     }
 #CONSIDER_CONDITIONS = ['chlamydia', 'gonorrhea', 'acute_hep_a', 'acute_hep_b']
     
@@ -51,6 +60,10 @@ from ESP.emr.models import LabResult
 from ESP.hef.models import Event
 from ESP.nodis import defs # Condition defintions
 from ESP.nodis.models import Case
+from ESP.nodis.models import ReferenceCase
+from ESP.nodis.models import ReferenceCaseList
+from ESP.nodis.models import ValidatorRun
+from ESP.nodis.models import ValidatorResult
 from ESP.nodis.core import Condition
 
 
@@ -146,7 +159,72 @@ def validate(records):
     log.debug('Found %s new cases' % new_cases.count())
     return (exact, similar, missing, new_cases, no_mrn)
 
+
+def load_csv(options):
+    filehandle = open(options.load)
+    records = csv.DictReader(filehandle, FILE_FIELDS)
+    list = ReferenceCaseList(notes=options.notes)
+    list.save()
+    log.info('Loading data from %s into reference list #%s' % (options.load, list.pk))
+    counter = 0
+    for rec in records:
+        mrn = rec['mrn']
+        try:
+            patient = Patient.objects.get(mrn=mrn)
+        except Patient.DoesNotExist:
+            log.warning('Could not find patient with MRN %s' % mrn)
+            continue
+        except Patient.MultipleObjectsReturned:
+            log.warning('More than one patient record matches MRN %s!' % mrn)
+            patient = Patient.objects.filter(mrn=mrn)[0]
+        try:
+            condition = CONDITION_MAP[rec['condition'].lower()]
+        except KeyError:
+            log.warning('Cannot understand condition name: %s' % rec['condition'])
+            continue
+        date = date_from_str(rec['date'])
+        ref = ReferenceCase(
+            list = list,
+            patient = patient,
+            condition = condition,
+            date = date
+            )
+        ref.save()
+        counter += 1
+    log.info('Loaded %s records as list #%s' % (counter, list.pk))
+
+
 def main():
+    parser = optparse.OptionParser()
+    parser.add_option('--load', action='store', dest='load', metavar='FILE', 
+        help='Load data from FILE')
+    parser.add_option('--run', action='store_true', dest='run', default=False, 
+        help='Run the validator')
+    parser.add_option('--list', action='store', dest='list', metavar='NUM', 
+        help='Use reference list #NUM when running validator')
+    parser.add_option('--notes', action='store', dest='notes', metavar='QUOTED TEXT', 
+        help='Save QUOTED TEXT as a note on this action')
+    options, args = parser.parse_args()
+    if options.load and (options.run or options.list):
+        print >> sys.stderr, 'Cannot use --load in conjunction with --run or --list.'
+        parser.print_help()
+        sys.exit(10)
+    if options.list and not options.run:
+        print >> sys.stderr, 'Cannot use --list without --run.'
+        parser.print_help()
+        sys.exit(10)
+    #
+    # Dispatch
+    #
+    if options.load:
+        load_csv(options)
+    elif options.run:
+        validate(options)
+    else:
+        raise RuntimeError('This should never happen.  Please contact developers.')
+    
+    
+def old_main():
     parser = optparse.OptionParser()
     parser.add_option('--text', action='store_true', dest='text', default=False, 
         help='Produce ASCII text output')
