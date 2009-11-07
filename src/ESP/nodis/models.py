@@ -29,6 +29,12 @@ STATUS_CHOICES = [
     ('S',  'Transmitted to Health Department')
     ]
 
+DISPOSITIONS = [
+    ('exact', 'Exact'),
+    ('similar', 'Similar'),
+    ('missing', 'Missing'),
+    ('new', 'New'),
+    ]
 
 class Pattern(models.Model):
     '''
@@ -123,8 +129,67 @@ class InterestingLab(models.Model):
     '''
     Cache of lab tests which contain suspicious strings in their names.  This 
     must be cached for display in web UI report, because query can be time 
-    consuming.
+    consuming.  Populated by find_unmapped_labs.py.
     '''
     native_code = models.CharField(max_length=100, blank=False)
     native_name = models.CharField(max_length=255, blank=False)
     count = models.IntegerField(blank=False)
+
+
+
+#-------------------------------------------------------------------------------
+#
+# Case Validator Models
+#
+#-------------------------------------------------------------------------------
+
+class ReferenceCaseList(models.Model):
+    '''
+    A group of reference cases loaded from the same source.
+    '''
+    source = models.CharField(max_length=255, blank=False)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True, null=True)
+
+
+class ReferenceCase(models.Model):
+    '''
+    A reference case -- provided from an external source (such as manual Health 
+    Department reporting systems), this is presumed to be a known valid case.
+    '''
+    list = models.ForeignKey(ReferenceCaseList, blank=False)
+    #
+    # Data provided by Health Dept etc
+    #
+    patient = models.ForeignKey(Patient, blank=True, null=True) 
+    condition = models.CharField(max_length=100, blank=False, db_index=True)
+    date = models.DateField(blank=False, db_index=True)
+    #
+    ignore = models.BooleanField(default=False, db_index=True)
+    notes = models.TextField(blank=True, null=True)
+    
+    
+class ValidatorRun(models.Model):
+    '''
+    One run of the validator tool.
+    '''
+    timestamp = models.DateTimeField(blank=False, auto_now_add=True)
+    list = models.ForeignKey(ReferenceCaseList, blank=False)
+    notes = models.TextField(blank=True, null=True)
+
+
+class ValidatorResult(models.Model):
+    run = models.ForeignKey(ValidatorRun, blank=False)
+    ref_case = models.ForeignKey(ReferenceCase, blank=True, null=True)
+    # Store reference to Nodis case as an integer, not a foreign key, since Case 
+    # table may be purged and rebuilt between validator runs.
+    nodis_case = models.IntegerField(blank=True, null=True) 
+    disposition = models.CharField(max_length=30, blank=False, choices=DISPOSITIONS)
+    #
+    # ManyToManyFields populated only for missing cases
+    #
+    lab_results = models.ForeignKey(LabResult, blank=True, null=True)
+    encounters = models.ForeignKey(Encounter, blank=True, null=True)
+    prescriptions = models.ForeignKey(Prescription, blank=True, null=True)
+    #
+    notes = models.TextField(blank=True, null=True)
