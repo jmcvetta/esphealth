@@ -16,7 +16,7 @@ import sys
 import re
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, F
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
@@ -504,85 +504,17 @@ class BasePatientRecord(BaseMedicalRecord):
 
 
 class LabResultManager(models.Manager):
-    def following_vaccination(self, days_after, loinc=None, include_same_day=False,
-                              begin_date=None, end_date=None):
+    def following_vaccination(self, days_after, include_same_day=False, **kw):
 
-        begin_date = begin_date or EPOCH
-        end_date = end_date or datetime.date.today()
-
-        lab_result_meta = LabResult.objects.model._meta
-        patient_meta = Patient.objects.model._meta
-        imm_meta = Immunization.objects.model._meta
-        
-        # Get PKs from patients, lab results, immunizations
-        # We will need them to construct a correct WHERE clause
-        ppk =  '%s.%s' % (patient_meta.db_table, patient_meta.pk.name) 
-        lab_result_pk = '%s.%s' % (lab_result_meta.db_table, lab_result_meta.pk.name) 
-
-        lab_result_fk = '%s.%s' % (lab_result_meta.db_table, 
-                            lab_result_meta.get_field('patient').attname) 
-        imm_fk = '%s.%s' % (imm_meta.db_table, 
-                            imm_meta.get_field('patient').attname)
-
-        patient_in_encounter = '%s=%s' % (ppk, lab_result_fk) #Patient.id=Encounter.EncounterPatient_id
-        patient_in_immunization = '%s=%s' % (ppk, imm_fk) #Patient.id = Imm.ImmPatient_id
-
-
-        # Get "Full Name" for order date and immunization Date fields
-        lab_result_date_field = '%s.%s' % (lab_result_meta.db_table, 'date')
-        imm_date_field = '%s.%s' % (imm_meta.db_table, 'date')
-
-
-         
-        # Let's construct the date comparison string. Basically, what
-        # we want is to compare between the dates of two different
-        # fields, in two different models. There is a good chance that
-        # Django's F() Objects can do this, but this code was handling
-        # string-to-date transformations before and the whole process
-        # was even messier.
-
-        
-        # We start by getting the proper date comparison function, depending on the database.
-        if DATABASE_ENGINE == 'sqlite3':
-            date_cmp_select = 'julianday(%s) - julianday(%s)'
-            params = (lab_result_date_field, imm_date_field)
-        elif DATABASE_ENGINE == 'mysql':
-            date_cmp_select = "DATEDIFF(%s, %s)"
-            params = (lab_result_date_field, imm_date_field)
-        elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
-            date_cmp_select = "date(%s) - date(%s)"
-            params = (lab_result_date_field, imm_date_field)
+        if include_same_day:
+            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
         else:
-            raise NotImplementedError, 'Implemented only for PostgreSQL, mySQL and Sqlite'
+            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
 
-        # Now, we get the comparison string and put it together with
-        # the expected value, so we create the time window constraint
-        max_days = '%s <= %s' % (date_cmp_select % params, str(days_after))
-        same_day = (date_cmp_select % params) + ' >= 0'
-        next_day = (date_cmp_select % params) + ' >= 1'
-
-        when_to_start = (same_day and include_same_day) or next_day
-
-        # This is our minimum WHERE clause
-        where_clauses = [patient_in_encounter, patient_in_immunization, 
-                         max_days, when_to_start]
-
-        
-        # begin_date and end_date are the dates that are give the date
-        # range of the encounters we are looking for. Luckily, all of
-        # the DB Engines agree on this one. We can compare a date
-        # field with a string in the format 'YYYY-MM-DD'.
-        where_clauses.append("%s >= '%s'" % (imm_date_field, begin_date.strftime('%Y-%m-%d')))
-        where_clauses.append("%s <= '%s'" % (imm_date_field, end_date.strftime('%Y-%m-%d')))
+        return self.filter(patient__immunization=F('patient__immunization')).filter(
+            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
 
 
-        # To find an specific lab result.    
-        qs = self.filter_loincs([loinc]) if loinc else self
-
-        return qs.extra(
-            tables = [patient_meta.db_table, imm_meta.db_table],
-            where = where_clauses
-            )
     
     @classmethod
     def filter_loincs(self, loinc_nums, **kwargs):
@@ -838,87 +770,15 @@ class Prescription(BasePatientRecord):
     
 
 class EncounterManager(models.Manager):
-    def following_vaccination(self, days_after, include_same_day=False,
-                              begin_date=None, end_date=None):
+    def following_vaccination(self, days_after, include_same_day=False, **kw):
 
-        begin_date = begin_date or EPOCH
-        end_date = end_date or datetime.date.today()
-        
-        encounter_meta = Encounter.objects.model._meta
-        patient_meta = Patient.objects.model._meta
-        imm_meta = Immunization.objects.model._meta
-        
-        # Get PKs from patients, encounters, immunizations
-        # We will need them to construct a correct WHERE clause
-        ppk =  '%s.%s' % (patient_meta.db_table, patient_meta.pk.name) 
-        enc_pk = '%s.%s' % (encounter_meta.db_table, encounter_meta.pk.name) 
-
-        enc_fk = '%s.%s' % (encounter_meta.db_table, 
-                            encounter_meta.get_field('patient').attname) 
-        imm_fk = '%s.%s' % (imm_meta.db_table, 
-                            imm_meta.get_field('patient').attname)
-
-        #Patient.id=Encounter.patient_id
-        patient_in_encounter = '%s=%s' % (ppk, enc_fk) 
-
-        #Patient.id = Immunization.patient_id
-        patient_in_immunization = '%s=%s' % (ppk, imm_fk) 
-
-        # Get "Full Name" for date fields
-        enc_date_field = '%s.%s' % (encounter_meta.db_table, 'date')
-        imm_date_field = '%s.%s' % (imm_meta.db_table, 'date')
-
-
-     
-        # Let's construct the date comparison string. Basically, what
-        # we want is to compare between the dates of two different
-        # fields, in two different models. There is a good chance that
-        # Django's F() Objects can do this, but this code was handling
-        # string-to-date transformations before and the whole process
-        # was even messier.
-
-        
-        # We started by getting the proper date comparison function, depending on the database.
-        if DATABASE_ENGINE == 'sqlite3':
-            date_cmp_select = 'julianday(%s) - julianday(%s)'
-            params = (enc_date_field, imm_date_field)
-        elif DATABASE_ENGINE == 'mysql':
-            date_cmp_select = "DATEDIFF(%s, %s)"
-            params = (enc_date_field, imm_date_field)
-        elif DATABASE_ENGINE in ('postgresql_psycopg2', 'postgresql'):
-            date_cmp_select = "date(%s) - date(%s)"
-            params = (enc_date_field, imm_date_field)
+        if include_same_day:
+            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
         else:
-            raise NotImplementedError, 'Implemented only for PostgreSQL, mySQL and Sqlite'
+            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
 
-        
-        # Now, we get the comparison string and put it together with
-        # the expected value, so we create the time window constraint
-        max_days = '%s <= %s' % (date_cmp_select % params, str(days_after))
-        same_day = (date_cmp_select % params) + ' >= 0'
-        next_day = (date_cmp_select % params) + ' >= 1'
-
-        when_to_start = (same_day and include_same_day) or next_day
-
-        # This is our minimum WHERE clause
-        where_clauses = [patient_in_encounter, patient_in_immunization, 
-                         max_days, when_to_start]
-
-
-
-        # begin_date and end_date are the dates that are give the date
-        # range of the encounters we are looking for. Luckily, all of
-        # the DB Engines agree on this one. We can compare a date
-        # field with a string in the format 'YYYY-MM-DD'.
-        where_clauses.append("%s >= '%s'" % (imm_date_field, begin_date.strftime('%Y-%m-%d')))
-        where_clauses.append("%s <= '%s'" % (imm_date_field, end_date.strftime('%Y-%m-%d')))
-
-
-        return self.extra(
-            tables = [patient_meta.db_table, imm_meta.db_table],
-            where = where_clauses
-            )    
-
+        return self.filter(patient__immunization=F('patient__immunization')).filter(
+            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
 
 class Encounter(BasePatientRecord):
     '''
