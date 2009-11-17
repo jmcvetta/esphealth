@@ -99,7 +99,7 @@ class BaseHeuristic(object):
         #
         registry = self.__registry # For convenience
         if name in registry:
-            log.error('Event definition "%s" is already registered for event type "%s".' % (self.def_name, name))
+            log.error('Event %s is already registered.' % name)
             raise HeuristicAlreadyRegistered('A BaseHeuristic instance is already registered with heuristic "%s".' % name)
         else:
             log.debug('Registering heuristic: "%s".' % name)
@@ -717,7 +717,7 @@ class MedicationHeuristic(BaseHeuristic):
 class WesternBlotHeuristic(BaseLabHeuristic):
     '''
     Generates events from western blot test results.
-        http://en.wikipedia.org/wiki/Western_blot
+    http://en.wikipedia.org/wiki/Western_blot
     '''
 
     def __init__(self, name, long_name, interesting_bands, band_count):
