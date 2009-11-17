@@ -5,8 +5,7 @@ from django.db.models import Q
 
 def make_clustering_event_report_file(filename, events, newline_separator='\r\n'):
     f = open(filename, 'w')
-    f.write('\t'.join(['id', 'vdate', 'edate', 'gap', 'vaccine', 
-                       'comment', 'age', 'gender']))
+    f.write('\t'.join(['id', 'vdate', 'edate', 'gap', 'vaccine', 'comment', 'age', 'gender']))
     f.write(newline_separator)
     for ev in events:
         f.write(ev.render_temporal_report())

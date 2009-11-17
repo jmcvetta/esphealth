@@ -450,7 +450,7 @@ if __name__ == '__main__':
 #    unittest.main()
 
     deidentify_suite = unittest.TestLoader().loadTestsFromTestCase(
-        TestDeidentification)
+        TestRuleEngine)
 
     unittest.TextTestRunner(verbosity=2).run(
         deidentify_suite

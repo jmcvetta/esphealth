@@ -10,6 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from ESP.hef.core import BaseHeuristic
 from ESP.hef.models import Run
 from ESP.conf.common import EPOCH
+from ESP.conf.models import CodeMap
 from ESP.static.models import Icd9
 from ESP.emr.models import Immunization, Encounter, LabResult
 from ESP.vaers.models import AdverseEvent
@@ -53,9 +54,8 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
 
         log.info('Finding fever events from %s to %s' % (begin, end))
         
-        return Encounter.objects.following_vaccination(
-            rules.TIME_WINDOW_POST_EVENT, begin_date=begin, 
-            end_date=end).filter(temperature__gte=rules.TEMP_TO_REPORT).distinct()
+        return Encounter.objects.following_vaccination(rules.TIME_WINDOW_POST_EVENT).filter(
+            temperature__gte=rules.TEMP_TO_REPORT, date__gte=begin, date__lte=end).distinct()
 
                     
 
@@ -77,7 +77,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
             try:
                 # Create event instance
                 ev, created = EncounterEvent.objects.get_or_create(
-                    category = self.category, date = date, encounter=e,
+                    category = self.category, date=date, encounter=e, patient=e.patient,
                     defaults={'matching_rule_explain':fever_message,
                               'content_type': encounter_type}
                     )
@@ -91,6 +91,9 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
                     e.patient, ev, self.time_post_immunization)
                 
                 assert len(immunizations) > 0 
+                # Get time interval between immunization and event
+                ev.gap = (e.date - min([i.date for i in immunizations])).days
+
                 for imm in immunizations:
                     ev.immunizations.add(imm)
 
@@ -101,6 +104,9 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
                 log.warn('Deleting event %s' % ev)
                 ev.delete()
                 counter -= 1
+
+            except Exception, why:
+                import pdb; pdb.set_trace()
 
         return counter
         
@@ -133,21 +139,16 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         begin = (incremental and last_run) or kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
 
-        candidates = Encounter.objects.following_vaccination(
-            rules.TIME_WINDOW_POST_EVENT, 
-            begin_date=begin, end_date=end).filter(
-            icd9_codes__in=self.icd9s).distinct()
-
+        candidates = Encounter.objects.following_vaccination(rules.TIME_WINDOW_POST_EVENT).filter(
+            date__gte=begin, date__lte=end, icd9_codes__in=self.icd9s).distinct()
 
         if self.discarding_icd9s:
-            candidates = [x for x in candidates if not 
-                          x.patient.has_history_of(self.discarding_icd9s, 
-                                                      end_date=end)]
+            candidates = [x for x in candidates 
+                          if not x.patient.has_history_of(self.discarding_icd9s, end_date=end)]
 
         if self.ignored_if_past_occurrence:
             months = self.ignored_if_past_occurrence
-            candidates = [x for x in candidates 
-                          if not x.is_reoccurrence(month_period=months)]
+            candidates = [x for x in candidates if not x.is_reoccurrence(month_period=months)]
 
         return candidates
 
@@ -163,7 +164,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
             try:
                 # Create event instance
                 ev, created = EncounterEvent.objects.get_or_create(
-                    encounter=e, date=e.date, category=self.category,
+                    encounter=e, date=e.date, category=self.category, patient=e.patient,
                     defaults={'matching_rule_explain':self.verbose_name,
                               'content_type':encounter_type}
                     )
@@ -178,6 +179,9 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
                     e.patient, ev, self.time_post_immunization)
                 
                 assert len(immunizations) > 0
+                # Get time interval between immunization and event
+                ev.gap = (e.date - min([i.date for i in immunizations])).days
+
                 for imm in immunizations:
                     ev.immunizations.add(imm)
                     
@@ -194,13 +198,16 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
 
 
 class VaersLxHeuristic(AdverseEventHeuristic):
-    def __init__(self, event_name, loinc, criterium, verbose_name=None):
+    def __init__(self, event_name, lab_codes, criterium):
         self.name = event_name
-        self.loinc = loinc
+        self.lab_codes = lab_codes
         self.criterium = criterium
         self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
 
-        super(VaersLxHeuristic, self).__init__(event_name, verbose_name=verbose_name)
+        super(VaersLxHeuristic, self).__init__(self.name, self.name)
+
+    def vaers_heuristic_name(self):
+        return 'VAERS: ' + self.name
 
     def matches(self, **kw):
         
@@ -218,7 +225,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         def excluded_due_to_history(lx, comparator, baseline):
             try:
                 
-                lkv = lx.last_known_value(self.loinc)
+                lkv = lx.last_known_value(self.lab_code)
                 if not lkv: return False
                 
                 current_value = lx.result_float or lx.result_string or None
@@ -231,7 +238,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
 
                 return eval(equation)
             except:
-#                log.warning('Could not find LKV for Lab Result %s' % lx)
+                log.warning('Could not find LKV for Lab Result %s' % lx)
                 return False
 
         
@@ -249,8 +256,8 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         trigger = self.criterium['trigger']
         comparator, baseline = self.criterium['exclude_if']
 
-        candidates = LabResult.objects.following_vaccination(
-            days, loinc=self.loinc).filter(date__gte=begin, date__lte=end).distinct()
+        candidates = LabResult.objects.following_vaccination(days).filter(
+            native_code__in=self.lab_codes, date__gte=begin, date__lte=end).distinct()
         
         return [c for c in candidates if is_trigger_value(c, trigger) and not 
                 excluded_due_to_history(c, comparator, baseline)]
@@ -274,28 +281,40 @@ class VaersLxHeuristic(AdverseEventHeuristic):
             try:
                 result = lab_result.result_float or lab_result.result_string
                 rule_explain = 'Lab Result for %s resulting in %s'% (self.name, result)
-            
-                ev, created = LabResultEvent.objects.get_or_create(
-                    lab_result=lab_result,
-                    category=self.criterium['category'],
-                    date=lab_result.date,
-                    defaults = {'matching_rule_explain': rule_explain,
-                                'content_type':lab_type}
-                    )
-                
+
+
+                try:
+                    ev, created = LabResultEvent.objects.get_or_create(
+                        lab_result=lab_result,
+                        category=self.criterium['category'],
+                        date=lab_result.date,
+                        patient=lab_result.patient,
+                        defaults = {
+                            'name': self.vaers_heuristic_name(),
+                            'matching_rule_explain': rule_explain,
+                            'content_type':lab_type}
+                        )
+                except Exception, why:
+                    import pdb; pdb.set_trace()
+
+                    
                 if created: counter += 1
 
                 ev.save()
                 ev.immunizations.clear()
 
                 # Register which immunizations may be responsible for the event
-                immunizations = Immunization.vaers_candidates(
-                    lab_result.patient, ev, self.time_post_immunization)
+                immunizations = Immunization.vaers_candidates(lab_result.patient, ev, self.time_post_immunization)
 
                 assert len(immunizations) > 0
+                # Get time interval between immunization and event
+                ev.gap = (lab_result.date - min([i.date for i in immunizations])).days
+
 
                 for imm in immunizations:
                     ev.immunizations.add(imm)
+                    
+
                 
                 ev.save()
 
@@ -323,17 +342,24 @@ def make_diagnosis_heuristic(name):
 
     return DiagnosisHeuristic(name, icd9s, category, verbose_name, **d)
 
-def make_lab_heuristics(loinc):
-    rule = rules.VAERS_LAB_RESULTS[loinc]
-    name = rule['name']
+def make_lab_heuristics(lab_type):
+    rule = rules.VAERS_LAB_RESULTS[lab_type]
 
-    def verbose_name(criterium):
-        return 'Lab Result for %s with value above/below the trigger of %s %s' % (name, criterium['trigger'], criterium['unit'])
+    def heuristic_name(criterium, lab_name):
+        return '%s %s %s' % (lab_name, criterium['trigger'], criterium['unit'])
 
-    return [
-        VaersLxHeuristic(name + criterium['trigger'], loinc, criterium, verbose_name=verbose_name(criterium))
-        for criterium in rule['criteria']]
-        
+    return [VaersLxHeuristic(heuristic_name(criterium, lab_type), rule['codes'], criterium)
+            for criterium in rule['criteria']]
+
+
+def do_lab_codemapping(heuristics):
+    for h in heuristics:
+        for code in h.lab_codes:
+            c, created = CodeMap.objects.get_or_create(native_code=code, heuristic=h.name, 
+                                                       native_name=h.vaers_heuristic_name())
+            msg = ('New mapping %s' % c) if created else ('Mapping %s already on database' % c)
+            log.info(msg)
+    
 
 
         
@@ -346,8 +372,9 @@ def diagnostic_heuristics():
 
 def lab_heuristics():
     hs = []
-    for loinc in rules.VAERS_LAB_RESULTS.keys():
-        for heuristic in make_lab_heuristics(loinc):
+
+    for lab_type in rules.VAERS_LAB_RESULTS.keys():
+        for heuristic in make_lab_heuristics(lab_type):
             hs.append(heuristic)
 
     return hs
@@ -366,6 +393,10 @@ def main():
                       help='Run Diagnostics Heuristics')
     parser.add_option('-a', '--all', action='store_true', dest='all', 
                       help='Generate new patients and immunization history')
+    parser.add_option('-m', '--mapping', action='store_true', dest='map', help='Build CodeMap for Lab Tests')
+    parser.add_option('-e', '--events', action='store_true', dest='events', help='Generate Events')
+
+
 
 
 
@@ -400,10 +431,22 @@ def main():
         sys.exit()
 
 
-    if options.fever: fever_heuristic().generate_events(begin_date=begin_date, end_date=end_date)
-    if options.diagnostics: [h.generate_events(begin_date=begin_date, end_date=end_date) 
-                             for h in diagnostic_heuristics()]
-    if options.lx: pass # lab_heuristics()
+    heuristics = []
+    if options.fever: heuristics.append(fever_heuristic())
+    if options.diagnostics: heuristics += diagnostic_heuristics()
+    if options.lx: 
+        lx_heuristics = lab_heuristics()
+        heuristics += lx_heuristics
+        if options.map:
+            do_lab_codemapping(lx_heuristics)
+
+
+    if options.events: 
+        log.info('Generating events from %s to %s' % (begin_date, end_date))
+        [h.generate_events(begin_date=begin_date, end_date=end_date) for h in heuristics]
+
+        
+        
 
 
 if __name__ == '__main__':

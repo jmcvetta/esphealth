@@ -1,10 +1,11 @@
 #-*- coding:utf-8 -*-
 
+from ESP.conf.models import CodeMap
 from ESP.static.models import Icd9, Vaccine, ImmunizationManufacturer
-from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
+from ESP.utils.utils import log
 
 # Constants defined in the VAERS documents.
-TEMP_TO_REPORT = AdverseEvent.VAERS_FEVER_TEMPERATURE # degrees are F in our records, 38C = 100.4F
+TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
 TIME_WINDOW_POST_EVENT = 60 # Period of time between immunization and event
 
 VAERS_LAB_RESULTS = {
@@ -170,7 +171,7 @@ VAERS_LAB_RESULTS = {
 
 
     'AST':{
-        'codes'::[
+        'codes':[
             '86003--4832', '86003--2739', '85007--1507', '86606--3807', '86003--4856', '86003--4855',
             '81001--2992', '81015--2992', '82465--1321', '81000--257', '81001--257', '81015--257',
             '87102--4297', '88173--4344', '88160--4343', '80061--6748', '81000--435', '81001--435',
@@ -225,9 +226,7 @@ VAERS_LAB_RESULTS = {
             '80053--66', '80076--66', '82040--66', '82947--66', '84075--66', '84080--66',
             '84078--5405', '84075--3480', 'LA0269--3480', '81002--3137', '85540--3137', 
             '84080--180','84080--179', '84080--178', '84080--181', '80076--177', '84075--177', 
-            '84080--177', '80053--66', '80076--66', '82040--66', '82947--66', '84075--66', 
-            '84080--66', '84078--5405', '84075--3480', 'LA0269--3480', '84078--5803', 
-            '81002--818', '85540--818', '81002--3137', '85540--3137'
+            '84080--177', '84078--5803', '81002--818', '85540--818'
             ],
         
         'criteria':[{
@@ -645,11 +644,22 @@ MANUFACTURER_MAPPING = {
     }
 
 
+def map_lab_tests():
+    for lab_type, lab in VAERS_LAB_RESULTS.items():
+        for code in set(lab['codes']):
+            c, created = CodeMap.objects.get_or_create(native_code=code, heuristic=lab_type)
+            msg = ('New mapping %s' % c) if created else 'Mapping %s already on database' % c
+            log.info(msg)
+                
+                
+
 
 def define_active_rules():
     '''Read each of the rules defined in VAERS_DIAGNOSTICS
     dict to create the Rule objects. The keys in the dict define a
     whole set of icd9 codes that are indication of a VAERS Event'''
+
+    from ESP.vaers.models import DiagnosticsEventRule
     
     def find_and_add_codes(code_expression_list, code_set):
         for code_expression in code_expression_list:
@@ -695,5 +705,11 @@ def define_active_rules():
                            obj.heuristic_discarding_codes)
 
 
+
+
+def main():
+    map_lab_tests()
+
+
 if __name__ == '__main__':
-    define_active_rules()
+    main()

@@ -14,17 +14,20 @@ from django.template.loader import get_template
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
-from ESP.emr.models import Patient, Immunization, Encounter, LabResult, Provider
 from ESP.esp.choices import WORKFLOW_STATES # FIXME: 'esp' module is deprecated
-from ESP.static.models import Icd9
-from ESP.static.models import Loinc
-from ESP.conf.common import DEIDENTIFICATION_TIMEDELTA
+from ESP.emr.models import Patient, Immunization, Encounter, LabResult, Provider
+from ESP.static.models import Icd9, Loinc
+from ESP.conf.models import CodeMap
+from ESP.conf.common import DEIDENTIFICATION_TIMEDELTA, EPOCH
+from ESP.utils.utils import log
 
+from rules import TEMP_TO_REPORT, TIME_WINDOW_POST_EVENT
 from utils import make_clustering_event_report_file
 import settings
 
-HL7_MESSAGES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                'assets', 'hl7_messages')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CLUSTERING_REPORTS_DIR = os.path.join(BASE_DIR, 'assets', 'clustering_reports')
+HL7_MESSAGES_DIR = os.path.join(BASE_DIR, 'assets', 'hl7_messages')
 
 
 ADVERSE_EVENT_CATEGORIES = [
@@ -53,8 +56,7 @@ class AdverseEventManager(models.Manager):
         
         auto = Q(category='auto')
         confirmed = Q(category='confirm', state='Q')
-        to_report_by_default = Q(category='default', state='AR', 
-                                 created_on__lte=week_ago)
+        to_report_by_default = Q(category='default', state='AR', created_on__lte=week_ago)
 
         return self.filter(auto | confirmed | to_report_by_default)
 
@@ -62,12 +64,15 @@ class AdverseEventManager(models.Manager):
 class AdverseEvent(models.Model):
 
     # Model Fields
+    patient = models.ForeignKey(Patient)
     immunizations = models.ManyToManyField(Immunization)
+    name = models.CharField(max_length=50)
+    date = models.DateField()
+    gap = models.IntegerField(null=True)
     matching_rule_explain = models.CharField(max_length=200)
     category = models.CharField(max_length=20, choices=ADVERSE_EVENT_CATEGORIES)
     digest = models.CharField(max_length=200, null=True)
     state = models.SlugField(max_length=2, choices=WORKFLOW_STATES, default='AR')
-    date = models.DateField()
     created_on = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
     
@@ -76,7 +81,7 @@ class AdverseEvent(models.Model):
     content_type = models.ForeignKey(ContentType)
 
     FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'fixtures', 'events')
-    VAERS_FEVER_TEMPERATURE = 100.4
+    VAERS_FEVER_TEMPERATURE = TEMP_TO_REPORT
    
     @staticmethod
     def fakes():
@@ -253,13 +258,10 @@ class AdverseEvent(models.Model):
         return '\n'.join(buf)
 
     def is_fake(self):
-        return self.patient().is_fake()
-
-    def patient(self):
-        return self.immunizations.all()[0].patient
+        return self.patient.is_fake()
 
     def provider(self):
-        return self.patient().pcp
+        return self.patient.pcp
 
     def verification_url(self):
         return reverse('verify_case', kwargs={'key':self.digest})
@@ -281,7 +283,7 @@ class AdverseEvent(models.Model):
         params = {
             'case': self,
             'provider': self.provider(),
-            'patient': self.patient(),
+            'patient': self.patient,
             'url':'http://%s%s' % (current_site, self.verification_url()),
             'misdirected_email_contact':settings.EMAIL_SENDER
             }
@@ -311,7 +313,7 @@ class AdverseEvent(models.Model):
         # dependant on the patient's age.
         
         fake_patient = Patient.make_mock(save_on_db=False)
-        new_dob = self.patient().date_of_birth - datetime.timedelta(days=days_to_shift)
+        new_dob = self.patient.date_of_birth - datetime.timedelta(days=days_to_shift)
         fake_patient.date_of_birth = new_dob
         return fake_patient
 
@@ -398,20 +400,42 @@ class EncounterEvent(AdverseEvent):
     encounter = models.ForeignKey(Encounter)
 
     @staticmethod
-    def write_fever_clustering_file_report(folder):
-        fever_events = EncounterEvent.objects.filter(
-            matching_rule_explain__startswith='Patient had')
+    def write_fever_clustering_report(**kw):
+        folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
+        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
+        begin_date = kw.pop('begin_date', None) or EPOCH
+        end_date = kw.pop('end_date', None) or datetime.datetime.today()
 
-        make_clustering_event_report_file(
-            os.path.join(folder, 'clustering_fever_events.txt'), fever_events)
+        fever_events = EncounterEvent.objects.filter(matching_rule_explain__startswith='Patient had',
+                                                     date__gte=begin_date, date__lte=end_date, gap__lte=7)
+
+        within_interval = [e for e in fever_events 
+                           if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
+
+        log.info('Writing report for %d fever events between %s and %s' % (
+                len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+        make_clustering_event_report_file(os.path.join(folder, 'fever_events.txt'), within_interval)
 
     @staticmethod
-    def write_diagnostics_clustering_file_report(folder):
-        diagnostics_events = EncounterEvent.objects.exclude(
-            matching_rule_explain__startswith='Patient had')
+    def write_diagnostics_clustering_report(**kw):
+        folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
+        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
+        begin_date = kw.pop('begin_date', None) or EPOCH
+        end_date = kw.pop('end_date', None) or datetime.datetime.today()
+
+
+        icd9_events = EncounterEvent.objects.exclude(matching_rule_explain__startswith='Patient had',
+                                                     date__gte=begin_date, date__lte=end_date, gap__lte=30)
+
+        within_interval = [e for e in icd9_events 
+                           if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
+
+        log.info('Writing report for %d icd9 events between %s and %s' % (
+                len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+
 
         make_clustering_event_report_file(
-            os.path.join(folder, 'clustering_diagnostics_events.txt'), diagnostics_events)
+            os.path.join(folder, 'diagnostics_events.txt'), within_interval)
 
     def _deidentified_encounter(self, days_to_shift):
         codes = [{'code':x.code} for x in self.encounter.icd9_codes.all()]
@@ -422,10 +446,6 @@ class EncounterEvent(AdverseEvent):
             'icd9_codes':codes
             }
     
-
-    def patient(self):
-        return self.encounter.patient
-
     def complete_deidentification(self, data, **kw):
         days_to_shift = kw.pop('days_to_shift', None)
         if not days_to_shift: 
@@ -444,15 +464,24 @@ class EncounterEvent(AdverseEvent):
 
 class LabResultEvent(AdverseEvent):
     lab_result = models.ForeignKey(LabResult)
+    
 
     @staticmethod
-    def write_clustering_file_report(folder):
+    def write_clustering_report(**kw):
+        folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
+        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
+        begin_date = kw.pop('begin_date', None) or EPOCH
+        end_date = kw.pop('end_date', None) or datetime.datetime.today()
+
+        lx_events = LabResultEvent.objects.filter(date__gte=begin_date, date__lte=end_date)
+        within_interval = [e for e in lx_events 
+                           if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
+
+        log.info('Writing report for %d Lab Result events between %s and %s' % (
+                len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+
         make_clustering_event_report_file(
-            os.path.join(folder, 'clustering_lx_events.txt'), LabResultEvent.objects.all())
-
-    def patient(self):
-        return self.lab_result.patient
-
+            os.path.join(folder, 'clustering_lx_events.txt'), within_interval)
 
     def _deidentified_lx(self, days_to_shift):
         date = self.lab_result.date - datetime.timedelta(days=days_to_shift)
@@ -538,21 +567,3 @@ class DiagnosticsEventRule(Rule):
     
     def __unicode__(self):
         return unicode(self.name)
-
-
-class LabResultEventRule(Rule):
-    @staticmethod
-    def all_active():
-        return LabResultEventRule.objects.filter(in_use=True)
-    
-    @staticmethod
-    def by_name(name, only_if_active=True):
-        q = LabResultEventRule.objects.filter(name=name)
-        if only_if_active: q = q.filter(in_use=True)
-        return q
-
-    @staticmethod
-    def random():
-        return LabResultEventRule.objects.order_by('?')[0]
-
-    loinc = models.ForeignKey(Loinc)
