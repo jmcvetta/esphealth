@@ -239,3 +239,6 @@ class ValidatorResult(models.Model):
     
     class Meta:
         verbose_name = 'Validator Result'
+    
+    def __str__(self):
+        return 'Result # %s' % self.pk
