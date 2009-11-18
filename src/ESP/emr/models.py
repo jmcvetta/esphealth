@@ -559,6 +559,7 @@ class LabResult(BasePatientRecord):
     result_string = models.TextField('Test Result', max_length=2000, blank=True, null=True, db_index=True)
     # Wide fields
     specimen_num = models.CharField('Speciment ID Number', max_length=100, blank=True, null=True)
+    specimen_source = models.CharField('Speciment Source', max_length=255, blank=True, null=True)
     impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
     comment = models.TextField('Comments',  blank=True,  null=True, )
     # Manager

@@ -364,6 +364,7 @@ class LabResultLoader(BaseLoader):
         'note',
         'specimen_id_num',
         'impression',
+        'specimen_source',
         ]
     
     def load_row(self, row):
@@ -410,6 +411,7 @@ class LabResultLoader(BaseLoader):
         l.comment = row['note']
         l.specimen_num = row['specimen_id_num']
         l.impression = row['impression']
+        l.specimen_source = row['specimen_source']
         l.save()
         log.debug('Saved lab result object: %s' % l)
 
