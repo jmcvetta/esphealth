@@ -92,15 +92,16 @@ class EtlError(models.Model):
     data = models.TextField()
     
 
+class LabTestConcordance(models.Model):
+    '''
+    Concordance table listing all distinct lab test names and codes, and the 
+    count results in the database for each test at time table was generated.
+    Should be rebuilt after each load of new EMR data.
+    '''
+    native_code = models.CharField(max_length=100, blank=False)
+    native_name = models.CharField(max_length=255, blank=False)
+    count = models.IntegerField(blank=False)
 
-class NativeNameCache(models.Model):
-    '''
-    Cache table for storing list of all distinct LabResult native_name 
-    and native_code values.  This isn't an EMR record; it is kept in 'emr' 
-    module for convenience.
-    '''
-    native_name = models.CharField(max_length=255, blank=True, null=True)
-    native_code = models.CharField(max_length=100, unique=True, blank=False)
 
 
 #===============================================================================

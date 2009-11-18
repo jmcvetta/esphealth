@@ -128,18 +128,6 @@ class CaseStatusHistory(models.Model):
         verbose_name_plural = 'Case Status History'
 
 
-class InterestingLab(models.Model):
-    '''
-    Cache of lab tests which contain suspicious strings in their names.  This 
-    must be cached for display in web UI report, because query can be time 
-    consuming.  Populated by find_unmapped_labs.py.
-    '''
-    native_code = models.CharField(max_length=100, blank=False)
-    native_name = models.CharField(max_length=255, blank=False)
-    count = models.IntegerField(blank=False)
-
-
-
 #===============================================================================
 #
 # Case Validator Models

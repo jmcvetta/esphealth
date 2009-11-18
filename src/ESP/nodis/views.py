@@ -50,19 +50,18 @@ from ESP.conf.models import NativeCode
 from ESP.conf.models import CodeMap
 from ESP.conf.models import IgnoredCode
 from ESP.static.models import Loinc
-from ESP.emr.models import NativeNameCache
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
 from ESP.emr.models import Encounter
 from ESP.emr.models import LabResult
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
+from ESP.emr.models import LabTestConcordance
 from ESP.hef.core import BaseHeuristic
 from ESP.hef import events # Required to register hef events
 from ESP.nodis.core import Condition
 from ESP.nodis.models import Case
 from ESP.nodis.models import CaseStatusHistory
-from ESP.nodis.models import InterestingLab
 from ESP.nodis.models import ReferenceCaseList
 from ESP.nodis.models import ReferenceCase
 from ESP.nodis.models import ValidatorRun
@@ -393,7 +392,11 @@ def unmapped_labs_report(request):
     q_obj = Q(native_code__isnull=False)
     q_obj &= ~Q(native_code__in=ignored)
     q_obj &= ~Q(native_code__in=mapped)
-    unmapped = InterestingLab.objects.filter(q_obj).order_by('native_name', 'native_code')
+    all_strings = Condition.all_test_name_search_strings()
+    q_obj = Q(native_name__icontains=all_strings[0])
+    for string in all_strings[1:]:
+        q_obj |= Q(native_name__icontains=string)
+    unmapped = LabTestConcordance.objects.filter(q_obj).order_by('native_name', 'native_code')
     strings = Condition.all_test_name_search_strings()
     strings.sort()
     values = {
