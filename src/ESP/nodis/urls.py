@@ -51,4 +51,9 @@ urlpatterns = patterns('ESP.nodis.views',
     #
     url(r'^labs/unmapped/$', 'unmapped_labs_report', name='unmapped_labs_report'),
     url(r'^labs/map/(?P<native_code>.+)/$', 'map_native_code', name='map_native_code'),
+    #
+    # Validator
+    #
+    url(r'^validate/$', 'validator_summary', name='validator_summary'),
+    url(r'^validate/missing/$', 'validate_missing', name='validate_missing'),
 )
