@@ -17,8 +17,8 @@ doc/specifications/PHIN_ELR_Implementation_Guide--HL7_2.3.1--21_May_2004.pdf -te
 doc/specifications/gipse.xsd -text
 etc/apache.conf -text
 etc/django.wsgi -text
-etc/esp-batch-run.sh -text
 /readme -text
+sbin/esp-batch-run.sh -text
 src/ESP/batch-run.sh -text
 src/ESP/cache/__init__.py -text
 src/ESP/cache/models.py -text
