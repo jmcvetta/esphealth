@@ -101,4 +101,22 @@
     {% csrf_token %}
 </form>
 
+<hr>
+
+<h2>Comment Values</h2>
+
+<p>10 most popular:
+<table>
+    <tr>
+        <th>Comment Value
+        <th>Lab Record Count
+    </tr>
+    {% for item in comments %}
+    <tr>
+        <td>{{ item.comment }}
+        <td>{{ item.count }}
+    </tr>
+    {% endfor %}
+</table>
+
 {% endblock %}

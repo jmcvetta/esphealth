@@ -63,8 +63,13 @@ from ESP.nodis.core import Condition
 from ESP.nodis.models import Case
 from ESP.nodis.models import CaseStatusHistory
 from ESP.nodis.models import InterestingLab
+from ESP.nodis.models import ReferenceCaseList
+from ESP.nodis.models import ReferenceCase
+from ESP.nodis.models import ValidatorRun
+from ESP.nodis.models import ValidatorResult
 from ESP.nodis.forms import CaseStatusForm
 from ESP.nodis.forms import CodeMapForm
+from ESP.nodis.validator import RELATED_MARGIN
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
 
@@ -431,7 +436,7 @@ def map_native_code(request, native_code):
             return redirect_to(request, reverse('unmapped_labs_report'))
     result_strings = labs.values('result_string').distinct().annotate(count=Count('id')).order_by('-count')[:10]
     ref_high_values = labs.values('ref_high_string').distinct().annotate(count=Count('id')).order_by('-count')[:10]
-    #comments = labs.values('comment').distinct().annotate(count=Count('id')).order_by('-count')[:10]
+    comments = labs.values('comment').distinct().annotate(count=Count('id')).order_by('-count')[:10]
     without_ref_high = labs.filter(result_float__isnull=False, ref_high_float__isnull=True).count()
     without_ref_high_percent = float(without_ref_high) / float(labs.count()) * 100
     values = {
@@ -443,7 +448,7 @@ def map_native_code(request, native_code):
         'ref_high_values': ref_high_values,
         'without_ref_high': without_ref_high,
         'without_ref_high_percent': without_ref_high_percent,
-        #'comments': comments,
+        'comments': comments,
         'form': form,
         'count': labs.count()
         }
@@ -467,3 +472,48 @@ def all_records(request, patient_pk):
         'immunizations': immunizations,
         }
     return render_to_response('nodis/all_records.html', values, context_instance=RequestContext(request))
+
+
+@login_required
+def validator_summary(request, validator_run_id=None):
+    if validator_run_id:
+        validator_run = get_object_or_404(ValidatorRun, pk=validator_run_id)
+    else:
+        validator_run = ValidatorRun.objects.all().order_by('-pk')[0]
+    results = ValidatorResult.objects.filter(run=validator_run, ref_case__ignore=False)
+    exact = results.filter(disposition='exact')
+    similar = results.filter(disposition='similar')
+    missing = results.filter(disposition='missing')
+    new = results.filter(disposition='new')
+    missing_summary = missing.values('ref_case__condition').annotate(Count('pk'))
+    print missing_summary
+    values = {
+        'title': 'Case Validator: Summary',
+        'exact': exact,
+        'similar': similar,
+        'missing': missing.select_related(),
+        'new': new,
+        'run': validator_run,
+        'count_exact': exact.count(),
+        'count_similar': similar.count(),
+        'count_missing': missing.count(),
+        'count_new': new.count(),
+        'percent_exact': float(exact.count()) / results.count(),
+        'percent_similar': float(similar.count()) / results.count(),
+        'percent_missing': float(missing.count()) / results.count(),
+        'percent_new': float(new.count()) / results.count(),
+        #'no_mrn': no_mrn,
+        #'count_no_mrn': count_no_mrn,
+        #'percent_no_mrn': percent_no_mrn,
+        'total': results.count(),
+        'related_margin': RELATED_MARGIN,
+        'missing_summary': missing_summary,
+        }
+    return render_to_response('nodis/validator_report.html', values, context_instance=RequestContext(request))
+
+@login_required
+def validate_missing(request):
+    values = {
+        'title': 'Case Validator: Missing Cases',
+        }
+    
