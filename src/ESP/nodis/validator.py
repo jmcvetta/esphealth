@@ -67,7 +67,7 @@ from ESP.nodis.models import ValidatorResult
 from ESP.nodis.core import Condition
 
 
-def validate(records):
+def old_validate(records):
     '''
     Validates cases described in iterable records
     '''
@@ -194,6 +194,78 @@ def load_csv(options):
     log.info('Loaded %s records as list #%s' % (counter, list.pk))
 
 
+def validate(options):
+    if options.list:
+        list = ReferenceCaseList.objects.get(pk=options.list)
+    else:
+        list = ReferenceCaseList.objects.all().order_by('-pk')[0]
+    run = ValidatorRun(list=list)
+    run.save()
+    log.info('Starting validator run # %s' % run.pk)
+    related_delta = datetime.timedelta(days=RELATED_MARGIN)
+    for ref in ReferenceCase.objects.filter(list=list).order_by('date', 'condition', 'pk'):
+        condition_object = Condition.get_condition(ref.condition)
+        if not condition_object:
+            log.warning('Invalid condition name: "%s".  Skipping.' % ref.condition)
+            continue
+        result = ValidatorResult(run=run, ref_case=ref)
+        cases = Case.objects.filter(patient=ref.patient, condition__iexact=ref.condition)
+        previous_day = ref.date - datetime.timedelta(days=1)
+        exact_date_cases = cases.filter(date__gte=previous_day, date__lte=ref.date)
+        if exact_date_cases:
+            log.debug('Exact case match found.')
+            if len(exact_date_cases) > 1: 
+                log.warning('More than one exact case match!')
+            result.nodis_case = exact_date_cases[0].pk
+            result.disposition = 'exact'
+            result.save()
+            continue
+        if condition_object.recur_after == -1: # does not recur
+            log.debug('Condition %s does not recur.  Any previous case will be considered similar.' % ref.condition)
+            similar_date_cases = cases.filter(date__lte=ref.date)
+        else:
+            recur_delta = datetime.timedelta(days=condition_object.recur_after)
+            begin_date = ref.date - recur_delta
+            end_date = ref.date + recur_delta
+            log.debug('recur delta: %s' % recur_delta)
+            log.debug('begin date: %s' % begin_date)
+            log.debug('end date: %s' % end_date)
+            similar_date_cases = cases.filter(date__gte=begin_date, date__lte=end_date)
+        if similar_date_cases:
+            log.debug('Found case with similar date: %s' % similar_date_cases[0].date)
+            if len(exact_date_cases) > 1: 
+                log.warning('More than one similar case match!')
+            result.nodis_case = similar_date_cases[0].pk
+            result.disposition = 'similar'
+            result.save()
+            continue
+        log.debug('No case match found')
+        #
+        # Related Events for Missing Case
+        #
+        # At this point, case is missing.  Let's look for relevant events for 
+        # this patient; and if none of those are found, we'll look for
+        # relevant lab results.
+        cases = Case.objects.filter(patient=ref.patient, condition=ref.condition).order_by('date')
+        log.debug('Found %s relevant cases' % cases.count())
+        begin = ref.date - related_delta
+        end = ref.date + related_delta
+        q_obj = Q(patient=ref.patient, date__gte=begin, date__lte=end)
+        event_names = condition_object.relevant_event_names
+        events = Event.objects.filter(q_obj).filter(name__in=event_names).order_by('date')
+        log.debug('Found %s relevant events' % events.count())
+        labs = condition_object.relevant_labs
+        for test_name in condition_object.test_name_search:
+            labs |= LabResult.objects.filter(native_name__icontains=test_name)
+        labs = labs.filter(q_obj).order_by('date')
+        log.debug('Found %s relevant labs' % labs.count())
+        result.disposition = 'missing'
+        result.save() # Must save before populating ManyToManyFields
+        result.lab_results = labs
+        result.events = events
+        result.save()
+        #
+
 def main():
     parser = optparse.OptionParser()
     parser.add_option('--load', action='store', dest='load', metavar='FILE', 
@@ -211,6 +283,10 @@ def main():
         sys.exit(10)
     if options.list and not options.run:
         print >> sys.stderr, 'Cannot use --list without --run.'
+        parser.print_help()
+        sys.exit(10)
+    if not (options.load or options.run):
+        print >> sys.stderr, 'Must use either --run or --load.'
         parser.print_help()
         sys.exit(10)
     #

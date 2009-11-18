@@ -137,7 +137,7 @@ class InterestingLab(models.Model):
 
 
 
-#-------------------------------------------------------------------------------
+#===============================================================================
 #
 # Case Validator Models
 #
@@ -150,6 +150,9 @@ class ReferenceCaseList(models.Model):
     source = models.CharField(max_length=255, blank=False)
     timestamp = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return 'List # %s' % self.pk
 
 
 class ReferenceCase(models.Model):
@@ -168,6 +171,9 @@ class ReferenceCase(models.Model):
     ignore = models.BooleanField(default=False, db_index=True)
     notes = models.TextField(blank=True, null=True)
     
+    def __str__(self):
+        return '%s - %s - %s' % (self.condition, self.date, self.patient.mrn)
+    
     
 class ValidatorRun(models.Model):
     '''
@@ -176,6 +182,9 @@ class ValidatorRun(models.Model):
     timestamp = models.DateTimeField(blank=False, auto_now_add=True)
     list = models.ForeignKey(ReferenceCaseList, blank=False)
     notes = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return 'Run # %s' % self.pk
 
 
 class ValidatorResult(models.Model):
@@ -183,13 +192,30 @@ class ValidatorResult(models.Model):
     ref_case = models.ForeignKey(ReferenceCase, blank=True, null=True)
     # Store reference to Nodis case as an integer, not a foreign key, since Case 
     # table may be purged and rebuilt between validator runs.
-    nodis_case = models.IntegerField(blank=True, null=True) 
+    nodis_case_id = models.IntegerField(blank=True, null=True) 
     disposition = models.CharField(max_length=30, blank=False, choices=DISPOSITIONS)
     #
     # ManyToManyFields populated only for missing cases
     #
-    lab_results = models.ForeignKey(LabResult, blank=True, null=True)
-    encounters = models.ForeignKey(Encounter, blank=True, null=True)
-    prescriptions = models.ForeignKey(Prescription, blank=True, null=True)
+    events = models.ManyToManyField(Event, blank=True, null=True)
+    cases = models.ManyToManyField(Case, blank=True, null=True)
+    lab_results = models.ManyToManyField(LabResult, blank=True, null=True)
+    encounters = models.ManyToManyField(Encounter, blank=True, null=True)
+    prescriptions = models.ManyToManyField(Prescription, blank=True, null=True)
     #
     notes = models.TextField(blank=True, null=True)
+
+    def nodis_case(self):
+        if self.nodis_case_id:
+            return Case.objects.get(pk=self.nodis_case_id)
+        else:
+            return None
+    
+    def condition(self):
+        return self.ref_case.condition
+    
+    def date(self):
+        return self.ref_case.date
+        
+    def patient(self):
+        return self.ref_case.patient
