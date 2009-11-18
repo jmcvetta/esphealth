@@ -22,8 +22,12 @@ Reference Case
 </h2>
 
 <p>
-Reference Case ID # {{ result.ref_case.pk }}
+ID #: {{ result.ref_case.pk }}
+<br>Condtion: {{ result.condition }}
+<br>Date: {{ result.date }}
+<br>Patient ID #: {{ result.patient.pk }}
 </p>
+
 
 <p>
     <form id='ref_case_form' method='POST' action='{% url missing_case_detail result.pk %}'>
