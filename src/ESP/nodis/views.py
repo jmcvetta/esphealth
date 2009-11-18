@@ -389,13 +389,13 @@ def unmapped_labs_report(request):
     '''
     ignored = IgnoredCode.objects.values('native_code')
     mapped = CodeMap.objects.values('native_code').distinct()
-    q_obj = Q(native_code__isnull=False)
-    q_obj &= ~Q(native_code__in=ignored)
-    q_obj &= ~Q(native_code__in=mapped)
     all_strings = Condition.all_test_name_search_strings()
     q_obj = Q(native_name__icontains=all_strings[0])
     for string in all_strings[1:]:
         q_obj |= Q(native_name__icontains=string)
+    q_obj &= Q(native_code__isnull=False)
+    q_obj &= ~Q(native_code__in=ignored)
+    q_obj &= ~Q(native_code__in=mapped)
     unmapped = LabTestConcordance.objects.filter(q_obj).order_by('native_name', 'native_code')
     strings = Condition.all_test_name_search_strings()
     strings.sort()
