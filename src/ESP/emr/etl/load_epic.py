@@ -175,7 +175,7 @@ class BaseLoader(object):
             if cur_row >= self.line_count:
                 break
             # check this, too -- in case there are extra blank lines at end of file
-            if row['patient_id_num'].upper() == 'CONTROL TOTALS':
+            if row[self.fields[0]].upper() == 'CONTROL TOTALS':
                 break
             sid = transaction.savepoint()
             try:
