@@ -105,14 +105,14 @@ LabResultHeuristic(
 #--- hep_a_igm
 LabResultHeuristic(
     name = 'hep_a_igm',
-    long_name = 'Hepatitis A IgM',
+    long_name = 'Hepatitis A IgM antibody',
     negative_events = True,
     )
 
 #--- hep_b_igm
 LabResultHeuristic(
     name = 'hep_b_igm',
-    long_name = 'Hepatitis B IgM',
+    long_name = 'Hepatitis B core IgM antibody',
     negative_events = True,
     order_events = True,
     )
@@ -120,7 +120,7 @@ LabResultHeuristic(
 #--- hep_b_core
 LabResultHeuristic(
     name = 'hep_b_core',
-    long_name = 'Hepatitis B core antibody',
+    long_name = 'Hepatitis B core general antibody',
     negative_events = True,
     )
 
