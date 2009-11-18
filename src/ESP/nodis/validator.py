@@ -107,13 +107,14 @@ def load_csv(options):
 def validate(options):
     if options.list:
         list = ReferenceCaseList.objects.get(pk=options.list)
+        reference_cases = ReferenceCase.objects.filter(list=list)
     else:
-        list = ReferenceCaseList.objects.all().order_by('-pk')[0]
+        reference_cases = ReferenceCase.objects.all()
     run = ValidatorRun(list=list, related_margin=RELATED_MARGIN)
     run.save()
     log.info('Starting validator run # %s' % run.pk)
     related_delta = datetime.timedelta(days=RELATED_MARGIN)
-    for ref in ReferenceCase.objects.filter(list=list).order_by('date', 'condition', 'pk'):
+    for ref in reference_cases.order_by('date', 'condition', 'pk'):
         condition_object = Condition.get_condition(ref.condition)
         if not condition_object:
             log.warning('Invalid condition name: "%s".  Skipping.' % ref.condition)
