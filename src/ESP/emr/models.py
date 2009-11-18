@@ -333,6 +333,8 @@ class Patient(BaseMedicalRecord):
             return u'%s, %s %s' % (self.last_name, self.first_name, self.middle_name)
         else:
             return u'%s, %s' % (self.last_name, self.first_name)
+    name = property(_get_name)
+    full_name = property(_get_name)
 
     def _get_age_str(self, precision='years', with_units=False):
         '''Returns patient's age as a string'''
@@ -353,8 +355,6 @@ class Patient(BaseMedicalRecord):
             }
         return ' '.join([str(d[precision]), 
                          str(precision) if with_units else ''])
-    name = property(_get_name)
-    full_name = property(_get_name)
 
 
     
