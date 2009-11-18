@@ -153,6 +153,9 @@ class ReferenceCaseList(models.Model):
     
     def __str__(self):
         return 'List # %s' % self.pk
+    
+    class Meta:
+        verbose_name = 'Reference Case List'
 
 
 class ReferenceCase(models.Model):
@@ -174,6 +177,9 @@ class ReferenceCase(models.Model):
     def __str__(self):
         return '%s - %s - %s' % (self.condition, self.date, self.patient.mrn)
     
+    class Meta:
+        verbose_name = 'Reference Case'
+    
     
 class ValidatorRun(models.Model):
     '''
@@ -185,6 +191,9 @@ class ValidatorRun(models.Model):
     
     def __str__(self):
         return 'Run # %s' % self.pk
+    
+    class Meta:
+        verbose_name = 'Validator Run'
 
 
 class ValidatorResult(models.Model):
@@ -219,3 +228,6 @@ class ValidatorResult(models.Model):
         
     def patient(self):
         return self.ref_case.patient
+    
+    class Meta:
+        verbose_name = 'Validator Result'
