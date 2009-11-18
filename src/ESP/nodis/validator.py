@@ -205,7 +205,7 @@ def validate(options):
     run.save()
     log.info('Starting validator run # %s' % run.pk)
     related_delta = datetime.timedelta(days=RELATED_MARGIN)
-    for ref in ReferenceCase.objects.filter(list=list, ignore=False).order_by('date', 'condition', 'pk'):
+    for ref in ReferenceCase.objects.filter(list=list).order_by('date', 'condition', 'pk'):
         condition_object = Condition.get_condition(ref.condition)
         if not condition_object:
             log.warning('Invalid condition name: "%s".  Skipping.' % ref.condition)
@@ -274,12 +274,14 @@ def validate(options):
     #
     # New Cases
     #
-    for new_case in Case.objects.filter(validatorresult__isnull=True):
+    q_obj = ~Q(validatorresult__run=run)
+    for new_case in Case.objects.filter(q_obj):
         result = ValidatorResult(run=run)
         result.disposition = 'new'
         result.save()
         result.cases = [new_case]
         result.save()
+        log.debug('New: %s' % result)
     #
     # Generate Run Statistics
     #
