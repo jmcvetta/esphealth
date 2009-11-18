@@ -127,7 +127,7 @@ LabResultHeuristic(
 #--- hep_b_surface
 LabResultHeuristic(
     name = 'hep_b_surface',
-    long_name = 'Hepatitis B surface antibody',
+    long_name = 'Hepatitis B surface antigen',
     negative_events = True,
     )
 
