@@ -42,3 +42,7 @@ class CodeMapForm(forms.Form):
 
 class ConditionForm(forms.Form):
     condition = forms.ChoiceField(choices=Condition.condition_choices(wildcard=True))
+
+class ReferenceCaseForm(forms.Form):
+    notes = forms.CharField(required=False, widget=forms.Textarea)
+    ignore = forms.BooleanField(required=False)

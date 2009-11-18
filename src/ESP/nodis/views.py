@@ -70,6 +70,7 @@ from ESP.nodis.models import ValidatorResult
 from ESP.nodis.forms import CaseStatusForm
 from ESP.nodis.forms import CodeMapForm
 from ESP.nodis.forms import ConditionForm
+from ESP.nodis.forms import ReferenceCaseForm
 from ESP.nodis.validator import RELATED_MARGIN
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
@@ -481,7 +482,7 @@ def validator_summary(request, validator_run_id=None):
         validator_run = get_object_or_404(ValidatorRun, pk=validator_run_id)
     else:
         validator_run = ValidatorRun.objects.all().order_by('-pk')[0]
-    results = ValidatorResult.objects.filter(run=validator_run, ref_case__ignore=False)
+    results = validator_run.results
     ref_cases = ReferenceCase.objects.filter(list=validator_run.list, ignore=False)
     values = {
         'title': 'Case Validator: Summary',
@@ -506,7 +507,7 @@ def validate_missing(request, validator_run_id=None):
         validator_run = get_object_or_404(ValidatorRun, pk=validator_run_id)
     else:
         validator_run = ValidatorRun.objects.all().order_by('-pk')[0]
-    missing = ValidatorResult.objects.filter(run=validator_run, disposition='missing')
+    missing = validator_run.missing
     condition_form = ConditionForm()
     values = {
         'title': 'Case Validator: Missing Cases',
@@ -522,4 +523,30 @@ def validate_missing(request, validator_run_id=None):
     values['missing'] = missing.select_related() # Is select_related() helpful here?
     values['condition_form'] = condition_form
     return render_to_response('nodis/validator_missing.html', values, context_instance=RequestContext(request))
+    
+
+@login_required
+def missing_case_detail(request, result_id):
+    result = get_object_or_404(ValidatorResult, pk=result_id)
+    initial = {'notes': result.ref_case.notes, 'ignore': result.ref_case.ignore}
+    form = ReferenceCaseForm(initial=initial)
+    values = {
+        'title': 'Missing Case Detail',
+        'result': result,
+        }
+    if request.method == 'POST':
+        form = ReferenceCaseForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            ref_case = result.ref_case
+            if not data['notes'] == ref_case.notes:
+                request.user.message_set.create(message='Updated notes for reference case # %s' % ref_case.pk)
+            if data['ignore']:
+                request.user.message_set.create(message='Ignoring reference case # %s' % ref_case.pk)
+            ref_case.notes = data['notes']
+            ref_case.ignore = data['ignore']
+            ref_case.save()
+    values['form'] = form
+    return render_to_response('nodis/missing_case_detail.html', values, context_instance=RequestContext(request))
+    
     
