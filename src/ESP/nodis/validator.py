@@ -258,6 +258,12 @@ def validate(options):
         for test_name in condition_object.test_name_search:
             labs |= LabResult.objects.filter(native_name__icontains=test_name)
         result.disposition = 'missing'
+        result.save() # Must save before populating ManyToManyFields
+        result.lab_results = labs.filter(q_obj).order_by('date')
+        result.encouters = Encounter.objects.filter(q_obj)
+        result.prescriptions = Prescription.objects.filter(q_obj)
+        result.events = Event.objects.filter(q_obj).filter(name__in=event_names).order_by('date')
+        result.cases = Case.objects.filter(patient=ref.patient, condition=ref.condition).order_by('date')
         result.save()
         log.debug('Found relevant:')
         log.debug('  cases: %s' % result.cases.count())
@@ -277,18 +283,13 @@ def validate(options):
     #
     # Generate Run Statistics
     #
-    results = ValidatorResult.objects.filter(run=run)
-    run.new = results.filter(disposition='new').count()
-    run.exact = results.filter(disposition='exact').count()
-    run.similar = results.filter(disposition='similar').count()
-    run.missing = results.filter(disposition='missing').count()
     run.complete = True
     run.save()
     log.info('Run # %s complete.' % run.pk)
-    log.info('    missing: %s' % run.missing)
-    log.info('    exact: %s' % run.exact)
-    log.info('    similar: %s' % run.similar)
-    log.info('    new: %s' % run.new)
+    log.info('    missing: %s' % run.missing.count())
+    log.info('    exact: %s' % run.exact.count())
+    log.info('    similar: %s' % run.similar.count())
+    log.info('    new: %s' % run.new.count())
             
 
 def main():
