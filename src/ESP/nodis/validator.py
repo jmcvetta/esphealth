@@ -205,7 +205,7 @@ def validate(options):
     run.save()
     log.info('Starting validator run # %s' % run.pk)
     related_delta = datetime.timedelta(days=RELATED_MARGIN)
-    for ref in ReferenceCase.objects.filter(list=list).order_by('date', 'condition', 'pk'):
+    for ref in ReferenceCase.objects.filter(list=list, ignore=False).order_by('date', 'condition', 'pk'):
         condition_object = Condition.get_condition(ref.condition)
         if not condition_object:
             log.warning('Invalid condition name: "%s".  Skipping.' % ref.condition)
@@ -258,12 +258,6 @@ def validate(options):
         for test_name in condition_object.test_name_search:
             labs |= LabResult.objects.filter(native_name__icontains=test_name)
         result.disposition = 'missing'
-        result.save() # Must save before populating ManyToManyFields
-        result.lab_results = labs.filter(q_obj).order_by('date')
-        result.encouters = Encounter.objects.filter(q_obj)
-        result.prescriptions = Prescription.objects.filter(q_obj)
-        result.events = Event.objects.filter(q_obj).filter(name__in=event_names).order_by('date')
-        result.cases = Case.objects.filter(patient=ref.patient, condition=ref.condition).order_by('date')
         result.save()
         log.debug('Found relevant:')
         log.debug('  cases: %s' % result.cases.count())

@@ -18,6 +18,9 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Provider
 from ESP.hef.models import Event
 
+from ESP.utils.utils import log
+from ESP.utils.utils import log_query
+
 
 STATUS_CHOICES = [
     ('AR', 'Awaiting Review'),
@@ -190,13 +193,6 @@ class ValidatorRun(models.Model):
     complete = models.BooleanField(blank=False, default=False) # Run is complete?
     related_margin = models.IntegerField(blank=False)
     #
-    # Statistics
-    #
-    exact = models.FloatField(blank=True, null=True)
-    similar = models.FloatField(blank=True, null=True)
-    missing = models.FloatField(blank=True, null=True)
-    new = models.FloatField(blank=True, null=True)
-    #
     # Notes
     #
     notes = models.TextField(blank=True, null=True)
@@ -208,26 +204,47 @@ class ValidatorRun(models.Model):
         verbose_name = 'Validator Run'
     
     def __get_results(self):
-        return ValidatorResult.objects.filter(run=self)
+        q_obj = Q(ref_case__ignore=False) | Q(ref_case__isnull=True)
+        q_obj &= Q(run=self)
+        qs = ValidatorResult.objects.filter(q_obj)
+        log_query('Validator results', qs)
+        return qs 
     results = property(__get_results)
     
-    def ignored(self):
-        return ValidatorResult.objects.filter(run=self, ref_case__ignored=True)
+    def __get_missing(self):
+        return self.results.filter(disposition='missing')
+    missing = property(__get_missing)
+    
+    def __get_exact(self):
+        return self.results.filter(disposition='exact')
+    exact = property(__get_exact)
+        
+    def __get_similar(self):
+        return self.results.filter(disposition='similar')
+    similar = property(__get_similar)
+    
+    def __get_new(self):
+        return self.results.filter(disposition='new')
+    new = property(__get_new)
+    
+    def __get_ignored(self):
+        return ValidatorResult.objects.filter(run=self, ref_case__ignore=True)
+    ignored = property(__get_ignored)
         
     def percent_ignored(self):
-        return 100.0 * float(self.ignored().count()) / self.results.count()
+        return 100.0 * float(self.ignored.count()) / self.results.count()
 
     def percent_exact(self):
-        return 100.0 * float(self.exact) / self.results.count()
+        return 100.0 * float(self.exact.count()) / self.results.count()
         
     def percent_similar(self):
-        return 100.0 * float(self.similar) / self.results.count()
+        return 100.0 * float(self.similar.count()) / self.results.count()
     
     def percent_missing(self):
-        return 100.0 * float(self.missing) / self.results.count()
+        return 100.0 * float(self.missing.count()) / self.results.count()
         
     def percent_new(self):
-        return 100.0 * float(self.new) / self.results.count()
+        return 100.0 * float(self.new.count()) / self.results.count()
     
 
 class ValidatorResult(models.Model):

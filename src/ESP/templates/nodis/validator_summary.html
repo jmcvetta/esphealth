@@ -21,19 +21,19 @@
         <th>Percentage
     <tr>
         <td><a href="{% url validate_missing %}">Missing</a>
-        <td>{{ run.missing }}
+        <td>{{ run.missing.count }}
         <td>{{ run.percent_missing|floatformat:3 }}%
     <tr>
         <td>New
-        <td>{{ run.new }}
-        <td>{{ run.percent_missing|floatformat:3 }}%
+        <td>{{ run.new.count }}
+        <td>{{ run.percent_new|floatformat:3 }}%
     <tr>
         <td>Similar
-        <td>{{ run.similar }}
+        <td>{{ run.similar.count }}
         <td>{{ run.percent_similar|floatformat:3 }}%
     <tr>
         <td>Exact
-        <td>{{ run.exact }}
+        <td>{{ run.exact.count }}
         <td>{{ run.percent_exact|floatformat:3 }}%
     <tr>
         <td><em>TOTAL</em>
