@@ -192,10 +192,10 @@ class ValidatorRun(models.Model):
     #
     # Statistics
     #
-    exact = models.IntegerField(blank=True, null=True)
-    similar = models.IntegerField(blank=True, null=True)
-    missing = models.IntegerField(blank=True, null=True)
-    new = models.IntegerField(blank=True, null=True)
+    exact = models.FloatField(blank=True, null=True)
+    similar = models.FloatField(blank=True, null=True)
+    missing = models.FloatField(blank=True, null=True)
+    new = models.FloatField(blank=True, null=True)
     #
     # Notes
     #
