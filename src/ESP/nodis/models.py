@@ -204,8 +204,7 @@ class ValidatorRun(models.Model):
         verbose_name = 'Validator Run'
     
     def __get_results(self):
-        q_obj = Q(ref_case__ignore=False) | Q(ref_case__isnull=True)
-        q_obj &= Q(run=self)
+        q_obj = Q(run=self) & ~Q(ref_case__ignore=True)
         qs = ValidatorResult.objects.filter(q_obj)
         log_query('Validator results', qs)
         return qs 
