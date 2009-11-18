@@ -244,6 +244,13 @@ class ValidatorRun(models.Model):
         
     def percent_new(self):
         return 100.0 * float(self.new.count()) / self.results.count()
+
+    @classmethod
+    def latest(cls):
+        '''
+        Return the most recent complete ValidatorRun
+        '''
+        return cls.objects.filter(complete=True).order_by('-timestamp')[0]
     
 
 class ValidatorResult(models.Model):
