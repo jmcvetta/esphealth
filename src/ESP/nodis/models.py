@@ -206,7 +206,29 @@ class ValidatorRun(models.Model):
     
     class Meta:
         verbose_name = 'Validator Run'
+    
+    def __get_results(self):
+        return ValidatorResult.objects.filter(run=self)
+    results = property(__get_results)
+    
+    def ignored(self):
+        return ValidatorResult.objects.filter(run=self, ref_case__ignored=True)
+        
+    def percent_ignored(self):
+        return 100.0 * float(self.ignored().count()) / self.results.count()
 
+    def percent_exact(self):
+        return 100.0 * float(self.exact) / self.results.count()
+        
+    def percent_similar(self):
+        return 100.0 * float(self.similar) / self.results.count()
+    
+    def percent_missing(self):
+        return 100.0 * float(self.missing) / self.results.count()
+        
+    def percent_new(self):
+        return 100.0 * float(self.new) / self.results.count()
+    
 
 class ValidatorResult(models.Model):
     run = models.ForeignKey(ValidatorRun, blank=False)
