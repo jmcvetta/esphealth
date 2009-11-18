@@ -188,6 +188,7 @@ class ValidatorRun(models.Model):
     timestamp = models.DateTimeField(blank=False, auto_now_add=True)
     list = models.ForeignKey(ReferenceCaseList, blank=False)
     complete = models.BooleanField(blank=False, default=False) # Run is complete?
+    related_margin = models.IntegerField(blank=False)
     #
     # Statistics
     #

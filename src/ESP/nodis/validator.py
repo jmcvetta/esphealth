@@ -17,7 +17,7 @@ EXIT CODES
 '''
 
 
-RELATED_MARGIN = 365 # Retrieve labs +/- this many days from date of missing case
+RELATED_MARGIN = 400 # Retrieve labs +/- this many days from date of missing case
 FILE_PATH = 'old_cases.csv'
 FILE_FIELDS = [
     'condition',
@@ -57,6 +57,8 @@ from ESP.utils.utils import log_query
 from ESP.utils.utils import date_from_str
 from ESP.emr.models import Patient
 from ESP.emr.models import LabResult
+from ESP.emr.models import Encounter
+from ESP.emr.models import Prescription
 from ESP.hef.models import Event
 from ESP.nodis import defs # Condition defintions
 from ESP.nodis.models import Case
@@ -199,7 +201,7 @@ def validate(options):
         list = ReferenceCaseList.objects.get(pk=options.list)
     else:
         list = ReferenceCaseList.objects.all().order_by('-pk')[0]
-    run = ValidatorRun(list=list)
+    run = ValidatorRun(list=list, related_margin=RELATED_MARGIN)
     run.save()
     log.info('Starting validator run # %s' % run.pk)
     related_delta = datetime.timedelta(days=RELATED_MARGIN)
@@ -241,32 +243,34 @@ def validate(options):
             result.disposition = 'similar'
             result.save()
             continue
-        log.debug('No case match found')
+        log.debug('No match found - case is missing')
         #
         # Related Events for Missing Case
         #
         # At this point, case is missing.  Let's look for relevant events for 
         # this patient; and if none of those are found, we'll look for
         # relevant lab results.
-        cases = Case.objects.filter(patient=ref.patient, condition=ref.condition).order_by('date')
-        log.debug('Found %s relevant cases' % cases.count())
         begin = ref.date - related_delta
         end = ref.date + related_delta
         q_obj = Q(patient=ref.patient, date__gte=begin, date__lte=end)
         event_names = condition_object.relevant_event_names
-        events = Event.objects.filter(q_obj).filter(name__in=event_names).order_by('date')
-        log.debug('Found %s relevant events' % events.count())
         labs = condition_object.relevant_labs
         for test_name in condition_object.test_name_search:
             labs |= LabResult.objects.filter(native_name__icontains=test_name)
-        labs = labs.filter(q_obj).order_by('date')
-        log.debug('Found %s relevant labs' % labs.count())
         result.disposition = 'missing'
         result.save() # Must save before populating ManyToManyFields
-        result.lab_results = labs
-        result.events = events
-        result.cases = cases
+        result.lab_results = labs.filter(q_obj).order_by('date')
+        result.encouters = Encounter.objects.filter(q_obj)
+        result.prescriptions = Prescription.objects.filter(q_obj)
+        result.events = Event.objects.filter(q_obj).filter(name__in=event_names).order_by('date')
+        result.cases = Case.objects.filter(patient=ref.patient, condition=ref.condition).order_by('date')
         result.save()
+        log.debug('Found relevant:')
+        log.debug('  cases: %s' % result.cases.count())
+        log.debug('  events: %s' % result.events.count())
+        log.debug('  lab results: %s' % result.lab_results.count())
+        log.debug('  encounters: %s' % result.encounters.count())
+        log.debug('  prescriptions: %s' % result.prescriptions.count())
     #
     # New Cases
     #
