@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<form id='condition_form' method='POST' action='{% url validate_missing %}'>
+    {{ condition_form }}
+    <input type='submit' value='Filter by Condition'>
+</form>
+
+<table id='missing_cases'>
+    <tr>
+        <th>Reference Case ID
+        <th>Date
+        <th>Condition
+        <th>Patient MRN
+        <th>Patient Name
+        <th>Related Cases
+        <th>Relevant Event Count
+        <th>Relevant Lab Result Count
+        <th>Relevant Physician Encounter Count
+        <th>Relevant Prescription Count
+    {% for result in missing %}
+    <tr>
+        <td># {{ result.pk }}
+        <td>{{ result.date }}
+        <td>{{ result.condition }}
+        <td>{{ result.patient.mrn }}
+        <td>{{ result.patient.name }}
+        <td>{{ result.results.count }}
+        <td>{{ result.events.count }}
+        <td>{{ result.lab_results.count }}
+        <td>{{ result.encounters.count }}
+        <td>{{ result.prescriptions.count }}
+    {% endfor %} {# result in missing_results #}
+</table>
+
+
+
+{% endblock %} {# content #}

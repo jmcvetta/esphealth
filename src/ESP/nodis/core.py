@@ -791,7 +791,19 @@ class Condition(object):
         Get name of all registered conditions
         @return: List of strings
         '''
-        return cls.__registry.keys()
+        out = cls.__registry.keys()
+        out.sort()
+        return out
+    
+    @classmethod
+    def condition_choices(cls, wildcard=False):
+        '''
+        Return condition names in tuples suitable for use with forms.ChoiceField
+        '''
+        out = [(name, name) for name in cls.list_all_condition_names()]
+        if wildcard:
+            out = [('*', '*')] + out
+        return out
     
     @classmethod
     def get_condition(cls, name):

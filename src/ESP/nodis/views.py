@@ -69,6 +69,7 @@ from ESP.nodis.models import ValidatorRun
 from ESP.nodis.models import ValidatorResult
 from ESP.nodis.forms import CaseStatusForm
 from ESP.nodis.forms import CodeMapForm
+from ESP.nodis.forms import ConditionForm
 from ESP.nodis.validator import RELATED_MARGIN
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
@@ -500,8 +501,25 @@ def validator_summary(request, validator_run_id=None):
     return render_to_response('nodis/validator_summary.html', values, context_instance=RequestContext(request))
 
 @login_required
-def validate_missing(request):
+def validate_missing(request, validator_run_id=None):
+    if validator_run_id:
+        validator_run = get_object_or_404(ValidatorRun, pk=validator_run_id)
+    else:
+        validator_run = ValidatorRun.objects.all().order_by('-pk')[0]
+    missing = ValidatorResult.objects.filter(run=validator_run, disposition='missing')
+    condition_form = ConditionForm()
     values = {
         'title': 'Case Validator: Missing Cases',
+        'run': validator_run,
         }
+    if request.method == 'POST':
+        condition_form = ConditionForm(request.POST)
+        if condition_form.is_valid():
+            condition = condition_form.cleaned_data['condition']
+            log.debug('Filtering on condition: %s' % condition)
+            if not condition == '*': # Filter not applied for wildcard
+                missing = missing.filter(ref_case__condition=condition)
+    values['missing'] = missing.select_related() # Is select_related() helpful here?
+    values['condition_form'] = condition_form
+    return render_to_response('nodis/validator_missing.html', values, context_instance=RequestContext(request))
     

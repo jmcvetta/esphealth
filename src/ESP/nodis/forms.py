@@ -19,6 +19,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
 from ESP.nodis.models import STATUS_CHOICES
+from ESP.nodis.core import Condition
 from ESP.hef.core import BaseHeuristic
 from ESP.static.models import Loinc
 
@@ -38,3 +39,6 @@ class CodeMapForm(forms.Form):
     threshold = forms.FloatField(required=False)
     notes = forms.CharField(widget=forms.Textarea, required=False)
     output_code = forms.CharField(max_length=100, required=False)
+
+class ConditionForm(forms.Form):
+    condition = forms.ChoiceField(choices=Condition.condition_choices(wildcard=True))
