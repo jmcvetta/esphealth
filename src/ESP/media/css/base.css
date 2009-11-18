@@ -51,3 +51,28 @@ body {
 	border: 1.5em groove #800000;
 }
 
+
+table {
+    border-width: thin;
+    border-spacing: 0;
+    border-style: solid;
+    border-color: gray;
+    border-collapse: separate;
+    background-color: white;
+}
+table th {
+    border-width: thin;
+    padding: 0.5em;
+    border-style: solid;
+    border-color: gray;
+    background-color: white;
+    -moz-border-radius: ;
+}
+table td {
+    border-width: thin;
+    padding: 0.5em;
+    border-style: solid;
+    border-color: gray;
+    background-color: white;
+    -moz-border-radius: ;
+}

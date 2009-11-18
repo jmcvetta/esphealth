@@ -481,35 +481,23 @@ def validator_summary(request, validator_run_id=None):
     else:
         validator_run = ValidatorRun.objects.all().order_by('-pk')[0]
     results = ValidatorResult.objects.filter(run=validator_run, ref_case__ignore=False)
-    exact = results.filter(disposition='exact')
-    similar = results.filter(disposition='similar')
-    missing = results.filter(disposition='missing')
-    new = results.filter(disposition='new')
-    missing_summary = missing.values('ref_case__condition').annotate(Count('pk'))
-    print missing_summary
+    ref_cases = ReferenceCase.objects.filter(list=validator_run.list, ignore=False)
     values = {
         'title': 'Case Validator: Summary',
-        'exact': exact,
-        'similar': similar,
-        'missing': missing.select_related(),
-        'new': new,
         'run': validator_run,
-        'count_exact': exact.count(),
-        'count_similar': similar.count(),
-        'count_missing': missing.count(),
-        'count_new': new.count(),
-        'percent_exact': float(exact.count()) / results.count(),
-        'percent_similar': float(similar.count()) / results.count(),
-        'percent_missing': float(missing.count()) / results.count(),
-        'percent_new': float(new.count()) / results.count(),
+        'ref_cases': ref_cases,
+        'results': results.select_related(),
+        #'percent_exact': float(exact.count()) / results.count(),
+        #'percent_similar': float(similar.count()) / results.count(),
+        #'percent_missing': float(missing.count()) / results.count(),
+        #'percent_new': float(new.count()) / results.count(),
         #'no_mrn': no_mrn,
         #'count_no_mrn': count_no_mrn,
         #'percent_no_mrn': percent_no_mrn,
         'total': results.count(),
         'related_margin': RELATED_MARGIN,
-        'missing_summary': missing_summary,
         }
-    return render_to_response('nodis/validator_report.html', values, context_instance=RequestContext(request))
+    return render_to_response('nodis/validator_summary.html', values, context_instance=RequestContext(request))
 
 @login_required
 def validate_missing(request):
