@@ -278,7 +278,7 @@ def validate(options):
         result = ValidatorResult(run=run)
         result.disposition = 'new'
         result.save()
-        result.cases = new_case
+        result.cases = [new_case]
         result.save()
     #
     # Generate Run Statistics
