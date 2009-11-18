@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #                            ESP Batch Run Script
@@ -7,7 +8,13 @@
 #
 # EXIT CODES
 #
+# 0   Success
 # 10  Invalid configuration
+# 11  Bad directory structure
+# 21  Loader failed
+# 22  HEF run failed
+# 23  Nodis run failed
+# 24  Find unmapped labs failed
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -35,7 +42,7 @@ PYTHON=""
 LOADER="" # Available options: 'Epic' or 'HL7'
 
 ESP_HOME="/opt/esp"
-INCOMING_DATA="/srv/esp/epic/incoming"
+INCOMING_DATA="/home/ftpuser/"
 PYTHON="/usr/bin/python"
 LOADER="Epic"
 
@@ -89,11 +96,16 @@ LOADER_CMD="$LOADER_CMD --no-archive"
 
 
 #
-# Run the ESP scripts
+# Run ESP
 #
 
-cd $ESP_HOME/src/ESP && \
-$PYTHON $LOADER_CMD && \
-$PYTHON nodis/find_unmapped_labs.py && \
-$PYTHON hef/run.py && \
-$PYTHON nodis/run.py 
+cd $ESP_HOME/src/ESP || exit 11
+$PYTHON $LOADER_CMD || exit 21
+$PYTHON hef/run.py || exit 22
+$PYTHON nodis/run.py || exit 23
+$PYTHON nodis/find_unmapped_labs.py || exit 24
+
+#
+# Success
+#
+exit 0
