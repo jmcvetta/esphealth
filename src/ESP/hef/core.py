@@ -42,7 +42,7 @@ from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 
 
-POSITIVE_STRINGS = ['reactiv', 'pos', 'detec']
+POSITIVE_STRINGS = ['reactiv', 'pos', 'detec', 'confirm']
 NEGATIVE_STRINGS = ['non', 'neg', 'not', 'nr']
 
 
