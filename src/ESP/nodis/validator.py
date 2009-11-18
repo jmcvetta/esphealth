@@ -216,7 +216,8 @@ def validate(options):
             log.debug('Exact case match found.')
             if len(exact_date_cases) > 1: 
                 log.warning('More than one exact case match!')
-            result.nodis_case = exact_date_cases[0].pk
+            result.save() # Must save before populating many to many field
+            result.cases = exact_date_cases
             result.disposition = 'exact'
             result.save()
             continue
@@ -235,7 +236,8 @@ def validate(options):
             log.debug('Found case with similar date: %s' % similar_date_cases[0].date)
             if len(exact_date_cases) > 1: 
                 log.warning('More than one similar case match!')
-            result.nodis_case = similar_date_cases[0].pk
+            result.save() # Must save before populating many to many field
+            result.cases = similar_date_cases
             result.disposition = 'similar'
             result.save()
             continue
@@ -263,8 +265,33 @@ def validate(options):
         result.save() # Must save before populating ManyToManyFields
         result.lab_results = labs
         result.events = events
+        result.cases = cases
         result.save()
-        #
+    #
+    # New Cases
+    #
+    for new_case in Case.objects.filter(validatorresult__isnull=True):
+        result = ValidatorResult(run=run)
+        result.disposition = 'new'
+        result.save()
+        result.cases = new_case
+        result.save()
+    #
+    # Generate Run Statistics
+    #
+    results = ValidatorResult.objects.filter(run=run)
+    run.new = results.filter(disposition='new').count()
+    run.exact = results.filter(disposition='exact').count()
+    run.similar = results.filter(disposition='similar').count()
+    run.missing = results.filter(disposition='missing').count()
+    run.complete = True
+    run.save()
+    log.info('Run # %s complete.' % run.pk)
+    log.info('    missing: %s' % run.missing)
+    log.info('    exact: %s' % run.exact)
+    log.info('    similar: %s' % run.similar)
+    log.info('    new: %s' % run.new)
+            
 
 def main():
     parser = optparse.OptionParser()

@@ -187,6 +187,17 @@ class ValidatorRun(models.Model):
     '''
     timestamp = models.DateTimeField(blank=False, auto_now_add=True)
     list = models.ForeignKey(ReferenceCaseList, blank=False)
+    complete = models.BooleanField(blank=False, default=False) # Run is complete?
+    #
+    # Statistics
+    #
+    exact = models.IntegerField(blank=True, null=True)
+    similar = models.IntegerField(blank=True, null=True)
+    missing = models.IntegerField(blank=True, null=True)
+    new = models.IntegerField(blank=True, null=True)
+    #
+    # Notes
+    #
     notes = models.TextField(blank=True, null=True)
     
     def __str__(self):
@@ -199,9 +210,7 @@ class ValidatorRun(models.Model):
 class ValidatorResult(models.Model):
     run = models.ForeignKey(ValidatorRun, blank=False)
     ref_case = models.ForeignKey(ReferenceCase, blank=True, null=True)
-    # Store reference to Nodis case as an integer, not a foreign key, since Case 
-    # table may be purged and rebuilt between validator runs.
-    nodis_case_id = models.IntegerField(blank=True, null=True) 
+    nodis_case = models.ForeignKey(Case, blank=True, null=True)
     disposition = models.CharField(max_length=30, blank=False, choices=DISPOSITIONS)
     #
     # ManyToManyFields populated only for missing cases
@@ -211,8 +220,6 @@ class ValidatorResult(models.Model):
     lab_results = models.ManyToManyField(LabResult, blank=True, null=True)
     encounters = models.ManyToManyField(Encounter, blank=True, null=True)
     prescriptions = models.ManyToManyField(Prescription, blank=True, null=True)
-    #
-    notes = models.TextField(blank=True, null=True)
 
     def nodis_case(self):
         if self.nodis_case_id:
