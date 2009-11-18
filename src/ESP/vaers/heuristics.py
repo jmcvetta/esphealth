@@ -218,14 +218,14 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 to_compare = trigger.replace('X', str(v))
                 return eval(to_compare)
             except:
-#                log.warning('Lab Result %s has no value to be analyzed' % lx)
+                log.warning('Lab Result %s has no value to be analyzed' % lx)
                 return False
             
 
         def excluded_due_to_history(lx, comparator, baseline):
             try:
                 
-                lkv = lx.last_known_value(self.lab_code)
+                lkv = lx.last_known_value()
                 if not lkv: return False
                 
                 current_value = lx.result_float or lx.result_string or None

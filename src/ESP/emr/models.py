@@ -600,9 +600,24 @@ class LabResult(BasePatientRecord):
         except:
             return None
 
-    def last_known_value(self, loinc, since=None):
-        last = self.previous()                                     
-        return (last and (last.result_float or last.result_string)) or None
+    def last_known_value(self, with_same_unit=True):
+        '''
+        Returns the value of the Lx that is immediately prior to
+        self.  if 'check_same_unit' is True, only returns the value if
+        both labs results have a matching (Case insensitive) ref_unit value
+        '''
+        
+        previous_labs = LabResult.objects.filter(native_code=self.native_code, patient=patient, 
+                                                 date__lt=self.date).order_by('-date')
+
+        if with_same_unit:
+            previous_labs = previous_labs.filter(ref_unit__iexact=self.ref_unit)
+
+        for lab in previous_labs:
+            value = (lab.result_float or lab.result_string) or None
+            if value: return value
+
+        return None
 
     def _get_loinc(self):
         try:
