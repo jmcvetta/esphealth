@@ -139,6 +139,7 @@ def heuristic_mapping_report(request):
         codes = maps.values_list('native_code', flat=True)
         mapped.append( (heuristic, codes) )
     mapped.sort(key=operator.itemgetter(1))
+    unmapped.sort()
     values['mapped'] = mapped
     values['unmapped'] = unmapped
     return render_to_response('conf/heuristic_mapping_report.html', values, context_instance=RequestContext(request))
