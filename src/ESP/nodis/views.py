@@ -507,7 +507,7 @@ def validate_missing(request, validator_run_id=None):
         validator_run = get_object_or_404(ValidatorRun, pk=validator_run_id)
     else:
         validator_run = ValidatorRun.objects.all().order_by('-pk')[0]
-    missing = validator_run.missing
+    missing = validator_run.missing.order_by('ref_case__date')
     condition_form = ConditionForm()
     values = {
         'title': 'Case Validator: Missing Cases',
@@ -521,6 +521,7 @@ def validate_missing(request, validator_run_id=None):
             if not condition == '*': # Filter not applied for wildcard
                 missing = missing.filter(ref_case__condition=condition)
     values['missing'] = missing.select_related() # Is select_related() helpful here?
+    values['counts'] = validator_run.missing.values('ref_case__condition').order_by('ref_case__condition').annotate(Count('pk'))
     values['condition_form'] = condition_form
     return render_to_response('nodis/validator_missing.html', values, context_instance=RequestContext(request))
     

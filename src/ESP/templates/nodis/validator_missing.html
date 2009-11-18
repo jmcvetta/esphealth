@@ -2,11 +2,29 @@
 
 {% block content %}
 
-<span style="float:right;">
+<p align="center">
+<i>
+    Validator Run #{{ run.pk }}
+    <br>{{ run.timestamp|date:"r" }}
+    <br>Completed: {{ run.complete }}
+</i>
+</p>
+
+<div style="float:right;">
     <p>
         <a href="{% url validator_summary %}">Back to Validator Summary</a>
     </p>
-</span>
+    <table id='missing_counts'>
+        <tr>
+            <th>Condition
+            <th># Cases Missing
+        {% for item in counts %}
+        <tr>
+            <td>{{ item.ref_case__condition }}
+            <td>{{ item.pk__count }}
+        {% endfor %}
+    </table>
+</div>
 
 <p>
     <form id='condition_form' method='POST' action='{% url validate_missing %}'>
@@ -23,24 +41,14 @@
         <th>Condition
         <th>Patient MRN
         <th>Patient Name
-        <th>Related Cases
-        <th>Relevant Events
-        <th>Relevant Lab Results
-        <th>Relevant Encounters
-        <th>Relevant Prescriptions
     {% for result in missing %}
     <tr>
-        <td><a href="{% url missing_case_detail result.pk %}">Edit</a>
+        <td><a href="{% url missing_case_detail result.pk %}">Examine</a>
         <td>{{ result.ref_case.pk }}
         <td>{{ result.date }}
         <td>{{ result.condition }}
         <td>{{ result.patient.mrn }}
         <td>{{ result.patient.name }}
-        <td>{{ result.results.count }}
-        <td>{{ result.events.count }}
-        <td>{{ result.lab_results.count }}
-        <td>{{ result.encounters.count }}
-        <td>{{ result.prescriptions.count }}
     {% endfor %} {# result in missing_results #}
 </table>
 
