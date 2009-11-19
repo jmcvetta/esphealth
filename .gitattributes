@@ -2,6 +2,7 @@
 /LICENSE -text
 axis-1_4/activation.jar -text
 axis-1_4/mail.jar -text
+bin/esp-batch-run.sh -text
 doc/ESP-architecture.png -text svneol=unset#unset
 doc/ESP-architecture.xmind -text svneol=unset#unset
 doc/disease-protocols/Chlamydia.doc -text
@@ -18,7 +19,6 @@ doc/specifications/gipse.xsd -text
 etc/apache.conf -text
 etc/django.wsgi -text
 /readme -text
-sbin/esp-batch-run.sh -text
 src/ESP/batch-run.sh -text
 src/ESP/cache/__init__.py -text
 src/ESP/cache/models.py -text
