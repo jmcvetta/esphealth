@@ -233,8 +233,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 assert float(current_value)
                 assert float(lkv)
                 
-                equation = ' '.join(
-                    [str(current_value), comparator, baseline.replace('LKV', str(lkv))])
+                equation = ' '.join([str(current_value), comparator, baseline.replace('LKV', str(lkv))])
 
                 return eval(equation)
             except:
