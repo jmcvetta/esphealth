@@ -44,8 +44,8 @@ class Site(models.Model):
         recorded. If exclude_duplicates is True, the count is reduced
         to only the number of patients.
         '''
-        count = Encounter.objects.filter(
-            date=date, native_site_num__in=Site.site_ids(zip_code)).values_list('patient')
+        count = Encounter.objects.filter(date=date).syndrome_care_visits(
+            sites=Site.site_ids(zip_code)).values_list('patient')
         return count.distinct().count() if exclude_duplicates else count.count()
         
     @staticmethod
@@ -53,8 +53,7 @@ class Site(models.Model):
         ''' 
         Returns a QuerySet for encounters from all sites with a given zip code
         '''
-        return Encounter.objects.filter(
-            native_site_num__in=Site.site_ids(zip_code))
+        return Encounter.objects.syndrome_care_visits(sites=Site.site_ids(zip_code))
 
     @staticmethod
     def age_group_aggregate(zip_code, date, lower, upper=90):
@@ -67,25 +66,6 @@ class Site(models.Model):
         sites = Site.objects.filter(zip_code=zip_code) if zip_code else Site.objects.all() 
         return sites.values_list('code', flat=True)
 
-
-    def encounters(self, acute_only=True, **kw):
-        ''' 
-        Returns a list of all encounters that took place at this Site.
-        kw may contain specific filters, like icd9 codes or dates.
-        '''
-
-        date = kw.pop('date', None)
-        at_site = Encounter.objects.filter(
-            native_site_num = str(self.code))
-
-        encounters = at_site        
-        if date:
-            encounters = encounters.filter(date=date)
-
-        if acute_only:
-            encounters = encounters.filter(native_site_num__in=Site.site_ids())
-
-        return encounters
 
 class NonSpecialistVisitEvent(Event):
     reporting_site = models.ForeignKey(Site, null=True)

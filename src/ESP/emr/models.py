@@ -797,6 +797,11 @@ class EncounterManager(models.Manager):
         return self.filter(patient__immunization=F('patient__immunization')).filter(
             date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
 
+    def syndrome_care_visits(self, sites=None):
+        qs = self.filter(event_type__in=['URGENT CARE', 'VISIT'])
+        if sites: qs = qs.filter(native_site_num__in=sites)
+        return qs
+
 class Encounter(BasePatientRecord):
     '''
     A encounter between provider and patient
