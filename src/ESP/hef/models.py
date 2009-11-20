@@ -56,6 +56,7 @@ class Event(models.Model):
     
     class Meta:
         unique_together = ['name', 'date', 'patient', 'content_type', 'object_id']
+        ordering = ['date', 'patient', 'name']
     
     def __str__(self):
         return 'Event # %s (%s %s)' % (self.pk, self.name, self.date)
