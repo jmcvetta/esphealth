@@ -41,6 +41,7 @@
         <th>Condition
         <th>Patient MRN
         <th>Patient Name
+        <th>Reference Case Notes
     {% for result in missing %}
     <tr>
         <td><a href="{% url missing_case_detail result.pk %}">Examine</a>
@@ -49,6 +50,7 @@
         <td>{{ result.condition }}
         <td>{{ result.patient.mrn }}
         <td>{{ result.patient.name }}
+        <td>{{ result.ref_case.notes|default:"" }}
     {% endfor %} {# result in missing_results #}
 </table>
 
