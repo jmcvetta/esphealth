@@ -99,7 +99,7 @@ class LabTestConcordance(models.Model):
     Should be rebuilt after each load of new EMR data.
     '''
     native_code = models.CharField(max_length=100, blank=False)
-    native_name = models.CharField(max_length=255, blank=False)
+    native_name = models.CharField(max_length=255)
     count = models.IntegerField(blank=False)
 
 
