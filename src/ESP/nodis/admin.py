@@ -28,7 +28,7 @@ class ValidatorResultAdmin(admin.ModelAdmin):
 
 
 class ReferenceCaseAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'list', 'condition', 'date', 'patient', 'ignore']
+    list_display = ['pk', 'list', 'condition', 'date', 'patient', 'ignore', 'notes']
     list_filter = ['ignore', 'list', 'condition']
     ordering = ['date', 'condition', 'patient']
     search_fields = ['patient__last_name', 'patient__first_name']
