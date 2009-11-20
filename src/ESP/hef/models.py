@@ -68,6 +68,9 @@ class Event(models.Model):
         values = self.__dict__
         return '%(date)-10s    %(id)-8s    %(name)-30s    %(object_id)-10s' % values
     
+    def __cmp__(self, other):
+        raise NotImplementedError('We have not defined how Event objects compare to one another')
+    
     @classmethod
     def str_line_header(cls):
         '''

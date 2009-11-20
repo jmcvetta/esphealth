@@ -149,11 +149,13 @@ class Window(object):
         
     def _get_start_date(self):
         '''Start of the time window'''
+        self.__events.sort(lambda x, y: (x.date - y.date).days) # Sort by date
         return self.__events[-1].date - self.delta
     start = property(_get_start_date)
 
     def _get_end_date(self):
         '''End of the time window'''
+        self.__events.sort(lambda x, y: (x.date - y.date).days) # Sort by date
         return self.__events[0].date + self.delta
     end = property(_get_end_date)
     
