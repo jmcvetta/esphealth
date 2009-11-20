@@ -185,7 +185,7 @@ class Window(object):
         return Window(days=self.delta.days, events=new_events)
     
     def __repr__(self):
-        return 'Window %s (%s events %s - %s)' % (id(self), len(self.__events), self.start, self.end)
+        return 'Window %s (%s events %s - %s patient %s)' % (id(self), len(self.__events), self.start, self.end, self.patient.pk)
         
     def overlaps(self, dates, recurance_interval):
         '''
@@ -610,10 +610,12 @@ class ComplexEventPattern(BaseEventPattern):
         log.debug('Checking constraints on %s' % win)
         if self.exclude_past:
             exclude_q = Q(patient=win.patient, name__in=self.exclude_past, date__lt=win.start)
-            query = Event.objects.filter(exclude_q)
-            log_query('Check exclude_past', query)
-            if  query.count() > 0:
-                log.debug('Patient %s excluded by %s past events' % (win.patient, query.count()))
+            past_events = Event.objects.filter(exclude_q)
+            log_query('Check exclude_past', past_events)
+            if  past_events.count() > 0:
+                log.debug('%s excluded by past events:' % win)
+                for e in past_events:
+                    log.debug('    %s' % e)
                 return False
             else:
                 log.debug('Patient %s was not excluded by past events' % win.patient)
@@ -622,14 +624,16 @@ class ComplexEventPattern(BaseEventPattern):
             if self.require_past_window:
                 lookback_start = win.start - self.require_past_window
                 require_q &= Q(date__gte=lookback_start)
-            query = Event.objects.filter(require_q)
-            log_query('Check require_past', query)
-            if query.count() == 0:
-                log.debug('Patient %s excluded by lack of required past events' % win.patient)
+            required_past = Event.objects.filter(require_q)
+            log_query('Check require_past', required_past)
+            if required_past.count() == 0:
+                log.debug('%s excluded by lack of required past events:' % win)
+                for e in self.require_past:
+                    log.debug('    %s' % e)
                 return False
             else:
                 log.debug('Patient %s has required past events' % win.patient)
-                log.debug('Adding events to window')
+                log.debug('Adding events to window %s' % id(win))
                 if win.past_events:
                     win.past_events = win.past_events | Event.objects.filter(require_q)
                 else:
@@ -644,13 +648,13 @@ class ComplexEventPattern(BaseEventPattern):
             # If any pattern matches, this constraint fails
             exclude_match = pat.match_window(win)
             if exclude_match:
-                log.debug('Patient %s excluded by pattern %s' % (win.patient, pat))
+                log.debug('%s excluded by pattern' % win)
                 log.debug('    Exclusion match: %s' % exclude_match)
                 return False
         #
         # If we made it this far, we have passed all constraints.  
         #
-        log.debug('Patient %s passes constraint checks' % win.patient)
+        log.debug('%s passes constraint checks' % win)
         return win
     
     def __get_pattern_object(self):
@@ -685,6 +689,10 @@ class ComplexEventPattern(BaseEventPattern):
         events = set()
         for pat in self.patterns:
             events |= pat.event_names
+        for pat in self.exclude:
+            events |= pat.event_names
+        events |= set(self.require_past)
+        events |= set(self.exclude_past)
         return events
     event_names = property(__get_event_names)
 
