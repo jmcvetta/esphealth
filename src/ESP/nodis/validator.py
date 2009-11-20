@@ -109,6 +109,7 @@ def validate(options):
         list = ReferenceCaseList.objects.get(pk=options.list)
         reference_cases = ReferenceCase.objects.filter(list=list)
     else:
+        list = ReferenceCaseList.objects.all().order_by('-pk')[0]
         reference_cases = ReferenceCase.objects.all()
     run = ValidatorRun(list=list, related_margin=RELATED_MARGIN)
     run.save()
@@ -143,7 +144,9 @@ def validate(options):
             log.debug('begin date: %s' % begin_date)
             log.debug('end date: %s' % end_date)
             similar_date_cases = cases.filter(date__gte=begin_date, date__lte=end_date)
-        if similar_date_cases:
+        similar_date_cases |= cases.filter(past_events__date=ref.date)
+        log_query('Similar date query', similar_date_cases)
+        if similar_date_cases.count():
             log.debug('Found case with similar date: %s' % similar_date_cases[0].date)
             if len(exact_date_cases) > 1: 
                 log.warning('More than one similar case match!')
