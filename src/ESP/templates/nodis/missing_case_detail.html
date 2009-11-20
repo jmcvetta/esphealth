@@ -70,6 +70,22 @@ ID #: {{ result.ref_case.pk }}
 </table>
 {% endif %}
 
+{% if result.past_events.count %}
+<h2>Past Events: </h2>
+<table>
+    <tr>
+        <th>Event ID
+        <th>Date
+        <th>Heuristic
+    {% for event in result.past_events.all %}
+    <tr>
+        <td>{{ event.pk }}
+        <td>{{ event.date }}
+        <td>{{ event.name }} 
+    {% endfor %}
+</table>
+{% endif %}
+
 {% if result.lab_results.count %}
 <h2>Labs: </h2>
 <table>
