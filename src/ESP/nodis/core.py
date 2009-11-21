@@ -180,7 +180,10 @@ class Window(object):
         @param event: Try to fit event into window
         @type event:  Event
         '''
-        log.debug('Fitting event %s to %s' % (event.pk, self))
+        log.debug('Fitting %s to %s' % (event, self))
+        log.debug('  Events already in this window:')
+        for e in self.__events:
+            log.debug('    %s' % e)
         self._check_event(event)
         new_events = self.events + [event]
         log.debug('Returning new window:')
@@ -538,6 +541,11 @@ class ComplexEventPattern(BaseEventPattern):
                     for win in queue:
                         new_matches = pattern.match_window(win, exclude_condition=exclude_condition)
                         matched_windows.update(new_matches)
+                        if not new_matches:
+                            log.debug('%s excluded, does not match pattern:' % win)
+                            log.debug('    %s' % pattern)
+                            log.debug('  Events in window:')
+                            [log.debug('    %s' % e) for e in win.events]
                     queue = matched_windows
                 log.debug('Complete unconstrained queue: %s' % queue)
                 # Any windows remaining in the queue at this point have 
@@ -586,6 +594,9 @@ class ComplexEventPattern(BaseEventPattern):
             if self.operator == 'and':
                 # Only windows that have matched everything so far will be considered for the next pass
                 queue = matched_windows = new_matches
+                if not new_matches:
+                    log.debug('%s excluded, does not match pattern:' % win)
+                    log.debug('    %s' % pattern)
             else: # operator == 'or'
                 # The original reference window, as well as any windows that 
                 # have matched so far, will be considered for next pass
