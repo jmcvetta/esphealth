@@ -125,9 +125,9 @@ class Window(object):
                 self.__patient = e.patient
             self._check_event(e)
             self.__events += [e]
-            self.__events.sort(lambda x, y: (x.date - y.date).days) # Sort by date
         self.past_events = None
         win_size = self.end - self.start
+        assert win_size.days >= 0
         log.debug('Initialized %s day window # %s with %s events' % (win_size.days, id(self), len(events)))
         for e in events:
             log.debug('    %s' % e)
@@ -139,7 +139,7 @@ class Window(object):
         '''
         out = False
         if self.__events: # Cannot check date range if window has no events
-            if not (event.date >= self.start) and (event.date <= self.end):
+            if (event.date < self.start) or (event.date > self.end):
                 out = 'Date outside window'
         if not self.__patient == event.patient:
             out = 'Patient does not match'
