@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<p align="center">
+<i>
+    Validator Run #{{ run.pk }}
+    <br>{{ run.timestamp|date:"r" }}
+    <br>Completed: {{ run.complete }}
+</i>
+</p>
+
+<div style="float:right;">
+    <p>
+        <a href="{% url validator_summary %}">Back to Validator Summary</a>
+    </p>
+    <table id='missing_counts'>
+        <tr>
+            <th>Condition
+            <th># Cases Missing
+        {% for item in counts %}
+        <tr>
+            <td>{{ item.cases__condition }}
+            <td>{{ item.pk__count }}
+        {% endfor %}
+    </table>
+</div>
+
+<p>
+    <form id='condition_form' method='POST' action='{% url validate_missing %}'>
+        {{ condition_form }}
+        <input type='submit' value='Filter by Condition'>
+    </form>
+</p>
+
+<table id='new_cases'>
+    <tr>
+        <th>&nbsp;
+        <th>Case ID #
+        <th>Date
+        <th>Condition
+        <th>Patient MRN
+        <th>Patient Name
+        <th>Events
+    {% for case in cases %}
+    <tr>
+        <td><a href="{% url nodis_case_detail case.pk %}">Examine</a>
+        <td>{{ case.pk }}
+        <td>{{ case.date }}
+        <td>{{ case.condition }}
+        <td>{{ case.patient.mrn }}
+        <td>{{ case.patient.name }}
+        <td>{{ case.events.all|join:"<br>" }}
+    {% endfor %} {# result in missing_results #}
+</table>
+
+
+
+{% endblock %} {# content #}

@@ -24,7 +24,7 @@
         <td>{{ run.missing.count }}
         <td>{{ run.percent_missing|floatformat:3 }}%
     <tr>
-        <td>New
+        <td><a href="{% url validate_new %}">New</a>
         <td>{{ run.new.count }}
         <td>{{ run.percent_new|floatformat:3 }}%
     <tr>
