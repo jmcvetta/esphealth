@@ -150,7 +150,7 @@
     Case Components
 </h2>
 
-{% if case.lab_results %}
+{% if case.lab_results.count %}
 
 <h3>
     Lab Results
@@ -171,7 +171,7 @@
         <th>Clinician</th>
         <th>Comment</th>
     </tr>
-    {% for lab in case.lab_results %}
+    {% for lab in case.lab_results.all %}
     <tr>
         <td>{{ lab.pk }}</td>
         <td>
@@ -203,7 +203,7 @@
 </table>
 {% endif %}
 
-{% if case.encounters %}
+{% if case.encounters.count %}
 <h3>
     Physician Encounters
 </h3>
@@ -219,7 +219,7 @@
         <th>Temperature</th>
         <th>Clinician</th>
     </tr>
-    {% for enc in case.encounters %}
+    {% for enc in case.encounters.all %}
     <tr>
         <td>{{ enc.pk }}</td>
         <td>
@@ -260,7 +260,7 @@
 </table>
 {% endif %}
 
-{% if case.prescriptions %}
+{% if case.prescriptions.count %}
 <h3>
     Prescriptions
 </h3>
@@ -306,7 +306,27 @@
     </tr>
     {% endfor %}
 </table>
-<p>&nbsp;</p>
+{% endif %}
+
+{% if case.past_events.count %}
+<h3>
+    Past Events
+</h3>
+
+<table id="past_events">
+    <tr>
+        <th>Event ID #
+        <th>Name
+        <th>Date
+        <th>Content
+    {% for event in case.past_events.all %}
+    <tr>
+        <td>{{ event.pk }}
+        <td>{{ event.name }}
+        <td>{{ event.date }}
+        <td>{{ event.content_object }}
+    {% endfor %}
+</table>
 {% endif %}
 
 <div id="all_records_wrapper">

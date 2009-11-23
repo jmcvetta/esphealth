@@ -20,14 +20,14 @@
             <th># Cases Missing
         {% for item in counts %}
         <tr>
-            <td>{{ item.cases__condition }}
+            <td>{{ item.condition }}
             <td>{{ item.pk__count }}
         {% endfor %}
     </table>
 </div>
 
 <p>
-    <form id='condition_form' method='POST' action='{% url validate_missing %}'>
+    <form id='condition_form' method='POST' action='{% url validate_new %}'>
         {{ condition_form }}
         <input type='submit' value='Filter by Condition'>
     </form>
@@ -42,6 +42,7 @@
         <th>Patient MRN
         <th>Patient Name
         <th>Events
+        <th>Past Events
     {% for case in cases %}
     <tr>
         <td><a href="{% url nodis_case_detail case.pk %}">Examine</a>
@@ -51,6 +52,7 @@
         <td>{{ case.patient.mrn }}
         <td>{{ case.patient.name }}
         <td>{{ case.events.all|join:"<br>" }}
+        <td>{{ case.past_events.all|join:"<br>" }}
     {% endfor %} {# result in missing_results #}
 </table>
 
