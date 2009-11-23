@@ -244,7 +244,6 @@ class ValidatorRun(models.Model):
 class ValidatorResult(models.Model):
     run = models.ForeignKey(ValidatorRun, blank=False)
     ref_case = models.ForeignKey(ReferenceCase, blank=True, null=True)
-    nodis_case = models.ForeignKey(Case, blank=True, null=True)
     disposition = models.CharField(max_length=30, blank=False, choices=DISPOSITIONS)
     #
     # ManyToManyFields populated only for missing cases
@@ -255,12 +254,6 @@ class ValidatorResult(models.Model):
     encounters = models.ManyToManyField(Encounter, blank=True, null=True)
     prescriptions = models.ManyToManyField(Prescription, blank=True, null=True)
 
-    def nodis_case(self):
-        if self.nodis_case_id:
-            return Case.objects.get(pk=self.nodis_case_id)
-        else:
-            return None
-    
     def condition(self):
         return self.ref_case.condition
     

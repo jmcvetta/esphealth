@@ -21,7 +21,7 @@ class CaseStatusHistoryAdmin(admin.ModelAdmin):
     
 
 class ValidatorResultAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'run', 'date', 'condition', 'patient', 'disposition', 'nodis_case']
+    list_display = ['pk', 'run', 'date', 'condition', 'patient', 'disposition']
     list_filter = ['disposition', 'run', ]
     ordering = ['ref_case__date', 'ref_case__condition', 'ref_case__patient']
     raw_id_fields = ['events', 'cases', 'lab_results', 'encounters', 'prescriptions']
