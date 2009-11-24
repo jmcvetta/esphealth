@@ -24,6 +24,7 @@ from ESP.settings import DATABASE_ENGINE
 from ESP.emr.choices import DATA_SOURCE
 from ESP.emr.choices import LOAD_STATUS
 from ESP.conf.common import EPOCH
+from ESP.conf.models import CodeMap
 from ESP.static.models import Loinc
 from ESP.static.models import Ndc
 from ESP.static.models import Icd9
@@ -608,42 +609,14 @@ class LabResult(BasePatientRecord):
         self.  if 'check_same_unit' is True, only returns the value if
         both labs results have a matching (Case insensitive) ref_unit value
         '''
-        
         previous_labs = LabResult.objects.filter(native_code=self.native_code, patient=patient, 
                                                  date__lt=self.date).order_by('-date')
-
         if with_same_unit:
             previous_labs = previous_labs.filter(ref_unit__iexact=self.ref_unit)
-
         for lab in previous_labs:
             value = (lab.result_float or lab.result_string) or None
             if value: return value
-
         return None
-
-    def _get_loinc(self):
-        try:
-            return NativeCode.objects.get(native_code=self.native_code).loinc
-        except:
-            return None
-        
-    def _set_loinc(self, value):
-        try:
-            mapping = NativeCode.objects.get(loinc=value)
-            self.native_code = mapping.native_code
-            if not mapping.native_name:
-                self.native_name = mapping.native_name
-        except:
-            raise ValueError, "%s is not a valid Loinc" % value
-
-    loinc = property(_get_loinc, _set_loinc)
-
-    def loinc_num(self):
-        '''
-        Returns LOINC number (not Loinc object!) for this test if it is mapped
-        to one, else returns None.
-        '''
-        return (self.loinc and self.loinc.loinc_num) or None
 
     def __str__(self):
         return 'Lab Result # %s' % self.pk
@@ -692,6 +665,21 @@ class LabResult(BasePatientRecord):
             }
         return '%(date)-10s    %(id)-8s    %(short_name)-15s    %(native_code)-11s    %(res)-20s' % values
 
+    def __get_output_code(self):
+        maps = CodeMap.objects.filter(native_code=self.native_code)
+        if maps:
+            return maps[0].output_code
+        else:
+            return None
+    output_code = property(__get_output_code)
+    
+    def __get__output_or_native_code(self):
+        output = self.output_code
+        if output:
+            return output
+        else:
+            return self.native_code
+    output_or_native_code = property(__get__output_or_native_code)
 
     def document_summary(self):
         return {
@@ -718,6 +706,7 @@ class LabResult(BasePatientRecord):
                 'comment':self.comment
                 } 
             }
+
     
     
 class Prescription(BasePatientRecord):
