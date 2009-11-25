@@ -345,26 +345,26 @@ class LabOrderLoader(NotImplementedLoader):
 class LabResultLoader(BaseLoader):
     
     fields = [
-        'patient_id_num',
-        'medical_record_num',
-        'order_id_num',
-        'order_date',
-        'result_date',
-        'provider_id_num',
-        'order_type',
-        'cpt',
-        'component',
-        'component_name',
-        'result_string',
-        'normal_flag',
-        'ref_low',
-        'ref_high',
-        'unit',
-        'status',
-        'note',
-        'specimen_id_num',
-        'impression',
-        'specimen_source',
+        'patient_id_num',       # 1
+        'medical_record_num',   # 2
+        'order_id_num',         # 3
+        'order_date',           # 4
+        'result_date',          # 5
+        'provider_id_num',      # 6
+        'order_type',           # 7
+        'cpt',                  # 8
+        'component',            # 9
+        'component_name',       # 10
+        'result_string',        # 11
+        'normal_flag',          # 12
+        'ref_low',              # 13
+        'ref_high',             # 14
+        'unit',                 # 15
+        'status',               # 16
+        'note',                 # 17
+        'specimen_id_num',      # 18
+        'impression',           # 19
+        'specimen_source',      # 20
         ]
     
     def load_row(self, row):
