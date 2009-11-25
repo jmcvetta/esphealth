@@ -12,7 +12,7 @@ doc/disease-protocols/Hepatitis_A.doc -text
 doc/planning/Atrius-DB-Roadmap.png -text svneol=unset#unset
 doc/planning/Atrius-DB-Roadmap.xmind -text svneol=unset#unset
 doc/planning/ESP-1.0.xmind -text svneol=unset#unset
-doc/specifications/EpicCare_ESP_Extract_Specifications--3_Aug_2006.doc -text
+doc/specifications/EpicCare_ETL_file_spec.doc -text
 doc/specifications/MDPH_ELR_EMR_Query_Specification_v1.0.doc -text
 doc/specifications/PHIN_ELR_Implementation_Guide--HL7_2.3.1--21_May_2004.pdf -text svneol=unset#unset
 doc/specifications/gipse.xsd -text
