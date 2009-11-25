@@ -92,7 +92,7 @@ PYTHONPATH="$ESP_HOME/src"
 DJANGO_SETTINGS_MODULE="ESP.settings"
 
 if [ "$LOADER" = "HL7" ]; then
-    LOADER_CMD="emr/etl/load_hl7.py --input=$INCOMING_DATA"
+    LOADER_CMD="emr/etl/load_hl7.py --new --input=$INCOMING_DATA"
 elif [ "$LOADER" = "Epic" ]; then
     LOADER_CMD="emr/etl/load_epic.py --input=$INCOMING_DATA"
 else
