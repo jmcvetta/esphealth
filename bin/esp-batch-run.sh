@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #                            ESP Batch Run Script
@@ -36,27 +35,35 @@ set -x
 # executable and the root of your ESP installation.
 #
 #-------------------------------------------------------------------------------
+PRINT_PROGRESS=1 # Should we display progress as script runs?
 ESP_HOME=""
 INCOMING_DATA=""
 PYTHON=""
 LOADER="" # Available options: 'Epic' or 'HL7'
 
-ESP_HOME="/opt/esp"
-INCOMING_DATA="/home/ftpuser/"
-PYTHON="/usr/bin/python"
-LOADER="Epic"
 
 
-#-------------------------------------------------------------------------------
+#===============================================================================
 #
 #        It should not be necessary to edit anything below this point.
 #
+#===============================================================================
+
+function progress {
+    if (($PRINT_PROGRESS)); then 
+        echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        echo $1
+        echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    fi
+}
+
+
 #-------------------------------------------------------------------------------
-
-
 #
 # Sanity Checks
 #
+#-------------------------------------------------------------------------------
+
 if [ -z "$ESP_HOME" ]; then
     echo "You must edit this script to set the \$ESP_HOME variable before running it."
     exit 10
@@ -75,9 +82,11 @@ if [ -z "$LOADER" ]; then
 fi
 
 
+#-------------------------------------------------------------------------------
 #
 # Set up variables
 #
+#-------------------------------------------------------------------------------
 
 PYTHONPATH="$ESP_HOME/src"
 DJANGO_SETTINGS_MODULE="ESP.settings"
@@ -95,17 +104,26 @@ fi
 LOADER_CMD="$LOADER_CMD --no-archive"
 
 
+#-------------------------------------------------------------------------------
 #
 # Run ESP
 #
+#-------------------------------------------------------------------------------
 
 cd $ESP_HOME/src/ESP || exit 11
+progress "Loading new data"
 $PYTHON $LOADER_CMD || exit 21
+progress "Generating heuristic events"
 $PYTHON hef/run.py || exit 22
+progress "Detecting cases"
 $PYTHON nodis/run.py || exit 23
+progress "Compiling lab test concordance"
 $PYTHON nodis/find_unmapped_labs.py || exit 24
 
+
+#-------------------------------------------------------------------------------
 #
 # Success
 #
+#-------------------------------------------------------------------------------
 exit 0
