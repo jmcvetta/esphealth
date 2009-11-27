@@ -5,16 +5,18 @@ import sys
 import datetime
 from optparse import OptionParser
 
-from ESP.utils.utils import date_from_str, str_from_date
-from ESP.utils.utils import log
+from ESP.utils.utils import date_from_str, str_from_date, log
+from ESP.conf.common import EPOCH
+from ESP.ss.models import Site
+
 
 import reports
 from heuristics import syndrome_heuristics
-
+from utils import make_non_specialty_clinics
 
             
 usage_msg = """espss.py
-Usage: python ss/main.py -b[start_date as 20090101] -e[end_date] [-f, --find-events] [-r --reports]"""
+Usage: python ss/main.py -b[start_date as 20090101] -e[end_date] [-f, --find-events] [-r --reports] [-c --consolidate]"""
 
 
 
@@ -24,13 +26,13 @@ def main():
     yesterday = today - datetime.timedelta(1)
 
     parser = OptionParser(usage=usage_msg)
-    parser.add_option('-b', '--begin', dest='begin_date', default=yesterday.strftime('%Y%m%d'))
+    parser.add_option('-b', '--begin', dest='begin_date', default=EPOCH.strftime('%Y%m%d'))
     parser.add_option('-e', '--end', dest='end_date', default=today.strftime('%Y%m%d'))
-    parser.add_option('-c', '--encounter-counts', action='store_true', dest='total_counts')
+    parser.add_option('-s', '--syndrome', dest='syndrome', default='all')
+    parser.add_option('-c', '--consolidate', action='store_true', dest='consolidate')
     parser.add_option('-f', '--find-events', action='store_true', dest='events')
     parser.add_option('-r', '--reports', action='store_true', dest='reports')
-    parser.add_option('-g', '--gipse', action='store_true', dest='gipse')
-    parser.add_option('-s', '--syndrome', dest='syndrome', default='all')
+
     
     options, args = parser.parse_args()
 
@@ -49,35 +51,34 @@ def main():
         if heuristic: heuristics.append(heuristic)
 
     if options.events:
+        if not Site.objects.count(): make_non_specialty_clinics()
         for heuristic in heuristics:
             log.info('Generating events for %s' % heuristic.name)
-            heuristic.generate_events(incremental=False, begin_date=begin_date, end_date=end_date)
+            heuristic.generate_events(begin_date=begin_date, end_date=end_date)
+
 
     if options.reports:
-        for heuristic in heuristics:
-            current_day = begin_date
-            log.info('Creating reports from %s until %s' % (current_day, end_date))
-            while current_day <= end_date:
-                log.info('Creating reports for %s syndrome on %s' % (heuristic.name, current_day))
-                heuristic.make_reports(current_day)
-                current_day += datetime.timedelta(1)
+        if options.consolidate:
+            reports.all_encounters_report(begin_date, end_date)
+            for heuristic in heuristics:
+                log.info('Creating %s reports, %s to %s' % (heuristic.name, begin_date, end_date))
+                heuristic.make_reports(begin_date, end_date)
+        else:
+            day = begin_date
+            while day <= end_date:
+                reports.all_encounters_report(day, day)
+                for heuristic in heuristics:
+                    log.info('Creating %s reports for %s' % (heuristic.name, day))
+                    heuristic.make_reports(day, day)
+                day += datetime.timedelta(1)
 
-    if options.gipse:
-        report = reports.Report(begin_date)
-        report.gipse_report(end_date=end_date)
+                
 
-    if options.total_counts:
-        current_day = begin_date
-        log.info('Creating reports for all encounters from %s until %s' % (current_day, end_date))
-        while current_day <= end_date:
-            log.info('Creating reports for %s' % current_day)
-            reports.all_encounters_report(current_day)
-            current_day += datetime.timedelta(1)
-
+        
         
 
 
-    if not (options.events or heuristics or options.total_counts):
+    if not (options.events or options.reports or options.total_counts):
         print usage_msg
         sys.exit(-1)
 

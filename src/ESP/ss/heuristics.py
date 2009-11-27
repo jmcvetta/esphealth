@@ -10,25 +10,17 @@ from django.contrib.contenttypes.models import ContentType
 from ESP.conf.common import EPOCH
 from ESP.emr.models import Encounter
 from ESP.hef.core import EncounterHeuristic
-from ESP.hef.models import Run
-from ESP.utils.utils import log, date_from_str, str_from_date
-
+from ESP.hef.models import Run, Event
+from ESP.utils.utils import log, date_from_str, str_from_date, days_in_interval
+from ESP.ss.utils import report_folder
 from ESP.ss.models import NonSpecialistVisitEvent, Site
 
+from definitions import AGGREGATE_BY_RESIDENTIAL_ZIP_FILENAME, AGGREGATE_BY_SITE_ZIP_FILENAME
+from definitions import INDIVIDUAL_BY_SYNDROME_FILENAME
+from definitions import AGE_GROUP_INTERVAL, AGE_GROUP_CAP, AGE_GROUPS
 from definitions import ICD9_FEVER_CODES
 from definitions import influenza_like_illness, haematological, lesions, rash
 from definitions import lymphatic, lower_gi, upper_gi, neurological, respiratory
-
-
-REPORT_FOLDER = os.path.join(os.path.dirname(__file__), 'assets')
-AGGREGATE_BY_RESIDENTIAL_ZIP_FILENAME = 'ESPAtrius_SyndAgg_zip5_Res_Excl_%s_%s_%s.xls'
-AGGREGATE_BY_SITE_ZIP_FILENAME = 'ESPAtrius_SyndAgg_zip5_Site_Excl_%s_%s_%s.xls'
-INDIVIDUAL_BY_SYNDROME_FILENAME = 'ESPAtrius_SyndInd_zip5_Site_Excl_%s_%s_%s.xls'
-AGE_GROUP_INTERVAL = 5
-AGE_GROUP_CAP = 90    
-
-AGE_GROUPS = xrange(0, AGE_GROUP_CAP, AGE_GROUP_INTERVAL)
-
 
 # According to the specs, all of the syndromes have their specific
 # lists of icd9 codes that are always required as part of the
@@ -48,10 +40,14 @@ AGE_GROUPS = xrange(0, AGE_GROUP_CAP, AGE_GROUP_INTERVAL)
 # instantiated as regular SyndromeHeuristics.
 
 
+
 class SyndromeHeuristic(EncounterHeuristic):
+    def encounters(self, **kw):
+        return Encounter.objects.syndrome_care_visits().filter(icd9_codes__in=self.icd9s)
 
     def generate_events(self, **kw):
-        counter = 0
+        created = 0
+        detected = 0
         encounter_type = ContentType.objects.get_for_model(Encounter)
         begin_date = kw.get('begin_date', EPOCH)
         end_date = kw.get('end_date', datetime.date.today())
@@ -59,39 +55,30 @@ class SyndromeHeuristic(EncounterHeuristic):
         run = Run.objects.create()
 
         for encounter in self.matches().filter(date__gte=begin_date, date__lte=end_date):
+            detected +=1 
             try:
                 site = Site.objects.get(code=encounter.native_site_num)
             except:
                 site = None
+                                
+            patient_zip = encounter.patient.zip
+            if patient_zip: patient_zip = patient_zip[:5].strip()
+            
+            ev, new = NonSpecialistVisitEvent.objects.get_or_create(
+                name=self.long_name, date=encounter.date, patient=encounter.patient, 
+                content_type=encounter_type, object_id=encounter.id, 
+                defaults = {'run':run, 'reporting_site':site, 
+                            'patient_zip_code':patient_zip, 'encounter':encounter
+                            }
+                )
+            if new: created+= 1
                 
-            try:
-                
-                patient_zip = encounter.patient.zip
-                NonSpecialistVisitEvent.objects.get_or_create(
-                    name = self.long_name,
-                    run = run,
-                    encounter = encounter,
-                    date = encounter.date,
-                    patient = encounter.patient,
-                    patient_zip_code = (patient_zip and patient_zip[:5].strip()) or None,
-                    reporting_site = site,
-                    object_id = encounter.id,
-                    defaults = {
-                        'content_type':encounter_type
-                        }
-                    )
-
-                counter +=1 
-
-            except Exception, why:
-                # There is not much to do if some of the information is bad, so we just log and skip it.
-                log.error('Error %s making event from %s' % (why, encounter))
-
         run.status = 's'
         run.save()
-        log.info('%s events detected' % counter)
+        log.info('%s events detected' % detected)
+        log.info('%s events created' % created)
 
-        return counter
+        return created
     
     def counts_by_age_range(self, lower, upper=150, **kw):
         '''
@@ -126,52 +113,55 @@ class SyndromeHeuristic(EncounterHeuristic):
 
         return events.count()
 
-    def residential_count(date, zip_code):
-        '''For given date and zip_code, return the total count of events'''
-        return NonSpecialistVisitEvent.objects.filter(
-            date=date, patient_zip_code=zip_code, name=self.longname).count()
-
-    def site_count(date, zip_code):
-        '''For given date and zip_code, return the total count of events'''
-
-        sites = Site.objects.filter(zip_code=zip_code)
-        return NonSpecialistVisitEvent.objects.filter(
-            date=date, reporting_site__in=sites, name=self.long_name).count()
+    def make_reports(self, date, end_date=None):
 
 
+        self.aggregate_site_report(date, end_date=end_date)
+        self.aggregate_residential_report(date, end_date=end_date)
+        self.detailed_site_report(date, end_date=end_date)
 
-    def make_reports(self, date):
-        self.aggregate_site_report(date)
-        self.aggregate_residential_report(date)
-        self.detailed_site_report(date)
+    def aggregate_site_report(self, date, end_date=None, exclude_duplicates=True):
 
-    def aggregate_site_report(self, date, exclude_duplicates=True):
-        log.debug('Aggregate site report for %s on %s' % (self.name, date))
+        if not end_date: end_date = date
+
+        folder = report_folder(date, end_date)
+
+        log.info('Aggregate site report for %s on %s-%s' % (self.name, date, end_date))
         header = ['encounter date', 'zip', 'syndrome', 'syndrome events', 'total encounters', 
                   'pct syndrome']
         
-        timestamp = str_from_date(date)
-        outfile = open(os.path.join(REPORT_FOLDER, AGGREGATE_BY_SITE_ZIP_FILENAME % (
-                    self.name, timestamp, timestamp)), 'w')
+        timestamp_begin = str_from_date(date)
+        timestamp_end = str_from_date(end_date)
+
+        outfile = open(os.path.join(folder, AGGREGATE_BY_SITE_ZIP_FILENAME % (
+                    self.name, timestamp_begin, timestamp_end)), 'w')
 
         outfile.write('\t'.join(header) + '\n')
 
         site_zips = Site.objects.values_list('zip_code', flat=True).distinct().order_by('zip_code')
-        for zip_code in site_zips:
-            total = Site.volume_by_zip(zip_code, date, exclude_duplicates=exclude_duplicates)
-            syndrome_count = NonSpecialistVisitEvent.objects.filter(
-                date=date, name=self.long_name, reporting_site__zip_code=zip_code).count()
 
-            if not (total and syndrome_count): continue
+        days = days_in_interval(date, end_date)
 
-            pct_syndrome = 100*(float(syndrome_count)/float(total))
 
-            line = '\t'.join([str(x) for x in [timestamp, zip_code, self.name, syndrome_count, total, '%1.3f' % pct_syndrome]])
-            outfile.write(line + '\n')
+        for day in days:
+            for zip_code in site_zips:
+                total = Site.volume_by_zip(zip_code, day, exclude_duplicates=exclude_duplicates)
+                syndrome_count = NonSpecialistVisitEvent.objects.filter(
+                    date=day, name=self.long_name, reporting_site__zip_code=zip_code).count()
+
+                
+                if not (total and syndrome_count): continue
+
+                pct_syndrome = 100*(float(syndrome_count)/float(total))
+
+                line = '\t'.join([str(x) for x in [str_from_date(day), zip_code, self.name, syndrome_count, total, '%1.3f' % pct_syndrome]])
+                log.info(line)
+                outfile.write(line + '\n')
+
 
         outfile.close()
 
-    def aggregate_residential_report(self, date, exclude_duplicates=True):
+    def aggregate_residential_report(self, date, end_date=None, exclude_duplicates=True):
 
         ''' 
         For this report, we need - for a given date:
@@ -180,77 +170,100 @@ class SyndromeHeuristic(EncounterHeuristic):
          - The syndrome ratio
         '''
 
-        log.debug('Aggregate residential report for %s on %s' % (self.name, date))
-        header = ['encounter date', 'zip', 'syndrome', 'syndrome events', 
-              'total encounters', 'pct syndrome']
+        if not end_date: end_date = date
 
-        timestamp = str_from_date(date)
-        outfile = open(os.path.join(REPORT_FOLDER, AGGREGATE_BY_RESIDENTIAL_ZIP_FILENAME % (
-                    self.name, timestamp, timestamp)), 'w')
+        folder = report_folder(date, end_date)
+
+        log.info('Aggregate residential report for %s on %s-%s' % (self.name, date, end_date))
+        header = ['encounter date', 'zip', 'syndrome', 'syndrome events', 'total encounters', 
+                  'pct syndrome']
+        
+        timestamp_begin = str_from_date(date)
+        timestamp_end = str_from_date(end_date)
+
+        outfile = open(os.path.join(folder, AGGREGATE_BY_RESIDENTIAL_ZIP_FILENAME % (
+                    self.name, timestamp_begin, timestamp_end)), 'w')
         
         outfile.write('\t'.join(header) + '\n')
 
-        zip_codes = Encounter.objects.syndrome_care_visits(sites=Site.site_ids()).filter(date=date).values_list(
-            'patient__zip5', flat=True).distinct().order_by('patient__zip5')
+        zip_codes = Encounter.objects.syndrome_care_visits(sites=Site.site_ids()).filter(
+            date=date).values_list('patient__zip5', flat=True).distinct().order_by('patient__zip5')
+
+        days = days_in_interval(date, end_date)
         
-        for zip_code in zip_codes:
-            non_specialty_encounters = Encounter.objects.syndrome_care_visits(sites=Site.site_ids()).filter(
-                date=date, patient__zip5=zip_code)
-            if exclude_duplicates:
-                total = non_specialty_encounters.values_list('patient', flat=True).distinct().count()
-            else:
-                total = non_specialty_encounters.count()
-            syndrome_patients = NonSpecialistVisitEvent.objects.filter(
-                name=self.long_name, date=date, patient_zip_code=zip_code).count()
+        for day in days:
+            for zip_code in zip_codes:
+                non_specialty_encounters = Encounter.objects.syndrome_care_visits(
+                    sites=Site.site_ids()).filter(date=day, patient__zip5=zip_code)
+                if exclude_duplicates:
+                    total = non_specialty_encounters.values_list('patient').distinct().count()
+                else:
+                    total = non_specialty_encounters.count()
 
-            if not (total and syndrome_patients): continue
+                syndrome_patients = NonSpecialistVisitEvent.objects.filter(
+                    name=self.long_name, date=day, patient_zip_code=zip_code).count()
 
-            pct_syndrome = 100*(float(syndrome_patients)/float(total))
+                if not (total and syndrome_patients): continue
 
-            line = '\t'.join([str(x) for x in [timestamp, zip_code, self.name, syndrome_patients, total, '%1.3f' % pct_syndrome]])
-            log.debug(line)
-            outfile.write(line + '\n')
+                pct_syndrome = 100*(float(syndrome_patients)/float(total))
+
+                line = '\t'.join([str(x) for x in [str_from_date(day), zip_code, self.name, 
+                                                   syndrome_patients, total, '%1.3f' % pct_syndrome]])
+                log.info(line)
+                outfile.write(line + '\n')
 
         outfile.close()
 
 
-    def detailed_site_report(self, date):
-        log.debug('Detailed site report for %s on %s' % (self.name, date))
-
-        header = ['syndrome', 'encounter date', 'zip residence', 'zip site',
-                  'age 5yrs', 'icd9', 'temperature', 
-                  'encounters at age and residential zip', 
-                  'encounters at age and site zip']
-
-        timestamp = str_from_date(date)
-        outfile = open(os.path.join(REPORT_FOLDER, INDIVIDUAL_BY_SYNDROME_FILENAME % (
-                    self.name, timestamp, timestamp)), 'w')
-        outfile.write('\t'.join(header) + '\n')
-    
-        for ev in NonSpecialistVisitEvent.objects.filter(name=self.name, date=date).exclude(
-            reporting_site__isnull=True).order_by('patient_zip_code'):
-
-            if not ev.patient.age: continue
-
-            patient_age = int(ev.patient.age.days/365.25)
-            patient_age_group = int(patient_age/AGE_GROUP_INTERVAL)*AGE_GROUP_INTERVAL
+    def detailed_site_report(self, date, end_date=None):
+        if not end_date: end_date = date
+        folder = report_folder(date, end_date)
         
-            encounter_codes = [x.code for x in ev.encounter.icd9_codes.all()]
-            icd9_codes = ' '.join([code for code in encounter_codes if code in self.icd9s])
+        log.info('Detailed site report for %s on %s-%s' % (self.name, date, end_date))
 
-            count_by_locality_and_age = self.counts_by_age_range(
-                patient_age_group, patient_age_group+AGE_GROUP_INTERVAL, 
-                locality_zip_code=ev.patient_zip_code)
+        header = ['syndrome', 'encounter date', 'zip residence', 'zip site', 'age 5yrs', 'icd9', 
+                  'temperature',  'encounters at age and residential zip', 
+                  'encounters at age and site zip']
+        
+        timestamp_begin = str_from_date(date)
+        timestamp_end = str_from_date(end_date)
+        
+        outfile = open(os.path.join(folder, INDIVIDUAL_BY_SYNDROME_FILENAME % (
+                    self.name, timestamp_begin, timestamp_end)), 'w')
+        outfile.write('\t'.join(header) + '\n')
 
-            count_by_site_and_age = self.counts_by_age_range(
-                patient_age_group, patient_age_group+AGE_GROUP_INTERVAL, 
-                site_zip_code=ev.reporting_site.zip_code)
+        days = days_in_interval(date, end_date)
+        
+        for day in days:
+            for ev in NonSpecialistVisitEvent.objects.filter(name=self.long_name, date=day).exclude(
+                reporting_site__isnull=True).order_by('patient_zip_code'):
 
-            outfile.write('\t'.join([str(x) for x in [
-                            self.name, timestamp, ev.patient_zip_code, ev.reporting_site.zip_code, 
-                            patient_age_group, icd9_codes, ev.encounter.temperature,
-                            count_by_locality_and_age, count_by_site_and_age, '\n']]))
+                
+                if not ev.patient.age: continue
 
+                patient_age = int(ev.patient.age.days/365.25)
+                patient_age_group = int(patient_age/AGE_GROUP_INTERVAL)*AGE_GROUP_INTERVAL
+        
+                encounter_codes = [x.code for x in ev.encounter.icd9_codes.all()]
+                icd9_codes = ' '.join([code for code in encounter_codes if code in self.icd9s])
+                
+                count_by_locality_and_age = self.counts_by_age_range(
+                    patient_age_group, patient_age_group+AGE_GROUP_INTERVAL, 
+                    locality_zip_code=ev.patient_zip_code)
+                
+                count_by_site_and_age = self.counts_by_age_range(
+                    patient_age_group, patient_age_group+AGE_GROUP_INTERVAL, 
+                    site_zip_code=ev.reporting_site.zip_code)
+
+                
+                line = '\t'.join([str(x) for x in [
+                            self.name, str_from_date(day), ev.patient_zip_code, 
+                            ev.reporting_site.zip_code, patient_age_group, icd9_codes, 
+                            ev.encounter.temperature,
+                            count_by_locality_and_age, count_by_site_and_age, '\n']])
+                log.info(line)
+                outfile.write(line)
+               
 
         outfile.close()
 
@@ -322,7 +335,7 @@ neuro = SyndromeHeuristic('Neurological', make_long_name('Neurological'), dict(n
 def syndrome_heuristics():
     return {
         'ili':ili,
-        'haemotological':haematological,
+        'haematological':haematological,
         'lymphatic':lymphatic,
         'rash':rash,
         'lesions':lesions,

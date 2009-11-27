@@ -44,9 +44,9 @@ class Site(models.Model):
         recorded. If exclude_duplicates is True, the count is reduced
         to only the number of patients.
         '''
-        count = Encounter.objects.filter(date=date).syndrome_care_visits(
-            sites=Site.site_ids(zip_code)).values_list('patient')
-        return count.distinct().count() if exclude_duplicates else count.count()
+        patients = Encounter.objects.syndrome_care_visits(sites=Site.site_ids(zip_code)).values_list(
+            'patient').filter(date=date)
+        return patients.distinct().count() if exclude_duplicates else patients.count()
         
     @staticmethod
     def encounters_by_zip(zip_code):
@@ -57,9 +57,8 @@ class Site(models.Model):
 
     @staticmethod
     def age_group_aggregate(zip_code, date, lower, upper=90):
-        return Site.encounters_by_zip(zip_code).filter(
-            age_group_filter(lower, upper)
-            ).filter(date=date).count()
+        return Site.encounters_by_zip(zip_code).filter(age_group_filter(lower, upper)).filter(
+            date=date).count()
 
     @staticmethod
     def site_ids(zip_code=None):
