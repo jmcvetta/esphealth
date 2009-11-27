@@ -135,6 +135,33 @@ def getfilesByDay(files):
     returndays.sort(key=lambda x:x[0])
     return returndays
 
+
+def timeit():
+    '''Poor man's profiler'''
+    def decorator(func):
+        def proxyfunc(self, *args, **kw):
+            import datetime
+            before = datetime.datetime.now()
+            res = func(self, *args, **kw)
+            print('%s took %s' % (func.name, (datetime.datetime.now() - before)))
+            return res
+        return proxyfunc
+    return decorator
+
+
+def days_in_interval(begin_date, end_date):
+    # We are going to get all of the days that cover the period between date and end_date
+    # Note that xrange works on (0..end_date-1). If end_date is larger than
+    # date, it will not be on the list, so we append to it.
+
+    assert begin_date <= end_date
+
+    days = [begin_date + datetime.timedelta(d) for d in xrange((end_date-begin_date).days)]
+    if end_date == begin_date: days.append(end_date)
+
+    return days
+
+
                                                                         
 def date_from_str(timestamp):
     '''
