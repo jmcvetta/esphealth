@@ -708,6 +708,7 @@ def define_active_rules():
 
 
 def main():
+    define_active_rules()
     map_lab_tests()
 
 

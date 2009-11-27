@@ -560,10 +560,8 @@ class DiagnosticsEventRule(Rule):
  
     source = models.CharField(max_length=30, null=True)
     ignored_if_past_occurrence = models.PositiveIntegerField(null=True)
-    heuristic_defining_codes = models.ManyToManyField(
-        Icd9, related_name='defining_icd9_code_set')
-    heuristic_discarding_codes = models.ManyToManyField(
-        Icd9, related_name='discarding_icd9_code_set')
+    heuristic_defining_codes = models.ManyToManyField(Icd9, related_name='defining_icd9_code_set')
+    heuristic_discarding_codes = models.ManyToManyField(Icd9, related_name='discarding_icd9_code_set')
     
     def __unicode__(self):
         return unicode(self.name)

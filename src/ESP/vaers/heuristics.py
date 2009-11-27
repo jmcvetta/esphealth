@@ -105,9 +105,6 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
                 ev.delete()
                 counter -= 1
 
-            except Exception, why:
-                import pdb; pdb.set_trace()
-
         return counter
         
 
@@ -218,7 +215,6 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 to_compare = trigger.replace('X', str(v))
                 return eval(to_compare)
             except:
-                log.warning('Lab Result %s has no value to be analyzed' % lx)
                 return False
             
 
@@ -237,7 +233,6 @@ class VaersLxHeuristic(AdverseEventHeuristic):
 
                 return eval(equation)
             except:
-                log.warning('Could not find LKV for Lab Result %s' % lx)
                 return False
 
         
