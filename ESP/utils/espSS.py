@@ -4,6 +4,7 @@ Please look at http://esphealth.org/trac/ESP/wiki/ESPSS
 to get some idea of the background
 
 Most Recent Changes First:
+28 Nov 2009: whoopsie.  forgot to filter by event_type
 26 May 2009: how to proceed for Katherine? Best to have individual daily files or to append each day?
 19 May 2009: added optionparser
 18 May 2009: added all encounter/date/zip reports. filter by zips > 10 encounters over entire period
@@ -23,6 +24,45 @@ Most Recent Changes First:
 27 april 2009: swine flu - added a simple tab delimited file dumperqscreen 
 21 april 2009: added btzipdict to espSSconf.py - lookup a zip code to get the MDPH BT region
 22 april 2009: added quick'n'dirty AMDS xml generator - bugger the xsd :)
+
+
+Notes on event types - should only count urgent_care and visit
+mysql> select count(*),EncEvent_Type from esp_enc group by EncEvent_Type order by EncEvent_Type;
++----------+---------------+
+| count(*) | EncEvent_Type |
++----------+---------------+
+|     6230 | CLASS         | 
+|   307703 | COUMADIN      | 
+|    33711 | EMERGENCY RO  | 
+|     1214 | EXTENDED CAR  | 
+|  1543137 | HISTORY       | 
+|     4647 | HOME VISIT    | 
+|   123911 | HOSPITAL      | 
+|    70088 | IMMUNIZATION  | 
+|      144 | INPT ROUND    | 
+|        1 | MENTAL HEALT  | 
+|      200 | MH INFORMED   | 
+|    24093 | OCC HEALTH    | 
+|  2393560 | ORDERS        | 
+|    92242 | ORDERS WITH   | 
+|      241 | OUTPT DEPT    | 
+|    23706 | PRE-OP        | 
+|  2166445 | REFILL        | 
+|  4810717 | TELEPHONE     | 
+|   763701 | URGENT CARE   | 
+|  6316000 | VISIT         | 
++----------+---------------+
+20 rows in set (50.93 sec)
+
+mysql> select count(*) from esp_enc;
++----------+
+| count(*) |
++----------+
+| 18681691 | 
++----------+
+1 row in set (0.00 sec)
+
+
 
 Copyright Ross Lazarus April 20 2009
 All rights reserved
@@ -179,11 +219,12 @@ localSiteZips, ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef
 # The icd9 codes are matched 'or' on all the subject codes.  
 
 
-
+encEventsToCount = ['URGENT CARE','VISIT']
 defList = [ILIdef,HAEMdef,LESIONSdef,LYMPHdef,LGIdef,UGIdef,NEUROdef,RASHdef,RESPdef]
 nameList = ['ILI','Haematological','Lesions','Lymphatic','Lower GI','Upper GI',
 'Neurological','Rashes','Respiratory']
 syndDefs = dict(zip(nameList,defList))
+
 # our application is now configured with all the data structures
 # needed to identify and report cases and aggregates
 # these can be easily adjusted - check the espSSconfATRIUS.py file
@@ -257,11 +298,13 @@ def AgeencDateVolumes(startDT='20090301',endDT='20090331',ziplen=5,localIgnore=T
     if localIgnore: # use encounter site exclusions 
                     # from the exclude list in the espSSconf[sitename].py file
         allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, EncEncounter_Date__lte=endDT,
+             EncEvent_Type__in = encEventsToCount,
              EncEncounter_Site__in = localSiteUseCodes).extra(select=esel).values_list('ezip','dob',
             'EncEncounter_Date','EncEncounter_Site').iterator() 
             # yes - this works well to minimize ram    
     else:
         allenc = Enc.objects.filter(EncEncounter_Date__gte=startDT, 
+        EncEvent_Type__in = encEventsToCount,
         EncEncounter_Date__lte=endDT).extra(select=esel).values_list('ezip','dob',
             'EncEncounter_Date','EncEncounter_Site').iterator() # yes - this works well to minimize ram             
     zl = ziplen # eg use 5 - ignore rest
@@ -319,14 +362,19 @@ def findCaseFactIds(syndDef=[],syndName='',startDT=None,endDT=None,ziplen=5,loca
     feverCodes = [x[0] for x in syndDef if x[1]] # definitive if fever or.. see note on complexities
     checkFever = (len(feverCodes) > 0) # no point if not needed
     checkNoFever = (len(noFevercodes) > 0)
+    esel = {'enctype': # django has a very neat way to inject sql
+            'select EncEvent_Type from esp_enc where esp_enc.id = icd9Fact.id',}
+
     if checkNoFever: # get all definitive cases as icd9fact ids
         nffacts = icd9Fact.objects.filter(icd9EncDate__gte=startDT, 
+             icd9Enc__EncEvent_Type__in=encEventsToCount,
              icd9EncDate__lte=endDT, icd9Code__in=noFevercodes).values_list('id',flat=True)
         nffacts = list(nffacts) # and back to list of unique encounter id 
         SSlogging.info('## %s Nofever: %d diags (+redundancies on patients in events)' % (syndName,len(list(nffacts))))
     if checkFever: # must look for specific icd9 codes accompanied by measured fever or no temp measure but icd9 fever
         # complex - find all encs with relevant icd9 code requiring a fever
         icd9Encs = icd9Fact.objects.filter(icd9EncDate__gte=startDT, icd9EncDate__lte=endDT, 
+            icd9Enc__EncEvent_Type__in = encEventsToCount,
             icd9Code__in=feverCodes).exclude(id__in=nffacts).values_list('icd9Enc',flat=True) 
         # all relevant icd9facts -> enc id list
         feverEncs = Enc.objects.filter(EncTemperature__gte=100,EncEncounter_Date__gte=startDT, 
@@ -794,7 +842,7 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5,
     limit to zips with > 10 cases over entire period arbitrarily
     """
     limit = 10
-    fproto = os.path.join(outdir,'ESP%s_AllEnc_zip%d_%s_%s.xls')
+    fproto = os.path.join(outdir,'ESP%s_AllEnc_zip%d_%s_%s_%s_%s.xls')
     localIgnore = 1
     ziplen = 5
     ages = [x for x in range(0,90,5)]
@@ -840,12 +888,13 @@ def makeEncVols(sdate='20060701',edate='20200101',outdir='./',ziplen=5,
                 siten.append(n) # res counts by age
             row = [d,z,'%d' % st] + ['%d' % x for x in siten] # string    
             sres.append(row) # for residential encounter report
-    fname = fproto % (thisSite,ziplen,'Excl','Site')
+    fname = fproto % (thisSite,ziplen,'Excl','Site',sdate,edate)
+    print '## makeencvols writing vols, fname=',fname
     f = open(fname,'w')
     f.write('\n'.join(['\t'.join(x) for x in sres]))
     f.write('\n')
     f.close()
-    fname = fproto % (thisSite,ziplen,'Excl','Res')
+    fname = fproto % (thisSite,ziplen,'Excl','Res',sdate,edate)
     f = open(fname,'w')
     f.write('\n'.join(['\t'.join(x) for x in rres]))
     f.write('\n')
