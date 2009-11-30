@@ -164,6 +164,7 @@ def hl7handler():
         fin,fout = os.popen4(javacmd)
 
         result = fout.read()
+
         if string.upper(result).find('ERROR') !=-1: ##error
             emlogging.error('ERROR when running javac:%s' % result)
             emlogging.error('Compile java Exception: %s' %javacmd )
@@ -269,13 +270,14 @@ def checkPrev5days():
                          
 ################################
 ################################
-if __name__ == "__main__":
+
+def main():
     startt = datetime.datetime.now()
     TEST=0    ##get files by ftp
     try:
         ##
         if TEST==1:
-             newfiles=[]
+            newfiles=[]
         else:    
             checkPrev5days()
             newfiles=doFTP()
@@ -313,3 +315,9 @@ if __name__ == "__main__":
     emlogging.info('Start: %s' %  startt)
     emlogging.info('End:   %s\n\n' % datetime.datetime.now())
     emlogging.shutdown() 
+
+
+
+
+if __name__ == "__main__":
+    main()

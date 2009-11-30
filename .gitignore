@@ -5,6 +5,7 @@ ESP/*.pyc
 ESP/assets
 ESP/esp/*.pyc
 ESP/localsettings.py
+ESP/sendMsgs*.class
 ESP/sendMsgs/*.class
 ESP/sendMsgs/org/openuri/www/Bcdc*.class
 ESP/utils/*.pyc

@@ -42,6 +42,7 @@ ESP/utils/hl7_to_etl.py -text
 ESP/utils/makeESPdm.py -text
 ESP/utils/northadams.py -text
 ESP/utils/parsehl7.py -text
+ESP/utils/send_hl7.py -text
 ESP/utils/utils.py -text
 ESP/utils/vaers_hl7.py -text
 ESP/utils/xml2bar.py -text
