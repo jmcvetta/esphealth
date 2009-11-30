@@ -12,10 +12,6 @@ ESP/run_ss.sh -text
 ESP/run_ss_november.sh -text
 ESP/run_ss_october.sh -text
 ESP/sendMsgs/bcdc.jar -text
-ESP/sendMsgs/org/openuri/www/Bcdc_elr.class -text
-ESP/sendMsgs/org/openuri/www/Bcdc_elrLocator.class -text
-ESP/sendMsgs/org/openuri/www/Bcdc_elrSoap.class -text
-ESP/sendMsgs/org/openuri/www/Bcdc_elrSoapStub.class -text
 ESP/settings.py -text
 ESP/templates/404.html -text
 ESP/templates/admin/login.html -text
