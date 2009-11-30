@@ -150,16 +150,13 @@ src/ESP/media/js/vaers.js -text
 src/ESP/mh_chlamydia_2.py -text
 src/ESP/nodis/__init__.py -text
 src/ESP/nodis/admin.py -text
-src/ESP/nodis/case_comparator.py -text
+src/ESP/nodis/case_reporter.py -text
 src/ESP/nodis/core.py -text
 src/ESP/nodis/defs.py -text
 src/ESP/nodis/forms.py -text
 src/ESP/nodis/models.py -text
 src/ESP/nodis/old_case_report.py -text
 src/ESP/nodis/patient_report.py -text
-src/ESP/nodis/report/case_reporter.py -text
-src/ESP/nodis/report/foo -text
-src/ESP/nodis/report/lyme_broad_report.py -text
 src/ESP/nodis/run.py -text
 src/ESP/nodis/tests.py -text
 src/ESP/nodis/urls.py -text
