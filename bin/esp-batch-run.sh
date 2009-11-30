@@ -13,7 +13,7 @@
 # 21  Loader failed
 # 22  HEF run failed
 # 23  Nodis run failed
-# 24  Find unmapped labs failed
+# 24  Make lab concordance failed
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -118,7 +118,7 @@ $PYTHON hef/run.py || exit 22
 progress "Detecting cases"
 $PYTHON nodis/run.py || exit 23
 progress "Compiling lab test concordance"
-$PYTHON nodis/find_unmapped_labs.py || exit 24
+$PYTHON emr/make_lab_concordance.py || exit 24
 
 
 #-------------------------------------------------------------------------------
