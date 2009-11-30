@@ -1,18 +1,7 @@
-#! /bin/bash
+#! /bin/sh
+mkdir -p assets/SS/2009/09
+mkdir -p assets/SS/2009/09/01
+mkdir -p assets/SS/2009/09/02
 
-APP_FOLDER="`pwd`/../ESP/utils"
-FILE_FOLDER="`pwd`/../ESP/assets/SS"
-
-if [ $# = 1 ] 
-then
-  DATE=`date -d $1 +%Y%m%d` 
-  FOLDER=`date -d $1 +%Y/%m/%d` 
-else
-  DATE=`date -d "-1 day" +%Y%m%d`
-  FOLDER=`date -d "-1 day" +%Y/%m/%d`  
-fi
-
-mkdir -p $FILE_FOLDER/$FOLDER
-
-python $APP_FOLDER/espSS.py -s $DATE -e $DATE -z5 -o $FILE_FOLDER/$FOLDER -t -v 
-
+python utils/espSS.py -s 20090901 -e 20090901 -z5 -o ./assets/SS/2009/09/01 -t -v 
+python utils/espSS.py -s 20090902 -e 20090902 -z5 -o ./assets/SS/2009/09/02 -t -v 

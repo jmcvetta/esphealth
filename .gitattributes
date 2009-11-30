@@ -68,4 +68,6 @@ prototype/preLoaderData/esp_rule.txt -text
 /readme -text
 scripts/daily_batch.sh -text
 scripts/run_ss.sh -text
+scripts/run_ss_november.sh -text
+scripts/run_ss_october.sh -text
 scripts/upload_ss_reports.sh -text
