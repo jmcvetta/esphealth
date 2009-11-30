@@ -107,18 +107,44 @@ INSTALLED_APPS = (
        'django.contrib.contenttypes',
        'django.contrib.sessions',
        'django.contrib.admin',
-        'ESP.esp',
+       'ESP.esp',
 )
 
 
 
 ###################################
 def getJavaInfo():
-    javadir="/usr/java/jdk1.5.0_09/bin/"
-    #    javadir="/usr/bin/"
-    javaclass=" /home/ESP/ESP/sendMsgs:/home/ESP/axis-1_4/activation.jar:/usr/local/axis-1_4/lib/axis.jar:/usr/local/axis-1_4/lib/commons-logging-1.0.4.jar:/usr/local/axis-1_4/lib/commons-discovery-0.2.jar:/usr/local/axis-1_4/lib/jaxrpc.jar:/usr/local/axis-1_4/lib/wsdl4j-1.5.1.jar:/usr/local/axis-1_4/lib/saaj.jar:/usr/local/axis-1_4/lib/axis-ant.jar:/usr/local/axis-1_4/lib/log4j-1.2.8.jar:/home/ESP/axis-1_4/mail.jar:/home/ESP/ESP/sendMsgs/bcdc.jar  "
+    javadir="/usr/bin"
+    jars_dir = '/usr/share/java'
+
+    def app_full_path(folder):
+        return os.path.realpath(os.path.join(TOPDIR, folder))
+
+    def java_full_path(folder):
+        return os.path.join(jars_dir, folder)
+        
+    javajars = [
+        java_full_path('axis.jar'),
+        java_full_path('commons-logging.jar'), 
+        java_full_path('commons-discovery.jar'), 
+        java_full_path('jaxrpc.jar'), 
+        java_full_path('wsdl4j.jar'), 
+        java_full_path('saaj.jar'), 
+        java_full_path('axis-ant.jar'), 
+        java_full_path('log4j-1.2.jar'),
+        app_full_path('axis-1_4/activation.jar'),
+        app_full_path('axis-1_4/mail.jar'),
+        app_full_path('ESP/sendMsgs/bcdc.jar'),
+        app_full_path('ESP/sendMsgs')
+        ]
+
+
+#    javaclass=" /home/ESP/ESP/sendMsgs:/home/ESP/axis-1_4/activation.jar:/usr/local/axis-1_4/lib/axis.jar:/usr/local/axis-1_4/lib/commons-logging-1.0.4.jar:/usr/local/axis-1_4/lib/commons-discovery-0.2.jar:/usr/local/axis-1_4/lib/jaxrpc.jar:/usr/local/axis-1_4/lib/wsdl4j-1.5.1.jar:/usr/local/axis-1_4/lib/saaj.jar:/usr/local/axis-1_4/lib/axis-ant.jar:/usr/local/axis-1_4/lib/log4j-1.2.8.jar:/home/ESP/axis-1_4/mail.jar:/home/ESP/ESP/sendMsgs/bcdc.jar  "
+    
+
+    javaclass = " %s " % ':'.join([str(jar) for jar in javajars])
     sendMsgcls = 'sendMsg'
-    return (javadir, javaclass,sendMsgcls)
+    return (javadir, javaclass, sendMsgcls)
 
 ###############################
 def getLogging(appname,debug=0):
