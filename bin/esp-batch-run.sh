@@ -35,11 +35,11 @@
 # executable and the root of your ESP installation.
 #
 #-------------------------------------------------------------------------------
-PRINT_PROGRESS=1 # Should we display progress as script runs?
-ESP_HOME=""
-INCOMING_DATA=""
-PYTHON=""
-LOADER="" # Available options: 'Epic' or 'HL7'
+PRINT_PROGRESS=1  # Should we display progress as script runs?
+ESP_HOME=""       # Root of ESP installation
+INCOMING_DATA=""  # Folder where incoming data is stored
+PYTHON=""         # Full path to Python 2.5+ executable
+LOADER=""         # Available options: 'Epic' or 'HL7'
 
 
 
