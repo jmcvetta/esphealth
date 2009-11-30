@@ -8,9 +8,6 @@ ESP/httpdconf/djangomedia/media/ESPMay2006Talk.htm -text
 ESP/httpdconf/httpd.conf.esp.sample -text
 ESP/localsettings.py.sample -text
 ESP/management.py -text
-ESP/run_ss.sh -text
-ESP/run_ss_november.sh -text
-ESP/run_ss_october.sh -text
 ESP/sendMsgs/bcdc.jar -text
 ESP/settings.py -text
 ESP/templates/404.html -text
