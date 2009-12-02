@@ -37,6 +37,9 @@ CONDITION_MAP = {
     'pid': 'pid',
     'active tuberculosis': 'tb',
     'syphilis': 'syphilis',
+    'chlamydia dna probe': 'chlamydia',  # For ref data from MetroHealth's lab
+    'chlamydia culture': 'chlamydia',    # "
+    'gc dna probe': 'gonorrhea',         # "
     }
 #CONSIDER_CONDITIONS = ['chlamydia', 'gonorrhea', 'acute_hep_a', 'acute_hep_b']
     
@@ -44,6 +47,7 @@ CONDITION_MAP = {
 import optparse
 import csv
 import datetime
+import time
 import pprint
 import sys
 
@@ -72,27 +76,32 @@ from ESP.nodis.core import Condition
 
 def load_csv(options):
     filehandle = open(options.load)
-    records = csv.DictReader(filehandle, FILE_FIELDS)
+    records = csv.DictReader(filehandle, FILE_FIELDS, delimiter='\t')
     list = ReferenceCaseList(notes=options.notes)
     list.save()
     log.info('Loading data from %s into reference list #%s' % (options.load, list.pk))
     counter = 0
     for rec in records:
-        mrn = rec['mrn']
+        log.debug('rec: %s' % rec)
+        mrn = 'ID 1-%07d' % int(rec['mrn'])
         try:
+            #patient = Patient.objects.get(mrn=mrn)
             patient = Patient.objects.get(mrn=mrn)
         except Patient.DoesNotExist:
             log.warning('Could not find patient with MRN %s' % mrn)
             continue
         except Patient.MultipleObjectsReturned:
             log.warning('More than one patient record matches MRN %s!' % mrn)
-            patient = Patient.objects.filter(mrn=mrn)[0]
+            patient = Patient.objects.filter(mrn=mrn)
         try:
             condition = CONDITION_MAP[rec['condition'].lower()]
         except KeyError:
             log.warning('Cannot understand condition name: %s' % rec['condition'])
             continue
-        date = date_from_str(rec['date'])
+        #date = date_from_str(rec['date'])
+        date = time.strptime(rec['date'],"%m/%d/%y")
+        date = datetime.datetime(*date[:6])
+        log.debug(date)
         ref = ReferenceCase(
             list = list,
             patient = patient,
