@@ -9,7 +9,6 @@
 @copyright: (c) 2009 Channing Laboratory
 @license: LGPL - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
-from pickle import INST
 
 
 VERSION = '2.3.1'
