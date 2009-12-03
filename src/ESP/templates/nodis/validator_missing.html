@@ -14,10 +14,10 @@
     <p>
         <a href="{% url validator_summary %}">Back to Validator Summary</a>
     </p>
-    <table id='missing_counts'>
+    <table id='case_counts'>
         <tr>
             <th>Condition
-            <th># Cases Missing
+            <th># Cases
         {% for item in counts %}
         <tr>
             <td>{{ item.ref_case__condition }}
