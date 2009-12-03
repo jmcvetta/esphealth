@@ -155,10 +155,7 @@ class Icd9(models.Model):
         assert(float(low))
         assert(float(high))
             
-        return Icd9.objects.filter(
-            code__gte=low, 
-            code__lte=high
-            ).order_by('code')
+        return Icd9.objects.filter(code__gte=low, code__lte=high).order_by('code')
 
     
         
