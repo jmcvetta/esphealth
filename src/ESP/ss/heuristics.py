@@ -146,8 +146,11 @@ class SyndromeHeuristic(EncounterHeuristic):
         for day in days:
             for zip_code in site_zips:
                 total = Site.volume_by_zip(zip_code, day, exclude_duplicates=exclude_duplicates)
-                syndrome_count = NonSpecialistVisitEvent.objects.filter(
-                    date=day, name=self.long_name, reporting_site__zip_code=zip_code).count()
+                events = NonSpecialistVisitEvent.objects.filter(date=day, name=self.long_name, 
+                                                                reporting_site__zip_code=zip_code)
+
+                cases = events.values_list('patient').distinct() if exclude_duplicates else events
+                syndrome_count = cases.count()
 
                 
                 if not (total and syndrome_count): continue
@@ -193,22 +196,24 @@ class SyndromeHeuristic(EncounterHeuristic):
         
         for day in days:
             for zip_code in zip_codes:
-                non_specialty_encounters = Encounter.objects.syndrome_care_visits(
-                    sites=Site.site_ids()).filter(date=day, patient__zip5=zip_code)
-                if exclude_duplicates:
-                    total = non_specialty_encounters.values_list('patient').distinct().count()
-                else:
-                    total = non_specialty_encounters.count()
+                encounters = Encounter.objects.syndrome_care_visits().filter(date=day, patient__zip5=zip_code)
+                cases = NonSpecialistVisitEvent.objects.filter(name=self.long_name, date=day, 
+                                                               patient_zip_code=zip_code)
 
-                syndrome_patients = NonSpecialistVisitEvent.objects.filter(
-                    name=self.long_name, date=day, patient_zip_code=zip_code).count()
+                
+                if exclude_duplicates: 
+                    encounters = encounters.values_list('patient').distinct()
+                    cases = cases.values_list('patient').distinct()
 
-                if not (total and syndrome_patients): continue
+                total_encounters = encounters.count()
+                total_cases = cases.count()
+                
+                if not (total_encounters and total_cases): continue
 
-                pct_syndrome = 100*(float(syndrome_patients)/float(total))
+                pct_syndrome = 100*(float(total_cases)/float(total_encounters))
 
                 line = '\t'.join([str(x) for x in [str_from_date(day), zip_code, self.name, 
-                                                   syndrome_patients, total, '%1.3f' % pct_syndrome]])
+                                                   total_cases, total_encounters, '%1.3f' % pct_syndrome]])
                 log.info(line)
                 outfile.write(line + '\n')
 
@@ -249,11 +254,11 @@ class SyndromeHeuristic(EncounterHeuristic):
                 
                 count_by_locality_and_age = self.counts_by_age_range(
                     patient_age_group, patient_age_group+AGE_GROUP_INTERVAL, 
-                    locality_zip_code=ev.patient_zip_code)
+                    locality_zip_code=ev.patient_zip_code, date=day)
                 
                 count_by_site_and_age = self.counts_by_age_range(
                     patient_age_group, patient_age_group+AGE_GROUP_INTERVAL, 
-                    site_zip_code=ev.reporting_site.zip_code)
+                    site_zip_code=ev.reporting_site.zip_code, date=day)
 
                 
                 line = '\t'.join([str(x) for x in [

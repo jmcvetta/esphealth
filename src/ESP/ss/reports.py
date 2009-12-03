@@ -3,6 +3,7 @@
 
 import os
 
+from django.db.models import Count
 from django.template import Context
 from django.template.loader import get_template
 
@@ -58,7 +59,8 @@ class Report(object):
             'requesting_user':settings.GIPSE_REQUESTING_USER,
             'heuristic_counts':counts,
             'syndromes':syndromes,
-            'zip_codes':zip_codes}
+            'zip_codes':zip_codes
+            }
 
         msg = get_template(Report.GIPSE_TEMPLATE).render(Context(params))
         log.debug(msg)
@@ -69,31 +71,35 @@ class Report(object):
         header = ['encounter date', 'zip', 'total'] + [str(x) for x in AGE_GROUPS]
         filename = ENCOUNTERS_BY_RESIDENTIAL_ZIP_FILENAME % self.timestamps
         log.debug('Writing file %s' % filename)
-        
-        zip_codes = Encounter.objects.syndrome_care_visits().filter(
-            date__gte=self.begin_date, date__lte=self.end_date).values_list(
-            'patient__zip5', flat=True).distinct().order_by('patient__zip5')
 
         outfile = open(os.path.join(self.folder, filename), 'w')
         outfile.write('\t'.join(header) + '\n')
-        
-        log.debug('Total Zip codes: %d' % len(zip_codes))
-
 
         for day in self.days:
-            for zip_code in zip_codes:
-                counts_by_age = [Encounter.volume(
-                        day, age_group_filter(age, age+AGE_GROUP_INTERVAL), patient__zip5=zip_code, 
-                        native_site_num__in=Site.site_ids())
-                                 for age in AGE_GROUPS]
+            # Now, on to getting all the encounters and doing the count.
+            encounters = Encounter.objects.syndrome_care_visits().filter(date=day)
+            zip_codes = encounters.exclude(patient__zip5__isnull=True).values(
+                'patient__zip5').annotate(count=Count('patient__zip5')).order_by('patient__zip5')
 
-                volume = sum(counts_by_age)
+            for code in zip_codes:
+                volume = code['count']
+                zip_code = code['patient__zip5']
                 if not volume: continue
 
-                log.debug('volume: %d' % volume)            
+                
+                # Initialize a map to count age groups
+                age_group_counts = {}
+                for group in AGE_GROUPS:  age_group_counts[group] = 0
+                for e in encounters:
+                    patient_group = e.patient.age_group()
+                    if (patient_group and (zip_code == e.patient.zip5)): age_group_counts[patient_group] += 1
+
+                if volume < sum(age_group_counts.values()): 
+                    log.warn('Total at zip" %s, Sum of age counts: %s' % (volume, sum(age_group_counts.values())))
+
+
                 summary = [str_from_date(day), zip_code, str(volume)]
-                line = '\t'.join(summary + [str(x) for x in counts_by_age])
-                log.debug(line)
+                line = '\t'.join(summary + [str(age_group_counts[group]) for group in AGE_GROUPS])
                 outfile.write(line + '\n')
 
         outfile.close()
@@ -109,14 +115,26 @@ class Report(object):
 
         for day in self.days:
             for zip_code in zip_codes:
-                counts_by_age = [Site.age_group_aggregate(zip_code, day, age, age+AGE_GROUP_INTERVAL) 
-                                 for age in AGE_GROUPS]
-                volume = sum(counts_by_age)
+                encounters = Site.encounters_by_zip(zip_code).filter(date=day)
+                volume = encounters.count()
+
                 if not volume: continue
+                
+                # Initialize a map to count age groups
+                age_group_counts = {}
+                for group in AGE_GROUPS:  age_group_counts[group] = 0
+                for e in encounters:
+                    patient_group = e.patient.age_group()
+                    if patient_group: age_group_counts[patient_group] += 1
+
+                if volume < sum(age_group_counts.values()): 
+                    log.warn('Total at zip" %s, Sum of age counts: %s' % (volume, sum(age_group_counts.values())))
+
+
 
                 summary = [str_from_date(day), zip_code, str(volume)]
-                line = '\t'.join(summary + [str(x) for x in counts_by_age])
-                log.debug(line)
+                line = '\t'.join(summary + [str(age_group_counts[group]) for group in AGE_GROUPS])
+                log.info(line)
                 outfile.write(line + '\n')
         
         outfile.close()

@@ -28,6 +28,7 @@ def main():
     parser = OptionParser(usage=usage_msg)
     parser.add_option('-b', '--begin', dest='begin_date', default=EPOCH.strftime('%Y%m%d'))
     parser.add_option('-e', '--end', dest='end_date', default=today.strftime('%Y%m%d'))
+    parser.add_option('-i', '--individual', dest='individual', action='store_true')
     parser.add_option('-s', '--syndrome', dest='syndrome', default='all')
     parser.add_option('-c', '--consolidate', action='store_true', dest='consolidate')
     parser.add_option('-f', '--find-events', action='store_true', dest='events')
@@ -72,10 +73,8 @@ def main():
                     heuristic.make_reports(day, day)
                 day += datetime.timedelta(1)
 
-                
-
-        
-        
+    if options.individual:
+        reports.all_encounters_report(begin_date, end_date)
 
 
     if not (options.events or options.reports or options.total_counts):
