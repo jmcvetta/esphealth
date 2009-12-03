@@ -130,10 +130,10 @@ class Provider(BaseMedicalRecord):
     '''
     provider_id_num = models.CharField('Physician code', unique=True, max_length=20, 
         blank=True, null=True, db_index=True)
-    last_name = models.CharField('Last Name',max_length=70,blank=True,null=True)
-    first_name = models.CharField('First Name',max_length=50,blank=True,null=True)
-    middle_initial = models.CharField('Middle_Initial',max_length=20,blank=True,null=True)
-    title = models.CharField('Title',max_length=20,blank=True,null=True)
+    last_name = models.CharField('Last Name',max_length=200, blank=True,null=True)
+    first_name = models.CharField('First Name',max_length=200, blank=True,null=True)
+    middle_name = models.CharField('Middle_Name',max_length=200, blank=True,null=True)
+    title = models.CharField('Title', max_length=20, blank=True, null=True)
     dept_id_num = models.CharField('Primary Department Id',max_length=20,blank=True,null=True)
     dept = models.CharField('Primary Department',max_length=200,blank=True,null=True)
     dept_address_1 = models.CharField('Primary Department Address 1',max_length=100,blank=True,null=True)
