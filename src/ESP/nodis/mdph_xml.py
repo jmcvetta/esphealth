@@ -9,11 +9,30 @@
 @copyright: (c) 2009 Channing Laboratory
 @license: LGPL - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
+from pickle import INST
 
 
-INSTITUTION_NAME = 'HVMA'
-INSTITUTION_CLIA = '22D0666230'
 VERSION = '2.3.1'
+
+# Information about reporting institution.  This info should be made configurable 
+# in reference localsettings.py.
+class Foo(): pass
+INSTITUTION = Foo()
+INSTITUTION.name = 'HVMA'
+INSTITUTION.clia = '22D0666230'
+INSTITUTION.last_name = '???'
+INSTITUTION.first_name = '???'
+INSTITUTION.last_name = '???'
+INSTITUTION.address1 = '???'
+INSTITUTION.address2 = '???'
+INSTITUTION.city = '???'
+INSTITUTION.state = '???'
+INSTITUTION.zip = '???'
+INSTITUTION.country = '???'
+INSTITUTION.email = '???'
+INSTITUTION.area_code = '???'
+INSTITUTION.tel = '???'
+INSTITUTION.tel_ext = '???'
 
 
 
@@ -45,7 +64,7 @@ HL7_RACES = {
     }
 
 
-def make_name(element, person):
+def make_name_element(element, person, is_clinician=False):
     '''
     Returns an Element containing name information.  Element is somewhat 
     different when person is a patient than when person is a provider.
@@ -53,6 +72,8 @@ def make_name(element, person):
     @type element:  String
     @param person: The person described by this element
     @type person:  Patient or Provider object
+    @param is_clinician: Is this person treating clinician?
+    @type is_clinician:  Boolean
     '''
     e = etree.Element(element)
     if person.first_name:
@@ -63,22 +84,100 @@ def make_name(element, person):
         last = person.last_name
     else:
         last = 'Unknown'
-    if isinstance(person, Patient):
-        etree.SubElement(etree.SubElement(e, 'XPN.1'), 'FN.1').text = person.last_name
-#            worklist = [(firstName,'XPN.2'),(middleInit,'XPN.3'),(suffix,'XPN.4')]
-        etree.SubElement(e, 'XPN.2').text = person.first_name
-        etree.SubElement(e, 'XPN.3').text = person.middle_name
-        etree.SubElement(e, 'XPN.4').text = person.suffix
-    elif isinstance(person, Provider):
-        etree.SubElement(etree.SubElement(e, 'XCN.2'), 'FN.1').text = person.last_name
-#            worklist = [(firstName,'XPN.2'),(middleInit,'XPN.3'),(suffix,'XPN.4')]
-        etree.SubElement(e, 'XCN.3').text = person.first_name
-        etree.SubElement(e, 'XCN.4').text = person.middle_name
-        etree.SubElement(e, 'XCN.5').text = person.suffix
-    else:
-        raise RuntimeError('Invalid object passed as person')
+    try:
+        suffix = person.suffix
+    except AttributeError:
+        suffix = ''
+    for data, tag, clinician_tag in [
+        (first,  'XCN.2', 'XCN.3'),
+        (last,   'XCN.3', 'XCN.4'),
+        (suffix, 'XCN.4', 'XCN.5'),
+        ]:
+        if data:
+            if is_clinician:
+                etree.SubElement(e, clinician_tag).text = data
+            else:
+                etree.SubElement(e, tag).text = data
     return e
 
+
+def make_address_element(element, addr_type, address1, address2, city, state, zip, country):
+    '''
+    Returns an Element containing address information.
+    @param element: Name of the element to be created
+    @type element:  String
+    @param addr_type: Address type code
+    @type addr_type:  String or None
+    Remaining elements are all strings; names should be self-explanatory.
+    '''
+    e = etree.Element(element)
+    for data, tag in  [
+        (address1,'XAD.1'),
+        (address2,'XAD.2'),
+        (city,'XAD.3'),
+        (state,'XAD.4'), 
+        (zip,'XAD.5'),
+        (country,'XAD.6'),
+        (addr_type,'XAD.7'),
+        ]:
+        if data:
+            etree.SubElement(e, tag).text = data
+    return e
+        
+        
+def make_provider_element(provider, addr_type, prov_type, nk_set_id):
+    '''
+    Returns an Element containing provider information.
+    @param addr_type: Address type code
+    @type addr_type:  String or None
+    @param addr_type: Provider type code
+    @type addr_type:  String
+    @param nk_set_id: Set ID for this NK record
+    @type nk_set_id:  String or Integer
+    '''
+    #
+    # Why are we using NK1 ("Next of Kin") element for provider?  Can this be right??!
+    e = etree.Element('NK1')
+    etree.SubElement(e, 'NK1.1').text = '%s' % nk_set_id
+    e.append( make_name_element('NK1.2', provider, is_clinician=False) ) 
+    etree.SubElement(etree.SubElement(e, 'NK1.3'), 'CE.4').text = prov_type
+    # WARNING:  We do not keep country data in Provider model.  This script will 
+    # always report providers as located in USA.
+    addr_element = make_address_element('NK1.4', addr_type=None, address1=provider.dept_address_1, 
+        address2=provider.dept_address_2, city=provider.dept_city, state=provider.dept_state, 
+        zip=provider.dept_zip, country='USA')
+    e.append(addr_element)
+    
+    outerElement='NK1.5'
+    email=''
+    ext=''
+    contact_element = make_contact_element('NK1.5', email=None, area_code=provider.area_code, tel=provider.telephone, ext=None)
+    if contact_element:
+        e.append(contact_element)
+    return e
+
+    
+def make_contact_element(element, email, area_code, tel, ext):
+    '''
+    Returns an Element containing contact information.
+    @param element: Name of the element to be created
+    @type element:  String
+    Remaining elements are all strings; names should be self-explanatory.
+    '''
+    # If there's no contact info, nothing to do here
+    if not element or email or area_code or tel or ext:
+        return None
+    for item in (element, email, area_code, tel, ext):
+        if item: 
+            item = item.strip()
+        else:
+            item = ''
+    e = etree.Element(element)
+    for data, tag in [(email,'XTN.4'),(area_code,'XTN.6'),(tel,'XTN.7'),(ext,'XTN.8')]:
+        if data:
+            etree.SubElement(e, tag).text = data
+    return e
+    
 
 def compose():
     #
@@ -130,8 +229,8 @@ def encode_case(case):
     etree.SubElement(msh, 'MSH.1').text = '|'
     etree.SubElement(msh, 'MSH.2').text = '^~\&'
     msh4 = etree.SubElement(msh, 'MSH.4')
-    etree.SubElement(msh4, 'HD.1').text = INSTITUTION_NAME
-    etree.SubElement(msh4, 'HD.2').text = INSTITUTION_CLIA
+    etree.SubElement(msh4, 'HD.1').text = INSTITUTION.name
+    etree.SubElement(msh4, 'HD.2').text = INSTITUTION.clia
     etree.SubElement(msh4, 'HD.3').text = 'CLIA'
     etree.SubElement(etree.SubElement(msh, 'MSH.5'), 'HD.1').text = 'MDPH-ELR'
     etree.SubElement(etree.SubElement(msh, 'MSH.6'), 'HD.1').text = 'MDPH'
@@ -165,7 +264,7 @@ def encode_case(case):
     etree.SubElement(pid3, 'CX.1').text = patient.ssn[-4:]
     etree.SubElement(pid3, 'CX.5').text = 'SS'
     # Name
-    pid.append( make_name('PID.5', patient) )
+    pid.append( make_name_element('PID.5', patient) )
     # DoB  -- do we need to convert date to some specific string format?
     etree.SubElement(etree.SubElement(pid, 'PID.7'), 'TS.1').text = '%s' % patient.date_of_birth
     # Gender
@@ -176,7 +275,48 @@ def encode_case(case):
     except:
         race = 'U'
     etree.SubElement(etree.SubElement(pid, 'PID.10'), 'CE.4').text = race
-    # Home Address
+    # Patient Home Address
+    addr_element = make_address_element('PID.11', 'H', patient.address1, patient.address2, 
+        patient.city, patient.state, patient.zip, patient.country)
+    pid.append(addr_element)
+    # Patient Telephone
+    if patient.tel:
+        pid13 = etree.SubElement(pid, 'PID.13')
+        etree.SubElement(pid13, 'XTN.6').text = patient.areacode
+        etree.SubElement(pid13, 'XTN.7').text = patient.tel
+        if patient.tel_ext:
+            etree.SubElement(pid13, 'XTN.8').text = patient.tel_ext
+    for data, tag in [
+        (patient.home_language,'PID.15'),
+        (patient.marital_stat,'PID.16'),
+        ]:
+        if data:
+            etree.SubElement(etree.SubElement(pid, tag), 'CE.4').text = data
+    if patient.race and patient.race.upper() == 'HISPANIC':
+        etree.SubElement(etree.SubElement(pid, 'PID.22'), 'CE.4').text = 'H'
+    #
+    # PCP
+    #
+    pid.append( make_provider_element(provider=provider, addr_type='O', prov_type='PCP', nk_set_id=1) )
+    #
+    # Facility
+    #
+    facility = etree.SubElement(pid, 'NK1')
+    etree.SubElement(facility, 'NK1.1').text = '2'
+    facility.append( make_name_element('NK1.2', INSTITUTION, is_clinician=False) )
+    etree.SubElement(etree.SubElement(facility, 'NK1.3'), 'CE.4').text = 'FCP'
+    address_element = make_address_element('NK1.4', addr_type='O', address1=INSTITUTION.address1, 
+        address2=INSTITUTION.address2, city=INSTITUTION.city, state=INSTITUTION.state, 
+        zip=INSTITUTION.zip, country=INSTITUTION.country)
+    facility.append(address_element)
+    contact_element = make_contact_element('NK1.5', email=INSTITUTION.email, 
+        area_code=INSTITUTION.area_code, tel=INSTITUTION.tel, ext=INSTITUTION.tel_ext)
+    if contact_element: facility.append(contact_element)
+    #
+    # Treating Clinician
+    #
+    for clinician in case.prescriptions.values_list('provider', flat=True).distinct():
+        oru.append( make_provider_element(clinician, addr_type='O', prov_type='TC', nk_set_id=3) )
     return oru
 
 
