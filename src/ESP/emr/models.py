@@ -366,22 +366,26 @@ class Patient(BaseMedicalRecord):
 
     street_address = property(lambda x: (u'%s %s' % (x.address1, x.address2)).strip())
     
-    def _get_age(self):
+    def _get_age(self, **kw):
         '''
         Returns patient's age as a TimeDelta
         '''
         if not self.date_of_birth: return None
-        return datetime.date.today() - self.date_of_birth
+        when = kw.get('when') or datetime.date.today()
+        return when - self.date_of_birth
     age = property(_get_age)
 
     def age_group(self, **kw):
         interval = kw.pop('interval', 5)
         ceiling = kw.pop('ceiling', 80)
+        when = kw.get('when', None)
         possible_age_groups = range(0, ceiling + interval, interval)
+
+        age = self._get_age(when=when)
         
-        if self.age:
-            age = int(self.age.days/365.25) # Coarse approximation. Works for what we need.
-            return possible_age_groups[min(age, ceiling)/interval]
+        if age:
+            years_old = int(age.days/365.25) # Coarse approximation. Works for what we need.
+            return possible_age_groups[min(years_old, ceiling)/interval]
         else: 
             return None
         
