@@ -77,26 +77,24 @@ class Report(object):
 
         for day in self.days:
             # Now, on to getting all the encounters and doing the count.
-            encounters = Encounter.objects.syndrome_care_visits().filter(date=day)
+            encounters = Encounter.objects.syndrome_care_visits(sites=Site.site_ids()).select_related(
+                'patient').filter(date=day)
             zip_codes = encounters.exclude(patient__zip5__isnull=True).values(
                 'patient__zip5').annotate(count=Count('patient__zip5')).order_by('patient__zip5')
 
             for code in zip_codes:
                 volume = code['count']
                 zip_code = code['patient__zip5']
-                if not volume: continue
-
                 
                 # Initialize a map to count age groups
                 age_group_counts = {}
                 for group in AGE_GROUPS:  age_group_counts[group] = 0
                 for e in encounters:
-                    patient_group = e.patient.age_group()
-                    if (patient_group and (zip_code == e.patient.zip5)): age_group_counts[patient_group] += 1
+                    patient_group = e.patient.age_group(when=e.date)
+                    if ((patient_group is not None) and (zip_code == e.patient.zip5)): age_group_counts[patient_group] += 1
 
-                if volume < sum(age_group_counts.values()): 
-                    log.warn('Total at zip" %s, Sum of age counts: %s' % (volume, sum(age_group_counts.values())))
-
+                age_sum = sum(age_group_counts.values())
+                if not age_sum: continue
 
                 summary = [str_from_date(day), zip_code, str(volume)]
                 line = '\t'.join(summary + [str(age_group_counts[group]) for group in AGE_GROUPS])
@@ -116,25 +114,19 @@ class Report(object):
         for day in self.days:
             for zip_code in zip_codes:
                 encounters = Site.encounters_by_zip(zip_code).filter(date=day)
-                volume = encounters.count()
-
-                if not volume: continue
                 
                 # Initialize a map to count age groups
                 age_group_counts = {}
-                for group in AGE_GROUPS:  age_group_counts[group] = 0
+                for group in AGE_GROUPS: age_group_counts[group] = 0
                 for e in encounters:
-                    patient_group = e.patient.age_group()
-                    if patient_group: age_group_counts[patient_group] += 1
+                    patient_group = e.patient.age_group(when=e.date)
+                    if patient_group is not None: age_group_counts[patient_group] += 1
 
-                if volume < sum(age_group_counts.values()): 
-                    log.warn('Total at zip" %s, Sum of age counts: %s' % (volume, sum(age_group_counts.values())))
+                age_sum = sum(age_group_counts.values())
+                if not age_sum: continue
 
-
-
-                summary = [str_from_date(day), zip_code, str(volume)]
+                summary = [str_from_date(day), zip_code, str(age_sum)]
                 line = '\t'.join(summary + [str(age_group_counts[group]) for group in AGE_GROUPS])
-                log.info(line)
                 outfile.write(line + '\n')
         
         outfile.close()

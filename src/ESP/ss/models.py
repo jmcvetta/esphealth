@@ -53,7 +53,8 @@ class Site(models.Model):
         ''' 
         Returns a QuerySet for encounters from all sites with a given zip code
         '''
-        return Encounter.objects.syndrome_care_visits(sites=Site.site_ids(zip_code))
+        return Encounter.objects.syndrome_care_visits(
+            sites=Site.site_ids(zip_code)).select_related('patient')
 
     @staticmethod
     def age_group_aggregate(zip_code, date, lower, upper=90):
