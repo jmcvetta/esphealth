@@ -157,7 +157,7 @@ def days_in_interval(begin_date, end_date):
     assert begin_date <= end_date
 
     days = [begin_date + datetime.timedelta(d) for d in xrange((end_date-begin_date).days)]
-    if end_date == begin_date: days.append(end_date)
+    if end_date > begin_date: days.append(end_date)
 
     return days
 
