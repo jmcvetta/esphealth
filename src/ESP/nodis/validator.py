@@ -39,6 +39,9 @@ CONDITION_MAP = {
     'syphilis': 'syphilis',
     'chlamydia dna probe': 'chlamydia',  # For ref data from MetroHealth's lab
     'chlamydia culture': 'chlamydia',    # "
+    'chlamydia amplification': 'chlamydia',    # "
+    'chlamydia dna probe': 'chlamydia',    # "
+    'gc amplification': 'gonorrhea',         # "
     'gc dna probe': 'gonorrhea',         # "
     }
 #CONSIDER_CONDITIONS = ['chlamydia', 'gonorrhea', 'acute_hep_a', 'acute_hep_b']
@@ -99,9 +102,13 @@ def load_csv(options):
             log.warning('Cannot understand condition name: %s' % rec['condition'])
             continue
         #date = date_from_str(rec['date'])
-        date = time.strptime(rec['date'],"%m/%d/%y")
-        date = datetime.datetime(*date[:6])
-        log.debug(date)
+        #date = time.strptime(rec['date'],"%m/%d/%y")
+        #date = datetime.datetime(*date[:6])
+        mon, day, year = rec['date'].split('/')
+        mon = int(mon)
+        day = int(day)
+        year = int(year)
+        date = datetime.date(year, mon, day)
         ref = ReferenceCase(
             list = list,
             patient = patient,
