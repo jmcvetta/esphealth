@@ -304,8 +304,6 @@ class SimpleEventPattern(BaseEventPattern):
     
     def plausible_patients(self, exclude_condition=None):
         q_obj = Q(event__name=self.event_name)
-        if exclude_condition:
-            q_obj = q_obj & ~Q(event__case__condition=exclude_condition)
         qs = Patient.objects.filter(q_obj).distinct()
         log_query('Plausible patients for %s, exclude %s' % (self, exclude_condition), qs)
         return qs
