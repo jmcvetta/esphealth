@@ -587,6 +587,7 @@ class LabResult(BasePatientRecord):
     
     class Meta:
         verbose_name = 'Lab Test Result'
+        ordering = ['date']
 
     q_fake = Q(patient__patient_id_num__startswith='FAKE')
 
@@ -746,6 +747,9 @@ class Prescription(BasePatientRecord):
     # HEF
     events = generic.GenericRelation('hef.Event')
     
+    class Meta:
+        ordering = ['date']
+    
     def __str__(self):
         return self.name
 
@@ -834,6 +838,9 @@ class Encounter(BasePatientRecord):
     peak_flow = models.FloatField(max_length=50, blank=True, null=True)
     # HEF
     events = generic.GenericRelation('hef.Event')
+    
+    class Meta:
+        ordering = ['date']
 
     q_fake = Q(patient__patient_id_num__startswith='FAKE')
 
@@ -958,6 +965,9 @@ class Immunization(BasePatientRecord):
     visit_date = models.DateField('Date of Visit', blank=True, null=True)
     # HEF
     events = generic.GenericRelation('hef.Event')
+    
+    class Meta:
+        ordering = ['date']
 
     q_fake = Q(name='FAKE')
 
