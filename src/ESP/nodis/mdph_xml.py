@@ -19,19 +19,18 @@ class Foo(): pass
 INSTITUTION = Foo()
 INSTITUTION.name = 'HVMA'
 INSTITUTION.clia = '22D0666230'
-INSTITUTION.last_name = '???'
-INSTITUTION.first_name = '???'
-INSTITUTION.last_name = '???'
-INSTITUTION.address1 = '???'
-INSTITUTION.address2 = '???'
-INSTITUTION.city = '???'
-INSTITUTION.state = '???'
-INSTITUTION.zip = '???'
-INSTITUTION.country = '???'
-INSTITUTION.email = '???'
-INSTITUTION.area_code = '???'
-INSTITUTION.tel = '???'
-INSTITUTION.tel_ext = '???'
+INSTITUTION.last_name = 'Institution First Name'
+INSTITUTION.first_name = 'Institution Last Name'
+INSTITUTION.address1 = 'Institution Address 1'
+INSTITUTION.address2 = 'Institution Address 2'
+INSTITUTION.city = 'Institution City'
+INSTITUTION.state = 'Institution State'
+INSTITUTION.zip = 'Institution Zip'
+INSTITUTION.country = 'Institution Country'
+INSTITUTION.email = 'Institution Email'
+INSTITUTION.area_code = 'Institution Area Code'
+INSTITUTION.tel = 'Institution Telephone Number'
+INSTITUTION.tel_ext = 'Institution Telephone Extension'
 
 
 
@@ -178,7 +177,10 @@ def make_contact_element(element, email, area_code, tel, ext):
     return e
     
 
-def compose():
+def compose_batch():
+    '''
+    Composes a batch of Cases to be transmitted as a single HL7 message.
+    '''
     #
     # Batch root container
     #
@@ -221,9 +223,11 @@ def encode_case(case):
     patient = case.patient
     provider = case.provider
     oru = etree.Element('ORU_R01')
+    #-------------------------------------------------------------------------------
     #
     # Message Header
     #
+    #-------------------------------------------------------------------------------
     msh = etree.SubElement(oru, 'MSH')
     etree.SubElement(msh, 'MSH.1').text = '|'
     etree.SubElement(msh, 'MSH.2').text = '^~\&'
@@ -248,9 +252,11 @@ def encode_case(case):
     #
     oru_sub1 = etree.SubElement(oru, 'ORU_R01.PIDPD1NK1NTEPV1PV2ORCOBRNTEOBXNTECTI_SUPPGRP')
     oru_sub2 = etree.SubElement(oru_sub1, 'ORU_R01.PIDPD1NK1NTEPV1PV2_SUPPGRP')
+    #-------------------------------------------------------------------------------
     #
     # Patient Information
     #
+    #-------------------------------------------------------------------------------
     pid = etree.SubElement(oru_sub2, 'PID')
     etree.SubElement(pid, 'PID.1').text = '1'
     # MRN
@@ -259,9 +265,9 @@ def encode_case(case):
     etree.SubElement(pid3, 'CX.5').text = 'MR'
     etree.SubElement(etree.SubElement(pid3, 'CX.6'), 'HD.2').text = provider.dept
     # SSN
-    pid3 = etree.SubElement(pid, 'PID.3') # New 'PID.3' section
-    etree.SubElement(pid3, 'CX.1').text = patient.ssn[-4:]
-    etree.SubElement(pid3, 'CX.5').text = 'SS'
+    if patient.ssn:
+        etree.SubElement(pid3, 'CX.1').text = patient.ssn[-4:]
+        etree.SubElement(pid3, 'CX.5').text = 'SS'
     # Name
     pid.append( make_name_element('PID.5', patient) )
     # DoB  -- do we need to convert date to some specific string format?
@@ -293,13 +299,17 @@ def encode_case(case):
             etree.SubElement(etree.SubElement(pid, tag), 'CE.4').text = data
     if patient.race and patient.race.upper() == 'HISPANIC':
         etree.SubElement(etree.SubElement(pid, 'PID.22'), 'CE.4').text = 'H'
+    #-------------------------------------------------------------------------------
     #
     # PCP
     #
+    #-------------------------------------------------------------------------------
     pid.append( make_provider_element(provider=provider, addr_type='O', prov_type='PCP', nk_set_id=1) )
+    #-------------------------------------------------------------------------------
     #
     # Facility
     #
+    #-------------------------------------------------------------------------------
     facility = etree.SubElement(pid, 'NK1')
     etree.SubElement(facility, 'NK1.1').text = '2'
     facility.append( make_name_element('NK1.2', INSTITUTION, is_clinician=False) )
@@ -311,11 +321,60 @@ def encode_case(case):
     contact_element = make_contact_element('NK1.5', email=INSTITUTION.email, 
         area_code=INSTITUTION.area_code, tel=INSTITUTION.tel, ext=INSTITUTION.tel_ext)
     if contact_element: facility.append(contact_element)
+    #-------------------------------------------------------------------------------
     #
     # Treating Clinician
     #
+    #-------------------------------------------------------------------------------
     for clinician in case.prescriptions.values_list('provider', flat=True).distinct():
-        oru.append( make_provider_element(clinician, addr_type='O', prov_type='TC', nk_set_id=3) )
+        oru_sub2.append( make_provider_element(clinician, addr_type='O', prov_type='TC', nk_set_id=3) )
+    #-------------------------------------------------------------------------------
+    #
+    # Clinical Information
+    #
+    #-------------------------------------------------------------------------------
+    oru_clin = etree.SubElement(oru, 'ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
+    obr = etree.SubElement(oru_clin, 'OBR')
+    etree.SubElement(obr, 'OBR.1').text = '1'
+    etree.SubElement(etree.SubElement(obr, 'OBR.4'), 'CE.2').text = 'Additional Patient Demographics'
+    #
+    # ICD9s
+    #
+    case_icd9s = case.events.filter(encounter__icd9_codes__isnull=False)
+    # Implied ICD9 Codes: If this case does not have any encounters attached, 
+    # with actual ICD9 codes, then the dictionary below is used to assign an 
+    # ICD9 code for reporting purposes.
+    implied_icd9_codes = {
+        'pid':'614.9',
+        'chlamydia': {
+            'F': '099.53',
+            'M': '099.41',
+            'U': '099.41', 
+            },
+        'gonorrhea': '098.0',
+        'acute_hep_a': '070.10',
+        'acute_hep_b': '070.30',
+        }
+    if case.gender:
+        gender = case.gender
+    else:
+        gender = 'U' # Unknown gender
+    if case_icd9s:
+        icd9s = case_icd9s
+    else:
+        if case.condition in implied_icd9_codes:
+            value = implied_icd9_codes[case.condition]
+            if not isinstance(value, str):
+                code = value[gender]
+            icd9s = [code]
+        else:
+            icd9s = []
+    for code in icd9s:
+        obr31 = etree.SubElement(obr, 'OBR.31')
+        etree.SubElement(obr31, 'CE.1').text = code
+        etree.SubElement(obr31, 'CE.2').text = case.condition
+        etree.SubElement(obr31, 'CE.3').text = 'I9'
+    #
     return oru
 
 
@@ -327,5 +386,6 @@ def encode_case(case):
 #batch = compose()
 #print(etree.tostring(batch, pretty_print=True))
 
-c = Case.objects.all()[0]
+#c = Case.objects.all()[0]
+c = Case.objects.get(pk=22619)
 print etree.tostring(encode_case(c), pretty_print=True)
