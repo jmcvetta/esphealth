@@ -25,7 +25,7 @@
     "pk": 1, 
     "model": "emr.provider", 
     "fields": {
-      "middle_initial": "UNKNOWN", 
+      "middle_name": "UNKNOWN", 
       "updated_timestamp": "2009-07-30 16:14:54", 
       "first_name": "UNKNOWN", 
       "last_name": "UNKNOWN", 
