@@ -182,7 +182,10 @@ class BaseLoader(object):
                 # Coerce to unicode
                 for key in row:
                     if row[key]:
-                        row[key] = row[key].strip().decode(EPIC_ENCODING).encode('utf-8')
+                        try:
+                            row[key] = row[key].strip().decode(EPIC_ENCODING).encode('utf-8')
+                        except AttributeError:
+                            pass
                 self.load_row(row)
                 transaction.savepoint_commit(sid)
                 valid += 1
