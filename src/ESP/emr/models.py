@@ -176,7 +176,7 @@ class Provider(BaseMedicalRecord):
         return self.provider_id_num.startswith('FAKE')
 
     def _get_name(self):
-        return u'%s, %s %s %s' % (self.last_name, self.title, self.first_name, self.middle_initial)
+        return u'%s, %s %s %s' % (self.last_name, self.title, self.first_name, self.middle_name)
     name = property(_get_name)
     full_name = property(_get_name)
     
