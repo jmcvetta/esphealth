@@ -28,7 +28,7 @@
         <td>{{ run.new.count }}
         <td>{{ run.percent_new|floatformat:3 }}%
     <tr>
-        <td>Similar
+        <td><a href="{% url validate_similar %}">Similar</a>
         <td>{{ run.similar.count }}
         <td>{{ run.percent_similar|floatformat:3 }}%
     <tr>

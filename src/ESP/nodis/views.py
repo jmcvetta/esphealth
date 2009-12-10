@@ -552,7 +552,32 @@ def validate_new(request, validator_run_id=None):
                 cases = cases.filter(condition=condition)
     values['cases'] = cases.order_by('date').select_related() # Is select_related() helpful here?
     return render_to_response('nodis/validator_new.html', values, context_instance=RequestContext(request))
-    
+
+
+@login_required
+def validate_similar(request, validator_run_id=None):
+    if validator_run_id:
+        validator_run = get_object_or_404(ValidatorRun, pk=validator_run_id)
+    else:
+        validator_run = ValidatorRun.objects.all().order_by('-pk')[0]
+    similar = validator_run.similar.order_by('ref_case__date')
+    condition_form = ConditionForm()
+    values = {
+        'title': 'Case Validator: Similar Cases',
+        'run': validator_run,
+        }
+    if request.method == 'POST':
+        condition_form = ConditionForm(request.POST)
+        if condition_form.is_valid():
+            condition = condition_form.cleaned_data['condition']
+            log.debug('Filtering on condition: %s' % condition)
+            if not condition == '*': # Filter not applied for wildcard
+                similar = similar.filter(ref_case__condition=condition)
+    values['similar'] = similar.select_related() # Is select_related() helpful here?
+    values['counts'] = validator_run.similar.values('ref_case__condition').order_by('ref_case__condition').annotate(Count('pk'))
+    values['condition_form'] = condition_form
+    return render_to_response('nodis/validator_similar.html', values, context_instance=RequestContext(request))
+
 
 @login_required
 def missing_case_detail(request, result_id):

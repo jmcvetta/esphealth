@@ -88,6 +88,7 @@ class Case(models.Model):
     
     class Meta:
         permissions = [ ('view_phi', 'Can view protected health information'), ]
+        unique_together = ['patient', 'condition', 'date']
     
     def __str__(self):
         return '%s # %s' % (self.condition, self.pk)
@@ -268,3 +269,12 @@ class ValidatorResult(models.Model):
     
     def __str__(self):
         return 'Result # %s' % self.pk
+    
+    def date_diff(self):
+        '''
+        For 'similar' cases, date_diff() returns the difference between the 
+        reference case date and the ESP case date.
+        '''
+        if not self.disposition == 'similar':
+            raise RuntimeError('date_diff() makes sense only for "similar" cases')
+        return self.ref_case.date - self.cases.all()[0].date
