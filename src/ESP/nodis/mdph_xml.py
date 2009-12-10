@@ -223,11 +223,11 @@ def encode_case(case):
     patient = case.patient
     provider = case.provider
     oru = etree.Element('ORU_R01')
-    #-------------------------------------------------------------------------------
+    #===============================================================================
     #
     # Message Header
     #
-    #-------------------------------------------------------------------------------
+    #===============================================================================
     msh = etree.SubElement(oru, 'MSH')
     etree.SubElement(msh, 'MSH.1').text = '|'
     etree.SubElement(msh, 'MSH.2').text = '^~\&'
@@ -252,11 +252,11 @@ def encode_case(case):
     #
     oru_sub1 = etree.SubElement(oru, 'ORU_R01.PIDPD1NK1NTEPV1PV2ORCOBRNTEOBXNTECTI_SUPPGRP')
     oru_sub2 = etree.SubElement(oru_sub1, 'ORU_R01.PIDPD1NK1NTEPV1PV2_SUPPGRP')
-    #-------------------------------------------------------------------------------
+    #===============================================================================
     #
     # Patient Information
     #
-    #-------------------------------------------------------------------------------
+    #===============================================================================
     pid = etree.SubElement(oru_sub2, 'PID')
     etree.SubElement(pid, 'PID.1').text = '1'
     # MRN
@@ -299,17 +299,17 @@ def encode_case(case):
             etree.SubElement(etree.SubElement(pid, tag), 'CE.4').text = data
     if patient.race and patient.race.upper() == 'HISPANIC':
         etree.SubElement(etree.SubElement(pid, 'PID.22'), 'CE.4').text = 'H'
-    #-------------------------------------------------------------------------------
+    #===============================================================================
     #
     # PCP
     #
-    #-------------------------------------------------------------------------------
+    #===============================================================================
     pid.append( make_provider_element(provider=provider, addr_type='O', prov_type='PCP', nk_set_id=1) )
-    #-------------------------------------------------------------------------------
+    #===============================================================================
     #
     # Facility
     #
-    #-------------------------------------------------------------------------------
+    #===============================================================================
     facility = etree.SubElement(pid, 'NK1')
     etree.SubElement(facility, 'NK1.1').text = '2'
     facility.append( make_name_element('NK1.2', INSTITUTION, is_clinician=False) )
@@ -321,18 +321,18 @@ def encode_case(case):
     contact_element = make_contact_element('NK1.5', email=INSTITUTION.email, 
         area_code=INSTITUTION.area_code, tel=INSTITUTION.tel, ext=INSTITUTION.tel_ext)
     if contact_element: facility.append(contact_element)
-    #-------------------------------------------------------------------------------
+    #===============================================================================
     #
     # Treating Clinician
     #
-    #-------------------------------------------------------------------------------
+    #===============================================================================
     for clinician in case.prescriptions.values_list('provider', flat=True).distinct():
         oru_sub2.append( make_provider_element(clinician, addr_type='O', prov_type='TC', nk_set_id=3) )
-    #-------------------------------------------------------------------------------
+    #===============================================================================
     #
     # Clinical Information
     #
-    #-------------------------------------------------------------------------------
+    #===============================================================================
     oru_clin = etree.SubElement(oru, 'ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
     obr = etree.SubElement(oru_clin, 'OBR')
     etree.SubElement(obr, 'OBR.1').text = '1'
@@ -374,7 +374,7 @@ def encode_case(case):
         etree.SubElement(obr31, 'CE.1').text = code
         etree.SubElement(obr31, 'CE.2').text = case.condition
         etree.SubElement(obr31, 'CE.3').text = 'I9'
-    #
+    #===============================================================================
     return oru
 
 
