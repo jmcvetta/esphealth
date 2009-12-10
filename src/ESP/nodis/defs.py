@@ -72,7 +72,6 @@ chlamydia = Condition(
         ],
     med_days_before = 7,
     # Report both Chlamydia and Gonorrhea labs
-    lab_loinc_nums = CHLAMYDIA_LOINCS + GONORRHEA_LOINCS,
     lab_days_before = 30,
     )
 
@@ -112,7 +111,6 @@ gonorrhea = Condition(
         ],
     icd9_days_before = 14,
     fever = True,
-    lab_loinc_nums = GONORRHEA_LOINCS, 
     lab_days_before = 28,
     med_names = [
         'amoxicillin',
@@ -163,7 +161,6 @@ acute_hep_a = Condition(
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     fever = True,
-    lab_loinc_nums = ['1742-6', '1920-8', '22314-9', '14212-5', '16128-1'],
     lab_days_before = 30,
     )
 
@@ -242,19 +239,6 @@ hep_b = Condition(
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     fever = True,
-    lab_loinc_nums = [
-        '1742-6', 
-        '1920-8', 
-        '31204-1', 
-        '5195-3',
-        '13954-3',
-        '13126-8',
-        '5009-6',
-        '16943-2',
-        '14212-5',
-        '22314-9',
-        '16128-1',
-        ],
     lab_days_before = 14,
     )
 
@@ -365,21 +349,6 @@ hep_c = Condition(
     icd9s = DEFAULT_REPORTABLE_ICD9S,
     icd9_days_before = 14,
     fever = True,
-    lab_loinc_nums = [
-        '16128-1',
-        'MDPH-144',
-        '6422-0',
-        '10676-5',
-        '34704-7',
-        '38180-6',
-        '5012-0',
-        '11259-9',
-        '20416-4',
-        '34703-9',
-        '1742-6',
-        '31204-1',
-        '22314-9',
-        ],
     lab_days_before = 28,
     )
 
@@ -450,15 +419,6 @@ lyme = Condition(
         ],
     icd9_days_before = 30,
     fever = True,
-    lab_loinc_nums = [
-        '5061-7',
-        '31155-5',
-        '16481-4',
-        '16482-2',
-        '23982-2',
-        '29898-4',
-        '4991-6',
-        ],
     lab_days_before = 30,
     med_names = [
         'doxycycline',
@@ -506,7 +466,6 @@ pid = Condition(
         ],
     icd9_days_before = 30,
     fever = False,
-    lab_loinc_nums = CHLAMYDIA_LOINCS + GONORRHEA_LOINCS,
     lab_days_before = 30,
     med_names = [
         'ampicillin-sulbactam',
@@ -562,7 +521,6 @@ tb = Condition(
         ],
     icd9_days_before = 30,
     fever = True,
-    lab_loinc_nums = ['11475-1', '11545-1', '17296-5'],
     lab_days_before = 30,
     med_names = [
         'Pyrazinamide',

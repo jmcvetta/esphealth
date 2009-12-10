@@ -722,7 +722,6 @@ class Condition(object):
         icd9s = [],
         icd9_days_before = 14,
         fever = True,
-        lab_loinc_nums = [],
         lab_days_before = 14,
         med_names = [],
         med_days_before = 14,
@@ -747,8 +746,6 @@ class Condition(object):
         @type icd9_days_before:  Integer
         @param fever:            Do we report fever, determined as temp > 100.4, rather than as ICD9?
         @type fever:             Boolean
-        @param lab_loinc_nums:   Report lab results matching these LOINCs
-        @type lab_loinc_nums:    List of strings
         @param lab_days_before:  How many days before case to search for labs
         @type lab_days_before:   Integer
         @param med_names:        Report medicines matching these names
@@ -777,7 +774,6 @@ class Condition(object):
         self.icd9s = icd9s
         self.icd9_days_before = datetime.timedelta(days = icd9_days_before)
         self.fever = fever
-        self.lab_loinc_nums = lab_loinc_nums
         self.lab_days_before = datetime.timedelta(days = lab_days_before)
         self.med_names = med_names
         self.med_days_before = datetime.timedelta(days = med_days_before)
@@ -1018,8 +1014,8 @@ class Condition(object):
         @param case: The case to update
         @type case:  Case instance
         '''
-        log.WARNING('update_case() is deprecated')
-        return
+        log.ERROR('update_case() is deprecated')
+        raise RuntimeError('update_case() is deprecated')
         log.debug('Updating case %s' % case)
         counter = 0
         patient = case.patient
