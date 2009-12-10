@@ -43,8 +43,9 @@ class Pattern(models.Model):
     '''
     Hash of the ComplexEventPattern used to generate a particular case
     '''
-    hash = models.CharField(max_length=512, blank=False, null=False, unique=True, db_index=True)
     name = models.CharField(max_length=64, blank=True, null=True, db_index=True)
+    pattern = models.CharField(max_length=512, blank=False)
+    hash = models.CharField(max_length=255, blank=False, null=False, unique=True, db_index=True)
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     
 

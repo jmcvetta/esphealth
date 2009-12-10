@@ -21,6 +21,7 @@ import types
 import sys
 import optparse
 import re
+import hashlib
 from operator import itemgetter
 
 from django.db import connection
@@ -673,11 +674,11 @@ class ComplexEventPattern(BaseEventPattern):
         Returns a Pattern model instance representing this pattern.
         '''
         if not self.__pattern_obj:
-            hash = self.string_hash
+            hash = hashlib.sha224(self.string_hash).hexdigest()
             try: 
                 pat = Pattern.objects.get(hash=hash)
             except Pattern.DoesNotExist:
-                pat = Pattern(hash=hash, name=self.name)
+                pat = Pattern(pattern=self.string_hash, hash=hash, name=self.name)
                 pat.save()
             self.__pattern_obj = pat
         return self.__pattern_obj
