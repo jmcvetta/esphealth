@@ -82,7 +82,7 @@ def main():
     parser = optparse.OptionParser()
     parser.add_option('--status', action='store', dest='status', metavar='STATUS',
         help="Purge records whose provenance status matches STATUS.  Possible " + \
-        "values are 'failure' and 'attempted'.", default=None)
+        "values are 'failure',  'attempted', and 'errors'.", default=None)
     parser.add_option('--provenance', action='store', dest='provenance', metavar='ID', 
         help='Purge records with provenance_id = ID', default=None)
     parser.add_option('--no-prompt', action='store_false', dest='prompt', default=True,
@@ -94,8 +94,8 @@ def main():
     if (options.status and options.provenance):
         bad_options( 'You cannot specify both --status and --provenance')
     if options.status:
-        if not options.status in ['failure', 'attempted']:
-            bad_options("Status must be either 'failure' or 'attempted.'")
+        if not options.status in ['failure', 'attempted', 'errors']:
+            bad_options("Status must be either 'failure', 'attempted', or 'errors'.'")
         print 'Provenance status to be deleted: %s' % options.status
     if options.provenance:
         try:
@@ -195,7 +195,8 @@ def main():
                 print
                 sys.exit(11)
             print 
-            print 'Deleting all records and cases with bad provenance.'
+            print 'Deleting all cases and records with bad provenance.'
+            bad_cases.delete()
         else:
             log.critical('One or more cases are bound to events with bad provenance, but operator input is disabled.')
             for case in bad_cases:
