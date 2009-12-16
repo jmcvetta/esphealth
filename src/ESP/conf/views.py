@@ -37,7 +37,6 @@ from django.http import HttpResponse, HttpResponseRedirect
 
 from ESP.settings import NLP_SEARCH, NLP_EXCLUDE
 from ESP.settings import ROWS_PER_PAGE
-from ESP.conf.models import NativeCode
 from ESP.conf.models import CodeMap
 from ESP.conf.models import IgnoredCode
 from ESP.emr.models import LabResult
@@ -47,24 +46,6 @@ from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
 
 
-def get_required_loincs():
-    '''
-    Returns a dictionary mapping a required LOINC number to the heuristic 
-    definition(s) that require it.
-    '''
-    required_loincs = {}
-    for heuristic in BaseHeuristic.get_all_heuristics():
-        try:
-            for l in heuristic.loinc_nums:
-                try:
-                    required_loincs[l] += [heuristic.def_name]
-                except KeyError:
-                    required_loincs[l] = [heuristic.def_name]
-        except AttributeError:
-            pass # Skip heuristics w/ no LOINCs defined
-    return required_loincs
-    
-    
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # 
 # All views must pass "context_instance=RequestContext(request)" argument 
@@ -72,45 +53,6 @@ def get_required_loincs():
 #
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
-class LoincMap:
-    '''
-    Convenience data structure for loinc_mapping()
-    '''
-    def __init__(self, loinc_num, required_by, native_codes=None):
-        self.loinc_num = loinc_num
-        self.required_by = required_by
-        self.native_codes = native_codes
-        
-
-@login_required
-def loinc_mapping(request):
-    '''
-    LOINC Mapping Report
-    '''
-    values = {'title': 'LOINC Mapping Report'}
-    mapped = []
-    unmapped = []
-    required_loincs = get_required_loincs()
-    for loinc_num in required_loincs:
-        mappings = NativeCode.objects.filter(loinc=loinc_num)
-        if mappings:
-            native_code_lab_count = []
-            for code in mappings.values_list('native_code', flat=True):
-                count = LabResult.objects.filter(native_code=code).count()
-                native_code_lab_count.append( (code, count) )
-            log.debug('native_code_lab_count: \n%s' % pprint.pformat(native_code_lab_count))
-            lm = LoincMap(
-                loinc_num=loinc_num, 
-                required_by=required_loincs[loinc_num], 
-                native_codes=native_code_lab_count,
-                )
-            mapped.append(lm)
-        else:
-            unmapped.append( LoincMap(loinc_num=loinc_num, required_by=required_loincs[loinc_num]) )
-    values['mapped'] = mapped
-    values['unmapped'] = unmapped
-    return render_to_response('conf/loinc_mapping.html', values, context_instance=RequestContext(request))
 
 @login_required
 def heuristic_mapping_report(request):

@@ -31,7 +31,6 @@ from django.contrib.contenttypes.models import ContentType
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
-from ESP.conf.models import NativeCode
 from ESP.conf.models import CodeMap
 from ESP.static.models import Loinc
 from ESP.hef.models import Event

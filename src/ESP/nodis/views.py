@@ -46,7 +46,6 @@ from ESP.settings import NLP_SEARCH
 from ESP.settings import NLP_EXCLUDE
 from ESP.settings import ROWS_PER_PAGE
 from ESP.settings import DATE_FORMAT
-from ESP.conf.models import NativeCode
 from ESP.conf.models import CodeMap
 from ESP.conf.models import IgnoredCode
 from ESP.static.models import Loinc

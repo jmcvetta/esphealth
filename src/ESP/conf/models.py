@@ -25,27 +25,6 @@ from ESP.static.models import ImmunizationManufacturer
 
 
 
-class NativeCode(models.Model):
-    '''
-    A mapping from a native code (for a lab result, etc) to a Loinc number
-    '''
-    # This table and utilities making use of it assume only one external 
-    # code table per ESP installation.  More work will be required if your 
-    # installation must comprehend multiple, potentially overlapping, external 
-    # code sources
-    native_code = models.CharField(max_length=100, blank=False)
-    native_name = models.CharField(max_length=255, blank=True, null=True)
-    # Loinc can be null to indicate an external code that maps to nothing
-    loinc = models.ForeignKey(Loinc, blank=False)
-    notes = models.TextField(blank=True, null=True)
-    class Meta:
-        verbose_name = 'Native Code to LOINC Map'
-        unique_together = ['native_code', 'loinc']
-    
-    def __str__(self):
-        return '%s --> %s' % (self.native_code, self.loinc.loinc_num)
-
-
 class CodeMap(models.Model):
     '''
     Map associating lab test native_code with a HEF event

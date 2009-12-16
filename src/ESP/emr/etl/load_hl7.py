@@ -32,7 +32,6 @@ from ESP.settings import DEBUG
 from ESP.settings import TOPDIR
 from ESP.settings import DATA_DIR
 from ESP.conf.models import NativeVaccine, NativeManufacturer
-from ESP.conf.models import NativeCode
 from ESP.static.models import Icd9
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
@@ -48,18 +47,8 @@ from ESP.utils.utils import str_from_date, date_from_str
 #
 # Populate tables in old schema (Demog, Lx, Rx, etc)?
 #
-POPULATE_OLD_SCHEMA = False
 
 
-
-if POPULATE_OLD_SCHEMA:
-    from ESP.esp.models import Demog
-    from ESP.esp.models import Provider as OldProvider
-    from ESP.esp.models import Enc
-    from ESP.esp.models import Lx
-    from ESP.esp.models import Lxo
-    from ESP.esp.models import Rx
-    from ESP.esp.models import Immunization as OldImmunization
 
 
 #
@@ -115,12 +104,6 @@ class NoPV1(Hl7LoaderException):
 
 class Hl7MessageLoader(object):
     
-    # We read the entire NativeCode into memory (it's small) just once, then 
-    # do dictionary lookup, instead of db lookup, each time we populate a 
-    # LabResult record.
-    codemap = dict(NativeCode.objects.values_list('native_code', 'loinc__pk')) # Class variable
-    
-
     def __init__(self, filepath, options):
         self.options = options
         self.filepath = filepath
@@ -234,17 +217,6 @@ class Hl7MessageLoader(object):
         patient.mrn = patient_id_num # Patient ID # is same as their Medical Record Number
         patient.provenance = self.provenance
         patient.save()
-        if POPULATE_OLD_SCHEMA:
-            demog = Demog.objects.get_or_create(pk=patient.pk)[0]
-            demog.DemogPatient_Identifier = patient.patient_id_num
-            demog.DemogMedical_Record_Number = patient.mrn
-            demog.DemogFirst_Name = patient.first_name
-            demog.DemogMiddle_Initial = patient.middle_name
-            demog.DemogLast_Name = patient.last_name
-            demog.Date_of_Birth = str_from_date(patient.date_of_birth)
-            demog.DemogGender = patient.gender
-            demog.save()
-            self.demog = demog
         self.patient = patient
         if is_new_patient:
             log.debug('NEW PATIENT')
@@ -275,13 +247,6 @@ class Hl7MessageLoader(object):
         provider.last_name = prov_last
         provider.provenance = self.provenance
         provider.save()
-        if POPULATE_OLD_SCHEMA:
-            oldprov = OldProvider.objects.get_or_create(pk=provider.pk)[0]
-            oldprov.provCode = provider_id_num
-            oldprov.provFirst_Name = prov_first
-            oldprov.provLast_Name = prov_last
-            oldprov.save()
-            self.old_provider = oldprov
         self.provider = provider
         if is_new_provider:
             log.debug('NEW PROVIDER')
@@ -319,13 +284,6 @@ class Hl7MessageLoader(object):
         provider.last_name = last
         provider.provenance = self.provenance
         provider.save()
-        if POPULATE_OLD_SCHEMA:
-            oldprov = OldProvider.objects.get_or_create(pk=provider.pk)[0]
-            oldprov.provCode = npi
-            oldprov.provFirst_Name = first
-            oldprov.provLast_Name = last
-            oldprov.save()
-            self.old_provider = oldprov
         self.provider = provider
         if is_new_provider:
             log.debug('NEW PROVIDER')
@@ -353,17 +311,6 @@ class Hl7MessageLoader(object):
             pre.route = route if route else None
             pre.provenance = self.provenance
             pre.save()
-            if POPULATE_OLD_SCHEMA:
-                rx = Rx(pk=pre.pk)
-                rx.RxPatient = self.demog
-                rx.RxProvider = self.old_provider
-                rx.RxOrderDate = str_from_date(pre.date)
-                rx.RxDrugName = pre.name
-                rx.RxDrugDesc = pre.directions
-                rx.RxQuantity = pre.quantity
-                rx.RxFrequency = pre.frequency
-                rx.RxRoute = pre.route
-                rx.save()
             log.debug('NEW PRESCRIPTION')
             log.debug('\t Name: %s' % pre.name)
             log.debug('\t Directions: %s' % pre.directions)
@@ -398,15 +345,6 @@ class Hl7MessageLoader(object):
             imm.lot = lot if lot else None
             imm.provenance = self.provenance
             imm.save()
-            if POPULATE_OLD_SCHEMA:
-                oldimm = OldImmunization(pk=imm.pk)
-                oldimm.ImmPatient = self.demog
-                oldimm.ImmName = imm.name
-                oldimm.ImmDate = str_from_date(imm.date)
-                oldimm.ImmType = imm.imm_type
-                oldimm.ImmManuf = imm.manufacturer
-                oldimm.ImmLot = imm.lot
-                oldimm.save()
             log.debug('NEW IMMUNIZATION')
             log.debug('\t Name: %s (%s)' % (imm.name, imm.imm_type))
             log.debug('\t Date: %s' % imm.date)
@@ -484,23 +422,6 @@ class Hl7MessageLoader(object):
             result.status = status if status else None
             result.provenance = self.provenance
             result.save()
-            if POPULATE_OLD_SCHEMA:
-                resdate_str = str_from_date(result.date)
-                lx = Lx(pk=result.pk)
-                lx.LxPatient = self.demog
-                lx.LxOrdering_Provider = self.old_provider
-                lx.LxDate_of_result = resdate_str
-                lx.LxOrderDate = resdate_str
-                lx.native_code = result.native_code
-                lx.LxLoinc = self.codemap.get(result.native_code, None)
-                lx.native_name = result.native_name
-                lx.LxTest_results = result.result_string
-                lx.LxReference_Unit = result.ref_unit
-                lx.LxReference_Low = result.ref_low_float
-                lx.LxReference_High = result.ref_high_float
-                lx.LxNormalAbnormal_Flag = result.abnormal_flag
-                lx.LxTest_status = result.status
-                lx.save()
             log.debug('NEW LAB RESULT')
             log.debug('\t Date: %s' % result.date)
             log.debug('\t Native code (name): %s (%s)' % (result.native_code, result.native_name))
@@ -598,19 +519,6 @@ class Hl7MessageLoader(object):
                     encounter.weight = value
                 encounter.provenance = self.provenance
                 encounter.save()
-                if encounter and POPULATE_OLD_SCHEMA:
-                    enc = Enc(pk=encounter.pk)
-                    enc.createdDate = datetime.datetime.now()
-                    enc.EncPatient = self.demog
-                    enc.EncEncounter_Provider = self.old_provider
-                    enc.EncEncounter_Date = str_from_date(encounter.date)
-                    enc.EncBPSys = encounter.bp_systolic
-                    enc.EncBPDias = encounter.bp_diastolic
-                    enc.EncTemperature = encounter.temperature
-                    enc.EncHeight = encounter.height
-                    enc.EncWeight = encounter.weight
-                    enc.EncICD9_Codes = ','.join(encounter.icd9_codes.all().values_list('code', flat=True))
-                    enc.save()
         
     def __has_seg(self, seg_type_list):
         if (self.seg_types & set(seg_type_list)):

@@ -29,7 +29,7 @@ from ESP.static.models import Loinc
 from ESP.static.models import Ndc
 from ESP.static.models import Icd9
 from ESP.static.models import Vaccine, ImmunizationManufacturer
-from ESP.conf.models import NativeCode, NativeManufacturer
+from ESP.conf.models import NativeManufacturer
 from ESP.utils import randomizer
 from ESP.utils.utils import log, date_from_str, str_from_date
 
@@ -531,22 +531,6 @@ class LabResultManager(models.Manager):
 
         return self.filter(patient__immunization=F('patient__immunization')).filter(
             date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
-
-
-    
-    @classmethod
-    def filter_loincs(self, loinc_nums, **kwargs):
-        '''
-        Translate LOINC numbers to native codes and lookup
-        @param loinc_nums: List of LOINC numbers for which to retrieve lab results
-        @type loinc_nums:  [String, String, ...]
-        @return: QuerySet
-        '''
-        log.debug('Querying lab results by LOINC')
-        log.debug('LOINCs: %s' % loinc_nums)
-        native_codes = NativeCode.objects.filter(loinc__in=loinc_nums).values_list('native_code', flat=True)
-        #log.debug('Native Codes: %s' % native_codes)
-        return LabResult.objects.filter(native_code__in=native_codes, **kwargs)
 
     
 class LabResult(BasePatientRecord):
