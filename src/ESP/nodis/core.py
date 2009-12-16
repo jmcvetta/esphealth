@@ -238,7 +238,7 @@ class BaseEventPattern(object):
         '''
         raise NotImplementedError
         
-    def plausible_events(self, patients=None):
+    def plausible_events(self, patients=None, exclude_condition=None):
         '''
         Returns a QuerySet of Event records which may plausibly match this pattern
         '''
@@ -361,6 +361,95 @@ class SimpleEventPattern(BaseEventPattern):
     event_names = property(__get_event_names)
         
 
+class MultipleEventPattern(BaseEventPattern):
+    '''
+    An event pattern that matches when a patient has a specified number of 
+    positive results from a pool of potential tests.
+    @param events: List of heuristic 
+    '''
+    
+    def __init__(self, events, count):
+        '''
+        '''
+        self.__events_cache = {}
+        for event_name in events:
+            if not event_name in BaseHeuristic.all_event_names():
+                raise InvalidHeuristic('Unknown heuristic Event: %s' % event_name)
+        self.events = events
+        if not isinstance(count, int):
+            raise TypeError('count must be an integer, but you supplied: "%s"' % count)
+        self.count = count
+    
+    def plausible_patients(self, exclude_condition=None):
+        '''
+        Returns a QuerySet of Patient records which may plausibly match this pattern
+        @param exclude_condition: Exclude events already bound to cases of this condition
+        @type exclude_condition:  String naming a Condition
+        '''
+        q_obj = Q(event__name__in=self.events)
+        qs = Patient.objects.filter(q_obj).distinct()
+        log_query('Plausible patients for %s, exclude %s' % (self, exclude_condition), qs)
+        return qs
+        
+    def plausible_events(self, patients=None, exclude_condition=None):
+        '''
+        Returns a QuerySet of Event records which may plausibly match this pattern
+        '''
+        log.debug('Building plausible events query for %s' % self)
+        q_obj = Q(name__in=self.event_name)
+        if patients:
+            q_obj = q_obj & Q(patient__in=patients)
+        if exclude_condition:
+            q_obj = q_obj & ~Q(case__condition=exclude_condition)
+        events = Event.objects.filter(q_obj)
+        log_query('Querying plausible events for %s' % self, events)
+        return events
+        
+    def generate_windows(self, days, patients=None, exclude_condition=None):
+        '''
+        Iterator yielding Window instances matching this pattern.  Matches can 
+        be constrained to a given set of patients.  Events already bound to 
+        exclude model are excluded.
+        @param days: Length of match window
+        @type days:  Integer
+        @param patients: Generate windows for specified patients only
+        @type patients:  ESP.emr.models.Patient QuerySet
+        @param exclude_condition: Exclude events already bound to cases of this condition
+        @type exclude_condition:  String naming a Condition
+        '''
+        raise NotImplementedError
+        log.debug('Generating windows for %s' % self)
+        events = self.plausible_events(patients=patients, exclude_condition=exclude_condition)
+        for e in events:
+            yield Window(days=days, events=[e])
+
+    def match_window(self, reference, exclude=False):
+        '''
+        Returns set of zero or more windows, falling within a reference window,
+        that match this pattern.
+        @param reference: Reference window
+        @type reference: Window instance
+        @param exclude: Exclude events already bound to this model instance
+        @type exclude: django.db.models.Model instance, which has this field:
+            events = models.ManyToManyField(Event)
+        @return: set of Window instances
+        '''
+        raise NotImplementedError
+    
+    def __get_string_hash(self):
+        '''
+        Returns a string that uniquely represents this pattern.  Cf the integer 
+        returned by __hash__().
+        '''
+        raise NotImplementedError
+    
+    def __get_event_names(self):
+        '''
+        Returns the set of heuristics Event names required by any component of this pattern
+        '''
+        raise NotImplementedError
+
+
 
 class ComplexEventPattern(BaseEventPattern):
     '''
@@ -393,7 +482,7 @@ class ComplexEventPattern(BaseEventPattern):
         self.name = name # Optional name
         self.exclude = []
         for pat in patterns:
-            if isinstance(pat, ComplexEventPattern):
+            if isinstance(pat, (ComplexEventPattern, MultipleEventPattern)):
                 self.patterns.append(pat)
             elif pat in valid_event_names: # Implies req is a string
                 pat_obj = SimpleEventPattern(event_name=pat)
