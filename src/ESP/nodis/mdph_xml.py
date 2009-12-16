@@ -504,13 +504,21 @@ class hl7Batch:
     def getPregnancyStatus(self, caseid):
         ##Email on 8/22/2007: Report patient as being pregnant if pregnancy flag active anytime between (test order date) and (test result date + 30 days inclusive).
         obx5='261665006' ##unknown
-        edc=None
-        (preg, edc) = Case.objects.filter(id__exact = caseid)[0].getPregnant()
-        if preg =='':
-            return (obx5, edc)
-        else:
-            obx5='77386006'
-            return (obx5, edc)
+        #
+        #
+        case = Case.objects.get(pk=caseid)
+        first_event = case.events.order_by('date')[0]
+        start_date = first_event.date
+        end_date = start_date + datetime.timedelta(days=30)
+        preg_encounters = Encounter.objects.filter(patient=case.patient, pregnancy_status='Y', date__gte=start_date,
+            date__lte=end_date)
+        if not preg_encounters:
+            return ('261665006', None)
+        edc_encs = preg_encounters.filter(edc__isnull=False).order_by('date')
+        if not edc_encs:
+            raise IncompleteCaseData('Patient %s is pregnant during case window, but has no EDC.')
+        edc = edc_encs[0].edc
+        return ('77386006', edc.strftime('%Y%m%d'))
 
 
     
@@ -1061,9 +1069,9 @@ def test():
 
 def main():
     cases = Case.objects.filter(condition='acute_hep_b')[0:10]
-    print cases
     batch = hl7Batch()
     for case in cases:
+        log.debug('Generating HL7 for %s' % case)
         try:
             batch.addCase(case)
         except IncompleteCaseData, e:

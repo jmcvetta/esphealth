@@ -100,6 +100,7 @@ class Case(models.Model):
         '''
         values = self.__dict__
         return '%(date)-10s    %(id)-8s    %(condition)-30s' % values
+
     
     @classmethod
     def str_line_header(cls):
