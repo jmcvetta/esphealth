@@ -37,6 +37,11 @@
 # ours is but to do or die I guess.
 
 
+#===============================================================================
+#
+#--- Configuration
+#
+#===============================================================================
 
 VERSION = '2.3.1'
 
@@ -64,6 +69,30 @@ SENDING_FACILITY = 'HVMA'
 
 
 
+#===============================================================================
+#
+#--- Exceptions
+#
+#===============================================================================
+
+class IncompleteCaseData(BaseException):
+    '''
+    Exception raised when a case does not have all the data elements required 
+    to generate a valid HL7 message.
+    '''
+    pass
+
+
+#===============================================================================
+#
+#--- Core
+#
+#===============================================================================
+
+import time
+import datetime
+import random
+
 from ESP.static.models import Icd9
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
@@ -73,10 +102,11 @@ from ESP.emr.models import Patient
 from ESP.emr.models import Provider
 from ESP.hef.models import Event
 from ESP.nodis.models import Case
+from ESP.utils.utils import log
+from ESP.utils.utils import log_query
 
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from xml.dom.minidom import Document
-import time,datetime,random
 
 
 def isoTime(t=None):
@@ -292,7 +322,11 @@ class hl7Batch:
 
         ##PID.3
         pid3 = self.casesDoc.createElement('PID.3')        
-        worklist = [('MR',demog.mrn),('SS',demog.ssn[-4:])]
+        if demog.ssn:
+            last_four = demog.ssn[-4:]
+        else:
+            last_four = None
+        worklist = [('MR', demog.mrn), ('SS', last_four)]
         for (cxtype,val) in worklist:
             if val:
                 pid3 = self.casesDoc.createElement('PID.3')
@@ -345,7 +379,7 @@ class hl7Batch:
                 self.addSimple(pidsec,elem,'CE.4')
                 section.appendChild(pidsec)
 
-        if demog.race.upper() == 'HISPANIC':
+        if demog.race and demog.race.upper() == 'HISPANIC':
             pidsec = self.casesDoc.createElement('PID.22')
             self.addSimple(pidsec,'H','CE.4')
             section.appendChild(pidsec)
@@ -485,25 +519,21 @@ class hl7Batch:
         """
         """
         indx=1
-        c=time.strftime('%Y%m%d',time.localtime())
-        dob=demog.date_of_birth
-        dur = self.getDurtion(dob,c)
+        if not demog.date_of_birth:
+            raise IncompleteCaseData('No date of birth for patient %s' %  demog)
+        dur = (datetime.date.today() - demog.date_of_birth).days
         obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'NM')],obx3=[('CE.4','21612-7')],obx5=[('',int(dur/365))],nte=casenote)
         orcs.appendChild(obx)
         indx += 1
-
         ##pregnancy status
         (obx5, edc) = self.getPregnancyStatus(caseid)
-                                            
         obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'CE')],obx3=[('CE.4','11449-6'),('CE.5','PREGNANCY STATUS')],obx5=[('CE.4',obx5)])
         orcs.appendChild(obx)
         indx += 1
-
         ##EDC
         if edc:
             obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'TS')],obx3=[('CE.4','NA-8'),('CE.5','EXPECTED DATE OF CONFINEMENT')],
                                 obx5=[('TS.1',edc)])
-            
             indx += 1
             orcs.appendChild(obx)
             pregdur =datetime.date(int(edc[:4]),int(edc[4:6]), int(edc[6:8]))-datetime.date(int(c[:4]),int(c[4:6]), int(c[6:8]))
@@ -512,7 +542,6 @@ class hl7Batch:
                                 obx5=[('',pregweeks)])
             indx += 1
             orcs.appendChild(obx)
-       
         ##NA_TRMT
         if rx and lx:
             rxdate = rx.date
@@ -528,13 +557,11 @@ class hl7Batch:
         obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'CE')],obx3=[('CE.4','NA-TRMT')], obx5=[('CE.4',trmt)])
         indx += 1
         orcs.appendChild(obx)
-
         ##NA_TRMTDT
         if rxdate:
             obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'TS')],obx3=[('CE.4','NA-TRMTDT')], obx5=[('TS.1',rxdate)])
             indx += 1
             orcs.appendChild(obx)
-
         ##Symptoms
         lxresd=None
         if lx:
@@ -557,8 +584,6 @@ class hl7Batch:
         obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'CE')],obx3=[('CE.4','NA-5')], obx5=[('CE.4',sym)])
         indx += 1
         orcs.appendChild(obx)
-
-        ##                
         if rule.ruleName.upper()  in ('CHLAMYDIA', 'GONORRHEA'):
             for i in icd9:
                 obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'ST')],obx3=[('CE.4','10187-3')], obx5=[('',i)])
@@ -569,7 +594,7 @@ class hl7Batch:
                 indx += 1
                 orcs.appendChild(obx)
                 
-   ##############################################                
+
     def addLXOBX(self,lxRecList=[],orus=None,condition=None):
         if not lxRecList: return
        
@@ -670,7 +695,7 @@ class hl7Batch:
         if snomednega=='' and snomedinter=='':
             return snomedposi
         
-        testsult = string.upper(lxRec.LxTest_results)[:5]
+        testsult = lxRec.result_string.upper()[:5]
         if testsult in ('BORDE'): ###BORDERLINE, use SNOMED for equivocal
             return snomedinter
         elif testsult not in ('REACT','POSIT','DETEC'): ##USE negative
@@ -1035,10 +1060,15 @@ def test():
 
 
 def main():
-    case = Case.objects.filter(condition='acute_hep_b')[0]
-    print case
+    cases = Case.objects.filter(condition='acute_hep_b')[0:10]
+    print cases
     batch = hl7Batch()
-    batch.addCase(case)
+    for case in cases:
+        try:
+            batch.addCase(case)
+        except IncompleteCaseData, e:
+            log.critical('Could not generate HL7 message for case # %s !')
+            log.critical('    %s' % e)
 
 
 if __name__ == "__main__":
