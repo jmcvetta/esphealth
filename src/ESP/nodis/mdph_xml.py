@@ -63,6 +63,7 @@ APP_NAME = 'ESPv2'
 SENDING_FACILITY = 'HVMA'
 
 
+
 from ESP.static.models import Icd9
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
@@ -197,7 +198,7 @@ class hl7Batch:
         orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
         orus.appendChild(orcs)
         icd9_codes = Icd9.objects.filter(encounter__events__case=case)
-        self.addCaseOBR(rule=case.condition, icd9=icd9_codes, orcs=orcs, gender=case.patient.gender)
+        self.addCaseOBR(condition=case.condition, icd9=icd9_codes, orcs=orcs, gender=case.patient.gender)
         if rxobjs:
             rx=rxobjs[0]
         else:
@@ -291,7 +292,7 @@ class hl7Batch:
 
         ##PID.3
         pid3 = self.casesDoc.createElement('PID.3')        
-        worklist = [('MR',demog.DemogMedical_Record_Number),('SS',demog.DemogSSN[-4:])]
+        worklist = [('MR',demog.mrn),('SS',demog.ssn[-4:])]
         for (cxtype,val) in worklist:
             if val:
                 pid3 = self.casesDoc.createElement('PID.3')
@@ -299,7 +300,7 @@ class hl7Batch:
                 self.addSimple(pid3,cxtype,'CX.5')
                 if cxtype=='MR':
                     e = self.casesDoc.createElement('CX.6')
-                    self.addSimple(e, pcp.provPrimary_Dept,'HD.2')        
+                    self.addSimple(e, pcp.dept,'HD.2')        
                     pid3.appendChild(e)                        
                 section.appendChild(pid3)
 
@@ -310,10 +311,10 @@ class hl7Batch:
             demog.suffix, outerElement, isClinician)
         section.appendChild(patname)
         pid7 = self.casesDoc.createElement('PID.7')
-        self.addSimple(pid7,demog.DemogDate_of_Birth,'TS.1')          
+        self.addSimple(pid7,demog.date_of_birth,'TS.1')          
         section.appendChild(pid7)
-        if demog.DemogGender:
-            self.addSimple(section,demog.DemogGender,'PID.8')
+        if demog.gender:
+            self.addSimple(section,demog.gender,'PID.8')
 
 
         try:
@@ -330,15 +331,15 @@ class hl7Batch:
         address = self.makeAddress(demog.address1, demog.address2, demog.city, 
            demog.state, demog.zip, demog.country, outerElement, addressType)
         section.appendChild(address)
-        if demog.DemogTel:
+        if demog.tel:
             pid13 = self.casesDoc.createElement('PID.13')
-            self.addSimple(pid13,demog.area_code,'XTN.6')
+            self.addSimple(pid13,demog.areacode,'XTN.6')
             self.addSimple(pid13,demog.tel,'XTN.7')
-            if demog.DemogExt:
+            if demog.tel_ext:
                 self.addSimple(pid13,demog.tel_ext,'XTN.8')
             section.appendChild(pid13)
 
-        for elem, sec in [(demog.language,'PID.15'),(demog.marital_status,'PID.16')]:
+        for elem, sec in [(demog.home_language,'PID.15'),(demog.marital_stat,'PID.16')]:
             if elem:
                 pidsec = self.casesDoc.createElement(sec)
                 self.addSimple(pidsec,elem,'CE.4')
@@ -419,7 +420,7 @@ class hl7Batch:
 
     
     ##################################################
-    def addCaseOBR(self, rule=None,icd9=[],orcs=None,gender=''):
+    def addCaseOBR(self, condition=None, icd9=[], orcs=None, gender=''):
         """
             </OBR.31> is used to name the notifiable condition"""
         obr = self.casesDoc.createElement('OBR')
@@ -436,9 +437,9 @@ class hl7Batch:
                   'ACUTE HEPATITIS B':'070.30'
                   }
         
-        if not icd9 and rule.ruleName.upper() in fakeicd9.keys():
+        if not icd9 and condition.upper() in fakeicd9.keys():
             gender = gender.upper()
-            icd9values = fakeicd9[rule.ruleName.upper()]
+            icd9values = fakeicd9[condition.upper()]
             if type(icd9values)==type(''): ##a string
                 icd9=[icd9values]
             else:
@@ -450,7 +451,7 @@ class hl7Batch:
         for i in icd9:
             obr31 = self.casesDoc.createElement('OBR.31') 
             self.addSimple(obr31,i,'CE.1')   
-            self.addSimple(obr31,rule.ruleName,'CE.2')
+            self.addSimple(obr31,condition,'CE.2')
             self.addSimple(obr31,'I9','CE.3')
             obr.appendChild(obr31)
 
@@ -458,7 +459,9 @@ class hl7Batch:
 
 
     ############################################
-    def getDurtion(self, day1,day2):
+    def getDurtion(self, day1, day2):
+        print 'day1: %s' % day1
+        print 'day2: %s' % day2
         dur =datetime.date(int(day2[:4]),int(day2[4:6]), int(day2[6:8]))-datetime.date(int(day1[:4]),int(day1[4:6]), int(day1[6:8]))
         return dur.days
 
@@ -1031,9 +1034,14 @@ def test():
     print s
 
 
-###################################
-###################################
+def main():
+    case = Case.objects.filter(condition='acute_hep_b')[0]
+    print case
+    batch = hl7Batch()
+    batch.addCase(case)
+
+
 if __name__ == "__main__":
-    test()
+    main()
         
     
