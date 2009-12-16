@@ -35,6 +35,12 @@ class CodeMap(models.Model):
     threshold = models.FloatField(help_text='Positive numeric threshold (if relevant)', blank=True, null=True)
     output_code = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     notes = models.TextField(blank=True, null=True)
+    #
+    # Reporting
+    # 
+    snomed_pos = models.CharField('SNOMED positive code', max_length=255, blank=True, null=True)
+    snomed_neg = models.CharField('SNOMED neg code', max_length=255, blank=True, null=True)
+    snomed_ind = models.CharField('SNOMED indeterminate code', max_length=255, blank=True, null=True)
     class Meta:
         verbose_name = 'Code Map'
         unique_together = ['native_code', 'heuristic']
