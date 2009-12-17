@@ -29,7 +29,8 @@ STATUS_CHOICES = [
     ('FP', 'False Positive - Do NOT Process'),
     # Only fields before this point will be included in on-screen case status menu
     ('Q',  'Confirmed Case, Transmit to Health Department'), 
-    ('S',  'Transmitted to Health Department')
+    ('S',  'Transmitted to Health Department'),
+    ('NO', 'Do NOT send cases'),
     ]
 
 DISPOSITIONS = [
@@ -38,6 +39,15 @@ DISPOSITIONS = [
     ('missing', 'Missing'),
     ('new', 'New'),
     ]
+
+class Condition(models.Model):
+    '''
+    A condition detected by Nodis.  Currently this model is used only for 
+    controlling the initial status of newly created cases.
+    '''
+    name = models.CharField(max_length=255, primary_key=True)
+    initial_status = models.CharField(max_length=8, choices=STATUS_CHOICES, blank=False, default='AR')
+
 
 class Pattern(models.Model):
     '''

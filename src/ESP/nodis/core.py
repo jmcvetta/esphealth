@@ -52,6 +52,7 @@ from ESP.hef.core import BaseHeuristic
 from ESP.hef.models import Event
 from ESP.nodis.models import Case
 from ESP.nodis.models import Pattern
+from ESP.nodis.models import Condition as ConditionModel
 
 HEAPY = False
 HEAPFILE = '/tmp/heapy.dat'
@@ -873,9 +874,13 @@ class Condition(object):
     __registry = {} # Class variable
     def _register(self):
         if self.name in self.__registry:
-            raise NodisException('A disease definition with the name "%s" is already registered.' % self.name)
+            raise NodisException('A condition with the name "%s" is already registered.' % self.name)
         else:
             self.__registry[self.name] = self
+        if not ConditionModel.objects.filter(name=self.name):
+            c = ConditionModel(name=self.name)
+            c.save()
+            log.debug('Added "%s" to condition table, with default initial status' % self.name)
 
     @classmethod
     def all_conditions(cls):
@@ -954,6 +959,7 @@ class Condition(object):
         case.condition = self.name
         case.pattern = pattern.pattern_obj
         #case.workflow_state = self.condition.ruleInitCaseStatus
+        case.status = ConditionModel.objects.get(name=self.name).initial_status
         case.save()
         case.events = window.events
         if window.past_events: # May be NoneType, so we can't rely on it being acceptable for ManyToManyField
