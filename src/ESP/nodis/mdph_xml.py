@@ -66,6 +66,7 @@ INSTITUTION.tel_ext = 'Institution Telephone Extension'
 
 APP_NAME = 'ESPv2'
 SENDING_FACILITY = 'HVMA'
+COMMENTS = '' # What goes in comments?
 
 
 
@@ -92,6 +93,7 @@ class IncompleteCaseData(BaseException):
 import time
 import datetime
 import random
+import string
 
 from ESP.static.models import Icd9
 from ESP.emr.models import LabResult
@@ -102,6 +104,7 @@ from ESP.emr.models import Patient
 from ESP.emr.models import Provider
 from ESP.hef.models import Event
 from ESP.nodis.models import Case
+from ESP.nodis.models import Condition as ConditionModel
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 
@@ -238,7 +241,7 @@ class hl7Batch:
         else:
             lx = None
         self.addCaseOBX(demog=patient, orcs=orcs, icd9=icd9_codes, lx=lx, rx=rx,
-            encs=case.encounters, rule=case.condition, casenote=case.notes,
+            encounters=case.encounters, condition=case.condition, casenote=case.notes,
             caseid=case.pk)
         totallxs = list(lxobjs)
         ##need check if any Gonorrhea test for Chlamydia
@@ -262,7 +265,7 @@ class hl7Batch:
         """
         lxdict={}
         for lxobj in lxobjs:
-            lxkey = (lxobj.LxOrder_Id_Num, lxobj.LxTest_Code_CPT,lxobj.LxComponent,lxobj.LxOrderDate,lxobj.LxTest_results,lxobj.LxDate_of_result)
+            lxkey = (lxobj.order_num, lxobj.native_code, lxobj.date, lxobj.result_string, lxobj.result_date)
             if not lxdict.has_key(lxkey):
                 lxdict[lxkey]=lxobj.id
                 
@@ -523,7 +526,7 @@ class hl7Batch:
 
     
     #############################################
-    def addCaseOBX(self, demog=None, orcs=None,icd9=None,lx=None, rx=None,encs=[],rule=None,casenote='',caseid=''):
+    def addCaseOBX(self, demog=None, orcs=None,icd9=None,lx=None, rx=None, encounters=[], condition=None, casenote='',caseid=''):
         """
         """
         indx=1
@@ -576,23 +579,22 @@ class hl7Batch:
             lxresd=lx.result_date
         sym='373067005' #NO
         temperature=0
-        for encid in encs:
-            enc = Encounter.objects.filter(id__exact=encid)[0]
+        for enc in encounters:
             try:
                 temperature = enc.temperature
             except:
                 temperature=0
             if lxresd:
-                dur = self.getDurtion(lxresd,enc.date)
+                dur = enc.date - lxresd
             else:
                 dur = 0
-            if abs(dur)<15 or temperature>100.4:
+            if abs(dur.days)<15 or temperature>100.4:
                 sym='373066001' #YES
                 break
         obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'CE')],obx3=[('CE.4','NA-5')], obx5=[('CE.4',sym)])
         indx += 1
         orcs.appendChild(obx)
-        if rule.ruleName.upper()  in ('CHLAMYDIA', 'GONORRHEA'):
+        if condition.upper()  in ('CHLAMYDIA', 'GONORRHEA'):
             for i in icd9:
                 obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'ST')],obx3=[('CE.4','10187-3')], obx5=[('',i)])
                 indx += 1
@@ -614,13 +616,16 @@ class hl7Batch:
         #
         #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         for lxRec in lxRecList:
-            needsend =ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc,CondiRule=condition)[0].CondiSend
-            if needsend==0: ##no need send
-                continue
-            
+            #
+            # Don't think we need this, since cases that should not be sent 
+            # will have their initial status set to "NO"
+            #
+            #needsend =ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc,CondiRule=condition)[0].CondiSend
+            #if needsend==0: ##no need send
+                #continue
             orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
             orus.appendChild(orcs)
-            orc = self.makeORC(lxRec.LxOrdering_Provider)
+            orc = self.makeORC(lxRec.provider)
             orcs.appendChild(orc)
             
             obr = self.casesDoc.createElement('OBR') # need a special lx OBR
@@ -629,17 +634,17 @@ class hl7Batch:
     
             obr3 = self.casesDoc.createElement('OBR.3')
       
-            self.addSimple(obr3,lxRec.LxOrder_Id_Num,'EI.1')
+            self.addSimple(obr3,lxRec.order_num,'EI.1')
             obr.appendChild(obr3)
 
             obr4 = self.casesDoc.createElement('OBR.4')
-            self.addSimple(obr4,lxRec.LxLoinc,'CE.4') 
+            self.addSimple(obr4,lxRec.output_or_native_code,'CE.4') 
             self.addSimple(obr4,'L','CE.6') # loinc code
             obr.appendChild(obr4)
             
             obr7 = self.casesDoc.createElement('OBR.7')
             obr.appendChild(obr7)
-            self.addSimple(obr7,lxRec.LxOrderDate,'TS.1') # lx date
+            self.addSimple(obr7,lxRec.date,'TS.1') # lx date
     
             obr15 = self.casesDoc.createElement('OBR.15') # noise - unknown specimen source. Eeessh
             sps = self.casesDoc.createElement('SPS.1')
@@ -648,15 +653,17 @@ class hl7Batch:
             obr15.appendChild(sps)
             obr.appendChild(obr15)
 
-            if lxRec.LxTest_status:  status='F'
-            else: status='P'
+            if lxRec.status:
+                status='F'
+            else:
+                status='P'
             self.addSimple(obr,status,'OBR.25') # result status
   
             orcs.appendChild(obr)
 
             # now add the obx records needed to describe dose, frequency and duration
-            lxTS = lxRec.LxOrderDate
-            lxRange = 'Low:' + lxRec.LxReference_Low+' - High: '+lxRec.LxReference_High
+            lxTS = lxRec.date
+            lxRange = 'Low: %s - High: %s' % (lxRec.ref_low_string, lxRec.ref_high_string)
 
 
             #snomed=ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc)[0].CondiSNMDPosi
@@ -664,10 +671,10 @@ class hl7Batch:
 
             if snomed=='': ##like ALT/AST
                 #ALT/AST much be number
-                obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'NM')],obx3=[('CE.4',lxRec.LxLoinc),('CE.6','L')],
-                                   obx5=[('',lxRec.LxTest_results.split()[0])], obx7=[('',lxRange)],obx14=[('TS.1',lxTS)], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
+                obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'NM')],obx3=[('CE.4',lxRec.output_or_native_code),('CE.6','L')],
+                                   obx5=[('',lxRec.result_string.split()[0])], obx7=[('',lxRange)],obx14=[('TS.1',lxTS)], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
             else:
-                obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'CE')],obx3=[('CE.4',lxRec.LxLoinc),('CE.6','L')],
+                obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'CE')],obx3=[('CE.4',lxRec.output_or_native_code),('CE.6','L')],
                                obx5=[('CE.4',snomed)],  obx7=[('',lxRange)],obx14=[('TS.1',lxTS)], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
         
             
@@ -677,25 +684,27 @@ class hl7Batch:
     ##################################
     def getSNOMED(self, lxRec,condition):
         # NOTE: See "PORTING NOTE" above.
-        snomedposi =ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc,CondiRule=condition)[0].CondiSNMDPosi
-        snomednega = ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc,CondiRule=condition)[0].CondiSNMDNega
-        snomedinter = ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc,CondiRule=condition)[0].CondiSNMDInde
+        snomedposi = lxRec.snomed_pos
+        snomednega = lxRec.snomed_neg
+        snomedinter = lxRec.snomed_ind
         
         if snomedposi=='' and snomednega=='': ##like ALT/AST
             return ''
-
+        #
+        # FIXME: It can't be good to have a hard-coded, LOINC-based table here.
+        #
         loinc_posires_map = {'5009-6':160,
                              '16934-2':100,
                              '34704-7':50}
         
-        if lxRec.LxLoinc in loinc_posires_map.keys():###('5009-6','16934-2'):
+        if lxRec.output_or_native_code in loinc_posires_map.keys():###('5009-6','16934-2'):
             try:
-                if float(lxRec.LxTest_results) <loinc_posires_map[lxRec.LxLoinc]:
+                if lxRec.result_float < loinc_posires_map[lxRec.output_or_native_code]:
                     return snomednega
                 else:
                     return snomedposi
             except:
-                if string.find(lxRec.LxTest_results, '>')!=-1:
+                if string.find(lxRec.result_string, '>')!=-1:
                     return snomedposi
                 else:
                     return snomednega
@@ -842,7 +851,7 @@ class hl7Batch:
         outerElement='ORC.22'
         country='USA'
         addressType=None
-        address = self.makeAddress(INSTITUTION.address1, INSTITUTION.address2, INSTITUTION.ciy,
+        address = self.makeAddress(INSTITUTION.address1, INSTITUTION.address2, INSTITUTION.city,
             INSTITUTION.state, INSTITUTION.zip, country ,outerElement, addressType)
         orc.appendChild(address)
 
@@ -935,12 +944,12 @@ class hl7Batch:
         fhs = self.batchDoc.createElement("FHS")
         self.addHSimple(fhs,'|','FHS.1')
         self.addHSimple(fhs,'^\&','FHS.2')
-        self.addHSimple(fhs,self.config.appName,'FHS.3') # file sending app
-        self.addHSimple(fhs,self.config.sendingFac,'FHS.4')
+        self.addHSimple(fhs, APP_NAME, 'FHS.3') # file sending app
+        self.addHSimple(fhs, SENDING_FACILITY, 'FHS.4')
         fhs2 = self.batchDoc.createElement('FHS.7')
         self.addHSimple(fhs2,self.timestamp,'TS.1')
         fhs.appendChild(fhs2)
-        self.addHSimple(fhs,self.config.instComments,'FHS.11')
+        self.addHSimple(fhs, COMMENTS, 'FHS.11')
         return fhs
 
     def makeBHS(self):
@@ -1077,6 +1086,7 @@ def main():
         except IncompleteCaseData, e:
             log.critical('Could not generate HL7 message for case # %s !')
             log.critical('    %s' % e)
+    print batch.renderBatch()
 
 
 if __name__ == "__main__":
