@@ -94,6 +94,7 @@ import time
 import datetime
 import random
 import string
+import pprint
 
 from ESP.static.models import Icd9
 from ESP.emr.models import LabResult
@@ -223,7 +224,8 @@ class hl7Batch:
         treatclis = case.prescriptions.values_list('provider', flat=True).distinct()
         for cli in treatclis:
             nkindx=3
-            p = self.makePCP(pcp=cli, addressType='O',NKindx=nkindx,NK13='TC')
+            pcp = Provider.objects.get(pk=cli)
+            p = self.makePCP(pcp=pcp, addressType='O',NKindx=nkindx,NK13='TC')
             nkindx=nkindx+1
             orus2.appendChild(p)
         ##Clinical information
@@ -257,8 +259,6 @@ class hl7Batch:
         self.addRXOBX(rxRecList=rxobjs, orus=orus) # do same for dr
         return [i.id for i in totallxs]
 
-    ###################################
-    ###################################
     def removeDuplicateLx(self, lxobjs):
         """we have a nasty problem with data reloaded as we built the system
         and when the data feed is broken
@@ -271,16 +271,17 @@ class hl7Batch:
                 
         return lxdict.values() # list of unique lx ids
                                                                                 
-    ###################################
     def getOtherLxs(self, cond,demog,lxids):
         returnlxs=[]
+        # NOTE: Do we really want lab results from all of this patient's cases
+        # of this condition, rather than lab results from only this particular
+        # case?
         thiscases = Case.objects.filter(patient=demog,condition=cond)
-        curLxids = [c.pk for c in thiscases]
-        if not curLxids:
+        cases = Case.objects.filter(patient=demog, condition=cond)
+        all_case_labs = LabResult.objects.filter(events__case__in=cases)
+        if not all_case_labs:
             return returnlxs
-
-        
-        curLxidlist = ','.join(curLxids).split(',')
+        # What kind of exception are we expecting here??
         try:
             baselxs = LabResult.objects.filter(id__in=lxids).order_by('result_date')
             ####get lastest Lx record
@@ -288,33 +289,23 @@ class hl7Batch:
             baselxs = LabResult.objects.filter(id__in=lxids).order_by('date')
             minrec=baselxs[0].date
         except:
-            return  LabResult.objects.filter(id__in=curLxidlist)
-        
+            return all_case_labs
         if maxrec and minrec:
             try:
                 maxdate = datetime.date(int(maxrec[:4]),int(maxrec[4:6]),int(maxrec[6:8]))+datetime.timedelta(30)
                 mindate = datetime.date(int(minrec[:4]),int(minrec[4:6]),int(minrec[6:8]))-datetime.timedelta(30)
-                
-                for onelid in curLxidlist:
-                    print onelid
-                    onelx = LabResult.objects.get(id=onelid)
+                for onelx in all_case_labs:
                     thisd = onelx.result_date
                     if thisd:
                         thisd = datetime.date(int(thisd[:4]),int(thisd[4:6]),int(thisd[6:8]))
-                        
                     if not thisd or (thisd>=mindate and thisd<=maxdate):
                         returnlxs.append(onelx)
 
                 return returnlxs
             except:
                 pass
+        return  all_case_labs
 
-        return  LabResult.objects.filter(id__in=curLxidlist)
-
-        
-        
-    ############################################
-    ############################################
     def makePID(self, demog=None, pcp=None, ):
         """
         patient demography and pcp
@@ -397,7 +388,6 @@ class hl7Batch:
         """
         section = self.casesDoc.createElement("NK1")
         self.addSimple(section,'%s' % NKindx,'NK1.1')
-
         suffix = None
         isClinician = 0
         outerElement='NK1.2'
@@ -557,11 +547,11 @@ class hl7Batch:
         if rx and lx:
             rxdate = rx.date
             lxorderd = lx.date
-            dur = self.getDurtion(lxorderd,rxdate)
+            dur = rxdate - lxorderd
         else:
             dur=None
             rxdate =None
-        if dur and dur<15:
+        if dur and dur.days < 15:
             trmt = '373066001' #YES
         else:
             trmt = '373067005' #NO
@@ -587,7 +577,7 @@ class hl7Batch:
             if lxresd:
                 dur = enc.date - lxresd
             else:
-                dur = 0
+                dur = datetime.timedelta(days=0)
             if abs(dur.days)<15 or temperature>100.4:
                 sym='373066001' #YES
                 break
@@ -783,7 +773,7 @@ class hl7Batch:
                 #
                 # PORTING NOTE: This should blow up, because it's assuming dates are strings.
                 #
-                rxDur =datetime.date(int(rxRec.RxEndDate[:4]),int(rxRec.RxEndDate[4:6]), int(rxRec.RxEndDate[6:8]))  - datetime.date(int(rxRec.RxStartDate[:4]),int(rxRec.RxStartDate[4:6]), int(rxRec.RxStartDate[6:8]))
+                rxDur = rxRec.end_date - rxRec.start_date
                 rxDur = rxDur.days+1
            
             rxTS = rxRec.date
@@ -1078,14 +1068,18 @@ def test():
 
 def main():
     #cases = Case.objects.filter(condition='acute_hep_b')
-    cases = Case.objects.all()
+    cases = set()
+    conditions = Case.objects.values_list('condition', flat=True).distinct()
+    for con in conditions:
+        cases |= set(Case.objects.filter(condition=con)[0:10])
+    pprint.pprint(list(cases))
     batch = hl7Batch()
     for case in cases:
         log.debug('Generating HL7 for %s' % case)
         try:
             batch.addCase(case)
         except IncompleteCaseData, e:
-            log.critical('Could not generate HL7 message for case # %s !')
+            log.critical('Could not generate HL7 message for case # %s !' % case)
             log.critical('    %s' % e)
     print batch.renderBatch()
 
