@@ -521,7 +521,7 @@ class hl7Batch:
         if not edc_encs:
             raise IncompleteCaseData('Patient %s is pregnant during case window, but has no EDC.')
         edc = edc_encs[0].edc
-        return ('77386006', edc.strftime('%Y%m%d'))
+        return ('77386006', edc)
 
 
     
@@ -547,7 +547,7 @@ class hl7Batch:
                                 obx5=[('TS.1',edc)])
             indx += 1
             orcs.appendChild(obx)
-            pregdur =datetime.date(int(edc[:4]),int(edc[4:6]), int(edc[6:8]))-datetime.date(int(c[:4]),int(c[4:6]), int(c[6:8]))
+            pregdur = edc - datetime.date.today()
             pregweeks = 40 - int(pregdur.days/7)
             obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'NM')],obx3=[('CE.4','NA-12')],
                                 obx5=[('',pregweeks)])
@@ -1077,7 +1077,8 @@ def test():
 
 
 def main():
-    cases = Case.objects.filter(condition='acute_hep_b')[0:10]
+    #cases = Case.objects.filter(condition='acute_hep_b')
+    cases = Case.objects.all()
     batch = hl7Batch()
     for case in cases:
         log.debug('Generating HL7 for %s' % case)
