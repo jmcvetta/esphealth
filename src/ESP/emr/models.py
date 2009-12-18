@@ -666,10 +666,18 @@ class LabResult(BasePatientRecord):
             }
         return '%(date)-10s    %(id)-8s    %(short_name)-15s    %(native_code)-11s    %(res)-20s' % values
 
-    def __get_output_code(self):
+    def __get_codemap(self):
         maps = CodeMap.objects.filter(native_code=self.native_code)
         if maps:
-            return maps[0].output_code
+            return maps[0]
+        else:
+            return None
+    codemap = property(__get_codemap)
+            
+    def __get_output_code(self):
+        map = self.codemap
+        if map:
+            return map.output_code
         else:
             return None
     output_code = property(__get_output_code)
@@ -707,6 +715,37 @@ class LabResult(BasePatientRecord):
                 'comment':self.comment
                 } 
             }
+    
+    def __get_snomed_pos(self):
+        '''
+        Returns SNOMED code for positive result, from this test's CodeMap
+        '''
+        cm = self.codemap
+        if not cm:
+            return None
+        return cm.snomed_pos
+    snomed_pos = property(__get_snomed_pos)
+    
+    def __get_snomed_neg(self):
+        '''
+        Returns SNOMED code for negative result, from this test's CodeMap
+        '''
+        cm = self.codemap
+        if not cm:
+            return None
+        return cm.snomed_neg
+    snomed_neg = property(__get_snomed_neg)
+        
+    def __get_snomed_ind(self):
+        '''
+        Returns SNOMED code for indeterminate result, from this test's CodeMap
+        '''
+        cm = self.codemap
+        if not cm:
+            return None
+        return cm.snomed_ind
+    snomed_ind = property(__get_snomed_ind)
+        
 
     
     
