@@ -476,7 +476,8 @@ class hl7Batch:
                 except: ##all other gender
                     icd9 = ['099.41']
                     
-        for i in icd9:
+        # icd9 is a QuerySet
+        for i in icd9.values_list('code', flat=True): 
             obr31 = self.casesDoc.createElement('OBR.31') 
             self.addSimple(obr31,i,'CE.1')   
             self.addSimple(obr31,condition,'CE.2')
@@ -658,7 +659,7 @@ class hl7Batch:
             #snomed=ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc)[0].CondiSNMDPosi
             snomed=self.getSNOMED(lxRec,condition)
 
-            if snomed=='': ##like ALT/AST
+            if not snomed: ##like ALT/AST
                 #ALT/AST much be number
                 obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'NM')],obx3=[('CE.4',lxRec.output_or_native_code),('CE.6','L')],
                                    obx5=[('',lxRec.result_string.split()[0])], obx7=[('',lxRange)],obx14=[('TS.1',lxTS.strftime(DATE_FORMAT))], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
@@ -1037,7 +1038,7 @@ W 	White"""
 def main():
     cases = Case.objects.filter(pk=55)
     #cases = Case.objects.all()
-    batch = hl7Batch()
+    batch = hl7Batch(nmessages=cases.count())
     for case in cases:
         log.debug('Generating HL7 for %s' % case)
         try:
