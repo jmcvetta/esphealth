@@ -549,7 +549,7 @@ class EncounterHeuristic(BaseHeuristic):
         '''
         @type name:         String
         @type icd9s:        [String, String, String, ...]
-        @type match_style:  String (either 'iexact' or 'istartswith')
+        @type match_style:  String (see assertion below)
         '''
         assert icd9s
         self.icd9s = icd9s
@@ -679,17 +679,26 @@ class CalculatedBilirubinHeuristic(BaseLabHeuristic):
 
 class MedicationHeuristic(BaseHeuristic):
 
-    def __init__(self, name, long_name, drugs, exclude=[]):
+    def __init__(self, name, long_name, drugs, exclude=[], require=[], min_quantity=None):
         '''
         @param drugs:  Generate events when drug(s) are prescribed
         @type drugs:   [String, String, ...]
-        @param drugs:  Exclude drugs that contain these strings
-        @type drugs:   [String, String, ...]
+        @param exclude:  Exclude drugs that contain these strings
+        @type exclude:   [String, String, ...]
+        @param exclude:  Require that drug name contain at least one of these strings
+        @type exclude:   [String, String, ...]
+        @param min_quantity: Quantity value on prescription must be >= this amount
+        @type min_quantity:  Integer
         '''
         assert drugs
         assert isinstance(exclude, list)
+        assert isinstance(require, list)
+        if min_quantity:
+            assert isinstance(min_quantity, int)
         self.drugs = drugs
         self.exclude = exclude
+        self.require = require
+        self.min_quantity = min_quantity
         BaseHeuristic.__init__(self,
             name = name,
             long_name = long_name,
@@ -706,8 +715,19 @@ class MedicationHeuristic(BaseHeuristic):
         q_obj = Q(name__icontains = self.drugs[0])
         for drug_name in self.drugs[1:]:
             q_obj |= Q(name__icontains = drug_name)
-        for string in self.exclude:
-            q_obj &= ~Q(name__icontains=string)
+        for s in self.exclude:
+            q_obj &= ~Q(name__icontains=s)
+        req_q = None
+        for s in self.require:
+            this_req_q = Q(name__icontains=s) 
+            if req_q:
+                req_q |= this_req_q
+            else:
+                req_q = this_req_q
+        if req_q:
+            q_obj &= req_q
+        if self.min_quantity:
+            q_obj &= Q(quantity_float__gte=self.min_quantity)
         qs = qs.filter(q_obj)
         log_query('Query for heuristic %s' % self.name, qs)
         return qs
