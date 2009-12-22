@@ -44,6 +44,7 @@
 #===============================================================================
 
 VERSION = '2.3.1'
+DATE_FORMAT = '%Y%m%d'
 
 # Information about reporting institution.  This info should be made configurable 
 # in reference localsettings.py.
@@ -51,21 +52,21 @@ class Foo(): pass
 INSTITUTION = Foo()
 INSTITUTION.name = 'HVMA'
 INSTITUTION.clia = '22D0666230'
-INSTITUTION.last_name = 'Institution First Name'
-INSTITUTION.first_name = 'Institution Last Name'
-INSTITUTION.address1 = 'Institution Address 1'
-INSTITUTION.address2 = 'Institution Address 2'
-INSTITUTION.city = 'Institution City'
-INSTITUTION.state = 'Institution State'
-INSTITUTION.zip = 'Institution Zip'
-INSTITUTION.country = 'Institution Country'
-INSTITUTION.email = 'Institution Email'
-INSTITUTION.area_code = 'Institution Area Code'
-INSTITUTION.tel = 'Institution Telephone Number'
-INSTITUTION.tel_ext = 'Institution Telephone Extension'
+INSTITUTION.last_name = 'Klompas'
+INSTITUTION.first_name = 'Michael'
+INSTITUTION.address1 = '133 Brookline Avenue'
+INSTITUTION.address2 = None
+INSTITUTION.city = 'Boston'
+INSTITUTION.state = 'MA'
+INSTITUTION.zip = '02215'
+INSTITUTION.country = 'USA'
+INSTITUTION.email = 'MKLOMPAS@PARTNERS.ORG'
+INSTITUTION.area_code = '617'
+INSTITUTION.tel = '5099991'
+INSTITUTION.tel_ext = None
 
 APP_NAME = 'ESPv2'
-SENDING_FACILITY = 'HVMA'
+SENDING_FACILITY = 'Test'
 COMMENTS = '' # What goes in comments?
 
 
@@ -339,7 +340,7 @@ class hl7Batch:
             demog.suffix, outerElement, isClinician)
         section.appendChild(patname)
         pid7 = self.casesDoc.createElement('PID.7')
-        self.addSimple(pid7,demog.date_of_birth,'TS.1')          
+        self.addSimple(pid7,demog.date_of_birth.strftime(DATE_FORMAT),'TS.1')          
         section.appendChild(pid7)
         if demog.gender:
             self.addSimple(section,demog.gender,'PID.8')
@@ -487,8 +488,6 @@ class hl7Batch:
 
     ############################################
     def getDurtion(self, day1, day2):
-        print 'day1: %s' % day1
-        print 'day2: %s' % day2
         dur =datetime.date(int(day2[:4]),int(day2[4:6]), int(day2[6:8]))-datetime.date(int(day1[:4]),int(day1[4:6]), int(day1[6:8]))
         return dur.days
 
@@ -534,7 +533,7 @@ class hl7Batch:
         ##EDC
         if edc:
             obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'TS')],obx3=[('CE.4','NA-8'),('CE.5','EXPECTED DATE OF CONFINEMENT')],
-                                obx5=[('TS.1',edc)])
+                                obx5=[('TS.1',edc.strftime(DATE_FORMAT))])
             indx += 1
             orcs.appendChild(obx)
             pregdur = edc - datetime.date.today()
@@ -560,7 +559,7 @@ class hl7Batch:
         orcs.appendChild(obx)
         ##NA_TRMTDT
         if rxdate:
-            obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'TS')],obx3=[('CE.4','NA-TRMTDT')], obx5=[('TS.1',rxdate)])
+            obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'TS')],obx3=[('CE.4','NA-TRMTDT')], obx5=[('TS.1',rxdate.strftime(DATE_FORMAT))])
             indx += 1
             orcs.appendChild(obx)
         ##Symptoms
@@ -634,7 +633,7 @@ class hl7Batch:
             
             obr7 = self.casesDoc.createElement('OBR.7')
             obr.appendChild(obr7)
-            self.addSimple(obr7,lxRec.date,'TS.1') # lx date
+            self.addSimple(obr7,lxRec.date.strftime(DATE_FORMAT),'TS.1') # lx date
     
             obr15 = self.casesDoc.createElement('OBR.15') # noise - unknown specimen source. Eeessh
             sps = self.casesDoc.createElement('SPS.1')
@@ -662,10 +661,10 @@ class hl7Batch:
             if snomed=='': ##like ALT/AST
                 #ALT/AST much be number
                 obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'NM')],obx3=[('CE.4',lxRec.output_or_native_code),('CE.6','L')],
-                                   obx5=[('',lxRec.result_string.split()[0])], obx7=[('',lxRange)],obx14=[('TS.1',lxTS)], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
+                                   obx5=[('',lxRec.result_string.split()[0])], obx7=[('',lxRange)],obx14=[('TS.1',lxTS.strftime(DATE_FORMAT))], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
             else:
                 obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'CE')],obx3=[('CE.4',lxRec.output_or_native_code),('CE.6','L')],
-                               obx5=[('CE.4',snomed)],  obx7=[('',lxRange)],obx14=[('TS.1',lxTS)], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
+                               obx5=[('CE.4',snomed)],  obx7=[('',lxRange)],obx14=[('TS.1',lxTS.strftime(DATE_FORMAT))], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
         
             
             orcs.appendChild(obx1)
@@ -746,7 +745,7 @@ class hl7Batch:
 
             obr7 = self.casesDoc.createElement('OBR.7')
             obr.appendChild(obr7)
-            self.addSimple(obr7,rxRec.date,'TS.1') # rx date
+            self.addSimple(obr7,rxRec.date.strftime(DATE_FORMAT),'TS.1') # rx date
             
             obr15 = self.casesDoc.createElement('OBR.15') # noise - unknown specimen source. Eeessh
             sps = self.casesDoc.createElement('SPS.1')
@@ -1034,45 +1033,10 @@ O 	Other
 U 	Unknown 			
 W 	White"""
 
-def test():
-    """test! used during development
-    Won't work now as I've cut over to using django records
-    """
-    ncases = 1
-
-
-    testDoc = hl7Batch(configDict = configDict, nmessages=ncases)
-    for case in range(ncases):
-        demog = Demog.objects.filter(id__exact=12930)[0]
-        pcp = Provider.objects.filter(id__exact=402)[0]
-        rule = Rule.objects.filter(id=1)[0]
-        c =Case.objects.filter(id__exact=56)[0]
-        ex = string.split(c.caseEncID,',') 
-        rx = string.split(c.caseRxID,',')
-        lx = string.split(c.caseLxID,',')
-        caseicd9 = string.split(c.caseICD9,',')
-        ex.remove('')
-        rx.remove('')
-        lx.remove('')
-        
-        testDoc.addCase(demog=demog,pcp=pcp,rule=rule, lx=lx, rx=rx,ex=ex,icd9=caseicd9,caseid = case.id)
-
-       
-    # Print our newly created XML
-    s = testDoc.renderBatch()
-    f = file('hl7Sample.hl7','w')
-    f.write(s)
-    f.close()
-    print s
-
 
 def main():
-    #cases = Case.objects.filter(condition='acute_hep_b')
-    cases = set()
-    conditions = Case.objects.values_list('condition', flat=True).distinct()
-    for con in conditions:
-        cases |= set(Case.objects.filter(condition=con)[0:10])
-    pprint.pprint(list(cases))
+    cases = Case.objects.filter(pk=55)
+    #cases = Case.objects.all()
     batch = hl7Batch()
     for case in cases:
         log.debug('Generating HL7 for %s' % case)
