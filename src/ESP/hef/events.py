@@ -192,23 +192,20 @@ LabResultHeuristic(
 
 
 #
-# Lyme Disease
+#--- Lyme Disease
 #
 
-#--- lyme_elisa_pos 
 LabResultHeuristic(
     name = 'lyme_elisa',
     long_name = 'Lyme ELISA',
     order_events = True,
     )
 
-#--- lyme_igg 
 LabResultHeuristic(
     name = 'lyme_igg',
     long_name = 'Lyme IGG',
     )
 
-#--- lyme_igg_wb
 WesternBlotHeuristic(
     name = 'lyme_igg_wb',
     long_name = 'Lyme Western Blot',
@@ -216,40 +213,34 @@ WesternBlotHeuristic(
     band_count = 5,
     )
 
-#--- lyme_igm 
 LabResultHeuristic(
     name = 'lyme_igm',
     long_name = 'Lyme IGM (EIA)',
     )
 
-#--- lyme_pcr 
 LabResultHeuristic(
     name = 'lyme_pcr',
     long_name = 'Lyme PCR',
     )
 
-#--- lyme_diagnosis 
 EncounterHeuristic(
     name = 'lyme_diagnosis',
     long_name = 'Lyme diagnosis',
     icd9s = ['088.81'],
     )
 
-#--- rash 
 EncounterHeuristic(
     name = 'rash',
     long_name = 'Rash',
     icd9s = ['782.1'],
     )
 
-#--- doxycycline 
 MedicationHeuristic(
     name = 'doxycycline',
     long_name = 'Doxycycline',
     drugs = ['doxycycline'],
     )
 
-#--- lyme_other_antibiotics 
 MedicationHeuristic(
     name = 'lyme_other_antibiotics',
     long_name = 'Lyme disease antibiotics other than Doxycycline',
@@ -258,11 +249,10 @@ MedicationHeuristic(
 
 
 # 
-# Pelvic Inflamatory Disease (PID)
+#--- Pelvic Inflamatory Disease (PID)
 #
 
 
-#--- pid_diagnosis
 EncounterHeuristic(
     name = 'pid_diagnosis',
     long_name = 'PID diagnosis',
@@ -276,7 +266,10 @@ EncounterHeuristic(
         ],
     )
 
-#--- tb_meds
+#
+#--- Tuberculosis
+#
+
 MedicationHeuristic(
     name = 'tb_meds',
     long_name = 'Tuberculosis medications',
@@ -290,7 +283,6 @@ MedicationHeuristic(
     exclude = ['CAPZA',]
     )
 
-#--- tb_diagnosis
 EncounterHeuristic(
     name = 'tb_diagnosis',
     long_name = 'Tuberculosis diagnosis',
@@ -301,10 +293,64 @@ EncounterHeuristic(
     match_style = 'startswith',
     )
 
-#--- tb_lab
 LabResultHeuristic(
     name = 'tb_lab',
     long_name = 'Tuberculosis lab order',
     order_events = True,
+    )
+#
+#--- Syphilis 
+#
+
+MedicationHeuristic(
+    name = 'penicillin_g',
+    long_name = 'Pennicilin G',
+    drugs = [
+        'PENICILLIN G',
+        'PEN G',
+        ]
+	)
+
+MedicationHeuristic(
+    name = 'doxycycline_7_days',
+    long_name = 'Doxycycline for >= 7 days',
+    drugs = ['doxycycline'],
+    min_quantity = 14, # Need 14 pills for 7 days
+    )
+
+MedicationHeuristic(
+    name = 'ceftriaxone_1g',
+    long_name = 'Ceftriaxone dosage >= 1g',
+    drugs = ['ceftriaxone'],
+    require = [
+        '1g',
+        '2g',
+        ]
+    )
+
+EncounterHeuristic(
+    name = 'syphilis_diagnosis',
+    long_name = 'Syphilis Diagnosis',
+    icd9s = [
+        '090',
+        '091',
+        '092',
+        '093',
+        '094',
+        '095',
+        '096',
+        '097',
+        ],
+    match_style = 'startswith'
+    )
+
+LabResultHeuristic(
+    name = 'ttpa',
+    long_name = 'TTPA test',
+    )
+
+LabResultHeuristic(
+    name = 'fta_abs',
+    long_name = 'FTA-ABS test',
     )
 
