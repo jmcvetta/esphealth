@@ -143,7 +143,7 @@ def timeit():
             import datetime
             before = datetime.datetime.now()
             res = func(self, *args, **kw)
-            print('%s took %s' % (func.name, (datetime.datetime.now() - before)))
+            print('%s took %s' % (func.__name__, (datetime.datetime.now() - before)))
             return res
         return proxyfunc
     return decorator
@@ -157,7 +157,7 @@ def days_in_interval(begin_date, end_date):
     assert begin_date <= end_date
 
     days = [begin_date + datetime.timedelta(d) for d in xrange((end_date-begin_date).days)]
-    if end_date > begin_date: days.append(end_date)
+    days.append(end_date)
 
     return days
 
