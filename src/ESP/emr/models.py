@@ -184,6 +184,20 @@ class Provider(BaseMedicalRecord):
         return self.name
 
 
+
+class Site(BaseMedicalRecord):
+    code = models.CharField(max_length=20, primary_key=True)
+    name = models.CharField(max_length=200, unique=True)
+    zip_code = models.CharField(max_length=10, db_index=True)
+
+    @staticmethod
+    def site_ids(zip_code=None):
+        sites = Site.objects.filter(zip_code=zip_code) if zip_code else Site.objects.all() 
+        return sites.values_list('code', flat=True)
+
+
+
+
 class Patient(BaseMedicalRecord):
     '''
     A patient, with demographic information
@@ -376,18 +390,14 @@ class Patient(BaseMedicalRecord):
     age = property(_get_age)
 
     def age_group(self, **kw):
+        when = kw.get('when', None)
+        
         interval = kw.pop('interval', 5)
         ceiling = kw.pop('ceiling', 80)
-        when = kw.get('when', None)
-        possible_age_groups = range(0, ceiling + interval, interval)
+        above_ceiling = ceiling + interval
 
-        age = self._get_age(when=when)
-        
-        if age:
-            years_old = int(age.days/365.25) # Coarse approximation. Works for what we need.
-            return possible_age_groups[min(years_old, ceiling)/interval]
-        else: 
-            return None
+        age = self._get_age(when=when)        
+        return (interval * int(min(age.days/365.25, above_ceiling)/interval)) if age else None
         
     
     def _get_age_str(self):
@@ -845,6 +855,7 @@ class Encounter(BasePatientRecord):
     status = models.CharField(max_length=20, blank=True, null=True)
     closed_date = models.DateField(blank=True, null=True)
     site_name = models.CharField(max_length=100, blank=True, null=True)
+    site = models.ForeignKey(Site, null=True)
     native_site_num = models.CharField('Site Id #', max_length=30, blank=True, null=True)
     native_encounter_num = models.CharField('Encounter ID #', max_length=20, blank=True, null=True)
     event_type = models.CharField(max_length=20, blank=True, null=True, db_index=True)

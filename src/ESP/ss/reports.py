@@ -1,14 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import os
+import os, pdb
 
 from django.db.models import Count
 from django.template import Context
 from django.template.loader import get_template
 
 from ESP.emr.models import Encounter, Patient
-from ESP.utils.utils import str_from_date, days_in_interval, log
+from ESP.utils.utils import str_from_date, days_in_interval, log, timeit
 from ESP.ss.models import Site, NonSpecialistVisitEvent, age_group_filter
 from ESP.ss.utils import report_folder
 
@@ -40,28 +40,22 @@ class Report(object):
         self.days = days_in_interval(self.begin_date, self.end_date)
         self.timestamps = str_from_date(self.begin_date), str_from_date(self.end_date)
         self.folder = report_folder(begin_date, end_date)
-        self.encounters = Encounter.objects.syndrome_care_visits(sites=Site.site_ids()).filter(date__gte=self.begin_date, date__lte=self.end_date)
+        self.encounters = Encounter.objects.syndrome_care_visits(sites=Site.site_ids()).filter(
+            date__gte=self.begin_date, date__lte=self.end_date)
 
-    def _make_date_and_zip_and_age_group_mapping(self, zip_codes):
-        mapping = {}
-        new_group_count = lambda: dict([(group, 0) for group in AGE_GROUPS])
-        for day in self.days:
-            # Initialize a map to count age groups
-            mapping[day] = dict([(code, new_group_count()) for code in zip_codes])
 
-        return mapping
+    def _write_date_zip_summary(self, day, zip_code, age_group_map, outfile):
+            # Output results for this date and zip to the file.
+            age_sum = sum(age_group_map.values())
+            if not age_sum: return
 
-    def _print_mapping_to_file(self, mapping, outfile):
-        for day in self.days:
-            for zip_code in sorted(mapping[day].keys()):
-                age_group_counts = mapping[day][zip_code]
-                age_sum = sum(age_group_counts.values())
-                if not age_sum: continue
+            age_group_map = [str(age_group_map[group]) for group in AGE_GROUPS]            
+            summary = [str_from_date(day), zip_code, str(age_sum)]
+            line = '\t'.join(summary + age_group_map)
+            log.info(line)
+            outfile.write(line + '\n')
 
-                summary = [str_from_date(day), zip_code, str(age_sum)]
-                line = '\t'.join(summary + [str(age_group_counts[group]) for group in AGE_GROUPS])
-                outfile.write(line + '\n')
-
+    
     def gipse_report(self):
 
         filename = GIPSE_SITE_FILENAME % self.timestamps
@@ -90,22 +84,35 @@ class Report(object):
     def total_residential_encounters(self):
         header = ['encounter date', 'zip', 'total'] + [str(x) for x in AGE_GROUPS]
         filename = ENCOUNTERS_BY_RESIDENTIAL_ZIP_FILENAME % self.timestamps
-        log.debug('Writing file %s' % filename)
+        log.info('Writing file %s' % filename)
 
         outfile = open(os.path.join(self.folder, filename), 'w')
         outfile.write('\t'.join(header) + '\n')
 
-        zip_codes = Patient.objects.values_list('zip5', flat=True).distinct().order_by('zip5')
-        mapping = self._make_date_and_zip_and_age_group_mapping(zip_codes)
 
-        # Now, on to doing the count.
-        for e in self.encounters.select_related('patient'):
-            patient_group = e.patient.age_group(when=e.date)
-            if ((patient_group is not None) and (e.patient.zip5)): 
-                mapping[e.date][e.patient.zip5][patient_group] += 1
+        encounters = self.encounters.select_related('patient').exclude(
+            patient__zip5__isnull=True).order_by('date', 'patient__zip5').iterator()
 
-        # print results from count and close.
-        self._print_mapping_to_file(mapping, outfile)
+        try:
+            e = encounters.next()
+        except StopIteration:
+            e = None
+
+        while e:
+            cur_date, cur_zip = e.date, e.patient.zip5
+            age_group_counts = dict([(group, 0) for group in AGE_GROUPS])
+            try:
+                while (e.date == cur_date) and (e.patient.zip5 == cur_zip):
+                    patient_group = e.patient.age_group(when=e.date)
+                    if ((patient_group is not None) and (e.patient.zip5)): 
+                        age_group_counts[patient_group] += 1
+                    e = encounters.next()
+            except StopIteration:
+                break
+            finally:
+                self._write_date_zip_summary(cur_date, cur_zip, age_group_counts, outfile)
+
+            
         outfile.close()
 
     def total_site_encounters(self):
@@ -118,18 +125,36 @@ class Report(object):
         site_codes = dict([(s.code, s.zip_code) for s in Site.objects.all()])
         zip_codes = Site.objects.values_list('zip_code', flat=True).distinct().order_by('zip_code')
 
+        encounters = self.encounters.order_by('date').iterator()
 
-        mapping = self._make_date_and_zip_and_age_group_mapping(zip_codes)
+        try:
+            e = encounters.next()
+        except StopIteration:
+            e = None
 
-        for e in self.encounters:                
-            patient_group = e.patient.age_group(when=e.date)
-            site_zip_code = e.native_site_num and site_codes.get(e.native_site_num)
-            if site_zip_code and (patient_group is not None): 
-                mapping[e.date][site_zip_code][patient_group] += 1
 
-        # print results from count and close.
-        self._print_mapping_to_file(mapping, outfile)
+        while e:
+            cur_date = e.date
+            mapping = {}
+            for zip_code in zip_codes:
+                for group in AGE_GROUPS:
+                    mapping[(zip_code, group)] = 0
+            try:
+                while e.date == cur_date:
+                    patient_group = e.patient.age_group(when=e.date)
+                    site_zip_code = e.native_site_num and site_codes.get(e.native_site_num)
+                    if site_zip_code and (patient_group is not None): 
+                        mapping[(site_zip_code, patient_group)] += 1
+                    e = encounters.next()
+            except StopIteration:
+                break
+            finally:
+                for zip_code in zip_codes:
+                    age_group_counts = dict([(group, mapping[(zip_code, group)]) for group in AGE_GROUPS])
+                    self._write_date_zip_summary(cur_date, zip_code, age_group_counts, outfile)
+                
         outfile.close()
+
 
 
 def all_encounters_report(begin_date, end_date):

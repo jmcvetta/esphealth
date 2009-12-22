@@ -18,6 +18,8 @@ from django.db.models import Q
 from ESP.emr.models import Encounter
 from ESP.hef.models import Event
 
+from definitions import AGE_GROUP_CAP
+
 
 def age_group_filter(lower, upper=150):
     today = datetime.date.today()
@@ -37,31 +39,6 @@ class Site(models.Model):
     zip_code = models.CharField(max_length=10, db_index=True)
 
     @staticmethod
-    def volume_by_zip(zip_code, date, exclude_duplicates=True):
-        ''' 
-        Returns the volume in a given day in the clinics that have a
-        given zip code, by checking how many encounters were
-        recorded. If exclude_duplicates is True, the count is reduced
-        to only the number of patients.
-        '''
-        patients = Encounter.objects.syndrome_care_visits(sites=Site.site_ids(zip_code)).values_list(
-            'patient').filter(date=date)
-        return patients.distinct().count() if exclude_duplicates else patients.count()
-        
-    @staticmethod
-    def encounters_by_zip(zip_code):
-        ''' 
-        Returns a QuerySet for encounters from all sites with a given zip code
-        '''
-        return Encounter.objects.syndrome_care_visits(
-            sites=Site.site_ids(zip_code)).select_related('patient')
-
-    @staticmethod
-    def age_group_aggregate(zip_code, date, lower, upper=90):
-        return Site.encounters_by_zip(zip_code).filter(age_group_filter(lower, upper)).filter(
-            date=date).count()
-
-    @staticmethod
     def site_ids(zip_code=None):
         sites = Site.objects.filter(zip_code=zip_code) if zip_code else Site.objects.all() 
         return sites.values_list('code', flat=True)
@@ -76,5 +53,47 @@ class NonSpecialistVisitEvent(Event):
     def counts_by_site(start_date, end_date):
         return NonSpecialistVisitEvent.objects.filter(date__gte=start_date, date__lte=end_date).values(
             'date', 'heuristic', 'reporting_site__zip_code').annotate(count=Count('heuristic'))
+
+
+    def similar_age_group(self, age_group_interval=5):
+        '''
+        returns a queryset representing all events that happened with
+        patients at the same age group that the event's patient's age
+        group.
+        '''
+        if not self.patient.date_of_birth: return
+
+        age_group = self.patient.age_group(when=self.date)
+        upper_bound_year = self.date.year - age_group
+
+        # if somebody falls in the '85 and above' age group, we need
+        # to assume that the patient's age is high enough to include
+        # all patients that can fit into this group. So, we set
+        # lower_bound_year to be 1800, so that we can check patients
+        # even if they are 200+ years old.
+        if age_group < (AGE_GROUP_CAP - age_group_interval):
+            lower_bound_year = self.date.year - age_group - age_group_interval
+        else:
+            lower_bound_year = 1800
+
+        month = self.patient.date_of_birth.month
+        day = self.patient.date_of_birth.day
+
+        # Need to check for leap years.
+        if month == 2 and day > 28: day = 28
+
+        # Edge case, youngest dob is lower than patient's dob if
+        # patient is born on Feb 29 and 0 years old at time of
+        # event.
+        youngest_dob = max(
+            datetime.date(year=upper_bound_year, month=month, day=day),
+            self.patient.date_of_birth
+            )
+        oldest_dob = datetime.date(year=lower_bound_year, month=month, day=day)
+
         
-        
+        return NonSpecialistVisitEvent.objects.filter(
+            name=self.name, 
+            patient__date_of_birth__gte=oldest_dob, patient__date_of_birth__lte=youngest_dob
+            )
+
