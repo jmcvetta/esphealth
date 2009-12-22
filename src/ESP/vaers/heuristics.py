@@ -386,7 +386,7 @@ def main():
     parser.add_option('-d', '--diagnostics', action='store_true', dest='diagnostics', 
                       help='Run Diagnostics Heuristics')
     parser.add_option('-a', '--all', action='store_true', dest='all', 
-                      help='Generate new patients and immunization history')
+                      help='Run all heuristics')
     parser.add_option('-m', '--mapping', action='store_true', dest='map', help='Build CodeMap for Lab Tests')
     parser.add_option('-e', '--events', action='store_true', dest='events', help='Generate Events')
 
