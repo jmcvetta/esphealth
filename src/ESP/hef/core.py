@@ -291,7 +291,8 @@ class LabResultHeuristic(BaseLabHeuristic):
     '''
 
     def __init__(self, name, long_name,  positive_events = True, negative_events=False, 
-        order_events=False, ratio_events=[], fixed_threshold_events=[]):
+        order_events=False, ratio_events=[], fixed_threshold_events=[], 
+        extra_positive_strings=[], extra_negative_strings=[]):
         '''
         @param name: Short name of this heuristic.  Should be suitable for use in a SlugField.
         @type  name: String
@@ -303,12 +304,20 @@ class LabResultHeuristic(BaseLabHeuristic):
         @type  negative_events: Boolean
         @param order_events: Should we also generate events for lab orders, regardless of result?
         @type  order_events: Boolean
+        @param fixed_threshold_events: Generates events based on a fixed threshold, regardless of reference high 
+        @type fixed_threshold_events:  [Float, Float, ...]
+        @param extra_positive_strings: Additional strings indicating positive test
+        @type extra_positive_strings:  [String, String, ...]
+        @param extra_negative_strings: Additional strings indicating negative test
+        @type extra_negative_strings:  [String, String, ...]
         '''
         self.positive_events = positive_events
         self.negative_events = negative_events
         self.order_events = order_events
         self.ratio_events = ratio_events
         self.fixed_threshold_events = fixed_threshold_events
+        self.extra_positive_strings = extra_positive_strings
+        self.extra_negative_strings = extra_negative_strings
         assert (positive_events or negative_events or order_events or ratio_events or fixed_threshold_events)
         for ratio in ratio_events:
             assert isinstance(ratio, int) or isinstance(ratio, float)
@@ -438,9 +447,9 @@ class LabResultHeuristic(BaseLabHeuristic):
         # lab, since we may be looking for higher value.
         strings_q = None
         if result_type == 'positive':
-            strings = POSITIVE_STRINGS
+            strings = POSITIVE_STRINGS + self.extra_positive_strings
         else:
-            strings = NEGATIVE_STRINGS
+            strings = NEGATIVE_STRINGS + self.extra_negative_strings
         assert strings
         for s in strings:
             q_obj = Q(result_string__istartswith = s)
