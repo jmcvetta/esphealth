@@ -544,3 +544,67 @@ tb = Condition(
         ],
     med_days_before = 30,
     )
+
+
+#===============================================================================
+#
+# Syphilis
+#
+#-------------------------------------------------------------------------------
+
+syphilis_meds = ComplexEventPattern(
+    patterns = [
+        'penicillin_g',
+        'doxycycline_7_days',
+        'ceftriaxone_1g',
+        ],
+    operator = 'or',
+    )
+
+# Definition (1)
+syphilis_diagnosis_or_meds = ComplexEventPattern(
+    patterns=[
+        'syphilis_diagnosis',
+        syphilis_meds,
+    ],
+    operator = 'and',
+    )
+
+syphilis_secondary_tests = ComplexEventPattern(
+    patterns = [
+        'ttpa_pos',
+        'fta_abs_pos',
+        ],
+    operator = 'or',
+    )
+
+syphilis_tests = ComplexEventPattern(
+    patterns = [
+        'rpr_pos',
+        syphilis_secondary_tests,
+        ],
+    operator = 'and',
+    )
+
+
+syphilis = Condition(
+    name = 'syphilis',
+    patterns = [
+        (syphilis_diagnosis_or_meds, 14),
+        (syphilis_tests, 14),
+        ],
+    recur_after = -1, # Never
+    test_name_search = ['syph', 'rpr', 'vdrl', 'tp','fta'],
+    # FIXME:  We need to add ability to express large ranges of ICD9s here - this is incomplete.
+    icd9s = [],
+    icd9_days_before = 28,
+    fever = True,
+    lab_days_before = 28,
+    med_names = [
+        'penicillin g',
+        'pen g',
+        'doxycycline',
+        'ceftriaxone',
+        ],
+    med_days_before = 28,
+    )
