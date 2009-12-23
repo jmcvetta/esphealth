@@ -19,6 +19,9 @@ doc/specifications/gipse.xsd -text
 etc/apache.conf -text
 etc/django.wsgi -text
 /readme -text
+share/epic_etl/AdditionalStepsAfterCompile.doc -text svneol=unset#unset
+share/epic_etl/ESPFileLayout.doc -text svneol=unset#unset
+share/epic_etl/mhslespftp.sh -text
 src/ESP/batch-run.sh -text
 src/ESP/cache/__init__.py -text
 src/ESP/cache/models.py -text
