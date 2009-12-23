@@ -354,3 +354,17 @@ LabResultHeuristic(
     long_name = 'FTA-ABS test',
     )
 
+
+LabResultHeuristic(
+    name = 'rpr',
+    long_name = 'RPR test',
+    extra_positive_strings = [
+        '1:8',
+        '1:16',
+        '1:32',
+        '1:64',
+        '1:128',
+        '1:256',
+        '1:512',
+        ]
+    )
