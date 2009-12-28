@@ -14,7 +14,7 @@ from django.template.loader import get_template
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
-from ESP.esp.choices import WORKFLOW_STATES # FIXME: 'esp' module is deprecated
+from ESP.emr.choices import WORKFLOW_STATES # FIXME: 'esp' module is deprecated
 from ESP.emr.models import Patient, Immunization, Encounter, LabResult, Provider
 from ESP.static.models import Icd9, Loinc
 from ESP.conf.models import CodeMap
