@@ -34,13 +34,17 @@ class CodeMap(models.Model):
     native_name = models.CharField(max_length=255, blank=True, null=True)
     threshold = models.FloatField(help_text='Positive numeric threshold (if relevant)', blank=True, null=True)
     output_code = models.CharField(max_length=100, blank=True, null=True, db_index=True)
-    notes = models.TextField(blank=True, null=True)
     #
     # Reporting
     # 
+    reportable = models.BooleanField('Is test reportable?', default=True, db_index=True)
     snomed_pos = models.CharField('SNOMED positive code', max_length=255, blank=True, null=True)
     snomed_neg = models.CharField('SNOMED neg code', max_length=255, blank=True, null=True)
     snomed_ind = models.CharField('SNOMED indeterminate code', max_length=255, blank=True, null=True)
+    #
+    # Notes
+    #
+    notes = models.TextField(blank=True, null=True)
     class Meta:
         verbose_name = 'Code Map'
         unique_together = ['native_code', 'heuristic']
@@ -49,6 +53,35 @@ class CodeMap(models.Model):
         msg = '%s (%s) --> %s' % (self.native_name, self.native_code, self.heuristic)
         if self.threshold:
             msg += ' (threshold %s)' % self.threshold
+        return msg
+
+
+class ReportableLab(models.Model):
+    '''
+    Additional lab tests to be reported for a given condition, in addition to 
+    those tests which are mapped to heuristics included in the condition's 
+    definition.
+    '''
+    condition = models.CharField(max_length=255, blank=False, db_index=True)
+    native_code = models.CharField(max_length=100, blank=False, db_index=True)
+    native_name = models.CharField(max_length=255, blank=True, null=True)
+    output_code = models.CharField(max_length=100, blank=False, db_index=True)
+    #
+    # Reporting
+    # 
+    snomed_pos = models.CharField('SNOMED positive code', max_length=255, blank=True, null=True)
+    snomed_neg = models.CharField('SNOMED neg code', max_length=255, blank=True, null=True)
+    snomed_ind = models.CharField('SNOMED indeterminate code', max_length=255, blank=True, null=True)
+    #
+    # Notes
+    #
+    notes = models.TextField(blank=True, null=True)
+    class Meta:
+        verbose_name = 'Code Map'
+        unique_together = ['native_code', 'condition']
+    
+    def __str__(self):
+        msg = '%s (%s) --> %s' % (self.native_name, self.native_code, self.condition)
         return msg
 
 
