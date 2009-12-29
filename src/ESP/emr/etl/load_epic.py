@@ -395,7 +395,10 @@ class LabResultLoader(BaseLoader):
         res = row['result_string']
         l.result_string = res
         try:
-            l.result_float = float(res.replace(',', '')) # Strip commas for values like "1,000,000"
+            rf = float(res.replace(',', '')) # Strip commas for values like "1,000,000"
+            # Database cannot handle infinite values (which are also typically an incorrect interpretation of the result string)
+            if not rf == float('infinity'):
+                l.result_float = rf
         except ValueError:
             pass # Not every result string is supposed to convert to a float, so this is okay
         l.ref_low_string = row['ref_low']
