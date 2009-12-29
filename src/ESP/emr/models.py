@@ -182,6 +182,13 @@ class Provider(BaseMedicalRecord):
     
     def __unicode__(self):
         return self.name
+        
+    def __get_tel_numeric(self):
+        '''
+        Returns telephone number string containing only numeric characters
+        '''
+        return re.sub('[^0-9]', '', self.telephone)
+    tel_numeric = property(__get_tel_numeric)
 
 
 
