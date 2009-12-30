@@ -58,7 +58,7 @@ from ESP.emr.models import Immunization
 from ESP.emr.models import LabTestConcordance
 from ESP.hef.core import BaseHeuristic
 from ESP.hef import events # Required to register hef events
-from ESP.nodis.core import Condition
+from ESP.nodis.models import Condition
 from ESP.nodis.models import Case
 from ESP.nodis.models import CaseStatusHistory
 from ESP.nodis.models import ReferenceCaseList
