@@ -155,7 +155,7 @@ class hl7Batch:
            'NAT AMERICAN':'I',
            'NATIVE HAWAI':'P',
            'ALASKAN':'I',
-           '': 'U'}
+           }
         self.nmessages = nmessages
         self.timestamp = isoTime() # will return time now
         self.batchDoc = Document() # create a dom root 
@@ -349,14 +349,13 @@ class hl7Batch:
             self.addSimple(section,demog.gender,'PID.8')
 
 
-        try:
+        if demog.race and demog.race.upper() in self.racedir:
             race = self.racedir[demog.race.upper()]
-        except:
-            race=''
-        if race:
-            pidsec = self.casesDoc.createElement('PID.10')
-            self.addSimple(pidsec,race,'CE.4')
-            section.appendChild(pidsec)
+        else:
+            race = 'U' # Unknown race
+        pidsec = self.casesDoc.createElement('PID.10')
+        self.addSimple(pidsec,race,'CE.4')
+        section.appendChild(pidsec)
             
         outerElement='PID.11'    
         addressType = 'H'
@@ -1038,7 +1037,7 @@ W 	White"""
 
 
 def main():
-    cases = Case.objects.filter(pk=1353)
+    cases = Case.objects.filter(pk=9518)
     #cases = Case.objects.all()
     batch = hl7Batch(nmessages=cases.count())
     for case in cases:
