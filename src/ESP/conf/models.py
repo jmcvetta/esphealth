@@ -65,6 +65,9 @@ class IgnoredCode(models.Model):
     
     def __str__(self):
         return self.native_code
+    
+    class Meta:
+        verbose_name = 'Ignored Test Code'
 
 
 
@@ -104,11 +107,22 @@ STATUS_CHOICES = [
 
 class ConditionConfig(models.Model):
     '''
-    A condition detected by Nodis.  Currently this model is used only for 
-    controlling the initial status of newly created cases.
+    Reporting configuration for a Nodis condition.
     '''
-    name = models.CharField(max_length=255, primary_key=True)
+    name = models.CharField('Condition Name', max_length=255, primary_key=True)
     initial_status = models.CharField(max_length=8, choices=STATUS_CHOICES, blank=False, default='AR')
+    lab_days_before = models.IntegerField(blank=False, default=28)
+    lab_days_after = models.IntegerField(blank=False, default=28)
+    icd9_days_before = models.IntegerField(blank=False, default=28)
+    icd9_days_after = models.IntegerField(blank=False, default=28)
+    med_days_before = models.IntegerField(blank=False, default=28)
+    med_days_after = models.IntegerField(blank=False, default=28)
+    
+    class Meta:
+        verbose_name = 'Condition Configuration'
+    
+    def __str__(self):
+        return self.name
 
 
 class ReportableLab(models.Model):
@@ -133,6 +147,7 @@ class ReportableLab(models.Model):
     notes = models.TextField(blank=True, null=True)
     class Meta:
         unique_together = ['native_code', 'condition']
+        verbose_name = 'Reportable Lab Test'
     
     def __str__(self):
         msg = '%s (%s) --> %s' % (self.native_name, self.native_code, self.condition)
@@ -154,6 +169,7 @@ class ReportableIcd9(models.Model):
 
     class Meta:
         unique_together = ['icd9', 'condition']
+        verbose_name = 'Reportable ICD9 Code'
     
     def __str__(self):
         return '%s (%s)' % (self.icd9.code, self.condition)
@@ -174,6 +190,7 @@ class ReportableMedication(models.Model):
 
     class Meta:
         unique_together = ['drug_name', 'condition']
+        verbose_name = 'Reportable Medication'
 
     def __str__(self):
-        return '%s (%s)' % (self.name, self.condition)
+        return '%s (%s)' % (self.drug_name, self.condition)
