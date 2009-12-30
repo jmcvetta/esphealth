@@ -821,12 +821,12 @@ class Condition(object):
         recur_after,
         test_name_search,
         # Reporting
-        icd9s = [],
-        icd9_days_before = 14,
-        fever = True,
-        lab_days_before = 14,
-        med_names = [],
-        med_days_before = 14,
+        #icd9s = [],
+        #icd9_days_before = 14,
+        #fever = True,
+        #lab_days_before = 14,
+        #med_names = [],
+        #med_days_before = 14,
         ):
         '''
         NOTE: No need to specify the LOINCs used to detect the condition, 
@@ -860,9 +860,9 @@ class Condition(object):
         assert ' ' not in name # No spaces allowed in disease name
         assert isinstance(test_name_search, list)
         self.test_name_search = test_name_search
-        assert icd9_days_before
-        assert lab_days_before
-        assert med_days_before
+#        assert icd9_days_before
+#        assert lab_days_before
+#        assert med_days_before
         self.name = name
         self.recur_after = recur_after
         self.patterns = {}
@@ -873,12 +873,12 @@ class Condition(object):
                 self.patterns[pat] = days
             else:
                 raise InvalidPattern('Pattern not an instance of BaseEventPattern: %s' % pat)
-        self.icd9s = icd9s
-        self.icd9_days_before = datetime.timedelta(days = icd9_days_before)
-        self.fever = fever
-        self.lab_days_before = datetime.timedelta(days = lab_days_before)
-        self.med_names = med_names
-        self.med_days_before = datetime.timedelta(days = med_days_before)
+#        self.icd9s = icd9s
+#        self.icd9_days_before = datetime.timedelta(days = icd9_days_before)
+#        self.fever = fever
+#        self.lab_days_before = datetime.timedelta(days = lab_days_before)
+#        self.med_names = med_names
+#        self.med_days_before = datetime.timedelta(days = med_days_before)
         self.__existing = {} # Cache 
         if self.name in self.__registry:
             raise NodisException('A condition with the name "%s" is already registered.' % self.name)
@@ -954,7 +954,7 @@ class Condition(object):
         Return a list of all the heuristics on which the events in this 
         condition's definition are based.
         '''
-        regex = re.compile(r'(?P<heuristic>.*)(_pos|_neg|_ind|_order|_\d*x)')
+        regex = re.compile(r'(?P<heuristic>.*)(_pos|_neg|_ind|_order|_\d*x|_\d*$)')
         heuristics = set()
         for event_name in self.event_names:
             match = regex.search(event_name)
@@ -964,6 +964,27 @@ class Condition(object):
                 heuristics.add( event_name )
         return heuristics
     heuristics = property(__get_heuristics)
+    
+    def __get_icd9s(self):
+        icd9_objs = Icd9.objects.none()
+        for name in self.heuristics:
+            heuristic_obj = BaseHeuristic.get_heuristic(name)
+            if isinstance(heuristic_obj, EncounterHeuristic):
+                icd9_objs |= heuristic_obj.icd9_objects
+        return icd9_objs.distinct()
+    icd9s = property(__get_icd9s)
+    
+    def __get_medications(self):
+        '''
+        Returns set of medication names used in this condition's definition.
+        '''
+        med_names = set()
+        for name in self.heuristics:
+            heuristic_obj = BaseHeuristic.get_heuristic(name)
+            if isinstance(heuristic_obj, MedicationHeuristic):
+                med_names |= set( heuristic_obj.drugs )
+        return med_names
+    medications = property(__get_medications)
 
     def new_case(self, window, pattern):
         '''
@@ -1326,31 +1347,27 @@ class Case(models.Model):
     def __get_reportable_labs(self):
         heuristics = Condition.get_condition(self.condition).heuristics
         reportable_codes = set( ReportableLab.objects.filter(condition=self.condition).values_list('native_code', flat=True) )
-        reportable_codes |= set( CodeMap.objects.filter(heuristic__in=heuristics).values_list('native_code', flat=True) )
+        reportable_codes |= set( CodeMap.objects.filter(heuristic__in=heuristics, reportable=True).values_list('native_code', flat=True) )
         q_obj = Q(native_code__in=reportable_codes, patient=self.patient)
         labs = LabResult.objects.filter(q_obj)
         log_query('Reportable labs for %s' % self, labs)
         return labs
     reportable_labs = property(__get_reportable_labs)
     
+    def __get_reportable_icd9s(self):
+        icd9_objs = Condition.get_condition(self.condition).icd9s
+        icd9_objs |= Icd9.objects.filter(reportableicd9__condition=self.condition_config).distinct()
+        return icd9_objs
+    reportable_icd9s = property(__get_reportable_icd9s)
+    
     def __get_reportable_encounters(self):
-        icd9_objs = Icd9.objects.none()
-        for name in Condition.get_condition(self.condition).heuristics:
-            heuristic_obj = BaseHeuristic.get_heuristic(name)
-            if isinstance(heuristic_obj, EncounterHeuristic):
-                icd9_objs |= heuristic_obj.icd9_objects
-            icd9_objs |= Icd9.objects.filter(reportableicd9__condition=self.condition_config)
-        encs = Encounter.objects.filter(patient=self.patient, icd9_codes__in=icd9_objs)
+        encs = Encounter.objects.filter(patient=self.patient, icd9_codes__in=self.reportable_icd9s)
         log_query('Encounters for %s' % self, encs)
         return encs
     reportable_encounters = property(__get_reportable_encounters)
     
     def __get_reportable_prescriptions(self):
-        med_names = set()
-        for name in Condition.get_condition(self.condition).heuristics:
-            heuristic_obj = BaseHeuristic.get_heuristic(name)
-            if isinstance(heuristic_obj, MedicationHeuristic):
-                med_names |= set( heuristic_obj.drugs )
+        med_names = Condition.get_condition(self.condition).medications
         med_names |= set( ReportableMedication.objects.filter(condition=self.condition_config).values_list('drug_name', flat=True) )
         if not med_names:
             return Prescription.objects.none()

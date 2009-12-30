@@ -107,6 +107,7 @@ from ESP.emr.models import Provider
 from ESP.hef.models import Event
 from ESP.nodis.models import Case
 from ESP.nodis.models import Condition as ConditionModel
+from ESP.nodis.defs import *
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 
@@ -221,8 +222,8 @@ class hl7Batch:
         p = self.makeFacility()
         orus2.appendChild(p)
         ##Treating Clinician
-        rxobjs = case.prescriptions.order_by('order_num')
-        treatclis = case.prescriptions.values_list('provider', flat=True).distinct()
+        rxobjs = case.reportable_prescriptions.order_by('order_num')
+        treatclis = set( case.reportable_prescriptions.values_list('provider', flat=True) )
         for cli in treatclis:
             nkindx=3
             pcp = Provider.objects.get(pk=cli)
@@ -230,10 +231,12 @@ class hl7Batch:
             nkindx=nkindx+1
             orus2.appendChild(p)
         ##Clinical information
-        lxobjs = case.lab_results.order_by('order_num')
+        lxobjs = case.reportable_labs.order_by('order_num')
         orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
         orus.appendChild(orcs)
         icd9_codes = Icd9.objects.filter(encounter__events__case=case)
+        # Would the line below be a better way to do the line above?
+        #icd9_codes = case.reportable_icd9s
         self.addCaseOBR(condition=case.condition, icd9=icd9_codes, orcs=orcs, gender=case.patient.gender)
         if rxobjs:
             rx=rxobjs[0]
@@ -244,7 +247,7 @@ class hl7Batch:
         else:
             lx = None
         self.addCaseOBX(demog=patient, orcs=orcs, icd9=icd9_codes, lx=lx, rx=rx,
-            encounters=case.encounters, condition=case.condition, casenote=case.notes,
+            encounters=case.reportable_encounters, condition=case.condition, casenote=case.notes,
             caseid=case.pk)
         totallxs = list(lxobjs)
         ##need check if any Gonorrhea test for Chlamydia
