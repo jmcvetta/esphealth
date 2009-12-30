@@ -571,6 +571,10 @@ class EncounterHeuristic(BaseHeuristic):
             )
 
     def __get_icd9_objects(self):
+        '''
+        Returns the actual Icd9 objects for which this heuristic is looking 
+        for linked encounters .
+        '''
         q_obj = Q()
         for code in self.icd9s:
             if self.match_style == 'exact':

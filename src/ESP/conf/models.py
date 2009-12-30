@@ -166,14 +166,14 @@ class ReportableMedication(models.Model):
     definition.
     '''
     condition = models.ForeignKey(ConditionConfig, blank=False)
-    name = models.CharField(blank=False, max_length=255)
+    drug_name = models.CharField(blank=False, max_length=255)
     #
     # Notes
     #
     notes = models.TextField(blank=True, null=True)
 
     class Meta:
-        unique_together = ['name', 'condition']
+        unique_together = ['drug_name', 'condition']
 
     def __str__(self):
         return '%s (%s)' % (self.name, self.condition)

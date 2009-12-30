@@ -48,6 +48,7 @@ from ESP.emr.models import Provider
 from ESP.hef import events
 from ESP.hef.core import BaseHeuristic
 from ESP.hef.core import EncounterHeuristic
+from ESP.hef.core import MedicationHeuristic
 from ESP.hef.models import Event
 from ESP.conf.models import ConditionConfig
 
@@ -1326,23 +1327,42 @@ class Case(models.Model):
         heuristics = Condition.get_condition(self.condition).heuristics
         reportable_codes = set( ReportableLab.objects.filter(condition=self.condition).values_list('native_code', flat=True) )
         reportable_codes |= set( CodeMap.objects.filter(heuristic__in=heuristics).values_list('native_code', flat=True) )
-        q_obj = Q(native_code__in=reportable_codes)
+        q_obj = Q(native_code__in=reportable_codes, patient=self.patient)
         labs = LabResult.objects.filter(q_obj)
         log_query('Reportable labs for %s' % self, labs)
         return labs
     reportable_labs = property(__get_reportable_labs)
     
     def __get_reportable_encounters(self):
+        icd9_objs = Icd9.objects.none()
         for name in Condition.get_condition(self.condition).heuristics:
             heuristic_obj = BaseHeuristic.get_heuristic(name)
-            icd9_objs = Icd9.objects.none()
             if isinstance(heuristic_obj, EncounterHeuristic):
                 icd9_objs |= heuristic_obj.icd9_objects
             icd9_objs |= Icd9.objects.filter(reportableicd9__condition=self.condition_config)
-        encs = Encounter.objects.filter(icd9_codes__in=icd9_objs)
+        encs = Encounter.objects.filter(patient=self.patient, icd9_codes__in=icd9_objs)
         log_query('Encounters for %s' % self, encs)
         return encs
     reportable_encounters = property(__get_reportable_encounters)
+    
+    def __get_reportable_prescriptions(self):
+        med_names = set()
+        for name in Condition.get_condition(self.condition).heuristics:
+            heuristic_obj = BaseHeuristic.get_heuristic(name)
+            if isinstance(heuristic_obj, MedicationHeuristic):
+                med_names |= set( heuristic_obj.drugs )
+        med_names |= set( ReportableMedication.objects.filter(condition=self.condition_config).values_list('drug_name', flat=True) )
+        if not med_names:
+            return Prescription.objects.none()
+        med_names = list(med_names)
+        q_obj = Q(name__icontains=med_names[0])
+        for med in med_names:
+            q_obj |= Q(name__icontains=med)
+        q_obj &= Q(patient=self.patient)
+        prescriptions = Prescription.objects.filter(q_obj)
+        log_query('Reportable prescriptions for %s' % self, prescriptions)
+        return prescriptions
+    reportable_prescriptions = property(__get_reportable_prescriptions)
     
     class Meta:
         permissions = [ ('view_phi', 'Can view protected health information'), ]
