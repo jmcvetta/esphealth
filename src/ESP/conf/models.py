@@ -20,6 +20,7 @@ from ESP.conf.choices import DEST_TYPES
 from ESP.conf.choices import WORKFLOW_STATES
 
 from ESP.static.models import Loinc
+from ESP.static.models import Icd9
 from ESP.static.models import Vaccine
 from ESP.static.models import ImmunizationManufacturer
 
@@ -110,14 +111,13 @@ class ConditionConfig(models.Model):
     initial_status = models.CharField(max_length=8, choices=STATUS_CHOICES, blank=False, default='AR')
 
 
-
 class ReportableLab(models.Model):
     '''
     Additional lab tests to be reported for a given condition, in addition to 
     those tests which are mapped to heuristics included in the condition's 
     definition.
     '''
-    condition = models.CharField(max_length=255, blank=False, db_index=True)
+    condition = models.ForeignKey(ConditionConfig, blank=False)
     native_code = models.CharField(max_length=100, blank=False, db_index=True)
     native_name = models.CharField(max_length=255, blank=True, null=True)
     output_code = models.CharField(max_length=100, blank=False, db_index=True)
@@ -132,7 +132,6 @@ class ReportableLab(models.Model):
     #
     notes = models.TextField(blank=True, null=True)
     class Meta:
-        verbose_name = 'Code Map'
         unique_together = ['native_code', 'condition']
     
     def __str__(self):
@@ -140,3 +139,41 @@ class ReportableLab(models.Model):
         return msg
 
 
+class ReportableIcd9(models.Model):
+    '''
+    Additional ICD9 codes to be reported for a given condition, in addition to 
+    those tests which are mapped to heuristics included in the condition's 
+    definition.
+    '''
+    condition = models.ForeignKey(ConditionConfig, blank=False)
+    icd9 = models.ForeignKey(Icd9, blank=False)
+    #
+    # Notes
+    #
+    notes = models.TextField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ['icd9', 'condition']
+    
+    def __str__(self):
+        return '%s (%s)' % (self.icd9.code, self.condition)
+
+
+class ReportableMedication(models.Model):
+    '''
+    Additional medications to be reported for a given condition, in addition to 
+    those tests which are mapped to heuristics included in the condition's 
+    definition.
+    '''
+    condition = models.ForeignKey(ConditionConfig, blank=False)
+    name = models.CharField(blank=False, max_length=255)
+    #
+    # Notes
+    #
+    notes = models.TextField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ['name', 'condition']
+
+    def __str__(self):
+        return '%s (%s)' % (self.name, self.condition)

@@ -32,9 +32,12 @@ from ESP.hef import events # Ensure events are loaded
 from ESP.utils import utils as util
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
+from ESP.static.models import Icd9
 from ESP.conf.models import STATUS_CHOICES
 from ESP.conf.models import CodeMap
 from ESP.conf.models import ReportableLab
+from ESP.conf.models import ReportableIcd9
+from ESP.conf.models import ReportableMedication
 from ESP.conf.models import IgnoredCode
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
@@ -44,6 +47,7 @@ from ESP.emr.models import Patient
 from ESP.emr.models import Provider
 from ESP.hef import events
 from ESP.hef.core import BaseHeuristic
+from ESP.hef.core import EncounterHeuristic
 from ESP.hef.models import Event
 from ESP.conf.models import ConditionConfig
 
@@ -1292,6 +1296,14 @@ class Case(models.Model):
     #
     events = models.ManyToManyField(Event, blank=False) # The events that caused this case to be generated
     past_events = models.ManyToManyField(Event, blank=False, related_name='past_events') # The events that caused this case to be generated
+    
+    #
+    # ConditionConfig object
+    #
+    def __get_condition_config(self):
+        return ConditionConfig.objects.get(name=self.condition)
+    condition_config = property(__get_condition_config)
+    
     #
     # Events by class
     #
@@ -1319,6 +1331,18 @@ class Case(models.Model):
         log_query('Reportable labs for %s' % self, labs)
         return labs
     reportable_labs = property(__get_reportable_labs)
+    
+    def __get_reportable_encounters(self):
+        for name in Condition.get_condition(self.condition).heuristics:
+            heuristic_obj = BaseHeuristic.get_heuristic(name)
+            icd9_objs = Icd9.objects.none()
+            if isinstance(heuristic_obj, EncounterHeuristic):
+                icd9_objs |= heuristic_obj.icd9_objects
+            icd9_objs |= Icd9.objects.filter(reportableicd9__condition=self.condition_config)
+        encs = Encounter.objects.filter(icd9_codes__in=icd9_objs)
+        log_query('Encounters for %s' % self, encs)
+        return encs
+    reportable_encounters = property(__get_reportable_encounters)
     
     class Meta:
         permissions = [ ('view_phi', 'Can view protected health information'), ]

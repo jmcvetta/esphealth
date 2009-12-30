@@ -33,6 +33,7 @@ from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.conf.models import CodeMap
 from ESP.static.models import Loinc
+from ESP.static.models import Icd9
 from ESP.hef.models import Event
 from ESP.hef.models import Run
 from ESP import settings
@@ -252,7 +253,7 @@ class BaseHeuristic(object):
                 return heuristic
 
     def __repr__(self):
-        return '<BaseHeuristic: %s>' % self.name
+        return '<%s: %s>' % (type(self), self.name)
     
     def __get_relevant_labs(self):
         '''
@@ -564,28 +565,30 @@ class EncounterHeuristic(BaseHeuristic):
         self.icd9s = icd9s
         assert match_style in ['exact', 'startswith', 'iexact', 'istartswith']
         self.match_style = match_style
-        BaseHeuristic.__init__(self,
+        super(EncounterHeuristic, self).__init__(
             name = name,
             long_name = long_name,
             )
 
+    def __get_icd9_objects(self):
+        q_obj = Q()
+        for code in self.icd9s:
+            if self.match_style == 'exact':
+                q_obj |= Q(code__exact = code)
+            elif self.match_style == 'iexact':
+                q_obj |= Q(code__iexact = code)
+            elif self.match_style == 'startswith':
+                q_obj |= Q(code__startswith = code)
+            elif self.match_style == 'istartswith':
+                q_obj |= Q(code__istartswith = code)
+        return Icd9.objects.filter(q_obj)
+    icd9_objects = property(__get_icd9_objects)
+    
     def __get_enc_q(self):
         '''
         Returns a Q object to select all Encounters indicated by self.icd9s
         '''
-        enc_q = Q()
-        for code in self.icd9s:
-            if self.match_style == 'exact':
-                enc_q |= Q(icd9_codes__code__exact = code)
-            elif self.match_style == 'iexact':
-                enc_q |= Q(icd9_codes__code__iexact = code)
-            elif self.match_style == 'startswith':
-                enc_q |= Q(icd9_codes__code__startswith = code)
-            elif self.match_style == 'istartswith':
-                enc_q |= Q(icd9_codes__code__istartswith = code)
-            else:
-                raise RuntimeError('Match style "%s" requested.  This should never happen.  Contact developers.' % self.match_style)
-        return enc_q
+        return Q(icd9_codes__in=self.icd9_objects)
     enc_q = property(__get_enc_q)
 
     def encounters(self, exclude_bound=True):
@@ -600,13 +603,14 @@ class EncounterHeuristic(BaseHeuristic):
             q_obj = ~Q(events__name=self.name)
             qs = qs.filter(q_obj)
         qs = qs.filter(self.enc_q)
+        log_query('Encounters for %s' % self, qs )
         return qs
 
     def matches(self, exclude_bound=True):
         qs = self.encounters(exclude_bound=exclude_bound)
         log_query('Query for heuristic %s' % self.name, qs)
         return qs
-
+        
 
 class FeverHeuristic(BaseHeuristic):
     '''
