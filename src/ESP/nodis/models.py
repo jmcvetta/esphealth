@@ -1348,8 +1348,14 @@ class Case(models.Model):
         heuristics = Condition.get_condition(self.condition).heuristics
         reportable_codes = set( ReportableLab.objects.filter(condition=self.condition).values_list('native_code', flat=True) )
         reportable_codes |= set( CodeMap.objects.filter(heuristic__in=heuristics, reportable=True).values_list('native_code', flat=True) )
-        q_obj = Q(native_code__in=reportable_codes, patient=self.patient)
-        labs = LabResult.objects.filter(q_obj)
+        q_obj = Q(patient=self.patient)
+        q_obj &= Q(native_code__in=reportable_codes)
+        conf = self.condition_config
+        start = self.date - datetime.timedelta(days=conf.lab_days_before)
+        end = self.date + datetime.timedelta(days=conf.lab_days_after)
+        q_obj &= Q(date__gte=start)
+        q_obj &= Q(date__lte=end)
+        labs = LabResult.objects.filter(q_obj).distinct()
         log_query('Reportable labs for %s' % self, labs)
         return labs
     reportable_labs = property(__get_reportable_labs)
@@ -1361,12 +1367,20 @@ class Case(models.Model):
     reportable_icd9s = property(__get_reportable_icd9s)
     
     def __get_reportable_encounters(self):
-        encs = Encounter.objects.filter(patient=self.patient, icd9_codes__in=self.reportable_icd9s)
+        q_obj = Q(patient=self.patient)
+        q_obj &= Q(icd9_codes__in=self.reportable_icd9s)
+        conf = self.condition_config
+        start = self.date - datetime.timedelta(days=conf.icd9_days_before)
+        end = self.date + datetime.timedelta(days=conf.icd9_days_after)
+        q_obj &= Q(date__gte=start)
+        q_obj &= Q(date__lte=end)
+        encs = Encounter.objects.filter(q_obj)
         log_query('Encounters for %s' % self, encs)
         return encs
     reportable_encounters = property(__get_reportable_encounters)
     
     def __get_reportable_prescriptions(self):
+        conf = self.condition_config
         med_names = Condition.get_condition(self.condition).medications
         med_names |= set( ReportableMedication.objects.filter(condition=self.condition_config).values_list('drug_name', flat=True) )
         if not med_names:
@@ -1376,7 +1390,11 @@ class Case(models.Model):
         for med in med_names:
             q_obj |= Q(name__icontains=med)
         q_obj &= Q(patient=self.patient)
-        prescriptions = Prescription.objects.filter(q_obj)
+        start = self.date - datetime.timedelta(days=conf.med_days_before)
+        end = self.date + datetime.timedelta(days=conf.med_days_after)
+        q_obj &= Q(date__gte=start)
+        q_obj &= Q(date__lte=end)
+        prescriptions = Prescription.objects.filter(q_obj).distinct()
         log_query('Reportable prescriptions for %s' % self, prescriptions)
         return prescriptions
     reportable_prescriptions = property(__get_reportable_prescriptions)
