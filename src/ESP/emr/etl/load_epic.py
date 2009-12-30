@@ -396,7 +396,8 @@ class LabResultLoader(BaseLoader):
         l.result_string = res
         try:
             rf = float(res.replace(',', '')) # Strip commas for values like "1,000,000"
-            # Database cannot handle infinite values (which are also typically an incorrect interpretation of the result string)
+            # Database cannot handle infinite values (which are also typically 
+            # an incorrect interpretation of the result string)
             if not rf == float('infinity'):
                 l.result_float = rf
         except ValueError:
