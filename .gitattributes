@@ -153,7 +153,6 @@ src/ESP/nodis/forms.py -text
 src/ESP/nodis/mdph_xml.py -text
 src/ESP/nodis/mdph_xml_experimental.py -text
 src/ESP/nodis/models.py -text
-src/ESP/nodis/old_case_report.py -text
 src/ESP/nodis/patient_report.py -text
 src/ESP/nodis/run.py -text
 src/ESP/nodis/tests.py -text
