@@ -479,8 +479,7 @@ class hl7Batch:
                 except: ##all other gender
                     icd9 = ['099.41']
                     
-        # icd9 is a QuerySet
-        for i in icd9.values_list('code', flat=True): 
+        for i in icd9:
             obr31 = self.casesDoc.createElement('OBR.31') 
             self.addSimple(obr31,i,'CE.1')   
             self.addSimple(obr31,condition,'CE.2')
@@ -1039,7 +1038,7 @@ W 	White"""
 
 
 def main():
-    cases = Case.objects.filter(pk=55)
+    cases = Case.objects.filter(pk=1353)
     #cases = Case.objects.all()
     batch = hl7Batch(nmessages=cases.count())
     for case in cases:
