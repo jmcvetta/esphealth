@@ -44,7 +44,7 @@ from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.nodis import defs
-from ESP.nodis.core import Condition
+from ESP.nodis.models import Condition
 from ESP.nodis.models import Case
 from ESP.nodis.models import STATUS_CHOICES
 
