@@ -148,7 +148,6 @@ src/ESP/mh_chlamydia_2.py -text
 src/ESP/nodis/__init__.py -text
 src/ESP/nodis/admin.py -text
 src/ESP/nodis/case_reporter.py -text
-src/ESP/nodis/core.py -text
 src/ESP/nodis/defs.py -text
 src/ESP/nodis/forms.py -text
 src/ESP/nodis/mdph_xml.py -text

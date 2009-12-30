@@ -56,6 +56,61 @@ class CodeMap(models.Model):
         return msg
 
 
+class IgnoredCode(models.Model):
+    '''
+    Codes to be ignored by nodis.core.Condition.find_unmapped_tests()
+    '''
+    native_code = models.CharField(max_length=100, blank=False, unique=True)
+    
+    def __str__(self):
+        return self.native_code
+
+
+
+class NativeVaccine(models.Model):
+    code = models.IntegerField(primary_key=True)
+    name = models.CharField(max_length=200)
+    canonical_code = models.ForeignKey(Vaccine, null=True)
+
+    def __unicode__(self):
+        return u'%s' % self.name
+
+
+class NativeManufacturer(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    canonical_code = models.ForeignKey(ImmunizationManufacturer, null=True)
+
+    def __unicode__(self):
+        return u'%s' % self.name
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#--- Nodis Configuration
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+STATUS_CHOICES = [
+    ('AR', 'Awaiting Review'),
+    ('UR', 'Under Review'),
+    ('RM', 'Review by MD'),
+    ('FP', 'False Positive - Do NOT Process'),
+    # Only fields before this point will be included in on-screen case status menu
+    ('Q',  'Confirmed Case, Transmit to Health Department'), 
+    ('S',  'Transmitted to Health Department'),
+    ('NO', 'Do NOT send cases'),
+    ]
+
+
+class ConditionConfig(models.Model):
+    '''
+    A condition detected by Nodis.  Currently this model is used only for 
+    controlling the initial status of newly created cases.
+    '''
+    name = models.CharField(max_length=255, primary_key=True)
+    initial_status = models.CharField(max_length=8, choices=STATUS_CHOICES, blank=False, default='AR')
+
+
+
 class ReportableLab(models.Model):
     '''
     Additional lab tests to be reported for a given condition, in addition to 
@@ -83,33 +138,5 @@ class ReportableLab(models.Model):
     def __str__(self):
         msg = '%s (%s) --> %s' % (self.native_name, self.native_code, self.condition)
         return msg
-
-
-class IgnoredCode(models.Model):
-    '''
-    Codes to be ignored by nodis.core.Condition.find_unmapped_tests()
-    '''
-    native_code = models.CharField(max_length=100, blank=False, unique=True)
-    
-    def __str__(self):
-        return self.native_code
-
-
-
-class NativeVaccine(models.Model):
-    code = models.IntegerField(primary_key=True)
-    name = models.CharField(max_length=200)
-    canonical_code = models.ForeignKey(Vaccine, null=True)
-
-    def __unicode__(self):
-        return u'%s' % self.name
-
-
-class NativeManufacturer(models.Model):
-    name = models.CharField(max_length=200, unique=True)
-    canonical_code = models.ForeignKey(ImmunizationManufacturer, null=True)
-
-    def __unicode__(self):
-        return u'%s' % self.name
 
 

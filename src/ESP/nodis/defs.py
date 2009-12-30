@@ -13,8 +13,8 @@
 from ESP.emr.models import Patient
 from ESP.hef import events # Load events
 from ESP.hef.core import BaseHeuristic
-from ESP.nodis.core import ComplexEventPattern
-from ESP.nodis.core import Condition
+from ESP.nodis.models import ComplexEventPattern
+from ESP.nodis.models import Condition
 from ESP.settings import DEFAULT_REPORTABLE_ICD9S
 from django.db import connection
 import pprint
