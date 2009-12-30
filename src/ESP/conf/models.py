@@ -59,7 +59,7 @@ class CodeMap(models.Model):
 
 class IgnoredCode(models.Model):
     '''
-    Codes to be ignored by nodis.core.Condition.find_unmapped_tests()
+    Codes to be ignored by nodis.model.Condition.find_unmapped_tests()
     '''
     native_code = models.CharField(max_length=100, blank=False, unique=True)
     

@@ -55,7 +55,7 @@ from ESP.emr.models import Provenance
 #from ESP.emr.models import Hl7Message
 from ESP.nodis.models import Case
 from ESP.nodis import defs
-from ESP.nodis.core import Condition
+from ESP.nodis.models import Condition
 from ESP.utils.utils import log
 
 
