@@ -109,6 +109,13 @@ LabResultHeuristic(
     negative_events = True,
     )
 
+LabResultHeuristic(
+    name = 'hav_tot',
+    long_name = 'Hepatitis A Total Antibodies',
+    positive_events = False,
+    negative_events = True,
+    )
+
 #--- hep_b_igm
 LabResultHeuristic(
     name = 'hep_b_igm',
