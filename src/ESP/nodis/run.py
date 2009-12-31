@@ -52,9 +52,14 @@ def main():
         for name in args:
             if name not in all_condition_names:
                 sys.stderr.write("Unknown condition: '%s'.  Exiting.\n" % name)
-            conditions.add(Condition.get_condition(name))
+            con = Condition.get_condition(name)
+            assert con, 'Unknown condition: %s' % name
+            conditions.add(con)
     else:
         conditions = Condition.all_conditions()
+    #
+    # (Re)generate Cases
+    #
     for c in conditions:
         if options.regenerate:
             c.regenerate()
