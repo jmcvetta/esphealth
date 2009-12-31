@@ -267,6 +267,14 @@ no_hep_b_surf = ComplexEventPattern(
         ]
     )
 
+no_hep_a = ComplexEventPattern(
+    patterns = [
+        'hep_a_igm_neg',
+        'hav_tot_neg', # Hep A total antibodies
+        ],
+    operator = 'or'
+    )
+
 no_hep_b = ComplexEventPattern(
     patterns = [
         'hep_b_igm_neg',
@@ -281,7 +289,7 @@ hep_c_1 = ComplexEventPattern(
     patterns = [
         jaundice_alt400,    # (1 or 2)
         'hep_c_elisa_pos',  # 3 positive
-        'hep_a_igm_neg',    # 7 negative
+        no_hep_a,           # (7 negative or 11 negative)
         no_hep_b,           # (8 negative or 9 non-reactive)
         ],
     exclude = [
@@ -303,7 +311,7 @@ hep_c_2 = ComplexEventPattern(
     patterns = [
         jaundice_alt400,    # (1 or 2)
         'hep_c_rna_pos',    # 6 positive
-        'hep_a_igm_neg',    # 7 negative
+        no_hep_a,           # (7 negative or 11 negative)
         no_hep_b,           # (8 negative or 9 non-reactive)
         ],
     exclude = [
