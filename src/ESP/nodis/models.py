@@ -137,7 +137,8 @@ class Window(object):
                 self.__patient = e.patient
             self._check_event(e)
             self.__events += [e]
-        self.past_events = None
+        self.events_after = None
+        self.events_before = None
         win_size = self.end - self.start
         assert win_size.days >= 0
         log.debug('Initialized %s day window # %s with %s events' % (win_size.days, id(self), len(events)))
@@ -467,7 +468,11 @@ class ComplexEventPattern(BaseEventPattern):
     An event pattern composed of one or more SimpleEventPattern or 
     ComplexEventPattern instances.  
     '''
-    def __init__(self, operator, patterns, name=None, require_past=[], require_past_window=None, exclude=[], exclude_past=[]):
+    def __init__(self, operator, patterns, name=None, 
+        require_before=[], require_before_window=None, 
+        require_after=[], require_after_window=None, 
+        exclude=[], exclude_past=[]
+        ):
         '''
         @param operator: Logical operator for combining patterns 
         @type operator:  String ('and' or 'or')
@@ -475,10 +480,14 @@ class ComplexEventPattern(BaseEventPattern):
         @type patterns:  String naming heuristic Event, or ComplexEventPattern instance
         @param name: Name of this pattern (optional)
         @type name:  String
-        @param require_past: Require these events in past
-        @type require_past:  String naming a heuristic Event
-        @param require_past_window: Optionally limit require_past look back to this many days before event window
-        @type require_past_window:  Integer (number of days)
+        @param require_before: Require these events in past
+        @type require_before:  String naming a heuristic Event that must have occurred before event window
+        @param require_before_window: Optionally limit require_before look back to this many days before event window
+        @type require_before_window:  Integer (number of days)
+        @param require_after: Require these events in past
+        @type require_after:  String naming a heuristic Event that must have occurred after event window
+        @param require_after_window: Optionally limit require_after look back to this many days after event window
+        @type require_after_window:  Integer (number of days)
         @param exclude: Exclude this pattern within match window
         @type exclude:  String naming heuristic Event, or ComplexEventPattern instance
         @param exclude_past: Exclude these events in past
@@ -509,23 +518,30 @@ class ComplexEventPattern(BaseEventPattern):
             else:
                 raise InvalidPattern('%s [%s]' % (pat, type(pat)))
         count = {} # Count of plausible events per req
-        for name in require_past + exclude_past:
+        for name in require_before + require_after + exclude_past:
             if not name in  valid_event_names:
                 log.error('"%s" not in valid heuristic Event names:' % name)
                 log.error('\t%s' % valid_event_names)
                 raise InvalidPattern('%s [%s]' % (name, type(name)))
-        self.require_past = require_past
-        if require_past_window:
-            self.require_past_window = datetime.timedelta(days=require_past_window)
+        self.require_before = require_before
+        self.require_after = require_after
+        if require_before_window:
+            self.require_before_window = datetime.timedelta(days=require_before_window)
         else:
-            self.require_past_window = None
+            self.require_before_window = None
+        if require_after_window:
+            self.require_after_window = datetime.timedelta(days=require_after_window)
+        else:
+            self.require_after_window = None
         self.exclude_past = exclude_past
         self.__pattern_obj = None # Cache 
         log.debug('Initializing new ComplexEventPattern instance')
         log.debug('    operator:    %s' % operator)
         log.debug('    patterns:    %s' % patterns)
-        log.debug('    require_past:  %s' % require_past)
-        log.debug('    require_past_window:  %s' % require_past_window)
+        log.debug('    require_before:  %s' % require_before)
+        log.debug('    require_before_window:  %s' % require_before_window)
+        log.debug('    require_after:  %s' % require_after)
+        log.debug('    require_after_window:  %s' % require_after_window)
         log.debug('    exclude:  %s' % exclude)
         log.debug('    exclude_past:  %s' % exclude_past)
     
@@ -538,14 +554,22 @@ class ComplexEventPattern(BaseEventPattern):
                 h += '(%s)' % ' or '.join([pat.string_hash for pat in self.exclude])
             else:
                 h += '%s' % self.exclude[0].string_hash
-        if self.require_past:
-            h += ' REQUIRE PAST '
-            if len(self.require_past) > 1:
-                h += '(%s)' % op_delim.join([pat.string_hash for pat in self.require_past])
+        if self.require_before:
+            h += ' REQUIRE BEFORE '
+            if len(self.require_before) > 1:
+                h += '(%s)' % op_delim.join([pat.string_hash for pat in self.require_before])
             else:
-                h += '%s' % self.require_past[0]
-        if self.require_past_window:
-            h += ' WITHIN %s DAYS ' % self.require_past_window.days
+                h += '%s' % self.require_before[0]
+        if self.require_before_window:
+            h += ' WITHIN %s DAYS ' % self.require_before_window.days
+        if self.require_after:
+            h += ' REQUIRE AFTER '
+            if len(self.require_after) > 1:
+                h += '(%s)' % op_delim.join([pat.string_hash for pat in self.require_after])
+            else:
+                h += '%s' % self.require_after[0]
+        if self.require_after_window:
+            h += ' WITHIN %s DAYS ' % self.require_after_window.days
         if self.exclude_past:
             h += ' EXCLUDE PAST '
             if len(self.exclude_past) > 1:
@@ -566,7 +590,7 @@ class ComplexEventPattern(BaseEventPattern):
                 plausible = plausible & pat.plausible_patients(exclude_condition)
             else: # 'or'
                 plausible = plausible | pat.plausible_patients(exclude_condition)
-        for event_name in self.require_past:
+        for event_name in self.require_before + self.require_after:
             plausible = plausible & Patient.objects.filter(event__name=event_name).distinct()
         log_query('Plausible patients for ComplexEventPattern "%s", exclude %s' % (self, exclude_condition), plausible)
         if EXCLUDE_XB_NAMES:
@@ -710,11 +734,11 @@ class ComplexEventPattern(BaseEventPattern):
     
     def _check_constaints(self, win):
         '''
-        Checks a Window object against 'require_past', 'exclude', and
+        Checks a Window object against 'require_before', 'exclude', and
         'exclude_past' constraints.  Returns window if all constraints are
-        passed; otherwise returns False.  If a 'require_past' constraint is
+        passed; otherwise returns False.  If a 'require_before' constraint is
         passed, relevant past events are added to the Window object's
-        past_events list.
+        events_before list.  Likewise 'require_after'.
         @param win: Window to check
         @type win:  Window instance
         '''
@@ -730,25 +754,50 @@ class ComplexEventPattern(BaseEventPattern):
                 return False
             else:
                 log.debug('Patient %s was not excluded by past events' % win.patient)
-        if self.require_past:
-            require_q = Q(patient=win.patient, name__in=self.require_past, date__lt=win.start)
-            if self.require_past_window:
-                lookback_start = win.start - self.require_past_window
+        #
+        # Required Before
+        #
+        if self.require_before:
+            require_q = Q(patient=win.patient, name__in=self.require_before, date__lt=win.start)
+            if self.require_before_window:
+                lookback_start = win.start - self.require_before_window
                 require_q &= Q(date__gte=lookback_start)
-            required_past = Event.objects.filter(require_q)
-            log_query('Check require_past', required_past)
-            if required_past.count() == 0:
-                log.debug('%s excluded by lack of required past events:' % win)
-                for e in self.require_past:
+            required_events = Event.objects.filter(require_q)
+            log_query('Check require_before', required_events)
+            if required_events.count() == 0:
+                log.debug('%s excluded by lack of require_before events:' % win)
+                for e in self.require_before:
                     log.debug('    %s' % e)
                 return False
             else:
-                log.debug('Patient %s has required past events' % win.patient)
+                log.debug('Patient %s has require_before events' % win.patient)
                 log.debug('Adding events to window %s' % id(win))
-                if win.past_events:
-                    win.past_events = win.past_events | Event.objects.filter(require_q)
+                if win.events_before:
+                    win.events_before = win.events_before | required_events
                 else:
-                    win.past_events = Event.objects.filter(require_q)
+                    win.events_before = required_events
+        #
+        # Required After
+        #
+        if self.require_before:
+            require_q = Q(patient=win.patient, name__in=self.require_before, date__gt=win.end)
+            if self.require_before_window:
+                lookahead_start = win.end + self.require_before_window
+                require_q &= Q(date__gte=lookahead_start)
+            required_events = Event.objects.filter(require_q)
+            log_query('Check require_before', required_events)
+            if required_events.count() == 0:
+                log.debug('%s excluded by lack of require_after events:' % win)
+                for e in self.require_before:
+                    log.debug('    %s' % e)
+                return False
+            else:
+                log.debug('Patient %s has require_after events' % win.patient)
+                log.debug('Adding events to window %s' % id(win))
+                if win.events_after:
+                    win.events_after = win.events_after | required_events
+                else:
+                    win.events_after = required_events
         #
         # Since self.exclude can include ComplexEventPatterns, it is by far the
         # most computationally expensive constraint check.  So we test it only 
@@ -802,7 +851,7 @@ class ComplexEventPattern(BaseEventPattern):
             events |= pat.event_names
         for pat in self.exclude:
             events |= pat.event_names
-        events |= set(self.require_past)
+        events |= set(self.require_before)
         events |= set(self.exclude_past)
         return events
     event_names = property(__get_event_names)
@@ -1005,8 +1054,11 @@ class Condition(object):
         case.status = ConditionConfig.objects.get(name=self.name).initial_status
         case.save()
         case.events = window.events
-        if window.past_events: # May be NoneType, so we can't rely on it being acceptable for ManyToManyField
-            case.past_events = window.past_events
+        if window.events_before: # May be NoneType, so we can't rely on it being acceptable for ManyToManyField
+            case.events_before = window.events_before
+        if window.events_after: # May be NoneType, so we can't rely on it being acceptable for ManyToManyField
+            case.events_after = window.events_after
+        # TODO: Do we need to add events_after here?
         case.save()
         log.info('Created new %s case # %s for patient # %s based on %s' % (self.name, case.pk, case.patient.pk, window))
         return case
@@ -1317,8 +1369,9 @@ class Case(models.Model):
     # Events that define this case
     #
     events = models.ManyToManyField(Event, blank=False) # The events that caused this case to be generated
-    past_events = models.ManyToManyField(Event, blank=False, related_name='past_events') # The events that caused this case to be generated
-    
+    # TODO: rename to events_before
+    events_before = models.ManyToManyField(Event, blank=False, related_name='events_before') # The events that caused this case to be generated, but occured before the event window
+    events_after = models.ManyToManyField(Event, blank=False, related_name='events_after') # The events that caused this case to be generated, but occurred after the event window
     #
     # ConditionConfig object
     #
@@ -1329,19 +1382,20 @@ class Case(models.Model):
     #
     # Events by class
     #
+    def __get_all_events(self):
+        return self.events.all() | self.events_before.all() | self.events_before.all()
+    all_events = property(__get_all_events)
+    
     def __get_lab_results(self):
-        e = self.events.all() | self.past_events.all()
-        return LabResult.objects.filter(events__in=e).order_by('date')
+        return LabResult.objects.filter(events__in=self.all_events).order_by('date')
     lab_results = property(__get_lab_results)
     
     def __get_encounters(self):
-        e = self.events.all() | self.past_events.all()
-        return Encounter.objects.filter(events__in=e).order_by('date')
+        return Encounter.objects.filter(events__in=self.all_events).order_by('date')
     encounters = property(__get_encounters)
     
     def __get_prescriptions(self):
-        e = self.events.all() | self.past_events.all()
-        return Prescription.objects.filter(events__in=e).order_by('date')
+        return Prescription.objects.filter(events__in=self.all_events).order_by('date')
     prescriptions = property(__get_prescriptions)
     
     def __get_reportable_labs(self):
