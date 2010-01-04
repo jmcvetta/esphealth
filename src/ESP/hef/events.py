@@ -295,6 +295,13 @@ EncounterHeuristic(
     long_name = 'Tuberculosis diagnosis',
     icd9s = [
         '010.',
+        '011.',
+        '012.',
+        '013.',
+        '014.',
+        '015.',
+        '016.',
+        '017.',
         '018.',
         ],
     match_style = 'startswith',
