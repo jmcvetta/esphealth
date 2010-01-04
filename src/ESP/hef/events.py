@@ -290,6 +290,27 @@ MedicationHeuristic(
     exclude = ['CAPZA',]
     )
 
+MedicationHeuristic(
+    name = 'tb_secondary_meds',
+    long_name = 'Tuberculosis secondary medications',
+    drugs = [
+        'Isoniazid',
+        'Ethambutol', 
+        'Rifampin', 
+        'Rifabutin', 
+        'Rifapentine', 
+        'Pyrazinamide',
+        'Streptomycin', 
+        'Para-aminosalicyclic acid', 
+        'Kanamycin', 
+        'Capreomycin', 
+        'Cycloserine', 
+        'Ethionamide', 
+        'Moxifloxacin', 
+        ],
+    exclude = ['CAPZA', 'INHAL', 'INHIB']
+    )
+
 EncounterHeuristic(
     name = 'tb_diagnosis',
     long_name = 'Tuberculosis diagnosis',
