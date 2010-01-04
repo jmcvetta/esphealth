@@ -11,10 +11,6 @@ from hl7.segments import MSH, PID, ORC, OBR, OBX
 from hl7.nodes import VaccineDetail, PriorVaccinationDetail
 from hl7.nodes import VaersProjectIdentification
 
-from rules import VACCINE_MAPPING, MANUFACTURER_MAPPING
-
-
-
 UNKNOWN_VACCINE = Vaccine.objects.get(short_name='unknown')
 UNKNOWN_MANUFACTURER = ImmunizationManufacturer.objects.get(code='UNK')
 
@@ -42,7 +38,7 @@ class AdverseReactionReport(object):
 
     def make_PID(self):
         
-        patient = self.event.patient()
+        patient = self.event.patient
         pid = PID()
 
         pid.patient_internal_id = [patient.patient_id_num]
@@ -60,18 +56,25 @@ class AdverseReactionReport(object):
         obr_fda_report = OBR()
         obr_fda_report.universal_service_id = 'CDC VAERS-1 (FDA) Report'
         obr_fda_report.observation_date = utils.str_from_date(self.event.date)
+
+        observation_results = []
+                
+
         
-        obx_patient_age = OBX()
-        obx_patient_age.value_type = 'NM'
-        obx_patient_age.identifier = ['21612-7', 'Reported Patient Age', 'LN']
-        age = self.event.patient().age_str
-        if age.endswith('Months'):
-            obx_patient_age.value = age.split()[0]       
-            obx_patient_age.units = ['mo', 'month', 'ANSI']
-        else:
-            obx_patient_age.value = age  
-            obx_patient_age.units = ['yr', 'year', 'ANSI']
-        obx_patient_age.observation_result_status = 'F'
+        age = self.event.patient.age_str
+        if age:
+            obx_patient_age = OBX()
+            obx_patient_age.value_type = 'NM'
+            obx_patient_age.identifier = ['21612-7', 'Reported Patient Age', 'LN']
+            if age.endswith('Months'):
+                obx_patient_age.value = age.split()[0]       
+                obx_patient_age.units = ['mo', 'month', 'ANSI']
+            else:
+                obx_patient_age.value = age  
+                obx_patient_age.units = ['yr', 'year', 'ANSI']
+            obx_patient_age.observation_result_status = 'F'
+            observation_results.append(obx_patient_age)
+        
 
 
         obx_form = OBX()
@@ -79,6 +82,7 @@ class AdverseReactionReport(object):
         obx_form.identifier = ['30947-6', 'Date form completed', 'LN']
         obx_form.value = utils.str_from_date(self.event.last_updated)
         obx_form.observation_result_status = 'F'
+        observation_results.append(obx_form)
 
         obx_treatment = OBX()
         obx_treatment.value_type = 'FT'
@@ -86,6 +90,7 @@ class AdverseReactionReport(object):
         obx_treatment.subsequence_id = 1
         obx_treatment.value = self.event.matching_rule_explain
         obx_treatment.observation_result_status = 'F'
+        observation_results.append(obx_treatment)
         
         obx_vaccination = OBX()
         obx_vaccination.value_type = 'TS'
@@ -93,16 +98,16 @@ class AdverseReactionReport(object):
         obx_vaccination.value = utils.str_from_date(
             max([x.date for x in self.event.immunizations.all()]))
         obx_vaccination.observation_result_status = 'F'
+        observation_results.append(obx_vaccination)
 
         obx_date = OBX()
         obx_date.value_type = 'TS'
-        obx_date.identifier = ['30953-4', 'Adverse event onset date and time',
-                               'LN']
+        obx_date.identifier = ['30953-4', 'Adverse event onset date and time', 'LN']
         obx_date.value = utils.str_from_date(self.event.date)
         obx_date.observation_result_status = 'F'
+        observation_results.append(obx_date)
 
-        observation_results = [obx_patient_age, obx_form, obx_treatment, 
-                               obx_vaccination, obx_date]
+
 
 
         return SegmentTree(obr_fda_report, observation_results)

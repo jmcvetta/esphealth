@@ -1,10 +1,11 @@
 # Adverse events are indicated though reports of fever, lab results
 # and icd9 codes that are present in patient encounters.
+import sys
 import pdb
 import optparse
 import datetime
 
-from django.db.models import Q, Max
+from django.db.models import Q, F, Max
 from django.contrib.contenttypes.models import ContentType
 
 from ESP.hef.core import BaseHeuristic
@@ -139,13 +140,17 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         candidates = Encounter.objects.following_vaccination(rules.TIME_WINDOW_POST_EVENT).filter(
             date__gte=begin, date__lte=end, icd9_codes__in=self.icd9s).distinct()
 
+        
         if self.discarding_icd9s:
-            candidates = [x for x in candidates 
-                          if not x.patient.has_history_of(self.discarding_icd9s, end_date=end)]
+            candidates = candidates.exclude(patient=F('patient'), date__lt=F('date'), 
+                                            icd9_codes__in=list(self.discarding_icd9s))         
 
         if self.ignored_if_past_occurrence:
-            months = self.ignored_if_past_occurrence
-            candidates = [x for x in candidates if not x.is_reoccurrence(month_period=months)]
+            days_ago = 30 * int(self.ignored_if_past_occurrence)
+            candidates = candidates.exclude(patient=F('patient'), 
+                                            date__lt=F('date'), date__gte=F('date') - days_ago,
+                                            icd9_codes__in=list(self.icd9s))
+
 
         return candidates
 
@@ -155,6 +160,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         counter = 0
 
         matches = self.matches(**kw)
+        log.info('Found %d matches' % matches.count())
         encounter_type = ContentType.objects.get_for_model(EncounterEvent)
 
         for e in matches:
@@ -236,16 +242,10 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 return False
 
         
+        begin = kw.get('begin_date') or EPOCH
+        end = kw.get('end_date') or datetime.date.today()
         
-        incremental = kw.get('incremental', False)
-        
-        last_run = Run.objects.filter(status='s').aggregate(ts=Max('timestamp'))['ts']
-        
-        begin = (incremental and last_run) or kw.get('begin_date') or EPOCH
-        end = kw.get('end_date', None) or datetime.date.today()
-
         days = rules.TIME_WINDOW_POST_EVENT
-
                 
         trigger = self.criterium['trigger']
         comparator, baseline = self.criterium['exclude_if']
@@ -260,11 +260,8 @@ class VaersLxHeuristic(AdverseEventHeuristic):
     def generate_events(self, **kw):
         log.info('Generating events for %s' % self.name)
         counter = 0
-
-        incremental = kw.get('incremental', False)
-        last_run = Run.objects.filter(status='s').aggregate(ts=Max('timestamp'))['ts'] or EPOCH
         
-        begin_date = kw.get('begin_date', None) or last_run
+        begin_date = kw.get('begin_date', None) or EPOCH
         end_date = kw.get('end_date', None) or datetime.date.today()
 
         matches = self.matches(**kw)
@@ -421,7 +418,6 @@ def main():
 
     if not (options.fever or options.diagnostics or options.lx):
         parser.print_help()
-        import sys
         sys.exit()
 
 

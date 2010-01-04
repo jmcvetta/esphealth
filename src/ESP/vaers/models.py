@@ -61,6 +61,14 @@ class AdverseEventManager(models.Manager):
         return self.filter(auto | confirmed | to_report_by_default)
 
 
+class EncounterEventManager(models.Manager):
+    def fevers(self):
+        return self.filter(matching_rule_explain__startswith='Patient had')
+    
+    def icd9_events(self):
+        return self.exclude(matching_rule_explain__startswith='Patient had')
+
+
 class AdverseEvent(models.Model):
 
     # Model Fields
@@ -388,8 +396,9 @@ class AdverseEvent(models.Model):
         from hl7_report import AdverseReactionReport
         return AdverseReactionReport(self).render()
 
-    def save_hl7_message_file(self):
-        outfile = open(os.path.join(HL7_MESSAGES_DIR, 'report.%07d.hl7' % self.id), 'w')
+    def save_hl7_message_file(self, folder=None):
+        folder = folder or HL7_MESSAGES_DIR
+        outfile = open(os.path.join(folder, 'report.%07d.hl7' % self.id), 'w')
         outfile.write(self.render_hl7_message())
         outfile.close()
 
@@ -397,6 +406,7 @@ class AdverseEvent(models.Model):
             
             
 class EncounterEvent(AdverseEvent):
+    objects = EncounterEventManager()
     encounter = models.ForeignKey(Encounter)
 
     @staticmethod
@@ -406,8 +416,8 @@ class EncounterEvent(AdverseEvent):
         begin_date = kw.pop('begin_date', None) or EPOCH
         end_date = kw.pop('end_date', None) or datetime.datetime.today()
 
-        fever_events = EncounterEvent.objects.filter(matching_rule_explain__startswith='Patient had',
-                                                     date__gte=begin_date, date__lte=end_date, gap__lte=7)
+        fever_events = EncounterEvent.objects.fevers().filter(
+            date__gte=begin_date, date__lte=end_date, gap__lte=7)
 
         within_interval = [e for e in fever_events 
                            if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
@@ -424,8 +434,8 @@ class EncounterEvent(AdverseEvent):
         end_date = kw.pop('end_date', None) or datetime.datetime.today()
 
 
-        icd9_events = EncounterEvent.objects.exclude(matching_rule_explain__startswith='Patient had',
-                                                     date__gte=begin_date, date__lte=end_date, gap__lte=30)
+        icd9_events = EncounterEvent.objects.icd9_events().filter(
+            date__gte=begin_date, date__lte=end_date, gap__lte=30)
 
         within_interval = [e for e in icd9_events 
                            if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
