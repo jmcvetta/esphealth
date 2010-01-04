@@ -50,6 +50,7 @@ def __get_logger():
 log = __get_logger()
 #===============================================================================
 
+
 def log_query(purpose, qs):
     '''
     Log the SQL query that will be use to evaluate a queryset.
@@ -59,11 +60,16 @@ def log_query(purpose, qs):
     @type qs:  QuerySet instance
     '''
     assert isinstance(qs, QuerySet)
-    sql = str(qs.query)
+    # If qs returns no result, then str(qs.query) throws an exception.  Hideous.
+    try:
+        sql = str(qs.query)
+    except:
+        log.debug('Django problems - could not render SQL for empty QuerySet')
+        return
     try:
         formatted = '\n' + sqlparse.format(sql, reindent=True)
     except: # Sometimes Django produces invalid SQL
-        log.debug('Invalid SQL produced by sq.query -- unable to pretty print')
+        log.debug('Invalid SQL produced by qs.query -- unable to pretty print')
         formatted = sql
     log.debug(purpose)
     log.debug(formatted)
