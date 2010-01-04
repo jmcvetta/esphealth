@@ -59,9 +59,7 @@ def log_query(purpose, qs):
     @type qs:  QuerySet instance
     '''
     assert isinstance(qs, QuerySet)
-    statement, args = qs.query.as_sql()
-    quoted_args = tuple(["'%s'" % a for a in args])
-    sql = statement % quoted_args
+    sql = str(qs.query)
     formatted = '\n' + sqlparse.format(sql, reindent=True)
     log.debug(purpose)
     log.debug(formatted)
