@@ -812,12 +812,12 @@ class ComplexEventPattern(BaseEventPattern):
         # Required Ever
         #
         if self.require_ever:
-            require_q = Q(patient=win.patient, name__in=self.require_before)
+            require_q = Q(patient=win.patient, name__in=self.require_ever)
             required_events = Event.objects.filter(require_q)
             log_query('Check require_ever', required_events)
             if required_events.count() == 0:
                 log.debug('%s excluded by lack of require_ever events:' % win)
-                for e in self.require_before:
+                for e in self.require_ever:
                     log.debug('    %s' % e)
                 return False
             else:
