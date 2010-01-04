@@ -689,12 +689,12 @@ class ComplexEventPattern(BaseEventPattern):
                 queue = list(queue)
                 queue.sort()
                 for win in queue:
-                    win = self._check_constaints(win)
-                    if win:
-                        log.debug('Yielding %s' % win)
-                        yield win
+                    new_win = self._check_constaints(win)
+                    if new_win:
+                        log.debug('Yielding %s' % new_win)
+                        yield new_win
                     else:
-                        log.debug('Constraint check failed for %s' % win)
+                        log.debug('Window %s failed constraint checks' % win)
         elif self.operator == 'or':
             for pattern in self.patterns:
                 for win in pattern.generate_windows(days=days, patients=patients, exclude_condition=exclude_condition):
