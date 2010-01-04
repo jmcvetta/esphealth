@@ -600,8 +600,12 @@ class ComplexEventPattern(BaseEventPattern):
                 plausible = plausible & pat.plausible_patients(exclude_condition)
             else: # 'or'
                 plausible = plausible | pat.plausible_patients(exclude_condition)
-        for event_name in self.require_before + self.require_after + self.require_ever:
-            plausible = plausible & Patient.objects.filter(event__name=event_name).distinct()
+        all_required_events = (self.require_before + self.require_after + self.require_ever)
+        if all_required_events:
+            q_obj = Q(event__name=all_required_events[0])
+            for name in all_required_events[1:]:
+                q_obj = q_obj | Q(event__name=name)
+            plausible = plausible & Patient.objects.filter(q_obj).distinct()
         log_query('Plausible patients for ComplexEventPattern "%s", exclude %s' % (self, exclude_condition), plausible)
         if EXCLUDE_XB_NAMES:
 	        #
@@ -789,16 +793,16 @@ class ComplexEventPattern(BaseEventPattern):
         #
         # Required After
         #
-        if self.require_before:
-            require_q = Q(patient=win.patient, name__in=self.require_before, date__gt=win.end)
+        if self.require_after:
+            require_q = Q(patient=win.patient, name__in=self.require_after, date__gt=win.end)
             if self.require_before_window:
                 lookahead_start = win.end + self.require_before_window
                 require_q &= Q(date__gte=lookahead_start)
             required_events = Event.objects.filter(require_q)
-            log_query('Check require_before', required_events)
+            log_query('Check require_after', required_events)
             if required_events.count() == 0:
                 log.debug('%s excluded by lack of require_after events:' % win)
-                for e in self.require_before:
+                for e in self.require_after:
                     log.debug('    %s' % e)
                 return False
             else:
