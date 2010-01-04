@@ -26,8 +26,12 @@ cursor = connection.cursor()
 VERSION = '0.2'
 DO_VALIDATE = 1 # set to zero to avoid the validation step
 REJECT_INVALID = 1 # don't process if any errors - usually are missing provider so ignore
-emailToList = ['rerla@channing.harvard.edu', 'jason.mcvetta@channing.harvard.edu','raphael.lullis@channing.harvard.edu'] 
-#emailToLIst += ['rexua@channing.harvard.edu','mklompas@partners.org','julie_dunn@harvardpilgrim.org',]
+emailToList = [
+    'ross.lazarus@channing.harvard.edu', 
+    'jason.mcvetta@channing.harvard.edu',
+    'raphael.lullis@channing.harvard.edu', 
+    'mklompas@partners.org',
+    ] 
 
 today=datetime.datetime.now().strftime('%Y%m%d')
 
