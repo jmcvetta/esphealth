@@ -139,6 +139,7 @@ class Window(object):
             self.__events += [e]
         self.events_after = None
         self.events_before = None
+        self.events_ever = None
         win_size = self.end - self.start
         assert win_size.days >= 0
         log.debug('Initialized %s day window # %s with %s events' % (win_size.days, id(self), len(events)))
@@ -471,7 +472,7 @@ class ComplexEventPattern(BaseEventPattern):
     def __init__(self, operator, patterns, name=None, 
         require_before=[], require_before_window=None, 
         require_after=[], require_after_window=None, 
-        exclude=[], exclude_past=[]
+        require_ever=[], exclude=[], exclude_past=[]
         ):
         '''
         @param operator: Logical operator for combining patterns 
@@ -488,6 +489,7 @@ class ComplexEventPattern(BaseEventPattern):
         @type require_after:  String naming a heuristic Event that must have occurred after event window
         @param require_after_window: Optionally limit require_after look back to this many days after event window
         @type require_after_window:  Integer (number of days)
+        @param require_ever: String naming event that must have occurred at some point, irrelevant of when
         @param exclude: Exclude this pattern within match window
         @type exclude:  String naming heuristic Event, or ComplexEventPattern instance
         @param exclude_past: Exclude these events in past
@@ -518,13 +520,14 @@ class ComplexEventPattern(BaseEventPattern):
             else:
                 raise InvalidPattern('%s [%s]' % (pat, type(pat)))
         count = {} # Count of plausible events per req
-        for name in require_before + require_after + exclude_past:
+        for name in require_before + require_after + require_ever + exclude_past:
             if not name in  valid_event_names:
                 log.error('"%s" not in valid heuristic Event names:' % name)
                 log.error('\t%s' % valid_event_names)
                 raise InvalidPattern('%s [%s]' % (name, type(name)))
         self.require_before = require_before
         self.require_after = require_after
+        self.require_ever = require_ever
         if require_before_window:
             self.require_before_window = datetime.timedelta(days=require_before_window)
         else:
@@ -542,6 +545,7 @@ class ComplexEventPattern(BaseEventPattern):
         log.debug('    require_before_window:  %s' % require_before_window)
         log.debug('    require_after:  %s' % require_after)
         log.debug('    require_after_window:  %s' % require_after_window)
+        log.debug('    require_ever:  %s' % require_ever)
         log.debug('    exclude:  %s' % exclude)
         log.debug('    exclude_past:  %s' % exclude_past)
     
@@ -557,19 +561,25 @@ class ComplexEventPattern(BaseEventPattern):
         if self.require_before:
             h += ' REQUIRE BEFORE '
             if len(self.require_before) > 1:
-                h += '(%s)' % op_delim.join([pat.string_hash for pat in self.require_before])
+                h += '(%s)' % op_delim.join([str(pat) for pat in self.require_before])
             else:
                 h += '%s' % self.require_before[0]
-        if self.require_before_window:
-            h += ' WITHIN %s DAYS ' % self.require_before_window.days
+            if self.require_before_window:
+                h += ' WITHIN %s DAYS ' % self.require_before_window.days
         if self.require_after:
             h += ' REQUIRE AFTER '
             if len(self.require_after) > 1:
-                h += '(%s)' % op_delim.join([pat.string_hash for pat in self.require_after])
+                h += '(%s)' % op_delim.join([str(pat) for pat in self.require_after])
             else:
                 h += '%s' % self.require_after[0]
-        if self.require_after_window:
-            h += ' WITHIN %s DAYS ' % self.require_after_window.days
+            if self.require_after_window:
+                h += ' WITHIN %s DAYS ' % self.require_after_window.days
+        if self.require_ever:
+            h += ' REQUIRE EVER '
+            if len(self.require_ever) > 1:
+                h += '(%s)' % op_delim.join([str(pat) for pat in self.require_ever])
+            else:
+                h += '%s' % self.require_ever[0]
         if self.exclude_past:
             h += ' EXCLUDE PAST '
             if len(self.exclude_past) > 1:
@@ -590,7 +600,7 @@ class ComplexEventPattern(BaseEventPattern):
                 plausible = plausible & pat.plausible_patients(exclude_condition)
             else: # 'or'
                 plausible = plausible | pat.plausible_patients(exclude_condition)
-        for event_name in self.require_before + self.require_after:
+        for event_name in self.require_before + self.require_after + self.require_ever:
             plausible = plausible & Patient.objects.filter(event__name=event_name).distinct()
         log_query('Plausible patients for ComplexEventPattern "%s", exclude %s' % (self, exclude_condition), plausible)
         if EXCLUDE_XB_NAMES:
@@ -799,6 +809,25 @@ class ComplexEventPattern(BaseEventPattern):
                 else:
                     win.events_after = required_events
         #
+        # Required Ever
+        #
+        if self.require_ever:
+            require_q = Q(patient=win.patient, name__in=self.require_before)
+            required_events = Event.objects.filter(require_q)
+            log_query('Check require_ever', required_events)
+            if required_events.count() == 0:
+                log.debug('%s excluded by lack of require_ever events:' % win)
+                for e in self.require_before:
+                    log.debug('    %s' % e)
+                return False
+            else:
+                log.debug('Patient %s has require_ever events' % win.patient)
+                log.debug('Adding events to window %s' % id(win))
+                if win.events_ever:
+                    win.events_ever = win.events_ever | required_events
+                else:
+                    win.events_ever = required_events
+        #
         # Since self.exclude can include ComplexEventPatterns, it is by far the
         # most computationally expensive constraint check.  So we test it only 
         # after all other constraints have passed.
@@ -852,6 +881,8 @@ class ComplexEventPattern(BaseEventPattern):
         for pat in self.exclude:
             events |= pat.event_names
         events |= set(self.require_before)
+        events |= set(self.require_after)
+        events |= set(self.require_ever)
         events |= set(self.exclude_past)
         return events
     event_names = property(__get_event_names)
@@ -1058,6 +1089,8 @@ class Condition(object):
             case.events_before = window.events_before
         if window.events_after: # May be NoneType, so we can't rely on it being acceptable for ManyToManyField
             case.events_after = window.events_after
+        if window.events_ever: # May be NoneType, so we can't rely on it being acceptable for ManyToManyField
+            case.events_ever = window.events_ever
         # TODO: Do we need to add events_after here?
         case.save()
         log.info('Created new %s case # %s for patient # %s based on %s' % (self.name, case.pk, case.patient.pk, window))
@@ -1322,7 +1355,6 @@ class Condition(object):
         '''
         all_strings = cls.all_test_name_search_strings()
         mapped_codes = CodeMap.objects.values('native_code').distinct()
-        print mapped_codes
         ignored_codes = IgnoredCode.objects.values('native_code').distinct()
         q_obj = Q(native_name__icontains=all_strings[0])
         for string in all_strings[1:]:
@@ -1372,6 +1404,7 @@ class Case(models.Model):
     # TODO: rename to events_before
     events_before = models.ManyToManyField(Event, blank=False, related_name='events_before') # The events that caused this case to be generated, but occured before the event window
     events_after = models.ManyToManyField(Event, blank=False, related_name='events_after') # The events that caused this case to be generated, but occurred after the event window
+    events_ever = models.ManyToManyField(Event, blank=False, related_name='events_ever') # The events that caused this case to be generated, but occurred after the event window
     #
     # ConditionConfig object
     #
@@ -1383,7 +1416,7 @@ class Case(models.Model):
     # Events by class
     #
     def __get_all_events(self):
-        return self.events.all() | self.events_before.all() | self.events_before.all()
+        return self.events.all() | self.events_before.all() | self.events_after.all() | self.events_ever.all()
     all_events = property(__get_all_events)
     
     def __get_lab_results(self):
