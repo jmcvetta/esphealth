@@ -60,7 +60,11 @@ def log_query(purpose, qs):
     '''
     assert isinstance(qs, QuerySet)
     sql = str(qs.query)
-    formatted = '\n' + sqlparse.format(sql, reindent=True)
+    try:
+        formatted = '\n' + sqlparse.format(sql, reindent=True)
+    except: # Sometimes Django produces invalid SQL
+        log.debug('Invalid SQL produced by sq.query -- unable to pretty print')
+        formatted = sql
     log.debug(purpose)
     log.debug(formatted)
 
