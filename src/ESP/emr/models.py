@@ -3,7 +3,7 @@
                      Electronic Medical Records Warehouse
                                   Data Models
 
-@authors: Jason McVetta <jason.mcvetta@gmail.com>
+@authors: Jason McVetta <jason.mcvetta@gmail.com>, Raphael Lullis <raphael.lullis@gmail.com>
 @organization: Channing Laboratory http://www.channing.harvard.edu
 @copyright: (c) 2009 Channing Laboratory
 @license: LGPL
@@ -191,20 +191,6 @@ class Provider(BaseMedicalRecord):
     tel_numeric = property(__get_tel_numeric)
 
 
-
-class Site(BaseMedicalRecord):
-    code = models.CharField(max_length=20, primary_key=True)
-    name = models.CharField(max_length=200, unique=True)
-    zip_code = models.CharField(max_length=10, db_index=True)
-
-    @staticmethod
-    def site_ids(zip_code=None):
-        sites = Site.objects.filter(zip_code=zip_code) if zip_code else Site.objects.all() 
-        return sites.values_list('code', flat=True)
-
-
-
-
 class Patient(BaseMedicalRecord):
     '''
     A patient, with demographic information
@@ -345,9 +331,9 @@ class Patient(BaseMedicalRecord):
         '''
         begin_date = begin_date or self.date_of_birth or EPOCH
         end_date = end_date or datetime.date.today()
-        return Encounter.objects.filter(patient=self).filter(
+        return self.encounters().filter(
             date__gte=begin_date, date__lt=end_date
-            ).filter(icd9_codes__in=icd9s).count() != 0
+            ).filter(icd9_codes__in=list(icd9s)).count() != 0
 
     phone_number = property(lambda x: '(%s) %s' % (x.areacode, x.tel))
     
@@ -713,7 +699,7 @@ class LabResult(BasePatientRecord):
                 'code': self.order_num,
                 'date': (self.date and self.date.isoformat()) or None
                 },
-            'loinc': self.loinc_num,
+            'code': self.output_code,
             'reference': {
                 'low':self.ref_low_float,
                 'high':self.ref_high_float,
@@ -854,6 +840,9 @@ class EncounterManager(models.Manager):
         if sites: qs = qs.filter(native_site_num__in=sites)
         return qs
 
+
+    
+
 class Encounter(BasePatientRecord):
     '''
     A encounter between provider and patient
@@ -865,7 +854,6 @@ class Encounter(BasePatientRecord):
     status = models.CharField(max_length=20, blank=True, null=True)
     closed_date = models.DateField(blank=True, null=True)
     site_name = models.CharField(max_length=100, blank=True, null=True)
-    site = models.ForeignKey(Site, null=True)
     native_site_num = models.CharField('Site Id #', max_length=30, blank=True, null=True)
     native_encounter_num = models.CharField('Encounter ID #', max_length=20, blank=True, null=True)
     event_type = models.CharField(max_length=20, blank=True, null=True, db_index=True)
