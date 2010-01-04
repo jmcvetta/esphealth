@@ -221,8 +221,8 @@ hep_b_3 = ComplexEventPattern(
     name = 'Hepatitis B definition 3',
     patterns = ['hep_b_surface_pos'],
     operator = 'and', # Meaningless w/ only one pattern
-    require_past = ['hep_b_surface_neg'],
-    require_past_window = 365, # 1 year
+    require_before = ['hep_b_surface_neg'],
+    require_before_window = 365, # 1 year
     exclude = ['chronic_hep_b'],
     exclude_past = ['chronic_hep_b', 'hep_b_surface_pos', 'hep_b_viral_dna_pos'],
     )
@@ -330,16 +330,16 @@ hep_c_2 = ComplexEventPattern(
 hep_c_3 = ComplexEventPattern(
     name = 'Acute Hepatitis C pattern (c)',
     patterns = ['hep_c_rna_pos'],
-    require_past = ['hep_c_elisa_neg'],
-    require_past_window = 365,
+    require_before = ['hep_c_elisa_neg'],
+    require_before_window = 365,
     operator = 'and',
     )
 
 hep_c_4 = ComplexEventPattern(
     name = 'Acute Hepatitis C pattern (d)',
     patterns = ['hep_c_elisa_pos'],
-    require_past = ['hep_c_elisa_neg'],
-    require_past_window = 365,
+    require_before = ['hep_c_elisa_neg'],
+    require_before_window = 365,
     operator = 'and',
     )
 
@@ -499,15 +499,40 @@ pid = Condition(
 # Active Tuberculosis (TB)
 #
 
+# Definition (a)
 tb_1 = ComplexEventPattern(
     patterns = ['tb_meds'],
     operator = 'and'
+    )
+
+tb_diagnosis_before = ComplexEventPattern(
+    patterns = ['tb_lab_order'],
+    operator = 'and', # n/a
+    require_before = ['tb_diagnosis'],
+    require_before_window = 14,
+    )
+
+tb_diagnosis_after = ComplexEventPattern(
+    patterns = ['tb_lab_order'],
+    operator = 'and', # n/a
+    require_after = ['tb_diagnosis'],
+    require_after_window = 60,
+    )
+
+# Definition (b)
+tb_2 = ComplexEventPattern(
+    patterns = [
+        tb_diagnosis_before,
+        tb_diagnosis_after,
+        ],
+    operator = 'or',
     )
 
 tb = Condition(
     name = 'tb',
     patterns = [
         (tb_1, 1),
+        (tb_2, 1),
         ],
     recur_after = -1, # Never
     test_name_search = ['myco', 'afb', 'tb', 'tuber',], 
