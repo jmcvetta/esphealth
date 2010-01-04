@@ -603,20 +603,14 @@ syphilis_diagnosis_or_meds = ComplexEventPattern(
     operator = 'and',
     )
 
-syphilis_secondary_tests = ComplexEventPattern(
-    patterns = [
+syphilis_tests = ComplexEventPattern(
+    patterns = ['rpr_pos',],
+    operator = 'and',
+    require_ever = [
+        # Operator is 'OR'
         'ttpa_pos',
         'fta_abs_pos',
         ],
-    operator = 'or',
-    )
-
-syphilis_tests = ComplexEventPattern(
-    patterns = [
-        'rpr_pos',
-        syphilis_secondary_tests,
-        ],
-    operator = 'and',
     )
 
 
