@@ -59,12 +59,12 @@ def log_query(purpose, qs):
     @type qs:  QuerySet instance
     '''
     assert isinstance(qs, QuerySet)
-
-    # statement, args = qs.query.as_sql() # as_sql apparently was removed from latest Django
-    # quoted_args = tuple(["'%s'" % a for a in args])
-    # sql = statement % quoted_args
-    # formatted = '\n' + sqlparse.format(sql, reindent=True)
-    formatted = qs.query.__str__
+    sql = str(qs.query)
+    try:
+        formatted = '\n' + sqlparse.format(sql, reindent=True)
+    except: # Sometimes Django produces invalid SQL
+        log.debug('Invalid SQL produced by sq.query -- unable to pretty print')
+        formatted = sql
     log.debug(purpose)
     log.debug(formatted)
 
@@ -195,20 +195,6 @@ def str_from_date(date):
         return date.strftime('%Y%m%d')
     except ValueError: # ValueError: year=1898 is before 1900; the datetime strftime() methods require year >= 1900
         return datetime.date(1900,1,1).strftime('%Y%m%d')
-
-
-def make_date_folders(basefolder, begin_date, end_date):
-    same_year = (begin_date.year == end_date.year)
-    same_month = same_year and (begin_date.month == end_date.month)
-    same_day = same_month and (begin_date.day == end_date.day)
-
-    if same_year: basefolder = os.path.join(basefolder, '%04d' % begin_date.year)
-    if same_month: basefolder = os.path.join(basefolder, '%02d' % begin_date.month)
-    if same_day: basefolder = os.path.join(basefolder, '%02d' % begin_date.day)
-
-    if not os.path.isdir(basefolder): os.makedirs(basefolder)
-    return basefolder
-
         
 
 
