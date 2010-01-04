@@ -160,7 +160,8 @@ def validate(options):
             log.debug('begin date: %s' % begin_date)
             log.debug('end date: %s' % end_date)
             similar_date_cases = cases.filter(date__gte=begin_date, date__lte=end_date)
-        similar_date_cases |= cases.filter(past_events__date=ref.date)
+        similar_date_cases |= cases.filter(events_before__date=ref.date)
+        similar_date_cases |= cases.filter(events_after__date=ref.date)
         log_query('Similar date query', similar_date_cases)
         if similar_date_cases.count():
             log.debug('Found case with similar date: %s' % similar_date_cases[0].date)
