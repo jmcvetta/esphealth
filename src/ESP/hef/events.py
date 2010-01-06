@@ -319,13 +319,13 @@ MedicationHeuristic(
     )
 
 MedicationHeuristic(
-    name = 'steptomycin',
-    long_name = 'Steptomycin prescription',
+    name = 'streptomycin',
+    long_name = 'Streptomycin prescription',
     drugs = ['Streptomycin'],
     )
 
 MedicationHeuristic(
-    name = 'para_aminosalicylic_acid',
+    name = 'para_aminosalicyclic_acid',
     long_name = 'Para-aminosalicyclic acid prescription',
     drugs = ['Para-aminosalicyclic acid'],
     )
