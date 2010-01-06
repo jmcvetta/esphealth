@@ -173,6 +173,7 @@ src/ESP/ss/main.py -text
 src/ESP/ss/models.py -text
 src/ESP/ss/reports.py -text
 src/ESP/ss/run.py -text
+src/ESP/ss/satscan.py -text
 src/ESP/ss/settings.py -text
 src/ESP/ss/templates/xml/gipse-metadata.xml -text
 src/ESP/ss/templates/xml/gipse-response.xml -text
@@ -224,6 +225,7 @@ src/ESP/templates/espheader.png -text
 src/ESP/templates/espheader150.gif -text
 src/ESP/templates/espheader2.png -text
 src/ESP/templates/esplogo.gif -text
+src/ESP/templates/files/satscan.conf -text
 src/ESP/templates/fixture_builders/adverse_event.json -text
 src/ESP/templates/login.html -text
 src/ESP/templates/nav-bg-grabber.gif -text
