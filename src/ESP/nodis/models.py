@@ -608,11 +608,11 @@ class ComplexEventPattern(BaseEventPattern):
             plausible = plausible & Patient.objects.filter(q_obj).distinct()
         log_query('Plausible patients for ComplexEventPattern "%s", exclude %s' % (self, exclude_condition), plausible)
         if EXCLUDE_XB_NAMES:
-	        #
-	        # DEBUG:  Remove me when done debugging!!!!!
-	        #
-	        last_name_q = ~Q(last_name__istartswith='xb')
-	        plausible = plausible.filter(last_name_q)
+            #
+            # DEBUG:  Remove me when done debugging!!!!!
+            #
+            last_name_q = ~Q(last_name__istartswith='xb')
+            plausible = plausible.filter(last_name_q)
         return plausible
     
     def plausible_events(self, patients=None, exclude_condition=None):
@@ -891,6 +891,72 @@ class ComplexEventPattern(BaseEventPattern):
         return events
     event_names = property(__get_event_names)
 
+
+class TuberculosisDefC(BaseEventPattern):
+    '''
+    TB definition (c), 
+    '''
+    
+    SECONDARY_MED_EVENTS = [
+        'isoniazid',
+        'ethambutol', 
+        'rifampin', 
+        'rifabutin', 
+        'rifapentine', 
+        'pyrazinamide',
+        'streptomycin', 
+        'para_aminosalicyclic_acid', 
+        'kanamycin', 
+        'capreomycin', 
+        'cycloserine', 
+        'ethionamide', 
+        'moxifloxacin', 
+        ]
+    
+    def __init__(self):
+        self.name = 'tb_def_c'
+        self.__pattern_obj = None
+    
+    def generate_windows(self, days, patients=None, exclude_condition=None):
+        diagnosed_patients = Patient.objects.filter(event__name='tb_diagnosis').exclude(case__condition='tb')
+        for pat in diagnosed_patients.distinct().order_by('pk'):
+            q_obj = Q(name='tb_diagnosis') & ~Q(case__condition='tb') & Q(patient=pat)
+            for diagnosis in Event.objects.filter(q_obj).order_by('date'):
+                start = diagnosis.date - datetime.timedelta(days=60)
+                end = diagnosis.date + datetime.timedelta(days=60)
+                med_events = Event.objects.filter(patient=pat, date__gte=start, date__lte=end, 
+                    name__in=self.SECONDARY_MED_EVENTS)
+                cnt = med_events.values_list('name', flat=True).distinct().count()
+                if not cnt >= 2:
+                    continue
+                else:
+                    yield Window(121, med_events)
+                    break
+
+    def plausible_patients(self, exclude_condition=None):
+        q_obj_1 = Q(event__name='tb_diagnosis') & ~Q(case__condition='tb')
+        q_obj_2 = Q(event__name__in=self.SECONDARY_MED_EVENTS) & ~Q(case__condition='tb')
+        qs = Patient.objects.filter(q_obj_1).distinct() & Patient.objects.filter(q_obj_2).distinct()
+        log_query('Plausible patients for tb', qs)
+        return qs
+
+    def __get_pattern_object(self):
+        '''
+        Returns a Pattern model instance representing this pattern.
+        '''
+        string_hash = '(tb_def_c)'
+        if not self.__pattern_obj:
+            hash = hashlib.sha224(string_hash).hexdigest()
+            try: 
+                pat = Pattern.objects.get(hash=hash)
+            except Pattern.DoesNotExist:
+                pat = Pattern(pattern=string_hash, hash=hash, name=self.name)
+                pat.save()
+            self.__pattern_obj = pat
+        return self.__pattern_obj
+    pattern_obj = property(__get_pattern_object)
+    
+    
 
 class Condition(object):
     '''

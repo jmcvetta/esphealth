@@ -14,6 +14,7 @@ from ESP.emr.models import Patient
 from ESP.hef import events # Load events
 from ESP.hef.core import BaseHeuristic
 from ESP.nodis.models import ComplexEventPattern
+from ESP.nodis.models import TuberculosisDefC
 from ESP.nodis.models import Condition
 from ESP.settings import DEFAULT_REPORTABLE_ICD9S
 from django.db import connection
@@ -500,9 +501,11 @@ pid = Condition(
 #
 
 # Definition (a)
-tb_1 = ComplexEventPattern(
-    patterns = ['tb_meds'],
-    operator = 'and'
+tb_a = ComplexEventPattern(
+    patterns = [
+        'pyrazinamide',
+        ],
+    operator = 'or'
     )
 
 tb_diagnosis_before = ComplexEventPattern(
@@ -520,7 +523,7 @@ tb_diagnosis_after = ComplexEventPattern(
     )
 
 # Definition (b)
-tb_2 = ComplexEventPattern(
+tb_b = ComplexEventPattern(
     patterns = [
         tb_diagnosis_before,
         tb_diagnosis_after,
@@ -528,54 +531,17 @@ tb_2 = ComplexEventPattern(
     operator = 'or',
     )
 
+tb_c = TuberculosisDefC()
+
 tb = Condition(
     name = 'tb',
     patterns = [
-        (tb_1, 1),
-        (tb_2, 1),
+        (tb_a, 1),
+        (tb_b, 1),
+        (tb_c, 1),
         ],
     recur_after = -1, # Never
     test_name_search = ['myco', 'afb', 'tb', 'tuber',], 
-#    icd9s = [
-#        '786.50',
-#        '786.51',
-#        '786.52',
-#        '786.53',
-#        '786.54',
-#        '786.55',
-#        '786.56',
-#        '786.57',
-#        '786.58',
-#        '786.59',
-#        '783.2',
-#        '783.21',
-#        '786.2',
-#        '795.5',
-#        ],
-#    icd9_days_before = 30,
-#    fever = True,
-#    lab_days_before = 30,
-#    med_names = [
-#        'Pyrazinamide',
-#        'PZA',
-#        'RIFAMPIN',
-#        'RIFAMATE',
-#        'Ethambutol',
-#        'Rifabutin',
-#        'Rifapentine',
-#        'Streptomycin',
-#        'Para-aminosalicyclic acid',
-#        'Kanamycin',
-#        'Capreomycin',
-#        'Cycloserine',
-#        'Ethionamide',
-#        'Levofloxacin',
-#        'Ciprofloxacin',
-#        'Moxifloxacin',
-#        'Gatifloxacin',
-#        'Azithromycin',
-#        ],
-#    med_days_before = 30,
     )
 
 
