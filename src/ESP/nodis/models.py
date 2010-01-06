@@ -929,8 +929,9 @@ class TuberculosisDefC(BaseEventPattern):
         self.pattern_obj = pat
     
     def generate_windows(self, days, patients=None, exclude_condition=None):
-        diagnosed_patients = Patient.objects.filter(event__name='tb_diagnosis').exclude(case__condition='tb')
-        for pat in diagnosed_patients.distinct().order_by('pk'):
+        if not patients:
+            patients = Patient.objects.filter(event__name='tb_diagnosis').exclude(case__condition='tb').distinct().order_by('pk')
+        for pat in patients:
             q_obj = Q(name='tb_diagnosis') & ~Q(case__condition='tb') & Q(patient=pat)
             for diagnosis in Event.objects.filter(q_obj).order_by('date'):
                 start = diagnosis.date - datetime.timedelta(days=60)
@@ -1230,15 +1231,15 @@ class Condition(object):
             queue.sort() # Sort by ascending date, then by descending number of bound events
             log.debug('sorted queue: %s' % queue)
             log.debug('sorted queue dates: %s' % [win.date for win in queue])
-            if self.recur_after == -1:
-                log.debug('Disease cannot recur, so limiting queue to the earliest window')
-                queue = [queue[0]]
-            else:
-                log.debug('Examining queue')
             #
             # Now we have a queue of cases that do not overlap existing (in db) 
             # cases.  Let's winnow down that queue to a list of valid windows.
             #
+            if self.recur_after == -1:
+                log.debug('Disease cannot recur, so limiting yield to the earliest window')
+                valid_windows = [valid_windows[0]]
+            else:
+                log.debug('Examining queue')
             valid_windows = [queue[0]]
             for win in queue[1:]:
                 log.debug('valid windows: %s' % valid_windows)
