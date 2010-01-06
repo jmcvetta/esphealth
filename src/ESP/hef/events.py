@@ -278,37 +278,86 @@ EncounterHeuristic(
 #
 
 MedicationHeuristic(
-    name = 'tb_meds',
-    long_name = 'Tuberculosis medications',
+    name = 'pyrazinamide',
+    long_name = 'Pyrazinamide prescription',
     drugs = [
         'Pyrazinamide',
         'PZA',
-        #'RIFAMPIN',
-        #'RIFAMATE',
-        #'ISONARIF',
         ],
     exclude = ['CAPZA',]
     )
 
 MedicationHeuristic(
-    name = 'tb_secondary_meds',
-    long_name = 'Tuberculosis secondary medications',
-    drugs = [
-        'Isoniazid',
-        'Ethambutol', 
-        'Rifampin', 
-        'Rifabutin', 
-        'Rifapentine', 
-        'Pyrazinamide',
-        'Streptomycin', 
-        'Para-aminosalicyclic acid', 
-        'Kanamycin', 
-        'Capreomycin', 
-        'Cycloserine', 
-        'Ethionamide', 
-        'Moxifloxacin', 
-        ],
-    exclude = ['CAPZA', 'INHAL', 'INHIB']
+    name = 'isoniazid',
+    long_name = 'Isoniazid prescription',
+    drugs = ['Isoniazid'],
+    exclude = ['INHAL', 'INHIB']
+    )
+
+MedicationHeuristic(
+    name = 'ethambutol',
+    long_name = 'Ethambutol prescription',
+    drugs = ['Ethambutol'],
+    )
+
+MedicationHeuristic(
+    name = 'rifampin',
+    long_name = 'Rifampin prescription',
+    drugs = ['Rifampin'],
+    )
+
+MedicationHeuristic(
+    name = 'rifabutin',
+    long_name = 'Rifabutin prescription',
+    drugs = ['Rifabutin'],
+    )
+
+MedicationHeuristic(
+    name = 'rifapentine',
+    long_name = 'Rifapentine prescription',
+    drugs = ['Rifapentine'],
+    )
+
+MedicationHeuristic(
+    name = 'steptomycin',
+    long_name = 'Steptomycin prescription',
+    drugs = ['Streptomycin'],
+    )
+
+MedicationHeuristic(
+    name = 'para_aminosalicylic_acid',
+    long_name = 'Para-aminosalicyclic acid prescription',
+    drugs = ['Para-aminosalicyclic acid'],
+    )
+
+MedicationHeuristic(
+    name = 'kanamycin',
+    long_name = 'Kanamycin prescription',
+    drugs = ['Kanamycin'],
+    )
+
+MedicationHeuristic(
+    name = 'capreomycin',
+    long_name = 'Capreomycin prescription',
+    drugs = ['capreomycin'],
+    )
+
+MedicationHeuristic(
+    name = 'cycloserine',
+    long_name = 'Cycloserine prescription',
+    drugs = ['Cycloserine', ],
+    )
+
+MedicationHeuristic(
+    name = 'ethionamide',
+    long_name = 'Ethionamide prescription',
+    drugs = [ 'Ethionamide',  ],
+    )
+
+MedicationHeuristic(
+    name = 'moxifoxacin',
+    long_name = 'Moxifoxacin prescription',
+    drugs = ['Moxifloxacin', ],
     )
 
 EncounterHeuristic(
