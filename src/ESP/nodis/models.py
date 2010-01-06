@@ -895,7 +895,7 @@ class ComplexEventPattern(BaseEventPattern):
 class TuberculosisDefC(BaseEventPattern):
     '''
     TB definition (c).  
-    This is something of an ugly hack, and does not full  support the Nodis API.  
+    This is something of an ugly hack, and does not fully support the Nodis API.  
     Can't say how much work it would be, to make it possible to use this as a 
     regular BaseEventPattern child.
     '''
