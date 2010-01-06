@@ -355,8 +355,8 @@ MedicationHeuristic(
     )
 
 MedicationHeuristic(
-    name = 'moxifoxacin',
-    long_name = 'Moxifoxacin prescription',
+    name = 'moxifloxacin',
+    long_name = 'Moxifloxacin prescription',
     drugs = ['Moxifloxacin', ],
     )
 
