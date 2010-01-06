@@ -894,7 +894,10 @@ class ComplexEventPattern(BaseEventPattern):
 
 class TuberculosisDefC(BaseEventPattern):
     '''
-    TB definition (c), 
+    TB definition (c).  
+    This is something of an ugly hack, and does not full  support the Nodis API.  
+    Can't say how much work it would be, to make it possible to use this as a 
+    regular BaseEventPattern child.
     '''
     
     SECONDARY_MED_EVENTS = [
@@ -915,7 +918,15 @@ class TuberculosisDefC(BaseEventPattern):
     
     def __init__(self):
         self.name = 'tb_def_c'
-        self.__pattern_obj = None
+        self.string_hash = '(%s)' % self.name
+        self.event_names = set(['tb_diagnosis'] + self.SECONDARY_MED_EVENTS)
+        hash = hashlib.sha224(self.string_hash).hexdigest()
+        try: 
+            pat = Pattern.objects.get(hash=hash)
+        except Pattern.DoesNotExist:
+            pat = Pattern(pattern=self.string_hash, hash=hash, name=self.name)
+            pat.save()
+        self.pattern_obj = pat
     
     def generate_windows(self, days, patients=None, exclude_condition=None):
         diagnosed_patients = Patient.objects.filter(event__name='tb_diagnosis').exclude(case__condition='tb')
@@ -939,23 +950,6 @@ class TuberculosisDefC(BaseEventPattern):
         qs = Patient.objects.filter(q_obj_1).distinct() & Patient.objects.filter(q_obj_2).distinct()
         log_query('Plausible patients for tb', qs)
         return qs
-
-    def __get_pattern_object(self):
-        '''
-        Returns a Pattern model instance representing this pattern.
-        '''
-        string_hash = '(tb_def_c)'
-        if not self.__pattern_obj:
-            hash = hashlib.sha224(string_hash).hexdigest()
-            try: 
-                pat = Pattern.objects.get(hash=hash)
-            except Pattern.DoesNotExist:
-                pat = Pattern(pattern=string_hash, hash=hash, name=self.name)
-                pat.save()
-            self.__pattern_obj = pat
-        return self.__pattern_obj
-    pattern_obj = property(__get_pattern_object)
-    
     
 
 class Condition(object):
@@ -1398,6 +1392,7 @@ class Condition(object):
         heuristics = set()
         for event_name in self.relevant_event_names:
             h = BaseHeuristic.get_heuristic_from_event_name(event_name)
+            assert h, 'No heuristic found for "%s".' % event_name
             heuristics.add(h)
         heuristic_names = [h.name for h in heuristics]
         codes = CodeMap.objects.filter(heuristic__in=heuristic_names).values('native_code')
