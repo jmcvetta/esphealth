@@ -1237,7 +1237,7 @@ class Condition(object):
             #
             if self.recur_after == -1:
                 log.debug('Disease cannot recur, so limiting yield to the earliest window')
-                valid_windows = [valid_windows[0]]
+                queue = [queue[0]]
             else:
                 log.debug('Examining queue')
             valid_windows = [queue[0]]
