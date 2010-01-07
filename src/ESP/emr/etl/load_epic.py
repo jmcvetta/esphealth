@@ -149,9 +149,12 @@ class BaseLoader(object):
     def float_or_none(self, string):
         m = self.float_catcher.match(string)
         if m and m.groups():
-            return float(m.groups()[0])
+            result = float(m.groups()[0])
         else:
-            return None
+            result = None
+        if result == float('infinity'): # Rare edge case, but it does happen
+            result = None
+        return result
     
     def date_or_none(self, string):
         try:
@@ -394,24 +397,11 @@ class LabResultLoader(BaseLoader):
         l.native_name = row['component_name']
         res = row['result_string']
         l.result_string = res
-        try:
-            rf = float(res.replace(',', '')) # Strip commas for values like "1,000,000"
-            # Database cannot handle infinite values (which are also typically 
-            # an incorrect interpretation of the result string)
-            if not rf == float('infinity'):
-                l.result_float = rf
-        except ValueError:
-            pass # Not every result string is supposed to convert to a float, so this is okay
+        l.result_float = self.float_or_none(l.result_string)
         l.ref_low_string = row['ref_low']
         l.ref_high_string = row['ref_high']
-        try:
-            l.ref_low_float = float(row['ref_low'])
-        except:
-            pass
-        try:
-            l.ref_high_float = float(row['ref_high'])
-        except:
-            pass
+        l.ref_low_float = self.float_or_none(row['ref_low'])
+        l.ref_high_float = self.float_or_none(row['ref_high'])
         l.ref_unit = row['unit']
         l.abnormal_flag = row['normal_flag']
         l.status = row['status']
@@ -557,6 +547,7 @@ class PrescriptionLoader(BaseLoader):
         p.name = row['drug_name']
         p.code = row['ndc']
         p.quantity = row['quantity']
+        p.quantity_float = self.float_or_none(row['quantity'])
         p.refills = row['refills']
         p.start_date = self.date_or_none(row['start_date'])
         p.end_date = self.date_or_none(row['end_date'])
