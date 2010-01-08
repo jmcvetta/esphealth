@@ -23,7 +23,7 @@ def float_or_none(string):
     '''
     Copied from load_epic.py
     '''
-    m = self.float_catcher.match(string)
+    m = FLOAT_CATCHER.match(string)
     if m and m.groups():
         return float(m.groups()[0])
     else:
