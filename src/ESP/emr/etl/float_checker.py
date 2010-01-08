@@ -19,7 +19,7 @@ from ESP.utils.utils import log_query
     
 FLOAT_CATCHER = re.compile(r'(\d+\.?\d*)') 
 
-def float_or_none(self, string):
+def float_or_none(string):
     '''
     Copied from load_epic.py
     '''
