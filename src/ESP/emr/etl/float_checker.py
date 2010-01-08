@@ -29,6 +29,7 @@ def float_or_none(string):
     else:
         return None
 
+@transaction.commit_manually
 def check_prescriptions():
     i = 0
     qs = Prescription.objects.filter(quantity__isnull=False, quantity_float__isnull=True).order_by('pk')
@@ -39,14 +40,18 @@ def check_prescriptions():
         rx.quantity_float = float_or_none(rx.quantity)
         try:
             rx.save()
-            transaction.savepoint_commit(sid)
+            #transaction.savepoint_commit(sid)
+            transaction.commit()
         except:
             transaction.savepoint_rollback(sid)
             print 'ERROR: Could not process record # %s' % rx.pk
             continue
+        del rx
+        del sid
         print 'Rx  %20s/%s' % (i, tot)
 
 
+@transaction.commit_manually
 def check_labs():
     i = 0
     q_obj = Q(ref_high_string__isnull=False, ref_high_float__isnull=True)
@@ -63,7 +68,8 @@ def check_labs():
         lab.result_float = float_or_none(lab.result_string)
         try:
             lab.save()
-            transaction.savepoint_commit(sid)
+            #transaction.savepoint_commit(sid)
+            transaction.commit()
         except:
             transaction.savepoint_rollback(sid)
             print 'ERROR: Could not process record # %s' % lab.pk
