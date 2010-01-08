@@ -88,8 +88,8 @@ fi
 #
 #-------------------------------------------------------------------------------
 
-PYTHONPATH="$ESP_HOME/src"
-DJANGO_SETTINGS_MODULE="ESP.settings"
+export PYTHONPATH="$ESP_HOME/src"
+export DJANGO_SETTINGS_MODULE="ESP.settings"
 
 if [ "$LOADER" = "HL7" ]; then
     LOADER_CMD="emr/etl/load_hl7.py --new --input=$INCOMING_DATA"
