@@ -23,7 +23,7 @@ def float_or_none(string):
     '''
     Copied from load_epic.py
     '''
-    m = FLOAT_CATCHER.match(string)
+    m = FLOAT_CATCHER.match(str(string))
     if m and m.groups():
         return float(m.groups()[0])
     else:
@@ -57,10 +57,11 @@ def check_labs():
     q_obj = Q(ref_high_string__isnull=False, ref_high_float__isnull=True)
     q_obj |= Q(ref_low_string__isnull=False, ref_low_float__isnull=True)
     q_obj |= Q(result_string__isnull=False, result_float__isnull=True)
-    qs = LabResult.objects.filter(q_obj).order_by('pk')
-    log_query('Lab results to check for float results', qs)
+    qs = LabResult.objects.filter(q_obj)
+    #log_query('Lab results to check for float results', qs)
     tot = qs.count()
-    for lab in qs:
+    #tot = 0
+    for lab in qs.iterator():
         i += 1
         sid = transaction.savepoint()
         lab.ref_high_float = float_or_none(lab.ref_high_string)
