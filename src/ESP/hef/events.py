@@ -485,3 +485,44 @@ LabResultHeuristic(
     name = 'ogtt75_2hr',
     long_name = 'GLUCOSE 2 HR POST 75 GM',
     )
+
+
+LabResultHeuristic(
+    name = 'ogtt100_fasting',
+    long_name = 'GLUCOSE FASTING PRE 100 GM',
+    )
+
+LabResultHeuristic(
+    name = 'ogtt100_30m',
+    long_name = 'GLUCOSE 1/2 HR POST 100 GM',
+    )
+
+LabResultHeuristic(
+    name = 'ogtt100_1hr',
+    long_name = 'GLUCOSE 1 HR POST 100 GM',
+    )
+
+LabResultHeuristic(
+    name = 'ogtt100_90m',
+    long_name = 'GLUCOSE 1 1/2 HR POST 100 GM',
+    )
+
+LabResultHeuristic(
+    name = 'ogtt100_2hr',
+    long_name = 'GLUCOSE 2 HR POST 100 GM',
+    )
+
+LabResultHeuristic(
+    name = 'ogtt100_3hr',
+    long_name = 'GLUCOSE 3 HR POST 100 GM',
+    )
+
+LabResultHeuristic(
+    name = 'ogtt100_4hr',
+    long_name = 'GLUCOSE 4 HR POST 100 GM',
+    )
+
+LabResultHeuristic(
+    name = 'ogtt100_5hr',
+    long_name = 'GLUCOSE 5 HR POST 100 GM',
+    )
