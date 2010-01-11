@@ -18,18 +18,6 @@ from ESP.hef.core import WesternBlotHeuristic
 
 
 
-# These definitions do not necessarily *need* to be assigned to variables.  The mere
-# act of instantiating a BaseHeuristic instance causes that instance to be
-# registered with the heuristics framework, and therefore to be called by
-# BaseHeuristic.generate_all_events().  
-
-
-#===============================================================================
-#
-#--- ~~~ Encounter Heuristics ~~~
-#
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 #--- fever 
 FeverHeuristic(
     name = 'esp-fever',
