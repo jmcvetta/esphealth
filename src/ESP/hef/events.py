@@ -382,6 +382,8 @@ LabResultHeuristic(
     long_name = 'Tuberculosis lab order',
     order_events = True,
     )
+
+
 #
 #--- Syphilis 
 #
@@ -452,4 +454,34 @@ LabResultHeuristic(
         '1:512',
         '1:1024',
         ]
+    )
+
+
+#
+#--- Gestational Diabetes
+#
+
+LabResultHeuristic(
+    name = 'ogtt75_fasting',
+    long_name = 'GLUCOSE FASTING PRE 75 GM',
+    )
+
+LabResultHeuristic(
+    name = 'ogtt75_30m',
+    long_name = 'GLUCOSE 1/2 HR POST 75 GM',
+    )
+
+LabResultHeuristic(
+    name = 'ogtt75_1hr',
+    long_name = 'GLUCOSE 1 HR POST 75 GM',
+    )
+
+LabResultHeuristic(
+    name = 'ogtt75_90m',
+    long_name = 'GLUCOSE 1 1/2 HR POST 75 GM',
+    )
+
+LabResultHeuristic(
+    name = 'ogtt75_2hr',
+    long_name = 'GLUCOSE 2 HR POST 75 GM',
     )
