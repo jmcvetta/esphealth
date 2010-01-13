@@ -17,6 +17,12 @@ from ESP.hef.core import CalculatedBilirubinHeuristic
 from ESP.hef.core import WesternBlotHeuristic
 
 
+#===============================================================================
+#
+#--- ~~~ Encounter Heuristics ~~~
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 #--- fever 
 FeverHeuristic(
@@ -536,3 +542,11 @@ LabResultHeuristic(
     name = 'ogtt100_5hr',
     long_name = 'GLUCOSE 5 HR POST 100 GM',
     )
+
+EncounterHeuristic(
+    name = 'pregnancy_diagnosis',
+    long_name = 'Pregnancy (by ICD9)',
+    icd9s = ['V22.', 'V23.'],
+    match_style = 'startswith',
+    )
+
