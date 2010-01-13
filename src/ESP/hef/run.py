@@ -57,7 +57,9 @@ def main():
     # Main
     #
     if options.list:
-        for name in BaseHeuristic.list_heuristics():
+        h_names =  [h.name for h in BaseHeuristic.all_heuristics()]
+        h_names.sort()
+        for name in h_names:
             print name
         sys.exit()
     this_run = Run()

@@ -449,6 +449,8 @@ LabResultHeuristic(
 #--- Gestational Diabetes
 #
 
+# OGTT 50
+
 LabResultHeuristic(
     name = 'ogtt50_fasting',
     long_name = 'OB GLUCOSE CHALLENGE, FASTING',
@@ -463,6 +465,9 @@ LabResultHeuristic(
     name = 'ogtt50_1hr',
     long_name = 'GLUCOSE 1 HR POST CHAL.',
     )
+
+
+# OGTT 75
 
 LabResultHeuristic(
     name = 'ogtt75_fasting',
@@ -488,6 +493,9 @@ LabResultHeuristic(
     name = 'ogtt75_2hr',
     long_name = 'GLUCOSE 2 HR POST 75 GM',
     )
+
+
+# OGTT 100
 
 LabResultHeuristic(
     name = 'ogtt100_fasting',
