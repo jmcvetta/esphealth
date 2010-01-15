@@ -640,8 +640,8 @@ class Command(BaseCommand):
         input_filepaths = []
         print options
         if options['single_file']:
-            if not os.path.isfile(options.single_file):
-                sys.stderr.write('Invalid file path specified: %s' % options.single_file)
+            if not os.path.isfile(options['single_file']):
+                sys.stderr.write('Invalid file path specified: %s' % options['single_file'])
             input_filepaths = [options['single_file']]
         else:
             dir_contents = os.listdir(options['input_folder'])
