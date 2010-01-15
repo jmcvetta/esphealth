@@ -64,6 +64,11 @@ src/ESP/emr/fake.py -text
 src/ESP/emr/fixtures/demo.json -text
 src/ESP/emr/fixtures/initial_data.json -text
 src/ESP/emr/make_lab_concordance.py -text
+src/ESP/emr/management/commands/cleanup.py -text
+src/ESP/emr/management/commands/float_checker.py -text
+src/ESP/emr/management/commands/load_epic.py -text
+src/ESP/emr/management/commands/load_hl7.py -text
+src/ESP/emr/management/commands/rename_files.py -text
 src/ESP/emr/models.py -text
 src/ESP/emr/report.py -text
 src/ESP/emr/sql/patient.postgresql.sql -text
