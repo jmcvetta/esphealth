@@ -47,7 +47,7 @@ VERSION = '2.3.1'
 DATE_FORMAT = '%Y%m%d'
 
 # Information about reporting institution.  This info should be made configurable 
-# in reference localsettings.py.
+# in settings.py.
 class Foo(): pass
 INSTITUTION = Foo()
 INSTITUTION.name = 'HVMA'

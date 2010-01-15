@@ -4,7 +4,7 @@
 from web import database
 from web.db import sqlwhere
 
-from ESP.localsettings import LEGACY_DB_USER, LEGACY_DB_PASSWORD, LEGACY_DB_NAME, LEGACY_DB_ENGINE
+from ESP.settings import LEGACY_DB_USER, LEGACY_DB_PASSWORD, LEGACY_DB_NAME, LEGACY_DB_ENGINE
 
 db = database(dbn=LEGACY_DB_ENGINE, user=LEGACY_DB_USER, pw=LEGACY_DB_PASSWORD, db=LEGACY_DB_NAME)
 

@@ -4,7 +4,7 @@ from ESP.static.models import Vaccine, ImmunizationManufacturer
 from ESP.emr.models import Patient, Provider, Immunization
 from ESP.vaers.models import AdverseEvent
 from ESP.utils import utils
-from ESP.localsettings import SITE_NAME
+from ESP.settings import SITE_NAME
 
 from hl7.core import Field, SegmentTree
 from hl7.segments import MSH, PID, ORC, OBR, OBX

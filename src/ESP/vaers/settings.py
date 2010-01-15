@@ -1,6 +1,6 @@
-from ESP import localsettings
+from ESP import settings
 
-EMAIL_RECIPIENT = localsettings.VAERS_NOTIFICATION_RECIPIENT
+EMAIL_RECIPIENT = settings.VAERS_NOTIFICATION_RECIPIENT
 EMAIL_SUBJECT = 'Testing VAERS NOTIFICATION'
 EMAIL_SENDER = 'noreply@esphealth.org'
 

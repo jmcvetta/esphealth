@@ -3,7 +3,7 @@ import os
 
 from couchdb import Server
 
-import ESP.localsettings
+import ESP.settings
 import simplejson
 
 # Get a connection to the server running on localhost, default port
@@ -17,10 +17,10 @@ if not server.__contains__('patients'):
 patients = server['patients']
 
 
-for f in os.listdir(ESP.localsettings.DOCUMENTS_DIR):
+for f in os.listdir(ESP.settings.DOCUMENTS_DIR):
     try:
         pid = f.split('.')[2]
-        patient_file = open(os.path.join(ESP.localsettings.DOCUMENTS_DIR, f), 'r')
+        patient_file = open(os.path.join(ESP.settings.DOCUMENTS_DIR, f), 'r')
         contents = simplejson.loads(patient_file.read())    
         patient_file.close()
         patients[pid] = contents
