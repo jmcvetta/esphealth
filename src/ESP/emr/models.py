@@ -858,7 +858,7 @@ class Encounter(BasePatientRecord):
     native_encounter_num = models.CharField('Encounter ID #', max_length=20, blank=True, null=True)
     event_type = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     pregnancy_status = models.BooleanField(blank=False, default=False)
-    edc = models.DateField('Expected date of confinement', blank=True, null=True) 
+    edc = models.DateField('Expected date of confinement', blank=True, null=True, db_index=True) 
     temperature = models.FloatField('Temperature (C)', blank=True, null=True, db_index=True)
     # WTF: What is an icd9_qualifier?
     #icd9_qualifier = models.CharField(max_length=200, blank=True, null=True)
