@@ -80,8 +80,10 @@ src/ESP/hef/__init__.py -text
 src/ESP/hef/admin.py -text
 src/ESP/hef/core.py -text
 src/ESP/hef/events.py -text
+src/ESP/hef/management/__init__.py -text
+src/ESP/hef/management/commands/__init__.py -text
+src/ESP/hef/management/commands/hef.py -text
 src/ESP/hef/models.py -text
-src/ESP/hef/run.py -text
 src/ESP/hef/tests.py -text
 src/ESP/hef/views.py -text
 src/ESP/localsettings.py.sample -text
