@@ -1,4 +1,15 @@
 #!/usr/bin/env python
+
+import os
+import sys
+
+if not os.environ.has_key('PYTHONPATH'):
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+if not os.environ.has_key('DJANGO_SETTINGS_MODULE'):
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
+
+
 from django.core.management import execute_manager
 
 try:
