@@ -22,6 +22,7 @@ import os
 import socket
 import datetime
 import optparse
+from optparse import make_option
 import re
 import pprint
 import shutil
@@ -29,6 +30,7 @@ import codecs
 from psycopg2 import Error as Psycopg2Error
 
 from django.db import transaction
+from django.core.management.base import BaseCommand
 
 from ESP.utils.utils import str_from_date
 from ESP.settings import DATA_DIR
@@ -608,114 +610,114 @@ def move_file(filepath, disposition):
     shutil.move(filepath, folder)
 
 
-def main():
+class Command(BaseCommand):
     #
     # Parse command line options
     #
-    parser = optparse.OptionParser()
-    parser.add_option('--file', action='store', dest='single_file', metavar='FILEPATH', 
-        help='Load an individual message file')
-    parser.add_option('--input', action='store', dest='input_folder', default=INCOMING_DIR,
-        metavar='FOLDER', help='Folder from which to read incoming HL7 messages')
-    parser.add_option('--no-archive', action='store_false', dest='archive', default=True, 
-        help='Do NOT archive files after they have been loaded')
-    options, args = parser.parse_args()
-    log.debug('options: %s' % options)
-    #
-    # Ensure all required folders exist
-    #
-    for folder in [ARCHIVE_DIR, ERROR_DIR, FAILURE_DIR]:
-        if not os.path.exists(folder): 
-            os.makedirs(folder)
-            log.debug('Created new folder: %s' % folder)
-    #
-    # Sort files by type
-    #
-    input_filepaths = []
-    if options.single_file:
-        if not os.path.isfile(options.single_file):
-            sys.stderr.write('Invalid file path specified: %s' % options.single_file)
-        input_filepaths = [options.single_file]
-    else:
-        dir_contents = os.listdir(options.input_folder)
-        dir_contents.sort()
-        for item in dir_contents:
-            filepath = os.path.join(options.input_folder, item)
-            if not os.path.isfile(filepath):
-                continue
-            if item[0] == '.':
-                continue # Skip dot files
-            input_filepaths.append(filepath)
-    conf = [
-        ('epicpro', ProviderLoader),
-        ('epicmem', PatientLoader),
-        ('epicord', LabOrderLoader),
-        ('epicres', LabResultLoader),
-        ('epicvis', EncounterLoader),
-        ('epicmed', PrescriptionLoader),
-        ('epicimm', ImmunizationLoader),
-        ]
-    loader = {}
-    filetype = {}
-    valid_count = {}
-    error_count = {}
-    load_order = []
-    for item in conf:
-        load_order.append(item[0])
-        loader[item[0]] = item[1]
-        filetype[item[0]] = []
-        valid_count[item[0]] = 0
-        error_count[item[0]] = 0
-    for filepath in input_filepaths:
-        path, filename = os.path.split(filepath)
-        if Provenance.objects.filter(source=filename, status__in=('loaded', 'errors')):
-            log.info('File "%s" has already been loaded; skipping' % filename)
-            continue
-        try:
-            filetype[filename.split('.')[0]] += [filepath]
-        except KeyError:
-            log.warning('Unrecognized file type: "%s"' % filename)
-    log.debug('Files to load by type: \n%s' % pprint.pformat(filetype))
-    #
-    # Load data
-    #
-    for ft in load_order:
-        for filepath in filetype[ft]:
-            loader_class = loader[ft]
-            l = loader_class(filepath) # BaseLoader child instance
-            try:
-                valid, error = l.load()
-                valid_count[ft] += valid
-                error_count[ft] += error
-                if error:
-                    log.info('File "%s" loaded with %s errors' % (filepath, error))
-                    disposition = 'errors'
-                else:
-                    log.info('File "%s" loaded successfully.' % filepath)
-                    disposition = 'success'
-            except KeyboardInterrupt:
-                log.critical('Keyboard interrupt: exiting.')
-                sys.exit(-255)
-            except BaseException, e: # Unhandled exception!
-                log.critical('Unhandled exception loading file "%s":' % filepath)
-                log.critical('\t%s' % e)
-                l.provenance.status = 'failure'
-                l.provenance.comment = str(e)
-                l.provenance.save()
-                disposition = 'failure'
-            if options.archive:
-                move_file(filepath, disposition)
-    #
-    # Print job summary
-    #
-    print '+' * 80
-    print 'Valid records loaded:'
-    pprint.pprint(valid_count)
-    print '-' * 80
-    print 'Errors:'
-    pprint.pprint(error_count)
+    option_list = BaseCommand.option_list + (
+        make_option('--file', action='store', dest='single_file', metavar='FILEPATH', 
+            help='Load an individual message file'),
+        make_option('--input', action='store', dest='input_folder', default=INCOMING_DIR,
+            metavar='FOLDER', help='Folder from which to read incoming HL7 messages'),
+        make_option('--no-archive', action='store_false', dest='archive', default=True, 
+            help='Do NOT archive files after they have been loaded'),
+        )
+    help = 'Loads data from Epic ETL files'
+    #log.debug('options: %s' % options)
     
-
-
-if __name__ == '__main__':
-    main()
+    def handle(self, *fixture_labels, **options):
+        #
+        # Ensure all required folders exist
+        #
+        if options['archive']:
+            for folder in [ARCHIVE_DIR, ERROR_DIR, FAILURE_DIR]:
+            	if not os.path.exists(folder): 
+                	os.makedirs(folder)
+                	log.debug('Created new folder: %s' % folder)
+        #
+        # Sort files by type
+        #
+        input_filepaths = []
+        print options
+        if options['single_file']:
+            if not os.path.isfile(options.single_file):
+                sys.stderr.write('Invalid file path specified: %s' % options.single_file)
+            input_filepaths = [options['single_file']]
+        else:
+            dir_contents = os.listdir(options['input_folder'])
+            dir_contents.sort()
+            for item in dir_contents:
+                filepath = os.path.join(options['input_folder'], item)
+                if not os.path.isfile(filepath):
+                    continue
+                if item[0] == '.':
+                    continue # Skip dot files
+                input_filepaths.append(filepath)
+        conf = [
+            ('epicpro', ProviderLoader),
+            ('epicmem', PatientLoader),
+            ('epicord', LabOrderLoader),
+            ('epicres', LabResultLoader),
+            ('epicvis', EncounterLoader),
+            ('epicmed', PrescriptionLoader),
+            ('epicimm', ImmunizationLoader),
+            ]
+        loader = {}
+        filetype = {}
+        valid_count = {}
+        error_count = {}
+        load_order = []
+        for item in conf:
+            load_order.append(item[0])
+            loader[item[0]] = item[1]
+            filetype[item[0]] = []
+            valid_count[item[0]] = 0
+            error_count[item[0]] = 0
+        for filepath in input_filepaths:
+            path, filename = os.path.split(filepath)
+            if Provenance.objects.filter(source=filename, status__in=('loaded', 'errors')):
+                log.info('File "%s" has already been loaded; skipping' % filename)
+                continue
+            try:
+                filetype[filename.split('.')[0]] += [filepath]
+            except KeyError:
+                log.warning('Unrecognized file type: "%s"' % filename)
+        log.debug('Files to load by type: \n%s' % pprint.pformat(filetype))
+        #
+        # Load data
+        #
+        for ft in load_order:
+            for filepath in filetype[ft]:
+                loader_class = loader[ft]
+                l = loader_class(filepath) # BaseLoader child instance
+                try:
+                    valid, error = l.load()
+                    valid_count[ft] += valid
+                    error_count[ft] += error
+                    if error:
+                        log.info('File "%s" loaded with %s errors' % (filepath, error))
+                        disposition = 'errors'
+                    else:
+                        log.info('File "%s" loaded successfully.' % filepath)
+                        disposition = 'success'
+                except KeyboardInterrupt:
+                    log.critical('Keyboard interrupt: exiting.')
+                    sys.exit(-255)
+                except BaseException, e: # Unhandled exception!
+                    log.critical('Unhandled exception loading file "%s":' % filepath)
+                    log.critical('\t%s' % e)
+                    l.provenance.status = 'failure'
+                    l.provenance.comment = str(e)
+                    l.provenance.save()
+                    disposition = 'failure'
+                if options['archive']:
+                    move_file(filepath, disposition)
+        #
+        # Print job summary
+        #
+        print '+' * 80
+        print 'Valid records loaded:'
+        pprint.pprint(valid_count)
+        print '-' * 80
+        print 'Errors:'
+        pprint.pprint(error_count)
