@@ -21,25 +21,32 @@ import logging
 #                                 Credentials
 #
 #===============================================================================
+TOPDIR = os.path.dirname(__file__)
+secret_key_path =  os.path.join(TOPDIR, 'secret_key.txt')
 try:
-    SECRET_KEY = open('secret_key.txt').readline().strip()
+    SECRET_KEY = open(secret_key_path).readline().strip()
 except IOError:
     print >> sys.stderr, \
 '''
-You must create a $ESP_HOME/secret_key.txt file, and populate it with a unique 
-string, which should not be shared.  The unix utility 'pwgen' is useful  for 
-generating long random password strings.
-'''
+Cannot find "%s".
+
+Please create this file, and poulate it with a unique string.  
+
+The unix utility 'pwgen' is useful  for generating long random password strings.
+''' % secret_key_path
     sys.exit(1001)
+db_pwd_path =  os.path.join(TOPDIR, 'database_password.txt')
 try:
-    DATABASE_PASSWORD = open('database_password.txt').readline().strip()
+    DATABASE_PASSWORD = open(db_pwd_path).readline().strip()
 except IOError:
     print >> sys.stderr, \
 '''
-You must create a $ESP_HOME/database_password.txt file, and populate it with 
-your database  password. The unix utility 'pwgen' is useful for generating long 
-random password strings.
-'''
+Cannot find "%s".
+
+Please create this file, and poulate it with your database password.
+
+The unix utility 'pwgen' is useful  for generating long random password strings.
+''' % db_pwd_path
     sys.exit(1002)
 
 
@@ -53,7 +60,6 @@ random password strings.
 DEBUG = True 
 # No error control, because version.txt is included with source.
 VERSION = open('version.txt').readline().strip()
-TOPDIR = os.path.dirname(__file__)
 CODEDIR = TOPDIR
 TEMPLATE_DEBUG = DEBUG
 ADMINS = (
