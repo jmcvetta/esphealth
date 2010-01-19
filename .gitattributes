@@ -161,7 +161,6 @@ src/ESP/nodis/management/commands/mdph_xml.py -text
 src/ESP/nodis/management/commands/nodis.py -text
 src/ESP/nodis/management/commands/patient_report.py -text
 src/ESP/nodis/management/commands/validator.py -text
-src/ESP/nodis/mdph_xml_experimental.py -text
 src/ESP/nodis/models.py -text
 src/ESP/nodis/tests.py -text
 src/ESP/nodis/urls.py -text
