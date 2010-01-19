@@ -303,6 +303,7 @@ src/ESP/vaers/vaccine/forms.py -text
 src/ESP/vaers/vaccine/urls.py -text
 src/ESP/vaers/vaccine/views.py -text
 src/ESP/vaers/views.py -text
+src/ESP/version.txt -text
 src/ESP/views.py -text
 src/guppy/__init__.py -text
 src/guppy/doc/ProfileBrowser.html -text
