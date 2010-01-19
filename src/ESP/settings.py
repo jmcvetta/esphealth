@@ -59,7 +59,8 @@ The unix utility 'pwgen' is useful  for generating long random password strings.
 # Set DEBUG to False before running in production!
 DEBUG = True 
 # No error control, because version.txt is included with source.
-VERSION = open('version.txt').readline().strip()
+version_path =  os.path.join(TOPDIR, 'secret_key.txt')
+VERSION = open(version_path).readline().strip()
 CODEDIR = TOPDIR
 TEMPLATE_DEBUG = DEBUG
 ADMINS = (
