@@ -85,11 +85,15 @@ def main():
 
     if options.satscan:
         for day in days_in_interval(begin_date, end_date):
-            scan = Satscan(day, syndrome_heuristics()['ili'])
-            scan.make_parameter_files()
-            scan.make_case_files()
-            scan.run_satscan()
-            scan.package()
+            try:
+                scan = Satscan(day, syndrome_heuristics()['ili'])
+                scan.make_parameter_files()
+                scan.make_case_files()
+                scan.run_satscan()
+                scan.package()
+            except Exception, why:
+                log.error('ERROR during satscan run: ' + str(why))
+                
         
 
 
