@@ -12,12 +12,13 @@ from ESP.ss.utils import report_folder
 from ESP.utils.utils import log, str_from_date, days_in_interval
 
 class Satscan(object):
+    EXECUTABLE_PATH = '/usr/local/bin/satscan'
     VERSION = '8.0.1'
 
     PARAM_FILE_TEMPLATE = 'ss/files/satscan.conf'
 
-    SITE_BASE_FILENAME = 'ESPAtrius_SyndAgg_zip5_Site_Excl_%s_%s_%s-age-%dto%d'
-    RESIDENTIAL_BASE_FILENAME = 'ESPAtrius_SyndAgg_zip5_Res_%s_%s_%s-age-%dto%d'
+    SITE_BASE_FILENAME = 'ESPAtrius_SyndAgg_zip5_Site_Excl_%s_%s_%s'
+    RESIDENTIAL_BASE_FILENAME = 'ESPAtrius_SyndAgg_zip5_Res_%s_%s_%s'
 
     SITE_CASE_FILENAME = 'ESPAtrius_SyndAgg_zip5_Site_Excl_%s_%s_%s.cas'
     SITE_PARAM_FILENAME = 'ESPAtrius_SyndAgg_zip5_Site_Excl_%s_%s_%s.prm'
@@ -36,13 +37,16 @@ class Satscan(object):
         self.age_groups = [(0, 4), (4, 25), (25, 125)]
         
     def _filenames(self, base, age_group):
-        min_age, max_age = age_group
+
         # Construct file names.
         filename_params = (self.heuristic.name, 
                            str_from_date(self.start_date), 
-                           str_from_date(self.end_date),
-                           min_age, max_age)
+                           str_from_date(self.end_date))
 
+        age_identifier = '-age-%dto%d' % age_group if age_group else '-all'
+
+        base += age_identifier
+        
         make_filename = lambda ext: '.'.join([base % filename_params, ext])
         
         return {
@@ -53,7 +57,9 @@ class Satscan(object):
 
 
     def make_parameter_files(self):
-        for group in self.age_groups:
+        groups = self.age_groups + [None]
+
+        for group in groups:
             site_files = self._filenames(Satscan.SITE_BASE_FILENAME, group)
             residential_files = self._filenames(Satscan.RESIDENTIAL_BASE_FILENAME, group)
 
@@ -92,33 +98,6 @@ class Satscan(object):
                                      ]))                        
             outfile.write('\n')
         
-
-        # try:
-        #     ev = it.next()
-        # except StopIteration:
-        #     return
-
-        # days = days_in_interval(self.start_date, self.end_date)
-        
-        # while ev:            
-        #     cur_zip = ev.reporting_site.zip_code
-        #     events_by_date = dict([(day, 0) for day in days])
-            
-        #     try:
-        #         while cur_zip == ev.reporting_site.zip_code:
-        #             events_by_date[ev.date] +=1
-        #             ev = it.next()                    
-        #     except StopIteration:
-        #         break
-        #     finally:
-        #         for day in days:
-        #             total_events = events_by_date.get(day, 0)
-        #             if total_events:
-        #                 line = '\t'.join([cur_zip, str(total_events), str(day)])
-        #                 outfile.write(line + '\n')
-        #                 log.info(line)
-
-
         outfile.close()
 
     def _make_residential_casefile(self, queryset, filename):
@@ -134,35 +113,6 @@ class Satscan(object):
                                      str(count['date'])]))
             outfile.write('\n')
 
-
-        # it = queryset.iterator()
-        
-        # try:
-        #     ev = it.next()
-        # except StopIteration:
-        #     return
-
-        # days = days_in_interval(self.start_date, self.end_date)
-        
-        # while ev:            
-        #     cur_zip = ev.patient_zip_code
-        #     events_by_date = dict([(day, 0) for day in days])
-            
-        #     try:
-        #         while cur_zip == ev.patient_zip_code:
-        #             events_by_date[ev.date] +=1
-        #             ev = it.next()
-        #     except StopIteration:
-        #         break
-        #     finally:
-        #         for day in days:
-        #             total_events = events_by_date.get(day, 0)
-        #             if total_events:
-        #                 line = '\t'.join([cur_zip, str(total_events), str(day)])
-        #                 log.info(line)
-        #                 outfile.write(line + '\n')
-
-                        
         outfile.close()
 
         
@@ -174,35 +124,31 @@ class Satscan(object):
         events = NonSpecialistVisitEvent.objects.filter(
             event_ptr__name=self.heuristic.long_name, date__gte=self.start_date, 
             date__lte=self.end_date)
+
+        groups = self.age_groups + [None]
         
-        for group in self.age_groups:
-            age_group_events = events.filter(age_group_filter(*group))
+        for group in groups:
+            group_events = events.filter(age_group_filter(*group)) if group else events
+
 
             site_filename = self._filenames(Satscan.SITE_BASE_FILENAME, group)['case']
             residential_filename = self._filenames(Satscan.RESIDENTIAL_BASE_FILENAME, group)['case']
             
-            
-            site_events = age_group_events.exclude(reporting_site__isnull=True)
-            residential_events = age_group_events.exclude(patient_zip_code__isnull=True).order_by('patient_zip_code', 'date')
+            site_events = group_events.exclude(reporting_site__isnull=True)
+            residential_events = group_events.exclude(patient_zip_code__isnull=True).order_by('patient_zip_code', 'date')
             
 
             self._make_site_casefile(site_events, site_filename)
             self._make_residential_casefile(residential_events, residential_filename)
             
             
-
-
-
-            
-        
-
-
-
     def run_satscan(self):
         os.chdir(self.folder)
-        run_with_file = lambda f: os.system('satscan %s' % f)
+        run_with_file = lambda f: os.system('%s %s' % (Satscan.EXECUTABLE_PATH, f))
 
-        for group in self.age_groups:
+        groups = self.age_groups + [None]
+
+        for group in groups:
             run_with_file(self._filenames(Satscan.SITE_BASE_FILENAME, group)['parameter'])
             run_with_file(self._filenames(Satscan.RESIDENTIAL_BASE_FILENAME, group)['parameter'])
         
@@ -218,28 +164,46 @@ class Satscan(object):
     def _package_reports(self, results_filename, package_basename, age_group):
         os.chdir(self.folder)
 
-        min_age, max_age = age_group
-        package_filename = package_basename % (str_from_date(self.end_date), 
-                                               min_age, max_age, Satscan.VERSION, 
-                                               max(self._recurrence_intervals(results_filename)))
-
+        if age_group:
+            min_age, max_age = age_group
+            package_filename = package_basename % (str_from_date(self.end_date), 
+                                                   min_age, max_age, Satscan.VERSION, 
+                                                   max(self._recurrence_intervals(results_filename)))
+        else:
+            package_filename = package_basename % (str_from_date(self.end_date), 
+                                                   Satscan.VERSION, 
+                                                   max(self._recurrence_intervals(results_filename)))
+            
         # Case, parameter, and satscan-generated file names should be
         # all the same Differing only by the extension(s). So we check
         # the name of the file and grab everything to add to the zip
         # file.
         common_filename = results_filename.split('.')[0]
         package = zipfile.ZipFile(package_filename, 'w')
-        for f in glob.glob('%s*' % common_filename):
+
+        # excluding case files from the list.
+        files = [f for f in glob.glob('%s*' % common_filename) if not f.endswith('cas')]
+        for f in files:
             package.write(f, os.path.basename(f), zipfile.ZIP_DEFLATED)
             
         package.close()
 
     def package(self):
-        for group in self.age_groups:
+        groups = self.age_groups + [None]
+        for group in groups:
+            if group:
+                site_package_basename = 'Site-%s-group%sto%s-satscan%s-interval%s.zip'
+                residential_package_basename = 'Residential-%s-group%sto%s-satscan%s-interval%s.zip'
+            else:
+                site_package_basename = 'Site-%s-all-satscan%s-interval%s.zip'
+                residential_package_basename = 'Residential-%s-all-satscan%s-interval%s.zip'
+
+                
+                
             self._package_reports(self._filenames(Satscan.SITE_BASE_FILENAME, group)['results'], 
-                                  'Site-%s-group%sto%s-satscan%s-interval%s.zip', group)
+                                  site_package_basename, group)
             self._package_reports(self._filenames(Satscan.RESIDENTIAL_BASE_FILENAME, group)['results'], 
-                                  'Residential-%s-group%sto%s-satscan%s-interval%s.zip', group)
+                                  residential_package_basename, group)
             
                                   
             
