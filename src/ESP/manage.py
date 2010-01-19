@@ -6,7 +6,7 @@ import logging
 
 logging.log(logging.DEBUG, 'PYTHONPATH:')
 if not os.environ.has_key('PYTHONPATH'):
-    pypath = os.path.join(os.path.dirname(__file__), '..')
+    pypath = os.path.dirname( os.getcwd() )
     sys.path.append(pypath)
     logging.log(logging.DEBUG, '\t%s' % pypath)
 else:
