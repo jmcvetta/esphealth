@@ -8,8 +8,10 @@ from ESP.ss.models import Site, NonSpecialistVisitEvent
 from ESP.ss.definitions import btzip, localSiteSites
 
 
-def report_folder(begin_date, end_date):
+def report_folder(begin_date, end_date, subfolder=None):
     folder = os.path.join(os.path.dirname(__file__), 'assets')
+    
+    if subfolder: folder = os.path.join(folder, subfolder)
 
     same_year = (begin_date.year == end_date.year)
     same_month = same_year and (begin_date.month == end_date.month)

@@ -11,6 +11,7 @@ from ESP.ss.models import Site
 
 
 import reports
+from satscan import Satscan
 from heuristics import syndrome_heuristics
 from utils import make_non_specialty_clinics
 
@@ -35,6 +36,7 @@ def main():
     parser.add_option('-s', '--syndrome', dest='syndrome', default='all')
     parser.add_option('-c', '--consolidate', action='store_true', dest='consolidate')
     parser.add_option('-d', '--detect', action='store_true', dest='detect')
+    parser.add_option('-t', '--satscan', action='store_true', dest='satscan')
     parser.add_option('-r', '--reports', action='store_true', dest='reports')
     parser.add_option('-f', '--full', action='store_true', dest='full')
 
@@ -59,6 +61,7 @@ def main():
     if options.full:
         options.detect = True
         options.reports = True
+        options.satscan = True
 
     if options.detect:
         if not Site.objects.count(): make_non_specialty_clinics()
@@ -80,12 +83,21 @@ def main():
                     log.info('Creating %s reports for %s' % (heuristic.name, day))
                     heuristic.make_reports(day, day)
 
+    if options.satscan:
+        for day in days_in_interval(begin_date, end_date):
+            scan = Satscan(day, syndrome_heuristics()['ili'])
+            scan.make_parameter_files()
+            scan.make_case_files()
+            scan.run_satscan()
+            scan.package()
+        
+
 
     if options.individual:
         reports.all_encounters_report(begin_date, end_date)
 
 
-    if not (options.detect or options.reports or options.individual):
+    if not (options.detect or options.reports or options.individual or options.satscan):
         print usage_msg
         sys.exit(-1)
 

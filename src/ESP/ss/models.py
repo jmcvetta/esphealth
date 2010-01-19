@@ -13,7 +13,7 @@
 import datetime
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, F
 
 from ESP.emr.models import Encounter
 from ESP.hef.models import Event
@@ -21,17 +21,11 @@ from ESP.hef.models import Event
 from definitions import AGE_GROUP_CAP
 
 
-def age_group_filter(lower, upper=150):
-    today = datetime.date.today()
-    younger_patient_date = datetime.date(year=(today.year - abs(lower)), 
-                                         month=today.month, day=today.day)
-    older_patient_date = datetime.date(year=(today.year - abs(upper)), 
-                                       month=today.month, day=today.day)
+def age_group_filter(lower, upper):
+    oldest = Q(patient__date_of_birth__gte=F('date') - int(upper*365.25))
+    youngest  = Q(patient__date_of_birth__lte=F('date') - int(lower*365.25))
     
-    born_before = Q(patient__date_of_birth__gte=older_patient_date)
-    born_after = Q(patient__date_of_birth__lt=younger_patient_date)
-    
-    return born_before & born_after
+    return oldest & youngest
 
 class Site(models.Model):
     code = models.CharField(max_length=20, primary_key=True)

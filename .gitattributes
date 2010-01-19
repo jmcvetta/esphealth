@@ -231,7 +231,6 @@ src/ESP/templates/espheader.png -text
 src/ESP/templates/espheader150.gif -text
 src/ESP/templates/espheader2.png -text
 src/ESP/templates/esplogo.gif -text
-src/ESP/templates/files/satscan.conf -text
 src/ESP/templates/fixture_builders/adverse_event.json -text
 src/ESP/templates/login.html -text
 src/ESP/templates/nav-bg-grabber.gif -text
@@ -263,6 +262,7 @@ src/ESP/templates/pages/vaers/report.html -text
 src/ESP/templates/pages/vaers/vaccine_index.html -text
 src/ESP/templates/pages/vaers/vaccines.html -text
 src/ESP/templates/pages/vaers/vaers.html -text
+src/ESP/templates/ss/files/satscan.conf -text
 src/ESP/templates/status.html -text
 src/ESP/templates/widgets/fixture_builder.json -text
 src/ESP/templates/widgets/ss/day_map_report.html -text

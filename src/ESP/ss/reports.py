@@ -28,6 +28,7 @@ import settings
 class Report(object):
 
     TEMPLATE_FOLDER = os.path.join(os.path.dirname(__file__), 'templates')
+
     GIPSE_TEMPLATE = os.path.join(TEMPLATE_FOLDER, 'xml', 'gipse-response.xml')
     GIPSE_SITE_FILENAME = 'GIPSE_Response_Site_%s_%s.xml'
     GIPSE_RESIDENTIAL_FILENAME = 'GIPSE_Response_Residential_%s_%s.xml'
@@ -55,7 +56,6 @@ class Report(object):
             log.info(line)
             outfile.write(line + '\n')
 
-    
     def gipse_report(self):
 
         filename = GIPSE_SITE_FILENAME % self.timestamps
@@ -68,15 +68,14 @@ class Report(object):
         zip_codes = events.values_list('reporting_site__zip_code', flat=True).distinct()
         syndromes = events.values_list('heuristic', flat=True).distinct()
 
-        params = {
-            'timestamp':datetime.datetime.now(),
-            'requesting_user':settings.GIPSE_REQUESTING_USER,
-            'heuristic_counts':counts,
-            'syndromes':syndromes,
-            'zip_codes':zip_codes
-            }
+        msg = get_template(Report.GIPSE_TEMPLATE).render(Context({
+                    'timestamp':datetime.datetime.now(),
+                    'requesting_user':settings.GIPSE_REQUESTING_USER,
+                    'heuristic_counts':counts,
+                    'syndromes':syndromes,
+                    'zip_codes':zip_codes
+                    }))
 
-        msg = get_template(Report.GIPSE_TEMPLATE).render(Context(params))
         log.debug(msg)
         outfile.write(msg)
         outfile.close()
@@ -153,9 +152,8 @@ class Report(object):
                     age_group_counts = dict([(group, mapping[(zip_code, group)]) for group in AGE_GROUPS])
                     self._write_date_zip_summary(cur_date, zip_code, age_group_counts, outfile)
                 
-        outfile.close()
-
-
+        outfile.close()        
+    
 
 def all_encounters_report(begin_date, end_date):
     report = Report(begin_date, end_date)
