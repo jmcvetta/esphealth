@@ -63,10 +63,10 @@ src/ESP/emr/etl/rename_files.py -text
 src/ESP/emr/fake.py -text
 src/ESP/emr/fixtures/demo.json -text
 src/ESP/emr/fixtures/initial_data.json -text
-src/ESP/emr/make_lab_concordance.py -text
 src/ESP/emr/management/__init__.py -text
 src/ESP/emr/management/commands/__init__.py -text
 src/ESP/emr/management/commands/cleanup.py -text
+src/ESP/emr/management/commands/concordance.py -text
 src/ESP/emr/management/commands/float_checker.py -text
 src/ESP/emr/management/commands/load_epic.py -text
 src/ESP/emr/management/commands/load_hl7.py -text
