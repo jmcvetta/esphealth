@@ -13,6 +13,8 @@
 from django.db import transaction
 from django.db.models import Q
 from django.db.models import Count
+from django.db.models import Min
+from django.db.models import Max
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
@@ -36,13 +38,23 @@ class Command(BaseCommand):
         log.debug('Purged concordance table.')
         # Generate the concordance -- *LONG* query
         qs = LabResult.objects.all().values('native_code', 'native_name').distinct()
-        qs = qs.annotate(count=Count('id'))
+        qs = qs.annotate(
+            count=Count('id'), 
+            min_ref_low=Min('ref_low_float'), 
+            max_ref_high=Max('ref_high_float'),
+            min_result=Min('result_float'),
+            max_result=Max('result_float'),
+            )
         log_query('Concordance query', qs)
         for item in qs:
             l = LabTestConcordance()
             l.native_code = item['native_code']
             l.native_name = item['native_name']
             l.count = item['count']
+            l.min_ref_low = item['min_ref_low']
+            l.max_ref_high = item['max_ref_high']
+            l.min_result = item['min_result']
+            l.max_result = item['max_result']
             l.save()
             transaction.commit()
             log.debug('Added %s to concordance' % item)
