@@ -2,17 +2,20 @@
 
 import os
 import sys
-from ESP.utils.utils import log
+import logging
 
+logging.log(logging.DEBUG, 'PYTHONPATH:')
 if not os.environ.has_key('PYTHONPATH'):
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    pypath = os.path.join(os.path.dirname(__file__), '..')
+    sys.path.append(pypath)
+    logging.log(logging.DEBUG, '\t%s' % pypath)
+else:
+    logging.log(logging.DEBUG, '\t%s' % os.environ['PYTHONPATH'])
 
 if not os.environ.has_key('DJANGO_SETTINGS_MODULE'):
     os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
-log.debug('PYTHONPATH:')
-log.debug('\t%s' % os.environ['PYTHONPATH'])
-log.debug('DJANGO_SETTINGS_MODULE:')
-log.debug('\t%s' % os.environ['DJANGO_SETTINGS_MODULE'])
+    logging.log(logging.DEBUG, 'DJANGO_SETTINGS_MODULE:')
+    logging.log(logging.DEBUG, '\t%s' % os.environ['DJANGO_SETTINGS_MODULE'])
 
 
 from django.core.management import execute_manager
