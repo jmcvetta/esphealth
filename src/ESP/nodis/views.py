@@ -42,8 +42,6 @@ from django.template.defaultfilters import slugify
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 
-from ESP.settings import NLP_SEARCH
-from ESP.settings import NLP_EXCLUDE
 from ESP.settings import ROWS_PER_PAGE
 from ESP.settings import DATE_FORMAT
 from ESP.conf.models import CodeMap
@@ -69,7 +67,7 @@ from ESP.nodis.forms import CaseStatusForm
 from ESP.nodis.forms import CodeMapForm
 from ESP.nodis.forms import ConditionForm
 from ESP.nodis.forms import ReferenceCaseForm
-from ESP.nodis.validator import RELATED_MARGIN
+from ESP.nodis.management.commands.validator import RELATED_MARGIN
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
 
