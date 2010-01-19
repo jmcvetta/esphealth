@@ -81,7 +81,7 @@ def main():
 
         
     if options.reports:
-        folder = make_date_folders(HL7_MESSAGES_DIR, begin_date, end_date)
+        folder = make_date_folders(begin_date, end_date, root=HL7_MESSAGES_DIR)
 
         def produce_reports(queryset):
             events = queryset.filter(date__gte=begin_date, date__lte=end_date)

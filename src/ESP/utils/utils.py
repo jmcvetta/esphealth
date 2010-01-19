@@ -188,6 +188,26 @@ def date_from_str(timestamp):
     
     return datetime.datetime.strptime(timestamp, format).date()
 
+def make_date_folders(begin_date, end_date, **kw):
+    folder = kw.get('root', os.path.dirname(__file__))
+    subfolder = kw.get('subfolder', None)
+    
+    if subfolder: folder = os.path.join(folder, subfolder)
+
+    same_year = (begin_date.year == end_date.year)
+    same_month = same_year and (begin_date.month == end_date.month)
+    same_day = same_month and (begin_date.day == end_date.day)
+
+    if same_year: folder = os.path.join(folder, '%04d' % begin_date.year)
+    if same_month: folder = os.path.join(folder, '%02d' % begin_date.month)
+    if same_day: folder = os.path.join(folder, '%02d' % begin_date.day)
+
+    print folder
+
+    if not os.path.isdir(folder): os.makedirs(folder)
+    return folder
+
+
     
 
 def str_from_date(date):
