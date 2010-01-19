@@ -617,7 +617,7 @@ class LabResult(BasePatientRecord):
         self.  if 'check_same_unit' is True, only returns the value if
         both labs results have a matching (Case insensitive) ref_unit value
         '''
-        previous_labs = LabResult.objects.filter(native_code=self.native_code, patient=patient, 
+        previous_labs = LabResult.objects.filter(native_code=self.native_code, patient=self.patient, 
                                                  date__lt=self.date).order_by('-date')
         if with_same_unit:
             previous_labs = previous_labs.filter(ref_unit__iexact=self.ref_unit)
@@ -926,7 +926,7 @@ class Encounter(BasePatientRecord):
     def is_fake(self):
         return self.status == 'FAKE'
 
-    def is_reoccurrence(self, month_period=12):
+    def is_reoccurrence(self, icd9s, month_period=12):
         '''
         returns a boolean indicating if this encounters shows any icd9
         code that has been registered for this patient in last
@@ -936,8 +936,7 @@ class Encounter(BasePatientRecord):
         earliest = self.date - datetime.timedelta(days=30*month_period)
         
         return Encounter.objects.filter(
-            date__lt=self.date, date__gte=earliest, 
-            patient=self.patient, icd9_codes__in=self.icd9_codes.all()
+            date__lt=self.date, date__gte=earliest, patient=self.patient, icd9_codes__in=icd9s
             ).count() > 0
                 
     def __str__(self):

@@ -110,49 +110,31 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
         
 
 class DiagnosisHeuristic(AdverseEventHeuristic):
-    def __init__(self, event_name, icd9s, category, verbose_name=None, **kwargs):
+    def __init__(self, event_name, icd9s, category, ignore_period):
         '''
         @type icd9s: [<Icd9>, <Icd9>, <Icd9>, ...]
         @type discarding_icd9: [<Icd9>, <Icd9>, <Icd9>, ...]
-        @type ignored_if_past_occurrence: int
+        @type ignore_period: int
         @type verbose_name: String
         '''
                  
         self.name = event_name
-        self.verbose_name = verbose_name
+        self.verbose_name = '%s as an adverse reaction to immunization' % self.name
         self.icd9s = icd9s
         self.category = category
-        self.discarding_icd9s = kwargs.pop('discarding_icd9s', [])
-        self.ignored_if_past_occurrence = kwargs.pop(
-            'ignored_if_past_occurrence', None)
+        self.ignore_period = ignore_period
         
-        super(DiagnosisHeuristic, self).__init__(event_name, verbose_name=verbose_name)
+        super(DiagnosisHeuristic, self).__init__(event_name, verbose_name=self.verbose_name)
             
     def matches(self, **kw):
-        incremental = kw.get('incremental', False)
-        
-        last_run = Run.objects.filter(status='s').aggregate(ts=Max('timestamp'))['ts']
-
-        
-        begin = (incremental and last_run) or kw.get('begin_date') or EPOCH
+        begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
 
-        candidates = Encounter.objects.following_vaccination(rules.TIME_WINDOW_POST_EVENT).filter(
+        return Encounter.objects.following_vaccination(rules.TIME_WINDOW_POST_EVENT).filter(
             date__gte=begin, date__lte=end, icd9_codes__in=self.icd9s).distinct()
 
         
-        if self.discarding_icd9s:
-            candidates = candidates.exclude(patient=F('patient'), date__lt=F('date'), 
-                                            icd9_codes__in=list(self.discarding_icd9s))         
 
-        if self.ignored_if_past_occurrence:
-            days_ago = 30 * int(self.ignored_if_past_occurrence)
-            candidates = candidates.exclude(patient=F('patient'), 
-                                            date__lt=F('date'), date__gte=F('date') - days_ago,
-                                            icd9_codes__in=list(self.icd9s))
-
-
-        return candidates
 
 
     def generate_events(self, **kw):
@@ -160,10 +142,10 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         counter = 0
 
         matches = self.matches(**kw)
-        log.info('Found %d matches' % matches.count())
         encounter_type = ContentType.objects.get_for_model(EncounterEvent)
 
         for e in matches:
+            if self.ignore_period and e.is_reoccurrence(self.icd9s, int(self.ignore_period)): continue
             try:
                 # Create event instance
                 ev, created = EncounterEvent.objects.get_or_create(
@@ -198,6 +180,18 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
                 counter -= 1
                 
         return counter
+
+class Icd9CorrelatedHeuristic(DiagnosisHeuristic):
+    def __init__(self, event_name, icd9s, category, ignore_period, discarding_icd9s):
+        self.discarding_icd9s = discarding_icd9s
+        super(Icd9CorrelatedHeuristic, self).__init__(event_name, icd9s, category, ignore_period)
+        
+    def matches(self, **kw):
+        matches = super(Icd9CorrelatedHeuristic, self).matches(**kw)
+        return [match for match in matches 
+                if not match.patient.has_history_of(self.discarding_icd9s, end_date=match.date)]
+
+
 
 
 class VaersLxHeuristic(AdverseEventHeuristic):
@@ -315,6 +309,8 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 ev.delete()
                 counter -= 1
 
+        log.info('Created %d events' % counter)
+
         return counter
 
 def make_diagnosis_heuristic(name):
@@ -323,16 +319,17 @@ def make_diagnosis_heuristic(name):
     '''
     
     rule = DiagnosticsEventRule.objects.get(name=name)
-    verbose_name = '%s as an adverse reaction to immunization' % name
     icd9s = rule.heuristic_defining_codes.all()
     category = rule.category
+    ignore_period = rule.ignored_if_past_occurrence
 
-    d = {'ignored_if_past_occurrence':rule.ignored_if_past_occurrence,
-         'discarding_icd9s': rule.heuristic_discarding_codes.all(),
-        }
+    discarding_icd9s = rule.heuristic_discarding_codes.all()
 
-    return DiagnosisHeuristic(name, icd9s, category, verbose_name, **d)
-
+    if discarding_icd9s:
+        return Icd9CorrelatedHeuristic(name, icd9s, category, ignore_period, discarding_icd9s)
+    else:
+        return DiagnosisHeuristic(name, icd9s, category, ignore_period)
+    
 def make_lab_heuristics(lab_type):
     rule = rules.VAERS_LAB_RESULTS[lab_type]
 
