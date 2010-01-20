@@ -102,10 +102,10 @@ class LabTestConcordance(models.Model):
     native_code = models.CharField(max_length=100, blank=False)
     native_name = models.CharField(max_length=255, null=True)
     count = models.IntegerField(blank=False)
-    min_ref_low = models.FloatField(blank=True)
-    max_ref_high = models.FloatField(blank=True)
-    min_result = models.FloatField(blank=True)
-    max_result = models.FloatField(blank=True)
+    min_ref_low = models.FloatField(blank=True, null=True)
+    max_ref_high = models.FloatField(blank=True, null=True)
+    min_result = models.FloatField(blank=True, null=True)
+    max_result = models.FloatField(blank=True, null=True)
 
 
 
