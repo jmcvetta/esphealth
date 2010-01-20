@@ -208,6 +208,27 @@ CASE_REPORT_FILENAME_FORMAT = '%(timestamp)s-%(serial)s.hl7'
 
 #===============================================================================
 #
+#                                     FTP
+#
+#===============================================================================
+FTP_SERVER = ''
+FTP_USER = ''
+ftp_pwd_path =  os.path.join(TOPDIR, 'ftp_password.txt')
+try:
+    FTP_PASSWORD = open(ftp_pwd_path).readline().strip()
+except IOError:
+    print >> sys.stderr, \
+'''
+Cannot find "%s".
+
+Please create this file, and populate it with your FTP password.
+''' % ftp_pwd_path
+    sys.exit(1003)
+
+
+
+#===============================================================================
+#
 #                                    Email
 #
 #===============================================================================
