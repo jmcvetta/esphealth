@@ -67,6 +67,8 @@ CODEDIR = TOPDIR
 TEMPLATE_DEBUG = DEBUG
 ADMINS = (
     ('Jason McVetta', 'jason.mcvetta@channing.harvard.edu'),
+    ('Ross Lazars', 'ross.lazarus@channing.harvard.edu'),
+    ('Raphael Lullis', 'raphael.lullis@channing.harvard.edu'),
 )
 MANAGERS = ADMINS
 DEVELOPER_EMAIL_LIST = [item[1] for item in ADMINS]
@@ -211,8 +213,8 @@ CASE_REPORT_FILENAME_FORMAT = '%(timestamp)s-%(serial)s.hl7'
 #                                     FTP
 #
 #===============================================================================
-FTP_SERVER = ''
-FTP_USER = ''
+FTP_SERVER = 'n2ftp001.hvma.org'
+FTP_USER = 'HEALTHONE\\rlazarus'
 ftp_pwd_path =  os.path.join(TOPDIR, 'ftp_password.txt')
 try:
     FTP_PASSWORD = open(ftp_pwd_path).readline().strip()
@@ -233,6 +235,7 @@ Please create this file, and populate it with your FTP password.
 #
 #===============================================================================
 EMAIL_SENDER = 'esp-noreply@your_domain.com'
+EMAIL_RECIPIENTS = [i[1] for i in ADMINS] # By default, send email to all admins
 EMAIL_HOST = 'localhost'
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
