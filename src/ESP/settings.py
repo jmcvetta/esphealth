@@ -30,9 +30,13 @@ except IOError:
 '''
 Cannot find "%s".
 
-Please create this file, and poulate it with a unique string.  
+Please create this file.
 
-The unix utility 'pwgen' is useful  for generating long random password strings.
+It should contain a secret key for this particular ESP installation. Used to 
+provide a seed in secret-key hashing algorithms. Set this to a random string 
+-- the longer, the better. 
+
+The unix utility 'pwgen is useful for generating long random password strings.
 ''' % secret_key_path
     sys.exit(1001)
 db_pwd_path =  os.path.join(TOPDIR, 'database_password.txt')
@@ -43,9 +47,7 @@ except IOError:
 '''
 Cannot find "%s".
 
-Please create this file, and poulate it with your database password.
-
-The unix utility 'pwgen' is useful  for generating long random password strings.
+Please create this file, and populate it with your database password.
 ''' % db_pwd_path
     sys.exit(1002)
 
