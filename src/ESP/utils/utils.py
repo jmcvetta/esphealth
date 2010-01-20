@@ -99,6 +99,10 @@ def email_notify(subject, msg, recipient_list=None):
     '''
     if not recipient_list:
         recipient_list = settings.EMAIL_RECIPIENTS
+    log.warn('Sending email notification:')
+    log.warn('   recipient_list: %s' % recipient_list)
+    log.warn('   subject: %s' % subject)
+    log.warn('   message: %s' % msg)
     send_mail(
         subject=subject, 
         message=msg, 
