@@ -36,7 +36,7 @@ from ESP import settings
 
 def __get_logger():
     #logging.basicConfig(level=logging.DEBUG, datefmt='%d-%b--%H:%M')
-    log = logging.getLogger()
+    log = logging.getLogger('ESP')
     if not log.handlers: # Don't register handlers more than once
         file = logging.FileHandler(settings.LOG_FILE, 'a')
         file.setLevel(settings.LOG_LEVEL_FILE)
