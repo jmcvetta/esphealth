@@ -44,7 +44,7 @@ class Command(BaseCommand):
             max_ref_high=Max('ref_high_float'),
             min_result=Min('result_float'),
             max_result=Max('result_float'),
-            )
+            ).order_by('pk')
         log_query('Concordance query', qs)
         for item in qs:
             l = LabTestConcordance()
