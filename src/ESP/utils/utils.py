@@ -21,6 +21,7 @@ import sqlparse
 
 from django.db.models import Q
 from django.core.paginator import Paginator
+from django.core.mail import send_mail
 from django.db.models.query import QuerySet
 
 from ESP import settings
@@ -89,21 +90,25 @@ def getAnotherdate(date1, dayrange):
     return ''
 
                     
-###################################
-###################################
 # 
 # This can probably be deprecated and replaced with django.core.mail.send_mail()
 #
-def sendoutemail(towho=['rexua@channing.harvard.edu', 'MKLOMPAS@PARTNERS.ORG'],msg='',subject='ESP management'):
-    ##send email
-    sender = settings.EMAIL_SENDER
-    
-    headers = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n" % (sender, ','.join(towho), subject)
-    
-    message = headers + 'on %s\n%s\n' % (datetime.datetime.now(),msg)
-    mailServer = smtplib.SMTP('localhost')
-    mailServer.sendmail(sender, towho, message)
-    mailServer.quit()
+def email_notify(subject, msg, recipient_list=None):
+    '''
+    Send an email notification.
+    '''
+    if not recipient_list:
+        recipient_list = settings.EMAIL_RECIPIENTS
+    send_mail(
+        subject=subject, 
+        message=msg, 
+        from_email=settings.EMAIL_SENDER,
+        recipient_list=recipient_list, 
+        fail_silently=False, 
+        #auth_user, 
+        #auth_password, 
+        #connection
+        )
 
                                 
 ###################################
