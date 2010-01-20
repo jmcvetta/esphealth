@@ -5,27 +5,20 @@ import shutil
 import StringIO
 import traceback
 import smtplib
-
-from ftplib import FTP
+import ftplib
 
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
 from ESP.emr.models import Provenance
-from ESP.utils import hl7XML
 from ESP.utils.utils import log
 from ESP.utils.utils import email_notify
 from ESP.utils.utils import getfilesByDay
 from ESP.utils.utils import filenlist
 from ESP.settings import DATA_DIR
-from ESP.settings import SITE_NAME
 from ESP.settings import FTP_USER
 from ESP.settings import FTP_PASSWORD
 from ESP.settings import FTP_SERVER
-from ESP.settings import EMAIL_SENDER
-from ESP.settings import EMAIL_HOST
-from ESP.settings import EMAIL_RECIPIENTS
-#from ESP.settings import getJavaInfo
 
 
 
@@ -56,19 +49,19 @@ class Command(BaseCommand):
         newfiles=[]
         errmsg = 'FTP login to %s failed.' % FTP_SERVER
         try:
-            ftp = FTP(FTP_SERVER)
+            ftp = ftplib.FTP(FTP_SERVER)
         except:
             errmsg = 'FTP login to %s failed.' % FTP_SERVER
             email_notify(subject='ESP: FTP login failed', msg=errmsg)
-            log.warn(errmsg)
+            log.critical(errmsg)
             return newfiles
         try:
             ftp.login(FTP_USER, FTP_PASSWORD)
         except:
             fp = StringIO.StringIO()
-            traceback.print_exc(file=fp)
+            #traceback.print_exc(file=fp)
             email_notify(subject='ESP: FTP login failed', msg=errmsg)
-        log.warn(errmsg)        
+            log.warn(errmsg)        
         os.chdir(dropbox)    
         # Remote site directory
         ftp.cwd('ESPFiles')
@@ -96,8 +89,8 @@ class Command(BaseCommand):
                 # Not downloaded yet
                 newfiles.append(eachfile)
                 ftp.retrbinary('RETR ' + eachfile, open(eachfile, 'wb').write)
-                log.info('FTP - retrieved file: %s' % eachfile)
+                log.debug('FTP - retrieved file: %s' % eachfile)
         ftp.quit()
-        print 'FTP - newfiles = ', newfiles
+        log.info('Retrieved %s files from FTP' % len(newfiles))
         return newfiles
     
