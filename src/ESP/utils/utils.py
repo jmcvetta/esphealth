@@ -40,15 +40,15 @@ def __get_logger():
     '''
     log = logging.getLogger()
     log.handlers = [] # Clear out the handler set by manage.py
-    file = logging.FileHandler(settings.LOG_FILE, 'a')
-    file.setLevel(settings.LOG_LEVEL_FILE)
-    file.setFormatter(logging.Formatter(settings.LOG_FORMAT_FILE))
+    f = logging.FileHandler(settings.LOG_FILE, 'a')
+    f.setLevel(settings.LOG_LEVEL_FILE)
+    f.setFormatter(logging.Formatter(settings.LOG_FORMAT_FILE))
     console = logging.StreamHandler()
     console.setLevel(settings.LOG_LEVEL_CONSOLE)
     console.setFormatter(logging.Formatter(settings.LOG_FORMAT_CONSOLE))
     #log.setLevel(logging.DEBUG) # Maximum level that will be logged, regardless of per-handler levels
     log.addHandler(console)
-    log.addHandler(file)
+    log.addHandler(f)
     return log
 log = __get_logger()
 #===============================================================================
