@@ -92,31 +92,6 @@ def getAnotherdate(date1, dayrange):
     return ''
 
                     
-# 
-# This can probably be deprecated and replaced with django.core.mail.send_mail()
-#
-def email_notify(subject, msg, recipient_list=None):
-    '''
-    Send an email notification.
-    '''
-    if not recipient_list:
-        recipient_list = settings.EMAIL_RECIPIENTS
-    log.warn('Sending email notification:')
-    log.warn('   recipient_list: %s' % recipient_list)
-    log.warn('   subject: %s' % subject)
-    log.warn('   message: %s' % msg)
-    send_mail(
-        subject=subject, 
-        message=msg, 
-        from_email=settings.EMAIL_SENDER,
-        recipient_list=recipient_list, 
-        fail_silently=False, 
-        #auth_user, 
-        #auth_password, 
-        #connection
-        )
-
-                                
 ###################################
 ###################################
 def getPeriod(date1,date2):

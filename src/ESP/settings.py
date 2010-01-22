@@ -71,7 +71,6 @@ ADMINS = (
     ('Raphael Lullis', 'raphael.lullis@channing.harvard.edu'),
 )
 MANAGERS = ADMINS
-DEVELOPER_EMAIL_LIST = [item[1] for item in ADMINS]
 SITE_NAME = 'Development (localhost)' # Name of your local site
 DATA_DIR = '/srv/esp'
 
@@ -227,19 +226,19 @@ Please create this file, and populate it with your FTP password.
     sys.exit(1003)
 
 
-
 #===============================================================================
 #
 #                                    Email
 #
 #===============================================================================
-EMAIL_SENDER = 'esp-noreply@your_domain.com'
-EMAIL_RECIPIENTS = [i[1] for i in ADMINS] # By default, send email to all admins
+SERVER_EMAIL = 'esp-noreply@your_domain.com'
+DEFAULT_FROM_EMAIL = 'esp-noreply@your_domain.com'
+EMAIL_SUBJECT_PREFIX = '[ESP] '
 EMAIL_HOST = 'localhost'
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 EMAIL_PORT = ''
-EMAIL_USE_TLS = True
+EMAIL_USE_TLS = False
 
 
 #===============================================================================
@@ -265,42 +264,3 @@ LOG_FILE = '/var/log/esp'
 LOG_LEVEL_CONSOLE = logging.DEBUG
 LOG_LEVEL_FILE = logging.DEBUG 
 
-
-# Java Setup
-###################################
-def getJavaInfo():
-    javadir="/usr/bin"
-    jars_dir = '/usr/share/java'
-
-    def app_full_path(folder):
-        return os.path.realpath(os.path.join(TOPDIR, folder))
-
-    def java_full_path(folder):
-        return os.path.join(jars_dir, folder)
-        
-    javajars = [
-        java_full_path('axis.jar'),
-        java_full_path('commons-logging.jar'), 
-        java_full_path('commons-discovery.jar'), 
-        java_full_path('jaxrpc.jar'), 
-        java_full_path('wsdl4j.jar'), 
-        java_full_path('saaj.jar'), 
-        java_full_path('axis-ant.jar'), 
-        java_full_path('log4j-1.2.jar'),
-        app_full_path('axis-1_4/activation.jar'),
-        app_full_path('axis-1_4/mail.jar'),
-        app_full_path('ESP/sendMsgs/bcdc.jar'),
-        app_full_path('ESP/sendMsgs')
-        ]
-
-
-#    javaclass=" /home/ESP/ESP/sendMsgs:/home/ESP/axis-1_4/activation.jar:/usr/local/axis-1_4/lib/axis.jar:/usr/local/axis-1_4/lib/commons-logging-1.0.4.jar:/usr/local/axis-1_4/lib/commons-discovery-0.2.jar:/usr/local/axis-1_4/lib/jaxrpc.jar:/usr/local/axis-1_4/lib/wsdl4j-1.5.1.jar:/usr/local/axis-1_4/lib/saaj.jar:/usr/local/axis-1_4/lib/axis-ant.jar:/usr/local/axis-1_4/lib/log4j-1.2.8.jar:/home/ESP/axis-1_4/mail.jar:/home/ESP/ESP/sendMsgs/bcdc.jar  "
-    
-
-    javaclass = " %s " % ':'.join([str(jar) for jar in javajars])
-    sendMsgcls = 'sendMsg'
-    return (javadir, javaclass, sendMsgcls)
-
-
-
- 
