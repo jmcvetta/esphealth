@@ -11,6 +11,11 @@
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+# TODO:  This script must be refactored to work as a manage.py command.
+#
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 
@@ -104,11 +109,30 @@ class NoPV1(Hl7LoaderException):
 
 class Hl7MessageLoader(object):
     
+    
     def __init__(self, filepath, options):
         self.options = options
         self.filepath = filepath
         self.basename = os.path.basename(filepath)
         
+    float_catcher = re.compile(r'(\d+\.?\d*)') 
+    
+    def float_or_none(self, string):
+        m = self.float_catcher.match(string)
+        if m and m.groups():
+            result = float(m.groups()[0])
+        else:
+            result = None
+        if result == float('infinity'): # Rare edge case, but it does happen
+            result = None
+        return result
+    
+    def date_or_none(self, string):
+        try:
+            return date_from_str(string)
+        except ValueError:
+            return None
+    
     def load(self):
         '''
         Loads the HL7 message into the database, with provenance & error 
@@ -306,6 +330,7 @@ class Hl7MessageLoader(object):
             pre.name = name
             pre.directions = directions if directions else None
             pre.quantity = quantity if quantity else None
+            pre.quantity_float = self.float_or_none(quantity)
             pre.dose = dose if dose else None
             pre.frequency = frequency if frequency else None
             pre.route = route if route else None
@@ -384,24 +409,11 @@ class Hl7MessageLoader(object):
             status = seg[11][0]
             if not abnormal_flag:
                 abnormal_flag = None
-            match = float_regex.match(result_string)
-            if match:
-                res_float = float(match.group(1))
-            else:
-                res_float = None
             ref_low_string = None
             ref_high_string = None
-            ref_low_float = None
-            ref_high_float = None
             if len(ref_range) == 2: # There must be both high and low
                 ref_low_string = ref_range[0]
                 ref_high_string = ref_range[1]
-                low_match = float_regex.match(ref_low_string)
-                if low_match:
-                    ref_low_float = float(low_match.group(1))
-                high_match = float_regex.match(ref_high_string)
-                if high_match:
-                    ref_high_float = float(high_match.group(1))
             result = LabResult(patient=self.patient, provider=self.provider)
             # Set (result) date and order date to the same thing, since we do 
             # not have separate order date info.
@@ -411,11 +423,11 @@ class Hl7MessageLoader(object):
             result.native_code = native_code if native_code else None
             result.native_name = native_name if native_name else None
             result.result_string = result_string if result_string else None
-            result.result_float = res_float if res_float else None
+            result.result_float = self.float_or_none(result_string)
             result.ref_low_string = ref_low_string if ref_low_string else None
             result.ref_high_string = ref_high_string if ref_high_string else None
-            result.ref_low_float = ref_low_float if ref_low_float else None
-            result.ref_high_float = ref_high_float if ref_high_float else None
+            result.ref_low_float = self.float_or_none(ref_low_string)
+            result.ref_high_float = self.float_or_none(ref_high_string)
             result.ref_unit = ref_unit if ref_unit else None
             #result.ref_range = ref_range if ref_range else None
             result.abnormal_flag = abnormal_flag if abnormal_flag else None
