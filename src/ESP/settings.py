@@ -81,9 +81,8 @@ DATA_DIR = '/srv/esp'
 #                                   Database
 #
 #===============================================================================
-DATABASE_ENGINE = 'postgresql_psycopg2' # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'esp'
-#DATABASE_NAME = 'dev_esp_jm'
+DATABASE_ENGINE = 'postgresql_psycopg2'
+DATABASE_NAME = 'esp'          # Or path to database file if usin
 DATABASE_USER = 'esp'
 DATABASE_HOST = 'localhost'
 DATABASE_PORT = ''
@@ -267,3 +266,41 @@ LOG_LEVEL_CONSOLE = logging.DEBUG
 LOG_LEVEL_FILE = logging.DEBUG 
 
 
+# Java Setup
+###################################
+def getJavaInfo():
+    javadir="/usr/bin"
+    jars_dir = '/usr/share/java'
+
+    def app_full_path(folder):
+        return os.path.realpath(os.path.join(TOPDIR, folder))
+
+    def java_full_path(folder):
+        return os.path.join(jars_dir, folder)
+        
+    javajars = [
+        java_full_path('axis.jar'),
+        java_full_path('commons-logging.jar'), 
+        java_full_path('commons-discovery.jar'), 
+        java_full_path('jaxrpc.jar'), 
+        java_full_path('wsdl4j.jar'), 
+        java_full_path('saaj.jar'), 
+        java_full_path('axis-ant.jar'), 
+        java_full_path('log4j-1.2.jar'),
+        app_full_path('axis-1_4/activation.jar'),
+        app_full_path('axis-1_4/mail.jar'),
+        app_full_path('ESP/sendMsgs/bcdc.jar'),
+        app_full_path('ESP/sendMsgs')
+        ]
+
+
+#    javaclass=" /home/ESP/ESP/sendMsgs:/home/ESP/axis-1_4/activation.jar:/usr/local/axis-1_4/lib/axis.jar:/usr/local/axis-1_4/lib/commons-logging-1.0.4.jar:/usr/local/axis-1_4/lib/commons-discovery-0.2.jar:/usr/local/axis-1_4/lib/jaxrpc.jar:/usr/local/axis-1_4/lib/wsdl4j-1.5.1.jar:/usr/local/axis-1_4/lib/saaj.jar:/usr/local/axis-1_4/lib/axis-ant.jar:/usr/local/axis-1_4/lib/log4j-1.2.8.jar:/home/ESP/axis-1_4/mail.jar:/home/ESP/ESP/sendMsgs/bcdc.jar  "
+    
+
+    javaclass = " %s " % ':'.join([str(jar) for jar in javajars])
+    sendMsgcls = 'sendMsg'
+    return (javadir, javaclass, sendMsgcls)
+
+
+
+ 
