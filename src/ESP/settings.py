@@ -61,7 +61,7 @@ Please create this file, and populate it with your database password.
 # Set DEBUG to False when running in production!
 DEBUG = False 
 # No error control, because version.txt is included with source.
-version_path =  os.path.join(TOPDIR, 'secret_key.txt')
+version_path =  os.path.join(TOPDIR, 'version.txt')
 VERSION = open(version_path).readline().strip()
 CODEDIR = TOPDIR
 TEMPLATE_DEBUG = DEBUG
