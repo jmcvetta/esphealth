@@ -42,7 +42,9 @@
         <th>Patient MRN
         <th>Patient Name
         <th>Events
-        <th>Past Events
+        <th>Events Before
+        <th>Events After
+        <th>Events Ever
     {% for case in cases %}
     <tr>
         <td><a href="{% url nodis_case_detail case.pk %}">Examine</a>
@@ -52,7 +54,9 @@
         <td>{{ case.patient.mrn }}
         <td>{{ case.patient.name }}
         <td>{{ case.events.all|join:"<br>" }}
-        <td>{{ case.past_events.all|join:"<br>" }}
+        <td>{{ case.events_before.all|join:"<br>" }}
+        <td>{{ case.events_after.all|join:"<br>" }}
+        <td>{{ case.events_ever.all|join:"<br>" }}
     {% endfor %} {# result in missing_results #}
 </table>
 
