@@ -46,7 +46,7 @@ class Command(BaseCommand):
             max_result=Max('result_float'),
             ).order_by('pk')
         log_query('Concordance query', qs)
-        for item in qs:
+        for item in qs.iterator():
             l = LabTestConcordance()
             l.native_code = item['native_code']
             l.native_name = item['native_name']
