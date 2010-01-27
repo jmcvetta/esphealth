@@ -188,8 +188,6 @@ def make_date_folders(begin_date, end_date, **kw):
     if same_month: folder = os.path.join(folder, '%02d' % begin_date.month)
     if same_day: folder = os.path.join(folder, '%02d' % begin_date.day)
 
-    print folder
-
     if not os.path.isdir(folder): os.makedirs(folder)
     return folder
 
