@@ -67,6 +67,8 @@ class Command(BaseCommand):
             help='Create file names using FORMAT.  Default: %s' % CASE_REPORT_FILENAME_FORMAT),
         make_option('--stdout', action='store_true', dest='stdout', 
             help='Print output to STDOUT (no files created)'),
+        make_option('--case', action='store', dest='case_id', metavar='ID', 
+            help='Export a single case with specified case ID'),
         make_option('--individual', action='store_false', dest='one_file',
             default=False, help='Export each cases to an individual file (default)'),
         make_option('--one-file', action='store_true', dest='one_file',
@@ -93,6 +95,7 @@ class Command(BaseCommand):
         #
         all_conditions = Condition.list_all_condition_names()
         all_conditions.sort()
+        case_id = options['case_id']
         sample = options['sample']
         one_file = options['one_file']
         stdout = options['stdout']
@@ -147,8 +150,11 @@ class Command(BaseCommand):
         #
         # Generate case query
         #
-        q_obj = Q(condition__in=report_conditions)
-        q_obj = q_obj & Q(status=status)
+        if case_id:
+            q_obj = Q(pk__exact=case_id)
+        else:
+            q_obj = Q(condition__in=report_conditions)
+            q_obj = q_obj & Q(status=status)
         cases = Case.objects.filter(q_obj).order_by('pk')
         if not cases:
             print 
@@ -178,7 +184,6 @@ class Command(BaseCommand):
                 if isinstance(content, Immunization):
                     matched_immunizations.append(content)
             labs = case.lab_results.all()
-            pprint.pprint(case.events.all())
             # Case.events is blank=False, so this shouldn't ever thrown an index error.
             provider = case.events.all().order_by('date')[0].content_object.provider
             values = {
