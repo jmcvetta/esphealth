@@ -638,7 +638,6 @@ class Command(BaseCommand):
         # Sort files by type
         #
         input_filepaths = []
-        print options
         if options['single_file']:
             if not os.path.isfile(options['single_file']):
                 sys.stderr.write('Invalid file path specified: %s' % options['single_file'])
