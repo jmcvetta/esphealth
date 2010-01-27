@@ -81,7 +81,6 @@ src/ESP/hef/management/commands/hef.py -text
 src/ESP/hef/models.py -text
 src/ESP/hef/tests.py -text
 src/ESP/hef/views.py -text
-src/ESP/localsettings.py.sample -text
 src/ESP/media/css/base.css -text
 src/ESP/media/css/changelists.css -text
 src/ESP/media/css/global.css -text
