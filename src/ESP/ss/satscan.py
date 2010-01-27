@@ -20,10 +20,6 @@ class Satscan(object):
     SITE_BASE_FILENAME = 'ESPAtrius_SyndAgg_zip5_Site_Excl_%s_%s_%s'
     RESIDENTIAL_BASE_FILENAME = 'ESPAtrius_SyndAgg_zip5_Res_%s_%s_%s'
 
-    SITE_CASE_FILENAME = 'ESPAtrius_SyndAgg_zip5_Site_Excl_%s_%s_%s.cas'
-    SITE_PARAM_FILENAME = 'ESPAtrius_SyndAgg_zip5_Site_Excl_%s_%s_%s.prm'
-    SITE_RESULTS_FILENAME = 'ESPAtrius_SyndAgg_zip5_Site_Excl_%s_%s_%s.txt'
-    
     TIME_WINDOW = 180    
     RELEVANT_INTERVAL = 365
 
@@ -34,7 +30,7 @@ class Satscan(object):
         self.end_date = day
         self.folder = report_folder(day, day, subfolder='satscan')        
         self.heuristic = heuristic
-        self.age_groups = [(0, 4), (4, 25), (25, 125)]
+        self.age_groups = [(0, 5), (5, 25), (25, 125)]
         
     def _filenames(self, base, age_group):
 
@@ -43,7 +39,11 @@ class Satscan(object):
                            str_from_date(self.start_date), 
                            str_from_date(self.end_date))
 
-        age_identifier = '-age-%dto%d' % age_group if age_group else '-all'
+        if age_group:
+            lower, upper = age_group[0], (age_group[1] - 1) 
+        else:
+            lower, upper = 0, 125
+        age_identifier = '-age-%dto%d' % (lower, upper) if age_group else '-all'
 
         base += age_identifier
         
@@ -93,8 +93,8 @@ class Satscan(object):
             count=Count('event_ptr')).order_by('reporting_site__zip_code', 'date')
                 
         for count in counts:
-            outfile.write('\t'.join([count['reporting_site__zip_code'], 
-                                     str(count['count']), str(count['date'])
+            outfile.write('\t'.join([count['reporting_site__zip_code'], str(count['count']), 
+                                     str(count['date']), str(count['date'].isoweekday())
                                      ]))                        
             outfile.write('\n')
         
@@ -110,7 +110,8 @@ class Satscan(object):
 
         for count in counts:
             outfile.write('\t'.join([count['patient_zip_code'], str(count['count']), 
-                                     str(count['date'])]))
+                                     str(count['date']), str(count['date'].isoweekday())
+                                     ]))
             outfile.write('\n')
 
         outfile.close()
