@@ -46,7 +46,7 @@ def __get_logger():
     console = logging.StreamHandler()
     console.setLevel(settings.LOG_LEVEL_CONSOLE)
     console.setFormatter(logging.Formatter(settings.LOG_FORMAT_CONSOLE))
-    #log.setLevel(logging.DEBUG) # Maximum level that will be logged, regardless of per-handler levels
+    log.setLevel(logging.DEBUG) # Maximum level that will be logged, regardless of per-handler levels
     log.addHandler(console)
     log.addHandler(f)
     return log
