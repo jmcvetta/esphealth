@@ -49,7 +49,7 @@ from ESP.settings import DATE_FORMAT
 from ESP.settings import SITE_NAME
 from ESP.settings import EMAIL_HOST
 from ESP.settings import EMAIL_PORT
-from ESP.settings import EMAIL_SENDER
+from ESP.settings import SERVER_EMAIL as EMAIL_SENDER
 from ESP.emr.models import Patient
 from ESP.emr.models import Provenance
 #from ESP.emr.models import Hl7Message
