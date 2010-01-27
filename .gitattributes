@@ -244,6 +244,7 @@ src/ESP/templates/nodis/missing_case_detail.html -text
 src/ESP/templates/nodis/provider_detail.html -text
 src/ESP/templates/nodis/report/odh_hl7.txt -text
 src/ESP/templates/nodis/unmapped_labs.html -text
+src/ESP/templates/nodis/validator_exact.html -text
 src/ESP/templates/nodis/validator_missing.html -text
 src/ESP/templates/nodis/validator_new.html -text
 src/ESP/templates/nodis/validator_similar.html -text
