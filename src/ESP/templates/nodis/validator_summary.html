@@ -32,7 +32,7 @@
         <td>{{ run.similar.count }}
         <td>{{ run.percent_similar|floatformat:3 }}%
     <tr>
-        <td>Exact
+        <td><a href="{% url validate_exact %}">Exact</a>
         <td>{{ run.exact.count }}
         <td>{{ run.percent_exact|floatformat:3 }}%
     <tr>

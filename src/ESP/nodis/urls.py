@@ -59,4 +59,5 @@ urlpatterns = patterns('ESP.nodis.views',
     url(r'^validate/missing/case/(?P<result_id>\d+)/$', 'missing_case_detail', name='missing_case_detail'),
     url(r'^validate/new/$', 'validate_new', name='validate_new'),
     url(r'^validate/similar/$', 'validate_similar', name='validate_similar'),
+    url(r'^validate/exact/$', 'validate_exact', name='validate_exact'),
 )
