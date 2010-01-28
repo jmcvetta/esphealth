@@ -17,11 +17,13 @@ import datetime
 import optparse
 
 from django.db import connection
+from django.db import transaction
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
 
 from ESP.hef.core import BaseHeuristic
+from ESP.hef.models import Event
 from ESP.hef.models import Run
 from ESP.hef.events import * # Load all Event definitions
 from ESP import settings
@@ -49,9 +51,13 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('--list', action='store_true', dest='list', 
             help='List names of all registered heuristics'),
+        make_option('--regenerate', action='store_true', dest='regenerate', default=False,
+            help='Purge and regenerate heuristic events')
         )
 
+    @transaction.commit_manually
     def handle(self, *args, **options):
+        sid = transaction.savepoint()
         # 
         # TODO: We need a lockfile or some othermeans to prevent multiple 
         # instances running at once.
@@ -60,9 +66,9 @@ class Command(BaseCommand):
         # 
         # Main
         #
+        h_names =  [h.name for h in BaseHeuristic.all_heuristics()]
+        h_names.sort()
         if options['list']:
-            h_names =  [h.name for h in BaseHeuristic.all_heuristics()]
-            h_names.sort()
             for name in h_names:
                 print name
             sys.exit()
@@ -71,9 +77,15 @@ class Command(BaseCommand):
         if args:
             for name in args:
                 try:
+                    if options['regenerate']:
+                        log.info('Purging %s events' % name)
+                        Event.objects.filter(name=name).delete()
                     BaseHeuristic.generate_events_by_name(name=name, run=this_run)
                 except KeyError:
                     print >> sys.stderr, 'Unknown heuristic name: "%s"' % name
         else:
+            if options['regenerate']:
+                log.info('Purging all events that we know how to regenerate')
+                Event.objects.filter(name__in=h_names).delete()
             BaseHeuristic.generate_all_events(run=this_run)
-        
+        transaction.commit()
