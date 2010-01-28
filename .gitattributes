@@ -158,7 +158,7 @@ src/ESP/nodis/management/commands/__init__.py -text
 src/ESP/nodis/management/commands/case_report.py -text
 src/ESP/nodis/management/commands/nodis.py -text
 src/ESP/nodis/management/commands/patient_report.py -text
-src/ESP/nodis/management/commands/validator.py -text
+src/ESP/nodis/management/commands/validate.py -text
 src/ESP/nodis/models.py -text
 src/ESP/nodis/tests.py -text
 src/ESP/nodis/urls.py -text
