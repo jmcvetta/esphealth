@@ -1259,7 +1259,7 @@ class Command(BaseCommand):
             log.info('Wrote single report for all %s cases to file: %s' % (serial_number, filepath))
     
     def mdph(self, options, cases):
-        batch = hl7Batch(nmessages=cases.count())
+        batch = hl7Batch(nmessages=len(cases))
         for case in cases:
             log.debug('Generating HL7 for %s' % case)
             try:
