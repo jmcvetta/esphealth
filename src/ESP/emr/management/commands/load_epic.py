@@ -432,7 +432,7 @@ class EncounterLoader(BaseLoader):
         'provider_id_num',
         'dept_id_num',
         'dept_name',
-        'encounter_type',
+        'event_type',
         'edc',
         'temp',
         'cpt',
@@ -453,6 +453,7 @@ class EncounterLoader(BaseLoader):
         e.native_encounter_num=row['encounter_id_num']
         e.native_site_num = row['dept_id_num']
         e.date = date_from_str(row['encounter_date'])
+        e.event_type = row['event_type']
         cd = row['closed_date']
         if cd:
             e.closed_date = self.date_or_none(cd)
