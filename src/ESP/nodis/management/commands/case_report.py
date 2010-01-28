@@ -143,7 +143,6 @@ def isoTime(t=None):
         return time.strftime('%Y%m%d%H%M%S',t)
 
 
-############################
 class hl7Batch:
     """ class for building an hl7 message
     eeesh this is horrible. hl7 sucks.
@@ -291,7 +290,6 @@ class hl7Batch:
             lxkey = (lxobj.order_num, lxobj.native_code, lxobj.date, lxobj.result_string, lxobj.result_date)
             if not lxdict.has_key(lxkey):
                 lxdict[lxkey]=lxobj.id
-                
         return lxdict.values() # list of unique lx ids
                                                                                 
     def getOtherLxs(self, cond,demog,lxids):
@@ -323,7 +321,6 @@ class hl7Batch:
                         thisd = datetime.date(int(thisd[:4]),int(thisd[4:6]),int(thisd[6:8]))
                     if not thisd or (thisd>=mindate and thisd<=maxdate):
                         returnlxs.append(onelx)
-
                 return returnlxs
             except:
                 pass
@@ -336,7 +333,6 @@ class hl7Batch:
         """
         section = self.casesDoc.createElement("PID")
         self.addSimple(section,'1','PID.1')
-
         ##PID.3
         pid3 = self.casesDoc.createElement('PID.3')        
         if demog.ssn:
@@ -354,7 +350,6 @@ class hl7Batch:
                     self.addSimple(e, pcp.dept,'HD.2')        
                     pid3.appendChild(e)                        
                 section.appendChild(pid3)
-
         ##PID.5
         outerElement='PID.5'
         isClinician = 0
@@ -366,8 +361,6 @@ class hl7Batch:
         section.appendChild(pid7)
         if demog.gender:
             self.addSimple(section,demog.gender,'PID.8')
-
-
         if demog.race and demog.race.upper() in self.racedir:
             race = self.racedir[demog.race.upper()]
         else:
@@ -375,7 +368,6 @@ class hl7Batch:
         pidsec = self.casesDoc.createElement('PID.10')
         self.addSimple(pidsec,race,'CE.4')
         section.appendChild(pidsec)
-            
         outerElement='PID.11'    
         addressType = 'H'
         address = self.makeAddress(demog.address1, demog.address2, demog.city, 
@@ -388,21 +380,17 @@ class hl7Batch:
             if demog.tel_ext:
                 self.addSimple(pid13,demog.tel_ext,'XTN.8')
             section.appendChild(pid13)
-
         for elem, sec in [(demog.home_language,'PID.15'),(demog.marital_stat,'PID.16')]:
             if elem:
                 pidsec = self.casesDoc.createElement(sec)
                 self.addSimple(pidsec,elem,'CE.4')
                 section.appendChild(pidsec)
-
         if demog.race and demog.race.upper() == 'HISPANIC':
             pidsec = self.casesDoc.createElement('PID.22')
             self.addSimple(pidsec,'H','CE.4')
             section.appendChild(pidsec)
-            
         return section
 
-    ##############################################
     def makePCP(self, pcp=None, addressType=None, NKindx=1,NK13='PCP'):
         """ expect contents dict to have fields like firstName,telAreaCode etc
         writes out a couple of sections so broken out, so specific
@@ -419,7 +407,6 @@ class hl7Batch:
         self.addSimple(x1,NK13,'CE.4')
         section.appendChild(x1)
         outerElement='NK1.4'
-       
         country='USA'
         #addressType=None
         address = self.makeAddress(pcp.dept_address_1, pcp.dept_address_2, 
@@ -433,7 +420,6 @@ class hl7Batch:
             section.appendChild(contact)
         return section
 
-    ##############################################
     def makeFacility(self):
         """ expect contents dict to have fields like firstName,telAreaCode etc
         writes out a couple of sections so broken out, so specific
@@ -441,8 +427,6 @@ class hl7Batch:
         """
         section = self.casesDoc.createElement("NK1")
         self.addSimple(section,'2','NK1.1')
-
-        
         suffix = None
         isClinician = 0
         outerElement='NK1.2'
@@ -452,13 +436,11 @@ class hl7Batch:
         self.addSimple(x1,'FCP','CE.4')
         section.appendChild(x1)
         outerElement='NK1.4'
-       
         country='USA'
         addressType='O'
         address = self.makeAddress(INSTITUTION.address1, INSTITUTION.address2, INSTITUTION.city,
             INSTITUTION.state, INSTITUTION.zip, INSTITUTION.country ,outerElement, addressType)
         section.appendChild(address)
-
         outerElement='NK1.5'
         email=INSTITUTION.email
         contact = self.makeContact(email, INSTITUTION.area_code, INSTITUTION.tel, INSTITUTION.tel_ext, outerElement)
@@ -466,26 +448,20 @@ class hl7Batch:
             section.appendChild(contact)
         return section
 
-
-    
-    ##################################################
     def addCaseOBR(self, condition=None, icd9=[], orcs=None, gender=''):
         """
             </OBR.31> is used to name the notifiable condition"""
         obr = self.casesDoc.createElement('OBR')
         self.addSimple(obr,'1','OBR.1')
-
         obr4 = self.casesDoc.createElement('OBR.4')
         self.addSimple(obr4,'Additional Patient Demographics','CE.2')
         obr.appendChild(obr4)
-
         fakeicd9={'PID':'614.9',
                   'CHLAMYDIA':{'F':'099.53','M':'099.41','U':'099.41', '':'099.41'},
                   'GONORRHEA':'098.0',
                   'ACUTE HEPATITIS A':'070.10',
                   'ACUTE HEPATITIS B':'070.30'
                   }
-        
         if not icd9 and condition.upper() in fakeicd9.keys():
             gender = gender.upper()
             icd9values = fakeicd9[condition.upper()]
@@ -496,24 +472,14 @@ class hl7Batch:
                     icd9=[icd9values[gender]]
                 except: ##all other gender
                     icd9 = ['099.41']
-                    
         for i in icd9:
             obr31 = self.casesDoc.createElement('OBR.31') 
             self.addSimple(obr31,i,'CE.1')   
             self.addSimple(obr31,condition,'CE.2')
             self.addSimple(obr31,'I9','CE.3')
             obr.appendChild(obr31)
-
         orcs.appendChild(obr)
 
-
-    ############################################
-    def getDurtion(self, day1, day2):
-        dur =datetime.date(int(day2[:4]),int(day2[4:6]), int(day2[6:8]))-datetime.date(int(day1[:4]),int(day1[4:6]), int(day1[6:8]))
-        return dur.days
-
-
-    ###################################
     def getPregnancyStatus(self, caseid):
         ##Email on 8/22/2007: Report patient as being pregnant if pregnancy flag active anytime between (test order date) and (test result date + 30 days inclusive).
         obx5='261665006' ##unknown
@@ -533,9 +499,6 @@ class hl7Batch:
         edc = edc_encs[0].edc
         return ('77386006', edc)
 
-
-    
-    #############################################
     def addCaseOBX(self, demog=None, orcs=None,icd9=None,lx=None, rx=None, encounters=[], condition=None, casenote='',caseid=''):
         """
         """
@@ -613,11 +576,9 @@ class hl7Batch:
                 obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'ST')],obx3=[('CE.4','10187-3')], obx5=[('','fever')])
                 indx += 1
                 orcs.appendChild(obx)
-                
 
     def addLXOBX(self,lxRecList=[],orus=None,condition=None):
         if not lxRecList: return
-       
         n=1
         #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #
@@ -637,67 +598,54 @@ class hl7Batch:
             orus.appendChild(orcs)
             orc = self.makeORC(lxRec.provider)
             orcs.appendChild(orc)
-            
             obr = self.casesDoc.createElement('OBR') # need a special lx OBR
             self.addSimple(obr,n,'OBR.1')
             n+=1
-    
             obr3 = self.casesDoc.createElement('OBR.3')
-      
             self.addSimple(obr3,lxRec.order_num,'EI.1')
             obr.appendChild(obr3)
-
             obr4 = self.casesDoc.createElement('OBR.4')
             self.addSimple(obr4,lxRec.output_or_native_code,'CE.4') 
             self.addSimple(obr4,'L','CE.6') # loinc code
             obr.appendChild(obr4)
-            
             obr7 = self.casesDoc.createElement('OBR.7')
             obr.appendChild(obr7)
             self.addSimple(obr7,lxRec.date.strftime(DATE_FORMAT),'TS.1') # lx date
-    
             obr15 = self.casesDoc.createElement('OBR.15') # noise - unknown specimen source. Eeessh
             sps = self.casesDoc.createElement('SPS.1')
             self.addSimple(sps,'261665006','CE.4') ##unknown = 261665006 (local code)
             self.addSimple(sps,'L','CE.6') # loinc code
             obr15.appendChild(sps)
             obr.appendChild(obr15)
-
             if lxRec.status:
                 status='F'
             else:
                 status='P'
             self.addSimple(obr,status,'OBR.25') # result status
-  
             orcs.appendChild(obr)
-
             # now add the obx records needed to describe dose, frequency and duration
             lxTS = lxRec.date
             lxRange = 'Low: %s - High: %s' % (lxRec.ref_low_string, lxRec.ref_high_string)
-
-
             #snomed=ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc)[0].CondiSNMDPosi
             snomed=self.getSNOMED(lxRec,condition)
-
+            if lxRec.result_string:
+                res = lxRec.result_string
+            else:
+                res = ''
             if not snomed: ##like ALT/AST
                 #ALT/AST much be number
                 obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'NM')],obx3=[('CE.4',lxRec.output_or_native_code),('CE.6','L')],
-                                   obx5=[('',lxRec.result_string.split()[0])], obx7=[('',lxRange)],obx14=[('TS.1',lxTS.strftime(DATE_FORMAT))], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
+                                   obx5=[('', res.split()[0])], obx7=[('',lxRange)],obx14=[('TS.1',lxTS.strftime(DATE_FORMAT))], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
             else:
                 obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'CE')],obx3=[('CE.4',lxRec.output_or_native_code),('CE.6','L')],
                                obx5=[('CE.4',snomed)],  obx7=[('',lxRange)],obx14=[('TS.1',lxTS.strftime(DATE_FORMAT))], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
-        
-            
             orcs.appendChild(obx1)
           
-
-    ##################################
     def getSNOMED(self, lxRec,condition):
         # NOTE: See "PORTING NOTE" above.
         snomedposi = lxRec.snomed_pos
         snomednega = lxRec.snomed_neg
         snomedinter = lxRec.snomed_ind
-        
         if snomedposi=='' and snomednega=='': ##like ALT/AST
             return ''
         #
@@ -706,7 +654,6 @@ class hl7Batch:
         loinc_posires_map = {'5009-6':160,
                              '16934-2':100,
                              '34704-7':50}
-        
         if lxRec.output_or_native_code in loinc_posires_map.keys():###('5009-6','16934-2'):
             try:
                 if lxRec.result_float < loinc_posires_map[lxRec.output_or_native_code]:
@@ -718,20 +665,19 @@ class hl7Batch:
                     return snomedposi
                 else:
                     return snomednega
-        
         if snomednega=='' and snomedinter=='':
             return snomedposi
-        
-        testsult = lxRec.result_string.upper()[:5]
+        if lxRec.result_string:
+            testsult = lxRec.result_string.upper()[:5]
+        else:
+            testsult = '' # Must be string for elif below
         if testsult in ('BORDE'): ###BORDERLINE, use SNOMED for equivocal
             return snomedinter
         elif testsult not in ('REACT','POSIT','DETEC'): ##USE negative
             return snomednega
         else:
             return snomedposi
-                                                        
         
-    ##############################################                
     def addRXOBX(self,rxRecList=[],orus=None):
         """
         make a record for each drug record in the caseDict
@@ -744,30 +690,22 @@ class hl7Batch:
             orus.appendChild(orcs)
             orc = self.makeORC(rxRec.provider)
             orcs.appendChild(orc)
-            
             obr = self.casesDoc.createElement('OBR') # need a special rx OBR
             self.addSimple(obr,'%d' % n,'OBR.1')
             n+=1
-          
             obr3 = self.casesDoc.createElement('OBR.3')
             self.addSimple(obr3,rxRec.order_num,'EI.1') 
             obr.appendChild(obr3)
-            
             obr4 = self.casesDoc.createElement('OBR.4')
-
-
             ########Added Jan,2009 to fix EMR Mappign question in order to
             ########integrate with MAVEN system from Barrus, Stephen (DPH)
             self.addSimple(obr4,'Additional Patient Demographics','CE.2')
-                        
             self.addSimple(obr4,'18776-5','CE.4') # treatment plan
             self.addSimple(obr4,'L','CE.6') # loinc code
             obr.appendChild(obr4)
-
             obr7 = self.casesDoc.createElement('OBR.7')
             obr.appendChild(obr7)
             self.addSimple(obr7,rxRec.date.strftime(DATE_FORMAT),'TS.1') # rx date
-            
             obr15 = self.casesDoc.createElement('OBR.15') # noise - unknown specimen source. Eeessh
             sps = self.casesDoc.createElement('SPS.1')
             self.addSimple(sps,'261665006','CE.4') #unknown
@@ -778,13 +716,10 @@ class hl7Batch:
             obr16 =self.makeName(firstName=provider.first_name, lastName=provider.last_name, 
                 middleInit=provider.middle_name, suffix='', outerElement ='OBR.16', isClinician=1)
             obr.appendChild(obr16)
-
             if rxRec.status: status= 'F'
             else: status = 'P'
             self.addSimple(obr,status,'OBR.25') # result status
-            
             orcs.appendChild(obr)
-            
             # now add the obx records needed to describe dose, frequency and duration
             rxDur='N/A'
             if rxRec.start_date and not rxRec.end_date:
@@ -795,24 +730,18 @@ class hl7Batch:
                 #
                 rxDur = rxRec.end_date - rxRec.start_date
                 rxDur = rxDur.days+1
-           
             rxTS = rxRec.date
             #<OBX.5>NDC_Number; Drug Name; Dose; Frequency; Duration</OBX.5>
             drugstr = '%s;%s;%s;%s;%s day(s)' % (rxRec.code, rxRec.name, rxRec.dose, rxRec.frequency, rxDur)
             obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'ST')],obx3=[('CE.4','NA-56')],
                                obx5=[('', drugstr)])
-
             orcs.appendChild(obx1)
 
-
-
-    ###########################################
     def makeOBX(self, obx1=[],obx2=[],obx3=[],obx5=[],obx6=[],obx7=[],obx11=[('','')],obx14=[],obx15=[],nte=''):
         """observation segment constructor
         """
         obx = self.casesDoc.createElement('ORU_R01.OBXNTE_SUPPGRP')
         p = self.casesDoc.createElement('OBX')
-        
         for (OuterTag, obxl) in [('OBX.1',obx1),('OBX.2',obx2),('OBX.3',obx3), ('OBX.5',obx5),('OBX.6',obx6),('OBX.7',obx7),('OBX.11',obx11),('OBX.14',obx14),('OBX.15',obx15)]:
             if len(obxl)==1 and obxl[0][0]=='':
                 if '%s'.strip() % obxl[0][1]:
@@ -826,18 +755,13 @@ class hl7Batch:
                         self.addSimple(tempobx,v,tag)          
                 if tempobx:
                     p.appendChild(tempobx)
-
         obx.appendChild(p)
         if nte:
             n = self.casesDoc.createElement('NTE')
             self.addSimple(n,  nte,'NTE.3')
             obx.appendChild(n)
-            
         return obx
        
-            
-    
-    ########################################    
     def makeORC(self, pcp=None):
         """updated like makePCP to use the pcp record
         """
@@ -847,7 +771,6 @@ class hl7Batch:
         outerElement='ORC.12'
         name = self.makeName(pcp.first_name, pcp.last_name, pcp.middle_name, suffix, outerElement, isClinician)
         orc.appendChild(name)
-
         outerElement='ORC.14'
         email=''
         ext=''
@@ -857,32 +780,25 @@ class hl7Batch:
         orc21 = self.casesDoc.createElement('ORC.21')
         self.addSimple(orc21, INSTITUTION.name, 'XON.1')
         orc.appendChild(orc21)
-        
         outerElement='ORC.22'
         country='USA'
         addressType=None
         address = self.makeAddress(INSTITUTION.address1, INSTITUTION.address2, INSTITUTION.city,
             INSTITUTION.state, INSTITUTION.zip, country ,outerElement, addressType)
         orc.appendChild(address)
-
         outerElement='ORC.23'
         contact = self.makeContact(None, INSTITUTION.area_code, INSTITUTION.tel, INSTITUTION.tel_ext, outerElement)
         if contact <> None:
             orc.appendChild(contact)
-
         outerElement='ORC.24'
         address = self.makeAddress(INSTITUTION.address1, INSTITUTION.address2, INSTITUTION.city, INSTITUTION.state,
             INSTITUTION.zip, country ,outerElement, addressType)
         orc.appendChild(address)
-        
         return orc
 
-
-    #########################    
     def makeMSH(self, segcontents = None, processingFlag='P', versionFlag='2.3.1'):
         """MSH segment
         """
-   
         # Create the elements
         section = self.casesDoc.createElement("MSH")
         self.addSimple(section,'|','MSH.1')
@@ -892,7 +808,6 @@ class hl7Batch:
             if element <> '':
                 self.addSimple(e,element,ename)
         section.appendChild(e)
-        
         e = self.casesDoc.createElement('MSH.5')         
         self.addSimple(e,'MDPH-ELR','HD.1')
         section.appendChild(e)
@@ -916,14 +831,12 @@ class hl7Batch:
         section.appendChild(e)
         return section
  
-    #################################
     def addSimple(self,dest=None, txt='',ename=''):
         """ Version for cases - must add to self.casesDoc
         abstracted out to add a single child element to an existing element
         """
         if txt =='':
             return
-        
         tt = self.casesDoc.createTextNode('%s' % txt) 
         e = self.casesDoc.createElement(ename)
         e.appendChild(tt)
@@ -932,14 +845,12 @@ class hl7Batch:
         else:
             dest.appendChild(e)
 
-    ##################################         
     def addHSimple(self,dest=None, txt='',ename=''):
         """ Version for headers - must add to self.batchDoc
         abstracted out to add a single child element to an existing element
         """
         if not txt:
             return
-        
         tt = self.batchDoc.createTextNode(txt) 
         e = self.batchDoc.createElement(ename)
         e.appendChild(tt)
@@ -975,9 +886,6 @@ class hl7Batch:
         bh.appendChild(e)
         return bh
 
-
-    ####################################
-    ####################################
     def makeName(self, firstName, lastName, middleInit, suffix, outerElement, isClinician):
         """reusable component = xpn1-4 pass the field names
         from the right record!
@@ -985,10 +893,8 @@ class hl7Batch:
         """
         lastName = lastName.strip()
         if not lastName: lastName='Unknown'
-
         firstName =firstName.strip()
         if not firstName: firstName='Unknown'
-        
         outer = self.casesDoc.createElement(outerElement)
         if not isClinician:
             n = self.casesDoc.createElement('XPN.1')
@@ -1005,7 +911,6 @@ class hl7Batch:
                  self.addSimple(outer,evar,ename)
         return outer
                  
-
     def makeAddress(self, address, addressOther, city, state, zip, country ,outerElement, addressType):
         """reusable component = xad.1-7 pass the field names
         from the right record!
@@ -1020,8 +925,6 @@ class hl7Batch:
             self.addSimple(outer,addressType,'XAD.7')
         return outer
 
-
-                 
     def makeContact(self, email, tac, tel, ext, outerElement):
         """xtn4,6,7 and 8
         pass the right values in the segcontents dict!
@@ -1040,7 +943,6 @@ class hl7Batch:
                 if element:
                     self.addSimple(outer,element,ename)
         return outer
-
 
 
 
