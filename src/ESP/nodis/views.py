@@ -67,7 +67,7 @@ from ESP.nodis.forms import CaseStatusForm
 from ESP.nodis.forms import CodeMapForm
 from ESP.nodis.forms import ConditionForm
 from ESP.nodis.forms import ReferenceCaseForm
-from ESP.nodis.management.commands.validator import RELATED_MARGIN
+from ESP.nodis.management.commands.validate import RELATED_MARGIN
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
 
