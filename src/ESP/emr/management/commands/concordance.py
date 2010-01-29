@@ -11,6 +11,7 @@
 '''
 
 from django.db import transaction
+from django.db import connection
 from django.db.models import Q
 from django.db.models import Count
 from django.core.management.base import BaseCommand
@@ -27,32 +28,25 @@ class Command(BaseCommand):
     
     help = 'Generate concordance of lab tests.'
     
-    @transaction.commit_manually
+    @transaction.commit_on_success
     def handle(self, *fixture_labels, **options):
         log.info('Repopulating lab test concordance')
         log.debug('Begin transaction')
-        # Clear the existing table
-        LabTestConcordance.objects.all().delete()
+        # Clear the existing table - raw SQL TRUNCATE for speed
+        cursor = connection.cursor()
+        cursor.execute('TRUNCATE emr_labtestconcordance')
         log.debug('Purged concordance table.')
         # Generate the concordance -- *LONG* query
         qs = LabResult.objects.all().values('native_code', 'native_name').distinct()
         qs = qs.annotate(count=Count('id'))
         log_query('Concordance query', qs)
-        for item in qs:
-            l = LabTestConcordance()
-            l.native_code = item['native_code']
-            l.native_name = item['native_name']
-            l.count = item['count']
-            l.save()
-            transaction.commit()
+        for item in qs.iterator():
+            LabTestConcordance(
+                native_code = item['native_code'],
+                native_name = item['native_name'],
+                count = item['count'],
+                ).save()
             log.debug('Added %s to concordance' % item)
-            try:
-                l.save()
-                transaction.commit()
-                log.debug('Added %s to concordance' % item)
-            except:
-                log.error('Could not save to concordance.')
-                transaction.rollback()
         count = LabTestConcordance.objects.all().count()
         log.debug('Transaction committed')
         log.info('Populated lab test concordance with %s items' % count)
