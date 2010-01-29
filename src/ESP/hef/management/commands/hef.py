@@ -26,8 +26,10 @@ from ESP.hef.core import BaseHeuristic
 from ESP.hef.models import Event
 from ESP.hef.models import Run
 from ESP.hef.events import * # Load all Event definitions
+from ESP.nodis.models import Case # hef.core and .models are dependencies of nodis/models, but this command script is not
 from ESP import settings
 from ESP.utils.utils import log
+from ESP.utils.utils import log_query
 
 
 
@@ -73,15 +75,47 @@ class Command(BaseCommand):
             sys.exit()
         this_run = Run()
         this_run.save()
+        #
+        # Purge data before regeneration
+        #
+        if options['regenerate']:
+            if args:
+                purge_names = args
+            else:
+                purge_names = BaseHeuristic.all_event_names
+            log.info('Purging %s events and dependent cases' % purge_names)
+            dependent_cases = Case.objects.filter(events__name__in=purge_names)
+            log_query('Dependent cases', dependent_cases)
+            dep_case_count = dependent_cases.count()
+            log.warning('NOTE: %s cases are dependent on these the heuristic events to be purged.' % dep_case_count)
+            log.warning('No safeguards are included in --regenerate at this time.')
+            print
+            print 'WARNING!'
+            print 
+            print 'The operation you have requested will PURGE %s Nodis cases.' % dep_case_count
+            print 'Please be sure you know what you are doing.'
+            print
+            decision = raw_input('Type PURGE to proceed:\n')
+            if not decision == 'PURGE':
+                print 'Not okay to proceed.  Exiting now.'
+                print
+                sys.exit(12)
+            log.debug('Purging dependent cases...')
+            dependent_cases.delete()
+            log.debug('Purging heuristic events...')
+            Event.objects.filter(name__in=purge_names).delete()
+        #
+        # Generate specific events
+        #
         if args:
             for name in args:
                 try:
-                    if options['regenerate']:
-                        log.info('Purging %s events' % name)
-                        Event.objects.filter(name=name).delete()
                     BaseHeuristic.generate_events_by_name(name=name, run=this_run)
                 except KeyError:
                     print >> sys.stderr, 'Unknown heuristic name: "%s"' % name
+        #
+        # Generate all events
+        #
         else:
             if options['regenerate']:
                 log.info('Purging all events that we know how to regenerate')
