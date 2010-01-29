@@ -82,8 +82,8 @@ class Command(BaseCommand):
             if args:
                 purge_names = args
             else:
-                purge_names = BaseHeuristic.all_event_names
-            log.info('Purging %s events and dependent cases' % purge_names)
+                purge_names = tuple(BaseHeuristic.all_event_names())
+            log.info('Purging %s events and dependent cases' % str(purge_names))
             dependent_cases = Case.objects.filter(events__name__in=purge_names)
             log_query('Dependent cases', dependent_cases)
             dep_case_count = dependent_cases.count()
@@ -101,9 +101,31 @@ class Command(BaseCommand):
                 print
                 sys.exit(12)
             log.debug('Purging dependent cases...')
-            dependent_cases.delete()
-            log.debug('Purging heuristic events...')
-            Event.objects.filter(name__in=purge_names).delete()
+            #
+            # NOTE:  We are using raw SQL because Django's delete() method is 
+            # extremely slow, and overwhelms PostgreSQL's max locks per 
+            # transaction (unless it's set absurdly high).  This SQL has been 
+            # tested ONLY with PostgreSQL.  YMMV.  
+            #
+            cursor = connection.cursor()
+            # Purge case events
+            sql = 'DELETE FROM nodis_case_events WHERE id IN'
+            sql = ' (SELECT ce.id FROM nodis_case_events ce'
+            sql += ' JOIN hef_event e ON ce.event_id = e.id'
+            sql += ' WHERE name in %s )' % str(purge_names)
+            log.debug('Purge dependent case-events:\n%s' % sql)
+            cursor.execute(sql)
+            # Purge cases
+            sql = 'DELETE FROM nodis_case WHERE id IN'
+            sql += ' (SELECT c.id FROM nodis_case c JOIN nodis_case_events ce ON c.id = ce.case_id '
+            sql += ' JOIN hef_event e ON ce.event_id = e.id'
+            sql += ' WHERE name in %s )' % str(purge_names)
+            log.debug('Purge dependent cases:\n%s' % sql)
+            cursor.execute(sql)
+            # Purge events
+            sql = 'DELETE FROM hef_event WHERE name in %s' % str(purge_names)
+            log.debug('Purge events:\n%s' % sql)
+            cursor.execute(sql)
         #
         # Generate specific events
         #
