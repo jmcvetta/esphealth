@@ -55,9 +55,8 @@ class Command(BaseCommand):
             help='Purge and regenerate heuristic events')
         )
 
-    @transaction.commit_manually
+    @transaction.commit_on_success
     def handle(self, *args, **options):
-        sid = transaction.savepoint()
         # 
         # TODO: We need a lockfile or some othermeans to prevent multiple 
         # instances running at once.
@@ -66,9 +65,9 @@ class Command(BaseCommand):
         # 
         # Main
         #
-        h_names =  [h.name for h in BaseHeuristic.all_heuristics()]
-        h_names.sort()
         if options['list']:
+            h_names =  [h.name for h in BaseHeuristic.all_heuristics()]
+            h_names.sort()
             for name in h_names:
                 print name
             sys.exit()
@@ -86,6 +85,5 @@ class Command(BaseCommand):
         else:
             if options['regenerate']:
                 log.info('Purging all events that we know how to regenerate')
-                Event.objects.filter(name__in=h_names).delete()
+                Event.objects.filter(name__in=BaseHeuristic.all_event_names).delete()
             BaseHeuristic.generate_all_events(run=this_run)
-        transaction.commit()
