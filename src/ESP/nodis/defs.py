@@ -601,3 +601,27 @@ syphilis = Condition(
 #        ],
 #    med_days_before = 28,
     )
+
+#===============================================================================
+#
+# Giardiasis
+#
+#-------------------------------------------------------------------------------
+
+giardiasis_1 = ComplexEventPattern(
+    name = 'Giardiasis pattern #1',
+    patterns = [
+        'giardiasis_antigen_pos',
+        ],
+    operator = 'and',
+    )
+
+giardiasis = Condition(
+    name = 'giardiasis',
+    patterns = [(giardiasis_1, 0)],
+    recur_after = 365, # New cases after 365 days
+    test_name_search = ['giar', 'giard'],
+    )
+
+
+

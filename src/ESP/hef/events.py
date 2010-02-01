@@ -550,3 +550,26 @@ EncounterHeuristic(
     match_style = 'startswith',
     )
 
+
+
+#
+#--- Giardiasis
+#
+
+LabResultHeuristic(
+    name = 'giardiasis_antigen',
+    long_name = 'Giardiasis Antigen',
+    )
+
+MedicationHeuristic(
+    name = 'metronidazole',
+    long_name = 'Metronidazole',
+    drugs = ['metronidazole'],
+    )
+
+EncounterHeuristic(
+    name = 'diarrhea',
+    long_name = 'Diarrhea',
+    icd9s = ['787.91'],
+    )
+
