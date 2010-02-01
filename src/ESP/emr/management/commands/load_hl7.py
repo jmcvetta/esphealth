@@ -31,6 +31,10 @@ import operator
 import shutil
 import socket
 
+from django.core.management.base import BaseCommand
+from optparse import make_option
+from optparse import Values
+
 from hl7 import hl7
 
 from ESP.settings import DEBUG
@@ -550,121 +554,92 @@ class Hl7MessageLoader(object):
         return datetime.datetime.strptime(str, dateformat)
 
     
-
-def check_folders_exist():
-    for folder in [INCOMING_DIR, PROCESSED_DIR, 
-                   ATTEMPTED_DIR, FAILED_DIR, SKIPPED_DIR]:
-        if not os.path.exists(folder):  # Create folders if necessary
-            os.makedirs(folder)
-
-def process_file(filename, options):
-    basename = os.path.basename(filename)
-    record_file_status(basename, 'attempted')
-    log.info('Loading HL7 message: "%s"' % filename)
-    f = open(filename)
-    msg = f.read()
-    # We have the contents of file in memory, so we can move to attempt folder
-    f.close()
-    if options.archive:
-        shutil.move(filename, ATTEMPTED_DIR)
-        log.debug('Moved file %s to %s' % (basename, ATTEMPTED_DIR))
-    Hl7MessageLoader(msg).parse()
-    # If we got here and everything is okay, record that this file has been 
-    # successfully processed.
-    record_file_status(basename, 'loaded') # Status 'loaded'
-    if options.archive:
-        #
-        # Archive file.  Archive path is determined by the date stamp of the file.
-        #
-        date = basename.split('_')[1].split()[0]
-        year, month, day = date.split('-')
-        day_folder = os.path.join(PROCESSED_DIR, year, month, day)
-        if not os.path.exists(day_folder):  # Create folders if necessary
-            os.makedirs(day_folder)
-        # Move file
-        shutil.move(os.path.join(ATTEMPTED_DIR, basename), day_folder)
-        log.debug('Moved file %s to %s' % (basename, day_folder))
+class Command(BaseCommand):
     
-                
-
-def main():
-    loaded_counter = 0
-    failure_counter = 0
-    folders = {}
-    parser = optparse.OptionParser()
-    parser.add_option('--new', action='store_true', dest='new', 
-        help='Process only new HL7 messages')
-    parser.add_option('--retry', action='store_true', dest='retry',
-        help='Process only HL7 messages that have previously failed to process')
-    parser.add_option('--all', action='store_true', dest='all', 
-        help='Process new and retry HL7 messages.')
-    parser.add_option('--no-load', action='store_false', dest='load', default=True,
-        help='Do not load HL7 message data into ESP')
-    parser.add_option('--mail', action='store_true', dest='mail', default=False,
-        help='Send email notifications' )
-    parser.add_option('--file', action='store', dest='single_file', metavar='FILEPATH', 
-        help='Load an individual message file')
-    parser.add_option('--input', action='store', dest='input_folder', default=INCOMING_DIR,
-        metavar='FOLDER', help='Folder from which to read incoming HL7 messages')
-    parser.add_option('--no-archive', action='store_false', dest='archive', default=True, 
-        help='Do NOT archive files after they have been loaded')
-    parser.add_option('--dry-run', action='store_true', dest='dry_run', default=False,
-        help='Show which files would be loaded, but do not actually load them')
-    options, args = parser.parse_args()
-    log.debug('options: %s' % options)
+    help = 'Load medical record data from HL7 files'
     
-    if options.input_folder:
-        folder = options.input_folder
-        assert os.path.isdir(folder) # Sanity check -- is really a folder?
-        folders[folder] = os.listdir(folder)
+    option_list = BaseCommand.option_list + (
+        make_option('--new', action='store_true', dest='new', 
+            help='Process only new HL7 messages'),
+        make_option('--retry', action='store_true', dest='retry',
+            help='Process only HL7 messages that have previously failed to process'),
+        make_option('--all', action='store_true', dest='all', 
+            help='Process new and retry HL7 messages.'),
+        make_option('--no-load', action='store_false', dest='load', default=True,
+            help='Do not load HL7 message data into ESP'),
+        make_option('--mail', action='store_true', dest='mail', default=False,
+            help='Send email notifications' ),
+        make_option('--file', action='store', dest='single_file', metavar='FILEPATH', 
+            help='Load an individual message file'),
+        make_option('--input', action='store', dest='input_folder', default=INCOMING_DIR,
+            metavar='FOLDER', help='Folder from which to read incoming HL7 messages'),
+        make_option('--no-archive', action='store_false', dest='archive', default=True, 
+            help='Do NOT archive files after they have been loaded'),
+        make_option('--dry-run', action='store_true', dest='dry_run', default=False,
+            help='Show which files would be loaded, but do not actually load them'),
+        )
         
-    if options.single_file:
-        log.debug('Loading single file from command line:\n\t%s' % options.single_file)
-        # Include only the one file specified on command line
-        filepath = options.single_file
-        basename = os.path.basename(full_name)
-        if Provenance.objects.filter(source=basename, status__in=('loaded', 'errors')).count():
-            sys.stderr.write('\nThis file has already been loaded into the database.  Aborting.\n\n')
-        else:
-            Hl7MessageLoader(filepath=filepath, options=options).load()
-            print 'File %s successfully loaded' % basename
-        sys.exit()
-
-    if options.all:
-        options.new = True
-        options.retry = True
-
-    if options.retry: folders[FAILED_DIR] = os.listdir(FAILED_DIR)
-    if options.new: folders[INCOMING_DIR] = os.listdir(INCOMING_DIR)
-
-    if options.dry_run:
-        for folder, files in folders.items():
-            for f in files: print os.path.abspath(os.path.join(folder, f))
-        sys.exit()
-            
-    if not options.retry and not options.new:
-        sys.stderr.write('You must select either --new, --retry, or --all\n')
-        parser.print_help()
-        sys.exit()
-    
-    loaded_sources = Provenance.objects.filter(status='loaded')
-    for folder, files in folders.items():
-        for f in files:
-            if loaded_sources.filter(source=f).count():
-                log.debug('File already loaded, skipping:  %s' % f)
-                continue
-            filepath = os.path.join(folder, f)
-            res = Hl7MessageLoader(filepath=filepath, options=options).load()
-            if res == 'loaded':
-                loaded_counter += 1
-            elif res == 'failure':
-                failure_counter += 1
+    def handle(self, *args, **options):
+        #
+        # Sanity Check -- do folders exist?
+        #
+        for folder in [INCOMING_DIR, PROCESSED_DIR, 
+                       ATTEMPTED_DIR, FAILED_DIR, SKIPPED_DIR]:
+            if not os.path.exists(folder):  # Create folders if necessary
+                os.makedirs(folder)
+        # 
+        # Setup Options
+        #
+        loaded_counter = 0
+        failure_counter = 0
+        folders = {}
+        options = Values(options) # So we don't have to reference dictionary keys all the time.
+        log.debug('options: %s' % options)
+        if options.input_folder:
+            folder = options.input_folder
+            assert os.path.isdir(folder) # Sanity check -- is really a folder?
+            folders[folder] = os.listdir(folder)
+        if options.single_file:
+            log.debug('Loading single file from command line:\n\t%s' % options.single_file)
+            # Include only the one file specified on command line
+            filepath = options.single_file
+            basename = os.path.basename(filepath)
+            if Provenance.objects.filter(source=basename, status__in=('loaded', 'errors')).count():
+                sys.stderr.write('\nThis file has already been loaded into the database.  Aborting.\n\n')
             else:
-                raise RuntimeError("WTF?!")
-    log.info('Loaded:    %s' % loaded_counter)
-    log.info('Failed:    %s' % failure_counter)
+                Hl7MessageLoader(filepath=filepath, options=options).load()
+                print 'File %s successfully loaded' % basename
+            sys.exit()
+        if options.all:
+            options.new = True
+            options.retry = True
+        if options.retry: folders[FAILED_DIR] = os.listdir(FAILED_DIR)
+        if options.new: folders[INCOMING_DIR] = os.listdir(INCOMING_DIR)
+        if options.dry_run:
+            for folder, files in folders.items():
+                for f in files: print os.path.abspath(os.path.join(folder, f))
+            sys.exit()
+        if not options.retry and not options.new:
+            sys.stderr.write('You must select either --new, --retry, or --all\n')
+            sys.exit()
+        #
+        # Load Files
+        #
+        loaded_sources = Provenance.objects.filter(status='loaded')
+        for folder, files in folders.items():
+            for f in files:
+                if loaded_sources.filter(source=f).count():
+                    log.debug('File already loaded, skipping:  %s' % f)
+                    continue
+                filepath = os.path.join(folder, f)
+                res = Hl7MessageLoader(filepath=filepath, options=options).load()
+                if res == 'loaded':
+                    loaded_counter += 1
+                elif res == 'failure':
+                    failure_counter += 1
+                else:
+                    raise RuntimeError("WTF?!")
+        log.info('Loaded:    %s' % loaded_counter)
+        log.info('Failed:    %s' % failure_counter)
     
             
-if __name__ == '__main__':
-    check_folders_exist()
-    main()
