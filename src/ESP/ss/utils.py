@@ -24,6 +24,15 @@ def report_folder(begin_date, end_date, subfolder=None):
     if not os.path.isdir(folder): os.makedirs(folder)
     return folder
 
+def age_identifier(age_group):
+    if age_group:
+        lower = age_group[0] if type(age_group[0]) is int else 'under'
+        upper = (age_group[1] - 1) if type(age_group[1]) is int else 'plus'
+        return '-age-%s-%s' % (lower, upper)
+    else:
+        return '-all'
+
+
 def make_non_specialty_clinics():
     # Some really twisted list comprehension magic to get a
     # tab-demilited file turned into a a list of lists, each list

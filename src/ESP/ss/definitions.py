@@ -8,6 +8,7 @@ ENCOUNTERS_BY_SITE_ZIP_FILENAME = 'ESPAtrius_AllEnc_zip5_Excl_Site_%s_%s.xls'
 AGGREGATE_BY_RESIDENTIAL_ZIP_FILENAME = 'ESPAtrius_SyndAgg_zip5_Res_Excl_%s_%s_%s.xls'
 AGGREGATE_BY_SITE_ZIP_FILENAME = 'ESPAtrius_SyndAgg_zip5_Site_Excl_%s_%s_%s.xls'
 INDIVIDUAL_BY_SYNDROME_FILENAME = 'ESPAtrius_SyndInd_zip5_Site_Excl_%s_%s_%s.xls'
+MAXIMUM_AGE = 250
 AGE_GROUP_INTERVAL = 5
 AGE_GROUP_CAP = 90    
 AGE_GROUPS = xrange(0, AGE_GROUP_CAP, AGE_GROUP_INTERVAL)

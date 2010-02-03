@@ -18,10 +18,12 @@ from django.db.models import Q, F
 from ESP.emr.models import Encounter
 from ESP.hef.models import Event
 
-from definitions import AGE_GROUP_CAP
+from definitions import AGE_GROUP_CAP, MAXIMUM_AGE
 
 
 def age_group_filter(lower, upper):
+    if lower is None: lower = 0
+    if upper is None: upper = MAXIMUM_AGE
     oldest = Q(patient__date_of_birth__gte=F('date') - int(upper*365.25))
     youngest  = Q(patient__date_of_birth__lte=F('date') - int(lower*365.25))
     
