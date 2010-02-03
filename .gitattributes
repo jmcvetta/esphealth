@@ -62,6 +62,7 @@ src/ESP/emr/management/__init__.py -text
 src/ESP/emr/management/commands/__init__.py -text
 src/ESP/emr/management/commands/cleanup.py -text
 src/ESP/emr/management/commands/concordance.py -text
+src/ESP/emr/management/commands/download_ftp.py -text
 src/ESP/emr/management/commands/float_checker.py -text
 src/ESP/emr/management/commands/load_epic.py -text
 src/ESP/emr/management/commands/load_hl7.py -text
