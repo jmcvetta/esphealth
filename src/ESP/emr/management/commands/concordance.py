@@ -38,7 +38,7 @@ class Command(BaseCommand):
         log.debug('Purged concordance table.')
         # Generate the concordance -- *LONG* query
         qs = LabResult.objects.all().values('native_code', 'native_name').distinct()
-        qs = qs.annotate(count=Count('id'))
+        qs = qs.annotate(count=Count('id')).order_by('native_code', 'native_name')
         log_query('Concordance query', qs)
         for item in qs.iterator():
             LabTestConcordance(
