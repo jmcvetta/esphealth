@@ -287,9 +287,6 @@ class SyndromeHeuristic(EncounterHeuristic):
             count_by_site_and_age = ev.similar_age_group().filter(
                 reporting_site__zip_code=ev.reporting_site.zip_code, date=ev.date).count()
 
-            if not (count_by_locality_and_age and count_by_site_and_age):
-                import pdb; pdb.set_trace()
-
             line = '\t'.join([str(x) for x in [
                         self.name, str_from_date(ev.date), ev.patient_zip_code, 
                         ev.reporting_site.zip_code, patient_age_group, icd9_codes, 
