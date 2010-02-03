@@ -57,7 +57,6 @@ class Command(BaseCommand):
             help='Purge and regenerate heuristic events')
         )
 
-    @transaction.commit_on_success
     def handle(self, *args, **options):
         # 
         # TODO: We need a lockfile or some othermeans to prevent multiple 
@@ -79,6 +78,13 @@ class Command(BaseCommand):
         # Purge data before regeneration
         #
         if options['regenerate']:
+            #
+            # Regenerate is broken
+            #
+            raise NotImplementedError('Regenerate functionality is currently broken.  Contact developers if this is a major problem.')
+            #
+            #
+            #
             if args:
                 purge_names = args
             else:
