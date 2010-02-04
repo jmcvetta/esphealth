@@ -10,6 +10,7 @@ src/ESP/database_password.txt
 src/ESP/emr/*.pyc
 src/ESP/esp/*.pyc
 src/ESP/esp/templatetags/*.pyc
+src/ESP/ftp_password.txt
 src/ESP/hef/*.pyc
 src/ESP/localsettings.py
 src/ESP/messages
