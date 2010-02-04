@@ -19,6 +19,7 @@ EXIT CODES
 
 RELATED_MARGIN = 400 # Retrieve labs +/- this many days from date of missing case
 FILE_PATH = 'old_cases.csv'
+DELIMITER=','
 FILE_FIELDS = [
     'condition',
     'date',
@@ -26,6 +27,8 @@ FILE_FIELDS = [
     'last',
     'first',
     ]
+#MRN_TEMPLATE = 'ID 1-%07d' # MetroHealth
+MRN_TEMPLATE = '%s'
 TEXT_OUTPUT_TEMPLATE = 'nodis/validator.txt'
 HTML_OUTPUT_TEMPLATE = 'nodis/validator.html'
 CONDITION_MAP = {
@@ -219,14 +222,14 @@ class Command(BaseCommand):
                 
     def load_csv(self, options):
         filehandle = open(options['load'])
-        records = csv.DictReader(filehandle, FILE_FIELDS, delimiter='\t')
+        records = csv.DictReader(filehandle, FILE_FIELDS, delimiter=DELIMITER)
         list = ReferenceCaseList(notes=options['notes'])
         list.save()
         log.info('Loading data from %s into reference list #%s' % (options['load'], list.pk))
         counter = 0
         for rec in records:
             log.debug('rec: %s' % rec)
-            mrn = 'ID 1-%07d' % int(rec['mrn'])
+            mrn = MRN_TEMPLATE % rec['mrn']
             try:
                 #patient = Patient.objects.get(mrn=mrn)
                 patient = Patient.objects.get(mrn=mrn)
@@ -235,20 +238,22 @@ class Command(BaseCommand):
                 continue
             except Patient.MultipleObjectsReturned:
                 log.warning('More than one patient record matches MRN %s!' % mrn)
-                patient = Patient.objects.filter(mrn=mrn)
+                patient = Patient.objects.filter(mrn=mrn)[0]
             try:
                 condition = CONDITION_MAP[rec['condition'].lower()]
             except KeyError:
                 log.warning('Cannot understand condition name: %s' % rec['condition'])
                 continue
-            #date = date_from_str(rec['date'])
-            #date = time.strptime(rec['date'],"%m/%d/%y")
-            #date = datetime.datetime(*date[:6])
-            mon, day, year = rec['date'].split('/')
+            #mon, day, year = rec['date'].split('/')
+            date = rec['date']
+            mon, day, year = date[4:6], date[6:8], date[0:4]
             mon = int(mon)
             day = int(day)
             year = int(year)
             date = datetime.date(year, mon, day)
+            if ReferenceCase.objects.filter(patient=patient, date=date, condition=condition):
+                log.debug('Record already exists')
+                continue
             ref = ReferenceCase(
                 list = list,
                 patient = patient,
