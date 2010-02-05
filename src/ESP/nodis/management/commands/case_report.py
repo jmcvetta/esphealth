@@ -23,6 +23,8 @@ EXIT CODES
 from ESP.settings import CASE_REPORT_OUTPUT_FOLDER
 from ESP.settings import CASE_REPORT_TEMPLATE
 from ESP.settings import CASE_REPORT_FILENAME_FORMAT
+from ESP.settings import FAKE_PATIENT_MRN
+from ESP.settings import FAKE_PATIENT_SURNAME
 
 
 import optparse
@@ -1049,6 +1051,10 @@ class Command(BaseCommand):
         else:
             q_obj = Q(condition__in=report_conditions)
             q_obj = q_obj & Q(status=status)
+        if FAKE_PATIENT_MRN:
+            q_obj &= ~Q(patient__mrn__iregex=FAKE_PATIENT_MRN)
+        if FAKE_PATIENT_SURNAME:
+            q_obj &= ~Q(patient__last_name__iregex=FAKE_PATIENT_SURNAME)
         cases = Case.objects.filter(q_obj).order_by('pk')
         if not cases:
             print 
