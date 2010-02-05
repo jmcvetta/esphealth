@@ -213,7 +213,8 @@ DEFAULT_REPORTABLE_ICD9S = [
 #===============================================================================
 CASE_REPORT_OUTPUT_FOLDER = '/tmp/'
 CASE_REPORT_TEMPLATE = 'odh_hl7.txt'
-CASE_REPORT_FILENAME_FORMAT = '%(timestamp)s-%(serial)s.hl7'
+CASE_REPORT_FILENAME_FORMAT = '%(timestamp)s-%(serial_number)s.hl7'
+
 
 
 
@@ -272,6 +273,6 @@ LOG_FORMAT_CONSOLE = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(messag
 LOG_FORMAT_FILE = '%(asctime)s:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 # BEWARE: If you set the log level to DEBUG, *copious* info will be logged!
 LOG_FILE = '/var/log/esp'
-LOG_LEVEL_CONSOLE = logging.INFO
+LOG_LEVEL_CONSOLE = logging.DEBUG
 LOG_LEVEL_FILE = logging.DEBUG 
 

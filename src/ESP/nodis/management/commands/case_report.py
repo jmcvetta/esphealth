@@ -1010,8 +1010,6 @@ class Command(BaseCommand):
         output_folder = options['output_folder']
         template = options['template']
         mdph = options['mdph']
-        if sample: # '--sample' implies '--no-sent-status'
-            sent_status = False
         #
         # Sanity check options
         #
@@ -1076,8 +1074,11 @@ class Command(BaseCommand):
         one_file = options['one_file']
         stdout = options['stdout']
         sent_status = options['sent_status']
+        if options['sample']: # '--sample' implies '--no-sent-status'
+            sent_status = False
         output_folder = options['output_folder']
         template = options['template']
+        format = options['format']
         if one_file:
             output_file = StringIO.StringIO()
         template_name = os.path.join('nodis', 'report', template)
@@ -1146,7 +1147,6 @@ class Command(BaseCommand):
                 output_file.write(case_report)
                 pass
             else: # Produce an individual file for every case report [default]
-                filename_values['serial'] = serial_number
                 filename = format % filename_values
                 filepath = os.path.join(output_folder, filename)
                 file = open(filepath, 'w')
