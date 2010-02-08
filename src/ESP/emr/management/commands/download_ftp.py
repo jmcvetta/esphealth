@@ -24,12 +24,12 @@ class Command(BaseCommand):
     help = 'Fetch ETL files via FTP'
     
     def handle(self, *fixture_labels, **options):
-#        try:
-        begin_date = date_from_str(options['begin_date'])
-        end_date = date_from_str(options['end_date'])
-#        except:
-#            log.error('Invalid dates')
-#            sys.exit(-2)
+        try:
+            begin_date = date_from_str(options['begin_date'])
+            end_date = date_from_str(options['end_date'])
+        except:
+            log.error('Invalid dates')
+            sys.exit(-2)
 
         try:
             ftp = FTP(FTP_SERVER)
@@ -51,7 +51,8 @@ class Command(BaseCommand):
         datestamps = [day.strftime('%m%d%Y') for day in days]
 
         for eachfile in filenames:
-            if eachfile.split('.')[-1] in datestamps:
+            processed = (Provenance.objects.filter(source=eachfile).count() == 1)
+            if eachfile.split('.')[-1] in datestamps and not processed:
                 log.info('Retrieving file ' + eachfile)
                 ftp.retrbinary('RETR ' + eachfile, open(eachfile, 'wb').write)
                 
