@@ -31,7 +31,6 @@ import operator
 import shutil
 import socket
 
-from django.core.management.base import BaseCommand
 from optparse import make_option
 from optparse import Values
 
@@ -42,6 +41,7 @@ from ESP.settings import TOPDIR
 from ESP.settings import DATA_DIR
 from ESP.conf.models import NativeVaccine, NativeManufacturer
 from ESP.static.models import Icd9
+from ESP.emr.management.commands.common import LoaderCommand
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
@@ -155,25 +155,9 @@ class Hl7MessageLoader(object):
         self.provenance.save()
         log.debug(self.provenance)
         try:
-            if self.options.archive:
-                shutil.move(self.filepath, ATTEMPTED_DIR)
-                log.debug('Moved file %s to %s' % (self.basename, ATTEMPTED_DIR))
-            self.__parse()
-            # If this runs without throwing an exception, load is successful
+            self.__parse() # If this runs without throwing an exception, load is successful
             status = 'loaded'
             comment = None
-            if self.options.archive:
-                #
-                # Archive file.  Archive path is determined by the date stamp of the file.
-                #
-                date = self.basename.split('_')[1].split()[0]
-                year, month, day = date.split('-')
-                day_folder = os.path.join(PROCESSED_DIR, year, month, day)
-                if not os.path.exists(day_folder):  # Create folders if necessary
-                    os.makedirs(day_folder)
-                # Move file
-                shutil.move(os.path.join(ATTEMPTED_DIR, self.basename), day_folder)
-                log.debug('Moved file %s to %s' % (self.basename, day_folder))
         except KeyboardInterrupt, e:
             raise e
         except BaseException as e:
@@ -183,9 +167,6 @@ class Hl7MessageLoader(object):
             log.error('  Exception Message: %s' % e)
             status = 'failure'
             comment = str(e)
-            if self.options.archive:
-                shutil.move(os.path.join(ATTEMPTED_DIR, self.basename), FAILED_DIR)
-                log.debug('Moved file %s to %s' % (self.basename, FAILED_DIR))
         self.provenance.status = status
         self.provenance.comment = comment
         self.provenance.save()
@@ -203,9 +184,6 @@ class Hl7MessageLoader(object):
         f = open(self.filepath)
         self.message = hl7.parse(f.read()) # parsed msg
         f.close()
-        if self.options.archive:
-            shutil.move(self.filepath, ATTEMPTED_DIR)
-            log.debug('Moved file %s to %s' % (self.basename, ATTEMPTED_DIR))
         #
         # MSH
         #
@@ -554,11 +532,11 @@ class Hl7MessageLoader(object):
         return datetime.datetime.strptime(str, dateformat)
 
     
-class Command(BaseCommand):
+class Command(LoaderCommand):
     
     help = 'Load medical record data from HL7 files'
     
-    option_list = BaseCommand.option_list + (
+    option_list = LoaderCommand.option_list + (
         make_option('--new', action='store_true', dest='new', 
             help='Process only new HL7 messages'),
         make_option('--retry', action='store_true', dest='retry',
@@ -569,12 +547,6 @@ class Command(BaseCommand):
             help='Do not load HL7 message data into ESP'),
         make_option('--mail', action='store_true', dest='mail', default=False,
             help='Send email notifications' ),
-        make_option('--file', action='store', dest='single_file', metavar='FILEPATH', 
-            help='Load an individual message file'),
-        make_option('--input', action='store', dest='input_folder', default=INCOMING_DIR,
-            metavar='FOLDER', help='Folder from which to read incoming HL7 messages'),
-        make_option('--no-archive', action='store_false', dest='archive', default=True, 
-            help='Do NOT archive files after they have been loaded'),
         make_option('--dry-run', action='store_true', dest='dry_run', default=False,
             help='Show which files would be loaded, but do not actually load them'),
         )
@@ -606,9 +578,10 @@ class Command(BaseCommand):
             basename = os.path.basename(filepath)
             if Provenance.objects.filter(source=basename, status__in=('loaded', 'errors')).count():
                 sys.stderr.write('\nThis file has already been loaded into the database.  Aborting.\n\n')
+                self.archive(options, filepath, 'loaded')
             else:
-                Hl7MessageLoader(filepath=filepath, options=options).load()
-                print 'File %s successfully loaded' % basename
+                status = Hl7MessageLoader(filepath=filepath, options=options).load()
+                self.archive(options, filepath, status)
             sys.exit()
         if options.all:
             options.new = True
@@ -628,10 +601,11 @@ class Command(BaseCommand):
         loaded_sources = Provenance.objects.filter(status='loaded')
         for folder, files in folders.items():
             for f in files:
+                filepath = os.path.join(folder, f)
                 if loaded_sources.filter(source=f).count():
                     log.debug('File already loaded, skipping:  %s' % f)
+                    self.archive(options, filepath, 'loaded')
                     continue
-                filepath = os.path.join(folder, f)
                 res = Hl7MessageLoader(filepath=filepath, options=options).load()
                 if res == 'loaded':
                     loaded_counter += 1

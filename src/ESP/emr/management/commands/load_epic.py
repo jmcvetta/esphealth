@@ -30,7 +30,7 @@ import codecs
 from psycopg2 import Error as Psycopg2Error
 
 from django.db import transaction
-from django.core.management.base import BaseCommand
+from ESP.emr.management.commands.common import LoaderCommand
 
 from ESP.utils.utils import str_from_date
 from ESP.settings import DATA_DIR
@@ -52,12 +52,8 @@ from ESP.emr.models import Immunization
 # 
 # Set global values that will be used by all functions
 #
-global UPDATED_BY, INCOMING_DIR, ARCHIVE_DIR, ERROR_DIR, TIMESTAMP, UNKNOWN_PROVIDER
+global UPDATED_BY, TIMESTAMP, UNKNOWN_PROVIDER
 UPDATED_BY = 'load_epic.py'
-INCOMING_DIR = os.path.join(DATA_DIR, 'epic', 'incoming')
-ARCHIVE_DIR = os.path.join(DATA_DIR, 'epic', 'archive') # Successfully loaded files
-ERROR_DIR = os.path.join(DATA_DIR, 'epic', 'error') # Files loaded with (handled) errors
-FAILURE_DIR = os.path.join(DATA_DIR, 'epic', 'error') # Files that failed to load (w/ unhandled exception)
 TIMESTAMP = datetime.datetime.now()
 UNKNOWN_PROVIDER = Provider.objects.get(provider_id_num='UNKNOWN')
 
@@ -589,52 +585,16 @@ class ImmunizationLoader(BaseLoader):
         log.debug('Saved immunization object: %s' % i)
 
 
-def move_file(filepath, disposition):
-    '''
-    Dispose of a file after attempting to load it.
-    @param filepath: Full path to file
-    @type filepath:  String
-    @param disposition: What to do with this file?
-    @type disposition:  String - ('success', 'errors', 'failure')
-    '''
-    if disposition == 'failure':
-        folder = FAILURE_DIR
-    else: # 'success' and 'errors'
-        #year = str(datetime.datetime.now().year)
-        #month = datetime.datetime.now().strftime('%b')
-        #folder = os.path.join(ARCHIVE_DIR, year, month)
-        #if not os.path.exists(folder): 
-            #os.makedirs(folder)
-            #log.debug('Created new folder: %s' % folder)
-        folder = ARCHIVE_DIR
-    log.info('Moving file "%s" to %s' % (filepath, folder))
-    shutil.move(filepath, folder)
 
-
-class Command(BaseCommand):
+class Command(LoaderCommand):
     #
     # Parse command line options
     #
-    option_list = BaseCommand.option_list + (
-        make_option('--file', action='store', dest='single_file', metavar='FILEPATH', 
-            help='Load an individual message file'),
-        make_option('--input', action='store', dest='input_folder', default=INCOMING_DIR,
-            metavar='FOLDER', help='Folder from which to read incoming HL7 messages'),
-        make_option('--no-archive', action='store_false', dest='archive', default=True, 
-            help='Do NOT archive files after they have been loaded'),
-        )
     help = 'Loads data from Epic ETL files'
     #log.debug('options: %s' % options)
     
     def handle(self, *fixture_labels, **options):
-        #
-        # Ensure all required folders exist
-        #
-        if options['archive']:
-            for folder in [ARCHIVE_DIR, ERROR_DIR, FAILURE_DIR]:
-            	if not os.path.exists(folder): 
-                	os.makedirs(folder)
-                	log.debug('Created new folder: %s' % folder)
+        self.folder_check()
         #
         # Sort files by type
         #
@@ -710,8 +670,7 @@ class Command(BaseCommand):
                     l.provenance.comment = str(e)
                     l.provenance.save()
                     disposition = 'failure'
-                if options['archive']:
-                    move_file(filepath, disposition)
+                self.archive(options, filepath, disposition)
         #
         # Print job summary
         #
