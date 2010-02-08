@@ -274,7 +274,6 @@ src/ESP/ui/__init__.py -text
 src/ESP/ui/management/__init__.py -text
 src/ESP/ui/management/commands/__init__.py -text
 src/ESP/ui/management/commands/batch.py -text
-src/ESP/ui/models.py -text
 src/ESP/ui/tests.py -text
 src/ESP/ui/views.py -text
 src/ESP/urls.py -text
