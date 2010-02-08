@@ -102,7 +102,58 @@ DATABASE_OPTIONS = {
 }
 
 
+#===============================================================================
+#
+#                                     ETL
+#
+#===============================================================================
+# ETL_SOURCE determines what loader will be used.  Valid choices are:
+#    'Epic'
+#    'HL7'
+#    None
+ETL_SOURCE = 'Epic'
+ETL_USE_FTP = True # Use built-in FTP function to retrieve Epic files
+ETL_ARCHIVE = True # Should ETL files be archived after they have been loaded?
 
+
+#===============================================================================
+#
+#                                     FTP
+#
+#===============================================================================
+FTP_SERVER = 'n2ftp001.hvma.org'
+FTP_USER = 'HEALTHONE\\rlazarus'
+ftp_pwd_path =  os.path.join(TOPDIR, 'ftp_password.txt')
+try:
+    FTP_PASSWORD = open(ftp_pwd_path).readline().strip()
+except IOError:
+    print >> sys.stderr, \
+'''
+Cannot find "%s".
+
+Please create this file, and populate it with your FTP password.
+''' % ftp_pwd_path
+    sys.exit(1003)
+
+
+#===============================================================================
+#
+#                                     FTP
+#
+#===============================================================================
+FTP_SERVER = 'n2ftp001.hvma.org'
+FTP_USER = 'HEALTHONE\\rlazarus'
+ftp_pwd_path =  os.path.join(TOPDIR, 'ftp_password.txt')
+try:
+    FTP_PASSWORD = open(ftp_pwd_path).readline().strip()
+except IOError:
+    print >> sys.stderr, \
+'''
+Cannot find "%s".
+
+Please create this file, and populate it with your FTP password.
+''' % ftp_pwd_path
+    sys.exit(1003)
 
 
 
@@ -216,26 +267,6 @@ CASE_REPORT_TEMPLATE = 'odh_hl7.txt'
 CASE_REPORT_FILENAME_FORMAT = '%(timestamp)s-%(serial_number)s.hl7'
 
 
-
-
-#===============================================================================
-#
-#                                     FTP
-#
-#===============================================================================
-FTP_SERVER = 'n2ftp001.hvma.org'
-FTP_USER = 'HEALTHONE\\rlazarus'
-ftp_pwd_path =  os.path.join(TOPDIR, 'ftp_password.txt')
-try:
-    FTP_PASSWORD = open(ftp_pwd_path).readline().strip()
-except IOError:
-    print >> sys.stderr, \
-'''
-Cannot find "%s".
-
-Please create this file, and populate it with your FTP password.
-''' % ftp_pwd_path
-    sys.exit(1003)
 
 
 #===============================================================================
