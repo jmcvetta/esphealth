@@ -163,7 +163,7 @@ class Hl7MessageLoader(object):
             comment = None
         except KeyboardInterrupt, e:
             raise e
-        except BaseException as e:
+        except BaseException, e:
             log.error('Caught Exception:')
             log.error('  File: %s' % self.basename)
             log.error('  Exception Type: %s' % type(e))
