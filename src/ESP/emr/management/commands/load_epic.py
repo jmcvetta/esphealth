@@ -160,6 +160,7 @@ class BaseLoader(object):
         except ValueError:
             return None
     
+    @transaction.commit_on_success
     def load(self):
         # 
         # We can put error control here as it becomes necessary

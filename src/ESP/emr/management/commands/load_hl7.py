@@ -34,6 +34,8 @@ import socket
 from optparse import make_option
 from optparse import Values
 
+from django.db import transaction
+
 from hl7 import hl7
 
 from ESP.settings import DEBUG
@@ -137,6 +139,7 @@ class Hl7MessageLoader(object):
         except ValueError:
             return None
     
+    @transaction.commit_on_success
     def load(self):
         '''
         Loads the HL7 message into the database, with provenance & error 
