@@ -56,7 +56,12 @@ class LoaderCommand(BaseCommand):
         else: # 'success' and 'errors'
             folder = self.ARCHIVE_DIR
         log.info('Moving file "%s" to %s' % (filepath, folder))
-        shutil.move(filepath, folder)
+        try:
+            shutil.move(filepath, folder)
+        except shutil.Error, e:
+            msg = 'shutil Error:  %s' % e
+            log.warning(msg)
+            print msg
     
     def folder_check(self):
         '''
