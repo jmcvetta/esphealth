@@ -53,8 +53,8 @@ class Command(BaseCommand):
                 print '%s: %s' % (datestamp, msg)
         #
         # NOTE: To run a command with default options, as though run from
-        # command line w/ no arguments, use run_from_argv([]).  Use handle() if
-        # it is necessary to specify options.
+        # command line w/ no arguments, use run_from_argv([None, None]).  Use
+        # handle() if it is necessary to specify options.
         #
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #--- ETL
@@ -62,26 +62,26 @@ class Command(BaseCommand):
         if ETL_USE_FTP:
             progress('Fetching new ETL files from FTP')
             cmnd = FtpCommand()
-            cmnd.run_from_argv([])
+            cmnd.run_from_argv([None, None])
             progress('Successfully fetched new ETL files from FTP')
             del cmnd
         if ETL_SOURCE.lower() == 'epic':
             progress('Loading Epic ETL files')
             cmnd = LoadEpicCommand()
-            cmnd.run_from_argv([])
+            cmnd.run_from_argv([None, None])
             del cmnd
             progress('Succesffully loaded Epic ETL files')
         if ETL_SOURCE.lower() == 'hl7':
             pass
             cmnd = LoadHl7Command()
-            cmnd.run_from_argv([])
+            cmnd.run_from_argv([None, None])
             del cmnd
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #--- HEF
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         progress('Generating heuristic events')
         cmnd = HefCommand()
-        cmnd.run_from_argv([])
+        cmnd.run_from_argv([None, None])
         del cmnd
         progress('Successfully generated heuristic events')
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -89,7 +89,7 @@ class Command(BaseCommand):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         progress('Generating Nodis cases')
         cmnd = NodisCommand()
-        cmnd.run_from_argv([])
+        cmnd.run_from_argv([None, None])
         del cmnd
         progress('Successfully generated Nodis cases')
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
