@@ -855,7 +855,7 @@ class Encounter(BasePatientRecord):
     closed_date = models.DateField(blank=True, null=True)
     site_name = models.CharField(max_length=100, blank=True, null=True)
     native_site_num = models.CharField('Site Id #', max_length=30, blank=True, null=True)
-    native_encounter_num = models.CharField('Encounter ID #', max_length=20, blank=True, null=True)
+    native_encounter_num = models.CharField('Encounter ID #', max_length=20, blank=True, null=True, db_index=True)
     event_type = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     pregnancy_status = models.BooleanField(blank=False, default=False)
     edc = models.DateField('Expected date of confinement', blank=True, null=True, db_index=True) 
