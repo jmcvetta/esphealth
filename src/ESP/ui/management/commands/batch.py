@@ -95,8 +95,17 @@ class Command(BaseCommand):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #--- Case reports
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        pass
+        # Should this have options specified?
+        progress('Generating Nodis case reports')
+        cmnd = CaseReportCommand()
+        cmnd.run_from_argv([None, None])
+        del cmnd
+        progress('Successfully generated Nodis case reports')
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #--- Concordance
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        pass
+        progress('Rebuilding lab tests condordance')
+        cmnd = CaseReportCommand()
+        cmnd.run_from_argv([None, None])
+        del cmnd
+        progress('Successfully rebuilt lab tests condordance')
