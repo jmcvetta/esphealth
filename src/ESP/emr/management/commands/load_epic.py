@@ -145,6 +145,8 @@ class BaseLoader(object):
         return self.__provider_cache[provider_id_num]
     
     def float_or_none(self, string):
+        if not string:
+            return None
         m = self.float_catcher.match(string)
         if m and m.groups():
             result = float(m.groups()[0])
@@ -155,6 +157,8 @@ class BaseLoader(object):
         return result
     
     def date_or_none(self, string):
+        if not string:
+            return None
         try:
             return date_from_str(string)
         except ValueError:
@@ -443,25 +447,47 @@ class EncounterLoader(BaseLoader):
         ]
     
     def load_row(self, row):
-        e = Encounter()
+        try:
+            e = Encounter.objects.get(native_encounter_num=row['encounter_id_num'])
+            log.debug('Retrieved existing Encounter object for update')
+        except Encounter.DoesNotExist:
+            e = Encounter()
+            log.debug('Creating new Encounter object')
         e.provenance = self.provenance
-        e.patient = self.get_patient(row['patient_id_num'])
-        e.provider = self.get_provider(row['provider_id_num'])
-        e.native_encounter_num=row['encounter_id_num']
-        e.native_site_num = row['dept_id_num']
-        e.date = date_from_str(row['encounter_date'])
-        e.event_type = row['event_type']
-        cd = row['closed_date']
-        if cd:
-            e.closed_date = self.date_or_none(cd)
-        e.site_name = row['dept_name']
-        edc = row['edc']
-        if edc:
-            e.edc = self.date_or_none(edc)
-            e.pregnancy_status = True
-        if row['temp']:
-            e.temperature = self.float_or_none(row['temp'])
+        #
+        patient = self.get_patient(row['patient_id_num'])
+        provider = self.get_provider(row['provider_id_num'])
+        native_encounter_num=row['encounter_id_num']
+        native_site_num = row['dept_id_num']
+        encounter_date = date_from_str(row['encounter_date'])
+        event_type = row['event_type']
+        closed_date = row['closed_date']
+        site_name = row['dept_name']
+        temperature = self.float_or_none(row['temp'])
+        bp_systolic = self.float_or_none(row['bp_systolic']) 
+        bp_diastolic = self.float_or_none(row['bp_diastolic'])
+        o2_stat = self.float_or_none(row['o2_stat'])
+        peak_flow = self.float_or_none(row['peak_flow'])
+        closed_date = self.date_or_none(closed_date)
         raw_weight = row['weight']
+        raw_height = row['height']
+        edc = self.date_or_none(row['edc'])
+        #
+        if patient: e.patient = patient 
+        if provider: e.provider = provider 
+        if native_encounter_num: e.native_encounter_num = native_encounter_num 
+        if native_site_num: e.native_site_num = native_site_num 
+        if encounter_date: e.date = encounter_date 
+        if event_type: e.event_type = event_type 
+        if closed_date: e.closed_date = closed_date
+        if site_name: e.site_name = site_name 
+        if temperature: e.temperature = temperature
+        if bp_systolic: e.bp_systolic = bp_systolic
+        if bp_diastolic: e.bp_diastolic = bp_diastolic
+        if o2_stat: e.o2_stat = o2_stat
+        if peak_flow: e.peak_flow = peak_flow
+        if edc: e.edc = edc
+        if edc: e.pregnancy_status = True
         if raw_weight:
             try:
                 weight = self.float_or_none(raw_weight.split()[0])
@@ -469,7 +495,6 @@ class EncounterLoader(BaseLoader):
                     e.weight = 0.45359237 * weight
             except ValueError:
                 log.warning('Cannot cast weight to a number: %s' % raw_weight)
-        raw_height = row['height']
         if raw_height:
             match = self.feet_regex.match(raw_height)
             if match: # Need to convert from feet to cm
@@ -482,14 +507,6 @@ class EncounterLoader(BaseLoader):
                     e.height = self.float_or_none(raw_height.split()[0])
                 except ValueError:
                     log.warning('Cannot cast height to a number: %s' % raw_height)
-        if row['bp_systolic']:
-            e.bp_systolic = self.float_or_none(row['bp_systolic']) 
-        if row['bp_diastolic']:
-            e.bp_diastolic = self.float_or_none(row['bp_diastolic'])
-        if row['o2_stat']:
-            e.o2_stat = self.float_or_none(row['o2_stat'])
-        if row['peak_flow']:
-            e.peak_flow = self.float_or_none(row['peak_flow'])
         e.save() # Must save before using ManyToMany relationship
         for code in row['icd9s'].split():
             e.icd9_codes.add(self.get_icd9(code))
