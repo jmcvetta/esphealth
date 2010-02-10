@@ -150,7 +150,7 @@
     Case Components
 </h2>
 
-{% if case.lab_results.count %}
+{% if case.lab_results %}
 
 <h3>
     Lab Results
@@ -203,7 +203,7 @@
 </table>
 {% endif %}
 
-{% if case.encounters.count %}
+{% if case.encounters %}
 <h3>
     Physician Encounters
 </h3>
@@ -260,7 +260,7 @@
 </table>
 {% endif %}
 
-{% if case.prescriptions.count %}
+{% if case.prescriptions %}
 <h3>
     Prescriptions
 </h3>
@@ -308,7 +308,7 @@
 </table>
 {% endif %}
 
-{% if case.past_events.count %}
+{% if case.past_events %}
 <h3>
     Past Events
 </h3>
