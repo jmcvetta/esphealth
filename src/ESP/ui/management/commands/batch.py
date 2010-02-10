@@ -27,6 +27,10 @@ from ESP.emr.management.commands.concordance   import Command as ConcordanceComm
 from ESP.settings import ETL_SOURCE
 from ESP.settings import ETL_USE_FTP
 from ESP.settings import ETL_SOURCE
+from ESP.settings import CASE_REPORT_OUTPUT_FOLDER
+from ESP.settings import CASE_REPORT_MDPH
+from ESP.settings import CASE_REPORT_FILENAME_FORMAT
+from ESP.settings import CASE_REPORT_TEMPLATE
 
 
 class Command(BaseCommand):
@@ -95,10 +99,19 @@ class Command(BaseCommand):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #--- Case reports
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Should this have options specified?
         progress('Generating Nodis case reports')
         cmnd = CaseReportCommand()
-        cmnd.run_from_argv([None, None])
+        cmnd.handle(
+            output_folder=CASE_REPORT_OUTPUT_FOLDER,
+            template=CASE_REPORT_TEMPLATE,
+            mdph=CASE_REPORT_MDPH,
+            stdout=False,
+            case=None,
+            individual=False,
+            status='Q',
+            sent_status=True,
+            sample=None,
+            )
         del cmnd
         progress('Successfully generated Nodis case reports')
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
