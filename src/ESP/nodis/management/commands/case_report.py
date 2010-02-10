@@ -34,6 +34,7 @@ import os
 import cStringIO as StringIO
 import datetime
 import re
+from optparse import Values
 
 from django.db.models import Q
 from django.template import TemplateDoesNotExist
@@ -976,14 +977,14 @@ class Command(BaseCommand):
             help='Create file names using FORMAT.  Default: %s' % CASE_REPORT_FILENAME_FORMAT),
         make_option('--mdph', action='store_true', dest='mdph', default=False,
             help='Export cases in HL7v3 dialect required by Mass Dept of Public Health'),
-        make_option('--stdout', action='store_true', dest='stdout', 
+        make_option('--stdout', action='store_true', dest='stdout', default=False,
             help='Print output to STDOUT (no files created)'),
         make_option('--case', action='store', dest='case_id', metavar='ID', 
             help='Export a single case with specified case ID'),
         make_option('--individual', action='store_false', dest='one_file',
             default=False, help='Export each cases to an individual file (default)'),
         make_option('--one-file', action='store_true', dest='one_file',
-            default=False, help='Export all cases to a one file'),
+            default=False, help='Export all cases to one file.  Always true for MDPH reports.'),
         make_option('--status', action='store', dest='status', default='Q',
             help='Export only cases with this status ("Q" by default)'),
         make_option('--no-sent-status', action='store_false', dest='sent_status', default=True,
@@ -1167,6 +1168,7 @@ class Command(BaseCommand):
             log.info('Wrote single report for all %s cases to file: %s' % (serial_number, filepath))
     
     def mdph(self, options, cases):
+        options = Values(options)
         batch = hl7Batch(nmessages=len(cases))
         for case in cases:
             log.debug('Generating HL7 for %s' % case)
@@ -1175,4 +1177,18 @@ class Command(BaseCommand):
             except IncompleteCaseData, e:
                 log.critical('Could not generate HL7 message for case # %s !' % case)
                 log.critical('    %s' % e)
-        print batch.renderBatch()
+        case_report = batch.renderBatch()
+        if options.stdout:
+            print case_report
+        else:
+            values = { 
+                # Used to populate file name template -- serial is updated below
+                'serial_number': 0,
+                'timestamp': self.timestamp,
+                }
+            filename = options.format % values
+            filepath = os.path.join(options.output_folder, filename)
+            file = open(filepath, 'w')
+            file.write(case_report)
+            file.close()
+            log.info('Wrote case report to file: %s' % filepath)
