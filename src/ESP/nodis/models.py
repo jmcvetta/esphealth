@@ -1490,7 +1490,7 @@ class Case(models.Model):
         #
         all_ids = set()
         for field in [self.events, self.events_before, self.events_after, self.events_ever]:
-            ids = field.all().values_list('pk')
+            ids = field.all().values_list('pk', flat=True)
             all_ids.update(ids)
         return Event.objects.filter(pk__in=all_ids)
     all_events = property(__get_all_events)
