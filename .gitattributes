@@ -1,7 +1,5 @@
 * text=auto !eol
 /LICENSE -text
-axis-1_4/activation.jar -text
-axis-1_4/mail.jar -text
 bin/esp-batch-run.sh -text
 doc/ESP-architecture.png -text svneol=unset#unset
 doc/ESP-architecture.xmind -text svneol=unset#unset
@@ -23,6 +21,8 @@ share/epic_etl/AdditionalStepsAfterCompile.doc -text svneol=unset#unset
 share/epic_etl/ESPFileLayout.doc -text svneol=unset#unset
 share/epic_etl/README.txt -text
 share/epic_etl/mhslespftp.sh -text
+src/ESP/axis-1_4/activation.jar -text
+src/ESP/axis-1_4/mail.jar -text
 src/ESP/batch-run.sh -text
 src/ESP/cache/__init__.py -text
 src/ESP/cache/models.py -text
