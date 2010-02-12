@@ -633,16 +633,12 @@ class hl7Batch:
             snomed=self.getSNOMED(lxRec,condition)
             if lxRec.result_string:
                 res = lxRec.result_string
-                first_res = res.split()[0]
             else:
                 res = ''
-                first_res = ''
             if not snomed: ##like ALT/AST
                 #ALT/AST much be number
-                #obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'NM')],obx3=[('CE.4',lxRec.output_or_native_code),('CE.6','L')],
-                                   #obx5=[('', res.split()[0])], obx7=[('',lxRange)],obx14=[('TS.1',lxTS.strftime(DATE_FORMAT))], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
                 obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'NM')],obx3=[('CE.4',lxRec.output_or_native_code),('CE.6','L')],
-                                   obx5=[('', first_res)], obx7=[('',lxRange)],obx14=[('TS.1',lxTS.strftime(DATE_FORMAT))], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
+                                   obx5=[('', res.split()[0])], obx7=[('',lxRange)],obx14=[('TS.1',lxTS.strftime(DATE_FORMAT))], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
             else:
                 obx1 = self.makeOBX(obx1=[('','1')],obx2=[('', 'CE')],obx3=[('CE.4',lxRec.output_or_native_code),('CE.6','L')],
                                obx5=[('CE.4',snomed)],  obx7=[('',lxRange)],obx14=[('TS.1',lxTS.strftime(DATE_FORMAT))], obx15=[('CE.1','22D0076229'), ('CE.3','CLIA')])
