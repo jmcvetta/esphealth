@@ -81,7 +81,7 @@ INSTITUTION.zip = '02215'
 INSTITUTION.country = 'USA'
 INSTITUTION.email = 'MKLOMPAS@PARTNERS.ORG'
 INSTITUTION.area_code = '617'
-INSTITUTION.tel = '5099991'
+INSTITUTION.tel_numeric = '5099991'
 INSTITUTION.tel_ext = None
 
 APP_NAME = 'ESPv2'
@@ -379,7 +379,7 @@ class hl7Batch:
         if demog.tel:
             pid13 = self.casesDoc.createElement('PID.13')
             self.addSimple(pid13,demog.areacode,'XTN.6')
-            self.addSimple(pid13,demog.tel,'XTN.7')
+            self.addSimple(pid13,demog.tel_numeric,'XTN.7')
             if demog.tel_ext:
                 self.addSimple(pid13,demog.tel_ext,'XTN.8')
             section.appendChild(pid13)
@@ -418,7 +418,7 @@ class hl7Batch:
         outerElement='NK1.5'
         email=''
         ext=''
-        contact = self.makeContact(email,pcp.area_code,pcp.telephone,ext,outerElement)
+        contact = self.makeContact(email,pcp.area_code,pcp.tel_numeric,ext,outerElement)
         if contact <> None:
             section.appendChild(contact)
         return section
@@ -446,7 +446,7 @@ class hl7Batch:
         section.appendChild(address)
         outerElement='NK1.5'
         email=INSTITUTION.email
-        contact = self.makeContact(email, INSTITUTION.area_code, INSTITUTION.tel, INSTITUTION.tel_ext, outerElement)
+        contact = self.makeContact(email, INSTITUTION.area_code, INSTITUTION.tel_numeric, INSTITUTION.tel_ext, outerElement)
         if contact <> None:
             section.appendChild(contact)
         return section
@@ -777,7 +777,7 @@ class hl7Batch:
         outerElement='ORC.14'
         email=''
         ext=''
-        contact = self.makeContact(email, pcp.area_code, pcp.telephone, ext, outerElement)
+        contact = self.makeContact(email, pcp.area_code, pcp.tel_numeric, ext, outerElement)
         if contact <> None:
             orc.appendChild(contact)
         orc21 = self.casesDoc.createElement('ORC.21')
@@ -790,7 +790,7 @@ class hl7Batch:
             INSTITUTION.state, INSTITUTION.zip, country ,outerElement, addressType)
         orc.appendChild(address)
         outerElement='ORC.23'
-        contact = self.makeContact(None, INSTITUTION.area_code, INSTITUTION.tel, INSTITUTION.tel_ext, outerElement)
+        contact = self.makeContact(None, INSTITUTION.area_code, INSTITUTION.tel_numeric, INSTITUTION.tel_ext, outerElement)
         if contact <> None:
             orc.appendChild(contact)
         outerElement='ORC.24'
