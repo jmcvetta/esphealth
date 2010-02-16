@@ -101,24 +101,24 @@ class Command(BaseCommand):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         progress('Generating Nodis case reports')
         cmnd = CaseReportCommand()
-        cmnd.handle(
-            output_folder=CASE_REPORT_OUTPUT_FOLDER,
-            template=CASE_REPORT_TEMPLATE,
-            mdph=CASE_REPORT_MDPH,
-            stdout=False,
-            case_id=None,
-            individual=False,
-            status='Q',
-            sent_status=True,
-            sample=None,
-            )
+#        cmnd.handle(
+#            output_folder=CASE_REPORT_OUTPUT_FOLDER,
+#            template=CASE_REPORT_TEMPLATE,
+#            mdph=CASE_REPORT_MDPH,
+#            stdout=False,
+#            case_id=None,
+#            individual=False,
+#            status='Q',
+#            sent_status=True,
+#            sample=None,
+#            )
         del cmnd
         progress('Successfully generated Nodis case reports')
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #--- Concordance
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         progress('Rebuilding lab tests condordance')
-        cmnd = CaseReportCommand()
+        cmnd = ConcordanceCommand()
         cmnd.run_from_argv([None, None])
         del cmnd
         progress('Successfully rebuilt lab tests condordance')
