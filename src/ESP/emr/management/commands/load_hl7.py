@@ -540,8 +540,6 @@ class Command(LoaderCommand):
     help = 'Load medical record data from HL7 files'
     
     option_list = LoaderCommand.option_list + (
-        make_option('--new', action='store_true', dest='new', 
-            help='Process only new HL7 messages'),
         make_option('--retry', action='store_true', dest='retry',
             help='Process only HL7 messages that have previously failed to process'),
         make_option('--all', action='store_true', dest='all', 
@@ -586,9 +584,11 @@ class Command(LoaderCommand):
                 status = Hl7MessageLoader(filepath=filepath, options=options).load()
                 self.archive(options, filepath, status)
             sys.exit()
-        if options.all:
+        if options.retry:
+            options.new = False
+        else:
             options.new = True
-            options.retry = True
+        if options.all: options.retry = True
         if options.retry: folders[FAILED_DIR] = os.listdir(FAILED_DIR)
         if options.new: folders[INCOMING_DIR] = os.listdir(INCOMING_DIR)
         if options.dry_run:
