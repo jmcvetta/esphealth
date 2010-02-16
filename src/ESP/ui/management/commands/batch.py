@@ -106,7 +106,7 @@ class Command(BaseCommand):
             template=CASE_REPORT_TEMPLATE,
             mdph=CASE_REPORT_MDPH,
             stdout=False,
-            case=None,
+            case_id=None,
             individual=False,
             status='Q',
             sent_status=True,
