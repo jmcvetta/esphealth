@@ -267,6 +267,7 @@ CASE_REPORT_OUTPUT_FOLDER = os.path.join(DATA_DIR, 'case_reports')
 CASE_REPORT_MDPH = True # Use MDPH case report output
 CASE_REPORT_TEMPLATE = 'odh_hl7.txt'
 CASE_REPORT_FILENAME_FORMAT = '%(timestamp)s-%(serial_number)s.hl7'
+CASE_REPORT_BATCH_SIZE = 30 # Integer or None
 
 
 

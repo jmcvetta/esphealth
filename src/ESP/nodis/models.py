@@ -1471,12 +1471,20 @@ class Case(models.Model):
     events_before = models.ManyToManyField(Event, blank=False, related_name='events_before') # The events that caused this case to be generated, but occured before the event window
     events_after = models.ManyToManyField(Event, blank=False, related_name='events_after') # The events that caused this case to be generated, but occurred after the event window
     events_ever = models.ManyToManyField(Event, blank=False, related_name='events_ever') # The events that caused this case to be generated, but occurred after the event window
-    #
-    # ConditionConfig object
-    #
+    
     def __get_condition_config(self):
+        '''
+        Return the ConditionConfig object for this case's condition
+        '''
         return ConditionConfig.objects.get(name=self.condition)
     condition_config = property(__get_condition_config)
+    
+    def __get_first_provider(self):
+        '''
+        Provider for chronologically first event
+        '''
+        return self.events.all().order_by('date')[0].content_object.provider
+    first_provider = property(__get_first_provider)
     
     #
     # Events by class
@@ -1604,6 +1612,28 @@ class CaseStatusHistory(models.Model):
     class Meta:
         verbose_name = 'Case Status History'
         verbose_name_plural = 'Case Status History'
+
+
+class ReportRun(models.Model):
+    '''
+    A run of the case_report command
+    '''
+    timestamp = models.DateTimeField(auto_now=True)
+    hostname = models.CharField('Host on which data was loaded', max_length=255, blank=False)
+
+
+    
+class Report(models.Model):
+    '''
+    A reporting message generated from one or more Case objects
+    '''
+    timestamp = models.DateTimeField(auto_now=True, blank=False)
+    run = models.ForeignKey(ReportRun, blank=False)
+    cases = models.ManyToManyField(Case, blank=False)
+    filename = models.CharField(max_length=512, blank=False)
+    sent = models.BooleanField('Case status was set to sent?', default=False)
+    message = models.TextField('Case report message', blank=False)
+    
 
 
 #===============================================================================

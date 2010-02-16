@@ -16,6 +16,7 @@ EXIT CODES
 101    Unrecognized condition
 102    Unrecognized case status
 103    Unrecognized template name
+104    Invalid combination of command line options
 999    Functionality not yet implemented
 '''
 
@@ -23,6 +24,7 @@ EXIT CODES
 from ESP.settings import CASE_REPORT_OUTPUT_FOLDER
 from ESP.settings import CASE_REPORT_TEMPLATE
 from ESP.settings import CASE_REPORT_FILENAME_FORMAT
+from ESP.settings import CASE_REPORT_BATCH_SIZE
 from ESP.settings import FAKE_PATIENT_MRN
 from ESP.settings import FAKE_PATIENT_SURNAME
 
@@ -32,27 +34,38 @@ import sys
 import pprint
 import os
 import cStringIO as StringIO
+import time
 import datetime
 import re
+import socket
+
 from optparse import Values
+from optparse import make_option
+from xml.dom.minidom import Document
 
 from django.db.models import Q
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.template.loader import get_template
 from django.core.management.base import BaseCommand
-from optparse import make_option
 
-from ESP.utils.utils import log
-from ESP.utils.utils import log_query
+from ESP.static.models import Icd9
+from ESP.emr.models import Patient
+from ESP.emr.models import Provider
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
-from ESP.nodis import defs
+
+from ESP.nodis import defs # Not sure if this is necessary
 from ESP.nodis.models import Condition
 from ESP.nodis.models import Case
+from ESP.nodis.models import ReportRun
+from ESP.nodis.models import Report
 from ESP.nodis.models import STATUS_CHOICES
+
+from ESP.utils.utils import log
+from ESP.utils.utils import log_query
 
 
 
@@ -79,7 +92,7 @@ INSTITUTION.city = 'Boston'
 INSTITUTION.state = 'MA'
 INSTITUTION.zip = '02215'
 INSTITUTION.country = 'USA'
-INSTITUTION.email = 'MKLOMPAS@PARTNERS.ORG'
+INSTITUTION.email = 'mklompas@partners.org'
 INSTITUTION.area_code = '617'
 INSTITUTION.tel_numeric = '5099991'
 INSTITUTION.tel_ext = None
@@ -104,37 +117,6 @@ class IncompleteCaseData(BaseException):
     pass
 
 
-#===============================================================================
-#
-#--- Core
-#
-#===============================================================================
-
-import time
-import datetime
-import random
-import string
-import pprint
-
-from django.core.management.base import BaseCommand
-from optparse import make_option
-
-from ESP.static.models import Icd9
-from ESP.emr.models import LabResult
-from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.emr.models import Immunization
-from ESP.emr.models import Patient
-from ESP.emr.models import Provider
-from ESP.hef.models import Event
-from ESP.nodis.models import Case
-from ESP.nodis.models import Condition as ConditionModel
-from ESP.nodis.defs import *
-from ESP.utils.utils import log
-from ESP.utils.utils import log_query
-
-from django.contrib.auth import REDIRECT_FIELD_NAME
-from xml.dom.minidom import Document
 
 
 def isoTime(t=None):
@@ -418,7 +400,7 @@ class hl7Batch:
         outerElement='NK1.5'
         email=''
         ext=''
-        contact = self.makeContact(email,pcp.area_code,pcp.tel_numeric,ext,outerElement)
+        contact = self.makeContact(email,pcp.area_code,pcp.tel_numeric, ext,outerElement)
         if contact <> None:
             section.appendChild(contact)
         return section
@@ -664,7 +646,7 @@ class hl7Batch:
                 else:
                     return snomedposi
             except:
-                if string.find(lxRec.result_string, '>')!=-1:
+                if lxRec.result_string.find('>') != -1:
                     return snomedposi
                 else:
                     return snomednega
@@ -979,7 +961,7 @@ class Command(BaseCommand):
             help='Export cases in HL7v3 dialect required by Mass Dept of Public Health'),
         make_option('--stdout', action='store_true', dest='stdout', default=False,
             help='Print output to STDOUT (no files created)'),
-        make_option('--case', action='store', dest='case_id', metavar='ID', 
+        make_option('--case', action='store', dest='case_id', type='int', metavar='ID', 
             help='Export a single case with specified case ID'),
         make_option('--individual', action='store_false', dest='one_file',
             default=False, help='Export each cases to an individual file (default)'),
@@ -991,29 +973,31 @@ class Command(BaseCommand):
             help='Do NOT set case status to "S" after export'),
         make_option('--sample', action='store', dest='sample', metavar='NUM', type='int', 
             help='Report only first NUM cases matching criteria; do NOT set status to sent'),
+        make_option('--batch-size', action='store', type='int', dest='batch_size', metavar='NUM',
+            default=None, help='Generate batches of NUM cases per file'),
         )
     
     def handle(self, *args, **options):
         report_conditions = [] # Names of conditions for which we will export cases
-        self.timestamp = datetime.datetime.now().strftime('%Y-%b-%d-%H:%M:%s')
         #
-        # Parse command line for options
+        # Parse and sanity check command line for options
         #
         all_conditions = Condition.list_all_condition_names()
         all_conditions.sort()
-        case_id = options['case_id']
-        sample = options['sample']
-        format = options['format']
-        status = options['status']
-        one_file = options['one_file']
-        stdout = options['stdout']
-        sent_status = options['sent_status']
-        output_folder = options['output_folder']
-        template = options['template']
-        mdph = options['mdph']
-        #
-        # Sanity check options
-        #
+        options = Values(options)
+        if options.sample: # '--sample' implies '--no-sent-status'
+            options.sent_status = False
+        template_name = os.path.join('nodis', 'report', options.template)
+        try:
+            get_template(template_name)
+        except TemplateDoesNotExist:
+            print >> sys.stderr
+            print >> sys.stderr, 'Unrecognized template name: "%s".  Aborting.' % options.template
+            print >> sys.stderr
+            sys.exit(103)
+        if options.one_file and options.batch_size:
+            print >> sys.stderr, '--batch-size and --one-file cannot be used together'
+            sys.exit(104)
         for a in args:
             if a.lower() == 'all':
                 report_conditions = all_conditions
@@ -1033,142 +1017,122 @@ class Command(BaseCommand):
                 sys.exit(101)
         log.debug('conditions: %s' % report_conditions)
         valid_status_choices = [item[0] for item in STATUS_CHOICES]
-        if status not in valid_status_choices:
+        if options.status not in valid_status_choices:
                 print >> sys.stderr
-                print >> sys.stderr, 'Unrecognized status: "%s".  Aborting.' % status
+                print >> sys.stderr, 'Unrecognized status: "%s".  Aborting.' % options.status
                 print >> sys.stderr
                 print >> sys.stderr, 'Valid status choices are:'
                 for stat in valid_status_choices:
                     print >> sys.stderr, '    %s' % stat
                 sys.exit(102)
-        log.debug('status: %s' % status)
+        log.debug('status: %s' % options.status)
+        #
+        # Set up case report run object
+        #
+        run = ReportRun(hostname=socket.gethostname())
+        run.save()
         #
         # Generate case query
         #
-        if case_id:
-            q_obj = Q(pk__exact=case_id)
+        if options.case_id:
+            q_obj = Q(pk__exact=options.case_id)
         else:
             q_obj = Q(condition__in=report_conditions)
-            q_obj = q_obj & Q(status=status)
+            q_obj = q_obj & Q(status=options.status)
         if FAKE_PATIENT_MRN:
             q_obj &= ~Q(patient__mrn__iregex=FAKE_PATIENT_MRN)
         if FAKE_PATIENT_SURNAME:
             q_obj &= ~Q(patient__last_name__iregex=FAKE_PATIENT_SURNAME)
         cases = Case.objects.filter(q_obj).order_by('pk')
+        log_query('Filtered cases', cases)
         if not cases:
             print 
             print 'No cases found matching your specifications.  No output generated.'
             print
             sys.exit(11)
-        log_query('Filtered cases', cases)
-        if sample: # Report only a single, random sample case
-            cases = cases[0:sample]
-        if options['mdph']:
-            self.mdph(options, cases)
-        else:
-            self.use_template(options, cases)
+        if options.sample: # Report only sample number of cases
+            cases = cases[0:options.sample]
+        #
+        # Split cases into batches
+        #
+        if not options.batch_size and not options.one_file:
+            options.batch_size = CASE_REPORT_BATCH_SIZE
+        elif options.one_file:
+            batch_size = cases.count()
+        batch_serial = 0
+        self.timestamp = datetime.datetime.now().strftime('%Y-%b-%d-%H:%M:%s')
+        for index in range(0, cases.count(), options.batch_size):
+            filename_values = { 
+                # Used to populate file name template -- serial is updated below
+                'serial_number': batch_serial,
+                'timestamp': self.timestamp,
+                }
+            batch_cases = cases[index:index+options.batch_size]
+            #
+            # Generate report message
+            #
+            if options.mdph:
+                report_str = self.mdph(options, batch_serial, batch_cases)
+            else:
+                report_str = self.use_template(options, batch_serial, batch_cases)
+            log.debug('Message to report:\n%s' % report_str)
+            report_obj = Report(
+                run = run,
+                message = report_str,
+                ) 
+            #
+            # Output
+            #
+            if options.stdout: # Print case reports to STDOUT
+                log.debug('Printing message to stdout')
+                report_obj.filename = 'STDOUT'
+                print report_str
+            else: # Produce one output file per batch
+                filename = options.format % filename_values
+                report_obj.filename = filename
+                filepath = os.path.join(options.output_folder, filename)
+                file = open(filepath, 'w')
+                file.write(report_str)
+                file.close()
+                log.info('Wrote case report to file: %s' % filepath)
+            if options.sent_status:
+                batch_cases.update(status = 'S')
+                report_obj.sent = True
+                log.debug("Set status to 'S' for this batch of cases")
+            report_obj.save()
+            report_obj.cases = batch_cases # 'Report' instance needs to have a primary key value before a many-to-many relationship can be used.
+            report_obj.save()
+            batch_serial += 1
     
-    def use_template(self, options, cases):
+    def use_template(self, options, batch_serial, cases):
         '''
         Generate report messages based on a template
         '''
-        one_file = options['one_file']
-        stdout = options['stdout']
-        sent_status = options['sent_status']
-        if options['sample']: # '--sample' implies '--no-sent-status'
-            sent_status = False
-        output_folder = options['output_folder']
-        template = options['template']
-        format = options['format']
-        if one_file:
-            output_file = StringIO.StringIO()
-        template_name = os.path.join('nodis', 'report', template)
+        #
+        # Sanity check -- does specified template exist?
+        #
+        template_name = os.path.join('nodis', 'report', options.template)
         try:
             get_template(template_name)
         except TemplateDoesNotExist:
             print >> sys.stderr
-            print >> sys.stderr, 'Unrecognized template name: "%s".  Aborting.' % template
+            print >> sys.stderr, 'Unrecognized template name: "%s".  Aborting.' % options.template
             print >> sys.stderr
             sys.exit(103)
-        filename_values = { 
-            # Used to populate file name template -- serial is updated below
-            'serial_number': 0,
-            'timestamp': self.timestamp,
+        #
+        # Build report message 
+        #
+        values = {
+            'cases': cases,
+            'batch_serial': batch_serial,
             }
-        #
-        # Build message string
-        #
-        serial_number = 0 # Serial number of case reported for this timestamp
-        for case in cases:
-            serial_number += 1 # Increment serial number for this case
-            matched_labs = []
-            matched_encounters = []
-            matched_prescriptions = []
-            matched_immunizations = []
-            for event in case.events.all():
-                content = event.content_object
-                if isinstance(content, LabResult):
-                    matched_labs.append(content)
-                if isinstance(content, Encounter):
-                    matched_encounters.append(content)
-                if isinstance(content, Prescription):
-                    matched_prescriptions.append(content)
-                if isinstance(content, Immunization):
-                    matched_immunizations.append(content)
-            labs = case.lab_results.all()
-            # Case.events is blank=False, so this shouldn't ever thrown an index error.
-            provider = case.events.all().order_by('date')[0].content_object.provider
-            values = {
-                'case': case,
-                'patient': case.patient,
-                'provider': provider,
-                'matched_labs': matched_labs,
-                'matched_encounters': matched_encounters,
-                'matched_prescriptions': matched_prescriptions,
-                'matched_immunizations': matched_immunizations,
-                #'all_labs': labs,
-                #'all_encounters': case.encounters.all(),
-                #'all_prescriptions': case.medications.all(),
-                #'all_immunizations': case.immunizations.all(),
-                'serial_number': serial_number,
-                }
-            log.debug('values for template: \n%s' % pprint.pformat(values))
-            case_report = render_to_string(template_name, values)
-            # Remove blank lines -- allows us to have neater templates
-            case_report = re.sub("\n\s*\n*", "\n", case_report)
-            #
-            # Report message
-            #
-            log.debug('Message to report:\n%s' % case_report)
-            if stdout: # Print case reports to STDOUT
-                log.debug('Printing message to stdout')
-                print case_report
-            elif one_file: # All reports in one big file
-                log.debug('Adding case #%s report to single output file' % case.pk)
-                output_file.write(case_report)
-                pass
-            else: # Produce an individual file for every case report [default]
-                filename = format % filename_values
-                filepath = os.path.join(output_folder, filename)
-                file = open(filepath, 'w')
-                file.write(case_report)
-                file.close()
-                log.info('Wrote case #%s report to file: %s' % (case.pk, filepath))
-            if sent_status:
-                case.status = 'S'
-                case.save()
-                log.debug("Set status to 'S' for case #%s" % case.pk)
-        if one_file:
-            filename = format % filename_values
-            filepath = os.path.join(output_folder, filename)
-            file = open(filepath, 'w')
-            file.write(output_file.getvalue())
-            file.close()
-            # serial_number is equal to the number of cases reported
-            log.info('Wrote single report for all %s cases to file: %s' % (serial_number, filepath))
+        log.debug('values for template: \n%s' % pprint.pformat(values))
+        case_report = render_to_string(template_name, values)
+        # Remove blank lines -- allows us to have neater templates
+        case_report = re.sub("\n\s*\n*", "\n", case_report)
+        return case_report
     
-    def mdph(self, options, cases):
-        options = Values(options)
+    def mdph(self, options, batch_serial, cases):
         batch = hl7Batch(nmessages=len(cases))
         for case in cases:
             log.debug('Generating HL7 for %s' % case)
@@ -1178,17 +1142,4 @@ class Command(BaseCommand):
                 log.critical('Could not generate HL7 message for case # %s !' % case)
                 log.critical('    %s' % e)
         case_report = batch.renderBatch()
-        if options.stdout:
-            print case_report
-        else:
-            values = { 
-                # Used to populate file name template -- serial is updated below
-                'serial_number': 0,
-                'timestamp': self.timestamp,
-                }
-            filename = options.format % values
-            filepath = os.path.join(options.output_folder, filename)
-            file = open(filepath, 'w')
-            file.write(case_report)
-            file.close()
-            log.info('Wrote case report to file: %s' % filepath)
+        return case_report
