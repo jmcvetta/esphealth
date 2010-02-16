@@ -108,10 +108,10 @@ DATABASE_OPTIONS = {
 #
 #===============================================================================
 # ETL_SOURCE determines what loader will be used.  Valid choices are:
-#    'Epic'
-#    'HL7'
+#    'epic'
+#    'hl7'
 #    None
-ETL_SOURCE = 'Epic'
+ETL_SOURCE = 'epic'
 ETL_USE_FTP = True # Use built-in FTP function to retrieve Epic files
 ETL_ARCHIVE = True # Should ETL files be archived after they have been loaded?
 

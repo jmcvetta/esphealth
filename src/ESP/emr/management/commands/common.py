@@ -19,6 +19,7 @@ from django.core.management.base import BaseCommand
 
 from ESP.utils.utils import log
 from ESP.settings import DATA_DIR
+from ESP.settings import ETL_SOURCE
 
 
 class LoaderCommand(BaseCommand):
@@ -26,9 +27,9 @@ class LoaderCommand(BaseCommand):
     Adds directory constands and file disposition method to BaseCommand.
     '''
     
-    INCOMING_DIR = os.path.join(DATA_DIR, 'epic', 'incoming')
-    ARCHIVE_DIR = os.path.join(DATA_DIR, 'epic', 'archive') # Successfully loaded files
-    FAILURE_DIR = os.path.join(DATA_DIR, 'epic', 'error') # Files that failed to load (w/ unhandled exception)
+    INCOMING_DIR = os.path.join(DATA_DIR, ETL_SOURCE, 'incoming')
+    ARCHIVE_DIR = os.path.join(DATA_DIR, ETL_SOURCE, 'archive') # Successfully loaded files
+    FAILURE_DIR = os.path.join(DATA_DIR, ETL_SOURCE, 'error') # Files that failed to load (w/ unhandled exception)
     
     option_list = BaseCommand.option_list + (
         make_option('--file', action='store', dest='single_file', metavar='FILEPATH', 

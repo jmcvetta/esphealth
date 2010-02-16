@@ -11,6 +11,7 @@
 '''
 
 import datetime
+import sys
 
 from django.core.management.base import BaseCommand
 from optparse import make_option
@@ -69,17 +70,23 @@ class Command(BaseCommand):
             cmnd.run_from_argv([None, None])
             progress('Successfully fetched new ETL files from FTP')
             del cmnd
-        if ETL_SOURCE.lower() == 'epic':
+        if ETL_SOURCE == 'epic':
             progress('Loading Epic ETL files')
             cmnd = LoadEpicCommand()
             cmnd.run_from_argv([None, None])
             del cmnd
             progress('Succesffully loaded Epic ETL files')
-        if ETL_SOURCE.lower() == 'hl7':
+        elif ETL_SOURCE == 'hl7':
             pass
             cmnd = LoadHl7Command()
             cmnd.run_from_argv([None, None])
             del cmnd
+        else:
+            print >> sys.stderr, 'Unrecognized ETL_SOURCE: "%s"' % ETL_SOURCE
+            print >> sys.stderr, ''
+            print >> sys.stderr, 'Valid case-sensitive ETL_SOURCE values are:'
+            print >> sys.stderr, '    epic'
+            print >> sys.stderr, '    hl7'
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #--- HEF
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
