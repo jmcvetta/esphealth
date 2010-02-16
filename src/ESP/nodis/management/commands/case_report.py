@@ -978,6 +978,7 @@ class Command(BaseCommand):
         )
     
     def handle(self, *args, **options):
+        output_file_paths = [] # Full path to each output file
         report_conditions = [] # Names of conditions for which we will export cases
         #
         # Parse and sanity check command line for options
@@ -1046,9 +1047,9 @@ class Command(BaseCommand):
         cases = Case.objects.filter(q_obj).order_by('pk')
         log_query('Filtered cases', cases)
         if not cases:
-            print 
-            print 'No cases found matching your specifications.  No output generated.'
-            print
+            print >> sys.stderr, ''
+            print >> sys.stderr, 'No cases found matching your specifications.  No output generated.'
+            print >> sys.stderr, ''
             sys.exit(11)
         if options.sample: # Report only sample number of cases
             cases = cases[0:options.sample]
@@ -1091,6 +1092,7 @@ class Command(BaseCommand):
                 filename = options.format % filename_values
                 report_obj.filename = filename
                 filepath = os.path.join(options.output_folder, filename)
+                output_file_paths.append(filepath)
                 file = open(filepath, 'w')
                 file.write(report_str)
                 file.close()
@@ -1103,6 +1105,12 @@ class Command(BaseCommand):
             report_obj.cases = batch_cases # 'Report' instance needs to have a primary key value before a many-to-many relationship can be used.
             report_obj.save()
             batch_serial += 1
+        #
+        # Print the full path of each output file, for the consumption of any script that may call this command.
+        #
+        for path in output_file_paths:
+            print path
+        sys.exit(0)
     
     def use_template(self, options, batch_serial, cases):
         '''
