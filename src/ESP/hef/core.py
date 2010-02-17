@@ -851,7 +851,7 @@ class PregnancyHeuristic(BaseHeuristic):
         # ICD9s
         #
         log.info('Generating pregnancy events from ICD9s')
-        q_obj = Q(icd9_codes__startswith='V22.') | Q(icd9_codes__startswith='V23.')
+        q_obj = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
         q_obj &= ~Q(pregnancy__pk__isnull=False)
         icd9_encounters = Encounter.objects.filter(q_obj)
         log_query('Pregnancy encounters by ICD9', icd9_encounters)
