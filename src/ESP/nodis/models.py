@@ -1611,7 +1611,7 @@ class CaseStatusHistory(models.Model):
     
     class Meta:
         verbose_name = 'Case Status History'
-        verbose_name_plural = 'Case Status History'
+        verbose_name_plural = 'Case Status Histories'
 
 
 class ReportRun(models.Model):
