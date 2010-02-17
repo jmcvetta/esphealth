@@ -36,6 +36,7 @@ from ESP.static.models import Loinc
 from ESP.static.models import Icd9
 from ESP.hef.models import Event
 from ESP.hef.models import Run
+from ESP.hef.models import Pregnancy
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
@@ -43,7 +44,7 @@ from ESP.utils.utils import log_query
 
 
 POSITIVE_STRINGS = ['reactiv', 'pos', 'detec', 'confirm']
-NEGATIVE_STRINGS = ['non', 'neg', 'not', 'nr']
+NEGATIVE_STRINGS = ['non', 'neg', 'not', 'nr', 'tnp']
 
 
 
@@ -414,6 +415,13 @@ class LabResultHeuristic(BaseLabHeuristic):
         #
         # Build numeric query
         #
+        #
+        # Not doing abnormal flag yet, because many values are not null but a blank string
+        #
+        #if result_type == 'positive':
+            #pos_q = Q(abnormal_flag__isnull=False)
+        #else:
+            #pos_q = None
         pos_q = None
         for map in code_maps:
             #
@@ -805,3 +813,58 @@ class WesternBlotHeuristic(BaseLabHeuristic):
                     break
         log.debug('Found %s actual positive lab results.' % len(match_pks))
         return LabResult.objects.filter(pk__in = match_pks)
+
+
+class PregnancyHeuristic(BaseHeuristic):
+    '''
+    Heuristic to infer periods of known pregnancy from EDC values and ICD9 codes
+    '''
+    
+    def __init__(self):
+        BaseHeuristic.__init__(self,
+            name = 'pregnancy',
+            long_name = 'Pregnancy',
+            )
+    
+    def generate_events(self, run, **kwargs):
+        #
+        # EDC
+        #
+        log.info('Generating pregnancy events from EDC')
+        q_obj = Q(edc__isnull=False)
+        q_obj &= ~Q(pregnancy__pk__isnull=False)
+        edc_encounters = Encounter.objects.filter(q_obj)
+        log_query('Pregnancy encounters by EDC', edc_encounters)
+        for enc in edc_encounters.iterator():
+            start_date = enc.edc - datetime.timedelta(days=280)
+            p = Pregnancy(
+                run = run,
+                patient = enc.patient,
+                start_date = start_date,
+                end_date = enc.edc,
+                content_object = enc,
+                )
+            p.save()
+            log.debug('Added pregnancy record: %s (%s - %s)' % (enc.patient, start_date, enc.edc))
+        del q_obj
+        #
+        # ICD9s
+        #
+        log.info('Generating pregnancy events from ICD9s')
+        q_obj = Q(icd9_codes__startswith='V22.') | Q(icd9_codes__startswith='V23.')
+        q_obj &= ~Q(pregnancy__pk__isnull=False)
+        icd9_encounters = Encounter.objects.filter(q_obj)
+        log_query('Pregnancy encounters by ICD9', icd9_encounters)
+        for enc in icd9_encounters.iterator():
+            start_date = enc.date - datetime.timedelta(days=30)
+            end_date = enc.date + datetime.timedelta(days=14)
+            p = Pregnancy(
+                run = run,
+                patient = enc.patient,
+                start_date = start_date,
+                end_date = end_date,
+                content_object = enc,
+                )
+            p.save()
+            log.debug('Added pregnancy record: %s (%s - %s)' % (enc.patient, start_date, enc.edc))
+        log.info('Generated %s new pregnancy events' % Pregnancy.objects.filter(run=run).count() )

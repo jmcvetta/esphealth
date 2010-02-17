@@ -15,6 +15,7 @@ from ESP.hef.core import MedicationHeuristic
 from ESP.hef.core import FeverHeuristic
 from ESP.hef.core import CalculatedBilirubinHeuristic
 from ESP.hef.core import WesternBlotHeuristic
+from ESP.hef.core import PregnancyHeuristic
 
 
 #===============================================================================
@@ -52,6 +53,9 @@ EncounterHeuristic(
     long_name = 'Chronic Hepatitis C diagnosis',
     icd9s = ['070.54', '070.70', ],
     )
+
+#--- pregnancy
+PregnancyHeuristic() # No config needed
 
 
 #===============================================================================

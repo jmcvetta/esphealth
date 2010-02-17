@@ -870,6 +870,7 @@ class Encounter(BasePatientRecord):
     peak_flow = models.FloatField(max_length=50, blank=True, null=True)
     # HEF
     events = generic.GenericRelation('hef.Event')
+    pregnancy = generic.GenericRelation('hef.Pregnancy')
     
     class Meta:
         ordering = ['date']
