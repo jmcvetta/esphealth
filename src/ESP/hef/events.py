@@ -509,7 +509,12 @@ LabResultHeuristic(
 
 LabResultHeuristic(
     name = 'ogtt75_fasting',
-    long_name = 'GLUCOSE FASTING PRE 75 GM',
+    long_name = 'GLUCOSE, FASTING'
+    )
+    
+LabResultHeuristic(
+    name = 'ogtt75_fasting_ur',
+    long_name = 'GLUCOSE FASTING, UR',
     )
     
 LabResultHeuristic(
