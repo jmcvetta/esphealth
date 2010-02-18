@@ -92,8 +92,8 @@ class Pregnancy(models.Model):
     # period.
     
     patient = models.ForeignKey(Patient, blank=False)
-    start_date = models.DateField(blank=False)
-    end_date = models.DateField(blank=False)
+    start_date = models.DateField(blank=False, db_index=True)
+    end_date = models.DateField(blank=False, db_index=True)
     timestamp = models.DateTimeField('Time this event was created in db', blank=False, auto_now_add=True)
     run = models.ForeignKey(Run, blank=False)
     #
