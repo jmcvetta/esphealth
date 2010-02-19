@@ -480,58 +480,38 @@ LabResultHeuristic(
 # OGTT 75 Intrapartum
 
 LabResultHeuristic(
-    name = 'ogtt75_intrapartum_fasting',
+    name = 'ogtt75_fasting',
     long_name = 'GLUCOSE FASTING PRE 75 GM',
     )
-    
-LabResultHeuristic(
-    name = 'ogtt75_intrapartum_30m',
-    long_name = 'GLUCOSE 1/2 HR POST 75 GM',
-    )
 
-LabResultHeuristic(
-    name = 'ogtt75_intrapartum_1hr',
-    long_name = 'GLUCOSE 1 HR POST 75 GM',
-    )
-
-LabResultHeuristic(
-    name = 'ogtt75_intrapartum_90m',
-    long_name = 'GLUCOSE 1 1/2 HR POST 75 GM',
-    )
-
-LabResultHeuristic(
-    name = 'ogtt75_intrapartum_2hr',
-    long_name = 'GLUCOSE 2 HR POST 75 GM',
-    )
-
-
-#--- OGTT 75
-
-LabResultHeuristic(
-    name = 'ogtt75_fasting',
-    long_name = 'GLUCOSE, FASTING'
-    )
-    
 LabResultHeuristic(
     name = 'ogtt75_fasting_ur',
     long_name = 'GLUCOSE FASTING, UR',
     )
     
 LabResultHeuristic(
+    name = 'ogtt75_30m',
+    long_name = 'GLUCOSE 1/2 HR POST 75 GM',
+    )
+
+LabResultHeuristic(
+    name = 'ogtt75_1hr',
+    long_name = 'GLUCOSE 1 HR POST 75 GM',
+    )
+
+LabResultHeuristic(
+    name = 'ogtt75_90m',
+    long_name = 'GLUCOSE 1 1/2 HR POST 75 GM',
+    )
+
+LabResultHeuristic(
     name = 'ogtt75_2hr',
-    long_name = 'GLUCOSE, 2 HR',
+    long_name = 'GLUCOSE 2 HR POST 75 GM',
     )
 
 
-#--- OGTT 75 Postpartum
-
 LabResultHeuristic(
-    name = 'ogtt75_postpartum_fasting',
-    long_name = 'GLUCOSE, FASTING',
-    )
-    
-LabResultHeuristic(
-    name = 'ogtt75_postpartum_2hr',
+    name = 'ogtt75_2hr',
     long_name = 'GLUCOSE, 2 HR',
     )
 
