@@ -475,10 +475,15 @@ LabResultHeuristic(
 
 #--- OGTT 75
 
+# We have intra- and postpartum OGTT75 fasting heuristics, because default threshold is different for each
 LabResultHeuristic(
-    name = 'ogtt75_fasting',
+    name = 'ogtt75_fasting_intrapartum',
     long_name = 'GLUCOSE FASTING PRE 75 GM',
-    fixed_threshold_events = [95, 126],
+    )
+    
+LabResultHeuristic(
+    name = 'ogtt75_fasting_postpartum',
+    long_name = 'GLUCOSE FASTING PRE 75 GM',
     )
 
 LabResultHeuristic(
