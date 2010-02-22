@@ -507,12 +507,6 @@ LabResultHeuristic(
     )
 
 
-LabResultHeuristic(
-    name = 'ogtt75_2hr',
-    long_name = 'GLUCOSE, 2 HR',
-    )
-
-
 #--- OGTT 100
 
 LabResultHeuristic(
