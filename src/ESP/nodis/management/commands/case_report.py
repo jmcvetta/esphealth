@@ -25,8 +25,14 @@ from ESP.settings import CASE_REPORT_OUTPUT_FOLDER
 from ESP.settings import CASE_REPORT_TEMPLATE
 from ESP.settings import CASE_REPORT_FILENAME_FORMAT
 from ESP.settings import CASE_REPORT_BATCH_SIZE
+from ESP.settings import CASE_REPORT_TRANSMIT
 from ESP.settings import FAKE_PATIENT_MRN
 from ESP.settings import FAKE_PATIENT_SURNAME
+from ESP.settings import CODEDIR
+from ESP.settings import JAVA_DIR
+from ESP.settings import JAVA_CLASSPATH
+from ESP.settings import JAVA_JARS
+from ESP.settings import LOG_FILE
 
 
 import optparse
@@ -38,6 +44,8 @@ import time
 import datetime
 import re
 import socket
+import subprocess
+import shlex
 
 from optparse import Values
 from optparse import make_option
@@ -951,31 +959,34 @@ class Command(BaseCommand):
     args = '[conditions]'
     
     option_list = BaseCommand.option_list + (
+        make_option('--case', action='store', dest='case_id', type='int', metavar='ID', 
+            help='Export a single case with specified case ID'),
+        make_option('--status', action='store', dest='status', default='Q',
+            help='Export only cases with this status ("Q" by default)'),
+        make_option('--batch-size', action='store', type='int', dest='batch_size', metavar='NUM',
+            default=None, help='Generate batches of NUM cases per file'),
+        make_option('--mdph', action='store_true', dest='mdph', default=False,
+            help='Export cases in HL7v3 dialect required by Massachusetts Department of Public Health'),
+        make_option('--transmit', action='store_true', dest='transmit', default=False, 
+            help='Transmit cases after generation'),
+        make_option('--no-mark-sent', action='store_false', dest='mark_sent', default=True,
+            help='Do NOT set cases status to "S"'),
         make_option('-o', action='store', metavar='FOLDER', dest='output_folder',
             default=CASE_REPORT_OUTPUT_FOLDER, help='Output case report file(s) to FOLDER'),
         make_option('-t', action='store', metavar='TEMPLATE', dest='template', 
             default=CASE_REPORT_TEMPLATE, help='Use TEMPLATE to generate HL7 messages'),
         make_option('-f', action='store', dest='format', metavar='FORMAT', default=CASE_REPORT_FILENAME_FORMAT,
             help='Create file names using FORMAT.  Default: %s' % CASE_REPORT_FILENAME_FORMAT),
-        make_option('--mdph', action='store_true', dest='mdph', default=False,
-            help='Export cases in HL7v3 dialect required by Mass Dept of Public Health'),
         make_option('--stdout', action='store_true', dest='stdout', default=False,
             help='Print output to STDOUT (no files created)'),
-        make_option('--case', action='store', dest='case_id', type='int', metavar='ID', 
-            help='Export a single case with specified case ID'),
         make_option('--individual', action='store_false', dest='one_file',
             default=False, help='Export each cases to an individual file (default)'),
         make_option('--one-file', action='store_true', dest='one_file',
             default=False, help='Export all cases to one file.  Always true for MDPH reports.'),
-        make_option('--status', action='store', dest='status', default='Q',
-            help='Export only cases with this status ("Q" by default)'),
-        make_option('--no-sent-status', action='store_false', dest='sent_status', default=True,
-            help='Do NOT set case status to "S" after export'),
         make_option('--sample', action='store', dest='sample', metavar='NUM', type='int', 
-            help='Report only first NUM cases matching criteria; do NOT set status to sent'),
-        make_option('--batch-size', action='store', type='int', dest='batch_size', metavar='NUM',
-            default=None, help='Generate batches of NUM cases per file'),
+            help='Report only first NUM cases matching criteria; do NOT set status to "s"'),
         )
+        
     
     def handle(self, *args, **options):
         output_file_paths = [] # Full path to each output file
@@ -998,6 +1009,9 @@ class Command(BaseCommand):
             sys.exit(103)
         if options.one_file and options.batch_size:
             print >> sys.stderr, '--batch-size and --one-file cannot be used together'
+            sys.exit(104)
+        if options.stdout and options.transmit:
+            print >> sys.stderr, '--stdout and --transmit cannot be used together'
             sys.exit(104)
         for a in args:
             if a.lower() == 'all':
@@ -1097,10 +1111,14 @@ class Command(BaseCommand):
                 file.write(report_str)
                 file.close()
                 log.info('Wrote case report to file: %s' % filepath)
-            if options.sent_status:
-                batch_cases.update(status = 'S')
-                report_obj.sent = True
-                log.debug("Set status to 'S' for this batch of cases")
+                #
+                # Transmission
+                #
+                if options.transmit:
+                    #batch_cases.update(status = 'S')
+                    #report_obj.sent = True
+                    #log.debug("Set status to 'S' for this batch of cases")
+                    self.transmit(options, filename)
             report_obj.save()
             report_obj.cases = batch_cases # 'Report' instance needs to have a primary key value before a many-to-many relationship can be used.
             report_obj.save()
@@ -1151,3 +1169,34 @@ class Command(BaseCommand):
                 log.critical('    %s' % e)
         case_report = batch.renderBatch()
         return case_report
+    
+    def transmit(self, options, report_file):
+        '''
+        Transmit a batch of cases to its recipient (e.g. dept of public health)
+        '''
+        if CASE_REPORT_TRANSMIT.lower() == 'atrius':
+            return self.transmit_atrius(options, report_file)
+        else:
+            raise NotImplementedError('Support for "%s" transmit is not implemented' % CASE_REPORT_TRANSMIT)
+        
+    def transmit_atrius(self, options, report_file):
+        #
+        # Compile Java sender application
+        #
+        send_msg_command = os.path.join(CODEDIR, 'sendMsgs', 'sendMsg')
+        javac = os.path.join(JAVA_DIR, 'javac')
+        compile_cmd = "%s -classpath %s %s.java" % (javac, JAVA_CLASSPATH, send_msg_command)
+        log.debug(compile_cmd)
+        compile_args = shlex.split(compile_cmd)
+        p = subprocess.Popen(compile_args)
+        retcode = p.wait()
+        if retcode: # Error
+            msg = 'Compile java Exception: %s' % compile_cmd
+            log.error(msg)
+            print >> sys.stderr, msg
+            sys.exit()
+        
+        java_runtime = os.path.join(JAVA_DIR, 'java')
+        transmit_cmd = "%s -classpath %s %s %s | tee %s" % (java_runtime, JAVA_CLASSPATH, 'sendMsg', report_file, LOG_FILE)
+        print transmit_cmd
+    
