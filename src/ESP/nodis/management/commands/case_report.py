@@ -1199,6 +1199,7 @@ class Command(BaseCommand):
         java_runtime = os.path.join(JAVA_DIR, 'java')
         # Do we really want to tee off to a log file here?
         transmit_cmd = "%s -classpath %s %s %s | tee %s" % (java_runtime, JAVA_CLASSPATH, 'sendMsg', report_file, LOG_FILE)
+        log.debug(transmit_cmd)
         transmit_args = shlex.split(transmit_cmd)
         p = subprocess.Popen(transmit_args)
         retcode = p.wait()
