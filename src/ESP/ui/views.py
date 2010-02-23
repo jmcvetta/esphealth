@@ -168,7 +168,7 @@ def labtest_lookup(request):
             class NativeCodeForm(forms.Form):
                 tests = forms.MultipleChoiceField(choices=choices, label=None,
                     widget=TableSelectMultiple(item_attrs=('native_code', 'native_name'))
-                	)
+                    )
             result_form = NativeCodeForm()
     else:
         lookup_form = TestSearchForm()
@@ -206,9 +206,9 @@ def labtest_detail(request):
             'native_code': nc,
             'native_names': labs.values_list('native_name', flat=True).distinct().order_by('native_name'),
             'result_strings': labs.filter(result_float__isnull=True).values_list('result_string', flat=True).distinct().order_by('result_string'),
-    	    'comments': labs.values_list('comment', flat=True).distinct().order_by('comment'),
-    	    'ref_high_values': labs.values_list('ref_high_string', flat=True).distinct().order_by('ref_high_string'),
-    	    'ref_low_values': labs.values_list('ref_low_string', flat=True).distinct().order_by('ref_low_string'),
+            'comments': labs.values_list('comment', flat=True).distinct().order_by('comment'),
+            'ref_high_values': labs.values_list('ref_high_string', flat=True).distinct().order_by('ref_high_string'),
+            'ref_low_values': labs.values_list('ref_low_string', flat=True).distinct().order_by('ref_low_string'),
             'min_result_float': labs.filter(result_float__isnull=False).aggregate(min=Min('result_float'))['min'],
             'max_result_float': labs.filter(result_float__isnull=False).aggregate(max=Max('result_float'))['max'],
             'count': labs.count(),

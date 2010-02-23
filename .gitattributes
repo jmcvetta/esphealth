@@ -262,6 +262,7 @@ src/ESP/templates/pages/vaers/vaers.html -text
 src/ESP/templates/ss/files/satscan.conf -text
 src/ESP/templates/status.html -text
 src/ESP/templates/ui/labtest_detail.html -text
+src/ESP/templates/ui/labtest_lookup.html -text
 src/ESP/templates/widgets/fixture_builder.json -text
 src/ESP/templates/widgets/ss/day_map_report.html -text
 src/ESP/templates/widgets/vaers/case_grid.html -text
@@ -273,6 +274,7 @@ src/ESP/ui/management/__init__.py -text
 src/ESP/ui/management/commands/__init__.py -text
 src/ESP/ui/management/commands/batch.py -text
 src/ESP/ui/tests.py -text
+src/ESP/ui/urls.py -text
 src/ESP/ui/views.py -text
 src/ESP/urls.py -text
 src/ESP/utils/common.py -text
