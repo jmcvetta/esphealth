@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
+{% endblock %}
+
+{% block content %}
+
+<table>
+    <tr>
+        <th>Native Code
+        <th>Native Name(s)
+        <th>Non-Numeric Results
+        <th>Minimum Numeric Result
+        <th>Maximum Numeric Result
+        <th>Reference Low Values
+        <th>Reference High Values
+        <th>Result Count
+    </tr>
+    {% for test in details %}
+    <tr>
+        <td>{{ test.native_code }}
+        <td>{{ test.native_names|join:"<br>" }}
+        <td>{{ test.result_strings|join:"<br>" }}
+        <td>{{ test.min_result_float }}
+        <td>{{ test.max_result_float }}
+        <td>{{ test.ref_low_values|join:"<br>" }}
+        <td>{{ test.ref_high_values|join:"<br>" }}
+        <td>{{ test.count }}
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock%}
