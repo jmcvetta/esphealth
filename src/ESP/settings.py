@@ -268,6 +268,12 @@ CASE_REPORT_MDPH = True # Use MDPH case report output
 CASE_REPORT_TEMPLATE = 'odh_hl7.txt'
 CASE_REPORT_FILENAME_FORMAT = '%(timestamp)s-%(serial_number)s.hl7'
 CASE_REPORT_BATCH_SIZE = 30 # Integer or None
+#
+# What transmission system should we use to report this case?  
+# Valid choices are:
+#    atrius
+#    metrohealth
+CASE_REPORT_TRANSMIT = 'atrius' 
 
 
 
@@ -294,6 +300,34 @@ EMAIL_USE_TLS = False
 #===============================================================================
 VAERS_NOTIFICATION_RECIPIENT = 'someone@example.com'
 
+
+#===============================================================================
+#
+#                                    JAVA
+#
+#===============================================================================
+JAVA_DIR = "/usr/bin"
+JAVA_JAR_DIR = '/usr/share/java'
+def app_full_path(folder):
+    return os.path.realpath(os.path.join(TOPDIR, folder))
+def java_full_path(folder):
+    return os.path.join(JAVA_JAR_DIR, folder)
+JAVA_JARS = [
+    java_full_path('axis.jar'),
+    java_full_path('commons-logging.jar'), 
+    java_full_path('commons-discovery.jar'), 
+    java_full_path('jaxrpc.jar'), 
+    java_full_path('wsdl4j.jar'), 
+    java_full_path('saaj.jar'), 
+    java_full_path('axis-ant.jar'), 
+    java_full_path('log4j-1.2.jar'),
+    app_full_path('axis-1_4/activation.jar'),
+    app_full_path('axis-1_4/mail.jar'),
+    app_full_path('sendMsgs/bcdc.jar'),
+    app_full_path('sendMsgs')
+    ]
+#    javaclass=" /home/ESP/ESP/sendMsgs:/home/ESP/axis-1_4/activation.jar:/usr/local/axis-1_4/lib/axis.jar:/usr/local/axis-1_4/lib/commons-logging-1.0.4.jar:/usr/local/axis-1_4/lib/commons-discovery-0.2.jar:/usr/local/axis-1_4/lib/jaxrpc.jar:/usr/local/axis-1_4/lib/wsdl4j-1.5.1.jar:/usr/local/axis-1_4/lib/saaj.jar:/usr/local/axis-1_4/lib/axis-ant.jar:/usr/local/axis-1_4/lib/log4j-1.2.8.jar:/home/ESP/axis-1_4/mail.jar:/home/ESP/ESP/sendMsgs/bcdc.jar  "
+JAVA_CLASSPATH = " %s " % ':'.join([str(jar) for jar in JAVA_JARS])
 
 
 
