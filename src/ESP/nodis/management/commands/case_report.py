@@ -1115,10 +1115,11 @@ class Command(BaseCommand):
                 # Transmission
                 #
                 if options.transmit:
-                    #batch_cases.update(status = 'S')
-                    #report_obj.sent = True
-                    #log.debug("Set status to 'S' for this batch of cases")
-                    self.transmit(options, filename)
+                    success = self.transmit(options, filename)
+                    if success:
+                        batch_cases.update(status = 'S')
+                        report_obj.sent = True
+                        log.debug("Set status to 'S' for this batch of cases")
             report_obj.save()
             report_obj.cases = batch_cases # 'Report' instance needs to have a primary key value before a many-to-many relationship can be used.
             report_obj.save()
