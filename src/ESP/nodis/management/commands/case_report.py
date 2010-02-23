@@ -1115,7 +1115,7 @@ class Command(BaseCommand):
                 # Transmission
                 #
                 if options.transmit:
-                    success = self.transmit(options, filename)
+                    success = self.transmit(options, filepath)
                     if success:
                         batch_cases.update(status = 'S')
                         report_obj.sent = True
