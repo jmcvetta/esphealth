@@ -1195,8 +1195,17 @@ class Command(BaseCommand):
             log.error(msg)
             print >> sys.stderr, msg
             sys.exit()
-        
         java_runtime = os.path.join(JAVA_DIR, 'java')
+        # Do we really want to tee off to a log file here?
         transmit_cmd = "%s -classpath %s %s %s | tee %s" % (java_runtime, JAVA_CLASSPATH, 'sendMsg', report_file, LOG_FILE)
-        print transmit_cmd
+        transmit_args = shlex.split(transmit_cmd)
+        p = subprocess.Popen(transmit_args)
+        retcode = p.wait()
+        if retcode == 0: # Error
+            return True
+        else:
+            msg = 'Error sending message with command:\n    %s' % transmit_cmd
+            log.error(msg)
+            print >> sys.stderr, msg
+            return False
     
