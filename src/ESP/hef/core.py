@@ -23,6 +23,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.db.models import F
 from django.db.models import Sum
+from django.db.models import Min
 from django.db.models import Max
 from django.db.models.query import QuerySet
 from django.contrib.contenttypes.models import ContentType
@@ -853,18 +854,28 @@ class PregnancyHeuristic(BaseHeuristic):
         log.info('Generating pregnancy events from ICD9s')
         q_obj = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
         q_obj &= Q(edc__isnull=True)
-        q_obj &= ~Q(pregnancy__pk__isnull=False)
-        icd9_encounters = Encounter.objects.filter(q_obj)
-        log_query('Pregnancy encounters by ICD9', icd9_encounters)
-        for enc in icd9_encounters.iterator():
-            start_date = enc.date - datetime.timedelta(days=30)
-            end_date = enc.date + datetime.timedelta(days=14)
+        ignore_bound_q = ~Q(pregnancy__pk__isnull=False)
+        encs = Encounter.objects.filter(q_obj)
+        encs_unbound = encs.filter(ignore_bound_q)
+        log_query('Pregnancy encounters by ICD9', encs_unbound)
+        for e in encs_unbound.iterator():
+            # Find previous pregnant encounters.  250 day range, because start_date will be 30 days earlier
+            range_encs = encs.filter(
+                patient=e.patient,
+                date__gte=(e.date - datetime.timedelta(days=250) ),
+                date__lte=(e.date + datetime.timedelta(days=266) ),
+                )
+            # Start is 30 days before first encounter in the range
+            date_range = range_encs.aggregate(start=Min('date'), end=Max('date'))
+            start_date = date_range['start'] - datetime.timedelta(days=30)
+            # End is 14 days after last encounter in the range
+            end_date = date_range['end'] + datetime.timedelta(days=14)
             p = Pregnancy(
                 run = run,
-                patient = enc.patient,
+                patient = e.patient,
                 start_date = start_date,
                 end_date = end_date,
-                content_object = enc,
+                content_object = e,
                 )
             p.save()
             log.debug('Added pregnancy record: %s (%s - %s)' % (enc.patient, start_date, enc.edc))
