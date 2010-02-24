@@ -20,8 +20,7 @@ else
   DATE=`date -d "-1 day" +%Y%m%d`
 fi
 
-python $ESP_HOME/manage.py download_ftp --begin=$DATE &&
-python $ESP_HOME/manage.py load_epic &&
-python $ESP_HOME/ss/main.py -f --begin=$DATE --end=$DATE
+python $ESP_HOME/manage.py batch &&
+python $ESP_HOME/ss/main.py -f --begin=$DATE --end=$DATE &&
 python $ESP_HOME/vaers/main.py -c -r -a --begin=$DATE --end=$DATE
 
