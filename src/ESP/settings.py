@@ -67,7 +67,7 @@ CODEDIR = TOPDIR
 TEMPLATE_DEBUG = DEBUG
 ADMINS = (
     ('Jason McVetta', 'jason.mcvetta@channing.harvard.edu'),
-    ('Ross Lazars', 'ross.lazarus@channing.harvard.edu'),
+    ('Ross Lazarus', 'ross.lazarus@channing.harvard.edu'),
     ('Raphael Lullis', 'raphael.lullis@channing.harvard.edu'),
 )
 MANAGERS = ADMINS
@@ -86,13 +86,16 @@ FAKE_PATIENT_MRN = None
 # 
 
 
+
+
+
 #===============================================================================
 #
 #                                   Database
 #
 #===============================================================================
 DATABASE_ENGINE = 'postgresql_psycopg2'
-DATABASE_NAME = 'esp'          # Or path to database file if usin
+DATABASE_NAME = 'esp_prod'          
 DATABASE_USER = 'esp'
 DATABASE_HOST = 'localhost'
 DATABASE_PORT = ''
