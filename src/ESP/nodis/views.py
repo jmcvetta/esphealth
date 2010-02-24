@@ -379,10 +379,11 @@ def updateWorkflowComment(request,object_id):
     return HttpResponseRedirect("cases/%s/F/" % caseid)
 
 
-@login_required
-def unmapped_labs_report(request):
+def _get_unmapped_labs():
     '''
-    Display Unmapped Labs report generated from cache
+    Utililty method to generate a LabTestCondordance QuerySet of unmapped, 
+    suspicious tests.  This is *not* a view.  It is called from ui.views.status 
+    as well as unmapped_labs_report() below.
     '''
     ignored = IgnoredCode.objects.values('native_code')
     mapped = CodeMap.objects.values('native_code').distinct()
@@ -394,6 +395,14 @@ def unmapped_labs_report(request):
     q_obj &= ~Q(native_code__in=ignored)
     q_obj &= ~Q(native_code__in=mapped)
     unmapped = LabTestConcordance.objects.filter(q_obj).order_by('native_name', 'native_code')
+    return unmapped
+
+@login_required
+def unmapped_labs_report(request):
+    '''
+    Display Unmapped Labs report generated from cache
+    '''
+    unmapped = _get_unmapped_labs()
     strings = Condition.all_test_name_search_strings()
     strings.sort()
     values = {

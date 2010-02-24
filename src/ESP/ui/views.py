@@ -33,6 +33,7 @@ from django.forms.models import formset_factory
 from django.forms.models import modelformset_factory
 from django.forms.util import ErrorList
 from django.shortcuts import render_to_response
+from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 from django.template import RequestContext
 from django.utils.translation import ugettext
@@ -52,9 +53,12 @@ from django.utils.safestring import mark_safe
 
 from ESP.settings import ROWS_PER_PAGE
 from ESP.settings import DATE_FORMAT
+from ESP.settings import SITE_NAME
+
 from ESP.conf.models import CodeMap
 from ESP.conf.models import IgnoredCode
 from ESP.static.models import Loinc
+from ESP.emr.models import Provenance
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
 from ESP.emr.models import Encounter
@@ -71,6 +75,7 @@ from ESP.nodis.models import ReferenceCaseList
 from ESP.nodis.models import ReferenceCase
 from ESP.nodis.models import ValidatorRun
 from ESP.nodis.models import ValidatorResult
+from ESP.nodis.views import _get_unmapped_labs
 from ESP.nodis.forms import CaseStatusForm
 from ESP.nodis.forms import CodeMapForm
 from ESP.nodis.forms import ConditionForm
@@ -217,3 +222,31 @@ def labtest_detail(request):
         details.append(row)
     values['details'] = details
     return render_to_response('ui/labtest_detail.html', values, context_instance=RequestContext(request))
+
+
+################################################################################
+#
+#--- Status Report
+#
+################################################################################
+
+
+@login_required
+def status(request, format='html'):
+    assert format.lower() in ('html', 'text')
+    today_string = datetime.datetime.now().strftime(DATE_FORMAT)
+    yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+    new_cases = Case.objects.filter(updated_timestamp__gte=yesterday)
+    values = {
+        'title': _('Status Report'),
+        'today_string': today_string,
+        'site_name': SITE_NAME,
+        'all_case_summary': Case.objects.values('condition').annotate(count=Count('pk')).order_by('condition'),
+        'new_case_summary': new_cases.values('condition').annotate(count=Count('pk')).order_by('condition'),
+        'provenances': Provenance.objects.filter(timestamp__gte=yesterday).order_by('-timestamp'),
+        'unmapped_labs': _get_unmapped_labs(),
+        }
+    if format.lower() == 'html':
+        return render_to_response('ui/status.html', values, context_instance=RequestContext(request))
+    else: # 'text'
+        return render_to_string('ui/status.txt', values)

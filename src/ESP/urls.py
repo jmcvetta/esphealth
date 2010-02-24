@@ -15,7 +15,7 @@ from django.contrib.auth.forms import AuthenticationForm
 
 from ESP.settings import MEDIA_ROOT, MEDIA_URL
 #from ESP.esp.views import index, esplogin
-from ESP.views import status
+from ESP.ui.views import status
 
 
 admin.autodiscover()

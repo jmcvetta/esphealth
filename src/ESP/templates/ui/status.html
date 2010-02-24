@@ -2,53 +2,96 @@
 
 
 {% block content %}
-<p>Date:  {{ date }}
-<br>Site:  {{ localsite }}
+<p>Date:  {{ today_string }}
+<br>Site:  {{ site_name }}
 
 
-<hr>
 <h2>
+    <hr>
     Nodis
+    <hr>
 </h2>
 
-<p>New Cases Today: 
-<blockquote>
-    <pre>
-{{ new_cases }}
-    </pre>
-</blockquote>
 
-<p>Case Summary: 
-<pre>
-{{ case_summary }}
-</pre>
-
-
-<hr>
-<h2>
-    Data
-</h2>
-
-<p>Latest Successful Data Load:             {{ latest_prov }}
-<p>Last Ten Data Loads:
-    <blockquote>
-    <table cellpadding=5 rules="all">
+<div id="all_case_summary" style="float:right;">
+    <h3>
+        All Cases:
+    </h3>
+    {% if all_case_summary.count %}
+    <table id="new_case_summary_table">
         <tr>
-            <th>Timestamp</th>
-            <th>Source</th>
-            <th>Hostname</th>
-            <th>Status</th>
-        </tr>
-        {% for prov in last_ten_prov %}
+            <th>Condition
+            <th>Count
+        {% for item in new_case_summary %}
         <tr>
-            <td>{{ prov.timestamp }}</td>
-            <td>{{ prov.source }}</td>
-            <td>{{ prov.hostname }}</td>
-            <td>{{ prov.status }}</td>
+            <td>{{ item.condition }}
+            <td>{{ item.count }}
         </tr>
         {% endfor %}
     </table>
-    </blockquote>
-</p>
+    {% else %}
+    <p>
+        <em>No new cases today.</em>
+    </p>
+    {% endif %}
+</div>
+
+<div id="new_case_summary" style="float: left;">
+    <h3>
+        New Cases Today: 
+    </h3>
+    {% if new_case_summary.count %}
+    <table id="new_case_summary_table">
+        <tr>
+            <th>Condition
+            <th>Count
+        {% for item in new_case_summary %}
+        <tr>
+            <td>{{ item.condition }}
+            <td>{{ item.count }}
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>
+        <em>No new cases today.</em>
+    </p>
+    {% endif %}
+</div>
+
+
+<div style="clear: both;" />
+
+<p>&nbsp;</p>
+
+<h3 style="clear: both;">
+    <hr>
+    Data Provenance
+    <hr>
+</h3>
+
+<div id="data_summary" style="clear: both;">
+    
+    <p>
+        <em>Data sources loaded in past day</em>
+    </p>
+    <table id="provenance_table">
+        <tr>
+            <th>Source
+            <th>Timestamp
+            <th>Status
+        </tr>
+        {% for prov in provenances %}
+        <tr>
+            <td>{{ prov.source }}
+            <td>{{ prov.timestamp }}
+            <td>{{ prov.status }}
+        </tr>
+        {% endfor %}
+    </table>
+
+</div>
+
+
 
 {% endblock %}
