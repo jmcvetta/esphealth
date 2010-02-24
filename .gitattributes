@@ -70,6 +70,7 @@ src/ESP/emr/management/commands/load_hl7.py -text
 src/ESP/emr/management/commands/rename_files.py -text
 src/ESP/emr/models.py -text
 src/ESP/emr/report.py -text
+src/ESP/emr/sql/multicolumn-indices.postgresql.sql -text
 src/ESP/emr/sql/patient.postgresql.sql -text
 src/ESP/emr/views.py -text
 src/ESP/env-setup.sh -text
