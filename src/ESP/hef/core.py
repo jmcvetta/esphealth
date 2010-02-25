@@ -45,7 +45,7 @@ from ESP.utils.utils import log_query
 
 
 POSITIVE_STRINGS = ['reactiv', 'pos', 'detec', 'confirm']
-NEGATIVE_STRINGS = ['non', 'neg', 'not', 'nr', 'tnp']
+NEGATIVE_STRINGS = ['non', 'neg', 'not', 'nr']
 
 
 
