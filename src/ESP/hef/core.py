@@ -171,7 +171,7 @@ class BaseHeuristic(object):
         '''
         raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseHeuristic.')
 
-    def generate_events(self, run, name=None, **kw):
+    def generate_events(self, run, name=None, date_field=None, **kw):
         '''
         Generate Event records for each item returned by self.matches().
         @param run: Current HEF run
@@ -185,10 +185,15 @@ class BaseHeuristic(object):
         if not name:
             name = self.name
         for event in self.matches(**kw).select_related():
+            event_date = event.date
+            if date_field == 'result': # Lab Order
+                event_date = event.result_date
+            if date_field == 'order': # Lab Result
+                event_date = event.date
             content_type = ContentType.objects.get_for_model(event)
             obj = Event(
                 name = name,
-                date = event.date,
+                date = event_date,
                 patient = event.patient,
                 run = run,
                 content_type = content_type,
@@ -295,7 +300,7 @@ class LabResultHeuristic(BaseLabHeuristic):
 
     def __init__(self, name, long_name,  positive_events = True, negative_events=False, 
         order_events=False, ratio_events=[], fixed_threshold_events=[], 
-        extra_positive_strings=[], extra_negative_strings=[]):
+        extra_positive_strings=[], extra_negative_strings=[], date_field='order',):
         '''
         @param name: Short name of this heuristic.  Should be suitable for use in a SlugField.
         @type  name: String
@@ -313,7 +318,11 @@ class LabResultHeuristic(BaseLabHeuristic):
         @type extra_positive_strings:  [String, String, ...]
         @param extra_negative_strings: Additional strings indicating negative test
         @type extra_negative_strings:  [String, String, ...]
+        @param date_field: Which field, order date or result date, should event's date be based upon?
+        @type date_field:  String (either 'order' or 'result')
         '''
+        assert (positive_events or negative_events or order_events or ratio_events or fixed_threshold_events)
+        assert date_field in ['order', 'result']
         self.positive_events = positive_events
         self.negative_events = negative_events
         self.order_events = order_events
@@ -321,7 +330,7 @@ class LabResultHeuristic(BaseLabHeuristic):
         self.fixed_threshold_events = fixed_threshold_events
         self.extra_positive_strings = extra_positive_strings
         self.extra_negative_strings = extra_negative_strings
-        assert (positive_events or negative_events or order_events or ratio_events or fixed_threshold_events)
+        self.date_field = date_field
         for ratio in ratio_events:
             assert isinstance(ratio, int) or isinstance(ratio, float)
         for threshold in fixed_threshold_events:
@@ -491,15 +500,15 @@ class LabResultHeuristic(BaseLabHeuristic):
         '''
         counter = 0
         if self.positive_events:
-            counter += BaseHeuristic.generate_events(self, run, name=self.pos_name, result_type='positive')
+            counter += BaseHeuristic.generate_events(self, run, name=self.pos_name, date_field=self.date_field, result_type='positive')
         if self.negative_events:
-            counter += BaseHeuristic.generate_events(self, run, name=self.neg_name, result_type='negative')
+            counter += BaseHeuristic.generate_events(self, run, name=self.neg_name, date_field=self.date_field, result_type='negative')
         if self.order_events:
-            counter += BaseHeuristic.generate_events(self, run, name=self.order_name, result_type='order')
+            counter += BaseHeuristic.generate_events(self, run, name=self.order_name, date_field=self.date_field, result_type='order')
         for ratio in self.ratio_events:
-            counter += BaseHeuristic.generate_events(self, run, name=self.ratio_name(ratio), result_type='ratio', ratio=ratio)
+            counter += BaseHeuristic.generate_events(self, run, name=self.ratio_name(ratio), date_field=self.date_field, result_type='ratio', ratio=ratio)
         for threshold in self.fixed_threshold_events:
-            counter += BaseHeuristic.generate_events(self, run, name=self.fixed_threshold_name(threshold), result_type='threshold', threshold=threshold)
+            counter += BaseHeuristic.generate_events(self, run, name=self.fixed_threshold_name(threshold), date_field=self.date_field, result_type='threshold', threshold=threshold)
         return counter
     
     ################################################################################

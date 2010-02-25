@@ -460,16 +460,19 @@ LabResultHeuristic(
 LabResultHeuristic(
     name = 'ogtt50_fasting',
     long_name = 'OB GLUCOSE CHALLENGE, FASTING',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt50_random',
     long_name = 'OB GLUCOSE CHALLENGE, RANDOM',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt50_1hr',
     long_name = 'GLUCOSE 1 HR POST CHAL.',
+    date_field = 'result',
     )
 
 
@@ -479,36 +482,43 @@ LabResultHeuristic(
 LabResultHeuristic(
     name = 'ogtt75_fasting_intrapartum',
     long_name = 'GLUCOSE FASTING PRE 75 GM',
+    date_field = 'result',
     )
     
 LabResultHeuristic(
     name = 'ogtt75_fasting_postpartum',
     long_name = 'GLUCOSE FASTING PRE 75 GM',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt75_fasting_urine',
     long_name = 'GLUCOSE FASTING, UR',
+    date_field = 'result',
     )
     
 LabResultHeuristic(
     name = 'ogtt75_30m',
     long_name = 'GLUCOSE 1/2 HR POST 75 GM',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt75_1hr',
     long_name = 'GLUCOSE 1 HR POST 75 GM',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt75_90m',
     long_name = 'GLUCOSE 1 1/2 HR POST 75 GM',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt75_2hr',
     long_name = 'GLUCOSE 2 HR POST 75 GM',
+    date_field = 'result',
     )
 
 
@@ -517,46 +527,55 @@ LabResultHeuristic(
 LabResultHeuristic(
     name = 'ogtt100_fasting',
     long_name = 'GLUCOSE FASTING PRE 100 GM',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt100_fasting_urine',
     long_name = 'GLUCOSE FASTING PRE 100 GM',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt100_30m',
     long_name = 'GLUCOSE 1/2 HR POST 100 GM',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt100_1hr',
     long_name = 'GLUCOSE 1 HR POST 100 GM',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt100_90m',
     long_name = 'GLUCOSE 1 1/2 HR POST 100 GM',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt100_2hr',
     long_name = 'GLUCOSE 2 HR POST 100 GM',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt100_3hr',
     long_name = 'GLUCOSE 3 HR POST 100 GM',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt100_4hr',
     long_name = 'GLUCOSE 4 HR POST 100 GM',
+    date_field = 'result',
     )
 
 LabResultHeuristic(
     name = 'ogtt100_5hr',
     long_name = 'GLUCOSE 5 HR POST 100 GM',
+    date_field = 'result',
     )
 
 EncounterHeuristic(
