@@ -301,7 +301,6 @@ def labtest_csv(request, native_code):
             lab.ref_high_string,
             lab.comment,
             ]
-        print row
         writer.writerow(row)
     return response
 
