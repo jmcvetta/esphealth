@@ -99,8 +99,8 @@ class LabTestConcordance(models.Model):
     count results in the database for each test at time table was generated.
     Should be rebuilt after each load of new EMR data.
     '''
-    native_code = models.CharField(max_length=100, blank=False)
-    native_name = models.CharField(max_length=255, null=True)
+    native_code = models.CharField(max_length=100, blank=False, db_index=True)
+    native_name = models.CharField(max_length=255, null=True, db_index=True)
     count = models.IntegerField(blank=False)
 
 
