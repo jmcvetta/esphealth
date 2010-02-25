@@ -9,6 +9,7 @@
 <table>
     <tr>
         <th>Native Code
+            <br>(click to download CSV linelist)
         <th>Native Name(s)
         <th>Non-Numeric Results
         <th>Minimum Numeric Result
@@ -19,7 +20,7 @@
     </tr>
     {% for test in details %}
     <tr>
-        <td>{{ test.native_code }}
+        <td><a href="{% url labtest_csv test.native_code %}">{{ test.native_code }}</a>
         <td>{{ test.native_names|join:"<br>" }}
         <td>{{ test.result_strings|join:"<br>" }}
         <td>{{ test.min_result_float }}

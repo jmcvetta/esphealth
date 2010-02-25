@@ -26,4 +26,5 @@ urlpatterns = patterns('ESP.ui.views',
     #
     url(r'^tests/lookup/$', 'labtest_lookup', name='labtest_lookup'),
     url(r'^tests/detail/$', 'labtest_detail', name='labtest_detail'),
+    url(r'^tests/linelist/(?P<native_code>.*)$', 'labtest_csv', name='labtest_csv'),
 )

@@ -13,6 +13,8 @@ User Interface Module
 import re
 import sys
 import datetime
+import csv
+import cStringIO as StringIO
 
 from django import forms
 from django import http
@@ -92,6 +94,42 @@ from ESP.utils.utils import Flexigrid
 # to render_to_response().
 #
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+################################################################################
+#
+#--- Status Report
+#
+################################################################################
+
+
+@login_required
+def status(request, format='html'):
+    assert format.lower() in ('html', 'text')
+    today_string = datetime.datetime.now().strftime(DATE_FORMAT)
+    yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+    new_cases = Case.objects.filter(updated_timestamp__gte=yesterday)
+    values = {
+        'title': _('Status Report'),
+        'today_string': today_string,
+        'site_name': SITE_NAME,
+        'all_case_summary': Case.objects.values('condition').annotate(count=Count('pk')).order_by('condition'),
+        'new_case_summary': new_cases.values('condition').annotate(count=Count('pk')).order_by('condition'),
+        'provenances': Provenance.objects.filter(timestamp__gte=yesterday).order_by('-timestamp'),
+        'unmapped_labs': _get_unmapped_labs().select_related(),
+        }
+    if format.lower() == 'html':
+        return render_to_response('ui/status.html', values, context_instance=RequestContext(request))
+    else: # 'text'
+        return render_to_string('ui/status.txt', values)
+
+
+
+################################################################################
+#
+#--- Lab Test Lookup tool
+#
+################################################################################
 
 
 class TableSelectMultiple(SelectMultiple):
@@ -223,30 +261,47 @@ def labtest_detail(request):
     values['details'] = details
     return render_to_response('ui/labtest_detail.html', values, context_instance=RequestContext(request))
 
-
-################################################################################
-#
-#--- Status Report
-#
-################################################################################
-
-
 @login_required
-def status(request, format='html'):
-    assert format.lower() in ('html', 'text')
-    today_string = datetime.datetime.now().strftime(DATE_FORMAT)
-    yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
-    new_cases = Case.objects.filter(updated_timestamp__gte=yesterday)
-    values = {
-        'title': _('Status Report'),
-        'today_string': today_string,
-        'site_name': SITE_NAME,
-        'all_case_summary': Case.objects.values('condition').annotate(count=Count('pk')).order_by('condition'),
-        'new_case_summary': new_cases.values('condition').annotate(count=Count('pk')).order_by('condition'),
-        'provenances': Provenance.objects.filter(timestamp__gte=yesterday).order_by('-timestamp'),
-        'unmapped_labs': _get_unmapped_labs(),
-        }
-    if format.lower() == 'html':
-        return render_to_response('ui/status.html', values, context_instance=RequestContext(request))
-    else: # 'text'
-        return render_to_string('ui/status.txt', values)
+def labtest_csv(request, native_code):
+    '''
+    Returns a linelist CSV file of lab results with patient info
+    '''
+    header = [
+        'Native Test Name',
+        'Native Test Code',
+        'Patient Surname', 
+        'Patient Given Name', 
+        'MRN', 
+        'Gender', 
+        'Date of Birth',
+        'Test Result',
+        'Test Order Date',
+        'Test Result Date',
+        'Reference Low',
+        'Reference High', 
+        'Comment',
+        ]
+    response = HttpResponse(mimetype='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=lab_results.%s.csv' % native_code
+    writer = csv.writer(response)
+    writer.writerow(header)
+    for lab in LabResult.objects.filter(native_code=native_code).select_related():
+        row = [
+            lab.native_name,
+            lab.native_code,
+            lab.patient.last_name,
+            lab.patient.first_name,
+            lab.patient.mrn,
+            lab.patient.gender,
+            lab.patient.date_of_birth,
+            lab.result_string,
+            lab.date, # 'date' is order date
+            lab.result_date,
+            lab.ref_low_string,
+            lab.ref_high_string,
+            lab.comment,
+            ]
+        print row
+        writer.writerow(row)
+    return response
+
