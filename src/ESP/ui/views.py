@@ -256,7 +256,6 @@ def labtest_detail(request):
             'max_result_float': labs.filter(result_float__isnull=False).aggregate(max=Max('result_float'))['max'],
             'count': labs.count(),
             }
-        print row
         details.append(row)
     values['details'] = details
     return render_to_response('ui/labtest_detail.html', values, context_instance=RequestContext(request))
