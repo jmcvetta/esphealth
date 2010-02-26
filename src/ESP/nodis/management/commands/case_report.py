@@ -1121,7 +1121,10 @@ class Command(BaseCommand):
                 if options.transmit:
                     success = self.transmit(options, filepath)
                     if success:
-                        batch_cases.update(status = 'S')
+                        if options.mark_sent:
+                            for case in batch_cases:
+                                case.status = 'S'
+                                case.save()
                         report_obj.sent = True
                         log.debug("Set status to 'S' for this batch of cases")
             report_obj.save()
