@@ -1468,9 +1468,9 @@ class Case(models.Model):
     #
     events = models.ManyToManyField(Event, blank=False) # The events that caused this case to be generated
     # TODO: rename to events_before
-    events_before = models.ManyToManyField(Event, blank=False, related_name='events_before') # The events that caused this case to be generated, but occured before the event window
-    events_after = models.ManyToManyField(Event, blank=False, related_name='events_after') # The events that caused this case to be generated, but occurred after the event window
-    events_ever = models.ManyToManyField(Event, blank=False, related_name='events_ever') # The events that caused this case to be generated, but occurred after the event window
+    events_before = models.ManyToManyField(Event, blank=False, related_name='case_before') # The events that caused this case to be generated, but occured before the event window
+    events_after = models.ManyToManyField(Event, blank=False, related_name='case_after') # The events that caused this case to be generated, but occurred after the event window
+    events_ever = models.ManyToManyField(Event, blank=False, related_name='case_ever') # The events that caused this case to be generated, but occurred after the event window
     
     def __get_condition_config(self):
         '''
