@@ -19,16 +19,24 @@ EXIT CODES
 
 RELATED_MARGIN = 400 # Retrieve labs +/- this many days from date of missing case
 FILE_PATH = 'old_cases.csv'
-DELIMITER=','
+#DELIMITER = ',' # Atrius
+DELIMITER = '\t' # MetroHealth
+#FILE_FIELDS = [
+#    'condition',
+#    'date',
+#    'mrn',
+#    'last',
+#    'first',
+#    ]
 FILE_FIELDS = [
-    'condition',
-    'date',
     'mrn',
-    'last',
-    'first',
+    'request_num',
+    'condition',
+    'result',
+    'date',
     ]
-#MRN_TEMPLATE = 'ID 1-%07d' # MetroHealth
-MRN_TEMPLATE = '%s'
+#MRN_TEMPLATE = '%s' # Atrius
+MRN_TEMPLATE = 'ID 1-%07s' # MetroHealth
 TEXT_OUTPUT_TEMPLATE = 'nodis/validator.txt'
 HTML_OUTPUT_TEMPLATE = 'nodis/validator.html'
 CONDITION_MAP = {
@@ -244,9 +252,12 @@ class Command(BaseCommand):
             except KeyError:
                 log.warning('Cannot understand condition name: %s' % rec['condition'])
                 continue
-            #mon, day, year = rec['date'].split('/')
+            #
+            # TODO: This really needs to be replaced with a configurable regex
+            #
+            mon, day, year = rec['date'].split('/') # Metrohealth
+            #mon, day, year = date[4:6], date[6:8], date[0:4] # Atrius
             date = rec['date']
-            mon, day, year = date[4:6], date[6:8], date[0:4]
             mon = int(mon)
             day = int(day)
             year = int(year)
