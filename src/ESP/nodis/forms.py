@@ -23,6 +23,8 @@ from ESP.nodis.models import Condition
 from ESP.hef.core import BaseHeuristic
 from ESP.static.models import Loinc
 
+from ESP.nodis import defs
+
 
 
 
