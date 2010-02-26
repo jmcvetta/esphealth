@@ -70,7 +70,12 @@ ADMINS = (
     ('Ross Lazarus', 'ross.lazarus@channing.harvard.edu'),
     ('Raphael Lullis', 'raphael.lullis@channing.harvard.edu'),
 )
-MANAGERS = ADMINS
+MANAGERS = (
+    ('Jason McVetta', 'jason.mcvetta@channing.harvard.edu'),
+    #('Ross Lazarus', 'ross.lazarus@channing.harvard.edu'),
+    #('Raphael Lullis', 'raphael.lullis@channing.harvard.edu'),
+    #('Michael Klompas', 'mklompas@partners.org'),
+)
 SITE_NAME = 'Development (localhost)' # Name of your local site
 DATA_DIR = '/srv/esp'
 #
