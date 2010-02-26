@@ -35,7 +35,6 @@ from django.forms.models import formset_factory
 from django.forms.models import modelformset_factory
 from django.forms.util import ErrorList
 from django.shortcuts import render_to_response
-from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 from django.template import RequestContext
 from django.utils.translation import ugettext
@@ -103,9 +102,11 @@ from ESP.utils.utils import Flexigrid
 ################################################################################
 
 
-@login_required
-def status(request, format='html'):
-    assert format.lower() in ('html', 'text')
+def _populate_status_values():
+    '''
+    Utility method to populate values dict for use with status_page() view and
+    manage.py status_report command.
+    '''
     today_string = datetime.datetime.now().strftime(DATE_FORMAT)
     yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
     new_cases = Case.objects.filter(updated_timestamp__gte=yesterday)
@@ -118,10 +119,15 @@ def status(request, format='html'):
         'provenances': Provenance.objects.filter(timestamp__gte=yesterday).order_by('-timestamp'),
         'unmapped_labs': _get_unmapped_labs().select_related(),
         }
-    if format.lower() == 'html':
-        return render_to_response('ui/status.html', values, context_instance=RequestContext(request))
-    else: # 'text'
-        return render_to_string('ui/status.txt', values)
+    return values
+
+@login_required
+def status_page(request):
+    '''
+    View returning a status report page.
+    '''
+    values = _populate_status_values()
+    return render_to_response('ui/status.html', values, context_instance=RequestContext(request))
 
 
 

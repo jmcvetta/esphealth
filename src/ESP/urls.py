@@ -15,7 +15,7 @@ from django.contrib.auth.forms import AuthenticationForm
 
 from ESP.settings import MEDIA_ROOT, MEDIA_URL
 #from ESP.esp.views import index, esplogin
-from ESP.ui.views import status
+from ESP.ui.views import status_page
 
 
 admin.autodiscover()
@@ -24,7 +24,7 @@ urlpatterns = patterns(
     '', # Why this??
     
     # Core Application
-    url(r'^$', status, name='status'),
+    url(r'^$', status_page, name='status'),
     
     # Vaers
     url(r'^vaers/', include('ESP.vaers.urls')),
