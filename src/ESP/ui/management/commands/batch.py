@@ -24,6 +24,7 @@ from ESP.hef.management.commands.hef           import Command as HefCommand
 from ESP.nodis.management.commands.nodis       import Command as NodisCommand
 from ESP.nodis.management.commands.case_report import Command as CaseReportCommand
 from ESP.emr.management.commands.concordance   import Command as ConcordanceCommand
+from ESP.ui.management.commands.status_report  import Command as StatusReportCommand
 
 from ESP.settings import ETL_SOURCE
 from ESP.settings import ETL_USE_FTP
@@ -129,3 +130,11 @@ class Command(BaseCommand):
         cmnd.run_from_argv([None, None])
         del cmnd
         progress('Successfully rebuilt lab tests condordance')
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #--- Status Report
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        progress('Sending status report')
+        cmnd = StatusReportCommand()
+        cmnd.handle(send_email=True)
+        del cmnd
+        progress('Successfully emailed status report.')
