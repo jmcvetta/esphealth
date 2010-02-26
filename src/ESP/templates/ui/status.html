@@ -22,7 +22,7 @@
         <tr>
             <th>Condition
             <th>Count
-        {% for item in new_case_summary %}
+        {% for item in all_case_summary %}
         <tr>
             <td>{{ item.condition }}
             <td>{{ item.count }}
@@ -92,6 +92,28 @@
 
 </div>
 
+
+<div id="unmapped_lab_summary">
+    <h2>
+        <hr>
+        Unmapped Lab Tests
+        </hr>
+    </h2>
+    <table>
+        <tr>
+            <th>Native Name</th>
+            <th>Native Code</th>
+            <th>Lab Record Count</th>
+        </tr>
+        {% for item in unmapped_labs %}
+        <tr>
+            <td>{{ item.native_name }}</td>
+            <td>{{ item.native_code }}</td>
+            <td>{{ item.count }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
 
 
 {% endblock %}
