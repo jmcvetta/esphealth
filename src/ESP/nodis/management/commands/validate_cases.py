@@ -263,7 +263,8 @@ class Command(BaseCommand):
             year = int(year)
             date = datetime.date(year, mon, day)
             if ReferenceCase.objects.filter(patient=patient, date=date, condition=condition):
-                log.debug('Record already exists')
+                log.info('Record already exists:')
+                log.info('    %s' % rec)
                 continue
             ref = ReferenceCase(
                 list = list,
