@@ -1,0 +1,57 @@
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++                                                                              + 
++                              ESP Status Report                               +
++                                                                              + 
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Date:  {{ today_string }}
+Site:  {{ site_name }}
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                     Nodis
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NEW CASES:
+{% if new_case_summary.count %}
+Condition            Count    
+--------------------------------------------------------------------------------
+{% for item in new_case_summary %}{{ item.condition|stringformat:"-20s" }} {{ item.count }}
+{% endfor %}
+{% else %}
+No new cases today.</em>
+{% endif %}
+
+ALL CASES:
+{% if all_case_summary.count %}
+Condition            Count    
+--------------------------------------------------------------------------------
+{% for item in all_case_summary %}{{ item.condition|stringformat:"-20.20s" }} {{ item.count }}
+{% endfor %}
+{% else %}
+No new cases today.</em>
+{% endif %}
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                Data Provenance
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Data sources loaded in past day:
+
+Source                         Timestamp                      Status
+--------------------------------------------------------------------------------
+{% for prov in provenances %}{{ prov.source|stringformat:"-30.30s" }} {{ prov.timestamp|stringformat:"-30.30s" }} {{ prov.status }}
+{% endfor %}
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                              Unmapped Lab Tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Native Name                    Native Code                    Lab Record Count
+--------------------------------------------------------------------------------
+{% for item in unmapped_labs %}{{ item.native_name|stringformat:"-30.30s" }} {{ item.native_code|stringformat:"-30s" }} {{ item.count }}
+{% endfor %}
+
