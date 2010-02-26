@@ -350,7 +350,11 @@ class hl7Batch:
             demog.suffix, outerElement, isClinician)
         section.appendChild(patname)
         pid7 = self.casesDoc.createElement('PID.7')
-        self.addSimple(pid7,demog.date_of_birth.strftime(DATE_FORMAT),'TS.1')          
+        if demog.date_of_birth:
+            formatted_dob = demog.date_of_birth.strftime(DATE_FORMAT)
+        else:
+            formatted_dob = ''
+        self.addSimple(pid7, formatted_dob, 'TS.1')          
         section.appendChild(pid7)
         if demog.gender:
             self.addSimple(section,demog.gender,'PID.8')
