@@ -278,6 +278,7 @@ src/ESP/ui/tests.py -text
 src/ESP/ui/urls.py -text
 src/ESP/ui/views.py -text
 src/ESP/urls.py -text
+src/ESP/utils/bogus_events_cleanup.py -text
 src/ESP/utils/common.py -text
 src/ESP/utils/couch.py -text
 src/ESP/utils/fake_world.py -text
