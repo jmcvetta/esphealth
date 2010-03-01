@@ -135,6 +135,6 @@ class Command(BaseCommand):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         progress('Sending status report')
         cmnd = StatusReportCommand()
-        cmnd.handle(send_email=True)
+        cmnd.handle(send_mail=True)
         del cmnd
         progress('Successfully emailed status report.')
