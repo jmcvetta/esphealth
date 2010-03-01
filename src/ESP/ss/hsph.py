@@ -18,17 +18,17 @@ class Hsph(object):
         self.begin_date = day - datetime.timedelta(7)
         self.end_date = day
         self.days = days_in_interval(self.begin_date, self.end_date)
-        self.folder = report_folder(begin_date, day, subfolder='hsph', resolution='month')        
+        self.folder = report_folder(self.begin_date, day, subfolder='hsph', resolution='month')        
         self.heuristic = heuristic
         self.age_groups = [(0, 5), (5, 20), (20, 25), (25, 50), (50, 65), (65, None)]
         
 
-    def make_case_files(self):
+    def report(self):
         log.info('HSPH files for %s on week %s-%s' % (self.heuristic.name, 
-                                                      self.start_date, self.end_date))
+                                                      self.begin_date, self.end_date))
 
         filename = Hsph.BASE_FILENAME % (str_from_date(self.begin_date), str_from_date(self.end_date))
-        age_group_columns = [age_group_identifier(group) for group in self.age_groups] 
+        age_group_columns = [age_identifier(group) for group in self.age_groups] 
         header = ['encounter date', 'residential zip'] + age_group_columns + [
             'total ILI visits', 'total clinic + urgent visits', '% ILI']
 
@@ -44,12 +44,17 @@ class Hsph(object):
                 'patient_zip_code')
                      
             for zip_code in zip_codes:
-                group_counts = [events.filter(age_group_filter(*group)).count()
-                                for groups in self.age_groups]
-                total_heuristic_visits = sum(group_counts)
-                heuristic_pct = 100 * (float(total_heuristic_visits)/total_encounters)
-                columns = [day, zip_code] + group_counts + [total_heuristic_visits, total_encounters]
-                line = '\t'.join(columns)
+                group_counts = [events.filter(patient_zip_code=zip_code).filter(age_group_filter(*group)).count()
+                                for group in self.age_groups]
+                heuristic_visits = sum(group_counts)
+                if not (heuristic_visits or total_encounters): continue
+
+                heuristic_pct = 100 * (float(heuristic_visits)/total_encounters)
+
+                columns = [str_from_date(day), zip_code] + group_counts
+                columns += [heuristic_visits, total_encounters, heuristic_pct]
+
+                line = '\t'.join([str(x) for x in columns])
                 log.info(line)
                 outfile.write(line + '\n')
 

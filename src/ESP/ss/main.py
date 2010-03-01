@@ -12,6 +12,7 @@ from ESP.ss.models import Site
 
 import reports
 from satscan import Satscan
+from hsph import Hsph
 from heuristics import syndrome_heuristics
 from utils import make_non_specialty_clinics
 
@@ -37,6 +38,7 @@ def main():
     parser.add_option('-c', '--consolidate', action='store_true', dest='consolidate')
     parser.add_option('-d', '--detect', action='store_true', dest='detect')
     parser.add_option('-t', '--satscan', action='store_true', dest='satscan')
+    parser.add_option('--hsph', action='store_true', dest='hsph')
     parser.add_option('-r', '--reports', action='store_true', dest='reports')
     parser.add_option('-f', '--full', action='store_true', dest='full')
 
@@ -93,6 +95,12 @@ def main():
                 scan.package()
             except Exception, why:
                 log.error('ERROR during satscan run: ' + str(why))
+
+    if options.hsph:
+        for day in days_in_interval(begin_date, end_date):
+            hsph = Hsph(day, syndrome_heuristics()['ili'])
+            hsph.report()
+        
                 
         
 
@@ -101,7 +109,7 @@ def main():
         reports.all_encounters_report(begin_date, end_date)
 
 
-    if not (options.detect or options.reports or options.individual or options.satscan):
+    if not (options.detect or options.reports or options.individual or options.satscan or options.hsph):
         print usage_msg
         sys.exit(-1)
 

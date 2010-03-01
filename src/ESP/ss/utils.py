@@ -7,15 +7,15 @@ from ESP.emr.models import Patient
 from ESP.ss.models import Site, NonSpecialistVisitEvent
 from ESP.ss.definitions import btzip, localSiteSites
 
-
-def report_folder(begin_date, end_date, subfolder=None):
+def report_folder(begin_date, end_date, subfolder=None, resolution='day'):
     folder = os.path.join(os.path.dirname(__file__), 'assets')
     
     if subfolder: folder = os.path.join(folder, subfolder)
-
-    same_year = (begin_date.year == end_date.year)
-    same_month = same_year and (begin_date.month == end_date.month)
-    same_day = same_month and (begin_date.day == end_date.day)
+    resolution = resolution if resolution in [None, 'year', 'month', 'day'] else 'day'
+    
+    same_year = (begin_date.year == end_date.year) and resolution in ['year', 'month', 'day']
+    same_month = same_year and (begin_date.month == end_date.month) and resolution in ['month', 'day']
+    same_day = same_month and (begin_date.day == end_date.day) and resolution == 'day'
 
     if same_year: folder = os.path.join(folder, '%04d' % begin_date.year)
     if same_month: folder = os.path.join(folder, '%02d' % begin_date.month)
