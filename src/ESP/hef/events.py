@@ -455,6 +455,16 @@ LabResultHeuristic(
     )
 
 
+#--- Glucose Fasting
+
+LabResultHeuristic(
+    name = 'glucose_fasting',
+    long_name = 'GLUCOSE FASTING (and variants)',
+    date_field = 'result',
+    fixed_threshold_events = [126],
+    )
+
+
 #--- OGTT 50
 
 LabResultHeuristic(
@@ -480,17 +490,12 @@ LabResultHeuristic(
 
 # We have intra- and postpartum OGTT75 fasting heuristics, because default threshold is different for each
 LabResultHeuristic(
-    name = 'ogtt75_fasting_intrapartum',
+    name = 'ogtt75_fasting',
     long_name = 'GLUCOSE FASTING PRE 75 GM',
     date_field = 'result',
+    fixed_threshold_events = [126],
     )
     
-LabResultHeuristic(
-    name = 'ogtt75_fasting_postpartum',
-    long_name = 'GLUCOSE FASTING PRE 75 GM',
-    date_field = 'result',
-    )
-
 LabResultHeuristic(
     name = 'ogtt75_fasting_urine',
     long_name = 'GLUCOSE FASTING, UR',
@@ -501,24 +506,28 @@ LabResultHeuristic(
     name = 'ogtt75_30m',
     long_name = 'GLUCOSE 1/2 HR POST 75 GM',
     date_field = 'result',
+    fixed_threshold_events = [200],
     )
 
 LabResultHeuristic(
     name = 'ogtt75_1hr',
     long_name = 'GLUCOSE 1 HR POST 75 GM',
     date_field = 'result',
+    fixed_threshold_events = [200],
     )
 
 LabResultHeuristic(
     name = 'ogtt75_90m',
     long_name = 'GLUCOSE 1 1/2 HR POST 75 GM',
     date_field = 'result',
+    fixed_threshold_events = [200],
     )
 
 LabResultHeuristic(
     name = 'ogtt75_2hr',
     long_name = 'GLUCOSE 2 HR POST 75 GM',
     date_field = 'result',
+    fixed_threshold_events = [200],
     )
 
 
