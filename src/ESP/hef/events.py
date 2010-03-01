@@ -471,18 +471,21 @@ LabResultHeuristic(
     name = 'ogtt50_fasting',
     long_name = 'OB GLUCOSE CHALLENGE, FASTING',
     date_field = 'result',
+    fixed_threshold_events = [95],
     )
 
 LabResultHeuristic(
     name = 'ogtt50_random',
     long_name = 'OB GLUCOSE CHALLENGE, RANDOM',
     date_field = 'result',
+    fixed_threshold_events = [190],
     )
 
 LabResultHeuristic(
     name = 'ogtt50_1hr',
     long_name = 'GLUCOSE 1 HR POST CHAL.',
     date_field = 'result',
+    fixed_threshold_events = [190],
     )
 
 
