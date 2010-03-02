@@ -1807,3 +1807,32 @@ class ValidatorResult(models.Model):
         if not self.disposition == 'similar':
             raise RuntimeError('date_diff() makes sense only for "similar" cases')
         return self.ref_case.date - self.cases.all()[0].date
+
+
+#-------------------------------------------------------------------------------
+#
+#--- Development
+#
+#-------------------------------------------------------------------------------
+
+
+
+
+class Gdm(models.Model):
+    '''
+    Introspected model to work with 'gdm' view until GDM algos are fully 
+    integrated into Nodis.
+    '''
+    date = models.DateField()
+    alogrithm = models.TextField()
+    patient_id = models.IntegerField()
+    mrn = models.CharField(max_length=20)
+    last_name = models.CharField(max_length=199)
+    first_name = models.CharField(max_length=199)
+    native_code = models.CharField(max_length=30)
+    native_name = models.CharField(max_length=255)
+    result_string = models.TextField()
+    event_id = models.IntegerField()
+    event_name = models.CharField(max_length=128)
+    class Meta:
+        db_table = u'gdm'
