@@ -384,7 +384,7 @@ class MultipleEventPattern(BaseEventPattern):
     def __init__(self, events, count):
         '''
         '''
-        self.__events_cache = {}
+        #self.__events_cache = {}
         for event_name in events:
             if not event_name in BaseHeuristic.all_event_names():
                 raise InvalidHeuristic('Unknown heuristic Event: %s' % event_name)
@@ -409,7 +409,7 @@ class MultipleEventPattern(BaseEventPattern):
         Returns a QuerySet of Event records which may plausibly match this pattern
         '''
         log.debug('Building plausible events query for %s' % self)
-        q_obj = Q(name__in=self.event_name)
+        q_obj = Q(name__in=self.events)
         if patients:
             q_obj = q_obj & Q(patient__in=patients)
         if exclude_condition:
@@ -430,13 +430,18 @@ class MultipleEventPattern(BaseEventPattern):
         @param exclude_condition: Exclude events already bound to cases of this condition
         @type exclude_condition:  String naming a Condition
         '''
-        raise NotImplementedError
         log.debug('Generating windows for %s' % self)
         events = self.plausible_events(patients=patients, exclude_condition=exclude_condition)
-        for e in events:
-            yield Window(days=days, events=[e])
+        patient_dates = events.values('patient', 'date').distinct().annotate(count=Count('name')).filter(count__gte=2)
+        for pd in patient_dates:
+            patient = pd['patient']
+            event_date = pd['date']
+            pd_events = self.plausible_events(exclude_condition=exclude_condition).filter(patient=patient, date=event_date)
+            print type(pd_events)
+            print pd_events
+            if pd_events: yield Window(days=days, events=pd_events)
 
-    def match_window(self, reference, exclude=False):
+    def match_window(self, reference, exclude_condition=None):
         '''
         Returns set of zero or more windows, falling within a reference window,
         that match this pattern.
@@ -447,7 +452,24 @@ class MultipleEventPattern(BaseEventPattern):
             events = models.ManyToManyField(Event)
         @return: set of Window instances
         '''
-        raise NotImplementedError
+        assert isinstance(reference, Window)
+        patient = reference.patient
+        events = self.plausible_events(patients=[patient], exclude_condition=exclude_condition)
+        valid_dates = events.values('date').distinct().annotate(count=Count('name')).filter(count__gte=2)
+        # 
+        # Not sure if we should do caching here, as in SimpleEventPattern.match_window()
+        #
+        matched_windows = set()
+        for date in valid_dates:
+            dated_events = events.filter(date=date)
+            win = reference
+            try:
+                for event in dated_events:
+                    win = win.fit(event)
+            except OutOfWindow:
+                continue
+            matched_windows.add(win)
+        return matched_windows
     
     def __get_string_hash(self):
         '''
