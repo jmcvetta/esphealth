@@ -10,6 +10,12 @@ from ESP.ss.models import NonSpecialistVisitEvent, Site, age_group_filter
 from ESP.ss.utils import report_folder, age_identifier
 from ESP.utils.utils import log, str_from_date, days_in_interval
 
+def make_age_group_column(prefix, age_group):
+    lower = age_group[0] if type(age_group[0]) is int else 'under'
+    upper = (age_group[1] - 1) if type(age_group[1]) is int else 'plus'
+    return '%s %s-%s' % (prefix, lower, upper)
+
+
 class Hsph(object):
 
     BASE_FILENAME = 'ESP_Atrius_HSPH_week_%s_%s.xls'
@@ -18,41 +24,54 @@ class Hsph(object):
         self.begin_date = day - datetime.timedelta(7)
         self.end_date = day
         self.days = days_in_interval(self.begin_date, self.end_date)
-        self.folder = report_folder(self.begin_date, day, subfolder='hsph', resolution='month')        
+        self.folder = report_folder(day, day, subfolder='hsph', resolution='month')
         self.heuristic = heuristic
         self.age_groups = [(0, 5), (5, 20), (20, 25), (25, 50), (50, 65), (65, None)]
-        
 
     def report(self):
         log.info('HSPH files for %s on week %s-%s' % (self.heuristic.name, 
                                                       self.begin_date, self.end_date))
 
         filename = Hsph.BASE_FILENAME % (str_from_date(self.begin_date), str_from_date(self.end_date))
-        age_group_columns = [age_identifier(group) for group in self.age_groups] 
-        header = ['encounter date', 'residential zip'] + age_group_columns + [
-            'total ILI visits', 'total clinic + urgent visits', '% ILI']
+        age_group_syndrome_columns = [make_age_group_column(self.heuristic.name, group) 
+                                      for group in self.age_groups] 
+        age_group_visit_columns = [make_age_group_column('Visits', group) for group in self.age_groups] 
+
+        header = ['encounter date', 'residential zip'] 
+        header += age_group_syndrome_columns + age_group_visit_columns 
+        header += ['total visits', '% ILI']
 
         outfile = open(os.path.join(self.folder, filename), 'w')
         outfile.write('\t'.join(header) + '\n')
         
         for day in self.days:
-            total_encounters = Encounter.objects.syndrome_care_visits().filter(date=day).count()
             events = NonSpecialistVisitEvent.objects.filter(
                 event_ptr__name=self.heuristic.long_name, date=day)
+            encounters = Encounter.objects.syndrome_care_visits().filter(date=day)
 
             zip_codes = events.values_list('patient_zip_code', flat=True).distinct().order_by(
                 'patient_zip_code')
                      
             for zip_code in zip_codes:
-                group_counts = [events.filter(patient_zip_code=zip_code).filter(age_group_filter(*group)).count()
-                                for group in self.age_groups]
-                heuristic_visits = sum(group_counts)
-                if not (heuristic_visits or total_encounters): continue
+                group_case_counts = [
+                    events.filter(patient_zip_code=zip_code).filter(age_group_filter(*group)).count()
+                    for group in self.age_groups
+                    ]
+                
+                group_visit_counts = [
+                    encounters.filter(patient__zip5=zip_code).filter(age_group_filter(*group)).count()
+                    for group in self.age_groups
+                    ]
+            
+                total_cases = sum(group_case_counts)
+                total_visits = sum(group_visit_counts)
+                
+                if not (total_visits and total_cases): continue
 
-                heuristic_pct = 100 * (float(heuristic_visits)/total_encounters)
+                heuristic_pct = 100 * (float(total_cases)/total_visits)
 
-                columns = [str_from_date(day), zip_code] + group_counts
-                columns += [heuristic_visits, total_encounters, heuristic_pct]
+                columns = [str_from_date(day), zip_code] + group_case_counts + group_visit_counts
+                columns += [total_visits, '%2.3f' % heuristic_pct]
 
                 line = '\t'.join([str(x) for x in columns])
                 log.info(line)

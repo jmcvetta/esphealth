@@ -38,7 +38,7 @@ def main():
     parser.add_option('-c', '--consolidate', action='store_true', dest='consolidate')
     parser.add_option('-d', '--detect', action='store_true', dest='detect')
     parser.add_option('-t', '--satscan', action='store_true', dest='satscan')
-    parser.add_option('-h', '--hsph', action='store_true', dest='hsph')
+    parser.add_option('--hsph', action='store_true', dest='hsph')
     parser.add_option('-r', '--reports', action='store_true', dest='reports')
     parser.add_option('-f', '--full', action='store_true', dest='full')
 
