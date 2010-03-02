@@ -14,6 +14,7 @@ from ESP.emr.models import Patient
 from ESP.hef import events # Load events
 from ESP.hef.core import BaseHeuristic
 from ESP.nodis.models import ComplexEventPattern
+from ESP.nodis.models import MultipleEventPattern
 from ESP.nodis.models import TuberculosisDefC
 from ESP.nodis.models import Condition
 from ESP.settings import DEFAULT_REPORTABLE_ICD9S
@@ -625,3 +626,21 @@ giardiasis = Condition(
 
 
 
+
+#===============================================================================
+#
+# Gestational Diabetes
+#
+#-------------------------------------------------------------------------------
+
+ogtt75 = MultipleEventPattern(
+    events = [
+        'ogtt75_1hr_pos',
+        'ogtt75_2hr_pos',
+		'ogtt75_30m_pos',
+		'ogtt75_90m_pos',
+		'ogtt75_fasting_pos',
+		'ogtt75_fasting_urine_pos',
+        ],
+    count = 2,
+    )
