@@ -9,8 +9,8 @@ from ESP.conf.models import ReportableMedication
 
 
 class CodeMapAdmin(admin.ModelAdmin):
-    list_display = ['id', 'native_code', 'native_name', 'heuristic', 'threshold', 'output_code', 'notes']
-    list_filter = ['heuristic']
+    list_display = ['id', 'native_code', 'native_name', 'heuristic', 'threshold', 'output_code', 'reportable', 'notes']
+    list_filter = ['heuristic', 'reportable']
     search_fields = ['native_code', 'native_name', 'output_code', 'heuristic']
     save_on_top = True
     ordering = ['output_code', 'native_code', 'heuristic']
