@@ -156,6 +156,7 @@ src/ESP/nodis/__init__.py -text
 src/ESP/nodis/admin.py -text
 src/ESP/nodis/defs.py -text
 src/ESP/nodis/forms.py -text
+src/ESP/nodis/gdm_report.py -text
 src/ESP/nodis/management/__init__.py -text
 src/ESP/nodis/management/commands/__init__.py -text
 src/ESP/nodis/management/commands/case_report.py -text
