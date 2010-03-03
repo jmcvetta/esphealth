@@ -1071,16 +1071,19 @@ class Command(BaseCommand):
             sys.exit(11)
         if options.sample: # Report only sample number of cases
             cases = cases[0:options.sample]
+            case_count = options.sample
+        else:
+            case_count =  cases.count()
         #
         # Split cases into batches
         #
         if not options.batch_size and not options.one_file:
             options.batch_size = CASE_REPORT_BATCH_SIZE
         elif options.one_file:
-            batch_size = cases.count()
+            options.batch_size = case_count
         batch_serial = 0
         self.timestamp = datetime.datetime.now().strftime('%Y-%b-%d-%H:%M:%s')
-        for index in range(0, cases.count(), options.batch_size):
+        for index in range(0, case_count, options.batch_size):
             filename_values = { 
                 # Used to populate file name template -- serial is updated below
                 'serial_number': batch_serial,
