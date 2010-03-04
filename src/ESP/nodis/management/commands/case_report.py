@@ -1131,8 +1131,8 @@ class Command(BaseCommand):
                             for case in batch_cases:
                                 case.status = 'S'
                                 case.save()
+                            log.debug("Set status to 'S' for this batch of cases")
                         report_obj.sent = True
-                        log.debug("Set status to 'S' for this batch of cases")
             report_obj.save()
             report_obj.cases = batch_cases # 'Report' instance needs to have a primary key value before a many-to-many relationship can be used.
             report_obj.save()
