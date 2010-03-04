@@ -887,7 +887,7 @@ class PregnancyHeuristic(BaseHeuristic):
                 content_object = e,
                 )
             p.save()
-            log.debug('Added pregnancy record: %s (%s - %s)' % (enc.patient, start_date, enc.edc))
+            log.debug('Added pregnancy record: %s (%s - %s)' % (e.patient, start_date, e.edc))
         new_pregnancy_count = Pregnancy.objects.filter(run=run).count()
         log.info('Generated %s new pregnancy events' % new_pregnancy_count)
         return new_pregnancy_count
