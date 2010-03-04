@@ -42,7 +42,7 @@ class Site(models.Model):
 
 class NonSpecialistVisitEvent(Event):
     reporting_site = models.ForeignKey(Site, null=True)
-    patient_zip_code = models.CharField(max_length=10, null=True)
+    patient_zip_code = models.CharField(max_length=10, null=True, db_index=True)
     encounter = models.ForeignKey(Encounter)
 
     @staticmethod

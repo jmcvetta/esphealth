@@ -97,9 +97,8 @@ def main():
                 log.error('ERROR during satscan run: ' + str(why))
 
     if options.hsph:
-        for day in days_in_interval(begin_date, end_date):
-            hsph = Hsph(day, syndrome_heuristics()['ili'])
-            hsph.report()
+        hsph = Hsph(begin_date, end_date, syndrome_heuristics()['ili'])
+        hsph.report()
         
                 
         
