@@ -245,9 +245,7 @@ class hl7Batch:
         lxobjs = case.reportable_labs.order_by('order_num')
         orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
         orus.appendChild(orcs)
-        icd9_codes = Icd9.objects.filter(encounter__events__case=case)
-        # Would the line below be a better way to do the line above?
-        #icd9_codes = case.reportable_icd9s
+        icd9_codes = case.reportable_icd9s
         self.addCaseOBR(condition=case.condition, icd9=icd9_codes, orcs=orcs, gender=case.patient.gender)
         if rxobjs:
             rx=rxobjs[0]
