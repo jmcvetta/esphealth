@@ -848,8 +848,8 @@ class PregnancyHeuristic(TimespanHeuristic):
         # EDC
         #
         log.info('Generating pregnancy events from EDC')
-        q_obj = Q(edc__isnull=False)
-        q_obj &= ~Q(timespan__name=self.name, timespan__pk__isnull=False)
+        ignore_bound_q = ~Q(timespan__name=self.name, timespan__pk__isnull=False)
+        q_obj = Q(edc__isnull=False) & ignore_bound_q
         edc_encounters = Encounter.objects.filter(q_obj)
         log_query('Pregnancy encounters by EDC', edc_encounters)
         for enc in edc_encounters.iterator():
@@ -872,7 +872,6 @@ class PregnancyHeuristic(TimespanHeuristic):
         log.info('Generating pregnancy events from ICD9s')
         q_obj = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
         q_obj &= Q(edc__isnull=True)
-        ignore_bound_q = ~Q(pregnancy__pk__isnull=False)
         encs = Encounter.objects.filter(q_obj)
         encs_unbound = encs.filter(ignore_bound_q)
         log_query('Pregnancy encounters by ICD9', encs_unbound)
