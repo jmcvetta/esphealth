@@ -157,6 +157,7 @@ src/ESP/nodis/admin.py -text
 src/ESP/nodis/defs.py -text
 src/ESP/nodis/forms.py -text
 src/ESP/nodis/gdm/gdm-combined.sql -text
+src/ESP/nodis/gdm/gdm_report.py -text
 src/ESP/nodis/gdm/glucose-fasting-intrapartum.sql -text
 src/ESP/nodis/gdm/ogtt100-intrapartum.sql -text
 src/ESP/nodis/gdm/ogtt100.sql -text
@@ -164,7 +165,6 @@ src/ESP/nodis/gdm/ogtt50-intrapartum.sql -text
 src/ESP/nodis/gdm/ogtt75-intrapartum.sql -text
 src/ESP/nodis/gdm/ogtt75-postpartum.sql -text
 src/ESP/nodis/gdm/pregnancy-analysis.sql -text
-src/ESP/nodis/gdm_report.py -text
 src/ESP/nodis/management/__init__.py -text
 src/ESP/nodis/management/commands/__init__.py -text
 src/ESP/nodis/management/commands/case_report.py -text
