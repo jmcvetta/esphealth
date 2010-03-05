@@ -37,7 +37,7 @@ from ESP.static.models import Loinc
 from ESP.static.models import Icd9
 from ESP.hef.models import Event
 from ESP.hef.models import Run
-from ESP.hef.models import Pregnancy
+from ESP.hef.models import Timespan
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
@@ -825,15 +825,22 @@ class WesternBlotHeuristic(BaseLabHeuristic):
         return LabResult.objects.filter(pk__in = match_pks)
 
 
-class PregnancyHeuristic(BaseHeuristic):
+class TimespanHeuristic(BaseHeuristic):
+    '''
+    Base class from which are derived heuristics that generate Timespan instances.
+    '''
+    pass
+    
+    
+class PregnancyHeuristic(TimespanHeuristic):
     '''
     Heuristic to infer periods of known pregnancy from EDC values and ICD9 codes
     '''
     
     def __init__(self):
         BaseHeuristic.__init__(self,
-            name = 'pregnancy',
-            long_name = 'Pregnancy',
+            name = 'pregnancy_inferred',
+            long_name = 'Pregnancy, inferred from EDC or ICD9 codes',
             )
     
     def generate_events(self, run, **kwargs):
@@ -842,19 +849,21 @@ class PregnancyHeuristic(BaseHeuristic):
         #
         log.info('Generating pregnancy events from EDC')
         q_obj = Q(edc__isnull=False)
-        q_obj &= ~Q(pregnancy__pk__isnull=False)
+        q_obj &= ~Q(timespan__name=self.name, timespan__pk__isnull=False)
         edc_encounters = Encounter.objects.filter(q_obj)
         log_query('Pregnancy encounters by EDC', edc_encounters)
         for enc in edc_encounters.iterator():
             start_date = enc.edc - datetime.timedelta(days=280)
-            p = Pregnancy(
+            tspan = Timespan(
                 run = run,
+                name = self.name,
                 patient = enc.patient,
+                date = enc.date,
                 start_date = start_date,
                 end_date = enc.edc,
                 content_object = enc,
                 )
-            p.save()
+            tspan.save()
             log.debug('Added pregnancy record: %s (%s - %s)' % (enc.patient, start_date, enc.edc))
         del q_obj
         #
@@ -879,15 +888,17 @@ class PregnancyHeuristic(BaseHeuristic):
             start_date = date_range['start'] - datetime.timedelta(days=30)
             # End is 14 days after last encounter in the range
             end_date = date_range['end'] + datetime.timedelta(days=14)
-            p = Pregnancy(
+            tspan = Timespan(
                 run = run,
-                patient = e.patient,
+                name = self.name,
+                patient = enc.patient,
+                date = enc.date,
                 start_date = start_date,
-                end_date = end_date,
-                content_object = e,
+                end_date = enc.edc,
+                content_object = enc,
                 )
-            p.save()
+            tspan.save()
             log.debug('Added pregnancy record: %s (%s - %s)' % (e.patient, start_date, e.edc))
-        new_pregnancy_count = Pregnancy.objects.filter(run=run).count()
+        new_pregnancy_count = Timespan.objects.filter(run=run, name=self.name).count()
         log.info('Generated %s new pregnancy events' % new_pregnancy_count)
         return new_pregnancy_count
