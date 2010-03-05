@@ -597,6 +597,32 @@ EncounterHeuristic(
     match_style = 'startswith',
     )
 
+#
+#-- Gestational Diabetes
+#
+
+EncounterHeuristic(
+    name = 'gdm_diagnosis',
+    long_name = 'ABN GLUCOSE (several variants)',
+    icd9s = ['648.8',],
+    match_style = 'startswith',
+    )
+
+MedicationHeuristic(
+    name = 'lancets_rx',
+    long_name = 'Lancets Prescription',
+    drugs = [
+        'lancets',
+        ],
+    )
+
+MedicationHeuristic(
+    name = 'test_strips_rx',
+    long_name = 'Test Strips Prescription',
+    drugs = [
+        'test strips',
+        ],
+    )
 
 
 #
