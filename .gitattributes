@@ -157,6 +157,7 @@ src/ESP/nodis/admin.py -text
 src/ESP/nodis/defs.py -text
 src/ESP/nodis/forms.py -text
 src/ESP/nodis/gdm/gdm-combined.sql -text
+src/ESP/nodis/gdm/gdm_icd9_lancets_test_strips.sql -text
 src/ESP/nodis/gdm/gdm_report.py -text
 src/ESP/nodis/gdm/glucose-fasting-intrapartum.sql -text
 src/ESP/nodis/gdm/ogtt100-intrapartum.sql -text
