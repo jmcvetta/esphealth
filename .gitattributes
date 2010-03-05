@@ -190,6 +190,7 @@ src/ESP/static/__init__.py -text
 src/ESP/static/admin.py -text
 src/ESP/static/fixtures/initial_data.json -text
 src/ESP/static/models.py -text
+src/ESP/static/sql/indices.postgresql.sql -text
 src/ESP/static/tests.py -text
 src/ESP/static/views.py -text
 src/ESP/templates/404.html -text
