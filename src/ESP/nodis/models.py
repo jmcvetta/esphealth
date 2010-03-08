@@ -317,7 +317,12 @@ class SimpleEventPattern(BaseEventPattern):
         self.event_name = event_name
     
     def plausible_patients(self, exclude_condition=None):
+        #
+        # FIXME: Why aren't we doing anyting with exclude_condition??
+        #
         q_obj = Q(event__name=self.event_name)
+        if exclude_condition:
+            q_obj = q_obj & ~Q(case__condition=exclude_condition)
         qs = Patient.objects.filter(q_obj).distinct()
         log_query('Plausible patients for %s, exclude %s' % (self, exclude_condition), qs)
         return qs
@@ -373,6 +378,40 @@ class SimpleEventPattern(BaseEventPattern):
         return set([self.event_name])
     event_names = property(__get_event_names)
         
+class TimespanPattern(object):
+    '''
+    A pattern matching a Timespan instance.  
+    
+    Note, this is NOT a child of BaseEventPattern, because it does not relate
+    to Event instances.
+    '''
+    def __init__(self, timespans):
+        raise NotImplementedError
+        
+    def plausible_patients(self, exclude_condition=None):
+        return Patient.objects.filter(timespan__pk__isnull=False)
+            
+    def plausible_events(self, patients=None, exclude_condition=None):
+        raise NotImplementedError
+    
+    def generate_windows(self, days, patients=None, exclude_condition=None):
+        raise NotImplementedError
+                
+    def match_window(self, reference, exclude_condition=None):
+        raise NotImplementedError
+    
+    def __get_string_hash(self):
+        raise NotImplementedError
+    string_hash = property(__get_string_hash)
+    
+    def __repr__(self):
+        raise NotImplementedError
+    
+    def __get_event_names(self):
+        raise NotImplementedError
+    event_names = property(__get_event_names)
+
+    
 
 class MultipleEventPattern(BaseEventPattern):
     '''
