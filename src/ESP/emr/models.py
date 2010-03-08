@@ -1073,23 +1073,22 @@ class Immunization(BasePatientRecord):
 
 
 class SocialHistory(BasePatientRecord):
-    tobacco_use = models.CharField(db_index=True)
-    alcohol_use = models.CharField(db_index=True)
+    tobacco_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
+    alcohol_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
 
 class Allergy(BasePatientRecord):
     problem_id = models.IntegerField(null=True, db_index=True)
-    date = models.DateField(db_index=True)
     date_noted = models.DateField(null=True, db_index=True)
     allergen = models.ForeignKey(Allergen)
-    name = models.CharField(length=200, null=True, db_index=True)
-    status = models.CharField(length=20, null=True, db_index=True)
-    description = models.CharField(length=200)
+    name = models.CharField(max_length=200, null=True, db_index=True)
+    status = models.CharField(max_length=20, null=True, db_index=True)
+    description = models.CharField(max_length=200)
 
 class Problem(BasePatientRecord):
     problem_id = models.IntegerField(null=True)
     date_noted = models.DateField(null=True, db_index=True)
     icd9 = models.ForeignKey(Icd9)
-    status = models.CharField(length=20, null=True, db_index=True)
+    status = models.CharField(max_length=20, null=True, db_index=True)
     comment = models.TextField(null=True, blank=True)
 
     
