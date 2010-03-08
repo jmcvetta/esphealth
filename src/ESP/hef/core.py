@@ -890,11 +890,11 @@ class PregnancyHeuristic(TimespanHeuristic):
             tspan = Timespan(
                 run = run,
                 name = self.name,
-                patient = enc.patient,
-                date = enc.date,
+                patient = e.patient,
+                date = e.date,
                 start_date = start_date,
-                end_date = enc.edc,
-                content_object = enc,
+                end_date = e.edc,
+                content_object = e,
                 )
             tspan.save()
             log.debug('Added pregnancy record: %s (%s - %s)' % (e.patient, start_date, e.edc))
