@@ -27,7 +27,7 @@ from ESP.conf.common import EPOCH
 from ESP.conf.models import CodeMap
 from ESP.static.models import Loinc
 from ESP.static.models import Ndc
-from ESP.static.models import Icd9
+from ESP.static.models import Icd9, Allergen
 from ESP.static.models import Vaccine, ImmunizationManufacturer
 from ESP.conf.models import NativeManufacturer
 from ESP.utils import randomizer
@@ -1072,3 +1072,29 @@ class Immunization(BasePatientRecord):
             self.patient.full_name, self.vaccine_type(), self.date)
 
 
+class SocialHistory(BasePatientRecord):
+    tobacco_use = models.CharField(db_index=True)
+    alcohol_use = models.CharField(db_index=True)
+
+class Allergy(BasePatientRecord):
+    problem_id = models.IntegerField(null=True, db_index=True)
+    date = models.DateField(db_index=True)
+    date_noted = models.DateField(null=True, db_index=True)
+    allergen = models.ForeignKey(Allergen)
+    name = models.CharField(length=200, null=True, db_index=True)
+    status = models.CharField(length=20, null=True, db_index=True)
+    description = models.CharField(length=200)
+
+class Problem(BasePatientRecord):
+    problem_id = models.IntegerField(null=True)
+    date_noted = models.DateField(null=True, db_index=True)
+    icd9 = models.ForeignKey(Icd9)
+    status = models.CharField(length=20, null=True, db_index=True)
+    comment = models.TextField(null=True, blank=True)
+
+    
+    
+    
+
+    
+    

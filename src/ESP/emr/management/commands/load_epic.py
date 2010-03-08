@@ -37,7 +37,7 @@ from ESP.settings import DATA_DIR
 from ESP.settings import DATE_FORMAT
 from ESP.utils.utils import log
 from ESP.utils.utils import date_from_str
-from ESP.static.models import Icd9
+from ESP.static.models import Icd9, Allergen
 from ESP.emr.models import Provenance
 from ESP.emr.models import EtlError
 from ESP.emr.models import Provider
@@ -46,6 +46,7 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
+from ESP.emr.models import SocialHistory, Problem, Allergy
 
 
     
@@ -601,6 +602,77 @@ class ImmunizationLoader(BaseLoader):
         i.imm_id_num = row['imm_id_num']
         i.save()
         log.debug('Saved immunization object: %s' % i)
+
+
+
+class SocialHistoryLoader(BaseLoader):
+    fields = [
+        'patient_id_num',
+        'mrn',
+        'tobacco_use',
+        'alcohol_use'
+        ]
+    
+    def load_row(self, row):
+        SocialHistory.objects.create(
+            patient=self.get_patient(row['patient_id_num']),
+            mrn = row['mrn'],
+            tobacco_use = row['tobacco_use'],
+            alcohol_use = row['alcohol_use']
+            )
+        
+
+class AllergyLoader(BaseLoader):
+    fields = [
+        'patient_id_num',
+        'mrn',
+        'problem_id',
+        'date_noted',
+        'allergy_id',
+        'allergy_name',
+        'allergy_status',
+        'allergy_description',
+        'allergy_entered_date'
+        ]
+    
+    def load_row(self, row):
+        allergen, created = Allergen.objects.get_or_create(code=row['allergy_id'])
+        Allergy.objects.create(
+            patient = self.get_patient(row['patient_id_num']),
+            mrn = row['mrn'],
+            problem_id = int(row(['problem_id'])),
+            date=date_from_str(row['allergy_entered_date']),
+            date_noted = date_from_str(row['date_noted']),
+            allergen = allergen,
+            name = row['allergy_name'],
+            status = row['allergy_status'],
+            description = row['allergy_description']
+            )
+            
+        
+class ProblemLoader(BaseLoader):
+    fields = [
+        'patient_id_num',
+        'mrn',
+        'problem_id',
+        'date_noted',
+        'icd9_code',
+        'problem_status',
+        'comment'
+        ]
+
+    def load_row(self, row):
+        icd9_code = Icd9.objects.get(code=row(['icd9_code']))
+        Problem.objects.create(
+            patient = self.get_patient(row['patient_id_num']),
+            mrn = row['mrn'],
+            date_noted = date_from_str(row['date_noted']),
+            icd9 = icd9_code,
+            status = row['status'],
+            comment = row['comment']
+            )
+
+
 
 
 

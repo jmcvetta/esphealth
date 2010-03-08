@@ -211,3 +211,6 @@ class ImmunizationManufacturer(models.Model):
         return self.full_name
 
 
+class Allergen(models.Model):
+    code = models.CharField(max_length=20, primary_key=True)
+    name = models.CharField(max_length=300, blank=True, null=True)
