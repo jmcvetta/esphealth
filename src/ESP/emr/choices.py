@@ -16,6 +16,13 @@ DATA_SOURCE = [
     # Add more as we get new sources
     ]
 
+LAB_ORDER_TYPES = [
+    (1, 'Lab'),
+    (2, 'Imaging'),
+    (3, 'EKG'),
+    (9, 'Procedure')
+    ]
+
 FORMAT_TYPES = (
     ('Text','Plain text representation'),
     ('XML','eXtended Markup Language format'),

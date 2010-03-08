@@ -23,6 +23,7 @@ from django.contrib.contenttypes import generic
 from ESP.settings import DATABASE_ENGINE
 from ESP.emr.choices import DATA_SOURCE
 from ESP.emr.choices import LOAD_STATUS
+from ESP.emr.choices import LAB_ORDER_TYPES
 from ESP.conf.common import EPOCH
 from ESP.conf.models import CodeMap
 from ESP.static.models import Loinc
@@ -750,6 +751,16 @@ class LabResult(BasePatientRecord):
     snomed_ind = property(__get_snomed_ind)
         
 
+class LabOrder(BasePatientRecord):
+    order_id = models.IntegerField(db_index=True)
+    procedure_master_num = models.CharField(max_length=20, blank=True, null=True, db_index=True)
+    modifier = models.CharField(max_length=20, blank=True, null=True)
+    specimen_id = models.CharField(max_length=20, blank=True, null=True, db_index=True)
+    order_type = models.IntegerField(choices=LAB_ORDER_TYPES, db_index=True)
+    procedure_name = models.CharField(max_length=300, blank=True, null=True)
+    specimen_source = models.CharField(max_length=300, blank=True, null=True)
+    
+    
     
     
 class Prescription(BasePatientRecord):
@@ -1086,7 +1097,6 @@ class Allergy(BasePatientRecord):
 
 class Problem(BasePatientRecord):
     problem_id = models.IntegerField(null=True)
-    date_noted = models.DateField(null=True, db_index=True)
     icd9 = models.ForeignKey(Icd9)
     status = models.CharField(max_length=20, null=True, db_index=True)
     comment = models.TextField(null=True, blank=True)

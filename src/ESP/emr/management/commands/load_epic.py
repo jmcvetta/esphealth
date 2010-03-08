@@ -42,7 +42,7 @@ from ESP.emr.models import Provenance
 from ESP.emr.models import EtlError
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
-from ESP.emr.models import LabResult
+from ESP.emr.models import LabResult, LabOrder
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
@@ -57,6 +57,25 @@ global UPDATED_BY, TIMESTAMP, UNKNOWN_PROVIDER
 UPDATED_BY = 'load_epic.py'
 TIMESTAMP = datetime.datetime.now()
 UNKNOWN_PROVIDER = Provider.objects.get(provider_id_num='UNKNOWN')
+
+def get_icd9(self, code):
+    '''
+    Given an ICD9 code, as a string, return an Icd9 model instance
+    '''
+    code = code.upper()
+    if not code in self.__icd9_cache:
+        try:
+            i = Icd9.objects.get(code__iexact=code)
+        except Icd9.DoesNotExist:
+            log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
+            i = Icd9()
+            i.code = code
+            i.name = 'Added by load_epic.py'
+            i.save()
+            self.__icd9_cache[code] = i
+    return self.__icd9_cache[code]
+
+
 
 
 class EpicDialect(csv.Dialect):
@@ -116,6 +135,7 @@ class BaseLoader(object):
         self.line_count = len(file_handle.readlines())
         file_handle.seek(0) # Reset file position after counting lines
         self.reader = csv.DictReader(file_handle, fieldnames=self.fields, dialect='epic')
+        self.created_on = datetime.datetime.now()
     
     def get_patient(self, patient_id_num):
         if not patient_id_num:
@@ -349,9 +369,6 @@ class PatientLoader(BaseLoader):
         log.debug('Saved patient object: %s' % p)
 
 
-class LabOrderLoader(NotImplementedLoader):    
-    pass
-
 class LabResultLoader(BaseLoader):
     
     fields = [
@@ -415,6 +432,38 @@ class LabResultLoader(BaseLoader):
         l.specimen_source = row['specimen_source']
         l.save()
         log.debug('Saved lab result object: %s' % l)
+        
+
+class LabOrderLoader(BaseLoader):    
+    fields = [
+        'patient_id_num',
+        'mrn',
+        'order_id',
+        'procedure_master_num',
+        'modifier',
+        'specimen_id',
+        'ordering_date',
+        'order_type',
+        'ordering_provider',
+        'procedure_name',
+        'specimen_source'
+        ]
+    
+    def load_row(self, row):
+        LabOrder.objects.create(
+            provenance = self.provenance,
+            patient = self.get_patient(row['patient_id_num']),
+            provider = self.get_provider(row['ordering_provider']),
+            mrn = row['mrn'],
+            order_id = row['order_id'],
+            procedure_master_num = row['procedure_master_num'],
+            modifier = row['modifier'],
+            specimen_id = row['specimen_id'],
+            date = date_from_str(row['ordering_date']),
+            order_type = int(row['order_type']),
+            procedure_name = row['procedure_name'],
+            specimen_source = row['specimen_source']
+            )
 
 
 class EncounterLoader(BaseLoader):
@@ -615,6 +664,8 @@ class SocialHistoryLoader(BaseLoader):
     
     def load_row(self, row):
         SocialHistory.objects.create(
+            provenance = self.provenance,
+            date = self.created_on, # date does not make sense for SocialHistory.
             patient=self.get_patient(row['patient_id_num']),
             mrn = row['mrn'],
             tobacco_use = row['tobacco_use'],
@@ -638,10 +689,11 @@ class AllergyLoader(BaseLoader):
     def load_row(self, row):
         allergen, created = Allergen.objects.get_or_create(code=row['allergy_id'])
         Allergy.objects.create(
+            provenance = self.provenance,
             patient = self.get_patient(row['patient_id_num']),
             mrn = row['mrn'],
-            problem_id = int(row(['problem_id'])),
-            date=date_from_str(row['allergy_entered_date']),
+            problem_id = int(row['problem_id']),
+            date = date_from_str(row['allergy_entered_date']),
             date_noted = date_from_str(row['date_noted']),
             allergen = allergen,
             name = row['allergy_name'],
@@ -662,13 +714,19 @@ class ProblemLoader(BaseLoader):
         ]
 
     def load_row(self, row):
-        icd9_code = Icd9.objects.get(code=row(['icd9_code']))
+        code = row['icd9_code'].upper()
+        icd9_code, created = Icd9.objects.get_or_create(code=code, defaults={
+                'name':'Added by load_epic.py'})
+        if created: log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
+        
+        
         Problem.objects.create(
+            provenance = self.provenance,
             patient = self.get_patient(row['patient_id_num']),
             mrn = row['mrn'],
-            date_noted = date_from_str(row['date_noted']),
+            date = date_from_str(row['date_noted']),
             icd9 = icd9_code,
-            status = row['status'],
+            status = row['problem_status'],
             comment = row['comment']
             )
 
@@ -711,7 +769,11 @@ class Command(LoaderCommand):
             ('epicvis', EncounterLoader),
             ('epicmed', PrescriptionLoader),
             ('epicimm', ImmunizationLoader),
+            ('epicall', AllergyLoader),
+            ('epicprb', ProblemLoader),
+            ('epicsoc', SocialHistoryLoader)                      
             ]
+
         loader = {}
         filetype = {}
         valid_count = {}
