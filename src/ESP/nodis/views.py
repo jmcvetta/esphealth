@@ -568,9 +568,10 @@ def validate_new(request, validator_run_id=None):
         'title': 'Case Validator: New Cases',
         'run': validator_run,
         }
-    cases = Case.objects.filter(validatorresult__run=validator_run, validatorresult__disposition='new')
+    #cases = Case.objects.filter(validatorresult__run=validator_run, validatorresult__disposition='new')
+    new_cases = validator_run.new.order_by('date')
     condition_form = ConditionForm()
-    values['counts'] = cases.values('condition').annotate(Count('pk')).order_by('condition')
+    values['counts'] = new_cases.values('condition').annotate(Count('pk')).order_by('condition')
     values['condition_form'] = condition_form
     if request.method == 'POST':
         condition_form = ConditionForm(request.POST)
@@ -578,8 +579,8 @@ def validate_new(request, validator_run_id=None):
             condition = condition_form.cleaned_data['condition']
             log.debug('Filtering on condition: %s' % condition)
             if not condition == '*': # Filter not applied for wildcard
-                cases = cases.filter(condition=condition)
-    values['cases'] = cases.order_by('date').select_related() # Is select_related() helpful here?
+                new_cases = new_cases.filter(condition=condition)
+    values['cases'] = new_cases.order_by('date').select_related() # Is select_related() helpful here?
     return render_to_response('nodis/validator_new.html', values, context_instance=RequestContext(request))
 
 
