@@ -49,6 +49,7 @@ from ESP.hef import events
 from ESP.hef.core import BaseHeuristic
 from ESP.hef.core import EncounterHeuristic
 from ESP.hef.core import MedicationHeuristic
+from ESP.hef.core import TimespanHeuristic
 from ESP.hef.models import Timespan
 from ESP.hef.models import Event
 from ESP.conf.models import ConditionConfig
@@ -311,19 +312,29 @@ class SimpleEventPattern(BaseEventPattern):
     # {heuristic: {condition: event_pk_set}}
     __excluded_events_cache = {}
     
-    def __init__(self, event_name):
+    def __init__(self, event_name, require_timespan=[], exclude_timespan=[]):
         self.__events_cache = {}
+        #
+        # Sanity Checks
+        #
         if not event_name in BaseHeuristic.all_event_names():
             raise InvalidHeuristic('Unknown heuristic Event: %s' % event_name)
+        for tspan_name in require_timespan + exclude_timespan:
+            if not tspan_name in TimespanHeuristic.all_event_names():
+                raise InvalidHeuristic('Unknown TimespanHeuristic: %s' % tspan_name)
+        #
+        #
         self.event_name = event_name
+        self.require_timespan = require_timespan
+        self.exclude_timespan = exclude_timespan
+            
     
     def plausible_patients(self, exclude_condition=None):
-        #
-        # FIXME: Why aren't we doing anyting with exclude_condition??
-        #
         q_obj = Q(event__name=self.event_name)
         if exclude_condition:
             q_obj = q_obj & ~Q(case__condition=exclude_condition)
+        for tspan_name in self.require_timespan:
+            q_obj = q_obj & Q(timespan__name=tspan_name)
         qs = Patient.objects.filter(q_obj).distinct()
         log_query('Plausible patients for %s, exclude %s' % (self, exclude_condition), qs)
         return qs
@@ -336,13 +347,37 @@ class SimpleEventPattern(BaseEventPattern):
         if exclude_condition:
             q_obj = q_obj & ~Q(case__condition=exclude_condition)
         events = Event.objects.filter(q_obj)
+        print events.count()
+        for tspan in self.require_timespan:
+            events = events.extra(
+                tables = ['hef_timespan'],
+                select = {
+                    'ts_name': 'hef_timespan.name',
+                    },
+                where = [
+                    'hef_timespan.patient_id = hef_event.patient_id',
+                    'hef_timespan.start_date <= hef_event.date',
+                    'hef_timespan.end_date >= hef_event.date',
+                    'hef_timespan.name = %s',
+                    ],
+                params = [tspan],
+                ).distinct()
+        for tspan in self.exclude_timespan:
+            raise NotImplementedError()
         log_query('Querying plausible events for %s' % self, events)
+        print events.count()
         return events
-    
+
     def generate_windows(self, days, patients=None, exclude_condition=None):
         log.debug('Generating windows for %s' % self)
         events = self.plausible_events(patients=patients, exclude_condition=exclude_condition)
         for e in events:
+            for tspan in self.require_timespan:
+                if not Timespan.objects.filter(patient=e.patient, start_date__lte=e.date, end_date__gte=e.date).count():
+                    continue # Event does not fall within required timespans
+            for tspan in self.exclude_timespan:
+                if Timespan.objects.filter(patient=e.patient, start_date__lte=e.date, end_date__gte=e.date).count():
+                    continue # Event falls within an excluded timespan
             yield Window(days=days, events=[e])
                 
     def match_window(self, reference, exclude_condition=None):
@@ -360,9 +395,15 @@ class SimpleEventPattern(BaseEventPattern):
             cache[key] = qs
         matched_windows = set()
         event_qs = cache[key]
-        for event in event_qs:
+        for e in event_qs:
+            for tspan in self.require_timespan:
+                if not Timespan.objects.filter(patient=e.patient, start_date__lte=e.date, end_date__gte=e.date).count():
+                    continue # Event does not fall within required timespans
+            for tspan in self.exclude_timespan:
+                if Timespan.objects.filter(patient=e.patient, start_date__lte=e.date, end_date__gte=e.date).count():
+                    continue # Event falls within an excluded timespan
             try:
-                win = reference.fit(event)
+                win = reference.fit(e)
                 matched_windows.add(win)
             except OutOfWindow:
                 continue
@@ -853,6 +894,9 @@ class ComplexEventPattern(BaseEventPattern):
         @type win:  Window instance
         '''
         log.debug('Checking constraints on %s' % win)
+        #
+        # Exclude Past
+        #
         if self.exclude_past:
             exclude_q = Q(patient=win.patient, name__in=self.exclude_past, date__lt=win.start)
             past_events = Event.objects.filter(exclude_q)
@@ -986,6 +1030,9 @@ class ComplexEventPattern(BaseEventPattern):
         events |= set(self.exclude_past)
         return events
     event_names = property(__get_event_names)
+    
+    def _is_in_timespan(self, event, timespan):
+        Timespan.objects
 
 
 class TuberculosisDefC(BaseEventPattern):
@@ -1848,6 +1895,8 @@ class ValidatorRun(models.Model):
 class ValidatorResult(models.Model):
     run = models.ForeignKey(ValidatorRun, blank=False)
     ref_case = models.ForeignKey(ReferenceCase, blank=True, null=True)
+    condition = models.CharField(max_length=100, blank=False, db_index=True)
+    date = models.DateField(blank=False, db_index=True)
     disposition = models.CharField(max_length=30, blank=False, choices=DISPOSITIONS)
     #
     # ManyToManyFields populated only for missing cases
@@ -1858,12 +1907,6 @@ class ValidatorResult(models.Model):
     encounters = models.ManyToManyField(Encounter, blank=True, null=True)
     prescriptions = models.ManyToManyField(Prescription, blank=True, null=True)
 
-    def condition(self):
-        return self.ref_case.condition
-    
-    def date(self):
-        return self.ref_case.date
-        
     def patient(self):
         return self.ref_case.patient
     
