@@ -644,3 +644,10 @@ ogtt75 = MultipleEventPattern(
         ],
     count = 2,
     )
+
+gdm_1 = ComplexEventPattern(
+    name = 'GDM based on fasting glucose',
+    patterns = ['glucose_fasting_pos',],
+    operator = 'or',
+    require_timespan = ['pregnancy_inferred']
+    )
