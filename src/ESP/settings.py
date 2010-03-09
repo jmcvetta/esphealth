@@ -291,8 +291,8 @@ CASE_REPORT_TRANSMIT = 'atrius'
 #                                    Email
 #
 #===============================================================================
-SERVER_EMAIL = 'esp-noreply@your_domain.com'
-DEFAULT_FROM_EMAIL = 'esp-noreply@your_domain.com'
+SERVER_EMAIL = 'esp-noreply@lkenpesp3'
+DEFAULT_FROM_EMAIL = 'esp-noreply@lkenpesp3'
 EMAIL_SUBJECT_PREFIX = '[ESP] '
 EMAIL_HOST = 'localhost'
 EMAIL_HOST_USER = ''
