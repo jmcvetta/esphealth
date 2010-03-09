@@ -150,9 +150,11 @@ class Command(BaseCommand):
                 log.debug('Exact case match found.')
                 if len(exact_date_cases) > 1: 
                     log.warning('More than one exact case match!')
+                result.date = ref.date
+                result.condition = ref.condition
+                result.disposition = 'exact'
                 result.save() # Must save before populating many to many field
                 result.cases = exact_date_cases
-                result.disposition = 'exact'
                 result.save()
                 continue
             if condition_object.recur_after == -1: # does not recur
@@ -173,9 +175,11 @@ class Command(BaseCommand):
                 log.debug('Found case with similar date: %s' % similar_date_cases[0].date)
                 if len(exact_date_cases) > 1: 
                     log.warning('More than one similar case match!')
+                result.date = ref.date
+                result.condition = ref.condition
+                result.disposition = 'similar'
                 result.save() # Must save before populating many to many field
                 result.cases = similar_date_cases
-                result.disposition = 'similar'
                 result.save()
                 continue
             log.debug('No match found - case is missing')
@@ -192,6 +196,8 @@ class Command(BaseCommand):
             labs = condition_object.relevant_labs
             for test_name in condition_object.test_name_search:
                 labs |= LabResult.objects.filter(native_name__icontains=test_name)
+            result.date = ref.date
+            result.condition = ref.condition
             result.disposition = 'missing'
             result.save() # Must save before populating ManyToManyFields
             result.lab_results = labs.filter(q_obj).order_by('date')
@@ -212,6 +218,8 @@ class Command(BaseCommand):
         q_obj = ~Q(validatorresult__run=run)
         for new_case in Case.objects.filter(q_obj):
             result = ValidatorResult(run=run)
+            result.condition = new_case.condition
+            result.date = new_case.date
             result.disposition = 'new'
             result.save()
             result.cases = [new_case]
