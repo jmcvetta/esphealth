@@ -32,7 +32,8 @@ class PatientAdmin(admin.ModelAdmin):
 class LabResultAdmin(admin.ModelAdmin):
     list_display = ['order_num', 'native_name', 'patient', 'provider', 'result_string']
     list_display_links = ['order_num']
-    search_fields = ['native_code', 'native_name', 'patient', 'provider', 'result_string']
+    raw_id_fields = ['patient', 'provider']
+    search_fields = ['order_num', 'native_code', 'native_name', 'patient__mrn']
     ordering = ['-date']
 
 class EncounterAdmin(admin.ModelAdmin):
