@@ -59,7 +59,7 @@ Please create this file, and populate it with your database password.
 #
 #===============================================================================
 # Set DEBUG to False when running in production!
-DEBUG = True 
+DEBUG = False 
 # No error control, because version.txt is included with source.
 version_path =  os.path.join(TOPDIR, 'version.txt')
 VERSION = open(version_path).readline().strip()
@@ -76,7 +76,7 @@ MANAGERS = (
     ('Raphael Lullis', 'raphael.lullis@channing.harvard.edu'),
     ('Michael Klompas', 'mklompas@partners.org'),
 )
-SITE_NAME = 'Development (localhost)' # Name of your local site
+SITE_NAME = 'Atrius (lkenpesp3)' # Name of your local site
 DATA_DIR = '/srv/esp'
 #
 # Some EMR systems, for instance Atrius Healthcare, include "fake" patients -- 
