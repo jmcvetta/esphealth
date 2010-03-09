@@ -316,10 +316,11 @@ VAERS_NOTIFICATION_RECIPIENT = 'someone@example.com'
 #===============================================================================
 JAVA_DIR = "/usr/bin"
 JAVA_JAR_DIR = '/usr/share/java'
-def app_full_path(folder):
-    return os.path.realpath(os.path.join(TOPDIR, folder))
-def java_full_path(folder):
-    return os.path.join(JAVA_JAR_DIR, folder)
+
+
+app_full_path = lambda folder: os.path.realpath(os.path.join(TOPDIR, folder))
+java_full_path = lambda folder: os.path.join(JAVA_JAR_DIR, folder)
+
 JAVA_JARS = [
     java_full_path('axis.jar'),
     java_full_path('commons-logging.jar'), 
@@ -334,7 +335,7 @@ JAVA_JARS = [
     app_full_path('sendMsgs/bcdc.jar'),
     app_full_path('sendMsgs')
     ]
-#    javaclass=" /home/ESP/ESP/sendMsgs:/home/ESP/axis-1_4/activation.jar:/usr/local/axis-1_4/lib/axis.jar:/usr/local/axis-1_4/lib/commons-logging-1.0.4.jar:/usr/local/axis-1_4/lib/commons-discovery-0.2.jar:/usr/local/axis-1_4/lib/jaxrpc.jar:/usr/local/axis-1_4/lib/wsdl4j-1.5.1.jar:/usr/local/axis-1_4/lib/saaj.jar:/usr/local/axis-1_4/lib/axis-ant.jar:/usr/local/axis-1_4/lib/log4j-1.2.8.jar:/home/ESP/axis-1_4/mail.jar:/home/ESP/ESP/sendMsgs/bcdc.jar  "
+
 JAVA_CLASSPATH = " %s " % ':'.join([str(jar) for jar in JAVA_JARS])
 
 
@@ -350,7 +351,7 @@ LOG_FORMAT_CONSOLE = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(messag
 LOG_FORMAT_FILE = '%(asctime)s:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 LOG_FORMAT_SYSLOG = 'ESP:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 # BEWARE: If you set the log level to DEBUG, *copious* info will be logged!
-LOG_LEVEL_CONSOLE = logging.DEBUG
+LOG_LEVEL_CONSOLE = logging.WARN
 LOG_LEVEL_FILE = None
 LOG_LEVEL_SYSLOG = logging.WARN
 
