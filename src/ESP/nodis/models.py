@@ -49,6 +49,7 @@ from ESP.hef import events
 from ESP.hef.core import BaseHeuristic
 from ESP.hef.core import EncounterHeuristic
 from ESP.hef.core import MedicationHeuristic
+from ESP.hef.models import Timespan
 from ESP.hef.models import Event
 from ESP.conf.models import ConditionConfig
 
@@ -389,13 +390,33 @@ class TimespanPattern(object):
         raise NotImplementedError
         
     def plausible_patients(self, exclude_condition=None):
-        return Patient.objects.filter(timespan__pk__isnull=False)
+        q_obj = Q(timespan__pk__isnull=False)
+        if exclude_condition:
+            q_obj = q_obj & ~Q(case__condition=exclude_condition)
+        qs = Patient.objects.filter(q_obj)
+        log_query('Plausible patients for %s, exclude %s' % (self, exclude_condition), qs)
+        return qs
             
     def plausible_events(self, patients=None, exclude_condition=None):
-        raise NotImplementedError
+        '''
+        NOTE: This function returns Timespan instances, not Event instances!
+        '''
+        # Not sure if this should be implemented this way, since we're dealing 
+        # with Timespan instances, not Event instances.
+        q_obj = Q(name=self.event_name)
+        if patients:
+            q_obj = q_obj & Q(patient__in=patients)
+        if exclude_condition:
+            q_obj = q_obj & ~Q(case__condition=exclude_condition)
+        events = Timespan.objects.filter(q_obj)
+        log_query('Querying plausible events for %s' % self, events)
+        return events
     
     def generate_windows(self, days, patients=None, exclude_condition=None):
-        raise NotImplementedError
+        log.debug('Generating windows for %s' % self)
+        events = self.plausible_events(patients=patients, exclude_condition=exclude_condition)
+        for e in events:
+            yield Window(days=days, events=[e])
                 
     def match_window(self, reference, exclude_condition=None):
         raise NotImplementedError
@@ -533,28 +554,34 @@ class ComplexEventPattern(BaseEventPattern):
     def __init__(self, operator, patterns, name=None, 
         require_before=[], require_before_window=None, 
         require_after=[], require_after_window=None, 
-        require_ever=[], exclude=[], exclude_past=[]
+        require_ever=[], require_timespan=[],
+        exclude=[], exclude_past=[], exclude_timespan=[],
         ):
         '''
         @param operator: Logical operator for combining patterns 
         @type operator:  String ('and' or 'or')
         @param patterns: Patterns to search for
-        @type patterns:  String naming heuristic Event, or ComplexEventPattern instance
+        @type patterns:  Dict of Strings naming heuristic Event, or ComplexEventPattern instance
         @param name: Name of this pattern (optional)
         @type name:  String
-        @param require_before: Require these events in past
-        @type require_before:  String naming a heuristic Event that must have occurred before event window
-        @param require_before_window: Optionally limit require_before look back to this many days before event window
-        @type require_before_window:  Integer (number of days)
-        @param require_after: Require these events in past
-        @type require_after:  String naming a heuristic Event that must have occurred after event window
-        @param require_after_window: Optionally limit require_after look back to this many days after event window
-        @type require_after_window:  Integer (number of days)
-        @param require_ever: String naming event that must have occurred at some point, irrelevant of when
-        @param exclude: Exclude this pattern within match window
-        @type exclude:  String naming heuristic Event, or ComplexEventPattern instance
-        @param exclude_past: Exclude these events in past
-        @type exclude_past:  String naming a heuristic Event
+        @param require_before:         Require these events in past
+        @type require_before:          Dict of Strings naming a heuristic Event that must have occurred before event window
+        @param require_before_window:  Limit require_before look back to this many days before event window
+        @type require_before_window:   Integer (number of days)
+        @param require_after:          Require these events in past
+        @type require_after:           Dict of Strings naming heuristic Event that must have occurred after event window
+        @param require_after_window:   Limit require_after look back to this many days after event window
+        @type require_after_window:    Integer (number of days)
+        @param require_ever:           Dict of Strings naming event that must have occurred at some point, irrelevant of when
+        @type require_ever:            Integer (number of days)
+        @type require_timespan:        Events matching thsi pattern must have occurred within these timespans
+        @param require_timespan:       Dict of strings naming timespans during which pattern match is valid
+        @param exclude:                Exclude this pattern within match window
+        @type exclude:                 Dict of String naming heuristic Event, or ComplexEventPattern instance
+        @param exclude_past:           Exclude these events in past
+        @type exclude_past:            Dict Strings naming a heuristic Event
+        @type exclude_timespan:        Events matching thsi pattern must have occurred within these timespans
+        @param exclude_timespan:       Dict of strings naming timespans during which pattern match is valid
         '''
         operator = operator.lower()
         self.__sorted_pattern_cache = None
@@ -598,6 +625,12 @@ class ComplexEventPattern(BaseEventPattern):
         else:
             self.require_after_window = None
         self.exclude_past = exclude_past
+        #
+        # What kind of sanity checking do we need for Timespans??
+        #
+        self.require_timespan = require_timespan
+        self.exclude_timespan = exclude_timespan
+        #
         self.__pattern_obj = None # Cache 
         log.debug('Initializing new ComplexEventPattern instance')
         log.debug('    operator:    %s' % operator)
@@ -667,6 +700,8 @@ class ComplexEventPattern(BaseEventPattern):
             for name in all_required_events[1:]:
                 q_obj = q_obj | Q(event__name=name)
             plausible = plausible & Patient.objects.filter(q_obj).distinct()
+        for tspan in self.require_timespan:
+            plausible = plausible & Patient.objects.filter(timespan__name=tspan).distinct()
         log_query('Plausible patients for ComplexEventPattern "%s", exclude %s' % (self, exclude_condition), plausible)
         if EXCLUDE_XB_NAMES:
             #
