@@ -27,6 +27,7 @@ import re
 import pprint
 import shutil
 import codecs
+from decimal import Decimal
 from psycopg2 import Error as Psycopg2Error
 
 from django.db import transaction
@@ -184,6 +185,10 @@ class BaseLoader(object):
             return date_from_str(string)
         except ValueError:
             return None
+        
+    def decimal_or_none(self, string):
+        return Decimal(string) if string else None
+        
     
     @transaction.commit_on_success
     def load(self):
@@ -392,7 +397,15 @@ class LabResultLoader(BaseLoader):
         'specimen_id_num',      # 18
         'impression',           # 19
         'specimen_source',      # 20
+        'collection_date',      # 21
+        'procedure_name'        #22
         ]
+
+
+
+
+
+
     
     def load_row(self, row):
         native_code = row['cpt']
@@ -430,6 +443,8 @@ class LabResultLoader(BaseLoader):
         l.specimen_num = row['specimen_id_num']
         l.impression = row['impression']
         l.specimen_source = row['specimen_source']
+        l.collection_date = self.date_or_none(row['collection_date'])
+        l.procedure_name = row['procedure_name']
         l.save()
         log.debug('Saved lab result object: %s' % l)
         
@@ -494,7 +509,13 @@ class EncounterLoader(BaseLoader):
         'o2_stat',
         'peak_flow',
         'icd9s',
+        'diagnosis',
+        'bmi'
         ]
+
+
+
+
     
     def load_row(self, row):
         try:
@@ -522,6 +543,8 @@ class EncounterLoader(BaseLoader):
         raw_weight = row['weight']
         raw_height = row['height']
         edc = self.date_or_none(row['edc'])
+        diagnosis = row['diagnosis']
+        bmi = self.decimal_or_none(row['bmi'])
         #
         if patient: e.patient = patient 
         if provider: e.provider = provider 
@@ -538,6 +561,8 @@ class EncounterLoader(BaseLoader):
         if peak_flow: e.peak_flow = peak_flow
         if edc: e.edc = edc
         if edc: e.pregnancy_status = True
+        if diagnosis: e.diagnosis = diagnosis
+        if bmi: e.bmi = bmi
         if raw_weight:
             try:
                 weight = self.float_or_none(raw_weight.split()[0])

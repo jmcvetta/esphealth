@@ -548,6 +548,7 @@ class LabResult(BasePatientRecord):
     native_name = models.CharField('Native Test Name', max_length=255, blank=True, null=True, db_index=True)
     order_num = models.CharField(max_length=128, blank=True, null=True)
     result_date = models.DateField(blank=True, null=True, db_index=True)
+    collection_date = models.DateField(blank=True, null=True)
     status = models.CharField('Result Status', max_length=50, blank=True, null=True)
     result_num = models.CharField('Result Id #', max_length=100, blank=True, null=True)
     # 
@@ -567,7 +568,8 @@ class LabResult(BasePatientRecord):
     specimen_num = models.CharField('Speciment ID Number', max_length=100, blank=True, null=True)
     specimen_source = models.CharField('Speciment Source', max_length=255, blank=True, null=True)
     impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
-    comment = models.TextField('Comments',  blank=True,  null=True, )
+    comment = models.TextField('Comments', blank=True, null=True)
+    procedure_name = models.CharField('Procedure Name', max_length=255, blank=True, null=True)
     # Manager
     objects = LabResultManager()
     # HEF
@@ -879,6 +881,8 @@ class Encounter(BasePatientRecord):
     bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True)
     o2_stat = models.FloatField(max_length=50, blank=True, null=True)
     peak_flow = models.FloatField(max_length=50, blank=True, null=True)
+    diagnosis = models.TextField(null=True, blank=True)
+    bmi = models.DecimalField(decimal_places=2, max_digits=5, null=True, blank=True, db_index=True)
     # HEF
     events = generic.GenericRelation('hef.Event')
     timespan = generic.GenericRelation('hef.Timespan')
