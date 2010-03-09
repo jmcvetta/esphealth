@@ -19,6 +19,8 @@ else
 fi
 
 scp -r -P 8080 $FILE_FOLDER/$FOLDER/*.zip kyih@esphealth.org:~/satscan &&
+scp -r -P 8080 $FILE_FOLDER/$FOLDER/*.cas kyih@esphealth.org:~/satscan &&
+scp -r -P 8080 $FILE_FOLDER/$FOLDER/*.txt kyih@esphealth.org:~/satscan &&
 mkdir -p $SATSCAN_SVN_FOLDER/$FOLDER &&
 cp $FILE_FOLDER/$FOLDER/*.zip $SATSCAN_SVN_FOLDER/$FOLDER/ &&
 cp $FILE_FOLDER/$FOLDER/*.txt $SATSCAN_SVN_FOLDER/$FOLDER/ &&
