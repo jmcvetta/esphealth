@@ -83,21 +83,9 @@ class Event(models.Model):
 class Timespan(models.Model):
     '''
     A condition, such as pregnancy, which occurs over a defined span of time.  
-    
-    date         Date at the "center" of this span -- used only when generating 
-                 new Nodis Window objects based on this Timespan instance
-    start_date   Date on which this span begins
-    end_date     Date on which this span ends
     '''   
-    '''
-    A period of pregnancy, inferred from EDC values and ICD9 codes in Encounter
-    records.  This data is not intended to determine actual begin/end dates of
-    pregnancy, but rather simply to note periods in which a given patient was
-    (probably) pregnant.  As such, pregnancy periods may overlap.
-    '''
     name = models.SlugField(max_length=128, null=False, blank=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False)
-    date = models.DateField('Date at the conceptual "center" of this time span', blank=False, db_index=True)
     start_date = models.DateField(blank=False, db_index=True)
     end_date = models.DateField(blank=False, db_index=True)
     timestamp = models.DateTimeField('Time this event was created in db', blank=False, auto_now_add=True)

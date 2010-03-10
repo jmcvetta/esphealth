@@ -81,7 +81,7 @@ class BaseHeuristic(object):
     used as components of disease definitions.
     '''
 
-    __registry = {} # Class variable
+    _registry = {} # Class variable
 
     def __init__(self, name, long_name):
         '''
@@ -99,7 +99,7 @@ class BaseHeuristic(object):
         #
         # Register this heuristic
         #
-        registry = self.__registry # For convenience
+        registry = self._registry # For convenience
         if name in registry:
             log.error('Event %s is already registered.' % name)
             raise HeuristicAlreadyRegistered('A BaseHeuristic instance is already registered with heuristic "%s".' % name)
@@ -113,9 +113,9 @@ class BaseHeuristic(object):
         Returns a list of all registered BaseHeuristic instances.
         '''
         result = []
-        keys = cls.__registry.keys()
+        keys = cls._registry.keys()
         keys.sort()
-        [result.append(cls.__registry[key]) for key in keys]
+        [result.append(cls._registry[key]) for key in keys]
         log.debug('All BaseHeuristic instances: %s')
         for item in result:
             log.debug('    %s' % item)
@@ -126,7 +126,7 @@ class BaseHeuristic(object):
         '''
         Given a string naming a heuristic, returns the appropriate BaseHeuristic instance
         '''
-        return cls.__registry[name]
+        return cls._registry[name]
 
     @classmethod
     def all_event_names(cls, choices=False):
@@ -136,7 +136,7 @@ class BaseHeuristic(object):
         @type choices: Boolean
         '''
         all_names = set()
-        [all_names.update(set(cls.__registry[i].event_names)) for i in cls.__registry]
+        [all_names.update(set(cls._registry[i].event_names)) for i in cls._registry]
         all_names = list(all_names)
         all_names.sort()
         return all_names
@@ -144,8 +144,8 @@ class BaseHeuristic(object):
     @classmethod
     def lab_heuristic_choices(cls):
         out = []
-        for item in cls.__registry:
-            heuristic = cls.__registry[item]
+        for item in cls._registry:
+            heuristic = cls._registry[item]
             if not isinstance(heuristic, BaseLabHeuristic):
                 continue
             display = '%s --- %s' % (item, heuristic.long_name)
@@ -156,8 +156,8 @@ class BaseHeuristic(object):
     @classmethod
     def lab_heuristics(cls):
         out = set()
-        for item in cls.__registry:
-            heuristic = cls.__registry[item]
+        for item in cls._registry:
+            heuristic = cls._registry[item]
             if isinstance(heuristic, BaseLabHeuristic):
                 out.add(heuristic)
         return out
@@ -254,8 +254,8 @@ class BaseHeuristic(object):
         '''
         Given an Event name, get the BaseHeuristic child instance that generates it.
         '''
-        for i in cls.__registry:
-            heuristic = cls.__registry[i]
+        for i in cls._registry:
+            heuristic = cls._registry[i]
             if event_name in heuristic.event_names:
                 return heuristic
 
@@ -829,7 +829,9 @@ class TimespanHeuristic(BaseHeuristic):
     '''
     Base class from which are derived heuristics that generate Timespan instances.
     '''
-    pass
+    
+    _registry = {} # Class variable just for Timespans
+    
     
     
 class PregnancyHeuristic(TimespanHeuristic):
@@ -858,7 +860,6 @@ class PregnancyHeuristic(TimespanHeuristic):
                 run = run,
                 name = self.name,
                 patient = enc.patient,
-                date = enc.date,
                 start_date = start_date,
                 end_date = enc.edc,
                 content_object = enc,
@@ -891,9 +892,8 @@ class PregnancyHeuristic(TimespanHeuristic):
                 run = run,
                 name = self.name,
                 patient = e.patient,
-                date = e.date,
                 start_date = start_date,
-                end_date = e.edc,
+                end_date = end_date,
                 content_object = e,
                 )
             tspan.save()
