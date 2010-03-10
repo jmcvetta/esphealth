@@ -651,3 +651,22 @@ gdm_1 = ComplexEventPattern(
     operator = 'or',
     require_timespan = ['pregnancy_inferred']
     )
+
+lancets_or_test_strips = ComplexEventPattern(
+    name = 'Prescription for lancets or test strips',
+    patterns = ['lancets_rx', 'test_strips_rx'],
+    operator = 'or',
+    )
+
+gdm_2 = ComplexEventPattern(
+    name = 'GDM based on diagnosis and lancets/test strips prescription',
+    patterns = ['gdm_diagnosis', lancets_or_test_strips],
+    operator = 'and',
+    )
+
+giardiasis = Condition(
+    name = 'gdm',
+    patterns = [(gdm_2, 14)],
+    recur_after = 365, # New cases after 365 days
+    test_name_search = ['glucose'],
+    )

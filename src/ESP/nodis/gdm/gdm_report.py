@@ -95,11 +95,11 @@ FIELDS = [
     'start_date',
     'end_date',
     'edc',
-    'glucose fasting count',
-    'OGTT50 count',
-    'OGTT75 intrapartum count',
-    'OGTT75 postpartum count',
-    'OGTT100 count',
+    'glucose fasting',
+    'OGTT50',
+    'OGTT75 intrapartum',
+    'OGTT75 postpartum',
+    'OGTT100',
     ]
 
 def summarize_date_range(patient, start_date):
@@ -116,11 +116,11 @@ def summarize_date_range(patient, start_date):
         'start_date': start_date,
         'end_date': cutoff_date,
         'edc': Encounter.objects.filter(q_obj).aggregate(edc=Max('edc'))['edc'],
-        'glucose fasting count': events.filter(name='glucose_fasting_pos').count(),
-        'OGTT50 count': events.filter(name__in=OGTT50_EVENT_NAMES).count(),
-        'OGTT75 intrapartum count': events.filter(name__in=OGTT75_INTRAPARTUM_EVENT_NAMES).count(),
-        'OGTT75 postpartum count': events.filter(name__in=OGTT75_POSTPARTUM_EVENT_NAMES).count(),
-        'OGTT100 count': events.filter(name__in=OGTT100_EVENT_NAMES).count(),
+        'glucose fasting': bool(events.filter(name='glucose_fasting_pos').count() ),
+        'OGTT50': bool(events.filter(name__in=OGTT50_EVENT_NAMES).count() ),
+        'OGTT75 intrapartum': bool( events.filter(name__in=OGTT75_INTRAPARTUM_EVENT_NAMES).count() > 1),
+        'OGTT75 postpartum ': bool( events.filter(name__in=OGTT75_POSTPARTUM_EVENT_NAMES).count() ),
+        'OGTT100': bool( events.filter(name__in=OGTT100_EVENT_NAMES).count() > 1),
         }
     return values
 
