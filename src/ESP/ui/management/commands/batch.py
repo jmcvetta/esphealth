@@ -14,6 +14,7 @@ import datetime
 import sys
 
 from django.core.management.base import BaseCommand
+from django.core.mail import mail_admins
 from optparse import make_option
 from optparse import Values
 
@@ -33,6 +34,7 @@ from ESP.settings import CASE_REPORT_OUTPUT_FOLDER
 from ESP.settings import CASE_REPORT_MDPH
 from ESP.settings import CASE_REPORT_FILENAME_FORMAT
 from ESP.settings import CASE_REPORT_TEMPLATE
+from ESP.settings import SITE_NAME
 
 
 class Command(BaseCommand):
@@ -62,79 +64,84 @@ class Command(BaseCommand):
         # command line w/ no arguments, use run_from_argv([None, None]).  Use
         # handle() if it is necessary to specify options.
         #
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #--- ETL
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if ETL_USE_FTP:
-            progress('Fetching new ETL files from FTP')
-            cmnd = FtpCommand()
+        try:
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            #--- ETL
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if ETL_USE_FTP:
+                progress('Fetching new ETL files from FTP')
+                cmnd = FtpCommand()
+                cmnd.run_from_argv([None, None])
+                progress('Successfully fetched new ETL files from FTP')
+                del cmnd
+            if ETL_SOURCE == 'epic':
+                progress('Loading Epic ETL files')
+                cmnd = LoadEpicCommand()
+                cmnd.run_from_argv([None, None])
+                del cmnd
+                progress('Succesffully loaded Epic ETL files')
+            elif ETL_SOURCE == 'hl7':
+                pass
+                cmnd = LoadHl7Command()
+                cmnd.run_from_argv([None, None])
+                del cmnd
+            else:
+                print >> sys.stderr, 'Unrecognized ETL_SOURCE: "%s"' % ETL_SOURCE
+                print >> sys.stderr, ''
+                print >> sys.stderr, 'Valid case-sensitive ETL_SOURCE values are:'
+                print >> sys.stderr, '    epic'
+                print >> sys.stderr, '    hl7'
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            #--- HEF
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            progress('Generating heuristic events')
+            cmnd = HefCommand()
             cmnd.run_from_argv([None, None])
-            progress('Successfully fetched new ETL files from FTP')
             del cmnd
-        if ETL_SOURCE == 'epic':
-            progress('Loading Epic ETL files')
-            cmnd = LoadEpicCommand()
+            progress('Successfully generated heuristic events')
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            #--- Nodis
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            progress('Generating Nodis cases')
+            cmnd = NodisCommand()
             cmnd.run_from_argv([None, None])
             del cmnd
-            progress('Succesffully loaded Epic ETL files')
-        elif ETL_SOURCE == 'hl7':
-            pass
-            cmnd = LoadHl7Command()
+            progress('Successfully generated Nodis cases')
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            #--- Case reports
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            progress('Generating Nodis case reports')
+            cmnd = CaseReportCommand()
+    #        cmnd.handle(
+    #            output_folder=CASE_REPORT_OUTPUT_FOLDER,
+    #            template=CASE_REPORT_TEMPLATE,
+    #            mdph=CASE_REPORT_MDPH,
+    #            stdout=False,
+    #            case_id=None,
+    #            individual=False,
+    #            status='Q',
+    #            sent_status=True,
+    #            sample=None,
+    #            )
+            del cmnd
+            progress('Successfully generated Nodis case reports')
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            #--- Concordance
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            progress('Rebuilding lab tests condordance')
+            cmnd = ConcordanceCommand()
             cmnd.run_from_argv([None, None])
             del cmnd
-        else:
-            print >> sys.stderr, 'Unrecognized ETL_SOURCE: "%s"' % ETL_SOURCE
-            print >> sys.stderr, ''
-            print >> sys.stderr, 'Valid case-sensitive ETL_SOURCE values are:'
-            print >> sys.stderr, '    epic'
-            print >> sys.stderr, '    hl7'
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #--- HEF
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        progress('Generating heuristic events')
-        cmnd = HefCommand()
-        cmnd.run_from_argv([None, None])
-        del cmnd
-        progress('Successfully generated heuristic events')
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #--- Nodis
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        progress('Generating Nodis cases')
-        cmnd = NodisCommand()
-        cmnd.run_from_argv([None, None])
-        del cmnd
-        progress('Successfully generated Nodis cases')
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #--- Case reports
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        progress('Generating Nodis case reports')
-        cmnd = CaseReportCommand()
-#        cmnd.handle(
-#            output_folder=CASE_REPORT_OUTPUT_FOLDER,
-#            template=CASE_REPORT_TEMPLATE,
-#            mdph=CASE_REPORT_MDPH,
-#            stdout=False,
-#            case_id=None,
-#            individual=False,
-#            status='Q',
-#            sent_status=True,
-#            sample=None,
-#            )
-        del cmnd
-        progress('Successfully generated Nodis case reports')
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #--- Concordance
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        progress('Rebuilding lab tests condordance')
-        cmnd = ConcordanceCommand()
-        cmnd.run_from_argv([None, None])
-        del cmnd
-        progress('Successfully rebuilt lab tests condordance')
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #--- Status Report
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        progress('Sending status report')
-        cmnd = StatusReportCommand()
-        cmnd.handle(send_mail=True)
-        del cmnd
-        progress('Successfully emailed status report.')
+            progress('Successfully rebuilt lab tests condordance')
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            #--- Status Report
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            progress('Sending status report')
+            cmnd = StatusReportCommand()
+            cmnd.handle(send_mail=True)
+            del cmnd
+            progress('Successfully emailed status report.')
+        except BaseException, e:
+            sub = 'WARNING! An error occurred in the ESP batch job at %s' % SITE_NAME
+            msg = 'Caught the following exception: \n%s' % e
+            mail_admins(sub, msg, fail_silently=False)
