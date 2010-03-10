@@ -611,17 +611,19 @@ EncounterHeuristic(
 MedicationHeuristic(
     name = 'lancets_rx',
     long_name = 'Lancets Prescription',
-    drugs = [
-        'lancets',
-        ],
+    drugs = ['lancets'],
     )
 
 MedicationHeuristic(
     name = 'test_strips_rx',
     long_name = 'Test Strips Prescription',
-    drugs = [
-        'test strips',
-        ],
+    drugs = ['test strips'],
+    )
+
+MedicationHeuristic(
+    name = 'insulin_rx',
+    long_name = 'Insulin Prescription',
+    drugs = ['insulin'],
     )
 
 
