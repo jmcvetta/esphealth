@@ -497,12 +497,14 @@ LabResultHeuristic(
     long_name = 'GLUCOSE FASTING PRE 75 GM',
     date_field = 'result',
     fixed_threshold_events = [126],
+    order_events = True,
     )
     
 LabResultHeuristic(
     name = 'ogtt75_fasting_urine',
     long_name = 'GLUCOSE FASTING, UR',
     date_field = 'result',
+    order_events = True,
     )
     
 LabResultHeuristic(
@@ -510,6 +512,7 @@ LabResultHeuristic(
     long_name = 'GLUCOSE 1/2 HR POST 75 GM',
     date_field = 'result',
     fixed_threshold_events = [200],
+    order_events = True,
     )
 
 LabResultHeuristic(
@@ -517,6 +520,7 @@ LabResultHeuristic(
     long_name = 'GLUCOSE 1 HR POST 75 GM',
     date_field = 'result',
     fixed_threshold_events = [200],
+    order_events = True,
     )
 
 LabResultHeuristic(
@@ -524,6 +528,7 @@ LabResultHeuristic(
     long_name = 'GLUCOSE 1 1/2 HR POST 75 GM',
     date_field = 'result',
     fixed_threshold_events = [200],
+    order_events = True,
     )
 
 LabResultHeuristic(
@@ -531,6 +536,7 @@ LabResultHeuristic(
     long_name = 'GLUCOSE 2 HR POST 75 GM',
     date_field = 'result',
     fixed_threshold_events = [200],
+    order_events = True,
     )
 
 
