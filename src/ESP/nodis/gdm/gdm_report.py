@@ -107,6 +107,10 @@ FIELDS = [
 
 def summarize_date_range(patient, start_date):
     cutoff_date = start_date + datetime.timedelta(days=250)
+    preg_start = Pregnancy.objects.filter(patient=patient, 
+        start_date__gte=start_date-datetime.timedelta(days=250)).aggregate(min=Min('start_date'))['min']
+    preg_end = Pregnancy.objects.filter(patient=patient, 
+        start_date__lte=cutoff_date).aggregate(max=Max('end_date'))['max']
     q_obj = Q(patient=patient, date__gte=start_date, date__lte=cutoff_date)
     events = Event.objects.filter(q_obj)
     values = {
@@ -117,8 +121,8 @@ def summarize_date_range(patient, start_date):
         'date_of_birth': patient.date_of_birth,
         'ethnicity': patient.race,
         'zip code': patient.zip,
-        'start_date': start_date,
-        'end_date': cutoff_date,
+        'start_date': preg_start,
+        'end_date': preg_end,
         'edc': Encounter.objects.filter(q_obj).aggregate(edc=Max('edc'))['edc'],
         'positive glucose fasting': bool(events.filter(name='glucose_fasting_pos').count() ),
         'positive OGTT50 intrapartum': bool(events.filter(name__in=OGTT50_EVENT_NAMES).count() ),
