@@ -99,3 +99,18 @@ class Timespan(models.Model):
     # Content object is the (EMR) record on which this span is based
     content_object = generic.GenericForeignKey('content_type', 'object_id')
 
+
+class Pregnancy(models.Model):
+    patient = models.ForeignKey(Patient, blank=False)
+    start_date = models.DateField(blank=False, db_index=True)
+    end_date = models.DateField(blank=False, db_index=True)
+    timestamp = models.DateTimeField('Time this event was created in db', blank=False, auto_now_add=True)
+    run = models.ForeignKey(Run, blank=False)
+    #
+    # Standard generic relation support
+    #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
+    #
+    content_type = models.ForeignKey(ContentType, db_index=True)
+    object_id = models.PositiveIntegerField(db_index=True)
+    content_object = generic.GenericForeignKey('content_type', 'object_id')
+
