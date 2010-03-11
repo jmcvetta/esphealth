@@ -96,12 +96,13 @@ FIELDS = [
     'start_date',
     'end_date',
     'edc',
-    'glucose fasting',
-    'OGTT50 intrapartum',
-    'OGTT75 intrapartum',
-    'OGTT75 postpartum',
-    'OGTT100 intrapartum',
+    'positive glucose fasting',
+    'positive OGTT50 intrapartum',
+    'positive OGTT75 intrapartum',
+    'positive OGTT75 postpartum',
+    'positive OGTT100 intrapartum',
     'lancets test strips rx',
+    'OGTT75 postpartum order',
     ]
 
 def summarize_date_range(patient, start_date):
@@ -119,12 +120,13 @@ def summarize_date_range(patient, start_date):
         'start_date': start_date,
         'end_date': cutoff_date,
         'edc': Encounter.objects.filter(q_obj).aggregate(edc=Max('edc'))['edc'],
-        'glucose fasting': bool(events.filter(name='glucose_fasting_pos').count() ),
-        'OGTT50 intrapartum': bool(events.filter(name__in=OGTT50_EVENT_NAMES).count() ),
-        'OGTT75 intrapartum': bool( events.filter(name__in=OGTT75_INTRAPARTUM_EVENT_NAMES).count() > 1),
-        'OGTT75 postpartum': bool( events.filter(name__in=OGTT75_POSTPARTUM_EVENT_NAMES).count() ),
-        'OGTT100 intrapartum': bool( events.filter(name__in=OGTT100_EVENT_NAMES).count() > 1 ),
+        'positive glucose fasting': bool(events.filter(name='glucose_fasting_pos').count() ),
+        'positive OGTT50 intrapartum': bool(events.filter(name__in=OGTT50_EVENT_NAMES).count() ),
+        'positive OGTT75 intrapartum': bool( events.filter(name__in=OGTT75_INTRAPARTUM_EVENT_NAMES).count() > 1),
+        'positive OGTT75 postpartum': bool( events.filter(name__in=OGTT75_POSTPARTUM_EVENT_NAMES).count() ),
+        'positive OGTT100 intrapartum': bool( events.filter(name__in=OGTT100_EVENT_NAMES).count() > 1 ),
         'lancets test strips rx': bool( Case.objects.filter(patient=patient, condition='gdm', date__gte=start_date, date__lte=cutoff_date ) ),
+        'OGTT75 postpartum order': bool( Event.objects.filter(patient=patient, date__gt=cutoff_date, name__startswith='ogtt75', name__endswith='_order')  ),
         }
     return values
 
