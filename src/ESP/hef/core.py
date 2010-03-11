@@ -377,7 +377,9 @@ class LabResultHeuristic(BaseLabHeuristic):
         '''
         Return all matching labs, regardless of 
         '''
-        result = self.relevant_labs.filter(updated_timestamp__gte=begin_timestamp)
+        result = self.relevant_labs
+        if begin_timestamp:
+            result = result.filter(updated_timestamp__gte=begin_timestamp)
         if exclude_bound:
             q_obj = ~Q(events__name=self.order_name)
             result = result.filter(q_obj)
@@ -392,7 +394,9 @@ class LabResultHeuristic(BaseLabHeuristic):
         @param ratio: Ratio used to generate this type of event
         @type  ratio: Int or Float
         '''
-        qs = self.relevant_labs.filter(updated_timestamp__gte=begin_timestamp)
+        qs = self.relevant_labs
+        if begin_timestamp:
+            qs = qs.filter(updated_timestamp__gte=begin_timestamp)
         if exclude_bound:
             q_obj = ~Q(events__name=self.fixed_threshold_name(threshold))
             qs = qs.filter(q_obj)
