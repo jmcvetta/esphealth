@@ -504,12 +504,9 @@ class hl7Batch:
         if demog.date_of_birth:
             dur = (datetime.date.today() - demog.date_of_birth).days
             age = int(dur/365)
-        else:
-            #raise IncompleteCaseData('No date of birth for patient %s' %  demog)
-            age = None
-        obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'NM')],obx3=[('CE.4','21612-7')],obx5=[('',age)],nte=casenote)
-        orcs.appendChild(obx)
-        indx += 1
+            obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'NM')],obx3=[('CE.4','21612-7')],obx5=[('',age)],nte=casenote)
+            orcs.appendChild(obx)
+            indx += 1
         ##pregnancy status
         (obx5, edc) = self.getPregnancyStatus(caseid)
         obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'CE')],obx3=[('CE.4','11449-6'),('CE.5','PREGNANCY STATUS')],obx5=[('CE.4',obx5)])
