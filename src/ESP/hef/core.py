@@ -162,7 +162,7 @@ class BaseHeuristic(object):
                 out.add(heuristic)
         return out
 
-    def matches(self, exclude_bound=True):
+    def matches(self, begin_timestamp=None, exclude_bound=True):
         '''
         Return a QuerySet of matches for this heuristic
         @param exclude_bound: Should we exclude labs that are already bound to 
@@ -171,7 +171,7 @@ class BaseHeuristic(object):
         '''
         raise NotImplementedError('This method MUST be implemented in concrete classes inheriting from BaseHeuristic.')
 
-    def generate_events(self, run, name=None, date_field=None, **kw):
+    def generate_events(self, run, name=None, date_field=None, begin_timestamp=None, **kw):
         '''
         Generate Event records for each item returned by self.matches().
         @param run: Current HEF run
@@ -184,7 +184,12 @@ class BaseHeuristic(object):
         counter = 0 # Counts how many new records have been created
         if not name:
             name = self.name
-        for event in self.matches(**kw).select_related():
+        if not begin_timestamp:
+            # By default, begin one day earlier than most recent event of this type
+            most_recent_event_date = Event.objects.filter(name=name).aggregate(max=Max('timestamp'))['max'] 
+            if most_recent_event_date:
+                begin_timestamp = most_recent_event_date - datetime.timedelta(days=1)
+        for event in self.matches(begin_timestamp, **kw).select_related():
             event_date = event.date
             if date_field == 'result': # Lab Order
                 event_date = event.result_date
@@ -340,7 +345,7 @@ class LabResultHeuristic(BaseLabHeuristic):
             long_name = long_name,
             )
     
-    def ratio_matches(self, ratio, exclude_bound=True):
+    def ratio_matches(self, ratio, begin_timestamp=None, exclude_bound=True):
         '''
         Return labs where result_float > ref_high_float * ratio
         @param ratio: Ratio used to generate this type of event
@@ -363,35 +368,41 @@ class LabResultHeuristic(BaseLabHeuristic):
         if exclude_bound:
             q_obj = ~Q(events__name=self.ratio_name(ratio))
             result = result.filter(q_obj)
+        if begin_timestamp:
+            result = result.filter(updated_timestamp__gte=begin_timestamp)
         log_query('Matches query for %s' % self.ratio_name(ratio), result)
         return result
     
-    def order_matches(self, exclude_bound=True):
+    def order_matches(self, begin_timestamp=None, exclude_bound=True):
         '''
         Return all matching labs, regardless of 
         '''
-        result = self.relevant_labs
+        result = self.relevant_labs.filter(updated_timestamp__gte=begin_timestamp)
         if exclude_bound:
             q_obj = ~Q(events__name=self.order_name)
             result = result.filter(q_obj)
+        if begin_timestamp:
+            result = result.filter(updated_timestamp__gte=begin_timestamp)
         log_query('Query for heuristic %s' % self.order_name, result)
         return result
     
-    def fixed_threshold_matches(self, threshold, exclude_bound=True):
+    def fixed_threshold_matches(self, threshold, begin_timestamp=None, exclude_bound=True):
         '''
         Return labs where result_float > threshold
         @param ratio: Ratio used to generate this type of event
         @type  ratio: Int or Float
         '''
-        qs = self.relevant_labs
+        qs = self.relevant_labs.filter(updated_timestamp__gte=begin_timestamp)
         if exclude_bound:
             q_obj = ~Q(events__name=self.fixed_threshold_name(threshold))
             qs = qs.filter(q_obj)
         qs = qs.filter(result_float__gt=float(threshold))
+        if begin_timestamp:
+            qs = qs.filter(updated_timestamp__gte=begin_timestamp)
         log_query('Query for %s' % self.fixed_threshold_name(threshold), qs)
         return qs
 
-    def matches(self, exclude_bound=True, result_type='positive', ratio=None, threshold=None):
+    def matches(self, begin_timestamp=None, exclude_bound=True, result_type='positive', ratio=None, threshold=None):
         '''
         If record has a reference high, and a ratio has been specified, compare
         test result against that reference.  If a record does not have a
@@ -404,13 +415,13 @@ class LabResultHeuristic(BaseLabHeuristic):
         elif result_type == 'negative':
             event_name = self.neg_name
         elif result_type == 'order':
-            return self.order_matches(exclude_bound=exclude_bound)
+            return self.order_matches(begin_timestamp=begin_timestamp, exclude_bound=exclude_bound)
         elif result_type == 'ratio':
             assert ratio
-            return self.ratio_matches(ratio=ratio, exclude_bound=exclude_bound)
+            return self.ratio_matches(ratio=ratio, begin_timestamp=begin_timestamp, exclude_bound=exclude_bound)
         elif result_type == 'threshold':
             assert threshold
-            return self.fixed_threshold_matches(threshold=threshold, exclude_bound=exclude_bound)
+            return self.fixed_threshold_matches(threshold=threshold, begin_timestamp=begin_timestamp, exclude_bound=exclude_bound)
         else:
             raise RuntimeError('This should never happen.  Consult the developers.')
         ################################################################################
@@ -490,6 +501,8 @@ class LabResultHeuristic(BaseLabHeuristic):
         #
         if exclude_bound:
             pos_q &= ~Q(events__name=event_name)
+        if begin_timestamp:
+            pos_q &= Q(updated_timestamp__gte=begin_timestamp)
         labs = LabResult.objects.filter(pos_q)
         log_query('Query for heuristic %s' % event_name, labs)
         return labs
@@ -628,8 +641,10 @@ class EncounterHeuristic(BaseHeuristic):
         log_query('Encounters for %s' % self, qs )
         return qs
 
-    def matches(self, exclude_bound=True):
+    def matches(self, begin_timestamp=None, exclude_bound=True):
         qs = self.encounters(exclude_bound=exclude_bound)
+        if begin_timestamp:
+            qs = qs.filter(updated_timestamp__gte=begin_timestamp)
         log_query('Query for heuristic %s' % self.name, qs)
         return qs
         
@@ -648,7 +663,7 @@ class FeverHeuristic(BaseHeuristic):
             long_name = long_name,
             )
 
-    def matches(self, queryset=None, exclude_bound=True):
+    def matches(self, queryset=None, begin_timestamp=None, exclude_bound=True):
         '''
         Return all encounters indicating fever.
             @type queryset:   QuerySet
@@ -668,6 +683,8 @@ class FeverHeuristic(BaseHeuristic):
         q_obj = enc_q | Q(temperature__gt = self.temperature)
         log.debug('q_obj: %s' % q_obj)
         qs = qs.filter(q_obj)
+        if begin_timestamp:
+            qs = qs.filter(updated_timestamp__gte=begin_timestamp)
         log_query('Query for heuristic %s' % self.name, qs)
         return qs
 
@@ -685,7 +702,7 @@ class CalculatedBilirubinHeuristic(BaseLabHeuristic):
             long_name = 'High bilirubin (calculated)'
             )
 
-    def matches(self, exclude_bound=True):
+    def matches(self, begin_timestamp=None, exclude_bound=True):
         log.debug('Looking for high calculated bilirubin scores')
         # First, we return a list of patient & order date pairs, where the sum
         # of direct and indirect bilirubin tests ordered on the same day is 
@@ -739,7 +756,7 @@ class MedicationHeuristic(BaseHeuristic):
             long_name = long_name,
             )
 
-    def matches(self, exclude_bound=True):
+    def matches(self, begin_timestamp=None, exclude_bound=True):
         log.debug('Finding matches for following drugs:')
         [log.debug('    %s' % d) for d in self.drugs]
         [log.debug('    Exclude string: %s' % s) for s in self.exclude]
@@ -764,6 +781,8 @@ class MedicationHeuristic(BaseHeuristic):
         if self.min_quantity:
             q_obj &= Q(quantity_float__gte=self.min_quantity)
         qs = qs.filter(q_obj)
+        if begin_timestamp:
+            qs = qs.filter(updated_timestamp__gte=begin_timestamp)
         log_query('Query for heuristic %s' % self.name, qs)
         return qs
 
@@ -790,7 +809,7 @@ class WesternBlotHeuristic(BaseLabHeuristic):
             long_name = long_name,
             )
 
-    def matches(self, exclude_bound=True):
+    def matches(self, begin_timestamp=None, exclude_bound=True):
         # Find potential positives -- tests whose results contain at least one 
         # of the interesting band numbers.
         q_obj = ~Q(events__name=self.name)
@@ -822,7 +841,10 @@ class WesternBlotHeuristic(BaseLabHeuristic):
                     match_pks.append(pk)
                     break
         log.debug('Found %s actual positive lab results.' % len(match_pks))
-        return LabResult.objects.filter(pk__in = match_pks)
+        qs = LabResult.objects.filter(pk__in = match_pks)
+        if begin_timestamp:
+            qs = qs.filter(updated_timestamp__gte=begin_timestamp)
+        return qs
 
 
 class TimespanHeuristic(BaseHeuristic):
