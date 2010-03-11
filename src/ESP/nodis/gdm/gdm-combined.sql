@@ -74,6 +74,15 @@ from (
 		group by date, patient_id 
 	) s1
 	where s1.count > 1
+	-- OGTT50
+	union
+	select distinct c.date, c.patient_id, 'lancets_test_strips_rx' as alogrithm
+	from nodis_case c
+	inner join hef_pregnancy pg 
+		on pg.patient_id = c.patient_id 
+		and pg.start_date <= c.date 
+		and pg.end_date >= c.date 
+	where c.condition = 'gdm'
 ) combined
 join emr_patient pt
 	on combined.patient_id = pt.id
