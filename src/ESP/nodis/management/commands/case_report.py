@@ -498,10 +498,16 @@ class hl7Batch:
         """
         """
         indx=1
-        if not demog.date_of_birth:
-            raise IncompleteCaseData('No date of birth for patient %s' %  demog)
-        dur = (datetime.date.today() - demog.date_of_birth).days
-        obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'NM')],obx3=[('CE.4','21612-7')],obx5=[('',int(dur/365))],nte=casenote)
+        #
+        # Testing - Does MDPH accept null age?
+        #
+        if demog.date_of_birth:
+            dur = (datetime.date.today() - demog.date_of_birth).days
+            age = int(dur/365)
+        else:
+            #raise IncompleteCaseData('No date of birth for patient %s' %  demog)
+            age = None
+        obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'NM')],obx3=[('CE.4','21612-7')],obx5=[('',age)],nte=casenote)
         orcs.appendChild(obx)
         indx += 1
         ##pregnancy status
