@@ -2,14 +2,14 @@
 -- Combined GDM
 --
 
-select combined.date, combined.alogrithm,
+select combined.date, combined.algorithm,
 	pt.id as patient_id, pt.mrn, pt.last_name, pt.first_name,
 	l.native_code, l.native_name, l.result_string,
 	e.id as event_id, e.name as event_name
 
 from (
 	-- Glucose Fasting
-	select distinct e.date, e.patient_id, 'glucose_fasting' as alogrithm
+	select distinct e.date, e.patient_id, 'glucose_fasting' as algorithm
 	from hef_event e 
 	inner join hef_pregnancy pg 
 		on e.patient_id = pg.patient_id 
@@ -19,7 +19,7 @@ from (
 	and e.name not like '%_pos'
 	-- OGTT50
 	union
-	select distinct e.date, e.patient_id, 'ogtt50_intrapartum' as alogrithm
+	select distinct e.date, e.patient_id, 'ogtt50_intrapartum' as algorithm
 	from hef_event e 
 	inner join hef_pregnancy pg 
 		on e.patient_id = pg.patient_id 
@@ -29,7 +29,7 @@ from (
 	and e.name not like '%_pos'
 	-- OGTT75 Intrapartum
 	union
-	select s1.date, s1.patient_id, 'ogtt75_intrapartum' as alogrithm
+	select s1.date, s1.patient_id, 'ogtt75_intrapartum' as algorithm
 	from (
 		select date, patient_id, count(*) 
 		from ( 
@@ -45,7 +45,7 @@ from (
 	where s1.count > 1
 	-- OGTT75 Postpartum
 	union 
-	select distinct e.date, e.patient_id, 'ogtt75_postpartum' as alogrithm
+	select distinct e.date, e.patient_id, 'ogtt75_postpartum' as algorithm
 	from hef_event e 
 	inner join emr_patient pt
 		on e.patient_id = pt.id
@@ -59,7 +59,7 @@ from (
 		and e.name not like '%_pos'
 	-- OGTT100 Intrapartum
 	union
-	select s1.date, s1.patient_id, 'ogtt100_intrapartum' as alogrithm
+	select s1.date, s1.patient_id, 'ogtt100_intrapartum' as algorithm
 	from (
 		select date, patient_id, count(*) 
 		from (
@@ -76,7 +76,7 @@ from (
 	where s1.count > 1
 	-- OGTT50
 	union
-	select distinct c.date, c.patient_id, 'lancets_test_strips_rx' as alogrithm
+	select distinct c.date, c.patient_id, 'lancets_test_strips_rx' as algorithm
 	from nodis_case c
 	inner join hef_pregnancy pg 
 		on pg.patient_id = c.patient_id 
