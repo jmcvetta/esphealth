@@ -347,7 +347,6 @@ class SimpleEventPattern(BaseEventPattern):
         if exclude_condition:
             q_obj = q_obj & ~Q(case__condition=exclude_condition)
         events = Event.objects.filter(q_obj)
-        print events.count()
         for tspan in self.require_timespan:
             events = events.extra(
                 tables = ['hef_timespan'],
@@ -365,7 +364,6 @@ class SimpleEventPattern(BaseEventPattern):
         for tspan in self.exclude_timespan:
             raise NotImplementedError()
         log_query('Querying plausible events for %s' % self, events)
-        print events.count()
         return events
 
     def generate_windows(self, days, patients=None, exclude_condition=None):
@@ -538,8 +536,6 @@ class MultipleEventPattern(BaseEventPattern):
             patient = pd['patient']
             event_date = pd['date']
             pd_events = self.plausible_events(exclude_condition=exclude_condition).filter(patient=patient, date=event_date)
-            print type(pd_events)
-            print pd_events
             if pd_events: yield Window(days=days, events=pd_events)
 
     def match_window(self, reference, exclude_condition=None):
