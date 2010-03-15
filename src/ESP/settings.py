@@ -22,7 +22,6 @@ import logging
 #
 #===============================================================================
 TOPDIR = os.path.dirname(__file__)
-PACKAGE_ROOT = os.path.normpath(os.path.join(TOPDIR, '..', '..'))
 secret_key_path =  os.path.join(TOPDIR, 'secret_key.txt')
 try:
     SECRET_KEY = open(secret_key_path).readline().strip()
@@ -60,7 +59,7 @@ Please create this file, and populate it with your database password.
 #
 #===============================================================================
 # Set DEBUG to False when running in production!
-DEBUG = True 
+DEBUG = False 
 # No error control, because version.txt is included with source.
 version_path =  os.path.join(TOPDIR, 'version.txt')
 VERSION = open(version_path).readline().strip()
@@ -77,7 +76,7 @@ MANAGERS = (
     ('Raphael Lullis', 'raphael.lullis@channing.harvard.edu'),
     ('Michael Klompas', 'mklompas@partners.org'),
 )
-SITE_NAME = 'Development (localhost)' # Name of your local site
+SITE_NAME = 'Atrius (lkenpesp3)' # Name of your local site
 DATA_DIR = '/srv/esp'
 #
 # Some EMR systems, for instance Atrius Healthcare, include "fake" patients -- 
@@ -292,8 +291,8 @@ CASE_REPORT_TRANSMIT = 'atrius'
 #                                    Email
 #
 #===============================================================================
-SERVER_EMAIL = 'esp-noreply@your_domain.com'
-DEFAULT_FROM_EMAIL = 'esp-noreply@your_domain.com'
+SERVER_EMAIL = 'esp-noreply@lkenpesp3'
+DEFAULT_FROM_EMAIL = 'esp-noreply@lkenpesp3'
 EMAIL_SUBJECT_PREFIX = '[ESP] '
 EMAIL_HOST = 'localhost'
 EMAIL_HOST_USER = ''
@@ -317,6 +316,8 @@ VAERS_NOTIFICATION_RECIPIENT = 'someone@example.com'
 #===============================================================================
 JAVA_DIR = "/usr/bin"
 JAVA_JAR_DIR = '/usr/share/java'
+
+
 app_full_path = lambda folder: os.path.realpath(os.path.join(TOPDIR, folder))
 java_full_path = lambda folder: os.path.join(JAVA_JAR_DIR, folder)
 
@@ -350,7 +351,7 @@ LOG_FORMAT_CONSOLE = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(messag
 LOG_FORMAT_FILE = '%(asctime)s:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 LOG_FORMAT_SYSLOG = 'ESP:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 # BEWARE: If you set the log level to DEBUG, *copious* info will be logged!
-LOG_LEVEL_CONSOLE = logging.DEBUG
+LOG_LEVEL_CONSOLE = logging.WARN
 LOG_LEVEL_FILE = None
 LOG_LEVEL_SYSLOG = logging.WARN
 
