@@ -51,6 +51,7 @@ from ESP.hef.core import PregnancyHeuristic
 
 from ESP.conf.models import CodeMap
 from ESP.utils.utils import log_query
+from ESP.hef.models import Timespan
 
 
 
@@ -108,6 +109,7 @@ FIELDS = [
     'intrapartum OGTT100 positive result',
     'postpartum OGTT75 order positive result',
     'postpartum OGTT75 positive result',
+    'lancets / test strips Rx',
     'new lancets / test strips Rx',
     ]
 
@@ -128,14 +130,12 @@ def main():
             preg_end = edc
             ogtt75_postpartum = bool( Event.objects.filter(patient=patient, date__gt=edc, name__startswith='ogtt75', name__endswith='_order')  )
         else:
-            preg_start = Pregnancy.objects.filter(patient=patient, 
-                start_date__gte=start_date).aggregate(min=Min('start_date'))['min']
-            preg_end = Pregnancy.objects.filter(patient=patient, 
-                start_date__lte=cutoff_date).aggregate(max=Max('end_date'))['max']
+            preg_timespans = Timespan.objects.filter(patient=patient, name__startswith='pregnancy_inferred')
+            preg_start = preg_timespans.filter(start_date__gte=start_date).aggregate(min=Min('start_date'))['min']
+            preg_end = preg_timespans.filter(start_date__lte=cutoff_date).aggregate(max=Max('end_date'))['max']
             ogtt75_postpartum = 'Unknown EDC'
         events = Event.objects.filter(q_obj)
         lancets = events.filter(patient=patient, name__in=['lancets_rx', 'test_strips_rx'])
-        print preg_start, preg_end
         preg_lancet_rx = lancets.filter(date__gte=preg_start, date__lte=preg_end)
         previous_lancet_rx = lancets.filter(date__lte=preg_start, date__gte=preg_start-datetime.timedelta(days=365))
         if preg_lancet_rx and not previous_lancet_rx:
