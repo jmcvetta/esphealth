@@ -137,6 +137,7 @@ def main():
         events = Event.objects.filter(q_obj)
         lancets = events.filter(patient=patient, name__in=['lancets_rx', 'test_strips_rx'])
         preg_lancet_rx = lancets.filter(date__gte=preg_start, date__lte=preg_end)
+        # previous lancet rx = within previous year
         previous_lancet_rx = lancets.filter(date__lte=preg_start, date__gte=preg_start-datetime.timedelta(days=365))
         if preg_lancet_rx and not previous_lancet_rx:
             new_lancet_rx = True
@@ -160,7 +161,7 @@ def main():
             'intrapartum OGTT100 positive result': bool( events.filter(name__in=OGTT100_EVENT_NAMES).count() > 1 ),
             'postpartum OGTT75 order positive result': ogtt75_postpartum,
             'postpartum OGTT75 positive result': bool( events.filter(name__in=OGTT75_POSTPARTUM_EVENT_NAMES).count() ),
-            'lancets / test strips Rx': preg_lancet_rx,
+            'lancets / test strips Rx': bool(preg_lancet_rx.count()),
             'new lancets / test strips Rx': new_lancet_rx,
             }
         writer.writerow(values)
