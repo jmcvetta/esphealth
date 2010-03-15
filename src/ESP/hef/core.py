@@ -856,7 +856,7 @@ class TimespanHeuristic(BaseHeuristic):
     Base class from which are derived heuristics that generate Timespan instances.
     '''
     
-    _registry = {} # Class variable just for Timespans
+    #_registry = {} # Class variable just for Timespans
     
     
     
@@ -884,7 +884,7 @@ class PregnancyHeuristic(TimespanHeuristic):
             start_date = enc.edc - datetime.timedelta(days=280)
             tspan = Timespan(
                 run = run,
-                name = self.name,
+                name = 'pregnancy_inferred_by_edc',
                 patient = enc.patient,
                 start_date = start_date,
                 end_date = enc.edc,
@@ -916,7 +916,7 @@ class PregnancyHeuristic(TimespanHeuristic):
             end_date = date_range['end'] + datetime.timedelta(days=14)
             tspan = Timespan(
                 run = run,
-                name = self.name,
+                name = 'pregnancy_inferred_by_icd9',
                 patient = e.patient,
                 start_date = start_date,
                 end_date = end_date,

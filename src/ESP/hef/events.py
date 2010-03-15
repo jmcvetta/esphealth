@@ -461,6 +461,7 @@ LabResultHeuristic(
     name = 'glucose_fasting',
     long_name = 'GLUCOSE FASTING (and variants)',
     date_field = 'result',
+    positive_events = False,
     fixed_threshold_events = [126],
     )
 
