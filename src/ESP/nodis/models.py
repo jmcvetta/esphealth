@@ -632,7 +632,7 @@ class ComplexEventPattern(BaseEventPattern):
             if isinstance(pat, (ComplexEventPattern, MultipleEventPattern)):
                 self.patterns.append(pat)
             elif pat in valid_event_names: # Implies req is a string
-                pat_obj = SimpleEventPattern(event_name=pat)
+                pat_obj = SimpleEventPattern(event_name=pat, require_timespan=require_timespan, exclude_timespan=exclude_timespan)
                 self.patterns.append(pat_obj)
             else:
                 raise InvalidPattern('%s [%s]' % (pat, type(pat)))
@@ -640,7 +640,7 @@ class ComplexEventPattern(BaseEventPattern):
             if isinstance(pat, ComplexEventPattern):
                 self.exclude.append(pat)
             elif pat in valid_event_names: # Implies req is a string
-                pat_obj = SimpleEventPattern(event_name=pat)
+                pat_obj = SimpleEventPattern(event_name=pat, require_timespan=require_timespan, exclude_timespan=exclude_timespan)
                 self.exclude.append(pat_obj)
             else:
                 raise InvalidPattern('%s [%s]' % (pat, type(pat)))
