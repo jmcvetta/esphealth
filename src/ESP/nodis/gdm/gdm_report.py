@@ -128,12 +128,15 @@ def main():
         if edc:
             preg_start = edc - datetime.timedelta(days=250)
             preg_end = edc
-            ogtt75_postpartum = bool( Event.objects.filter(patient=patient, date__gt=edc, name__startswith='ogtt75', name__endswith='_order')  )
+            postpartum_events = Event.objects.filter(patient=patient, date__gt=edc, date__lte=edc+datetime.timedelta(weeks=12))
+            ogtt75_postpartum_order = bool( postpartum_events.filter(name__startswith='ogtt75', name__endswith='_order')  )
+            ogtt75_postpartum_pos = bool( postpartum_events.filter(name__in=OGTT75_POSTPARTUM_EVENT_NAMES) )
         else:
             preg_timespans = Timespan.objects.filter(patient=patient, name__startswith='pregnancy_inferred')
             preg_start = preg_timespans.filter(start_date__gte=start_date).aggregate(min=Min('start_date'))['min']
             preg_end = preg_timespans.filter(start_date__lte=cutoff_date).aggregate(max=Max('end_date'))['max']
-            ogtt75_postpartum = 'Unknown EDC'
+            ogtt75_postpartum_order = 'Unknown EDC'
+            ogtt75_postpartum_pos = 'Unknown EDC'
         events = Event.objects.filter(q_obj)
         lancets = events.filter(patient=patient, name__in=['lancets_rx', 'test_strips_rx'])
         preg_lancet_rx = lancets.filter(date__gte=preg_start, date__lte=preg_end)
@@ -159,8 +162,8 @@ def main():
             'intrapartum OGTT50 positive result': bool(events.filter(name__in=OGTT50_EVENT_NAMES).count() ),
             'intrapartum OGTT75 positive result': bool( events.filter(name__in=OGTT75_INTRAPARTUM_EVENT_NAMES).count() > 1),
             'intrapartum OGTT100 positive result': bool( events.filter(name__in=OGTT100_EVENT_NAMES).count() > 1 ),
-            'postpartum OGTT75 order positive result': ogtt75_postpartum,
-            'postpartum OGTT75 positive result': bool( events.filter(name__in=OGTT75_POSTPARTUM_EVENT_NAMES).count() ),
+            'postpartum OGTT75 order positive result': ogtt75_postpartum_order,
+            'postpartum OGTT75 positive result': ogtt75_postpartum_pos,
             'lancets / test strips Rx': bool(preg_lancet_rx.count()),
             'new lancets / test strips Rx': new_lancet_rx,
             }
