@@ -141,7 +141,6 @@ def generate_gdm_cases(pattern, event_names, event_count, partum):
     cached_patient = None
     cached_preg_ranges = None
     cached_edcs = None
-    cached_gdm_date = None
     q_obj = Q(patient__in=preg_patients, name__in=event_names)
     q_obj &= ~Q(case__condition='gdm')
     events = Event.objects.filter(q_obj)
@@ -157,7 +156,7 @@ def generate_gdm_cases(pattern, event_names, event_count, partum):
                 cached_edcs = Encounter.objects.filter(patient=patient, edc__isnull=False).order_by('date').values_list('date', flat=True)
             cached_patient = patient
             cached_gdm_date = None
-        if cached_gdm_date and (e.date < cached_gdm_date + datetime.timedelta(RECURRENCE_INTERVAL)):
+        if Case.objects.filter(condition='gdm', patient=patient, date__gte=event_date-datetime.timedelta(days=365)):
             continue # This event falls before next possible recurrence 
         if intrapartum and not is_intrapartum(event_date, cached_preg_ranges):
             continue # Patient was not pregnant at this event
