@@ -432,6 +432,7 @@ src/hl7/nodes.py -text
 src/hl7/segments.py -text
 src/hl7/test.py -text
 src/scripts/daily_batch.sh -text
+src/scripts/upload_hsph_reports.sh -text
 src/sqlparse/__init__.py -text
 src/sqlparse/engine/__init__.py -text
 src/sqlparse/engine/filter.py -text
