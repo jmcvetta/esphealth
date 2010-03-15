@@ -158,6 +158,7 @@ src/ESP/nodis/defs.py -text
 src/ESP/nodis/forms.py -text
 src/ESP/nodis/gdm/README.txt -text
 src/ESP/nodis/gdm/gdm-combined.sql -text
+src/ESP/nodis/gdm/gdm-core.py -text
 src/ESP/nodis/gdm/gdm_icd9_lancets_test_strips.sql -text
 src/ESP/nodis/gdm/gdm_report.py -text
 src/ESP/nodis/gdm/glucose-fasting-intrapartum.sql -text
