@@ -884,7 +884,8 @@ class PregnancyHeuristic(TimespanHeuristic):
             start_date = enc.edc - datetime.timedelta(days=280)
             tspan = Timespan(
                 run = run,
-                name = 'pregnancy_inferred_by_edc',
+                #name = 'pregnancy_inferred_by_edc',
+                name = 'pregnancy_inferred',
                 patient = enc.patient,
                 start_date = start_date,
                 end_date = enc.edc,
@@ -916,7 +917,8 @@ class PregnancyHeuristic(TimespanHeuristic):
             end_date = date_range['end'] + datetime.timedelta(days=14)
             tspan = Timespan(
                 run = run,
-                name = 'pregnancy_inferred_by_icd9',
+                #name = 'pregnancy_inferred_by_icd9',
+                name = 'pregnancy_inferred',
                 patient = e.patient,
                 start_date = start_date,
                 end_date = end_date,
