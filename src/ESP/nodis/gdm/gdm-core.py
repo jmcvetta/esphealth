@@ -137,7 +137,7 @@ def generate_gdm_cases(pattern, event_names, event_count, partum):
         postpartum = True
     else:
         raise 'Bad partum value'
-    preg_patients = Timespan.objects.filter(name__in=PREGNANCY_TIMESPANS).values_list('patient', flat=True)
+    preg_patients = Timespan.objects.filter(name='pregnancy_inferred').values_list('patient', flat=True)
     cached_patient = None
     cached_preg_ranges = None
     cached_edcs = None
