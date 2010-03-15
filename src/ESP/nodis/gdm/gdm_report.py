@@ -18,6 +18,11 @@ from django.db.models import Sum
 from django.db.models import Count
 from django.db.models import Max
 from django.db.models import Min
+
+
+from ESP.utils.utils import log
+from ESP.utils.utils import log_query
+
 from ESP.emr.models import Patient
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
@@ -95,66 +100,71 @@ FIELDS = [
     'zip code',
     'start_date',
     'end_date',
+    'algorithm',
     'edc',
-    'positive glucose fasting',
-    'positive OGTT50 intrapartum',
-    'positive OGTT75 intrapartum',
-    'positive OGTT75 postpartum',
-    'positive OGTT100 intrapartum',
-    'lancets test strips rx',
-    'OGTT75 postpartum order',
+    'intrapartum glucose fasting positive result',
+    'intrapartum OGTT50 positive result',
+    'intrapartum OGTT75 positive result',
+    'intrapartum OGTT100 positive result',
+    'postpartum OGTT75 order positive result',
+    'postpartum OGTT75 positive result',
+    'new lancets / test strips Rx',
     ]
-
-def summarize_date_range(patient, start_date):
-    cutoff_date = start_date + datetime.timedelta(days=250)
-    preg_start = Pregnancy.objects.filter(patient=patient, 
-        start_date__gte=start_date-datetime.timedelta(days=250)).aggregate(min=Min('start_date'))['min']
-    preg_end = Pregnancy.objects.filter(patient=patient, 
-        start_date__lte=cutoff_date).aggregate(max=Max('end_date'))['max']
-    q_obj = Q(patient=patient, date__gte=start_date, date__lte=cutoff_date)
-    events = Event.objects.filter(q_obj)
-    values = {
-        'patient db id': patient.pk,
-        'mrn': patient.mrn,
-        'last_name': patient.last_name,
-        'first_name': patient.first_name,
-        'date_of_birth': patient.date_of_birth,
-        'ethnicity': patient.race,
-        'zip code': patient.zip,
-        'start_date': preg_start,
-        'end_date': preg_end,
-        'edc': Encounter.objects.filter(q_obj).aggregate(edc=Max('edc'))['edc'],
-        'positive glucose fasting': bool(events.filter(name='glucose_fasting_pos').count() ),
-        'positive OGTT50 intrapartum': bool(events.filter(name__in=OGTT50_EVENT_NAMES).count() ),
-        'positive OGTT75 intrapartum': bool( events.filter(name__in=OGTT75_INTRAPARTUM_EVENT_NAMES).count() > 1),
-        'positive OGTT75 postpartum': bool( events.filter(name__in=OGTT75_POSTPARTUM_EVENT_NAMES).count() ),
-        'positive OGTT100 intrapartum': bool( events.filter(name__in=OGTT100_EVENT_NAMES).count() > 1 ),
-        'lancets test strips rx': bool( Case.objects.filter(patient=patient, condition='gdm', date__gte=start_date, date__lte=cutoff_date ) ),
-        'OGTT75 postpartum order': bool( Event.objects.filter(patient=patient, date__gt=cutoff_date, name__startswith='ogtt75', name__endswith='_order')  ),
-        }
-    return values
 
 
 def main():
     writer = csv.DictWriter(sys.stdout, fieldnames=FIELDS)
     header = dict(zip(FIELDS, FIELDS)) 
     writer.writerow(header)
-    for patient_id in Gdm.objects.values_list('patient_id', flat=True).distinct().iterator():
-        patient = Patient.objects.get(pk=patient_id)
-        # Find pregnancy ranges (identified by start date)
-        dates = Gdm.objects.filter(patient_id=patient_id).values_list('date', flat=True).distinct().order_by('date')
-        start_dates = [dates[0]]
-        for d in dates:
-            cutoff = start_dates[-1] + datetime.timedelta(days=250)
-            if d <= cutoff:
-                continue
-            else:
-                start_dates.append(d)
-        # Now summarize each pregnancy
-        for start in start_dates:
-            rowdict = summarize_date_range(patient, start)
-            writer.writerow(rowdict)
-
+    for gdm_case in Case.objects.filter(condition='gdm').order_by('date'):
+        log.debug('%s' % gdm_case)
+        patient = gdm_case.patient
+        start_date = gdm_case.date - datetime.timedelta(days=250)
+        cutoff_date = gdm_case.date + datetime.timedelta(days=250)
+        q_obj = Q(patient=patient, date__gte=start_date, date__lte=cutoff_date)
+        edc = Encounter.objects.filter(q_obj).aggregate(edc=Max('edc'))['edc']
+        if edc:
+            preg_start = edc - datetime.timedelta(days=250)
+            preg_end = edc
+            ogtt75_postpartum = bool( Event.objects.filter(patient=patient, date__gt=edc, name__startswith='ogtt75', name__endswith='_order')  )
+        else:
+            preg_start = Pregnancy.objects.filter(patient=patient, 
+                start_date__gte=start_date).aggregate(min=Min('start_date'))['min']
+            preg_end = Pregnancy.objects.filter(patient=patient, 
+                start_date__lte=cutoff_date).aggregate(max=Max('end_date'))['max']
+            ogtt75_postpartum = 'Unknown EDC'
+        events = Event.objects.filter(q_obj)
+        lancets = events.filter(patient=patient, name__in=['lancets_rx', 'test_strips_rx'])
+        print preg_start, preg_end
+        preg_lancet_rx = lancets.filter(date__gte=preg_start, date__lte=preg_end)
+        previous_lancet_rx = lancets.filter(date__lte=preg_start, date__gte=preg_start-datetime.timedelta(days=365))
+        if preg_lancet_rx and not previous_lancet_rx:
+            new_lancet_rx = True
+        else:
+            new_lancet_rx = False
+        values = {
+            'patient db id': patient.pk,
+            'mrn': patient.mrn,
+            'last_name': patient.last_name,
+            'first_name': patient.first_name,
+            'date_of_birth': patient.date_of_birth,
+            'ethnicity': patient.race,
+            'zip code': patient.zip,
+            'start_date': preg_start,
+            'end_date': preg_end,
+            'algorithm': gdm_case.pattern.name,
+            'edc': edc,
+            'intrapartum glucose fasting positive result': bool(events.filter(name='glucose_fasting_126').count() ),
+            'intrapartum OGTT50 positive result': bool(events.filter(name__in=OGTT50_EVENT_NAMES).count() ),
+            'intrapartum OGTT75 positive result': bool( events.filter(name__in=OGTT75_INTRAPARTUM_EVENT_NAMES).count() > 1),
+            'intrapartum OGTT100 positive result': bool( events.filter(name__in=OGTT100_EVENT_NAMES).count() > 1 ),
+            'postpartum OGTT75 order positive result': ogtt75_postpartum,
+            'postpartum OGTT75 positive result': bool( events.filter(name__in=OGTT75_POSTPARTUM_EVENT_NAMES).count() ),
+            'lancets / test strips Rx': preg_lancet_rx,
+            'new lancets / test strips Rx': new_lancet_rx,
+            }
+        writer.writerow(values)
+    
 
 if __name__ == '__main__':
     main()
