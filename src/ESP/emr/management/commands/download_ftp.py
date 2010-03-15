@@ -53,8 +53,11 @@ class Command(BaseCommand):
         for eachfile in filenames:
             processed = (Provenance.objects.filter(source=eachfile).count() == 1)
             if eachfile.split('.')[-1] in datestamps and not processed:
-                log.info('Retrieving file ' + eachfile)
-                ftp.retrbinary('RETR ' + eachfile, open(eachfile, 'wb').write)
+                try:
+                    log.info('Retrieving file ' + eachfile)
+                    ftp.retrbinary('RETR ' + eachfile, open(eachfile, 'wb').write)
+                except:
+                    log.warn('Could not write file: ' + eachfile)
                 
         ftp.quit()
         return        
