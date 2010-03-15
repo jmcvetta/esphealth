@@ -876,7 +876,7 @@ class PregnancyHeuristic(TimespanHeuristic):
         # EDC
         #
         log.info('Generating pregnancy events from EDC')
-        ignore_bound_q = ~Q(timespan__name=self.name, timespan__pk__isnull=False)
+        ignore_bound_q = ~Q(timespan__name=self.name)
         q_obj = Q(edc__isnull=False) & ignore_bound_q
         edc_encounters = Encounter.objects.filter(q_obj)
         log_query('Pregnancy encounters by EDC', edc_encounters)
