@@ -662,9 +662,10 @@ gdm_2 = ComplexEventPattern(
     name = 'GDM based on diagnosis and lancets/test strips prescription',
     patterns = ['gdm_diagnosis', lancets_or_test_strips],
     operator = 'and',
+    require_timespan = ['pregnancy_inferred_by_edc', 'pregnancy_inferred_by_icd9'],
     )
 
-giardiasis = Condition(
+gdm = Condition(
     name = 'gdm',
     patterns = [(gdm_2, 14)],
     recur_after = 365, # New cases after 365 days
