@@ -882,7 +882,7 @@ class Encounter(BasePatientRecord):
     o2_stat = models.FloatField(max_length=50, blank=True, null=True)
     peak_flow = models.FloatField(max_length=50, blank=True, null=True)
     diagnosis = models.TextField(null=True, blank=True)
-    bmi = models.DecimalField(decimal_places=2, max_digits=5, null=True, blank=True, db_index=True)
+    bmi = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, db_index=True)
     # HEF
     events = generic.GenericRelation('hef.Event')
     timespan = generic.GenericRelation('hef.Timespan')

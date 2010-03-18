@@ -27,6 +27,7 @@ import re
 import pprint
 import shutil
 import codecs
+import string
 from decimal import Decimal
 from psycopg2 import Error as Psycopg2Error
 
@@ -231,6 +232,7 @@ class BaseLoader(object):
                 log.error('  Line: %s' % cur_row)
                 log.error('  Exception: \n%s' % e)
                 log.error(pprint.pformat(row))
+                
                 errors += 1
                 #
                 # Log ETL errors to db
@@ -241,6 +243,7 @@ class BaseLoader(object):
                 err.err_msg = str(e)
                 err.data = pprint.pformat(row)
                 err.save()
+
             if ROW_LOG_COUNT and not (cur_row % ROW_LOG_COUNT):
                 now = datetime.datetime.now()
                 log.info('Loaded %s of %s rows:  %s %s' % (cur_row, self.line_count, now, self.filename))
@@ -509,8 +512,8 @@ class EncounterLoader(BaseLoader):
         'o2_stat',
         'peak_flow',
         'icd9s',
-        'diagnosis',
-        'bmi'
+        'bmi',
+        'diagnosis'
         ]
 
 
@@ -518,51 +521,42 @@ class EncounterLoader(BaseLoader):
 
     
     def load_row(self, row):
-        try:
-            e = Encounter.objects.get(native_encounter_num=row['encounter_id_num'])
-            log.debug('Retrieved existing Encounter object for update')
-        except Encounter.DoesNotExist:
-            e = Encounter()
-            log.debug('Creating new Encounter object')
-        e.provenance = self.provenance
-        #
-        patient = self.get_patient(row['patient_id_num'])
-        provider = self.get_provider(row['provider_id_num'])
-        native_encounter_num=row['encounter_id_num']
-        native_site_num = row['dept_id_num']
-        encounter_date = date_from_str(row['encounter_date'])
-        event_type = row['event_type']
-        closed_date = row['closed_date']
-        site_name = row['dept_name']
-        temperature = self.float_or_none(row['temp'])
-        bp_systolic = self.float_or_none(row['bp_systolic']) 
-        bp_diastolic = self.float_or_none(row['bp_diastolic'])
-        o2_stat = self.float_or_none(row['o2_stat'])
-        peak_flow = self.float_or_none(row['peak_flow'])
-        closed_date = self.date_or_none(closed_date)
-        raw_weight = row['weight']
-        raw_height = row['height']
-        edc = self.date_or_none(row['edc'])
-        diagnosis = row['diagnosis']
-        bmi = self.decimal_or_none(row['bmi'])
-        #
-        if patient: e.patient = patient 
-        if provider: e.provider = provider 
-        if native_encounter_num: e.native_encounter_num = native_encounter_num 
-        if native_site_num: e.native_site_num = native_site_num 
-        if encounter_date: e.date = encounter_date 
-        if event_type: e.event_type = event_type 
-        if closed_date: e.closed_date = closed_date
-        if site_name: e.site_name = site_name 
-        if temperature: e.temperature = temperature
-        if bp_systolic: e.bp_systolic = bp_systolic
-        if bp_diastolic: e.bp_diastolic = bp_diastolic
-        if o2_stat: e.o2_stat = o2_stat
-        if peak_flow: e.peak_flow = peak_flow
-        if edc: e.edc = edc
-        if edc: e.pregnancy_status = True
-        if diagnosis: e.diagnosis = diagnosis
-        if bmi: e.bmi = bmi
+        e, created = Encounter.objects.get_or_create(
+            native_encounter_num=row['encounter_id_num'],
+            defaults = {
+                'provenance':self.provenance,
+                'patient':self.get_patient(row['patient_id_num']),
+                'provider':self.get_provider(row['provider_id_num']),
+                'date':date_from_str(row['encounter_date'])
+                })
+
+        message = 'Updating existing Encounter' if created else 'Creating new Encounter object'
+        log.debug(message)
+
+
+        # If the row contains new information about the record, we will update it
+        # Else, we will just keep it as it was (or default, if it's a new record).
+        
+        e.native_site_num = row['dept_id_num'] or e.native_site_num or None
+        e.event_type = row['event_type'] or e.event_type or None
+        e.closed_date = row['closed_date'] or e.closed_date or None
+        e.site_name = row['dept_name'] or e.site_name or None
+        e.temperature = self.float_or_none(row['temp']) or e.temperature or None
+        e.bp_systolic = self.float_or_none(row['bp_systolic'])  or e.bp_systolic or None
+        e.bp_diastolic = self.float_or_none(row['bp_diastolic']) or e.bp_diastolic or None
+        e.o2_stat = self.float_or_none(row['o2_stat']) or e.o2_stat or None
+        e.peak_flow = self.float_or_none(row['peak_flow']) or e.peak_flow or None
+        e.closed_date = self.date_or_none(row['closed_date']) or e.closed_date or None
+        e.edc = self.date_or_none(row['edc']) or e.edc or None
+        e.bmi = self.decimal_or_none(row['bmi']) or e.bmi or None               
+#        e.diagnosis = row['diagnosis'] or e.diagnosis or None
+
+
+        # Elements that derived from the information on the row.
+        if e.edc: e.pregnancy_status = True
+        raw_weight = row['weight'] 
+        raw_height = row['height'] 
+
         if raw_weight:
             try:
                 weight = self.float_or_none(raw_weight.split()[0])
@@ -582,9 +576,17 @@ class EncounterLoader(BaseLoader):
                     e.height = self.float_or_none(raw_height.split()[0])
                 except ValueError:
                     log.warning('Cannot cast height to a number: %s' % raw_height)
-        e.save() # Must save before using ManyToMany relationship
-        for code in row['icd9s'].split():
-            e.icd9_codes.add(self.get_icd9(code))
+                    
+        # We still need to process icd9 codes, but we 
+        # must save the encounter before using a ManyToMany relationship
+        e.save() 
+        
+        for code_string in row['icd9s'].split(';'):
+            if len(code_string.split()) >= 1: 
+                code = code_string.split()[0].strip()
+                # We'll only accept a code if it has at least one digit in the string.
+                if any(c in string.digits for c in code):
+                    e.icd9_codes.add(self.get_icd9(code))
         e.save()
         log.debug('Saved encounter object: %s' % e)
     
