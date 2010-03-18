@@ -26,7 +26,6 @@ src/ESP/axis-1_4/mail.jar -text
 src/ESP/batch-run.sh -text
 src/ESP/cache/__init__.py -text
 src/ESP/cache/models.py -text
-src/ESP/clean.db -text
 src/ESP/conf/__init__.py -text
 src/ESP/conf/admin.py -text
 src/ESP/conf/choices.py -text
