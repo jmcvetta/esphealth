@@ -252,6 +252,8 @@ class BaseLoader(object):
             self.provenance.status = 'loaded'
         else:
             self.provenance.status = 'errors'
+        self.provenance.valid_rec_count = valid
+        self.provenance.error_count = errors
         self.provenance.save()
         return (valid, errors)
 

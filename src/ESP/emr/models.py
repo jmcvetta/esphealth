@@ -62,6 +62,8 @@ class Provenance(models.Model):
     hostname = models.CharField('Host on which data was loaded', max_length=255, blank=False)
     status = models.CharField(max_length=10, choices=LOAD_STATUS, 
         blank=False, db_index=True)
+    valid_rec_count = models.IntegerField('Count of valid records loaded')
+    error_count = models.IntegerField('Count of errors during load')
     comment = models.TextField(blank=True, null=True)
     
     class Meta:
