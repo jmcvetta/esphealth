@@ -80,12 +80,16 @@
             <th>Source
             <th>Timestamp
             <th>Status
+	    <th>Valid Record Count
+            <th>Error Count
         </tr>
         {% for prov in provenances %}
         <tr>
             <td>{{ prov.source }}
             <td>{{ prov.timestamp }}
             <td>{{ prov.status }}
+	    <td>{{ prov.valid_rec_count }}
+	    <td>{{ prov.error_count }}
         </tr>
         {% endfor %}
     </table>
