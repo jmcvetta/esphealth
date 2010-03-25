@@ -158,7 +158,7 @@ UPLOAD_USER = 'your_upload_username'
 UPLOAD_PATH = '/path/for/upload'
 upload_pwd_path =  os.path.join(TOPDIR, 'upload_password.txt')
 try:
-    UPLOAD_PASSWORD = open(ftp_pwd_path).readline().strip()
+    UPLOAD_PASSWORD = open(upload_pwd_path).readline().strip()
 except IOError:
     print >> sys.stderr, \
 '''
