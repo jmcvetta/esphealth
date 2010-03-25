@@ -1093,7 +1093,7 @@ class Command(BaseCommand):
         elif options.one_file:
             options.batch_size = case_count
         batch_serial = 0
-        self.timestamp = datetime.datetime.now().strftime('%Y-%b-%d-%H-%M-%s')
+        self.timestamp = datetime.datetime.now().strftime('%Y-%b-%d-%H.%M.%s')
         for index in range(0, case_count, options.batch_size):
             filename_values = { 
                 # Used to populate file name template -- serial is updated below
