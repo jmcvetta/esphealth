@@ -127,12 +127,15 @@ ETL_ARCHIVE = True # Should ETL files be archived after they have been loaded?
 
 #===============================================================================
 #
-#                                     FTP
+#                                  DOWNLOAD
 #
 #===============================================================================
+
+# The 'FTP_*' variable names are legacy.  At some point, they should be updated 
+# to 'DOWNLOAD_*'.
 FTP_SERVER = 'n2ftp001.hvma.org'
 FTP_USER = 'HEALTHONE\\rlazarus'
-ftp_pwd_path =  os.path.join(TOPDIR, 'ftp_password.txt')
+ftp_pwd_path =  os.path.join(TOPDIR, 'download_password.txt')
 try:
     FTP_PASSWORD = open(ftp_pwd_path).readline().strip()
 except IOError:
@@ -140,28 +143,29 @@ except IOError:
 '''
 Cannot find "%s".
 
-Please create this file, and populate it with your FTP password.
+Please create this file, and populate it with your download password.
 ''' % ftp_pwd_path
     sys.exit(1003)
 
 
 #===============================================================================
 #
-#                                     FTP
+#                                   UPLOAD
 #
 #===============================================================================
-FTP_SERVER = 'n2ftp001.hvma.org'
-FTP_USER = 'HEALTHONE\\rlazarus'
-ftp_pwd_path =  os.path.join(TOPDIR, 'ftp_password.txt')
+UPLOAD_SERVER = '1.2.3.4'
+UPLOAD_USER = 'your_upload_username'
+UPLOAD_PATH = '/path/for/upload'
+upload_pwd_path =  os.path.join(TOPDIR, 'upload_password.txt')
 try:
-    FTP_PASSWORD = open(ftp_pwd_path).readline().strip()
+    UPLOAD_PASSWORD = open(ftp_pwd_path).readline().strip()
 except IOError:
     print >> sys.stderr, \
 '''
 Cannot find "%s".
 
-Please create this file, and populate it with your FTP password.
-''' % ftp_pwd_path
+Please create this file, and populate it with your upload password.
+''' % upload_pwd_path
     sys.exit(1003)
 
 
@@ -282,7 +286,7 @@ CASE_REPORT_BATCH_SIZE = 30 # Integer or None
 # Valid choices are:
 #    atrius
 #    metrohealth
-CASE_REPORT_TRANSMIT = 'atrius' 
+CASE_REPORT_TRANSMIT = 'ftp' 
 
 
 
