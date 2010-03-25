@@ -111,6 +111,8 @@ FIELDS = [
     'postpartum OGTT75 positive result',
     'lancets / test strips Rx',
     'new lancets / test strips Rx',
+    'insulin rx during pregnancy',
+    'referral to nutrition',
     ]
 
 
@@ -121,12 +123,12 @@ def main():
     for gdm_case in Case.objects.filter(condition='gdm').order_by('date'):
         log.debug('%s' % gdm_case)
         patient = gdm_case.patient
-        start_date = gdm_case.date - datetime.timedelta(days=250)
-        cutoff_date = gdm_case.date + datetime.timedelta(days=250)
+        start_date = gdm_case.date - datetime.timedelta(days=200)
+        cutoff_date = gdm_case.date + datetime.timedelta(days=200)
         q_obj = Q(patient=patient, date__gte=start_date, date__lte=cutoff_date)
         edc = Encounter.objects.filter(q_obj).aggregate(edc=Max('edc'))['edc']
         if edc:
-            preg_start = edc - datetime.timedelta(days=250)
+            preg_start = edc - datetime.timedelta(days=280)
             preg_end = edc
             postpartum_events = Event.objects.filter(patient=patient, date__gt=edc, date__lte=edc+datetime.timedelta(weeks=12))
             ogtt75_postpartum_order = bool( postpartum_events.filter(name__startswith='ogtt75', name__endswith='_order')  )
@@ -138,14 +140,20 @@ def main():
             ogtt75_postpartum_order = 'Unknown EDC'
             ogtt75_postpartum_pos = 'Unknown EDC'
         events = Event.objects.filter(q_obj)
-        lancets = events.filter(patient=patient, name__in=['lancets_rx', 'test_strips_rx'])
-        preg_lancet_rx = lancets.filter(date__gte=preg_start, date__lte=preg_end)
+        preg_events = Event.objects.filter(patient=patient, date__gte=preg_start, date__lte=preg_end)
+        lancets = events.filter(name__in=['lancets_rx', 'test_strips_rx'])
+        preg_lancet_rx = preg_events & lancets
         # previous lancet rx = within previous year
         previous_lancet_rx = lancets.filter(date__lte=preg_start, date__gte=preg_start-datetime.timedelta(days=365))
         if preg_lancet_rx and not previous_lancet_rx:
             new_lancet_rx = True
         else:
             new_lancet_rx = False
+        # 
+        # Nutrition referral
+        #
+        nutrition_q = Q(provider__title__icontains='RD') | Q(site_name__icontains='Nutrition')
+        nutrition_ref = bool( Encounter.objects.filter(date__gte=preg_start, date__lte=preg_end, patient=patient).filter(nutrition_q) )
         values = {
             'patient db id': patient.pk,
             'mrn': patient.mrn,
@@ -166,6 +174,8 @@ def main():
             'postpartum OGTT75 positive result': ogtt75_postpartum_pos,
             'lancets / test strips Rx': bool(preg_lancet_rx.count()),
             'new lancets / test strips Rx': new_lancet_rx,
+            'insulin rx during pregnancy': bool( preg_events.filter(name='insulin_rx').count() ),
+            'referral to nutrition': nutrition_ref,
             }
         writer.writerow(values)
     
