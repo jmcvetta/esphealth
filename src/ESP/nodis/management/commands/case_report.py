@@ -1093,7 +1093,7 @@ class Command(BaseCommand):
         elif options.one_file:
             options.batch_size = case_count
         batch_serial = 0
-        self.timestamp = datetime.datetime.now().strftime('%Y-%b-%d-%H:%M:%s')
+        self.timestamp = datetime.datetime.now().strftime('%Y-%b-%d-%H-%M-%s')
         for index in range(0, case_count, options.batch_size):
             filename_values = { 
                 # Used to populate file name template -- serial is updated below
@@ -1207,18 +1207,17 @@ class Command(BaseCommand):
         else:
             raise NotImplementedError('Support for "%s" transmit is not implemented' % CASE_REPORT_TRANSMIT)
         
-    def transmit_ftp(self, options, report_file):
+    def transmit_ftp(self, options, report_file_path):
         '''
         Upload a file using cleartext FTP.  Why must people insist on doing this??
         '''
         log.info('Transmitting case report via FTP')
         log.warning("Using FTP to transmit patient data is a *horrible* idea.  You've been warned.")
-        log.debug('Case report file: %s' % report_file)
+        log.debug('Case report file: %s' % report_file_path)
         log.debug('FTP server: %s' % UPLOAD_SERVER)
         log.debug('FTP user: %s' % UPLOAD_USER)
         log.debug('Attempting to connect...')
         conn = ftplib.FTP(UPLOAD_SERVER, UPLOAD_USER, UPLOAD_PASSWORD)
-        conn.login()
         log.debug('Connected to %s' % UPLOAD_SERVER)
         log.debug('CWD to %s' % UPLOAD_PATH)
         conn.cwd(UPLOAD_PATH)
@@ -1226,19 +1225,23 @@ class Command(BaseCommand):
         # Code below taken from Anthony McDonald's post at:
         #    http://bytes.com/topic/python/answers/22534-ftplib-question-how-upload-files
         #
-        (head, tail) = os.path.split(report_file)
+        (head, tail) = os.path.split(report_file_path)
         command = "STOR " + tail
-        fd = open(report_file, 'rb')
+        log.debug(command)
+        fd = open(report_file_path, 'rb')
         temp = fd.read(2048)
         fd.seek(0, 0)
-        if temp.find('\0') != -1:
-            log.debug('STOR binary')
-            conn.storbinary(command, fd)
-        else:
-            log.debug('STOR lines')
-            conn.storlines(command, fd)
+        try:
+            if temp.find('\0') != -1:
+                log.debug('storbinary')
+                conn.storbinary(command, fd)
+            else:
+                log.debug('storlines')
+                conn.storlines(command, fd)
+            log.info('Successfully uploaded %s' % report_file_path)
+        except BaseException, e:
+            log.error('FTP ERROR: %s' % e)
         fd.close()
-        log.info('Successfully uploaded %s' % report_file)
             
         
     def transmit_atrius(self, options, report_file_path):
