@@ -342,11 +342,20 @@ JAVA_JARS = [
 JAVA_CLASSPATH = " %s " % ':'.join([str(jar) for jar in JAVA_JARS])
 
 
+#===============================================================================
+#
+#                                  BATCH JOB
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BATCH_RETRIEVE_ETL_FILES = True
+BATCH_MAIL_STATUS_REPORT = True
+BATCH_GENERATE_CASE_REPORT = False
+BATCH_TRANSMIT_CASE_REPORT = False
 
 
 #===============================================================================
 #
-#--- ~~~ Logging Configuration ~~~
+#                                   LOGGING
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 LOG_FILE = '/var/log/esp' # Used only if LOG_LEVEL_FILE != None
