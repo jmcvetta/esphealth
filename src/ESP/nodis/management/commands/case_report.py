@@ -1029,9 +1029,7 @@ class Command(BaseCommand):
             print >> sys.stderr, '--stdout and --transmit cannot be used together'
             sys.exit(104)
         for a in args:
-            if a.lower() == 'all':
-                report_conditions = all_conditions
-                break
+            print a
             if a in all_conditions:
                 report_conditions.append(a)
             else:
@@ -1045,6 +1043,8 @@ class Command(BaseCommand):
                 for con in all_conditions:
                     print >> sys.stderr, '    %s' % con
                 sys.exit(101)
+        if not args:
+            report_conditions = all_conditions
         log.debug('conditions: %s' % report_conditions)
         valid_status_choices = [item[0] for item in STATUS_CHOICES]
         if options.status not in valid_status_choices:
@@ -1150,7 +1150,6 @@ class Command(BaseCommand):
         #
         for path in output_file_paths:
             print path
-        sys.exit(0)
     
     def use_template(self, options, batch_serial, cases):
         '''
