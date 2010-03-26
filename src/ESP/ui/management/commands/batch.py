@@ -35,6 +35,10 @@ from ESP.settings import CASE_REPORT_MDPH
 from ESP.settings import CASE_REPORT_FILENAME_FORMAT
 from ESP.settings import CASE_REPORT_TEMPLATE
 from ESP.settings import SITE_NAME
+from ESP.settings import BATCH_RETRIEVE_ETL_FILES
+from ESP.settings import BATCH_MAIL_STATUS_REPORT
+from ESP.settings import BATCH_GENERATE_CASE_REPORT
+from ESP.settings import BATCH_TRANSMIT_CASE_REPORT
 
 
 class Command(BaseCommand):
@@ -68,29 +72,30 @@ class Command(BaseCommand):
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             #--- ETL
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            if ETL_USE_FTP:
-                progress('Fetching new ETL files from FTP')
-                cmnd = FtpCommand()
-                cmnd.run_from_argv([None, None])
-                progress('Successfully fetched new ETL files from FTP')
-                del cmnd
-            if ETL_SOURCE == 'epic':
-                progress('Loading Epic ETL files')
-                cmnd = LoadEpicCommand()
-                cmnd.run_from_argv([None, None])
-                del cmnd
-                progress('Succesffully loaded Epic ETL files')
-            elif ETL_SOURCE == 'hl7':
-                pass
-                cmnd = LoadHl7Command()
-                cmnd.run_from_argv([None, None])
-                del cmnd
-            else:
-                print >> sys.stderr, 'Unrecognized ETL_SOURCE: "%s"' % ETL_SOURCE
-                print >> sys.stderr, ''
-                print >> sys.stderr, 'Valid case-sensitive ETL_SOURCE values are:'
-                print >> sys.stderr, '    epic'
-                print >> sys.stderr, '    hl7'
+            if BATCH_RETRIEVE_ETL_FILES:
+                if ETL_USE_FTP:
+                    progress('Fetching new ETL files from FTP')
+                    cmnd = FtpCommand()
+                    cmnd.run_from_argv([None, None])
+                    progress('Successfully fetched new ETL files from FTP')
+                    del cmnd
+                if ETL_SOURCE == 'epic':
+                    progress('Loading Epic ETL files')
+                    cmnd = LoadEpicCommand()
+                    cmnd.run_from_argv([None, None])
+                    del cmnd
+                    progress('Succesffully loaded Epic ETL files')
+                elif ETL_SOURCE == 'hl7':
+                    pass
+                    cmnd = LoadHl7Command()
+                    cmnd.run_from_argv([None, None])
+                    del cmnd
+                else:
+                    print >> sys.stderr, 'Unrecognized ETL_SOURCE: "%s"' % ETL_SOURCE
+                    print >> sys.stderr, ''
+                    print >> sys.stderr, 'Valid case-sensitive ETL_SOURCE values are:'
+                    print >> sys.stderr, '    epic'
+                    print >> sys.stderr, '    hl7'
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             #--- HEF
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -110,21 +115,26 @@ class Command(BaseCommand):
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             #--- Case reports
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            progress('Generating Nodis case reports')
-            cmnd = CaseReportCommand()
-    #        cmnd.handle(
-    #            output_folder=CASE_REPORT_OUTPUT_FOLDER,
-    #            template=CASE_REPORT_TEMPLATE,
-    #            mdph=CASE_REPORT_MDPH,
-    #            stdout=False,
-    #            case_id=None,
-    #            individual=False,
-    #            status='Q',
-    #            sent_status=True,
-    #            sample=None,
-    #            )
-            del cmnd
-            progress('Successfully generated Nodis case reports')
+            if BATCH_GENERATE_CASE_REPORT:
+                progress('Generating Nodis case reports')
+                cmnd = CaseReportCommand()
+                cmnd.handle(
+                    case_id=None,
+                    status='Q',
+                    batch_size=None,
+                    mdph=CASE_REPORT_MDPH,
+                    transmit=BATCH_TRANSMIT_CASE_REPORT,
+                    mark_sent=True,
+                    output_folder=CASE_REPORT_OUTPUT_FOLDER,
+                    template=CASE_REPORT_TEMPLATE,
+                    format=CASE_REPORT_FILENAME_FORMAT,
+                    stdout=False,
+                    individual=False,
+                    one_file=False,
+                    sample=None,
+                    )
+                del cmnd
+                progress('Successfully generated Nodis case reports')
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             #--- Concordance
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -136,12 +146,15 @@ class Command(BaseCommand):
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             #--- Status Report
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            progress('Sending status report')
-            cmnd = StatusReportCommand()
-            cmnd.handle(send_mail=True)
-            del cmnd
-            progress('Successfully emailed status report.')
+            if BATCH_MAIL_STATUS_REPORT:
+                progress('Sending status report')
+                cmnd = StatusReportCommand()
+                cmnd.handle(send_mail=True)
+                del cmnd
+                progress('Successfully emailed status report.')
+            progress('Batch run complete')
         except BaseException, e:
             sub = 'WARNING! An error occurred in the ESP batch job at %s' % SITE_NAME
             msg = 'Caught the following exception: \n%s' % e
             mail_admins(sub, msg, fail_silently=False)
+            print >> sys.stderr, msg
