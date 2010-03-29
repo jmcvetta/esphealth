@@ -94,14 +94,14 @@ class NativeManufacturer(models.Model):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 STATUS_CHOICES = [
-    ('AR', 'Awaiting Review'),
-    ('UR', 'Under Review'),
-    ('RM', 'Review by MD'),
-    ('FP', 'False Positive - Do NOT Process'),
+    ('AR', 'AR - Awaiting Review'),
+    ('UR', 'UR - Under Review'),
+    ('RM', 'RM - Review by MD'),
+    ('FP', 'FP - False Positive - Do NOT Process'),
     # Only fields before this point will be included in on-screen case status menu
-    ('Q',  'Confirmed Case, Transmit to Health Department'), 
-    ('S',  'Transmitted to Health Department'),
-    ('NO', 'Do NOT send cases'),
+    ('Q',  'Q - Confirmed Case, Transmit to Health Department'), 
+    ('S',  'S - Transmitted to Health Department'),
+    ('NO', 'NO - Do NOT send cases'),
     ]
 
 
