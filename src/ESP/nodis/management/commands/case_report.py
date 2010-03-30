@@ -1096,10 +1096,12 @@ class Command(BaseCommand):
         cases = Case.objects.filter(q_obj).order_by('pk')
         log_query('Filtered cases', cases)
         if not cases:
+            msg = 'No cases found matching your specifications.  No output generated.'
+            log.warning(msg)
             print >> sys.stderr, ''
-            print >> sys.stderr, 'No cases found matching your specifications.  No output generated.'
+            print >> sys.stderr, msg
             print >> sys.stderr, ''
-            sys.exit(11)
+            sys.exit()
         if options.sample: # Report only sample number of cases
             cases = cases[0:options.sample]
             case_count = options.sample
