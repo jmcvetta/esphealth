@@ -634,12 +634,15 @@ class hl7Batch:
             if lxRec.result_float:
                 res = lxRec.result_float
                 obx2_type = 'SN'
+                obx5_type = 'SN.2'
             elif lxRec.result_string:
                 res = lxRec.result_string.split()[0]
                 obx2_type = 'ST'
+                obx5_type = ''
             else:
                 res = ''
                 obx2_type = 'ST'
+                obx5_type = ''
             if not snomed: ##like ALT/AST
                 #ALT/AST much be number
                 obx1 = self.makeOBX(
@@ -647,7 +650,7 @@ class hl7Batch:
                     obx2  = [('', obx2_type)],
                     obx3  = [('CE.4',lxRec.output_or_native_code),('CE.6','L')],
                     obx6  = [('CE.1', lxRec.ref_unit)],
-                    obx5  = [('SN.2', res)], 
+                    obx5  = [(obx5_type, res)], 
                     obx7  = [('',lxRange)],
                     obx11 = [('', lxRec.status)],
                     obx14 = [('TS.1',lxTS.strftime(DATE_FORMAT))], 
