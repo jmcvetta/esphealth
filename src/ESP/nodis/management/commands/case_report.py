@@ -1097,11 +1097,11 @@ class Command(BaseCommand):
         log_query('Filtered cases', cases)
         if not cases:
             msg = 'No cases found matching your specifications.  No output generated.'
-            log.warning(msg)
+            log.info(msg)
             print >> sys.stderr, ''
             print >> sys.stderr, msg
             print >> sys.stderr, ''
-            sys.exit()
+            return
         if options.sample: # Report only sample number of cases
             cases = cases[0:options.sample]
             case_count = options.sample
