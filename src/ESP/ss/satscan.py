@@ -136,7 +136,7 @@ class Satscan(object):
             residential_events = group_events.exclude(patient_zip_code__isnull=True).order_by('patient_zip_code', 'date')
             
 
-#            self._make_site_casefile(site_events, site_filename)
+            self._make_site_casefile(site_events, site_filename)
             self._make_residential_casefile(residential_events, residential_filename)
             
             
@@ -147,16 +147,15 @@ class Satscan(object):
         groups = self.age_groups + [None]
 
         for group in groups:
-#            run_with_file(self._filenames(Satscan.SITE_BASE_FILENAME, group)['parameter'])
+            run_with_file(self._filenames(Satscan.SITE_BASE_FILENAME, group)['parameter'])
             run_with_file(self._filenames(Satscan.RESIDENTIAL_BASE_FILENAME, group)['parameter'])
         
         
     def _recurrence_intervals(self, filename):
         os.chdir(self.folder)
         contents = open(filename, 'r').read()
-        regexp = re.compile('Recurrence interval...: \d+ day')
-        return [int(match.rstrip(' day').lstrip('Reccurrence interval...: '))
-                for match in regexp.findall(contents)]
+        regexp = re.compile('Recurrence interval...: \w+ day')
+        return [float(match.split()[2].strip()) for match in regexp.findall(contents)]
 
 
     def _package_reports(self, results_filename, package_basename, age_group):
@@ -180,15 +179,15 @@ class Satscan(object):
 
     def package(self):
         groups = self.age_groups + [None]
-        site_package_basename = 'Site-%s%s-satscan%s-interval%s.zip'
-        residential_package_basename = 'Residential-%s%s-satscan%s-interval%s.zip'
+        site_package_basename = 'Site-%s%s-satscan%s-interval%.0f.zip'
+        residential_package_basename = 'Residential-%s%s-satscan%s-interval%.0f.zip'
         
                 
         for group in groups:
             self._package_reports(self._filenames(Satscan.RESIDENTIAL_BASE_FILENAME, group)['results'], 
                                   residential_package_basename, group)
-#            self._package_reports(self._filenames(Satscan.SITE_BASE_FILENAME, group)['results'], 
-#                                  site_package_basename, group)
+            self._package_reports(self._filenames(Satscan.SITE_BASE_FILENAME, group)['results'], 
+                                  site_package_basename, group)
             
                                   
             
