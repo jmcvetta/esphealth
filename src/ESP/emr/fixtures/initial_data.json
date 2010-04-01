@@ -7,7 +7,9 @@
       "timestamp": "1900-01-01 00:00:00", 
       "hostname": "[N/A]", 
       "comment": "Provenance used for system records - i.e. those distributed with ESP, and not loaded from any data source.", 
-      "source": "SYSTEM"
+      "source": "SYSTEM",
+      "valid_rec_count": "-1",
+      "error_count": "-1"
     }
   }, 
   {
@@ -18,7 +20,9 @@
       "timestamp": "1900-01-01 00:00:00", 
       "hostname": "[N/A]", 
       "comment": "Provenance used for Provider and Patient models whose most recent provenance was removed by cleanup script.  Many/most of these records will be updated to a new, valid provenance when a future data set is loaded.", 
-      "source": "CLEANUP"
+      "source": "CLEANUP",
+      "valid_rec_count": "-1",
+      "error_count": "-1"
     }
   }, 
   {
