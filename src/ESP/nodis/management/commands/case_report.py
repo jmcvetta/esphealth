@@ -26,6 +26,7 @@ from ESP.settings import CASE_REPORT_TEMPLATE
 from ESP.settings import CASE_REPORT_FILENAME_FORMAT
 from ESP.settings import CASE_REPORT_BATCH_SIZE
 from ESP.settings import CASE_REPORT_TRANSMIT
+from ESP.settings import CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP
 from ESP.settings import FAKE_PATIENT_MRN
 from ESP.settings import FAKE_PATIENT_SURNAME
 from ESP.settings import CODEDIR
@@ -614,12 +615,27 @@ class hl7Batch:
             obr7 = self.casesDoc.createElement('OBR.7')
             obr.appendChild(obr7)
             self.addSimple(obr7,lxRec.date.strftime(DATE_FORMAT),'TS.1') # lx date
+            #
+            # Specimen Source
+            #
             obr15 = self.casesDoc.createElement('OBR.15') # noise - unknown specimen source. Eeessh
             sps = self.casesDoc.createElement('SPS.1')
-            self.addSimple(sps,'261665006','CE.4') ##unknown = 261665006 (local code)
-            self.addSimple(sps,'L','CE.6') # loinc code
+            specso = lxRec.specimen_source
+            snomed_spec_source_code = '261665006' # Local code for 'Unknown'
+            if specso:
+                if CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP.has_key(specso.lower()):
+                    snomed_spec_source_code = CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP[specso.lower()]
+                    log.debug('Mapped specimen source "%s" to snomed code %s' % (specso, snomed_spec_source_code))
+                else:
+                    log.warning('Lab record has specimen source "%s", but no SNOMED code is known for that source.  Using SNOMED code for "unknownn".' % specso)
+            else:
+                log.debug('No specimen source in lab record -- using SNOMED code for "unknown"')
+            self.addSimple(sps, snomed_spec_source_code, 'CE.4')
+            self.addSimple(sps,'L','CE.6') # loinc code --- why??
             obr15.appendChild(sps)
             obr.appendChild(obr15)
+            #
+            #
             if lxRec.status:
                 status='F'
             else:
@@ -670,7 +686,9 @@ class hl7Batch:
             orcs.appendChild(obx1)
           
     def getSNOMED(self, lxRec,condition):
-        # NOTE: See "PORTING NOTE" above.
+        #
+        # NOTE: This method probably doesn't work right with ESP v2 models.  
+        #
         snomedposi = lxRec.snomed_pos
         snomednega = lxRec.snomed_neg
         snomedinter = lxRec.snomed_ind
