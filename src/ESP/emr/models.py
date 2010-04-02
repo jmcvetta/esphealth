@@ -190,7 +190,10 @@ class Provider(BaseMedicalRecord):
         '''
         Returns telephone number string containing only numeric characters
         '''
-        return re.sub('[^0-9]', '', self.telephone)
+        if self.telephone:
+            return re.sub('[^0-9]', '', self.telephone)
+        else:
+            return None
     tel_numeric = property(__get_tel_numeric)
 
 
