@@ -42,9 +42,6 @@ from ESP.settings import BATCH_TRANSMIT_CASE_REPORT
 
 
 class Command(BaseCommand):
-    #
-    # Parse command line options
-    #
 #    option_list = BaseCommand.option_list + (
 #        make_option('--file', action='store', dest='single_file', metavar='FILEPATH', 
 #            help='Load an individual message file'),

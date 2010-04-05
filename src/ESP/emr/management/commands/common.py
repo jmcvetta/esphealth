@@ -20,6 +20,7 @@ from django.core.management.base import BaseCommand
 from ESP.utils.utils import log
 from ESP.settings import DATA_DIR
 from ESP.settings import ETL_SOURCE
+from ESP.settings import ETL_ARCHIVE
 
 
 class LoaderCommand(BaseCommand):
@@ -36,7 +37,7 @@ class LoaderCommand(BaseCommand):
             help='Load an individual message file'),
         make_option('--input', action='store', dest='input_folder', default=INCOMING_DIR,
             metavar='FOLDER', help='Folder from which to read incoming HL7 messages'),
-        make_option('--no-archive', action='store_false', dest='archive', default=True, 
+        make_option('--no-archive', action='store_false', dest='archive', default=ETL_ARCHIVE, 
             help='Do NOT archive files after they have been loaded'),
         )
 
