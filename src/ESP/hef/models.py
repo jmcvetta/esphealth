@@ -13,8 +13,8 @@ from django.db import models
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
-from ESP.static.models import Loinc
 from ESP.emr.models import Patient
+from ESP.emr.models import Encounter
 
 
 HEF_RUN_STATUS = [
@@ -106,11 +106,8 @@ class Pregnancy(models.Model):
     end_date = models.DateField(blank=False, db_index=True)
     timestamp = models.DateTimeField('Time this event was created in db', blank=False, auto_now_add=True)
     run = models.ForeignKey(Run, blank=False)
-    #
-    # Standard generic relation support
-    #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
-    #
-    content_type = models.ForeignKey(ContentType, db_index=True)
-    object_id = models.PositiveIntegerField(db_index=True)
-    content_object = generic.GenericForeignKey('content_type', 'object_id')
+    encounters = models.ManyToManyField(Encounter)
+    
+    def __str__(self):
+        return 'Pregnancy patient %s, %s - %s' % (self.patient.name, self.start_date, self.end_date)
 
