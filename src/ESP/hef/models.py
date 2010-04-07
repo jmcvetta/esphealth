@@ -106,6 +106,7 @@ class Pregnancy(models.Model):
     end_date = models.DateField(blank=False, db_index=True)
     timestamp = models.DateTimeField('Time this event was created in db', blank=False, auto_now_add=True)
     run = models.ForeignKey(Run, blank=False)
+    pattern = models.SlugField(blank=False)
     encounters = models.ManyToManyField(Encounter)
     
     def __str__(self):
