@@ -254,40 +254,95 @@ def labtest_csv(request, native_code):
     return response
 
 
+
+@login_required
+def unmapped_labs_report(request):
+    '''
+    Display Unmapped Labs report generated from cache
+    '''
+    unmapped = _get_unmapped_labs()
+    strings = Condition.all_test_name_search_strings()
+    strings.sort()
+    values = {
+        'title': 'Unmapped Lab Tests Report',
+        "request":request,
+        'unmapped': unmapped,
+        'search_strings': strings,
+        }
+    return render_to_response('ui/unmapped_labs.html', values, context_instance=RequestContext(request))
+    
+
+@user_passes_test(lambda u: u.is_staff)
+def map_native_code(request, native_code):
+    '''
+    Convenience screen to help users map native lab test codes to LOINC codes 
+    used by Nodis.  This view is part of nodis because it depends on several
+    lower-level modules (conf, hef, & static).
+    '''
+    #native_code = native_code.lower()
+    native_code = native_code # Why was this .lower() before??
+    form = CodeMapForm() # This may be overridden below
+    labs = LabResult.objects.filter(native_code=native_code)
+    native_names = labs.values_list('native_name', flat=True).distinct().order_by('native_name')
+    if request.method == 'POST':
+        form = CodeMapForm(request.POST)
+        if form.is_valid():
+            heuristic_name = form.cleaned_data['heuristic']
+            assert BaseHeuristic.get_heuristic(heuristic_name)
+            threshold = form.cleaned_data['threshold']
+            cm, created = CodeMap.objects.get_or_create(native_code=native_code, heuristic=heuristic_name)
+            cm.notes = form.cleaned_data['notes']
+            cm.native_name = native_names[0]
+            cm.threshold = threshold
+            cm.output_code = form.cleaned_data['output_code']
+            cm.save()
+            if created:
+                msg = 'Saved code map: %s' % cm
+            else:
+                msg = 'Updated code map: %s' % cm
+            request.user.message_set.create(message=msg)
+            log.debug(msg)
+            return redirect_to(request, reverse('unmapped_labs_report'))
+    result_strings = labs.values('result_string').distinct().annotate(count=Count('id')).order_by('-count')[:10]
+    ref_high_values = labs.values('ref_high_string').distinct().annotate(count=Count('id')).order_by('-count')[:10]
+    comments = labs.values('comment').distinct().annotate(count=Count('id')).order_by('-count')[:10]
+    without_ref_high = labs.filter(result_float__isnull=False, ref_high_float__isnull=True).count()
+    without_ref_high_percent = float(without_ref_high) / float(labs.count()) * 100
+    values = {
+        'title': 'Map Native Code to Heuristic',
+        "request":request,
+        'native_code': native_code,
+        'native_names': native_names,
+        'result_strings': result_strings,
+        'ref_high_values': ref_high_values,
+        'without_ref_high': without_ref_high,
+        'without_ref_high_percent': without_ref_high_percent,
+        'comments': comments,
+        'form': form,
+        'count': labs.count()
+        }
+    return render_to_response('ui/map_native_code.html', values, context_instance=RequestContext(request))
+    
+
 @user_passes_test(lambda u: u.is_staff)
 def ignore_code_set(request):
     '''
     Ignores a set of native codes pass in REQUEST
     '''
-    print request.POST
-    tests = LabTestConcordance.objects.filter(native_name__icontains=lookup_string).distinct('native_code').order_by('native_code')
-    choices = [(i.native_code, i) for i in tests]
-    class NativeCodeForm(forms.Form):
-        tests = forms.MultipleChoiceField(choices=choices, label=None,
-            widget=TableSelectMultiple(item_attrs=('native_code', 'native_name'))
-            )
-    result_form = NativeCodeForm()
-    native_codes = request.POST.getlist('native_codes')
+    native_codes = request.POST.getlist('codes')
     if not native_codes:
-        msg = 'Request not understood: no test codes specified for detail query'
+        msg = 'Request not understood: no test codes specified to be ignored'
         request.user.message_set.create(message=msg)
         return redirect_to(request, reverse('unmapped_labs_report'))
     details = []
     for nc in native_codes:
-        ic_obj, created = IgnoredCode.objects.get_or_create(native_code=native_code)
+        ic_obj, created = IgnoredCode.objects.get_or_create(native_code=nc)
         if created:
             ic_obj.save()
-            msg = 'Native code "%s" has been added to the ignore list' % native_code
+            msg = 'Native code "%s" has been added to the ignore list' % nc
         else:
-            msg = 'Native code "%s" is already on the ignore list' % native_code
+            msg = 'Native code "%s" is already on the ignore list' % nc
         request.user.message_set.create(message=msg)
         log.debug(msg)
-        return redirect_to(request, reverse('unmapped_labs_report'))
-    else:
-        values = {
-            'title': 'Unmapped Lab Tests Report',
-            "request":request,
-            'native_codes': native_codes,
-            }
-        return render_to_response('ui/confirm_ignore_codes.html', values, context_instance=RequestContext(request))
-    
+    return redirect_to(request, reverse('unmapped_labs_report'))
+

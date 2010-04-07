@@ -70,6 +70,7 @@ from ESP.nodis.forms import ReferenceCaseForm
 from ESP.nodis.management.commands.validate_cases import RELATED_MARGIN
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
+from ESP.utils import TableSelectMultiple
 
 
 
@@ -397,74 +398,6 @@ def _get_unmapped_labs():
     unmapped = LabTestConcordance.objects.filter(q_obj).order_by('native_name', 'native_code')
     return unmapped
 
-@login_required
-def unmapped_labs_report(request):
-    '''
-    Display Unmapped Labs report generated from cache
-    '''
-    unmapped = _get_unmapped_labs()
-    strings = Condition.all_test_name_search_strings()
-    strings.sort()
-    values = {
-        'title': 'Unmapped Lab Tests Report',
-        "request":request,
-        'unmapped': unmapped,
-        'search_strings': strings,
-        }
-    return render_to_response('nodis/unmapped_labs.html', values, context_instance=RequestContext(request))
-    
-
-@user_passes_test(lambda u: u.is_staff)
-def map_native_code(request, native_code):
-    '''
-    Convenience screen to help users map native lab test codes to LOINC codes 
-    used by Nodis.  This view is part of nodis because it depends on several
-    lower-level modules (conf, hef, & static).
-    '''
-    #native_code = native_code.lower()
-    native_code = native_code # Why was this .lower() before??
-    form = CodeMapForm() # This may be overridden below
-    labs = LabResult.objects.filter(native_code=native_code)
-    native_names = labs.values_list('native_name', flat=True).distinct().order_by('native_name')
-    if request.method == 'POST':
-        form = CodeMapForm(request.POST)
-        if form.is_valid():
-            heuristic_name = form.cleaned_data['heuristic']
-            assert BaseHeuristic.get_heuristic(heuristic_name)
-            threshold = form.cleaned_data['threshold']
-            cm, created = CodeMap.objects.get_or_create(native_code=native_code, heuristic=heuristic_name)
-            cm.notes = form.cleaned_data['notes']
-            cm.native_name = native_names[0]
-            cm.threshold = threshold
-            cm.output_code = form.cleaned_data['output_code']
-            cm.save()
-            if created:
-                msg = 'Saved code map: %s' % cm
-            else:
-                msg = 'Updated code map: %s' % cm
-            request.user.message_set.create(message=msg)
-            log.debug(msg)
-            return redirect_to(request, reverse('unmapped_labs_report'))
-    result_strings = labs.values('result_string').distinct().annotate(count=Count('id')).order_by('-count')[:10]
-    ref_high_values = labs.values('ref_high_string').distinct().annotate(count=Count('id')).order_by('-count')[:10]
-    comments = labs.values('comment').distinct().annotate(count=Count('id')).order_by('-count')[:10]
-    without_ref_high = labs.filter(result_float__isnull=False, ref_high_float__isnull=True).count()
-    without_ref_high_percent = float(without_ref_high) / float(labs.count()) * 100
-    values = {
-        'title': 'Map Native Code to Heuristic',
-        "request":request,
-        'native_code': native_code,
-        'native_names': native_names,
-        'result_strings': result_strings,
-        'ref_high_values': ref_high_values,
-        'without_ref_high': without_ref_high,
-        'without_ref_high_percent': without_ref_high_percent,
-        'comments': comments,
-        'form': form,
-        'count': labs.count()
-        }
-    return render_to_response('nodis/map_native_code.html', values, context_instance=RequestContext(request))
-    
 
 @login_required
 def all_records(request, patient_pk):

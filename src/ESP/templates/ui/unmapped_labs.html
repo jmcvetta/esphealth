@@ -40,30 +40,36 @@
     </ul>
 </p>
 
-<p>
-<table>
-    <tr>
-        <th>Native Name</th>
-        <th>Native Code</th>
-        <th>Lab Record Count</th>
-        {% if user.is_staff %}
-        <th></th>
-        <th></th>
-        {% endif %}
-    </tr>
-    {% for item in unmapped %}
-    <tr>
-        <td>{{ item.native_name }}</td>
-        <td>{{ item.native_code }}</td>
-        <td>{{ item.count }}</td>
-        {% if user.is_staff %}
-        <td><a href="{% url ignore_code item.native_code %}">ignore</a></td>
-        <td><a href="{% url map_native_code item.native_code %}">map</a></td>
-        {% endif %}
-    </tr>
-    {% endfor %}
-</table>
-</p>
+
+<form method="POST" action="{% url ignore_code_set %}" >
+	<p>
+	<table>
+	    <tr>
+		<th />
+		<th>Native Name</th>
+		<th>Native Code</th>
+		<th>Lab Record Count</th>
+		{% if user.is_staff %}
+		<th></th>
+		{% endif %}
+	    </tr>
+	    {% for item in unmapped %}
+	    <tr>
+		<td><input type="checkbox" name="codes" value="{{ item.native_code }}" id="id_codes_{{ forloop.counter }}">
+		<td>{{ item.native_name }}</td>
+		<td>{{ item.native_code }}</td>
+		<td>{{ item.count }}</td>
+		{% if user.is_staff %}
+		<td><a href="{% url map_native_code item.native_code %}">map</a></td>
+		{% endif %}
+	    </tr>
+	    {% endfor %}
+	</table>
+	</p>
+	<p>
+		<input type="submit" name="submit" value="Ignore Selected Codes" />
+	</p>
+</form>
 
 
 {% endblock %}

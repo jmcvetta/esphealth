@@ -250,11 +250,9 @@ src/ESP/templates/nav-bg.gif -text
 src/ESP/templates/nodis/all_records.html -text
 src/ESP/templates/nodis/case_detail.html -text
 src/ESP/templates/nodis/case_list.html -text
-src/ESP/templates/nodis/map_native_code.html -text
 src/ESP/templates/nodis/missing_case_detail.html -text
 src/ESP/templates/nodis/provider_detail.html -text
 src/ESP/templates/nodis/report/odh_hl7.txt -text
-src/ESP/templates/nodis/unmapped_labs.html -text
 src/ESP/templates/nodis/validator_exact.html -text
 src/ESP/templates/nodis/validator_missing.html -text
 src/ESP/templates/nodis/validator_new.html -text
@@ -278,8 +276,10 @@ src/ESP/templates/ss/files/boston.geo -text
 src/ESP/templates/ss/files/satscan.conf -text
 src/ESP/templates/ui/labtest_detail.html -text
 src/ESP/templates/ui/labtest_lookup.html -text
+src/ESP/templates/ui/map_native_code.html -text
 src/ESP/templates/ui/status.html -text
 src/ESP/templates/ui/status.txt -text
+src/ESP/templates/ui/unmapped_labs.html -text
 src/ESP/templates/widgets/fixture_builder.json -text
 src/ESP/templates/widgets/ss/day_map_report.html -text
 src/ESP/templates/widgets/vaers/case_grid.html -text
