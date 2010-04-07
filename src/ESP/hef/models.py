@@ -111,4 +111,3 @@ class Pregnancy(models.Model):
     
     def __str__(self):
         return 'Pregnancy patient %s, %s - %s' % (self.patient.name, self.start_date, self.end_date)
-
