@@ -1,6 +1,6 @@
 '''
-                              ESP Health Project
-User Interface Module
+                               ESP Health Project
+                             User Interface Module
                                      Views
 
 @authors: Jason McVetta <jason.mcvetta@gmail.com>
@@ -84,6 +84,7 @@ from ESP.nodis.forms import ReferenceCaseForm
 from ESP.nodis.management.commands.validate_cases import RELATED_MARGIN
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
+from ESP.utils import TableSelectMultiple
 
 
 
@@ -137,63 +138,6 @@ def status_page(request):
 #
 ################################################################################
 
-
-class TableSelectMultiple(SelectMultiple):
-    # This class taken from Django Snippets.
-    # URL:    http://www.djangosnippets.org/snippets/518/
-    # Author:  insin
-    """
-    Provides selection of items via checkboxes, with a table row
-    being rendered for each item, the first cell in which contains the
-    checkbox.
-
-    When providing choices for this field, give the item as the second
-    item in all choice tuples. For example, where you might have
-    previously used::
-
-        field.choices = [(item.id, item.name) for item in item_list]
-
-    ...you should use::
-
-        field.choices = [(item.id, item) for item in item_list]
-    """
-    def __init__(self, item_attrs, *args, **kwargs):
-        """
-        item_attrs
-            Defines the attributes of each item which will be displayed
-            as a column in each table row, in the order given.
-
-            Any callable attributes specified will be called and have
-            their return value used for display.
-
-            All attribute values will be escaped.
-        """
-        super(TableSelectMultiple, self).__init__(*args, **kwargs)
-        self.item_attrs = item_attrs
-
-    def render(self, name, value, attrs=None, choices=()):
-        if value is None: value = []
-        has_id = attrs and 'id' in attrs
-        final_attrs = self.build_attrs(attrs, name=name)
-        output = []
-        str_values = set([force_unicode(v) for v in value]) # Normalize to strings.
-        for i, (option_value, item) in enumerate(self.choices):
-            # If an ID attribute was given, add a numeric index as a suffix,
-            # so that the checkboxes don't all have the same ID attribute.
-            if has_id:
-                final_attrs = dict(final_attrs, id='%s_%s' % (attrs['id'], i))
-            cb = CheckboxInput(final_attrs, check_test=lambda value: value in str_values)
-            option_value = force_unicode(option_value)
-            rendered_cb = cb.render(name, option_value)
-            output.append(u'<tr><td>%s</td>' % rendered_cb)
-            for attr in self.item_attrs:
-                if callable(getattr(item, attr)):
-                    content = getattr(item, attr)()
-                else:
-                    content = getattr(item, attr)
-                output.append(u'<td>%s</td>' % escape(content))
-            output.append(u'</tr>')
-        return mark_safe(u'\n'.join(output))
 
 class TestSearchForm(forms.Form):
     search_string = forms.CharField(max_length=255, required=True)
@@ -309,3 +253,41 @@ def labtest_csv(request, native_code):
         writer.writerow(row)
     return response
 
+
+@user_passes_test(lambda u: u.is_staff)
+def ignore_code_set(request):
+    '''
+    Ignores a set of native codes pass in REQUEST
+    '''
+    print request.POST
+    tests = LabTestConcordance.objects.filter(native_name__icontains=lookup_string).distinct('native_code').order_by('native_code')
+    choices = [(i.native_code, i) for i in tests]
+    class NativeCodeForm(forms.Form):
+        tests = forms.MultipleChoiceField(choices=choices, label=None,
+            widget=TableSelectMultiple(item_attrs=('native_code', 'native_name'))
+            )
+    result_form = NativeCodeForm()
+    native_codes = request.POST.getlist('native_codes')
+    if not native_codes:
+        msg = 'Request not understood: no test codes specified for detail query'
+        request.user.message_set.create(message=msg)
+        return redirect_to(request, reverse('unmapped_labs_report'))
+    details = []
+    for nc in native_codes:
+        ic_obj, created = IgnoredCode.objects.get_or_create(native_code=native_code)
+        if created:
+            ic_obj.save()
+            msg = 'Native code "%s" has been added to the ignore list' % native_code
+        else:
+            msg = 'Native code "%s" is already on the ignore list' % native_code
+        request.user.message_set.create(message=msg)
+        log.debug(msg)
+        return redirect_to(request, reverse('unmapped_labs_report'))
+    else:
+        values = {
+            'title': 'Unmapped Lab Tests Report',
+            "request":request,
+            'native_codes': native_codes,
+            }
+        return render_to_response('ui/confirm_ignore_codes.html', values, context_instance=RequestContext(request))
+    
