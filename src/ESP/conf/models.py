@@ -33,7 +33,7 @@ class CodeMap(models.Model):
     heuristic = models.SlugField(max_length=255, blank=False, db_index=True)
     native_code = models.CharField(max_length=100, blank=False, db_index=True)
     native_name = models.CharField(max_length=255, blank=True, null=True)
-    threshold = models.FloatField(help_text='Positive numeric threshold (if relevant)', blank=True, null=True)
+    threshold = models.FloatField(help_text='Numeric threshold for positive test', blank=True, null=True)
     output_code = models.CharField('Test code for template output', max_length=100, blank=True, null=True, db_index=True)
     output_name = models.CharField('Test name for template output', max_length=255, blank=True, null=True)
     #
