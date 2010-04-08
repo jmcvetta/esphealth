@@ -693,6 +693,14 @@ class LabResult(BasePatientRecord):
             return None
     output_code = property(__get_output_code)
     
+    def __get_output_name(self):
+        map = self.codemap
+        if map:
+            return map.output_name
+        else:
+            return None
+    output_name = property(__get_output_name)
+    
     def __get__output_or_native_code(self):
         output = self.output_code
         if output:
@@ -700,6 +708,14 @@ class LabResult(BasePatientRecord):
         else:
             return self.native_code
     output_or_native_code = property(__get__output_or_native_code)
+    
+    def __get__output_or_native_name(self):
+        output = self.output_name
+        if output:
+            return output
+        else:
+            return self.native_name
+    output_or_native_name = property(__get__output_or_native_name)
 
     def document_summary(self):
         return {
