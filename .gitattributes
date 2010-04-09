@@ -1,6 +1,9 @@
 * text=auto !eol
 /LICENSE -text
 bin/esp-batch-run.sh -text
+conf/app.conf -text
+conf/secrets.conf.sample -text
+conf/ss.conf -text
 doc/ESP-architecture.png -text svneol=unset#unset
 doc/ESP-architecture.xmind -text svneol=unset#unset
 doc/disease-protocols/Chlamydia.doc -text

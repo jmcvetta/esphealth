@@ -1,5 +1,6 @@
 /.project
 /.pydevproject
+conf/secrets.conf
 src/ESP/*.db
 src/ESP/*.pyc
 src/ESP/.ropeproject
