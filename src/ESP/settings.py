@@ -14,6 +14,41 @@ information are stored in external plain text files.
 import os
 import sys
 import logging
+from ConfigParser import ConfigParser
+
+def missing_config(message):
+    print message
+    print 'Please check your configuration files'
+    sys.exit(-1)
+
+
+TOPDIR = os.path.dirname(__file__)
+PACKAGE_ROOT = os.path.normpath(os.path.join(TOPDIR, '..', '..'))
+
+
+#===============================================================================
+#
+#                         Site-specific Configuration
+#
+#===============================================================================
+
+try:
+    secrets_conf_file = os.path.join(PACKAGE_ROOT, 'conf', 'secrets.conf')
+    secrets_config = ConfigParser()
+    secrets_config.read([secrets_conf_file])
+    
+    app_conf_file = os.path.join(PACKAGE_ROOT, 'conf', 'app.conf')
+    app_config = ConfigParser()
+    app_config.read([app_conf_file])
+  
+    ss_conf_file = os.path.join(PACKAGE_ROOT, 'conf', 'ss.conf')
+    ss_config = ConfigParser()
+    ss_config.read([ss_conf_file])
+
+except Exception, reason:
+    print 'Error during conf:', reason
+    sys.exit()
+
 
 
 #===============================================================================
@@ -21,36 +56,16 @@ import logging
 #                                 Credentials
 #
 #===============================================================================
-TOPDIR = os.path.dirname(__file__)
-PACKAGE_ROOT = os.path.normpath(os.path.join(TOPDIR, '..', '..'))
-secret_key_path =  os.path.join(TOPDIR, 'secret_key.txt')
-try:
-    SECRET_KEY = open(secret_key_path).readline().strip()
-except IOError:
-    print >> sys.stderr, \
-'''
-Cannot find "%s".
-
-Please create this file.
-
+missing_secret_msg = '''
+Please set a secret key on secrets.conf, the 'Application' Section.
 It should contain a secret key for this particular ESP installation. Used to 
 provide a seed in secret-key hashing algorithms. Set this to a random string 
 -- the longer, the better. 
+The unix utility 'pwgen' is useful for generating long random password strings.
+''' 
 
-The unix utility 'pwgen is useful for generating long random password strings.
-''' % secret_key_path
-    sys.exit(1001)
-db_pwd_path =  os.path.join(TOPDIR, 'database_password.txt')
-try:
-    DATABASE_PASSWORD = open(db_pwd_path).readline().strip()
-except IOError:
-    print >> sys.stderr, \
-'''
-Cannot find "%s".
+SECRET_KEY = secrets_config.get('Application', 'secret_key') or missing_config(missing_secret_msg)
 
-Please create this file, and populate it with your database password.
-''' % db_pwd_path
-    sys.exit(1002)
 
 
 
@@ -77,8 +92,9 @@ MANAGERS = (
     ('Raphael Lullis', 'raphael.lullis@channing.harvard.edu'),
     ('Michael Klompas', 'mklompas@partners.org'),
 )
-SITE_NAME = 'Development (localhost)' # Name of your local site
-DATA_DIR = '/srv/esp'
+SITE_NAME = app_config.get('Site', 'name')
+DATA_DIR = app_config.get('Data', 'folder') or os.path.join(PACKAGE_ROOT, 'assets', 'data')
+
 #
 # Some EMR systems, for instance Atrius Healthcare, include "fake" patients -- 
 # test entries referring to fictional patients and events.  The variables below
@@ -100,11 +116,12 @@ FAKE_PATIENT_MRN = None
 #                                   Database
 #
 #===============================================================================
-DATABASE_ENGINE = 'postgresql_psycopg2'
-DATABASE_NAME = 'esp_prod'          
-DATABASE_USER = 'esp'
-DATABASE_HOST = 'localhost'
-DATABASE_PORT = ''
+DATABASE_ENGINE = secrets_config.get('Database', 'engine') or missing_config('No db engine defined')
+DATABASE_NAME = secrets_config.get('Database', 'name') or missing_config('No db name defined')
+DATABASE_USER = secrets_config.get('Database', 'user') or missing_config('No db user defined')
+DATABASE_PASSWORD = secrets_config.get('Database', 'password') or missing_config('No db password')
+DATABASE_HOST = secrets_config.get('Database', 'host') 
+DATABASE_PORT = secrets_config.get('Database', 'port') 
 DATABASE_OPTIONS = {
     # Make PostgreSQL recover gracefully from caught exceptions
     #"autocommit": True,
@@ -133,19 +150,10 @@ ETL_ARCHIVE = True # Should ETL files be archived after they have been loaded?
 
 # The 'FTP_*' variable names are legacy.  At some point, they should be updated 
 # to 'DOWNLOAD_*'.
-FTP_SERVER = 'n2ftp001.hvma.org'
-FTP_USER = 'HEALTHONE\\rlazarus'
-ftp_pwd_path =  os.path.join(TOPDIR, 'download_password.txt')
-try:
-    FTP_PASSWORD = open(ftp_pwd_path).readline().strip()
-except IOError:
-    print >> sys.stderr, \
-'''
-Cannot find "%s".
+FTP_SERVER = secrets_config.get('FTP', 'server') or missing_config('No ftp server')
+FTP_USER = secrets_config.get('FTP', 'user') or missing_config('No ftp user')
+FTP_PASSWORD = secrets_config.get('FTP', 'password') or missing_config('No ftp password') 
 
-Please create this file, and populate it with your download password.
-''' % ftp_pwd_path
-    sys.exit(1003)
 
 
 #===============================================================================
@@ -153,20 +161,10 @@ Please create this file, and populate it with your download password.
 #                                   UPLOAD
 #
 #===============================================================================
-UPLOAD_SERVER = '1.2.3.4'
-UPLOAD_USER = 'your_upload_username'
-UPLOAD_PATH = '/path/for/upload'
-upload_pwd_path =  os.path.join(TOPDIR, 'upload_password.txt')
-try:
-    UPLOAD_PASSWORD = open(upload_pwd_path).readline().strip()
-except IOError:
-    print >> sys.stderr, \
-'''
-Cannot find "%s".
-
-Please create this file, and populate it with your upload password.
-''' % upload_pwd_path
-    sys.exit(1003)
+UPLOAD_SERVER = secrets_config.get('Upload', 'server') or missing_config('No upload server defined')
+UPLOAD_USER = secrets_config.get('Upload', 'user') or missing_config('No upload user defined')
+UPLOAD_PATH = secrets_config.get('Upload', 'path') or missing_config('No upload path defined') 
+UPLOAD_PASSWORD = secrets_config.get('Upload', 'password') or missing_config('No upload access password defined')
 
 
 
@@ -495,14 +493,15 @@ CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP = {
 #                                    Email
 #
 #===============================================================================
-SERVER_EMAIL = 'esp-noreply@your_domain.com'
-DEFAULT_FROM_EMAIL = 'esp-noreply@your_domain.com'
-EMAIL_SUBJECT_PREFIX = '[ESP] '
-EMAIL_HOST = 'localhost'
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
-EMAIL_PORT = ''
-EMAIL_USE_TLS = False
+EMAIL_HOST = secrets_config.get('Email', 'host') or 'localhost'
+EMAIL_HOST_USER = secrets_config.get('Email', 'host') or ''
+EMAIL_HOST_PASSWORD = secrets_config.get('Email', 'host') or ''
+EMAIL_PORT = secrets_config.get('Email', 'host') or ''
+EMAIL_USE_TLS = secrets_config.get('Email', 'host') or False
+SERVER_EMAIL = secrets_config.get('Email', 'server-') or 'noreply@example.org'
+DEFAULT_FROM_EMAIL = secrets_config.get('Email', 'host') or 'noreply@example.org'
+EMAIL_SUBJECT_PREFIX = secrets_config.get('Email', 'host') or '[ESP]'
+
 
 
 #===============================================================================
@@ -511,6 +510,18 @@ EMAIL_USE_TLS = False
 #
 #===============================================================================
 VAERS_NOTIFICATION_RECIPIENT = 'someone@example.com'
+
+
+#===============================================================================
+#
+#                                  SS
+#
+#===============================================================================
+SS_EMAIL_RECIPIENT = ss_config.get('email', 'relevant_interval_notification')
+
+
+
+
 
 
 #===============================================================================
@@ -562,7 +573,7 @@ LOG_FORMAT_CONSOLE = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(messag
 LOG_FORMAT_FILE = '%(asctime)s:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 LOG_FORMAT_SYSLOG = 'ESP:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 # BEWARE: If you set the log level to DEBUG, *copious* info will be logged!
-LOG_LEVEL_CONSOLE = logging.DEBUG
+LOG_LEVEL_CONSOLE = logging.INFO
 LOG_LEVEL_FILE = None
 LOG_LEVEL_SYSLOG = logging.WARN
 
