@@ -1128,9 +1128,8 @@ class Command(BaseCommand):
         #
         # Split cases into batches
         #
-        if not options.batch_size and not options.one_file:
-            options.batch_size = CASE_REPORT_BATCH_SIZE
-        elif options.one_file:
+        options.batch_size = CASE_REPORT_BATCH_SIZE
+        if options.one_file or not options.batch_size:
             options.batch_size = case_count
         batch_serial = 0
         self.timestamp = datetime.datetime.now().strftime('%Y-%b-%d-%H.%M.%s')

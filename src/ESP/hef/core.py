@@ -433,7 +433,7 @@ class LabResultHeuristic(BaseLabHeuristic):
         # 
         # Everything below this point assumes we are looking for pos or neg match
         #
-        log.info('Finding matches for heuristic %s' % event_name)
+        log.debug('Finding matches for heuristic %s' % event_name)
         code_maps = CodeMap.objects.filter(heuristic=self.name)
         native_codes = code_maps.values_list('native_code')
         has_ref_high = Q(ref_high_float__isnull=False) # Record does NOT have null value for ref_high_float
