@@ -5,8 +5,8 @@
                                 Django Settings
 
 
-Configuration settings for the ESP application.  Passwords and other private 
-information are stored in external plain text files.
+Configuration settings for the ESP application.  Passwords and and site-dependent
+ information are stored in files in the conf folder.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 '''
 
