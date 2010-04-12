@@ -6,7 +6,7 @@ import zipfile
 from django.db.models import Count
 from django.template import Context
 from django.template.loader import get_template
-from django.core.email import mail_admins, send_mail
+from django.core.mail import mail_admins, send_mail
 
 from ESP.settings import SERVER_EMAIL, SS_EMAIL_RECIPIENT, DEBUG
 from ESP.ss.models import NonSpecialistVisitEvent, Site, age_group_filter
@@ -162,9 +162,9 @@ class Satscan(object):
 
     def _package_reports(self, results_filename, package_basename, age_group):
         os.chdir(self.folder)
-        max_interval = max(self._recurrence_intervals(results_filename)
+        max_interval = max(self._recurrence_intervals(results_filename))
         package_filename = package_basename % (str_from_date(self.end_date), age_identifier(age_group),
-                                               Satscan.VERSION, max_interval))
+                                               Satscan.VERSION, max_interval)
         # Case, parameter, and satscan-generated file names should be
         # all the same Differing only by the extension(s). So we check
         # the name of the file and grab everything to add to the zip
@@ -180,11 +180,11 @@ class Satscan(object):
         package.close()
 
         if max_interval >= Satscan.RELEVANT_INTERVAL:
-            subject = 'Satscan identified relevant interval cluster'
+            subject = ' Satscan identified relevant interval cluster'
             msg = 'Please refer to file %s' % package_filename
             fail_silently = not DEBUG
+            send_mail(subject, msg, SERVER_EMAIL, [SS_EMAIL_RECIPIENT], fail_silently=fail_silently)
             mail_admins(subject, msg, fail_silently=fail_silently)
-            send_mail(subject, msg, SERVER_EMAIL, SS_MAIL_RECIPIENT, fail_silently=fail_silently)
 
     def package(self):
         groups = self.age_groups + [None]
