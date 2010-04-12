@@ -34,17 +34,28 @@ PACKAGE_ROOT = os.path.normpath(os.path.join(TOPDIR, '..', '..'))
 
 try:
     secrets_conf_file = os.path.join(PACKAGE_ROOT, 'conf', 'secrets.conf')
-    secrets_config = ConfigParser()
-    secrets_config.read([secrets_conf_file])
-    
     app_conf_file = os.path.join(PACKAGE_ROOT, 'conf', 'app.conf')
+    ss_conf_file = os.path.join(PACKAGE_ROOT, 'conf', 'ss.conf')
+
+    #Check if have the files
+    open(secrets_conf_file, 'r')
+    open(app_conf_file, 'r')
+    open(ss_conf_file, 'r')
+
+
+    secrets_config = ConfigParser()
+    secrets_config.read([secrets_conf_file])    
+
     app_config = ConfigParser()
     app_config.read([app_conf_file])
-  
-    ss_conf_file = os.path.join(PACKAGE_ROOT, 'conf', 'ss.conf')
+
     ss_config = ConfigParser()
     ss_config.read([ss_conf_file])
 
+except IOError, reason:
+    print 'Could not open configuration file. Please check your configuration folder.'
+    print reason
+    sys.exit()
 except Exception, reason:
     print 'Error during conf:', reason
     sys.exit()
@@ -161,10 +172,10 @@ FTP_PASSWORD = secrets_config.get('FTP', 'password') or missing_config('No ftp p
 #                                   UPLOAD
 #
 #===============================================================================
-UPLOAD_SERVER = secrets_config.get('Upload', 'server') or missing_config('No upload server defined')
-UPLOAD_USER = secrets_config.get('Upload', 'user') or missing_config('No upload user defined')
-UPLOAD_PATH = secrets_config.get('Upload', 'path') or missing_config('No upload path defined') 
-UPLOAD_PASSWORD = secrets_config.get('Upload', 'password') or missing_config('No upload access password defined')
+UPLOAD_SERVER = secrets_config.get('Upload', 'server')
+UPLOAD_USER = secrets_config.get('Upload', 'user')
+UPLOAD_PATH = secrets_config.get('Upload', 'path')
+UPLOAD_PASSWORD = secrets_config.get('Upload', 'password')
 
 
 
@@ -494,13 +505,13 @@ CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP = {
 #
 #===============================================================================
 EMAIL_HOST = secrets_config.get('Email', 'host') or 'localhost'
-EMAIL_HOST_USER = secrets_config.get('Email', 'host') or ''
-EMAIL_HOST_PASSWORD = secrets_config.get('Email', 'host') or ''
-EMAIL_PORT = secrets_config.get('Email', 'host') or ''
-EMAIL_USE_TLS = secrets_config.get('Email', 'host') or False
-SERVER_EMAIL = secrets_config.get('Email', 'server-') or 'noreply@example.org'
-DEFAULT_FROM_EMAIL = secrets_config.get('Email', 'host') or 'noreply@example.org'
-EMAIL_SUBJECT_PREFIX = secrets_config.get('Email', 'host') or '[ESP]'
+EMAIL_HOST_USER = secrets_config.get('Email', 'user') or ''
+EMAIL_HOST_PASSWORD = secrets_config.get('Email', 'password') or ''
+EMAIL_PORT = secrets_config.get('Email', 'port') or ''
+EMAIL_USE_TLS = secrets_config.get('Email', 'use_tls') or False
+SERVER_EMAIL = secrets_config.get('Email', 'server_email') or 'noreply@example.org'
+DEFAULT_FROM_EMAIL = secrets_config.get('Email', 'default_email') or 'noreply@example.org'
+EMAIL_SUBJECT_PREFIX = secrets_config.get('Email', 'subject_prefix') or '[ESP]'
 
 
 
