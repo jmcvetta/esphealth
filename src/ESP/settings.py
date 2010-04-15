@@ -14,14 +14,24 @@ Configuration settings for the ESP application.  Passwords and and site-dependen
 import os
 import sys
 import logging
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, NoOptionError
 
 def missing_config(message):
     print message
     print 'Please check your configuration files'
     sys.exit(-1)
 
-
+def get_config(config, section, param, required=False, error_msg=None):
+    default_message = 'Missing configuration parameter: %s on section %s'
+    try:
+        return config.get(section, param)
+    except NoOptionError:
+        if not required: 
+            return None
+        else:
+            missing_config(error_msg or (default_message % (param, section)))
+                           
+            
 TOPDIR = os.path.dirname(__file__)
 PACKAGE_ROOT = os.path.normpath(os.path.join(TOPDIR, '..', '..'))
 
@@ -75,7 +85,7 @@ provide a seed in secret-key hashing algorithms. Set this to a random string
 The unix utility 'pwgen' is useful for generating long random password strings.
 ''' 
 
-SECRET_KEY = secrets_config.get('Application', 'secret_key') or missing_config(missing_secret_msg)
+SECRET_KEY = get_config(secrets_config, 'Application', 'secret_key', required=True, error_msg=missing_secret_msg)
 
 
 
@@ -103,8 +113,8 @@ MANAGERS = (
     ('Raphael Lullis', 'raphael.lullis@channing.harvard.edu'),
     ('Michael Klompas', 'mklompas@partners.org'),
 )
-SITE_NAME = app_config.get('Site', 'name')
-DATA_DIR = app_config.get('Data', 'folder') or os.path.join(PACKAGE_ROOT, 'assets', 'data')
+SITE_NAME = get_config(app_config, 'Site', 'name')
+DATA_DIR = get_config(app_config, 'Data', 'folder') or os.path.join(PACKAGE_ROOT, 'assets', 'data')
 
 #
 # Some EMR systems, for instance Atrius Healthcare, include "fake" patients -- 
@@ -127,12 +137,12 @@ FAKE_PATIENT_MRN = None
 #                                   Database
 #
 #===============================================================================
-DATABASE_ENGINE = secrets_config.get('Database', 'engine') or missing_config('No db engine defined')
-DATABASE_NAME = secrets_config.get('Database', 'name') or missing_config('No db name defined')
-DATABASE_USER = secrets_config.get('Database', 'user') or missing_config('No db user defined')
-DATABASE_PASSWORD = secrets_config.get('Database', 'password') or missing_config('No db password')
-DATABASE_HOST = secrets_config.get('Database', 'host') 
-DATABASE_PORT = secrets_config.get('Database', 'port') 
+DATABASE_ENGINE = get_config(secrets_config, 'Database', 'engine', required=True)
+DATABASE_NAME = get_config(secrets_config, 'Database', 'name', required=True) 
+DATABASE_USER = get_config(secrets_config, 'Database', 'user', required=True) 
+DATABASE_PASSWORD = get_config(secrets_config, 'Database', 'password', required=True) 
+DATABASE_HOST = get_config(secrets_config, 'Database', 'host') 
+DATABASE_PORT = get_config(secrets_config, 'Database', 'port') 
 DATABASE_OPTIONS = {
     # Make PostgreSQL recover gracefully from caught exceptions
     #"autocommit": True,
@@ -161,9 +171,9 @@ ETL_ARCHIVE = True # Should ETL files be archived after they have been loaded?
 
 # The 'FTP_*' variable names are legacy.  At some point, they should be updated 
 # to 'DOWNLOAD_*'.
-FTP_SERVER = secrets_config.get('FTP', 'server') or missing_config('No ftp server')
-FTP_USER = secrets_config.get('FTP', 'user') or missing_config('No ftp user')
-FTP_PASSWORD = secrets_config.get('FTP', 'password') or missing_config('No ftp password') 
+FTP_SERVER = get_config(secrets_config, 'FTP', 'server', required=True)
+FTP_USER = get_config(secrets_config, 'FTP', 'user', required=True) 
+FTP_PASSWORD = get_config(secrets_config, 'FTP', 'password', required=True)
 
 
 
@@ -172,10 +182,10 @@ FTP_PASSWORD = secrets_config.get('FTP', 'password') or missing_config('No ftp p
 #                                   UPLOAD
 #
 #===============================================================================
-UPLOAD_SERVER = secrets_config.get('Upload', 'server')
-UPLOAD_USER = secrets_config.get('Upload', 'user')
-UPLOAD_PATH = secrets_config.get('Upload', 'path')
-UPLOAD_PASSWORD = secrets_config.get('Upload', 'password')
+UPLOAD_SERVER = get_config(secrets_config, 'Upload', 'server')
+UPLOAD_USER = get_config(secrets_config, 'Upload', 'user')
+UPLOAD_PATH = get_config(secrets_config, 'Upload', 'path')
+UPLOAD_PASSWORD = get_config(secrets_config, 'Upload', 'password')
 
 
 
@@ -504,14 +514,14 @@ CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP = {
 #                                    Email
 #
 #===============================================================================
-EMAIL_HOST = secrets_config.get('Email', 'host') or 'localhost'
-EMAIL_HOST_USER = secrets_config.get('Email', 'user') or ''
-EMAIL_HOST_PASSWORD = secrets_config.get('Email', 'password') or ''
-EMAIL_PORT = secrets_config.get('Email', 'port') or ''
-EMAIL_USE_TLS = secrets_config.get('Email', 'use_tls') or False
-SERVER_EMAIL = secrets_config.get('Email', 'server_email') or 'noreply@example.org'
-DEFAULT_FROM_EMAIL = secrets_config.get('Email', 'default_email') or 'noreply@example.org'
-EMAIL_SUBJECT_PREFIX = secrets_config.get('Email', 'subject_prefix') or '[ESP]'
+EMAIL_HOST = get_config(secrets_config, 'Email', 'host') or 'localhost'
+EMAIL_HOST_USER = get_config(secrets_config, 'Email', 'user') or ''
+EMAIL_HOST_PASSWORD = get_config(secrets_config, 'Email', 'password') or ''
+EMAIL_PORT = get_config(secrets_config, 'Email', 'port') or ''
+EMAIL_USE_TLS = get_config(secrets_config, 'Email', 'use_tls') or False
+SERVER_EMAIL = get_config(secrets_config, 'Email', 'server_email') or 'noreply@example.org'
+DEFAULT_FROM_EMAIL = get_config(secrets_config, 'Email', 'default_email') or 'noreply@example.org'
+EMAIL_SUBJECT_PREFIX = get_config(secrets_config, 'Email', 'subject_prefix') or '[ESP]'
 
 
 
@@ -528,7 +538,7 @@ VAERS_NOTIFICATION_RECIPIENT = 'someone@example.com'
 #                                  SS
 #
 #===============================================================================
-SS_EMAIL_RECIPIENT = ss_config.get('email', 'relevant_interval_notification')
+SS_EMAIL_RECIPIENT = get_config(ss_config, 'email', 'relevant_interval_notification')
 
 
 
