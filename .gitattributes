@@ -3,7 +3,6 @@
 analysis/dm_esp.schema.xml -text
 analysis/pat.hibernate.pg.sql -text
 bin/esp -text
-bin/esp-batch-run.sh -text
 conf/app.conf -text
 conf/secrets.conf.sample -text
 conf/ss.conf -text
