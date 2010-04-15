@@ -4,10 +4,14 @@ import os
 import sys
 import logging
 
+if sys.version_info < (2, 6):
+    print 'CRITICAL FAILURE: ESP requires Python 2.6 or greater.'
+    sys.exit(1)
+
 
 logging.log(logging.DEBUG, 'PYTHONPATH:')
 if not os.environ.has_key('PYTHONPATH'):
-    pypath = os.path.dirname( os.path.dirname( __file__ ) )
+    pypath = os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) )
     sys.path.append(pypath)
     logging.log(logging.DEBUG, '\t%s' % pypath)
 else:
