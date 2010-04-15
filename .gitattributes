@@ -1,5 +1,6 @@
 * text=auto !eol
 /LICENSE -text
+analysis/dm_esp.schema.xml -text
 bin/esp-batch-run.sh -text
 conf/app.conf -text
 conf/secrets.conf.sample -text
