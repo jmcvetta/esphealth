@@ -29,8 +29,9 @@ from ESP.conf.models import CodeMap
 from ESP.static.models import Loinc
 from ESP.static.models import Ndc
 from ESP.static.models import Icd9, Allergen
-from ESP.static.models import Vaccine, ImmunizationManufacturer
-from ESP.conf.models import NativeManufacturer
+from ESP.static.models import Vaccine
+from ESP.static.models import ImmunizationManufacturer
+from ESP.conf.models import VaccineManufacturerMap
 from ESP.utils import randomizer
 from ESP.utils.utils import log, date_from_str, str_from_date
 
@@ -1083,7 +1084,7 @@ class Immunization(BasePatientRecord):
 
     def _get_manufacturer(self):
         try:
-            return NativeManufacturer.objects.get(name=self.manufacturer).canonical_code
+            return VaccineManufacturerMap.objects.get(native_name=self.manufacturer).canonical_code
         except:
             return None
 
