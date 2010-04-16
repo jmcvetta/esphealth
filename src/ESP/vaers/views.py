@@ -14,7 +14,6 @@ from django.contrib.sites.models import Site
 
 from ESP.vaers.models import AdverseEvent, ProviderComment
 from ESP.vaers.forms import CaseConfirmForm
-from ESP.conf.models import NativeVaccine, Vaccine
 from ESP.utils.utils import log, Flexigrid
 
 

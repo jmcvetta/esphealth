@@ -12,17 +12,15 @@
 '''
 
 
-from django.db import models
-
+from ESP.conf.choices import DEST_TYPES
 from ESP.conf.choices import EMR_SOFTWARE
 from ESP.conf.choices import FORMAT_TYPES
-from ESP.conf.choices import DEST_TYPES
 from ESP.conf.choices import WORKFLOW_STATES
-
-from ESP.static.models import Loinc
 from ESP.static.models import Icd9
-from ESP.static.models import Vaccine
 from ESP.static.models import ImmunizationManufacturer
+from ESP.static.models import Loinc
+from ESP.static.models import Vaccine
+from django.db import models
 
 
 
@@ -72,17 +70,23 @@ class IgnoredCode(models.Model):
 
 
 
-class NativeVaccine(models.Model):
-    code = models.IntegerField(primary_key=True)
-    name = models.CharField(max_length=200)
+class VaccineCodeMap(models.Model):
+    '''
+    Maps native vaccine code to canonical vaccine code for use in reporting 
+    '''
+    native_code = models.CharField(max_length=128, unique=True)
+    native_name = models.CharField(max_length=200)
     canonical_code = models.ForeignKey(Vaccine, null=True)
 
     def __unicode__(self):
         return u'%s' % self.name
 
 
-class NativeManufacturer(models.Model):
-    name = models.CharField(max_length=200, unique=True)
+class VaccineManufacturerMap(models.Model):
+    '''
+    Maps native manufacturer name to canonical manufacturer code for use in reporting 
+    '''
+    native_name = models.CharField(max_length=200, unique=True)
     canonical_code = models.ForeignKey(ImmunizationManufacturer, null=True)
 
     def __unicode__(self):

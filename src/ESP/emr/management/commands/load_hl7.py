@@ -41,7 +41,8 @@ from hl7 import hl7
 from ESP.settings import DEBUG
 from ESP.settings import TOPDIR
 from ESP.settings import DATA_DIR
-from ESP.conf.models import NativeVaccine, NativeManufacturer
+from ESP.conf.models import VaccineCodeMap
+from ESP.conf.models import VaccineManufacturerMap
 from ESP.static.models import Icd9
 from ESP.emr.management.commands.common import LoaderCommand
 from ESP.emr.models import Provider
@@ -338,25 +339,27 @@ class Hl7MessageLoader(object):
             imm_type = rxa[5][0]
             manufacturer = rxa[15][0]
             lot = rxa[16][0]
+            #
+            # Create new Immunization object
+            #
             imm = Immunization(patient=self.patient, provider=self.provider)
             imm.name = name if name else None
             imm.date = imm_date if imm_date else None
             imm.imm_type = imm_type if imm_type else None
             imm.manufacturer = manufacturer if manufacturer else None
-
-            if imm_type:
-                native_vaccine, new = NativeVaccine.objects.get_or_create(
-                    code=imm_type, defaults={'name': name})
-
-            if manufacturer:
-                native_manuf, new = NativeManufacturer.objects.get_or_create(
-                        name=manufacturer)
-
-            
-
             imm.lot = lot if lot else None
             imm.provenance = self.provenance
             imm.save()
+            #
+            # Add vaccine & manufacturer map records
+            #
+            if imm_type:
+                native_vaccine, new = VaccineCodeMap.objects.get_or_create(
+                    native_code=imm_type, defaults={'native_name': name})
+            if manufacturer:
+                native_manuf, new = VaccineManufacturerMap.objects.get_or_create(
+                        native_name=manufacturer)
+            #
             log.debug('NEW IMMUNIZATION')
             log.debug('\t Name: %s (%s)' % (imm.name, imm.imm_type))
             log.debug('\t Date: %s' % imm.date)

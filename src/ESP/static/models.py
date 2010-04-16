@@ -183,7 +183,7 @@ class Vaccine(models.Model):
     '''
     A vaccine drug
     '''
-    code = models.IntegerField(unique=True)
+    code = models.CharField(max_length=128, unique=True)
     short_name = models.CharField(max_length=60)
     name = models.CharField(max_length=300)
     
