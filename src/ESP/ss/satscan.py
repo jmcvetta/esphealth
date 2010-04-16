@@ -23,7 +23,7 @@ class Satscan(object):
     RESIDENTIAL_BASE_FILENAME = 'ESPAtrius_SyndAgg_zip5_Res_%s_%s_%s'
 
     TIME_WINDOW = 180    
-    RELEVANT_INTERVAL = 7
+    RELEVANT_INTERVAL = 365
     
 
     def __init__(self, day, heuristic):
