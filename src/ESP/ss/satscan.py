@@ -179,12 +179,21 @@ class Satscan(object):
             
         package.close()
 
-        if max_interval >= Satscan.RELEVANT_INTERVAL:
-            subject = ' Satscan identified relevant interval cluster'
-            msg = 'Please refer to file %s' % package_filename
-            fail_silently = not DEBUG
-            send_mail(subject, msg, SERVER_EMAIL, [SS_EMAIL_RECIPIENT], fail_silently=fail_silently)
-            mail_admins(subject, msg, fail_silently=fail_silently)
+        try:
+            if max_interval >= Satscan.RELEVANT_INTERVAL:
+                subject = ' Satscan identified relevant interval cluster'
+                msg = 'Please refer to file %s' % package_filename
+                fail_silently = not DEBUG
+                mail_admins(subject, msg, fail_silently=fail_silently)
+
+                assert SS_EMAIL_RECIPIENT is not None
+                recipients = SS_EMAIL_RECIPIENT.split(',')
+                send_mail(subject, msg, SERVER_EMAIL, recipients, fail_silently=fail_silently)
+
+        except AssertionError:
+            msg = 'ESP:SS email recipient is not defined'
+            log.warn(msg)
+            mail_admins('Could not send notification email related to ESP:SS', msg, fail_silently=False)
 
     def package(self):
         groups = self.age_groups + [None]
