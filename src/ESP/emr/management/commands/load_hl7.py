@@ -124,6 +124,8 @@ class Hl7MessageLoader(object):
     float_catcher = re.compile(r'(\d+\.?\d*)') 
     
     def float_or_none(self, string):
+        if not string:
+            return None
         m = self.float_catcher.match(string)
         if m and m.groups():
             result = float(m.groups()[0])
