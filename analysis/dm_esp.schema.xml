@@ -1,5 +1,5 @@
 <Schema name="dm_esp">
-  <Cube name="Nodis Cases" cache="false" enabled="true">
+  <Cube name="Nodis Cases" cache="true" enabled="true">
     <Table name="case_facts" schema="public">
     </Table>
     <Dimension type="TimeDimension" foreignKey="date_id" name="Date">
@@ -16,17 +16,11 @@
         </Level>
       </Hierarchy>
     </Dimension>
-    <Dimension type="StandardDimension" foreignKey="patient_id" name="Demographic">
-      <Hierarchy name="Race" hasAll="true" primaryKey="patient_id">
+    <Dimension type="StandardDimension" foreignKey="patient_id" name="Race">
+      <Hierarchy hasAll="true" primaryKey="patient_id">
         <Table name="patient_dim" schema="public">
         </Table>
         <Level name="Race" column="race" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
-        </Level>
-      </Hierarchy>
-      <Hierarchy name="Gender" hasAll="true" primaryKey="patient_id">
-        <Table name="patient_dim" schema="public">
-        </Table>
-        <Level name="Gender" column="gender" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
         </Level>
       </Hierarchy>
     </Dimension>
@@ -66,7 +60,27 @@
         </Level>
       </Hierarchy>
     </Dimension>
+    <Dimension type="StandardDimension" foreignKey="patient_id" name="Gender">
+      <Hierarchy hasAll="true" primaryKey="patient_id">
+        <Table name="patient_dim" schema="public" alias="">
+        </Table>
+        <Level name="Gender" column="gender" type="String" uniqueMembers="true" levelType="Regular">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" foreignKey="patient_id" name="Individual Patient">
+      <Hierarchy hasAll="true" primaryKey="patient_id">
+        <Table name="patient_dim" schema="public" alias="">
+        </Table>
+        <Level name="mrn" column="mrn" type="String" uniqueMembers="true" levelType="Regular">
+        </Level>
+      </Hierarchy>
+    </Dimension>
     <Measure name="Cases" column="nodis_case_id" datatype="Integer" formatString="#,##" aggregator="count" visible="true">
     </Measure>
+    <Measure name="BMI" column="bmi" datatype="Numeric" formatString="##.##" aggregator="avg" visible="true">
+    </Measure>
+    <CalculatedMember name="Rounded BMI" formatString="" formula="Round( [Measures].[BMI] )" dimension="Measures" visible="true">
+    </CalculatedMember>
   </Cube>
 </Schema>
