@@ -59,7 +59,7 @@ class Command(BaseCommand):
                 #report,
                 #)
             msg = EmailMultiAlternatives(
-                EMAIL_SUBJECT_PREFIX + 'Status Report -- ' + SITE_NAME,
+                EMAIL_SUBJECT_PREFIX + ' Status Report -- ' + SITE_NAME,
                 report,
                 SERVER_EMAIL, 
                 [a[1] for a in MANAGERS],
