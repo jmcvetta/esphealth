@@ -1215,7 +1215,7 @@ class Command(BaseCommand):
         log.debug('values for template: \n%s' % pprint.pformat(values))
         case_report = render_to_string(template_name, values)
         # Remove blank lines -- allows us to have neater templates
-        case_report = re.sub("\n\s*\n*", "\n", case_report)
+        case_report = '\n'.join([x for x in case_report.split("\n") if x.strip()!=''])
         return case_report
     
     def mdph(self, options, batch_serial, cases):
