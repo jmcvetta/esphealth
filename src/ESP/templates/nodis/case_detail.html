@@ -108,7 +108,7 @@
 <table id="patient_info">
     <tr>
         <th>DB ID #</th>
-        {% if perms.esp.view_phi %}
+        {% if perms.nodis.view_phi %}
         <th>Patient Name</th>
 	<th>Medical Record Number</th>
         <th>Date of Birth</th>
@@ -126,7 +126,7 @@
     </tr>
     <tr>
         <td>{{ case.patient.pk }}</td>
-        {% if perms.esp.view_phi %}
+        {% if perms.nodis.view_phi %}
         <td>{{ case.patient.name }}</td>
         <td>{{ case.patient.mrn }}</td>
         </td> 
