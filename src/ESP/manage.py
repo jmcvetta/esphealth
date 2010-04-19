@@ -4,8 +4,8 @@ import os
 import sys
 import logging
 
-if sys.version_info < (2, 6):
-    print 'CRITICAL FAILURE: ESP requires Python 2.6 or greater.'
+if sys.version_info < (2, 5):
+    print 'CRITICAL FAILURE: ESP requires Python 2.5 or greater.'
     sys.exit(1)
 
 
