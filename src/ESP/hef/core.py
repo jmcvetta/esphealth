@@ -47,7 +47,7 @@ from ESP.utils.utils import log_query
 
 POSITIVE_STRINGS = ['reactiv', 'pos', 'detec', 'confirm']
 NEGATIVE_STRINGS = ['non', 'neg', 'not', 'nr']
-
+EDC_MARGIN = datetime.timedelta(days=20)
 
 
 #===============================================================================
@@ -891,14 +891,21 @@ class PregnancyHeuristic(TimespanHeuristic):
         pat_edc_encs = self.edc_encounters.filter(patient=patient_id)
         for enc in pat_edc_encs:
             #
-            # Check if this encounter falls within an existing pregnancy
+            # Check if this encounter's EDC falls last pregnancy object
             #
-            existing_pregs = pregnancies.filter(patient=patient_id, start_date__lte=enc.edc, end_date__gte=enc.edc)
-            if (last_preg and last_preg.start_date <= enc.edc <= last_preg.end_date) or existing_pregs:
-                # This encounter overlaps an existing pregnancy.  Add encounter to that preg, and continue
+            if (last_preg and last_preg.start_date <= enc.edc <= (last_preg.end_date + EDC_MARGIN)):
+                last_preg.encounters.add(enc)
+                # Do NOT save yet -- instead, save when we're all done w/ this Pregnancy instance
+                log.debug('Added encounter %s to last pregnancy %s' % (enc.pk, last_preg.pk))
+                continue
+            #
+            # Check if this encounter's EDC falls within an existing pregnancy
+            #
+            existing_pregs = pregnancies.filter(start_date__lte=enc.edc, end_date__gte=(enc.edc - EDC_MARGIN))
+            if existing_pregs:
                 ep = existing_pregs[0]
                 ep.encounters.add(enc)
-                # Do NOT save yet -- instead, save when we're all done w/ this Pregnancy instance
+                ep.save()
                 log.debug('Added encounter %s to existing pregnancy %s' % (enc.pk, ep.pk))
                 continue
             # No overlap with existing pregnancies, so create a new one
