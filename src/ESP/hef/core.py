@@ -38,7 +38,7 @@ from ESP.static.models import Icd9
 from ESP.hef.models import Event
 from ESP.hef.models import Run
 from ESP.hef.models import Timespan
-from ESP.hef.models import Pregnancy
+#from ESP.hef.models import Pregnancy
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
@@ -868,10 +868,10 @@ class PregnancyHeuristic(TimespanHeuristic):
     
     def __init__(self):
         BaseHeuristic.__init__(self,
-            name = 'pregnancy_inferred',
+            name = 'pregnancy',
             long_name = 'Pregnancy, inferred from EDC or ICD9 codes',
             )
-        ignore_bound_q = Q(pregnancy__id__isnull=True)
+        ignore_bound_q = ~Q(timespan__name='pregnancy')
         has_edc_q = Q(edc__isnull=False)
         self.edc_encounters = Encounter.objects.filter(has_edc_q & ignore_bound_q).order_by('date')
         log_query('Pregnancy encounters by EDC', self.edc_encounters)
@@ -882,13 +882,14 @@ class PregnancyHeuristic(TimespanHeuristic):
     
     def generate_patient_events(self, run, patient_id):
         log.debug('Generating pregnancy events for patient %s' % patient_id)
-        pregnancies = Pregnancy.objects.filter(patient=patient_id).order_by('start_date')
+        pregnancies = Timespan.objects.filter(name='pregnancy', patient=patient_id).order_by('start_date')
         #
         # EDC
         #
         log.debug('Generating pregnancy based on EDC')
         last_preg = None # Most recent Pregnancy object
-        for enc in self.edc_encounters.filter(patient=patient_id):
+        pat_edc_encs = self.edc_encounters.filter(patient=patient_id)
+        for enc in pat_edc_encs:
             #
             # Check if this encounter falls within an existing pregnancy
             #
@@ -904,7 +905,8 @@ class PregnancyHeuristic(TimespanHeuristic):
             if last_preg: # Don't do this if None type!
                 last_preg.save() # Save all encounters that have been attached to last_preg
             start_date = enc.edc - datetime.timedelta(days=280)
-            new_preg = Pregnancy(
+            new_preg = Timespan(
+                name = 'pregnancy',
                 run = run,
                 patient = enc.patient,
                 start_date = start_date,
@@ -941,7 +943,8 @@ class PregnancyHeuristic(TimespanHeuristic):
                 last_preg.save() # Save all encounters that have been attached to last_preg
             start_date = enc.date - datetime.timedelta(days=30)
             end_date = enc.date + datetime.timedelta(days=250)
-            new_preg = Pregnancy(
+            new_preg = Timespan(
+                name = 'pregnancy',
                 run = run,
                 patient = enc.patient,
                 start_date = start_date,

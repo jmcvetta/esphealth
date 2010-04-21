@@ -907,7 +907,7 @@ class Encounter(BasePatientRecord):
     bmi = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, db_index=True)
     # HEF
     events = generic.GenericRelation('hef.Event')
-    timespan = generic.GenericRelation('hef.Timespan')
+    #timespan = generic.GenericRelation('hef.Timespan')
     
     class Meta:
         ordering = ['date']
