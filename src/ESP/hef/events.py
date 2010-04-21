@@ -54,9 +54,6 @@ EncounterHeuristic(
     icd9s = ['070.54', '070.70', ],
     )
 
-#--- pregnancy
-PregnancyHeuristic() # No config needed
-
 
 #===============================================================================
 #
@@ -607,6 +604,10 @@ EncounterHeuristic(
 #
 #-- Gestational Diabetes
 #
+
+#--- pregnancy
+PregnancyHeuristic() # No config needed
+
 
 EncounterHeuristic(
     name = 'gdm_diagnosis',
