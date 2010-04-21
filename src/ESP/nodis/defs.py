@@ -481,18 +481,18 @@ pid = Condition(
 #        'ampicillin-sulbactam',
 #        'amoxicillin-clavulinic acid',
 #        'clindamycin',
-#		'levofloxacin',
-#		'ciprofloxacin',
-#		'ofloxacin',
-#		'cefotetan',
-#		'cefoxitin',
-#		'ceftriaxone',
-#		'cefotaxime',
-#		'cefitizoxine',
-#		'doxycycline',
-#		'gentamicin',
-#		'metronidazole',
-#		'azithromycin',
+#        'levofloxacin',
+#        'ciprofloxacin',
+#        'ofloxacin',
+#        'cefotetan',
+#        'cefoxitin',
+#        'ceftriaxone',
+#        'cefotaxime',
+#        'cefitizoxine',
+#        'doxycycline',
+#        'gentamicin',
+#        'metronidazole',
+#        'azithromycin',
 #        ],
 #    med_days_before = 30,
     )
@@ -633,23 +633,60 @@ giardiasis = Condition(
 #
 #-------------------------------------------------------------------------------
 
-ogtt75 = MultipleEventPattern(
+gdm_fasting_glucose = ComplexEventPattern(
+    name = 'GDM based on fasting glucose',
+    patterns = ['glucose_fasting_pos',],
+    operator = 'or',
+    require_timespan = ['pregnancy']
+    )
+
+gdm_ogtt50 = ComplexEventPattern(
+    name = 'GDM based on OGTT50',
+    patterns = [
+        'ogtt50_1hr_pos',
+        'ogtt50_fasting_pos',
+        'ogtt50_random_pos',
+        ],
+    operator = 'or',
+    require_timespan = ['pregnancy']
+    )
+
+ogtt75_multi = MultipleEventPattern(
     events = [
         'ogtt75_1hr_pos',
         'ogtt75_2hr_pos',
-		'ogtt75_30m_pos',
-		'ogtt75_90m_pos',
-		'ogtt75_fasting_pos',
-		'ogtt75_fasting_urine_pos',
+        'ogtt75_30m_pos',
+        'ogtt75_90m_pos',
+        'ogtt75_fasting_pos',
+        'ogtt75_fasting_urine_pos',
         ],
     count = 2,
     )
 
-gdm_1 = ComplexEventPattern(
-    name = 'GDM based on fasting glucose',
-    patterns = ['glucose_fasting_pos',],
+gdm_ogtt75 = ComplexEventPattern(
+    name = 'GDM based on OGTT75',
+    patterns = [ogtt75_multi],
     operator = 'or',
-    require_timespan = ['pregnancy_inferred']
+    require_timespan = ['pregnancy']
+    )
+
+ogtt100_multi = MultipleEventPattern(
+    events = [
+        'ogtt100_1hr_pos',
+        'ogtt100_2hr_pos',
+        'ogtt100_30m_pos',
+        'ogtt100_90m_pos',
+        'ogtt100_fasting_pos',
+        'ogtt100_fasting_urine_pos',
+        ],
+    count = 2,
+    )
+
+gdm_ogtt100 = ComplexEventPattern(
+    name = 'GDM based on OGTT100',
+    patterns = [ogtt100_multi],
+    operator = 'or',
+    require_timespan = ['pregnancy']
     )
 
 lancets_or_test_strips = ComplexEventPattern(
@@ -658,16 +695,22 @@ lancets_or_test_strips = ComplexEventPattern(
     operator = 'or',
     )
 
-gdm_2 = ComplexEventPattern(
+gdm_lancets = ComplexEventPattern(
     name = 'GDM based on diagnosis and lancets/test strips prescription',
     patterns = ['gdm_diagnosis', lancets_or_test_strips],
     operator = 'and',
-    require_timespan = ['pregnancy_inferred']
+    require_timespan = ['pregnancy']
     )
 
 gdm = Condition(
     name = 'gdm',
-    patterns = [(gdm_2, 14)],
+    patterns = [
+        (gdm_lancets, 14),
+        (gdm_fasting_glucose, 14),
+        (gdm_ogtt50, 14),
+        (gdm_ogtt75, 14),
+        (gdm_ogtt100, 14),
+        ],
     recur_after = 365, # New cases after 365 days
     test_name_search = ['glucose'],
     )
