@@ -978,6 +978,7 @@ class PregnancyHeuristic(TimespanHeuristic):
             if end_encs:
                 end_date = end_encs.aggregate(end_date=Min('date'))['end_date']
                 start_date = end_date - datetime.timedelta(days=280)
+                pattern = 'ICD9_EOP' # EOP = End of Pregnancy
             #
             # Otherwise, base start/end off pregnancy ICD9 codes alone
             #
@@ -986,13 +987,14 @@ class PregnancyHeuristic(TimespanHeuristic):
                 relevant_encs = pat_icd9_encs.filter(date__gte=start_date, 
                     date__lte=(start_date + datetime.timedelta(days=280) + PREG_END_MARGIN) )
                 end_date = relevant_encs.aggregate(end_date=Max('date'))['end_date']
+                pattern = 'ICD9'
             new_preg = Timespan(
                 name = 'pregnancy',
                 run = run,
                 patient = enc.patient,
                 start_date = start_date,
                 end_date = end_date,
-                pattern = 'ICD9',
+                pattern = pattern,
                 )
             new_preg.save() # Must save before adding many-to-many objects
             new_preg.encounters.add(enc)
