@@ -876,7 +876,7 @@ class PregnancyHeuristic(TimespanHeuristic):
         self.edc_encounters = Encounter.objects.filter(has_edc_q & ignore_bound_q).order_by('date')
         log_query('Pregnancy encounters by EDC', self.edc_encounters)
         preg_icd9_q = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
-        self.icd9_encounters = Encounter.objects.filter(~has_edc_q & preg_icd9_q & ignore_bound_q)
+        self.icd9_encounters = Encounter.objects.filter(~has_edc_q & preg_icd9_q & ignore_bound_q).order_by('date')
         log_query('Pregnancy encounters by ICD9', self.edc_encounters)
         preg_end_q = Q(icd9_codes__code__startswith='V24.')   # Postpartum care
         preg_end_q |= Q(icd9_codes__code__startswith='630.x') # Ectopic & molar pregnancy
@@ -888,7 +888,7 @@ class PregnancyHeuristic(TimespanHeuristic):
         preg_end_q |= Q(icd9_codes__code__startswith='636.x') #  "
         preg_end_q |= Q(icd9_codes__code__startswith='637.x') #  "
         preg_end_q |= Q(icd9_codes__code__startswith='639')   # Abortion
-        self.preg_end_encounters = Encounter.objects.filter(preg_end_q)
+        self.preg_end_encounters = Encounter.objects.filter(preg_end_q).order_by('date')
     
     
     def generate_patient_events(self, run, patient_id):
