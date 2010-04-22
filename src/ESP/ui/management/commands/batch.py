@@ -35,7 +35,7 @@ from ESP.settings import CASE_REPORT_MDPH
 from ESP.settings import CASE_REPORT_FILENAME_FORMAT
 from ESP.settings import CASE_REPORT_TEMPLATE
 from ESP.settings import SITE_NAME
-from ESP.settings import BATCH_RETRIEVE_ETL_FILES
+from ESP.settings import BATCH_ETL
 from ESP.settings import BATCH_MAIL_STATUS_REPORT
 from ESP.settings import BATCH_GENERATE_CASE_REPORT
 from ESP.settings import BATCH_TRANSMIT_CASE_REPORT
@@ -69,7 +69,7 @@ class Command(BaseCommand):
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             #--- ETL
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            if BATCH_RETRIEVE_ETL_FILES:
+            if BATCH_ETL:
                 if ETL_USE_FTP:
                     progress('Fetching new ETL files from FTP')
                     cmnd = FtpCommand()

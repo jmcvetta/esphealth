@@ -578,7 +578,7 @@ JAVA_CLASSPATH = " %s " % ':'.join([str(jar) for jar in JAVA_JARS])
 #                                  BATCH JOB
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-BATCH_RETRIEVE_ETL_FILES = True
+BATCH_ETL = True  # Run built-in ETL tools
 BATCH_MAIL_STATUS_REPORT = True
 BATCH_GENERATE_CASE_REPORT = False
 BATCH_TRANSMIT_CASE_REPORT = False
@@ -594,7 +594,7 @@ LOG_FORMAT_CONSOLE = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(messag
 LOG_FORMAT_FILE = '%(asctime)s:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 LOG_FORMAT_SYSLOG = 'ESP:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 # BEWARE: If you set the log level to DEBUG, *copious* info will be logged!
-LOG_LEVEL_CONSOLE = logging.INFO
+LOG_LEVEL_CONSOLE = logging.DEBUG
 LOG_LEVEL_FILE = None
 LOG_LEVEL_SYSLOG = logging.WARN
 
