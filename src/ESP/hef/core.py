@@ -915,17 +915,17 @@ class PregnancyHeuristic(TimespanHeuristic):
         else:
             return False
     
-    def pregnancy_from_edc(self, run, patient_id):
+    def pregnancy_from_edc(self, run, patient):
         '''
         Generates pregnancy timespans for a given patient, based on encounters with EDC value
         '''
-        pregnancies = Timespan.objects.filter(name='pregnancy', patient=patient_id).order_by('start_date')
+        pregnancies = Timespan.objects.filter(name='pregnancy', patient=patient).order_by('start_date')
         #
         # EDC
         #
         last_preg = None # Most recent Pregnancy object
         while True:
-            encs = self.edc_encounters.filter(patient=patient_id) # Unbound encounters for this patient
+            encs = self.edc_encounters.filter(patient=patient) # Unbound encounters for this patient
             if not encs.count(): # No more (unbound) encounters left 
                 break
             first = encs[0] # Chronologically first encounter
@@ -955,10 +955,10 @@ class PregnancyHeuristic(TimespanHeuristic):
                 pattern = 'EDC',
                 )
             new_preg.save() # Must save before adding M2M relations
-            new_preg.encounters = self.all_preg_encounters.filter(patient=patient_id, date__gte=enc_start, date__lte=enc_end)
+            new_preg.encounters = self.all_preg_encounters.filter(patient=patient, date__gte=enc_start, date__lte=enc_end)
             new_preg.encounters.add(first) # Add this one, in case it is dated after EDC
             new_preg.save()
-            log.debug('New pregnancy %s by EDC (patient %s):  %s - %s' % (new_preg.pk, patient_id, new_preg.start_date, new_preg.end_date))
+            log.debug('New pregnancy %s by EDC (patient %s):  %s - %s' % (new_preg.pk, patient.pk, new_preg.start_date, new_preg.end_date))
         return
     
     def pregnancy_from_icd9(self, run, patient):
@@ -1012,11 +1012,27 @@ class PregnancyHeuristic(TimespanHeuristic):
         #
         # EDC
         #
-        for patient_id in self.edc_encounters.values_list('patient', flat=True):
-            self.pregnancy_from_edc(run, patient_id)
+        q_obj = Q(encounter__edc__isnull=False) & ~Q(encounter__timespan__name='pregnancy')
+        patient_qs = Patient.objects.filter(q_obj).distinct().order_by('pk')
+        log_query('Patients to consider for EDC pregnancy', patient_qs)
+        pat_count = patient_qs.count()
+        index = 0
+        for patient in patient_qs:
+            index += 1
+            log.debug('Patient %s (%s/%s)' % (patient.pk, index, pat_count))
+            self.pregnancy_from_edc(run, patient)
         #
         # ICD9
         #
-        for patient_id in self.icd9_encounters.values_list('patient', flat=True):
-            self.pregnancy_from_edc(run, patient_id)
+        q_obj = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
+        q_obj &= Q(encounter__edc__isnull=True) 
+        q_obj &= ~Q(encounter__timespan__name='pregnancy')
+        patient_qs = Patient.objects.filter(q_obj).distinct().order_by('pk')
+        log_query('Patients to consider for ICD9 pregnancy', patient_qs)
+        pat_count = patient_qs.count()
+        index = 0
+        for patient in patient_qs:
+            index += 1
+            log.debug('Patient %s (%s/%s)' % (patient.pk, index, pat_count))
+            self.pregnancy_from_icd9(run, patient)
         return Timespan.objects.filter(name__in=('pregnancy', 'mini_pregnancy'), run=run).count()
