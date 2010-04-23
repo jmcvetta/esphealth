@@ -8,6 +8,7 @@
 
 
 import os
+import re
 import sys
 import string
 import traceback
@@ -181,12 +182,13 @@ def date_from_str(timestamp):
     Given a string in timestamp format (YYYYMMDD), returns the corresponding date.
     If the string is only 6 characters long, assumes that is YYYYMM format and make day=1
     '''
-
-    if len(timestamp) == 14:
+    if re.match('^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d$', timestamp):
+        format = '%Y-%m-%d %H:%M:%S'
+    elif re.match('^\d{14}$', timestamp):
         format = '%Y%m%d%H%M%S'
-    elif len(timestamp) == 8:
+    elif re.match('^\d{8}$', timestamp):
         format = '%Y%m%d'
-    elif len(timestamp) == 6: 
+    elif re.match('^\d{6}$', timestamp):
         format = '%Y%m'
     else:
         raise ValueError, '%s can not be converted into a date' % str(timestamp)
