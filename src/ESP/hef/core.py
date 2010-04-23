@@ -29,6 +29,7 @@ from django.db.models.query import QuerySet
 from django.contrib.contenttypes.models import ContentType
 
 
+from ESP.emr.models import Patient
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
@@ -878,134 +879,144 @@ class PregnancyHeuristic(TimespanHeuristic):
         preg_icd9_q = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
         self.icd9_encounters = Encounter.objects.filter(~has_edc_q & preg_icd9_q & ignore_bound_q).order_by('date')
         log_query('Pregnancy encounters by ICD9', self.edc_encounters)
-        preg_end_q = Q(icd9_codes__code__startswith='V24.')   # Postpartum care
-        preg_end_q |= Q(icd9_codes__code__startswith='630.x') # Ectopic & molar pregnancy
-        preg_end_q |= Q(icd9_codes__code__startswith='631.x') #  "
-        preg_end_q |= Q(icd9_codes__code__startswith='632.x') #  "
-        preg_end_q |= Q(icd9_codes__code__startswith='633.x') #  "
-        preg_end_q |= Q(icd9_codes__code__startswith='634.x') #  "
-        preg_end_q |= Q(icd9_codes__code__startswith='635.x') #  "
-        preg_end_q |= Q(icd9_codes__code__startswith='636.x') #  "
-        preg_end_q |= Q(icd9_codes__code__startswith='637.x') #  "
-        preg_end_q |= Q(icd9_codes__code__startswith='639')   # Abortion
+        all_preg_q = ignore_bound_q & (preg_icd9_q | has_edc_q)
+        self.all_preg_encounters = Encounter.objects.filter(all_preg_q).order_by('date')
+        preg_end_q = Q(icd9_codes__code__startswith='V24.')  # Postpartum care
+        preg_end_q |= Q(icd9_codes__code__startswith='630.') # Ectopic & molar pregnancy
+        preg_end_q |= Q(icd9_codes__code__startswith='631.') #  "
+        preg_end_q |= Q(icd9_codes__code__startswith='632.') #  "
+        preg_end_q |= Q(icd9_codes__code__startswith='633.') #  "
+        preg_end_q |= Q(icd9_codes__code__startswith='634.') # Abortion
+        preg_end_q |= Q(icd9_codes__code__startswith='635.') #  "
+        preg_end_q |= Q(icd9_codes__code__startswith='636.') #  "
+        preg_end_q |= Q(icd9_codes__code__startswith='637.') #  "
+        preg_end_q |= Q(icd9_codes__code__startswith='639.') #  "
         self.preg_end_encounters = Encounter.objects.filter(preg_end_q).order_by('date')
     
+    def check_existing(self, enc):
+        '''
+        If enc overlaps an existing pregnancy timespan, attach it and return the timespan object; 
+        else return False
+        '''
+        if enc.edc:
+            comp_date = enc.edc
+        else:
+            comp_date = enc.date
+        q_obj = Q(name__in=('pregnancy', 'mini_pregnancy'))
+        q_obj &= Q(patient=enc.patient)
+        q_obj &= Q(start_date__lte=comp_date)
+        q_obj &= Q(end_date__gte=comp_date)
+        spans = Timespan.objects.filter(q_obj)
+        if spans:
+            ts = spans[0]
+            ts.encounters.add(enc)
+            ts.save()
+            return ts
+        else:
+            return False
     
-    def generate_patient_events(self, run, patient_id):
-        log.debug('Generating pregnancy events for patient %s' % patient_id)
+    def pregnancy_from_edc(self, run, patient_id):
+        '''
+        Generates pregnancy timespans for a given patient, based on encounters with EDC value
+        '''
         pregnancies = Timespan.objects.filter(name='pregnancy', patient=patient_id).order_by('start_date')
         #
         # EDC
         #
-        log.debug('Generating pregnancy based on EDC')
         last_preg = None # Most recent Pregnancy object
-        pat_edc_encs = self.edc_encounters.filter(patient=patient_id)
-        for enc in pat_edc_encs:
-            #
-            # Check if this encounter's EDC falls last pregnancy object
-            #
-            if (last_preg and last_preg.start_date <= enc.edc <= (last_preg.end_date + PREG_END_MARGIN)):
-                last_preg.encounters.add(enc)
-                # Do NOT save yet -- instead, save when we're all done w/ this Pregnancy instance
-                log.debug('Added encounter %s to last pregnancy %s' % (enc.pk, last_preg.pk))
+        while True:
+            encs = self.edc_encounters.filter(patient=patient_id) # Unbound encounters for this patient
+            if not encs.count(): # No more (unbound) encounters left 
+                break
+            first = encs[0] # Chronologically first encounter
+            if self.check_existing(first): # Oops, this one overlaps an existing pregnancy
                 continue
+            # EDC is the taken from the chronologically most recent encounter that falls within 
+            # the tentative pregnancy window established by the first encounter and its EDC, thereby
+            # (hopefully) capturing any revisions made to the EDC over the course of pregnancy.
+            low_edc = first.edc - PREG_END_MARGIN
+            high_edc = first.edc + PREG_END_MARGIN
+            edc = encs.filter(edc__gte=low_edc, edc__lte=high_edc).order_by('-date')[0].edc
+            start_date = edc - datetime.timedelta(days=280)
+            if start_date > first.date:
+                enc_start = first.date
+            else:
+                enc_start = start_date
+            enc_end = edc + PREG_END_MARGIN
             #
-            # Check if this encounter's EDC falls within an existing pregnancy
+            # Create a new pregnancy timespan
             #
-            existing_pregs = pregnancies.filter(start_date__lte=enc.edc, end_date__gte=(enc.edc - PREG_END_MARGIN))
-            if existing_pregs:
-                ep = existing_pregs[0]
-                ep.encounters.add(enc)
-                ep.save()
-                log.debug('Added encounter %s to existing pregnancy %s' % (enc.pk, ep.pk))
-                continue
-            # No overlap with existing pregnancies, so create a new one
-            if last_preg: # Don't do this if None type!
-                last_preg.save() # Save all encounters that have been attached to last_preg
-            start_date = enc.edc - datetime.timedelta(days=280)
             new_preg = Timespan(
                 name = 'pregnancy',
                 run = run,
-                patient = enc.patient,
+                patient = first.patient,
                 start_date = start_date,
-                end_date = enc.edc,
+                end_date = edc,
                 pattern = 'EDC',
                 )
-            new_preg.save() # Must save before adding many-to-many objects
-            new_preg.encounters.add(enc)
-            new_preg.save() 
+            new_preg.save() # Must save before adding M2M relations
+            new_preg.encounters = self.all_preg_encounters.filter(patient=patient_id, date__gte=enc_start, date__lte=enc_end)
+            new_preg.encounters.add(first) # Add this one, in case it is dated after EDC
+            new_preg.save()
             log.debug('New pregnancy %s by EDC (patient %s):  %s - %s' % (new_preg.pk, patient_id, new_preg.start_date, new_preg.end_date))
-            last_preg = new_preg
-        #-------------------------------------------------------------------------------
-        #
-        # ICD9
-        #
-        #-------------------------------------------------------------------------------
-        #
-        # This is similar to how we do EDC, except for date calculations.
-        log.debug('Generating pregnancy based on ICD9')
-        pat_icd9_encs = self.icd9_encounters.filter(patient=patient_id)
-        for enc in pat_icd9_encs:
-            #
-            # Check if this encounter's EDC falls last pregnancy object
-            #
-            if (last_preg and last_preg.start_date <= enc.date <= last_preg.end_date):
-                last_preg.encounters.add(enc)
-                # Do NOT save yet -- instead, save when we're all done w/ this Pregnancy instance
-                log.debug('Added encounter %s to last pregnancy %s' % (enc.pk, last_preg.pk))
+        return
+    
+    def pregnancy_from_icd9(self, run, patient):
+        '''
+        Generates pregnancy timespans for a given patient, based on a
+        combination of encounters with pregnancy ICD9s and end-of-pregnancy ICD9s
+        '''
+        while True:
+            encs = self.icd9_encounters.filter(patient=patient)
+            if not encs.count(): # No more (unbound) encounters left 
+                break
+            first = encs[0]
+            if self.check_existing(first): # Oops, this one overlaps an existing pregnancy
                 continue
-            #
-            # Check if this encounter falls within an existing pregnancy
-            #
-            existing_pregs = pregnancies.filter(start_date__lte=enc.date, end_date__gte=enc.date)
-            if existing_pregs:
-                # This encounter overlaps an existing pregnancy.  Add encounter to that preg, and continue
-                ep = existing_pregs[0]
-                ep.encounters.add(enc)
-                ep.save()
-                log.debug('Added encounter %s to existing pregnancy %s' % (enc.pk, ep.pk))
-                continue
-            #
-            # No overlap with existing pregnancies, so create a new one
-            #
-            if last_preg: # Don't do this if None type!
-                last_preg.save() # Save all encounters that have been attached to last_preg
             #
             # Are there any pregnancy-end events? (postnatal care, stillbirth, abortion)
             #
-            end_encs = self.preg_end_encounters.filter(patient=enc.patient_id, date__gte=enc.date, 
-                date__lte=(enc.date + datetime.timedelta(days=280)) )
-            if end_encs:
+            end_encs = self.preg_end_encounters.filter(patient=patient, date__gte=first.date, 
+                date__lte=(first.date + datetime.timedelta(days=300)) )
+            if end_encs: # If there is no plausible end date for this pregnancy, so we create 
+                name = 'pregnancy'
                 end_date = end_encs.aggregate(end_date=Min('date'))['end_date']
                 start_date = end_date - datetime.timedelta(days=280)
                 pattern = 'ICD9_EOP' # EOP = End of Pregnancy
-            #
-            # Otherwise, base start/end off pregnancy ICD9 codes alone
-            #
-            else:
-                start_date = enc.date - datetime.timedelta(days=30)
-                relevant_encs = pat_icd9_encs.filter(date__gte=start_date, 
-                    date__lte=(start_date + datetime.timedelta(days=280) + PREG_END_MARGIN) )
-                end_date = relevant_encs.aggregate(end_date=Max('date'))['end_date']
+                enc_start = first.date # Attach encounters from this date or later
+                enc_end = end_date + PREG_END_MARGIN # Attach encounters up until this date
+            else: # There is no plausible end date for this pregnancy, so we create a mini-pregnancy
+                name = 'mini_pregnancy'
+                start_date = first.date - datetime.timedelta(days=15)
+                end_date =  first.date + datetime.timedelta(days=15)
                 pattern = 'ICD9'
+                enc_start = first.date # Attach only encounters that are stricly within the mini-preg window
+                enc_end = end_date     #  "
             new_preg = Timespan(
-                name = 'pregnancy',
+                name = name,
                 run = run,
-                patient = enc.patient,
+                patient = first.patient,
                 start_date = start_date,
                 end_date = end_date,
                 pattern = pattern,
                 )
             new_preg.save() # Must save before adding many-to-many objects
-            new_preg.encounters.add(enc)
+            new_preg.encounters = self.all_preg_encounters.filter(patient=patient, date__gte=enc_start, date__lte=enc_end)
+            new_preg.encounters.add(first) # Add this one, in case it is dated after EDC
             new_preg.save() 
-            log.debug('New pregnancy %s by ICD9 (patient %s):  %s - %s' % (new_preg.pk, patient_id, new_preg.start_date, new_preg.end_date))
-            last_preg = new_preg
-        if last_preg: # Don't do this if None type!
-            last_preg.save() # Make sure all of our attached encounters are saved
+            log.debug('New pregnancy %s by ICD9 (patient %s):  %s - %s' % (new_preg.pk, patient.pk, new_preg.start_date, new_preg.end_date))
+        return 
             
     def generate_events(self, run, **kwargs):
         log.info('Generating pregnancy events')
+        #
+        # EDC
+        #
         for patient_id in self.edc_encounters.values_list('patient', flat=True):
-            self.generate_patient_events(run, patient_id)
-        return Pregnancy.objects.filter(run=run).count()
+            self.pregnancy_from_edc(run, patient_id)
+        #
+        # ICD9
+        #
+        for patient_id in self.icd9_encounters.values_list('patient', flat=True):
+            self.pregnancy_from_edc(run, patient_id)
+        return Timespan.objects.filter(name__in=('pregnancy', 'mini_pregnancy'), run=run).count()
