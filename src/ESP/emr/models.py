@@ -226,7 +226,7 @@ class Patient(BaseMedicalRecord):
     gender = models.CharField('Gender', max_length=20, blank=True, null=True)
     pregnant = models.NullBooleanField('Patient is pregnant?', blank=True, null=True)
     race = models.CharField('Race', max_length=20, blank=True, null=True)
-    home_language = models.CharField('Home Language', max_length=20, blank=True, null=True)
+    home_language = models.CharField('Home Language', max_length=128, blank=True, null=True)
     ssn = models.CharField('SSN', max_length=20, blank=True, null=True)
     marital_stat = models.CharField('Marital Status', max_length=20, blank=True, null=True)
     religion = models.CharField('Religion', max_length=100, blank=True, null=True)
