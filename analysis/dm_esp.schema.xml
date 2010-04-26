@@ -25,7 +25,7 @@
       </Hierarchy>
     </Dimension>
     <Dimension type="StandardDimension" foreignKey="patient_location_id" name="Patient City">
-      <Hierarchy name="City" hasAll="true" allMemberName="All Locations" primaryKey="location_id">
+      <Hierarchy hasAll="true" allMemberName="All Locations" primaryKey="location_id">
         <Table name="location_dim" schema="public">
         </Table>
         <Level name="State" column="state" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="IfBlankName" caption="State">
@@ -35,12 +35,12 @@
       </Hierarchy>
     </Dimension>
     <Dimension type="StandardDimension" foreignKey="patient_location_id" name="Patient Zip">
-      <Hierarchy name="City" hasAll="true" allMemberName="All Locations" primaryKey="location_id">
+      <Hierarchy hasAll="true" primaryKey="location_id">
         <Table name="location_dim" schema="public">
         </Table>
-        <Level name="State" column="state" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="IfBlankName" caption="State">
+        <Level name="Short Zip" column="zip_short" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
         </Level>
-        <Level name="City" column="city" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="IfBlankName">
+        <Level name="Zip" column="zip" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
         </Level>
       </Hierarchy>
     </Dimension>
@@ -62,25 +62,23 @@
     </Dimension>
     <Dimension type="StandardDimension" foreignKey="patient_id" name="Gender">
       <Hierarchy hasAll="true" primaryKey="patient_id">
-        <Table name="patient_dim" schema="public" alias="">
+        <Table name="patient_dim" schema="public">
         </Table>
-        <Level name="Gender" column="gender" type="String" uniqueMembers="true" levelType="Regular">
+        <Level name="Gender" column="gender" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
         </Level>
       </Hierarchy>
     </Dimension>
-    <Dimension type="StandardDimension" foreignKey="patient_id" name="Individual Patient">
-      <Hierarchy hasAll="true" primaryKey="patient_id">
-        <Table name="patient_dim" schema="public" alias="">
+    <Dimension type="StandardDimension" foreignKey="bmi_id" name="BMI">
+      <Hierarchy hasAll="true" primaryKey="bmi_id">
+        <Table name="bmi_dim" schema="public">
         </Table>
-        <Level name="mrn" column="mrn" type="String" uniqueMembers="true" levelType="Regular">
+        <Level name="BMI Range" column="range" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="BMI Numeric" column="bmi" type="Numeric" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
         </Level>
       </Hierarchy>
     </Dimension>
     <Measure name="Cases" column="nodis_case_id" datatype="Integer" formatString="#,##" aggregator="count" visible="true">
     </Measure>
-    <Measure name="BMI" column="bmi" datatype="Numeric" formatString="##.##" aggregator="avg" visible="true">
-    </Measure>
-    <CalculatedMember name="Rounded BMI" formatString="" formula="Round( [Measures].[BMI] )" dimension="Measures" visible="true">
-    </CalculatedMember>
   </Cube>
 </Schema>
