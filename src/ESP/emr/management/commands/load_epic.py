@@ -430,7 +430,7 @@ class LabResultLoader(BaseLoader):
         l.provider = self.get_provider(row['provider_id_num'])
         l.mrn = row['medical_record_num']
         l.order_num = row['order_id_num']
-        l.date = date_from_str(row['order_date'])
+        l.date = self.date_or_none(row['order_date'])
         l.result_date = self.date_or_none(row['result_date'])
         l.native_code = native_code
         l.native_name = row['component_name']
@@ -479,7 +479,7 @@ class LabOrderLoader(BaseLoader):
             procedure_master_num = row['procedure_master_num'],
             modifier = row['modifier'],
             specimen_id = row['specimen_id'],
-            date = date_from_str(row['ordering_date']),
+            date = self.date_or_none(row['ordering_date']),
             order_type = int(row['order_type']),
             procedure_name = row['procedure_name'],
             specimen_source = row['specimen_source']
@@ -529,7 +529,7 @@ class EncounterLoader(BaseLoader):
                 'provenance':self.provenance,
                 'patient':self.get_patient(row['patient_id_num']),
                 'provider':self.get_provider(row['provider_id_num']),
-                'date':date_from_str(row['encounter_date'])
+                'date':self.date_or_none(row['encounter_date'])
                 })
 
         message = 'Updating existing Encounter' if created else 'Creating new Encounter object'
@@ -638,7 +638,7 @@ class PrescriptionLoader(BaseLoader):
         p.patient = self.get_patient(row['patient_id_num'])
         p.provider = self.get_provider(row['provider_id_num'])
         p.order_num = row['order_id_num']
-        p.date = date_from_str(row['order_date'])
+        p.date = self.date_or_none(row['order_date'])
         p.status = row['status']
         p.name = row['drug_name']
         p.code = row['ndc']
@@ -673,7 +673,7 @@ class ImmunizationLoader(BaseLoader):
         i.patient = self.get_patient(row['patient_id_num'])
         i.type = row['type']
         i.name = row['name']
-        i.date = date_from_str(row['date'])
+        i.date = self.date_or_none(row['date'])
         i.dose = row['dose']
         i.manufacturer = row['manufacturer']
         i.lot = row['lot']
@@ -722,8 +722,8 @@ class AllergyLoader(BaseLoader):
             patient = self.get_patient(row['patient_id_num']),
             mrn = row['mrn'],
             problem_id = int(row['problem_id']),
-            date = date_from_str(row['allergy_entered_date']),
-            date_noted = date_from_str(row['date_noted']),
+            date = self.date_or_none(row['allergy_entered_date']),
+            date_noted = self.date_or_none(row['date_noted']),
             allergen = allergen,
             name = row['allergy_name'],
             status = row['allergy_status'],
@@ -753,7 +753,7 @@ class ProblemLoader(BaseLoader):
             provenance = self.provenance,
             patient = self.get_patient(row['patient_id_num']),
             mrn = row['mrn'],
-            date = date_from_str(row['date_noted']),
+            date = self.date_or_none(row['date_noted']),
             icd9 = icd9_code,
             status = row['problem_status'],
             comment = row['comment']
