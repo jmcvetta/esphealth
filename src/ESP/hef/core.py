@@ -873,11 +873,13 @@ class PregnancyHeuristic(TimespanHeuristic):
             long_name = 'Pregnancy, inferred from EDC or ICD9 codes',
             )
         ignore_bound_q = ~Q(timespan__name='pregnancy')
+        ignore_bound_mini_preg_q = ~Q(timespan__name='mini_pregnancy')
         has_edc_q = Q(edc__isnull=False)
         self.edc_encounters = Encounter.objects.filter(has_edc_q & ignore_bound_q).order_by('date')
         log_query('Pregnancy encounters by EDC', self.edc_encounters)
         preg_icd9_q = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
         self.icd9_encounters = Encounter.objects.filter(~has_edc_q & preg_icd9_q & ignore_bound_q).order_by('date')
+        self.icd9_encounters = Encounter.objects.filter(~has_edc_q & preg_icd9_q & ignore_bound_q & ignore_bound_mini_preg_q).order_by('date')
         log_query('Pregnancy encounters by ICD9', self.edc_encounters)
         all_preg_q = ignore_bound_q & (preg_icd9_q | has_edc_q)
         self.all_preg_encounters = Encounter.objects.filter(all_preg_q).order_by('date')
@@ -911,6 +913,7 @@ class PregnancyHeuristic(TimespanHeuristic):
             ts = spans[0]
             ts.encounters.add(enc)
             ts.save()
+            log.debug('Added %s to %s' % (enc, ts))
             return ts
         else:
             return False
@@ -1024,7 +1027,7 @@ class PregnancyHeuristic(TimespanHeuristic):
         #
         # ICD9
         #
-        q_obj = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
+        q_obj = Q(encounter__icd9_codes__code__startswith='V22.') | Q(encounter__icd9_codes__code__startswith='V23.')
         q_obj &= Q(encounter__edc__isnull=True) 
         q_obj &= ~Q(encounter__timespan__name='pregnancy')
         patient_qs = Patient.objects.filter(q_obj).distinct().order_by('pk')
