@@ -594,7 +594,7 @@ LOG_FORMAT_CONSOLE = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(messag
 LOG_FORMAT_FILE = '%(asctime)s:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 LOG_FORMAT_SYSLOG = 'ESP:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 # BEWARE: If you set the log level to DEBUG, *copious* info will be logged!
-LOG_LEVEL_CONSOLE = logging.DEBUG if DEBUG else logging.INFO
+LOG_LEVEL_CONSOLE = logging.DEBUG
 LOG_LEVEL_FILE = None
 LOG_LEVEL_SYSLOG = logging.WARN
 
