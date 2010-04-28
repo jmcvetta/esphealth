@@ -96,7 +96,7 @@ SECRET_KEY = get_config(secrets_config, 'Application', 'secret_key', required=Tr
 #
 #===============================================================================
 # Set DEBUG to False when running in production!
-DEBUG = True 
+DEBUG = True
 # No error control, because version.txt is included with source.
 version_path =  os.path.join(TOPDIR, 'version.txt')
 VERSION = open(version_path).readline().strip()
@@ -594,7 +594,7 @@ LOG_FORMAT_CONSOLE = '%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(messag
 LOG_FORMAT_FILE = '%(asctime)s:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 LOG_FORMAT_SYSLOG = 'ESP:%(levelname)s:%(module)s:%(funcName)s:%(lineno)d: %(message)s'
 # BEWARE: If you set the log level to DEBUG, *copious* info will be logged!
-LOG_LEVEL_CONSOLE = logging.DEBUG
+LOG_LEVEL_CONSOLE = logging.DEBUG if DEBUG else logging.INFO
 LOG_LEVEL_FILE = None
 LOG_LEVEL_SYSLOG = logging.WARN
 
