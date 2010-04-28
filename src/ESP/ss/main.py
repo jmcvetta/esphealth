@@ -64,6 +64,7 @@ def main():
         options.detect = True
         options.reports = True
         options.satscan = True
+        options.hsph = True
 
     if options.detect:
         if not Site.objects.count(): make_non_specialty_clinics()
