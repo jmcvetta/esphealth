@@ -15,7 +15,7 @@ from ESP.utils.utils import log, str_from_date, days_in_interval
 
 class Satscan(object):
     EXECUTABLE_PATH = '/usr/local/bin/satscan'
-    VERSION = '8.3-alpha5'
+    VERSION = '8.3-beta5'
 
     PARAM_FILE_TEMPLATE = 'ss/files/satscan.conf'
 
