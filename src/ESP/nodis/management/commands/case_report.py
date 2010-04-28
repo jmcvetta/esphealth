@@ -1280,6 +1280,7 @@ class Command(BaseCommand):
         except BaseException, e:
             log.error('FTP ERROR: %s' % e)
         fd.close()
+        return True
             
         
     def transmit_atrius(self, options, report_file_path):
