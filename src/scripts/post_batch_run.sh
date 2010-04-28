@@ -13,13 +13,17 @@ ESP_HOME=$BASEDIR/../ESP
 export PYTHONPATH=$BASEDIR/..
 export DJANGO_SETTINGS_MODULE=`basename $ESP_HOME`.settings
 
+# DATE should be the first parameter, in the YYYYMMDD format.
+
 if [ $# = 1 ] 
 then
-  DATE=`date -d $1 +%Y%m%d` 
+  DATE=$1 
 else
   DATE=`date -d "-1 day" +%Y%m%d`
 fi
 
+# If you need to run any scripts besides daily_batch, add them here.
+# Examples below, for sites that would run ESP:VAERS and ESP:SS
 
-python $ESP_HOME/manage.py batch
-source $BASEDIR/post_batch_run.sh $DATE
+#python $ESP_HOME/ss/main.py -f --begin=$DATE --end=$DATE
+#python $ESP_HOME/vaers/main.py -c -r -a --begin=$DATE --end=$DATE
