@@ -780,7 +780,7 @@ class LabOrder(BasePatientRecord):
     procedure_master_num = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     modifier = models.CharField(max_length=20, blank=True, null=True)
     specimen_id = models.CharField(max_length=20, blank=True, null=True, db_index=True)
-    order_type = models.IntegerField(choices=LAB_ORDER_TYPES, db_index=True)
+    order_type = models.CharField(max_length=64, blank=True, db_index=True)
     procedure_name = models.CharField(max_length=300, blank=True, null=True)
     specimen_source = models.CharField(max_length=300, blank=True, null=True)
     
