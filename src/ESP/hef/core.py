@@ -878,7 +878,6 @@ class PregnancyHeuristic(TimespanHeuristic):
         self.edc_encounters = Encounter.objects.filter(has_edc_q & ignore_bound_q).order_by('date')
         log_query('Pregnancy encounters by EDC', self.edc_encounters)
         preg_icd9_q = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
-        self.icd9_encounters = Encounter.objects.filter(~has_edc_q & preg_icd9_q & ignore_bound_q).order_by('date')
         self.icd9_encounters = Encounter.objects.filter(~has_edc_q & preg_icd9_q & ignore_bound_q & ignore_bound_mini_preg_q).order_by('date')
         log_query('Pregnancy encounters by ICD9', self.edc_encounters)
         all_preg_q = ignore_bound_q & (preg_icd9_q | has_edc_q)
