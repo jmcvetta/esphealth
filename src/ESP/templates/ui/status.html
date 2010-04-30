@@ -89,7 +89,7 @@
             {% for rep in reports %}
                 {% for c in rep.cases.all %}
                 <tr>
-                    <td>{{ c.pk }}
+                    <td><a href="{% url nodis_case_detail c.pk %}">{{ c.pk }}</a>
                     <td>{{ c.condition }}
                     <td>{{ c.date }}
                     <td>{{ c.patient.pk }}
