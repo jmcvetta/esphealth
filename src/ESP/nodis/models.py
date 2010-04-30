@@ -1712,6 +1712,7 @@ class Case(models.Model):
     class Meta:
         permissions = [ ('view_phi', 'Can view protected health information'), ]
         unique_together = ['patient', 'condition', 'date']
+        ordering = ['id']
     
     def __str__(self):
         return '%s # %s' % (self.condition, self.pk)
