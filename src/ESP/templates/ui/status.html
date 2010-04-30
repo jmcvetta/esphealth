@@ -31,7 +31,7 @@
     </table>
     {% else %}
     <p>
-        <em>No new cases today.</em>
+        <em>No cases</em>
     </p>
     {% endif %}
 </div>
@@ -54,10 +54,58 @@
     </table>
     {% else %}
     <p>
-        <em>No new cases today.</em>
+        <em>No new cases today</em>
     </p>
     {% endif %}
 </div>
+
+
+<div style="clear: both;" />
+
+<p>&nbsp;</p>
+
+<div id="report_summary" style="clear: both;">
+
+    <h2 style="clear: both;">
+        <hr>
+        Case Reports
+        <hr>
+    </h2>
+
+    <p>
+        <em>Case reports transmitted in past day</em>
+    </p>
+
+    {% if reports %}
+        <table id="case_reports">
+            <tr>
+                <th>Case ID
+                <th>Condition
+                <th>Case Date
+                <th>Patient DB ID
+                <th>Report Timestamp
+                <th>Report Sent?
+                <th>Report Filename
+            {% for rep in reports %}
+                {% for c in rep.cases.all %}
+                <tr>
+                    <td>{{ c.pk }}
+                    <td>{{ c.condition }}
+                    <td>{{ c.date }}
+                    <td>{{ c.patient.pk }}
+                    <td>{{ rep.timestamp }}
+                    <td>{{ rep.sent }}
+                    <td>{{ rep.filename }}
+                {% endfor %}
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>
+            <em>No cases reported in past day</em>
+        </p>
+    {% endif %}
+</div>
+
 
 
 <div style="clear: both;" />

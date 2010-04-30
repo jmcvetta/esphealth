@@ -72,6 +72,7 @@ from ESP.hef import events # Required to register hef events
 from ESP.nodis.models import Condition
 from ESP.nodis.models import Case
 from ESP.nodis.models import CaseStatusHistory
+from ESP.nodis.models import Report
 from ESP.nodis.models import ReferenceCaseList
 from ESP.nodis.models import ReferenceCase
 from ESP.nodis.models import ValidatorRun
@@ -111,6 +112,7 @@ def _populate_status_values():
     today_string = datetime.datetime.now().strftime(DATE_FORMAT)
     yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
     new_cases = Case.objects.filter(updated_timestamp__gte=yesterday)
+    reports = Report.objects.filter(timestamp__gte=yesterday, sent=True)
     values = {
         'title': _('Status Report'),
         'today_string': today_string,
@@ -119,6 +121,7 @@ def _populate_status_values():
         'new_case_summary': new_cases.values('condition').annotate(count=Count('pk')).order_by('condition'),
         'provenances': Provenance.objects.filter(timestamp__gte=yesterday).order_by('-timestamp'),
         'unmapped_labs': _get_unmapped_labs().select_related(),
+        'reports': reports.order_by('timestamp'),
         }
     return values
 

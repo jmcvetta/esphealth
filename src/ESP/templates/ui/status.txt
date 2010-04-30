@@ -33,6 +33,18 @@ No new cases today.</em>
 {% endif %}
 
 
+CASE REPORTS:
+{% if reports %}
+Case #   Condition   Case Date   Patient   Sent?   Filename
+--------------------------------------------------------------------------------
+{% for rep in reports %}{% for c in rep.cases.all %}{{ c.pk|stringformat:"-9s" }}{{ c.condition|stringformat:"-12s" }}{{ c.date|stringformat:"-12s" }}{{ c.patient.pk|stringformat:"-10s" }}{{ rep.sent|stringformat:"-8s" }}{{ rep.filename }}
+{% endfor %}
+{% endfor %}
+{% else %}
+No cases reported inn past day.
+{% endif %}
+
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                 Data Provenance
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
