@@ -656,3 +656,48 @@ EncounterHeuristic(
     icd9s = ['787.91'],
     )
 
+
+#
+#--- Pertussis
+#
+
+EncounterHeuristic(
+    name = 'pertussis_diagnosis',
+    long_name = 'Pertussis diagnosis by ICD9',
+    icd9s = ['033.0', '033.9'],
+    )
+
+#
+# Needs new functionality to examine comment string
+#
+LabResultHeuristic(
+    name = 'pertussis_pcr',
+    long_name = 'Pertussis PCR test',
+    order_events = True,
+    )
+    
+#
+# Needs new functionality to examine comment string
+#
+LabResultHeuristic(
+    name = 'pertussis_culture',
+    long_name = 'Culture for pertussis',
+    order_events = True,
+    )
+    
+LabResultHeuristic(
+    name = 'pertussis_serology',
+    long_name = 'Pertussis serology',
+    order_events = True,
+    )
+
+MedicationHeuristic(
+    name = 'pertussis_rx',
+    long_name = 'Prescription for Pertussis antibiotics',
+    drugs = [
+        'Erythromycin',
+        'Clarithromycin',
+        'Azithromycin',
+        'Trimethoprim-sulfamethoxazole',
+        ],
+    )
