@@ -714,3 +714,46 @@ giardiasis = Condition(
 #    recur_after = 365, # New cases after 365 days
 #    test_name_search = ['glucose'],
 #    )
+
+
+#===============================================================================
+#
+# Pertussis
+#
+#-------------------------------------------------------------------------------
+
+
+pertussis_diagnosis_or_lab_order = ComplexEventPattern(
+    name = 'Positive result for Pertussis lab',
+    patterns = [
+        'pertussis_diagnosis',
+        'pertussis_pcr_pos',
+        'pertussis_culture_pos',
+        'pertussis_serology_pos',
+        ],
+    operator = 'or',
+    )
+
+pertussis_1 = ComplexEventPattern(
+    #(ICD9 for pertussis or lab order for a pertussis test) and antibiotic prescription within 7 day window
+    name = 'Pertussis definition 1',
+    patterns = ['pertussis_rx', pertussis_diagnosis_or_lab_order],
+    operator = 'and',
+    )
+
+pertussis_2 = ComplexEventPattern(
+    # Positive culture or PCR for pertussis
+    name = 'Pertussis definition 2',
+    patterns = ['pertussis_pcr_pos', 'pertussis_culture_pos'],
+    operator = 'or', # irrelevant for single pattern
+    )
+
+pertussis = Condition(
+    name = 'pertussis',
+    patterns = [
+        (pertussis_1, 7),
+        (pertussis_2, 0), # Single pattern match requires no date window
+        ],
+    recur_after = -1, # FIXME: Can Pertussis recur?
+    test_name_search = ['pertussis'],
+    )
