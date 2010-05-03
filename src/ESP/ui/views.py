@@ -119,7 +119,7 @@ def _populate_status_values():
         'site_name': SITE_NAME,
         'all_case_summary': Case.objects.values('condition').annotate(count=Count('pk')).order_by('condition'),
         'new_case_summary': new_cases.values('condition').annotate(count=Count('pk')).order_by('condition'),
-        'provenances': Provenance.objects.filter(timestamp__gte=yesterday).order_by('-timestamp'),
+        'data_status': Provenance.objects.filter(timestamp__gte=yesterday).values('status').annotate(count=Count('pk')),
         'unmapped_labs': _get_unmapped_labs().select_related(),
         'reports': reports.order_by('timestamp'),
         }

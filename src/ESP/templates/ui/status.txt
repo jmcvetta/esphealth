@@ -41,21 +41,21 @@ Case #   Condition   Case Date   Patient   Sent?   Filename
 {% endfor %}
 {% endfor %}
 {% else %}
-No cases reported inn past day.
+No cases reported in past day.
 {% endif %}
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                                Data Provenance
+                               Data Load Status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Data sources loaded in past day:
-
-Source                         Timestamp                      Status
+{% if data_status %}
+Status              Count
 --------------------------------------------------------------------------------
-{% for prov in provenances %}{{ prov.source|stringformat:"-30.30s" }} {{ prov.timestamp|stringformat:"-30.30s" }} {{ prov.status }}
+{% for item in data_status %}{{ item.status|stringformat:"-20s" }}{{ item.count }}
 {% endfor %}
-
+{% else %}
+No data loading attempted in the past day
+{% endif %}
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
