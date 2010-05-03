@@ -727,9 +727,9 @@ pertussis_diagnosis_or_lab_order = ComplexEventPattern(
     name = 'Positive result for Pertussis lab',
     patterns = [
         'pertussis_diagnosis',
-        'pertussis_pcr_pos',
-        'pertussis_culture_pos',
-        'pertussis_serology_pos',
+        'pertussis_pcr_order',
+        'pertussis_culture_order',
+        'pertussis_serology_order',
         ],
     operator = 'or',
     )
