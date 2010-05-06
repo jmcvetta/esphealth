@@ -3,9 +3,6 @@
 analysis/dm_esp.schema.xml -text
 analysis/pat.hibernate.pg.sql -text
 bin/esp -text
-conf/app.conf -text
-conf/secrets.conf.sample -text
-conf/ss.conf -text
 doc/ESP-architecture.png -text svneol=unset#unset
 doc/ESP-architecture.xmind -text svneol=unset#unset
 doc/disease-protocols/Chlamydia.doc -text
@@ -20,7 +17,8 @@ doc/specifications/MDPH_ELR_EMR_Query_Specification_v1.0.doc -text
 doc/specifications/PHIN_ELR_Implementation_Guide--HL7_2.3.1--21_May_2004.pdf -text svneol=unset#unset
 doc/specifications/gipse.xsd -text
 etc/apache.conf.sample -text
-etc/django.wsgi.sample -text
+etc/django.wsgi -text
+etc/ss.conf -text
 /readme -text
 share/epic_etl/AdditionalStepsAfterCompile.doc -text svneol=unset#unset
 share/epic_etl/ESPFileLayout.doc -text svneol=unset#unset
@@ -78,6 +76,7 @@ src/ESP/emr/sql/multicolumn-indices.postgresql.sql -text
 src/ESP/emr/sql/patient.postgresql.sql -text
 src/ESP/emr/views.py -text
 src/ESP/env-setup.sh -text
+src/ESP/esp.spec.ini -text
 src/ESP/hef/__init__.py -text
 src/ESP/hef/admin.py -text
 src/ESP/hef/core.py -text
@@ -183,6 +182,7 @@ src/ESP/nodis/models.py -text
 src/ESP/nodis/tests.py -text
 src/ESP/nodis/urls.py -text
 src/ESP/nodis/views.py -text
+src/ESP/secrets.spec.ini -text
 src/ESP/sendMsgs/bcdc.jar -text
 src/ESP/settings.py -text
 src/ESP/ss/__init__.py -text

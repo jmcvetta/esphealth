@@ -17,9 +17,7 @@ from ESP.nodis.models import ComplexEventPattern
 from ESP.nodis.models import MultipleEventPattern
 from ESP.nodis.models import TuberculosisDefC
 from ESP.nodis.models import Condition
-from ESP.settings import DEFAULT_REPORTABLE_ICD9S
 from django.db import connection
-import pprint
 
 
 GONORRHEA_LOINCS = ['691-6', '23908-7', '24111-7', '36902-5'] 
@@ -160,10 +158,6 @@ acute_hep_a = Condition(
     patterns = [(hep_a_1, 30)],
     recur_after = -1, # Never recur
     test_name_search = ['hep', 'alt', 'ast', 'tbil', 'bili'],
-#    icd9s = DEFAULT_REPORTABLE_ICD9S,
-#    icd9_days_before = 14,
-#    fever = True,
-#    lab_days_before = 30,
     )
 
 
@@ -238,10 +232,6 @@ hep_b = Condition(
     ],
     recur_after = -1, # Never recur
     test_name_search = ['hep', 'alt', 'ast', 'tbil', 'bili', 'hb', 'core',],
-#    icd9s = DEFAULT_REPORTABLE_ICD9S,
-#    icd9_days_before = 14,
-#    fever = True,
-#    lab_days_before = 14,
     )
 
 
@@ -356,10 +346,6 @@ hep_c = Condition(
             ],
     recur_after = -1, # Never recur
     test_name_search = ['hep', 'alt', 'ast', 'tbil', 'bili', 'hc'],
-#    icd9s = DEFAULT_REPORTABLE_ICD9S,
-#    icd9_days_before = 14,
-#    fever = True,
-#    lab_days_before = 28,
     )
 
 
