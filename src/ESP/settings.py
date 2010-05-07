@@ -77,7 +77,8 @@ ADMINS = [(i,i) for i in config['General']['admins']]
 MANAGERS = [(i,i) for i in config['General']['managers']]
 SITE_NAME = config['General']['site_name']
 DATA_DIR = config['General']['data_folder']
-FAKE_PATIENT_MRN = config['Reporting']['fake_patient_surname']
+FAKE_PATIENT_SURNAME = config['Reporting']['fake_patient_surname']
+FAKE_PATIENT_MRN = config['Reporting']['fake_patient_mrn']
 DATABASE_ENGINE = config['Database']['engine']
 DATABASE_NAME = config['Database']['db_name']
 DATABASE_USER = config['Database']['username']
@@ -131,6 +132,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 TEMPLATE_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
+    os.path.join(CONFIG_FOLDER, 'templates'),
     os.path.join(TOPDIR, 'templates'),
     os.path.join(TOPDIR, 'templates/esp'),
     os.path.join(TOPDIR, 'templates/pages/vaers'),

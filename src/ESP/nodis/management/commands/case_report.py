@@ -1052,14 +1052,6 @@ class Command(BaseCommand):
         options = Values(options)
         if options.sample: # '--sample' implies '--no-sent-status'
             options.sent_status = False
-        template_name = os.path.join('nodis', 'report', options.template)
-        try:
-            get_template(template_name)
-        except TemplateDoesNotExist:
-            print >> sys.stderr
-            print >> sys.stderr, 'Unrecognized template name: "%s".  Aborting.' % options.template
-            print >> sys.stderr
-            sys.exit(103)
         if options.one_file and options.batch_size:
             print >> sys.stderr, '--batch-size and --one-file cannot be used together'
             sys.exit(104)
@@ -1197,7 +1189,8 @@ class Command(BaseCommand):
         #
         # Sanity check -- does specified template exist?
         #
-        template_name = os.path.join('nodis', 'report', options.template)
+        template_name = os.path.join('case_report', options.template)
+        log.debug('template_name: %s' % template_name)
         try:
             get_template(template_name)
         except TemplateDoesNotExist:

@@ -19,6 +19,7 @@ doc/specifications/gipse.xsd -text
 etc/apache.conf.sample -text
 etc/django.wsgi -text
 etc/ss.conf -text
+etc/templates/case_report/odh_hl7.txt -text
 /readme -text
 share/epic_etl/AdditionalStepsAfterCompile.doc -text svneol=unset#unset
 share/epic_etl/ESPFileLayout.doc -text svneol=unset#unset
@@ -257,7 +258,6 @@ src/ESP/templates/nodis/case_detail.html -text
 src/ESP/templates/nodis/case_list.html -text
 src/ESP/templates/nodis/missing_case_detail.html -text
 src/ESP/templates/nodis/provider_detail.html -text
-src/ESP/templates/nodis/report/odh_hl7.txt -text
 src/ESP/templates/nodis/validator_exact.html -text
 src/ESP/templates/nodis/validator_missing.html -text
 src/ESP/templates/nodis/validator_new.html -text
