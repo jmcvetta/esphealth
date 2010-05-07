@@ -334,6 +334,7 @@ src/ESP/vaers/vaccine/urls.py -text
 src/ESP/vaers/vaccine/views.py -text
 src/ESP/vaers/views.py -text
 src/ESP/version.txt -text
+src/configobj.py -text
 src/guppy/__init__.py -text
 src/guppy/doc/ProfileBrowser.html -text
 src/guppy/doc/__init__.py -text
@@ -449,6 +450,7 @@ src/sqlparse/keywords.py -text
 src/sqlparse/lexer.py -text
 src/sqlparse/sql.py -text
 src/sqlparse/tokens.py -text
+src/validate.py -text
 src/web/__init__.py -text
 src/web/application.py -text
 src/web/browser.py -text
