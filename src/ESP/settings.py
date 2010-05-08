@@ -90,7 +90,7 @@ DATABASE_OPTIONS = {
     # Make PostgreSQL recover gracefully from caught exceptions
     #"autocommit": True,   
 }
-ETL_SOURCE = config['ETL']['server']
+ETL_SOURCE = config['ETL']['source']
 ETL_USE_FTP = config['ETL']['retrieve_files'] # Use built-in FTP function to retrieve Epic files
 ETL_ARCHIVE = config['ETL']['archive'] # Should ETL files be archived after they have been loaded?
 FTP_SERVER = config['ETL']['server']
