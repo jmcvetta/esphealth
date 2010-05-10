@@ -5,6 +5,7 @@ from django.contrib import admin
 #from django.utils.translation import ugettext_lazy as _
 
 from ESP.nodis.models import Case
+from ESP.nodis.models import Report
 from ESP.nodis.models import CaseStatusHistory
 from ESP.nodis.models import ValidatorResult
 from ESP.nodis.models import ReferenceCase
@@ -14,6 +15,10 @@ from ESP.nodis.models import ReferenceCase
 class CaseAdmin(admin.ModelAdmin):
     list_display = ['pk', 'condition', 'patient', 'date']
     
+
+class ReportAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'timestamp', 'filename', 'sent']
+    raw_id_fields = ['cases']
 
 class CaseStatusHistoryAdmin(admin.ModelAdmin):
     list_display = ['case', 'timestamp', 'new_status', 'changed_by']
@@ -57,6 +62,7 @@ class ReferenceCaseAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Case, CaseAdmin)
+admin.site.register(Report, ReportAdmin)
 admin.site.register(CaseStatusHistory, CaseStatusHistoryAdmin)
 admin.site.register(ValidatorResult, ValidatorResultAdmin)
 admin.site.register(ReferenceCase, ReferenceCaseAdmin)
