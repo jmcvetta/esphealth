@@ -120,6 +120,7 @@ def _populate_status_values():
         'all_case_summary': Case.objects.values('condition').annotate(count=Count('pk')).order_by('condition'),
         'new_case_summary': new_cases.values('condition').annotate(count=Count('pk')).order_by('condition'),
         'data_status': Provenance.objects.filter(timestamp__gte=yesterday).values('status').annotate(count=Count('pk')),
+        'provenances': Provenance.objects.filter(timestamp__gte=yesterday).order_by('-timestamp'),
         'unmapped_labs': _get_unmapped_labs().select_related(),
         'reports': reports.order_by('timestamp'),
         }
