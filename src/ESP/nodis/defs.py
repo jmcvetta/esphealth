@@ -44,35 +44,6 @@ chlamydia = Condition(
     patterns = [(chlamydia_1, 0)],
     recur_after = 28, # New cases after 28 days
     test_name_search = ['chla'],
-#    icd9s = [
-#        '788.7',
-#        '099.40',
-#        '597.80',
-#        '780.6A',
-#        '616.0',
-#        '616.10',
-#        '623.5',
-#        '789.07',
-#        '789.04',
-#        '789.09',
-#        '789.03',
-#        '789.00',
-#        ],
-#    icd9_days_before = 14,
-#    fever = True,
-#    med_names = [
-#        'azithromycin',
-#        'levofloxacin',
-#        'ofloxacin',
-#        'ciprofloxacin',
-#        'doxycycline',
-#        'eryrthromycin',
-#        'amoxicillin',
-#        'EES',
-#        ],
-#    med_days_before = 7,
-#    # Report both Chlamydia and Gonorrhea labs
-#    lab_days_before = 30,
     )
 
 
@@ -96,36 +67,6 @@ gonorrhea = Condition(
     patterns = [(gonorrhea_1, 1)],
     recur_after = 28, # New cases after 28 days
     test_name_search = ['gon', 'gc'],
-#    icd9s = [
-#        '788.7',
-#        '099.40',
-#        '597.80',
-#        '616.0',
-#        '616.10',
-#        '623.5',
-#        '789.07',
-#        '789.04',
-#        '789.09',
-#        '789.03',
-#        '789.00',
-#        ],
-#    icd9_days_before = 14,
-#    fever = True,
-#    lab_days_before = 28,
-#    med_names = [
-#        'amoxicillin',
-#        'cefixime',
-#        'cefotaxime',
-#        'cefpodoxime',
-#        'ceftizoxime',
-#        'ceftriaxone',
-#        'gatifloxacin',
-#        'levofloxacin',
-#        'ofloxacin',
-#        'spectinomycin',
-#        'moxifloxacin',
-#        ],
-#    med_days_before = 7,
     )
 
 
@@ -400,30 +341,6 @@ lyme = Condition(
         ],
     recur_after = 365, # 1 year
     test_name_search = ['lyme'],
-#    icd9s = [
-#        '782.1',
-#        '711.8',
-#        '320.7',
-#        '351.0',
-#        '723.4',
-#        '724.4',
-#        '422.0',
-#        '426.0',
-#        '426.12',
-#        '426.13',
-#        '780.6',
-#        ],
-#    icd9_days_before = 30,
-#    fever = True,
-#    lab_days_before = 30,
-#    med_names = [
-#        'doxycycline',
-#        'amoxicillin',
-#        'cefuroxime',
-#        'ceftriaxone',
-#        'cefotaxime',
-#        ],
-#    med_days_before = 30,
     )
     
 
@@ -452,35 +369,6 @@ pid = Condition(
         ],
     recur_after = 28, # 1 year
     test_name_search = ['chlam', 'gon', 'gc'],
-#    icd9s = [
-#        '614.0',
-#        '614.2',
-#        '614.3',
-#        '614.5',
-#        '614.9',
-#        '099.56',
-#        ],
-#    icd9_days_before = 30,
-#    fever = False,
-#    lab_days_before = 30,
-#    med_names = [
-#        'ampicillin-sulbactam',
-#        'amoxicillin-clavulinic acid',
-#        'clindamycin',
-#        'levofloxacin',
-#        'ciprofloxacin',
-#        'ofloxacin',
-#        'cefotetan',
-#        'cefoxitin',
-#        'ceftriaxone',
-#        'cefotaxime',
-#        'cefitizoxine',
-#        'doxycycline',
-#        'gentamicin',
-#        'metronidazole',
-#        'azithromycin',
-#        ],
-#    med_days_before = 30,
     )
 
 #
@@ -575,18 +463,6 @@ syphilis = Condition(
         ],
     recur_after = -1, # Never
     test_name_search = ['syph', 'rpr', 'vdrl', 'tp','fta'],
-#    # FIXME:  We need to add ability to express large ranges of ICD9s here - this is incomplete.
-#    icd9s = [],
-#    icd9_days_before = 28,
-#    fever = True,
-#    lab_days_before = 28,
-#    med_names = [
-#        'penicillin g',
-#        'pen g',
-#        'doxycycline',
-#        'ceftriaxone',
-#        ],
-#    med_days_before = 28,
     )
 
 #===============================================================================
