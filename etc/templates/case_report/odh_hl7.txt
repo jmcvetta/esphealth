@@ -7,7 +7,7 @@ ORC|||||||||||||||||||||MetroHealth Medical Center|2500 MetroHealth Drive^^Cleve
 {% for lab in case.reportable_labs %}
 OBR|{{ forloop.counter }}||{{ lab.specimen_num }}|^^^{{ lab.native_code }}^{{ lab.native_name }}^L|||{{ lab.date|date:"Ymd" }}||||||||{{lab.specimen_source }}|{{ case.provider.provider_id_num }}^{{ case.provider.last_name }}^{{ case.provider.first_name }}|^^^^^{{ case.provider.area_code }}^{{ case.provider.tel_numeric }}||||||||{% ifequal lab.status "Final" %}F{% endifequal %}{% ifequal lab.status "Preliminary" %}P{% endifequal %}
 OBX|{{ forloop.counter }}|{% if lab.result_float %}SN{% else %}ST{% endif %}|{{ lab.output_or_native_code }}^{{ lab.output_or_native_name }}^{% if lab.output_code %}LN{% else %}L{% endif %}^|1|{{ lab.result_string }}|{% if lab.result_float %}{{ lab.ref_unit }}{% endif %}|{% if lab.result_float %}{{ lab.ref_low_string }}{% if lab.ref_low_string %}-{% endif %}{{ lab.ref_high_string }}{% endif %}||||{% ifequal lab.status "Final" %}F{% endifequal %}{% ifequal lab.status "Preliminary" %}P{% endifequal %}{% ifequal lab.status "Corrected" %}C{% endifequal %}|||{{ lab.date|date:"Ymd" }}|36D0336261^MetroHealth System Laboratory^CLIA|
-{% if lab.comment %} NTE|{{ forloop.counter }}|O|{{ lab.comment }}{% endif %}
+{% if lab.comment %}NTE|{{ forloop.counter }}|O|{{ lab.comment }}{% endif %}
 {% endfor %}
 
 {% ifequal case.patient.gender "F" %}NTE||O|{%if case.patient.pregnant %}Patient is pregnant{% else %}Patient is not pregnant{% endif %} {% endifequal %}
