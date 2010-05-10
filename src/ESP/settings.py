@@ -44,7 +44,10 @@ for ini_file, conf_obj in [(secrets_ini, secrets), (esp_ini, config)]:
         print
         bad_config = True
     results = conf_obj.validate(validator, copy=True)
-    conf_obj.write()
+    try:
+        conf_obj.write()
+    except IOError:
+        logging.info('Do not have write permission on %s' % ini_file)
     if results != True:
         for (section_list, key, _) in flatten_errors(config, results):
             print '%s:' % ini_file
