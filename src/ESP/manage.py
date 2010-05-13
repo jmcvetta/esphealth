@@ -23,11 +23,11 @@ if not os.environ.has_key('DJANGO_SETTINGS_MODULE'):
     logging.log(logging.DEBUG, '\t%s' % os.environ['DJANGO_SETTINGS_MODULE'])
 
 #
-# Intercept the special argument 'install' -- if someone is running this
+# Intercept the special argument 'check_environment' -- if someone is running this
 # command, presumably 'import settings' will fail, because settings files do
 # not yet exists.
 #
-if sys.argv[1] == 'install':
+if sys.argv[1] == 'check_environment':
     _folders = [
         os.path.join('/', 'srv', 'esp-data'),
         os.path.join('/', 'srv', 'esp-data', 'case_reports'),
