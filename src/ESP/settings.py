@@ -29,15 +29,15 @@ CONFIG_FOLDER = os.path.join(PACKAGE_ROOT, 'etc')
 #
 #-------------------------------------------------------------------------------
 validator = Validator()
-esp_ini = os.path.join(CONFIG_FOLDER, 'esp.ini')
-esp_spec = ConfigObj(os.path.join(TOPDIR, 'esp.spec.ini'), interpolation=False, list_values=False)
+application_ini = os.path.join(CONFIG_FOLDER, 'application.ini')
+application_spec = ConfigObj(os.path.join(TOPDIR, 'application.spec.ini'), interpolation=False, list_values=False)
 secrets_ini = os.path.join(CONFIG_FOLDER, 'secrets.ini')
 secrets_spec = os.path.join(TOPDIR, 'secrets.spec.ini')
 secrets = ConfigObj(secrets_ini, configspec=secrets_spec)
-config = ConfigObj(esp_ini, configspec=esp_spec, interpolation=False)
+config = ConfigObj(application_ini, configspec=application_spec, interpolation=False)
 
 bad_config = False
-for ini_file, conf_obj in [(secrets_ini, secrets), (esp_ini, config)]:
+for ini_file, conf_obj in [(secrets_ini, secrets), (application_ini, config)]:
     if not os.path.exists(ini_file):
         print 'Cound not find configuration file %s' % ini_file
         print 'Creating new configuration file.  Please fill it in with your values.'

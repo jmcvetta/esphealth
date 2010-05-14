@@ -51,12 +51,12 @@ if sys.argv[1] == 'setup_environment':
     PACKAGE_ROOT = os.path.normpath(os.path.join(TOPDIR, '..', '..'))
     CONFIG_FOLDER = os.path.join(PACKAGE_ROOT, 'etc')
     validator = Validator()
-    esp_ini = os.path.join(CONFIG_FOLDER, 'esp.ini')
-    esp_spec = ConfigObj(os.path.join(TOPDIR, 'esp.spec.ini'), interpolation=False, list_values=False)
+    application_ini = os.path.join(CONFIG_FOLDER, 'application.ini')
+    application_spec = ConfigObj(os.path.join(TOPDIR, 'application.spec.ini'), interpolation=False, list_values=False)
     secrets_ini = os.path.join(CONFIG_FOLDER, 'secrets.ini')
     secrets_spec = os.path.join(TOPDIR, 'secrets.spec.ini')
-    ConfigObj(esp_ini, configspec=esp_spec, interpolation=False).validate(validator, copy=True)
-    print '    esp.ini'
+    ConfigObj(application_ini, configspec=application_spec, interpolation=False).validate(validator, copy=True)
+    print '    application.ini'
     ConfigObj(secrets_ini, configspec=secrets_spec).validate(validator, copy=True)
     print '    secrets.ini'
     #

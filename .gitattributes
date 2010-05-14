@@ -24,6 +24,7 @@ share/epic_etl/AdditionalStepsAfterCompile.doc -text svneol=unset#unset
 share/epic_etl/ESPFileLayout.doc -text svneol=unset#unset
 share/epic_etl/README.txt -text
 share/epic_etl/mhslespftp.sh -text
+src/ESP/application.spec.ini -text
 src/ESP/axis-1_4/activation.jar -text
 src/ESP/axis-1_4/mail.jar -text
 src/ESP/batch-run.sh -text
@@ -76,7 +77,6 @@ src/ESP/emr/sql/multicolumn-indices.postgresql.sql -text
 src/ESP/emr/sql/patient.postgresql.sql -text
 src/ESP/emr/views.py -text
 src/ESP/env-setup.sh -text
-src/ESP/esp.spec.ini -text
 src/ESP/hef/__init__.py -text
 src/ESP/hef/admin.py -text
 src/ESP/hef/core.py -text
