@@ -27,7 +27,7 @@ if not os.environ.has_key('DJANGO_SETTINGS_MODULE'):
 # command, presumably 'import settings' will fail, because settings files do
 # not yet exists.
 #
-if sys.argv[1] == 'setup_environment':
+if (len(sys.argv) > 1) and (sys.argv[1] == 'setup_environment'):
     _folders = [
         os.path.join('/', 'srv', 'esp-data'),
         os.path.join('/', 'srv', 'esp-data', 'case_reports'),
