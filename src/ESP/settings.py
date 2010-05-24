@@ -40,7 +40,10 @@ bad_config = False
 for ini_file, conf_obj in [(secrets_ini, secrets), (application_ini, config)]:
     if not os.path.exists(ini_file):
         print 'Cound not find configuration file %s' % ini_file
-        print 'Creating new configuration file.  Please fill it in with your values.'
+        if os.access(ini_file, os.W_OK):
+            print 'Creating new configuration file.  Please fill it in with your values.'
+        else:
+            print 'Cannot create new configuration file -- do not have write access to %s' % ini_file
         print
         bad_config = True
     results = conf_obj.validate(validator, copy=True)
