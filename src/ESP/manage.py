@@ -55,10 +55,14 @@ if (len(sys.argv) > 1) and (sys.argv[1] == 'setup_environment'):
     application_spec = ConfigObj(os.path.join(TOPDIR, 'application.spec.ini'), interpolation=False, list_values=False)
     secrets_ini = os.path.join(CONFIG_FOLDER, 'secrets.ini')
     secrets_spec = os.path.join(TOPDIR, 'secrets.spec.ini')
-    ConfigObj(application_ini, configspec=application_spec, interpolation=False).validate(validator, copy=True)
     print '    %s' % application_ini
-    ConfigObj(secrets_ini, configspec=secrets_spec).validate(validator, copy=True)
+    conf_obj = ConfigObj(application_ini, configspec=application_spec, interpolation=False)
+    conf_obj.validate(validator, copy=True)
+    conf_obj.write()
     print '    %s' % secrets_ini
+    conf_obj = ConfigObj(secrets_ini, configspec=secrets_spec)
+    conf_obj.validate(validator, copy=True)
+    conf_obj.write()
     #
     #
     print 'Checking data folders...'
