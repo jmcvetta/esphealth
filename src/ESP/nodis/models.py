@@ -573,7 +573,10 @@ class MultipleEventPattern(BaseEventPattern):
         Returns a string that uniquely represents this pattern.  Cf the integer 
         returned by __hash__().
         '''
-        raise NotImplementedError
+        events_string = ', '.join(self.events)
+        h = '(AT LEAST %s OF %s)' % (self.count, events_string)
+        return h
+    string_hash = property(__get_string_hash)
     
     def __get_event_names(self):
         '''
