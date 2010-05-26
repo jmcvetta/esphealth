@@ -52,7 +52,7 @@ class Command(BaseCommand):
         datestamps = [day.strftime('%m%d%Y') for day in days]
 
         for eachfile in filenames:
-            processed = Provenance.objects.filter(source=eachfile)
+            processed = Provenance.objects.filter(source=eachfile) # Not evaluated until second half of 'and not' clause below
             if eachfile.split('.')[-1] in datestamps and not processed:
                 try:
                     log.info('Retrieving file ' + eachfile)
