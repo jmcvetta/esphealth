@@ -102,6 +102,7 @@ ETL_ARCHIVE = config['ETL']['archive'] # Should ETL files be archived after they
 FTP_SERVER = config['ETL']['server']
 FTP_USER = config['ETL']['username']
 FTP_PASSWORD = secrets['General']['etl_server_password']
+FTP_PATH = config['ETL']['path']
 UPLOAD_SERVER = config['Reporting']['upload_server']
 UPLOAD_USER = config['Reporting']['upload_username']
 UPLOAD_PASSWORD = secrets['General']['upload_password']

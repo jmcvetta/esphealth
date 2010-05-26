@@ -6,7 +6,7 @@ from ftplib import FTP
 from django.core.management.base import BaseCommand
 
 from ESP.emr.models import Provenance
-from ESP.settings import DATA_DIR, FTP_USER, FTP_PASSWORD, FTP_SERVER
+from ESP.settings import DATA_DIR, FTP_USER, FTP_PASSWORD, FTP_SERVER, FTP_PATH
 from ESP.utils.utils import log, days_in_interval, str_from_date, date_from_str
 
 
@@ -16,7 +16,7 @@ class Command(BaseCommand):
     #
     option_list = BaseCommand.option_list + (
         make_option('-b', '--begin', dest='begin_date', help='Begin date',
-                    default=(datetime.date.today() - datetime.timedelta(1)).strftime('%Y%m%d')),
+                    default=(datetime.date.today() - datetime.timedelta(30)).strftime('%Y%m%d')),
         make_option('-e', '--end', dest='end_date', help='End date',
                     default=datetime.date.today().strftime('%Y%m%d'))
         )
@@ -24,6 +24,7 @@ class Command(BaseCommand):
     help = 'Fetch ETL files via FTP'
     
     def handle(self, *fixture_labels, **options):
+        log.warning('Downloading PHI over FTP is insecure and therefore a TERRIBLE idea.')
         try:
             begin_date = date_from_str(options['begin_date'])
             end_date = date_from_str(options['end_date'])
@@ -43,7 +44,7 @@ class Command(BaseCommand):
         os.chdir(todir)    
 
         #remote site directory
-        ftp.cwd('ESPFiles')
+        ftp.cwd(FTP_PATH)
         filenames = ftp.nlst()
            
         # Find files that need to be downloaded
@@ -51,7 +52,7 @@ class Command(BaseCommand):
         datestamps = [day.strftime('%m%d%Y') for day in days]
 
         for eachfile in filenames:
-            processed = (Provenance.objects.filter(source=eachfile).count() == 1)
+            processed = Provenance.objects.filter(source=eachfile)
             if eachfile.split('.')[-1] in datestamps and not processed:
                 try:
                     log.info('Retrieving file ' + eachfile)
