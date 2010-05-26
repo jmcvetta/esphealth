@@ -480,9 +480,7 @@ class MultipleEventPattern(BaseEventPattern):
     @param events: List of heuristic 
     '''
     
-    def __init__(self, events, count):
-        '''
-        '''
+    def __init__(self, events, count,  require_timespan=[], exclude_timespan=[]):
         #self.__events_cache = {}
         for event_name in events:
             if not event_name in BaseHeuristic.all_event_names():
@@ -491,6 +489,11 @@ class MultipleEventPattern(BaseEventPattern):
         if not isinstance(count, int):
             raise TypeError('count must be an integer, but you supplied: "%s"' % count)
         self.count = count
+        #
+        # TODO: What kind of sanity checking do we need for Timespans??
+        #
+        self.require_timespan = require_timespan
+        self.exclude_timespan = exclude_timespan
     
     def plausible_patients(self, exclude_condition=None):
         '''
@@ -666,7 +669,7 @@ class ComplexEventPattern(BaseEventPattern):
             self.require_after_window = None
         self.exclude_past = exclude_past
         #
-        # What kind of sanity checking do we need for Timespans??
+        # TODO: What kind of sanity checking do we need for Timespans??
         #
         self.require_timespan = require_timespan
         self.exclude_timespan = exclude_timespan
@@ -720,6 +723,18 @@ class ComplexEventPattern(BaseEventPattern):
                 h += '(%s)' % ' or '.join([str(pat) for pat in self.exclude_past])
             else:
                 h += '%s' % self.exclude_past[0]
+        if self.require_timespan:
+            h += ' WITHIN TIMESPAN '
+            if len(self.exclude_past) > 1:
+                h += '(%s)' % ' or '.join([str(ts) for ts in self.require_timespan])
+            else:
+                h += '%s' % self.require_timespan[0]
+        if self.exclude_timespan:
+            h += ' NOT WITHIN TIMESPAN '
+            if len(self.exclude_past) > 1:
+                h += '(%s)' % ' or '.join([str(ts) for ts in self.exclude_timespan])
+            else:
+                h += '%s' % self.exclude_timespan[0]
         h = '(%s)' % h
         return h
     string_hash = property(__get_string_hash)
