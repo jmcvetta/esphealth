@@ -46,8 +46,6 @@ from ESP.nodis.models import Case
 from ESP.nodis.models import Pattern
 from ESP.nodis.models import Gdm
 from ESP.hef.models import Event
-from ESP.hef.models import Pregnancy
-from ESP.hef.core import PregnancyHeuristic
 
 from ESP.conf.models import CodeMap
 from ESP.utils.utils import log_query
@@ -122,24 +120,31 @@ def main():
     writer.writerow(header)
     for gdm_case in Case.objects.filter(condition='gdm').order_by('date'):
         log.debug('%s' % gdm_case)
+        log.debug('case date: %s' % gdm_case.date)
         patient = gdm_case.patient
-        start_date = gdm_case.date - datetime.timedelta(days=200)
-        cutoff_date = gdm_case.date + datetime.timedelta(days=200)
+        start_date = gdm_case.date - datetime.timedelta(days=280)
+        cutoff_date = gdm_case.date + datetime.timedelta(days=280)
+        log.debug('start_date: %s' % start_date)
+        log.debug('cutoff_date: %s' % cutoff_date)
         q_obj = Q(patient=patient, date__gte=start_date, date__lte=cutoff_date)
         edc = Encounter.objects.filter(q_obj).aggregate(edc=Max('edc'))['edc']
         if edc:
+            log.debug('edc: %s' % edc)
             preg_start = edc - datetime.timedelta(days=280)
             preg_end = edc
             postpartum_events = Event.objects.filter(patient=patient, date__gt=edc, date__lte=edc+datetime.timedelta(weeks=12))
             ogtt75_postpartum_order = bool( postpartum_events.filter(name__startswith='ogtt75', name__endswith='_order')  )
             ogtt75_postpartum_pos = bool( postpartum_events.filter(name__in=OGTT75_POSTPARTUM_EVENT_NAMES) )
         else:
-            preg_timespans = Timespan.objects.filter(patient=patient, name__startswith='pregnancy_inferred')
+            preg_timespans = Timespan.objects.filter(patient=patient, name__in=('pregnancy', 'mini_pregnancy'))
+            log.debug('preg_timespans: %s' % preg_timespans)
             preg_start = preg_timespans.filter(start_date__gte=start_date).aggregate(min=Min('start_date'))['min']
             preg_end = preg_timespans.filter(start_date__lte=cutoff_date).aggregate(max=Max('end_date'))['max']
             ogtt75_postpartum_order = 'Unknown EDC'
             ogtt75_postpartum_pos = 'Unknown EDC'
         events = Event.objects.filter(q_obj)
+        log.debug('preg_start: %s' % preg_start)
+        log.debug('preg_end: %s' % preg_end)
         preg_events = Event.objects.filter(patient=patient, date__gte=preg_start, date__lte=preg_end)
         lancets = events.filter(name__in=['lancets_rx', 'test_strips_rx'])
         preg_lancet_rx = preg_events & lancets
