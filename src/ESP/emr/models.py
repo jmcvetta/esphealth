@@ -601,7 +601,7 @@ class LabResult(BasePatientRecord):
         LabResult.fakes().delete()
 
     @staticmethod
-    def make_mock(loinc, patient, when=None, **kw):
+    def make_mock(patient, when=None, **kw):
         save_on_db = kw.pop('save_on_db', False)
         loinc = kw.get('with_loinc', None) or Loinc.objects.order_by('?')[0]
 
