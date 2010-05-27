@@ -7,7 +7,6 @@ import pdb
 from django.db.models import Max
 
 # Models
-from ESP.conf.models import NativeCode
 from ESP.static.models import Icd9, Loinc
 from ESP.emr.models import Patient, Immunization, LabResult, Encounter
 from ESP.vaers.models import AdverseEvent, EncounterEvent, LabResultEvent
@@ -24,28 +23,9 @@ MESSAGE_DIR = os.path.realpath(os.path.join(
 
 FEVER_HEURISTIC = fever_heuristic()
 DIAGNOSTICS_HEURISTICS = dict([
-        (h.heuristic_name, h) for h in diagnostic_heuristics()])
+        (h.name, h) for h in diagnostic_heuristics()])
 LAB_HEURISTICS = lab_heuristics()
 
-
-
-class TestLoincCodes(unittest.TestCase):
-    def setUp(self):
-        self.codes = VAERS_LAB_RESULTS.keys()
-
-    def testLoincTable(self):
-        for loinc in self.codes:
-            try:
-                self.assert_(Loinc.objects.get(loinc_num=loinc))
-            except Exception, why:
-                self.assert_(False, 'Testing LOINC"%s": %s' % (loinc, why))
-
-    def testNativeCodeTable(self):
-        for loinc in self.codes:
-            try:
-                self.assert_(NativeCode.objects.get(native_code=loinc))
-            except Exception, why:
-                self.assert_(False, 'Testing NativeCode "%s": %s' % (loinc, why))
 
 
 class TestDeidentification(unittest.TestCase):
