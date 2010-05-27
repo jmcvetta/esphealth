@@ -118,10 +118,9 @@ class BaseLoader(object):
     # the same.
     #
     __patient_cache = {} # {patient_id_num: Patient instance}
-    __provider_cache = {} # {provider_id_num: Pro
+    __provider_cache = {} # {provider_id_num: Provider instance}
     
     def __init__(self, filepath):
-        #vider instance}
         assert os.path.isfile(filepath)
         path, filename = os.path.split(filepath)
         self.filename = filename
@@ -248,10 +247,8 @@ class BaseLoader(object):
                 now = datetime.datetime.now()
                 log.info('Loaded %s of %s rows:  %s %s' % (cur_row, self.line_count, now, self.filename))
         log.debug('Loaded %s records with %s errors.' % (valid, errors))
-        if not errors:
-            self.provenance.status = 'loaded'
-        else:
-            self.provenance.status = 'errors'
+
+        self.provenance.status = 'loaded' if not errors else 'errors'
         self.provenance.valid_rec_count = valid
         self.provenance.error_count = errors
         self.provenance.save()
