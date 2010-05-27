@@ -1,16 +1,21 @@
 import datetime
 import random
 import optparse
+import pdb
 
 from ESP.conf.common import EPOCH
-from ESP.static.models import Icd9
+from ESP.static.models import Icd9, Loinc
 from ESP.emr.models import Provider, Patient, Encounter, Immunization, LabResult
 from ESP.conf.models import Vaccine
 from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
+from ESP.utils.utils import log
 from ESP.utils import randomizer
 from ESP.utils import utils
 
 from rules import TIME_WINDOW_POST_EVENT, VAERS_LAB_RESULTS
+
+
+POPULATION_SIZE = 200
 
 FEVER_EVENT_PCT = 40
 ICD9_EVENT_PCT = 15
@@ -23,50 +28,42 @@ USAGE_MSG = '''\
     Either '-p', '-i' or '-a' must be specified.
 '''
 
-def main():
-    parser = optparse.OptionParser(usage=USAGE_MSG)
-    parser.add_option('-c', '--clear', action='store_true', dest='clear',
-                      help='Clear all fake Entities from the Database')
-    parser.add_option('-p', '--patients', action='store_true', dest='patients',
-                      help='Create Population of Patients')
-    parser.add_option('-i', '--imm', action='store_true', dest='immunizations',
-                      help='Create Immunization History for Patients')
+class ImmunizationHistory(object):
+    IMMUNIZATIONS_PER_PATIENT = 10
 
-    parser.add_option('-a', '--all', action='store_true', dest='all', 
-        help='Generate new patients and immunization history')
+    def __init__(self, patient):
+        self.patient = patient
+        self.clear()
+        
+    def clear(self):
+        Immunization.objects.filter(patient=self.patient).delete()
 
-    (options, args) = parser.parse_args()
+    def add_immunization(self):
+        '''
+        Gives a completely random vaccine to a patient in a
+        completely random date between his date_of_birth and
+        today()
+        '''
+        
+        # Find a vaccine
+        vaccine = Vaccine.random()
 
+        # Find a random date in the past
+        today = datetime.date.today()
 
-    if options.clear: clear()
+        # Sanity check. If the patient was born "today", we can not put the immunization in the past.
+        if self.patient.date_of_birth >= today:
+            days_ago = 0
+        else:
+            interval = today - (max(self.patient.date_of_birth, EPOCH))
+            days_ago = random.randrange(0, interval.days)
+        
+        when = today - datetime.timedelta(days=days_ago)
+        assert (self.patient.date_of_birth <= when <= today)
+        assert (EPOCH <= when <= today)
 
-    if options.patients:
-        Provider.make_fakes()
-        for provider in Provider.fakes():
-            patient = Patient.make_mock()
-            patient.pcp = provider
-            patient.save()
-
-    if options.immunizations:
-        for patient in Patient.fakes():
-            history = ImmunizationHistory(patient)
-            for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
-                imm = history.add_immunization()
-                check_for_reactions(imm)
-                
-                
-    if options.all:
-        massive_immunization_action()
-
-    if not (options.patients or options.immunizations or options.all):
-        parser.print_help()
-        import sys
-        sys.exit()
-
-
-def clear():
-    for klass in [Patient, Immunization, Encounter, LabResult, AdverseEvent]:
-        klass.delete_fakes()
+        # If everything is ok, give patient the vaccine
+        return Immunization.make_mock(vaccine, self.patient, when, save_on_db=True)
 
 def check_for_reactions(imm):
     # Should we cause a fever event?
@@ -97,8 +94,9 @@ def check_for_reactions(imm):
     # Or a lab result event?
     elif random.randrange(100) <= LX_EVENT_PCT:
         ev = Vaers(imm)
-        loinc = random.choice(VAERS_LAB_RESULTS.keys())
-        lx = VAERS_LAB_RESULTS[loinc]
+        syndrome = random.choice(VAERS_LAB_RESULTS.keys())
+        lx = VAERS_LAB_RESULTS[syndrome]
+        loinc = random.choice(lx['codes'])
         criterium = random.choice(lx['criteria'])
         ev.cause_positive_lab_result(loinc, criterium)
         # Maybe it's one that should be ignored?
@@ -106,14 +104,6 @@ def check_for_reactions(imm):
             ev.cause_negative_lx_for_lkv(loinc, criterium)
 
 
-def massive_immunization_action():
-    Patient.make_fakes(2000)
-    for patient in Patient.fakes():
-        history = ImmunizationHistory(patient)
-        for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
-            imm = history.add_immunization()
-            check_for_reactions(imm)
-        
                     
 class Vaers(object):
 
@@ -132,11 +122,11 @@ class Vaers(object):
         when = self.immunization_date+days_after
         return Encounter.make_mock(self.patient, when=when)
 
-    def _lab_result(self, loinc):
+    def _lab_result(self):
         days_after =  datetime.timedelta(days=random.randrange(
                 1, TIME_WINDOW_POST_EVENT))
         when = self.immunization_date+days_after
-        return  LabResult.make_mock(loinc, self.patient, when=when)
+        return LabResult.make_mock(self.patient, when=when)
 
     def make_post_immunization_encounter(self):
         encounter = self._encounter()
@@ -160,11 +150,17 @@ class Vaers(object):
         self.matching_encounter = encounter
 
     def cause_icd9_ignored_for_history(self, code):
+        
+        
+        
         maximum_days_ago =  (self.immunization_date - 
                              self.patient.date_of_birth).days
 
-        when = self.immunization_date - datetime.timedelta(
-            days=random.randrange(1, maximum_days_ago))
+        try:
+            when = self.immunization_date - datetime.timedelta(
+                days=random.randrange(1, maximum_days_ago))
+        except:
+            pdb.set_trace()
 
         past_encounter = Encounter.make_mock(self.patient, when=when)
         past_encounter.temperature = randomizer.body_temperature()
@@ -188,7 +184,7 @@ class Vaers(object):
         past_encounter.save()
 
     def cause_positive_lab_result(self, loinc, criterium):
-        lx = self._lab_result(loinc)
+        lx = self._lab_result()
         # criterium['trigger'] is always a string that represents an
         # inequation in the "X(>|<)Value" format.
         
@@ -209,6 +205,7 @@ class Vaers(object):
         # If value has not been updated, this means our criterium is ill-formed.
         if value == -1: 
             raise ValueError, 'Couldn\'t figure out the trigger value'
+
 
         lx.native_code = loinc
         lx.result_float = float(value)
@@ -270,7 +267,7 @@ class Vaers(object):
         days_ago = random.randrange(1, max_days) if max_days > 1 else 1
         when = self.immunization.date - datetime.timedelta(days=days_ago)
 
-        last_lx = LabResult.make_mock(loinc, self.patient, when=when)
+        last_lx = LabResult.make_mock(self.patient, when=when)
 
         # And now we add the values for lkv
         last_lx.result_float = lkv
@@ -278,44 +275,70 @@ class Vaers(object):
         last_lx.loinc = loinc
         last_lx.save()
 
-
-class ImmunizationHistory(object):
-    IMMUNIZATIONS_PER_PATIENT = 10
-
-    def __init__(self, patient):
-        self.patient = patient
-        self.clear()
         
-    def clear(self):
-        Immunization.objects.filter(patient=self.patient).delete()
 
-    def add_immunization(self):
-        '''
-        Gives a completely random vaccine to a patient in a
-        completely random date between his date_of_birth and
-        today()
-        '''
-        
-        # Find a vaccine
-        vaccine = Vaccine.random()
 
-        # Find a random date in the past
-        today = datetime.date.today()
+def main():
+    parser = optparse.OptionParser(usage=USAGE_MSG)
+    parser.add_option('-c', '--clear', action='store_true', dest='clear',
+                      help='Clear all fake Entities from the Database')
+    parser.add_option('-p', '--patients', action='store_true', dest='patients',
+                      help='Create Population of Patients')
+    parser.add_option('-i', '--imm', action='store_true', dest='immunizations',
+                      help='Create Immunization History for Patients')
+    
+    parser.add_option('-n', '--how-many', dest='population_size', default=None,
+                      help='Define how many patients will be affected/created.')
 
-        # Sanity check. If the patient was born "today", we can not put the immunization in the past.
-        if self.patient.date_of_birth >= today:
-            days_ago = 0
-        else:
-            interval = today - (max(self.patient.date_of_birth, EPOCH))
-            days_ago = random.randrange(0, interval.days)
-        
-        when = today - datetime.timedelta(days=days_ago)
-        assert (self.patient.date_of_birth <= when <= today)
-        assert (EPOCH <= when <= today)
 
-        # If everything is ok, give patient the vaccine
-        return Immunization.make_mock(vaccine, self.patient, when, save_on_db=True)
-        
+    parser.add_option('-a', '--all', action='store_true', dest='all', 
+        help='Generate new patients and immunization history')
+
+    (options, args) = parser.parse_args()
+
+
+    total_patients = int(options.population_size) or POPULATION_SIZE
+    
+    if options.all:
+        options.patients = True
+        options.immunizations = True
+        options.clear = False
+
+    if not (options.patients or options.immunizations):
+        parser.print_help()
+        import sys
+        sys.exit()
+
+
+    if options.clear:
+        clear()
+
+    patients = []
+
+    if options.patients:
+        for i in xrange(total_patients):
+            patients.append(Patient.make_mock())
+
+
+    if options.immunizations:
+        for patient in patients:
+            log.info('Creating Immunization history for patient %s' % patient)
+            history = ImmunizationHistory(patient)
+            for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
+                imm = history.add_immunization()
+                check_for_reactions(imm)
+                
+                
+
+
+
+
+def clear():
+    for klass in [Patient, Immunization, Encounter, LabResult, AdverseEvent]:
+        klass.delete_fakes()
+
+
+
 
 if __name__ == '__main__':
     main()
