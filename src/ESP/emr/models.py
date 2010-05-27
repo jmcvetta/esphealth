@@ -1,4 +1,4 @@
-'''
+3'''
                               ESP Health Project
                      Electronic Medical Records Warehouse
                                   Data Models
@@ -20,7 +20,7 @@ from django.db.models import Q, F
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
-from ESP.settings import DATABASE_ENGINE
+from ESP.settings import DATABASE_ENGINE, DATA_DIR
 from ESP.emr.choices import DATA_SOURCE
 from ESP.emr.choices import LOAD_STATUS
 from ESP.emr.choices import LAB_ORDER_TYPES
@@ -61,8 +61,7 @@ class Provenance(models.Model):
     # source will contain the filename, if data came from a file
     source = models.CharField(max_length=500, blank=False, db_index=True)
     hostname = models.CharField('Host on which data was loaded', max_length=255, blank=False)
-    status = models.CharField(max_length=10, choices=LOAD_STATUS, 
-        blank=False, db_index=True)
+    status = models.CharField(max_length=10, choices=LOAD_STATUS, blank=False, db_index=True)
     valid_rec_count = models.IntegerField('Count of valid records loaded', blank=False, default=0)
     error_count = models.IntegerField('Count of errors during load', blank=False, default=0)
     comment = models.TextField(blank=True, null=True)
@@ -161,14 +160,18 @@ class Provider(BaseMedicalRecord):
         Provider.fakes().delete()
 
     @staticmethod
-    def make_fakes(save_on_db=True):
+    def make_fakes(save_on_db=True, save_to_epic=False):
         provenance = Provenance.fake()
         if Provider.fakes().count() > 0: return
         import fake
+        if save_to_epic:
+            filename = os.path.join(DATA_DIR, 'fake', 'epicpro.%s.esp' % EPOCH.strftime('%m%d%Y'))
+            epic_file = open(filename, 'a')
         for p in fake.PROVIDERS:
             p.provenance = provenance
             p.provider_id_num = 'FAKE-%05d' % random.randrange(1, 100000)
             if save_on_db: p.save()
+            if save_to_epic: p.write
 
     @staticmethod
     def get_mock():
@@ -238,7 +241,7 @@ class Patient(BaseMedicalRecord):
     q_fake = Q(patient_id_num__startswith='FAKE')
 
     @staticmethod
-    def fakes():
+    def fakes(**kw):
         return Patient.objects.filter(Patient.q_fake)
 
     @staticmethod
@@ -246,7 +249,7 @@ class Patient(BaseMedicalRecord):
         Patient.fakes().delete()
             
     @staticmethod
-    def make_fakes(how_many, save_on_db=True):
+    def make_fakes(how_many, save_on_db=True, **kw):
         for i in xrange(how_many):
             Patient.make_mock(save_on_db=save_on_db)
 
@@ -255,7 +258,9 @@ class Patient(BaseMedicalRecord):
         Patient.fakes().delete()
 
     @staticmethod
-    def make_mock(save_on_db=False):
+    def make_mock(**kw):
+        save_on_db = kw.get('save_on_db', False)
+
         # Common, random attributes
         provenance = Provenance.fake()
         phone_number = randomizer.phone_number()
@@ -449,7 +454,7 @@ class Patient(BaseMedicalRecord):
         The patient's self-contained register of all of records, in JSON-format
         '''
         import simplejson
-        from django.core.serializers.python import Serializer
+
         
         
         name = {
@@ -596,23 +601,27 @@ class LabResult(BasePatientRecord):
         LabResult.fakes().delete()
 
     @staticmethod
-    def make_mock(loinc, patient, when=None, save_on_db=True):
+    def make_mock(loinc, patient, when=None, **kw):
+        save_on_db = kw.pop('save_on_db', False)
+        loinc = kw.get('with_loinc', None) or Loinc.objects.order_by('?')[0]
+
         when = when or datetime.date.today()
-        result_date = when + datetime.timedelta(
-            days=random.randrange(1, 30))
+        result_date = when + datetime.timedelta(days=random.randrange(1, 30))
         # Make sure the patient was alive for the order...
-        order_date = max(when, patient.date_of_birth)
-        lx = LabResult(patient=patient, provenance=Provenance.fake(), 
-                       date=order_date, result_date=result_date)
+        order_date = when if patient.date_of_birth is None else max(when, patient.date_of_birth)
+        lx = LabResult(patient=patient, provenance=Provenance.fake(), date=order_date, 
+                       native_code = str(loinc), native_name =loinc.shortname,
+                       result_date=result_date)
+
+
+
         if save_on_db: lx.save()
         return lx
 
     def previous(self):
         try:
-            return LabResult.objects.filter(patient=self.patient, 
-                                            native_code=self.native_code
-                                            ).exclude(date__gte=self.date
-                                                      ).latest('date')
+            return LabResult.objects.filter(patient=self.patient, native_code=self.native_code
+                                            ).exclude(date__gte=self.date).latest('date')
         except:
             return None
 
@@ -937,13 +946,13 @@ class Encounter(BasePatientRecord):
                     Encounter.make_mock(patient, save_on_db=True, when=when)
             
     @staticmethod
-    def make_mock(patient, save_on_db=False, **kw):
+    def make_mock(patient, **kw):
+        save_on_db=kw.pop('save_on_db', False)
         when = kw.get('when', datetime.datetime.now())
         provider = Provider.get_mock()
 
         e = Encounter(patient=patient, provider=provider, provenance=Provenance.fake(),
-                      mrn=patient.mrn, status='FAKE', date=when, 
-                      closed_date=when)
+                      mrn=patient.mrn, status='FAKE', date=when, closed_date=when)
         
         if save_on_db: e.save()
         return e
