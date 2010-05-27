@@ -62,13 +62,13 @@ class Satscan(object):
             residential_files = self._filenames(Satscan.RESIDENTIAL_BASE_FILENAME, group)
 
 
-#            site_file = open(os.path.join(self.folder, site_files['parameter']), 'w')   
-#            site_file.write(get_template(Satscan.PARAM_FILE_TEMPLATE).render(Context({
-#                            'case_file': site_files['case'],
-#                            'result_file': site_files['results'],
-#                            'start_date': self.start_date,
-#                            'end_date': self.end_date
-#                            })))
+           site_file = open(os.path.join(self.folder, site_files['parameter']), 'w')   
+           site_file.write(get_template(Satscan.PARAM_FILE_TEMPLATE).render(Context({
+                           'case_file': site_files['case'],
+                           'result_file': site_files['results'],
+                           'start_date': self.start_date,
+                           'end_date': self.end_date
+                           })))
 
             residential_file = open(os.path.join(self.folder, residential_files['parameter']), 'w')   
             residential_file.write(get_template(Satscan.PARAM_FILE_TEMPLATE).render(Context({
@@ -80,7 +80,7 @@ class Satscan(object):
 
 
             residential_file.close()
-#            site_file.close()
+            site_file.close()
                       
 
 
@@ -131,14 +131,14 @@ class Satscan(object):
             group_events = events.filter(age_group_filter(*group)) if group else events
 
 
-#            site_filename = self._filenames(Satscan.SITE_BASE_FILENAME, group)['case']
+            site_filename = self._filenames(Satscan.SITE_BASE_FILENAME, group)['case']
             residential_filename = self._filenames(Satscan.RESIDENTIAL_BASE_FILENAME, group)['case']
             
-#            site_events = group_events.exclude(reporting_site__isnull=True)
+            site_events = group_events.exclude(reporting_site__isnull=True)
             residential_events = group_events.exclude(patient_zip_code__isnull=True).order_by('patient_zip_code', 'date')
             
 
-#            self._make_site_casefile(site_events, site_filename)
+            self._make_site_casefile(site_events, site_filename)
             self._make_residential_casefile(residential_events, residential_filename)
             
             
@@ -149,7 +149,7 @@ class Satscan(object):
         groups = self.age_groups + [None]
 
         for group in groups:
-#            run_with_file(self._filenames(Satscan.SITE_BASE_FILENAME, group)['parameter'])
+            run_with_file(self._filenames(Satscan.SITE_BASE_FILENAME, group)['parameter'])
             run_with_file(self._filenames(Satscan.RESIDENTIAL_BASE_FILENAME, group)['parameter'])
         
         
@@ -197,15 +197,15 @@ class Satscan(object):
 
     def package(self):
         groups = self.age_groups + [None]
-#        site_package_basename = 'Site-%s%s-satscan%s-interval%.0f.zip'
+        site_package_basename = 'Site-%s%s-satscan%s-interval%.0f.zip'
         residential_package_basename = 'Residential-%s%s-satscan%s-interval%.0f.zip'
         
                 
         for group in groups:
             self._package_reports(self._filenames(Satscan.RESIDENTIAL_BASE_FILENAME, group)['results'], 
                                   residential_package_basename, group)
-#            self._package_reports(self._filenames(Satscan.SITE_BASE_FILENAME, group)['results'], 
-#                                  site_package_basename, group)
+            self._package_reports(self._filenames(Satscan.SITE_BASE_FILENAME, group)['results'], 
+                                  site_package_basename, group)
             
                                   
             
