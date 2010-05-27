@@ -150,6 +150,17 @@ def getfilesByDay(files):
     return returndays
 
 
+class Profiler(object):
+    def __init__(self):
+        self.mark = datetime.datetime.now()
+
+    def check(self, message=None):
+        new_time = datetime.datetime.now()
+        msg = str(message) or ''
+        log.info(': '.join([msg, str(new_time - self.mark)]))
+        self.mark = new_time
+
+
 def timeit():
     '''Poor man's profiler'''
     def decorator(func):
@@ -365,3 +376,5 @@ class TableSelectMultiple(SelectMultiple):
                 output.append(u'<td>%s</td>' % escape(content))
             output.append(u'</tr>')
         return mark_safe(u'\n'.join(output))
+
+
