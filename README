@@ -1,0 +1,27 @@
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~                                                                              ~
+~                                 ESP Health                                   ~
+~                                                                              ~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+ESP is a disease surveillance application.  It can analyze large volumes of
+electronic medical records to detect various medical conditions.  Support is
+included for automatic reporting of notifiable diseases to public health
+authorities.  Advanced data analysis and reporting tools are planned for a
+future release.
+
+ESP is written in Python, using the Django framework.   Since all database
+calls are made using the Django ORM, ESP is database backend agnostic.  It can
+work with any RDBMS supported by Django.
+
+All documentation is available online at http://esphealth.org/.  If you are just
+getting started, you may wish to read the Quick Start Guide:
+http://esphealth.org/trac/ESP/wiki/QuickStart/.
+
+ESP is Free Software, released under the LGPL, and includes various compatibly
+licensed components.  See the LICENSE file for more details.
+
+ESP was developed as part of a CDC Center of Excellence in Public Health
+Informatics <http://www.phiconnect.org/> project at Channing Laboratory
+<http://www.channing.harvard.edu/> in Boston.  
