@@ -15,7 +15,6 @@ from ESP.hef.core import MedicationHeuristic
 from ESP.hef.core import FeverHeuristic
 from ESP.hef.core import CalculatedBilirubinHeuristic
 from ESP.hef.core import WesternBlotHeuristic
-from ESP.hef.core import PregnancyHeuristic
 
 
 #===============================================================================
@@ -599,39 +598,6 @@ EncounterHeuristic(
     long_name = 'Pregnancy (by ICD9)',
     icd9s = ['V22.', 'V23.'],
     match_style = 'startswith',
-    )
-
-#
-#-- Gestational Diabetes
-#
-
-#--- pregnancy
-#pregnancy = PregnancyHeuristic() # No config needed
-
-
-EncounterHeuristic(
-    name = 'gdm_diagnosis',
-    long_name = 'ABN GLUCOSE (several variants)',
-    icd9s = ['648.8',],
-    match_style = 'startswith',
-    )
-
-MedicationHeuristic(
-    name = 'lancets_rx',
-    long_name = 'Lancets Prescription',
-    drugs = ['lancets'],
-    )
-
-MedicationHeuristic(
-    name = 'test_strips_rx',
-    long_name = 'Test Strips Prescription',
-    drugs = ['test strips'],
-    )
-
-MedicationHeuristic(
-    name = 'insulin_rx',
-    long_name = 'Insulin Prescription',
-    drugs = ['insulin'],
     )
 
 
