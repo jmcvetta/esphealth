@@ -15,19 +15,19 @@ S: MetroHealth System
 S: 2500 MetroHealth Drive
 S: Cleveland, OH 44109
 
-N: Julie Dunn
-E: Julie_Dunn@harvardpilgrim.org
-D: Project manager
-S: Harvard Pilgrim Healthcare Institute
-S: 133 Brookline Avenue, 6Fl
-S: Boston, MA 02215
-
 N: George Bieber
 E: george.bieber@channing.harvard.edu 
 D: System administrator
 S: Bioinformatics Group
 S: Channing Laboratory, 4Fl
 S: 181 Longwood Ave
+S: Boston, MA 02215
+
+N: Julie Dunn
+E: Julie_Dunn@harvardpilgrim.org
+D: Project manager
+S: Harvard Pilgrim Healthcare Institute
+S: 133 Brookline Avenue, 6Fl
 S: Boston, MA 02215
 
 N: Xuanlin Hou
