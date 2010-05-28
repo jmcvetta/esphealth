@@ -56,8 +56,7 @@ S: Boston, MA 02215
 
 N: Raphael Lullis
 E: raphael.lullis@channing.harvard.edu
-D: Created syndromic surveillance & VAERS components; data faker; and various 
-D: tests and testing infrastructure
+D: Syndromic surveillance & VAERS; data faker; most tests
 S: Bioinformatics Group
 S: Channing Laboratory, 4Fl
 S: 181 Longwood Ave
