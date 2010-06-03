@@ -1,7 +1,7 @@
 * text=auto !eol
+/CREDITS -text
 /LICENSE -text
-analysis/dm_esp.schema.xml -text
-analysis/pat.hibernate.pg.sql -text
+/README -text
 bin/esp -text
 doc/ESP-architecture.png -text svneol=unset#unset
 doc/ESP-architecture.xmind -text svneol=unset#unset
@@ -17,7 +17,6 @@ doc/specifications/MDPH_ELR_EMR_Query_Specification_v1.0.doc -text
 doc/specifications/PHIN_ELR_Implementation_Guide--HL7_2.3.1--21_May_2004.pdf -text svneol=unset#unset
 doc/specifications/gipse.xsd -text
 etc/templates/case_report/odh_hl7.txt -text
-/readme -text
 share/apache.conf.sample -text
 share/django.wsgi.sample -text
 share/epic_etl/AdditionalStepsAfterCompile.doc -text svneol=unset#unset
