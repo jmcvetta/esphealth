@@ -111,7 +111,7 @@ def _populate_status_values():
     '''
     today_string = datetime.datetime.now().strftime(DATE_FORMAT)
     yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
-    new_cases = Case.objects.filter(updated_timestamp__gte=yesterday)
+    new_cases = Case.objects.filter(created_timestamp__gte=yesterday)
     reports = Report.objects.filter(timestamp__gte=yesterday, sent=True)
     values = {
         'title': _('Status Report'),
