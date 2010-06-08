@@ -150,6 +150,9 @@ class Command(BaseCommand):
                 del cmnd
                 progress('Successfully emailed status report.')
             progress('Batch run complete')
+        except KeyboardInterrupt:
+            sys.stderr.write('Keyboard interrupt - exiting now.')
+            sys.exit(-255)
         except BaseException, e:
             sub = 'WARNING! An error occurred in the ESP batch job at %s' % SITE_NAME
             msg = 'Caught the following exception: \n%s' % e
