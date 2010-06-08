@@ -371,10 +371,10 @@ class SimpleEventPattern(BaseEventPattern):
         events = self.plausible_events(patients=patients, exclude_condition=exclude_condition)
         for e in events:
             for tspan in self.require_timespan:
-                if not Timespan.objects.filter(patient=e.patient, start_date__lte=e.date, end_date__gte=e.date).count():
+                if not Timespan.objects.filter(name=tspan, patient=e.patient, start_date__lte=e.date, end_date__gte=e.date).count():
                     continue # Event does not fall within required timespans
             for tspan in self.exclude_timespan:
-                if Timespan.objects.filter(patient=e.patient, start_date__lte=e.date, end_date__gte=e.date).count():
+                if Timespan.objects.filter(name=tspan, patient=e.patient, start_date__lte=e.date, end_date__gte=e.date).count():
                     continue # Event falls within an excluded timespan
             yield Window(days=days, events=[e])
                 
@@ -502,6 +502,8 @@ class MultipleEventPattern(BaseEventPattern):
         @type exclude_condition:  String naming a Condition
         '''
         q_obj = Q(event__name__in=self.events)
+        if self.require_timespan:
+            q_obj = q_obj & Q(timespan__name__in=self.require_timespan)
         qs = Patient.objects.filter(q_obj).distinct()
         log_query('Plausible patients for %s, exclude %s' % (self, exclude_condition), qs)
         return qs
@@ -517,6 +519,22 @@ class MultipleEventPattern(BaseEventPattern):
         if exclude_condition:
             q_obj = q_obj & ~Q(case__condition=exclude_condition)
         events = Event.objects.filter(q_obj)
+        for tspan in self.require_timespan:
+            events = events.extra(
+                tables = ['hef_timespan'],
+                select = {
+                    'ts_name': 'hef_timespan.name',
+                    },
+                where = [
+                    'hef_timespan.patient_id = hef_event.patient_id',
+                    'hef_timespan.start_date <= hef_event.date',
+                    'hef_timespan.end_date >= hef_event.date',
+                    'hef_timespan.name = %s',
+                    ],
+                params = [tspan],
+                ).distinct()
+        for tspan in self.exclude_timespan:
+            raise NotImplementedError()
         log_query('Querying plausible events for %s' % self, events)
         return events
         
@@ -538,8 +556,9 @@ class MultipleEventPattern(BaseEventPattern):
         for pd in patient_dates:
             patient = pd['patient']
             event_date = pd['date']
-            pd_events = self.plausible_events(exclude_condition=exclude_condition).filter(patient=patient, date=event_date)
+            pd_events = self.plausible_events(patients=[patient], exclude_condition=exclude_condition).filter(date=event_date)
             if pd_events: yield Window(days=days, events=pd_events)
+            
 
     def match_window(self, reference, exclude_condition=None):
         '''
@@ -617,7 +636,7 @@ class ComplexEventPattern(BaseEventPattern):
         @type require_after_window:    Integer (number of days)
         @param require_ever:           Dict of Strings naming event that must have occurred at some point, irrelevant of when
         @type require_ever:            Integer (number of days)
-        @type require_timespan:        Events matching thsi pattern must have occurred within these timespans
+        @type require_timespan:        Events matching this pattern must have occurred within these timespans
         @param require_timespan:       Dict of strings naming timespans during which pattern match is valid
         @param exclude:                Exclude this pattern within match window
         @type exclude:                 Dict of String naming heuristic Event, or ComplexEventPattern instance
@@ -1617,8 +1636,8 @@ class Case(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='AR') # Is it sensible to have default here?
     notes = models.TextField(blank=True, null=True)
     # Timestamps:
-    created_timestamp = models.DateTimeField(auto_now_add=True, blank=False, db_index=True)
-    updated_timestamp = models.DateTimeField(auto_now=True, blank=False, db_index=True)
+    created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
+    updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
     sent_timestamp = models.DateTimeField(blank=True, null=True)
     #
     # Events that define this case
