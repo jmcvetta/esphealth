@@ -1617,8 +1617,8 @@ class Case(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='AR') # Is it sensible to have default here?
     notes = models.TextField(blank=True, null=True)
     # Timestamps:
-    created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
-    updated_timestamp = models.DateTimeField(auto_now=True, blank=False)
+    created_timestamp = models.DateTimeField(auto_now_add=True, blank=False, db_index=True)
+    updated_timestamp = models.DateTimeField(auto_now=True, blank=False, db_index=True)
     sent_timestamp = models.DateTimeField(blank=True, null=True)
     #
     # Events that define this case
