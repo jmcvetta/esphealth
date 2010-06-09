@@ -6,6 +6,7 @@ analysis/dm_esp.schema.xml -text
 analysis/pat.hibernate.pg.sql -text
 bin/esp -text
 doc/ESP-architecture.xmind -text svneol=unset#unset
+doc/LGPL-3.0.txt -text
 doc/README.docs.txt -text
 doc/disease-protocols/Chlamydia.doc -text
 doc/disease-protocols/Combined_Hepatitis_B.doc -text

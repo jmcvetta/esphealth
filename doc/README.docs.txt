@@ -15,7 +15,10 @@ ESP-architecture.xmind  Graphical depiction of how ESP works, viewable with the
                         any regular basis, so should be presumed to be out of 
                         date.
 
-ESP-architecture.png    PNG representation of the Xmind diagram above.
+LGPL-3.0.txt            Text of the GNU Lesser General Public License, under
+                        which ESP is released to the public.
 
 specifications/         Various spec documents related to ESP and the services 
                         with which it interacts.
+
+
