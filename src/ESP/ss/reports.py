@@ -16,8 +16,6 @@ from definitions import ENCOUNTERS_BY_RESIDENTIAL_ZIP_FILENAME, ENCOUNTERS_BY_SI
 from definitions import MINIMUM_RESIDENTIAL_CASE_THRESHOLD
 from definitions import AGE_GROUP_INTERVAL, AGE_GROUP_CAP, AGE_GROUPS
 
-import settings
-
 #-----------------------------------------------------------------------------
 #
 #   Methods to generate Tab-delimited and XML files for reports related to ALL
@@ -32,6 +30,7 @@ class Report(object):
     GIPSE_TEMPLATE = os.path.join(TEMPLATE_FOLDER, 'xml', 'gipse-response.xml')
     GIPSE_SITE_FILENAME = 'GIPSE_Response_Site_%s_%s.xml'
     GIPSE_RESIDENTIAL_FILENAME = 'GIPSE_Response_Residential_%s_%s.xml'
+    GIPSE_REQUESTING_USER = 'Tester'
 
     def __init__(self, begin_date, end_date):
         assert begin_date <= end_date
@@ -40,7 +39,7 @@ class Report(object):
         self.end_date = end_date
         self.days = days_in_interval(self.begin_date, self.end_date)
         self.timestamps = str_from_date(self.begin_date), str_from_date(self.end_date)
-        self.folder = report_folder(begin_date, end_date)
+        self.folder = report_folder(begin_date, end_date, subfolder='reports')
         self.encounters = Encounter.objects.syndrome_care_visits(sites=Site.site_ids()).filter(
             date__gte=self.begin_date, date__lte=self.end_date)
 
@@ -70,7 +69,7 @@ class Report(object):
 
         msg = get_template(Report.GIPSE_TEMPLATE).render(Context({
                     'timestamp':datetime.datetime.now(),
-                    'requesting_user':settings.GIPSE_REQUESTING_USER,
+                    'requesting_user':Report.GIPSE_REQUESTING_USER,
                     'heuristic_counts':counts,
                     'syndromes':syndromes,
                     'zip_codes':zip_codes
