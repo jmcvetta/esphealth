@@ -192,11 +192,11 @@ src/ESP/ss/heuristics.py -text
 src/ESP/ss/hsph.py -text
 src/ESP/ss/legacy.py -text
 src/ESP/ss/main.py -text
+src/ESP/ss/mapping.py -text
 src/ESP/ss/models.py -text
 src/ESP/ss/reports.py -text
 src/ESP/ss/run.py -text
 src/ESP/ss/satscan.py -text
-src/ESP/ss/settings.py -text
 src/ESP/ss/templates/xml/gipse-metadata.xml -text
 src/ESP/ss/templates/xml/gipse-response.xml -text
 src/ESP/ss/tests.py -text

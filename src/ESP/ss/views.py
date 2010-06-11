@@ -11,7 +11,7 @@ from django.core.urlresolvers import reverse
 from django.views.generic.simple import direct_to_template
 
 from definitions import SYNDROME_NAMES
-from settings import MAP_ZOOM_LEVEL, MAP_CENTER_LATITUDE, MAP_CENTER_LONGITUDE
+from mapping import MAP_ZOOM_LEVEL, MAP_CENTER_LATITUDE, MAP_CENTER_LONGITUDE
 
 PAGE_TEMPLATE_DIR = 'pages/ss/'
 WIDGET_TEMPLATE_DIR = 'widgets/ss/'
