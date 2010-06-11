@@ -62,13 +62,13 @@ class Satscan(object):
             residential_files = self._filenames(Satscan.RESIDENTIAL_BASE_FILENAME, group)
 
 
-           site_file = open(os.path.join(self.folder, site_files['parameter']), 'w')   
-           site_file.write(get_template(Satscan.PARAM_FILE_TEMPLATE).render(Context({
-                           'case_file': site_files['case'],
-                           'result_file': site_files['results'],
-                           'start_date': self.start_date,
-                           'end_date': self.end_date
-                           })))
+            site_file = open(os.path.join(self.folder, site_files['parameter']), 'w')   
+            site_file.write(get_template(Satscan.PARAM_FILE_TEMPLATE).render(Context({
+                            'case_file': site_files['case'],
+                            'result_file': site_files['results'],
+                            'start_date': self.start_date,
+                            'end_date': self.end_date
+                            })))
 
             residential_file = open(os.path.join(self.folder, residential_files['parameter']), 'w')   
             residential_file.write(get_template(Satscan.PARAM_FILE_TEMPLATE).render(Context({
