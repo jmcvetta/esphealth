@@ -606,7 +606,7 @@ EncounterHeuristic(
 #
 
 #--- pregnancy
-#pregnancy = PregnancyHeuristic() # No config needed
+pregnancy = PregnancyHeuristic() # No config needed
 
 
 EncounterHeuristic(
