@@ -370,12 +370,6 @@ class SimpleEventPattern(BaseEventPattern):
         log.debug('Generating windows for %s' % self)
         events = self.plausible_events(patients=patients, exclude_condition=exclude_condition)
         for e in events:
-            for tspan in self.require_timespan:
-                if not Timespan.objects.filter(name=tspan, patient=e.patient, start_date__lte=e.date, end_date__gte=e.date).count():
-                    continue # Event does not fall within required timespans
-            for tspan in self.exclude_timespan:
-                if Timespan.objects.filter(name=tspan, patient=e.patient, start_date__lte=e.date, end_date__gte=e.date).count():
-                    continue # Event falls within an excluded timespan
             yield Window(days=days, events=[e])
                 
     def match_window(self, reference, exclude_condition=None):
@@ -494,6 +488,9 @@ class MultipleEventPattern(BaseEventPattern):
         #
         self.require_timespan = require_timespan
         self.exclude_timespan = exclude_timespan
+
+    def __repr__(self):
+        return self.string_hash
     
     def plausible_patients(self, exclude_condition=None):
         '''
@@ -552,7 +549,7 @@ class MultipleEventPattern(BaseEventPattern):
         '''
         log.debug('Generating windows for %s' % self)
         events = self.plausible_events(patients=patients, exclude_condition=exclude_condition)
-        patient_dates = events.values('patient', 'date').distinct().annotate(count=Count('name')).filter(count__gte=2)
+        patient_dates = events.values('patient', 'date').distinct().annotate(cnt=Count('name')).filter(cnt__gte=2)
         for pd in patient_dates:
             patient = pd['patient']
             event_date = pd['date']
@@ -797,6 +794,20 @@ class ComplexEventPattern(BaseEventPattern):
                 plausible = plausible & pat.plausible_events(patients=patients, exclude_condition=exclude_condition)
             else: # 'or'
                 plausible = plausible | pat.plausible_events(patients=patients, exclude_condition=exclude_condition)
+        for tspan in self.require_timespan:
+            plausible = plausible.extra(
+                tables = ['hef_timespan'],
+                select = {
+                    'ts_name': 'hef_timespan.name',
+                    },
+                where = [
+                    'hef_timespan.patient_id = hef_event.patient_id',
+                    'hef_timespan.start_date <= hef_event.date',
+                    'hef_timespan.end_date >= hef_event.date',
+                    'hef_timespan.name = %s',
+                    ],
+                params = [tspan],
+                ).distinct()
         purpose = 'Querying plausible events for %s' % self
         log_query(purpose, plausible)
         return plausible
