@@ -477,7 +477,7 @@ class LabOrderLoader(BaseLoader):
             modifier = row['modifier'],
             specimen_id = row['specimen_id'],
             date = self.date_or_none(row['ordering_date']),
-            order_type = int(row['order_type']),
+            order_type = row['order_type'],
             procedure_name = row['procedure_name'],
             specimen_source = row['specimen_source']
             )
