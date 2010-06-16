@@ -101,10 +101,6 @@ def main():
         hsph = Hsph(begin_date, end_date, syndrome_heuristics()['ili'])
         hsph.report()
         
-                
-        
-
-
     if options.individual:
         reports.all_encounters_report(begin_date, end_date)
 
