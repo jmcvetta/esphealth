@@ -2,6 +2,7 @@
 /*.pyo
 /.project
 /.pydevproject
+src/*.pyc
 src/ESP/*.db
 src/ESP/*.pyc
 src/ESP/.ropeproject
