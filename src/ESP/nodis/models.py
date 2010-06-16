@@ -5,7 +5,6 @@
 '''
 
 CACHE_WARNING_THRESHOLD = 100 # Log warning when cache exceeds this many patients
-EXCLUDE_XB_NAMES = False # Exclude patients whose names start with 'Xb' -- test patients
 
 
 import datetime
@@ -774,12 +773,6 @@ class ComplexEventPattern(BaseEventPattern):
         for tspan in self.require_timespan:
             plausible = plausible & Patient.objects.filter(timespan__name=tspan).distinct()
         log_query('Plausible patients for ComplexEventPattern "%s", exclude %s' % (self, exclude_condition), plausible)
-        if EXCLUDE_XB_NAMES:
-            #
-            # DEBUG:  Remove me when done debugging!!!!!
-            #
-            last_name_q = ~Q(last_name__istartswith='xb')
-            plausible = plausible.filter(last_name_q)
         return plausible
     
     def plausible_events(self, patients=None, exclude_condition=None):
