@@ -421,3 +421,6 @@ LOG_FORMAT_SYSLOG = config['Logging']['log_format_syslog']
 LOG_LEVEL_CONSOLE = _levels[config['Logging']['log_level_console']]
 LOG_LEVEL_FILE = _levels[config['Logging']['log_level_file']]
 LOG_LEVEL_SYSLOG = _levels[config['Logging']['log_level_syslog']]
+
+# Sphinx 0.9.9
+SPHINX_API_VERSION = 0x116
