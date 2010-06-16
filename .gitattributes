@@ -16,6 +16,7 @@ doc/specifications/EpicCare_ETL_file_spec.doc -text
 doc/specifications/MDPH_ELR_EMR_Query_Specification_v1.0.doc -text
 doc/specifications/PHIN_ELR_Implementation_Guide--HL7_2.3.1--21_May_2004.pdf -text svneol=unset#unset
 doc/specifications/gipse.xsd -text
+doc/specifications/reduced-gipse.xsd -text
 etc/templates/case_report/odh_hl7.txt -text
 share/apache.conf.sample -text
 share/django.wsgi.sample -text
