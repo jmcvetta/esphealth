@@ -873,12 +873,11 @@ class PregnancyHeuristic(TimespanHeuristic):
             long_name = 'Pregnancy, inferred from EDC or ICD9 codes',
             )
         ignore_bound_q = ~Q(timespan__name='pregnancy')
-        ignore_bound_mini_preg_q = ~Q(timespan__name='mini_pregnancy')
         has_edc_q = Q(edc__isnull=False)
         self.edc_encounters = Encounter.objects.filter(has_edc_q & ignore_bound_q).order_by('date')
         log_query('Pregnancy encounters by EDC', self.edc_encounters)
         preg_icd9_q = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
-        self.icd9_encounters = Encounter.objects.filter(~has_edc_q & preg_icd9_q & ignore_bound_q & ignore_bound_mini_preg_q).order_by('date')
+        self.icd9_encounters = Encounter.objects.filter(~has_edc_q & preg_icd9_q & ignore_bound_q).order_by('date')
         log_query('Pregnancy encounters by ICD9', self.edc_encounters)
         all_preg_q = ignore_bound_q & (preg_icd9_q | has_edc_q)
         self.all_preg_encounters = Encounter.objects.filter(all_preg_q).order_by('date')
@@ -903,7 +902,8 @@ class PregnancyHeuristic(TimespanHeuristic):
             comp_date = enc.edc
         else:
             comp_date = enc.date
-        q_obj = Q(name__in=('pregnancy', 'mini_pregnancy'))
+        q_obj = Q(name__in='pregnancy')
+        q_obj = ~Q(pattern='ICD9_ONLY')
         q_obj &= Q(patient=enc.patient)
         q_obj &= Q(start_date__lte=comp_date)
         q_obj &= Q(end_date__gte=comp_date)
@@ -988,10 +988,10 @@ class PregnancyHeuristic(TimespanHeuristic):
                 enc_start = first.date # Attach encounters from this date or later
                 enc_end = end_date + PREG_END_MARGIN # Attach encounters up until this date
             else: # There is no plausible end date for this pregnancy, so we create a mini-pregnancy
-                name = 'mini_pregnancy'
+                name = 'pregnancy'
                 start_date = first.date - datetime.timedelta(days=15)
                 end_date =  first.date + datetime.timedelta(days=15)
-                pattern = 'ICD9'
+                pattern = 'ICD9_ONLY'
                 enc_start = first.date # Attach only encounters that are stricly within the mini-preg window
                 enc_end = end_date     #  "
             new_preg = Timespan(
@@ -1037,4 +1037,4 @@ class PregnancyHeuristic(TimespanHeuristic):
             index += 1
             log.debug('Patient %s (%s/%s)' % (patient.pk, index, pat_count))
             self.pregnancy_from_icd9(run, patient)
-        return Timespan.objects.filter(name__in=('pregnancy', 'mini_pregnancy'), run=run).count()
+        return Timespan.objects.filter(name__in='pregnancy', run=run).count()
