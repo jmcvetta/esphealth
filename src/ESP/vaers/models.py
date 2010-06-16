@@ -19,15 +19,16 @@ from ESP.emr.models import Patient, Immunization, Encounter, LabResult, Provider
 from ESP.static.models import Icd9, Loinc
 from ESP.conf.models import CodeMap
 from ESP.conf.common import DEIDENTIFICATION_TIMEDELTA, EPOCH
-from ESP.utils.utils import log
+from ESP.utils.utils import log, make_date_folders
+from ESP.settings import DATA_DIR
 
 from rules import TEMP_TO_REPORT, TIME_WINDOW_POST_EVENT
 from utils import make_clustering_event_report_file
 import settings
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CLUSTERING_REPORTS_DIR = os.path.join(BASE_DIR, 'assets', 'clustering_reports')
-HL7_MESSAGES_DIR = os.path.join(BASE_DIR, 'assets', 'hl7_messages')
+
+CLUSTERING_REPORTS_DIR = os.path.join(DATA_DIR, 'vaers', 'clustering_reports')
+HL7_MESSAGES_DIR = os.path.join(DATA_DIR, 'vaers', 'hl7_messages')
 
 
 ADVERSE_EVENT_CATEGORIES = [
@@ -43,11 +44,9 @@ def adverse_event_digest(**kw):
 
     if not event.digest:
         clear_msg = '%s%s%s%s' % (event.id, event.immunizations, 
-                                  event.matching_rule_explain, 
-                                  event.category)
+                                  event.matching_rule_explain, event.category)
         event.digest = hashlib.sha224(clear_msg).hexdigest()
         event.save()
-
 
 class AdverseEventManager(models.Manager):
     def cases_to_report(self):
@@ -170,12 +169,8 @@ class AdverseEvent(models.Model):
                 event.encounter = event_encounter
 
                 for code in encounter['icd9_codes']:
-                    try:
-                        icd9_code = Icd9.objects.get(code=code['code'])
-                        event.encounter.icd9_codes.add(icd9_code)
-                    except:
-                        import pdb
-                        pdb.set_trace()
+                    icd9_code = Icd9.objects.get(code=code['code'])
+                    event.encounter.icd9_codes.add(icd9_code)
                 
             if lab_result: 
                 lx_type = ContentType.objects.get_for_model(LabResultEvent)
@@ -188,19 +183,15 @@ class AdverseEvent(models.Model):
                 event_lx.save()
                 event.lab_result = event_lx
 
-
             event.date = event_data['date']
             event.category = event_data['category']
             event.matching_rule_explain = event_data['matching_rule_explain']
             event.save()
-
             
 
             for immunization in [Immunization.objects.create(
                     patient=patient, date=imm['date']) for imm in immunizations]:
                 event.immunizations.add(immunization)
-                
-            
 
             fixture_file.close()
 
@@ -229,8 +220,6 @@ class AdverseEvent(models.Model):
         outfile = open(os.path.join(AdverseEvent.FIXTURE_DIR, 'vaers_event.%s.json' % self.id), 'w')
         outfile.write(self.render_json_fixture())
         outfile.close()
-
-
 
     fake_q = Q(immunizations__name='FAKE')
 
@@ -309,9 +298,7 @@ class AdverseEvent(models.Model):
 
         
         
-        msg = EmailMessage(settings.EMAIL_SUBJECT, html_msg, 
-                           settings.EMAIL_SENDER, 
-                           who_to_send)
+        msg = EmailMessage(settings.EMAIL_SUBJECT, html_msg, settings.EMAIL_SENDER, who_to_send)
         msg.content_subtype = "html"  # Main content is now text/html
         msg.send()
         
@@ -411,13 +398,15 @@ class EncounterEvent(AdverseEvent):
 
     @staticmethod
     def write_fever_clustering_report(**kw):
-        folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
-        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
         begin_date = kw.pop('begin_date', None) or EPOCH
         end_date = kw.pop('end_date', None) or datetime.datetime.today()
 
-        fever_events = EncounterEvent.objects.fevers().filter(
-            date__gte=begin_date, date__lte=end_date, gap__lte=7)
+        root_folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
+        folder = make_date_folders(begin_date, end_date, root=root_folder)
+        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
+
+        fever_events = EncounterEvent.objects.fevers().filter(date__gte=begin_date, date__lte=end_date, 
+                                                              gap__lte=7)
 
         within_interval = [e for e in fever_events 
                            if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
@@ -428,14 +417,15 @@ class EncounterEvent(AdverseEvent):
 
     @staticmethod
     def write_diagnostics_clustering_report(**kw):
-        folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
-        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
         begin_date = kw.pop('begin_date', None) or EPOCH
         end_date = kw.pop('end_date', None) or datetime.datetime.today()
 
+        root_folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
+        folder = make_date_folders(begin_date, end_date, root=root_folder)
+        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
 
-        icd9_events = EncounterEvent.objects.icd9_events().filter(
-            date__gte=begin_date, date__lte=end_date, gap__lte=30)
+        icd9_events = EncounterEvent.objects.icd9_events().filter(date__gte=begin_date, 
+                                                                  date__lte=end_date, gap__lte=30)
 
         within_interval = [e for e in icd9_events 
                            if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
@@ -444,8 +434,7 @@ class EncounterEvent(AdverseEvent):
                 len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
 
 
-        make_clustering_event_report_file(
-            os.path.join(folder, 'diagnostics_events.txt'), within_interval)
+        make_clustering_event_report_file(os.path.join(folder, 'icd9_events.txt'), within_interval)
 
     def _deidentified_encounter(self, days_to_shift):
         codes = [{'code':x.code} for x in self.encounter.icd9_codes.all()]
@@ -478,10 +467,12 @@ class LabResultEvent(AdverseEvent):
 
     @staticmethod
     def write_clustering_report(**kw):
-        folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
-        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
         begin_date = kw.pop('begin_date', None) or EPOCH
         end_date = kw.pop('end_date', None) or datetime.datetime.today()
+        
+        root_folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
+        folder = make_date_folders(begin_date, end_date, root=root_folder)
+        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
 
         lx_events = LabResultEvent.objects.filter(date__gte=begin_date, date__lte=end_date)
         within_interval = [e for e in lx_events 
@@ -490,8 +481,7 @@ class LabResultEvent(AdverseEvent):
         log.info('Writing report for %d Lab Result events between %s and %s' % (
                 len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
 
-        make_clustering_event_report_file(
-            os.path.join(folder, 'clustering_lx_events.txt'), within_interval)
+        make_clustering_event_report_file(os.path.join(folder, 'lx_events.txt'), within_interval)
 
     def _deidentified_lx(self, days_to_shift):
         date = self.lab_result.date - datetime.timedelta(days=days_to_shift)
