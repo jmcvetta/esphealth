@@ -464,6 +464,8 @@ class Patient(BaseMedicalRecord):
         recent BMI.  If date is specified, returns most recent BMI in this 
         range:
             (date - before days) thru (date + after days)
+        Default before/after values are those required by GDM algorithm
+        
         @param date:   Optional date for which to get BMI
         @type date:    DateTime
         @param before: How many days before date to consider?
