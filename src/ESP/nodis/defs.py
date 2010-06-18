@@ -506,7 +506,6 @@ gdm_ogtt50 = ComplexEventPattern(
     name = 'GDM based on OGTT50',
     patterns = [
         'ogtt50_1hr_190',
-        #'ogtt50_fasting_95',
         'ogtt50_random_190',
         ],
     operator = 'or',
