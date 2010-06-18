@@ -469,6 +469,7 @@ LabResultHeuristic(
     name = 'ogtt50_fasting',
     long_name = 'OB GLUCOSE CHALLENGE, FASTING',
     date_field = 'result',
+    positive_events = False,
     fixed_threshold_events = [95],
     )
 
@@ -476,6 +477,7 @@ LabResultHeuristic(
     name = 'ogtt50_random',
     long_name = 'OB GLUCOSE CHALLENGE, RANDOM',
     date_field = 'result',
+    positive_events = False,
     fixed_threshold_events = [190],
     )
 
@@ -483,6 +485,7 @@ LabResultHeuristic(
     name = 'ogtt50_1hr',
     long_name = 'GLUCOSE 1 HR POST CHAL.',
     date_field = 'result',
+    positive_events = False,
     fixed_threshold_events = [190],
     )
 
@@ -494,7 +497,8 @@ LabResultHeuristic(
     name = 'ogtt75_fasting',
     long_name = 'GLUCOSE FASTING PRE 75 GM',
     date_field = 'result',
-    fixed_threshold_events = [126],
+    positive_events = False,
+    fixed_threshold_events = [95, 126],
     order_events = True,
     )
     
@@ -502,6 +506,7 @@ LabResultHeuristic(
     name = 'ogtt75_fasting_urine',
     long_name = 'GLUCOSE FASTING, UR',
     date_field = 'result',
+    positive_events = True,
     order_events = True,
     )
     
@@ -509,6 +514,7 @@ LabResultHeuristic(
     name = 'ogtt75_30m',
     long_name = 'GLUCOSE 1/2 HR POST 75 GM',
     date_field = 'result',
+    positive_events = False,
     fixed_threshold_events = [200],
     order_events = True,
     )
@@ -517,7 +523,8 @@ LabResultHeuristic(
     name = 'ogtt75_1hr',
     long_name = 'GLUCOSE 1 HR POST 75 GM',
     date_field = 'result',
-    fixed_threshold_events = [200],
+    positive_events = False,
+    fixed_threshold_events = [180, 200],
     order_events = True,
     )
 
@@ -525,7 +532,8 @@ LabResultHeuristic(
     name = 'ogtt75_90m',
     long_name = 'GLUCOSE 1 1/2 HR POST 75 GM',
     date_field = 'result',
-    fixed_threshold_events = [200],
+    positive_events = False,
+    fixed_threshold_events = [180, 200],
     order_events = True,
     )
 
@@ -533,7 +541,8 @@ LabResultHeuristic(
     name = 'ogtt75_2hr',
     long_name = 'GLUCOSE 2 HR POST 75 GM',
     date_field = 'result',
-    fixed_threshold_events = [200],
+    positive_events = False,
+    fixed_threshold_events = [155, 200],
     order_events = True,
     )
 
@@ -544,54 +553,71 @@ LabResultHeuristic(
     name = 'ogtt100_fasting',
     long_name = 'GLUCOSE FASTING PRE 100 GM',
     date_field = 'result',
+    positive_events = False,
+    fixed_threshold_events = [95],
     )
 
 LabResultHeuristic(
     name = 'ogtt100_fasting_urine',
     long_name = 'GLUCOSE FASTING PRE 100 GM',
     date_field = 'result',
+    positive_events = True,
     )
 
 LabResultHeuristic(
     name = 'ogtt100_30m',
     long_name = 'GLUCOSE 1/2 HR POST 100 GM',
     date_field = 'result',
+    positive_events = False,
+    fixed_threshold_events = [200],
     )
 
 LabResultHeuristic(
     name = 'ogtt100_1hr',
     long_name = 'GLUCOSE 1 HR POST 100 GM',
     date_field = 'result',
+    positive_events = False,
+    fixed_threshold_events = [180],
     )
 
 LabResultHeuristic(
     name = 'ogtt100_90m',
     long_name = 'GLUCOSE 1 1/2 HR POST 100 GM',
     date_field = 'result',
+    positive_events = False,
+    fixed_threshold_events = [180],
     )
 
 LabResultHeuristic(
     name = 'ogtt100_2hr',
     long_name = 'GLUCOSE 2 HR POST 100 GM',
     date_field = 'result',
+    positive_events = False,
+    fixed_threshold_events = [155],
     )
 
 LabResultHeuristic(
     name = 'ogtt100_3hr',
     long_name = 'GLUCOSE 3 HR POST 100 GM',
     date_field = 'result',
+    positive_events = False,
+    fixed_threshold_events = [140],
     )
 
 LabResultHeuristic(
     name = 'ogtt100_4hr',
     long_name = 'GLUCOSE 4 HR POST 100 GM',
     date_field = 'result',
+    positive_events = False,
+    fixed_threshold_events = [140],
     )
 
 LabResultHeuristic(
     name = 'ogtt100_5hr',
     long_name = 'GLUCOSE 5 HR POST 100 GM',
     date_field = 'result',
+    positive_events = False,
+    fixed_threshold_events = [140],
     )
 
 EncounterHeuristic(
