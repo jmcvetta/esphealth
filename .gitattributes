@@ -24,6 +24,9 @@ share/epic_etl/AdditionalStepsAfterCompile.doc -text svneol=unset#unset
 share/epic_etl/ESPFileLayout.doc -text svneol=unset#unset
 share/epic_etl/README.txt -text
 share/epic_etl/mhslespftp.sh -text
+share/esp-postgres.daily.logrotate -text
+share/esp-postgres.monthly.logrotate -text
+share/esp-postgres.weekly.logrotate -text
 src/ESP/application.spec.ini -text
 src/ESP/axis-1_4/activation.jar -text
 src/ESP/axis-1_4/mail.jar -text
