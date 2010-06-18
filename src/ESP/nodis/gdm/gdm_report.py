@@ -175,7 +175,7 @@ def main():
             'intrapartum OGTT50 positive result': bool(events.filter(name__in=OGTT50_EVENT_NAMES).count() ),
             'intrapartum OGTT75 positive result': bool( events.filter(name__in=OGTT75_INTRAPARTUM_EVENT_NAMES).count() > 1),
             'intrapartum OGTT100 positive result': bool( events.filter(name__in=OGTT100_EVENT_NAMES).count() > 1 ),
-            'postpartum OGTT75 order positive result': ogtt75_postpartum_order,
+            'postpartum OGTT75 order': ogtt75_postpartum_order,
             'postpartum OGTT75 positive result': ogtt75_postpartum_pos,
             'lancets / test strips Rx': bool(preg_lancet_rx.count()),
             'new lancets / test strips Rx': new_lancet_rx,
