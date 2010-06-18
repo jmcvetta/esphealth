@@ -99,7 +99,7 @@ class SyndromeHeuristic(EncounterHeuristic):
 
         if not end_date: end_date = date
 
-        folder = report_folder(date, end_date)
+        folder = report_folder(date, end_date, subfolder='reports')
 
         log.info('Aggregate residential report for %s on %s-%s' % (self.name, date, end_date))
         header = ['encounter date', 'zip', 'syndrome', 'syndrome events', 'total encounters', 
@@ -166,7 +166,7 @@ class SyndromeHeuristic(EncounterHeuristic):
 
         if not end_date: end_date = date
 
-        folder = report_folder(date, end_date)
+        folder = report_folder(date, end_date, subfolder='reports')
 
         log.info('Aggregate site report for %s on %s-%s' % (self.name, date, end_date))
         header = ['encounter date', 'zip', 'syndrome', 'syndrome events', 'total encounters', 
@@ -254,7 +254,7 @@ class SyndromeHeuristic(EncounterHeuristic):
 
     def detailed_site_report(self, date, end_date=None):
         if not end_date: end_date = date
-        folder = report_folder(date, end_date)
+        folder = report_folder(date, end_date, subfolder='reports')
         
         log.info('Detailed site report for %s on %s-%s' % (self.name, date, end_date))
 
