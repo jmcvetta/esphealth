@@ -168,7 +168,7 @@ def main():
         #
         # BMI
         #
-        bmi = patient.bmi(date=gdm_case.date, before=365, after=120)
+        bmi = patient.bmi(date=preg_start, before=365, after=120)
         values = {
             'patient db id': patient.pk,
             'mrn': patient.mrn,
