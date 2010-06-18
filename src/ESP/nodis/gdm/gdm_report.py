@@ -118,7 +118,12 @@ def main():
     writer = csv.DictWriter(sys.stdout, fieldnames=FIELDS)
     header = dict(zip(FIELDS, FIELDS)) 
     writer.writerow(header)
-    for gdm_case in Case.objects.filter(condition='gdm').order_by('date'):
+    all_gdm_cases = Case.objects.filter(condition='gdm').order_by('date')
+    case_count = all_gdm_cases.count()
+    case_index = 0
+    for gdm_case in all_gdm_cases:
+        case_index += 1 # Increment case index
+        log.debug('Case %6s of %6s' % (case_index, case_count))
         log.debug('%s' % gdm_case)
         log.debug('case date: %s' % gdm_case.date)
         patient = gdm_case.patient
