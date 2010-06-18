@@ -10,6 +10,7 @@
 #
 
 /srv/dump/postgres/esp_prod.daily.dump {
+    daily
     rotate 7
     dateext
     nomissingok
@@ -19,6 +20,34 @@
     prerotate
         test -x /usr/bin/pg_dump || exit 0
         /usr/bin/pg_dump esp_prod -F c > /srv/dump/postgres/esp_prod.daily.dump
+    endscript
+}
+
+/srv/dump/postgres/esp_prod.weekly.dump {
+    weekly
+    rotate 7
+    dateext
+    nomissingok
+    create
+    nocompress
+    nocopy
+    prerotate
+        test -x /usr/bin/pg_dump || exit 0
+        /usr/bin/pg_dump esp_prod -F c > /srv/dump/postgres/esp_prod.weekly.dump
+    endscript
+}
+
+/srv/dump/postgres/esp_prod.monthly.dump {
+    monthly
+    rotate 7
+    dateext
+    nomissingok
+    create
+    nocompress
+    nocopy
+    prerotate
+        test -x /usr/bin/pg_dump || exit 0
+        /usr/bin/pg_dump esp_prod -F c > /srv/dump/postgres/esp_prod.monthly.dump
     endscript
 }
 
