@@ -101,6 +101,7 @@ FIELDS = [
     'end_date',
     'algorithm',
     'edc',
+    'bmi',
     'intrapartum glucose fasting positive result',
     'intrapartum OGTT50 positive result',
     'intrapartum OGTT75 positive result',
@@ -164,6 +165,10 @@ def main():
         #
         nutrition_q = Q(provider__title__icontains='RD') | Q(site_name__icontains='Nutrition')
         nutrition_ref = bool( Encounter.objects.filter(date__gte=preg_start, date__lte=preg_end, patient=patient).filter(nutrition_q) )
+        #
+        # BMI
+        #
+        bmi = patient.bmi(date=gdm_case.date, before=365, after=120)
         values = {
             'patient db id': patient.pk,
             'mrn': patient.mrn,
@@ -176,6 +181,7 @@ def main():
             'end_date': preg_end,
             'algorithm': gdm_case.pattern.name,
             'edc': edc,
+            'bmi': bmi,
             'intrapartum glucose fasting positive result': bool(events.filter(name='glucose_fasting_126').count() ),
             'intrapartum OGTT50 positive result': bool(events.filter(name__in=OGTT50_EVENT_NAMES).count() ),
             'intrapartum OGTT75 positive result': bool( events.filter(name__in=OGTT75_INTRAPARTUM_EVENT_NAMES).count() > 1),

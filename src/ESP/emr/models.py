@@ -446,7 +446,54 @@ class Patient(BaseMedicalRecord):
     def prescriptions(self):
         return Prescription.objects.filter(patient=self)
 
-
+    def __calc_bmi_from_enc(self, enc):
+        '''
+        Calculates BMI from an encounter.  Encounter MUST have both height
+        and weight data, or assertion is raised.
+        '''
+        assert enc.height
+        assert enc.weight
+        height_m = enc.height / 100  # Height is stored in centimeters
+        weight_kg = enc.weight # Already in kilograms
+        bmi = weight_kg / (height_m ** 2 )
+        return bmi
+        
+    def bmi(self, date=None, before=365, after=120):
+        '''
+        Returns this patient's BMI.  If no date is specified, returns most 
+        recent BMI.  If date is specified, returns most recent BMI in this 
+        range:
+            (date - before days) thru (date + after days)
+        @param date:   Optional date for which to get BMI
+        @type date:    DateTime
+        @param before: How many days before date to consider?
+        @type before:  Integer
+        @param after:  How many days after date to consider?
+        @type after:   Integer
+        '''
+        # Encounters that have BMI provided from source EMR
+        bmi_encs = self.encounter_set.filter(bmi__isnull=False).order_by('-date')
+        # Encounters with height and weight can be used to calculate BMI
+        hw_q = Q(height__isnull=False, weight__isnull=False) & ~Q(height=0) & ~Q(weight=0)
+        hw_encs = self.encounter_set.filter(hw_q).order_by('-date')
+        exact_date = Q(date=date)
+        begin = date - datetime.timedelta(days=before)
+        end = date + datetime.timedelta(days=after)
+        range_dates = Q(date__gte=begin, date__lte=end)
+        exact_bmi_encs = bmi_encs.filter(exact_date)
+        range_bmi_encs = bmi_encs.filter(range_dates)
+        exact_hw_encs = hw_encs.filter(exact_date)
+        range_hw_encs = hw_encs.filter(range_dates)
+        if exact_bmi_encs:
+            return exact_bmi_encs[0].bmi
+        elif exact_hw_encs:
+            return self.__calc_bmi_from_enc(exact_hw_encs[0])
+        elif range_bmi_encs:
+            return range_bmi_encs[0].bmi
+        elif range_hw_encs:
+            return self.__calc_bmi_from_enc(range_hw_encs[0])
+        else:
+            return "Unknown"
     
 
     def document_summary(self):
