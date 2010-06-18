@@ -151,7 +151,7 @@ class SyndromeHeuristic(EncounterHeuristic):
                     line = '\t'.join([str(x) for x in [
                                 str_from_date(e['date']), e['patient__zip5'], self.name, 
                                 total_cases, total_encounters, '%1.3f' % pct_syndrome]])
-                    log.info(line)
+                    log.debug(line)
                     outfile.write(line + '\n')
 
                 ev = events.next()
@@ -245,7 +245,7 @@ class SyndromeHeuristic(EncounterHeuristic):
                                 str_from_date(cur_date), zip_code, self.name, total_events, 
                                 total_encounters, '%1.3f' % pct_syndrome]
                                       ])
-                    log.info(line)
+                    log.debug(line)
                     outfile.write(line + '\n')
 
 
@@ -292,7 +292,7 @@ class SyndromeHeuristic(EncounterHeuristic):
                         ev.reporting_site.zip_code, patient_age_group, icd9_codes, 
                         ev.encounter.temperature,
                         count_by_locality_and_age, count_by_site_and_age, '\n']])
-            log.info(line)
+            log.debug(line)
             outfile.write(line)
                
 

@@ -73,7 +73,7 @@ class Hsph(object):
                 columns += [total_visits, '%2.3f' % heuristic_pct]
 
                 line = '\t'.join([str(x) for x in columns])
-                log.info(line)
+                log.debug(line)
                 outfile.write(line + '\n')
 
         outfile.close()

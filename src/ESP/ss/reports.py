@@ -52,7 +52,7 @@ class Report(object):
             age_group_map = [str(age_group_map[group]) for group in AGE_GROUPS]            
             summary = [str_from_date(day), zip_code, str(age_sum)]
             line = '\t'.join(summary + age_group_map)
-            log.info(line)
+            log.debug(line)
             outfile.write(line + '\n')
 
     def gipse_report(self):
