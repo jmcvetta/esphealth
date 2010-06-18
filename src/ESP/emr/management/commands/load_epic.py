@@ -815,6 +815,7 @@ class Command(LoaderCommand):
             path, filename = os.path.split(filepath)
             if Provenance.objects.filter(source=filename, status__in=('loaded', 'errors')):
                 log.info('File "%s" has already been loaded; skipping' % filename)
+                self.archive(options, filepath, 'success')
                 continue
             try:
                 filetype[filename.split('.')[0]] += [filepath]
