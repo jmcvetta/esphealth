@@ -502,7 +502,7 @@ gdm_fasting_glucose = ComplexEventPattern(
     require_timespan = ['pregnancy']
     )
 
-gdm_ogtt50 = ComplexEventPattern(
+gdm_ogtt50_intrapartum = ComplexEventPattern(
     name = 'GDM based on OGTT50',
     patterns = [
         'ogtt50_1hr_190',
@@ -531,7 +531,7 @@ gdm_ogtt75 = ComplexEventPattern(
     operator = 'or',
     )
 
-ogtt100_multi = MultipleEventPattern(
+ogtt100_multi_intrapartum = MultipleEventPattern(
     events = [
         'ogtt100_fasting_urine_pos',
         'ogtt100_fasting_95',
@@ -549,7 +549,7 @@ ogtt100_multi = MultipleEventPattern(
 
 gdm_ogtt100 = ComplexEventPattern(
     name = 'GDM based on OGTT100',
-    patterns = [ogtt100_multi],
+    patterns = [ogtt100_multi_intrapartum],
     operator = 'or',
     )
 
