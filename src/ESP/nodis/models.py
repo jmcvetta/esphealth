@@ -27,7 +27,7 @@ from django.contrib.contenttypes.models import ContentType
 
 
 from ESP import settings
-from ESP.hef import events # Ensure events are loaded
+#from ESP.hef import events # Ensure events are loaded
 from ESP.utils import utils as util
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
@@ -44,7 +44,6 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
-from ESP.hef import events
 from ESP.hef.core import BaseHeuristic
 from ESP.hef.core import EncounterHeuristic
 from ESP.hef.core import MedicationHeuristic
