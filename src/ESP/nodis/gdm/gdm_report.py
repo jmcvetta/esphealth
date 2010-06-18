@@ -105,7 +105,7 @@ FIELDS = [
     'intrapartum OGTT50 positive result',
     'intrapartum OGTT75 positive result',
     'intrapartum OGTT100 positive result',
-    'postpartum OGTT75 order positive result',
+    'postpartum OGTT75 order',
     'postpartum OGTT75 positive result',
     'lancets / test strips Rx',
     'new lancets / test strips Rx',
