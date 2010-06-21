@@ -8,7 +8,6 @@ src/ESP/*.pyc
 src/ESP/.ropeproject
 src/ESP/Atrius
 src/ESP/assets
-src/ESP/conf/*.pyc
 src/ESP/database_password.txt
 src/ESP/emr/*.pyc
 src/ESP/esp/*.pyc
@@ -18,7 +17,6 @@ src/ESP/hef/*.pyc
 src/ESP/localsettings.py
 src/ESP/messages
 src/ESP/nodis/*.pyc
-src/ESP/nodis2/*.pyc
 src/ESP/secret_key.txt
 src/ESP/ss/*.pyc
 src/ESP/ss/assets
