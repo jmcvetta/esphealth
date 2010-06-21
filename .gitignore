@@ -8,6 +8,7 @@ src/ESP/*.pyc
 src/ESP/.ropeproject
 src/ESP/Atrius
 src/ESP/assets
+src/ESP/conf/*.pyc
 src/ESP/database_password.txt
 src/ESP/emr/*.pyc
 src/ESP/esp/*.pyc
