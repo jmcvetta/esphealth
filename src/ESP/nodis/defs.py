@@ -502,7 +502,7 @@ gdm_fasting_glucose = ComplexEventPattern(
     require_timespan = ['pregnancy']
     )
 
-gdm_ogtt50_intrapartum = ComplexEventPattern(
+gdm_ogtt50 = ComplexEventPattern(
     name = 'GDM based on OGTT50',
     patterns = [
         'ogtt50_1hr_190',
