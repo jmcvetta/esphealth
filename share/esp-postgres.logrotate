@@ -25,7 +25,7 @@
 
 /srv/dump/postgres/esp_prod.weekly.dump {
     weekly
-    rotate 7
+    rotate 4
     dateext
     nomissingok
     create
@@ -39,7 +39,7 @@
 
 /srv/dump/postgres/esp_prod.monthly.dump {
     monthly
-    rotate 7
+    rotate 12
     dateext
     nomissingok
     create
