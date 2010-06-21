@@ -25,7 +25,6 @@ share/fake_data/README.fake_data.txt -text
 src/ESP/application.spec.ini -text
 src/ESP/axis-1_4/activation.jar -text
 src/ESP/axis-1_4/mail.jar -text
-src/ESP/batch-run.sh -text
 src/ESP/data/atrius-map.csv -text
 src/ESP/data/diseases.txt -text
 src/ESP/data/icd9.txt -text
