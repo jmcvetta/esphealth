@@ -14,6 +14,7 @@ import random
 import datetime
 import sys
 import re
+import os
 
 from django.db import models
 from django.db.models import Q, F
@@ -52,59 +53,17 @@ from ESP.utils.utils import log, date_from_str, str_from_date
 #    message = models.TextField('Status Message', blank=True, null=True)
 
 
-class Provenance(models.Model):
-    '''
-    Answers the question "Where did this data come from?"
-    '''
-    provenance_id = models.AutoField(primary_key=True)
-    timestamp = models.DateTimeField(auto_now_add=True, blank=False)
-    # source will contain the filename, if data came from a file
-    source = models.CharField(max_length=500, blank=False, db_index=True)
-    hostname = models.CharField('Host on which data was loaded', max_length=255, blank=False)
-    status = models.CharField(max_length=10, choices=LOAD_STATUS, blank=False, db_index=True)
-    valid_rec_count = models.IntegerField('Count of valid records loaded', blank=False, default=0)
-    error_count = models.IntegerField('Count of errors during load', blank=False, default=0)
-    comment = models.TextField(blank=True, null=True)
-    
-    class Meta:
-        unique_together = ['timestamp', 'source', 'hostname']
-
-    @staticmethod
-    def fake():
-        data_faker = 'Data Faker App'
-        try:
-            return Provenance.objects.get(source=data_faker)
-        except:
-            return Provenance.objects.create(
-                source=data_faker, status='loaded', hostname='fake',
-                comment='Data Faker App add data that should be used ' \
-                    'for testing and development purposes only')
-                
-        
-    def __str__(self):
-        return '%s | %s | %s' % (self.source, self.timestamp, self.hostname)
-
-
-class EtlError(models.Model):
-    '''
-    An ETL error, usually corresponding with a single bad line in a data file.
-    '''
-    timestamp = models.DateTimeField(auto_now_add=True, blank=False)
-    provenance = models.ForeignKey(Provenance, blank=False)
-    line = models.IntegerField('Line Number', blank=False)
-    err_msg = models.CharField(max_length=512, blank=False)
-    data = models.TextField()
     
 
-class LabTestConcordance(models.Model):
-    '''
-    Concordance table listing all distinct lab test names and codes, and the 
-    count results in the database for each test at time table was generated.
-    Should be rebuilt after each load of new EMR data.
-    '''
-    native_code = models.CharField(max_length=100, blank=False, db_index=True)
-    native_name = models.CharField(max_length=255, null=True, db_index=True)
-    count = models.IntegerField(blank=False)
+#class LabTestConcordance(models.Model):
+#    '''
+#    Concordance table listing all distinct lab test names and codes, and the 
+#    count results in the database for each test at time table was generated.
+#    Should be rebuilt after each load of new EMR data.
+#    '''
+#    native_code = models.CharField(max_length=100, blank=False, db_index=True)
+#    native_name = models.CharField(max_length=255, null=True, db_index=True)
+#    count = models.IntegerField(blank=False)
 
 
 
@@ -115,40 +74,63 @@ class LabTestConcordance(models.Model):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-class BaseMedicalRecord(models.Model):
+class DimensionRecord(models.Model):
     '''
-    Abstract base class for a medical record
+    Abstract base class for a datamart dimension
     '''
-    provenance = models.ForeignKey(Provenance, blank=False)
-    created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
-    updated_timestamp = models.DateTimeField(auto_now=True, blank=False, db_index=True)
+    #
+    # Slowly Changing Dimension Support
+    #
+    version = models.IntegerField(blank=False, db_index=True)
+    date_from = models.DateTimeField(db_index=True, null=True)
+    date_to = models.DateTimeField(db_index=True, null=True)
+    class Meta:
+        abstract = True
 
+class JunkDimensionRecord(models.Model):
+    '''
+    Abstract base class for a datamart junk dimension
+    '''
+    # Hashcode field - PDI speed optimization
+    hashcode = models.BigIntegerField(blank=False, db_index=True)
     class Meta:
         abstract = True
 
 
-class Provider(BaseMedicalRecord):
-    '''
-    A medical care provider
-    '''
-    provider_id_num = models.CharField('Physician code', unique=True, max_length=20, 
-        blank=True, null=True, db_index=True)
-    last_name = models.CharField('Last Name',max_length=200, blank=True,null=True)
-    first_name = models.CharField('First Name',max_length=200, blank=True,null=True)
-    middle_name = models.CharField('Middle_Name',max_length=200, blank=True,null=True)
-    title = models.CharField('Title', max_length=20, blank=True, null=True)
-    dept_id_num = models.CharField('Primary Department Id',max_length=20,blank=True,null=True)
-    dept = models.CharField('Primary Department',max_length=200,blank=True,null=True)
-    dept_address_1 = models.CharField('Primary Department Address 1',max_length=100,blank=True,null=True)
-    dept_address_2 = models.CharField('Primary Department Address 2',max_length=20,blank=True,null=True)
-    dept_city = models.CharField('Primary Department City',max_length=20,blank=True,null=True)
-    dept_state = models.CharField('Primary Department State',max_length=20,blank=True,null=True)
-    dept_zip = models.CharField('Primary Department Zip',max_length=20,blank=True,null=True)
-    # Large max_length value for area code because Atrius likes to put descriptive text into that field
-    area_code = models.CharField('Primary Department Phone Areacode',max_length=50,blank=True,null=True)
-    telephone = models.CharField('Primary Department Phone Number',max_length=50,blank=True,null=True)
-    
+class ProvenanceRecord(models.Model):
+    # 
+    # Provenance
+    #
+    filename = models.CharField(max_length=128, null=True)
+    rownum = models.IntegerField(null=True)
+    updated_timestamp = models.DateTimeField(auto_now=True, null=True, db_index=True)
+    # 
+    # Standard Fields
+    record_date = models.DateTimeField(null=True, db_index=True)
+    class Meta:
+        abstract = True
+
+
+class Provider(ProvenanceRecord, DimensionRecord):
+    provider_id = models.IntegerField(primary_key=True)
+    native_provider_id = models.CharField(max_length=128, db_index=True, null=True)
+    last_name = models.CharField(max_length=256, null=True)
+    first_name = models.CharField(max_length=256, null=True)
+    middle_name = models.CharField(max_length=256, null=True)
+    title = models.CharField(max_length=256, null=True)
+    native_dept_id = models.CharField(max_length=128, null=True)
+    dept = models.CharField(max_length=128, db_index=True, null=True)
+    dept_address_1 = models.CharField(max_length=256, null=True)
+    dept_address_2 = models.CharField(max_length=256, null=True)
+    dept_city = models.CharField(max_length=128, null=True)
+    dept_state = models.CharField(max_length=128, null=True)
+    dept_zip = models.CharField(max_length=128, null=True)
+    area_code = models.CharField(max_length=256, null=True)
+    telephone = models.CharField(max_length=256, null=True)
     q_fake = Q(provider_id_num__startswith='FAKE')
+    
+    class Meta:
+        db_table = 'emr_provider_dim'
 
     # Some methods to deal with mock/fake data
     @staticmethod
@@ -169,7 +151,7 @@ class Provider(BaseMedicalRecord):
             epic_file = open(filename, 'a')
         for p in fake.PROVIDERS:
             p.provenance = provenance
-            p.provider_id_num = 'FAKE-%05d' % random.randrange(1, 100000)
+            p.native_provider_id = 'FAKE-%05d' % random.randrange(1, 100000)
             if save_on_db: p.save()
             if save_to_epic: p.write
 
@@ -201,43 +183,43 @@ class Provider(BaseMedicalRecord):
     tel_numeric = property(__get_tel_numeric)
 
 
-class Patient(BaseMedicalRecord):
+
+
+
+class Patient(ProvenanceRecord, DimensionRecord):
     '''
     A patient, with demographic information
     '''
-    patient_id_num = models.CharField('Patient ID #', unique=True, max_length=20, 
-        blank=True, null=True, db_index=True)
-    mrn = models.CharField('Medical Record ', max_length=20, blank=True, null=True, db_index=True)
-    last_name = models.CharField('Last Name', max_length=200, blank=True, null=True)
-    first_name = models.CharField('First Name', max_length=200, blank=True, null=True)
-    middle_name = models.CharField('Middle Name', max_length=200, blank=True, null=True)
-    suffix = models.CharField('Suffix', max_length=199, blank=True, null=True)
-    pcp = models.ForeignKey(Provider, verbose_name='Primary Care Physician', blank=True, null=True)
-    address1 = models.CharField('Address1', max_length=200, blank=True, null=True)
-    address2 = models.CharField('Address2', max_length=100, blank=True, null=True)
-    city = models.CharField('City', max_length=50, blank=True, null=True)
-    state = models.CharField('State', max_length=20, blank=True, null=True)
-    zip = models.CharField('Zip', max_length=20, blank=True, null=True, db_index=True)
-    zip5 = models.CharField('5-digit zip', max_length=5, null=True, db_index=True)
-    country = models.CharField('Country', max_length=20, blank=True, null=True)
-    # Large max_length value for area code because Atrius likes to put descriptive text into that field
-    areacode = models.CharField('Home Phone Area Code', max_length=50, blank=True, null=True)
-    tel = models.CharField('Home Phone Number', max_length=100, blank=True, null=True)
-    tel_ext = models.CharField('Home Phone Extension', max_length=50, blank=True, null=True)
-    date_of_birth = models.DateField('Date of Birth', blank=True, null=True)
-    date_of_death = models.DateField('Date of death', blank=True, null=True)
-    gender = models.CharField('Gender', max_length=20, blank=True, null=True)
-    pregnant = models.NullBooleanField('Patient is pregnant?', blank=True, null=True)
-    race = models.CharField('Race', max_length=20, blank=True, null=True)
-    home_language = models.CharField('Home Language', max_length=128, blank=True, null=True)
-    ssn = models.CharField('SSN', max_length=20, blank=True, null=True)
-    marital_stat = models.CharField('Marital Status', max_length=20, blank=True, null=True)
-    religion = models.CharField('Religion', max_length=100, blank=True, null=True)
-    aliases = models.TextField('Aliases', blank=True, null=True)
-    mother_mrn = models.CharField('Mother Medical Record Number', max_length=20, blank=True, null=True)
-    #death_indicator = models.CharField('Death_Indicator', max_length=30, blank=True, null=True)
-    occupation = models.CharField('Occupation', max_length=200, blank=True, null=True)
+    patient_id = models.IntegerField(primary_key=True)
+    native_patient_id = models.CharField(max_length=128, null=True, db_index=True)
+    mrn = models.CharField(max_length=256, null=True, db_index=True)
+    last_name = models.TextField(null=True)
+    first_name = models.TextField(null=True)
+    middle_name = models.TextField(null=True)
+    address_1 = models.TextField(null=True)
+    address_2 = models.TextField(null=True)
+    city = models.CharField(max_length=128, null=True)
+    state = models.CharField(max_length=128, null=True)
+    zip = models.CharField(max_length=32, null=True)
+    country = models.TextField(null=True)
+    areacode = models.TextField(null=True)
+    tel = models.TextField(null=True)
+    tel_ext = models.TextField(null=True)
+    date_of_birth = models.DateTimeField(null=True, db_index=True)
+    gender = models.CharField(max_length=32, null=True)
+    race = models.CharField(max_length=32, null=True)
+    home_language = models.CharField(max_length=128, null=True)
+    ssn = models.TextField(null=True)
+    native_provider_id = models.CharField(max_length=128, null=True)
+    marital_status = models.CharField(max_length=64, null=True)
+    religion = models.CharField(max_length=128, null=True)
+    aliases = models.TextField(null=True)
+    mother_mrn = models.CharField(max_length=128, null=True)
+    date_of_death = models.DateTimeField(null=True)
     
+    class Meta:
+        db_table = 'emr_patient_dim'
+
     q_fake = Q(patient_id_num__startswith='FAKE')
 
     @staticmethod
@@ -520,7 +502,7 @@ class Patient(BaseMedicalRecord):
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class BasePatientRecord(BaseMedicalRecord):
+class BasePatientRecord(DimensionRecord):
     '''
     A patient record is a medical record tied to a specific patient and provider
     '''
@@ -536,6 +518,105 @@ class BasePatientRecord(BaseMedicalRecord):
         abstract = True
 
 
+#
+# Lab Result plus required junk dimensions
+# 
+
+class TestCode(JunkDimensionRecord):
+    '''
+    The code used to identify a given lab test within its native EMR system.
+    '''
+    test_code_id = models.IntegerField(primary_key=True)
+    test_code = models.CharField(max_length=128, null=True, db_index=True)
+    class Meta:
+        db_table = 'emr_test_code_dim'
+
+
+class TestName(JunkDimensionRecord):
+    '''
+    String describing status of a lab test
+    '''
+    test_name_id = models.IntegerField(primary_key=True)
+    test_name = models.CharField(max_length=128, null=True, db_index=True)
+    class Meta:
+        db_table = 'emr_test_name_dim'
+
+
+class ResultString(JunkDimensionRecord):
+    '''
+    The string result of a lab test
+    '''
+    result_string_id = models.IntegerField(primary_key=True)
+    result_string = models.CharField(max_length=128, null=True, db_index=True)
+    class Meta:
+        db_table = 'emr_result_string_dim'
+
+
+class ReferenceString(JunkDimensionRecord):
+    '''
+    String describing reference high or low value for a lab test
+    '''
+    reference_string_id = models.IntegerField(primary_key=True)
+    reference_string = models.CharField(max_length=128, null=True, db_index=True)
+    class Meta:
+        db_table = 'emr_reference_string_dim'
+
+
+class DateDimension(JunkDimensionRecord):
+    '''
+    Date dimension
+    '''
+    date_id = models.IntegerField(primary_key=True)
+    year = models.IntegerField(null=True, db_index=True)
+    month = models.IntegerField(null=True, db_index=True)
+    day = models.IntegerField(null=True, db_index=True)
+    week = models.IntegerField(null=True, db_index=True)
+    class Meta:
+        db_table = 'emr_date_dim'
+
+
+class Status(JunkDimensionRecord):
+    '''
+    String describing status of a lab test
+    '''
+    status_id = models.IntegerField(primary_key=True)
+    status = models.CharField(max_length=128, null=True, db_index=True)
+    class Meta:
+        db_table = 'emr_status_dim'
+
+
+class Units(JunkDimensionRecord):
+    '''
+    String describing status of a lab test
+    '''
+    units_id = models.IntegerField(primary_key=True)
+    units = models.CharField(max_length=128, null=True, db_index=True)
+    class Meta:
+        db_table = 'emr_units_dim'
+
+
+class SpecimenSource(JunkDimensionRecord):
+    '''
+    String describing status of a lab test
+    '''
+    specimen_source_id = models.IntegerField(primary_key=True)
+    specimen_source = models.CharField(max_length=128, null=True, db_index=True)
+    class Meta:
+        db_table = 'emr_specimen_source_dim'
+
+
+class ProcedureName(JunkDimensionRecord):
+    '''
+    String describing status of a lab test
+    '''
+    procedure_name_id = models.IntegerField(primary_key=True)
+    procedure_name = models.CharField(max_length=128, null=True, db_index=True)
+    class Meta:
+        db_table = 'emr_procedure_name_dim'
+
+
+
+
 class LabResultManager(models.Manager):
     def following_vaccination(self, days_after, include_same_day=False, **kw):
 
@@ -547,598 +628,652 @@ class LabResultManager(models.Manager):
         return self.filter(patient__immunization=F('patient__immunization')).filter(
             date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
 
-    
-class LabResult(BasePatientRecord):
-    '''
-    Result data for a lab test
-    '''
-    # Date (from base class) is order date
-    #
-    # Coding
-    native_code = models.CharField('Native Test Code', max_length=30, blank=True, null=True, db_index=True)
-    native_name = models.CharField('Native Test Name', max_length=255, blank=True, null=True, db_index=True)
-    order_num = models.CharField(max_length=128, blank=True, null=True)
-    result_date = models.DateField(blank=True, null=True, db_index=True)
-    collection_date = models.DateField(blank=True, null=True)
-    status = models.CharField('Result Status', max_length=50, blank=True, null=True)
-    result_num = models.CharField('Result Id #', max_length=100, blank=True, null=True)
+
+class LabResult(ProvenanceRecord):
+    lab_result_id = models.AutoField(primary_key=True)
+    test_code = models.CharField(max_length=128, null=True, db_index=True)
+    test_name = models.CharField(max_length=128, null=True, db_index=True)
+    native_patient_id = models.CharField(max_length=128, null=True)
+    native_provider_id = models.CharField(max_length=128, null=True)
+    native_order_id = models.CharField(max_length=128)
+    mrn = models.CharField(max_length=128, null=True, db_index=True)
+    result_string = models.CharField(max_length=128, null=True)
+    order_date = models.DateTimeField(null=True, db_index=True)
+    result_date = models.DateTimeField(null=True, db_index=True)
+    status = models.CharField(max_length=128, null=True, db_index=True)
+    order_type = models.CharField(max_length=128, null=True)
     # 
-    # In some EMR data sets, reference pos & high, and neg & low, may come from
-    # the same field depending whether the value is a string or a number.
+    # Specimen info
     #
-    ref_high_string = models.CharField('Reference Positive Value', max_length=100, blank=True, null=True)
-    ref_low_string = models.CharField('Reference Negative Value', max_length=100, blank=True, null=True)
-    ref_high_float = models.FloatField('Reference High Value', blank=True, null=True, db_index=True)
-    ref_low_float = models.FloatField('Reference Low Value', blank=True, null=True, db_index=True)
-    ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
-    # Result
-    abnormal_flag = models.CharField(max_length=20, blank=True, null=True, db_index=True)
-    result_float = models.FloatField('Numeric Test Result', blank=True, null=True, db_index=True)
-    result_string = models.TextField('Test Result', max_length=2000, blank=True, null=True, db_index=True)
-    # Wide fields
-    specimen_num = models.CharField('Speciment ID Number', max_length=100, blank=True, null=True)
-    specimen_source = models.CharField('Speciment Source', max_length=255, blank=True, null=True)
-    impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
-    comment = models.TextField('Comments', blank=True, null=True)
-    procedure_name = models.CharField('Procedure Name', max_length=255, blank=True, null=True)
-    # Manager
-    objects = LabResultManager()
-    # HEF
-    events = generic.GenericRelation('hef.Event')
-    
-    class Meta:
-        verbose_name = 'Lab Test Result'
-        ordering = ['date']
-
-    q_fake = Q(patient__patient_id_num__startswith='FAKE')
-
-    @staticmethod
-    def fakes():
-        return LabResult.objects.filter(LabResult.q_fake)
-    
-    @staticmethod
-    def delete_fakes():
-        LabResult.fakes().delete()
-
-    @staticmethod
-    def make_mock(patient, when=None, **kw):
-        save_on_db = kw.pop('save_on_db', False)
-        loinc = kw.get('with_loinc', None) or Loinc.objects.order_by('?')[0]
-
-        when = when or datetime.date.today()
-        result_date = when + datetime.timedelta(days=random.randrange(1, 30))
-        # Make sure the patient was alive for the order...
-        order_date = when if patient.date_of_birth is None else max(when, patient.date_of_birth)
-        lx = LabResult(patient=patient, provenance=Provenance.fake(), date=order_date, 
-                       native_code = str(loinc), native_name =loinc.shortname,
-                       result_date=result_date)
-
-
-
-        if save_on_db: lx.save()
-        return lx
-
-    def previous(self):
-        try:
-            return LabResult.objects.filter(patient=self.patient, native_code=self.native_code
-                                            ).exclude(date__gte=self.date).latest('date')
-        except:
-            return None
-
-    def last_known_value(self, with_same_unit=True):
-        '''
-        Returns the value of the Lx that is immediately prior to
-        self.  if 'check_same_unit' is True, only returns the value if
-        both labs results have a matching (Case insensitive) ref_unit value
-        '''
-        previous_labs = LabResult.objects.filter(native_code=self.native_code, patient=self.patient, 
-                                                 date__lt=self.date).order_by('-date')
-        if with_same_unit:
-            previous_labs = previous_labs.filter(ref_unit__iexact=self.ref_unit)
-        for lab in previous_labs:
-            value = (lab.result_float or lab.result_string) or None
-            if value: return value
-        return None
-
-    def __str__(self):
-        return 'Lab Result # %s' % self.pk
-    
-    def __unicode__(self):
-        return u'Lab Result # %s' % self.pk
-    
-    def str_line(self):
-        '''
-        Returns a single-line string representation of the Case instance
-        '''
-        values = self.__dict__
-        values['short_name'] = self.native_name[:15] if self.native_name else 'N/A'
-        values['res'] = self.result_string[:20] if self.result_string else ''
-        return '%(date)-10s    %(id)-8s    %(short_name)-15s    %(native_code)-11s    %(res)-20s' % values
-    
-    def __get_ref_range(self):
-        '''
-        Generate a reference range string
-        '''
-        if self.ref_low_float:
-            low = self.ref_low_float
-        else:
-            low = self.ref_low_string
-        if self.ref_high_float:
-            high = self.ref_high_float
-        else:
-            high = self.ref_high_string
-        if (high or low):
-            return '%s - %s' % (low, high)
-        else:
-            return None
-    ref_range = property(__get_ref_range)
-    
-    @classmethod
-    def str_line_header(cls):
-        '''
-        Returns a header describing the fields returned by str_line()
-        '''
-        values = {
-            'date': 'DATE', 
-            'id': 'LAB #', 
-            'short_name': 'TEST NAME', 
-            'native_code': 'CODE',
-            'res': 'RESULT',
-            }
-        return '%(date)-10s    %(id)-8s    %(short_name)-15s    %(native_code)-11s    %(res)-20s' % values
-
-    def __get_codemap(self):
-        maps = CodeMap.objects.filter(native_code=self.native_code)
-        if maps:
-            return maps[0]
-        else:
-            return None
-    codemap = property(__get_codemap)
-            
-    def __get_output_code(self):
-        map = self.codemap
-        if map:
-            return map.output_code
-        else:
-            return None
-    output_code = property(__get_output_code)
-    
-    def __get_output_name(self):
-        map = self.codemap
-        if map:
-            return map.output_name
-        else:
-            return None
-    output_name = property(__get_output_name)
-    
-    def __get__output_or_native_code(self):
-        output = self.output_code
-        if output:
-            return output
-        else:
-            return self.native_code
-    output_or_native_code = property(__get__output_or_native_code)
-    
-    def __get__output_or_native_name(self):
-        output = self.output_name
-        if output:
-            return output
-        else:
-            return self.native_name
-    output_or_native_name = property(__get__output_or_native_name)
-
-    def document_summary(self):
-        return {
-            'order': { 
-                'code': self.order_num,
-                'date': (self.date and self.date.isoformat()) or None
-                },
-            'code': self.output_code,
-            'reference': {
-                'low':self.ref_low_float,
-                'high':self.ref_high_float,
-                'positive':self.ref_high_string,
-                'negative':self.ref_low_string,
-                'unit':self.ref_unit
-                },
-            'result':{
-                'code':self.result_num,
-                'date':(self.result_date and self.result_date.isoformat()) or None,
-                'status':self.status,
-                'abnormal':self.abnormal_flag,
-                'value': self.result_float or self.result_string,
-                'specimen': self.specimen_num,
-                'impression':self.impression,
-                'comment':self.comment
-                } 
-            }
-    
-    def __get_snomed_pos(self):
-        '''
-        Returns SNOMED code for positive result, from this test's CodeMap
-        '''
-        cm = self.codemap
-        if not cm:
-            return None
-        return cm.snomed_pos
-    snomed_pos = property(__get_snomed_pos)
-    
-    def __get_snomed_neg(self):
-        '''
-        Returns SNOMED code for negative result, from this test's CodeMap
-        '''
-        cm = self.codemap
-        if not cm:
-            return None
-        return cm.snomed_neg
-    snomed_neg = property(__get_snomed_neg)
-        
-    def __get_snomed_ind(self):
-        '''
-        Returns SNOMED code for indeterminate result, from this test's CodeMap
-        '''
-        cm = self.codemap
-        if not cm:
-            return None
-        return cm.snomed_ind
-    snomed_ind = property(__get_snomed_ind)
-        
-
-class LabOrder(BasePatientRecord):
-    order_id = models.IntegerField(db_index=True)
-    procedure_master_num = models.CharField(max_length=20, blank=True, null=True, db_index=True)
-    modifier = models.CharField(max_length=20, blank=True, null=True)
-    specimen_id = models.CharField(max_length=20, blank=True, null=True, db_index=True)
-    order_type = models.CharField(max_length=64, blank=True, db_index=True)
-    procedure_name = models.CharField(max_length=300, blank=True, null=True)
-    specimen_source = models.CharField(max_length=300, blank=True, null=True)
-    
-    
-    
-    
-class Prescription(BasePatientRecord):
-    '''
-    A prescribed medication
-    '''
-    # Date is order date
+    native_specimen_id = models.CharField(max_length=128, null=True)
+    specimen_source = models.CharField(max_length=128, null=True, db_index=True)
+    collection_date = models.DateTimeField(null=True)
+    procedure_name = models.CharField(max_length=128, null=True)
     #
-    order_num = models.CharField('Order Id #', max_length=20, blank=True, null=True)
-    name = models.TextField(max_length=3000, blank=False, db_index=True)
-    code = models.CharField('Drug Code (system varies by site)', max_length=255, blank=True, null=True)
-    directions = models.TextField(max_length=3000, blank=True, null=True)
-    dose = models.CharField(max_length=200, blank=True, null=True)
-    frequency = models.CharField(max_length=200, blank=True, null=True)
-    # This really should be quantity_string instead of quantity; but I don't 
-    # want to break a bunch of other stuff right now.
-    quantity = models.CharField(max_length=200, blank=True, null=True)
-    quantity_float = models.FloatField(blank=True, null=True, db_index=True)
-    refills = models.CharField(max_length=200, blank=True, null=True)
-    route = models.CharField(max_length=200, blank=True, null=True)
-    status = models.CharField('Order Status', max_length=20, blank=True, null=True)
-    start_date = models.DateField(blank=True, null=True)
-    end_date = models.DateField(blank=True, null=True)
-    # HEF
-    events = generic.GenericRelation('hef.Event')
-    
-    class Meta:
-        ordering = ['date']
-    
-    def __str__(self):
-        return self.name
-
-    def str_line(self):
-        '''
-        Returns a single-line string representation of the Case instance
-        '''
-        values = self.__dict__
-        return '%(date)-10s    %(id)-8s    %(name)-30s' % values
-    
-    @classmethod
-    def str_line_header(cls):
-        '''
-        Returns a header describing the fields returned by str_line()
-        '''
-        values = {
-            'date': 'DATE', 
-            'id': 'RX #', 
-            'name': 'DRUG NAME'
-            }
-        return '%(date)-10s    %(id)-8s    %(name)-30s' % values
-
-
-    def document_summary(self):
-        return {
-            'order':{
-                'id':self.order_num,
-                'date':(self.date and self.date.isoformat()) or None,
-                'status':self.status
-                },
-            'provider':self.provider.pk,
-            'name':self.name,
-            'code':self.code,
-            'frequency':self.frequency,
-            'quantity':self.quantity,
-            'route':self.route,
-            'directions':self.directions,
-            'refills':self.refills,
-            'valid_dates':{
-                'start': (self.start_date and self.start_date.isoformat()) or None,
-                'end': (self.end_date and self.end_date.isoformat()) or None
-                }
-            }
-    
-
-class EncounterManager(models.Manager):
-    def following_vaccination(self, days_after, include_same_day=False, **kw):
-
-        if include_same_day:
-            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
-        else:
-            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
-
-        return self.filter(patient__immunization=F('patient__immunization')).filter(
-            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
-
-    def syndrome_care_visits(self, sites=None):
-        qs = self.filter(event_type__in=['URGENT CARE', 'VISIT'])
-        if sites: qs = qs.filter(native_site_num__in=sites)
-        return qs
-
-
-    
-
-class Encounter(BasePatientRecord):
-    '''
-    A encounter between provider and patient
-    '''
-    # Date is encounter date
+    # Reference Values
     #
-    objects = EncounterManager()
-    icd9_codes = models.ManyToManyField(Icd9,  blank=True,  null=True, db_index=True)
-    status = models.CharField(max_length=20, blank=True, null=True)
-    closed_date = models.DateField(blank=True, null=True)
-    site_name = models.CharField(max_length=100, blank=True, null=True)
-    native_site_num = models.CharField('Site Id #', max_length=30, blank=True, null=True)
-    native_encounter_num = models.CharField('Encounter ID #', max_length=20, blank=True, null=True, db_index=True)
-    event_type = models.CharField(max_length=20, blank=True, null=True, db_index=True)
-    pregnancy_status = models.BooleanField(blank=False, default=False)
-    edc = models.DateField('Expected date of confinement', blank=True, null=True, db_index=True) 
-    temperature = models.FloatField('Temperature (C)', blank=True, null=True, db_index=True)
-    # WTF: What is an icd9_qualifier?
-    #icd9_qualifier = models.CharField(max_length=200, blank=True, null=True)
-    weight = models.FloatField('Weight (kg)', blank=True, null=True, db_index=True)
-    height = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
-    bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True)
-    bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True)
-    o2_stat = models.FloatField(max_length=50, blank=True, null=True)
-    peak_flow = models.FloatField(max_length=50, blank=True, null=True)
-    diagnosis = models.TextField(null=True, blank=True)
-    bmi = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, db_index=True)
-    # HEF
-    events = generic.GenericRelation('hef.Event')
-    #timespan = generic.GenericRelation('hef.Timespan')
-    
-    class Meta:
-        ordering = ['date']
-
-    q_fake = Q(patient__patient_id_num__startswith='FAKE')
-
-    @staticmethod
-    def fakes():
-        return Encounter.objects.filter(Encounter.q_fake)
-
-    @staticmethod
-    def delete_fakes():
-        Encounter.fakes().delete()
-
-    @staticmethod
-    def make_fakes(how_many, **kw):
-        now = datetime.datetime.now()
-        start = kw.get('start_date', None)
-        interval = kw.get('interval', None)
-        
-        for patient in Patient.fakes():
-            when = start or patient.date_of_birth
-            for i in xrange(0, how_many):
-                next_encounter_interval = interval or random.randrange(0, 180)
-                when += datetime.timedelta(days=next_encounter_interval)
-                if when < now: 
-                    Encounter.make_mock(patient, save_on_db=True, when=when)
-            
-    @staticmethod
-    def make_mock(patient, **kw):
-        save_on_db=kw.pop('save_on_db', False)
-        when = kw.get('when', datetime.datetime.now())
-        provider = Provider.get_mock()
-
-        e = Encounter(patient=patient, provider=provider, provenance=Provenance.fake(),
-                      mrn=patient.mrn, status='FAKE', date=when, closed_date=when)
-        
-        if save_on_db: e.save()
-        return e
-
-
-    @staticmethod
-    def volume(date, *args, **kw):
-        '''
-        Returns the total of encounters occurred on a given date.
-        Extra named parameters can be passed on **kw, or Q objects on *args.        
-        '''
-        return Encounter.objects.filter(date=date).filter(*args).filter(**kw).count()
-
-    def is_fake(self):
-        return self.status == 'FAKE'
-
-    def is_reoccurrence(self, icd9s, month_period=12):
-        '''
-        returns a boolean indicating if this encounters shows any icd9
-        code that has been registered for this patient in last
-        month_period time.
-        '''
-        
-        earliest = self.date - datetime.timedelta(days=30*month_period)
-        
-        return Encounter.objects.filter(
-            date__lt=self.date, date__gte=earliest, patient=self.patient, icd9_codes__in=icd9s
-            ).count() > 0
-                
-    def __str__(self):
-        return 'Encounter # %s' % self.pk
-    
-    def str_line(self):
-        '''
-        Returns a single-line string representation of the Case instance
-        '''
-        values = self.__dict__ 
-        values['icd9s'] = ', '.join([i.code for i in self.icd9_codes.all().order_by('code')])
-        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(icd9s)-30s' % values
-    
-    @classmethod
-    def str_line_header(cls):
-        '''
-        Returns a header describing the fields returned by str_line()
-        '''
-        values = {'date': 'DATE', 'id': 'ENC #', 'temperature': 'TEMP (F)', 'icd9s': 'ICD9 CODES'}
-        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(icd9s)-30s' % values
-    
-    def _get_icd9_codes_str(self):
-        return ', '.join(self.icd9_codes.order_by('code').values_list('code', flat=True))
-    icd9_codes_str = property(_get_icd9_codes_str)
-
-
-    def document_summary(self):
-        return {
-            'site':self.site_name,
-            'provider':self.provider.pk,
-            'status':self.status,
-            'date':(self.date and self.date.isoformat()) or None,
-            'closed_date':(self.closed_date and self.closed_date.isoformat()) or None,
-            'event_type':self.event_type,
-            'edc':(self.edc and self.edc.isoformat()) or None,
-            'measurements':{
-                'pregnancy':self.pregnancy_status,
-                'temperature':self.temperature,
-                'weight':self.weight,
-                'height':self.height,
-                'bp_systolic':self.bp_systolic,
-                'bp_diastolic':self.bp_diastolic,
-                'o2_stat':self.o2_stat,
-                'peak_flow':self.peak_flow
-                }
-            }
-            
-
-class Immunization(BasePatientRecord):
-    '''
-    An immunization
-    '''
-    # Date is immunization date
+    ref_high_float = models.FloatField(null=True, db_index=True)
+    ref_high_string = models.CharField(max_length=128, null=True)
+    ref_low_float = models.FloatField(null=True, db_index=True)
+    ref_low_string = models.CharField(max_length=128, null=True)
+    units = models.TextField(null=True)
+    abnormal_flag = models.CharField(max_length=128, null=True, db_index=True)
+    # 
+    # Dimensional Relations
     #
-    imm_id_num = models.CharField('Immunization Record Id', max_length=200, blank=True, null=True)
-    imm_type = models.CharField('Immunization Type', max_length=20, blank=True, null=True)
-    name = models.CharField('Immunization Name', max_length=200, blank=True, null=True)
-    dose = models.CharField('Immunization Dose', max_length=100, blank=True, null=True)
-    manufacturer = models.CharField('Manufacturer', max_length=100, blank=True, null=True)
-    lot = models.TextField('Lot Number', max_length=500, blank=True, null=True)
-    visit_date = models.DateField('Date of Visit', blank=True, null=True)
-    # HEF
-    events = generic.GenericRelation('hef.Event')
-    
+    collection_date_dim = models.ForeignKey(DateDimension, db_column='collection_date_id', related_name='labs_collected')
+    order_date_dim = models.ForeignKey(DateDimension, db_column='order_date_id', related_name='labs_ordered')
+    patient_dim = models.ForeignKey(Patient, db_column='patient_id')
+    procedure_name_dim = models.ForeignKey(ProcedureName, db_column='procedure_name_id')
+    provider_dim = models.ForeignKey(Provider, db_column='provider_id')
+    ref_high_string_dim = models.ForeignKey(ReferenceString, db_column='ref_high_string_id', related_name='reference_highs')
+    ref_low_string_dim = models.ForeignKey(ReferenceString, db_column='ref_low_string_id', related_name='reference_lows')
+    result_date_dim = models.ForeignKey(DateDimension, db_column='result_date_id', related_name='labs_resulted')
+    result_string_dim = models.ForeignKey(ResultString, db_column='result_string_id')
+    specimen_source_dim = models.ForeignKey(SpecimenSource, db_column='specimen_source_id')
+    status_dim = models.ForeignKey(Status, db_column='status_id')
+    test_code_dim = models.ForeignKey(TestCode, db_column='test_code_id')
+    test_name_dim = models.ForeignKey(TestName, db_column='test_name_id')
+    units_dim = models.ForeignKey(Units, db_column='units_id')
+    #
+    # Text Fields -- arbitrarily large
+    impression = models.TextField(null=True)
+    note = models.TextField(null=True)
     class Meta:
-        ordering = ['date']
-
-    q_fake = Q(name='FAKE')
-
-    @staticmethod
-    def vaers_candidates(patient, event, days_prior):
-        '''Given an adverse event, returns a queryset that represents
-        the possible immunizations that have caused it'''
-        
-        earliest_date = event.date - datetime.timedelta(days=days_prior)
-                
-        return Immunization.objects.filter(
-            date__gte=earliest_date, date__lte=event.date,
-            patient=patient
-            )
-    
-    @staticmethod
-    def fakes():
-        return Immunization.objects.filter(Immunization.q_fake)
-
-    @staticmethod
-    def delete_fakes():
-        Immunization.fakes().delete()
-
-    @staticmethod
-    def make_mock(vaccine, patient, date, save_on_db=False):
-        i = Immunization(patient=patient, provenance=Provenance.fake(),
-                         date=date, visit_date=date,
-                         imm_type=vaccine.code, name='FAKE'
-                         )
-        if save_on_db: i.save()
-        return i
-            
-    def is_fake(self):
-        return self.name == 'FAKE'
-
-    def _get_vaccine(self):
-        try:
-            return Vaccine.objects.get(code=self.imm_type)
-        except:
-            return Vaccine.objects.get(short_name='unknown')
-    vaccine = property(_get_vaccine)
-
-    def vaccine_type(self):
-        return (self.vaccine and self.vaccine.name) or 'Unknown Vaccine'
-
-    def _get_manufacturer(self):
-        try:
-            return VaccineManufacturerMap.objects.get(native_name=self.manufacturer).canonical_code
-        except:
-            return None
-
-    vaccine_manufacturer = property(_get_manufacturer)
-
-
-    def document_summary(self):
-        return {
-            'date':(self.date and self.date.isoformat()) or None,
-            'vaccine':{
-                'name':self.vaccine_type(),
-                'code':(self.vaccine and self.vaccine.code) or None,
-                'lot':self.lot,
-                'manufacturer':self.manufacturer
-                },
-            'dose':self.dose
-            }
-
-
-    def  __unicode__(self):
-        return u"Immunization on %s received %s on %s" % (
-            self.patient.full_name, self.vaccine_type(), self.date)
-
-
-class SocialHistory(BasePatientRecord):
-    tobacco_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
-    alcohol_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
-
-class Allergy(BasePatientRecord):
-    problem_id = models.IntegerField(null=True, db_index=True)
-    date_noted = models.DateField(null=True, db_index=True)
-    allergen = models.ForeignKey(Allergen)
-    name = models.CharField(max_length=200, null=True, db_index=True)
-    status = models.CharField(max_length=20, null=True, db_index=True)
-    description = models.CharField(max_length=200)
-
-class Problem(BasePatientRecord):
-    problem_id = models.IntegerField(null=True)
-    icd9 = models.ForeignKey(Icd9)
-    status = models.CharField(max_length=20, null=True, db_index=True)
-    comment = models.TextField(null=True, blank=True)
+        db_table = u'emr_lab_result_fact'
 
     
-    
-    
-
-    
-    
+#class LabResult(BasePatientRecord):
+#    '''
+#    Result data for a lab test
+#    '''
+#    # Date (from base class) is order date
+#    #
+#    # Coding
+#    native_code = models.CharField('Native Test Code', max_length=30, blank=True, null=True, db_index=True)
+#    native_name = models.CharField('Native Test Name', max_length=255, blank=True, null=True, db_index=True)
+#    order_num = models.CharField(max_length=128, blank=True, null=True)
+#    result_date = models.DateField(blank=True, null=True, db_index=True)
+#    collection_date = models.DateField(blank=True, null=True)
+#    status = models.CharField('Result Status', max_length=50, blank=True, null=True)
+#    result_num = models.CharField('Result Id #', max_length=100, blank=True, null=True)
+#    # 
+#    # In some EMR data sets, reference pos & high, and neg & low, may come from
+#    # the same field depending whether the value is a string or a number.
+#    #
+#    ref_high_string = models.CharField('Reference Positive Value', max_length=100, blank=True, null=True)
+#    ref_low_string = models.CharField('Reference Negative Value', max_length=100, blank=True, null=True)
+#    ref_high_float = models.FloatField('Reference High Value', blank=True, null=True, db_index=True)
+#    ref_low_float = models.FloatField('Reference Low Value', blank=True, null=True, db_index=True)
+#    ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
+#    # Result
+#    abnormal_flag = models.CharField(max_length=20, blank=True, null=True, db_index=True)
+#    result_float = models.FloatField('Numeric Test Result', blank=True, null=True, db_index=True)
+#    result_string = models.TextField('Test Result', max_length=2000, blank=True, null=True, db_index=True)
+#    # Wide fields
+#    specimen_num = models.CharField('Speciment ID Number', max_length=100, blank=True, null=True)
+#    specimen_source = models.CharField('Speciment Source', max_length=255, blank=True, null=True)
+#    impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
+#    comment = models.TextField('Comments', blank=True, null=True)
+#    procedure_name = models.CharField('Procedure Name', max_length=255, blank=True, null=True)
+#    # Manager
+#    objects = LabResultManager()
+#    # HEF
+#    events = generic.GenericRelation('hef.Event')
+#    
+#    class Meta:
+#        verbose_name = 'Lab Test Result'
+#        ordering = ['date']
+#
+#    q_fake = Q(patient__patient_id_num__startswith='FAKE')
+#
+#    @staticmethod
+#    def fakes():
+#        return LabResult.objects.filter(LabResult.q_fake)
+#    
+#    @staticmethod
+#    def delete_fakes():
+#        LabResult.fakes().delete()
+#
+#    @staticmethod
+#    def make_mock(patient, when=None, **kw):
+#        save_on_db = kw.pop('save_on_db', False)
+#        loinc = kw.get('with_loinc', None) or Loinc.objects.order_by('?')[0]
+#
+#        when = when or datetime.date.today()
+#        result_date = when + datetime.timedelta(days=random.randrange(1, 30))
+#        # Make sure the patient was alive for the order...
+#        order_date = when if patient.date_of_birth is None else max(when, patient.date_of_birth)
+#        lx = LabResult(patient=patient, provenance=Provenance.fake(), date=order_date, 
+#                       native_code = str(loinc), native_name =loinc.shortname,
+#                       result_date=result_date)
+#
+#
+#
+#        if save_on_db: lx.save()
+#        return lx
+#
+#    def previous(self):
+#        try:
+#            return LabResult.objects.filter(patient=self.patient, native_code=self.native_code
+#                                            ).exclude(date__gte=self.date).latest('date')
+#        except:
+#            return None
+#
+#    def last_known_value(self, with_same_unit=True):
+#        '''
+#        Returns the value of the Lx that is immediately prior to
+#        self.  if 'check_same_unit' is True, only returns the value if
+#        both labs results have a matching (Case insensitive) ref_unit value
+#        '''
+#        previous_labs = LabResult.objects.filter(native_code=self.native_code, patient=self.patient, 
+#                                                 date__lt=self.date).order_by('-date')
+#        if with_same_unit:
+#            previous_labs = previous_labs.filter(ref_unit__iexact=self.ref_unit)
+#        for lab in previous_labs:
+#            value = (lab.result_float or lab.result_string) or None
+#            if value: return value
+#        return None
+#
+#    def __str__(self):
+#        return 'Lab Result # %s' % self.pk
+#    
+#    def __unicode__(self):
+#        return u'Lab Result # %s' % self.pk
+#    
+#    def str_line(self):
+#        '''
+#        Returns a single-line string representation of the Case instance
+#        '''
+#        values = self.__dict__
+#        values['short_name'] = self.native_name[:15] if self.native_name else 'N/A'
+#        values['res'] = self.result_string[:20] if self.result_string else ''
+#        return '%(date)-10s    %(id)-8s    %(short_name)-15s    %(native_code)-11s    %(res)-20s' % values
+#    
+#    def __get_ref_range(self):
+#        '''
+#        Generate a reference range string
+#        '''
+#        if self.ref_low_float:
+#            low = self.ref_low_float
+#        else:
+#            low = self.ref_low_string
+#        if self.ref_high_float:
+#            high = self.ref_high_float
+#        else:
+#            high = self.ref_high_string
+#        if (high or low):
+#            return '%s - %s' % (low, high)
+#        else:
+#            return None
+#    ref_range = property(__get_ref_range)
+#    
+#    @classmethod
+#    def str_line_header(cls):
+#        '''
+#        Returns a header describing the fields returned by str_line()
+#        '''
+#        values = {
+#            'date': 'DATE', 
+#            'id': 'LAB #', 
+#            'short_name': 'TEST NAME', 
+#            'native_code': 'CODE',
+#            'res': 'RESULT',
+#            }
+#        return '%(date)-10s    %(id)-8s    %(short_name)-15s    %(native_code)-11s    %(res)-20s' % values
+#
+#    def __get_codemap(self):
+#        maps = CodeMap.objects.filter(native_code=self.native_code)
+#        if maps:
+#            return maps[0]
+#        else:
+#            return None
+#    codemap = property(__get_codemap)
+#            
+#    def __get_output_code(self):
+#        map = self.codemap
+#        if map:
+#            return map.output_code
+#        else:
+#            return None
+#    output_code = property(__get_output_code)
+#    
+#    def __get_output_name(self):
+#        map = self.codemap
+#        if map:
+#            return map.output_name
+#        else:
+#            return None
+#    output_name = property(__get_output_name)
+#    
+#    def __get__output_or_native_code(self):
+#        output = self.output_code
+#        if output:
+#            return output
+#        else:
+#            return self.native_code
+#    output_or_native_code = property(__get__output_or_native_code)
+#    
+#    def __get__output_or_native_name(self):
+#        output = self.output_name
+#        if output:
+#            return output
+#        else:
+#            return self.native_name
+#    output_or_native_name = property(__get__output_or_native_name)
+#
+#    def document_summary(self):
+#        return {
+#            'order': { 
+#                'code': self.order_num,
+#                'date': (self.date and self.date.isoformat()) or None
+#                },
+#            'code': self.output_code,
+#            'reference': {
+#                'low':self.ref_low_float,
+#                'high':self.ref_high_float,
+#                'positive':self.ref_high_string,
+#                'negative':self.ref_low_string,
+#                'unit':self.ref_unit
+#                },
+#            'result':{
+#                'code':self.result_num,
+#                'date':(self.result_date and self.result_date.isoformat()) or None,
+#                'status':self.status,
+#                'abnormal':self.abnormal_flag,
+#                'value': self.result_float or self.result_string,
+#                'specimen': self.specimen_num,
+#                'impression':self.impression,
+#                'comment':self.comment
+#                } 
+#            }
+#    
+#    def __get_snomed_pos(self):
+#        '''
+#        Returns SNOMED code for positive result, from this test's CodeMap
+#        '''
+#        cm = self.codemap
+#        if not cm:
+#            return None
+#        return cm.snomed_pos
+#    snomed_pos = property(__get_snomed_pos)
+#    
+#    def __get_snomed_neg(self):
+#        '''
+#        Returns SNOMED code for negative result, from this test's CodeMap
+#        '''
+#        cm = self.codemap
+#        if not cm:
+#            return None
+#        return cm.snomed_neg
+#    snomed_neg = property(__get_snomed_neg)
+#        
+#    def __get_snomed_ind(self):
+#        '''
+#        Returns SNOMED code for indeterminate result, from this test's CodeMap
+#        '''
+#        cm = self.codemap
+#        if not cm:
+#            return None
+#        return cm.snomed_ind
+#    snomed_ind = property(__get_snomed_ind)
+#        
+#
+#class LabOrder(BasePatientRecord):
+#    order_id = models.IntegerField(db_index=True)
+#    procedure_master_num = models.CharField(max_length=20, blank=True, null=True, db_index=True)
+#    modifier = models.CharField(max_length=20, blank=True, null=True)
+#    specimen_id = models.CharField(max_length=20, blank=True, null=True, db_index=True)
+#    order_type = models.CharField(max_length=64, blank=True, db_index=True)
+#    procedure_name = models.CharField(max_length=300, blank=True, null=True)
+#    specimen_source = models.CharField(max_length=300, blank=True, null=True)
+#    
+#    
+#    
+#    
+#class Prescription(BasePatientRecord):
+#    '''
+#    A prescribed medication
+#    '''
+#    # Date is order date
+#    #
+#    order_num = models.CharField('Order Id #', max_length=20, blank=True, null=True)
+#    name = models.TextField(max_length=3000, blank=False, db_index=True)
+#    code = models.CharField('Drug Code (system varies by site)', max_length=255, blank=True, null=True)
+#    directions = models.TextField(max_length=3000, blank=True, null=True)
+#    dose = models.CharField(max_length=200, blank=True, null=True)
+#    frequency = models.CharField(max_length=200, blank=True, null=True)
+#    # This really should be quantity_string instead of quantity; but I don't 
+#    # want to break a bunch of other stuff right now.
+#    quantity = models.CharField(max_length=200, blank=True, null=True)
+#    quantity_float = models.FloatField(blank=True, null=True, db_index=True)
+#    refills = models.CharField(max_length=200, blank=True, null=True)
+#    route = models.CharField(max_length=200, blank=True, null=True)
+#    status = models.CharField('Order Status', max_length=20, blank=True, null=True)
+#    start_date = models.DateField(blank=True, null=True)
+#    end_date = models.DateField(blank=True, null=True)
+#    # HEF
+#    events = generic.GenericRelation('hef.Event')
+#    
+#    class Meta:
+#        ordering = ['date']
+#    
+#    def __str__(self):
+#        return self.name
+#
+#    def str_line(self):
+#        '''
+#        Returns a single-line string representation of the Case instance
+#        '''
+#        values = self.__dict__
+#        return '%(date)-10s    %(id)-8s    %(name)-30s' % values
+#    
+#    @classmethod
+#    def str_line_header(cls):
+#        '''
+#        Returns a header describing the fields returned by str_line()
+#        '''
+#        values = {
+#            'date': 'DATE', 
+#            'id': 'RX #', 
+#            'name': 'DRUG NAME'
+#            }
+#        return '%(date)-10s    %(id)-8s    %(name)-30s' % values
+#
+#
+#    def document_summary(self):
+#        return {
+#            'order':{
+#                'id':self.order_num,
+#                'date':(self.date and self.date.isoformat()) or None,
+#                'status':self.status
+#                },
+#            'provider':self.provider.pk,
+#            'name':self.name,
+#            'code':self.code,
+#            'frequency':self.frequency,
+#            'quantity':self.quantity,
+#            'route':self.route,
+#            'directions':self.directions,
+#            'refills':self.refills,
+#            'valid_dates':{
+#                'start': (self.start_date and self.start_date.isoformat()) or None,
+#                'end': (self.end_date and self.end_date.isoformat()) or None
+#                }
+#            }
+#    
+#
+#class EncounterManager(models.Manager):
+#    def following_vaccination(self, days_after, include_same_day=False, **kw):
+#
+#        if include_same_day:
+#            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
+#        else:
+#            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
+#
+#        return self.filter(patient__immunization=F('patient__immunization')).filter(
+#            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
+#
+#    def syndrome_care_visits(self, sites=None):
+#        qs = self.filter(event_type__in=['URGENT CARE', 'VISIT'])
+#        if sites: qs = qs.filter(native_site_num__in=sites)
+#        return qs
+#
+#
+#    
+#
+#class Encounter(BasePatientRecord):
+#    '''
+#    A encounter between provider and patient
+#    '''
+#    # Date is encounter date
+#    #
+#    objects = EncounterManager()
+#    icd9_codes = models.ManyToManyField(Icd9,  blank=True,  null=True, db_index=True)
+#    status = models.CharField(max_length=20, blank=True, null=True)
+#    closed_date = models.DateField(blank=True, null=True)
+#    site_name = models.CharField(max_length=100, blank=True, null=True)
+#    native_site_num = models.CharField('Site Id #', max_length=30, blank=True, null=True)
+#    native_encounter_num = models.CharField('Encounter ID #', max_length=20, blank=True, null=True, db_index=True)
+#    event_type = models.CharField(max_length=20, blank=True, null=True, db_index=True)
+#    pregnancy_status = models.BooleanField(blank=False, default=False)
+#    edc = models.DateField('Expected date of confinement', blank=True, null=True, db_index=True) 
+#    temperature = models.FloatField('Temperature (C)', blank=True, null=True, db_index=True)
+#    # WTF: What is an icd9_qualifier?
+#    #icd9_qualifier = models.CharField(max_length=200, blank=True, null=True)
+#    weight = models.FloatField('Weight (kg)', blank=True, null=True, db_index=True)
+#    height = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
+#    bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True)
+#    bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True)
+#    o2_stat = models.FloatField(max_length=50, blank=True, null=True)
+#    peak_flow = models.FloatField(max_length=50, blank=True, null=True)
+#    diagnosis = models.TextField(null=True, blank=True)
+#    bmi = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, db_index=True)
+#    # HEF
+#    events = generic.GenericRelation('hef.Event')
+#    #timespan = generic.GenericRelation('hef.Timespan')
+#    
+#    class Meta:
+#        ordering = ['date']
+#
+#    q_fake = Q(patient__patient_id_num__startswith='FAKE')
+#
+#    @staticmethod
+#    def fakes():
+#        return Encounter.objects.filter(Encounter.q_fake)
+#
+#    @staticmethod
+#    def delete_fakes():
+#        Encounter.fakes().delete()
+#
+#    @staticmethod
+#    def make_fakes(how_many, **kw):
+#        now = datetime.datetime.now()
+#        start = kw.get('start_date', None)
+#        interval = kw.get('interval', None)
+#        
+#        for patient in Patient.fakes():
+#            when = start or patient.date_of_birth
+#            for i in xrange(0, how_many):
+#                next_encounter_interval = interval or random.randrange(0, 180)
+#                when += datetime.timedelta(days=next_encounter_interval)
+#                if when < now: 
+#                    Encounter.make_mock(patient, save_on_db=True, when=when)
+#            
+#    @staticmethod
+#    def make_mock(patient, **kw):
+#        save_on_db=kw.pop('save_on_db', False)
+#        when = kw.get('when', datetime.datetime.now())
+#        provider = Provider.get_mock()
+#
+#        e = Encounter(patient=patient, provider=provider, provenance=Provenance.fake(),
+#                      mrn=patient.mrn, status='FAKE', date=when, closed_date=when)
+#        
+#        if save_on_db: e.save()
+#        return e
+#
+#
+#    @staticmethod
+#    def volume(date, *args, **kw):
+#        '''
+#        Returns the total of encounters occurred on a given date.
+#        Extra named parameters can be passed on **kw, or Q objects on *args.        
+#        '''
+#        return Encounter.objects.filter(date=date).filter(*args).filter(**kw).count()
+#
+#    def is_fake(self):
+#        return self.status == 'FAKE'
+#
+#    def is_reoccurrence(self, icd9s, month_period=12):
+#        '''
+#        returns a boolean indicating if this encounters shows any icd9
+#        code that has been registered for this patient in last
+#        month_period time.
+#        '''
+#        
+#        earliest = self.date - datetime.timedelta(days=30*month_period)
+#        
+#        return Encounter.objects.filter(
+#            date__lt=self.date, date__gte=earliest, patient=self.patient, icd9_codes__in=icd9s
+#            ).count() > 0
+#                
+#    def __str__(self):
+#        return 'Encounter # %s' % self.pk
+#    
+#    def str_line(self):
+#        '''
+#        Returns a single-line string representation of the Case instance
+#        '''
+#        values = self.__dict__ 
+#        values['icd9s'] = ', '.join([i.code for i in self.icd9_codes.all().order_by('code')])
+#        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(icd9s)-30s' % values
+#    
+#    @classmethod
+#    def str_line_header(cls):
+#        '''
+#        Returns a header describing the fields returned by str_line()
+#        '''
+#        values = {'date': 'DATE', 'id': 'ENC #', 'temperature': 'TEMP (F)', 'icd9s': 'ICD9 CODES'}
+#        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(icd9s)-30s' % values
+#    
+#    def _get_icd9_codes_str(self):
+#        return ', '.join(self.icd9_codes.order_by('code').values_list('code', flat=True))
+#    icd9_codes_str = property(_get_icd9_codes_str)
+#
+#
+#    def document_summary(self):
+#        return {
+#            'site':self.site_name,
+#            'provider':self.provider.pk,
+#            'status':self.status,
+#            'date':(self.date and self.date.isoformat()) or None,
+#            'closed_date':(self.closed_date and self.closed_date.isoformat()) or None,
+#            'event_type':self.event_type,
+#            'edc':(self.edc and self.edc.isoformat()) or None,
+#            'measurements':{
+#                'pregnancy':self.pregnancy_status,
+#                'temperature':self.temperature,
+#                'weight':self.weight,
+#                'height':self.height,
+#                'bp_systolic':self.bp_systolic,
+#                'bp_diastolic':self.bp_diastolic,
+#                'o2_stat':self.o2_stat,
+#                'peak_flow':self.peak_flow
+#                }
+#            }
+#            
+#
+#class Immunization(BasePatientRecord):
+#    '''
+#    An immunization
+#    '''
+#    # Date is immunization date
+#    #
+#    imm_id_num = models.CharField('Immunization Record Id', max_length=200, blank=True, null=True)
+#    imm_type = models.CharField('Immunization Type', max_length=20, blank=True, null=True)
+#    name = models.CharField('Immunization Name', max_length=200, blank=True, null=True)
+#    dose = models.CharField('Immunization Dose', max_length=100, blank=True, null=True)
+#    manufacturer = models.CharField('Manufacturer', max_length=100, blank=True, null=True)
+#    lot = models.TextField('Lot Number', max_length=500, blank=True, null=True)
+#    visit_date = models.DateField('Date of Visit', blank=True, null=True)
+#    # HEF
+#    events = generic.GenericRelation('hef.Event')
+#    
+#    class Meta:
+#        ordering = ['date']
+#
+#    q_fake = Q(name='FAKE')
+#
+#    @staticmethod
+#    def vaers_candidates(patient, event, days_prior):
+#        '''Given an adverse event, returns a queryset that represents
+#        the possible immunizations that have caused it'''
+#        
+#        earliest_date = event.date - datetime.timedelta(days=days_prior)
+#                
+#        return Immunization.objects.filter(
+#            date__gte=earliest_date, date__lte=event.date,
+#            patient=patient
+#            )
+#    
+#    @staticmethod
+#    def fakes():
+#        return Immunization.objects.filter(Immunization.q_fake)
+#
+#    @staticmethod
+#    def delete_fakes():
+#        Immunization.fakes().delete()
+#
+#    @staticmethod
+#    def make_mock(vaccine, patient, date, save_on_db=False):
+#        i = Immunization(patient=patient, provenance=Provenance.fake(),
+#                         date=date, visit_date=date,
+#                         imm_type=vaccine.code, name='FAKE'
+#                         )
+#        if save_on_db: i.save()
+#        return i
+#            
+#    def is_fake(self):
+#        return self.name == 'FAKE'
+#
+#    def _get_vaccine(self):
+#        try:
+#            return Vaccine.objects.get(code=self.imm_type)
+#        except:
+#            return Vaccine.objects.get(short_name='unknown')
+#    vaccine = property(_get_vaccine)
+#
+#    def vaccine_type(self):
+#        return (self.vaccine and self.vaccine.name) or 'Unknown Vaccine'
+#
+#    def _get_manufacturer(self):
+#        try:
+#            return VaccineManufacturerMap.objects.get(native_name=self.manufacturer).canonical_code
+#        except:
+#            return None
+#
+#    vaccine_manufacturer = property(_get_manufacturer)
+#
+#
+#    def document_summary(self):
+#        return {
+#            'date':(self.date and self.date.isoformat()) or None,
+#            'vaccine':{
+#                'name':self.vaccine_type(),
+#                'code':(self.vaccine and self.vaccine.code) or None,
+#                'lot':self.lot,
+#                'manufacturer':self.manufacturer
+#                },
+#            'dose':self.dose
+#            }
+#
+#
+#    def  __unicode__(self):
+#        return u"Immunization on %s received %s on %s" % (
+#            self.patient.full_name, self.vaccine_type(), self.date)
+#
+#
+#class SocialHistory(BasePatientRecord):
+#    tobacco_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
+#    alcohol_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
+#
+#class Allergy(BasePatientRecord):
+#    problem_id = models.IntegerField(null=True, db_index=True)
+#    date_noted = models.DateField(null=True, db_index=True)
+#    allergen = models.ForeignKey(Allergen)
+#    name = models.CharField(max_length=200, null=True, db_index=True)
+#    status = models.CharField(max_length=20, null=True, db_index=True)
+#    description = models.CharField(max_length=200)
+#
+#class Problem(BasePatientRecord):
+#    problem_id = models.IntegerField(null=True)
+#    icd9 = models.ForeignKey(Icd9)
+#    status = models.CharField(max_length=20, null=True, db_index=True)
+#    comment = models.TextField(null=True, blank=True)
+#
+#    
+#    
+#    
+#
+#    
+#    

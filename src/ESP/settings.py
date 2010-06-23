@@ -151,14 +151,14 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
-    'ESP.static', 
-    'ESP.conf', 
+    #'ESP.static', 
+    #'ESP.conf', 
     'ESP.emr',
-    'ESP.hef',
-    'ESP.nodis',
-    'ESP.vaers',
-    'ESP.ss',
-    'ESP.ui',
+    #'ESP.hef',
+    #'ESP.nodis',
+    #'ESP.vaers',
+    #'ESP.ss',
+    #'ESP.ui',
 )
 CASE_REPORT_OUTPUT_FOLDER = os.path.join(DATA_DIR, 'case_reports')
 CASE_REPORT_MDPH = config['Reporting']['use_mdph_format']
