@@ -620,6 +620,17 @@ LabResultHeuristic(
     fixed_threshold_events = [140],
     )
 
+#
+#-- Gestational Diabetes
+#
+
+LabResultHeuristic(
+    name = 'a1c',
+    long_name = 'Hemoglobin A1C',
+    positive_events = False,
+    fixed_threshold_events = [6.0, 6.5],
+    )
+
 EncounterHeuristic(
     name = 'pregnancy_diagnosis',
     long_name = 'Pregnancy (by ICD9)',
@@ -627,9 +638,6 @@ EncounterHeuristic(
     match_style = 'startswith',
     )
 
-#
-#-- Gestational Diabetes
-#
 
 #--- pregnancy
 PregnancyHeuristic() # No config needed
