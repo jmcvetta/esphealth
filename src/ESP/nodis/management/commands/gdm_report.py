@@ -10,6 +10,7 @@ import re
 import pprint
 import datetime
 import csv
+from dateutil.relativedelta import relativedelta
 
 from django.db import connection
 from django.db.models import Q
@@ -54,8 +55,9 @@ FIELDS = [
     'start_date',
     'end_date',
     'algorithm',
-    'edc',
+    'edd',
     'bmi',
+    'age at preg onset',
     'intrapartum glucose fasting positive result',
     'intrapartum OGTT50 positive result',
     'intrapartum OGTT75 positive result',
@@ -86,30 +88,40 @@ class Command(BaseCommand):
             log.debug('%s' % gdm_case)
             log.debug('case date: %s' % gdm_case.date)
             patient = gdm_case.patient
-            start_date = gdm_case.date - datetime.timedelta(days=280)
-            cutoff_date = gdm_case.date + datetime.timedelta(days=280)
-            log.debug('start_date: %s' % start_date)
-            log.debug('cutoff_date: %s' % cutoff_date)
-            q_obj = Q(patient=patient, date__gte=start_date, date__lte=cutoff_date)
-            edc = Encounter.objects.filter(q_obj).aggregate(edc=Max('edc'))['edc']
-            events = Event.objects.filter(q_obj)
-            if edc:
-                log.debug('edc: %s' % edc)
-                preg_start = edc - datetime.timedelta(days=280)
-                preg_end = edc
-                postpartum_events = Event.objects.filter(patient=patient, date__gt=edc, date__lte=edc+datetime.timedelta(weeks=12))
+            events = Event.objects.filter(patient=patient)
+            #
+            # Pregnancy Dates
+            #
+            preg_timespans = Timespan.objects.filter(patient=patient, name='pregnancy', 
+                start_date__lte=gdm_case.date, end_date__gte=gdm_case.date)
+            preg_start = preg_timespans.aggregate(min=Min('start_date'))['min']
+            preg_end = preg_timespans.aggregate(max=Max('end_date'))['max']
+            preg_events = Event.objects.filter(patient=patient, date__gte=preg_start, date__lte=preg_end)
+            log.debug('preg_start: %s' % preg_start)
+            log.debug('preg_end: %s' % preg_end)
+            #
+            # EDD
+            #
+            edd_encs = Encounter.objects.filter(patient=patient, date__gte=preg_start, date__lte=preg_end, edc__isnull=False)
+            if edd_encs:
+                edd = edd_encs.order_by('-date')[0].edc
+            else:
+                edd = 'Unknown'
+            #
+            # Postpartum
+            #
+            postpartum_timespans = Timespan.objects.filter(patient=patient, name='postpartum', 
+                start_date__lte=gdm_case.date, end_date__gte=gdm_case.date)
+            if postpartum_timespans:
+                postpartum_events = Event.objects.filter(patient=patient, date__gt=preg_end, date__lte=preg_end+datetime.timedelta(weeks=12))
                 ogtt75_postpartum_order = bool( postpartum_events.filter(name__startswith='ogtt75', name__endswith='_order')  )
                 ogtt75_postpartum_pos = bool( postpartum_events.filter(name__in=OGTT75_POSTPARTUM_EVENTS) )
             else:
-                preg_timespans = Timespan.objects.filter(patient=patient, name__in=('pregnancy', 'mini_pregnancy'))
-                log.debug('preg_timespans: %s' % preg_timespans)
-                preg_start = preg_timespans.filter(start_date__gte=start_date).aggregate(min=Min('start_date'))['min']
-                preg_end = preg_timespans.filter(start_date__lte=cutoff_date).aggregate(max=Max('end_date'))['max']
-                ogtt75_postpartum_order = 'Unknown EDC'
-                ogtt75_postpartum_pos = 'Unknown EDC'
-            log.debug('preg_start: %s' % preg_start)
-            log.debug('preg_end: %s' % preg_end)
-            preg_events = Event.objects.filter(patient=patient, date__gte=preg_start, date__lte=preg_end)
+                ogtt75_postpartum_order = 'Delivery date unknown'
+                ogtt75_postpartum_pos = 'Delivery date unknown'
+            #
+            # Lancets
+            #
             lancets = events.filter(name__in=['lancets_rx', 'test_strips_rx'])
             preg_lancet_rx = preg_events & lancets
             # previous lancet rx = within previous year
@@ -127,6 +139,9 @@ class Command(BaseCommand):
             # BMI
             #
             bmi = patient.bmi(date=preg_start, before=365, after=120)
+            #
+            # Generate output
+            #
             values = {
                 'patient db id': patient.pk,
                 'mrn': patient.mrn,
@@ -138,8 +153,9 @@ class Command(BaseCommand):
                 'start_date': preg_start,
                 'end_date': preg_end,
                 'algorithm': gdm_case.pattern.name,
-                'edc': edc,
+                'edd': edd,
                 'bmi': bmi,
+                'age at preg onset': relativedelta(preg_start, patient.date_of_birth).years,
                 'intrapartum glucose fasting positive result': bool(preg_events.filter(name='glucose_fasting_126').count() ),
                 'intrapartum OGTT50 positive result': bool(preg_events.filter(name__in=OGTT50_EVENTS).count() ),
                 'intrapartum OGTT75 positive result': bool( preg_events.filter(name__in=OGTT75_INTRAPARTUM_EVENTS).count() > 1),
