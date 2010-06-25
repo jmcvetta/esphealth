@@ -950,7 +950,7 @@ class PregnancyHeuristic(TimespanHeuristic):
                 patient = enc.patient,
                 start_date = start_date,
                 end_date = edc,
-                pattern = 'EDC',
+                pattern = 'EDD',
                 )
             new_postpartum = Timespan(
                 name = 'postpartum',
@@ -958,14 +958,14 @@ class PregnancyHeuristic(TimespanHeuristic):
                 patient = enc.patient,
                 start_date = edc,
                 end_date = edc + datetime.timedelta(days=120),
-                pattern = 'EDC_+_120_days',
+                pattern = 'EDD_+_120_days',
                 )
             new_preg.save() # Must save before adding M2M relations
             new_preg.encounters = self.all_preg_encounters.filter(patient=patient, date__gte=enc_start, date__lte=enc_end)
             new_preg.encounters.add(enc) # Add this one, in case it is dated after EDC
             new_preg.save()
             new_postpartum.save()
-            log.debug('New pregnancy %s by EDC (patient %s):  %s - %s' % (new_preg.pk, patient.pk, new_preg.start_date, new_preg.end_date))
+            log.debug('New pregnancy %s by EDD (patient %s):  %s - %s' % (new_preg.pk, patient.pk, new_preg.start_date, new_preg.end_date))
         return
     
     def pregnancy_from_icd9(self, run, patient):
@@ -1014,7 +1014,7 @@ class PregnancyHeuristic(TimespanHeuristic):
                 )
             new_preg.save() # Must save before adding many-to-many objects
             new_preg.encounters = self.all_preg_encounters.filter(patient=patient, date__gte=enc_start, date__lte=enc_end)
-            new_preg.encounters.add(enc) # Add this one, in case it is dated after EDC
+            new_preg.encounters.add(enc) # Add this one, in case it is dated after EDD
             new_preg.save() 
             if new_postpartum:
                 new_postpartum.save()
@@ -1024,11 +1024,11 @@ class PregnancyHeuristic(TimespanHeuristic):
     def generate_events(self, run, **kwargs):
         log.info('Generating pregnancy events')
         #
-        # EDC
+        # EDD
         #
         q_obj = Q(encounter__edc__isnull=False) & ~Q(encounter__timespan__name='pregnancy')
         patient_qs = Patient.objects.filter(q_obj).distinct().order_by('pk')
-        log_query('Patients to consider for EDC pregnancy', patient_qs)
+        log_query('Patients to consider for EDD pregnancy', patient_qs)
         pat_count = patient_qs.count()
         index = 0
         for patient in patient_qs:
