@@ -525,6 +525,18 @@ ogtt75_multi_intrapartum = MultipleEventPattern(
     require_timespan = ['pregnancy']
     )
 
+ogtt75_multi_postpartum = MultipleEventPattern(
+    events = [
+        'ogtt75_fasting_126',
+        'ogtt75_30m_200',
+        'ogtt75_1hr_200',
+        'ogtt75_90m_200',
+        'ogtt75_2hr_200',
+        ],
+    count = 2,
+    require_timespan = ['pregnancy']
+    )
+
 gdm_ogtt75 = ComplexEventPattern(
     name = 'GDM based on OGTT75',
     patterns = [ogtt75_multi_intrapartum],
