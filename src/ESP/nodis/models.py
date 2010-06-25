@@ -27,7 +27,7 @@ from django.contrib.contenttypes.models import ContentType
 
 
 from ESP import settings
-#from ESP.hef import events # Ensure events are loaded
+from ESP.hef import events # Ensure events are loaded
 from ESP.utils import utils as util
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
@@ -1205,7 +1205,8 @@ class Condition(object):
 #        self.med_days_before = datetime.timedelta(days = med_days_before)
         self.__existing = {} # Cache 
         if self.name in self.__registry:
-            raise NodisException('A condition with the name "%s" is already registered.' % self.name)
+            log.debug('A condition with the name "%s" is already registered.' % self.name)
+            return
         else:
             log.debug('Registering condition %s' % self.name)
             self.__registry[self.name] = self
