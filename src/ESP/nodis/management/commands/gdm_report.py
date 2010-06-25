@@ -110,9 +110,8 @@ class Command(BaseCommand):
             #
             # Postpartum
             #
-            postpartum_timespans = Timespan.objects.filter(patient=patient, name='postpartum', 
-                start_date__lte=gdm_case.date, end_date__gte=gdm_case.date)
-            if postpartum_timespans:
+            has_end_of_preg = bool( preg_timespans.filter(pattern__in=['EDD', 'ICD9_EOP']) )
+            if has_end_of_preg:
                 postpartum_events = Event.objects.filter(patient=patient, date__gt=preg_end, date__lte=preg_end+datetime.timedelta(weeks=12))
                 ogtt75_postpartum_order = bool( postpartum_events.filter(name__startswith='ogtt75', name__endswith='_order')  )
                 ogtt75_postpartum_pos = bool( postpartum_events.filter(name__in=OGTT75_POSTPARTUM_EVENTS) )
