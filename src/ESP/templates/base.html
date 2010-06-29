@@ -76,7 +76,7 @@
             <li>Administration &raquo;
                 <ul>
 		    {% if user.is_staff %}
-                    <li><a href="{{ SITEROOT }}/admin">Site Administration</a></li>
+                    <li><a href="{% url admin:index %}/admin">Site Administration</a></li>
 		    {% endif %}
                     <li><a href="{% url heuristic_mapping_report %}">Heuristic Mapping Summary</a></li>
                     <li><a href="{% url unmapped_labs_report %}">Unmapped Lab Tests Report</a></li>
