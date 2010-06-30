@@ -128,9 +128,12 @@ class Command(BaseCommand):
                 ogtt75_postpartum_pos = bool( postpartum_events.filter(name__in=OGTT75_POSTPARTUM_EVENTS) )
                 #a1c_postpartum_order = bool( LabOrder.objects.filter(patient=patient, date__gt=preg_end, 
                     #date__lte=preg_end+datetime.timedelta(weeks=12), native_code__in=a1c_native_codes) )
-                a1c_postpartum_result = LabResult.objects.filter(patient=patient, date__gt=preg_end, 
-                    date__lte=preg_end+datetime.timedelta(weeks=12), 
-                    native_code__in=a1c_native_codes).aggregate(maxres=Max('result_float'))['maxres']
+                a1c_tests = LabResult.objects.filter(patient=patient, date__gt=preg_end, 
+                    date__lte=preg_end+datetime.timedelta(weeks=12),  native_code__in=a1c_native_codes)
+                if a1c_tests:
+                    a1c_postpartum_result = a1c_tests.aggregate(maxres=Max('result_float'))['maxres']
+                else:
+                    a1c_postpartum_result = 'Test not performed'
             else:
                 #ogtt75_postpartum_order = 'Delivery date unknown'
                 ogtt75_postpartum_result = 'Delivery date unknown'
