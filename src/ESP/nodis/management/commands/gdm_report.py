@@ -94,6 +94,7 @@ class Command(BaseCommand):
             log.debug('%s' % gdm_case)
             log.debug('case date: %s' % gdm_case.date)
             patient = gdm_case.patient
+            log.debug('patient id: %s' % patient.pk)
             events = Event.objects.filter(patient=patient)
             #
             # Pregnancy Dates
@@ -113,10 +114,12 @@ class Command(BaseCommand):
                 edd = edd_encs.order_by('-date')[0].edc
             else:
                 edd = 'Unknown'
+            log.debug('edd: %s' % edd)
             #
             # Postpartum
             #
             has_end_of_preg = bool( preg_timespans.filter(pattern__in=['EDD', 'ICD9_EOP']) )
+            log.debug('has end of preg: %s' % has_end_of_preg)
             if has_end_of_preg:
                 postpartum_events = Event.objects.filter(patient=patient, date__gt=preg_end, date__lte=preg_end+datetime.timedelta(weeks=12))
                 #ogtt75_postpartum_order = bool( LabOrder.objects.filter(patient=patient, date__gt=preg_end, 
