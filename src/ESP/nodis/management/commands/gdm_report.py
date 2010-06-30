@@ -24,8 +24,11 @@ from django.core.management.base import BaseCommand
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 
+from ESP.conf.models import CodeMap
+
 from ESP.emr.models import Patient
 from ESP.emr.models import LabResult
+from ESP.emr.models import LabOrder
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 
@@ -62,8 +65,9 @@ FIELDS = [
     'intrapartum OGTT50 positive result',
     'intrapartum OGTT75 positive result',
     'intrapartum OGTT100 positive result',
-    'postpartum OGTT75 order',
+    'postpartum OGTT75 any result',
     'postpartum OGTT75 positive result',
+    'postpartum A1C result',
     'lancets / test strips Rx',
     'new lancets / test strips Rx',
     'insulin rx during pregnancy',
@@ -79,6 +83,8 @@ class Command(BaseCommand):
         writer = csv.DictWriter(sys.stdout, fieldnames=FIELDS)
         header = dict(zip(FIELDS, FIELDS)) 
         writer.writerow(header)
+        ogtt75_native_codes = CodeMap.objects.filter(heuristic__istartswith='ogtt75').values_list('native_code', flat=True).distinct()
+        a1c_native_codes = CodeMap.objects.filter(heuristic='a1c').values_list('native_code', flat=True).distinct()
         all_gdm_cases = Case.objects.filter(condition='gdm').order_by('date')
         case_count = all_gdm_cases.count()
         case_index = 0
@@ -113,11 +119,21 @@ class Command(BaseCommand):
             has_end_of_preg = bool( preg_timespans.filter(pattern__in=['EDD', 'ICD9_EOP']) )
             if has_end_of_preg:
                 postpartum_events = Event.objects.filter(patient=patient, date__gt=preg_end, date__lte=preg_end+datetime.timedelta(weeks=12))
-                ogtt75_postpartum_order = bool( postpartum_events.filter(name__startswith='ogtt75', name__endswith='_order')  )
+                #ogtt75_postpartum_order = bool( LabOrder.objects.filter(patient=patient, date__gt=preg_end, 
+                    #date__lte=preg_end+datetime.timedelta(weeks=12), native_code__in=ogtt75_native_codes) )
+                ogtt75_postpartum_result = bool( postpartum_events.filter(name__startswith='ogtt75', name__endswith='_order')  )
                 ogtt75_postpartum_pos = bool( postpartum_events.filter(name__in=OGTT75_POSTPARTUM_EVENTS) )
+                #a1c_postpartum_order = bool( LabOrder.objects.filter(patient=patient, date__gt=preg_end, 
+                    #date__lte=preg_end+datetime.timedelta(weeks=12), native_code__in=a1c_native_codes) )
+                a1c_postpartum_result = LabResult.objects.filter(patient=patient, date__gt=preg_end, 
+                    date__lte=preg_end+datetime.timedelta(weeks=12), 
+                    native_code__in=a1c_native_codes).aggregate(maxres=Max('result_float'))['maxres']
             else:
-                ogtt75_postpartum_order = 'Delivery date unknown'
+                #ogtt75_postpartum_order = 'Delivery date unknown'
+                ogtt75_postpartum_result = 'Delivery date unknown'
                 ogtt75_postpartum_pos = 'Delivery date unknown'
+                #a1c_postpartum_order =  'Delivery date unknown'
+                a1c_postpartum_result =  'Delivery date unknown'
             #
             # Lancets
             #
@@ -159,8 +175,11 @@ class Command(BaseCommand):
                 'intrapartum OGTT50 positive result': bool(preg_events.filter(name__in=OGTT50_EVENTS).count() ),
                 'intrapartum OGTT75 positive result': bool( preg_events.filter(name__in=OGTT75_INTRAPARTUM_EVENTS).count() > 1),
                 'intrapartum OGTT100 positive result': bool( preg_events.filter(name__in=OGTT100_EVENTS).count() > 1 ),
-                'postpartum OGTT75 order': ogtt75_postpartum_order,
+                #'postpartum OGTT75 order': ogtt75_postpartum_order,
+                'postpartum OGTT75 any result': ogtt75_postpartum_result,
                 'postpartum OGTT75 positive result': ogtt75_postpartum_pos,
+                #'postpartum A1C order': a1c_postpartum_order,
+                'postpartum A1C result': a1c_postpartum_result,
                 'lancets / test strips Rx': bool(preg_lancet_rx.count()),
                 'new lancets / test strips Rx': new_lancet_rx,
                 'insulin rx during pregnancy': bool( preg_events.filter(name='insulin_rx').count() ),
