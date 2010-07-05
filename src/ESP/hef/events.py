@@ -426,8 +426,8 @@ EncounterHeuristic(
     )
 
 LabResultHeuristic(
-    name = 'ttpa',
-    long_name = 'TTPA test',
+    name = 'tppa',
+    long_name = 'TPPA test',
     )
 
 LabResultHeuristic(

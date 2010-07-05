@@ -449,7 +449,7 @@ syphilis_tests = ComplexEventPattern(
     operator = 'and', # n/a
     require_ever = [
         # Operator is 'OR'
-        'ttpa_pos',
+        'tppa_pos',
         'fta_abs_pos',
         ],
     )
