@@ -128,7 +128,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 )
 ROOT_URLCONF = 'ESP.urls'
-LOGIN_URL = '/login'
+LOGIN_URL = config['Web']['login_url']
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.auth',
     'django.core.context_processors.debug',
