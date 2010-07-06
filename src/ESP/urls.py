@@ -45,7 +45,7 @@ urlpatterns = patterns(
     
     
     # Django Admin
-    url(r'^admin/(.*)', admin.site.root),
+    url(r'^admin/', include(admin.site.urls)),
 #    (r'^admin/doc/', include('django.contrib.admindocs.urls'),
 
     url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIA_ROOT}),
