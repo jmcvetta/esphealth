@@ -447,8 +447,43 @@ LabResultHeuristic(
         '1:128',
         '1:256',
         '1:512',
-        '1:1024',
-        ]
+        '1:1024', ]
+    )
+
+LabResultHeuristic(
+    name = 'vdrl_serum',
+    long_name = 'VDRL serum test',
+    extra_positive_strings = [
+        '1:8',
+        '1:16',
+        '1:32',
+        '1:64',
+        '1:128',
+        '1:256',
+        '1:512',
+        '1:1024', ]
+    )
+
+LabResultHeuristic(
+    name = 'tp_igg',
+    long_name = 'TP-IGG test',
+    )
+
+LabResultHeuristic(
+    name = 'vdrl_csf',
+    long_name = 'VDRL-CSF test',
+    extra_positive_strings = [
+        '1:1',
+        '1:2',
+        '1:4',
+        '1:8',
+        '1:16',
+        '1:32',
+        '1:64',
+        '1:128',
+        '1:256',
+        '1:512',
+        '1:1024', ]
     )
 
 

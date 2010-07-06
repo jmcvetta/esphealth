@@ -445,13 +445,22 @@ syphilis_diagnosis_or_meds = ComplexEventPattern(
     )
 
 syphilis_tests = ComplexEventPattern(
-    patterns = ['rpr_pos',],
-    operator = 'and', # n/a
+    patterns = [
+        'rpr_pos',
+        'vdrl_serum_pos',
+        ],
+    operator = 'or',
     require_ever = [
         # Operator is 'OR'
         'tppa_pos',
         'fta_abs_pos',
+        'tp_igg_pos',
         ],
+    )
+
+syphilis_vdrl_csf = ComplexEventPattern(
+    patterns = ['vdrl_csf_pos'],
+    operator = 'and' # n/a
     )
 
 
@@ -460,6 +469,7 @@ syphilis = Condition(
     patterns = [
         (syphilis_diagnosis_or_meds, 14),
         (syphilis_tests, 14),
+        (syphilis_vdrl_csf, 1), 
         ],
     recur_after = -1, # Never
     test_name_search = ['syph', 'rpr', 'vdrl', 'tp','fta'],
