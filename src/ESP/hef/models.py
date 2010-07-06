@@ -97,15 +97,3 @@ class Timespan(models.Model):
     #
     encounters = models.ManyToManyField(Encounter)
 
-
-#class Pregnancy(models.Model):
-#    patient = models.ForeignKey(Patient, blank=False)
-#    start_date = models.DateField(blank=False, db_index=True)
-#    end_date = models.DateField(blank=False, db_index=True)
-#    timestamp = models.DateTimeField('Time this event was created in db', blank=False, auto_now_add=True)
-#    run = models.ForeignKey(Run, blank=False)
-#    pattern = models.SlugField(blank=False)
-#    encounters = models.ManyToManyField(Encounter)
-    
-    def __str__(self):
-        return 'Pregnancy patient %s, %s - %s' % (self.patient.name, self.start_date, self.end_date)
