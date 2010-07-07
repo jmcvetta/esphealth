@@ -204,25 +204,37 @@ LabResultHeuristic(
     )
 
 LabResultHeuristic(
-    name = 'lyme_igg',
-    long_name = 'Lyme IGG',
+    name = 'lyme_igg_eia',
+    long_name = 'Lyme IGG (EIA)',
+    order_events = True,
     )
+
+LabResultHeuristic(
+    name = 'lyme_igm_eia',
+    long_name = 'Lyme IGM (EIA)',
+    order_events = True,
+    )
+
+
+# Western blot IGG is resulted in bands, some of which are significant; but western 
+# blot IGM is resulted as a standard lab test with POSTIVE result string.
 
 WesternBlotHeuristic(
     name = 'lyme_igg_wb',
-    long_name = 'Lyme Western Blot',
+    long_name = 'Lyme Western Blot IGG',
     interesting_bands = [18, 21, 28, 30, 39, 41, 45, 58, 66, 93],
     band_count = 5,
     )
 
 LabResultHeuristic(
-    name = 'lyme_igm',
-    long_name = 'Lyme IGM (EIA)',
+    name = 'lyme_igm_wb',
+    long_name = 'Lyme Western Blot IGM',
     )
 
 LabResultHeuristic(
     name = 'lyme_pcr',
     long_name = 'Lyme PCR',
+    order_events = True,
     )
 
 EncounterHeuristic(

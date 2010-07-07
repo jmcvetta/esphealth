@@ -299,7 +299,12 @@ hep_c = Condition(
 
 
 lyme_test_pos = ComplexEventPattern(
-    patterns = ['lyme_elisa_pos', 'lyme_igg_pos', 'lyme_igm_pos', 'lyme_pcr_pos'],
+    patterns = ['lyme_elisa_pos', 'lyme_igg_eia_pos', 'lyme_igm_eia_pos', 'lyme_pcr_pos'],
+    operator = 'or'
+    )
+
+lyme_test_order = ComplexEventPattern(
+    patterns = ['lyme_elisa_order', 'lyme_igg_eia_order', 'lyme_igm_eia_order', 'lyme_pcr_order'],
     operator = 'or'
     )
 
@@ -327,7 +332,7 @@ lyme_2 = ComplexEventPattern(
 
 lyme_3 = ComplexEventPattern(
     name = 'Lyme Disease Definition 3',
-    patterns = ['rash', 'lyme_elisa_order', 'doxycycline'],
+    patterns = ['rash', 'doxycycline', lyme_test_order],
     operator = 'and'
     )
 
@@ -337,7 +342,7 @@ lyme = Condition(
     patterns = [
         (lyme_1, 30),
         (lyme_2, 14),
-        (lyme_3, 14),
+        (lyme_3, 30),
         ],
     recur_after = 365, # 1 year
     test_name_search = ['lyme'],
