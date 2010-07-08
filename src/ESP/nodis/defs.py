@@ -137,7 +137,7 @@ hep_b_1 = ComplexEventPattern(
     )
 
 bilirubin = ComplexEventPattern(
-    patterns = ['total_bilirubin_high_pos', 'high_calc_bilirubin'],
+    patterns = ['total_bilirubin_high_pos', 'high_calc_bilirubin_pos'],
     operator = 'or'
     )
 
@@ -298,13 +298,13 @@ hep_c = Condition(
 #-------------------------------------------------------------------------------
 
 
-lyme_test_pos = ComplexEventPattern(
-    patterns = ['lyme_elisa_pos', 'lyme_igg_eia_pos', 'lyme_igm_eia_pos', 'lyme_pcr_pos'],
+lyme_elisa_eia_pos = ComplexEventPattern(
+    patterns = ['lyme_elisa_pos', 'lyme_igg_eia_pos', 'lyme_igm_eia_pos'],
     operator = 'or'
     )
 
-lyme_test_order = ComplexEventPattern(
-    patterns = ['lyme_elisa_order', 'lyme_igg_eia_order', 'lyme_igm_eia_order', 'lyme_pcr_order'],
+lyme_elisa_eia_order = ComplexEventPattern(
+    patterns = ['lyme_elisa_order', 'lyme_igg_eia_order', 'lyme_igm_eia_order'],
     operator = 'or'
     )
 
@@ -320,7 +320,7 @@ doxy_lyme_ab = ComplexEventPattern(
 
 lyme_1 = ComplexEventPattern(
     name = 'Lyme Disease definition 1',
-    patterns = [lyme_test_pos, lyme_diag_ab],
+    patterns = [lyme_elisa_eia_pos, lyme_diag_ab],
     operator = 'and',
     )
 
@@ -332,9 +332,15 @@ lyme_2 = ComplexEventPattern(
 
 lyme_3 = ComplexEventPattern(
     name = 'Lyme Disease Definition 3',
-    patterns = ['rash', 'doxycycline', lyme_test_order],
+    patterns = ['rash', 'doxycycline', lyme_elisa_eia_order],
     operator = 'and'
     )
+
+lyme_4 = ComplexEventPattern(
+    patterns = ['lyme_igg_wb_pos', 'lyme_igm_wb_pos', 'lyme_pcr_pos'],
+    operator = 'or',
+    )
+
 
 
 lyme = Condition(
@@ -343,6 +349,7 @@ lyme = Condition(
         (lyme_1, 30),
         (lyme_2, 14),
         (lyme_3, 30),
+        (lyme_4, 1),
         ],
     recur_after = 365, # 1 year
     test_name_search = ['lyme'],
