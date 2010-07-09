@@ -15,6 +15,7 @@ import sys
 import datetime
 import csv
 import cStringIO as StringIO
+import django_tables as tables
 
 from django import forms
 from django import http
@@ -349,14 +350,74 @@ def ignore_code_set(request):
         log.debug(msg)
     return redirect_to(request, reverse('unmapped_labs_report'))
 
+'''
+case_id_link,
+case.condition,
+case_date,
+case.provider.dept,
+# Begin PHI
+patient.name.title(),
+patient.mrn,
+patient.address.title(),
+# End PHI
+case.get_status_display(),
+case.updated_timestamp.strftime(DATE_FORMAT),
+#case.getPrevcases()
+'''
+
+class CaseTableNoPHI(tables.ModelTable):
+    '''
+    Case table including PHI
+    '''
+    id = tables.Column()
+    condition = tables.Column()
+    date = tables.Column()
+    provider__dept = tables.Column(name='Provider Department')
+    status = tables.Column()
+    updated_timestamp = tables.Column(name='Last Updated')
+    
+class CaseTablePHI(tables.ModelTable):
+    '''
+    Case table including PHI
+    '''
+    id = tables.Column()
+    condition = tables.Column()
+    date = tables.Column()
+    provider__dept = tables.Column(name='Provider Department')
+    # Begin PHI
+    patient__mrn = tables.Column(name='Patient MRN')
+    patient__name = tables.Column(name='Patient Name', sortable=False)
+    patient__address = tables.Column(name='Patient Address', sortable=False)
+    # End PHI
+    status = tables.Column()
+    updated_timestamp = tables.Column(name='Last Updated')
+    
 
 @login_required
 def case_list(request, status):
     values = {}
-    values['default_rp'] = ROWS_PER_PAGE
-    values['request'] = request # Should this really be necessary?
-    values['status'] = status
-    return render_to_response('nodis/case_list.html', values, context_instance=RequestContext(request))
+    #values['default_rp'] = ROWS_PER_PAGE
+    #values['request'] = request # Should this really be necessary?
+    #values['status'] = status
+    #qs = Case.objects.filter(status=status)
+    if request.user.has_perm('esp.view_phi'):
+        CaseTable = CaseTablePHI
+    else:
+        CaseTable = CaseTableNoPHI
+    qs = Case.objects.all()
+    if status == 'await':
+        qs = qs.filter(status='AR')
+    elif status == 'under':
+        qs = qs.filter(status='UR')
+    elif status == 'queued':
+        qs = qs.filter(status='Q')
+    elif status == 'sent':
+        qs = qs.filter(status='S')
+    table = CaseTable(qs, order_by=request.GET.get('sort', '-Last Updated'))
+    page = Paginator(table.rows, ROWS_PER_PAGE).page(request.GET.get('page', 1))
+    values['table'] = table
+    values['page'] = page
+    return render_to_response('ui/case_list.html', values, context_instance=RequestContext(request))
 
 
 @login_required

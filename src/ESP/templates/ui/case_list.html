@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<table id="case_table">
+    <tr>
+        <th>&nbsp;</th>
+        {% for column in table.columns %}
+            {% if column.sortable %}
+                <th><a href="?sort={{ column.name_toggled }}">{{ column }}</a></th>
+            {% else %}
+                <th>{{ column }}</th>
+            {% endif %}
+        {% endfor %}
+    </tr>
+    {% for row in page.object_list %}
+        <tr>
+        <td><a href="{% url nodis_case_detail row.id %}">view</a></td>
+        {% for value in row %}
+            <td>{{ value }}</td>
+        {% endfor %}
+        </tr>
+    {% endfor %}
+</table>
+
+<div class="pagination">
+    <p>
+    {{ page.paginator.count }} cases matching query.
+    </p>
+    <p>
+    <span class="step-links">
+        {% if page.has_previous %}
+            <a href="?page={{ page.previous_page_number }}">previous</a> |
+        {% endif %}
+
+
+        <span class="current">
+            Page {{ page.number }} of {{ page.paginator.num_pages }}
+        </span>
+
+        {% if page.has_next %}
+            | <a href="?page={{ page.next_page_number }}">next</a>
+        {% endif %}
+    </span>
+    </p>
+</div>
+
+
+
+{% endblock%}

@@ -351,12 +351,13 @@ class Patient(BaseMedicalRecord):
     
     def _get_name(self):
         if self.middle_name:
-            return u'%s, %s %s' % (self.last_name, self.first_name, self.middle_name)
+            name = u'%s, %s %s' % (self.last_name, self.first_name, self.middle_name)
         else:
-            return u'%s, %s' % (self.last_name, self.first_name)
+            name = u'%s, %s' % (self.last_name, self.first_name)
+        return name.title()
     name = property(_get_name)
     full_name = property(_get_name)
-
+    
     def _get_age_str(self, precision='years', with_units=False):
         '''Returns patient's age as a string'''
         if not self.date_of_birth: return None
@@ -380,7 +381,8 @@ class Patient(BaseMedicalRecord):
 
     
     def _get_address(self):
-        return u'%s %s %s, %s, %s' % (self.address1, self.address2, self.city, self.state, self.zip)
+        address = u'%s %s %s, %s, %s' % (self.address1, self.address2, self.city, self.state, self.zip)
+        return address.title()
     address = property(_get_address)
 
     street_address = property(lambda x: (u'%s %s' % (x.address1, x.address2)).strip())
