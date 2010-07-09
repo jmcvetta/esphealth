@@ -180,8 +180,6 @@ src/ESP/nodis/management/commands/patient_report.py -text
 src/ESP/nodis/management/commands/validate_cases.py -text
 src/ESP/nodis/models.py -text
 src/ESP/nodis/tests.py -text
-src/ESP/nodis/urls.py -text
-src/ESP/nodis/views.py -text
 src/ESP/secrets.spec.ini -text
 src/ESP/sendMsgs/bcdc.jar -text
 src/ESP/settings.py -text
