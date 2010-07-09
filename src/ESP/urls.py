@@ -54,7 +54,7 @@ urlpatterns = patterns(
     url(r'^conf/', include('ESP.conf.urls')),
     
     # Nodis
-    url(r'^nodis/', include('ESP.nodis.urls')),
+    #url(r'^nodis/', include('ESP.nodis.urls')),
     
     # Nodis
     url(r'^util/', include('ESP.ui.urls')),
@@ -64,4 +64,5 @@ urlpatterns = patterns(
     #
     #url(r'^codes', code_maintenance),
     #url(r'^json_code_grid', json_code_grid, name='json_code_grid'),
+    url('r^/', include('ESP.ui.urls')),
 )
