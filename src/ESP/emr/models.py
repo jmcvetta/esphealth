@@ -131,22 +131,22 @@ class Provider(BaseMedicalRecord):
     '''
     A medical care provider
     '''
-    provider_id_num = models.CharField('Physician code', unique=True, max_length=20, 
+    provider_id_num = models.CharField('Physician code', unique=True, max_length=128, 
         blank=True, null=True, db_index=True)
-    last_name = models.CharField('Last Name',max_length=200, blank=True,null=True)
-    first_name = models.CharField('First Name',max_length=200, blank=True,null=True)
-    middle_name = models.CharField('Middle_Name',max_length=200, blank=True,null=True)
-    title = models.CharField('Title', max_length=20, blank=True, null=True)
-    dept_id_num = models.CharField('Primary Department Id',max_length=20,blank=True,null=True)
-    dept = models.CharField('Primary Department',max_length=200,blank=True,null=True)
-    dept_address_1 = models.CharField('Primary Department Address 1',max_length=100,blank=True,null=True)
-    dept_address_2 = models.CharField('Primary Department Address 2',max_length=20,blank=True,null=True)
-    dept_city = models.CharField('Primary Department City',max_length=20,blank=True,null=True)
-    dept_state = models.CharField('Primary Department State',max_length=20,blank=True,null=True)
-    dept_zip = models.CharField('Primary Department Zip',max_length=20,blank=True,null=True)
+    last_name = models.CharField('Last Name',max_length=128, blank=True,null=True)
+    first_name = models.CharField('First Name',max_length=128, blank=True,null=True)
+    middle_name = models.CharField('Middle_Name',max_length=128, blank=True,null=True)
+    title = models.CharField('Title', max_length=128, blank=True, null=True)
+    dept_id_num = models.CharField('Primary Department Id',max_length=128,blank=True,null=True)
+    dept = models.CharField('Primary Department',max_length=128,blank=True,null=True)
+    dept_address_1 = models.CharField('Primary Department Address 1',max_length=128,blank=True,null=True)
+    dept_address_2 = models.CharField('Primary Department Address 2',max_length=128,blank=True,null=True)
+    dept_city = models.CharField('Primary Department City',max_length=128,blank=True,null=True)
+    dept_state = models.CharField('Primary Department State',max_length=128,blank=True,null=True)
+    dept_zip = models.CharField('Primary Department Zip',max_length=128,blank=True,null=True)
     # Large max_length value for area code because Atrius likes to put descriptive text into that field
-    area_code = models.CharField('Primary Department Phone Areacode',max_length=50,blank=True,null=True)
-    telephone = models.CharField('Primary Department Phone Number',max_length=50,blank=True,null=True)
+    area_code = models.CharField('Primary Department Phone Areacode',max_length=128,blank=True,null=True)
+    telephone = models.CharField('Primary Department Phone Number',max_length=128,blank=True,null=True)
     
     q_fake = Q(provider_id_num__startswith='FAKE')
 
@@ -205,38 +205,38 @@ class Patient(BaseMedicalRecord):
     '''
     A patient, with demographic information
     '''
-    patient_id_num = models.CharField('Patient ID #', unique=True, max_length=20, 
+    patient_id_num = models.CharField('Patient ID #', unique=True, max_length=128, 
         blank=True, null=True, db_index=True)
-    mrn = models.CharField('Medical Record ', max_length=20, blank=True, null=True, db_index=True)
-    last_name = models.CharField('Last Name', max_length=200, blank=True, null=True)
-    first_name = models.CharField('First Name', max_length=200, blank=True, null=True)
-    middle_name = models.CharField('Middle Name', max_length=200, blank=True, null=True)
-    suffix = models.CharField('Suffix', max_length=199, blank=True, null=True)
+    mrn = models.CharField('Medical Record ', max_length=128, blank=True, null=True, db_index=True)
+    last_name = models.CharField('Last Name', max_length=128, blank=True, null=True)
+    first_name = models.CharField('First Name', max_length=128, blank=True, null=True)
+    middle_name = models.CharField('Middle Name', max_length=128, blank=True, null=True)
+    suffix = models.CharField('Suffix', max_length=128, blank=True, null=True)
     pcp = models.ForeignKey(Provider, verbose_name='Primary Care Physician', blank=True, null=True)
-    address1 = models.CharField('Address1', max_length=200, blank=True, null=True)
-    address2 = models.CharField('Address2', max_length=100, blank=True, null=True)
-    city = models.CharField('City', max_length=50, blank=True, null=True)
-    state = models.CharField('State', max_length=20, blank=True, null=True)
-    zip = models.CharField('Zip', max_length=20, blank=True, null=True, db_index=True)
+    address1 = models.CharField('Address1', max_length=128, blank=True, null=True)
+    address2 = models.CharField('Address2', max_length=128, blank=True, null=True)
+    city = models.CharField('City', max_length=128, blank=True, null=True)
+    state = models.CharField('State', max_length=128, blank=True, null=True)
+    zip = models.CharField('Zip', max_length=128, blank=True, null=True, db_index=True)
     zip5 = models.CharField('5-digit zip', max_length=5, null=True, db_index=True)
-    country = models.CharField('Country', max_length=20, blank=True, null=True)
+    country = models.CharField('Country', max_length=128, blank=True, null=True)
     # Large max_length value for area code because Atrius likes to put descriptive text into that field
-    areacode = models.CharField('Home Phone Area Code', max_length=50, blank=True, null=True)
-    tel = models.CharField('Home Phone Number', max_length=100, blank=True, null=True)
-    tel_ext = models.CharField('Home Phone Extension', max_length=50, blank=True, null=True)
+    areacode = models.CharField('Home Phone Area Code', max_length=128, blank=True, null=True)
+    tel = models.CharField('Home Phone Number', max_length=128, blank=True, null=True)
+    tel_ext = models.CharField('Home Phone Extension', max_length=128, blank=True, null=True)
     date_of_birth = models.DateField('Date of Birth', blank=True, null=True)
     date_of_death = models.DateField('Date of death', blank=True, null=True)
-    gender = models.CharField('Gender', max_length=20, blank=True, null=True)
+    gender = models.CharField('Gender', max_length=128, blank=True, null=True)
     pregnant = models.NullBooleanField('Patient is pregnant?', blank=True, null=True)
-    race = models.CharField('Race', max_length=20, blank=True, null=True)
+    race = models.CharField('Race', max_length=128, blank=True, null=True)
     home_language = models.CharField('Home Language', max_length=128, blank=True, null=True)
-    ssn = models.CharField('SSN', max_length=20, blank=True, null=True)
-    marital_stat = models.CharField('Marital Status', max_length=20, blank=True, null=True)
-    religion = models.CharField('Religion', max_length=100, blank=True, null=True)
+    ssn = models.CharField('SSN', max_length=128, blank=True, null=True)
+    marital_stat = models.CharField('Marital Status', max_length=128, blank=True, null=True)
+    religion = models.CharField('Religion', max_length=128, blank=True, null=True)
     aliases = models.TextField('Aliases', blank=True, null=True)
-    mother_mrn = models.CharField('Mother Medical Record Number', max_length=20, blank=True, null=True)
+    mother_mrn = models.CharField('Mother Medical Record Number', max_length=128, blank=True, null=True)
     #death_indicator = models.CharField('Death_Indicator', max_length=30, blank=True, null=True)
-    occupation = models.CharField('Occupation', max_length=200, blank=True, null=True)
+    occupation = models.CharField('Occupation', max_length=128, blank=True, null=True)
     
     q_fake = Q(patient_id_num__startswith='FAKE')
 
@@ -579,7 +579,7 @@ class BasePatientRecord(BaseMedicalRecord):
     date = models.DateField(blank=False, db_index=True)
     # Does it make sense to have an MRN field on every patient record table?  
     # Will all patient records have their own individual MRN?
-    mrn = models.CharField('Medical Record Number', max_length=50, blank=True, null=True)
+    mrn = models.CharField('Medical Record Number', max_length=128, blank=True, null=True)
     
     class Meta:
         abstract = True
@@ -604,29 +604,29 @@ class LabResult(BasePatientRecord):
     # Date (from base class) is order date
     #
     # Coding
-    native_code = models.CharField('Native Test Code', max_length=30, blank=True, null=True, db_index=True)
+    native_code = models.CharField('Native Test Code', max_length=128, blank=True, null=True, db_index=True)
     native_name = models.CharField('Native Test Name', max_length=255, blank=True, null=True, db_index=True)
     order_num = models.CharField(max_length=128, blank=True, null=True)
     result_date = models.DateField(blank=True, null=True, db_index=True)
     collection_date = models.DateField(blank=True, null=True)
-    status = models.CharField('Result Status', max_length=50, blank=True, null=True)
-    result_num = models.CharField('Result Id #', max_length=100, blank=True, null=True)
+    status = models.CharField('Result Status', max_length=128, blank=True, null=True)
+    result_num = models.CharField('Result Id #', max_length=128, blank=True, null=True)
     # 
     # In some EMR data sets, reference pos & high, and neg & low, may come from
     # the same field depending whether the value is a string or a number.
     #
-    ref_high_string = models.CharField('Reference Positive Value', max_length=100, blank=True, null=True)
-    ref_low_string = models.CharField('Reference Negative Value', max_length=100, blank=True, null=True)
+    ref_high_string = models.CharField('Reference Positive Value', max_length=128, blank=True, null=True)
+    ref_low_string = models.CharField('Reference Negative Value', max_length=128, blank=True, null=True)
     ref_high_float = models.FloatField('Reference High Value', blank=True, null=True, db_index=True)
     ref_low_float = models.FloatField('Reference Low Value', blank=True, null=True, db_index=True)
-    ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
+    ref_unit = models.CharField('Measurement Unit', max_length=128, blank=True, null=True)
     # Result
     abnormal_flag = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     result_float = models.FloatField('Numeric Test Result', blank=True, null=True, db_index=True)
     result_string = models.TextField('Test Result', max_length=2000, blank=True, null=True, db_index=True)
     # Wide fields
-    specimen_num = models.CharField('Speciment ID Number', max_length=100, blank=True, null=True)
-    specimen_source = models.CharField('Speciment Source', max_length=255, blank=True, null=True)
+    specimen_num = models.CharField('Speciment ID Number', max_length=128, blank=True, null=True)
+    specimen_source = models.CharField('Speciment Source', max_length=128, blank=True, null=True)
     impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
     comment = models.TextField('Comments', blank=True, null=True)
     procedure_name = models.CharField('Procedure Name', max_length=255, blank=True, null=True)
@@ -835,12 +835,12 @@ class LabResult(BasePatientRecord):
 
 class LabOrder(BasePatientRecord):
     order_id = models.IntegerField(db_index=True)
-    procedure_master_num = models.CharField(max_length=20, blank=True, null=True, db_index=True)
-    modifier = models.CharField(max_length=20, blank=True, null=True)
-    specimen_id = models.CharField(max_length=20, blank=True, null=True, db_index=True)
-    order_type = models.CharField(max_length=64, blank=True, db_index=True)
+    procedure_master_num = models.CharField(max_length=128, blank=True, null=True, db_index=True)
+    modifier = models.CharField(max_length=128, blank=True, null=True)
+    specimen_id = models.CharField(max_length=128, blank=True, null=True, db_index=True)
+    order_type = models.CharField(max_length=128, blank=True, db_index=True)
     procedure_name = models.CharField(max_length=300, blank=True, null=True)
-    specimen_source = models.CharField(max_length=300, blank=True, null=True)
+    specimen_source = models.CharField(max_length=128, blank=True, null=True)
     
     
     
@@ -851,9 +851,9 @@ class Prescription(BasePatientRecord):
     '''
     # Date is order date
     #
-    order_num = models.CharField('Order Id #', max_length=20, blank=True, null=True)
+    order_num = models.CharField('Order Id #', max_length=128, blank=True, null=True)
     name = models.TextField(max_length=3000, blank=False, db_index=True)
-    code = models.CharField('Drug Code (system varies by site)', max_length=255, blank=True, null=True)
+    code = models.CharField('Drug Code (system varies by site)', max_length=128, blank=True, null=True)
     directions = models.TextField(max_length=3000, blank=True, null=True)
     dose = models.CharField(max_length=200, blank=True, null=True)
     frequency = models.CharField(max_length=200, blank=True, null=True)
@@ -863,7 +863,7 @@ class Prescription(BasePatientRecord):
     quantity_float = models.FloatField(blank=True, null=True, db_index=True)
     refills = models.CharField(max_length=200, blank=True, null=True)
     route = models.CharField(max_length=200, blank=True, null=True)
-    status = models.CharField('Order Status', max_length=20, blank=True, null=True)
+    status = models.CharField('Order Status', max_length=128, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
     # HEF
@@ -944,12 +944,12 @@ class Encounter(BasePatientRecord):
     #
     objects = EncounterManager()
     icd9_codes = models.ManyToManyField(Icd9,  blank=True,  null=True, db_index=True)
-    status = models.CharField(max_length=20, blank=True, null=True)
+    status = models.CharField(max_length=128, blank=True, null=True)
     closed_date = models.DateField(blank=True, null=True)
-    site_name = models.CharField(max_length=100, blank=True, null=True)
-    native_site_num = models.CharField('Site Id #', max_length=30, blank=True, null=True)
-    native_encounter_num = models.CharField('Encounter ID #', max_length=20, blank=True, null=True, db_index=True)
-    event_type = models.CharField(max_length=20, blank=True, null=True, db_index=True)
+    site_name = models.CharField(max_length=128, blank=True, null=True)
+    native_site_num = models.CharField('Site Id #', max_length=128, blank=True, null=True)
+    native_encounter_num = models.CharField('Encounter ID #', max_length=128, blank=True, null=True, db_index=True)
+    event_type = models.CharField(max_length=128, blank=True, null=True, db_index=True)
     pregnancy_status = models.BooleanField(blank=False, default=False)
     edc = models.DateField('Expected date of confinement', blank=True, null=True, db_index=True) 
     temperature = models.FloatField('Temperature (C)', blank=True, null=True, db_index=True)
@@ -959,8 +959,8 @@ class Encounter(BasePatientRecord):
     height = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
     bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True)
     bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True)
-    o2_stat = models.FloatField(max_length=50, blank=True, null=True)
-    peak_flow = models.FloatField(max_length=50, blank=True, null=True)
+    o2_stat = models.FloatField(max_length=128, blank=True, null=True)
+    peak_flow = models.FloatField(max_length=128, blank=True, null=True)
     diagnosis = models.TextField(null=True, blank=True)
     bmi = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, db_index=True)
     # HEF
@@ -1084,10 +1084,10 @@ class Immunization(BasePatientRecord):
     # Date is immunization date
     #
     imm_id_num = models.CharField('Immunization Record Id', max_length=200, blank=True, null=True)
-    imm_type = models.CharField('Immunization Type', max_length=20, blank=True, null=True)
+    imm_type = models.CharField('Immunization Type', max_length=128, blank=True, null=True)
     name = models.CharField('Immunization Name', max_length=200, blank=True, null=True)
-    dose = models.CharField('Immunization Dose', max_length=100, blank=True, null=True)
-    manufacturer = models.CharField('Manufacturer', max_length=100, blank=True, null=True)
+    dose = models.CharField('Immunization Dose', max_length=128, blank=True, null=True)
+    manufacturer = models.CharField('Manufacturer', max_length=128, blank=True, null=True)
     lot = models.TextField('Lot Number', max_length=500, blank=True, null=True)
     visit_date = models.DateField('Date of Visit', blank=True, null=True)
     # HEF
@@ -1168,21 +1168,21 @@ class Immunization(BasePatientRecord):
 
 
 class SocialHistory(BasePatientRecord):
-    tobacco_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
-    alcohol_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
+    tobacco_use = models.CharField(max_length=128, null=True, blank=True, db_index=True)
+    alcohol_use = models.CharField(max_length=128, null=True, blank=True, db_index=True)
 
 class Allergy(BasePatientRecord):
     problem_id = models.IntegerField(null=True, db_index=True)
     date_noted = models.DateField(null=True, db_index=True)
     allergen = models.ForeignKey(Allergen)
     name = models.CharField(max_length=200, null=True, db_index=True)
-    status = models.CharField(max_length=20, null=True, db_index=True)
+    status = models.CharField(max_length=128, null=True, db_index=True)
     description = models.CharField(max_length=200)
 
 class Problem(BasePatientRecord):
     problem_id = models.IntegerField(null=True)
     icd9 = models.ForeignKey(Icd9)
-    status = models.CharField(max_length=20, null=True, db_index=True)
+    status = models.CharField(max_length=128, null=True, db_index=True)
     comment = models.TextField(null=True, blank=True)
 
     
