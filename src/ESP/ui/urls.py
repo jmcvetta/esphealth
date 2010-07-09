@@ -39,15 +39,6 @@ urlpatterns = patterns('ESP.ui.views',
     url(r'^cases/list/queued/$', 'case_list', {'status': 'queued'}, name='nodis_cases_queued'),
     url(r'^cases/list/sent/$', 'case_list', {'status': 'sent'}, name='nodis_cases_sent'),
     #
-    # JSON Case Grid
-    #
-    url(r'^cases/json/$', 'json_case_grid', {'status': 'all'}, name='nodis_case_grid'),
-    url(r'^cases/json/all/$', 'json_case_grid', {'status': 'all'}),
-    url(r'^cases/json/await/$', 'json_case_grid', {'status': 'await'}),
-    url(r'^cases/json/under/$', 'json_case_grid', {'status': 'under'}),
-    url(r'^cases/json/queued/$', 'json_case_grid', {'status': 'queued'}),
-    url(r'^cases/json/sent/$', 'json_case_grid', {'status': 'sent'}),
-    #
     # Case Detail
     #
     url(r'^cases/view/(?P<case_id>\d+)/$', 'case_detail', name='nodis_case_detail'),

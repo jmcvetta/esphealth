@@ -396,10 +396,6 @@ class CaseTablePHI(tables.ModelTable):
 @login_required
 def case_list(request, status):
     values = {}
-    #values['default_rp'] = ROWS_PER_PAGE
-    #values['request'] = request # Should this really be necessary?
-    #values['status'] = status
-    #qs = Case.objects.filter(status=status)
     if request.user.has_perm('esp.view_phi'):
         CaseTable = CaseTablePHI
     else:
@@ -419,114 +415,6 @@ def case_list(request, status):
     values['page'] = page
     return render_to_response('ui/case_list.html', values, context_instance=RequestContext(request))
 
-
-@login_required
-def json_case_grid(request, status):
-    view_phi = request.user.has_perm('view_phi') # Does user have permission to view PHI?
-    flexi = Flexigrid(request)
-    cases = Case.objects.all()
-    #
-    # Limit Cases by Status
-    #
-    if status == 'await':
-        cases = cases.filter(status='AR')
-    elif status == 'under':
-        cases = cases.filter(status='UR')
-    elif status == 'queued':
-        cases = cases.filter(status='Q')
-    elif status == 'sent':
-        cases = cases.filter(status='S')
-    #
-    # Search Cases
-    #
-    # I would like also to be able to search by site, but we cannot do so in 
-    # a tolerably efficient manner without changes to the data model.
-    if flexi.query and flexi.qtype == 'condition':
-        cases = cases.filter(condition__icontains=flexi.query)
-    # Search on PHI -- limited to users w/ correct permissions
-    elif view_phi and flexi.query and flexi.qtype == 'name':
-        cases = cases.filter(patient__last_name__icontains=flexi.query)
-    elif view_phi and flexi.query and flexi.qtype == 'mrn':
-        # Is it sensible that MRN search is exact rather than contains?
-        cases = cases.filter(patient__mrn__iexact=flexi.query)
-    #
-    # Sort Cases
-    #
-    # Maybe some/all of this sorting logic should be in the Case model?
-    if flexi.sortname == 'workflow':
-        cases = cases.order_by('workflow_state')
-    elif flexi.sortname == 'last_updated':
-        cases = cases.order_by('updated_timestamp')
-    elif flexi.sortname == 'date_ordered':
-        cases = cases.order_by('date')
-    elif flexi.sortname == 'condition':
-        cases = cases.order_by('condition')
-#    elif flexi.sortname == 'site':
-#        list = [(c.latest_lx_provider_site(), c) for c in cases]
-#        list.sort()
-#        cases = [item[1] for item in list]
-    # Sort on PHI -- limited to users w/ correct permissions
-    elif view_phi and flexi.sortname == 'name':
-        cases = cases.order_by('patient__last_name', 'patient__first_name')
-    elif view_phi and flexi.sortname == 'mrn':
-        cases = cases.order_by('patient__mrn')
-    elif view_phi and flexi.sortname == 'address':
-        list = [(c.address, c) for c in cases]
-        list.sort()
-        cases = [item[1] for item in list]
-    else: # sortname == 'id'
-         cases = cases.order_by('pk')
-    if flexi.sortorder == 'desc':
-        # It should not be necessary to convert QuerySet to List in order to
-        # do reverse(), but there appears to be a bug in Django requiring this
-        # work-around.
-        # TODO: submit bug report
-        cases = [c for c in cases]
-        cases.reverse()
-    #
-    # Generate JSON
-    #
-    p = Paginator(cases, flexi.rp)
-    cases = p.page(flexi.page).object_list
-    rows = []
-    for case in cases:
-        row = {}
-        case_date = case.date.strftime(DATE_FORMAT)
-        row['id'] = case.id
-        href = urlresolvers.reverse('nodis_case_detail', kwargs={'case_id': int(case.id)})
-        case_id_link = '%s <a href="' % case.pk  + href + '">(view)</a>'
-        if view_phi:
-            patient = case.patient
-            row['cell'] =  [
-                case_id_link,
-                case.condition,
-                case_date,
-                case.provider.dept,
-                # Begin PHI
-                patient.name.title(),
-                patient.mrn,
-                patient.address.title(),
-                # End PHI
-                case.get_status_display(),
-                case.updated_timestamp.strftime(DATE_FORMAT),
-                #case.getPrevcases()
-                'n/a',
-                ]
-        else:
-            row['cell'] =  [
-                case_id_link,
-                case.condition,
-                case_date,
-                case.provider.dept,
-                case.get_status_display(),
-                case.updated_timestamp.strftime(DATE_FORMAT),
-                #case.getPrevcases()
-                'n/a',
-                ]
-        rows += [row]
-    json = flexi.json(rows, use_paginator=False, page_count=p.count)
-    #return HttpResponse(json, mimetype='application/json')
-    return HttpResponse(json)
 
 
 @login_required
