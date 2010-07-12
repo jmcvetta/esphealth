@@ -29,7 +29,6 @@ import shutil
 import codecs
 import string
 from decimal import Decimal
-from psycopg2 import Error as Psycopg2Error
 
 from django.db import transaction
 from ESP.emr.management.commands.common import LoaderCommand
