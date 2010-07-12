@@ -48,6 +48,7 @@ from django.http import HttpResponse
 from django.http import HttpResponseRedirect
 
 from django.forms.widgets import CheckboxInput, SelectMultiple
+from django.forms.extras.widgets import SelectDateWidget
 from django.utils.encoding import force_unicode
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
@@ -59,6 +60,7 @@ from ESP.settings import SITE_NAME
 
 from ESP.conf.models import CodeMap
 from ESP.conf.models import IgnoredCode
+from ESP.conf.models import STATUS_CHOICES
 from ESP.static.models import Loinc
 from ESP.emr.models import Provenance
 from ESP.emr.models import Patient
@@ -144,6 +146,7 @@ def status_page(request):
 
 
 class TestSearchForm(forms.Form):
+    
     search_string = forms.CharField(max_length=255, required=True)
 
 
@@ -393,6 +396,17 @@ class CaseTablePHI(tables.ModelTable):
     updated_timestamp = tables.Column(name='Last Updated')
     
 
+
+class CaseFilterForm(forms.Form):
+    __status_choices = [('', '---')] + STATUS_CHOICES
+    __condition_choices = [('', '---')] + Condition.condition_choices()
+    condition = forms.ChoiceField(choices=__condition_choices, required=False)
+    date_after = forms.DateField(required=False)
+    date_before = forms.DateField(required=False)
+    patient_mrn = forms.CharField(required=False)
+    patient_last_name = forms.CharField(required=False)
+    status = forms.ChoiceField(choices=__status_choices, required=False)
+
 @login_required
 def case_list(request, status):
     values = {}
@@ -409,10 +423,34 @@ def case_list(request, status):
         qs = qs.filter(status='Q')
     elif status == 'sent':
         qs = qs.filter(status='S')
+    if request.method == 'POST':
+        search_form = CaseFilterForm(request.POST)
+        if search_form.is_valid():
+            condition = search_form.cleaned_data['condition']
+            date_before = search_form.cleaned_data['date_before']
+            date_after = search_form.cleaned_data['date_after']
+            patient_mrn = search_form.cleaned_data['patient_mrn']
+            patient_last_name = search_form.cleaned_data['patient_last_name']
+            print search_form.cleaned_data
+            log.debug('Filtering on condition: %s' % condition)
+            if condition:
+                qs = qs.filter(condition=condition)
+            if date_before:
+                qs = qs.filter(date__lte=date_before)
+            if date_after:
+                qs = qs.filter(date__gte=date_after)
+            if patient_mrn:
+                qs = qs.filter(patient__mrn__istartswith=patient_mrn)
+            if patient_last_name:
+                qs = qs.filter(patient__last_name__istartswith=patient_last_name)
+    else:
+        search_form = CaseFilterForm()
     table = CaseTable(qs, order_by=request.GET.get('sort', '-Last Updated'))
     page = Paginator(table.rows, ROWS_PER_PAGE).page(request.GET.get('page', 1))
     values['table'] = table
     values['page'] = page
+    values['search_form'] = search_form
+    print values
     return render_to_response('ui/case_list.html', values, context_instance=RequestContext(request))
 
 
