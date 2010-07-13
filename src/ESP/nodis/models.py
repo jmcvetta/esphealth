@@ -20,6 +20,7 @@ from django.db import connection
 from django.db.models import Q
 from django.db.models import F
 from django.db.models import Sum
+from django.db.models import Max
 from django.db.models import Model
 from django.db.models import Count
 from django.db.models.query import QuerySet
@@ -1652,6 +1653,11 @@ class Case(models.Model):
     events_after = models.ManyToManyField(Event, blank=False, related_name='case_after') # The events that caused this case to be generated, but occurred after the event window
     events_ever = models.ManyToManyField(Event, blank=False, related_name='case_ever') # The events that caused this case to be generated, but occurred after the event window
     
+    class Meta:
+        permissions = [ ('view_phi', 'Can view protected health information'), ]
+        unique_together = ['patient', 'condition', 'date']
+        ordering = ['id']
+    
     def __get_condition_config(self):
         '''
         Return the ConditionConfig object for this case's condition
@@ -1750,11 +1756,6 @@ class Case(models.Model):
         return prescriptions
     reportable_prescriptions = property(__get_reportable_prescriptions)
     
-    class Meta:
-        permissions = [ ('view_phi', 'Can view protected health information'), ]
-        unique_together = ['patient', 'condition', 'date']
-        ordering = ['id']
-    
     def __str__(self):
         return '%s # %s' % (self.condition, self.pk)
     
@@ -1765,7 +1766,6 @@ class Case(models.Model):
         values = self.__dict__
         return '%(date)-10s    %(id)-8s    %(condition)-30s' % values
 
-    
     @classmethod
     def str_line_header(cls):
         '''
@@ -1773,6 +1773,26 @@ class Case(models.Model):
         '''
         values = {'date': 'DATE', 'id': 'CASE #', 'condition': 'CONDITION'}
         return '%(date)-10s    %(id)-8s    %(condition)-30s' % values
+    
+    def __get_collection_date(self):
+        '''
+        Returns the earliest specimen collection date
+        '''
+        if self.lab_results:
+            return self.lab_results.aggregate(maxdate=Max('collection_date'))['maxdate']
+        else:
+            return None
+    collection_date = property(__get_collection_date)
+    
+    def __get_result_date(self):
+        '''
+        Returns the earliest specimen collection date
+        '''
+        if self.lab_results:
+            return self.lab_results.aggregate(maxdate=Max('result_date'))['maxdate']
+        else:
+            return None
+    result_date = property(__get_result_date)
     
 
 
