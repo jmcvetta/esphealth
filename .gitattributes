@@ -332,6 +332,16 @@ src/ESP/vaers/vaccine/views.py -text
 src/ESP/vaers/views.py -text
 src/ESP/version.txt -text
 src/configobj.py -text
+src/django_tables/__init__.py -text
+src/django_tables/app/__init__.py -text
+src/django_tables/app/models.py -text
+src/django_tables/app/templatetags/__init__.py -text
+src/django_tables/app/templatetags/tables.py -text
+src/django_tables/base.py -text
+src/django_tables/columns.py -text
+src/django_tables/memory.py -text
+src/django_tables/models.py -text
+src/django_tables/options.py -text
 src/djangosphinx/__init__.py -text
 src/djangosphinx/admin.py -text
 src/djangosphinx/apis/__init__.py -text
