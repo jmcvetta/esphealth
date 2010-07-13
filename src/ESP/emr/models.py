@@ -610,7 +610,7 @@ class LabResult(BasePatientRecord):
     native_name = models.CharField('Native Test Name', max_length=255, blank=True, null=True, db_index=True)
     order_num = models.CharField(max_length=128, blank=True, null=True)
     result_date = models.DateField(blank=True, null=True, db_index=True)
-    collection_date = models.DateField(blank=True, null=True)
+    collection_date = models.DateField(blank=True, null=True, db_index=True)
     status = models.CharField('Result Status', max_length=128, blank=True, null=True)
     result_num = models.CharField('Result Id #', max_length=128, blank=True, null=True)
     # 
