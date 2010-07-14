@@ -24,7 +24,7 @@ class CodeMapAdmin(admin.ModelAdmin):
 
 
 class LabOrderHeuristicAdmin(admin.ModelAdmin):
-    list_display = ['test']
+    list_display = ['verbose_name', 'test']
 
 
 admin.site.register(AbstractLabTest, AbstractLabTestAdmin)

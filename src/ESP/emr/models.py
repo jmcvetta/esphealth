@@ -843,6 +843,7 @@ class LabOrder(BasePatientRecord):
     order_type = models.CharField(max_length=128, blank=True, db_index=True)
     procedure_name = models.CharField(max_length=300, blank=True, null=True)
     specimen_source = models.CharField(max_length=128, blank=True, null=True)
+    events = generic.GenericRelation('new_hef.Event')
     
     
     

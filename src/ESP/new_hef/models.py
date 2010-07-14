@@ -22,6 +22,8 @@ from ESP.utils import log
 from ESP.utils import log_query
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
+from ESP.emr.models import LabResult
+from ESP.emr.models import LabOrder
 
 
 MATCH_TYPE_CHOICES = [
@@ -77,7 +79,8 @@ class AbstractLabTest(models.Model):
     '''
     Represents an abstract type of lab test
     '''
-    name = models.CharField(max_length=128, blank=False, unique=True, db_index=True)
+    name = models.SlugField(primary_key=True)
+    verbose_name = models.CharField(max_length=128, blank=False, unique=True, db_index=True)
     #
     # Reporting
     # 
@@ -94,6 +97,22 @@ class AbstractLabTest(models.Model):
     
     def __str__(self):
         return self.name
+    
+    def __get_lab_results(self):
+        result = LabResult.objects.none()
+        for cm in self.codemap_set.all():
+            result = result | cm.lab_results
+        log_query('Lab Results for %s' % self.name, result)
+        return result
+    lab_results = property(__get_lab_results)
+    
+    def __get_lab_orders(self):
+        result = LabOrder.objects.none()
+        for cm in self.codemap_set.all():
+            result = result | cm.lab_orders
+        log_query('Lab Orders for %s' % self.name, result)
+        return result
+    lab_orders = property(__get_lab_orders)
     
 
 class CodeMap(models.Model):
@@ -113,6 +132,47 @@ class CodeMap(models.Model):
     notes = models.TextField(blank=True, null=True)
     class Meta:
         verbose_name = 'Code Map'
+        unique_together = ['test', 'code']
+    
+    def __get_lab_results(self):
+        if self.code_match_type == 'exact':
+            return LabResult.objects.filter(native_code__exact=self.code)
+        elif self.code_match_type == 'iexact':
+            return LabResult.objects.filter(native_code__iexact=self.code)
+        elif self.code_match_type == 'startswith':
+            return LabResult.objects.filter(native_code__startswith=self.code)
+        elif self.code_match_type == 'istartswith':
+            return LabResult.objects.filter(native_code__istartswith=self.code)
+        elif self.code_match_type == 'endswith':
+            return LabResult.objects.filter(native_code__endswith=self.code)
+        elif self.code_match_type == 'iendswith':
+            return LabResult.objects.filter(native_code__iendswith=self.code)
+        elif self.code_match_type == 'contains':
+            return LabResult.objects.filter(native_code__contains=self.code)
+        elif self.code_match_type == 'icontains':
+            return LabResult.objects.filter(native_code__icontains=self.code)
+    lab_results = property(__get_lab_results)
+    
+    def __get_lab_orders(self):
+        #
+        # 'procedure_master_num' is a crappy field name, and needs to be changed
+        if self.code_match_type == 'exact':
+            return LabOrder.objects.filter(procedure_master_num__exact=self.code)
+        elif self.code_match_type == 'iexact':
+            return LabOrder.objects.filter(procedure_master_num__iexact=self.code)
+        elif self.code_match_type == 'startswith':
+            return LabOrder.objects.filter(procedure_master_num__startswith=self.code)
+        elif self.code_match_type == 'istartswith':
+            return LabOrder.objects.filter(procedure_master_num__istartswith=self.code)
+        elif self.code_match_type == 'endswith':
+            return LabOrder.objects.filter(procedure_master_num__endswith=self.code)
+        elif self.code_match_type == 'iendswith':
+            return LabOrder.objects.filter(procedure_master_num__iendswith=self.code)
+        elif self.code_match_type == 'contains':
+            return LabOrder.objects.filter(procedure_master_num__contains=self.code)
+        elif self.code_match_type == 'icontains':
+            return LabOrder.objects.filter(procedure_master_num__icontains=self.code)
+    lab_orders = property(__get_lab_orders)
     
 
 
@@ -122,23 +182,49 @@ class Heuristic(models.Model):
     instances of which may be used as components of disease definitions.
     '''
     
-    name = models.SlugField(blank=False, db_index=True)
-    
     def generate_events(self):
         raise NotImplementedError
+    
+    def __str__(self):
+        return self.verbose_name
     
 
 class LabOrderHeuristic(Heuristic):
     '''
-    A heuristic for detecting lab order events.  Note that in some EMR systems 
-    (e.g. Atrius) lab orders may be less specific than lab results, and thus 
-    lab orders may require a different AbstractLabTest than required for lab 
-    results.
+    A heuristic for detecting lab order events.
+
+    Note that in some EMR systems (e.g. Atrius) lab orders may be less specific
+    than lab results, and thus lab orders may require a different
+    AbstractLabTest than required for lab results.
     '''
     test = models.ForeignKey(AbstractLabTest, blank=False)
     
+    def __get_name(self):
+        return '%s--order' % self.test.name
+    name = property(__get_name)
+    
+    def __get_verbose_name(self):
+        return '%s Order Heuristic' % self.test.verbose_name
+    verbose_name = property(__get_verbose_name)
+    
     def generate_events(self):
-        pass
+        log.debug('Generating events for "%s"' % self.verbose_name)
+        unbound_orders = self.test.lab_orders.exclude(events__heuristic=self)
+        log_query('Unbound lab orders for %s' % self.name, unbound_orders)
+        unbound_count = unbound_orders.count()
+        for order in unbound_orders:
+            e = Event(
+                name = self.name,
+                heuristic = self,
+                date = order.date,
+                patient = order.patient,
+                content_object = order,
+                )
+            e.save()
+            log.debug('Saved new event: %s' % e)
+        log.info('Generated %s new %s events' % (unbound_count, self.name))
+        return unbound_count
+            
 
 
 class Event(models.Model):
@@ -159,3 +245,6 @@ class Event(models.Model):
         related_name='new_event_set') # FIXME: Remove related_name after hef refactor complete
     object_id = models.PositiveIntegerField(db_index=True)
     content_object = generic.GenericForeignKey('content_type', 'object_id')
+
+    def __str__(self):
+        return 'Event # %s (%s %s)' % (self.pk, self.name, self.date)
