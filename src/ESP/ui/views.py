@@ -383,17 +383,19 @@ class CaseTablePHI(tables.ModelTable):
     '''
     Case table including PHI
     '''
-    id = tables.Column()
+    id = tables.Column(verbose_name='Case ID')
     condition = tables.Column()
-    date = tables.Column()
-    provider__dept = tables.Column(name='Provider Department')
+    #date = tables.Column()
+    provider__dept = tables.Column(verbose_name='Provider Department')
     # Begin PHI
-    patient__mrn = tables.Column(name='Patient MRN')
-    patient__name = tables.Column(name='Patient Name', sortable=False)
-    patient__address = tables.Column(name='Patient Address', sortable=False)
+    patient__mrn = tables.Column(verbose_name='Patient MRN')
+    patient__name = tables.Column(verbose_name='Patient Name', sortable=False)
     # End PHI
+    collection_date = tables.Column(verbose_name='Collection Date', sortable=False)
+    result_date = tables.Column(verbose_name='Result Date', sortable=False)
+    #
     status = tables.Column()
-    updated_timestamp = tables.Column(name='Last Updated')
+    sent_timestamp = tables.Column(verbose_name='Sent Date')
     
 
 
@@ -405,7 +407,7 @@ class CaseFilterForm(forms.Form):
     date_before = forms.DateField(required=False)
     patient_mrn = forms.CharField(required=False)
     patient_last_name = forms.CharField(required=False)
-    status = forms.ChoiceField(choices=__status_choices, required=False)
+    #status = forms.ChoiceField(choices=__status_choices, required=False)
 
 @login_required
 def case_list(request, status):
@@ -423,34 +425,38 @@ def case_list(request, status):
         qs = qs.filter(status='Q')
     elif status == 'sent':
         qs = qs.filter(status='S')
-    if request.method == 'POST':
-        search_form = CaseFilterForm(request.POST)
-        if search_form.is_valid():
-            condition = search_form.cleaned_data['condition']
-            date_before = search_form.cleaned_data['date_before']
-            date_after = search_form.cleaned_data['date_after']
-            patient_mrn = search_form.cleaned_data['patient_mrn']
-            patient_last_name = search_form.cleaned_data['patient_last_name']
-            print search_form.cleaned_data
-            log.debug('Filtering on condition: %s' % condition)
-            if condition:
-                qs = qs.filter(condition=condition)
-            if date_before:
-                qs = qs.filter(date__lte=date_before)
-            if date_after:
-                qs = qs.filter(date__gte=date_after)
-            if patient_mrn:
-                qs = qs.filter(patient__mrn__istartswith=patient_mrn)
-            if patient_last_name:
-                qs = qs.filter(patient__last_name__istartswith=patient_last_name)
-    else:
-        search_form = CaseFilterForm()
-    table = CaseTable(qs, order_by=request.GET.get('sort', '-Last Updated'))
+    search_form = CaseFilterForm(request.GET)
+    if search_form.is_valid():
+        condition = search_form.cleaned_data['condition']
+        date_before = search_form.cleaned_data['date_before']
+        date_after = search_form.cleaned_data['date_after']
+        patient_mrn = search_form.cleaned_data['patient_mrn']
+        patient_last_name = search_form.cleaned_data['patient_last_name']
+        print search_form.cleaned_data
+        log.debug('Filtering on condition: %s' % condition)
+        if condition:
+            qs = qs.filter(condition=condition)
+        if date_before:
+            qs = qs.filter(date__lte=date_before)
+        if date_after:
+            qs = qs.filter(date__gte=date_after)
+        if patient_mrn:
+            qs = qs.filter(patient__mrn__istartswith=patient_mrn)
+        if patient_last_name:
+            qs = qs.filter(patient__last_name__istartswith=patient_last_name)
+    # Remove '?sort=' bit from full URL path
+    full_path = request.get_full_path()
+    print full_path
+    index = full_path.find('?sort')
+    if index != -1:
+        full_path = full_path[:index]
+    print full_path
+    table = CaseTable(qs, order_by=request.GET.get('sort', '-id'))
     page = Paginator(table.rows, ROWS_PER_PAGE).page(request.GET.get('page', 1))
+    values['full_path'] = full_path
     values['table'] = table
     values['page'] = page
     values['search_form'] = search_form
-    print values
     return render_to_response('ui/case_list.html', values, context_instance=RequestContext(request))
 
 

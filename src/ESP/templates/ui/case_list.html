@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<form id="search_form" method="POST" action="{% url nodis_cases_all %}">
+<form id="search_form" method="GET" action="{% url nodis_cases_all %}">
     <p>
         {{ search_form.as_p }}
     </p>
@@ -17,7 +17,7 @@
         <th>&nbsp;</th>
         {% for column in table.columns %}
             {% if column.sortable %}
-                <th><a href="?sort={{ column.name_toggled }}">{{ column }}</a></th>
+                <th><a href="{{ full_path }}?sort={{ column.name_toggled }}">{{ column }}</a></th>
             {% else %}
                 <th>{{ column }}</th>
             {% endif %}
@@ -25,7 +25,7 @@
     </tr>
     {% for row in page.object_list %}
         <tr>
-        <td><a href="{% url nodis_case_detail row.id %}">view</a></td>
+        <td>{# <a href="{% url nodis_case_detail row.id %}">view</a> #}</td>
         {% for value in row %}
             <td>{{ value }}</td>
         {% endfor %}

@@ -20,8 +20,7 @@ from ESP.ui.views import status_page
 
 admin.autodiscover()
 
-urlpatterns = patterns(
-    '', # Why this??
+urlpatterns = patterns('',
     
     # Core Application
     url(r'^$', status_page, name='status'),
@@ -64,5 +63,5 @@ urlpatterns = patterns(
     #
     #url(r'^codes', code_maintenance),
     #url(r'^json_code_grid', json_code_grid, name='json_code_grid'),
-    url('r^/', include('ESP.ui.urls')),
+    #url(r'^/$', include('ESP.ui.urls')),
 )
