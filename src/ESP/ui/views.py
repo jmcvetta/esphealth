@@ -85,7 +85,8 @@ from ESP.nodis.forms import CodeMapForm
 from ESP.nodis.forms import ConditionForm
 from ESP.nodis.forms import ReferenceCaseForm
 from ESP.nodis.management.commands.validate_cases import RELATED_MARGIN
-from ESP.utils.utils import log
+from ESP.utils import log
+from ESP.utils import log_query
 from ESP.utils.utils import Flexigrid
 from ESP.utils import TableSelectMultiple
 
@@ -353,20 +354,15 @@ def ignore_code_set(request):
         log.debug(msg)
     return redirect_to(request, reverse('unmapped_labs_report'))
 
-'''
-case_id_link,
-case.condition,
-case_date,
-case.provider.dept,
-# Begin PHI
-patient.name.title(),
-patient.mrn,
-patient.address.title(),
-# End PHI
-case.get_status_display(),
-case.updated_timestamp.strftime(DATE_FORMAT),
-#case.getPrevcases()
-'''
+
+# PERFORMANCE NOTE:  Current version of django-tables seems to generate entire
+# table, then paginate; rather than paginating by object id, then generating
+# table.  This results in sub-optimal performance on our Case table, since
+# collection_date and result_date are not DB fields, but rather are properties
+# which get their data from aggregate queries, which can be expensive.  With
+# current count of cases at Atrius this is not a big deal, but it could become
+# problematic in the future.  At that point, it will probably be necessary to
+# hack on django-tables and submit a patch to its author.
 
 class CaseTableNoPHI(tables.ModelTable):
     '''
@@ -456,20 +452,22 @@ def case_list(request, status):
                 qs = qs.filter(patient__mrn__istartswith=patient_mrn)
             if patient_last_name:
                 qs = qs.filter(patient__last_name__istartswith=patient_last_name)
-    # Remove '?sort=' bit from full URL path
-    full_path = request.get_full_path()
-    log.debug(full_path)
-    index = full_path.find('?sort')
-    if index != -1:
-        full_path = full_path[:index]
-    # If path does not contain a query string (beginning with '?'), add a '?' 
-    # so the template's "&sort=" html forms a valid query
-    if full_path.find('?') == -1:
-        full_path += '?'
-    log.debug(full_path)
+    log_query('Nodis case list', qs)
     table = CaseTable(qs, order_by=request.GET.get('sort', '-id'))
     page = Paginator(table.rows, ROWS_PER_PAGE).page(request.GET.get('page', 1))
+    # Remove '?sort=' bit from full URL path
+    full_path = request.get_full_path()
+    sort_index = full_path.find('&sort')
+    if sort_index != -1:
+        full_path = full_path[:sort_index]
+    # If path does not contain a query string (beginning with '?'), add a '?' 
+    # so the template's "&sort=" html forms a valid query
+    query_index = full_path.find('?')
+    if query_index == -1:
+        full_path += '?'
+    clear_search_path = full_path[:query_index]
     values['full_path'] = full_path
+    values['clear_search_path'] = clear_search_path
     values['table'] = table
     values['page'] = page
     values['search_form'] = search_form
