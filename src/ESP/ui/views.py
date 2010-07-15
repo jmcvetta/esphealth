@@ -370,14 +370,17 @@ case.updated_timestamp.strftime(DATE_FORMAT),
 
 class CaseTableNoPHI(tables.ModelTable):
     '''
-    Case table including PHI
+    Case table without PHI
     '''
-    id = tables.Column()
+    id = tables.Column(verbose_name='Case ID')
     condition = tables.Column()
-    date = tables.Column()
-    provider__dept = tables.Column(name='Provider Department')
+    #date = tables.Column()
+    provider__dept = tables.Column(verbose_name='Provider Department')
+    collection_date = tables.Column(verbose_name='Collection Date', sortable=False)
+    result_date = tables.Column(verbose_name='Result Date', sortable=False)
+    #
     status = tables.Column()
-    updated_timestamp = tables.Column(name='Last Updated')
+    sent_timestamp = tables.Column(verbose_name='Sent Date')
     
 class CaseTablePHI(tables.ModelTable):
     '''
@@ -399,7 +402,7 @@ class CaseTablePHI(tables.ModelTable):
     
 
 
-class CaseFilterForm(forms.Form):
+class CaseFilterFormPHI(forms.Form):
     __status_choices = [('', '---')] + STATUS_CHOICES
     __condition_choices = [('', '---')] + Condition.condition_choices()
     condition = forms.ChoiceField(choices=__condition_choices, required=False)
@@ -407,15 +410,24 @@ class CaseFilterForm(forms.Form):
     date_before = forms.DateField(required=False)
     patient_mrn = forms.CharField(required=False)
     patient_last_name = forms.CharField(required=False)
-    #status = forms.ChoiceField(choices=__status_choices, required=False)
+
+
+class CaseFilterFormNoPHI(forms.Form):
+    __status_choices = [('', '---')] + STATUS_CHOICES
+    __condition_choices = [('', '---')] + Condition.condition_choices()
+    condition = forms.ChoiceField(choices=__condition_choices, required=False)
+    date_after = forms.DateField(required=False)
+    date_before = forms.DateField(required=False)
 
 @login_required
 def case_list(request, status):
     values = {}
     if request.user.has_perm('esp.view_phi'):
         CaseTable = CaseTablePHI
-    else:
+        CaseFilterForm = CaseFilterFormPHI
+    else: # User cannot view or search by PHI
         CaseTable = CaseTableNoPHI
+        CaseFilterForm = CaseFilterFormNoPHI
     qs = Case.objects.all()
     if status == 'await':
         qs = qs.filter(status='AR')
@@ -427,30 +439,34 @@ def case_list(request, status):
         qs = qs.filter(status='S')
     search_form = CaseFilterForm(request.GET)
     if search_form.is_valid():
+        log.debug(search_form.cleaned_data)
         condition = search_form.cleaned_data['condition']
         date_before = search_form.cleaned_data['date_before']
         date_after = search_form.cleaned_data['date_after']
-        patient_mrn = search_form.cleaned_data['patient_mrn']
-        patient_last_name = search_form.cleaned_data['patient_last_name']
-        print search_form.cleaned_data
-        log.debug('Filtering on condition: %s' % condition)
         if condition:
             qs = qs.filter(condition=condition)
         if date_before:
             qs = qs.filter(date__lte=date_before)
         if date_after:
             qs = qs.filter(date__gte=date_after)
-        if patient_mrn:
-            qs = qs.filter(patient__mrn__istartswith=patient_mrn)
-        if patient_last_name:
-            qs = qs.filter(patient__last_name__istartswith=patient_last_name)
+        if request.user.has_perm('esp.view_phi'):
+            patient_mrn = search_form.cleaned_data['patient_mrn']
+            patient_last_name = search_form.cleaned_data['patient_last_name']
+            if patient_mrn:
+                qs = qs.filter(patient__mrn__istartswith=patient_mrn)
+            if patient_last_name:
+                qs = qs.filter(patient__last_name__istartswith=patient_last_name)
     # Remove '?sort=' bit from full URL path
     full_path = request.get_full_path()
-    print full_path
+    log.debug(full_path)
     index = full_path.find('?sort')
     if index != -1:
         full_path = full_path[:index]
-    print full_path
+    # If path does not contain a query string (beginning with '?'), add a '?' 
+    # so the template's "&sort=" html forms a valid query
+    if full_path.find('?') == -1:
+        full_path += '?'
+    log.debug(full_path)
     table = CaseTable(qs, order_by=request.GET.get('sort', '-id'))
     page = Paginator(table.rows, ROWS_PER_PAGE).page(request.GET.get('page', 1))
     values['full_path'] = full_path
