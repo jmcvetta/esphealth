@@ -160,7 +160,7 @@ src/ESP/new_hef/core.py -text
 src/ESP/new_hef/events.py -text
 src/ESP/new_hef/management/__init__.py -text
 src/ESP/new_hef/management/commands/__init__.py -text
-src/ESP/new_hef/management/commands/hef.py -text
+src/ESP/new_hef/management/commands/new_hef.py -text
 src/ESP/new_hef/models.py -text
 src/ESP/new_hef/sql/multicolumn-indices.postgresql.sql -text
 src/ESP/new_hef/tests.py -text
