@@ -137,7 +137,7 @@ hep_b_1 = ComplexEventPattern(
     )
 
 bilirubin = ComplexEventPattern(
-    patterns = ['total_bilirubin_high_pos', 'high_calc_bilirubin_pos'],
+    patterns = ['total_bilirubin_high_pos', 'high_calc_bilirubin'],
     operator = 'or'
     )
 
@@ -337,7 +337,7 @@ lyme_3 = ComplexEventPattern(
     )
 
 lyme_4 = ComplexEventPattern(
-    patterns = ['lyme_igg_wb_pos', 'lyme_igm_wb_pos', 'lyme_pcr_pos'],
+    patterns = ['lyme_igg_wb', 'lyme_igm_wb_pos', 'lyme_pcr_pos'],
     operator = 'or',
     )
 
