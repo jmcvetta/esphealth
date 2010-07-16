@@ -9,6 +9,8 @@
 @license: LGPL
 '''
 
+import pprint
+
 from django.db import models
 from django.db.models import Q
 from django.db.models import F
@@ -26,6 +28,9 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import LabOrder
 
 
+POSITIVE_STRINGS = ['reactiv', 'pos', 'detec', 'confirm']
+NEGATIVE_STRINGS = ['non', 'neg', 'not', 'nr']
+
 MATCH_TYPE_CHOICES = [
     ('exact', 'Exact Match (case sensitive)'),
     ('iexact', 'Exact Match (NOT case sensitive)'),
@@ -36,43 +41,6 @@ MATCH_TYPE_CHOICES = [
     ('contains', 'Contains (case sensitive)'),
     ('icontains', 'Contains (NOT case sensitive)'),
     ]
-
-#HEF_RUN_STATUS = [
-#    ('r', 'Run in progress'),
-#    ('a', 'Aborted by user'),
-#    ('s', 'Successfully completed'),
-#    ('f', 'Failure'),
-#    ]
-
-#class Run(models.Model):
-#    '''
-#    HEF run status.  The 'timestamp' field is automatically set to current 
-#    time, and 'status' is set to 'r'.  Upon successful completion of the run, 
-#    status is updated to 's'.  
-#    '''
-#    timestamp = models.DateTimeField(blank=False, auto_now_add=True)
-#    status = models.CharField(max_length=1, blank=False, choices=HEF_RUN_STATUS, default='r')
-#    
-#    def __str__(self):
-#        return '<HEF Run #%s: %s: %s>' % (self.pk, self.status, self.timestamp)
-
-
-#class Timespan(models.Model):
-#    '''
-#    A condition, such as pregnancy, which occurs over a defined span of time.  
-#    '''   
-#    name = models.SlugField(max_length=128, null=False, blank=False, db_index=True)
-#    patient = models.ForeignKey(Patient, blank=False)
-#    start_date = models.DateField(blank=False, db_index=True)
-#    end_date = models.DateField(blank=False, db_index=True)
-#    timestamp = models.DateTimeField('Time this event was created in db', blank=False, auto_now_add=True)
-#    run = models.ForeignKey(Run, blank=False)
-#    pattern = models.SlugField(blank=False)
-#    # 
-#    # The 'encounters' field is a short-term hack for generating gdm pregnancy timespans, and should be 
-#    # replaced (soon) with a fully generic solution.
-#    #
-#    encounters = models.ManyToManyField(Encounter)
 
 
 class AbstractLabTest(models.Model):
@@ -100,7 +68,7 @@ class AbstractLabTest(models.Model):
     
     def __get_lab_results(self):
         result = LabResult.objects.none()
-        for cm in self.codemap_set.all():
+        for cm in self.labtestmap_set.all():
             result = result | cm.lab_results
         log_query('Lab Results for %s' % self.name, result)
         return result
@@ -108,14 +76,14 @@ class AbstractLabTest(models.Model):
     
     def __get_lab_orders(self):
         result = LabOrder.objects.none()
-        for cm in self.codemap_set.all():
+        for cm in self.labtestmap_set.all():
             result = result | cm.lab_orders
         log_query('Lab Orders for %s' % self.name, result)
         return result
     lab_orders = property(__get_lab_orders)
     
 
-class CodeMap(models.Model):
+class LabTestMap(models.Model):
     '''
     Mapping object to associate an abstract lab test type with a concrete, 
     EMR-specific lab test type
@@ -131,7 +99,7 @@ class CodeMap(models.Model):
     #
     notes = models.TextField(blank=True, null=True)
     class Meta:
-        verbose_name = 'Code Map'
+        verbose_name = 'Lab Test Code Map'
         unique_together = ['test', 'code']
     
     def __get_lab_results(self):
@@ -199,6 +167,9 @@ class LabOrderHeuristic(Heuristic):
     '''
     test = models.ForeignKey(AbstractLabTest, blank=False)
     
+    class Meta:
+        verbose_name = 'Lab Order Heuristic'
+    
     def __get_name(self):
         return '%s--order' % self.test.name
     name = property(__get_name)
@@ -206,6 +177,10 @@ class LabOrderHeuristic(Heuristic):
     def __get_verbose_name(self):
         return '%s Order Heuristic' % self.test.verbose_name
     verbose_name = property(__get_verbose_name)
+    
+    def __get_event_names(self):
+        return [self.name]
+    event_names = property(__get_event_names)
     
     def generate_events(self):
         log.debug('Generating events for "%s"' % self.verbose_name)
@@ -224,7 +199,106 @@ class LabOrderHeuristic(Heuristic):
             log.debug('Saved new event: %s' % e)
         log.info('Generated %s new %s events' % (unbound_count, self.name))
         return unbound_count
-            
+
+
+class LabResultHeuristic(Heuristic):
+    '''
+    Abstract base class for lab result heuristics
+    '''
+    test = models.ForeignKey(AbstractLabTest, blank=False)
+    class Meta:
+        abstract = True
+
+
+class LabResultPositiveHeuristic(LabResultHeuristic):
+    '''
+    A heuristic for detecting positive (& negative) lab result events
+    '''
+    class Meta:
+        verbose_name = 'Positive/Negative Lab Result Heuristic'
+    
+    def __get_name(self):
+        return '%s--positive' % self.test.name
+    name = property(__get_name)
+    
+    def __get_verbose_name(self):
+        return '%s Positive Heuristic' % self.test.verbose_name
+    verbose_name = property(__get_verbose_name)
+    
+    def __get_event_names(self):
+        return [
+            self.name, 
+            '%s--negative' % self.test.name,
+            '%s--indeterminate' % self.test.name,
+            ]
+    
+    def generate_events(self):
+        log.debug('Generating events for "%s"' % self.verbose_name)
+        unbound_labs = self.test.lab_results.exclude(events__heuristic=self)
+        log_query('Unbound lab results for %s' % self.name, unbound_labs)
+        #
+        #
+        #
+        #
+        # Build numeric query
+        #
+        #
+        # Not doing abnormal flag yet, because many values are not null but a blank string
+        #
+        #if result_type == 'positive':
+            #pos_q = Q(abnormal_flag__isnull=False)
+        #else:
+            #pos_q = None
+        positive_labs = LabResult.objects.none()
+        negative_labs = LabResult.objects.none()
+        code_maps = LabTestMap.objects.filter(test=self.test).values_list('native_code', flat=True)
+        for map in code_maps:
+            labs = unbound_labs.filter(native_code=map.native_code)
+            #
+            # Build numeric comparison queries
+            #
+            num_res_labs = labs.filter(result_float__isnull=False)
+            positive_labs += num_res_labs.filter(ref_high_float__isnull=False, result_float__gte = F('ref_high_float'))
+            negative_labs += num_res_labs.filter(ref_high_float__isnull=False, result_float__lt = F('ref_high_float'))
+            if map.threshold:
+                positive_labs += num_res_labs.filter(ref_high_float__isnull=True, result_float__gte=map.threshold)
+                negative_labs += num_res_labs.filter(ref_high_float__isnull=True, result_float__lt=map.threshold)
+        #
+        # Build string queries
+        #
+        #
+        pos_str_q = Q(result_string__istartswith=POSITIVE_STRINGS[0])
+        for s in POSITIVE_STRINGS[1:]:
+            pos_str_q |= Q(result_string__istartswith=s)
+        positive_labs += unbound_labs.filter(pos_str_q)
+        #
+        neg_str_q = Q(result_string__istartswith=NEGATIVE_STRINGS[0])
+        for s in NEGATIVE_STRINGS[1:]:
+            neg_str_q |= Q(result_string__istartswith=s)
+        negative_labs += unbound_labs.filter(neg_str_q)
+        #
+        # REMOVED -- is this still necessary/useful?
+        #
+        # Only look at relevant labs.  We do this for both numeric & string 
+        # subqueries, for faster overall query performance.   
+        #
+        #pos_q &= Q(native_code__in=native_codes)
+        #
+        #
+        # If a lab is positive, then it definitionally is not negative
+        #
+        negative_labs = negative_labs - positive_labs
+        #
+        # If a lab is neither positive nor negative, then it is indeterminate
+        #
+        indeterminate_labs = unbound_labs - positive_labs - negative_labs
+        log_query('Positive labs for %s' % self.name, positive_labs)
+        print positive_labs.count()
+        log_query('Negative labs for %s' % self.name, negative_labs)
+        print negative_labs.count()
+        log_query('Indeterminate labs for %s' % self.name, indeterminate_labs)
+        print indeterminate_labs.count()
+        
 
 
 class Event(models.Model):
