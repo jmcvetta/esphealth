@@ -1,5 +1,18 @@
 {% extends "base.html" %}
 
+{% block extrascript %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $.datepicker.setDefaults({
+                changeMonth: true,
+                changeYear: true,
+            });
+            $('#id_date_after').datepicker();
+            $('#id_date_before').datepicker();
+        });
+    </script>
+{% endblock %}
+
 {% block content %}
 
 <form id="search_form" method="GET" action="{% url nodis_cases_all %}">
