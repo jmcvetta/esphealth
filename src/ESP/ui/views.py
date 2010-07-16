@@ -389,6 +389,7 @@ class CaseTablePHI(tables.ModelTable):
     # Begin PHI
     patient__mrn = tables.Column(verbose_name='Patient MRN')
     patient__name = tables.Column(verbose_name='Patient Name', sortable=False)
+    patient__date_of_birth = tables.Column(verbose_name='Date of Birth')
     # End PHI
     collection_date = tables.Column(verbose_name='Collection Date', sortable=False)
     result_date = tables.Column(verbose_name='Result Date', sortable=False)
