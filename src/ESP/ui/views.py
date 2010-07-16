@@ -404,12 +404,12 @@ class CaseTablePHI(tables.ModelTable):
 class CaseFilterFormPHI(forms.Form):
     __status_choices = [('', '---')] + STATUS_CHOICES
     __condition_choices = [('', '---')] + Condition.condition_choices()
-    case_id = forms.CharField(required=False)
+    case_id = forms.CharField(required=False, label="Case ID")
     condition = forms.ChoiceField(choices=__condition_choices, required=False)
-    date_after = forms.DateField(required=False)
-    date_before = forms.DateField(required=False)
-    patient_mrn = forms.CharField(required=False)
-    patient_last_name = forms.CharField(required=False)
+    date_after = forms.DateField(required=False, label='Date After')
+    date_before = forms.DateField(required=False, label='Date Before')
+    patient_mrn = forms.CharField(required=False, label='Patient MRN')
+    patient_last_name = forms.CharField(required=False, label='Patient Surname')
 
 
 class CaseFilterFormNoPHI(forms.Form):
