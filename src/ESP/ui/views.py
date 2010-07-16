@@ -401,6 +401,7 @@ class CaseTablePHI(tables.ModelTable):
 class CaseFilterFormPHI(forms.Form):
     __status_choices = [('', '---')] + STATUS_CHOICES
     __condition_choices = [('', '---')] + Condition.condition_choices()
+    case_id = forms.CharField(required=False)
     condition = forms.ChoiceField(choices=__condition_choices, required=False)
     date_after = forms.DateField(required=False)
     date_before = forms.DateField(required=False)
@@ -411,6 +412,7 @@ class CaseFilterFormPHI(forms.Form):
 class CaseFilterFormNoPHI(forms.Form):
     __status_choices = [('', '---')] + STATUS_CHOICES
     __condition_choices = [('', '---')] + Condition.condition_choices()
+    case_id = forms.CharField(required=False)
     condition = forms.ChoiceField(choices=__condition_choices, required=False)
     date_after = forms.DateField(required=False)
     date_before = forms.DateField(required=False)
@@ -436,9 +438,12 @@ def case_list(request, status):
     search_form = CaseFilterForm(request.GET)
     if search_form.is_valid():
         log.debug(search_form.cleaned_data)
+        case_id = search_form.cleaned_data['case_id']
         condition = search_form.cleaned_data['condition']
         date_before = search_form.cleaned_data['date_before']
         date_after = search_form.cleaned_data['date_after']
+        if case_id:
+            qs = qs.filter(pk=case_id)
         if condition:
             qs = qs.filter(condition=condition)
         if date_before:
