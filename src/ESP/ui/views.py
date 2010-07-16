@@ -370,7 +370,7 @@ class CaseTableNoPHI(tables.ModelTable):
     '''
     id = tables.Column(verbose_name='Case ID')
     condition = tables.Column()
-    #date = tables.Column()
+    created_timestamp__date = tables.Column('Date Detected')
     provider__dept = tables.Column(verbose_name='Provider Department')
     collection_date = tables.Column(verbose_name='Collection Date', sortable=False)
     result_date = tables.Column(verbose_name='Result Date', sortable=False)
@@ -384,7 +384,7 @@ class CaseTablePHI(tables.ModelTable):
     '''
     id = tables.Column(verbose_name='Case ID')
     condition = tables.Column()
-    #date = tables.Column()
+    created_timestamp__date = tables.Column('Date Detected')
     provider__dept = tables.Column(verbose_name='Provider Department')
     # Begin PHI
     patient__mrn = tables.Column(verbose_name='Patient MRN')
