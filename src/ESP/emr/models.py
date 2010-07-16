@@ -636,6 +636,7 @@ class LabResult(BasePatientRecord):
     objects = LabResultManager()
     # HEF
     events = generic.GenericRelation('hef.Event')
+    new_events = generic.GenericRelation('new_hef.Event')
     
     class Meta:
         verbose_name = 'Lab Test Result'

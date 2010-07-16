@@ -29,7 +29,8 @@ from ESP.emr.models import LabOrder
 
 
 POSITIVE_STRINGS = ['reactiv', 'pos', 'detec', 'confirm']
-NEGATIVE_STRINGS = ['non', 'neg', 'not', 'nr']
+NEGATIVE_STRINGS = ['non', 'neg', 'not det', 'nr']
+INDETERMINATE_STRINGS = ['indeterminate', 'not done', 'tnp']
 
 MATCH_TYPE_CHOICES = [
     ('exact', 'Exact Match (case sensitive)'),
@@ -62,6 +63,7 @@ class AbstractLabTest(models.Model):
     notes = models.TextField(blank=True, null=True)
     class Meta:
         verbose_name = 'Abstract Lab Test Type'
+        ordering = ['name']
     
     def __str__(self):
         return self.name
@@ -234,35 +236,33 @@ class LabResultPositiveHeuristic(LabResultHeuristic):
     
     def generate_events(self):
         log.debug('Generating events for "%s"' % self.verbose_name)
-        unbound_labs = self.test.lab_results.exclude(events__heuristic=self)
+        unbound_labs = self.test.lab_results.exclude(new_events__heuristic=self)
         log_query('Unbound lab results for %s' % self.name, unbound_labs)
-        #
-        #
-        #
         #
         # Build numeric query
         #
-        #
+        #--------------------------------------------------------------------------------
         # Not doing abnormal flag yet, because many values are not null but a blank string
         #
         #if result_type == 'positive':
             #pos_q = Q(abnormal_flag__isnull=False)
         #else:
             #pos_q = None
+        #--------------------------------------------------------------------------------
         positive_labs = LabResult.objects.none()
         negative_labs = LabResult.objects.none()
-        code_maps = LabTestMap.objects.filter(test=self.test).values_list('native_code', flat=True)
+        code_maps = LabTestMap.objects.filter(test=self.test)
         for map in code_maps:
-            labs = unbound_labs.filter(native_code=map.native_code)
+            labs = unbound_labs.filter(native_code=map.code)
             #
             # Build numeric comparison queries
             #
             num_res_labs = labs.filter(result_float__isnull=False)
-            positive_labs += num_res_labs.filter(ref_high_float__isnull=False, result_float__gte = F('ref_high_float'))
-            negative_labs += num_res_labs.filter(ref_high_float__isnull=False, result_float__lt = F('ref_high_float'))
+            positive_labs |= num_res_labs.filter(ref_high_float__isnull=False, result_float__gte = F('ref_high_float'))
+            negative_labs |= num_res_labs.filter(ref_high_float__isnull=False, result_float__lt = F('ref_high_float'))
             if map.threshold:
-                positive_labs += num_res_labs.filter(ref_high_float__isnull=True, result_float__gte=map.threshold)
-                negative_labs += num_res_labs.filter(ref_high_float__isnull=True, result_float__lt=map.threshold)
+                positive_labs |= num_res_labs.filter(ref_high_float__isnull=True, result_float__gte=map.threshold)
+                negative_labs |= num_res_labs.filter(ref_high_float__isnull=True, result_float__lt=map.threshold)
         #
         # Build string queries
         #
@@ -270,35 +270,73 @@ class LabResultPositiveHeuristic(LabResultHeuristic):
         pos_str_q = Q(result_string__istartswith=POSITIVE_STRINGS[0])
         for s in POSITIVE_STRINGS[1:]:
             pos_str_q |= Q(result_string__istartswith=s)
-        positive_labs += unbound_labs.filter(pos_str_q)
+        positive_labs |= unbound_labs.filter(pos_str_q)
         #
         neg_str_q = Q(result_string__istartswith=NEGATIVE_STRINGS[0])
         for s in NEGATIVE_STRINGS[1:]:
             neg_str_q |= Q(result_string__istartswith=s)
-        negative_labs += unbound_labs.filter(neg_str_q)
-        #
+        negative_labs |= unbound_labs.filter(neg_str_q)
+        # Indeterminate events can ONLY be determined from string result
+        ind_str_q = Q(result_string__istartswith=INDETERMINATE_STRINGS[0])
+        for s in INDETERMINATE_STRINGS[1:]:
+            ind_str_q |= Q(result_string__istartswith=s)
+        indeterminate_labs = unbound_labs.filter(ind_str_q)
+        #--------------------------------------------------------------------------------
         # REMOVED -- is this still necessary/useful?
         #
         # Only look at relevant labs.  We do this for both numeric & string 
         # subqueries, for faster overall query performance.   
         #
         #pos_q &= Q(native_code__in=native_codes)
-        #
+        #--------------------------------------------------------------------------------
         #
         # If a lab is positive, then it definitionally is not negative
         #
-        negative_labs = negative_labs - positive_labs
-        #
-        # If a lab is neither positive nor negative, then it is indeterminate
-        #
-        indeterminate_labs = unbound_labs - positive_labs - negative_labs
+        pos_pks = positive_labs.values('pk')
+        negative_labs = negative_labs.exclude(pk__in=pos_pks)
         log_query('Positive labs for %s' % self.name, positive_labs)
-        print positive_labs.count()
         log_query('Negative labs for %s' % self.name, negative_labs)
-        print negative_labs.count()
         log_query('Indeterminate labs for %s' % self.name, indeterminate_labs)
-        print indeterminate_labs.count()
-        
+        #
+        # Generate Events
+        #
+        log.info('Generating positive events for %s' % self.name)
+        for lab in positive_labs:
+            new_event = Event(
+                name = '%s--positive' % self.test.name,
+                heuristic = self,
+                patient = lab.patient,
+                date = lab.date,
+                content_object = lab,
+                )
+            new_event.save()
+            log.debug('Saved new event: %s' % new_event)
+        log.info('Generated %s new positive events for %s' % (positive_labs.count(), self.name))
+        log.info('Generating negative events for %s' % self.name)
+        for lab in negative_labs:
+            new_event = Event(
+                name = '%s--negative' % self.test.name,
+                heuristic = self,
+                patient = lab.patient,
+                date = lab.date,
+                content_object = lab,
+                )
+            new_event.save()
+            log.debug('Saved new event: %s' % new_event)
+        log.info('Generated %s new negative events for %s' % (negative_labs.count(), self.name))
+        log.info('Generating indeterminate events for %s' % self.name)
+        for lab in indeterminate_labs:
+            new_event = Event(
+                name = '%s--indeterminate' % self.test.name,
+                heuristic = self,
+                patient = lab.patient,
+                date = lab.date,
+                content_object = lab,
+                )
+            new_event.save()
+            log.debug('Saved new event: %s' % new_event)
+        log.info('Generated %s new indeterminate events for %s' % (indeterminate_labs.count(), self.name))
+        return positive_labs.count() # We can only return one count, and positive is most important
 
 
 class Event(models.Model):
