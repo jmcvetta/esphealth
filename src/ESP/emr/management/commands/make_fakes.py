@@ -51,13 +51,13 @@ from ESP.emr.models import SocialHistory, Problem, Allergy
 from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
 
 
-POPULATION_SIZE = 10**6
+POPULATION_SIZE = 10**3
 ENCOUNTERS_PER_PATIENT = 10
 LAB_TESTS_PER_PATIENT = 5
 CHLAMYDIA_LX_PCT = 20
 
 ICD9_CODE_PCT = 20
-IMMUNIZATION_PCT = 20
+IMMUNIZATION_PCT = 0.5
 CHLAMYDIA_INFECTION_PCT = 15
 
 
@@ -253,9 +253,9 @@ class LabResultWriter(EpicWriter):
                 'order_date': str_from_date(lx.date),
                 'result_date': str_from_date(lx.result_date),
                 'provider_id_num': 'FAKE_PROVIDER_%s' % random.randint(1, 100),
-                'order_type':' ',
-                'cpt': lx.native_code.split('--')[1].strip(),
-                'component': lx.native_code.split('--')[-1].strip(),
+                'order_type':'',
+                'cpt': lx.native_code,
+                'component': '',
                 'component_name': lx.native_name,
                 'result_string': lx.result_string,
                 'normal_flag' : lx.abnormal_flag,
@@ -353,7 +353,7 @@ class EncounterWriter(EpicWriter):
         self.writer.writerow({
                 'patient_id_num':encounter.patient.patient_id_num,
                 'medical_record_num':'',
-                'encounter_id_num':encounter.id,
+                'encounter_id_num': encounter.native_encounter_num,
                 'encounter_date':str_from_date(encounter.date),
                 'is_closed': '',
                 'closed_date':str_from_date(encounter.closed_date) or '',
@@ -545,12 +545,12 @@ class Command(LoaderCommand):
             p = Patient.make_mock()
             patient_writer.write_row(p)
                 
-            # if random.random() <= float(IMMUNIZATION_PCT/100.0):
-            #     history = ImmunizationHistory(p)
-            #     for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
-            #         imm = history.add_immunization()
-            #         check_for_reactions(imm)
-            #         immunization_writer.write_row(imm)
+            if random.random() <= float(IMMUNIZATION_PCT/100.0):
+                history = ImmunizationHistory(p)
+                for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
+                    imm = history.add_immunization()
+                    #check_for_reactions(imm)
+                    immunization_writer.write_row(imm)
 
             
             # Write random encounters and lab tests.
@@ -567,8 +567,6 @@ class Command(LoaderCommand):
 
                 lx = LabResult.make_mock(p, with_loinc=loinc)
                 lx.result_string = result_string
-                lx.native_code = str(loinc)
-                lx.native_name = loinc.shortname
                 lx_writer.write_row(lx)
 
                 
