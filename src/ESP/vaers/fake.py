@@ -8,10 +8,12 @@ from ESP.static.models import Icd9, Loinc
 from ESP.emr.models import Provider, Patient, Encounter, Immunization, LabResult
 from ESP.conf.models import Vaccine
 from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
+
 from ESP.utils.utils import log
 from ESP.utils import randomizer
 from ESP.utils import utils
 
+import rules
 from rules import TIME_WINDOW_POST_EVENT, VAERS_LAB_RESULTS
 
 
@@ -38,7 +40,7 @@ class ImmunizationHistory(object):
     def clear(self):
         Immunization.objects.filter(patient=self.patient).delete()
 
-    def add_immunization(self):
+    def add_immunization(self, save_on_db=False):
         '''
         Gives a completely random vaccine to a patient in a
         completely random date between his date_of_birth and
@@ -63,7 +65,7 @@ class ImmunizationHistory(object):
         assert (EPOCH <= when <= today)
 
         # If everything is ok, give patient the vaccine
-        return Immunization.make_mock(vaccine, self.patient, when, save_on_db=True)
+        return Immunization.make_mock(vaccine, self.patient, when, save_on_db=save_on_db)
 
 def check_for_reactions(imm):
     # Should we cause a fever event?
@@ -77,8 +79,9 @@ def check_for_reactions(imm):
         try:
             code = random.choice(rule.heuristic_defining_codes.all())
         except Exception, why:
-            import pdb
-            pdb.set_trace()
+            rules.define_active_rules()
+            rules.map_lab_tests()
+
 
         ev.cause_icd9(code)
         
