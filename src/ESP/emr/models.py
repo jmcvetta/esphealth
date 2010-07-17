@@ -661,11 +661,9 @@ class LabResult(BasePatientRecord):
         result_date = when + datetime.timedelta(days=random.randrange(1, 30))
         # Make sure the patient was alive for the order...
         order_date = when if patient.date_of_birth is None else max(when, patient.date_of_birth)
-        lx = LabResult(patient=patient, provenance=Provenance.fake(), date=order_date, 
-                       native_code = str(loinc), native_name =loinc.shortname,
-                       result_date=result_date)
-
-
+        lx = LabResult(patient=patient, provider=Provider.get_mock(), 
+                       provenance=Provenance.fake(), date=order_date, result_date=result_date,
+                       native_code=loinc.loinc_num, native_name=loinc.name)
 
         if save_on_db: lx.save()
         return lx
@@ -944,8 +942,10 @@ class Encounter(BasePatientRecord):
     '''
     A encounter between provider and patient
     '''
+
     # Date is encounter date
     #
+
     objects = EncounterManager()
     icd9_codes = models.ManyToManyField(Icd9,  blank=True,  null=True, db_index=True)
     status = models.CharField(max_length=128, blank=True, null=True)
@@ -1005,6 +1005,7 @@ class Encounter(BasePatientRecord):
         provider = Provider.get_mock()
 
         e = Encounter(patient=patient, provider=provider, provenance=Provenance.fake(),
+                      native_encounter_num='FAKE-%s' % randomizer.string(length=15),
                       mrn=patient.mrn, status='FAKE', date=when, closed_date=when)
         
         if save_on_db: e.save()
