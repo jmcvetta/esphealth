@@ -328,6 +328,9 @@ src/ESP/vaers/forms.py -text
 src/ESP/vaers/heuristics.py -text
 src/ESP/vaers/hl7_report.py -text
 src/ESP/vaers/main.py -text
+src/ESP/vaers/management/__init__.py -text
+src/ESP/vaers/management/commands/__init__.py -text
+src/ESP/vaers/management/commands/set_rules.py -text
 src/ESP/vaers/models.py -text
 src/ESP/vaers/reports.py -text
 src/ESP/vaers/rules.py -text
