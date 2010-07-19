@@ -155,6 +155,9 @@ class Heuristic(models.Model):
     def generate_events(self):
         raise NotImplementedError
     
+    def __str__(self):
+        return 'Heuristic # %s' % self.pk
+    
 
 class LabOrderHeuristic(Heuristic):
     '''
@@ -164,10 +167,13 @@ class LabOrderHeuristic(Heuristic):
     than lab results, and thus lab orders may require a different
     AbstractLabTest than required for lab results.
     '''
-    test = models.ForeignKey(AbstractLabTest, blank=False)
+    test = models.ForeignKey(AbstractLabTest, blank=False, unique=True)
     
     class Meta:
         verbose_name = 'Lab Order Heuristic'
+    
+    def __str__(self):
+        return self.verbose_name
     
     def __get_name(self):
         return '%s--order' % self.test.name
@@ -200,21 +206,18 @@ class LabOrderHeuristic(Heuristic):
         return unbound_count
 
 
-class LabResultHeuristic(Heuristic):
-    '''
-    Abstract base class for lab result heuristics
-    '''
-    test = models.ForeignKey(AbstractLabTest, blank=False)
-    class Meta:
-        abstract = True
-
-
-class LabResultPositiveHeuristic(LabResultHeuristic):
+class LabResultPositiveHeuristic(Heuristic):
     '''
     A heuristic for detecting positive (& negative) lab result events
     '''
+    
+    test = models.ForeignKey(AbstractLabTest, blank=False, unique=True)
+    
     class Meta:
         verbose_name = 'Positive/Negative Lab Result Heuristic'
+    
+    def __str__(self):
+        return self.verbose_name
     
     def __get_name(self):
         return '%s--positive' % self.test.name
@@ -333,17 +336,22 @@ class LabResultPositiveHeuristic(LabResultHeuristic):
             new_event.save()
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new indeterminate events for %s' % (indeterminate_labs.count(), self.name))
-        return positive_labs.count() # We can only return one count, and positive is most important
+        return positive_labs.count() + negative_labs.count() + indeterminate_labs.count()
 
 
-class LabResultRatioHeuristic(LabResultHeuristic):
+class LabResultRatioHeuristic(Heuristic):
     '''
     A heuristic for detecting ratio-based positive lab result events
     '''
+    test = models.ForeignKey(AbstractLabTest, blank=False)
     ratio = models.FloatField(blank=False)
     
     class Meta:
         verbose_name = 'Ratio Lab Result Heuristic'
+        unique_together = ['test', 'ratio']
+    
+    def __str__(self):
+        return self.verbose_name
     
     def __get_name(self):
         return '%s--ratio--%s' % (self.test.name, self.ratio)
@@ -387,18 +395,23 @@ class LabResultRatioHeuristic(LabResultHeuristic):
         return positive_labs.count() # We can only return one count, and positive is most important
 
 
-class LabResultFixedThresholdHeuristic(LabResultHeuristic):
+class LabResultFixedThresholdHeuristic(Heuristic):
     '''
     A heuristic for detecting fixed-threshold-based positive lab result events
     '''
+    test = models.ForeignKey(AbstractLabTest, blank=False)
     threshold = models.FloatField(blank=False, 
         help_text='Events are generated for lab results greater than or equal to this value')
     
     class Meta:
         verbose_name = 'Fixed Threshold Lab Result Heuristic'
+        unique_together = ['test', 'threshold']
+    
+    def __str__(self):
+        return self.verbose_name
     
     def __get_name(self):
-        return '%s--threshold--%s' % (self.test.name, self.ratio)
+        return '%s--threshold--%s' % (self.test.name, self.threshold)
     name = property(__get_name)
     
     def __get_verbose_name(self):
@@ -412,7 +425,7 @@ class LabResultFixedThresholdHeuristic(LabResultHeuristic):
         log.info('Generating events for "%s"' % self.verbose_name)
         unbound_labs = self.test.lab_results.exclude(new_events__heuristic=self)
         log_query('Unbound lab results for %s' % self.name, unbound_labs)
-        positive_labs = unbound_labs.fitler(result_float__isnull=False, result_float__gte=self.threshold)
+        positive_labs = unbound_labs.filter(result_float__isnull=False, result_float__gte=self.threshold)
         log_query(self.name, positive_labs)
         for lab in positive_labs:
             new_event = Event(
