@@ -95,7 +95,7 @@ class LabTestMap(models.Model):
         help_text='Native test code from source EMR system', blank=False, db_index=True)
     code_match_type = models.CharField(max_length=32, blank=False, choices=MATCH_TYPE_CHOICES, db_index=True, 
         help_text='Match type for test code', default='exact')
-    threshold = models.FloatField(help_text='Numeric threshold for positive test', blank=True, null=True)
+    threshold = models.FloatField(help_text='Fallback positive threshold for tests without reference high', blank=True, null=True)
     #
     # Notes
     #
