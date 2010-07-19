@@ -155,9 +155,6 @@ class Heuristic(models.Model):
     def generate_events(self):
         raise NotImplementedError
     
-    def __str__(self):
-        return self.verbose_name
-    
 
 class LabOrderHeuristic(Heuristic):
     '''
@@ -341,7 +338,7 @@ class LabResultPositiveHeuristic(LabResultHeuristic):
 
 class LabResultRatioHeuristic(LabResultHeuristic):
     '''
-    A heuristic for detecting positive (& negative) lab result events
+    A heuristic for detecting ratio-based positive lab result events
     '''
     ratio = models.FloatField(blank=False)
     
@@ -389,6 +386,46 @@ class LabResultRatioHeuristic(LabResultHeuristic):
         log.info('Generated %s new events for %s' % (positive_labs.count(), self.name))
         return positive_labs.count() # We can only return one count, and positive is most important
 
+
+class LabResultFixedThresholdHeuristic(LabResultHeuristic):
+    '''
+    A heuristic for detecting fixed-threshold-based positive lab result events
+    '''
+    threshold = models.FloatField(blank=False, 
+        help_text='Events are generated for lab results greater than or equal to this value')
+    
+    class Meta:
+        verbose_name = 'Fixed Threshold Lab Result Heuristic'
+    
+    def __get_name(self):
+        return '%s--threshold--%s' % (self.test.name, self.ratio)
+    name = property(__get_name)
+    
+    def __get_verbose_name(self):
+        return '%s %s Threshold Heuristic' % (self.test.verbose_name, self.threshold)
+    verbose_name = property(__get_verbose_name)
+    
+    def __get_event_names(self):
+        return [self.name,]
+    
+    def generate_events(self):
+        log.info('Generating events for "%s"' % self.verbose_name)
+        unbound_labs = self.test.lab_results.exclude(new_events__heuristic=self)
+        log_query('Unbound lab results for %s' % self.name, unbound_labs)
+        positive_labs = unbound_labs.fitler(result_float__isnull=False, result_float__gte=self.threshold)
+        log_query(self.name, positive_labs)
+        for lab in positive_labs:
+            new_event = Event(
+                name = self.name,
+                heuristic = self,
+                patient = lab.patient,
+                date = lab.date,
+                content_object = lab,
+                )
+            new_event.save()
+            log.debug('Saved new event: %s' % new_event)
+        log.info('Generated %s new events for %s' % (positive_labs.count(), self.name))
+        return positive_labs.count() # We can only return one count, and positive is most important
 
 
 class Event(models.Model):
