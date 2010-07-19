@@ -294,12 +294,10 @@ class LabResultPositiveHeuristic(LabResultHeuristic):
         #
         pos_pks = positive_labs.values('pk')
         negative_labs = negative_labs.exclude(pk__in=pos_pks)
-        log_query('Positive labs for %s' % self.name, positive_labs)
-        log_query('Negative labs for %s' % self.name, negative_labs)
-        log_query('Indeterminate labs for %s' % self.name, indeterminate_labs)
         #
         # Generate Events
         #
+        log_query('Positive labs for %s' % self.name, positive_labs)
         log.info('Generating positive events for %s' % self.name)
         for lab in positive_labs:
             new_event = Event(
@@ -312,6 +310,7 @@ class LabResultPositiveHeuristic(LabResultHeuristic):
             new_event.save()
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new positive events for %s' % (positive_labs.count(), self.name))
+        log_query('Negative labs for %s' % self.name, negative_labs)
         log.info('Generating negative events for %s' % self.name)
         for lab in negative_labs:
             new_event = Event(
@@ -324,6 +323,7 @@ class LabResultPositiveHeuristic(LabResultHeuristic):
             new_event.save()
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new negative events for %s' % (negative_labs.count(), self.name))
+        log_query('Indeterminate labs for %s' % self.name, indeterminate_labs)
         log.info('Generating indeterminate events for %s' % self.name)
         for lab in indeterminate_labs:
             new_event = Event(
@@ -337,6 +337,58 @@ class LabResultPositiveHeuristic(LabResultHeuristic):
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new indeterminate events for %s' % (indeterminate_labs.count(), self.name))
         return positive_labs.count() # We can only return one count, and positive is most important
+
+
+class LabResultRatioHeuristic(LabResultHeuristic):
+    '''
+    A heuristic for detecting positive (& negative) lab result events
+    '''
+    ratio = models.FloatField(blank=False)
+    
+    class Meta:
+        verbose_name = 'Ratio Lab Result Heuristic'
+    
+    def __get_name(self):
+        return '%s--ratio--%s' % (self.test.name, self.ratio)
+    name = property(__get_name)
+    
+    def __get_verbose_name(self):
+        return '%s %s Ratio Heuristic' % (self.test.verbose_name, self.ratio)
+    verbose_name = property(__get_verbose_name)
+    
+    def __get_event_names(self):
+        return [self.name,]
+    
+    def generate_events(self):
+        log.debug('Generating events for "%s"' % self.verbose_name)
+        unbound_labs = self.test.lab_results.exclude(new_events__heuristic=self)
+        log_query('Unbound lab results for %s' % self.name, unbound_labs)
+        positive_labs = LabResult.objects.none()
+        code_maps = LabTestMap.objects.filter(test=self.test)
+        for map in code_maps:
+            labs = unbound_labs.filter(native_code=map.code)
+            #
+            # Build numeric comparison queries
+            #
+            num_res_labs = labs.filter(result_float__isnull=False)
+            positive_labs |= num_res_labs.filter(ref_high_float__isnull=False, result_float__gte = (self.ratio * F('ref_high_float')))
+            if map.threshold:
+                positive_labs |= num_res_labs.filter(ref_high_float__isnull=True, result_float__gte = (self.ratio * map.threshold))
+        log_query(self.name, positive_labs)
+        log.info('Generating new events for %s' % self.name)
+        for lab in positive_labs:
+            new_event = Event(
+                name = self.name,
+                heuristic = self,
+                patient = lab.patient,
+                date = lab.date,
+                content_object = lab,
+                )
+            new_event.save()
+            log.debug('Saved new event: %s' % new_event)
+        log.info('Generated %s new events for %s' % (positive_labs.count(), self.name))
+        return positive_labs.count() # We can only return one count, and positive is most important
+
 
 
 class Event(models.Model):

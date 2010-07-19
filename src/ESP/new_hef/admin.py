@@ -10,6 +10,7 @@ from ESP.new_hef.models import AbstractLabTest
 from ESP.new_hef.models import LabTestMap
 from ESP.new_hef.models import LabOrderHeuristic
 from ESP.new_hef.models import LabResultPositiveHeuristic
+from ESP.new_hef.models import LabResultRatioHeuristic
 
 
 class EventAdmin(admin.ModelAdmin):
@@ -25,13 +26,17 @@ class LabTestMapAdmin(admin.ModelAdmin):
 
 
 class LabOrderHeuristicAdmin(admin.ModelAdmin):
-    list_display = ['verbose_name', 'test']
+    list_display = ['test']
 
 class LabResultPositiveHeuristicAdmin(admin.ModelAdmin):
     list_display = ['test']
+
+class LabResultRatioHeuristicAdmin(admin.ModelAdmin):
+    list_display = ['test', 'ratio']
 
 
 admin.site.register(AbstractLabTest, AbstractLabTestAdmin)
 admin.site.register(LabTestMap, LabTestMapAdmin)
 admin.site.register(LabOrderHeuristic, LabOrderHeuristicAdmin)
 admin.site.register(LabResultPositiveHeuristic, LabResultPositiveHeuristicAdmin)
+admin.site.register(LabResultRatioHeuristic, LabResultRatioHeuristicAdmin)
