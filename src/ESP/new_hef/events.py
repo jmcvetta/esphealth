@@ -219,95 +219,194 @@ LabResultPositiveHeuristic.objects.get_or_create(
 #
 #-------------------------------------------------------------------------------
 
+hep_e_ab = AbstractLabTest.objects.get_or_create(
+    name = 'hep_e_ab',
+    defaults = {
+        'verbose_name': 'Hepatitis E antibody',
+        }
+    )[0]
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = hep_e_ab,
+    )
 
-#--- hep_e_ab 
-#LabResultHeuristic(
-#    name = 'hep_e_ab',
-#    long_name = 'Hepatitis E antibody',
-#    )
+#-------------------------------------------------------------------------------
 #
-##--- total_bilirubin_high 
-#LabResultHeuristic(
-#    name = 'total_bilirubin_high',
-#    long_name = 'High total bilirubin',
-#    )
+# Bilirubin
 #
-##--- high_calc_bilirubin 
-#CalculatedBilirubinHeuristic()
+#-------------------------------------------------------------------------------
+
+bilirubin_total = AbstractLabTest.objects.get_or_create(
+    name = 'bilirubin_total',
+    defaults = {
+        'verbose_name': 'Bilirubin glucuronidated + bilirubin non-glucuronidated',
+        }
+    )[0]
+    
+bilirubin_direct = AbstractLabTest.objects.get_or_create(
+    name = 'bilirubin_direct',
+    defaults = {
+        'verbose_name': 'Bilirubin glucuronidated',
+        }
+    )[0]
+    
+bilirubin_indirect = AbstractLabTest.objects.get_or_create(
+    name = 'bilirubin_indirect',
+    defaults = {
+        'verbose_name': 'Bilirubin non-glucuronidated',
+        }
+    )[0]
+    
+#-------------------------------------------------------------------------------
 #
-##--- hep_c_signal_cutoff 
-#LabResultHeuristic(
-#    name = 'hep_c_signal_cutoff',
-#    long_name = 'Hepatitis C signal cutoff',
-#    negative_events = True,
-#    )
+# Hepatitis C
 #
-##--- hep_c_riba 
-#LabResultHeuristic(
-#    name = 'hep_c_riba',
-#    long_name = 'Hepatitis C RIBA',
-#    negative_events = True,
-#    )
+#-------------------------------------------------------------------------------
+
+hep_c_signal_cutoff = AbstractLabTest.objects.get_or_create(
+    name = 'hep_c_signal_cutoff',
+    defaults = {
+        'verbose_name': 'Hepatitis C signal cutoff',
+        }
+    )[0]
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = hep_c_signal_cutoff,
+    )
+
+hep_c_riba = AbstractLabTest.objects.get_or_create(
+    name = 'hep_c_riba',
+    defaults = {
+        'verbose_name': 'Hepatitis C RIBA',
+        }
+    )[0]
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = hep_c_riba,
+    )
+
+hep_c_rna = AbstractLabTest.objects.get_or_create(
+    name = 'hep_c_rna',
+    defaults = {
+        'verbose_name': 'Hepatitis C RNA',
+        }
+    )[0]
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = hep_c_rna,
+    )
+
+hep_c_elisa = AbstractLabTest.objects.get_or_create(
+    name = 'hep_c_elisa',
+    defaults = {
+        'verbose_name': 'Hepatitis C ELISA',
+        }
+    )[0]
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = hep_c_elisa,
+    )
+
+
+#-------------------------------------------------------------------------------
 #
-##--- hep_c_rna 
-#LabResultHeuristic(
-#    name = 'hep_c_rna',
-#    long_name = 'Hepatitis C RNA',
-#    negative_events = True,
-#    )
+# Lyme
 #
-##--- hep_c_elisa 
-#LabResultHeuristic(
-#    name = 'hep_c_elisa',
-#    long_name = 'Hepatitis C ELISA',
-#    negative_events = True,
-#    )
-#
-#
-##
-##--- Lyme Disease
-##
-#
-#LabResultHeuristic(
-#    name = 'lyme_elisa',
-#    long_name = 'Lyme ELISA',
-#    order_events = True,
-#    )
-#
-#LabResultHeuristic(
-#    name = 'lyme_igg_eia',
-#    long_name = 'Lyme IGG (EIA)',
-#    order_events = True,
-#    )
-#
-#LabResultHeuristic(
-#    name = 'lyme_igm_eia',
-#    long_name = 'Lyme IGM (EIA)',
-#    order_events = True,
-#    )
-#
-#
-## Western blot IGG is resulted in bands, some of which are significant; but western 
-## blot IGM is resulted as a standard lab test with POSTIVE result string.
-#
+#-------------------------------------------------------------------------------
+
+lyme_elisa = AbstractLabTest.objects.get_or_create(
+    name = 'lyme_elisa',
+    defaults = {
+        'verbose_name': 'Lyme ELISA',
+        }
+    )[0]
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = lyme_elisa,
+    )
+
+LabOrderHeuristic.objects.get_or_create(
+    test = lyme_elisa,
+    )
+
+lyme_igg_eia = AbstractLabTest.objects.get_or_create(
+    name = 'lyme_igg_eia',
+    defaults = {
+        'verbose_name': 'Lyme IGG (EIA)',
+        }
+    )[0]
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = lyme_igg_eia,
+    )
+
+LabOrderHeuristic.objects.get_or_create(
+    test = lyme_igg_eia,
+    )
+
+lyme_igm_eia = AbstractLabTest.objects.get_or_create(
+    name = 'lyme_igm_eia',
+    defaults = {
+        'verbose_name': 'Lyme IGM (EIA)',
+        }
+    )[0]
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = lyme_igm_eia,
+    )
+
+LabOrderHeuristic.objects.get_or_create(
+    test = lyme_igm_eia,
+    )
+
+# Western blot IGG is resulted in bands, some of which are significant; but western 
+# blot IGM is resulted as a standard lab test with POSTIVE result string.
+
 #WesternBlotHeuristic(
 #    name = 'lyme_igg_wb',
 #    long_name = 'Lyme Western Blot IGG',
 #    interesting_bands = [18, 21, 28, 30, 39, 41, 45, 58, 66, 93],
 #    band_count = 5,
 #    )
+
 #
-#LabResultHeuristic(
-#    name = 'lyme_igm_wb',
-#    long_name = 'Lyme Western Blot IGM',
-#    )
+# TODO: This test needs a western blog heuristic!
 #
-#LabResultHeuristic(
-#    name = 'lyme_pcr',
-#    long_name = 'Lyme PCR',
-#    order_events = True,
-#    )
-#
+lyme_igg_wb = AbstractLabTest.objects.get_or_create(
+    name = 'lyme_igg_wb',
+    defaults = {
+        'verbose_name': 'Lyme IGG (Western Blot)',
+        }
+    )[0]
+    
+lyme_igm_wb = AbstractLabTest.objects.get_or_create(
+    name = 'lyme_igm_wb',
+    defaults = {
+        'verbose_name': 'Lyme IGM (Western Blot)',
+        }
+    )[0]
+    
+# Despite being a western blot, this test is resulted pos/neg
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = lyme_igm_wb,
+    )
+
+lyme_pcr = AbstractLabTest.objects.get_or_create(
+    name = 'lyme_pcr',
+    defaults = {
+        'verbose_name': 'Lyme PCR',
+        }
+    )[0]
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = lyme_pcr,
+    )
+
+LabOrderHeuristic.objects.get_or_create(
+    test = lyme_pcr,
+    )
+
+
 #EncounterHeuristic(
 #    name = 'lyme_diagnosis',
 #    long_name = 'Lyme diagnosis',
@@ -350,11 +449,11 @@ LabResultPositiveHeuristic.objects.get_or_create(
 #        '099.56',
 #        ],
 #    )
+
 #
-##
-##--- Tuberculosis
-##
+#--- Tuberculosis
 #
+
 #MedicationHeuristic(
 #    name = 'pyrazinamide',
 #    long_name = 'Pyrazinamide prescription',
@@ -454,18 +553,31 @@ LabResultPositiveHeuristic.objects.get_or_create(
 #        ],
 #    match_style = 'startswith',
 #    )
+
+
+#-------------------------------------------------------------------------------
 #
-#LabResultHeuristic(
-#    name = 'tb_lab',
-#    long_name = 'Tuberculosis lab order',
-#    order_events = True,
-#    )
+# Tuberculosis
 #
+#-------------------------------------------------------------------------------
+
+tb_lab = AbstractLabTest.objects.get_or_create(
+    name = 'tb_lab',
+    defaults = {
+        'verbose_name': 'Tuberculosis lab test (several varieties)',
+        }
+    )[0]
+    
+LabOrderHeuristic.objects.get_or_create(
+    test = tb_lab,
+    )
+
+
+
 #
-##
-##--- Syphilis 
-##
+#--- Syphilis 
 #
+
 #MedicationHeuristic(
 #    name = 'penicillin_g',
 #    long_name = 'Pennicilin G',
@@ -507,18 +619,37 @@ LabResultPositiveHeuristic.objects.get_or_create(
 #        ],
 #    match_style = 'startswith'
 #    )
+
+
+#-------------------------------------------------------------------------------
 #
-#LabResultHeuristic(
-#    name = 'tppa',
-#    long_name = 'TPPA test',
-#    )
+# Syphilis
 #
-#LabResultHeuristic(
-#    name = 'fta_abs',
-#    long_name = 'FTA-ABS test',
-#    )
-#
-#
+#-------------------------------------------------------------------------------
+
+syphilis_tppa = AbstractLabTest.objects.get_or_create(
+    name = 'syphilis_tppa',
+    defaults = {
+        'verbose_name': 'Syphilis TP-PA',
+        }
+    )[0]
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = syphilis_tppa,
+    )
+    
+syphilis_fta_abs = AbstractLabTest.objects.get_or_create(
+    name = 'syphilis_fta_abs',
+    defaults = {
+        'verbose_name': 'Syphilis FTA-ABS',
+        }
+    )[0]
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = syphilis_fta_abs,
+    )
+
+
 #LabResultHeuristic(
 #    name = 'rpr',
 #    long_name = 'RPR test',
@@ -546,12 +677,19 @@ LabResultPositiveHeuristic.objects.get_or_create(
 #        '1:512',
 #        '1:1024', ]
 #    )
-#
-#LabResultHeuristic(
-#    name = 'tp_igg',
-#    long_name = 'TP-IGG test',
-#    )
-#
+
+syphilis_tp_igg = AbstractLabTest.objects.get_or_create(
+    name = 'syphilis_tp_igg',
+    defaults = {
+        'verbose_name': 'Syphilis TP-IGG',
+        }
+    )[0]
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = syphilis_tp_igg,
+    )
+
+
 #LabResultHeuristic(
 #    name = 'vdrl_csf',
 #    long_name = 'VDRL-CSF test',
@@ -568,21 +706,31 @@ LabResultPositiveHeuristic.objects.get_or_create(
 #        '1:512',
 #        '1:1024', ]
 #    )
+
+
+#-------------------------------------------------------------------------------
 #
+# Glucose
 #
-##--- Glucose Fasting
-#
-#LabResultHeuristic(
-#    name = 'glucose_fasting',
-#    long_name = 'GLUCOSE FASTING (and variants)',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [126],
-#    )
-#
-#
-##--- OGTT 50
-#
+#-------------------------------------------------------------------------------
+
+glucose_fasting = AbstractLabTest.objects.get_or_create(
+    name = 'glucose_fasting',
+    defaults = {
+        'verbose_name':  'Fasting glucose (several OGTT variations)',
+        }
+    )[0]
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = glucose_fasting,
+    threshold = 126,
+    date_field = 'result'
+    )
+
+
+
+#--- OGTT 50
+
 #LabResultHeuristic(
 #    name = 'ogtt50_fasting',
 #    long_name = 'OB GLUCOSE CHALLENGE, FASTING',
