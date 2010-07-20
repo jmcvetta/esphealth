@@ -162,6 +162,7 @@ src/ESP/new_hef/fixtures/initial_data.json -text
 src/ESP/new_hef/management/__init__.py -text
 src/ESP/new_hef/management/commands/__init__.py -text
 src/ESP/new_hef/management/commands/new_hef.py -text
+src/ESP/new_hef/migrator.py -text
 src/ESP/new_hef/models.py -text
 src/ESP/new_hef/tests.py -text
 src/ESP/new_hef/views.py -text
