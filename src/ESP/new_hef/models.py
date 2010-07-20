@@ -101,6 +101,15 @@ class LabTestMap(models.Model):
         help_text='Match type for test code', default='exact')
     threshold = models.FloatField(help_text='Fallback positive threshold for tests without reference high', blank=True, null=True)
     #
+    # Reporting
+    # 
+    reportable = models.BooleanField('Is test reportable?', default=True, db_index=True)
+    output_code = models.CharField('Test code for template output', max_length=100, blank=True, null=True, db_index=True)
+    output_name = models.CharField('Test name for template output', max_length=255, blank=True, null=True)
+    snomed_pos = models.CharField('SNOMED positive code', max_length=255, blank=True, null=True)
+    snomed_neg = models.CharField('SNOMED neg code', max_length=255, blank=True, null=True)
+    snomed_ind = models.CharField('SNOMED indeterminate code', max_length=255, blank=True, null=True)
+    #
     # Notes
     #
     notes = models.TextField(blank=True, null=True)
