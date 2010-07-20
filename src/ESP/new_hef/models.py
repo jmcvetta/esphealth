@@ -31,6 +31,10 @@ from ESP.emr.models import LabOrder
 POSITIVE_STRINGS = ['reactiv', 'pos', 'detec', 'confirm']
 NEGATIVE_STRINGS = ['non', 'neg', 'not det', 'nr']
 INDETERMINATE_STRINGS = ['indeterminate', 'not done', 'tnp']
+DATE_FIELD_CHOICES = [
+    ('order', 'Order'),
+    ('result', 'Result')
+    ]
 
 MATCH_TYPE_CHOICES = [
     ('exact', 'Exact Match (case sensitive)'),
@@ -210,8 +214,8 @@ class LabResultPositiveHeuristic(Heuristic):
     '''
     A heuristic for detecting positive (& negative) lab result events
     '''
-    
     test = models.ForeignKey(AbstractLabTest, blank=False, unique=True)
+    date_field = models.CharField(max_length=32, blank=False, choices=DATE_FIELD_CHOICES, default='order')
     
     class Meta:
         verbose_name = 'Positive/Negative Lab Result Heuristic'
@@ -300,11 +304,15 @@ class LabResultPositiveHeuristic(Heuristic):
         log_query('Positive labs for %s' % self.name, positive_labs)
         log.info('Generating positive events for %s' % self.name)
         for lab in positive_labs:
+            if self.date_field == 'order':
+                lab_date = lab.date
+            elif self.date_field == 'result':
+                lab_date = lab.result_date
             new_event = Event(
                 name = '%s--positive' % self.test.name,
                 heuristic = self,
                 patient = lab.patient,
-                date = lab.date,
+                date = lab_date,
                 content_object = lab,
                 )
             new_event.save()
@@ -313,11 +321,15 @@ class LabResultPositiveHeuristic(Heuristic):
         log_query('Negative labs for %s' % self.name, negative_labs)
         log.info('Generating negative events for %s' % self.name)
         for lab in negative_labs:
+            if self.date_field == 'order':
+                lab_date = lab.date
+            elif self.date_field == 'result':
+                lab_date = lab.result_date
             new_event = Event(
                 name = '%s--negative' % self.test.name,
                 heuristic = self,
                 patient = lab.patient,
-                date = lab.date,
+                date = lab_date,
                 content_object = lab,
                 )
             new_event.save()
@@ -326,11 +338,15 @@ class LabResultPositiveHeuristic(Heuristic):
         log_query('Indeterminate labs for %s' % self.name, indeterminate_labs)
         log.info('Generating indeterminate events for %s' % self.name)
         for lab in indeterminate_labs:
+            if self.date_field == 'order':
+                lab_date = lab.date
+            elif self.date_field == 'result':
+                lab_date = lab.result_date
             new_event = Event(
                 name = '%s--indeterminate' % self.test.name,
                 heuristic = self,
                 patient = lab.patient,
-                date = lab.date,
+                date = lab_date,
                 content_object = lab,
                 )
             new_event.save()
@@ -345,6 +361,7 @@ class LabResultRatioHeuristic(Heuristic):
     '''
     test = models.ForeignKey(AbstractLabTest, blank=False)
     ratio = models.FloatField(blank=False)
+    date_field = models.CharField(max_length=32, blank=False, choices=DATE_FIELD_CHOICES, default='order')
     
     class Meta:
         verbose_name = 'Ratio Lab Result Heuristic'
@@ -382,11 +399,15 @@ class LabResultRatioHeuristic(Heuristic):
         log_query(self.name, positive_labs)
         log.info('Generating new events for %s' % self.name)
         for lab in positive_labs:
+            if self.date_field == 'order':
+                lab_date = lab.date
+            elif self.date_field == 'result':
+                lab_date = lab.result_date
             new_event = Event(
                 name = self.name,
                 heuristic = self,
                 patient = lab.patient,
-                date = lab.date,
+                date = lab_date,
                 content_object = lab,
                 )
             new_event.save()
@@ -402,6 +423,7 @@ class LabResultFixedThresholdHeuristic(Heuristic):
     test = models.ForeignKey(AbstractLabTest, blank=False)
     threshold = models.FloatField(blank=False, 
         help_text='Events are generated for lab results greater than or equal to this value')
+    date_field = models.CharField(max_length=32, blank=False, choices=DATE_FIELD_CHOICES, default='order')
     
     class Meta:
         verbose_name = 'Fixed Threshold Lab Result Heuristic'
@@ -428,11 +450,15 @@ class LabResultFixedThresholdHeuristic(Heuristic):
         positive_labs = unbound_labs.filter(result_float__isnull=False, result_float__gte=self.threshold)
         log_query(self.name, positive_labs)
         for lab in positive_labs:
+            if self.date_field == 'order':
+                lab_date = lab.date
+            elif self.date_field == 'result':
+                lab_date = lab.result_date
             new_event = Event(
                 name = self.name,
                 heuristic = self,
                 patient = lab.patient,
-                date = lab.date,
+                date = lab_date,
                 content_object = lab,
                 )
             new_event.save()
