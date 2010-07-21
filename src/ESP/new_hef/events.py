@@ -14,6 +14,7 @@ from ESP.new_hef.models import LabOrderHeuristic
 from ESP.new_hef.models import LabResultPositiveHeuristic
 from ESP.new_hef.models import LabResultRatioHeuristic
 from ESP.new_hef.models import LabResultFixedThresholdHeuristic
+from ESP.new_hef.models import EncounterHeuristic
 
 
 #-------------------------------------------------------------------------------
@@ -407,18 +408,17 @@ LabOrderHeuristic.objects.get_or_create(
     )
 
 
-#EncounterHeuristic(
-#    name = 'lyme_diagnosis',
-#    long_name = 'Lyme diagnosis',
-#    icd9s = ['088.81'],
-#    )
-#
-#EncounterHeuristic(
-#    name = 'rash',
-#    long_name = 'Rash',
-#    icd9s = ['782.1'],
-#    )
-#
+lyme_diagnosis = EncounterHeuristic.objects.get_or_create(
+    name = 'lyme_diagnosis',
+    icd9_codes = '088.81',
+    )[0]
+
+
+rash = EncounterHeuristic.objects.get_or_create(
+    name = 'rash',
+    icd9_codes = '782.1',
+    )
+
 #MedicationHeuristic(
 #    name = 'doxycycline',
 #    long_name = 'Doxycycline',
@@ -432,23 +432,18 @@ LabOrderHeuristic.objects.get_or_create(
 #    )
 #
 #
-## 
-##--- Pelvic Inflamatory Disease (PID)
-##
+
+
+#-------------------------------------------------------------------------------
 #
+# Pelvic Inflamatory Disease (PID)
 #
-#EncounterHeuristic(
-#    name = 'pid_diagnosis',
-#    long_name = 'PID diagnosis',
-#    icd9s = [
-#        '614.0',
-#        '614.2',
-#        '614.3',
-#        '614.5',
-#        '614.9',
-#        '099.56',
-#        ],
-#    )
+#-------------------------------------------------------------------------------
+
+EncounterHeuristic(
+    name = 'pid_diagnosis',
+    icd9_codes = '614.0, 614.2, 614.3, 614.5, 614.9, 099.56',
+    )[0]
 
 #
 #--- Tuberculosis
@@ -536,23 +531,12 @@ LabOrderHeuristic.objects.get_or_create(
 #    long_name = 'Moxifloxacin prescription',
 #    drugs = ['Moxifloxacin', ],
 #    )
-#
-#EncounterHeuristic(
-#    name = 'tb_diagnosis',
-#    long_name = 'Tuberculosis diagnosis',
-#    icd9s = [
-#        '010.',
-#        '011.',
-#        '012.',
-#        '013.',
-#        '014.',
-#        '015.',
-#        '016.',
-#        '017.',
-#        '018.',
-#        ],
-#    match_style = 'startswith',
-#    )
+
+tb_diagnosis = EncounterHeuristic.objects.get_or_create(
+    name = 'tb_diagnosis',
+    icd9s = '010., 011., 012., 013., 014., 015., 016., 017., 018.',
+    code_match_type = 'startswith',
+    )[0]
 
 
 #-------------------------------------------------------------------------------
@@ -603,22 +587,12 @@ LabOrderHeuristic.objects.get_or_create(
 #        '2g',
 #        ]
 #    )
-#
-#EncounterHeuristic(
-#    name = 'syphilis_diagnosis',
-#    long_name = 'Syphilis Diagnosis',
-#    icd9s = [
-#        '090',
-#        '091',
-#        '092',
-#        '093',
-#        '094',
-#        '095',
-#        '096',
-#        '097',
-#        ],
-#    match_style = 'startswith'
-#    )
+
+syphilis_diagnosis = EncounterHeuristic.objects.get_or_create(
+    name = 'syphilis_diagnosis',
+    icd9s = '090., 091., 092., 093., 094., 095., 096., 097.',
+    code_match_type = 'startswith',
+    )[0]
 
 
 #-------------------------------------------------------------------------------
@@ -897,25 +871,24 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
 #    fixed_threshold_events = [6.0, 6.5],
 #    )
 #
-#EncounterHeuristic(
-#    name = 'pregnancy_diagnosis',
-#    long_name = 'Pregnancy (by ICD9)',
-#    icd9s = ['V22.', 'V23.'],
-#    match_style = 'startswith',
-#    )
+pregnancy_diagnosis = EncounterHeuristic.objects.get_or_create(
+    name = 'pregnancy_diagnosis',
+    icd9s = 'V22., V23.',
+    code_match_type = 'startswith',
+    )[0]
+
 #
 #
 ##--- pregnancy
 #PregnancyHeuristic() # No config needed
 #
-#
-#EncounterHeuristic(
-#    name = 'gdm_diagnosis',
-#    long_name = 'ABN GLUCOSE (several variants)',
-#    icd9s = ['648.8',],
-#    match_style = 'startswith',
-#    )
-#
+
+gdm_diagnosis = EncounterHeuristic.objects.get_or_create(
+    name = 'gdm_diagnosis',
+    icd9s = '648.8',
+    code_match_type = 'startswith',
+    )[0]
+
 #MedicationHeuristic(
 #    name = 'lancets_rx',
 #    long_name = 'Lancets Prescription',
@@ -949,24 +922,22 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
 #    long_name = 'Metronidazole',
 #    drugs = ['metronidazole'],
 #    )
-#
-#EncounterHeuristic(
-#    name = 'diarrhea',
-#    long_name = 'Diarrhea',
-#    icd9s = ['787.91'],
-#    )
-#
-#
+
+diahrrhea_diagnosis = EncounterHeuristic.objects.get_or_create(
+    name = 'diarrhea_diagnosis',
+    icd9s = '787.91',
+    )[0]
+
+
 ##
 ##--- Pertussis
 ##
-#
-#EncounterHeuristic(
-#    name = 'pertussis_diagnosis',
-#    long_name = 'Pertussis diagnosis by ICD9',
-#    icd9s = ['033.0', '033.9'],
-#    )
-#
+
+pertussis_diagnosis = EncounterHeuristic.objects.get_or_create(
+    name = 'pertussis_diagnosis',
+    icd9s = '033.0, 033.9',
+    )[0]
+
 ##
 ## Needs new functionality to examine comment string
 ##

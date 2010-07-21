@@ -268,6 +268,12 @@ class LabResultPositiveHeuristic(Heuristic):
             ]
     
     def generate_events(self):
+        #
+        # TODO:  The negative and indeterminate querysets should be generated 
+        # *after* creating of preceding queries' events, so that labs bound to 
+        # those events are ignored.  This will allow negative lab query to much
+        # simpler.
+        #
         log.debug('Generating events for "%s"' % self.verbose_name)
         unbound_labs = self.test.lab_results.exclude(new_events__heuristic=self)
         log_query('Unbound lab results for %s' % self.name, unbound_labs)
