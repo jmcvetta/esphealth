@@ -440,7 +440,7 @@ rash = EncounterHeuristic.objects.get_or_create(
 #
 #-------------------------------------------------------------------------------
 
-EncounterHeuristic(
+EncounterHeuristic.objects.get_or_create(
     name = 'pid_diagnosis',
     icd9_codes = '614.0, 614.2, 614.3, 614.5, 614.9, 099.56',
     )[0]
@@ -534,7 +534,7 @@ EncounterHeuristic(
 
 tb_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'tb_diagnosis',
-    icd9s = '010., 011., 012., 013., 014., 015., 016., 017., 018.',
+    icd9_codes = '010., 011., 012., 013., 014., 015., 016., 017., 018.',
     code_match_type = 'startswith',
     )[0]
 
@@ -590,7 +590,7 @@ LabOrderHeuristic.objects.get_or_create(
 
 syphilis_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'syphilis_diagnosis',
-    icd9s = '090., 091., 092., 093., 094., 095., 096., 097.',
+    icd9_codes = '090., 091., 092., 093., 094., 095., 096., 097.',
     code_match_type = 'startswith',
     )[0]
 
@@ -858,7 +858,7 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
 ogtt75_2hr = AbstractLabTest.objects.get_or_create(
     name = 'ogtt75_2hr',
     defaults = {
-        'verbose_name':  'Oral Glucose Tolerance Test 75 gram 90 minutes post',
+        'verbose_name':  'Oral Glucose Tolerance Test 75 gram 2 hour post',
         }
     )[0]
 
@@ -1027,7 +1027,7 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
 
 pregnancy_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'pregnancy_diagnosis',
-    icd9s = 'V22., V23.',
+    icd9_codes = 'V22., V23.',
     code_match_type = 'startswith',
     )[0]
 
@@ -1039,7 +1039,7 @@ pregnancy_diagnosis = EncounterHeuristic.objects.get_or_create(
 
 gdm_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'gdm_diagnosis',
-    icd9s = '648.8',
+    icd9_codes = '648.8',
     code_match_type = 'startswith',
     )[0]
 
@@ -1079,7 +1079,7 @@ gdm_diagnosis = EncounterHeuristic.objects.get_or_create(
 
 diahrrhea_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'diarrhea_diagnosis',
-    icd9s = '787.91',
+    icd9_codes = '787.91',
     )[0]
 
 
@@ -1089,7 +1089,7 @@ diahrrhea_diagnosis = EncounterHeuristic.objects.get_or_create(
 
 pertussis_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'pertussis_diagnosis',
-    icd9s = '033.0, 033.9',
+    icd9_codes = '033.0, 033.9',
     )[0]
 
 ##
