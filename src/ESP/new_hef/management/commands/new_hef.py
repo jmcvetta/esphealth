@@ -23,6 +23,7 @@ from optparse import make_option
 
 
 from ESP.new_hef.models import AbstractLabTest
+from ESP.new_hef.models import EncounterHeuristic
 from ESP.nodis.models import Case # hef.core and .models are dependencies of nodis/models, but this command script is not
 from ESP import settings
 from ESP.utils import log
@@ -44,7 +45,7 @@ class Command(BaseCommand):
     
     usage_str = '[options] [NAME, NAME, ...] \n'
     usage_str += '\n'
-    usage_str += 'Runs heuristics for abstract test NAME if specified; otherwise, runs all heuristics.\n'
+    usage_str += 'Runs heuristics for NAME if specified; otherwise, runs all heuristics.\n'
     usage_str += '\n'
     option_list = BaseCommand.option_list + (
         make_option('--list', action='store_true', dest='list', 
@@ -58,36 +59,38 @@ class Command(BaseCommand):
         #
         log.debug('options: %s' % options)
         # 
-        # Main
+        # Create dispatch dictionary of abstract tests and heuristics
         #
+        dispatch = {}
         abstract_tests = AbstractLabTest.objects.all().order_by('name')
+        for test in abstract_tests:
+            dispatch[test.name] = test
+        for eh in EncounterHeuristic.objects.all():
+            assert eh.name not in dispatch
+            dispatch[eh.name] = eh
+        name_list = dispatch.keys()
+        name_list.sort()
         if options['list']:
             print '-' * 80
-            print '%-32s  %s' % ('TEST', 'DESCRIPTION')
+            print '%-32s  %s' % ('NAME', 'DESCRIPTION')
             print '-' * 80
-            for test in abstract_tests:
-                print '%-32s  %s' % (test.name, test.verbose_name)
+            for name in name_list:
+                print '%-32s  %s' % (name, dispatch[name])
             sys.exit()
-        test_names = abstract_tests.values_list('name', flat=True)
         if args:
             #
             # Sanity Check
             #
+            name_list = []
             for name in args:
-                if not name in test_names:
+                if not name in dispatch:
                     sys.stderr.write('Error, unknown test name: %s\n' % name)
                     sys.exit()
-            abstract_tests = abstract_tests.filter(name__in=args)
+                name_list.append(name)
         #
         # Generate Events
         #
         count = 0
-        for test in abstract_tests:
-            log.info('Generating events for abstract test: %s' % test)
-            heuristic_set = set(test.laborderheuristic_set.all())
-            heuristic_set |= set(test.labresultpositiveheuristic_set.all())
-            heuristic_set |= set(test.labresultratioheuristic_set.all())
-            heuristic_set |= set(test.labresultfixedthresholdheuristic_set.all())
-            for heuristic in heuristic_set:
-                count += heuristic.generate_events()
+        for name in name_list:
+            count += dispatch[name].generate_events()
         log.info('Generated %s total new events' % count)
