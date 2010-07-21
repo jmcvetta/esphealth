@@ -702,175 +702,329 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
     )
 
 
+#-------------------------------------------------------------------------------
+#
+# Oral Glucose Tolerance Test 50g (OGTT50)
+#
+#-------------------------------------------------------------------------------
 
-#--- OGTT 50
+ogtt50_fasting = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt50_fasting',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 50 gram Fasting',
+        }
+    )[0]
 
-#LabResultHeuristic(
-#    name = 'ogtt50_fasting',
-#    long_name = 'OB GLUCOSE CHALLENGE, FASTING',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [95],
-#    )
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt50_fasting,
+    threshold = 95,
+    date_field = 'result'
+    )
+
+ogtt50_random = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt50_random',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 50 gram Random',
+        }
+    )[0]
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt50_random,
+    threshold = 190,
+    date_field = 'result'
+    )
+
+ogtt50_1hr = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt50_1hr',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 50 gram 1 hour post',
+        }
+    )[0]
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt50_1hr,
+    threshold = 190,
+    date_field = 'result'
+    )
+
+#-------------------------------------------------------------------------------
 #
-#LabResultHeuristic(
-#    name = 'ogtt50_random',
-#    long_name = 'OB GLUCOSE CHALLENGE, RANDOM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [190],
-#    )
+# Oral Glucose Tolerance Test 75g (OGTT 75)
 #
-#LabResultHeuristic(
-#    name = 'ogtt50_1hr',
-#    long_name = 'GLUCOSE 1 HR POST CHAL.',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [190],
-#    )
+#-------------------------------------------------------------------------------
+
+ogtt75_fasting = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt75_fasting',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 75 gram fasting',
+        }
+    )[0]
+
+LabOrderHeuristic.objects.get_or_create(
+    test=ogtt75_fasting,
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt75_fasting,
+    threshold = 95,
+    date_field = 'result'
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt75_fasting,
+    threshold = 126,
+    date_field = 'result'
+    )
+
+ogtt75_fasting_urine = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt75_fasting_urine',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 75 gram fasting, urine',
+        }
+    )[0]
+
+LabOrderHeuristic.objects.get_or_create(
+    test=ogtt75_fasting_urine,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ogtt75_fasting_urine,
+    date_field = 'result'
+    )
+
+ogtt75_30m = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt75_30m',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 75 gram 30 minutes post',
+        }
+    )[0]
+
+LabOrderHeuristic.objects.get_or_create(
+    test=ogtt75_30m,
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt75_30m,
+    threshold = 200,
+    date_field = 'result'
+    )
+
+ogtt75_1hr = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt75_1hr',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 75 gram 1 hour post',
+        }
+    )[0]
+
+LabOrderHeuristic.objects.get_or_create(
+    test=ogtt75_1hr,
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt75_1hr,
+    threshold = 180,
+    date_field = 'result'
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt75_1hr,
+    threshold = 200,
+    date_field = 'result'
+    )
+
+ogtt75_90m = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt75_90m',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 75 gram 90 minutes post',
+        }
+    )[0]
+
+LabOrderHeuristic.objects.get_or_create(
+    test=ogtt75_90m,
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt75_90m,
+    threshold = 180,
+    date_field = 'result'
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt75_90m,
+    threshold = 200,
+    date_field = 'result'
+    )
+
+ogtt75_2hr = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt75_2hr',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 75 gram 90 minutes post',
+        }
+    )[0]
+
+LabOrderHeuristic.objects.get_or_create(
+    test=ogtt75_2hr,
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt75_2hr,
+    threshold = 155,
+    date_field = 'result'
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt75_2hr,
+    threshold = 200,
+    date_field = 'result'
+    )
+
+#-------------------------------------------------------------------------------
 #
+# Oral Gluclose Tolerance Test 100g (OGTT 100)
 #
-##--- OGTT 75
+#-------------------------------------------------------------------------------
+
+ogtt100_fasting = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt100_fasting',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 100 gram fasting',
+        }
+    )[0]
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt100_fasting,
+    threshold = 95,
+    date_field = 'result'
+    )
+
+ogtt100_fasting_urine = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt100_fasting_urine',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 100 gram fasting (urine)',
+        }
+    )[0]
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ogtt100_fasting_urine,
+    date_field = 'result'
+    )
+
+ogtt100_30m = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt75_2hr',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 100 gram 30 minutes post',
+        }
+    )[0]
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt100_30m,
+    threshold = 200,
+    date_field = 'result'
+    )
+
+ogtt100_1hr = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt100_1hr',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 100 gram 1 hour post',
+        }
+    )[0]
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt100_1hr,
+    threshold = 180,
+    date_field = 'result'
+    )
+
+ogtt100_90m = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt100_90m',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 100 gram 90 minutes post',
+        }
+    )[0]
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt100_90m,
+    threshold = 180,
+    date_field = 'result'
+    )
+
+ogtt100_2hr = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt100_2hr',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 100 gram 2 hour post',
+        }
+    )[0]
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt100_2hr,
+    threshold = 155,
+    date_field = 'result'
+    )
+
+ogtt100_3hr = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt100_3hr',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 100 gram 3 hour post',
+        }
+    )[0]
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt100_3hr,
+    threshold = 140,
+    date_field = 'result'
+    )
+
+ogtt100_4hr = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt100_4hr',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 100 gram 4 hour post',
+        }
+    )[0]
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt100_4hr,
+    threshold = 140,
+    date_field = 'result'
+    )
+
+ogtt100_5hr = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt100_5hr',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 100 gram 5 hour post',
+        }
+    )[0]
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt100_5hr,
+    threshold = 140,
+    date_field = 'result'
+    )
+
+
+#-------------------------------------------------------------------------------
 #
-## We have intra- and postpartum OGTT75 fasting heuristics, because default threshold is different for each
-#LabResultHeuristic(
-#    name = 'ogtt75_fasting',
-#    long_name = 'GLUCOSE FASTING PRE 75 GM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [95, 126],
-#    order_events = True,
-#    )
-#    
-#LabResultHeuristic(
-#    name = 'ogtt75_fasting_urine',
-#    long_name = 'GLUCOSE FASTING, UR',
-#    date_field = 'result',
-#    positive_events = True,
-#    order_events = True,
-#    )
-#    
-#LabResultHeuristic(
-#    name = 'ogtt75_30m',
-#    long_name = 'GLUCOSE 1/2 HR POST 75 GM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [200],
-#    order_events = True,
-#    )
+# Glycated hemoglobin (A1C)
 #
-#LabResultHeuristic(
-#    name = 'ogtt75_1hr',
-#    long_name = 'GLUCOSE 1 HR POST 75 GM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [180, 200],
-#    order_events = True,
-#    )
-#
-#LabResultHeuristic(
-#    name = 'ogtt75_90m',
-#    long_name = 'GLUCOSE 1 1/2 HR POST 75 GM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [180, 200],
-#    order_events = True,
-#    )
-#
-#LabResultHeuristic(
-#    name = 'ogtt75_2hr',
-#    long_name = 'GLUCOSE 2 HR POST 75 GM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [155, 200],
-#    order_events = True,
-#    )
-#
-#
-##--- OGTT 100
-#
-#LabResultHeuristic(
-#    name = 'ogtt100_fasting',
-#    long_name = 'GLUCOSE FASTING PRE 100 GM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [95],
-#    )
-#
-#LabResultHeuristic(
-#    name = 'ogtt100_fasting_urine',
-#    long_name = 'GLUCOSE FASTING PRE 100 GM',
-#    date_field = 'result',
-#    positive_events = True,
-#    )
-#
-#LabResultHeuristic(
-#    name = 'ogtt100_30m',
-#    long_name = 'GLUCOSE 1/2 HR POST 100 GM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [200],
-#    )
-#
-#LabResultHeuristic(
-#    name = 'ogtt100_1hr',
-#    long_name = 'GLUCOSE 1 HR POST 100 GM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [180],
-#    )
-#
-#LabResultHeuristic(
-#    name = 'ogtt100_90m',
-#    long_name = 'GLUCOSE 1 1/2 HR POST 100 GM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [180],
-#    )
-#
-#LabResultHeuristic(
-#    name = 'ogtt100_2hr',
-#    long_name = 'GLUCOSE 2 HR POST 100 GM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [155],
-#    )
-#
-#LabResultHeuristic(
-#    name = 'ogtt100_3hr',
-#    long_name = 'GLUCOSE 3 HR POST 100 GM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [140],
-#    )
-#
-#LabResultHeuristic(
-#    name = 'ogtt100_4hr',
-#    long_name = 'GLUCOSE 4 HR POST 100 GM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [140],
-#    )
-#
-#LabResultHeuristic(
-#    name = 'ogtt100_5hr',
-#    long_name = 'GLUCOSE 5 HR POST 100 GM',
-#    date_field = 'result',
-#    positive_events = False,
-#    fixed_threshold_events = [140],
-#    )
-#
-##
-##-- Gestational Diabetes
-##
-#
-#LabResultHeuristic(
-#    name = 'a1c',
-#    long_name = 'Hemoglobin A1C',
-#    positive_events = False,
-#    fixed_threshold_events = [6.0, 6.5],
-#    )
-#
+#-------------------------------------------------------------------------------
+
+a1c = AbstractLabTest.objects.get_or_create(
+    name = 'a1c',
+    defaults = {
+        'verbose_name':  'Glycated hemoglobin (A1C)',
+        }
+    )[0]
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = a1c,
+    threshold = 6.0,
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = a1c,
+    threshold = 6.5,
+    )
+
+
 pregnancy_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'pregnancy_diagnosis',
     icd9s = 'V22., V23.',
