@@ -36,6 +36,12 @@ DATE_FIELD_CHOICES = [
     ('result', 'Result')
     ]
 
+DOSE_UNIT_CHOICES = [
+    ('mililiters', 'Mililiters'),
+    ('miligrams', 'Miligrams'),
+    ('grams', 'Grams'),
+    ]
+
 MATCH_TYPE_CHOICES = [
     ('exact', 'Exact Match (case sensitive)'),
     ('iexact', 'Exact Match (NOT case sensitive)'),
@@ -70,7 +76,7 @@ class AbstractLabTest(models.Model):
         ordering = ['name']
     
     def __str__(self):
-        return self.name
+        return self.verbose_name
     
     def __get_lab_results(self):
         result = LabResult.objects.none()
@@ -87,6 +93,18 @@ class AbstractLabTest(models.Model):
         log_query('Lab Orders for %s' % self.name, result)
         return result
     lab_orders = property(__get_lab_orders)
+    
+    def generate_events(self):
+        count = 0
+        log.info('Generating events for abstract test: %s' % self)
+        heuristic_set = set(self.laborderheuristic_set.all())
+        heuristic_set |= set(self.labresultpositiveheuristic_set.all())
+        heuristic_set |= set(self.labresultratioheuristic_set.all())
+        heuristic_set |= set(self.labresultfixedthresholdheuristic_set.all())
+        for heuristic in heuristic_set:
+            count += heuristic.generate_events()
+        return count
+ 
     
 
 class LabTestMap(models.Model):
@@ -181,6 +199,7 @@ class LabOrderHeuristic(Heuristic):
     AbstractLabTest than required for lab results.
     '''
     test = models.ForeignKey(AbstractLabTest, blank=False, unique=True)
+    notes = models.TextField(blank=True, null=True)
     
     class Meta:
         verbose_name = 'Lab Order Heuristic'
@@ -225,6 +244,7 @@ class LabResultPositiveHeuristic(Heuristic):
     '''
     test = models.ForeignKey(AbstractLabTest, blank=False, unique=True)
     date_field = models.CharField(max_length=32, blank=False, choices=DATE_FIELD_CHOICES, default='order')
+    notes = models.TextField(blank=True, null=True)
     
     class Meta:
         verbose_name = 'Positive/Negative Lab Result Heuristic'
@@ -371,6 +391,7 @@ class LabResultRatioHeuristic(Heuristic):
     test = models.ForeignKey(AbstractLabTest, blank=False)
     ratio = models.FloatField(blank=False)
     date_field = models.CharField(max_length=32, blank=False, choices=DATE_FIELD_CHOICES, default='order')
+    notes = models.TextField(blank=True, null=True)
     
     class Meta:
         verbose_name = 'Ratio Lab Result Heuristic'
@@ -422,7 +443,7 @@ class LabResultRatioHeuristic(Heuristic):
             new_event.save()
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (positive_labs.count(), self.name))
-        return positive_labs.count() # We can only return one count, and positive is most important
+        return positive_labs.count()
 
 
 class LabResultFixedThresholdHeuristic(Heuristic):
@@ -433,6 +454,7 @@ class LabResultFixedThresholdHeuristic(Heuristic):
     threshold = models.FloatField(blank=False, 
         help_text='Events are generated for lab results greater than or equal to this value')
     date_field = models.CharField(max_length=32, blank=False, choices=DATE_FIELD_CHOICES, default='order')
+    notes = models.TextField(blank=True, null=True)
     
     class Meta:
         verbose_name = 'Fixed Threshold Lab Result Heuristic'
@@ -473,7 +495,90 @@ class LabResultFixedThresholdHeuristic(Heuristic):
             new_event.save()
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (positive_labs.count(), self.name))
-        return positive_labs.count() # We can only return one count, and positive is most important
+        return positive_labs.count() 
+
+
+class Dose(models.Model):
+    '''
+    A measurement of dose for a prescription
+    '''
+    quantity = models.CharField(max_length=32, blank=False)
+    units = models.CharField(max_length=32, blank=False)
+
+
+class PrescriptionHeuristic(Heuristic):
+    '''
+    A heuristic for detecting prescription events
+    '''
+    drug = models.CharField(max_length=64, blank=False)
+    require = models.CharField(max_length=64, blank=True, null=True, 
+        help_text='Prescription must include one or more of these strings.  Separate strings with commas.')
+    exclude = models.CharField(max_length=64, blank=True, null=True, 
+        help_text='Prescription may not include any of these strings.  Separate strings with commas.')
+    pass
+
+
+class EncounterHeuristic(Heuristic):
+    '''
+    A heuristic for detecting encounter ICD9 code based events
+    '''
+    name = models.SlugField(blank=False, unique=True)
+    icd9_codes = models.CharField(max_length=128, blank=False, 
+        help_text='Encounter must include one or more of these ICD9 codes.  Separate codes with commas.')
+    code_match_type = models.CharField(max_length=32, blank=False, choices=MATCH_TYPE_CHOICES, db_index=True, 
+        help_text='Match type for ICD9 code', default='exact')
+    notes = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Encounter Heuristic'
+        unique_together = ['icd9_codes', 'code_match_type']
+    
+    def __str__(self):
+        return self.verbose_name
+    
+    def __get_verbose_name(self):
+        return '%s Encounter Heuristic' % self.name
+    verbose_name = property(__get_verbose_name)
+    
+    def __get_event_names(self):
+        return [self.name,]
+    
+    def generate_events(self):
+        codes = [c.strip() for c in self.icd9_codes.split(',')]
+        unbound = Encounter.objects.exclude(new_events__heuristic=self)
+        encounters = Encounter.objects.none()
+        for c in codes:
+            if self.code_match_type == 'exact':
+                encounters |= unbound.filter(icd9_codes__code__exact=c)
+            elif self.code_match_type == 'iexact':
+                encounters |= unbound.filter(icd9_codes__code__iexact=c)
+            elif self.code_match_type == 'startswith':
+                encounters |= unbound.filter(icd9_codes__code__startswith=c)
+            elif self.code_match_type == 'istartswith':
+                encounters |= unbound.filter(icd9_codes__code__istartswith=c)
+            elif self.code_match_type == 'endswith':
+                encounters |= unbound.filter(icd9_codes__code__endswith=c)
+            elif self.code_match_type == 'iendswith':
+                encounters |= unbound.filter(icd9_codes__code__iendswith=c)
+            elif self.code_match_type == 'contains':
+                encounters |= unbound.filter(icd9_codes__code__contains=c)
+            elif self.code_match_type == 'icontains':
+                encounters |= unbound.filter(icd9_codes__code__icontains=c)
+        log_query('Encounters for %s' % self.name, encounters)
+        log.info('Generating events for "%s"' % self.verbose_name)
+        for enc in encounters:
+            new_event = Event(
+                name = self.name,
+                heuristic = self,
+                patient = enc.patient,
+                date = enc.date,
+                content_object = enc,
+                )
+            new_event.save()
+            log.debug('Saved new event: %s' % new_event)
+        log.info('Generated %s new events for %s' % (encounters.count(), self.name))
+        return encounters.count()
+        
 
 
 class Event(models.Model):
