@@ -18,6 +18,13 @@ Condition            Count
 --------------------------------------------------------------------------------
 {% for item in new_case_summary %}{{ item.condition|stringformat:"-20s" }} {{ item.count }}
 {% endfor %}
+
+NEW CASE DETAILS:
+
+Case ID     Condition        Date          Department
+--------------------------------------------------------------------------------
+{% for case in new_cases %}{{ case.id|stringformat:"-10s" }}  {{ case.condition|stringformat:"-15s" }}  {{ case.date|stringformat:"-12s" }}  {{ case.provider.dept }}
+{% endfor %}
 {% else %}
 No new cases today.</em>
 {% endif %}

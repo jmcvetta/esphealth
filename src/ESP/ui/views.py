@@ -120,6 +120,7 @@ def _populate_status_values():
         'title': _('Status Report'),
         'today_string': today_string,
         'site_name': SITE_NAME,
+        'new_cases': new_cases,
         'all_case_summary': Case.objects.values('condition').annotate(count=Count('pk')).order_by('condition'),
         'new_case_summary': new_cases.values('condition').annotate(count=Count('pk')).order_by('condition'),
         'data_status': Provenance.objects.filter(timestamp__gte=yesterday).values('status').annotate(count=Count('pk')),
