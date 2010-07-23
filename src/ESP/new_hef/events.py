@@ -623,34 +623,29 @@ LabResultPositiveHeuristic.objects.get_or_create(
     test = syphilis_fta_abs,
     )
 
+syphilis_rpr = AbstractLabTest.objects.get_or_create(
+    name = 'syphilis_rpr',
+    defaults = {
+        'verbose_name': 'Syphilis rapid plasma reagin (RPR)',
+        }
+    )[0]
 
-#LabResultHeuristic(
-#    name = 'rpr',
-#    long_name = 'RPR test',
-#    extra_positive_strings = [
-#        '1:8',
-#        '1:16',
-#        '1:32',
-#        '1:64',
-#        '1:128',
-#        '1:256',
-#        '1:512',
-#        '1:1024', ]
-#    )
-#
-#LabResultHeuristic(
-#    name = 'vdrl_serum',
-#    long_name = 'VDRL serum test',
-#    extra_positive_strings = [
-#        '1:8',
-#        '1:16',
-#        '1:32',
-#        '1:64',
-#        '1:128',
-#        '1:256',
-#        '1:512',
-#        '1:1024', ]
-#    )
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = syphilis_rpr,
+    titer = 8, # 1:8 titer
+    )
+
+syphilis_vdrl_serum = AbstractLabTest.objects.get_or_create(
+    name = 'syphilis_vdrl_serum',
+    defaults = {
+        'verbose_name': 'Syphilis VDRL serum',
+        }
+    )[0]
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = syphilis_vdrl_serum,
+    titer = 8, # 1:8 titer
+    )
 
 syphilis_tp_igg = AbstractLabTest.objects.get_or_create(
     name = 'syphilis_tp_igg',
@@ -663,23 +658,17 @@ LabResultPositiveHeuristic.objects.get_or_create(
     test = syphilis_tp_igg,
     )
 
+syphilis_vrdl_csf = AbstractLabTest.objects.get_or_create(
+    name = 'syphilis_vrdl_csf',
+    defaults = {
+        'verbose_name': 'Syphilis VDRL-CSF',
+        }
+    )[0]
 
-#LabResultHeuristic(
-#    name = 'vdrl_csf',
-#    long_name = 'VDRL-CSF test',
-#    extra_positive_strings = [
-#        '1:1',
-#        '1:2',
-#        '1:4',
-#        '1:8',
-#        '1:16',
-#        '1:32',
-#        '1:64',
-#        '1:128',
-#        '1:256',
-#        '1:512',
-#        '1:1024', ]
-#    )
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = syphilis_vrdl_csf,
+    titer = 1, # 1:1 titer
+    )
 
 
 #-------------------------------------------------------------------------------

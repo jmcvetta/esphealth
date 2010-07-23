@@ -5,13 +5,23 @@ from ESP.new_hef.models import AbstractLabTest
 from ESP.new_hef.models import LabTestMap
 from ESP.conf.models import CodeMap
 
+
+TRANSLATION = {
+    'rpr': 'syphilis_rpr',
+    'vdrl_serum': 'syphilis_vdrl_serum',
+    'vdrl_csf': 'syphilis_vdrl_csf',
+    }
+
 test_names = AbstractLabTest.objects.values_list('name', flat=True)
 
 for cm in CodeMap.objects.all():
-    if not cm.heuristic in test_names:
-        print 'No AbstractLabTest found matching "%s"' % cm.heuristic
+    heuristic = cm.heuristic
+    if heuristic in TRANSLATION:
+        heuristic = TRANSLATION[heuristic]
+    if not heuristic in test_names:
+        print 'No AbstractLabTest found matching "%s"' % heuristic
         continue
-    test = AbstractLabTest.objects.get(name=cm.heuristic)
+    test = AbstractLabTest.objects.get(name=heuristic)
     ltm, created = LabTestMap.objects.get_or_create(
         test = test,
         code = cm.native_code,

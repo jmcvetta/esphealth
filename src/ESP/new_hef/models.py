@@ -9,6 +9,7 @@
 @license: LGPL
 '''
 
+import math
 import pprint
 
 from django.db import models
@@ -40,6 +41,21 @@ DOSE_UNIT_CHOICES = [
     ('mililiters', 'Mililiters'),
     ('miligrams', 'Miligrams'),
     ('grams', 'Grams'),
+    ]
+
+TITER_DILUTION_CHOICES = [
+    (1, '1:1'),  
+    (2, '1:2'),
+    (4, '1:4'),
+    (8, '1:8'),
+    (16, '1:16'),
+    (32, '1:32'),
+    (64, '1:64'),
+    (128, '1:128'),
+    (256, '1:256'),
+    (512, '1:512'),
+    (1024, '1:1024'),
+    (2048, '1:2048'),
     ]
 
 MATCH_TYPE_CHOICES = [
@@ -243,6 +259,8 @@ class LabResultPositiveHeuristic(Heuristic):
     A heuristic for detecting positive (& negative) lab result events
     '''
     test = models.ForeignKey(AbstractLabTest, blank=False, unique=True)
+    titer = models.IntegerField(blank=True, null=True, choices=TITER_DILUTION_CHOICES, default=None,
+        help_text='Titer value indicating positive result.  Leave blank if titer result is not anticipated.')
     date_field = models.CharField(max_length=32, blank=False, choices=DATE_FIELD_CHOICES, default='order')
     notes = models.TextField(blank=True, null=True)
     
@@ -288,54 +306,45 @@ class LabResultPositiveHeuristic(Heuristic):
         #else:
             #pos_q = None
         #--------------------------------------------------------------------------------
-        positive_labs = LabResult.objects.none()
-        negative_labs = LabResult.objects.none()
-        code_maps = LabTestMap.objects.filter(test=self.test)
-        for map in code_maps:
-            labs = unbound_labs.filter(native_code=map.code)
-            #
-            # Build numeric comparison queries
-            #
-            num_res_labs = labs.filter(result_float__isnull=False)
-            positive_labs |= num_res_labs.filter(ref_high_float__isnull=False, result_float__gte = F('ref_high_float'))
-            negative_labs |= num_res_labs.filter(ref_high_float__isnull=False, result_float__lt = F('ref_high_float'))
+        positive_q = Q(pk__isnull=True)
+        negative_q = Q(pk__isnull=True)
+        #
+        # Build numeric comparison queries
+        #
+        for map in LabTestMap.objects.filter(test=self.test):
+            num_res_q = Q(native_code=map.code, result_float__isnull=False)
+            positive_q |= num_res_q & Q(ref_high_float__isnull=False, result_float__gte = F('ref_high_float'))
+            negative_q |= num_res_q & Q(ref_high_float__isnull=False, result_float__lt = F('ref_high_float'))
             if map.threshold:
-                positive_labs |= num_res_labs.filter(ref_high_float__isnull=True, result_float__gte=map.threshold)
-                negative_labs |= num_res_labs.filter(ref_high_float__isnull=True, result_float__lt=map.threshold)
+                positive_q |= num_res_q & Q(ref_high_float__isnull=True, result_float__gte=map.threshold)
+                negative_q |= num_res_q & Q(ref_high_float__isnull=True, result_float__lt=map.threshold)
         #
         # Build string queries
         #
-        #
-        pos_str_q = Q(result_string__istartswith=POSITIVE_STRINGS[0])
-        for s in POSITIVE_STRINGS[1:]:
+        pos_strings = list(POSITIVE_STRINGS)
+        neg_strings = list(NEGATIVE_STRINGS)
+        if self.titer:
+            positive_titer_strings = ['1:%s' % 2**i for i in range(math.log(self.titer, 2), math.log(4096,2))]
+            negative_titer_strings = ['1:%s' % 2**i for i in range(math.log(self.titer, 2))]
+            pos_strings += positive_titer_strings
+            neg_strings += negative_titer_strings
+        pos_str_q = Q(result_string__istartswith=pos_strings[0])
+        for s in pos_strings[1:]:
             pos_str_q |= Q(result_string__istartswith=s)
-        positive_labs |= unbound_labs.filter(pos_str_q)
+        positive_q |= pos_str_q
         #
-        neg_str_q = Q(result_string__istartswith=NEGATIVE_STRINGS[0])
-        for s in NEGATIVE_STRINGS[1:]:
+        neg_str_q = Q(result_string__istartswith=neg_strings[0])
+        for s in neg_strings[1:]:
             neg_str_q |= Q(result_string__istartswith=s)
-        negative_labs |= unbound_labs.filter(neg_str_q)
+        negative_q |= neg_str_q
         # Indeterminate events can ONLY be determined from string result
-        ind_str_q = Q(result_string__istartswith=INDETERMINATE_STRINGS[0])
+        indeterminate_q = Q(result_string__istartswith=INDETERMINATE_STRINGS[0])
         for s in INDETERMINATE_STRINGS[1:]:
-            ind_str_q |= Q(result_string__istartswith=s)
-        indeterminate_labs = unbound_labs.filter(ind_str_q)
-        #--------------------------------------------------------------------------------
-        # REMOVED -- is this still necessary/useful?
-        #
-        # Only look at relevant labs.  We do this for both numeric & string 
-        # subqueries, for faster overall query performance.   
-        #
-        #pos_q &= Q(native_code__in=native_codes)
-        #--------------------------------------------------------------------------------
-        #
-        # If a lab is positive, then it definitionally is not negative
-        #
-        pos_pks = positive_labs.values('pk')
-        negative_labs = negative_labs.exclude(pk__in=pos_pks)
+            indeterminate_q |= Q(result_string__istartswith=s)
         #
         # Generate Events
         #
+        positive_labs = unbound_labs.filter(positive_q)
         log_query('Positive labs for %s' % self.name, positive_labs)
         log.info('Generating positive events for %s' % self.name)
         for lab in positive_labs:
@@ -353,6 +362,7 @@ class LabResultPositiveHeuristic(Heuristic):
             new_event.save()
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new positive events for %s' % (positive_labs.count(), self.name))
+        negative_labs = unbound_labs.filter(negative_q)
         log_query('Negative labs for %s' % self.name, negative_labs)
         log.info('Generating negative events for %s' % self.name)
         for lab in negative_labs:
@@ -370,6 +380,7 @@ class LabResultPositiveHeuristic(Heuristic):
             new_event.save()
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new negative events for %s' % (negative_labs.count(), self.name))
+        indeterminate_labs = unbound_labs.filter(indeterminate_q)
         log_query('Indeterminate labs for %s' % self.name, indeterminate_labs)
         log.info('Generating indeterminate events for %s' % self.name)
         for lab in indeterminate_labs:
