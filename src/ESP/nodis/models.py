@@ -1628,6 +1628,9 @@ class Pattern(models.Model):
     hash = models.CharField(max_length=255, blank=False, null=False, unique=True, db_index=True)
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     
+    def __str__(self):
+        return self.pattern
+    
 
 class Case(models.Model):
     '''
