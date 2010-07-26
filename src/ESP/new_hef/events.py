@@ -16,6 +16,7 @@ from ESP.new_hef.models import LabResultPositiveHeuristic
 from ESP.new_hef.models import LabResultRatioHeuristic
 from ESP.new_hef.models import LabResultFixedThresholdHeuristic
 from ESP.new_hef.models import EncounterHeuristic
+from ESP.new_hef.models import PrescriptionHeuristic
 from ESP.new_hef.models import Dose
 
 #-------------------------------------------------------------------------------
@@ -154,15 +155,15 @@ LabResultPositiveHeuristic.objects.get_or_create(
     test = hep_a_igm,
     )
 
-hep_a_tot_ab = AbstractLabTest.objects.get_or_create(
-    name = 'hep_a_tot_ab',
+hep_a_tot_antibody = AbstractLabTest.objects.get_or_create(
+    name = 'hep_a_tot_antibody',
     defaults = {
         'verbose_name': 'Hepatitis A Total Antibodies',
         },
     )[0]
     
 LabResultPositiveHeuristic.objects.get_or_create(
-    test = hep_a_tot_ab,
+    test = hep_a_tot_antibody,
     )
 
 
@@ -172,33 +173,33 @@ LabResultPositiveHeuristic.objects.get_or_create(
 #
 #-------------------------------------------------------------------------------
 
-hep_b_igm_ab = AbstractLabTest.objects.get_or_create(
-    name = 'hep_b_igm_ab',
+hep_b_igm_antibody = AbstractLabTest.objects.get_or_create(
+    name = 'hep_b_igm_antibody',
     defaults = {
         'verbose_name': 'Hepatitis B core IgM antibody',
         }
     )[0]
 
 LabOrderHeuristic.objects.get_or_create(
-    test = hep_b_igm_ab,
+    test = hep_b_igm_antibody,
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
-    test = hep_b_igm_ab,
+    test = hep_b_igm_antibody,
     )
 
-hep_b_core_ab = AbstractLabTest.objects.get_or_create(
-    name = 'hep_b_core_ab',
+hep_b_core_antibody = AbstractLabTest.objects.get_or_create(
+    name = 'hep_b_core_antibody',
     defaults = {
         'verbose_name': 'Hepatitis B core general antibody',
         }
     )[0]
 
 LabResultPositiveHeuristic.objects.get_or_create(
-    test = hep_b_core_ab,
+    test = hep_b_core_antibody,
     )
 
-hep_b_surface_ag = AbstractLabTest.objects.get_or_create(
+hep_b_surface_antigen = AbstractLabTest.objects.get_or_create(
     name = 'hep_b_surface_antigen',
     defaults = {
         'verbose_name': 'Hepatitis B surface antigen',
@@ -206,30 +207,30 @@ hep_b_surface_ag = AbstractLabTest.objects.get_or_create(
     )[0]
     
 LabResultPositiveHeuristic.objects.get_or_create(
-    test = hep_b_surface_ag,
+    test = hep_b_surface_antigen,
     )
 
 
-hep_b_e_ag = AbstractLabTest.objects.get_or_create(
-    name = 'hep_b_e_ag',
+hep_b_e_antigen = AbstractLabTest.objects.get_or_create(
+    name = 'hep_b_e_antigen',
     defaults = {
-        'verbose_name': 'Hep B "e" antigen',
+        'verbose_name': 'Hepatitis B "e" antigen',
         }
     )[0]
 
 LabResultPositiveHeuristic.objects.get_or_create(
-    test = hep_b_e_ag,
+    test = hep_b_e_antigen,
     )
 
 
-# NOTE:  See note in Hep B google doc about "HEPATITIS B DNA, QN, IU/COPIES" 
+# NOTE:  See note in Hepatitis B google doc about "HEPATITIS B DNA, QN, IU/COPIES" 
 # portion of algorithm
 
 
 hep_b_viral_dna = AbstractLabTest.objects.get_or_create(
     name = 'hep_b_viral_dna',
     defaults = {
-        'verbose_name': 'Hep B viral DNA',
+        'verbose_name': 'Hepatitis B viral DNA',
         }
     )[0]
     
@@ -243,15 +244,15 @@ LabResultPositiveHeuristic.objects.get_or_create(
 #
 #-------------------------------------------------------------------------------
 
-hep_e_ab = AbstractLabTest.objects.get_or_create(
-    name = 'hep_e_ab',
+hep_e_antibody = AbstractLabTest.objects.get_or_create(
+    name = 'hep_e_antibody',
     defaults = {
         'verbose_name': 'Hepatitis E antibody',
         }
     )[0]
     
 LabResultPositiveHeuristic.objects.get_or_create(
-    test = hep_e_ab,
+    test = hep_e_antibody,
     )
 
 #-------------------------------------------------------------------------------
@@ -442,19 +443,15 @@ rash_diagnosis = EncounterHeuristic.objects.get_or_create(
     icd9_codes = '782.1',
     )
 
-#MedicationHeuristic(
-#    name = 'doxycycline',
-#    long_name = 'Doxycycline',
-#    drugs = ['doxycycline'],
-#    )
-#
-#MedicationHeuristic(
-#    name = 'lyme_other_antibiotics',
-#    long_name = 'Lyme disease antibiotics other than Doxycycline',
-#    drugs = ['Amoxicillin', 'Cefuroxime', 'Ceftriaxone', 'Cefotaxime'],
-#    )
-#
-#
+doxycycline_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'doxycycline_rx',
+    drugs = 'doxycycline',
+    )[0]
+
+lyme_antibio_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'lyme_other_antibiotic_rx',
+    drugs = 'Amoxicillin, Cefuroxime, Ceftriaxone, Cefotaxime',
+    )[0]
 
 
 #-------------------------------------------------------------------------------
@@ -468,92 +465,79 @@ EncounterHeuristic.objects.get_or_create(
     icd9_codes = '614.0, 614.2, 614.3, 614.5, 614.9, 099.56',
     )[0]
 
-#
-#--- Tuberculosis
-#
 
-#MedicationHeuristic(
-#    name = 'pyrazinamide',
-#    long_name = 'Pyrazinamide prescription',
-#    drugs = [
-#        'Pyrazinamide',
-#        'PZA',
-#        ],
-#    exclude = ['CAPZA',]
-#    )
+#-------------------------------------------------------------------------------
 #
-#MedicationHeuristic(
-#    name = 'isoniazid',
-#    long_name = 'Isoniazid prescription',
-#    drugs = ['Isoniazid'],
-#    exclude = ['INHAL', 'INHIB']
-#    )
+# Tuberculosis
 #
-#MedicationHeuristic(
-#    name = 'ethambutol',
-#    long_name = 'Ethambutol prescription',
-#    drugs = ['Ethambutol'],
-#    )
-#
-#MedicationHeuristic(
-#    name = 'rifampin',
-#    long_name = 'Rifampin prescription',
-#    drugs = ['Rifampin'],
-#    )
-#
-#MedicationHeuristic(
-#    name = 'rifabutin',
-#    long_name = 'Rifabutin prescription',
-#    drugs = ['Rifabutin'],
-#    )
-#
-#MedicationHeuristic(
-#    name = 'rifapentine',
-#    long_name = 'Rifapentine prescription',
-#    drugs = ['Rifapentine'],
-#    )
-#
-#MedicationHeuristic(
-#    name = 'streptomycin',
-#    long_name = 'Streptomycin prescription',
-#    drugs = ['Streptomycin'],
-#    )
-#
-#MedicationHeuristic(
-#    name = 'para_aminosalicyclic_acid',
-#    long_name = 'Para-aminosalicyclic acid prescription',
-#    drugs = ['Para-aminosalicyclic acid'],
-#    )
-#
-#MedicationHeuristic(
-#    name = 'kanamycin',
-#    long_name = 'Kanamycin prescription',
-#    drugs = ['Kanamycin'],
-#    )
-#
-#MedicationHeuristic(
-#    name = 'capreomycin',
-#    long_name = 'Capreomycin prescription',
-#    drugs = ['capreomycin'],
-#    )
-#
-#MedicationHeuristic(
-#    name = 'cycloserine',
-#    long_name = 'Cycloserine prescription',
-#    drugs = ['Cycloserine', ],
-#    )
-#
-#MedicationHeuristic(
-#    name = 'ethionamide',
-#    long_name = 'Ethionamide prescription',
-#    drugs = [ 'Ethionamide',  ],
-#    )
-#
-#MedicationHeuristic(
-#    name = 'moxifloxacin',
-#    long_name = 'Moxifloxacin prescription',
-#    drugs = ['Moxifloxacin', ],
-#    )
+#-------------------------------------------------------------------------------
+
+pyrazinamide_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'pyrazinamide_rx',
+    drugs = 'Pyrazinamide, PZA',
+    exclude = 'CAPZA'
+    )[0]
+
+isoniazid_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'isoniazid_rx',
+    drugs = 'Isoniazid',
+    exclude = 'INHAL, INHIB',
+    )[0]
+
+ethambutol_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'ethambutol_rx',
+    drugs = 'Ethambutol',
+    )[0]
+
+rifampin_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'rifampin_rx',
+    drugs = 'rifampin',
+    )[0]
+
+rifabutin_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'rifabutin_rx',
+    drugs = 'rifabutin',
+    )[0]
+
+rifapentine_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'rifapentine_rx',
+    drugs = 'rifapentine',
+    )[0]
+
+streptomycin_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'streptomycin_rx',
+    drugs = 'streptomycin',
+    )[0]
+
+para_aminosalicyclic_acid_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'para_aminosalicyclic_acid_rx',
+    drugs = 'para-aminosalicyclic acid',
+    )[0]
+
+kanamycin_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'kanamycin_rx',
+    drugs = 'kanamycin',
+    )[0]
+
+capreomycin_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'capreomycin_rx',
+    drugs = 'capreomycin',
+    )[0]
+
+cycloserine_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'cycloserine_rx',
+    drugs = 'cycloserine',
+    )[0]
+
+ethionamide_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'ethionamide_rx',
+    drugs = 'ethionamide',
+    )[0]
+
+moxifloxacin_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'moxifloxacin_rx',
+    drugs = 'moxifloxacin_rx',
+    )[0]
 
 tb_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'tb_diagnosis',
@@ -581,48 +565,35 @@ LabOrderHeuristic.objects.get_or_create(
 
 
 
+#-------------------------------------------------------------------------------
 #
-#--- Syphilis 
+# Syphilis 
 #
+#-------------------------------------------------------------------------------
 
-#MedicationHeuristic(
-#    name = 'penicillin_g',
-#    long_name = 'Pennicilin G',
-#    drugs = [
-#        'PENICILLIN G',
-#        'PEN G',
-#        ]
-#	)
-#
-#MedicationHeuristic(
-#    name = 'doxycycline_7_days',
-#    long_name = 'Doxycycline for >= 7 days',
-#    drugs = ['doxycycline'],
-#    min_quantity = 14, # Need 14 pills for 7 days
-#    )
-#
-#MedicationHeuristic(
-#    name = 'ceftriaxone_1g',
-#    long_name = 'Ceftriaxone dosage >= 1g',
-#    drugs = ['ceftriaxone'],
-#    require = [
-#        '1g',
-#        '2g',
-#        ]
-#    )
+penicillin_g_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'penicillin_g_rx',
+    drugs = 'penicillin g, pen g'
+    )[0]
+
+doxycycline_7_days_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'doxycycline_7_days_rx',
+    drugs = 'doxycycline',
+    min_quantity = 14, # Need 14 pills for 7 days
+    )[0]
+
+ceftriaxone_1g_2g_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'ceftriaxone_1g_2g_rx',
+    drugs = 'ceftriaxone',
+    )[0]
+ceftriaxone_1g_2g_rx.dose.add(dose_1g)
+ceftriaxone_1g_2g_rx.dose.add(dose_2g)
 
 syphilis_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'syphilis_diagnosis',
     icd9_codes = '090., 091., 092., 093., 094., 095., 096., 097.',
     code_match_type = 'startswith',
     )[0]
-
-
-#-------------------------------------------------------------------------------
-#
-# Syphilis
-#
-#-------------------------------------------------------------------------------
 
 syphilis_tppa = AbstractLabTest.objects.get_or_create(
     name = 'syphilis_tppa',
@@ -1055,39 +1026,43 @@ gdm_diagnosis = EncounterHeuristic.objects.get_or_create(
     code_match_type = 'startswith',
     )[0]
 
-#MedicationHeuristic(
-#    name = 'lancets_rx',
-#    long_name = 'Lancets Prescription',
-#    drugs = ['lancets'],
-#    )
+lancets_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'lancets_rx',
+    drugs = 'lancets',
+    )[0]
+
+test_strips_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'test_strips_rx',
+    drugs = 'test strips',
+    )
+
+insulin_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'insulin_rx',
+    drugs = 'insulin',
+    )
+
+#-------------------------------------------------------------------------------
 #
-#MedicationHeuristic(
-#    name = 'test_strips_rx',
-#    long_name = 'Test Strips Prescription',
-#    drugs = ['test strips'],
-#    )
+# Giardiasis
 #
-#MedicationHeuristic(
-#    name = 'insulin_rx',
-#    long_name = 'Insulin Prescription',
-#    drugs = ['insulin'],
-#    )
-#
-#
-##
-##--- Giardiasis
-##
-#
-#LabResultHeuristic(
-#    name = 'giardiasis_antigen',
-#    long_name = 'Giardiasis Antigen',
-#    )
-#
-#MedicationHeuristic(
-#    name = 'metronidazole',
-#    long_name = 'Metronidazole',
-#    drugs = ['metronidazole'],
-#    )
+#-------------------------------------------------------------------------------
+
+giardiasis_antigen = AbstractLabTest.objects.get_or_create(
+    name = 'giardiasis_antigen',
+    defaults = {
+        'verbose_name': 'Giardiasis Antigen',
+        },
+    )[0]
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = giardiasis_antigen,
+    )
+
+
+metronidazole = PrescriptionHeuristic.objects.get_or_create(
+    name = 'metronidazole',
+    drugs = 'metronidazole',
+    )
 
 diahrrhea_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'diarrhea_diagnosis',
@@ -1095,46 +1070,69 @@ diahrrhea_diagnosis = EncounterHeuristic.objects.get_or_create(
     )[0]
 
 
-##
-##--- Pertussis
-##
+#-------------------------------------------------------------------------------
+#
+# Pertussis
+#
+#-------------------------------------------------------------------------------
 
 pertussis_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'pertussis_diagnosis',
     icd9_codes = '033.0, 033.9',
     )[0]
 
-##
-## Needs new functionality to examine comment string
-##
-#LabResultHeuristic(
-#    name = 'pertussis_pcr',
-#    long_name = 'Pertussis PCR test',
-#    order_events = True,
-#    )
-#    
-##
-## Needs new functionality to examine comment string
-##
-#LabResultHeuristic(
-#    name = 'pertussis_culture',
-#    long_name = 'Culture for pertussis',
-#    order_events = True,
-#    )
-#    
-#LabResultHeuristic(
-#    name = 'pertussis_serology',
-#    long_name = 'Pertussis serology',
-#    order_events = True,
-#    )
 #
-#MedicationHeuristic(
-#    name = 'pertussis_rx',
-#    long_name = 'Prescription for Pertussis antibiotics',
-#    drugs = [
-#        'Erythromycin',
-#        'Clarithromycin',
-#        'Azithromycin',
-#        'Trimethoprim-sulfamethoxazole',
-#        ],
-#    )
+# Needs new functionality to examine comment string
+#
+pertussis_pcr = AbstractLabTest.objects.get_or_create(
+    name = 'pertussis_pcr',
+    defaults = {
+        'verbose_name': 'Pertussis PCR',
+        },
+    )[0]
+
+LabOrderHeuristic.objects.get_or_create(
+    test = pertussis_pcr,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = pertussis_pcr,
+    )
+
+#
+# Needs new functionality to examine comment string
+#
+pertussis_culture = AbstractLabTest.objects.get_or_create(
+    name = 'pertussis_culture',
+    defaults = {
+        'verbose_name': 'Pertussis Culture',
+        },
+    )[0]
+
+LabOrderHeuristic.objects.get_or_create(
+    test = pertussis_culture,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = pertussis_culture,
+    )
+
+pertussis_serology = AbstractLabTest.objects.get_or_create(
+    name = 'pertussis_serology',
+    defaults = {
+        'verbose_name': 'Pertussis serology',
+        },
+    )[0]
+
+LabOrderHeuristic.objects.get_or_create(
+    test = pertussis_serology,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = pertussis_culture,
+    )
+
+pertussis_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'pertussis_rx',
+    drugs =  'Erythromycin, Clarithromycin, Azithromycin, Trimethoprim-sulfamethoxazole',
+    )
