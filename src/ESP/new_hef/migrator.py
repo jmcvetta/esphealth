@@ -10,6 +10,15 @@ TRANSLATION = {
     'rpr': 'syphilis_rpr',
     'vdrl_serum': 'syphilis_vdrl_serum',
     'vdrl_csf': 'syphilis_vdrl_csf',
+    'hep_b_surface': 'hep_b_surface_antigen',
+    'tppa': 'syphilis_tppa',
+    'hep_b_core': 'hep_b_core_antibody',
+    'tp_igg': 'syphilis_tp_igg',
+    'hep_e_ab': 'hep_e_antibody',
+    'hep_a_igm': 'hep_a_igm_antibody',
+    'hav_tot': 'hep_a_tot_antibody',
+    'fta_abs': 'syphilis_fta_abs',
+    'hep_b_igm': 'hep_b_igm_antibody',
     }
 
 test_names = AbstractLabTest.objects.values_list('name', flat=True)
