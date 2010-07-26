@@ -144,15 +144,15 @@ LabResultRatioHeuristic.objects.get_or_create(
 #
 #-------------------------------------------------------------------------------
 
-hep_a_igm = AbstractLabTest.objects.get_or_create(
-    name = 'hep_b_igm',
+hep_a_igm_antibody = AbstractLabTest.objects.get_or_create(
+    name = 'hep_a_igm_antibody',
     defaults = {
         'verbose_name': 'Hepatitis A IgM antibody',
         },
     )[0]
     
 LabResultPositiveHeuristic.objects.get_or_create(
-    test = hep_a_igm,
+    test = hep_a_igm_antibody,
     )
 
 hep_a_tot_antibody = AbstractLabTest.objects.get_or_create(
@@ -652,15 +652,15 @@ LabResultPositiveHeuristic.objects.get_or_create(
     test = syphilis_tp_igg,
     )
 
-syphilis_vrdl_csf = AbstractLabTest.objects.get_or_create(
-    name = 'syphilis_vrdl_csf',
+syphilis_vdrl_csf = AbstractLabTest.objects.get_or_create(
+    name = 'syphilis_vdrl_csf',
     defaults = {
         'verbose_name': 'Syphilis VDRL-CSF',
         }
     )[0]
 
 LabResultPositiveHeuristic.objects.get_or_create(
-    test = syphilis_vrdl_csf,
+    test = syphilis_vdrl_csf,
     titer = 1, # 1:1 titer
     )
 
@@ -893,7 +893,7 @@ LabResultPositiveHeuristic.objects.get_or_create(
     )
 
 ogtt100_30m = AbstractLabTest.objects.get_or_create(
-    name = 'ogtt75_2hr',
+    name = 'ogtt100_30m',
     defaults = {
         'verbose_name':  'Oral Glucose Tolerance Test 100 gram 30 minutes post',
         }
