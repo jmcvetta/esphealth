@@ -12,6 +12,7 @@ from ESP.new_hef.models import LabOrderHeuristic
 from ESP.new_hef.models import LabResultPositiveHeuristic
 from ESP.new_hef.models import LabResultRatioHeuristic
 from ESP.new_hef.models import LabResultFixedThresholdHeuristic
+from ESP.new_hef.models import Dose
 
 
 class EventAdmin(admin.ModelAdmin):
@@ -38,6 +39,10 @@ class LabResultRatioHeuristicAdmin(admin.ModelAdmin):
 class LabResultFixedThresholdHeuristicAdmin(admin.ModelAdmin):
     list_display = ['test', 'threshold']
     list_filter = ['test']
+
+class DoseAdmin(admin.ModelAdmin):
+    list_display = ['units', 'quantity']
+    list_filter = ['units']
 
 admin.site.register(AbstractLabTest, AbstractLabTestAdmin)
 admin.site.register(LabTestMap, LabTestMapAdmin)

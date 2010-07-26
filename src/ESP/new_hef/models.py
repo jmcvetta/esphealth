@@ -38,10 +38,18 @@ DATE_FIELD_CHOICES = [
     ]
 
 DOSE_UNIT_CHOICES = [
-    ('mililiters', 'Mililiters'),
-    ('miligrams', 'Miligrams'),
-    ('grams', 'Grams'),
+    ('ml', 'Milliliters'),
+    ('mg', 'Milligrams'),
+    ('g', 'Grams'),
+    ('ug', 'Micrograms'),
     ]
+
+DOSE_UNIT_VARIANTS = {
+    'ml': ['milliliter', 'ml'],
+    'g': ['gram', 'g', 'gm'],
+    'mg': ['milligram', 'mg'],
+    'ug': ['microgram', 'mcg', 'ug'],
+    }
 
 TITER_DILUTION_CHOICES = [
     (1, '1:1'),  
@@ -346,7 +354,7 @@ class LabResultPositiveHeuristic(Heuristic):
         #
         positive_labs = unbound_labs.filter(positive_q)
         log_query('Positive labs for %s' % self.name, positive_labs)
-        log.info('Generating positive events for %s' % self.name)
+        log.info('Generating positive events for %s' % self.test.name)
         for lab in positive_labs:
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -364,7 +372,7 @@ class LabResultPositiveHeuristic(Heuristic):
         log.info('Generated %s new positive events for %s' % (positive_labs.count(), self.name))
         negative_labs = unbound_labs.filter(negative_q)
         log_query('Negative labs for %s' % self.name, negative_labs)
-        log.info('Generating negative events for %s' % self.name)
+        log.info('Generating negative events for %s' % self.test.name)
         for lab in negative_labs:
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -382,7 +390,7 @@ class LabResultPositiveHeuristic(Heuristic):
         log.info('Generated %s new negative events for %s' % (negative_labs.count(), self.name))
         indeterminate_labs = unbound_labs.filter(indeterminate_q)
         log_query('Indeterminate labs for %s' % self.name, indeterminate_labs)
-        log.info('Generating indeterminate events for %s' % self.name)
+        log.info('Generating indeterminate events for %s' % self.test.name)
         for lab in indeterminate_labs:
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -429,7 +437,6 @@ class LabResultRatioHeuristic(Heuristic):
         return [self.name,]
     
     def generate_events(self):
-        log.debug('Generating events for "%s"' % self.verbose_name)
         unbound_labs = self.test.lab_results.exclude(new_events__heuristic=self)
         log_query('Unbound lab results for %s' % self.name, unbound_labs)
         positive_labs = LabResult.objects.none()
@@ -492,11 +499,11 @@ class LabResultFixedThresholdHeuristic(Heuristic):
         return [self.name,]
     
     def generate_events(self):
-        log.info('Generating events for "%s"' % self.verbose_name)
         unbound_labs = self.test.lab_results.exclude(new_events__heuristic=self)
         log_query('Unbound lab results for %s' % self.name, unbound_labs)
         positive_labs = unbound_labs.filter(result_float__isnull=False, result_float__gte=self.threshold)
         log_query(self.name, positive_labs)
+        log.info('Generating events for "%s"' % self.verbose_name)
         for lab in positive_labs:
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -519,8 +526,31 @@ class Dose(models.Model):
     '''
     A measurement of dose for a prescription
     '''
-    quantity = models.CharField(max_length=32, blank=False)
-    units = models.CharField(max_length=32, blank=False)
+    quantity = models.FloatField(blank=False)
+    units = models.CharField(max_length=8, blank=False, choices=DOSE_UNIT_CHOICES)
+    
+    class Meta:
+        unique_together = ['quantity', 'units']
+        ordering = ['units', 'quantity']
+    
+    def __str__(self):
+        return '%s %s' % (self.quantity, self.units)
+    
+    def __get_string_variants(self):
+        '''
+        Returns the various different strings that can represent this dose
+        '''
+        # Represent quantity as an integer ('2' vs '2.0') if appropriate
+        if int(self.quantity) == self.quantity:
+            quantity = int(self.quantity)
+        else:
+            quantity = self.quantity
+        variants = DOSE_UNIT_VARIANTS[self.units]
+        result = ['%s%s' % (quantity, i) for i in variants]   # Without space
+        result += ['%s %s' % (quantity, i) for i in variants] # With space
+        return result
+    string_variants = property(__get_string_variants)
+        
 
 
 class PrescriptionHeuristic(Heuristic):

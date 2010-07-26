@@ -16,6 +16,7 @@ from ESP.new_hef.models import LabResultPositiveHeuristic
 from ESP.new_hef.models import LabResultRatioHeuristic
 from ESP.new_hef.models import LabResultFixedThresholdHeuristic
 from ESP.new_hef.models import EncounterHeuristic
+from ESP.new_hef.models import Dose
 
 #-------------------------------------------------------------------------------
 #
@@ -27,6 +28,17 @@ from ESP.new_hef.models import EncounterHeuristic
 legacy_heuristic = Heuristic.objects.get_or_create(
     id = 0
     )[0]
+
+
+#-------------------------------------------------------------------------------
+#
+# Doses
+#
+#-------------------------------------------------------------------------------
+
+dose_1g = Dose.objects.get_or_create(quantity = 1, units = 'g')[0]
+dose_2g = Dose.objects.get_or_create(quantity = 2, units = 'g')[0]
+
 
 #-------------------------------------------------------------------------------
 #
