@@ -9,13 +9,24 @@
 @license: LGPL
 '''
 
-from ESP.new_hef.models import AbstractLabTest, LabOrderHeuristic
+from ESP.new_hef.models import AbstractLabTest
+from ESP.new_hef.models import Heuristic
 from ESP.new_hef.models import LabOrderHeuristic
 from ESP.new_hef.models import LabResultPositiveHeuristic
 from ESP.new_hef.models import LabResultRatioHeuristic
 from ESP.new_hef.models import LabResultFixedThresholdHeuristic
 from ESP.new_hef.models import EncounterHeuristic
 
+#-------------------------------------------------------------------------------
+#
+# Legacy Event Support
+#
+#-------------------------------------------------------------------------------
+
+# All events created by previous version of HEF will be bound to this heuristic.
+legacy_heuristic = Heuristic.objects.get_or_create(
+    id = 0
+    )[0]
 
 #-------------------------------------------------------------------------------
 #
@@ -414,8 +425,8 @@ lyme_diagnosis = EncounterHeuristic.objects.get_or_create(
     )[0]
 
 
-rash = EncounterHeuristic.objects.get_or_create(
-    name = 'rash',
+rash_diagnosis = EncounterHeuristic.objects.get_or_create(
+    name = 'rash_diagnosis',
     icd9_codes = '782.1',
     )
 
