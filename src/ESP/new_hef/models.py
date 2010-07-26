@@ -27,6 +27,7 @@ from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
 from ESP.emr.models import LabResult
 from ESP.emr.models import LabOrder
+from ESP.emr.models import Prescription
 
 
 POSITIVE_STRINGS = ['reactiv', 'pos', 'detec', 'confirm']
@@ -274,6 +275,7 @@ class LabResultPositiveHeuristic(Heuristic):
     
     class Meta:
         verbose_name = 'Positive/Negative Lab Result Heuristic'
+        ordering = ['test']
     
     def __str__(self):
         return self.verbose_name
@@ -421,6 +423,7 @@ class LabResultRatioHeuristic(Heuristic):
     class Meta:
         verbose_name = 'Ratio Lab Result Heuristic'
         unique_together = ['test', 'ratio']
+        ordering = ['test']
     
     def __str__(self):
         return self.verbose_name
@@ -483,6 +486,7 @@ class LabResultFixedThresholdHeuristic(Heuristic):
     class Meta:
         verbose_name = 'Fixed Threshold Lab Result Heuristic'
         unique_together = ['test', 'threshold']
+        ordering = ['test']
     
     def __str__(self):
         return self.verbose_name
@@ -557,12 +561,69 @@ class PrescriptionHeuristic(Heuristic):
     '''
     A heuristic for detecting prescription events
     '''
-    drug = models.CharField(max_length=64, blank=False)
-    require = models.CharField(max_length=64, blank=True, null=True, 
+    name = models.SlugField(blank=False, unique=True, help_text='Unique name for this heuristic')
+    drugs = models.CharField(max_length=256, blank=False, help_text='Drug names, separated by commas.')
+    dose = models.ManyToManyField(Dose, blank=True, null=True)
+    min_quantity = models.IntegerField(blank=True, null=True, default=None)
+    require = models.CharField(max_length=128, blank=True, null=True, 
         help_text='Prescription must include one or more of these strings.  Separate strings with commas.')
-    exclude = models.CharField(max_length=64, blank=True, null=True, 
+    exclude = models.CharField(max_length=128, blank=True, null=True, 
         help_text='Prescription may not include any of these strings.  Separate strings with commas.')
-    pass
+    
+    class Meta:
+        verbose_name = 'Prescription Heuristic'
+        ordering = ['name']
+        
+    def __str__(self):
+        return self.verbose_name
+    
+    def __get_verbose_name(self):
+        return '%s Prescription Heuristic' % self.name
+    verbose_name = property(__get_verbose_name)
+    
+    def __get_event_names(self):
+        return [self.name,]
+    
+    def generate_events(self):
+        unbound = Prescription.objects.exclude(new_events__heuristic=self)
+        drugs = [s.strip() for s in self.drugs.split(',')]
+        if self.require:
+            require = [s.strip() for s in self.require.split(',')]
+        else:
+            require = []
+        if self.exclude:
+            exclude = [s.strip() for s in self.exclude.split(',')]
+        else:
+            exclude = []
+        prescriptions = Prescription.objects.none()
+        for drug_name in drugs:
+            prescriptions |= unbound.filter(name__icontains=drug_name)
+        if self.dose.all():
+            rxs_by_dose = Prescription.objects.none()
+            for dose_obj in self.dose.all():
+                for dose_string in dose_obj.string_variants:
+                    rxs_by_dose |= unbound.filter(name__icontains=dose_string)
+                    rxs_by_dose |= unbound.filter(dose__icontains=dose_string)
+            prescriptions &= rxs_by_dose
+        if self.min_quantity:
+            prescriptions = prescriptions.filter(quantity__gte=self.min_quantity)
+        for required_string in require:
+            prescriptions &= unbound.filter(name__icontains=required_string)
+        for excluded_string in exclude:
+            prescriptions &= prescriptions.exclude(name__icontains=excluded_string)
+        log_query('Prescriptions for %s' % self.name, prescriptions)
+        log.info('Generating events for "%s"' % self.verbose_name)
+        for rx in prescriptions:
+            new_event = Event(
+                name = self.name,
+                heuristic = self,
+                patient = rx.patient,
+                date = rx.date,
+                content_object = rx,
+                )
+            new_event.save()
+            log.debug('Saved new event: %s' % new_event)
+        return prescriptions.count()
 
 
 class EncounterHeuristic(Heuristic):
@@ -578,6 +639,7 @@ class EncounterHeuristic(Heuristic):
 
     class Meta:
         verbose_name = 'Encounter Heuristic'
+        ordering = ['name']
         unique_together = ['icd9_codes', 'code_match_type']
     
     def __str__(self):

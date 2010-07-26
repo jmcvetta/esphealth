@@ -857,7 +857,7 @@ class Prescription(BasePatientRecord):
     name = models.TextField(max_length=3000, blank=False, db_index=True)
     code = models.CharField('Drug Code (system varies by site)', max_length=128, blank=True, null=True)
     directions = models.TextField(max_length=3000, blank=True, null=True)
-    dose = models.CharField(max_length=200, blank=True, null=True)
+    dose = models.CharField(max_length=200, blank=True, null=True, db_index=True)
     frequency = models.CharField(max_length=200, blank=True, null=True)
     # This really should be quantity_string instead of quantity; but I don't 
     # want to break a bunch of other stuff right now.
@@ -870,6 +870,7 @@ class Prescription(BasePatientRecord):
     end_date = models.DateField(blank=True, null=True)
     # HEF
     events = generic.GenericRelation('hef.Event')
+    new_events = generic.GenericRelation('new_hef.Event')
     
     class Meta:
         ordering = ['date']

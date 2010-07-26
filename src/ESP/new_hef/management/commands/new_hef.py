@@ -24,6 +24,7 @@ from optparse import make_option
 
 from ESP.new_hef.models import AbstractLabTest
 from ESP.new_hef.models import EncounterHeuristic
+from ESP.new_hef.models import PrescriptionHeuristic
 from ESP.nodis.models import Case # hef.core and .models are dependencies of nodis/models, but this command script is not
 from ESP import settings
 from ESP.utils import log
@@ -68,6 +69,9 @@ class Command(BaseCommand):
         for eh in EncounterHeuristic.objects.all():
             assert eh.name not in dispatch
             dispatch[eh.name] = eh
+        for ph in PrescriptionHeuristic.objects.all():
+            assert ph.name not in dispatch
+            dispatch[ph.name] = ph
         name_list = dispatch.keys()
         name_list.sort()
         if options['list']:
