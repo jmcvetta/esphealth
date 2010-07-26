@@ -15,6 +15,9 @@
 import sys
 import datetime
 import optparse
+import threading
+import Queue
+import thread
 
 from django.db import connection
 from django.db import transaction
@@ -51,6 +54,8 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('--list', action='store_true', dest='list', 
             help='List all abstract tests'),
+        make_option('--threads', action='store', dest='thread_count', default=1,
+            type='int', metavar='COUNT', help='Run in COUNT threads'),
         )
 
     def handle(self, *args, **options):
@@ -95,6 +100,31 @@ class Command(BaseCommand):
         # Generate Events
         #
         count = 0
+        queue = Queue.Queue()
+        log.debug('Starting %s threads' % options['thread_count'])
+        for i in range(options['thread_count']):
+            t = ThreadedEventGenerator(queue, dispatch, count)
+            t.setDaemon(True)
+            t.start()
         for name in name_list:
-            count += dispatch[name].generate_events()
+            queue.put(name)
+        queue.join()
         log.info('Generated %s total new events' % count)
+
+
+class ThreadedEventGenerator(threading.Thread):
+    '''
+    Thread subclass to call generate_events() on various HEF objects
+    '''
+    def __init__(self, queue, dispatch, count):
+        threading.Thread.__init__(self)
+        self.queue = queue
+        self.dispatch = dispatch
+        self.count = count
+    
+    def run(self):
+        while True:
+            name = self.queue.get()
+            self.count += self.dispatch[name].generate_events()
+            self.queue.task_done()
+            
