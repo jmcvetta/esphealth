@@ -83,7 +83,7 @@ src/ESP/env-setup.sh -text
 src/ESP/hef/__init__.py -text
 src/ESP/hef/admin.py -text
 src/ESP/hef/core.py -text
-src/ESP/hef/events.py -text
+src/ESP/hef/defaults.py -text
 src/ESP/hef/management/__init__.py -text
 src/ESP/hef/management/commands/__init__.py -text
 src/ESP/hef/management/commands/hef.py -text
