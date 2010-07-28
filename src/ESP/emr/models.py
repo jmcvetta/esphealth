@@ -636,7 +636,6 @@ class LabResult(BasePatientRecord):
     objects = LabResultManager()
     # HEF
     events = generic.GenericRelation('hef.Event')
-    new_events = generic.GenericRelation('new_hef.Event')
     
     class Meta:
         verbose_name = 'Lab Test Result'
@@ -842,7 +841,6 @@ class LabOrder(BasePatientRecord):
     order_type = models.CharField(max_length=128, blank=True, db_index=True)
     procedure_name = models.CharField(max_length=300, blank=True, null=True)
     specimen_source = models.CharField(max_length=128, blank=True, null=True)
-    events = generic.GenericRelation('new_hef.Event')
     
     
     
@@ -870,7 +868,6 @@ class Prescription(BasePatientRecord):
     end_date = models.DateField(blank=True, null=True)
     # HEF
     events = generic.GenericRelation('hef.Event')
-    new_events = generic.GenericRelation('new_hef.Event')
     
     class Meta:
         ordering = ['date']
@@ -970,7 +967,6 @@ class Encounter(BasePatientRecord):
     bmi = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, db_index=True)
     # HEF
     events = generic.GenericRelation('hef.Event')
-    new_events = generic.GenericRelation('new_hef.Event')
     #timespan = generic.GenericRelation('hef.Timespan')
     
     class Meta:
