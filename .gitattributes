@@ -42,6 +42,8 @@ src/ESP/conf/fixtures/native_vaccines.sql -text
 src/ESP/conf/fixtures/vaccines.json -text
 src/ESP/conf/fixtures/vaccines.sql -text
 src/ESP/conf/forms.py -text
+src/ESP/conf/migrations/0001_initial.py -text
+src/ESP/conf/migrations/__init__.py -text
 src/ESP/conf/models.py -text
 src/ESP/conf/tests.py -text
 src/ESP/conf/urls.py -text
@@ -71,6 +73,8 @@ src/ESP/emr/management/commands/load_epic.py -text
 src/ESP/emr/management/commands/load_hl7.py -text
 src/ESP/emr/management/commands/make_fakes.py -text
 src/ESP/emr/management/commands/rename_files.py -text
+src/ESP/emr/migrations/0001_initial.py -text
+src/ESP/emr/migrations/__init__.py -text
 src/ESP/emr/models.py -text
 src/ESP/emr/report.py -text
 src/ESP/emr/sql/multicolumn-indices.postgresql.sql -text
@@ -83,6 +87,8 @@ src/ESP/hef/events.py -text
 src/ESP/hef/management/__init__.py -text
 src/ESP/hef/management/commands/__init__.py -text
 src/ESP/hef/management/commands/hef.py -text
+src/ESP/hef/migrations/0001_initial.py -text
+src/ESP/hef/migrations/__init__.py -text
 src/ESP/hef/models.py -text
 src/ESP/hef/sql/multicolumn-indices.postgresql.sql -text
 src/ESP/hef/tests.py -text
@@ -178,6 +184,8 @@ src/ESP/nodis/management/commands/gdm_report.py -text
 src/ESP/nodis/management/commands/nodis.py -text
 src/ESP/nodis/management/commands/patient_report.py -text
 src/ESP/nodis/management/commands/validate_cases.py -text
+src/ESP/nodis/migrations/0001_initial.py -text
+src/ESP/nodis/migrations/__init__.py -text
 src/ESP/nodis/models.py -text
 src/ESP/nodis/tests.py -text
 src/ESP/secrets.spec.ini -text
@@ -190,6 +198,8 @@ src/ESP/ss/hsph.py -text
 src/ESP/ss/legacy.py -text
 src/ESP/ss/main.py -text
 src/ESP/ss/mapping.py -text
+src/ESP/ss/migrations/0001_initial.py -text
+src/ESP/ss/migrations/__init__.py -text
 src/ESP/ss/models.py -text
 src/ESP/ss/reports.py -text
 src/ESP/ss/run.py -text
@@ -203,6 +213,8 @@ src/ESP/ss/views.py -text
 src/ESP/static/__init__.py -text
 src/ESP/static/admin.py -text
 src/ESP/static/fixtures/initial_data.json -text
+src/ESP/static/migrations/0001_initial.py -text
+src/ESP/static/migrations/__init__.py -text
 src/ESP/static/models.py -text
 src/ESP/static/sql/indices.postgresql.sql -text
 src/ESP/static/tests.py -text
@@ -321,6 +333,8 @@ src/ESP/vaers/main.py -text
 src/ESP/vaers/management/__init__.py -text
 src/ESP/vaers/management/commands/__init__.py -text
 src/ESP/vaers/management/commands/set_rules.py -text
+src/ESP/vaers/migrations/0001_initial.py -text
+src/ESP/vaers/migrations/__init__.py -text
 src/ESP/vaers/models.py -text
 src/ESP/vaers/reports.py -text
 src/ESP/vaers/rules.py -text
