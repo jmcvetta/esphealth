@@ -651,10 +651,15 @@ class hl7Batch:
                 res = lxRec.result_float
                 obx2_type = 'SN'
                 obx5_type = 'SN.2'
+                if lxRec.ref_unit:
+                    ref_unit = lxRec.ref_unit
+                else:
+                    ref_unit = 'Unknown'
             elif lxRec.result_string:
                 res = lxRec.result_string.split()[0]
                 obx2_type = 'ST'
                 obx5_type = ''
+                ref_unit = '' # When ref_unit is blank string, makeOBX does not add an OBX.6 tag
             else:
                 res = ''
                 obx2_type = 'ST'
@@ -665,7 +670,7 @@ class hl7Batch:
                     obx1  = [('','1')],
                     obx2  = [('', obx2_type)],
                     obx3  = [('CE.4',lxRec.output_or_native_code),('CE.6','L')],
-                    obx6  = [('CE.1', lxRec.ref_unit)],
+                    obx6  = [('CE.1', ref_unit)],
                     obx5  = [(obx5_type, res)], 
                     obx7  = [('',lxRange)],
                     obx11 = [('', lxRec.status)],
