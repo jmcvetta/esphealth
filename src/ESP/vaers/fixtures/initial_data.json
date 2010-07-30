@@ -1,0 +1,458 @@
+[
+  {
+    "pk": 1, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Angioneurotic edema", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Allergic urticaria", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 3, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Febrile seizure", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 4, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Seizures (RotaTeq)", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 5, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "confirm", 
+      "name": "Pneumonitis - hypersensitivity", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 6, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Myocarditis", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 7, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "confirm", 
+      "name": "Encephalitis / encephalomyelitis - post immunization", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 8, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "confirm", 
+      "name": "Myelitis - post immunization", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 9, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Encephalitis", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 10, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Arthritis", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 11, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Meningitis / encephalitis", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 12, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Intussusception", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 13, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "confirm", 
+      "name": "Poisoning - mixed bacterial (non-pertussis) vaccine", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 14, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "confirm", 
+      "name": "Poisoning - bacterial vaccine", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 15, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Ataxia", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 16, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "GI bleeding", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 17, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Guillain-Barre", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 18, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "confirm", 
+      "name": "Infection due to vaccine", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 19, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "confirm", 
+      "name": "Hypersensitivity - drug, unspec", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 20, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Bells palsy", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 21, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "confirm", 
+      "name": "Upper respiratory tract hypersensitivity reaction", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 22, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Anaphylactic shock due to serum", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 23, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "confirm", 
+      "name": "Post-immunization reaction", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 24, 
+    "model": "vaers.rule", 
+    "fields": {
+      "category": "default", 
+      "name": "Seizures", 
+      "in_use": true
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "MMR-V", 
+      "ignored_if_past_occurrence": 12, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "MMR-V", 
+      "ignored_if_past_occurrence": 12, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 3, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "MMR-V", 
+      "ignored_if_past_occurrence": null, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 4, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "RotaTeq", 
+      "ignored_if_past_occurrence": null, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 5, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": null, 
+      "ignored_if_past_occurrence": null, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 6, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "RotaTeq", 
+      "ignored_if_past_occurrence": 12, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 7, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": null, 
+      "ignored_if_past_occurrence": null, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 8, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": null, 
+      "ignored_if_past_occurrence": null, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 9, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "MMR-V", 
+      "ignored_if_past_occurrence": 12, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 10, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "MMR-V", 
+      "ignored_if_past_occurrence": 12, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 11, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "RotaTeq", 
+      "ignored_if_past_occurrence": 12, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 12, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "RotaTeq", 
+      "ignored_if_past_occurrence": 12, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 13, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": null, 
+      "ignored_if_past_occurrence": null, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 14, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": null, 
+      "ignored_if_past_occurrence": null, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 15, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "MMR-V", 
+      "ignored_if_past_occurrence": 12, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 16, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "RotaTeq", 
+      "ignored_if_past_occurrence": 12, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 17, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "Menactra", 
+      "ignored_if_past_occurrence": 12, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 18, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": null, 
+      "ignored_if_past_occurrence": null, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 19, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": null, 
+      "ignored_if_past_occurrence": null, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 20, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "Menactra", 
+      "ignored_if_past_occurrence": 12, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 21, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": null, 
+      "ignored_if_past_occurrence": null, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 22, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "MMR-V", 
+      "ignored_if_past_occurrence": 12, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 23, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": null, 
+      "ignored_if_past_occurrence": null, 
+      "heuristic_discarding_codes": []
+    }
+  }, 
+  {
+    "pk": 24, 
+    "model": "vaers.diagnosticseventrule", 
+    "fields": {
+      "heuristic_defining_codes": [], 
+      "source": "Menactra", 
+      "ignored_if_past_occurrence": null, 
+      "heuristic_discarding_codes": []
+    }
+  }
+]

@@ -1,0 +1,72 @@
+{% extends "espbase.html" %}
+{% load esplib %}
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
+{% endblock %}
+
+{% block extrascript %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('#case_table').flexigrid({
+                striped: true,
+                height: 'auto',
+                url: '{% url json_case_grid %}{{ status }}/',
+                dataType: 'json',
+                singleSelect: true,
+                {% if perms.esp.view_phi %}
+                    colModel: [
+                        {display: 'Case ID #', name: 'id', width: 50, sortable: true, align: 'left'},
+                        {display: 'Condition', name: 'condition', width: 100, sortable: true, align: 'left'},
+                        {display: 'Date', name: 'date_ordered', width: 75, sortable: true, align: 'left'},
+                        {display: 'Provider Site', name: 'site', width: 150, sortable: true, align: 'left'},
+                        {# Begin PHI #}
+                        {display: 'Patient Name', name: 'name', width: 150, sortable: true, align: 'left'},
+                        {display: 'MRN', name: 'mrn', width: 50, sortable: true, align: 'left'},
+                        {display: 'Patient Address', name: 'address', width: 150, sortable: true, align: 'left'},
+                        {# End PHI #}
+                        {display: 'Workflow State', name: 'workflow', width: 100, sortable: true, align: 'left'},
+                        {display: 'Last Updated', name: 'last_updated', width: 75, sortable: true, align: 'left'},
+                        {display: 'Previously Notified Cases', name: 'prev_cases', width: 100, sortable: true, align: 'left'},
+                        ],
+                    searchitems: [
+                        {display: 'Condition', name: 'condition'},
+                        {# Begin PHI #}
+                        {display: 'Patient Last Name', name: 'name'},
+                        {display: 'Medical Record #', name: 'mrn'},
+                        {# End PHI #}
+                        ],
+                {% else %}
+                    colModel: [
+                        {display: 'Case ID #', name: 'id', width: 50, sortable: true, align: 'left'},
+                        {display: 'Condition', name: 'condition', width: 100, sortable: true, align: 'left'},
+                        {display: 'Date', name: 'date_ordered', width: 100, sortable: true, align: 'left'},
+                        {display: 'Provider Site', name: 'site', width: 200, sortable: true, align: 'left'},
+                        {display: 'Workflow State', name: 'workflow', width: 100, sortable: true, align: 'left'},
+                        {display: 'Last Updated', name: 'last_updated', width: 100, sortable: true, align: 'left'},
+                        {display: 'Previously Notified Cases', name: 'prev_cases', width: 100, sortable: true, align: 'left'},
+                        ],
+                    searchitems: [
+                        {display: 'Condition', name: 'condition'},
+                        ],
+                {% endif %}
+                sortname: 'id',
+                sortorder: 'asc',
+                usepager: 'true',
+                width: '100%',
+                rpOptions: [10, 25, 50, 100],
+                rp: {{ default_rp }},
+                showToggleBtn: false,
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+
+
+<table id="case_table">
+</table>
+
+
+{% endblock%}

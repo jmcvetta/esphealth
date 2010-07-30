@@ -1,0 +1,87 @@
+This is an at least partial list of people who have contributed to the ESP
+Health project.  The structure of this file shamelessly apes that of the the
+Linux Kernel's CREDITS file.  It is sorted by name, and formatted in a format
+that allows for easy grepping and beautification by scripts.  The fields are:
+name (N), email (E), web-address (W), PGP key ID and fingerprint (P),
+description (D), and snail-mail address (S). 
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+N: Guptha Baskaran
+E: gbaskaran@metrohealth.org
+D: Giardiasis definition; testing feedback
+S: MetroHealth System
+S: 2500 MetroHealth Drive
+S: Cleveland, OH 44109
+
+N: George Bieber
+E: george.bieber@channing.harvard.edu 
+D: System administrator
+S: Bioinformatics Group
+S: Channing Laboratory, 4Fl
+S: 181 Longwood Ave
+S: Boston, MA 02215
+
+N: Julie Dunn
+E: Julie_Dunn@harvardpilgrim.org
+D: Project manager
+S: Harvard Pilgrim Healthcare Institute
+S: 133 Brookline Avenue, 6Fl
+S: Boston, MA 02215
+
+N: Xuanlin Hou
+E: rexua@channing.harvard.edu 
+D: Early ESP code
+S: Bioinformatics Group
+S: Channing Laboratory, 4Fl
+S: 181 Longwood Ave
+S: Boston, MA 02215
+
+N: Mike Klompas, MD
+E: mklompas@partners.org
+D: Formal disease definitions on which ESP's algorithms are based
+S: Department of Population Medicine
+S: Harvard Medical School
+S: 133 Brookline Avenue, 6Fl
+S: Boston, MA 02215
+
+N: Ross Lazarus, MBBS, MPH
+E: ross.lazarus@channing.harvard.edu
+D: Primary investigator on the project; original ESP design and code
+S: Bioinformatics Group
+S: Channing Laboratory, 4Fl
+S: 181 Longwood Ave
+S: Boston, MA 02215
+
+N: Raphael Lullis
+E: raphael.lullis@channing.harvard.edu
+D: Syndromic surveillance & VAERS; data faker; most tests
+S: Bioinformatics Group
+S: Channing Laboratory, 4Fl
+S: 181 Longwood Ave
+S: Boston, MA 02215
+
+N: Jason McVetta
+E: jason.mcvetta@channing.harvard.edu
+D: Overall architecture; HEF & Nodis; most documentation
+S: Bioinformatics Group
+S: Channing Laboratory, 4Fl
+S: 181 Longwood Ave
+S: Boston, MA 02215
+
+N: Jody Sylvia
+E: jody.slyvia@channing.harvard.edu
+D: Project Manager
+S: Bioinformatics Group
+S: Channing Laboratory, 4Fl
+S: 181 Longwood Ave
+S: Boston, MA 02215
+
+N: John Ziniti
+E: john.ziniti@channing.harvard.edu 
+D: System administrator
+S: Bioinformatics Group
+S: Channing Laboratory, 4Fl
+S: 181 Longwood Ave
+S: Boston, MA 02215

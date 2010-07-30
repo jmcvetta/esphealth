@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block extrascript %}
+<script type="text/javascript" src="{{ site_javascript_folder }}vaers.js">
+</script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+   makeGrid($("#case_table"), "{% url vaers.views.list_cases %}");
+});
+</script>
+{% endblock %}
+
+{% block extrastyle %}
+<link rel="stylesheet" type="text/css" href="{{ site_css_folder }}vaers.css" />
+<link rel="stylesheet" type="text/css" href="{{ site_javascript_folder }}flexigrid/css/flexigrid/flexigrid.css" />
+
+{% endblock %}
+
+
+
+{% block content %}
+<div class="warning" id="banner_no_email">
+  <h2>No email to send notifications</h2>
+  <p>
+    You haven't set the email address where the notifications will be
+    sent out to. Please, <span class="button" onClick="promptEmail();">click here</span> to
+    be able to receive demonstration messages.
+  </p>
+</div>
+
+<div style="display:none;" class="info" id="banner_info_email">
+  Currently set to send detailed reports to <span id="email_address"></span>. <span class="button" onClick="promptEmail();">Change it here</span>.
+</div>
+
+<div class="warning" id="banner">
+  <span id="btn_close_banner" onClick="hideDemoWarning();" class="button">Dismiss</span>
+  <div id="banner_content">
+  <h2>Warning: Feature is only for demonstration purposes.</h2>  
+  <p>
+    In a "real world" scenario, cases that are detected by ESP are
+    mailed to the physician with a randomly generated URL. To receive
+    such link, just click "Get Details" button for one of the
+    cases. You need to provide your email address, and
+    you <em>should</em> receive an email with the link to the detailed
+    case information.
+  </p>
+  </div>
+
+</div>
+
+{% include "widgets/vaers/case_grid.html" %} 
+
+
+{% endblock %}
+
