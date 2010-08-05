@@ -126,7 +126,10 @@ class DatabaseOperations(object):
         if self.debug:
             print "   = %s" % sql, params
 
-        get_logger().debug('south execute "%s" with params "%s"' % (sql, params))
+        get_logger().debug('south execute "%s" with params "%s"' % (sql, params), extra={
+            'sql': sql,
+            'params': params,
+        })
 
         if self.dry_run:
             return []
@@ -282,6 +285,15 @@ class DatabaseOperations(object):
             return field.db_type(connection=self._get_connection())
         except TypeError:
             return field.db_type()
+        
+    def _alter_set_defaults(self, field, name, params, sqls): 
+        "Subcommand of alter_column that sets default values (overrideable)"
+        # Next, set any default
+        if not field.null and field.has_default():
+            default = field.get_default()
+            sqls.append(('ALTER COLUMN %s SET DEFAULT %%s ' % (self.quote_name(name),), [default]))
+        else:
+            sqls.append(('ALTER COLUMN %s DROP DEFAULT' % (self.quote_name(name),), []))
 
     def alter_column(self, table_name, name, field, explicit_name=True, ignore_constraints=False):
         """
@@ -294,6 +306,9 @@ class DatabaseOperations(object):
         @param name: The name of the column to alter
         @param field: The new field definition to use
         """
+        
+        if self.dry_run:
+            return
 
         # hook for the field to do any resolution prior to it's attributes being queried
         if hasattr(field, 'south_init'):
@@ -330,21 +345,20 @@ class DatabaseOperations(object):
         }
 
         # SQLs is a list of (SQL, values) pairs.
-        sqls = [(self.alter_string_set_type % params, [])]
-
-        # Next, set any default
-        if not field.null and field.has_default():
-            default = field.get_default()
-            sqls.append(('ALTER COLUMN %s SET DEFAULT %%s ' % (self.quote_name(name),), [default]))
-        else:
-            sqls.append(('ALTER COLUMN %s DROP DEFAULT' % (self.quote_name(name),), []))
-
-
+        sqls = []
+        
+        # Only alter the column if it has a type (Geometry ones sometimes don't)
+        if params["type"] is not None:
+            sqls.append((self.alter_string_set_type % params, []))
+        
         # Next, nullity
         if field.null:
             sqls.append((self.alter_string_set_null % params, []))
         else:
             sqls.append((self.alter_string_drop_null % params, []))
+
+        # Next, set any default
+        self._alter_set_defaults(field, name, params, sqls)
 
         # Finally, actually change the column
         if self.allows_combined_alters:
@@ -500,30 +514,31 @@ class DatabaseOperations(object):
             sqlparams = ()
             # if the field is "NOT NULL" and a default value is provided, create the column with it
             # this allows the addition of a NOT NULL field to a table with existing rows
-            if not field.null and not getattr(field, '_suppress_default', False) and field.has_default():
-                default = field.get_default()
-                # If the default is actually None, don't add a default term
-                if default is not None:
-                    # If the default is a callable, then call it!
-                    if callable(default):
-                        default = default()
-                    # Now do some very cheap quoting. TODO: Redesign return values to avoid this.
-                    if isinstance(default, basestring):
-                        default = "'%s'" % default.replace("'", "''")
-                    elif isinstance(default, (datetime.date, datetime.time, datetime.datetime)):
-                        default = "'%s'" % default
-                    # Escape any % signs in the output (bug #317)
-                    if isinstance(default, basestring):
-                        default = default.replace("%", "%%")
-                    # Add it in
-                    sql += " DEFAULT %s"
-                    sqlparams = (default)
-            elif (not field.null and field.blank) or ((field.get_default() == '') and (not getattr(field, '_suppress_default', False))):
-                if field.empty_strings_allowed and self._get_connection().features.interprets_empty_strings_as_nulls:
-                    sql += " DEFAULT ''"
-                # Error here would be nice, but doesn't seem to play fair.
-                #else:
-                #    raise ValueError("Attempting to add a non null column that isn't character based without an explicit default value.")
+            if not getattr(field, '_suppress_default', False):
+                if field.has_default():
+                    default = field.get_default()
+                    # If the default is actually None, don't add a default term
+                    if default is not None:
+                        # If the default is a callable, then call it!
+                        if callable(default):
+                            default = default()
+                        # Now do some very cheap quoting. TODO: Redesign return values to avoid this.
+                        if isinstance(default, basestring):
+                            default = "'%s'" % default.replace("'", "''")
+                        elif isinstance(default, (datetime.date, datetime.time, datetime.datetime)):
+                            default = "'%s'" % default
+                        # Escape any % signs in the output (bug #317)
+                        if isinstance(default, basestring):
+                            default = default.replace("%", "%%")
+                        # Add it in
+                        sql += " DEFAULT %s"
+                        sqlparams = (default)
+                elif (not field.null and field.blank) or (field.get_default() == ''):
+                    if field.empty_strings_allowed and self._get_connection().features.interprets_empty_strings_as_nulls:
+                        sql += " DEFAULT ''"
+                    # Error here would be nice, but doesn't seem to play fair.
+                    #else:
+                    #    raise ValueError("Attempting to add a non null column that isn't character based without an explicit default value.")
 
             if field.rel and self.supports_foreign_keys:
                 self.add_deferred_sql(
@@ -760,7 +775,7 @@ class DatabaseOperations(object):
         self.pending_create_signals.append((app_label, model_names))
 
 
-    def send_pending_create_signals(self):
+    def send_pending_create_signals(self, verbosity=0, interactive=False):
         # Group app_labels together
         signals = SortedDict()
         for (app_label, model_names) in self.pending_create_signals:
@@ -770,11 +785,14 @@ class DatabaseOperations(object):
                 signals[app_label] = list(model_names)
         # Send only one signal per app.
         for (app_label, model_names) in signals.iteritems():
-            self.really_send_create_signal(app_label, list(set(model_names)))
+            self.really_send_create_signal(app_label, list(set(model_names)),
+                                           verbosity=verbosity,
+                                           interactive=interactive)
         self.pending_create_signals = []
 
 
-    def really_send_create_signal(self, app_label, model_names):
+    def really_send_create_signal(self, app_label, model_names,
+                                  verbosity=0, interactive=False):
         """
         Sends a post_syncdb signal for the model specified.
 
@@ -801,9 +819,6 @@ class DatabaseOperations(object):
                 created_models.append(model)
 
         if created_models:
-            # syncdb defaults -- perhaps take these as options?
-            verbosity = 1
-            interactive = True
 
             if hasattr(dispatcher, "send"):
                 # Older djangos

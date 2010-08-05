@@ -52,11 +52,7 @@ class Command(BaseCommand):
             self.error("You must provide an app to create a migration for.\n" + self.usage_str)
         
         # Get the Migrations for this app (creating the migrations dir if needed)
-        try:
-            migrations = Migrations(app)
-        except NoMigrations:
-            Migrations.create_migrations_directory(app, verbose=verbosity > 0)
-            migrations = Migrations(app)
+        migrations = Migrations(app, force_creation=True, verbose_creation=verbosity > 0)
         
         # See what filename is next in line. We assume they use numbers.
         new_filename = migrations.next_filename(name)
@@ -113,15 +109,16 @@ from south.v2 import DataMigration
 from django.db import models
 
 class Migration(DataMigration):
-    
+
     def forwards(self, orm):
         "Write your forwards methods here."
-    
-    
+
+
     def backwards(self, orm):
         "Write your backwards methods here."
-    
+
+
     models = %(frozen_models)s
-    
+
     %(complete_apps)s
 """

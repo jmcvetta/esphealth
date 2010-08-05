@@ -23,6 +23,7 @@ class TestBrokenMigration(Monkeypatcher):
         self.assertRaises(
             exceptions.DependsOnUnmigratedApplication,
             Migrations.calculate_dependencies,
+            force=True,
         )
         #depends_on_unknown = self.brokenapp['0002_depends_on_unknown']
         #self.assertRaises(exceptions.DependsOnUnknownMigration,
@@ -39,7 +40,7 @@ class TestMigration(Monkeypatcher):
         super(TestMigration, self).setUp()
         self.fakeapp = Migrations('fakeapp')
         self.otherfakeapp = Migrations('otherfakeapp')
-        Migrations.calculate_dependencies()
+        Migrations.calculate_dependencies(force=True)
 
     def test_str(self):
         migrations = [str(m) for m in self.fakeapp]
@@ -169,7 +170,7 @@ class TestMigrationDependencies(Monkeypatcher):
         self.deps_a = Migrations('deps_a')
         self.deps_b = Migrations('deps_b')
         self.deps_c = Migrations('deps_c')
-        Migrations.calculate_dependencies()
+        Migrations.calculate_dependencies(force=True)
 
     def test_dependencies(self):
         self.assertEqual(
@@ -246,18 +247,18 @@ class TestMigrationDependencies(Monkeypatcher):
                           [self.deps_a['0001_a'],
                            self.deps_a['0002_a'],
                            self.deps_a['0003_a']],
-                          [self.deps_a['0001_a'],
+                          [self.deps_b['0001_b'],
+                           self.deps_a['0001_a'],
                            self.deps_a['0002_a'],
-                           self.deps_a['0003_a'],
-                           self.deps_b['0001_b'],
                            self.deps_b['0002_b'],
+                           self.deps_a['0003_a'],
                            self.deps_b['0003_b'],
                            self.deps_a['0004_a']],
-                          [self.deps_a['0001_a'],
+                          [self.deps_b['0001_b'],
+                           self.deps_a['0001_a'],
                            self.deps_a['0002_a'],
-                           self.deps_a['0003_a'],
-                           self.deps_b['0001_b'],
                            self.deps_b['0002_b'],
+                           self.deps_a['0003_a'],
                            self.deps_b['0003_b'],
                            self.deps_a['0004_a'],
                            self.deps_a['0005_a']]],
@@ -413,7 +414,7 @@ class TestCircularDependencies(Monkeypatcher):
     installed_apps = ["circular_a", "circular_b"]
 
     def test_plans(self):
-        Migrations.calculate_dependencies()
+        Migrations.calculate_dependencies(force=True)
         circular_a = Migrations('circular_a')
         circular_b = Migrations('circular_b')
         self.assertRaises(
@@ -691,13 +692,17 @@ class TestMigrationLogic(Monkeypatcher):
                          fakeapp['0003_alter_spam'].forwards_plan())
         
         # And a complex one.
-        self.assertEqual([fakeapp['0001_spam'],
-                          otherfakeapp['0001_first'],
-                          otherfakeapp['0002_second'],
-                          fakeapp['0002_eggs'],
-                          fakeapp['0003_alter_spam'],
-                          otherfakeapp['0003_third']],
-                         otherfakeapp['0003_third'].forwards_plan())
+        self.assertEqual(
+            [
+                fakeapp['0001_spam'],
+                otherfakeapp['0001_first'],
+                otherfakeapp['0002_second'],
+                fakeapp['0002_eggs'],
+                fakeapp['0003_alter_spam'],
+                otherfakeapp['0003_third']
+            ],
+            otherfakeapp['0003_third'].forwards_plan(),
+        )
 
 
 class TestMigrationUtils(Monkeypatcher):
@@ -839,7 +844,7 @@ class TestUtils(unittest.TestCase):
                  'B2': ['B1', 'A2'],
                  'B3': ['B2']}
         self.assertCircularDependency(
-            ['B1', 'A2', 'A1', 'B2', 'B1'],
+            ['A2', 'A1', 'B2', 'A2'],
             'A3',
             graph,
         )
@@ -850,7 +855,7 @@ class TestUtils(unittest.TestCase):
                  'B2': ['B1', 'A2'],
                  'B3': ['B2']}
         self.assertCircularDependency(
-            ['B3', 'B2', 'B1', 'A2', 'A1', 'B3'],
+            ['B2', 'A2', 'A1', 'B3', 'B2'],
             'A3',
             graph,
         )

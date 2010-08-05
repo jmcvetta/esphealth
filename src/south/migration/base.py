@@ -131,10 +131,11 @@ class Migrations(list):
     
     def migrations_module(self):
         "Returns the module name of the migrations module for this"
+        app_label = application_to_app_label(self.application)
         if hasattr(settings, "SOUTH_MIGRATION_MODULES"):
-            if self.application.__name__ in settings.SOUTH_MIGRATION_MODULES:
+            if app_label in settings.SOUTH_MIGRATION_MODULES:
                 # There's an override.
-                return settings.SOUTH_MIGRATION_MODULES[self.application.__name__]
+                return settings.SOUTH_MIGRATION_MODULES[app_label]
         return self._application.__name__ + '.migrations'
 
     def get_application(self):
@@ -216,12 +217,15 @@ class Migrations(list):
     def full_name(self):
         return self._migrations.__name__
 
-    @staticmethod
-    def calculate_dependencies():
+    @classmethod
+    def calculate_dependencies(cls, force=False):
         "Goes through all the migrations, and works out the dependencies."
+        if getattr(cls, "_dependencies_done", False) and not force:
+            return
         for migrations in all_migrations():
             for migration in migrations:
                 migration.calculate_dependencies()
+        cls._dependencies_done = True
     
     @staticmethod
     def invalidate_all_modules():
@@ -287,7 +291,7 @@ class Migration(object):
             migration = sys.modules[full_name]
         except KeyError:
             try:
-                migration = __import__(full_name, '', '', ['Migration'])
+                migration = __import__(full_name, {}, {}, ['Migration'])
             except ImportError, e:
                 raise exceptions.UnknownMigration(self, sys.exc_info())
             except Exception, e:

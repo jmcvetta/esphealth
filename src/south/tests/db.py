@@ -189,10 +189,6 @@ class TestOperations(unittest.TestCase):
         Test the primary key operations
         """
         
-        # SQLite backend doesn't support this yet.
-        if db.backend_name == "sqlite3":
-            return
-        
         db.create_table("test_pk", [
             ('id', models.IntegerField(primary_key=True)),
             ('new_pkey', models.IntegerField()),
@@ -200,12 +196,37 @@ class TestOperations(unittest.TestCase):
         ])
         db.execute_deferred_sql()
         # Remove the default primary key, and make eggs it
-        db.drop_primary_key("test_pk")
+        db.delete_primary_key("test_pk")
         db.create_primary_key("test_pk", "new_pkey")
         # Try inserting a now-valid row pair
         db.execute("INSERT INTO test_pk (id, new_pkey, eggs) VALUES (1, 2, 3)")
         db.execute("INSERT INTO test_pk (id, new_pkey, eggs) VALUES (1, 3, 4)")
         db.delete_table("test_pk")
+    
+    def test_primary_key_implicit(self):
+        """
+        Tests changing primary key implicitly.
+        """
+        
+        # This is ONLY important for SQLite. It's not a feature we support, but
+        # not implementing it means SQLite fails (due to the table-copying weirdness).
+        if db.backend_name != "sqlite3":
+            return
+        
+        db.create_table("test_pki", [
+            ('id', models.IntegerField(primary_key=True)),
+            ('new_pkey', models.IntegerField()),
+            ('eggs', models.IntegerField(unique=True)),
+        ])
+        db.execute_deferred_sql()
+        # Remove the default primary key, and make eggs it
+        db.alter_column("test_pki", "id", models.IntegerField())
+        db.alter_column("test_pki", "new_pkey", models.IntegerField(primary_key=True))
+        # Try inserting a now-valid row pair
+        db.execute("INSERT INTO test_pki (id, new_pkey, eggs) VALUES (1, 2, 3)")
+        db.execute("INSERT INTO test_pki (id, new_pkey, eggs) VALUES (1, 3, 4)")
+        db.delete_table("test_pki")
+        
     
     def test_add_columns(self):
         """
@@ -219,7 +240,12 @@ class TestOperations(unittest.TestCase):
         db.add_column("test_addc", "add1", models.IntegerField(default=3), keep_default=False)
         # Add a FK with keep_default=False (#69)
         User = db.mock_model(model_name='User', db_table='auth_user', db_tablespace='', pk_field_name='id', pk_field_type=models.AutoField, pk_field_args=[], pk_field_kwargs={})
+        # insert some data so we can test the default value of the added fkey
+        db.execute("INSERT INTO test_addc (eggs, add1) VALUES (1, 2)")
         db.add_column("test_addc", "user", models.ForeignKey(User, null=True), keep_default=False)
+        # try selecting from the user_id column to make sure it was actually created
+        val = db.execute("SELECT user_id FROM test_addc")[0][0]
+        self.assertEquals(val, None)
         db.delete_column("test_addc", "add1")
         db.delete_table("test_addc")
     
@@ -234,7 +260,19 @@ class TestOperations(unittest.TestCase):
         # Change eggs to be a FloatField
         db.alter_column("test_alterc", "eggs", models.FloatField())
         db.delete_table("test_alterc")
-        
+    
+    def test_mysql_defaults(self):
+        """
+        Test MySQL default handling for BLOB and TEXT.
+        """
+        db.create_table("test_altermyd", [
+            ('spam', models.BooleanField(default=False)),
+            ('eggs', models.TextField()),
+        ])
+        # Change eggs to be a FloatField
+        db.alter_column("test_altermyd", "eggs", models.TextField(null=True))
+        db.delete_table("test_altermyd")
+    
     def test_alter_column_postgres_multiword(self):
         """
         Tests altering columns with multiple words in Postgres types (issue #125)
