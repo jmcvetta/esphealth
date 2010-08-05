@@ -25,9 +25,9 @@ from django.core.management.base import BaseCommand
 from optparse import make_option
 
 
-from ESP.new_hef.models import AbstractLabTest
-from ESP.new_hef.models import EncounterHeuristic
-from ESP.new_hef.models import PrescriptionHeuristic
+from ESP.hef.models import AbstractLabTest
+from ESP.hef.models import EncounterHeuristic
+from ESP.hef.models import PrescriptionHeuristic
 from ESP.nodis.models import Case # hef.core and .models are dependencies of nodis/models, but this command script is not
 from ESP import settings
 from ESP.utils import log
@@ -102,13 +102,17 @@ class Command(BaseCommand):
         count = 0
         queue = Queue.Queue()
         log.debug('Starting %s threads' % options['thread_count'])
-        for i in range(options['thread_count']):
-            t = ThreadedEventGenerator(queue, dispatch, count)
-            t.setDaemon(True)
-            t.start()
-        for name in name_list:
-            queue.put(name)
-        queue.join()
+        if options['thread_count'] == 0:
+            for name in name_list:
+                count += dispatch[name].generate_events()
+        else:
+            for i in range(options['thread_count']):
+                t = ThreadedEventGenerator(queue, dispatch, count)
+                t.setDaemon(True)
+                t.start()
+            for name in name_list:
+                queue.put(name)
+            queue.join()
         log.info('Generated %s total new events' % count)
 
 

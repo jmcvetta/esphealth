@@ -107,8 +107,8 @@ class AbstractLabTest(models.Model):
         verbose_name = 'Abstract Lab Test Type'
         ordering = ['name']
     
-    def __str__(self):
-        return self.verbose_name
+    def __unicode__(self):
+        return u'%s' % self.verbose_name
     
     def __get_lab_results(self):
         result = LabResult.objects.none()
@@ -229,17 +229,29 @@ class Heuristic(models.Model):
     Abstract base class for Django-model-based heuristics, concrete 
     instances of which may be used as components of disease definitions.
     '''
+    name = models.SlugField(blank=False, unique=True)
     
     def generate_events(self):
         raise NotImplementedError
     
-    def __str__(self):
-        return 'Heuristic # %s' % self.pk
+    def __unicode__(self):
+        return u'Heuristic # %s' % self.pk
+    
+    def _update_event_types(self):
+        '''
+        Save EventType objects that relate to this heuristic.
+        '''
+        # Noop for base Heuristic class.
+        return
+
     
 
 class LabOrderHeuristic(Heuristic):
     '''
     A heuristic for detecting lab order events.
+    
+    Name is set programmatically for LabOrderHeuristic -- you do not need, and 
+    in fact are not permitted, to set it manually
 
     Note that in some EMR systems (e.g. Atrius) lab orders may be less specific
     than lab results, and thus lab orders may require a different
@@ -251,30 +263,35 @@ class LabOrderHeuristic(Heuristic):
     class Meta:
         verbose_name = 'Lab Order Heuristic'
     
-    def __str__(self):
-        return self.verbose_name
-    
-    def __get_name(self):
-        return '%s--order' % self.test.name
-    name = property(__get_name)
+    def __unicode__(self):
+        return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
         return '%s Order Heuristic' % self.test.verbose_name
     verbose_name = property(__get_verbose_name)
     
-    def __get_event_names(self):
-        return [self.name]
-    event_names = property(__get_event_names)
+    def save(self, *args, **kwargs):
+        name = '%s--order' % self.test.name
+        if self.name and not self.name == name:
+            log.warning('You tried to name a heuristic "%s", but it was automatically named "%s" instead.' % (self.name, name))
+        self.name = name
+        super(LabOrderHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
+        obj, created = EventType.objects.get_or_create(
+            name = self.name,
+            heuristic = self,
+            )
+        if created:
+            log.debug('Added %s for %s' % (obj, self))
     
     def generate_events(self):
         log.debug('Generating events for "%s"' % self.verbose_name)
-        unbound_orders = self.test.lab_orders.exclude(events__heuristic=self)
+        unbound_orders = self.test.lab_orders.exclude(events__event_type__heuristic=self)
         log_query('Unbound lab orders for %s' % self.name, unbound_orders)
         unbound_count = unbound_orders.count()
+        event_type = EventType.objects.get(name=self.name)
         for order in unbound_orders:
             e = Event(
-                name = self.name,
-                heuristic = self,
+                event_type = event_type,
                 date = order.date,
                 patient = order.patient,
                 content_object = order,
@@ -299,23 +316,32 @@ class LabResultPositiveHeuristic(Heuristic):
         verbose_name = 'Positive/Negative Lab Result Heuristic'
         ordering = ['test']
     
-    def __str__(self):
-        return self.verbose_name
-    
-    def __get_name(self):
-        return '%s--positive' % self.test.name
-    name = property(__get_name)
+    def __unicode__(self):
+        return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
         return '%s Positive Heuristic' % self.test.verbose_name
     verbose_name = property(__get_verbose_name)
     
-    def __get_event_names(self):
-        return [
+    def save(self, *args, **kwargs):
+        name = '%s--positive' % self.test.name
+        if self.name and not self.name == name:
+            log.warning('You tried to name a heuristic "%s", but it was automatically named "%s" instead.' % (self.name, name))
+        self.name = name
+        super(LabResultPositiveHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
+        event_name_list = [
             self.name, 
             '%s--negative' % self.test.name,
             '%s--indeterminate' % self.test.name,
             ]
+        for event_name in event_name_list:
+            obj, created = EventType.objects.get_or_create(
+                name = event_name,
+                heuristic = self,
+                )
+            if created:
+                log.debug('Added %s for %s' % (obj, self))
+    
     
     def generate_events(self):
         #
@@ -325,7 +351,7 @@ class LabResultPositiveHeuristic(Heuristic):
         # simpler.
         #
         log.debug('Generating events for "%s"' % self.verbose_name)
-        unbound_labs = self.test.lab_results.exclude(new_events__heuristic=self)
+        unbound_labs = self.test.lab_results.exclude(events__event_type__heuristic=self)
         log_query('Unbound lab results for %s' % self.name, unbound_labs)
         #
         # Build numeric query
@@ -379,14 +405,14 @@ class LabResultPositiveHeuristic(Heuristic):
         positive_labs = unbound_labs.filter(positive_q)
         log_query('Positive labs for %s' % self.name, positive_labs)
         log.info('Generating positive events for %s' % self.test.name)
+        pos_event_type = EventType.objects.get(name='%s--positive' % self.test.name)
         for lab in positive_labs:
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
                 lab_date = lab.result_date
             new_event = Event(
-                name = '%s--positive' % self.test.name,
-                heuristic = self,
+                event_type = pos_event_type,
                 patient = lab.patient,
                 date = lab_date,
                 content_object = lab,
@@ -397,14 +423,14 @@ class LabResultPositiveHeuristic(Heuristic):
         negative_labs = unbound_labs.filter(negative_q)
         log_query('Negative labs for %s' % self.name, negative_labs)
         log.info('Generating negative events for %s' % self.test.name)
+        neg_event_type = EventType.objects.get(name='%s--negative' % self.test.name)
         for lab in negative_labs:
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
                 lab_date = lab.result_date
             new_event = Event(
-                name = '%s--negative' % self.test.name,
-                heuristic = self,
+                event_type = neg_event_type,
                 patient = lab.patient,
                 date = lab_date,
                 content_object = lab,
@@ -415,14 +441,14 @@ class LabResultPositiveHeuristic(Heuristic):
         indeterminate_labs = unbound_labs.filter(indeterminate_q)
         log_query('Indeterminate labs for %s' % self.name, indeterminate_labs)
         log.info('Generating indeterminate events for %s' % self.test.name)
+        ind_event_type = EventType.objects.get(name='%s--indeterminate' % self.test.name)
         for lab in indeterminate_labs:
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
                 lab_date = lab.result_date
             new_event = Event(
-                name = '%s--indeterminate' % self.test.name,
-                heuristic = self,
+                event_type = ind_event_type,
                 patient = lab.patient,
                 date = lab_date,
                 content_object = lab,
@@ -447,22 +473,28 @@ class LabResultRatioHeuristic(Heuristic):
         unique_together = ['test', 'ratio']
         ordering = ['test']
     
-    def __str__(self):
-        return self.verbose_name
-    
-    def __get_name(self):
-        return '%s--ratio--%s' % (self.test.name, self.ratio)
-    name = property(__get_name)
+    def __unicode__(self):
+        return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
         return '%s %s Ratio Heuristic' % (self.test.verbose_name, self.ratio)
     verbose_name = property(__get_verbose_name)
     
-    def __get_event_names(self):
-        return [self.name,]
+    def save(self, *args, **kwargs):
+        name = '%s--ratio--%s' % (self.test.name, self.ratio)
+        if self.name and not self.name == name:
+            log.warning('You tried to name a heuristic "%s", but it was automatically named "%s" instead.' %  (self.name, name))
+        self.name = name
+        super(LabResultRatioHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
+        obj, created = EventType.objects.get_or_create(
+            name = self.name,
+            heuristic = self,
+            )
+        if created:
+            log.debug('Added %s for %s' % (obj, self))
     
     def generate_events(self):
-        unbound_labs = self.test.lab_results.exclude(new_events__heuristic=self)
+        unbound_labs = self.test.lab_results.exclude(events__event_type__heuristic=self)
         log_query('Unbound lab results for %s' % self.name, unbound_labs)
         positive_labs = LabResult.objects.none()
         code_maps = LabTestMap.objects.filter(test=self.test)
@@ -477,14 +509,14 @@ class LabResultRatioHeuristic(Heuristic):
                 positive_labs |= num_res_labs.filter(ref_high_float__isnull=True, result_float__gte = (self.ratio * map.threshold))
         log_query(self.name, positive_labs)
         log.info('Generating new events for %s' % self.name)
+        event_type = EventType.objects.get(name=self.name)
         for lab in positive_labs:
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
                 lab_date = lab.result_date
             new_event = Event(
-                name = self.name,
-                heuristic = self,
+                event_type = event_type,
                 patient = lab.patient,
                 date = lab_date,
                 content_object = lab,
@@ -510,34 +542,40 @@ class LabResultFixedThresholdHeuristic(Heuristic):
         unique_together = ['test', 'threshold']
         ordering = ['test']
     
-    def __str__(self):
-        return self.verbose_name
-    
-    def __get_name(self):
-        return '%s--threshold--%s' % (self.test.name, self.threshold)
-    name = property(__get_name)
+    def __unicode__(self):
+        return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
         return '%s %s Threshold Heuristic' % (self.test.verbose_name, self.threshold)
     verbose_name = property(__get_verbose_name)
     
-    def __get_event_names(self):
-        return [self.name,]
+    def save(self, *args, **kwargs):
+        name = '%s--threshold--%s' % (self.test.name, self.threshold)
+        if self.name and not self.name == name:
+            log.warning('You tried to name a heuristic "%s", but it was automatically named "%s" instead.' % (self.name, name))
+        self.name = name
+        super(LabResultFixedThresholdHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
+        obj, created = EventType.objects.get_or_create(
+            name = self.name,
+            heuristic = self,
+            )
+        if created:
+            log.debug('Added %s for %s' % (obj, self))
     
     def generate_events(self):
-        unbound_labs = self.test.lab_results.exclude(new_events__heuristic=self)
+        unbound_labs = self.test.lab_results.exclude(events__event_type__heuristic=self)
         log_query('Unbound lab results for %s' % self.name, unbound_labs)
         positive_labs = unbound_labs.filter(result_float__isnull=False, result_float__gte=self.threshold)
         log_query(self.name, positive_labs)
         log.info('Generating events for "%s"' % self.verbose_name)
+        event_type = EventType.objects.get(name=self.name)
         for lab in positive_labs:
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
                 lab_date = lab.result_date
             new_event = Event(
-                name = self.name,
-                heuristic = self,
+                event_type = event_type,
                 patient = lab.patient,
                 date = lab_date,
                 content_object = lab,
@@ -559,8 +597,8 @@ class Dose(models.Model):
         unique_together = ['quantity', 'units']
         ordering = ['units', 'quantity']
     
-    def __str__(self):
-        return '%s %s' % (self.quantity, self.units)
+    def __unicode__(self):
+        return u'%s %s' % (self.quantity, self.units)
     
     def __get_string_variants(self):
         '''
@@ -583,7 +621,6 @@ class PrescriptionHeuristic(Heuristic):
     '''
     A heuristic for detecting prescription events
     '''
-    name = models.SlugField(blank=False, unique=True, help_text='Unique name for this heuristic')
     drugs = models.CharField(max_length=256, blank=False, help_text='Drug names, separated by commas.')
     dose = models.ManyToManyField(Dose, blank=True, null=True)
     min_quantity = models.IntegerField(blank=True, null=True, default=None)
@@ -596,18 +633,24 @@ class PrescriptionHeuristic(Heuristic):
         verbose_name = 'Prescription Heuristic'
         ordering = ['name']
         
-    def __str__(self):
-        return self.verbose_name
+    def __unicode__(self):
+        return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
         return '%s Prescription Heuristic' % self.name
     verbose_name = property(__get_verbose_name)
     
-    def __get_event_names(self):
-        return [self.name,]
+    def save(self, *args, **kwargs):
+        super(PrescriptionHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
+        obj, created = EventType.objects.get_or_create(
+            name = self.name,
+            heuristic = self,
+            )
+        if created:
+            log.debug('Added %s for %s' % (obj, self))
     
     def generate_events(self):
-        unbound = Prescription.objects.exclude(new_events__heuristic=self)
+        unbound = Prescription.objects.exclude(events__event_type__heuristic=self)
         drugs = [s.strip() for s in self.drugs.split(',')]
         if self.require:
             require = [s.strip() for s in self.require.split(',')]
@@ -635,10 +678,10 @@ class PrescriptionHeuristic(Heuristic):
             prescriptions &= prescriptions.exclude(name__icontains=excluded_string)
         log_query('Prescriptions for %s' % self.name, prescriptions)
         log.info('Generating events for "%s"' % self.verbose_name)
+        event_type = EventType.objects.get(name=self.name)
         for rx in prescriptions:
             new_event = Event(
-                name = self.name,
-                heuristic = self,
+                event_type = event_type,
                 patient = rx.patient,
                 date = rx.date,
                 content_object = rx,
@@ -652,7 +695,6 @@ class EncounterHeuristic(Heuristic):
     '''
     A heuristic for detecting encounter ICD9 code based events
     '''
-    name = models.SlugField(blank=False, unique=True)
     icd9_codes = models.CharField(max_length=128, blank=False, 
         help_text='Encounter must include one or more of these ICD9 codes.  Separate codes with commas.')
     code_match_type = models.CharField(max_length=32, blank=False, choices=MATCH_TYPE_CHOICES, db_index=True, 
@@ -664,19 +706,25 @@ class EncounterHeuristic(Heuristic):
         ordering = ['name']
         unique_together = ['icd9_codes', 'code_match_type']
     
-    def __str__(self):
-        return self.verbose_name
+    def __unicode__(self):
+        return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
         return '%s Encounter Heuristic' % self.name
     verbose_name = property(__get_verbose_name)
     
-    def __get_event_names(self):
-        return [self.name,]
+    def save(self, *args, **kwargs):
+        super(EncounterHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
+        obj, created = EventType.objects.get_or_create(
+            name = self.name,
+            heuristic = self,
+            )
+        if created:
+            log.debug('Added %s for %s' % (obj, self))
     
     def generate_events(self):
         codes = [c.strip() for c in self.icd9_codes.split(',')]
-        unbound = Encounter.objects.exclude(new_events__heuristic=self)
+        unbound = Encounter.objects.exclude(events__event_type__heuristic=self)
         encounters = Encounter.objects.none()
         for c in codes:
             if self.code_match_type == 'exact':
@@ -697,10 +745,10 @@ class EncounterHeuristic(Heuristic):
                 encounters |= unbound.filter(icd9_codes__code__icontains=c)
         log_query('Encounters for %s' % self.name, encounters)
         log.info('Generating events for "%s"' % self.verbose_name)
+        event_type = EventType.objects.get(name=self.name)
         for enc in encounters:
             new_event = Event(
-                name = self.name,
-                heuristic = self,
+                event_type = event_type,
                 patient = enc.patient,
                 date = enc.date,
                 content_object = enc,
@@ -709,27 +757,58 @@ class EncounterHeuristic(Heuristic):
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (encounters.count(), self.name))
         return encounters.count()
-        
+
+
+class EventType(models.Model):
+    '''
+    A distinct, named type of medical event, associated with a the heuristic 
+    which generated it.
+    '''
+    name = models.SlugField(max_length=128, primary_key=True)
+    heuristic = models.ForeignKey(Heuristic, blank=False)
+    
+    def __unicode__(self):
+        return u'Event Type %s' % self.name
+    
+    def __str__(self):
+        return u'Event Type %s' % self.name
 
 
 class Event(models.Model):
     '''
-    An interesting medical event
+    A medical event
     '''
-    name = models.SlugField(max_length=128, null=False, blank=False, db_index=True)
-    heuristic = models.ForeignKey(Heuristic, blank=False)
+    event_type = models.ForeignKey(EventType, blank=True, null=True)
     date = models.DateField('Date event occured', blank=False, db_index=True)
-    patient = models.ForeignKey(Patient, blank=False, db_index=True, 
-        related_name='new_event_set') # FIXME: Remove related_name after hef refactor complete
+    patient = models.ForeignKey(Patient, blank=False, db_index=True)
     timestamp = models.DateTimeField('Time event was created in db', blank=False, auto_now_add=True)
     #
     # Standard generic relation support
     #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
     #
-    content_type = models.ForeignKey(ContentType, db_index=True,
-        related_name='new_event_set') # FIXME: Remove related_name after hef refactor complete
+    content_type = models.ForeignKey(ContentType, db_index=True)
     object_id = models.PositiveIntegerField(db_index=True)
     content_object = generic.GenericForeignKey('content_type', 'object_id')
 
-    def __str__(self):
-        return 'Event # %s (%s %s)' % (self.pk, self.name, self.date)
+    def __unicode__(self):
+        return u'Event # %s (%s %s)' % (self.pk, self.event_type.name, self.date)
+
+
+class Timespan(models.Model):
+    '''
+    A condition, such as pregnancy, which occurs over a defined span of time.  
+    '''   
+    name = models.SlugField(max_length=128, null=False, blank=False, db_index=True)
+    patient = models.ForeignKey(Patient, blank=False)
+    start_date = models.DateField(blank=False, db_index=True)
+    end_date = models.DateField(blank=False, db_index=True)
+    timestamp = models.DateTimeField('Time this event was created in db', blank=False, auto_now_add=True)
+    pattern = models.SlugField(blank=False)
+    # 
+    # The 'encounters' field is a short-term hack for generating gdm pregnancy timespans, and should be 
+    # replaced (soon) with a fully generic solution.
+    #
+    encounters = models.ManyToManyField(Encounter)
+
+    def __unicode__(self):
+        return u'Timespan %s, patient %s, %s - %s' % (self.name, self.patient.name, self.start_date, self.end_date)

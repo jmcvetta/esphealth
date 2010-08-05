@@ -9,15 +9,15 @@
 @license: LGPL
 '''
 
-from ESP.new_hef.models import AbstractLabTest
-from ESP.new_hef.models import Heuristic
-from ESP.new_hef.models import LabOrderHeuristic
-from ESP.new_hef.models import LabResultPositiveHeuristic
-from ESP.new_hef.models import LabResultRatioHeuristic
-from ESP.new_hef.models import LabResultFixedThresholdHeuristic
-from ESP.new_hef.models import EncounterHeuristic
-from ESP.new_hef.models import PrescriptionHeuristic
-from ESP.new_hef.models import Dose
+from ESP.hef.models import AbstractLabTest
+from ESP.hef.models import Heuristic
+from ESP.hef.models import LabOrderHeuristic
+from ESP.hef.models import LabResultPositiveHeuristic
+from ESP.hef.models import LabResultRatioHeuristic
+from ESP.hef.models import LabResultFixedThresholdHeuristic
+from ESP.hef.models import EncounterHeuristic
+from ESP.hef.models import PrescriptionHeuristic
+from ESP.hef.models import Dose
 
 #-------------------------------------------------------------------------------
 #
@@ -27,7 +27,8 @@ from ESP.new_hef.models import Dose
 
 # All events created by previous version of HEF will be bound to this heuristic.
 legacy_heuristic = Heuristic.objects.get_or_create(
-    id = 0
+    id = 0,
+    name = 'Legacy Heuristic',
     )[0]
 
 
@@ -53,7 +54,7 @@ gonorrhea_test = AbstractLabTest.objects.get_or_create(
         'verbose_name': 'Gonorrhea test',
         },
     )[0]
-
+    
 LabResultPositiveHeuristic.objects.get_or_create(
     test = gonorrhea_test,
     )
