@@ -15,7 +15,7 @@ class Migration(DataMigration):
         from ESP.hef import defaults 
         EventType = orm['hef.EventType']
         legacy_heuristic = orm['hef.Heuristic'].objects.get(pk=0)
-        for event_type_value in orm['hef.Event'].objects.values_list('event_type', flat=True):
+        for event_type_value in orm['hef.Event'].objects.values_list('event_type', flat=True).distinct():
             et, created = EventType.objects.get_or_create(
                 name = event_type_value,
                 defaults = {'heuristic': legacy_heuristic,},
