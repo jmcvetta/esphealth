@@ -30,13 +30,19 @@ class Migration(DataMigration):
             'ogtt75_90m': 'ogtt75_90min',
             'ogtt100_30m': 'ogtt100_30min',
             'ogtt100_90m': 'ogtt100_90min',
+            'total_bilirubin_high': 'bilirubin_total',
             }
         test_names = AbstractLabTest.objects.values_list('name', flat=True)
         
         for cm in CodeMap.objects.all():
-            heuristic = cm.heuristic
+            heuristic = str(cm.heuristic)
             if heuristic in TRANSLATION:
                 heuristic = TRANSLATION[heuristic]
+            if heuristic == 'high_calc_bilirubin':
+                if cm.native_name.lower().find('indirect') == -1: # Direct
+                    heuristic = 'bilirubin_direct'
+                else: # Indirect
+                    heuristic = 'bilirubin_indirect'
             if not heuristic in test_names:
                 print 'No AbstractLabTest found matching "%s"' % heuristic
                 continue
@@ -60,7 +66,6 @@ class Migration(DataMigration):
                 print 'Created new LabTestMap for %s, %s' % (test.verbose_name, cm.native_code)
             else:
                 print 'LabTestMap for %s, %s already exists' % (test.verbose_name, cm.native_code)
-
 
     def backwards(self, orm):
         raise RuntimeError("Cannot reverse this migration.")
