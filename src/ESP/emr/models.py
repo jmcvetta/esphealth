@@ -834,6 +834,9 @@ class LabResult(BasePatientRecord):
         
 
 class LabOrder(BasePatientRecord):
+    '''
+    An order for a laboratory test
+    '''
     order_id = models.IntegerField(db_index=True)
     procedure_master_num = models.CharField(max_length=128, blank=True, null=True, db_index=True)
     modifier = models.CharField(max_length=128, blank=True, null=True)
@@ -841,6 +844,8 @@ class LabOrder(BasePatientRecord):
     order_type = models.CharField(max_length=128, blank=True, db_index=True)
     procedure_name = models.CharField(max_length=300, blank=True, null=True)
     specimen_source = models.CharField(max_length=128, blank=True, null=True)
+    # HEF
+    events = generic.GenericRelation('hef.Event')
     
     
     
@@ -1151,7 +1156,6 @@ class Immunization(BasePatientRecord):
 
     vaccine_manufacturer = property(_get_manufacturer)
 
-
     def document_summary(self):
         return {
             'date':(self.date and self.date.isoformat()) or None,
@@ -1164,17 +1168,25 @@ class Immunization(BasePatientRecord):
             'dose':self.dose
             }
 
-
     def  __unicode__(self):
         return u"Immunization on %s received %s on %s" % (
             self.patient.full_name, self.vaccine_type(), self.date)
 
 
 class SocialHistory(BasePatientRecord):
+    '''
+    A social history record.
+    '''
+    # Why not add a 'fastfood_use' field?  Probably as useful as the others 
+    # for predicting future illness.
     tobacco_use = models.CharField(max_length=128, null=True, blank=True, db_index=True)
     alcohol_use = models.CharField(max_length=128, null=True, blank=True, db_index=True)
 
+
 class Allergy(BasePatientRecord):
+    '''
+    An allergy report
+    '''
     problem_id = models.IntegerField(null=True, db_index=True)
     date_noted = models.DateField(null=True, db_index=True)
     allergen = models.ForeignKey(Allergen)
@@ -1182,7 +1194,11 @@ class Allergy(BasePatientRecord):
     status = models.CharField(max_length=128, null=True, db_index=True)
     description = models.CharField(max_length=200)
 
+
 class Problem(BasePatientRecord):
+    '''
+    Problem list -- cumulative over time, no current 
+    '''
     problem_id = models.IntegerField(null=True)
     icd9 = models.ForeignKey(Icd9)
     status = models.CharField(max_length=128, null=True, db_index=True)
