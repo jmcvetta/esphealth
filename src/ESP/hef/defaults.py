@@ -1060,8 +1060,8 @@ LabResultPositiveHeuristic.objects.get_or_create(
     )
 
 
-metronidazole = PrescriptionHeuristic.objects.get_or_create(
-    name = 'metronidazole',
+metronidazole_rx = PrescriptionHeuristic.objects.get_or_create(
+    name = 'metronidazole_rx',
     drugs = 'metronidazole',
     )
 
