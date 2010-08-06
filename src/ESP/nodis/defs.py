@@ -20,11 +20,6 @@ from ESP.nodis.models import Condition
 from django.db import connection
 
 
-GONORRHEA_LOINCS = ['691-6', '23908-7', '24111-7', '36902-5'] 
-CHLAMYDIA_LOINCS = ['4993-2', '6349-5', '16601-7', '20993-2', '21613-5', '36902-5', ] 
-
-
-
 #===============================================================================
 #
 # Chlamydia
