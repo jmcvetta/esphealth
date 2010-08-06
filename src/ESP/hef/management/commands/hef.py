@@ -34,6 +34,8 @@ from ESP.utils import log
 from ESP.utils import log_query
 
 
+DEFAULT_THREAD_COUNT = 15
+
 
 
 #===============================================================================
@@ -54,7 +56,7 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('--list', action='store_true', dest='list', 
             help='List all abstract tests'),
-        make_option('--threads', action='store', dest='thread_count', default=1,
+        make_option('--threads', action='store', dest='thread_count', default=DEFAULT_THREAD_COUNT,
             type='int', metavar='COUNT', help='Run in COUNT threads'),
         )
 
