@@ -26,6 +26,10 @@ class Migration(DataMigration):
             'lyme_igg': 'lyme_igg_eia',
             'lyme_igm': 'lyme_igm_eia',
             'ttpa': 'syphilis_tppa',
+            'ogtt75_30m': 'ogtt75_30min',
+            'ogtt75_90m': 'ogtt75_90min',
+            'ogtt100_30m': 'ogtt100_30min',
+            'ogtt100_90m': 'ogtt100_90min',
             }
         test_names = AbstractLabTest.objects.values_list('name', flat=True)
         
@@ -53,9 +57,9 @@ class Migration(DataMigration):
                     }
                 )
             if created:
-                print 'Created new LabTestMap for %s, %s' % (test, cm.native_code)
+                print 'Created new LabTestMap for %s, %s' % (test.verbose_name, cm.native_code)
             else:
-                print 'LabTestMap for %s, %s already exists' % (test, cm.native_code)
+                print 'LabTestMap for %s, %s already exists' % (test.verbose_name, cm.native_code)
 
 
     def backwards(self, orm):

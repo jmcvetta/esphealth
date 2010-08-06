@@ -1,11 +1,11 @@
 '''
                                   ESP Health
                           Heuristic Events Framework
-                               Event Definitions
+                        Default Lab & Event Definitions
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
 @organization: Channing Laboratory http://www.channing.harvard.edu
-@copyright: (c) 2009 Channing Laboratory
+@copyright: (c) 2009-2010 Channing Laboratory
 @license: LGPL
 '''
 
@@ -776,19 +776,19 @@ LabResultPositiveHeuristic.objects.get_or_create(
     date_field = 'result'
     )
 
-ogtt75_30m = AbstractLabTest.objects.get_or_create(
-    name = 'ogtt75_30m',
+ogtt75_30min = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt75_30min',
     defaults = {
         'verbose_name':  'Oral Glucose Tolerance Test 75 gram 30 minutes post',
         }
     )[0]
 
 LabOrderHeuristic.objects.get_or_create(
-    test=ogtt75_30m,
+    test=ogtt75_30min,
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
-    test = ogtt75_30m,
+    test = ogtt75_30min,
     threshold = 200,
     date_field = 'result'
     )
@@ -816,25 +816,25 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
     date_field = 'result'
     )
 
-ogtt75_90m = AbstractLabTest.objects.get_or_create(
-    name = 'ogtt75_90m',
+ogtt75_90min = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt75_90min',
     defaults = {
         'verbose_name':  'Oral Glucose Tolerance Test 75 gram 90 minutes post',
         }
     )[0]
 
 LabOrderHeuristic.objects.get_or_create(
-    test=ogtt75_90m,
+    test=ogtt75_90min,
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
-    test = ogtt75_90m,
+    test = ogtt75_90min,
     threshold = 180,
     date_field = 'result'
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
-    test = ogtt75_90m,
+    test = ogtt75_90min,
     threshold = 200,
     date_field = 'result'
     )
@@ -893,15 +893,15 @@ LabResultPositiveHeuristic.objects.get_or_create(
     date_field = 'result'
     )
 
-ogtt100_30m = AbstractLabTest.objects.get_or_create(
-    name = 'ogtt100_30m',
+ogtt100_30min = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt100_30min',
     defaults = {
         'verbose_name':  'Oral Glucose Tolerance Test 100 gram 30 minutes post',
         }
     )[0]
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
-    test = ogtt100_30m,
+    test = ogtt100_30min,
     threshold = 200,
     date_field = 'result'
     )
@@ -919,15 +919,15 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
     date_field = 'result'
     )
 
-ogtt100_90m = AbstractLabTest.objects.get_or_create(
-    name = 'ogtt100_90m',
+ogtt100_90min = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt100_90min',
     defaults = {
         'verbose_name':  'Oral Glucose Tolerance Test 100 gram 90 minutes post',
         }
     )[0]
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
-    test = ogtt100_90m,
+    test = ogtt100_90min,
     threshold = 180,
     date_field = 'result'
     )
