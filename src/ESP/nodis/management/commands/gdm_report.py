@@ -33,6 +33,7 @@ from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 
 from ESP.hef.models import Event
+from ESP.hef.models import EventType
 from ESP.hef.models import Timespan
 
 from ESP.nodis.models import Case
@@ -46,6 +47,7 @@ OGTT50_EVENTS = gdm_ogtt50.patterns
 OGTT75_INTRAPARTUM_EVENTS = ogtt75_multi_intrapartum.events
 OGTT75_POSTPARTUM_EVENTS = ogtt75_multi_postpartum.events
 OGTT100_EVENTS = ogtt100_multi_intrapartum.events
+OGTT75_RESULT_EVENTS = EventType.objects.filter(name__startswith='ogtt75', name__endswith='_order')
 
 FIELDS = [
     'patient db id',
@@ -65,8 +67,10 @@ FIELDS = [
     'intrapartum OGTT50 positive result',
     'intrapartum OGTT75 positive result',
     'intrapartum OGTT100 positive result',
+    'postpartum OGTT75 order',
     'postpartum OGTT75 any result',
     'postpartum OGTT75 positive result',
+    'postpartum A1C order',
     'postpartum A1C result',
     'lancets / test strips Rx',
     'new lancets / test strips Rx',
@@ -124,10 +128,14 @@ class Command(BaseCommand):
                 postpartum_events = Event.objects.filter(patient=patient, date__gt=preg_end, date__lte=preg_end+datetime.timedelta(weeks=12))
                 #ogtt75_postpartum_order = bool( LabOrder.objects.filter(patient=patient, date__gt=preg_end, 
                     #date__lte=preg_end+datetime.timedelta(weeks=12), native_code__in=ogtt75_native_codes) )
-                ogtt75_postpartum_result = bool( postpartum_events.filter(name__startswith='ogtt75', name__endswith='_order')  )
-                ogtt75_postpartum_pos = bool( postpartum_events.filter(name__in=OGTT75_POSTPARTUM_EVENTS) )
+                ogtt75_postpartum_order = bool( Event.objects.filter(patient=patient, date__gt=preg_end, 
+                    date__lte=preg_end+datetime.timedelta(weeks=12), event_type='ogtt75_series--order') )
+                ogtt75_postpartum_result = bool( postpartum_events.filter(event_type__in=OGTT75_RESULT_EVENTS)  )
+                ogtt75_postpartum_pos = bool( postpartum_events.filter(event_type__in=OGTT75_POSTPARTUM_EVENTS) )
                 #a1c_postpartum_order = bool( LabOrder.objects.filter(patient=patient, date__gt=preg_end, 
                     #date__lte=preg_end+datetime.timedelta(weeks=12), native_code__in=a1c_native_codes) )
+                a1c_postpartum_order = bool( Event.objects.filter(patient=patient, date__gt=preg_end, 
+                    date__lte=preg_end+datetime.timedelta(weeks=12), event_type='a1c--order') )
                 a1c_tests = LabResult.objects.filter(patient=patient, date__gt=preg_end, 
                     date__lte=preg_end+datetime.timedelta(weeks=12),  native_code__in=a1c_native_codes)
                 if a1c_tests:
@@ -135,15 +143,15 @@ class Command(BaseCommand):
                 else:
                     a1c_postpartum_result = 'Test not performed'
             else:
-                #ogtt75_postpartum_order = 'Delivery date unknown'
+                ogtt75_postpartum_order = 'Delivery date unknown'
                 ogtt75_postpartum_result = 'Delivery date unknown'
                 ogtt75_postpartum_pos = 'Delivery date unknown'
-                #a1c_postpartum_order =  'Delivery date unknown'
+                a1c_postpartum_order =  'Delivery date unknown'
                 a1c_postpartum_result =  'Delivery date unknown'
             #
             # Lancets
             #
-            lancets = events.filter(name__in=['lancets_rx', 'test_strips_rx'])
+            lancets = events.filter(event_type__in=['lancets_rx', 'test_strips_rx'])
             preg_lancet_rx = preg_events & lancets
             # previous lancet rx = within previous year
             previous_lancet_rx = lancets.filter(date__lte=preg_start, date__gte=preg_start-datetime.timedelta(days=365))
@@ -177,18 +185,18 @@ class Command(BaseCommand):
                 'edd': edd,
                 'bmi': bmi,
                 'age at preg onset': relativedelta(preg_start, patient.date_of_birth).years,
-                'intrapartum glucose fasting positive result': bool(preg_events.filter(name='glucose_fasting_126').count() ),
-                'intrapartum OGTT50 positive result': bool(preg_events.filter(name__in=OGTT50_EVENTS).count() ),
-                'intrapartum OGTT75 positive result': bool( preg_events.filter(name__in=OGTT75_INTRAPARTUM_EVENTS).count() > 1),
-                'intrapartum OGTT100 positive result': bool( preg_events.filter(name__in=OGTT100_EVENTS).count() > 1 ),
-                #'postpartum OGTT75 order': ogtt75_postpartum_order,
+                'intrapartum glucose fasting positive result': bool(preg_events.filter(event_type='glucose_fasting_126').count() ),
+                'intrapartum OGTT50 positive result': bool(preg_events.filter(event_type__in=OGTT50_EVENTS).count() ),
+                'intrapartum OGTT75 positive result': bool( preg_events.filter(event_type__in=OGTT75_INTRAPARTUM_EVENTS).count() > 1),
+                'intrapartum OGTT100 positive result': bool( preg_events.filter(event_type__in=OGTT100_EVENTS).count() > 1 ),
+                'postpartum OGTT75 order': ogtt75_postpartum_order,
                 'postpartum OGTT75 any result': ogtt75_postpartum_result,
                 'postpartum OGTT75 positive result': ogtt75_postpartum_pos,
-                #'postpartum A1C order': a1c_postpartum_order,
+                'postpartum A1C order': a1c_postpartum_order,
                 'postpartum A1C result': a1c_postpartum_result,
                 'lancets / test strips Rx': bool(preg_lancet_rx.count()),
                 'new lancets / test strips Rx': new_lancet_rx,
-                'insulin rx during pregnancy': bool( preg_events.filter(name='insulin_rx').count() ),
+                'insulin rx during pregnancy': bool( preg_events.filter(event_type='insulin_rx').count() ),
                 'referral to nutrition': nutrition_ref,
                 }
             writer.writerow(values)

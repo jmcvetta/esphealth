@@ -45,11 +45,11 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
-from ESP.hef.core import BaseHeuristic
-from ESP.hef.core import EncounterHeuristic
-from ESP.hef.core import MedicationHeuristic
-from ESP.hef.core import TimespanHeuristic
-from ESP.hef.models import Timespan
+#from ESP.hef.core import BaseHeuristic
+#from ESP.hef.core import EncounterHeuristic
+#from ESP.hef.core import MedicationHeuristic
+#from ESP.hef.core import TimespanHeuristic
+#from ESP.hef.models import Timespan
 from ESP.hef.models import Event
 from ESP.conf.models import ConditionConfig
 
@@ -68,6 +68,24 @@ from ESP.hef.models import Event
 
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# Backwards Compatibility Fitings -- Temporary Only!
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+from ESP.hef.models import Heuristic as BaseHeuristic
+
+class TimespanHeuristic:
+    @classmethod
+    def all_event_names(self):
+        return ['pregnancy']
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+from ESP.hef.models import Heuristic as BaseHeuristic # Backwards compat
 
 
 DISPOSITIONS = [
@@ -477,7 +495,8 @@ class MultipleEventPattern(BaseEventPattern):
         #self.__events_cache = {}
         for event_name in events:
             if not event_name in BaseHeuristic.all_event_names():
-                raise InvalidHeuristic('Unknown heuristic Event: %s' % event_name)
+                #raise InvalidHeuristic('Unknown heuristic Event: %s' % event_name)
+                log.warning('backwards compat: Unknown heuristic Event: %s' % event_name)
         self.events = events
         if not isinstance(count, int):
             raise TypeError('count must be an integer, but you supplied: "%s"' % count)
@@ -656,7 +675,8 @@ class ComplexEventPattern(BaseEventPattern):
                 pat_obj = SimpleEventPattern(event_name=pat, require_timespan=require_timespan, exclude_timespan=exclude_timespan)
                 self.patterns.append(pat_obj)
             else:
-                raise InvalidPattern('%s [%s]' % (pat, type(pat)))
+                #raise InvalidPattern('%s [%s]' % (pat, type(pat)))
+                log.warning('backwards compat issue, invalid pattern: %s [%s]' % (pat, type(pat)))
         for pat in exclude:
             if isinstance(pat, ComplexEventPattern):
                 self.exclude.append(pat)
@@ -664,13 +684,15 @@ class ComplexEventPattern(BaseEventPattern):
                 pat_obj = SimpleEventPattern(event_name=pat, require_timespan=require_timespan, exclude_timespan=exclude_timespan)
                 self.exclude.append(pat_obj)
             else:
-                raise InvalidPattern('%s [%s]' % (pat, type(pat)))
+                #raise InvalidPattern('%s [%s]' % (pat, type(pat)))
+                log.warning('backwards compat issue, invalid pattern: %s [%s]' % (pat, type(pat)))
         count = {} # Count of plausible events per req
         for name in require_before + require_after + require_ever + exclude_past:
             if not name in  valid_event_names:
                 log.error('"%s" not in valid heuristic Event names:' % name)
                 log.error('\t%s' % valid_event_names)
-                raise InvalidPattern('%s [%s]' % (name, type(name)))
+                #raise InvalidPattern('%s [%s]' % (name, type(name)))
+                log.warning('backwards compat issue, invalid pattern: %s [%s]' % (pat, type(pat)))
         self.require_before = require_before
         self.require_after = require_after
         self.require_ever = require_ever

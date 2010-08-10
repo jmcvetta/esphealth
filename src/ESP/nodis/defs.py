@@ -10,14 +10,10 @@
 @license: LGPL - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
-from ESP.emr.models import Patient
-from ESP.hef import events # Load events
-from ESP.hef.core import BaseHeuristic
 from ESP.nodis.models import ComplexEventPattern
 from ESP.nodis.models import MultipleEventPattern
 from ESP.nodis.models import TuberculosisDefC
 from ESP.nodis.models import Condition
-from django.db import connection
 
 
 #===============================================================================
