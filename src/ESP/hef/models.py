@@ -85,6 +85,12 @@ MATCH_TYPE_CHOICES = [
     ('icontains', 'Contains (NOT case sensitive)'),
     ]
 
+ORDER_RESULT_RECORD_TYPES = [
+    ('order', 'Lab Test Orders'),
+    ('result', 'Lab Test Results'),
+    ('both', 'Both Lab Test Orders and Results'),
+    ]
+
 
 class AbstractLabTest(models.Model):
     '''
@@ -112,7 +118,8 @@ class AbstractLabTest(models.Model):
     
     def __get_lab_results(self):
         result = LabResult.objects.none()
-        for cm in self.labtestmap_set.all():
+        result_q = Q(record_type='result') | Q(record_type='both')
+        for cm in self.labtestmap_set.filter(result_q):
             result = result | cm.lab_results
         log_query('Lab Results for %s' % self.name, result)
         return result
@@ -120,7 +127,8 @@ class AbstractLabTest(models.Model):
     
     def __get_lab_orders(self):
         result = LabOrder.objects.none()
-        for cm in self.labtestmap_set.all():
+        order_q = Q(record_type='order') | Q(record_type='both')
+        for cm in self.labtestmap_set.filter(order_q):
             result = result | cm.lab_orders
         log_query('Lab Orders for %s' % self.name, result)
         return result
@@ -155,11 +163,13 @@ class LabTestMap(models.Model):
     Mapping object to associate an abstract lab test type with a concrete, 
     source-EMR-specific lab test type
     '''
-    test = models.ForeignKey(AbstractLabTest, blank=False, db_index=True)
-    code = models.CharField(max_length=100, verbose_name='Test Code',
-        help_text='Native test code from source EMR system', blank=False, db_index=True)
-    code_match_type = models.CharField(max_length=32, blank=False, choices=MATCH_TYPE_CHOICES, db_index=True, 
+    test = models.ForeignKey(AbstractLabTest, blank=False)
+    code = models.CharField(max_length=100, verbose_name='Test Code', db_index=True,
+        help_text='Native test code from source EMR system', blank=False)
+    code_match_type = models.CharField(max_length=32, blank=False, choices=MATCH_TYPE_CHOICES, 
         help_text='Match type for test code', default='exact')
+    record_type = models.CharField(max_length=8, blank=False, choices=ORDER_RESULT_RECORD_TYPES, 
+        help_text='Does this map relate to lab orders, results, or both?', default='both')
     threshold = models.FloatField(help_text='Fallback positive threshold for tests without reference high', blank=True, null=True)
     extra_positive_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='positive_set',
         limit_choices_to={'indicates': 'pos', 'applies_to_all': False})
@@ -169,7 +179,7 @@ class LabTestMap(models.Model):
     # Reporting
     # 
     reportable = models.BooleanField('Is test reportable?', default=True, db_index=True)
-    output_code = models.CharField('Test code for template output', max_length=100, blank=True, null=True, db_index=True)
+    output_code = models.CharField('Test code for template output', max_length=100, blank=True, null=True)
     output_name = models.CharField('Test name for template output', max_length=255, blank=True, null=True)
     snomed_pos = models.CharField('SNOMED positive code', max_length=255, blank=True, null=True)
     snomed_neg = models.CharField('SNOMED neg code', max_length=255, blank=True, null=True)
@@ -243,6 +253,14 @@ class Heuristic(models.Model):
         '''
         # Noop for base Heuristic class.
         return
+    
+    #-------------------------------------------------------------------------------
+    # Backwards Compatiblity w/ old HEF 
+    #-------------------------------------------------------------------------------
+    
+    @classmethod
+    def all_event_names(self):
+        return EventType.objects.values_list('name', flat=True)
 
     
 

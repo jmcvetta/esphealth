@@ -31,6 +31,7 @@ class Migration(DataMigration):
             'ogtt100_30m': 'ogtt100_30min',
             'ogtt100_90m': 'ogtt100_90min',
             'total_bilirubin_high': 'bilirubin_total',
+            'high_calc_bilirubin': 'bilirubin_calculated',
             }
         test_names = AbstractLabTest.objects.values_list('name', flat=True)
         
@@ -52,6 +53,7 @@ class Migration(DataMigration):
                 code = cm.native_code,
                 defaults = {
                     'code_match_type': 'exact',
+                    'record_type': 'result',
                     'threshold': cm.threshold,
                     'reportable': cm.reportable,
                     'output_code': cm.output_code,
@@ -270,6 +272,7 @@ class Migration(DataMigration):
             'Meta': {'unique_together': "(['test', 'code'],)", 'object_name': 'LabTestMap'},
             'code': ('django.db.models.fields.CharField', [], {'max_length': '100', 'db_index': 'True'}),
             'code_match_type': ('django.db.models.fields.CharField', [], {'default': "'exact'", 'max_length': '32', 'db_index': 'True'}),
+            'record_type': ('django.db.models.fields.CharField', [], {'default': "'both'", 'max_length': '8'}),
             'extra_negative_strings': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'negative_set'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['hef.ResultString']"}),
             'extra_positive_strings': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'positive_set'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['hef.ResultString']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
