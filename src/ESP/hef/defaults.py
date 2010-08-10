@@ -675,7 +675,7 @@ LabResultPositiveHeuristic.objects.get_or_create(
 glucose_fasting = AbstractLabTest.objects.get_or_create(
     name = 'glucose_fasting',
     defaults = {
-        'verbose_name':  'Fasting glucose (several OGTT variations)',
+        'verbose_name':  'Fasting glucose (several variations)',
         }
     )[0]
 
@@ -736,6 +736,17 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
 # Oral Glucose Tolerance Test 75g (OGTT 75)
 #
 #-------------------------------------------------------------------------------
+
+ogtt75_series = AbstractLabTest.objects.get_or_create(
+    name = 'ogtt75_series',
+    defaults = {
+        'verbose_name':  'Oral Glucose Tolerance Test 75 gram Series',
+        }
+    )[0]
+
+LabOrderHeuristic.objects.get_or_create(
+    test=ogtt75_series,
+    )
 
 ogtt75_fasting = AbstractLabTest.objects.get_or_create(
     name = 'ogtt75_fasting',
@@ -997,6 +1008,10 @@ a1c = AbstractLabTest.objects.get_or_create(
         'verbose_name':  'Glycated hemoglobin (A1C)',
         }
     )[0]
+    
+LabOrderHeuristic.objects.get_or_create(
+    test = a1c,
+    )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = a1c,
