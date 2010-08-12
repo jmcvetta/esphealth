@@ -8,7 +8,6 @@ Created on Jul 9, 2009
 import sys
 import re
 import pprint
-import datetime
 import csv
 from dateutil.relativedelta import relativedelta
 
@@ -125,13 +124,16 @@ class Command(BaseCommand):
             has_end_of_preg = bool( preg_timespans.filter(pattern__in=['EDD', 'ICD9_EOP']) )
             log.debug('has end of preg: %s' % has_end_of_preg)
             if has_end_of_preg:
-                postpartum_events = Event.objects.filter(patient=patient, date__gte=preg_end, date__lte=preg_end+datetime.timedelta(weeks=12))
-                ogtt75_postpartum_order = bool( postpartum_events.filter(event_type='ogtt75_series--order') )
+                postpartum_events = Event.objects.filter(patient=patient, date__gte=preg_end, 
+                    date__lte=preg_end+relativedelta(weeks=12))
+                postpartum_order_events = Event.objects.filter(patient=patient, date__gte=preg_end-relativedelta(days=60), 
+                    date__lte=preg_end+relativedelta(weeks=12))
+                ogtt75_postpartum_order = bool( postpartum_order_events.filter(event_type='ogtt75_series--order') )
                 ogtt75_postpartum_result = bool( postpartum_events.filter(event_type__in=OGTT75_RESULT_EVENTS)  )
                 ogtt75_postpartum_pos = bool( postpartum_events.filter(event_type__in=OGTT75_POSTPARTUM_EVENTS) )
-                a1c_postpartum_order = bool( postpartum_events.filter(event_type='a1c--order') )
+                a1c_postpartum_order = bool( postpartum_order_events.filter(event_type='a1c--order') )
                 a1c_tests = LabResult.objects.filter(patient=patient, date__gt=preg_end, 
-                    date__lte=preg_end+datetime.timedelta(weeks=12),  native_code__in=a1c_native_codes)
+                    date__lte=preg_end+relativedelta(weeks=12),  native_code__in=a1c_native_codes)
                 if a1c_tests:
                     a1c_postpartum_result = a1c_tests.aggregate(maxres=Max('result_float'))['maxres']
                 else:
@@ -148,7 +150,7 @@ class Command(BaseCommand):
             lancets = events.filter(event_type__in=['lancets_rx', 'test_strips_rx'])
             preg_lancet_rx = preg_events & lancets
             # previous lancet rx = within previous year
-            previous_lancet_rx = lancets.filter(date__lte=preg_start, date__gte=preg_start-datetime.timedelta(days=365))
+            previous_lancet_rx = lancets.filter(date__lte=preg_start, date__gte=preg_start-relativedelta(days=365))
             if preg_lancet_rx and not previous_lancet_rx:
                 new_lancet_rx = True
             else:
