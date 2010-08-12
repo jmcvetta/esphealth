@@ -55,21 +55,7 @@ class Migration(SchemaMigration):
     
     
     def backwards(self, orm):
-        
-        # Deleting model 'Run'
-        db.delete_table('hef_run')
-
-        # Deleting model 'Event'
-        db.delete_table('hef_event')
-
-        # Removing unique constraint on 'Event', fields ['name', 'date', 'patient', 'content_type', 'object_id']
-        db.delete_unique('hef_event', ['name', 'date', 'patient_id', 'content_type_id', 'object_id'])
-
-        # Deleting model 'Timespan'
-        db.delete_table('hef_timespan')
-
-        # Removing M2M table for field encounters on 'Timespan'
-        db.delete_table('hef_timespan_encounters')
+        raise RuntimeError("Cannot reverse this migration.")
     
     
     models = {
