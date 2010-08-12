@@ -74,6 +74,8 @@ src/ESP/emr/management/commands/load_hl7.py -text
 src/ESP/emr/management/commands/make_fakes.py -text
 src/ESP/emr/management/commands/rename_files.py -text
 src/ESP/emr/migrations/0001_initial.py -text
+src/ESP/emr/migrations/0002_rename_source_system_id_num_fields.py -text
+src/ESP/emr/migrations/0003_resize_source_system_id_num_fields.py -text
 src/ESP/emr/migrations/__init__.py -text
 src/ESP/emr/models.py -text
 src/ESP/emr/report.py -text

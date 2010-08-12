@@ -33,7 +33,7 @@ from ESP.static.models import Vaccine
 from ESP.static.models import ImmunizationManufacturer
 from ESP.conf.models import VaccineManufacturerMap
 from ESP.utils import randomizer
-from ESP.utils.utils import log, date_from_str, str_from_date
+from ESP.utils.utils import log, log_query, date_from_str, str_from_date
 
 
 
@@ -131,13 +131,13 @@ class Provider(BaseMedicalRecord):
     '''
     A medical care provider
     '''
-    provider_id_num = models.CharField('Physician code', unique=True, max_length=20, 
-        blank=True, null=True, db_index=True)
+    provider_id_num = models.CharField('Physician identifier in source EMR system', unique=True, max_length=128, 
+        blank=False, db_index=True)
     last_name = models.CharField('Last Name',max_length=200, blank=True,null=True)
     first_name = models.CharField('First Name',max_length=200, blank=True,null=True)
     middle_name = models.CharField('Middle_Name',max_length=200, blank=True,null=True)
     title = models.CharField('Title', max_length=20, blank=True, null=True)
-    dept_id_num = models.CharField('Primary Department Id',max_length=20,blank=True,null=True)
+    dept_id_num = models.CharField('Primary Department identifier in source EMR system', max_length=128, blank=True, null=True)
     dept = models.CharField('Primary Department',max_length=200,blank=True,null=True)
     dept_address_1 = models.CharField('Primary Department Address 1',max_length=100,blank=True,null=True)
     dept_address_2 = models.CharField('Primary Department Address 2',max_length=20,blank=True,null=True)
@@ -205,8 +205,8 @@ class Patient(BaseMedicalRecord):
     '''
     A patient, with demographic information
     '''
-    patient_id_num = models.CharField('Patient ID #', unique=True, max_length=20, 
-        blank=True, null=True, db_index=True)
+    patient_id_num = models.CharField('Patient identifier in source EMR system', unique=True, max_length=128, 
+        blank=False, db_index=True)
     mrn = models.CharField('Medical Record ', max_length=20, blank=True, null=True, db_index=True)
     last_name = models.CharField('Last Name', max_length=200, blank=True, null=True)
     first_name = models.CharField('First Name', max_length=200, blank=True, null=True)
@@ -489,12 +489,16 @@ class Patient(BaseMedicalRecord):
         exact_hw_encs = hw_encs.filter(exact_date)
         range_hw_encs = hw_encs.filter(range_dates)
         if exact_bmi_encs:
+            log_query('Exact BMI Encs', exact_bmi_encs)
             return exact_bmi_encs[0].bmi
         elif exact_hw_encs:
+            log_query('Exact Ht/Wt Encs', exact_hw_encs)
             return self.__calc_bmi_from_enc(exact_hw_encs[0])
         elif range_bmi_encs:
+            log_query('Range BMI Encs', range_bmi_encs)
             return range_bmi_encs[0].bmi
         elif range_hw_encs:
+            log_query('Range Ht/Wt Encs', range_hw_encs)
             return self.__calc_bmi_from_enc(range_hw_encs[0])
         else:
             return "Unknown"
@@ -608,11 +612,11 @@ class LabResult(BasePatientRecord):
     # Coding
     native_code = models.CharField('Native Test Code', max_length=30, blank=True, null=True, db_index=True)
     native_name = models.CharField('Native Test Name', max_length=255, blank=True, null=True, db_index=True)
-    order_num = models.CharField(max_length=128, blank=True, null=True)
+    order_id_num = models.CharField(max_length=128, blank=False, db_index=True)
     result_date = models.DateField(blank=True, null=True, db_index=True)
     collection_date = models.DateField(blank=True, null=True, db_index=True)
     status = models.CharField('Result Status', max_length=50, blank=True, null=True)
-    result_num = models.CharField('Result Id #', max_length=100, blank=True, null=True)
+    result_id_num = models.CharField('Result identifier in source EMR system', max_length=128, blank=True, null=True)
     # 
     # In some EMR data sets, reference pos & high, and neg & low, may come from
     # the same field depending whether the value is a string or a number.
@@ -837,12 +841,12 @@ class LabOrder(BasePatientRecord):
     '''
     An order for a laboratory test
     '''
-    order_id = models.IntegerField(db_index=True)
+    order_id_num = models.CharField('Order identifier in source EMR system', max_length=128, db_index=True)
     procedure_master_num = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     modifier = models.CharField(max_length=20, blank=True, null=True)
+    procedure_name = models.CharField(max_length=300, blank=True, null=True)
     specimen_id = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     order_type = models.CharField(max_length=64, blank=True, db_index=True)
-    procedure_name = models.CharField(max_length=300, blank=True, null=True)
     specimen_source = models.CharField(max_length=300, blank=True, null=True)
     # HEF
     events = generic.GenericRelation('hef.Event')
@@ -856,7 +860,7 @@ class Prescription(BasePatientRecord):
     '''
     # Date is order date
     #
-    order_num = models.CharField('Order Id #', max_length=20, blank=True, null=True)
+    order_id_num = models.CharField('Order identifier in source EMR system', max_length=128, blank=False)
     name = models.TextField(max_length=3000, blank=False, db_index=True)
     code = models.CharField('Drug Code (system varies by site)', max_length=255, blank=True, null=True)
     directions = models.TextField(max_length=3000, blank=True, null=True)
@@ -1091,7 +1095,7 @@ class Immunization(BasePatientRecord):
     '''
     # Date is immunization date
     #
-    imm_id_num = models.CharField('Immunization Record Id', max_length=200, blank=True, null=True)
+    imm_id_num = models.CharField('Immunization identifier in source EMR system', max_length=200, blank=True, null=True)
     imm_type = models.CharField('Immunization Type', max_length=20, blank=True, null=True)
     name = models.CharField('Immunization Name', max_length=200, blank=True, null=True)
     dose = models.CharField('Immunization Dose', max_length=100, blank=True, null=True)
