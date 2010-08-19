@@ -171,10 +171,18 @@ class LabTestMap(models.Model):
     record_type = models.CharField(max_length=8, blank=False, choices=ORDER_RESULT_RECORD_TYPES, 
         help_text='Does this map relate to lab orders, results, or both?', default='both')
     threshold = models.FloatField(help_text='Fallback positive threshold for tests without reference high', blank=True, null=True)
-    extra_positive_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='positive_set',
+    extra_positive_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='extra_positive_set',
         limit_choices_to={'indicates': 'pos', 'applies_to_all': False})
-    extra_negative_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='negative_set',
+    excluded_positive_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='excluded_positive_set',
+        limit_choices_to={'indicates': 'pos', 'applies_to_all': True})
+    extra_negative_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='extra_negative_set',
         limit_choices_to={'indicates': 'neg', 'applies_to_all': False})
+    excluded_negative_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='excluded_negative_set',
+        limit_choices_to={'indicates': 'neg', 'applies_to_all': True})
+    extra_indeterminate = models.ManyToManyField(ResultString, blank=True, null=True, related_name='extra_indeterminate_set',
+        limit_choices_to={'indicates': 'ind', 'applies_to_all': False})
+    excluded_indeterminate_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='excluded_indeterminate_set',
+        limit_choices_to={'indicates': 'ind', 'applies_to_all': True})
     #
     # Reporting
     # 

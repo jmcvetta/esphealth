@@ -93,6 +93,7 @@ src/ESP/hef/migrations/0002_new_schema_no_constraints.py -text
 src/ESP/hef/migrations/0003_default_heuristics.py -text
 src/ESP/hef/migrations/0004_event_type_foreign_key.py -text
 src/ESP/hef/migrations/0005_convert_code_maps.py -text
+src/ESP/hef/migrations/0006_more_result_string_control.py -text
 src/ESP/hef/migrations/__init__.py -text
 src/ESP/hef/models.py -text
 src/ESP/hef/sql/multicolumn-indices.postgresql.sql -text
