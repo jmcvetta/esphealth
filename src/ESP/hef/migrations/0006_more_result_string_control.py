@@ -24,7 +24,7 @@ class Migration(SchemaMigration):
         ))
         db.create_unique('hef_labtestmap_excluded_negative_strings', ['labtestmap_id', 'resultstring_id'])
 
-        # Adding M2M table for field extra_indeterminate on 'LabTestMap'
+        # Adding M2M table for field extra_indeterminate_strings on 'LabTestMap'
         db.create_table('hef_labtestmap_extra_indeterminate_strings', (
             ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
             ('labtestmap', models.ForeignKey(orm['hef.labtestmap'], null=False)),
@@ -201,6 +201,12 @@ class Migration(SchemaMigration):
             'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'test': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.AbstractLabTest']", 'unique': 'True'})
         },
+        'hef.labresultanyheuristic': {
+            'Meta': {'ordering': "['test']", 'object_name': 'LabResultAnyHeuristic', '_ormbases': ['hef.Heuristic']},
+            'heuristic_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['hef.Heuristic']", 'unique': 'True', 'primary_key': 'True'}),
+            'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'test': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.AbstractLabTest']", 'unique': 'True'})
+        },
         'hef.labresultfixedthresholdheuristic': {
             'Meta': {'ordering': "['test']", 'unique_together': "(['test', 'threshold'],)", 'object_name': 'LabResultFixedThresholdHeuristic', '_ormbases': ['hef.Heuristic']},
             'date_field': ('django.db.models.fields.CharField', [], {'default': "'order'", 'max_length': '32'}),
@@ -232,7 +238,7 @@ class Migration(SchemaMigration):
             'excluded_indeterminate_strings': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'excluded_indeterminate_set'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['hef.ResultString']"}),
             'excluded_negative_strings': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'excluded_negative_set'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['hef.ResultString']"}),
             'excluded_positive_strings': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'excluded_positive_set'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['hef.ResultString']"}),
-            'extra_indeterminate': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'extra_indeterminate_set'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['hef.ResultString']"}),
+            'extra_indeterminate_strings': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'extra_indeterminate_set'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['hef.ResultString']"}),
             'extra_negative_strings': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'extra_negative_set'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['hef.ResultString']"}),
             'extra_positive_strings': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'extra_positive_set'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['hef.ResultString']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),

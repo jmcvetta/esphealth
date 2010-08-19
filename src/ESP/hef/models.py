@@ -136,6 +136,7 @@ class AbstractLabTest(models.Model):
         count = 0
         log.info('Generating events for abstract test: %s' % self)
         heuristic_set = set(self.laborderheuristic_set.all())
+        heuristic_set |= set(self.labresultanyheuristic_set.all())
         heuristic_set |= set(self.labresultpositiveheuristic_set.all())
         heuristic_set |= set(self.labresultratioheuristic_set.all())
         heuristic_set |= set(self.labresultfixedthresholdheuristic_set.all())
@@ -351,7 +352,7 @@ class LabOrderHeuristic(Heuristic):
         return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
-        return '%s Order Heuristic' % self.test.verbose_name
+        return 'Heuristic - Lab - Order - %s' % self.test
     verbose_name = property(__get_verbose_name)
     
     def save(self, *args, **kwargs):
@@ -386,7 +387,58 @@ class LabOrderHeuristic(Heuristic):
         return unbound_count
 
 
-class LabResultPositiveHeuristic(Heuristic):
+class LabResultAnyHeuristic(Heuristic): 
+    '''
+    A heuristic for detecting positive (& negative) lab result events
+    '''
+    test = models.ForeignKey(AbstractLabTest, blank=False, unique=True)
+    notes = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = 'Heuristic - Lab - Any Result'
+        verbose_name_plural = 'Heuristic - Lab - Any Result'
+        ordering = ['test']
+    
+    def __get_verbose_name(self):
+        return 'Heuristic - Lab - Any Result - %s' % self.test
+    verbose_name = property(__get_verbose_name)
+    
+    def __unicode__(self):
+        return u'%s - %s' % (self.verbose_name, self.test)
+    
+    def save(self, *args, **kwargs):
+        name = '%s--any_result' % self.test.name
+        if self.name and not self.name == name:
+            log.warning('You tried to name a heuristic "%s", but it was automatically named "%s" instead.' % (self.name, name))
+        self.name = name
+        super(LabResultAnyHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
+        obj, created = EventType.objects.get_or_create(
+            name = self.name,
+            heuristic = self,
+            )
+        if created:
+            log.debug('Added %s for %s' % (obj, self))
+    
+    def generate_events(self):
+        log.debug('Generating events for "%s"' % self)
+        unbound_results = self.test.lab_results.exclude(events__event_type__heuristic=self)
+        log_query('Unbound lab results for %s' % self.name, unbound_results)
+        unbound_count = unbound_results.count()
+        event_type = EventType.objects.get(name=self.name)
+        for res in unbound_results:
+            e = Event(
+                event_type = event_type,
+                date = res.date,
+                patient = res.patient,
+                content_object = res,
+                )
+            e.save()
+            log.debug('Saved new event: %s' % e)
+        log.info('Generated %s new %s events' % (unbound_count, self.name))
+        return unbound_count
+
+
+class LabResultPositiveHeuristic(Heuristic): 
     '''
     A heuristic for detecting positive (& negative) lab result events
     '''
@@ -402,10 +454,10 @@ class LabResultPositiveHeuristic(Heuristic):
         ordering = ['test']
     
     def __unicode__(self):
-        return u'%s' % self.verbose_name
+        return u'%s - %s' % (self.verbose_name, self.test)
     
     def __get_verbose_name(self):
-        return '%s Positive Heuristic' % self.test.verbose_name
+        return 'Heuristic - Lab - Positive/Negative - %s' % self.test
     verbose_name = property(__get_verbose_name)
     
     def save(self, *args, **kwargs):
@@ -557,7 +609,7 @@ class LabResultRatioHeuristic(Heuristic):
         return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
-        return '%s %s Ratio Heuristic' % (self.test.verbose_name, self.ratio)
+        return 'Heuristic - Lab - Ratio - %s' % self.test
     verbose_name = property(__get_verbose_name)
     
     def save(self, *args, **kwargs):
@@ -627,7 +679,7 @@ class LabResultFixedThresholdHeuristic(Heuristic):
         return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
-        return '%s %s Threshold Heuristic' % (self.test.verbose_name, self.threshold)
+        return 'Heuristic - Lab - Fixed Threshold - %s' % self.test
     verbose_name = property(__get_verbose_name)
     
     def save(self, *args, **kwargs):
@@ -719,7 +771,7 @@ class PrescriptionHeuristic(Heuristic):
         return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
-        return '%s Prescription Heuristic' % self.name
+        return 'Heuristic - Prescription - %s' % self.name
     verbose_name = property(__get_verbose_name)
     
     def save(self, *args, **kwargs):
@@ -793,8 +845,9 @@ class EncounterHeuristic(Heuristic):
         return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
-        return '%s Encounter Heuristic' % self.name
+        return 'Heuristic - Prescription - %s' % self.name
     verbose_name = property(__get_verbose_name)
+    
     
     def save(self, *args, **kwargs):
         super(EncounterHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.

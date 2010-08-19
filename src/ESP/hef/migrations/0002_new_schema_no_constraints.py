@@ -167,6 +167,15 @@ class Migration(SchemaMigration):
         
         # Rename field 'Event.name' to 'Event.event_type_id'
         db.rename_column('hef_event', 'name', 'event_type_id')
+        
+        # Adding model 'LabResultAnyHeuristic'
+        db.create_table('hef_labresultanyheuristic', (
+            ('heuristic_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['hef.Heuristic'], unique=True, primary_key=True)),
+            ('test', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hef.AbstractLabTest'], unique=True)),
+            ('notes', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('hef', ['LabResultAnyHeuristic'])
+
 
 
     def backwards(self, orm):
@@ -325,6 +334,12 @@ class Migration(SchemaMigration):
         },
         'hef.laborderheuristic': {
             'Meta': {'object_name': 'LabOrderHeuristic', '_ormbases': ['hef.Heuristic']},
+            'heuristic_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['hef.Heuristic']", 'unique': 'True', 'primary_key': 'True'}),
+            'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'test': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.AbstractLabTest']", 'unique': 'True'})
+        },
+        'hef.labresultanyheuristic': {
+            'Meta': {'ordering': "['test']", 'object_name': 'LabResultAnyHeuristic', '_ormbases': ['hef.Heuristic']},
             'heuristic_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['hef.Heuristic']", 'unique': 'True', 'primary_key': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'test': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.AbstractLabTest']", 'unique': 'True'})

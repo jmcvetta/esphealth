@@ -30,6 +30,20 @@ class Migration(DataMigration):
             if created:
                 log.debug('Added %s for %s' % (obj, self))
         LabOrderHeuristic.save = lab_order_save
+        LabResultAnyHeuristic = orm['hef.LabResultAnyHeuristic']
+        def lab_any_save(self, *args, **kwargs):
+            name = '%s--any_result' % self.test.name
+            if self.name and not self.name == name:
+                log.warning('You tried to name a heuristic "%s", but it was automatically named "%s" instead.' % (self.name, name))
+            self.name = name
+            super(LabResultAnyHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
+            obj, created = EventType.objects.get_or_create(
+                name = self.name,
+                heuristic = self,
+                )
+            if created:
+                log.debug('Added %s for %s' % (obj, self))
+        LabResultAnyHeuristic.save = lab_any_save
         LabResultPositiveHeuristic = orm['hef.LabResultPositiveHeuristic']
         def lab_positive_save(self, *args, **kwargs):
             name = '%s--positive' % self.test.name
@@ -834,6 +848,10 @@ class Migration(DataMigration):
                 'verbose_name':  'Fasting glucose (several variations)',
                 }
             )[0]
+        
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = glucose_fasting,
+            )
 
         LabResultFixedThresholdHeuristic.objects.get_or_create(
             test = glucose_fasting,
@@ -855,6 +873,10 @@ class Migration(DataMigration):
                 }
             )[0]
 
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt50_fasting,
+            )
+
         LabResultFixedThresholdHeuristic.objects.get_or_create(
             test = ogtt50_fasting,
             threshold = 95,
@@ -868,6 +890,10 @@ class Migration(DataMigration):
                 }
             )[0]
 
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt50_random,
+            )
+
         LabResultFixedThresholdHeuristic.objects.get_or_create(
             test = ogtt50_random,
             threshold = 190,
@@ -880,6 +906,10 @@ class Migration(DataMigration):
                 'verbose_name':  'Oral Glucose Tolerance Test 50 gram 1 hour post',
                 }
             )[0]
+
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt50_1hr,
+            )
 
         LabResultFixedThresholdHeuristic.objects.get_or_create(
             test = ogtt50_1hr,
@@ -911,6 +941,10 @@ class Migration(DataMigration):
                 }
             )[0]
 
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt75_fasting,
+            )
+
         LabOrderHeuristic.objects.get_or_create(
             test=ogtt75_fasting,
             )
@@ -934,6 +968,10 @@ class Migration(DataMigration):
                 }
             )[0]
 
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt75_fasting_urine,
+            )
+
         LabOrderHeuristic.objects.get_or_create(
             test=ogtt75_fasting_urine,
             )
@@ -949,6 +987,10 @@ class Migration(DataMigration):
                 'verbose_name':  'Oral Glucose Tolerance Test 75 gram 30 minutes post',
                 }
             )[0]
+
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt75_30min,
+            )
 
         LabOrderHeuristic.objects.get_or_create(
             test=ogtt75_30min,
@@ -966,6 +1008,10 @@ class Migration(DataMigration):
                 'verbose_name':  'Oral Glucose Tolerance Test 75 gram 1 hour post',
                 }
             )[0]
+
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt75_1hr,
+            )
 
         LabOrderHeuristic.objects.get_or_create(
             test=ogtt75_1hr,
@@ -990,6 +1036,10 @@ class Migration(DataMigration):
                 }
             )[0]
 
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt75_90min,
+            )
+
         LabOrderHeuristic.objects.get_or_create(
             test=ogtt75_90min,
             )
@@ -1012,6 +1062,10 @@ class Migration(DataMigration):
                 'verbose_name':  'Oral Glucose Tolerance Test 75 gram 2 hour post',
                 }
             )[0]
+
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt75_2hr,
+            )
 
         LabOrderHeuristic.objects.get_or_create(
             test=ogtt75_2hr,
@@ -1042,6 +1096,10 @@ class Migration(DataMigration):
                 }
             )[0]
 
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt100_fasting,
+            )
+
         LabResultFixedThresholdHeuristic.objects.get_or_create(
             test = ogtt100_fasting,
             threshold = 95,
@@ -1055,6 +1113,10 @@ class Migration(DataMigration):
                 }
             )[0]
 
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt100_fasting_urine,
+            )
+
         LabResultPositiveHeuristic.objects.get_or_create(
             test = ogtt100_fasting_urine,
             date_field = 'result'
@@ -1066,6 +1128,10 @@ class Migration(DataMigration):
                 'verbose_name':  'Oral Glucose Tolerance Test 100 gram 30 minutes post',
                 }
             )[0]
+
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt100_30min,
+            )
 
         LabResultFixedThresholdHeuristic.objects.get_or_create(
             test = ogtt100_30min,
@@ -1080,6 +1146,10 @@ class Migration(DataMigration):
                 }
             )[0]
 
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt100_1hr,
+            )
+
         LabResultFixedThresholdHeuristic.objects.get_or_create(
             test = ogtt100_1hr,
             threshold = 180,
@@ -1092,6 +1162,10 @@ class Migration(DataMigration):
                 'verbose_name':  'Oral Glucose Tolerance Test 100 gram 90 minutes post',
                 }
             )[0]
+
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt100_90min,
+            )
 
         LabResultFixedThresholdHeuristic.objects.get_or_create(
             test = ogtt100_90min,
@@ -1106,6 +1180,10 @@ class Migration(DataMigration):
                 }
             )[0]
 
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt100_2hr,
+            )
+
         LabResultFixedThresholdHeuristic.objects.get_or_create(
             test = ogtt100_2hr,
             threshold = 155,
@@ -1118,6 +1196,10 @@ class Migration(DataMigration):
                 'verbose_name':  'Oral Glucose Tolerance Test 100 gram 3 hour post',
                 }
             )[0]
+
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt100_3hr,
+            )
 
         LabResultFixedThresholdHeuristic.objects.get_or_create(
             test = ogtt100_3hr,
@@ -1132,6 +1214,10 @@ class Migration(DataMigration):
                 }
             )[0]
 
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt100_4hr,
+            )
+
         LabResultFixedThresholdHeuristic.objects.get_or_create(
             test = ogtt100_4hr,
             threshold = 140,
@@ -1144,6 +1230,10 @@ class Migration(DataMigration):
                 'verbose_name':  'Oral Glucose Tolerance Test 100 gram 5 hour post',
                 }
             )[0]
+            
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = ogtt100_5hr,
+            )
 
         LabResultFixedThresholdHeuristic.objects.get_or_create(
             test = ogtt100_5hr,
@@ -1165,6 +1255,10 @@ class Migration(DataMigration):
                 }
             )[0]
             
+        LabResultAnyHeuristic.objects.get_or_create(
+            test = a1c,
+            )
+
         LabOrderHeuristic.objects.get_or_create(
             test = a1c,
             )
@@ -1476,6 +1570,12 @@ class Migration(DataMigration):
         },
         'hef.laborderheuristic': {
             'Meta': {'object_name': 'LabOrderHeuristic', '_ormbases': ['hef.Heuristic']},
+            'heuristic_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['hef.Heuristic']", 'unique': 'True', 'primary_key': 'True'}),
+            'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'test': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.AbstractLabTest']", 'unique': 'True'})
+        },
+        'hef.labresultanyheuristic': {
+            'Meta': {'ordering': "['test']", 'object_name': 'LabResultAnyHeuristic', '_ormbases': ['hef.Heuristic']},
             'heuristic_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['hef.Heuristic']", 'unique': 'True', 'primary_key': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'test': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.AbstractLabTest']", 'unique': 'True'})
