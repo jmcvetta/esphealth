@@ -159,7 +159,6 @@ INSTALLED_APPS = (
     'ESP.vaers',
     'ESP.ss',
     'ESP.ui',
-    'ESP.new_hef',
     'south',
 )
 CASE_REPORT_OUTPUT_FOLDER = os.path.join(DATA_DIR, 'case_reports')
