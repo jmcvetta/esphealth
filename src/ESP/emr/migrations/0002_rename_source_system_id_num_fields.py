@@ -12,43 +12,17 @@ class Migration(SchemaMigration):
         # Prescription
         #-------------------------------------------------------------------------------
         db.rename_column('emr_prescription', 'order_num', 'order_id_num')
-        #orm['emr.Prescription'].objects.filter(order_id_num__isnull=True).update(order_id_num='Unknown')
-        #db.alter_column('emr_prescription', 'order_id_num', self.gf('django.db.models.fields.CharField')(blank=False, db_index=True, max_length=128))
-        #db.create_index('emr_prescription', ['dose'])
-
-        #-------------------------------------------------------------------------------
-        # Patient
-        #-------------------------------------------------------------------------------
-        #db.alter_column('emr_patient', 'patient_id_num', self.gf('django.db.models.fields.CharField')(unique=True, db_index=True, max_length=128))
 
         #-------------------------------------------------------------------------------
         # Lab Order
         #-------------------------------------------------------------------------------
         db.rename_column('emr_laborder', 'order_id', 'order_id_num')
-        #db.alter_column('emr_laborder', 'order_id_num', self.gf('django.db.models.fields.CharField')(blank=True, null=True, max_length=128))
-        #orm['emr.LabOrder'].objects.filter(order_id_num__isnull=True).update(order_id_num='Unknown')
-        #db.alter_column('emr_laborder', 'order_id_num', self.gf('django.db.models.fields.CharField')(blank=False, db_index=True, max_length=128))
 
         #-------------------------------------------------------------------------------
         # Lab Result
         #-------------------------------------------------------------------------------
         db.rename_column('emr_labresult', 'order_num', 'order_id_num')
         db.rename_column('emr_labresult', 'result_num', 'result_id_num')
-        #orm['emr.LabResult'].objects.filter(order_id_num__isnull=True).update(order_id_num='Unknown')
-        #db.alter_column('emr_labresult', 'order_id_num', self.gf('django.db.models.fields.CharField')(blank=False, db_index=True, max_length=128))
-        #db.alter_column('emr_labresult', 'result_id_num', self.gf('django.db.models.fields.CharField')(blank=True, null=True, max_length=128))
-        #db.create_index('emr_labresult', ['collection_date'])
-
-        #-------------------------------------------------------------------------------
-        # Encounter
-        #-------------------------------------------------------------------------------
-        #db.alter_column('emr_encounter', 'pregnancy_status', self.gf('django.db.models.fields.BooleanField')())
-
-        #-------------------------------------------------------------------------------
-        # Provider
-        #-------------------------------------------------------------------------------
-        #db.alter_column('emr_provider', 'dept_id_num', self.gf('django.db.models.fields.CharField')(max_length=128, null=True, blank=True))
-        #db.alter_column('emr_provider', 'provider_id_num', self.gf('django.db.models.fields.CharField')(unique=True, max_length=128))
 
 
     def backwards(self, orm):
@@ -234,7 +208,7 @@ class Migration(SchemaMigration):
             'created_timestamp': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'date': ('django.db.models.fields.DateField', [], {'db_index': 'True'}),
             'directions': ('django.db.models.fields.TextField', [], {'max_length': '3000', 'null': 'True', 'blank': 'True'}),
-            'dose': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '200', 'null': 'True', 'blank': 'True'}),
+            'dose': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'end_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'frequency': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
