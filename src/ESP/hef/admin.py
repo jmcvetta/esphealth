@@ -6,15 +6,16 @@
 
 from django.contrib import admin
 
-from ESP.new_hef.models import AbstractLabTest
-from ESP.new_hef.models import LabTestMap
-from ESP.new_hef.models import LabOrderHeuristic
-from ESP.new_hef.models import LabResultPositiveHeuristic
-from ESP.new_hef.models import LabResultRatioHeuristic
-from ESP.new_hef.models import LabResultFixedThresholdHeuristic
-from ESP.new_hef.models import EncounterHeuristic
-from ESP.new_hef.models import PrescriptionHeuristic
-from ESP.new_hef.models import Dose
+from ESP.hef.models import AbstractLabTest
+from ESP.hef.models import LabTestMap
+from ESP.hef.models import LabOrderHeuristic
+from ESP.hef.models import LabResultPositiveHeuristic
+from ESP.hef.models import LabResultRatioHeuristic
+from ESP.hef.models import LabResultFixedThresholdHeuristic
+from ESP.hef.models import EncounterHeuristic
+from ESP.hef.models import PrescriptionHeuristic
+from ESP.hef.models import Dose
+from ESP.hef.models import ResultString
 
 
 class EventAdmin(admin.ModelAdmin):
@@ -24,7 +25,44 @@ class AbstractLabTestAdmin(admin.ModelAdmin):
     list_display = ['name', 'reportable']
 
 class LabTestMapAdmin(admin.ModelAdmin):
-    list_display = ['test', 'code', 'code_match_type']
+    list_display = ['test', 'code', 'record_type', 'code_match_type']
+    list_filter = ['record_type', 'test']
+    search_fields = ['code']
+    filter_horizontal = [
+        'extra_positive_strings', 
+        'excluded_positive_strings',
+        'extra_negative_strings',
+        'excluded_negative_strings',
+        'extra_indeterminate_strings',
+        'excluded_indeterminate_strings',
+        ]
+    fieldsets = (
+        (None, {
+            'fields': ('test',)
+            }),
+        ('Mapping', {
+            'fields': ('code', 'code_match_type', 'record_type'),
+            }),
+        ('Reporting', {
+            'fields': ('reportable', 'output_code', 'output_name', 'snomed_pos', 'snomed_neg',  'snomed_ind'),
+            'classes': ('collapse',),
+            }),
+        ('Result Strings', {
+            'fields': (
+		        'extra_positive_strings', 
+		        'excluded_positive_strings',
+		        'extra_negative_strings',
+		        'excluded_negative_strings',
+		        'extra_indeterminate_strings',
+		        'excluded_indeterminate_strings',
+                ),
+            'classes': ('collapse',),
+            }),
+        ('', {
+            'fields': ('notes',)
+            }),
+        )
+    
 
 class LabOrderHeuristicAdmin(admin.ModelAdmin):
     list_display = ['test']
@@ -52,6 +90,10 @@ class EncounterHeuristicAdmin(admin.ModelAdmin):
 class PrescriptionHeuristicAdmin(admin.ModelAdmin):
     list_display = ['name', 'drugs', 'exclude', 'require']
 
+class ResultStringAdmin(admin.ModelAdmin):
+    list_display = ['value', 'indicates', 'match_type', 'applies_to_all']
+    list_filter = ['indicates', 'match_type', 'applies_to_all']
+
 
 admin.site.register(AbstractLabTest, AbstractLabTestAdmin)
 admin.site.register(LabTestMap, LabTestMapAdmin)
@@ -61,3 +103,4 @@ admin.site.register(LabResultRatioHeuristic, LabResultRatioHeuristicAdmin)
 admin.site.register(LabResultFixedThresholdHeuristic, LabResultFixedThresholdHeuristicAdmin)
 admin.site.register(EncounterHeuristic, EncounterHeuristicAdmin)
 admin.site.register(PrescriptionHeuristic, PrescriptionHeuristicAdmin)
+admin.site.register(ResultString, ResultStringAdmin)
