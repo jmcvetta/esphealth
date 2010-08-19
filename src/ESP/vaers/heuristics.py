@@ -9,7 +9,6 @@ from django.db.models import Q, F, Max
 from django.contrib.contenttypes.models import ContentType
 
 from ESP.hef.core import BaseHeuristic
-from ESP.hef.models import Run
 from ESP.conf.common import EPOCH
 from ESP.conf.models import CodeMap
 from ESP.static.models import Icd9
@@ -46,9 +45,10 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
             'VAERS Fever', verbose_name='Fever reaction to immunization')
 
     def matches(self, **kw):
+        raise NotImplementedError('Last run support no longer available.  This method must be refactored')
         incremental = kw.get('incremental', False)
         
-        last_run = Run.objects.filter(status='s').aggregate(ts=Max('timestamp'))['ts']
+        #last_run = Run.objects.filter(status='s').aggregate(ts=Max('timestamp'))['ts']
         
         begin = (incremental and last_run) or kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()

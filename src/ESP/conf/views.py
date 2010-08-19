@@ -39,8 +39,6 @@ from ESP.settings import ROWS_PER_PAGE
 from ESP.conf.models import CodeMap
 from ESP.conf.models import IgnoredCode
 from ESP.emr.models import LabResult
-from ESP.hef.core import BaseHeuristic
-from ESP.hef import events # Required to register hef events
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
 

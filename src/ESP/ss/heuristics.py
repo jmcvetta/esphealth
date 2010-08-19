@@ -10,7 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from ESP.conf.common import EPOCH
 from ESP.emr.models import Encounter, Patient
 from ESP.hef.core import EncounterHeuristic
-from ESP.hef.models import Run, Event
+from ESP.hef.models import Event
 from ESP.utils.utils import log, date_from_str, str_from_date, days_in_interval, timeit
 from ESP.ss.utils import report_folder
 from ESP.ss.models import NonSpecialistVisitEvent, Site
@@ -52,7 +52,6 @@ class SyndromeHeuristic(EncounterHeuristic):
         begin_date = kw.get('begin_date', EPOCH)
         end_date = kw.get('end_date', datetime.date.today())
 
-        run = Run.objects.create()
 
         for encounter in self.matches().filter(date__gte=begin_date, date__lte=end_date):
             detected +=1 

@@ -20,7 +20,7 @@ from django.contrib.auth.forms import UserCreationForm
 
 from ESP.nodis.models import STATUS_CHOICES
 from ESP.nodis.models import Condition
-from ESP.hef.core import BaseHeuristic
+from ESP.hef.models import AbstractLabTest
 from ESP.static.models import Loinc
 
 from ESP.nodis import defs
@@ -37,7 +37,8 @@ class CaseStatusForm(forms.Form):
 
 
 class CodeMapForm(forms.Form):
-    heuristic = forms.ChoiceField(choices=BaseHeuristic.lab_heuristic_choices(), required=True)
+    TEST_CHOICES = [('%s' % t.name, '%s - %s' % (t.name, t.verbose_name)) for t in AbstractLabTest.objects.all()]
+    test = forms.ChoiceField(choices=TEST_CHOICES, required=True)
     threshold = forms.FloatField(required=False)
     notes = forms.CharField(widget=forms.Textarea, required=False)
     output_code = forms.CharField(max_length=100, required=False)
