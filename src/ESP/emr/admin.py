@@ -30,10 +30,10 @@ class PatientAdmin(admin.ModelAdmin):
     search_fields = ['patient_id_num', 'last_name']
 
 class LabResultAdmin(admin.ModelAdmin):
-    list_display = ['order_num', 'native_name', 'patient', 'provider', 'result_string']
-    list_display_links = ['order_num']
+    list_display = ['order_id_num', 'native_name', 'patient', 'provider', 'result_string']
+    list_display_links = ['order_id_num']
     raw_id_fields = ['patient', 'provider']
-    search_fields = ['order_num', 'native_code', 'native_name', 'patient__mrn']
+    search_fields = ['order_id_num', 'native_code', 'native_name', 'patient__mrn']
     ordering = ['-date']
 
 class EncounterAdmin(admin.ModelAdmin):
@@ -44,8 +44,8 @@ class EncounterAdmin(admin.ModelAdmin):
     ordering = ['-date']
 
 class PrescriptionAdmin(admin.ModelAdmin):
-    list_display = ['order_num', 'date', 'patient', 'name', 'dose']
-    search_fields = ['order_num', 'name', 'patient__last_name']
+    list_display = ['order_id_num', 'date', 'patient', 'name', 'dose']
+    search_fields = ['order_id_num', 'name', 'patient__last_name']
     ordering = ['-date']
 
 class ImmunizationAdmin(admin.ModelAdmin):
