@@ -12,6 +12,7 @@ class Migration(DataMigration):
     def forwards(self, orm):
         AbstractLabTest = orm['hef.AbstractLabTest']
         Heuristic = orm['hef.Heuristic']
+        ResultString = orm['hef.ResultString']
         # We have to add custom save() methods to the South orm objects -- they
         # are frozen models, and do not have any custom methods from the 
         # actual django models.
@@ -100,6 +101,77 @@ class Migration(DataMigration):
         Dose = orm['hef.Dose']
         EventType = orm['hef.EventType']
     
+        #-------------------------------------------------------------------------------
+        #
+        # Result Strings
+        #
+        #-------------------------------------------------------------------------------
+        ResultString.objects.get_or_create(
+            value = 'reactiv',
+            indicates = 'pos',
+            match_type = 'istartswith',
+            applies_to_all = True,
+            )
+        ResultString.objects.get_or_create(
+            value = 'pos',
+            indicates = 'pos',
+            match_type = 'istartswith',
+            applies_to_all = True,
+            )
+        ResultString.objects.get_or_create(
+            value = 'detec',
+            indicates = 'pos',
+            match_type = 'istartswith',
+            applies_to_all = True,
+            )
+        ResultString.objects.get_or_create(
+            value = 'confirm',
+            indicates = 'pos',
+            match_type = 'istartswith',
+            applies_to_all = True,
+            )
+        ResultString.objects.get_or_create(
+            value = 'non',
+            indicates = 'neg',
+            match_type = 'istartswith',
+            applies_to_all = True,
+            )
+        ResultString.objects.get_or_create(
+            value = 'neg',
+            indicates = 'neg',
+            match_type = 'istartswith',
+            applies_to_all = True,
+            )
+        ResultString.objects.get_or_create(
+            value = 'not det',
+            indicates = 'neg',
+            match_type = 'istartswith',
+            applies_to_all = True,
+            )
+        ResultString.objects.get_or_create(
+            value = 'nr',
+            indicates = 'neg',
+            match_type = 'istartswith',
+            applies_to_all = True,
+            )
+        ResultString.objects.get_or_create(
+            value = 'indeterminate',
+            indicates = 'ind',
+            match_type = 'istartswith',
+            applies_to_all = True,
+            )
+        ResultString.objects.get_or_create(
+            value = 'not done',
+            indicates = 'ind',
+            match_type = 'istartswith',
+            applies_to_all = True,
+            )
+        ResultString.objects.get_or_create(
+            value = 'tnp',
+            indicates = 'ind',
+            match_type = 'istartswith',
+            applies_to_all = True,
+            )
 
         #-------------------------------------------------------------------------------
         #

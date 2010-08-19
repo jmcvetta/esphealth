@@ -25,12 +25,12 @@ class Migration(SchemaMigration):
         db.create_unique('hef_labtestmap_excluded_negative_strings', ['labtestmap_id', 'resultstring_id'])
 
         # Adding M2M table for field extra_indeterminate on 'LabTestMap'
-        db.create_table('hef_labtestmap_extra_indeterminate', (
+        db.create_table('hef_labtestmap_extra_indeterminate_strings', (
             ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
             ('labtestmap', models.ForeignKey(orm['hef.labtestmap'], null=False)),
             ('resultstring', models.ForeignKey(orm['hef.resultstring'], null=False))
         ))
-        db.create_unique('hef_labtestmap_extra_indeterminate', ['labtestmap_id', 'resultstring_id'])
+        db.create_unique('hef_labtestmap_extra_indeterminate_strings', ['labtestmap_id', 'resultstring_id'])
 
         # Adding M2M table for field excluded_indeterminate_strings on 'LabTestMap'
         db.create_table('hef_labtestmap_excluded_indeterminate_strings', (

@@ -110,26 +110,24 @@ class AbstractLabTest(models.Model):
     #
     notes = models.TextField(blank=True, null=True)
     class Meta:
-        verbose_name = 'Abstract Lab Test Type'
+        verbose_name = 'Abstract Lab Test'
         ordering = ['name']
     
     def __unicode__(self):
-        return u'%s' % self.verbose_name
+        return u'%s - %s' % (self.name, self.verbose_name)
     
     def __get_lab_results(self):
         result = LabResult.objects.none()
-        result_q = Q(record_type='result') | Q(record_type='both')
-        for cm in self.labtestmap_set.filter(result_q):
-            result = result | cm.lab_results
+        for cm in self.labtestmap_set.filter( Q(record_type='result') | Q(record_type='both') ):
+            result |= LabResult.objects.filter(cm.lab_results_q_obj)
         log_query('Lab Results for %s' % self.name, result)
         return result
     lab_results = property(__get_lab_results)
     
     def __get_lab_orders(self):
         result = LabOrder.objects.none()
-        order_q = Q(record_type='order') | Q(record_type='both')
-        for cm in self.labtestmap_set.filter(order_q):
-            result = result | cm.lab_orders
+        for cm in self.labtestmap_set.filter( Q(record_type='order') | Q(record_type='both') ):
+            result |= LabOrder.objects.filter(cm.lab_orders_q_obj)
         log_query('Lab Orders for %s' % self.name, result)
         return result
     lab_orders = property(__get_lab_orders)
@@ -156,6 +154,32 @@ class ResultString(models.Model):
         help_text='Match type for string', default='istartswith')
     applies_to_all = models.BooleanField(blank=False, default=False, 
         help_text='Match this string for ALL tests.  If not checked, string must be explicitly specified in Lab Test Map')
+    
+    class Meta:
+        ordering = ['value']
+        verbose_name = 'Result String'
+    
+    def __get_q_obj(self):
+        '''
+        Returns a Q object to search for this result string
+        '''
+        if self.match_type == 'exact':
+            return Q(result_string__exact=self.value)
+        elif self.match_type == 'iexact':
+            return Q(result_string__iexact=self.value)
+        elif self.match_type == 'startswith':
+            return Q(result_string__startswith=self.value)
+        elif self.match_type == 'istartswith':
+            return Q(result_string__istartswith=self.value)
+        elif self.match_type == 'endswith':
+            return Q(result_string__endswith=self.value)
+        elif self.match_type == 'iendswith':
+            return Q(result_string__iendswith=self.value)
+        elif self.match_type == 'contains':
+            return Q(result_string__contains=self.value)
+        elif self.match_type == 'icontains':
+            return Q(result_string__icontains=self.value)
+    q_obj = property(__get_q_obj)
 
 
 class LabTestMap(models.Model):
@@ -179,7 +203,7 @@ class LabTestMap(models.Model):
         limit_choices_to={'indicates': 'neg', 'applies_to_all': False})
     excluded_negative_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='excluded_negative_set',
         limit_choices_to={'indicates': 'neg', 'applies_to_all': True})
-    extra_indeterminate = models.ManyToManyField(ResultString, blank=True, null=True, related_name='extra_indeterminate_set',
+    extra_indeterminate_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='extra_indeterminate_set',
         limit_choices_to={'indicates': 'ind', 'applies_to_all': False})
     excluded_indeterminate_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='excluded_indeterminate_set',
         limit_choices_to={'indicates': 'ind', 'applies_to_all': True})
@@ -197,29 +221,29 @@ class LabTestMap(models.Model):
     #
     notes = models.TextField(blank=True, null=True)
     class Meta:
-        verbose_name = 'Lab Test Code Map'
+        verbose_name = 'Lab Test Map'
         unique_together = ['test', 'code']
     
-    def __get_lab_results(self):
+    def __get_lab_results_q_obj(self):
         if self.code_match_type == 'exact':
-            return LabResult.objects.filter(native_code__exact=self.code)
+            return Q(native_code__exact=self.code)
         elif self.code_match_type == 'iexact':
-            return LabResult.objects.filter(native_code__iexact=self.code)
+            return Q(native_code__iexact=self.code)
         elif self.code_match_type == 'startswith':
-            return LabResult.objects.filter(native_code__startswith=self.code)
+            return Q(native_code__startswith=self.code)
         elif self.code_match_type == 'istartswith':
-            return LabResult.objects.filter(native_code__istartswith=self.code)
+            return Q(native_code__istartswith=self.code)
         elif self.code_match_type == 'endswith':
-            return LabResult.objects.filter(native_code__endswith=self.code)
+            return Q(native_code__endswith=self.code)
         elif self.code_match_type == 'iendswith':
-            return LabResult.objects.filter(native_code__iendswith=self.code)
+            return Q(native_code__iendswith=self.code)
         elif self.code_match_type == 'contains':
-            return LabResult.objects.filter(native_code__contains=self.code)
+            return Q(native_code__contains=self.code)
         elif self.code_match_type == 'icontains':
-            return LabResult.objects.filter(native_code__icontains=self.code)
-    lab_results = property(__get_lab_results)
+            return Q(native_code__icontains=self.code)
+    lab_results_q_obj = property(__get_lab_results_q_obj)
     
-    def __get_lab_orders(self):
+    def __get_lab_orders_q_obj(self):
         #
         # 'procedure_master_num' is a crappy field name, and needs to be changed
         if self.code_match_type == 'exact':
@@ -238,8 +262,41 @@ class LabTestMap(models.Model):
             return LabOrder.objects.filter(procedure_master_num__contains=self.code)
         elif self.code_match_type == 'icontains':
             return LabOrder.objects.filter(procedure_master_num__icontains=self.code)
-    lab_orders = property(__get_lab_orders)
+    lab_orders_q_obj = property(__get_lab_orders_q_obj)
     
+    def __get_positive_string_q_obj(self):
+        # Build pos q for this lab test based on q_obj for each result string object
+        pos_rs = ResultString.objects.filter(indicates='pos', applies_to_all=True)
+        pos_rs |= self.extra_positive_strings.all()
+        if self.excluded_positive_strings.all():
+            pos_rs = pos_rs.exclude(self.excluded_positive_strings.all())
+        q_obj = pos_rs[0].q_obj
+        for rs in pos_rs[1:]:
+            q_obj |= rs.q_obj
+        return q_obj
+    positive_string_q_obj = property(__get_positive_string_q_obj)
+    
+    def __get_negative_string_q_obj(self):
+        neg_rs = ResultString.objects.filter(indicates='neg', applies_to_all=True)
+        neg_rs |= self.extra_negative_strings.all()
+        if self.excluded_negative_strings.all():
+            neg_rs = neg_rs.exclude(self.excluded_negative_strings.all())
+        q_obj = neg_rs[0].q_obj
+        for rs in neg_rs[1:]:
+            q_obj |= rs.q_obj
+        return q_obj
+    negative_string_q_obj = property(__get_negative_string_q_obj)
+    
+    def __get_indeterminate_string_q_obj(self):
+        rs_set = ResultString.objects.filter(indicates='ind', applies_to_all=True)
+        rs_set |= self.extra_indeterminate_strings.all()
+        if self.excluded_indeterminate_strings.all():
+            rs_set = rs_set.exclude(self.excluded_indeterminate_strings.all())
+        q_obj = rs_set[0].q_obj
+        for rs in rs_set[1:]:
+            q_obj |= rs.q_obj
+        return q_obj
+    indeterminate_string_q_obj = property(__get_indeterminate_string_q_obj)
 
 
 class Heuristic(models.Model):
@@ -287,7 +344,8 @@ class LabOrderHeuristic(Heuristic):
     notes = models.TextField(blank=True, null=True)
     
     class Meta:
-        verbose_name = 'Lab Order Heuristic'
+        verbose_name = 'Heuristic - Lab - Order'
+        verbose_name_plural = 'Heuristic - Lab - Order'
     
     def __unicode__(self):
         return u'%s' % self.verbose_name
@@ -339,7 +397,8 @@ class LabResultPositiveHeuristic(Heuristic):
     notes = models.TextField(blank=True, null=True)
     
     class Meta:
-        verbose_name = 'Lab Result Heuristic - Pos/Neg/Ind'
+        verbose_name = 'Heuristic - Lab - Positive/Negative'
+        verbose_name_plural = 'Heuristic - Lab - Positive/Negative'
         ordering = ['test']
     
     def __unicode__(self):
@@ -392,8 +451,9 @@ class LabResultPositiveHeuristic(Heuristic):
         #--------------------------------------------------------------------------------
         positive_q = Q(pk__isnull=True)
         negative_q = Q(pk__isnull=True)
+        indeterminate_q = Q(pk__isnull=True)
         #
-        # Build numeric comparison queries
+        # Build queries from LabTestMaps
         #
         for map in LabTestMap.objects.filter(test=self.test):
             num_res_q = Q(native_code=map.code, result_float__isnull=False)
@@ -402,29 +462,22 @@ class LabResultPositiveHeuristic(Heuristic):
             if map.threshold:
                 positive_q |= num_res_q & Q(ref_high_float__isnull=True, result_float__gte=map.threshold)
                 negative_q |= num_res_q & Q(ref_high_float__isnull=True, result_float__lt=map.threshold)
+            # String queries
+            positive_q |= (map.positive_string_q_obj & map.lab_results_q_obj)
+            negative_q |= (map.negative_string_q_obj & map.lab_results_q_obj)
+            indeterminate_q |= (map.indeterminate_string_q_obj & map.lab_results_q_obj)
         #
-        # Build string queries
+        # Add titer string queries
         #
-        pos_strings = list(POSITIVE_STRINGS)
-        neg_strings = list(NEGATIVE_STRINGS)
         if self.titer:
             positive_titer_strings = ['1:%s' % 2**i for i in range(math.log(self.titer, 2), math.log(4096,2))]
             negative_titer_strings = ['1:%s' % 2**i for i in range(math.log(self.titer, 2))]
-            pos_strings += positive_titer_strings
-            neg_strings += negative_titer_strings
-        pos_str_q = Q(result_string__istartswith=pos_strings[0])
-        for s in pos_strings[1:]:
-            pos_str_q |= Q(result_string__istartswith=s)
-        positive_q |= pos_str_q
-        #
-        neg_str_q = Q(result_string__istartswith=neg_strings[0])
-        for s in neg_strings[1:]:
-            neg_str_q |= Q(result_string__istartswith=s)
-        negative_q |= neg_str_q
-        # Indeterminate events can ONLY be determined from string result
-        indeterminate_q = Q(result_string__istartswith=INDETERMINATE_STRINGS[0])
-        for s in INDETERMINATE_STRINGS[1:]:
-            indeterminate_q |= Q(result_string__istartswith=s)
+            positive_q |= Q(result_string__istartswith=positive_titer_strings[0])
+            negative_q |= Q(result_string__istartswith=negative_titer_strings[0])
+            for s in positive_titer_strings[1:]:
+                positive_q |= Q(result_string__istartswith=s)
+            for s in negative_titer_strings[1:]:
+                negative_q |= Q(result_string__istartswith=s)
         #
         # Generate Events
         #
@@ -495,7 +548,8 @@ class LabResultRatioHeuristic(Heuristic):
     notes = models.TextField(blank=True, null=True)
     
     class Meta:
-        verbose_name = 'Lab Result Heuristic - Ratio'
+        verbose_name = 'Heuristic - Lab - Ratio'
+        verbose_name_plural = 'Heuristic - Lab - Ratio'
         unique_together = ['test', 'ratio']
         ordering = ['test']
     
@@ -564,7 +618,8 @@ class LabResultFixedThresholdHeuristic(Heuristic):
     notes = models.TextField(blank=True, null=True)
     
     class Meta:
-        verbose_name = 'Lab Result Heuristic - Fixed Threshold'
+        verbose_name = 'Heuristic - Lab - Fixed Threshold'
+        verbose_name_plural = 'Heuristic - Lab - Fixed Threshold'
         unique_together = ['test', 'threshold']
         ordering = ['test']
     
@@ -656,7 +711,8 @@ class PrescriptionHeuristic(Heuristic):
         help_text='Prescription may not include any of these strings.  Separate strings with commas.')
     
     class Meta:
-        verbose_name = 'Prescription Heuristic'
+        verbose_name = 'Heuristic - Prescription'
+        verbose_name_plural = 'Heuristic - Prescription'
         ordering = ['name']
         
     def __unicode__(self):
@@ -728,7 +784,8 @@ class EncounterHeuristic(Heuristic):
     notes = models.TextField(blank=True, null=True)
 
     class Meta:
-        verbose_name = 'Encounter Heuristic'
+        verbose_name = 'Heuristic - Encounter'
+        verbose_name_plural = 'Heuristic - Encounter'
         ordering = ['name']
         unique_together = ['icd9_codes', 'code_match_type']
     
