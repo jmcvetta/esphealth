@@ -331,7 +331,7 @@ class LabResultPositiveHeuristic(Heuristic):
     notes = models.TextField(blank=True, null=True)
     
     class Meta:
-        verbose_name = 'Positive/Negative Lab Result Heuristic'
+        verbose_name = 'Lab Result Heuristic - Pos/Neg/Ind'
         ordering = ['test']
     
     def __unicode__(self):
@@ -487,7 +487,7 @@ class LabResultRatioHeuristic(Heuristic):
     notes = models.TextField(blank=True, null=True)
     
     class Meta:
-        verbose_name = 'Ratio Lab Result Heuristic'
+        verbose_name = 'Lab Result Heuristic - Ratio'
         unique_together = ['test', 'ratio']
         ordering = ['test']
     
@@ -556,7 +556,7 @@ class LabResultFixedThresholdHeuristic(Heuristic):
     notes = models.TextField(blank=True, null=True)
     
     class Meta:
-        verbose_name = 'Fixed Threshold Lab Result Heuristic'
+        verbose_name = 'Lab Result Heuristic - Fixed Threshold'
         unique_together = ['test', 'threshold']
         ordering = ['test']
     
