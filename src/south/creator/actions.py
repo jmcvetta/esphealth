@@ -8,7 +8,7 @@ import sys
 import datetime
 
 from django.db.models.fields.related import RECURSIVE_RELATIONSHIP_CONSTANT
-from django.db.models.fields import FieldDoesNotExist, NOT_PROVIDED
+from django.db.models.fields import FieldDoesNotExist, NOT_PROVIDED, CharField, TextField
 
 from south import modelsinspector
 from south.creator.freezer import remove_useless_attributes, model_key
@@ -19,6 +19,9 @@ class Action(object):
     the forwards() and backwards() method lists.
     """
     
+    prepend_forwards = False
+    prepend_backwards = False
+    
     def forwards_code(self):
         raise NotImplementedError
     
@@ -26,10 +29,16 @@ class Action(object):
         raise NotImplementedError
     
     def add_forwards(self, forwards):
-        forwards.append(self.forwards_code())
+        if self.prepend_forwards:
+            forwards.insert(0, self.forwards_code())
+        else:
+            forwards.append(self.forwards_code())
     
     def add_backwards(self, backwards):
-        backwards.append(self.backwards_code())
+        if self.prepend_backwards:
+            backwards.insert(0, self.backwards_code())
+        else:
+            backwards.append(self.backwards_code())
     
     def console_line(self):
         "Returns the string to print on the console, e.g. ' + Added field foo'"
@@ -145,6 +154,10 @@ class AddField(Action):
             self.deal_with_not_null_no_default()
 
     def deal_with_not_null_no_default(self):
+        # If it's a CharField or TextField that's blank, skip this step.
+        if isinstance(self.field, (CharField, TextField)) and self.field.blank:
+            self.field_def[2]['default'] = repr("")
+            return
         # Oh dear. Ask them what to do.
         print " ? The field '%s.%s' does not have a default specified, yet is NOT NULL." % (
             self.model._meta.object_name,
@@ -346,6 +359,8 @@ class AddUnique(Action):
         # Removing unique constraint on '%(model_name)s', fields %(field_names)s
         db.delete_unique(%(table_name)r, %(fields)r)'''
     
+    prepend_backwards = True
+    
     def __init__(self, model, fields):
         self.model = model
         self.fields = fields
@@ -380,6 +395,9 @@ class DeleteUnique(AddUnique):
     """
     Removes a unique constraint from a model. Takes a Model class and the field names.
     """
+    
+    prepend_forwards = True
+    prepend_backwards = False
     
     def console_line(self):
         "Returns the string to print on the console, e.g. ' + Added field foo'"

@@ -401,6 +401,11 @@ class DatabaseOperations(object):
             ifsc_table = "constraint_column_usage"
         else:
             ifsc_table = "key_column_usage"
+            
+        if self._has_setting("SCHEMA"):
+            schema = self._get_setting("SCHEMA")
+        else:
+            schema = "public"
 
         # First, load all constraint->col mappings for this table.
         rows = self.execute("""
@@ -414,7 +419,7 @@ class DatabaseOperations(object):
                 kc.table_schema = %%s AND
                 kc.table_name = %%s AND
                 c.constraint_type = %%s
-        """ % ifsc_table, ['public', table_name, type])
+        """ % ifsc_table, [schema, table_name, type])
         
         # Load into a dict
         mapping = {}
@@ -635,8 +640,8 @@ class DatabaseOperations(object):
             return ''
 
         connection = self._get_connection()
-        if db_tablespace and self._get_connection().features.supports_tablespaces:
-            tablespace_sql = ' ' + self._get_connection().ops.tablespace_sql(db_tablespace)
+        if db_tablespace and connection.features.supports_tablespaces:
+            tablespace_sql = ' ' + connection.ops.tablespace_sql(db_tablespace)
         else:
             tablespace_sql = ''
 

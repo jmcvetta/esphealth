@@ -511,6 +511,8 @@ src/south/exceptions.py -text
 src/south/hacks/__init__.py -text
 src/south/hacks/django_1_0.py -text
 src/south/introspection_plugins/__init__.py -text
+src/south/introspection_plugins/annoying_autoonetoone.py -text
+src/south/introspection_plugins/django_objectpermissions.py -text
 src/south/introspection_plugins/django_tagging.py -text
 src/south/introspection_plugins/django_taggit.py -text
 src/south/introspection_plugins/geodjango.py -text
