@@ -248,21 +248,21 @@ class LabTestMap(models.Model):
         #
         # 'procedure_master_num' is a crappy field name, and needs to be changed
         if self.code_match_type == 'exact':
-            return LabOrder.objects.filter(procedure_master_num__exact=self.code)
+            return Q(procedure_master_num__exact=self.code)
         elif self.code_match_type == 'iexact':
-            return LabOrder.objects.filter(procedure_master_num__iexact=self.code)
+            return Q(procedure_master_num__iexact=self.code)
         elif self.code_match_type == 'startswith':
-            return LabOrder.objects.filter(procedure_master_num__startswith=self.code)
+            return Q(procedure_master_num__startswith=self.code)
         elif self.code_match_type == 'istartswith':
-            return LabOrder.objects.filter(procedure_master_num__istartswith=self.code)
+            return Q(procedure_master_num__istartswith=self.code)
         elif self.code_match_type == 'endswith':
-            return LabOrder.objects.filter(procedure_master_num__endswith=self.code)
+            return Q(procedure_master_num__endswith=self.code)
         elif self.code_match_type == 'iendswith':
-            return LabOrder.objects.filter(procedure_master_num__iendswith=self.code)
+            return Q(procedure_master_num__iendswith=self.code)
         elif self.code_match_type == 'contains':
-            return LabOrder.objects.filter(procedure_master_num__contains=self.code)
+            return Q(procedure_master_num__contains=self.code)
         elif self.code_match_type == 'icontains':
-            return LabOrder.objects.filter(procedure_master_num__icontains=self.code)
+            return Q(procedure_master_num__icontains=self.code)
     lab_orders_q_obj = property(__get_lab_orders_q_obj)
     
     def __get_positive_string_q_obj(self):
