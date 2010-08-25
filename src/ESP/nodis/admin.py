@@ -14,6 +14,7 @@ from ESP.nodis.models import ReferenceCase
 
 class CaseAdmin(admin.ModelAdmin):
     list_display = ['pk', 'condition', 'patient', 'date']
+    raw_id_fields = ['patient', 'provider']
     
 
 class ReportAdmin(admin.ModelAdmin):
