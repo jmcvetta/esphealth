@@ -96,6 +96,9 @@ src/ESP/hef/migrations/0005_convert_code_maps.py -text
 src/ESP/hef/migrations/0006_more_result_string_control.py -text
 src/ESP/hef/migrations/__init__.py -text
 src/ESP/hef/models.py -text
+src/ESP/hef/phit/phit.diabetes.1.sql -text
+src/ESP/hef/phit/phit.diabetes.2.sql -text
+src/ESP/hef/phit/phit.diabetes.3.sql -text
 src/ESP/hef/sql/multicolumn-indices.postgresql.sql -text
 src/ESP/hef/tests.py -text
 src/ESP/media/css/base.css -text
