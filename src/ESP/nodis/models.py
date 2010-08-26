@@ -1672,11 +1672,16 @@ class Case(models.Model):
     #
     # Events that define this case
     #
-    events = models.ManyToManyField(Event, blank=False) # The events that caused this case to be generated
-    # TODO: rename to events_before
-    events_before = models.ManyToManyField(Event, blank=False, related_name='case_before') # The events that caused this case to be generated, but occured before the event window
-    events_after = models.ManyToManyField(Event, blank=False, related_name='case_after') # The events that caused this case to be generated, but occurred after the event window
-    events_ever = models.ManyToManyField(Event, blank=False, related_name='case_ever') # The events that caused this case to be generated, but occurred after the event window
+    #
+    # The events that caused this case to be generated
+    events = models.ManyToManyField(Event, blank=False)
+    # The events that caused this case to be generated, but occured before the event window
+    events_before = models.ManyToManyField(Event, blank=True, null=True, related_name='case_before')
+    # The events that caused this case to be generated, but occurred after the event window
+    events_after = models.ManyToManyField(Event, blank=True, null=True, related_name='case_after')
+    # The events that caused this case to be generated, but occurred after the event window
+    events_ever = models.ManyToManyField(Event, blank=True, null=True, related_name='case_ever')
+    # The events that caused this case to be generated, but occurred after the event window
     
     class Meta:
         permissions = [ ('view_phi', 'Can view protected health information'), ]
