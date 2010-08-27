@@ -12,6 +12,9 @@ SELECT date_part('month', ppt.month) AS month
 , pat.mrn
 , pat.last_name
 , pat.first_name
+, age(ppt.month, pat.date_of_birth)
+, pat.race
+, pat.gender
 FROM analysis.practice_patients AS ppt
 JOIN analysis.month_encs AS me
     ON me.month = ppt.month
