@@ -370,7 +370,7 @@ class LabOrderHeuristic(Heuristic):
     
     def generate_events(self):
         log.debug('Generating events for "%s"' % self.verbose_name)
-        unbound_orders = self.test.lab_orders.exclude(events__event_type__heuristic=self)
+        unbound_orders = self.test.lab_orders.exclude(tags__event__event_type__heuristic=self)
         log_query('Unbound lab orders for %s' % self.name, unbound_orders)
         unbound_count = unbound_orders.count()
         event_type = EventType.objects.get(name=self.name)
@@ -379,9 +379,9 @@ class LabOrderHeuristic(Heuristic):
                 event_type = event_type,
                 date = order.date,
                 patient = order.patient,
-                content_object = order,
                 )
             e.save()
+            e.tag_object(order)
             log.debug('Saved new event: %s' % e)
         log.info('Generated %s new %s events' % (unbound_count, self.name))
         return unbound_count
@@ -421,7 +421,7 @@ class LabResultAnyHeuristic(Heuristic):
     
     def generate_events(self):
         log.debug('Generating events for "%s"' % self)
-        unbound_results = self.test.lab_results.exclude(events__event_type__heuristic=self)
+        unbound_results = self.test.lab_results.exclude(tags__event__event_type__heuristic=self)
         log_query('Unbound lab results for %s' % self.name, unbound_results)
         unbound_count = unbound_results.count()
         event_type = EventType.objects.get(name=self.name)
@@ -430,9 +430,9 @@ class LabResultAnyHeuristic(Heuristic):
                 event_type = event_type,
                 date = res.date,
                 patient = res.patient,
-                content_object = res,
                 )
             e.save()
+            e.tag_object(res)
             log.debug('Saved new event: %s' % e)
         log.info('Generated %s new %s events' % (unbound_count, self.name))
         return unbound_count
@@ -488,7 +488,7 @@ class LabResultPositiveHeuristic(Heuristic):
         # simpler.
         #
         log.debug('Generating events for "%s"' % self.verbose_name)
-        unbound_labs = self.test.lab_results.exclude(events__event_type__heuristic=self)
+        unbound_labs = self.test.lab_results.exclude(tags__event__event_type__heuristic=self)
         log_query('Unbound lab results for %s' % self.name, unbound_labs)
         #
         # Build numeric query
@@ -546,9 +546,9 @@ class LabResultPositiveHeuristic(Heuristic):
                 event_type = pos_event_type,
                 patient = lab.patient,
                 date = lab_date,
-                content_object = lab,
                 )
             new_event.save()
+            new_event.tag_object(lab)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new positive events for %s' % (positive_labs.count(), self.name))
         negative_labs = unbound_labs.filter(negative_q)
@@ -564,9 +564,9 @@ class LabResultPositiveHeuristic(Heuristic):
                 event_type = neg_event_type,
                 patient = lab.patient,
                 date = lab_date,
-                content_object = lab,
                 )
             new_event.save()
+            new_event.tag_object(lab)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new negative events for %s' % (negative_labs.count(), self.name))
         indeterminate_labs = unbound_labs.filter(indeterminate_q)
@@ -582,9 +582,9 @@ class LabResultPositiveHeuristic(Heuristic):
                 event_type = ind_event_type,
                 patient = lab.patient,
                 date = lab_date,
-                content_object = lab,
                 )
             new_event.save()
+            new_event.tag_object(lab)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new indeterminate events for %s' % (indeterminate_labs.count(), self.name))
         return positive_labs.count() + negative_labs.count() + indeterminate_labs.count()
@@ -626,7 +626,7 @@ class LabResultRatioHeuristic(Heuristic):
             log.debug('Added %s for %s' % (obj, self))
     
     def generate_events(self):
-        unbound_labs = self.test.lab_results.exclude(events__event_type__heuristic=self)
+        unbound_labs = self.test.lab_results.exclude(tags__event__event_type__heuristic=self)
         log_query('Unbound lab results for %s' % self.name, unbound_labs)
         positive_labs = LabResult.objects.none()
         code_maps = LabTestMap.objects.filter(test=self.test)
@@ -651,9 +651,9 @@ class LabResultRatioHeuristic(Heuristic):
                 event_type = event_type,
                 patient = lab.patient,
                 date = lab_date,
-                content_object = lab,
                 )
             new_event.save()
+            new_event.tag_object(lab)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (positive_labs.count(), self.name))
         return positive_labs.count()
@@ -696,7 +696,7 @@ class LabResultFixedThresholdHeuristic(Heuristic):
             log.debug('Added %s for %s' % (obj, self))
     
     def generate_events(self):
-        unbound_labs = self.test.lab_results.exclude(events__event_type__heuristic=self)
+        unbound_labs = self.test.lab_results.exclude(tags__event__event_type__heuristic=self)
         log_query('Unbound lab results for %s' % self.name, unbound_labs)
         positive_labs = unbound_labs.filter(result_float__isnull=False, result_float__gte=self.threshold)
         log_query(self.name, positive_labs)
@@ -711,9 +711,9 @@ class LabResultFixedThresholdHeuristic(Heuristic):
                 event_type = event_type,
                 patient = lab.patient,
                 date = lab_date,
-                content_object = lab,
                 )
             new_event.save()
+            new_event.tag_object(lab)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (positive_labs.count(), self.name))
         return positive_labs.count() 
@@ -784,7 +784,7 @@ class PrescriptionHeuristic(Heuristic):
             log.debug('Added %s for %s' % (obj, self))
     
     def generate_events(self):
-        unbound = Prescription.objects.exclude(events__event_type__heuristic=self)
+        unbound = Prescription.objects.exclude(tags__event__event_type__heuristic=self)
         drugs = [s.strip() for s in self.drugs.split(',')]
         if self.require:
             require = [s.strip() for s in self.require.split(',')]
@@ -818,9 +818,9 @@ class PrescriptionHeuristic(Heuristic):
                 event_type = event_type,
                 patient = rx.patient,
                 date = rx.date,
-                content_object = rx,
                 )
             new_event.save()
+            new_event.tag_object(rx)
             log.debug('Saved new event: %s' % new_event)
         return prescriptions.count()
 
@@ -860,7 +860,7 @@ class EncounterHeuristic(Heuristic):
     
     def generate_events(self):
         codes = [c.strip() for c in self.icd9_codes.split(',')]
-        unbound = Encounter.objects.exclude(events__event_type__heuristic=self)
+        unbound = Encounter.objects.exclude(tags__event__event_type__heuristic=self)
         encounters = Encounter.objects.none()
         for c in codes:
             if self.code_match_type == 'exact':
@@ -887,9 +887,9 @@ class EncounterHeuristic(Heuristic):
                 event_type = event_type,
                 patient = enc.patient,
                 date = enc.date,
-                content_object = enc,
                 )
             new_event.save()
+            new_event.tag_object(enc)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (encounters.count(), self.name))
         return encounters.count()
@@ -918,6 +918,27 @@ class Event(models.Model):
     date = models.DateField('Date event occured', blank=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
     timestamp = models.DateTimeField('Time event was created in db', blank=False, auto_now_add=True)
+    
+    def __unicode__(self):
+        return u'Event # %s (%s %s)' % (self.pk, self.event_type.name, self.date)
+    
+    def tag_object(self, obj):
+        '''
+        Tags a medical record with this event. 
+        '''
+        ert = EventRecordTag(
+            event=self,
+            content_object=obj,
+            )
+        ert.save()
+        return ert
+
+
+class EventRecordTag(models.Model):
+    '''
+    A tag associating an Event instance with a medical record
+    '''
+    event = models.ForeignKey(Event, blank=False, related_name='tag_set')
     #
     # Standard generic relation support
     #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
@@ -925,10 +946,13 @@ class Event(models.Model):
     content_type = models.ForeignKey(ContentType, db_index=True)
     object_id = models.PositiveIntegerField(db_index=True)
     content_object = generic.GenericForeignKey('content_type', 'object_id')
-
+    
     def __unicode__(self):
-        return u'Event # %s (%s %s)' % (self.pk, self.event_type.name, self.date)
-
+        return u'%s --> %s' % (self.event, self.content_object)
+    
+    class Meta:
+        unique_together = [('event', 'content_type', 'object_id')]
+        
 
 class Timespan(models.Model):
     '''

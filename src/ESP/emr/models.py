@@ -639,7 +639,7 @@ class LabResult(BasePatientRecord):
     # Manager
     objects = LabResultManager()
     # HEF
-    events = generic.GenericRelation('hef.Event')
+    tags = generic.GenericRelation('hef.EventRecordTag')
     
     class Meta:
         verbose_name = 'Lab Test Result'
@@ -849,7 +849,7 @@ class LabOrder(BasePatientRecord):
     order_type = models.CharField(max_length=64, blank=True, db_index=True)
     specimen_source = models.CharField(max_length=300, blank=True, null=True)
     # HEF
-    events = generic.GenericRelation('hef.Event')
+    tags = generic.GenericRelation('hef.EventRecordTag')
     
     
     
@@ -876,7 +876,7 @@ class Prescription(BasePatientRecord):
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
     # HEF
-    events = generic.GenericRelation('hef.Event')
+    tags = generic.GenericRelation('hef.EventRecordTag')
     
     class Meta:
         ordering = ['date']
@@ -975,7 +975,7 @@ class Encounter(BasePatientRecord):
     diagnosis = models.TextField(null=True, blank=True)
     bmi = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, db_index=True)
     # HEF
-    events = generic.GenericRelation('hef.Event')
+    tags = generic.GenericRelation('hef.EventRecordTag')
     #timespan = generic.GenericRelation('hef.Timespan')
     
     class Meta:
@@ -1103,7 +1103,7 @@ class Immunization(BasePatientRecord):
     lot = models.TextField('Lot Number', max_length=500, blank=True, null=True)
     visit_date = models.DateField('Date of Visit', blank=True, null=True)
     # HEF
-    events = generic.GenericRelation('hef.Event')
+    tags = generic.GenericRelation('hef.EventRecordTag')
     
     class Meta:
         ordering = ['date']

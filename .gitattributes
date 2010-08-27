@@ -94,6 +94,9 @@ src/ESP/hef/migrations/0003_default_heuristics.py -text
 src/ESP/hef/migrations/0004_event_type_foreign_key.py -text
 src/ESP/hef/migrations/0005_convert_code_maps.py -text
 src/ESP/hef/migrations/0006_more_result_string_control.py -text
+src/ESP/hef/migrations/0007_eventtag_schema.py -text
+src/ESP/hef/migrations/0008_migrate_to_eventtags.py -text
+src/ESP/hef/migrations/0009_remove_defunct_fields_from_event.py -text
 src/ESP/hef/migrations/__init__.py -text
 src/ESP/hef/models.py -text
 src/ESP/hef/phit/phit.diabetes.1.sql -text
