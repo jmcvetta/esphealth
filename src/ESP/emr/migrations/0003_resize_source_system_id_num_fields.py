@@ -38,7 +38,7 @@ class Migration(SchemaMigration):
         #-------------------------------------------------------------------------------
         # Encounter
         #-------------------------------------------------------------------------------
-        db.alter_column('emr_encounter', 'pregnancy_status', self.gf('django.db.models.fields.BooleanField')())
+        db.alter_column('emr_encounter', 'pregnancy_status', self.gf('django.db.models.fields.BooleanField')(blank=False, default=False))
 
         #-------------------------------------------------------------------------------
         # Provider
