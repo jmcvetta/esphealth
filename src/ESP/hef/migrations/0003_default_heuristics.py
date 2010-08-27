@@ -6,6 +6,15 @@ from django.db import models
 
 from ESP.utils import log
 
+'''
+NOTE:
+
+These objects probably should not be created this way.  It might be better if
+they were loaded as a fixture when all migrations are complete.  That way new
+installs could do 'syncdb --all' and avoid going through dozens of migrations 
+just to get the current schema.  
+'''
+
 
 class Migration(DataMigration):
 
