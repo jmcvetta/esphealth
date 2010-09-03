@@ -915,12 +915,33 @@ class EventType(models.Model):
         return u'Event Type %s' % self.name
 
 
+class DateDimension(models.Model):
+    '''
+    An OLAP dimension representing a date
+    '''
+    date = models.DateField(blank=False, unique=True, db_index=True)
+    day = models.IntegerField(blank=False, db_index=True)
+    week = models.IntegerField(blank=False, db_index=True)
+    month = models.IntegerField(blank=False, db_index=True)
+    quarter = models.IntegerField(blank=False, db_index=True)
+    year = models.IntegerField(blank=False, db_index=True)
+    
+    def save(self, *args, **kwargs):
+        self.day = self.date.day
+        self.week = self.date.isocalendar()[1] # ISO week of year
+        self.year = self.date.year
+        self.month = self.date.month
+        self.quarter = ( (self.date.month - 1) // 3 ) + 1 # quarter of year, 1-4
+        super(DateDimension, self).save(*args, **kwargs) # Call the "real" save() method.
+
+
 class Event(models.Model):
     '''
     A medical event
     '''
     event_type = models.ForeignKey(EventType, blank=True, null=True)
     date = models.DateField('Date event occured', blank=False, db_index=True)
+    date_dim = models.ForeignKey(DateDimension, blank=False)
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
     timestamp = models.DateTimeField('Time event was created in db', blank=False, auto_now_add=True)
     
@@ -937,6 +958,12 @@ class Event(models.Model):
             )
         ert.save()
         return ert
+    
+    def save(self, *args, **kwargs):
+        date_dim, created = DateDimension.objects.get_or_create(date=self.date)
+        date_dim.save()
+        self.date_dim = date_dim
+        super(Event, self).save(*args, **kwargs) # Call the "real" save() method.
 
 
 class EventRecordTag(models.Model):

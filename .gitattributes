@@ -98,6 +98,9 @@ src/ESP/hef/migrations/0006_more_result_string_control.py -text
 src/ESP/hef/migrations/0007_eventtag_schema.py -text
 src/ESP/hef/migrations/0008_migrate_to_eventtags.py -text
 src/ESP/hef/migrations/0009_remove_defunct_fields_from_event.py -text
+src/ESP/hef/migrations/0010_add_date_dimension.py -text
+src/ESP/hef/migrations/0011_populate_date_dimensions.py -text
+src/ESP/hef/migrations/0012_event_date_dim_not_null.py -text
 src/ESP/hef/migrations/__init__.py -text
 src/ESP/hef/models.py -text
 src/ESP/hef/phit/phit.diabetes.1.sql -text
