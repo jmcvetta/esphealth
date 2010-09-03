@@ -58,6 +58,7 @@ global UPDATED_BY, TIMESTAMP, UNKNOWN_PROVIDER
 UPDATED_BY = 'load_epic.py'
 TIMESTAMP = datetime.datetime.now()
 UNKNOWN_PROVIDER = Provider.objects.get(provider_id_num='UNKNOWN')
+ETL_FILE_REGEX = re.compile(r'^epic\D\D\D\.esp\.(\d\d)(\d\d)(\d\d\d\d)$')
 
 def get_icd9(self, code):
     '''
@@ -76,6 +77,18 @@ def get_icd9(self, code):
             self.__icd9_cache[code] = i
     return self.__icd9_cache[code]
 
+
+def date_from_filepath(filepath):
+    '''
+    Extracts datestamp from ETL file path
+    '''
+    filename = os.path.basename(filepath)
+    assert  ETL_FILE_REGEX.match(filename)
+    match = ETL_FILE_REGEX.match(filename)
+    month = int(match.groups()[0])
+    day = int(match.groups()[1])
+    year = int(match.groups()[2])
+    return datetime.date(day=day, month=month, year=year)
 
 
 
@@ -780,11 +793,12 @@ class Command(LoaderCommand):
             dir_contents = os.listdir(options['input_folder'])
             dir_contents.sort()
             for item in dir_contents:
+                if not ETL_FILE_REGEX.match(item):
+                    log.debug('Invalid filename: %s' % item)
+                    continue
                 filepath = os.path.join(options['input_folder'], item)
                 if not os.path.isfile(filepath):
                     continue
-                if item[0] == '.':
-                    continue # Skip dot files
                 input_filepaths.append(filepath)
         conf = [
             ('epicpro', ProviderLoader),
@@ -825,7 +839,9 @@ class Command(LoaderCommand):
         # Load data
         #
         for ft in load_order:
-            for filepath in filetype[ft]:
+            filepath_list = filetype[ft]
+            filepath_list.sort(key=lambda filepath: date_from_filepath(filepath))
+            for filepath in filepath_list:
                 loader_class = loader[ft]
                 l = loader_class(filepath) # BaseLoader child instance
                 try:
