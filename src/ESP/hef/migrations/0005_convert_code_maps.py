@@ -10,35 +10,23 @@ class Migration(DataMigration):
         CodeMap = orm['conf.CodeMap']
         AbstractLabTest = orm['hef.AbstractLabTest']
         LabTestMap = orm['hef.LabTestMap']
-        TRANSLATION = {
-            'rpr': 'syphilis_rpr',
-            'vdrl_serum': 'syphilis_vdrl_serum',
-            'vdrl_csf': 'syphilis_vdrl_csf',
-            'hep_b_surface': 'hep_b_surface_antigen',
-            'tppa': 'syphilis_tppa',
-            'hep_b_core': 'hep_b_core_antibody',
-            'tp_igg': 'syphilis_tp_igg',
-            'hep_e_ab': 'hep_e_antibody',
-            'hep_a_igm': 'hep_a_igm_antibody',
-            'hav_tot': 'hep_a_tot_antibody',
-            'fta_abs': 'syphilis_fta_abs',
-            'hep_b_igm': 'hep_b_igm_antibody',
-            'lyme_igg': 'lyme_igg_eia',
-            'lyme_igm': 'lyme_igm_eia',
-            'ttpa': 'syphilis_tppa',
-            'ogtt75_30m': 'ogtt75_30min',
-            'ogtt75_90m': 'ogtt75_90min',
-            'ogtt100_30m': 'ogtt100_30min',
-            'ogtt100_90m': 'ogtt100_90min',
-            'total_bilirubin_high': 'bilirubin_total',
-            'high_calc_bilirubin': 'bilirubin_calculated',
-            }
-        test_names = AbstractLabTest.objects.values_list('name', flat=True)
         
+        
+        for item in self.ABSTRACT_LAB_TESTS:
+            obj, created = AbstractLabTest.objects.get_or_create(
+                name=item[0],
+			    defaults = {
+			        'verbose_name': item[1],
+			        },
+                )
+            if created:
+                print 'Created AbstractLabTest: %s' % obj
+        
+        test_names = AbstractLabTest.objects.values_list('name', flat=True)
         for cm in CodeMap.objects.all():
             heuristic = str(cm.heuristic)
-            if heuristic in TRANSLATION:
-                heuristic = TRANSLATION[heuristic]
+            if heuristic in self.TRANSLATION:
+                heuristic = self.TRANSLATION[heuristic]
             if heuristic == 'high_calc_bilirubin':
                 if cm.native_name.lower().find('indirect') == -1: # Direct
                     heuristic = 'bilirubin_direct'
@@ -328,3 +316,87 @@ class Migration(DataMigration):
     }
 
     complete_apps = ['hef']
+    
+    TRANSLATION = {
+        'rpr': 'syphilis_rpr',
+        'vdrl_serum': 'syphilis_vdrl_serum',
+        'vdrl_csf': 'syphilis_vdrl_csf',
+        'hep_b_surface': 'hep_b_surface_antigen',
+        'tppa': 'syphilis_tppa',
+        'hep_b_core': 'hep_b_core_antibody',
+        'tp_igg': 'syphilis_tp_igg',
+        'hep_e_ab': 'hep_e_antibody',
+        'hep_a_igm': 'hep_a_igm_antibody',
+        'hav_tot': 'hep_a_tot_antibody',
+        'fta_abs': 'syphilis_fta_abs',
+        'hep_b_igm': 'hep_b_igm_antibody',
+        'lyme_igg': 'lyme_igg_eia',
+        'lyme_igm': 'lyme_igm_eia',
+        'ttpa': 'syphilis_tppa',
+        'ogtt75_30m': 'ogtt75_30min',
+        'ogtt75_90m': 'ogtt75_90min',
+        'ogtt100_30m': 'ogtt100_30min',
+        'ogtt100_90m': 'ogtt100_90min',
+        'total_bilirubin_high': 'bilirubin_total',
+        'high_calc_bilirubin': 'bilirubin_calculated',
+        }
+        
+    ABSTRACT_LAB_TESTS = [
+        ('a1c', 'Glycated hemoglobin (A1C)'),
+        ('alt', 'Alanine Aminotransferase blood test'),
+        ('ast', 'Aspartate Aminotransferase blood test'),
+        ('bilirubin_direct', 'Bilirubin glucuronidated'),
+        ('bilirubin_indirect', 'Bilirubin non-glucuronidated'),
+        ('bilirubin_total', 'Bilirubin glucuronidated + bilirubin non-glucuronidated'),
+        ('chlamydia', 'Chlamydia test'),
+        ('giardiasis_antigen', 'Giardiasis Antigen'),
+        ('glucose_fasting', 'Fasting glucose (several variations)'),
+        ('gonorrhea', 'Gonorrhea test'),
+        ('hep_a_igm_antibody', 'Hepatitis A IgM antibody'),
+        ('hep_a_tot_antibody', 'Hepatitis A Total Antibodies'),
+        ('hep_b_core_antibody', 'Hepatitis B core general antibody'),
+        ('hep_b_e_antigen', 'Hepatitis B "e" antigen'),
+        ('hep_b_igm_antibody', 'Hepatitis B core IgM antibody'),
+        ('hep_b_surface_antigen', 'Hepatitis B surface antigen'),
+        ('hep_b_viral_dna', 'Hepatitis B viral DNA'),
+        ('hep_c_elisa', 'Hepatitis C ELISA'),
+        ('hep_c_riba', 'Hepatitis C RIBA'),
+        ('hep_c_rna', 'Hepatitis C RNA'),
+        ('hep_c_signal_cutoff', 'Hepatitis C signal cutoff'),
+        ('hep_e_antibody', 'Hepatitis E antibody'),
+        ('lyme_elisa', 'Lyme ELISA'),
+        ('lyme_igg_eia', 'Lyme IGG (EIA)'),
+        ('lyme_igg_wb', 'Lyme IGG (Western Blot)'),
+        ('lyme_igm_eia', 'Lyme IGM (EIA)'),
+        ('lyme_igm_wb', 'Lyme IGM (Western Blot)'),
+        ('lyme_pcr', 'Lyme PCR'),
+        ('ogtt100_1hr', 'Oral Glucose Tolerance Test 100 gram 1 hour post'),
+        ('ogtt100_2hr', 'Oral Glucose Tolerance Test 100 gram 2 hour post'),
+        ('ogtt100_30min', 'Oral Glucose Tolerance Test 100 gram 30 minutes post'),
+        ('ogtt100_3hr', 'Oral Glucose Tolerance Test 100 gram 3 hour post'),
+        ('ogtt100_4hr', 'Oral Glucose Tolerance Test 100 gram 4 hour post'),
+        ('ogtt100_5hr', 'Oral Glucose Tolerance Test 100 gram 5 hour post'),
+        ('ogtt100_90min', 'Oral Glucose Tolerance Test 100 gram 90 minutes post'),
+        ('ogtt100_fasting', 'Oral Glucose Tolerance Test 100 gram fasting'),
+        ('ogtt100_fasting_urine', 'Oral Glucose Tolerance Test 100 gram fasting (urine)'),
+        ('ogtt50_1hr', 'Oral Glucose Tolerance Test 50 gram 1 hour post'),
+        ('ogtt50_fasting', 'Oral Glucose Tolerance Test 50 gram Fasting'),
+        ('ogtt50_random', 'Oral Glucose Tolerance Test 50 gram Random'),
+        ('ogtt75_1hr', 'Oral Glucose Tolerance Test 75 gram 1 hour post'),
+        ('ogtt75_2hr', 'Oral Glucose Tolerance Test 75 gram 2 hour post'),
+        ('ogtt75_30min', 'Oral Glucose Tolerance Test 75 gram 30 minutes post'),
+        ('ogtt75_90min', 'Oral Glucose Tolerance Test 75 gram 90 minutes post'),
+        ('ogtt75_fasting', 'Oral Glucose Tolerance Test 75 gram fasting'),
+        ('ogtt75_fasting_urine', 'Oral Glucose Tolerance Test 75 gram fasting, urine'),
+        ('ogtt75_series', 'Oral Glucose Tolerance Test 75 gram Series'),
+        ('pertussis_culture', 'Pertussis Culture'),
+        ('pertussis_pcr', 'Pertussis PCR'),
+        ('pertussis_serology', 'Pertussis serology'),
+        ('syphilis_fta_abs', 'Syphilis FTA-ABS'),
+        ('syphilis_rpr', 'Syphilis rapid plasma reagin (RPR)'),
+        ('syphilis_tp_igg', 'Syphilis TP-IGG'),
+        ('syphilis_tppa', 'Syphilis TP-PA'),
+        ('syphilis_vdrl_csf', 'Syphilis VDRL-CSF'),
+        ('syphilis_vdrl_serum', 'Syphilis VDRL serum'),
+        ('tb_lab', 'Tuberculosis lab test (several varieties)'),
+        ]
