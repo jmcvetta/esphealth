@@ -91,7 +91,7 @@ src/ESP/hef/management/commands/hef.py -text
 src/ESP/hef/management/commands/load_hef_defaults.py -text
 src/ESP/hef/migrations/0001_initial.py -text
 src/ESP/hef/migrations/0002_new_schema_no_constraints.py -text
-src/ESP/hef/migrations/0003_default_heuristics.py -text
+src/ESP/hef/migrations/0003_legacy_heuristics.py -text
 src/ESP/hef/migrations/0004_event_type_foreign_key.py -text
 src/ESP/hef/migrations/0005_convert_code_maps.py -text
 src/ESP/hef/migrations/0006_more_result_string_control.py -text
