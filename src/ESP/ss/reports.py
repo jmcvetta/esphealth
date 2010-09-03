@@ -113,6 +113,7 @@ class Report(object):
             
         outfile.close()
 
+
     def total_site_encounters(self):
         header = ['encounter date', 'zip', 'total'] + [str(x) for x in AGE_GROUPS]
         filename = ENCOUNTERS_BY_SITE_ZIP_FILENAME % self.timestamps
