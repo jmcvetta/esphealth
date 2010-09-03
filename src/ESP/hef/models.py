@@ -524,11 +524,11 @@ class LabResultPositiveHeuristic(Heuristic):
         if self.titer:
             positive_titer_strings = ['1:%s' % 2**i for i in range(math.log(self.titer, 2), math.log(4096,2))]
             negative_titer_strings = ['1:%s' % 2**i for i in range(math.log(self.titer, 2))]
-            positive_q |= Q(result_string__istartswith=positive_titer_strings[0])
-            negative_q |= Q(result_string__istartswith=negative_titer_strings[0])
-            for s in positive_titer_strings[1:]:
+            log.debug('positive_titer_strings: %s' % positive_titer_strings)
+            log.debug('negative_titer_strings: %s' % negative_titer_strings)
+            for s in positive_titer_strings:
                 positive_q |= Q(result_string__istartswith=s)
-            for s in negative_titer_strings[1:]:
+            for s in negative_titer_strings:
                 negative_q |= Q(result_string__istartswith=s)
         #
         # Generate Events
@@ -894,6 +894,11 @@ class EncounterHeuristic(Heuristic):
         log.info('Generated %s new events for %s' % (encounters.count(), self.name))
         return encounters.count()
 
+
+class CalculatedBilirubinHeuristic(models.Model):
+    '''
+    A heuristic to detect high calculated 
+    '''
 
 class EventType(models.Model):
     '''
