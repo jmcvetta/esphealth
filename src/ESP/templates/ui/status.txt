@@ -12,7 +12,7 @@ Site:  {{ site_name }}
                                      Nodis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NEW CASES:
+NEW CASE SUMMARY:
 {% if new_case_summary.count %}
 Condition            Count    
 --------------------------------------------------------------------------------
@@ -40,7 +40,7 @@ No new cases today.</em>
 {% endif %}
 
 
-CASE REPORTS:
+CASES REPORTED:
 {% if reports %}
 Case #   Condition   Case Date   Patient   Sent?   Filename
 --------------------------------------------------------------------------------
