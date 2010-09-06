@@ -10,8 +10,7 @@ class Migration(SchemaMigration):
         
         # Adding model 'DateDimension'
         db.create_table('hef_datedimension', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('date', self.gf('django.db.models.fields.DateField')(unique=True, db_index=True)),
+            ('date', self.gf('django.db.models.fields.DateField')(primary_key=True)),
             ('day', self.gf('django.db.models.fields.IntegerField')(db_index=True)),
             ('week', self.gf('django.db.models.fields.IntegerField')(db_index=True)),
             ('month', self.gf('django.db.models.fields.IntegerField')(db_index=True)),
@@ -20,13 +19,9 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('hef', ['DateDimension'])
 
-        # Adding field 'Event.date_dim' without not-null constraint
-        db.add_column('hef_event', 'date_dim', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hef.DateDimension'], null=True, blank=True), keep_default=False)
-
 
     def backwards(self, orm):
         raise RuntimeError("Cannot reverse this migration.")
-        
 
 
     models = {
@@ -148,9 +143,8 @@ class Migration(SchemaMigration):
         },
         'hef.datedimension': {
             'Meta': {'object_name': 'DateDimension'},
-            'date': ('django.db.models.fields.DateField', [], {'unique': 'True', 'db_index': 'True'}),
+            'date': ('django.db.models.fields.DateField', [], {'primary_key': 'True'}),
             'day': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'month': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'}),
             'quarter': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'}),
             'week': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'}),
@@ -172,7 +166,6 @@ class Migration(SchemaMigration):
         'hef.event': {
             'Meta': {'object_name': 'Event'},
             'date': ('django.db.models.fields.DateField', [], {'db_index': 'True'}),
-            'date_dim': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.DateDimension']", 'null': 'True', 'blank': 'True'}),
             'event_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.EventType']", 'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'patient': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['emr.Patient']"}),

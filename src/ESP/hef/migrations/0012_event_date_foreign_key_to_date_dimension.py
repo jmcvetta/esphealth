@@ -1,28 +1,17 @@
 # encoding: utf-8
 import datetime
 from south.db import db
-from south.v2 import DataMigration
+from south.v2 import SchemaMigration
 from django.db import models
 
-class Migration(DataMigration):
+class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        Event = orm['hef.Event']
-        DateDimension = orm['hef.DateDimension']
-        for date_obj in Event.objects.values_list('date', flat=True).distinct():
-            print 'Creating DateDimension for %s' % date_obj
-            week = date_obj.isocalendar()[1]
-            quarter = ( (date_obj.month - 1) // 3 ) + 1
-            dim, created = DateDimension.objects.get_or_create(
-                date = date_obj,
-                defaults = {
-                    'day': date_obj.day,
-                    'week': week,
-                    'year': date_obj.year,
-                    'month': date_obj.month,
-                    'quarter': quarter,
-                    }
-                )
+        
+        # Renaming column for 'Event.date' to match new field type.
+        db.rename_column('hef_event', 'date', 'date_id')
+        # Changing field 'Event.date'
+        db.alter_column('hef_event', 'date_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hef.DateDimension']))
 
 
     def backwards(self, orm):
@@ -146,6 +135,10 @@ class Migration(DataMigration):
             'snomed_pos': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
             'verbose_name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '128', 'db_index': 'True'})
         },
+        'hef.calculatedbilirubinheuristic': {
+            'Meta': {'object_name': 'CalculatedBilirubinHeuristic'},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
+        },
         'hef.datedimension': {
             'Meta': {'object_name': 'DateDimension'},
             'date': ('django.db.models.fields.DateField', [], {'primary_key': 'True'}),
@@ -170,7 +163,7 @@ class Migration(DataMigration):
         },
         'hef.event': {
             'Meta': {'object_name': 'Event'},
-            'date': ('django.db.models.fields.DateField', [], {'db_index': 'True'}),
+            'date': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.DateDimension']"}),
             'event_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.EventType']", 'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'patient': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['emr.Patient']"}),

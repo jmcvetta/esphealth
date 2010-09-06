@@ -919,7 +919,7 @@ class DateDimension(models.Model):
     '''
     An OLAP dimension representing a date
     '''
-    date = models.DateField(blank=False, unique=True, db_index=True)
+    date = models.DateField(blank=False, primary_key=True)
     day = models.IntegerField(blank=False, db_index=True)
     week = models.IntegerField(blank=False, db_index=True)
     month = models.IntegerField(blank=False, db_index=True)
@@ -940,8 +940,7 @@ class Event(models.Model):
     A medical event
     '''
     event_type = models.ForeignKey(EventType, blank=True, null=True)
-    date = models.DateField('Date event occured', blank=False, db_index=True)
-    date_dim = models.ForeignKey(DateDimension, blank=False)
+    date = models.ForeignKey(DateDimension, blank=False)
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
     timestamp = models.DateTimeField('Time event was created in db', blank=False, auto_now_add=True)
     
