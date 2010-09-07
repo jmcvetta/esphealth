@@ -192,6 +192,8 @@ src/ESP/phit/__init__.py -text
 src/ESP/phit/management/__init__.py -text
 src/ESP/phit/management/commands/__init__.py -text
 src/ESP/phit/management/commands/generate_practice_patient_counts.py -text
+src/ESP/phit/migrations/0001_initial.py -text
+src/ESP/phit/migrations/__init__.py -text
 src/ESP/phit/models.py -text
 src/ESP/phit/phit.diabetes.1.sql -text
 src/ESP/phit/phit.diabetes.2.sql -text
