@@ -3,6 +3,7 @@
 /LICENSE -text
 /README -text
 analysis/dm_esp.schema.xml -text
+analysis/new_hef_analysis.xml -text
 analysis/pat.hibernate.pg.sql -text
 bin/esp -text
 doc/ESP-architecture.xmind -text svneol=unset#unset
