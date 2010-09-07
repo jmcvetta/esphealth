@@ -11,7 +11,9 @@ class Migration(SchemaMigration):
         #-------------------------------------------------------------------------------
         # Prescription
         #-------------------------------------------------------------------------------
-        orm['emr.Prescription'].objects.filter(order_id_num__isnull=True).update(order_id_num='Unknown')
+        # Set default to 'Unknown' when doing initial column type conversion
+        db.alter_column('emr_prescription', 'order_id_num', self.gf('django.db.models.fields.CharField')(blank=False, db_index=True, max_length=128, default='Unknown'))
+        # Remove default value
         db.alter_column('emr_prescription', 'order_id_num', self.gf('django.db.models.fields.CharField')(blank=False, db_index=True, max_length=128))
         db.create_index('emr_prescription', ['dose'])
 
@@ -23,13 +25,17 @@ class Migration(SchemaMigration):
         #-------------------------------------------------------------------------------
         # Lab Order
         #-------------------------------------------------------------------------------
-        orm['emr.LabOrder'].objects.filter(order_id_num__isnull=True).update(order_id_num='Unknown')
+        # Set default to 'Unknown' when doing initial column type conversion
+        db.alter_column('emr_laborder', 'order_id_num', self.gf('django.db.models.fields.CharField')(blank=False, db_index=True, max_length=128, default='Unknown'))
+        # Remove default value
         db.alter_column('emr_laborder', 'order_id_num', self.gf('django.db.models.fields.CharField')(blank=False, db_index=True, max_length=128))
 
         #-------------------------------------------------------------------------------
         # Lab Result
         #-------------------------------------------------------------------------------
-        orm['emr.LabResult'].objects.filter(order_id_num__isnull=True).update(order_id_num='Unknown')
+        # Set default to 'Unknown' when doing initial column type conversion
+        db.alter_column('emr_labresult', 'order_id_num', self.gf('django.db.models.fields.CharField')(blank=False, db_index=True, max_length=128, default='Unknown'))
+        # Remove default value
         db.alter_column('emr_labresult', 'order_id_num', self.gf('django.db.models.fields.CharField')(blank=False, db_index=True, max_length=128))
         db.alter_column('emr_labresult', 'result_id_num', self.gf('django.db.models.fields.CharField')(blank=True, null=True, max_length=128))
         db.create_index('emr_labresult', ['collection_date'])
