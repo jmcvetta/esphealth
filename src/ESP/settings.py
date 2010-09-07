@@ -158,6 +158,7 @@ INSTALLED_APPS = (
     'ESP.nodis',
     'ESP.vaers',
     'ESP.ss',
+    'ESP.phit',
     'ESP.ui',
     'south',
 )

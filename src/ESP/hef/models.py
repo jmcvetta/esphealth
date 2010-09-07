@@ -5,7 +5,7 @@
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
 @organization: Channing Laboratory http://www.channing.harvard.edu
-@copyright: (c) 2009 Channing Laboratory
+@copyright: (c) 2009-2010 Channing Laboratory
 @license: LGPL
 '''
 
