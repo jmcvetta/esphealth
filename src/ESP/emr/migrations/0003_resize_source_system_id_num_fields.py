@@ -23,7 +23,6 @@ class Migration(SchemaMigration):
         #-------------------------------------------------------------------------------
         # Lab Order
         #-------------------------------------------------------------------------------
-        db.alter_column('emr_laborder', 'order_id_num', self.gf('django.db.models.fields.CharField')(blank=True, null=True, max_length=128))
         orm['emr.LabOrder'].objects.filter(order_id_num__isnull=True).update(order_id_num='Unknown')
         db.alter_column('emr_laborder', 'order_id_num', self.gf('django.db.models.fields.CharField')(blank=False, db_index=True, max_length=128))
 
