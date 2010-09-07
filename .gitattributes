@@ -102,6 +102,9 @@ src/ESP/hef/migrations/0009_remove_defunct_fields_from_event.py -text
 src/ESP/hef/migrations/0010_add_date_dimension.py -text
 src/ESP/hef/migrations/0011_populate_date_dimensions.py -text
 src/ESP/hef/migrations/0012_event_date_foreign_key_to_date_dimension.py -text
+src/ESP/hef/migrations/0013_add_event_provider.py -text
+src/ESP/hef/migrations/0014_populate_event_provider.py -text
+src/ESP/hef/migrations/0015_event_provider_not_null.py -text
 src/ESP/hef/migrations/__init__.py -text
 src/ESP/hef/models.py -text
 src/ESP/hef/sql/multicolumn-indices.postgresql.sql -text

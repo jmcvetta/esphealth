@@ -24,6 +24,7 @@ from django.contrib.contenttypes.models import ContentType
 from ESP.utils import log
 from ESP.utils import log_query
 from ESP.emr.models import Patient
+from ESP.emr.models import Provider
 from ESP.emr.models import Encounter
 from ESP.emr.models import LabResult
 from ESP.emr.models import LabOrder
@@ -379,6 +380,7 @@ class LabOrderHeuristic(Heuristic):
                 event_type = event_type,
                 date = order.date,
                 patient = order.patient,
+                provider = order.provider,
                 )
             e.save()
             e.tag_object(order)
@@ -430,6 +432,7 @@ class LabResultAnyHeuristic(Heuristic):
                 event_type = event_type,
                 date = res.date,
                 patient = res.patient,
+                provider = res.provider,
                 )
             e.save()
             e.tag_object(res)
@@ -545,6 +548,7 @@ class LabResultPositiveHeuristic(Heuristic):
             new_event = Event(
                 event_type = pos_event_type,
                 patient = lab.patient,
+                provider = lab.provider,
                 date = lab_date,
                 )
             new_event.save()
@@ -563,6 +567,7 @@ class LabResultPositiveHeuristic(Heuristic):
             new_event = Event(
                 event_type = neg_event_type,
                 patient = lab.patient,
+                provider = lab.provider,
                 date = lab_date,
                 )
             new_event.save()
@@ -581,6 +586,7 @@ class LabResultPositiveHeuristic(Heuristic):
             new_event = Event(
                 event_type = ind_event_type,
                 patient = lab.patient,
+                provider = lab.provider,
                 date = lab_date,
                 )
             new_event.save()
@@ -650,6 +656,7 @@ class LabResultRatioHeuristic(Heuristic):
             new_event = Event(
                 event_type = event_type,
                 patient = lab.patient,
+                provider = lab.provider,
                 date = lab_date,
                 )
             new_event.save()
@@ -710,6 +717,7 @@ class LabResultFixedThresholdHeuristic(Heuristic):
             new_event = Event(
                 event_type = event_type,
                 patient = lab.patient,
+                provider = lab.provider,
                 date = lab_date,
                 )
             new_event.save()
@@ -817,6 +825,7 @@ class PrescriptionHeuristic(Heuristic):
             new_event = Event(
                 event_type = event_type,
                 patient = rx.patient,
+                provider = rx.provider,
                 date = rx.date,
                 )
             new_event.save()
@@ -886,6 +895,7 @@ class EncounterHeuristic(Heuristic):
             new_event = Event(
                 event_type = event_type,
                 patient = enc.patient,
+                provider = enc.provider,
                 date = enc.date,
                 )
             new_event.save()
@@ -942,6 +952,7 @@ class Event(models.Model):
     event_type = models.ForeignKey(EventType, blank=True, null=True)
     date = models.ForeignKey(DateDimension, blank=False)
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
+    provider = models.ForeignKey(Provider, blank=False)
     timestamp = models.DateTimeField('Time event was created in db', blank=False, auto_now_add=True)
     
     def __unicode__(self):
