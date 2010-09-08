@@ -376,9 +376,10 @@ class LabOrderHeuristic(Heuristic):
         unbound_count = unbound_orders.count()
         event_type = EventType.objects.get(name=self.name)
         for order in unbound_orders:
+            ddim = DateDimension.objects.get_or_create(date=order.date)[0]
             e = Event(
                 event_type = event_type,
-                date = order.date,
+                date = ddim,
                 patient = order.patient,
                 provider = order.provider,
                 )
@@ -428,9 +429,10 @@ class LabResultAnyHeuristic(Heuristic):
         unbound_count = unbound_results.count()
         event_type = EventType.objects.get(name=self.name)
         for res in unbound_results:
+            ddim = DateDimension.objects.get_or_create(date=res.date)[0]
             e = Event(
                 event_type = event_type,
-                date = res.date,
+                date = ddim,
                 patient = res.patient,
                 provider = res.provider,
                 )
@@ -545,11 +547,12 @@ class LabResultPositiveHeuristic(Heuristic):
                 lab_date = lab.date
             elif self.date_field == 'result':
                 lab_date = lab.result_date
+            ddim = DateDimension.objects.get_or_create(date=lab_date)[0]
             new_event = Event(
                 event_type = pos_event_type,
                 patient = lab.patient,
                 provider = lab.provider,
-                date = lab_date,
+                date = ddim,
                 )
             new_event.save()
             new_event.tag_object(lab)
@@ -564,11 +567,12 @@ class LabResultPositiveHeuristic(Heuristic):
                 lab_date = lab.date
             elif self.date_field == 'result':
                 lab_date = lab.result_date
+            ddim = DateDimension.objects.get_or_create(date=lab_date)[0]
             new_event = Event(
                 event_type = neg_event_type,
                 patient = lab.patient,
                 provider = lab.provider,
-                date = lab_date,
+                date = ddim,
                 )
             new_event.save()
             new_event.tag_object(lab)
@@ -583,11 +587,12 @@ class LabResultPositiveHeuristic(Heuristic):
                 lab_date = lab.date
             elif self.date_field == 'result':
                 lab_date = lab.result_date
+            ddim = DateDimension.objects.get_or_create(date=lab_date)[0]
             new_event = Event(
                 event_type = ind_event_type,
                 patient = lab.patient,
                 provider = lab.provider,
-                date = lab_date,
+                date = ddim,
                 )
             new_event.save()
             new_event.tag_object(lab)
@@ -653,11 +658,12 @@ class LabResultRatioHeuristic(Heuristic):
                 lab_date = lab.date
             elif self.date_field == 'result':
                 lab_date = lab.result_date
+            ddim = DateDimension.objects.get_or_create(date=lab_date)[0]
             new_event = Event(
                 event_type = event_type,
                 patient = lab.patient,
                 provider = lab.provider,
-                date = lab_date,
+                date = ddim,
                 )
             new_event.save()
             new_event.tag_object(lab)
@@ -714,11 +720,12 @@ class LabResultFixedThresholdHeuristic(Heuristic):
                 lab_date = lab.date
             elif self.date_field == 'result':
                 lab_date = lab.result_date
+            ddim = DateDimension.objects.get_or_create(date=lab_date)[0]
             new_event = Event(
                 event_type = event_type,
                 patient = lab.patient,
                 provider = lab.provider,
-                date = lab_date,
+                date = ddim,
                 )
             new_event.save()
             new_event.tag_object(lab)
@@ -822,11 +829,12 @@ class PrescriptionHeuristic(Heuristic):
         log.info('Generating events for "%s"' % self.verbose_name)
         event_type = EventType.objects.get(name=self.name)
         for rx in prescriptions:
+            ddim = DateDimension.objects.get_or_create(date=rx.date)[0]
             new_event = Event(
                 event_type = event_type,
                 patient = rx.patient,
                 provider = rx.provider,
-                date = rx.date,
+                date = ddim,
                 )
             new_event.save()
             new_event.tag_object(rx)
@@ -892,11 +900,12 @@ class EncounterHeuristic(Heuristic):
         log.info('Generating events for "%s"' % self.verbose_name)
         event_type = EventType.objects.get(name=self.name)
         for enc in encounters:
+            ddim = DateDimension.objects.get_or_create(date=enc.date)[0]
             new_event = Event(
                 event_type = event_type,
                 patient = enc.patient,
                 provider = enc.provider,
-                date = enc.date,
+                date = ddim,
                 )
             new_event.save()
             new_event.tag_object(enc)
@@ -968,12 +977,6 @@ class Event(models.Model):
             )
         ert.save()
         return ert
-    
-    def save(self, *args, **kwargs):
-        date_dim, created = DateDimension.objects.get_or_create(date=self.date)
-        date_dim.save()
-        self.date_dim = date_dim
-        super(Event, self).save(*args, **kwargs) # Call the "real" save() method.
 
 
 class EventRecordTag(models.Model):
