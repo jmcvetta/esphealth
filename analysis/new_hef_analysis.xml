@@ -41,4 +41,48 @@
     <Measure name="Events" column="id" datatype="Integer" aggregator="count" visible="true">
     </Measure>
   </Cube>
+  <Cube name="Encounters" cache="true" enabled="true">
+    <Table name="emr_encounter" schema="public">
+    </Table>
+    <Dimension type="TimeDimension" foreignKey="date" highCardinality="false" name="Date">
+      <Hierarchy hasAll="true" primaryKey="date">
+        <Table name="hef_datedimension" schema="public">
+        </Table>
+        <Level name="Year" column="year" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Month" column="month" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+      <Hierarchy name="Quarterly" hasAll="true" primaryKey="date">
+        <Table name="hef_datedimension" schema="public">
+        </Table>
+        <Level name="Year" column="year" type="Numeric" uniqueMembers="true" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="Quarter" column="quarter" type="Numeric" uniqueMembers="false" levelType="TimeQuarters" hideMemberIf="Never">
+        </Level>
+        <Level name="Month" column="month" type="Numeric" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" foreignKey="patient_id" highCardinality="false" name="Race">
+      <Hierarchy hasAll="true" primaryKey="id">
+        <Table name="emr_patient">
+        </Table>
+        <Level name="Race" column="race" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" foreignKey="patient_id" highCardinality="false" name="Gender">
+      <Hierarchy hasAll="true" primaryKey="id">
+        <Table name="emr_patient">
+        </Table>
+        <Level name="Gender" column="gender" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Encounters" column="id" aggregator="count" visible="true">
+    </Measure>
+    <Measure name="Distinct Patients" column="patient_id" aggregator="distinct-count" visible="true">
+    </Measure>
+  </Cube>
 </Schema>
