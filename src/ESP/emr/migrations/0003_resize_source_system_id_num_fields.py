@@ -38,6 +38,7 @@ class Migration(SchemaMigration):
         #-------------------------------------------------------------------------------
         # Encounter
         #-------------------------------------------------------------------------------
+        orm.Encounter.objects.filter(pregnancy_status__isnull=True).update(pregnancy_status=False)
         db.alter_column('emr_encounter', 'pregnancy_status', self.gf('django.db.models.fields.BooleanField')(blank=False, default=False))
 
         #-------------------------------------------------------------------------------
