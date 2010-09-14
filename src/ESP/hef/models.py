@@ -952,6 +952,9 @@ class DateDimension(models.Model):
         self.month = self.date.month
         self.quarter = ( (self.date.month - 1) // 3 ) + 1 # quarter of year, 1-4
         super(DateDimension, self).save(*args, **kwargs) # Call the "real" save() method.
+    
+    def __unicode__(self):
+        return u'%s' % self.date
 
 
 class Event(models.Model):
