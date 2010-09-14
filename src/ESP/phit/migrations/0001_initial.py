@@ -8,25 +8,29 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         
-        # Adding model 'PracticePatients'
-        db.create_table('phit_practicepatients', (
+        # Adding model 'MonthlyStatistics'
+        db.create_table('phit_monthlystatistics', (
             ('month', self.gf('django.db.models.fields.DateField')(primary_key=True)),
-            ('patient_count', self.gf('django.db.models.fields.IntegerField')()),
+            ('practice_patients', self.gf('django.db.models.fields.IntegerField')()),
+            ('total_encounters', self.gf('django.db.models.fields.IntegerField')()),
+            ('patients_with_encounter', self.gf('django.db.models.fields.IntegerField')()),
         ))
-        db.send_create_signal('phit', ['PracticePatients'])
+        db.send_create_signal('phit', ['MonthlyStatistics'])
 
 
     def backwards(self, orm):
         
-        # Deleting model 'PracticePatients'
-        db.delete_table('phit_practicepatients')
+        # Deleting model 'MonthlyStatistics'
+        db.delete_table('phit_monthlystatistics')
 
 
     models = {
-        'phit.practicepatients': {
-            'Meta': {'object_name': 'PracticePatients'},
+        'phit.monthlystatistics': {
+            'Meta': {'object_name': 'MonthlyStatistics'},
             'month': ('django.db.models.fields.DateField', [], {'primary_key': 'True'}),
-            'patient_count': ('django.db.models.fields.IntegerField', [], {})
+            'patients_with_encounter': ('django.db.models.fields.IntegerField', [], {}),
+            'practice_patients': ('django.db.models.fields.IntegerField', [], {}),
+            'total_encounters': ('django.db.models.fields.IntegerField', [], {})
         }
     }
 
