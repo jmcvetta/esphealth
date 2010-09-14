@@ -6,6 +6,10 @@ from django.db import models
 from django.contrib.contenttypes import generic
 
 class Migration(DataMigration):
+    
+    depends_on = (
+        ('emr', '0002_rename_source_system_id_num_fields'),
+        )
 
     def forwards(self, orm):
         gfk = generic.GenericForeignKey()
