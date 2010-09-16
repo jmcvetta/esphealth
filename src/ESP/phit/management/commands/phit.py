@@ -73,6 +73,7 @@ class Command(BaseCommand):
         field_names = ['month', 'practice_patients', 'total_encounters', 'patients_with_encounter', 'any_test']
         field_names += self.QUERIES.keys()
         writer = csv.DictWriter(sys.stdout, field_names)
+        writer.writerow(field_names) # Header for CSV file
         for ms in MonthlyStatistics.objects.all():
             next_month = ms.month + relativedelta(months=1)
             events = Event.objects.filter(date__gte=ms.month, date__lte=next_month)
@@ -92,9 +93,21 @@ class Command(BaseCommand):
             writer.writerow(values)
     
     def linelist(self):
-        field_names = ['month', 'practice_patients', 'total_encounters', 'patients_with_encounter', 'patient_last', 'patient_first', 'patient_mrn', 'patient_age']
+        field_names = [
+            'month', 
+            'practice_patients', 
+            'total_encounters', 
+            'patients_with_encounter', 
+            'patient_last', 
+            'patient_first', 
+            'patient_mrn', 
+            'patient_age',
+            'patient_gender',
+            'patient_race',
+            ]
         field_names += self.QUERIES.keys()
         writer = csv.DictWriter(sys.stdout, field_names)
+        writer.writerow(dict(zip(field_names, field_names))) # Header for CSV file
         for ms in MonthlyStatistics.objects.all():
             next_month = ms.month + relativedelta(months=1)
             events = Event.objects.filter(date__gte=ms.month, date__lte=next_month)
@@ -112,6 +125,8 @@ class Command(BaseCommand):
                     'patient_first': patient.first_name,
                     'patient_mrn': patient.mrn,
                     'patient_age': relativedelta(ms.month, patient.date_of_birth).years,
+                    'patient_gender': patient.gender,
+                    'patient_race': patient.race,
                     }
                 for name in self.QUERIES:
                     values[name] = bool( events.filter(self.QUERIES[name]).filter(patient=patient) )
