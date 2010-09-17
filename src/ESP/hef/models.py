@@ -222,6 +222,10 @@ class LabTestMap(models.Model):
     # Notes
     #
     notes = models.TextField(blank=True, null=True)
+    
+    def __unicode__(self):
+        return u'"%s" --> %s' % (self.code, self.test)
+    
     class Meta:
         verbose_name = 'Lab Test Map'
         unique_together = ['test', 'code']
