@@ -76,9 +76,10 @@ class Command(BaseCommand):
         writer.writerow(field_names) # Header for CSV file
         for ms in MonthlyStatistics.objects.all():
             next_month = ms.month + relativedelta(months=1)
-            events = Event.objects.filter(date__gte=ms.month, date__lte=next_month)
-            any_q = Q(pk__isnull=True) # Null Q object
-            for name in self.QUERIES:
+            events = Event.objects.filter(date__gte=ms.month, date__lt=next_month)
+            names = self.QUERIES.keys()
+            any_q = self.QUERIES[names[0]]
+            for name in names[1:]:
                 any_q |= self.QUERIES[name]
             self.QUERIES['any_test'] = any_q
             values = {
