@@ -39,7 +39,12 @@ class MonthlyStatistics(models.Model):
         log.debug('Regenerating MonthlyStatistics table')
         months_qs = Encounter.objects.filter(date__isnull=False).dates('date', 'month').order_by('date')
         log_query('Encounter months', months_qs)
-        for month_start in months_qs:
+        # Calling distinct() on the QS above does not return distinct month 
+        # values.  So we convert the QS to a set object, thereby eliminating 
+        # duplicates, then convert the set to a list so it can be sorted.
+        all_months = list(set(months_qs))
+        all_months.sort() 
+        for month_start in all_months:
             end_date = month_start + relativedelta(months=1)
             practic_patient_start = month_start - relativedelta(years=3)
             total_encounters = Encounter.objects.filter(date__gte=month_start, date__lt=end_date).count()
