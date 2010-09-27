@@ -147,6 +147,7 @@ class Command(BaseCommand):
             writer.writerow(values)
     
     def linelist(self):
+        log.info('Generating patient line list')
         field_names = [
             'month', 
             'patient_last', 
@@ -158,19 +159,25 @@ class Command(BaseCommand):
             ]
         field_names += self.QUERIES.keys()
         all_stat_names = MonthlyStatistic.objects.values_list('name', flat=True).distinct()
-        print all_stat_names
         field_names += all_stat_names
         writer = csv.DictWriter(sys.stdout, field_names)
         writer.writerow(dict(zip(field_names, field_names))) # Header for CSV file
         for month in MonthlyStatistic.objects.values_list('month', flat=True).distinct().order_by('month'):
             next_month = month + relativedelta(months=1)
             events = Event.objects.filter(date__gte=month, date__lte=next_month)
+            # Q object that matches patients who match any query in self.QUERIES
             any_q = Q(pk__isnull=True) # Null Q object
             for name in self.QUERIES:
                 any_q |= self.QUERIES[name]
             month_values = {}
+            # Get statistics for this month
             for statname in all_stat_names:
                 month_values[statname] = MonthlyStatistic.objects.get(month=month, name=statname).value
+            # Make a dict associating query names with all patient IDs who match the query this month
+            query_pats = {}
+            for name in self.QUERIES:
+                query_pats[name] = list(events.filter(self.QUERIES[name]).values_list('patient', flat=True).distinct())
+            # Generate the line list
             for pat_id in events.filter(any_q).values_list('patient', flat=True).distinct():
                 patient = Patient.objects.get(pk=pat_id)
                 values = {
@@ -182,8 +189,12 @@ class Command(BaseCommand):
                     'patient_gender': patient.gender,
                     'patient_race': patient.race,
                     }
+                # Look up patient in query_pats dict to see if pat matches query this month
                 for name in self.QUERIES:
-                    values[name] = bool( events.filter(self.QUERIES[name]).filter(patient=patient) )
+                    if patient.pk in query_pats[name]:
+                        values[name] = True
+                    else:
+                        values[name] = False
                 values.update(month_values)
                 log.debug(values)
                 writer.writerow(values)
