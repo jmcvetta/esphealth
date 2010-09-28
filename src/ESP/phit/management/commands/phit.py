@@ -43,12 +43,12 @@ class Command(BaseCommand):
     help = 'Generate counts of practice patients per month'
     
     option_list = BaseCommand.option_list + (
-        make_option('--no-regenerate-statistics', action='store_false', dest='regenerate', 
-            help='Do not regenerate montly statistics before producing report', default=True),
+        make_option('--statistics', action='store_true', dest='statistics', 
+            help='Regenerate monthly statistics', default=False),
         make_option('--summary', action='store_true', dest='summary', default=False,
-            help='Produce monthly summary report'),
+            help='Monthly summary report'),
         make_option('--linelist', action='store_true', dest='linelist', default=False,
-            help='Produce patient line list report'),
+            help='Patient line list report'),
         )
     
     QUERIES = {
@@ -58,19 +58,23 @@ class Command(BaseCommand):
         }
     
     def handle(self, *args, **options):
-        if options['regenerate']:
+        if options['statistics']:
             self.regenerate()
-        if options['linelist']:
+        elif options['linelist']:
             self.linelist()
         elif options['summary']:
             self.summary()
         else:
-            sys.stderr.write('You must choose either --summary or --linelist\n')
+            sys.stderr.write('You must specify either --summary, --linelist, or --statistics\n')
             sys.exit(-1)
-    
     
     @commit_on_success
     def regenerate(self):
+        '''
+        Regenerate monthly statistics -- those stats that relate only to a 
+        month, not to a particular patient -- used to provide denominators 
+        for PHIT event data.
+        '''
         log.debug('Truncating MonthlyStatistic table')
         MonthlyStatistic.objects.all().delete() # Truncate table before repopulating
         log.debug('Regenerating monthly statistics')
@@ -78,11 +82,13 @@ class Command(BaseCommand):
         #all_months |= set(LabResult.objects.filter(date__isnull=False).dates('date', 'month').order_by('date'))
         #all_months |= set(LabOrder.objects.filter(date__isnull=False).dates('date', 'month').order_by('date'))
         #all_months |= set(Prescription.objects.filter(date__isnull=False).dates('date', 'month').order_by('date'))
+        #
         # Calling distinct() on the QS above does not return distinct month 
         # values.  So we convert the QS to a set object, thereby eliminating 
         # duplicates, then convert the set to a list so it can be sorted.
         all_months = list(all_months)
         all_months.sort() 
+        distinct_races = Patient.objects.filter(race__isnull=False).exclude(race='').values_list('race', flat=True).distinct()
         for month_start in all_months:
             values = {}
             end_date = month_start + relativedelta(months=1)
@@ -99,7 +105,6 @@ class Command(BaseCommand):
             log_query('practice patients', prac_pts)
             values['practice_patients'] = prac_pts.count()
             #
-            distinct_races = Patient.objects.filter(race__isnull=False).exclude(race='').values_list('race', flat=True).distinct()
             dob_14 = month_start - relativedelta(years=14)
             dob_45 = month_start - relativedelta(years=45)
             younger_q = Q(patient__date_of_birth__lte=dob_14, patient__date_of_birth__gt=dob_45)
@@ -118,31 +123,60 @@ class Command(BaseCommand):
                 ms.save()
                 log.debug(ms)
     
-        
     def summary(self):
         '''
         Produces monthly summary report
         '''
-        field_names = ['month', 'practice_patients', 'total_encounters', 'patients_with_encounter', 'any_test']
-        field_names += self.QUERIES.keys()
+        # Populate list of field names to initialize dict writer and output header
+        field_names = ['month',]
+        distinct_races = Patient.objects.filter(race__isnull=False).exclude(race='').values_list('race', flat=True).distinct()
+        for query_name in ['any_test'] + self.QUERIES.keys():
+            field_names += ['%s_female' % query_name]
+            field_names += ['%s_all_patients' % query_name]
+            for race in distinct_races:
+                lrace = race.lower().replace(' ', '_')
+                field_names += ['%s_female_%s' % (query_name, lrace) ]
+                field_names += ['%s_female_%s_14_to_44' % (query_name, lrace) ]
+                field_names += ['%s_female_%s_over_44' % (query_name, lrace) ]
+        all_stat_names = MonthlyStatistic.objects.values_list('name', flat=True).distinct()
+        field_names += all_stat_names
         writer = csv.DictWriter(sys.stdout, field_names)
-        writer.writerow(field_names) # Header for CSV file
-        for ms in MonthlyStatistic.objects.all():
-            next_month = ms.month + relativedelta(months=1)
-            events = Event.objects.filter(date__gte=ms.month, date__lt=next_month)
+        writer.writerow(dict(zip(field_names, field_names))) # Header for CSV file
+        #
+        for month in MonthlyStatistic.objects.values_list('month', flat=True).order_by('month').distinct():
+            next_month = month + relativedelta(months=1)
+            dob_14 = month - relativedelta(years=14)
+            dob_45 = month - relativedelta(years=45)
+            younger_q = Q(patient__date_of_birth__lte=dob_14, patient__date_of_birth__gt=dob_45)
+            older_q = Q(patient__date_of_birth__lte=dob_45)
+            #
+            events = Event.objects.filter(date__gte=month, date__lt=next_month)
+            fem_events = events.filter(patient__gender__iexact='F')
+            stratifications = {
+                'all_patients': events,
+                'female': fem_events,
+                }
+            for race in distinct_races:
+                lrace = race.lower().replace(' ', '_')
+                stratifications['female_%s' % lrace] = fem_events.filter(patient__race=race).values('patient').distinct()
+                stratifications['female_%s_14_to_44' % lrace] = fem_events.filter(patient__race=race).filter(younger_q).values('patient').distinct()
+                stratifications['female_%s_over_44' % lrace] = fem_events.filter(patient__race=race).filter(older_q).values('patient').distinct()
+            #
             names = self.QUERIES.keys()
             any_q = self.QUERIES[names[0]]
             for name in names[1:]:
                 any_q |= self.QUERIES[name]
             self.QUERIES['any_test'] = any_q
-            values = {
-                'month': ms.month,
-                'practice_patients': ms.practice_patients,
-                'total_encounters': ms.total_encounters,
-                'patients_with_encounter': ms.patients_with_encounter,
-                }
-            for name in self.QUERIES:
-                values[name] = events.filter(self.QUERIES[name]).values('patient').distinct().count()
+            values = {'month': month, }
+            for query_name in self.QUERIES:
+                for strat_name in stratifications:
+                    out_name = '%s_%s' % (query_name, strat_name)
+                    qs = stratifications[strat_name].filter(self.QUERIES[query_name]).values('patient').distinct()
+                    log_query(out_name, qs)
+                    values[out_name] = qs.count()
+            # Add statistical denominators
+            for statname in all_stat_names:
+                values[statname] = MonthlyStatistic.objects.get(month=month, name=statname).value
             log.debug(values)
             writer.writerow(values)
     
