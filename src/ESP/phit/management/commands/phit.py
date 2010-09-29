@@ -25,6 +25,7 @@ from django.db.transaction import commit_on_success
 
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
+from ESP.emr.models import LabResult
 from ESP.phit.models import MonthlyStatistic
 from ESP.hef.models import Event
 from ESP.utils import log
@@ -78,7 +79,9 @@ class Command(BaseCommand):
         log.debug('Truncating MonthlyStatistic table')
         MonthlyStatistic.objects.all().delete() # Truncate table before repopulating
         log.debug('Regenerating monthly statistics')
-        all_months = set(Encounter.objects.filter(date__isnull=False).dates('date', 'month').order_by('date'))
+        all_months = Encounter.objects.filter(date__isnull=False).dates('date', 'month').order_by('date')
+        log_query('all_months', all_months)
+        all_months = set(all_months)
         #all_months |= set(LabResult.objects.filter(date__isnull=False).dates('date', 'month').order_by('date'))
         #all_months |= set(LabOrder.objects.filter(date__isnull=False).dates('date', 'month').order_by('date'))
         #all_months |= set(Prescription.objects.filter(date__isnull=False).dates('date', 'month').order_by('date'))
@@ -90,35 +93,41 @@ class Command(BaseCommand):
         all_months.sort() 
         distinct_races = Patient.objects.filter(race__isnull=False).exclude(race='').values_list('race', flat=True).distinct()
         for month_start in all_months:
-            values = {}
+            queries = {}
             end_date = month_start + relativedelta(months=1)
-            #
-            values['total_encounters'] = Encounter.objects.filter(date__gte=month_start, date__lt=end_date).count()
+            # Encounter stats
             encs = Encounter.objects.filter(date__gte=month_start, date__lt=end_date)
-            fem_encs = Encounter.objects.filter(date__gte=month_start, date__lt=end_date, patient__gender__iexact='F')
-            values['patients_with_encounter'] = encs.values('patient').distinct().count()
-            values['female_patients_with_encounter'] = fem_encs.values('patient').distinct().count()
-            #
+            fem_encs = encs.filter(patient__gender__iexact='F')
+            queries['total_encounters'] = encs
+            queries['patients_with_encounter'] = encs.values('patient').distinct()
+            queries['female_patients_with_encounter'] = fem_encs.values('patient').distinct()
+            # Practice patients -- those patients who "belong" to Atrius practice
             practic_patient_start = month_start - relativedelta(years=3)
             prac_pt_encs = Encounter.objects.filter(date__gte=practic_patient_start, date__lt=end_date)
             prac_pts = prac_pt_encs.values('patient').annotate(enc_count=Count('pk')).filter(enc_count__gte=2)
-            log_query('practice patients', prac_pts)
-            values['practice_patients'] = prac_pts.count()
-            #
+            queries['practice_patients'] = prac_pts
+            # Age stratifications
             dob_14 = month_start - relativedelta(years=14)
             dob_45 = month_start - relativedelta(years=45)
             younger_q = Q(patient__date_of_birth__lte=dob_14, patient__date_of_birth__gt=dob_45)
             older_q = Q(patient__date_of_birth__lte=dob_45)
             for race in distinct_races:
                 lrace = race.lower().replace(' ', '_')
-                values['female_%s_patients' % lrace] = fem_encs.filter(patient__race=race).values('patient').distinct().count()
-                values['female_%s_14_to_44_patients' % lrace] = fem_encs.filter(patient__race=race).filter(younger_q).values('patient').distinct().count()
-                values['female_%s_over_44_patients' % lrace] = fem_encs.filter(patient__race=race).filter(older_q).values('patient').distinct().count()
-            for name in values:
+                queries['female_%s_patients' % lrace] = fem_encs.filter(patient__race=race).values('patient').distinct()
+                queries['female_%s_14_to_44_patients' % lrace] = fem_encs.filter(patient__race=race).filter(younger_q).values('patient').distinct()
+                queries['female_%s_over_44_patients' % lrace] = fem_encs.filter(patient__race=race).filter(older_q).values('patient').distinct()
+            # Lab stats
+            labs = LabResult.objects.filter(date__gte=month_start, date__lt=end_date)
+            fem_labs = labs.filter(patient__gender__iexact='F')
+            queries['total_labresults'] = labs
+            queries['patients_with_labresult'] = labs.values('patient').distinct()
+            queries['female_patients_with_labresult'] = fem_labs.values('patient').distinct()
+            for query_name in queries:
+                log_query(query_name, queries[query_name])
                 ms = MonthlyStatistic(
                     month = month_start,
-                    name = name,
-                    value = values[name],
+                    name = query_name,
+                    value = queries[query_name].count(),
                     )
                 ms.save()
                 log.debug(ms)
