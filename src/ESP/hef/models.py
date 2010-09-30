@@ -189,7 +189,7 @@ class LabTestMap(models.Model):
     source-EMR-specific lab test type
     '''
     test = models.ForeignKey(AbstractLabTest, blank=False)
-    code = models.CharField(max_length=100, verbose_name='Test Code', db_index=True,
+    native_code = models.CharField(max_length=100, verbose_name='Test Code', db_index=True,
         help_text='Native test code from source EMR system', blank=False)
     code_match_type = models.CharField(max_length=32, blank=False, choices=MATCH_TYPE_CHOICES, 
         help_text='Match type for test code', default='exact')
@@ -223,46 +223,46 @@ class LabTestMap(models.Model):
     notes = models.TextField(blank=True, null=True)
     class Meta:
         verbose_name = 'Lab Test Map'
-        unique_together = ['test', 'code']
+        unique_together = ['test', 'native_code']
     
     def __get_lab_results_q_obj(self):
         if self.code_match_type == 'exact':
-            return Q(native_code__exact=self.code)
+            return Q(native_code__exact=self.native_code)
         elif self.code_match_type == 'iexact':
-            return Q(native_code__iexact=self.code)
+            return Q(native_code__iexact=self.native_code)
         elif self.code_match_type == 'startswith':
-            return Q(native_code__startswith=self.code)
+            return Q(native_code__startswith=self.native_code)
         elif self.code_match_type == 'istartswith':
-            return Q(native_code__istartswith=self.code)
+            return Q(native_code__istartswith=self.native_code)
         elif self.code_match_type == 'endswith':
-            return Q(native_code__endswith=self.code)
+            return Q(native_code__endswith=self.native_code)
         elif self.code_match_type == 'iendswith':
-            return Q(native_code__iendswith=self.code)
+            return Q(native_code__iendswith=self.native_code)
         elif self.code_match_type == 'contains':
-            return Q(native_code__contains=self.code)
+            return Q(native_code__contains=self.native_code)
         elif self.code_match_type == 'icontains':
-            return Q(native_code__icontains=self.code)
+            return Q(native_code__icontains=self.native_code)
     lab_results_q_obj = property(__get_lab_results_q_obj)
     
     def __get_lab_orders_q_obj(self):
         #
         # 'procedure_master_num' is a crappy field name, and needs to be changed
         if self.code_match_type == 'exact':
-            return Q(procedure_master_num__exact=self.code)
+            return Q(procedure_master_num__exact=self.native_code)
         elif self.code_match_type == 'iexact':
-            return Q(procedure_master_num__iexact=self.code)
+            return Q(procedure_master_num__iexact=self.native_code)
         elif self.code_match_type == 'startswith':
-            return Q(procedure_master_num__startswith=self.code)
+            return Q(procedure_master_num__startswith=self.native_code)
         elif self.code_match_type == 'istartswith':
-            return Q(procedure_master_num__istartswith=self.code)
+            return Q(procedure_master_num__istartswith=self.native_code)
         elif self.code_match_type == 'endswith':
-            return Q(procedure_master_num__endswith=self.code)
+            return Q(procedure_master_num__endswith=self.native_code)
         elif self.code_match_type == 'iendswith':
-            return Q(procedure_master_num__iendswith=self.code)
+            return Q(procedure_master_num__iendswith=self.native_code)
         elif self.code_match_type == 'contains':
-            return Q(procedure_master_num__contains=self.code)
+            return Q(procedure_master_num__contains=self.native_code)
         elif self.code_match_type == 'icontains':
-            return Q(procedure_master_num__icontains=self.code)
+            return Q(procedure_master_num__icontains=self.native_code)
     lab_orders_q_obj = property(__get_lab_orders_q_obj)
     
     def __get_positive_string_q_obj(self):
@@ -508,7 +508,7 @@ class LabResultPositiveHeuristic(Heuristic):
         # Build queries from LabTestMaps
         #
         for map in LabTestMap.objects.filter(test=self.test):
-            num_res_q = Q(native_code=map.code, result_float__isnull=False)
+            num_res_q = map.lab_results_q.filter(result_float__isnull=False)
             positive_q |= num_res_q & Q(ref_high_float__isnull=False, result_float__gte = F('ref_high_float'))
             negative_q |= num_res_q & Q(ref_high_float__isnull=False, result_float__lt = F('ref_high_float'))
             if map.threshold:
@@ -631,7 +631,7 @@ class LabResultRatioHeuristic(Heuristic):
         positive_labs = LabResult.objects.none()
         code_maps = LabTestMap.objects.filter(test=self.test)
         for map in code_maps:
-            labs = unbound_labs.filter(native_code=map.code)
+            labs = unbound_labs.filter(map.lab_results_q_obj)
             #
             # Build numeric comparison queries
             #

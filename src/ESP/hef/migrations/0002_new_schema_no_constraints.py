@@ -38,7 +38,7 @@ class Migration(SchemaMigration):
         db.create_table('hef_labtestmap', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('test', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['hef.AbstractLabTest'])),
-            ('code', self.gf('django.db.models.fields.CharField')(max_length=100, db_index=True)),
+            ('native_code', self.gf('django.db.models.fields.CharField')(max_length=100, db_index=True)),
             ('code_match_type', self.gf('django.db.models.fields.CharField')(default='exact', max_length=32)),
             ('record_type', self.gf('django.db.models.fields.CharField')(default='both', max_length=8)),
             ('threshold', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
@@ -50,6 +50,7 @@ class Migration(SchemaMigration):
             ('snomed_ind', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
             ('notes', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
         ))
+        db.create_unique('hef_labtestmap', ['test', 'native_code'])
         db.send_create_signal('hef', ['LabTestMap'])
 
         # Adding M2M table for field extra_positive_strings on 'LabTestMap'
@@ -369,8 +370,8 @@ class Migration(SchemaMigration):
             'test': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.AbstractLabTest']"})
         },
         'hef.labtestmap': {
-            'Meta': {'unique_together': "(['test', 'code'],)", 'object_name': 'LabTestMap'},
-            'code': ('django.db.models.fields.CharField', [], {'max_length': '100', 'db_index': 'True'}),
+            'Meta': {'unique_together': "(['test', 'native_code'],)", 'object_name': 'LabTestMap'},
+            'native_code': ('django.db.models.fields.CharField', [], {'max_length': '100', 'db_index': 'True'}),
             'code_match_type': ('django.db.models.fields.CharField', [], {'default': "'exact'", 'max_length': '32', 'db_index': 'True'}),
             'record_type': ('django.db.models.fields.CharField', [], {'default': "'both'", 'max_length': '8'}),
             'extra_negative_strings': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'negative_set'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['hef.ResultString']"}),

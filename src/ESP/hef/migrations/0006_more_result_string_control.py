@@ -232,8 +232,8 @@ class Migration(SchemaMigration):
             'test': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.AbstractLabTest']"})
         },
         'hef.labtestmap': {
-            'Meta': {'unique_together': "(['test', 'code'],)", 'object_name': 'LabTestMap'},
-            'code': ('django.db.models.fields.CharField', [], {'max_length': '100', 'db_index': 'True'}),
+            'Meta': {'unique_together': "(['test', 'native_code'],)", 'object_name': 'LabTestMap'},
+            'native_code': ('django.db.models.fields.CharField', [], {'max_length': '100', 'db_index': 'True'}),
             'code_match_type': ('django.db.models.fields.CharField', [], {'default': "'exact'", 'max_length': '32'}),
             'excluded_indeterminate_strings': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'excluded_indeterminate_set'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['hef.ResultString']"}),
             'excluded_negative_strings': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'excluded_negative_set'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['hef.ResultString']"}),
