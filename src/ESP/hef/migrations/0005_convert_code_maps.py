@@ -38,7 +38,7 @@ class Migration(DataMigration):
             test = AbstractLabTest.objects.get(name=heuristic)
             ltm, created = LabTestMap.objects.get_or_create(
                 test = test,
-                code = cm.native_code,
+                native_code = cm.native_code,
                 defaults = {
                     'code_match_type': 'exact',
                     'record_type': 'result',

@@ -50,7 +50,7 @@ class Migration(SchemaMigration):
             ('snomed_ind', self.gf('django.db.models.fields.CharField')(max_length=255, null=True, blank=True)),
             ('notes', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
         ))
-        db.create_unique('hef_labtestmap', ['test', 'native_code'])
+        db.create_unique('hef_labtestmap', ['test_id', 'native_code'])
         db.send_create_signal('hef', ['LabTestMap'])
 
         # Adding M2M table for field extra_positive_strings on 'LabTestMap'

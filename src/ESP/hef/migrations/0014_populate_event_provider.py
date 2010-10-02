@@ -326,7 +326,7 @@ class Migration(DataMigration):
         },
         'hef.event': {
             'Meta': {'object_name': 'Event'},
-            'date': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.DateDimension']"}),
+            'date': ('django.db.models.fields.DateField', [], {'db_index': 'True'}),
             'event_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['hef.EventType']", 'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'patient': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['emr.Patient']"}),
