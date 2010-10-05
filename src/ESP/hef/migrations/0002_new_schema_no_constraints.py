@@ -86,6 +86,7 @@ class Migration(SchemaMigration):
             ('code_match_type', self.gf('django.db.models.fields.CharField')(default='exact', max_length=32, db_index=True)),
             ('notes', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
         ))
+        db.create_unique('hef_encounterheuristic', ['icd9_codes', 'code_match_type'])
         db.send_create_signal('hef', ['EncounterHeuristic'])
 
         # Adding model 'AbstractLabTest'
