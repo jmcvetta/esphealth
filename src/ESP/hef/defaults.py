@@ -31,7 +31,7 @@ from ESP.hef.models import ResultString
 # All events created by previous version of HEF will be bound to this heuristic.
 legacy_heuristic = Heuristic.objects.get_or_create(
     id = 0,
-    name = 'Legacy Heuristic',
+    #name = 'Legacy Heuristic',
     )[0]
 
 
@@ -509,22 +509,22 @@ LabOrderHeuristic.objects.get_or_create(
     )
 
 
-lyme_diagnosis = EncounterHeuristic.objects.get_or_create(
+lyme_dx = EncounterHeuristic.objects.get_or_create(
     name = 'lyme',
     )[0]
 
-Icd9Query.objects.get_or_create(
-    heuristic = lyme_diagnosis,
+foo = Icd9Query.objects.get_or_create(
+    heuristic = lyme_dx,
     icd9_exact = '088.81',
-    )
+    )[0]
 
 
-rash_diagnosis = EncounterHeuristic.objects.get_or_create(
+rash_dx = EncounterHeuristic.objects.get_or_create(
     name = 'rash',
-    )
+    )[0]
 
 Icd9Query.objects.get_or_create(
-    heuristic = rash_diagnosis,
+    heuristic = rash_dx,
     icd9_exact = '782.1',
     )
 
@@ -551,7 +551,32 @@ pelvic_inflamatory_disease = EncounterHeuristic.objects.get_or_create(
 
 Icd9Query.objects.get_or_create(
     heuristic = pelvic_inflamatory_disease,
-    icd9_start_swith = '614.',
+    icd9_exact = '614.0',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = pelvic_inflamatory_disease,
+    icd9_exact = '614.0',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = pelvic_inflamatory_disease,
+    icd9_exact = '614.2',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = pelvic_inflamatory_disease,
+    icd9_exact = '614.3',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = pelvic_inflamatory_disease,
+    icd9_exact = '614.5',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = pelvic_inflamatory_disease,
+    icd9_exact = '614.9',
     )
 
 Icd9Query.objects.get_or_create(
@@ -638,7 +663,47 @@ tb_diagnosis = EncounterHeuristic.objects.get_or_create(
     
 Icd9Query.objects.get_or_create(
     heuristic = tb_diagnosis,
-    icd9_starts_with = '01',
+    icd9_starts_with = '010.',
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = tb_diagnosis,
+    icd9_starts_with = '011.',
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = tb_diagnosis,
+    icd9_starts_with = '012.',
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = tb_diagnosis,
+    icd9_starts_with = '013.',
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = tb_diagnosis,
+    icd9_starts_with = '014.',
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = tb_diagnosis,
+    icd9_starts_with = '015.',
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = tb_diagnosis,
+    icd9_starts_with = '016.',
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = tb_diagnosis,
+    icd9_starts_with = '017.',
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = tb_diagnosis,
+    icd9_starts_with = '018.',
     )[0]
 
 
@@ -690,42 +755,42 @@ syphilis_diagnosis = EncounterHeuristic.objects.get_or_create(
     )[0]
 
 Icd9Query.objects.get_or_create(
-    name = syphilis_diagnosis,
+    heuristic = syphilis_diagnosis,
     icd9_starts_with = '090.',
     )
 
 Icd9Query.objects.get_or_create(
-    name = syphilis_diagnosis,
+    heuristic = syphilis_diagnosis,
     icd9_starts_with = '091.',
     )
 
 Icd9Query.objects.get_or_create(
-    name = syphilis_diagnosis,
+    heuristic = syphilis_diagnosis,
     icd9_starts_with = '092.',
     )
 
 Icd9Query.objects.get_or_create(
-    name = syphilis_diagnosis,
+    heuristic = syphilis_diagnosis,
     icd9_starts_with = '093.',
     )
 
 Icd9Query.objects.get_or_create(
-    name = syphilis_diagnosis,
+    heuristic = syphilis_diagnosis,
     icd9_starts_with = '094.',
     )
 
 Icd9Query.objects.get_or_create(
-    name = syphilis_diagnosis,
+    heuristic = syphilis_diagnosis,
     icd9_starts_with = '095.',
     )
 
 Icd9Query.objects.get_or_create(
-    name = syphilis_diagnosis,
+    heuristic = syphilis_diagnosis,
     icd9_starts_with = '096.',
     )
 
 Icd9Query.objects.get_or_create(
-    name = syphilis_diagnosis,
+    heuristic = syphilis_diagnosis,
     icd9_starts_with = '097.',
     )
 
@@ -1238,10 +1303,18 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
 
 
 pregnancy_diagnosis = EncounterHeuristic.objects.get_or_create(
-    name = 'pregnancy_diagnosis',
-    icd9_codes = 'V22., V23.',
-    code_match_type = 'startswith',
+    name = 'pregnancy',
     )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = pregnancy_diagnosis,
+    icd9_starts_with = 'V22.',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = pregnancy_diagnosis,
+    icd9_starts_with = 'V23.',
+    )
 
 #
 #
@@ -1251,9 +1324,12 @@ pregnancy_diagnosis = EncounterHeuristic.objects.get_or_create(
 
 gdm_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'gdm_diagnosis',
-    icd9_codes = '648.8',
-    code_match_type = 'startswith',
     )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = gdm_diagnosis,
+    icd9_starts_with = '648.8',
+    )
 
 lancets_rx = PrescriptionHeuristic.objects.get_or_create(
     name = 'lancets_rx',
@@ -1295,8 +1371,12 @@ metronidazole_rx = PrescriptionHeuristic.objects.get_or_create(
 
 diahrrhea_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'diarrhea',
-    icd9_exact = '787.91',
     )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = diahrrhea_diagnosis,
+    icd9_exact = '787.91',
+    )
 
 
 #-------------------------------------------------------------------------------
@@ -1305,15 +1385,19 @@ diahrrhea_diagnosis = EncounterHeuristic.objects.get_or_create(
 #
 #-------------------------------------------------------------------------------
 
-pertussis_bordetella_dx = EncounterHeuristic.objects.get_or_create(
-    name = 'pertussis_bordetella',
+pertussis_dx = EncounterHeuristic.objects.get_or_create(
+    name = 'pertussis',
+    )[0]
+    
+Icd9Query.objects.get_or_create(
+    heuristic = pertussis_dx,
     icd9_exact = '033.0',
-    )[0]
+    )
 
-pertussis_bordetella_dx = EncounterHeuristic.objects.get_or_create(
-    name = 'pertussis_whooping_cough_nos',
+Icd9Query.objects.get_or_create(
+    heuristic = pertussis_dx,
     icd9_exact = '033.9',
-    )[0]
+    )
 
 #
 # Needs new functionality to examine comment string
@@ -1385,5 +1469,9 @@ diabetes_rx = PrescriptionHeuristic.objects.get_or_create(
 
 diabetes_diagnosis = EncounterHeuristic.objects.get_or_create(
     name = 'diabetes',
-    icd9_startswith = '250.',
     )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = diabetes_diagnosis,
+    icd9_starts_with = '250.',
+    )
