@@ -14,7 +14,7 @@ for c in [
     ]:
     obj, created = LabTestMap.objects.get_or_create(
         test = a1c,
-        code = c,
+        native_code = c,
         code_match_type = 'exact',
         record_type = 'result',
         )
@@ -26,7 +26,7 @@ for c in [
     
 obj, created = LabTestMap.objects.get_or_create(
     test = a1c,
-    code = '83036',
+    native_code = '83036',
     code_match_type = 'istartswith',
     record_type = 'order',
     )
@@ -38,7 +38,7 @@ else:
 for c in ['82951F', '82951H', '82951K', '82951M']:
     obj, created = LabTestMap.objects.get_or_create(
         test = ogtt75_series,
-        code = c,
+        native_code = c,
         code_match_type = 'exact',
         record_type = 'order',
         )
@@ -67,7 +67,7 @@ for c in [
     ]:
     obj, created = LabTestMap.objects.get_or_create(
         test = glucose_fasting,
-        code = c,
+        native_code = c,
         code_match_type = 'exact',
         record_type = 'result',
         )
