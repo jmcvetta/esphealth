@@ -88,6 +88,8 @@ class Command(BaseCommand):
             for name in name_list:
                 print '%-32s  %s' % (name, dispatch[name])
             sys.exit()
+        if settings.DEBUG:
+            log.warning('Django DEBUG is set to True.  This can cause massive memory consumption and slow performance.  Do not run in production without disabling debug in $ESP_HOME/etc/application.ini.')
         if args:
             #
             # Sanity Check
