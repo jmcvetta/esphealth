@@ -18,6 +18,7 @@ import optparse
 import threading
 import Queue
 import thread
+import signal
 
 from django.db import connection
 from django.db import transaction
@@ -103,20 +104,27 @@ class Command(BaseCommand):
         #
         # Generate Events
         #
-        count = 0
-        queue = Queue.Queue()
         log.debug('Starting %s threads' % options['thread_count'])
         if options['thread_count'] == 0:
+            count = 0
             for name in name_list:
                 count += dispatch[name].generate_events()
         else:
+            queue = Queue.Queue()
+            counter = Queue.Queue()
+            counter.put(0)
             for i in range(options['thread_count']):
-                t = ThreadedEventGenerator(queue, dispatch, count)
+                t = ThreadedEventGenerator(queue, counter)
                 t.setDaemon(True)
                 t.start()
             for name in name_list:
-                queue.put(name)
+                dispatcher = dispatch[name]
+                if isinstance(dispatcher, AbstractLabTest):
+                    for heuristic in dispatcher.heuristic_set:
+                        queue.put(heuristic)
+                queue.put(dispatcher)
             queue.join()
+            count = counter.get()
         log.info('Generated %s total new events' % count)
 
 
@@ -124,15 +132,18 @@ class ThreadedEventGenerator(threading.Thread):
     '''
     Thread subclass to call generate_events() on various HEF objects
     '''
-    def __init__(self, queue, dispatch, count):
-        threading.Thread.__init__(self)
+    def __init__(self, queue, counter):
         self.queue = queue
-        self.dispatch = dispatch
-        self.count = count
+        self.counter = counter
+        threading.Thread.__init__(self)
     
     def run(self):
         while True:
-            name = self.queue.get()
-            self.count += self.dispatch[name].generate_events()
+            event_generating_obj = self.queue.get()
+            count = event_generating_obj.generate_events()
+            i = self.counter.get()
+            self.counter.put(i+count)
             self.queue.task_done()
+        thread.exit()
+                    
             
