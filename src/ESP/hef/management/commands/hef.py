@@ -135,15 +135,19 @@ class ThreadedEventGenerator(threading.Thread):
     def __init__(self, queue, counter):
         self.queue = queue
         self.counter = counter
+        self.alive = True
         threading.Thread.__init__(self)
     
     def run(self):
-        while True:
-            event_generating_obj = self.queue.get()
-            count = event_generating_obj.generate_events()
-            i = self.counter.get()
-            self.counter.put(i+count)
-            self.queue.task_done()
+        while self.alive:
+            try:
+                event_generating_obj = self.queue.get()
+                count = event_generating_obj.generate_events()
+                i = self.counter.get()
+                self.counter.put(i+count)
+                self.queue.task_done()
+            except KeyboardInterrupt:
+                self.alive = False
         thread.exit()
                     
             
