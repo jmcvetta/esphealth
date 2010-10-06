@@ -148,6 +148,5 @@ class ThreadedEventGenerator(threading.Thread):
                 self.queue.task_done()
             except KeyboardInterrupt:
                 self.alive = False
-        thread.exit()
                     
             

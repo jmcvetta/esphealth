@@ -369,7 +369,7 @@ class LabOrderHeuristic(HeuristicMixin):
     verbose_name = property(__get_verbose_name)
     
     def save(self, *args, **kwargs):
-        name = '%s--order' % self.test.name
+        name = 'lab_order--%s' % self.test.name
         if self.name and not self.name == name:
             log.warning('You tried to name a heuristic "%s", but it was automatically named "%s" instead.' % (self.name, name))
         self.name = name
@@ -529,7 +529,7 @@ class LabResultPositiveHeuristic(HeuristicMixin):
         # Build queries from LabTestMaps
         #
         for map in LabTestMap.objects.filter(test=self.test):
-            num_res_q = map.lab_results_q.filter(result_float__isnull=False)
+            num_res_q = map.lab_results_q_obj & Q(result_float__isnull=False)
             positive_q |= num_res_q & Q(ref_high_float__isnull=False, result_float__gte = F('ref_high_float'))
             negative_q |= num_res_q & Q(ref_high_float__isnull=False, result_float__lt = F('ref_high_float'))
             if map.threshold:
@@ -922,7 +922,7 @@ class Icd9Query(models.Model):
         '''
         Returns a Q object suitable for selecting Encounter objects that match this ICD9 query
         '''
-        if not self.icd9_exact or self.icd9_starts_with or self.icd9_ends_with or self.icd9_contains:
+        if not (self.icd9_exact or self.icd9_starts_with or self.icd9_ends_with or self.icd9_contains):
             log.error('%s does not contain any ICD9 search terms, and will not be processed.' % self)
             return 0
         q_obj = Q(pk__isnull=True) # Null Q object (is there a less ugly way to do this?)
@@ -947,7 +947,7 @@ class Icd9Query(models.Model):
         return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
-        return '%s' % self.name
+        return 'ICD9 Query: %s | %s | %s | %s | %s' % (self.heuristic, self.icd9_exact, self.icd9_starts_with, self.icd9_ends_with, self.icd9_contains),
     verbose_name = property(__get_verbose_name)
     
 
