@@ -1467,11 +1467,43 @@ diabetes_rx = PrescriptionHeuristic.objects.get_or_create(
     drugs =  'glyburide, gliclazide, glipizide, glimepiride,pioglitazone, rosiglitazone, repaglinide, nateglinide, meglitinide, sitagliptin, exenatide, pramlintide',
     )[0]
 
-diabetes_diagnosis = EncounterHeuristic.objects.get_or_create(
-    name = 'diabetes',
+diabetes_dx = EncounterHeuristic.objects.get_or_create(
+    name = 'diabetes_all_types',
     )[0]
 
 Icd9Query.objects.get_or_create(
-    heuristic = diabetes_diagnosis,
+    heuristic = diabetes_dx,
     icd9_starts_with = '250.',
+    )
+
+diabetes_type_1_dx = EncounterHeuristic.objects.get_or_create(
+    name = 'diabetes_type_1'
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = diabetes_type_1_dx,
+    icd9_starts_with = '250.',
+    icd9_ends_with = '1',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = diabetes_type_1_dx,
+    icd9_starts_with = '250.',
+    icd9_ends_with = '3',
+    )
+
+diabetes_type_2_dx = EncounterHeuristic.objects.get_or_create(
+    name = 'diabetes_type_2'
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = diabetes_type_2_dx,
+    icd9_starts_with = '250.',
+    icd9_ends_with = '0',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = diabetes_type_2_dx,
+    icd9_starts_with = '250.',
+    icd9_ends_with = '2',
     )
