@@ -9,7 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from ESP.conf.common import EPOCH
 from ESP.emr.models import Encounter, Patient
-from ESP.hef.core import EncounterHeuristic
+from ESP.hef.core import DiagnosisHeuristic
 from ESP.hef.models import Event
 from ESP.utils.utils import log, date_from_str, str_from_date, days_in_interval, timeit
 from ESP.ss.utils import report_folder
@@ -41,7 +41,7 @@ from definitions import lymphatic, lower_gi, upper_gi, neurological, respiratory
 
 
 
-class SyndromeHeuristic(EncounterHeuristic):
+class SyndromeHeuristic(DiagnosisHeuristic):
     def encounters(self, **kw):
         return Encounter.objects.syndrome_care_visits().filter(icd9_codes__in=self.icd9s)
 

@@ -12,7 +12,7 @@ from ESP.hef.models import LabOrderHeuristic
 from ESP.hef.models import LabResultPositiveHeuristic
 from ESP.hef.models import LabResultRatioHeuristic
 from ESP.hef.models import LabResultFixedThresholdHeuristic
-from ESP.hef.models import EncounterHeuristic
+from ESP.hef.models import DiagnosisHeuristic
 from ESP.hef.models import PrescriptionHeuristic
 from ESP.hef.models import Dose
 from ESP.hef.models import ResultString
@@ -85,7 +85,7 @@ class DoseAdmin(admin.ModelAdmin):
     list_filter = ['units']
 
 class EncounterHeuristicAdmin(admin.ModelAdmin):
-    list_display = ['name', 'icd9_codes', 'code_match_type']
+    list_display = ['name', ]
 
 class PrescriptionHeuristicAdmin(admin.ModelAdmin):
     list_display = ['name', 'drugs', 'exclude', 'require']
@@ -101,6 +101,6 @@ admin.site.register(LabOrderHeuristic, LabOrderHeuristicAdmin)
 admin.site.register(LabResultPositiveHeuristic, LabResultPositiveHeuristicAdmin)
 admin.site.register(LabResultRatioHeuristic, LabResultRatioHeuristicAdmin)
 admin.site.register(LabResultFixedThresholdHeuristic, LabResultFixedThresholdHeuristicAdmin)
-admin.site.register(EncounterHeuristic, EncounterHeuristicAdmin)
+admin.site.register(DiagnosisHeuristic, EncounterHeuristicAdmin)
 admin.site.register(PrescriptionHeuristic, PrescriptionHeuristicAdmin)
 admin.site.register(ResultString, ResultStringAdmin)

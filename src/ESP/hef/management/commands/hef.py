@@ -27,7 +27,7 @@ from optparse import make_option
 
 
 from ESP.hef.models import AbstractLabTest
-from ESP.hef.models import EncounterHeuristic
+from ESP.hef.models import DiagnosisHeuristic
 from ESP.hef.models import PrescriptionHeuristic
 from ESP.nodis.models import Case # hef.core and .models are dependencies of nodis/models, but this command script is not
 from ESP import settings
@@ -74,12 +74,14 @@ class Command(BaseCommand):
         abstract_tests = AbstractLabTest.objects.all().order_by('name')
         for test in abstract_tests:
             dispatch[test.name] = test
-        for eh in EncounterHeuristic.objects.all():
-            assert eh.name not in dispatch
-            dispatch[eh.name] = eh
+        for dh in DiagnosisHeuristic.objects.all():
+            name = 'dx--%s' % dh.name
+            assert name not in dispatch
+            dispatch[name] = dh
         for ph in PrescriptionHeuristic.objects.all():
-            assert ph.name not in dispatch
-            dispatch[ph.name] = ph
+            name = 'rx--%s' % ph.name
+            assert name not in dispatch
+            dispatch[name] = ph
         name_list = dispatch.keys()
         name_list.sort()
         if options['list']:

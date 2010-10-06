@@ -115,7 +115,7 @@ class AbstractLabTest(models.Model):
         ordering = ['name']
     
     def __unicode__(self):
-        return u'%s - %s' % (self.name, self.verbose_name)
+        return u'Abstract Lab Test - %s - %s' % (self.name, self.verbose_name)
     
     def __get_lab_results(self):
         result = LabResult.objects.none()
@@ -369,7 +369,7 @@ class LabOrderHeuristic(HeuristicMixin):
     verbose_name = property(__get_verbose_name)
     
     def save(self, *args, **kwargs):
-        name = 'lab_order--%s' % self.test.name
+        name = 'lx--%s--order' % self.test.name
         if self.name and not self.name == name:
             log.warning('You tried to name a heuristic "%s", but it was automatically named "%s" instead.' % (self.name, name))
         self.name = name
@@ -428,7 +428,7 @@ class LabResultAnyHeuristic(LabResultHeuristicBase):
         return u'%s - %s' % (self.verbose_name, self.test)
     
     def save(self, *args, **kwargs):
-        name = '%s--any_result' % self.test.name
+        name = 'lx--%s--any_result' % self.test.name
         if self.name and not self.name == name:
             log.warning('You tried to name a heuristic "%s", but it was automatically named "%s" instead.' % (self.name, name))
         self.name = name
@@ -482,15 +482,15 @@ class LabResultPositiveHeuristic(HeuristicMixin):
     verbose_name = property(__get_verbose_name)
     
     def save(self, *args, **kwargs):
-        name = '%s--positive' % self.test.name
+        name = 'lx--%s--positive' % self.test.name
         if self.name and not self.name == name:
             log.warning('You tried to name a heuristic "%s", but it was automatically named "%s" instead.' % (self.name, name))
         self.name = name
         super(LabResultPositiveHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
         event_name_list = [
             self.name, 
-            '%s--negative' % self.test.name,
-            '%s--indeterminate' % self.test.name,
+            'lx--%s--negative' % self.test.name,
+            'lx--%s--indeterminate' % self.test.name,
             ]
         for event_name in event_name_list:
             obj, created = EventType.objects.get_or_create(
@@ -557,7 +557,7 @@ class LabResultPositiveHeuristic(HeuristicMixin):
         positive_labs = unbound_labs.filter(positive_q)
         log_query('Positive labs for %s' % self.name, positive_labs)
         log.info('Generating positive events for %s' % self.test.name)
-        pos_event_type = EventType.objects.get(name='%s--positive' % self.test.name)
+        pos_event_type = EventType.objects.get(name='lx--%s--positive' % self.test.name)
         for lab in positive_labs:
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -576,7 +576,7 @@ class LabResultPositiveHeuristic(HeuristicMixin):
         negative_labs = unbound_labs.filter(negative_q)
         log_query('Negative labs for %s' % self.name, negative_labs)
         log.info('Generating negative events for %s' % self.test.name)
-        neg_event_type = EventType.objects.get(name='%s--negative' % self.test.name)
+        neg_event_type = EventType.objects.get(name='lx--%s--negative' % self.test.name)
         for lab in negative_labs:
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -595,7 +595,7 @@ class LabResultPositiveHeuristic(HeuristicMixin):
         indeterminate_labs = unbound_labs.filter(indeterminate_q)
         log_query('Indeterminate labs for %s' % self.name, indeterminate_labs)
         log.info('Generating indeterminate events for %s' % self.test.name)
-        ind_event_type = EventType.objects.get(name='%s--indeterminate' % self.test.name)
+        ind_event_type = EventType.objects.get(name='lx--%s--indeterminate' % self.test.name)
         for lab in indeterminate_labs:
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -636,7 +636,7 @@ class LabResultRatioHeuristic(HeuristicMixin):
     verbose_name = property(__get_verbose_name)
     
     def save(self, *args, **kwargs):
-        name = '%s--ratio--%s' % (self.test.name, self.ratio)
+        name = 'lx--%s--ratio--%s' % (self.test.name, self.ratio)
         if self.name and not self.name == name:
             log.warning('You tried to name a heuristic "%s", but it was automatically named "%s" instead.' %  (self.name, name))
         self.name = name
@@ -706,7 +706,7 @@ class LabResultFixedThresholdHeuristic(HeuristicMixin):
     verbose_name = property(__get_verbose_name)
     
     def save(self, *args, **kwargs):
-        name = '%s--threshold--%s' % (self.test.name, self.threshold)
+        name = 'lx--%s--threshold--%s' % (self.test.name, self.threshold)
         if self.name and not self.name == name:
             log.warning('You tried to name a heuristic "%s", but it was automatically named "%s" instead.' % (self.name, name))
         self.name = name
@@ -801,7 +801,7 @@ class PrescriptionHeuristic(HeuristicMixin):
     def save(self, *args, **kwargs):
         super(PrescriptionHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
         obj, created = EventType.objects.get_or_create(
-            name = self.name,
+            name = 'rx--%s' % self.name,
             heuristic = self,
             )
         if created:
@@ -836,7 +836,7 @@ class PrescriptionHeuristic(HeuristicMixin):
             prescriptions &= prescriptions.exclude(name__icontains=excluded_string)
         log_query('Prescriptions for %s' % self.name, prescriptions)
         log.info('Generating events for "%s"' % self.verbose_name)
-        event_type = EventType.objects.get(name=self.name)
+        event_type = EventType.objects.get(name='rx--%s' % self.name)
         for rx in prescriptions:
             new_event = Event(
                 event_type = event_type,
@@ -850,9 +850,10 @@ class PrescriptionHeuristic(HeuristicMixin):
         return prescriptions.count()
 
 
-class EncounterHeuristic(HeuristicMixin):
+class DiagnosisHeuristic(HeuristicMixin):
     '''
-    A heuristic for detecting events based on one or more ICD9 query
+    A heuristic for detecting events based on one or more ICD9 diagnosis codes
+    from a physician encounter.  Formerly called EncounterHeuristic.
     '''
     
     class Meta:
@@ -868,9 +869,9 @@ class EncounterHeuristic(HeuristicMixin):
     verbose_name = property(__get_verbose_name)
     
     def save(self, *args, **kwargs):
-        super(EncounterHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
+        super(DiagnosisHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
         obj, created = EventType.objects.get_or_create(
-            name = 'encounter--%s' % self.name,
+            name = 'dx--%s' % self.name,
             heuristic = self,
             )
         if created:
@@ -884,7 +885,7 @@ class EncounterHeuristic(HeuristicMixin):
         encounters = unbound.filter(q_obj)
         log_query('Encounters for %s' % self.name, encounters)
         log.info('Generating events for "%s"' % self.verbose_name)
-        event_type = EventType.objects.get(name='encounter--%s' % self.name)
+        event_type = EventType.objects.get(name='dx--%s' % self.name)
         for enc in encounters:
             new_event = Event(
                 event_type = event_type,
@@ -904,7 +905,7 @@ class Icd9Query(models.Model):
     '''
     A query for selecting encounters based on ICD9 codes
     '''
-    heuristic = models.ForeignKey(EncounterHeuristic, blank=False)
+    heuristic = models.ForeignKey(DiagnosisHeuristic, blank=False)
     # Let's hope we never need to deal with case-sensitive ICD9 codes.
     icd9_exact = models.CharField(max_length=128, blank=True, null=True,
         help_text='Encounter must include this exact ICD9 code')

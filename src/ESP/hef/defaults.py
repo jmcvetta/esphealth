@@ -17,7 +17,7 @@ from ESP.hef.models import LabResultPositiveHeuristic
 from ESP.hef.models import LabResultRatioHeuristic
 from ESP.hef.models import LabResultFixedThresholdHeuristic
 from ESP.hef.models import Icd9Query
-from ESP.hef.models import EncounterHeuristic
+from ESP.hef.models import DiagnosisHeuristic
 from ESP.hef.models import PrescriptionHeuristic
 from ESP.hef.models import Dose
 from ESP.hef.models import ResultString
@@ -509,7 +509,7 @@ LabOrderHeuristic.objects.get_or_create(
     )
 
 
-lyme_dx = EncounterHeuristic.objects.get_or_create(
+lyme_dx = DiagnosisHeuristic.objects.get_or_create(
     name = 'lyme',
     )[0]
 
@@ -519,7 +519,7 @@ foo = Icd9Query.objects.get_or_create(
     )[0]
 
 
-rash_dx = EncounterHeuristic.objects.get_or_create(
+rash_dx = DiagnosisHeuristic.objects.get_or_create(
     name = 'rash',
     )[0]
 
@@ -529,12 +529,12 @@ Icd9Query.objects.get_or_create(
     )
 
 doxycycline_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'doxycycline_rx',
+    name = 'doxycycline',
     drugs = 'doxycycline',
     )[0]
 
 lyme_antibio_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'lyme_other_antibiotic_rx',
+    name = 'lyme_other_antibiotic',
     drugs = 'Amoxicillin, Cefuroxime, Ceftriaxone, Cefotaxime',
     )[0]
 
@@ -545,7 +545,7 @@ lyme_antibio_rx = PrescriptionHeuristic.objects.get_or_create(
 #
 #-------------------------------------------------------------------------------
 
-pelvic_inflamatory_disease = EncounterHeuristic.objects.get_or_create(
+pelvic_inflamatory_disease = DiagnosisHeuristic.objects.get_or_create(
     name = 'pelvic_inflamatory_disease',
     )[0]
 
@@ -591,73 +591,73 @@ Icd9Query.objects.get_or_create(
 #-------------------------------------------------------------------------------
 
 pyrazinamide_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'pyrazinamide_rx',
+    name = 'pyrazinamide',
     drugs = 'Pyrazinamide, PZA',
     exclude = 'CAPZA'
     )[0]
 
 isoniazid_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'isoniazid_rx',
+    name = 'isoniazid',
     drugs = 'Isoniazid',
     exclude = 'INHAL, INHIB',
     )[0]
 
 ethambutol_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'ethambutol_rx',
+    name = 'ethambutol',
     drugs = 'Ethambutol',
     )[0]
 
 rifampin_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'rifampin_rx',
+    name = 'rifampin',
     drugs = 'rifampin',
     )[0]
 
 rifabutin_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'rifabutin_rx',
+    name = 'rifabutin',
     drugs = 'rifabutin',
     )[0]
 
 rifapentine_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'rifapentine_rx',
+    name = 'rifapentine',
     drugs = 'rifapentine',
     )[0]
 
 streptomycin_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'streptomycin_rx',
+    name = 'streptomycin',
     drugs = 'streptomycin',
     )[0]
 
 para_aminosalicyclic_acid_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'para_aminosalicyclic_acid_rx',
+    name = 'para_aminosalicyclic_acid',
     drugs = 'para-aminosalicyclic acid',
     )[0]
 
 kanamycin_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'kanamycin_rx',
+    name = 'kanamycin',
     drugs = 'kanamycin',
     )[0]
 
 capreomycin_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'capreomycin_rx',
+    name = 'capreomycin',
     drugs = 'capreomycin',
     )[0]
 
 cycloserine_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'cycloserine_rx',
+    name = 'cycloserine',
     drugs = 'cycloserine',
     )[0]
 
 ethionamide_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'ethionamide_rx',
+    name = 'ethionamide',
     drugs = 'ethionamide',
     )[0]
 
 moxifloxacin_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'moxifloxacin_rx',
-    drugs = 'moxifloxacin_rx',
+    name = 'moxifloxacin',
+    drugs = 'moxifloxacin',
     )[0]
 
-tb_diagnosis = EncounterHeuristic.objects.get_or_create(
+tb_diagnosis = DiagnosisHeuristic.objects.get_or_create(
     name = 'tuberculosis',
     )[0]
     
@@ -733,24 +733,24 @@ LabOrderHeuristic.objects.get_or_create(
 #-------------------------------------------------------------------------------
 
 penicillin_g_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'penicillin_g_rx',
+    name = 'penicillin_g',
     drugs = 'penicillin g, pen g'
     )[0]
 
 doxycycline_7_days_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'doxycycline_7_days_rx',
+    name = 'doxycycline_7_days',
     drugs = 'doxycycline',
     min_quantity = 14, # Need 14 pills for 7 days
     )[0]
 
 ceftriaxone_1g_2g_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'ceftriaxone_1g_2g_rx',
+    name = 'ceftriaxone_1g_2g',
     drugs = 'ceftriaxone',
     )[0]
 ceftriaxone_1g_2g_rx.dose.add(dose_1g)
 ceftriaxone_1g_2g_rx.dose.add(dose_2g)
 
-syphilis_diagnosis = EncounterHeuristic.objects.get_or_create(
+syphilis_diagnosis = DiagnosisHeuristic.objects.get_or_create(
     name = 'syphilis',
     )[0]
 
@@ -1302,7 +1302,7 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
     )
 
 
-pregnancy_diagnosis = EncounterHeuristic.objects.get_or_create(
+pregnancy_diagnosis = DiagnosisHeuristic.objects.get_or_create(
     name = 'pregnancy',
     )[0]
 
@@ -1322,7 +1322,7 @@ Icd9Query.objects.get_or_create(
 #PregnancyHeuristic() # No config needed
 #
 
-gdm_diagnosis = EncounterHeuristic.objects.get_or_create(
+gdm_diagnosis = DiagnosisHeuristic.objects.get_or_create(
     name = 'gdm_diagnosis',
     )[0]
 
@@ -1332,17 +1332,17 @@ Icd9Query.objects.get_or_create(
     )
 
 lancets_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'lancets_rx',
+    name = 'lancets',
     drugs = 'lancets',
     )[0]
 
 test_strips_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'test_strips_rx',
+    name = 'test_strips',
     drugs = 'test strips',
     )
 
 insulin_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'insulin_rx',
+    name = 'insulin',
     drugs = 'insulin',
     )
 
@@ -1365,11 +1365,11 @@ LabResultPositiveHeuristic.objects.get_or_create(
 
 
 metronidazole_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'metronidazole_rx',
+    name = 'metronidazole',
     drugs = 'metronidazole',
     )
 
-diahrrhea_diagnosis = EncounterHeuristic.objects.get_or_create(
+diahrrhea_diagnosis = DiagnosisHeuristic.objects.get_or_create(
     name = 'diarrhea',
     )[0]
 
@@ -1385,7 +1385,7 @@ Icd9Query.objects.get_or_create(
 #
 #-------------------------------------------------------------------------------
 
-pertussis_dx = EncounterHeuristic.objects.get_or_create(
+pertussis_dx = DiagnosisHeuristic.objects.get_or_create(
     name = 'pertussis',
     )[0]
     
@@ -1451,7 +1451,7 @@ LabResultPositiveHeuristic.objects.get_or_create(
     )
 
 pertussis_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'pertussis_rx',
+    name = 'pertussis',
     drugs =  'Erythromycin, Clarithromycin, Azithromycin, Trimethoprim-sulfamethoxazole',
     )[0]
 
@@ -1463,11 +1463,11 @@ pertussis_rx = PrescriptionHeuristic.objects.get_or_create(
 #-------------------------------------------------------------------------------
 
 diabetes_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'diabetes_rx',
+    name = 'diabetes',
     drugs =  'glyburide, gliclazide, glipizide, glimepiride,pioglitazone, rosiglitazone, repaglinide, nateglinide, meglitinide, sitagliptin, exenatide, pramlintide',
     )[0]
 
-diabetes_dx = EncounterHeuristic.objects.get_or_create(
+diabetes_dx = DiagnosisHeuristic.objects.get_or_create(
     name = 'diabetes_all_types',
     )[0]
 
@@ -1476,9 +1476,9 @@ Icd9Query.objects.get_or_create(
     icd9_starts_with = '250.',
     )
 
-diabetes_type_1_dx = EncounterHeuristic.objects.get_or_create(
+diabetes_type_1_dx = DiagnosisHeuristic.objects.get_or_create(
     name = 'diabetes_type_1'
-    )
+    )[0]
 
 Icd9Query.objects.get_or_create(
     heuristic = diabetes_type_1_dx,
@@ -1492,9 +1492,9 @@ Icd9Query.objects.get_or_create(
     icd9_ends_with = '3',
     )
 
-diabetes_type_2_dx = EncounterHeuristic.objects.get_or_create(
+diabetes_type_2_dx = DiagnosisHeuristic.objects.get_or_create(
     name = 'diabetes_type_2'
-    )
+    )[0]
 
 Icd9Query.objects.get_or_create(
     heuristic = diabetes_type_2_dx,
