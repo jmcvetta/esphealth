@@ -25,7 +25,7 @@ from ESP.nodis.models import Condition
 chlamydia_1 = ComplexEventPattern(
     name = 'Chlamydia pattern #1',
     patterns = [
-        'chlamydia_pos',
+        'lx--chlamydia--positive',
         ],
     operator = 'and',
     )
@@ -48,7 +48,7 @@ chlamydia = Condition(
 gonorrhea_1 = ComplexEventPattern(
     name = 'Gonorrhea pattern #1',
     patterns = [
-        'gonorrhea_pos',
+        'lx--gonorrhea--positive',
         ],
     operator = 'and',
     )
@@ -69,9 +69,9 @@ gonorrhea = Condition(
 
 jaundice_or_blood_2x = ComplexEventPattern(
     patterns = [
-        'jaundice', 
-        'alt_2x', 
-        'ast_2x',
+        'dx--jaundice', 
+        'lx--alt--ratio--2.0', 
+        'lx--ast--ratio--2.0', 
         ],
     operator = 'or',
     )
@@ -80,7 +80,7 @@ hep_a_1 = ComplexEventPattern(
     name = 'Acute Hepatitis A Definition 1',
     patterns = [
         jaundice_or_blood_2x, # (#1 or #2 or #3)
-        'hep_a_igm_pos',       # AND #4
+        'lx--hep_a_igm_antibody--positive',       # AND #4
         ],
     operator = 'and',
     )
@@ -117,42 +117,42 @@ Acute Hepatitis B definitions:
 
 
 jaundice_or_blood_5x = ComplexEventPattern(
-    patterns = ['jaundice', 'alt_5x', 'ast_5x',],
+    patterns = ['dx--jaundice', 'lx--alt--ratio--5.0', 'lx--ast--ratio--5.0',],
     operator = 'or',
     )
     
 hep_b_1 = ComplexEventPattern(
     name = 'Acute Hepatitis B Definition 1',
-    patterns = [jaundice_or_blood_5x, 'hep_b_igm_pos'],
+    patterns = [jaundice_or_blood_5x, 'lx--hep_b_igm_antibody--positive'],
     operator = 'and',
     )
 
 bilirubin = ComplexEventPattern(
-    patterns = ['total_bilirubin_high_pos', 'high_calc_bilirubin'],
+    patterns = ['lx--bilirubin_total--threshold--1.5', 'lx--bilirubin_calculated--threshold--1.5'],
     operator = 'or'
     )
 
-hep_b_lab_pos = ComplexEventPattern(
-    patterns = ['hep_b_surface_pos', 'hep_b_viral_dna_pos'],
+hep_b_pos_lab = ComplexEventPattern(
+    patterns = ['lx--hep_b_surface_antigen--positive', 'lx--hep_b_viral_dna--positive'],
     operator = 'or'
     )
 
 hep_b_2 = ComplexEventPattern(
     name = 'Acute Hepatitis B definition 2',
-    patterns = [jaundice_or_blood_5x, bilirubin, hep_b_lab_pos],
+    patterns = [jaundice_or_blood_5x, bilirubin, hep_b_pos_lab],
     operator = 'and',
-    exclude = ['chronic_hep_b'],
-    exclude_past = ['chronic_hep_b', 'hep_b_surface_pos', 'hep_b_viral_dna_pos'],
+    exclude = ['dx--chronic_hep_b'],
+    exclude_past = ['dx--chronic_hep_b', 'lx--hep_b_surface_antigen--positive', 'lx--hep_b_viral_dna--positive'],
     )
 
 hep_b_3 = ComplexEventPattern(
     name = 'Hepatitis B definition 3',
-    patterns = ['hep_b_surface_pos'],
+    patterns = ['lx--hep_b_surface_antigen--positive'],
     operator = 'and', # Meaningless w/ only one pattern
-    require_before = ['hep_b_surface_neg'],
+    require_before = ['lx--hep_b_surface_antigen--negative'],
     require_before_window = 365, # 1 year
-    exclude = ['chronic_hep_b'],
-    exclude_past = ['chronic_hep_b', 'hep_b_surface_pos', 'hep_b_viral_dna_pos'],
+    exclude = ['dx--chronic_hep_b'],
+    exclude_past = ['dx--chronic_hep_b', 'lx--hep_b_surface_antigen--positive', 'lx--hep_b_viral_dna--positive'],
     )
 
 hep_b = Condition(
@@ -175,34 +175,34 @@ hep_b = Condition(
 
 jaundice_alt400 = ComplexEventPattern(
     patterns = [
-        'jaundice',
-        'alt_400',
+        'dx--jaundice',
+        'lx--alt--threshold--400.0',
         ],
     operator = 'or'
     )
     
 no_hep_b_surf = ComplexEventPattern(
     patterns = [
-        'hep_b_surface_neg',
+        'lx--hep_b_surface_antigen--negative',
         ],
     operator = 'and',
     exclude = [
-        'hep_b_igm_order',
+        'lx--hep_b_igm_antibody--order',
         ]
     )
 
 no_hep_a = ComplexEventPattern(
     patterns = [
-        'hep_a_igm_neg',
-        'hav_tot_neg', # Hep A total antibodies
+        'lx--hep_a_igm_antibody--negative',
+        'lx--hep_a_total_antibody--negative', # Hep A total antibodies
         ],
     operator = 'or'
     )
 
 no_hep_b = ComplexEventPattern(
     patterns = [
-        'hep_b_igm_neg',
-        'hep_b_core_neg',
+        'lx--hep_b_igm_antibody--negative',
+        'lx--hep_b_core_antibody--negative',
         no_hep_b_surf,
         ],
     operator = 'or'
@@ -212,20 +212,20 @@ hep_c_1 = ComplexEventPattern(
     name = 'Acute Hepatitis C pattern (a)', # Name is optional, but desirable on top-level patterns
     patterns = [
         jaundice_alt400,    # (1 or 2)
-        'hep_c_elisa_pos',  # 3 positive
+        'lx--hep_c_elisa--positive',  # 3 positive
         no_hep_a,           # (7 negative or 11 negative)
         no_hep_b,           # (8 negative or 9 non-reactive)
         ],
     exclude = [
-        'hep_c_signal_cutoff_neg', # 4 positive (if done)
-        'hep_c_riba_neg',          # 5 positive (if done)
-        'hep_c_rna_neg',           # 6 positive (if done)
+        'lx--hep_c_signal_cutoff--negative', # 4 positive (if done)
+        'lx--hep_c_riba--negative',          # 5 positive (if done)
+        'lx--hep_c_rna--negative',           # 6 positive (if done)
         ],
     exclude_past = [
-        'hep_c_elisa_pos',   # no prior positive 3 or 5 or 6
-        'hep_c_riba_pos',    # "
-        'hep_c_rna_pos',     # "
-        'chronic_hep_b', # no ICD9 (070.54 or 070.70) ever prior to this encounter
+        'lx--hep_c_elisa--positive',   # no prior positive 3 or 5 or 6
+        'lx--hep_c_riba--positive',    # "
+        'lx--hep_c_rna--positive',     # "
+        'dx--chronic_hep_b', # no ICD9 (070.54 or 070.70) ever prior to this encounter
         ],
     operator = 'and',
     )
@@ -234,35 +234,35 @@ hep_c_2 = ComplexEventPattern(
     name = 'Acute Hepatitis C pattern (b)',
     patterns = [
         jaundice_alt400,    # (1 or 2)
-        'hep_c_rna_pos',    # 6 positive
+        'lx--hep_c_rna--positive',    # 6 positive
         no_hep_a,           # (7 negative or 11 negative)
         no_hep_b,           # (8 negative or 9 non-reactive)
         ],
     exclude = [
-        'hep_c_signal_cutoff_neg', # 4 positive (if done)
-        'hep_c_riba_neg',          # 5 positive (if done)
+        'lx--hep_c_signal_cutoff--negative', # 4 positive (if done)
+        'lx--hep_c_riba--negative',          # 5 positive (if done)
         ],
     exclude_past = [
-        'hep_c_elisa_pos',   # no prior positive 3 or 5 or 6
-        'hep_c_riba_pos',    # "
-        'hep_c_rna_pos',     # "
-        'chronic_hep_b', # no ICD9 (070.54 or 070.70) ever prior to this encounter
+        'lx--hep_c_elisa--positive',   # no prior positive 3 or 5 or 6
+        'lx--hep_c_riba--positive',    # "
+        'lx--hep_c_rna--positive',     # "
+        'dx--chronic_hep_b', # no ICD9 (070.54 or 070.70) ever prior to this encounter
         ],
     operator = 'and',
     )
 
 hep_c_3 = ComplexEventPattern(
     name = 'Acute Hepatitis C pattern (c)',
-    patterns = ['hep_c_rna_pos'],
-    require_before = ['hep_c_elisa_neg'],
+    patterns = ['lx--hep_c_rna--positive'],
+    require_before = ['lx--hep_c_elisa--negative'],
     require_before_window = 365,
     operator = 'and',
     )
 
 hep_c_4 = ComplexEventPattern(
     name = 'Acute Hepatitis C pattern (d)',
-    patterns = ['hep_c_elisa_pos'],
-    require_before = ['hep_c_elisa_neg'],
+    patterns = ['lx--hep_c_elisa--positive'],
+    require_before = ['lx--hep_c_elisa--negative'],
     require_before_window = 365,
     operator = 'and',
     )
@@ -289,46 +289,46 @@ hep_c = Condition(
 #-------------------------------------------------------------------------------
 
 
-lyme_elisa_eia_pos = ComplexEventPattern(
-    patterns = ['lyme_elisa_pos', 'lyme_igg_eia_pos', 'lyme_igm_eia_pos'],
+lyme_elisa_eia = ComplexEventPattern(
+    patterns = ['lx--lyme_elisa--positive', 'lx--lyme_igg_eia--positive', 'lx--lyme_igm_eia--positive'],
     operator = 'or'
     )
 
 lyme_elisa_eia_order = ComplexEventPattern(
-    patterns = ['lyme_elisa_order', 'lyme_igg_eia_order', 'lyme_igm_eia_order'],
+    patterns = ['lx--lyme_elisa--order', 'lx--lyme_igg_eia--order', 'lx--lyme_igm_eia--order'],
     operator = 'or'
     )
 
 lyme_diag_ab = ComplexEventPattern(
-    patterns = ['lyme_diagnosis', 'doxycycline', 'lyme_other_antibiotics'],
+    patterns = ['dx--lyme', 'rx--doxycycline', 'rx--lyme_other_antibiotics'],
     operator = 'or'
     )
 
 doxy_lyme_ab = ComplexEventPattern(
-    patterns = ['doxycycline', 'lyme_other_antibiotics'],
+    patterns = ['rx--doxycycline', 'rx--lyme_other_antibiotics'],
     operator = 'or'
     )
 
 lyme_1 = ComplexEventPattern(
     name = 'Lyme Disease definition 1',
-    patterns = [lyme_elisa_eia_pos, lyme_diag_ab],
+    patterns = [lyme_elisa_eia, lyme_diag_ab],
     operator = 'and',
     )
 
 lyme_2 = ComplexEventPattern(
     name = 'Lyme Disease definition 2',
-    patterns = ['lyme_diagnosis', doxy_lyme_ab],
+    patterns = ['dx--lyme', doxy_lyme_ab],
     operator = 'and'
     )
 
 lyme_3 = ComplexEventPattern(
     name = 'Lyme Disease Definition 3',
-    patterns = ['rash', 'doxycycline', lyme_elisa_eia_order],
+    patterns = ['dx--rash', 'rx--doxycycline', lyme_elisa_eia_order],
     operator = 'and'
     )
 
 lyme_4 = ComplexEventPattern(
-    patterns = ['lyme_igg_wb', 'lyme_igm_wb_pos', 'lyme_pcr_pos'],
+    patterns = ['lx--lyme_igg_wb--positive', 'lx--lyme_igm_wb--positive', 'lx--lyme_pcr--positive'],
     operator = 'or',
     )
 
@@ -355,12 +355,12 @@ lyme = Condition(
 
 
 chlam_or_gon = ComplexEventPattern(
-    patterns = ['chlamydia_pos', 'gonorrhea_pos'],
+    patterns = ['lx--chlamydia--positive', 'lx--gonorrhea--positive'],
     operator = 'or'
     )
 
 pid_1 = ComplexEventPattern(
-    patterns = [chlam_or_gon, 'pid_diagnosis'],
+    patterns = [chlam_or_gon, 'dx--pelvic_inflamatory_disease'],
     operator = 'and'
     )
 
@@ -381,22 +381,22 @@ pid = Condition(
 # Definition (a)
 tb_a = ComplexEventPattern(
     patterns = [
-        'pyrazinamide',
+        'rx--pyrazinamide',
         ],
     operator = 'or'
     )
 
 tb_diagnosis_before = ComplexEventPattern(
-    patterns = ['tb_lab_order'],
+    patterns = ['lx--tuberculosis--order'],
     operator = 'and', # n/a
-    require_before = ['tb_diagnosis'],
+    require_before = ['dx--tuberculosis'],
     require_before_window = 14,
     )
 
 tb_diagnosis_after = ComplexEventPattern(
-    patterns = ['tb_lab_order'],
+    patterns = ['lx--tuberculosis--order'],
     operator = 'and', # n/a
-    require_after = ['tb_diagnosis'],
+    require_after = ['dx--tuberculosis'],
     require_after_window = 60,
     )
 
@@ -431,9 +431,9 @@ tb = Condition(
 
 syphilis_meds = ComplexEventPattern(
     patterns = [
-        'penicillin_g',
-        'doxycycline_7_days',
-        'ceftriaxone_1g',
+        'rx--penicillin_g',
+        'rx--doxycycline_7_days',
+        'rx--ceftriaxone_1g_2g',
         ],
     operator = 'or',
     )
@@ -441,7 +441,7 @@ syphilis_meds = ComplexEventPattern(
 # Definition (1)
 syphilis_diagnosis_or_meds = ComplexEventPattern(
     patterns=[
-        'syphilis_diagnosis',
+        'dx--syphilis',
         syphilis_meds,
     ],
     operator = 'and',
@@ -449,20 +449,20 @@ syphilis_diagnosis_or_meds = ComplexEventPattern(
 
 syphilis_tests = ComplexEventPattern(
     patterns = [
-        'rpr_pos',
-        'vdrl_serum_pos',
+        'lx--syphilis_rpr--positive',
+        'lx--syphilis_vdrl_serum--positive',
         ],
     operator = 'or',
     require_ever = [
         # Operator is 'OR'
-        'tppa_pos',
-        'fta_abs_pos',
-        'tp_igg_pos',
+        'lx--syphilis_tppa--positive',
+        'lx--syphilis_fta_abs--positive',
+        'lx--syphilis_tp_igg--positive',
         ],
     )
 
 syphilis_vdrl_csf = ComplexEventPattern(
-    patterns = ['vdrl_csf_pos'],
+    patterns = ['lx--syphilis_vdrl_csf--positive'],
     operator = 'and' # n/a
     )
 
@@ -487,7 +487,7 @@ syphilis = Condition(
 giardiasis_1 = ComplexEventPattern(
     name = 'Giardiasis pattern #1',
     patterns = [
-        'giardiasis_antigen_pos',
+        'lx--giardiasis_antigen--positive',
         ],
     operator = 'and',
     )
@@ -510,7 +510,7 @@ giardiasis = Condition(
 
 gdm_fasting_glucose = ComplexEventPattern(
     name = 'GDM based on fasting glucose',
-    patterns = ['glucose_fasting_126',],
+    patterns = ['lx--glucose_fasting--threshold--126.0',],
     operator = 'or',
     require_timespan = ['pregnancy']
     )
@@ -518,8 +518,8 @@ gdm_fasting_glucose = ComplexEventPattern(
 gdm_ogtt50 = ComplexEventPattern(
     name = 'GDM based on OGTT50',
     patterns = [
-        'ogtt50_1hr_190',
-        'ogtt50_random_190',
+        'lx--ogtt50_1hr--threshold--190.0',
+        'lx--ogtt50_random--threshold--190.0',
         ],
     operator = 'or',
     require_timespan = ['pregnancy']
@@ -527,24 +527,24 @@ gdm_ogtt50 = ComplexEventPattern(
 
 ogtt75_multi_intrapartum = MultipleEventPattern(
     events = [
-        'ogtt75_fasting_95',
-        'ogtt75_fasting_urine_pos',
-        'ogtt75_30m_200',
-        'ogtt75_1hr_180',
-        'ogtt75_90m_180',
-        'ogtt75_2hr_155',
+        'lx--ogtt75_fasting--threshold--95.0',
+        'lx--ogtt75_fasting_urine--positive',
+        'lx--ogtt75_30min--threshold--200.0',
+        'lx--ogtt75_1hr--threshold--180.0',
+        'lx--ogtt75_90min--threshold--180.0',
+        'lx--ogtt75_2hr--threshold--155.0',
         ],
     count = 2,
     require_timespan = ['pregnancy']
     )
 
-ogtt75_multi_postpartum = MultipleEventPattern(
+ogtt75_multi = MultipleEventPattern(
     events = [
-        'ogtt75_fasting_126',
-        'ogtt75_30m_200',
-        'ogtt75_1hr_200',
-        'ogtt75_90m_200',
-        'ogtt75_2hr_200',
+        'lx--ogtt75_fasting--threshold--126.0',
+        'lx--ogtt75_30min--threshold--200.0',
+        'lx--ogtt75_30min--threshold--200.0',
+        'lx--ogtt75_90min--threshold--200.0',
+        'lx--ogtt75_2hr--threshold--200.0',
         ],
     count = 2,
     require_timespan = ['pregnancy']
@@ -558,15 +558,15 @@ gdm_ogtt75 = ComplexEventPattern(
 
 ogtt100_multi_intrapartum = MultipleEventPattern(
     events = [
-        'ogtt100_fasting_urine_pos',
-        'ogtt100_fasting_95',
-        'ogtt100_30m_200',
-        'ogtt100_1hr_180',
-        'ogtt100_90m_180',
-        'ogtt100_2hr_155',
-        'ogtt100_3hr_140',
-        'ogtt100_4hr_140',
-        'ogtt100_5hr_140',
+        'lx--ogtt100_fasting_urine--positive',
+        'lx--ogtt100_fasting--threshold--95.0',
+        'lx--ogtt100_30min--threshold--200.0',
+        'lx--ogtt100_1hr--threshold--180.0',
+        'lx--ogtt100_90min--threshold--180.0',
+        'lx--ogtt100_2hr--threshold--155.0',
+        'lx--ogtt100_3hr--threshold--140.0',
+        'lx--ogtt100_4hr--threshold--140.0',
+        'lx--ogtt100_5hr--threshold--140.0',
         ],
     count = 2,
     require_timespan = ['pregnancy']
@@ -580,13 +580,13 @@ gdm_ogtt100 = ComplexEventPattern(
 
 lancets_or_test_strips = ComplexEventPattern(
     name = 'Prescription for lancets or test strips',
-    patterns = ['lancets_rx', 'test_strips_rx'],
+    patterns = ['rx--lancets', 'rx--test_strips'],
     operator = 'or',
     )
 
 gdm_lancets = ComplexEventPattern(
     name = 'GDM based on diagnosis and lancets/test strips prescription',
-    patterns = ['gdm_diagnosis', lancets_or_test_strips],
+    patterns = ['dx--gestational_diabetes', lancets_or_test_strips],
     operator = 'and',
     require_timespan = ['pregnancy']
     )
@@ -615,10 +615,10 @@ gdm = Condition(
 pertussis_diagnosis_or_lab_order = ComplexEventPattern(
     name = 'Positive result for Pertussis lab',
     patterns = [
-        'pertussis_diagnosis',
-        'pertussis_pcr_order',
-        'pertussis_culture_order',
-        'pertussis_serology_order',
+        'dx--pertussis',
+        'lx--pertussis_pcr--order',
+        'lx--pertussis_culture--order',
+        'lx--pertussis_serology--order',
         ],
     operator = 'or',
     )
@@ -626,14 +626,14 @@ pertussis_diagnosis_or_lab_order = ComplexEventPattern(
 pertussis_1 = ComplexEventPattern(
     #(ICD9 for pertussis or lab order for a pertussis test) and antibiotic prescription within 7 day window
     name = 'Pertussis definition 1',
-    patterns = ['pertussis_rx', pertussis_diagnosis_or_lab_order],
+    patterns = ['rx--pertussis', pertussis_diagnosis_or_lab_order],
     operator = 'and',
     )
 
 pertussis_2 = ComplexEventPattern(
     # Positive culture or PCR for pertussis
     name = 'Pertussis definition 2',
-    patterns = ['pertussis_pcr_pos', 'pertussis_culture_pos'],
+    patterns = ['lx--pertussis_pcr--positive', 'lx--pertussis_culture--positive'],
     operator = 'or', # irrelevant for single pattern
     )
 
@@ -645,4 +645,14 @@ pertussis = Condition(
         ],
     recur_after = -1, # FIXME: Can Pertussis recur?
     test_name_search = ['pertussis'],
+    )
+
+diabetes_both_types = ComplexEventPattern(
+    name = 'diabetes_both_types',
+    patterns = [
+        'lx--a1c--threshold--6.5',
+        'lx--glucose_fasting--threshold--126.0',
+        'rx--diabetes',
+        ],
+    operator = 'or',
     )
