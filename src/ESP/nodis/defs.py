@@ -647,12 +647,35 @@ pertussis = Condition(
     test_name_search = ['pertussis'],
     )
 
+diabetes_dx_twice = ComplexEventPattern(
+    # A dm dx event now, plus a dm dx event in the past = 2 dm dx events
+    patterns = ['dx--diabetes_all_types'],
+    operator = 'and',
+    require_before = ['dx--diabetes_all_types'],
+    )
+
+insulin_outside_pregnancy = ComplexEventPattern(
+    patterns = ['rx--insulin'],
+    operator = 'and',
+    exclude_timespan = ['pregnancy'],
+    )
+
+
 diabetes_both_types = ComplexEventPattern(
     name = 'diabetes_both_types',
+    # FIXME: Incomplete pattern list!!!
     patterns = [
         'lx--a1c--threshold--6.5',
         'lx--glucose_fasting--threshold--126.0',
         'rx--diabetes',
+        insulin_outside_pregnancy,
         ],
     operator = 'or',
+    )
+
+diabetes_type_1_def_1 = ComplexEventPattern(
+    patterns = [
+        diabetes_both_types,
+        ],
+    operator = 'and',
     )

@@ -34,7 +34,7 @@ from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 from ESP.static.models import Icd9
 from ESP.conf.models import STATUS_CHOICES
-from ESP.conf.models import CodeMap
+#from ESP.conf.models import CodeMap
 from ESP.conf.models import ReportableLab
 from ESP.conf.models import ReportableIcd9
 from ESP.conf.models import ReportableMedication
@@ -45,12 +45,13 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
-#from ESP.hef.core import BaseHeuristic
-#from ESP.hef.core import EncounterHeuristic
-#from ESP.hef.core import MedicationHeuristic
+from ESP.hef.models import Heuristic
+from ESP.hef.models import DiagnosisHeuristic
+from ESP.hef.models import PrescriptionHeuristic
 #from ESP.hef.core import TimespanHeuristic
-#from ESP.hef.models import Timespan
+from ESP.hef.models import Timespan
 from ESP.hef.models import Event
+from ESP.hef.models import EventType
 from ESP.conf.models import ConditionConfig
 
 import datetime
@@ -76,7 +77,6 @@ from ESP.utils.utils import log_query
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-from ESP.hef.models import Heuristic as BaseHeuristic
 
 class TimespanHeuristic:
     @classmethod
@@ -84,8 +84,6 @@ class TimespanHeuristic:
         return ['pregnancy']
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-from ESP.hef.models import Heuristic as BaseHeuristic # Backwards compat
 
 
 DISPOSITIONS = [
@@ -334,7 +332,7 @@ class SimpleEventPattern(BaseEventPattern):
         #
         # Sanity Checks
         #
-        if not event_name in BaseHeuristic.all_event_names():
+        if not event_name in Heuristic.all_event_names():
             raise InvalidHeuristic('Unknown heuristic Event: %s' % event_name)
         for tspan_name in require_timespan + exclude_timespan:
             if not tspan_name in TimespanHeuristic.all_event_names():
@@ -347,7 +345,7 @@ class SimpleEventPattern(BaseEventPattern):
             
     
     def plausible_patients(self, exclude_condition=None):
-        q_obj = Q(event__name=self.event_name)
+        q_obj = Q(event__event_type=self.event_name)
         if exclude_condition:
             q_obj = q_obj & ~Q(case__condition=exclude_condition)
         for tspan_name in self.require_timespan:
@@ -358,7 +356,7 @@ class SimpleEventPattern(BaseEventPattern):
     
     def plausible_events(self, patients=None, exclude_condition=None):
         log.debug('Building plausible events query for %s' % self)
-        q_obj = Q(name=self.event_name)
+        q_obj = Q(event_type=self.event_name)
         if patients:
             q_obj = q_obj & Q(patient__in=patients)
         if exclude_condition:
@@ -396,7 +394,7 @@ class SimpleEventPattern(BaseEventPattern):
         key = (patient, exclude_condition)
         if not key in cache:
             q_obj = Q(patient=patient)
-            q_obj &= Q(name=self.event_name)
+            q_obj &= Q(event_type=self.event_name)
             if exclude_condition:
                 q_obj &= ~Q(case__condition=exclude_condition)
             qs = Event.objects.filter(q_obj)
@@ -453,7 +451,7 @@ class TimespanPattern(object):
         '''
         # Not sure if this should be implemented this way, since we're dealing 
         # with Timespan instances, not Event instances.
-        q_obj = Q(name=self.event_name)
+        q_obj = Q(event_type=self.event_name)
         if patients:
             q_obj = q_obj & Q(patient__in=patients)
         if exclude_condition:
@@ -494,9 +492,8 @@ class MultipleEventPattern(BaseEventPattern):
     def __init__(self, events, count,  require_timespan=[], exclude_timespan=[]):
         #self.__events_cache = {}
         for event_name in events:
-            if not event_name in BaseHeuristic.all_event_names():
-                #raise InvalidHeuristic('Unknown heuristic Event: %s' % event_name)
-                log.warning('backwards compat: Unknown heuristic Event: %s' % event_name)
+            if not event_name in Heuristic.all_event_names():
+                raise InvalidHeuristic('Unknown heuristic Event: %s' % event_name)
         self.events = events
         if not isinstance(count, int):
             raise TypeError('count must be an integer, but you supplied: "%s"' % count)
@@ -516,7 +513,7 @@ class MultipleEventPattern(BaseEventPattern):
         @param exclude_condition: Exclude events already bound to cases of this condition
         @type exclude_condition:  String naming a Condition
         '''
-        q_obj = Q(event__name__in=self.events)
+        q_obj = Q(event__event_type__in=self.events)
         if self.require_timespan:
             q_obj = q_obj & Q(timespan__name__in=self.require_timespan)
         qs = Patient.objects.filter(q_obj).distinct()
@@ -528,7 +525,7 @@ class MultipleEventPattern(BaseEventPattern):
         Returns a QuerySet of Event records which may plausibly match this pattern
         '''
         log.debug('Building plausible events query for %s' % self)
-        q_obj = Q(name__in=self.events)
+        q_obj = Q(event_type__in=self.events)
         if patients:
             q_obj = q_obj & Q(patient__in=patients)
         if exclude_condition:
@@ -567,7 +564,7 @@ class MultipleEventPattern(BaseEventPattern):
         '''
         log.debug('Generating windows for %s' % self)
         events = self.plausible_events(patients=patients, exclude_condition=exclude_condition)
-        patient_dates = events.values('patient', 'date').distinct().annotate(cnt=Count('name')).filter(cnt__gte=2)
+        patient_dates = events.values('patient', 'date').distinct().annotate(cnt=Count('event_type')).filter(cnt__gte=2)
         for pd in patient_dates:
             patient = pd['patient']
             event_date = pd['date']
@@ -664,7 +661,7 @@ class ComplexEventPattern(BaseEventPattern):
         self.__sorted_pattern_cache = None
         assert operator in ('and', 'or')
         self.operator = operator
-        valid_event_names = BaseHeuristic.all_event_names()
+        valid_event_names = Heuristic.all_event_names()
         self.patterns = []
         self.name = name # Optional name
         self.exclude = []
@@ -675,8 +672,7 @@ class ComplexEventPattern(BaseEventPattern):
                 pat_obj = SimpleEventPattern(event_name=pat, require_timespan=require_timespan, exclude_timespan=exclude_timespan)
                 self.patterns.append(pat_obj)
             else:
-                #raise InvalidPattern('%s [%s]' % (pat, type(pat)))
-                log.warning('backwards compat issue, invalid pattern: %s [%s]' % (pat, type(pat)))
+                raise InvalidPattern('%s [%s]' % (pat, type(pat)))
         for pat in exclude:
             if isinstance(pat, ComplexEventPattern):
                 self.exclude.append(pat)
@@ -684,15 +680,13 @@ class ComplexEventPattern(BaseEventPattern):
                 pat_obj = SimpleEventPattern(event_name=pat, require_timespan=require_timespan, exclude_timespan=exclude_timespan)
                 self.exclude.append(pat_obj)
             else:
-                #raise InvalidPattern('%s [%s]' % (pat, type(pat)))
-                log.warning('backwards compat issue, invalid pattern: %s [%s]' % (pat, type(pat)))
+                raise InvalidPattern('%s [%s]' % (pat, type(pat)))
         count = {} # Count of plausible events per req
         for name in require_before + require_after + require_ever + exclude_past:
             if not name in  valid_event_names:
                 log.error('"%s" not in valid heuristic Event names:' % name)
                 log.error('\t%s' % valid_event_names)
-                #raise InvalidPattern('%s [%s]' % (name, type(name)))
-                log.warning('backwards compat issue, invalid pattern: %s [%s]' % (pat, type(pat)))
+                raise InvalidPattern('%s [%s]' % (name, type(name)))
         self.require_before = require_before
         self.require_after = require_after
         self.require_ever = require_ever
@@ -788,9 +782,9 @@ class ComplexEventPattern(BaseEventPattern):
                 plausible = plausible | pat.plausible_patients(exclude_condition)
         all_required_events = (self.require_before + self.require_after + self.require_ever)
         if all_required_events:
-            q_obj = Q(event__name=all_required_events[0])
+            q_obj = Q(event__event_type=all_required_events[0])
             for name in all_required_events[1:]:
-                q_obj = q_obj | Q(event__name=name)
+                q_obj = q_obj | Q(event__event_type=name)
             plausible = plausible & Patient.objects.filter(q_obj).distinct()
         for tspan in self.require_timespan:
             plausible = plausible & Patient.objects.filter(timespan__name=tspan).distinct()
@@ -957,7 +951,7 @@ class ComplexEventPattern(BaseEventPattern):
         # Exclude Past
         #
         if self.exclude_past:
-            exclude_q = Q(patient=win.patient, name__in=self.exclude_past, date__lt=win.start)
+            exclude_q = Q(patient=win.patient, event_type__in=self.exclude_past, date__lt=win.start)
             past_events = Event.objects.filter(exclude_q)
             log_query('Check exclude_past', past_events)
             if  past_events.count() > 0:
@@ -971,7 +965,7 @@ class ComplexEventPattern(BaseEventPattern):
         # Required Before
         #
         if self.require_before:
-            require_q = Q(patient=win.patient, name__in=self.require_before, date__lt=win.start)
+            require_q = Q(patient=win.patient, event_type__in=self.require_before, date__lt=win.start)
             if self.require_before_window:
                 lookback_start = win.start - self.require_before_window
                 require_q &= Q(date__gte=lookback_start)
@@ -993,7 +987,7 @@ class ComplexEventPattern(BaseEventPattern):
         # Required After
         #
         if self.require_after:
-            require_q = Q(patient=win.patient, name__in=self.require_after, date__gt=win.end)
+            require_q = Q(patient=win.patient, event_type__in=self.require_after, date__gt=win.end)
             if self.require_before_window:
                 lookahead_start = win.end + self.require_before_window
                 require_q &= Q(date__gte=lookahead_start)
@@ -1015,7 +1009,7 @@ class ComplexEventPattern(BaseEventPattern):
         # Required Ever
         #
         if self.require_ever:
-            require_q = Q(patient=win.patient, name__in=self.require_ever)
+            require_q = Q(patient=win.patient, event_type__in=self.require_ever)
             required_events = Event.objects.filter(require_q)
             log_query('Check require_ever', required_events)
             if required_events.count() == 0:
@@ -1132,14 +1126,14 @@ class TuberculosisDefC(BaseEventPattern):
     
     def generate_windows(self, days, patients=None, exclude_condition=None):
         if not patients:
-            patients = Patient.objects.filter(event__name='tb_diagnosis').exclude(case__condition='tb').distinct().order_by('pk')
+            patients = Patient.objects.filter(event__event_type='tb_diagnosis').exclude(case__condition='tb').distinct().order_by('pk')
         for pat in patients:
-            q_obj = Q(name='tb_diagnosis') & ~Q(case__condition='tb') & Q(patient=pat)
+            q_obj = Q(event_type='tb_diagnosis') & ~Q(case__condition='tb') & Q(patient=pat)
             for diagnosis in Event.objects.filter(q_obj).order_by('date'):
                 start = diagnosis.date - datetime.timedelta(days=60)
                 end = diagnosis.date + datetime.timedelta(days=60)
                 med_events = Event.objects.filter(patient=pat, date__gte=start, date__lte=end, 
-                    name__in=self.SECONDARY_MED_EVENTS)
+                    event_type__in=self.SECONDARY_MED_EVENTS)
                 cnt = med_events.values_list('name', flat=True).distinct().count()
                 if not cnt >= 2:
                     continue
@@ -1148,8 +1142,8 @@ class TuberculosisDefC(BaseEventPattern):
                     break
 
     def plausible_patients(self, exclude_condition=None):
-        q_obj_1 = Q(event__name='tb_diagnosis') & ~Q(case__condition='tb')
-        q_obj_2 = Q(event__name__in=self.SECONDARY_MED_EVENTS) & ~Q(case__condition='tb')
+        q_obj_1 = Q(event__event_type='tb_diagnosis') & ~Q(case__condition='tb')
+        q_obj_2 = Q(event__event_type__in=self.SECONDARY_MED_EVENTS) & ~Q(case__condition='tb')
         qs = Patient.objects.filter(q_obj_1).distinct() & Patient.objects.filter(q_obj_2).distinct()
         log_query('Plausible patients for tb', qs)
         return qs
@@ -1315,9 +1309,7 @@ class Condition(object):
     
     def __get_icd9s(self):
         icd9_objs = Icd9.objects.none()
-        for name in self.heuristics:
-            heuristic_obj = BaseHeuristic.get_heuristic(name)
-            if isinstance(heuristic_obj, EncounterHeuristic):
+        for heuristic_obj in DiagnosisHeuristic.objects.filter(name__in=self.heuristics):
                 icd9_objs |= heuristic_obj.icd9_objects
         return icd9_objs.distinct()
     icd9s = property(__get_icd9s)
@@ -1327,10 +1319,8 @@ class Condition(object):
         Returns set of medication names used in this condition's definition.
         '''
         med_names = set()
-        for name in self.heuristics:
-            heuristic_obj = BaseHeuristic.get_heuristic(name)
-            if isinstance(heuristic_obj, MedicationHeuristic):
-                med_names |= set( heuristic_obj.drugs )
+        for heuristic_obj in PrescriptionHeuristic.objects.filter(name__in=self.heuristics):
+            med_names |= set( heuristic_obj.drugs )
         return med_names
     medications = property(__get_medications)
 
@@ -1345,7 +1335,7 @@ class Condition(object):
         '''
         case = Case()
         case.patient = window.patient
-        case.provider = window.events[0].content_object.provider
+        case.provider = window.events[0].tag_set.all()[0].content_object.provider
         case.date = window.date
         case.condition = self.name
         case.pattern = pattern.pattern_obj
@@ -1595,7 +1585,7 @@ class Condition(object):
         '''
         heuristics = set()
         for event_name in self.relevant_event_names:
-            h = BaseHeuristic.get_heuristic_from_event_name(event_name)
+            h = EventType.objects.get(event_type=event_name).heuristic
             assert h, 'No heuristic found for "%s".' % event_name
             heuristics.add(h)
         heuristic_names = [h.name for h in heuristics]
@@ -1699,7 +1689,7 @@ class Case(models.Model):
         '''
         Provider for chronologically first event
         '''
-        return self.events.all().order_by('date')[0].content_object.provider
+        return self.events.all().order_by('date')[0].tag_set.all()[0].content_object.provider
     first_provider = property(__get_first_provider)
     
     #
