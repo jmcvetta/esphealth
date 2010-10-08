@@ -341,8 +341,8 @@ class LabHeuristicBase(Heuristic):
     
     class Meta:
         abstract = True
-    
 
+    
 class LabOrderHeuristic(LabHeuristicBase):
     '''
     A heuristic for detecting lab order events.
@@ -368,7 +368,7 @@ class LabOrderHeuristic(LabHeuristicBase):
     name = property(__get_name)
     
     def __get_verbose_name(self):
-        return 'Heuristic - Lab - Order - %s' % self.test
+        return 'Heuristic - Lab - Order - %s' % self.test.name
     verbose_name = property(__get_verbose_name)
     
     def save(self, *args, **kwargs):
@@ -400,7 +400,17 @@ class LabOrderHeuristic(LabHeuristicBase):
         return unbound_count
 
 
-class LabResultAnyHeuristic(LabHeuristicBase): 
+class LabResultHeuristicBase(LabHeuristicBase):
+    '''
+    Abstract base class for all lab heuristics
+    '''
+    date_field = models.CharField(max_length=32, blank=False, choices=DATE_FIELD_CHOICES, default='order')
+    
+    class Meta:
+        abstract = True
+    
+
+class LabResultAnyHeuristic(LabResultHeuristicBase): 
     '''
     A heuristic for detecting positive (& negative) lab result events
     '''
@@ -416,7 +426,7 @@ class LabResultAnyHeuristic(LabHeuristicBase):
     name = property(__get_name)
     
     def __get_verbose_name(self):
-        return 'Heuristic - Lab - Any Result - %s' % self.test
+        return 'Heuristic - Lab - Any Result - %s' % self.test.name
     verbose_name = property(__get_verbose_name)
     
     def __unicode__(self):
@@ -437,27 +447,30 @@ class LabResultAnyHeuristic(LabHeuristicBase):
         log_query('Unbound lab results for %s' % self.name, unbound_results)
         unbound_count = unbound_results.count()
         event_type = EventType.objects.get(name=self.name)
-        for res in unbound_results:
+        for lab in unbound_results:
+            if self.date_field == 'order':
+                lab_date = lab.date
+            elif self.date_field == 'result':
+                lab_date = lab.result_date
             e = Event(
                 event_type = event_type,
-                date = res.date,
-                patient = res.patient,
-                provider = res.provider,
+                date = lab_date,
+                patient = lab.patient,
+                provider = lab.provider,
                 )
             e.save()
-            e.tag_object(res)
+            e.tag_object(lab)
             log.debug('Saved new event: %s' % e)
         log.info('Generated %s new %s events' % (unbound_count, self.name))
         return unbound_count
 
 
-class LabResultPositiveHeuristic(LabHeuristicBase): 
+class LabResultPositiveHeuristic(LabResultHeuristicBase): 
     '''
     A heuristic for detecting positive (& negative) lab result events
     '''
     titer = models.IntegerField(blank=True, null=True, choices=TITER_DILUTION_CHOICES, default=None,
         help_text='Titer value indicating positive result.  Leave blank if titer result is not anticipated.')
-    date_field = models.CharField(max_length=32, blank=False, choices=DATE_FIELD_CHOICES, default='order')
     
     class Meta:
         verbose_name = 'Heuristic - Lab - Positive/Negative'
@@ -470,7 +483,7 @@ class LabResultPositiveHeuristic(LabHeuristicBase):
     name = property(__get_name)
     
     def __get_verbose_name(self):
-        return 'Heuristic - Lab - Positive/Negative - %s' % self.test
+        return 'Heuristic - Lab - Positive/Negative - %s' % self.test.name
     verbose_name = property(__get_verbose_name)
     
     def __unicode__(self):
@@ -604,12 +617,11 @@ class LabResultPositiveHeuristic(LabHeuristicBase):
         return positive_labs.count() + negative_labs.count() + indeterminate_labs.count()
 
 
-class LabResultRatioHeuristic(LabHeuristicBase):
+class LabResultRatioHeuristic(LabResultHeuristicBase):
     '''
     A heuristic for detecting ratio-based positive lab result events
     '''
     ratio = models.FloatField(blank=False)
-    date_field = models.CharField(max_length=32, blank=False, choices=DATE_FIELD_CHOICES, default='order')
     
     class Meta:
         verbose_name = 'Heuristic - Lab - Ratio'
@@ -619,11 +631,12 @@ class LabResultRatioHeuristic(LabHeuristicBase):
         unique_together = ['test', 'ratio']
     
     def __get_name(self):
-        return  u'lx--%s--ratio--%s' % (self.test.name, self.ratio)
+        # explicit cast to float to work around django FloatField pre/post save quirk
+        return  u'lx--%s--ratio--%s' % (self.test.name, float(self.ratio))
     name = property(__get_name)
     
     def __get_verbose_name(self):
-        return 'Heuristic - Lab - Ratio - %s' % self.test
+        return 'Heuristic - Lab - Ratio - %s' % self.test.name
     verbose_name = property(__get_verbose_name)
     
     def __unicode__(self):
@@ -673,27 +686,25 @@ class LabResultRatioHeuristic(LabHeuristicBase):
         return positive_labs.count()
 
 
-class LabResultFixedThresholdHeuristic(LabHeuristicBase):
+class LabResultFixedThresholdHeuristic(LabResultHeuristicBase):
     '''
     A heuristic for detecting fixed-threshold-based positive lab result events
     '''
     threshold = models.FloatField(blank=False, 
         help_text='Events are generated for lab results greater than or equal to this value')
-    date_field = models.CharField(max_length=32, blank=False, choices=DATE_FIELD_CHOICES, default='order')
     
     class Meta:
         verbose_name = 'Heuristic - Lab - Fixed Threshold'
         verbose_name_plural = 'Heuristic - Lab - Fixed Threshold'
-        unique_together = ['test', 'threshold']
         ordering = ['test']
         unique_together = ['test', 'threshold']
     
     def __get_name(self):
-        return  u'lx--%s--threshold--%s' % (self.test.name, self.threshold)
+        return  u'lx--%s--threshold--%s' % (self.test.name, float(self.threshold))
     name = property(__get_name)
     
     def __get_verbose_name(self):
-        return 'Heuristic - Lab - Fixed Threshold - %s' % self.test
+        return 'Heuristic - Lab - Fixed Threshold - %s' % self.test.name
     verbose_name = property(__get_verbose_name)
     
     def __unicode__(self):
@@ -713,7 +724,7 @@ class LabResultFixedThresholdHeuristic(LabHeuristicBase):
         log_query('Unbound lab results for %s' % self.name, unbound_labs)
         positive_labs = unbound_labs.filter(result_float__isnull=False, result_float__gte=self.threshold)
         log_query(self.name, positive_labs)
-        log.info('Generating events for "%s"' % self.verbose_name)
+        log.info('Generating events for "%s"' % self.name)
         event_type = EventType.objects.get(name=self.name)
         for lab in positive_labs:
             if self.date_field == 'order':
@@ -731,6 +742,104 @@ class LabResultFixedThresholdHeuristic(LabHeuristicBase):
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (positive_labs.count(), self.name))
         return positive_labs.count() 
+
+
+class LabResultWesternBlotHeuristic(LabResultHeuristicBase):
+    '''
+    Generates events from western blot test results.
+    http://en.wikipedia.org/wiki/Western_blot
+    '''
+    bands = models.CharField('Interesting Bands', max_length=256, blank=False, 
+        help_text='Comma-separated list of interesting bands for this western blot')
+    
+    # Making this model unique on test means we assume there is only one way 
+    # to interpret a western blot test -- however, I do not actually know that 
+    # this is true.
+    class Meta:
+        verbose_name = 'Heuristic - Lab - Western Blot'
+        verbose_name_plural = 'Heuristic - Lab - Western Blot'
+        unique_together = ['test', ]
+        ordering = ['test']
+    
+    def __get_name(self):
+        return  u'lx--%s--western_blot' % self.test.name
+    name = property(__get_name)
+    
+    def __get_verbose_name(self):
+        return 'Heuristic - Lab -  Western Blot - %s' % self.test.name
+    verbose_name = property(__get_verbose_name)
+    
+    def __unicode__(self):
+        return u'%s' % self.verbose_name
+    
+    def save(self, *args, **kwargs):
+        super(LabResultWesternBlotHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
+        event_name_list = [
+            '%s--positive' % self.name,
+            '%s--negative' % self.name,
+            ]
+        for event_name in event_name_list:
+            obj, created = EventType.objects.get_or_create(
+                name = event_name,
+                heuristic = self,
+                )
+            if created:
+                log.debug('Added %s for %s' % (obj, self))
+   
+    def __get_band_list(self):
+        return [i.strip() for i in self.bands.split(',')]
+    band_list = property(__get_band_list)
+
+    def generate_events(self):
+        log.debug('Generating events for "%s"' % self.verbose_name)
+        unbound_labs = self.test.lab_results.exclude(tags__event__event_type__heuristic=self)
+        log_query('Unbound lab results for %s' % self.name, unbound_labs)
+        # Find potential positives -- tests whose results contain at least one 
+        # of the interesting band numbers.
+        q_obj = Q(result_string__icontains = self.band_list[0])
+        for band in self.band_list[1:]:
+            q_obj = q_obj | Q(result_string__icontains = band)
+        potential_positives = unbound_labs.filter(q_obj)
+        negatives = unbound_labs.exclude(potential_positives)
+        neg_event_type = EventType.objects.get(name='%s--negative' % self.name)
+        for lab in negatives:
+            if self.date_field == 'order':
+                lab_date = lab.date
+            elif self.date_field == 'result':
+                lab_date = lab.result_date
+            new_event = Event(
+                event_type = neg_event_type,
+                patient = lab.patient,
+                date = lab_date,
+                provider = lab.provider,
+                )
+        log.debug('Found %s potential positive lab results.' % potential_positives.count())
+        # Examine result strings of each potential positive.  If it has enough 
+        # interesting bands, add its pk to the match list
+        match_pks = []
+        for item in potential_positives.values('pk', 'result_string'):
+            # We might need smarter splitting logic if we ever get differently
+            # formatted result strings.
+            count = 0 # Counter of interesting bands in this result
+            result_bands = item['result_string'].replace(' ', '').split(',')
+            pk = item['pk']
+            for band in result_bands:
+                try:
+                    band = int(band)
+                except ValueError:
+                    log.warning('Could not cast band "%s" from lab # %s into an integer.' % (band, pk))
+                    continue
+                if band in self.interesting_bands:
+                    count += 1
+                # If we reach the band_count threshold, we have a positive result.  No need to look further.
+                if count >= self.band_count:
+                    match_pks.append(pk)
+                    break
+        log.debug('Found %s actual positive lab results.' % len(match_pks))
+        qs = LabResult.objects.filter(pk__in = match_pks)
+        if begin_timestamp:
+            qs = qs.filter(updated_timestamp__gte=begin_timestamp)
+        return qs
 
 
 class Dose(models.Model):
@@ -944,12 +1053,16 @@ class Icd9Query(models.Model):
     verbose_name = property(__get_verbose_name)
     
 
-class CalculatedBilirubinHeuristic(models.Model):
+class CalculatedBilirubinHeuristic(Heuristic):
     '''
     A heuristic to detect high calculated 
     '''
     threshold = models.FloatField(blank=False, 
         help_text='Events are generated for calculated bilirubin levels greater than or equal to this value')
+    
+    def __get_name(self):
+        return 'lx--bilirubin_calculated--threshold--%s' % self.threshold
+    name = property(__get_name)
     
     def __get_verbose_name(self):
         return u'Heuristic - Calculated Bilirubin - Threshold - %s' % self.threshold
@@ -959,12 +1072,9 @@ class CalculatedBilirubinHeuristic(models.Model):
         return u'%s' % self.verbose_name
     
     def save(self, *args, **kwargs):
-        name = 'lx--calculated_bilirubin--threshold--%s' % self.threshold,
-        if self.name and not self.name == name:
-            log.warning('You tried to name a heuristic "%s", but it was automatically named "%s" instead.' % (self.name, name))
         super(CalculatedBilirubinHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
         obj, created = EventType.objects.get_or_create(
-            name = name,
+            name = self.name,
             heuristic = self,
             )
         if created:

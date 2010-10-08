@@ -21,6 +21,7 @@ from ESP.hef.models import DiagnosisHeuristic
 from ESP.hef.models import PrescriptionHeuristic
 from ESP.hef.models import Dose
 from ESP.hef.models import ResultString
+from ESP.hef.models import CalculatedBilirubinHeuristic
 
 #-------------------------------------------------------------------------------
 #
@@ -233,7 +234,7 @@ LabResultPositiveHeuristic.objects.get_or_create(
     )
 
 hep_a_tot_antibody = AbstractLabTest.objects.get_or_create(
-    name = 'hep_a_tot_antibody',
+    name = 'hep_a_total_antibody',
     defaults = {
         'verbose_name': 'Hepatitis A Total Antibodies',
         },
@@ -249,6 +250,38 @@ LabResultPositiveHeuristic.objects.get_or_create(
 # Hepatitis B
 #
 #-------------------------------------------------------------------------------
+
+jaundice_dx = DiagnosisHeuristic.objects.get_or_create(
+    name = 'jaundice'
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = jaundice_dx,
+    icd9_exact = '782.4'
+    )
+
+chronic_hep_c = DiagnosisHeuristic.objects.get_or_create(
+    name = 'chronic_hep_c'
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = chronic_hep_c,
+    icd9_exact = '070.54',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = chronic_hep_c,
+    icd9_exact = '070.70',
+    )
+
+chronic_hep_b = DiagnosisHeuristic.objects.get_or_create(
+    name = 'chronic_hep_b'
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = chronic_hep_b,
+    icd9_exact = '070.32',
+    )
 
 hep_b_igm_antibody = AbstractLabTest.objects.get_or_create(
     name = 'hep_b_igm_antibody',
@@ -344,6 +377,11 @@ bilirubin_total = AbstractLabTest.objects.get_or_create(
         'verbose_name': 'Bilirubin glucuronidated + bilirubin non-glucuronidated',
         }
     )[0]
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = bilirubin_total,
+    threshold = 1.5,
+    )
     
 bilirubin_direct = AbstractLabTest.objects.get_or_create(
     name = 'bilirubin_direct',
@@ -358,6 +396,11 @@ bilirubin_indirect = AbstractLabTest.objects.get_or_create(
         'verbose_name': 'Bilirubin non-glucuronidated',
         }
     )[0]
+
+CalculatedBilirubinHeuristic.objects.get_or_create(
+    threshold = 1.5,
+    )[0]
+
     
 #-------------------------------------------------------------------------------
 #
@@ -493,6 +536,11 @@ LabResultPositiveHeuristic.objects.get_or_create(
     test = lyme_igm_wb,
     )
 
+# 
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = lyme_igg_wb,
+    )
+
 lyme_pcr = AbstractLabTest.objects.get_or_create(
     name = 'lyme_pcr',
     defaults = {
@@ -534,7 +582,7 @@ doxycycline_rx = PrescriptionHeuristic.objects.get_or_create(
     )[0]
 
 lyme_antibio_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'lyme_other_antibiotic',
+    name = 'lyme_other_antibiotics',
     drugs = 'Amoxicillin, Cefuroxime, Ceftriaxone, Cefotaxime',
     )[0]
 
@@ -714,7 +762,7 @@ Icd9Query.objects.get_or_create(
 #-------------------------------------------------------------------------------
 
 tb_lab = AbstractLabTest.objects.get_or_create(
-    name = 'tb_lab',
+    name = 'tuberculosis',
     defaults = {
         'verbose_name': 'Tuberculosis lab test (several varieties)',
         }
@@ -1323,7 +1371,7 @@ Icd9Query.objects.get_or_create(
 #
 
 gdm_diagnosis = DiagnosisHeuristic.objects.get_or_create(
-    name = 'gdm_diagnosis',
+    name = 'gestational_diabetes',
     )[0]
 
 Icd9Query.objects.get_or_create(
