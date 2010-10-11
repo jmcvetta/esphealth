@@ -14,6 +14,7 @@ ConfigObj          BSD
 django-sphinx      BSD
 django-tables      BSD
 South              Apache
+Dowser             Unknown, presumed open source
 
 
 
@@ -385,3 +386,14 @@ South:
     reason of your accepting any such warranty or additional liability.
 
     END OF TERMS AND CONDITIONS
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Dowser:
+
+    No licensing information can be located in code or on website
+    (http://www.aminus.net/wiki/Dowser).  Therefore, since code is made freely
+    available for download and is referenced in various open source-oriented
+    sites (e.g. StackOverflow), we presume the Dowser code is released under a
+    FOSS license.  If you are the owner of the code and believe we have
+    misinterpetted, please do not hesitate to contact us.

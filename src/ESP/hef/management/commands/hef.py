@@ -19,6 +19,8 @@ import threading
 import Queue
 import thread
 import signal
+import cherrypy
+import dowser
 
 from django.db import connection
 from django.db import transaction
@@ -67,6 +69,18 @@ class Command(BaseCommand):
         # instances running at once.
         #
         log.debug('options: %s' % options)
+        #
+        # Start Dowswer to track memory usage -- this should have a toggle to en-/dis-able 
+        #
+        dowser.Root.period = 10
+        cherrypy.tree.mount(dowser.Root())
+        cherrypy.config.update({
+        	'environment': 'embedded',
+        	'server.socket_port': 8080,
+    	})
+        cherrypy.server.quickstart()
+        cherrypy.engine.start()
+
         # 
         # Create dispatch dictionary of abstract tests and heuristics
         #
@@ -147,6 +161,7 @@ class ThreadedEventGenerator(threading.Thread):
                 count = event_generating_obj.generate_events()
                 i = self.counter.get()
                 self.counter.put(i+count)
+                del event_generating_obj
                 self.queue.task_done()
         except BaseException, e:
             self.alive = False

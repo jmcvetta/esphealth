@@ -398,6 +398,12 @@ src/djangosphinx/templates/source.conf -text
 src/djangosphinx/templates/sphinx.conf -text
 src/djangosphinx/utils/__init__.py -text
 src/djangosphinx/utils/config.py -text
+src/dowser/__init__.py -text
+src/dowser/graphs.html -text
+src/dowser/main.css -text
+src/dowser/reftree.py -text
+src/dowser/trace.html -text
+src/dowser/tree.html -text
 src/guppy/__init__.py -text
 src/guppy/doc/ProfileBrowser.html -text
 src/guppy/doc/__init__.py -text
