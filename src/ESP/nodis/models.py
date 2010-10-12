@@ -1589,7 +1589,7 @@ class Condition(object):
             assert h, 'No heuristic found for "%s".' % event_name
             heuristics.add(h)
         heuristic_names = [h.name for h in heuristics]
-        codes = CodeMap.objects.filter(heuristic__in=heuristic_names).values('native_code')
+        codes = LabTestMap.objects.filter(test__heuristic__in=heuristic_names).values('native_code')
         return LabResult.objects.filter(native_code__in=codes)
     relevant_labs = property(__get_relevant_labs)
     
