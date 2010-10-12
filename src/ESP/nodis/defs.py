@@ -14,6 +14,7 @@ from ESP.nodis.models import ComplexEventPattern
 from ESP.nodis.models import MultipleEventPattern
 from ESP.nodis.models import TuberculosisDefC
 from ESP.nodis.models import Condition
+from ESP.hef.defaults import diabetes_type_1_dx
 
 
 #===============================================================================
@@ -647,11 +648,18 @@ pertussis = Condition(
     test_name_search = ['pertussis'],
     )
 
-diabetes_dx_twice = ComplexEventPattern(
+diabetes_all_dx_twice = ComplexEventPattern(
     # A dm dx event now, plus a dm dx event in the past = 2 dm dx events
     patterns = ['dx--diabetes_all_types'],
     operator = 'and',
     require_before = ['dx--diabetes_all_types'],
+    )
+
+diabetes_type_2_dx_twice = ComplexEventPattern(
+    # A dm dx event now, plus a dm dx event in the past = 2 dm dx events
+    patterns = ['dx--diabetes_type_2'],
+    operator = 'and',
+    require_before = ['dx--diabetes_type_2'],
     )
 
 insulin_outside_pregnancy = ComplexEventPattern(
@@ -669,13 +677,65 @@ diabetes_both_types = ComplexEventPattern(
         'lx--glucose_fasting--threshold--126.0',
         'rx--diabetes',
         insulin_outside_pregnancy,
+        diabetes_all_dx_twice,
         ],
     operator = 'or',
     )
 
-diabetes_type_1_def_1 = ComplexEventPattern(
+diabetes_type_1_def_past_insulin = ComplexEventPattern(
     patterns = [
         diabetes_both_types,
         ],
+    require_before = ['rx--insulin'],
+    require_before_window = 365,
+    require_ever = ['dx--diabetes_type_1'],
     operator = 'and',
     )
+
+diabetes_type_1_def_future_insulin = ComplexEventPattern(
+    patterns = [
+        diabetes_both_types,
+        ],
+    require_after = ['rx--insulin'],
+    require_after_window = 365,
+    require_ever = ['dx--diabetes_type_1'],
+    operator = 'and',
+    )
+
+diabetes_type_1 = Condition(
+    name = 'diabetes_type_1',
+    patterns = [
+        (diabetes_type_1_def_past_insulin, 1),
+        (diabetes_type_1_def_future_insulin, 1),
+        ],
+    recur_after = -1, # Does not recur
+    test_name_search = [],
+    )
+
+diabetes_type_2_dx = ComplexEventPattern(
+    patterns = [
+        diabetes_both_types,
+        diabetes_type_2_dx_twice,
+        ],
+    operator = 'and',
+    )
+
+diabetes_type_2_rx = ComplexEventPattern(
+    patterns = [
+        diabetes_both_types,
+        'rx--diabetes'
+        ],
+    operator = 'and',
+    )
+
+
+diabetes_type_2 = Condition(
+    name = 'diabetes_type_2',
+    patterns = [
+        (diabetes_type_2_dx, 1),
+        (diabetes_type_2_rx, 1),
+        ],
+    recur_after = -1, # Does not recur
+    test_name_search = [],
+    )
+
