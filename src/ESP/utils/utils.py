@@ -19,7 +19,7 @@ import logging
 import simplejson
 import types
 import sqlparse
-from logging.handlers import SysLogHandler
+#from logging.handlers import SysLogHandler
 
 from django.db.models import Q
 from django.core.paginator import Paginator
@@ -64,11 +64,11 @@ def __get_logger():
         console.setLevel(LOG_LEVEL_CONSOLE)
         console.setFormatter(logging.Formatter(LOG_FORMAT_CONSOLE))
         log.addHandler(console)
-    if LOG_LEVEL_SYSLOG:
-        sl = SysLogHandler('/dev/log')
-        sl.setLevel(LOG_LEVEL_SYSLOG)
-        sl.setFormatter(logging.Formatter(LOG_FORMAT_SYSLOG))
-        log.addHandler(sl)
+#    if LOG_LEVEL_SYSLOG:
+#        sl = SysLogHandler('/dev/log')
+#        sl.setLevel(LOG_LEVEL_SYSLOG)
+#        sl.setFormatter(logging.Formatter(LOG_FORMAT_SYSLOG))
+#        log.addHandler(sl)
     return log
 log = __get_logger()
 #===============================================================================
