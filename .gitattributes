@@ -363,6 +363,15 @@ src/ESP/vaers/vaccine/views.py -text
 src/ESP/vaers/views.py -text
 src/ESP/version.txt -text
 src/configobj.py -text
+src/dateutil/__init__.py -text
+src/dateutil/easter.py -text
+src/dateutil/parser.py -text
+src/dateutil/relativedelta.py -text
+src/dateutil/rrule.py -text
+src/dateutil/tz.py -text
+src/dateutil/tzwin.py -text
+src/dateutil/zoneinfo/__init__.py -text
+src/dateutil/zoneinfo/zoneinfo-2010g.tar.gz -text svneol=unset#unset
 src/django_tables/__init__.py -text
 src/django_tables/app/__init__.py -text
 src/django_tables/app/models.py -text
@@ -398,6 +407,48 @@ src/djangosphinx/templates/source.conf -text
 src/djangosphinx/templates/sphinx.conf -text
 src/djangosphinx/utils/__init__.py -text
 src/djangosphinx/utils/config.py -text
+src/doj/__init__.py -text
+src/doj/backends/__init__.py -text
+src/doj/backends/zxjdbc/__init__.py -text
+src/doj/backends/zxjdbc/common.py -text
+src/doj/backends/zxjdbc/mssql2k/__init__.py -text
+src/doj/backends/zxjdbc/mssql2k/base.py -text
+src/doj/backends/zxjdbc/mssql2k/call_sp.py -text
+src/doj/backends/zxjdbc/mssql2k/creation.py -text
+src/doj/backends/zxjdbc/mssql2k/custom_queries.py -text
+src/doj/backends/zxjdbc/mssql2k/introspection.py -text
+src/doj/backends/zxjdbc/mssql2k/operations.py -text
+src/doj/backends/zxjdbc/mssql2k/pool.py -text
+src/doj/backends/zxjdbc/mssql2k/query.py -text
+src/doj/backends/zxjdbc/mssql2k/sql2kext.py -text
+src/doj/backends/zxjdbc/mysql/__init__.py -text
+src/doj/backends/zxjdbc/mysql/_mysql_exceptions.py -text
+src/doj/backends/zxjdbc/mysql/base.py -text
+src/doj/backends/zxjdbc/mysql/constants/FIELD_TYPE.py -text
+src/doj/backends/zxjdbc/mysql/constants/__init__.py -text
+src/doj/backends/zxjdbc/mysql/creation.py -text
+src/doj/backends/zxjdbc/mysql/introspection.py -text
+src/doj/backends/zxjdbc/oracle/__init__.py -text
+src/doj/backends/zxjdbc/oracle/base.py -text
+src/doj/backends/zxjdbc/oracle/introspection.py -text
+src/doj/backends/zxjdbc/oracle/query.py -text
+src/doj/backends/zxjdbc/oracle/zxJDBCCursorWrapperOracle.py -text
+src/doj/backends/zxjdbc/postgresql/__init__.py -text
+src/doj/backends/zxjdbc/postgresql/base.py -text
+src/doj/backends/zxjdbc/postgresql/creation.py -text
+src/doj/backends/zxjdbc/sqlite3/__init__.py -text
+src/doj/backends/zxjdbc/sqlite3/base.py -text
+src/doj/management/__init__.py -text
+src/doj/management/commands/__init__.py -text
+src/doj/management/commands/tomcat.py -text
+src/doj/management/commands/war.py -text
+src/doj/management/commands/war_skel/WEB-INF/lib-python/README -text
+src/doj/management/commands/war_skel/WEB-INF/lib/jruby-extras-fileservlet.jar -text svneol=unset#unset
+src/doj/management/commands/war_skel/WEB-INF/web.xml -text
+src/doj/management/commands/war_skel/application.py -text
+src/doj/test/__init__.py -text
+src/doj/test/xmlrunner/__init__.py -text
+src/doj/test/xmlrunner/junitxmlrunner.py -text
 src/dowser/__init__.py -text
 src/dowser/graphs.html -text
 src/dowser/main.css -text
@@ -509,6 +560,47 @@ src/hl7/segments.py -text
 src/hl7/test.py -text
 src/scripts/daily_batch.sh -text
 src/scripts/post_batch_run.sh -text
+src/simplejson/.__speedups.c -text svneol=unset#unset
+src/simplejson/._decoder.py -text svneol=unset#unset
+src/simplejson/._encoder.py -text svneol=unset#unset
+src/simplejson/._ordered_dict.py -text svneol=unset#unset
+src/simplejson/._scanner.py -text svneol=unset#unset
+src/simplejson/._tool.py -text svneol=unset#unset
+src/simplejson/__init__.py -text
+src/simplejson/_speedups.c -text
+src/simplejson/decoder.py -text
+src/simplejson/encoder.py -text
+src/simplejson/ordered_dict.py -text
+src/simplejson/scanner.py -text
+src/simplejson/tests/.___init__.py -text svneol=unset#unset
+src/simplejson/tests/._test_decimal.py -text svneol=unset#unset
+src/simplejson/tests/._test_decode.py -text svneol=unset#unset
+src/simplejson/tests/._test_default.py -text svneol=unset#unset
+src/simplejson/tests/._test_dump.py -text svneol=unset#unset
+src/simplejson/tests/._test_encode_basestring_ascii.py -text svneol=unset#unset
+src/simplejson/tests/._test_float.py -text svneol=unset#unset
+src/simplejson/tests/._test_separators.py -text svneol=unset#unset
+src/simplejson/tests/._test_unicode.py -text svneol=unset#unset
+src/simplejson/tests/__init__.py -text
+src/simplejson/tests/test_check_circular.py -text
+src/simplejson/tests/test_decimal.py -text
+src/simplejson/tests/test_decode.py -text
+src/simplejson/tests/test_default.py -text
+src/simplejson/tests/test_dump.py -text
+src/simplejson/tests/test_encode_basestring_ascii.py -text
+src/simplejson/tests/test_encode_for_html.py -text
+src/simplejson/tests/test_fail.py -text
+src/simplejson/tests/test_float.py -text
+src/simplejson/tests/test_indent.py -text
+src/simplejson/tests/test_pass1.py -text
+src/simplejson/tests/test_pass2.py -text
+src/simplejson/tests/test_pass3.py -text
+src/simplejson/tests/test_recursion.py -text
+src/simplejson/tests/test_scanstring.py -text
+src/simplejson/tests/test_separators.py -text
+src/simplejson/tests/test_speedups.py -text
+src/simplejson/tests/test_unicode.py -text
+src/simplejson/tool.py -text
 src/south/__init__.py -text
 src/south/creator/__init__.py -text
 src/south/creator/actions.py -text
