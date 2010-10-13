@@ -105,6 +105,11 @@ src/ESP/hef/migrations/0009_remove_defunct_fields_from_event.py -text
 src/ESP/hef/migrations/0010_add_event_provider.py -text
 src/ESP/hef/migrations/0011_populate_event_provider.py -text
 src/ESP/hef/migrations/0012_event_provider_not_null.py -text
+src/ESP/hef/migrations/0013_auto__del_datedimension__add_icd9query__add_unique_icd9query_heuristic.py -text
+src/ESP/hef/migrations/0014_auto__del_encounterheuristic__add_diagnosisheuristic__chg_field_icd9qu.py -text
+src/ESP/hef/migrations/0015_auto__add_calculatedbilirubinheuristic__del_field_labresultfixedthresh.py -text
+src/ESP/hef/migrations/0016_auto__del_field_calculatedbilirubinheuristic_id__add_field_calculatedb.py -text
+src/ESP/hef/migrations/0017_auto__add_labresultwesternblotheuristic__add_unique_labresultwesternbl.py -text
 src/ESP/hef/migrations/__init__.py -text
 src/ESP/hef/models.py -text
 src/ESP/hef/sql/multicolumn-indices.postgresql.sql -text
