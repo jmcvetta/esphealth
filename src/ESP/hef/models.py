@@ -837,8 +837,6 @@ class LabResultWesternBlotHeuristic(LabResultHeuristicBase):
                     break
         log.debug('Found %s actual positive lab results.' % len(match_pks))
         qs = LabResult.objects.filter(pk__in = match_pks)
-        if begin_timestamp:
-            qs = qs.filter(updated_timestamp__gte=begin_timestamp)
         return qs
 
 
