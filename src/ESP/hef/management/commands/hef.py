@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 '''
                                   ESP Health
                           Heuristic Events Framework
@@ -7,8 +6,7 @@
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
 @organization: Channing Laboratory http://www.channing.harvard.edu
-@cooptions['args']:pyright: (c) 2009 Channing Laboratory
-
+@copyright: (c) 2009-2010 Channing Laboratory
 @license: LGPL
 '''
 
@@ -72,14 +70,14 @@ class Command(BaseCommand):
         #
         # Start Dowswer to track memory usage -- this should have a toggle to en-/dis-able 
         #
-        dowser.Root.period = 10
-        cherrypy.tree.mount(dowser.Root())
-        cherrypy.config.update({
-        	'environment': 'embedded',
-        	'server.socket_port': 8080,
-    	})
-        cherrypy.server.quickstart()
-        cherrypy.engine.start()
+#        dowser.Root.period = 10
+#        cherrypy.tree.mount(dowser.Root())
+#        cherrypy.config.update({
+#        	'environment': 'embedded',
+#        	'server.socket_port': 8080,
+#    	})
+#        cherrypy.server.quickstart()
+#        cherrypy.engine.start()
 
         # 
         # Create dispatch dictionary of abstract tests and heuristics
