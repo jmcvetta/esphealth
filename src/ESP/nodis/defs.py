@@ -684,22 +684,30 @@ diabetes_both_types = ComplexEventPattern(
 
 diabetes_type_1_def_past_insulin = ComplexEventPattern(
     patterns = [
-        diabetes_both_types,
+        'lx--a1c--threshold--6.5',
+        'lx--glucose_fasting--threshold--126.0',
+        'rx--diabetes',
+        #insulin_outside_pregnancy,
+        #diabetes_all_dx_twice,
         ],
     require_before = ['rx--insulin'],
     require_before_window = 365,
     require_ever = ['dx--diabetes_type_1'],
-    operator = 'and',
+    operator = 'or',
     )
 
 diabetes_type_1_def_future_insulin = ComplexEventPattern(
     patterns = [
-        diabetes_both_types,
+        'lx--a1c--threshold--6.5',
+        'lx--glucose_fasting--threshold--126.0',
+        'rx--diabetes',
+        #insulin_outside_pregnancy,
+        #diabetes_all_dx_twice,
         ],
     require_after = ['rx--insulin'],
     require_after_window = 365,
     require_ever = ['dx--diabetes_type_1'],
-    operator = 'and',
+    operator = 'or',
     )
 
 diabetes_type_1 = Condition(
