@@ -121,7 +121,6 @@ class AbstractLabTest(models.Model):
         result = LabResult.objects.none()
         for cm in self.labtestmap_set.filter( Q(record_type='result') | Q(record_type='both') ):
             result |= LabResult.objects.filter(cm.lab_results_q_obj)
-        log_query('Lab Results for %s' % self.name, result)
         return result
     lab_results = property(__get_lab_results)
     
