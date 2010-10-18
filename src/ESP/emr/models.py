@@ -480,14 +480,20 @@ class Patient(BaseMedicalRecord):
         # Encounters with height and weight can be used to calculate BMI
         hw_q = Q(height__isnull=False, weight__isnull=False) & ~Q(height=0) & ~Q(weight=0)
         hw_encs = self.encounter_set.filter(hw_q).order_by('-date')
-        exact_date = Q(date=date)
-        begin = date - datetime.timedelta(days=before)
-        end = date + datetime.timedelta(days=after)
-        range_dates = Q(date__gte=begin, date__lte=end)
-        exact_bmi_encs = bmi_encs.filter(exact_date)
-        range_bmi_encs = bmi_encs.filter(range_dates)
-        exact_hw_encs = hw_encs.filter(exact_date)
-        range_hw_encs = hw_encs.filter(range_dates)
+        if date:
+	        exact_date = Q(date=date)
+	        begin = date - datetime.timedelta(days=before)
+	        end = date + datetime.timedelta(days=after)
+	        range_dates = Q(date__gte=begin, date__lte=end)
+	        exact_bmi_encs = bmi_encs.filter(exact_date)
+	        range_bmi_encs = bmi_encs.filter(range_dates)
+	        exact_hw_encs = hw_encs.filter(exact_date)
+	        range_hw_encs = hw_encs.filter(range_dates)
+        else:
+            exact_bmi_encs = None
+            exact_hw_encs = None
+            range_bmi_encs = bmi_encs
+            range_hw_encs = hw_encs
         if exact_bmi_encs:
             log_query('Exact BMI Encs', exact_bmi_encs)
             return exact_bmi_encs[0].bmi
