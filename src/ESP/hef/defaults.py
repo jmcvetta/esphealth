@@ -1510,8 +1510,8 @@ pertussis_rx = PrescriptionHeuristic.objects.get_or_create(
 #
 #-------------------------------------------------------------------------------
 
-diabetes_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'diabetes',
+diabetes_type_2_meds = PrescriptionHeuristic.objects.get_or_create(
+    name = 'diabetes_type_2_meds',
     drugs =  'glyburide, gliclazide, glipizide, glimepiride,pioglitazone, rosiglitazone, repaglinide, nateglinide, meglitinide, sitagliptin, exenatide, pramlintide',
     )[0]
 
