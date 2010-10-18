@@ -14,6 +14,7 @@ import datetime
 import optparse
 
 from django.db.models import Q
+from django.db.models import Min
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
