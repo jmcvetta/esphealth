@@ -906,7 +906,6 @@ class PrescriptionHeuristic(Heuristic):
             log.debug('Added %s for %s' % (obj, self))
     
     def generate_events(self):
-        unbound = Prescription.objects.exclude(tags__event__event_type__heuristic=self)
         drugs = [s.strip() for s in self.drugs.split(',')]
         if self.require:
             require = [s.strip() for s in self.require.split(',')]
@@ -918,20 +917,22 @@ class PrescriptionHeuristic(Heuristic):
             exclude = []
         prescriptions = Prescription.objects.none()
         for drug_name in drugs:
-            prescriptions |= unbound.filter(name__icontains=drug_name)
+            prescriptions |= Prescription.objects.filter(name__icontains=drug_name)
         if self.dose.all():
             rxs_by_dose = Prescription.objects.none()
             for dose_obj in self.dose.all():
                 for dose_string in dose_obj.string_variants:
-                    rxs_by_dose |= unbound.filter(name__icontains=dose_string)
-                    rxs_by_dose |= unbound.filter(dose__icontains=dose_string)
+                    rxs_by_dose |= Prescription.objects.filter(name__icontains=dose_string)
+                    rxs_by_dose |= Prescription.objects.filter(dose__icontains=dose_string)
             prescriptions &= rxs_by_dose
         if self.min_quantity:
             prescriptions = prescriptions.filter(quantity__gte=self.min_quantity)
         for required_string in require:
-            prescriptions &= unbound.filter(name__icontains=required_string)
+            prescriptions = prescriptions.filter(name__icontains=required_string)
         for excluded_string in exclude:
-            prescriptions &= prescriptions.exclude(name__icontains=excluded_string)
+            prescriptions = prescriptions.exclude(name__icontains=excluded_string)
+        # Exclude prescriptions already bound to this heuristic
+        prescriptions = prescriptions.exclude(tags__event__event_type__heuristic=self)
         log_query('Prescriptions for %s' % self.name, prescriptions)
         log.info('Generating events for "%s"' % self.verbose_name)
         event_type = EventType.objects.get(name='rx--%s' % self.name)
@@ -1156,4 +1157,4 @@ class Timespan(models.Model):
     encounters = models.ManyToManyField(Encounter)
 
     def __unicode__(self):
-        return u'Timespan: %s | patient %s | %s - %s' % (self.name, self.patient.name, self.start_date, self.end_date)
+        return u'Timespan #%s | %s | patient %s | %s - %s' % (self.pk, self.name, self.patient.name, self.start_date, self.end_date)
