@@ -222,6 +222,8 @@ class Command(BaseCommand):
     def linelist(self):
         FIELDS = [
             'case_id',
+            'diabetes_type', 
+            'case_date',
             'patient_id', 
             'mrn', 
             'dob', 
@@ -229,7 +231,6 @@ class Command(BaseCommand):
             'race', 
             'bmi', 
             'zip', 
-            'diabetes_type', 
             'max_a1c_value', 
             'max_a1c_date',
             'max_glucose_fasting_value',
@@ -290,6 +291,8 @@ class Command(BaseCommand):
             pat_rxs = Prescription.objects.filter(patient=p)
             values = {
                 'case_id': c.pk,
+                'diabetes_type': c.condition, 
+                'case_date': c.date,
                 'patient_id': p.pk,
                 'mrn': p.mrn, 
                 'dob': p.date_of_birth, 
@@ -297,7 +300,6 @@ class Command(BaseCommand):
                 'race': p.race, 
                 'bmi': p.bmi(c.date), 
                 'zip': p.zip, 
-                'diabetes_type': c.condition, 
                 }
             for name in ['a1c', 'glucose_fasting']:
                 alt = AbstractLabTest.objects.get(name=name)
@@ -310,14 +312,15 @@ class Command(BaseCommand):
                     values['max_%s_value' % name] = None
                     values['max_%s_date' % name] = None
             for suffix in ['0', '2', '1', '3']:
-                q_obj = Q(icd9_codes__code__istartswith='250.', icd9_codes__code__endswith=suffix)
-                encs = pat_encs.filter(q_obj)
+                enc_q_obj = Q(icd9_codes__code__istartswith='250.', icd9_codes__code__iendswith=suffix)
+                icd9_q_obj = Q(code__istartswith='250.', code__iendswith=suffix)
+                encs = pat_encs.filter(enc_q_obj)
                 encs = encs.order_by('-date')
                 for item in [0, 1]:
                     val_str = 'recent_icd9_250.x' + suffix + '_' + str(item + 1)
                     try:
                         this_enc = encs[item]
-                        icd9_code = this_enc.icd9_codes.filter(q_obj)[0]
+                        icd9_code = this_enc.icd9_codes.filter(icd9_q_obj)[0]
                         values['%s_value' % val_str] = icd9_code.code
                         values['%s_text' % val_str] = icd9_code.name
                         values['%s_date' % val_str] = this_enc.date
