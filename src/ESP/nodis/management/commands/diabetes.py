@@ -10,8 +10,9 @@ Diabetes Case Generator Hack
 '''
 
 
-import hashlib
+import sys
 import csv
+import hashlib
 from dateutil.relativedelta import relativedelta
 
 from django.db.models import Q
@@ -27,7 +28,10 @@ from optparse import make_option
 from ESP.utils import log
 from ESP.utils import log_query
 from ESP.emr.models import Patient
+from ESP.emr.models import Encounter
+from ESP.emr.models import Prescription
 from ESP.hef.models import Event
+from ESP.hef.models import AbstractLabTest
 from ESP.nodis.models import Pattern
 from ESP.nodis.models import Case
 
@@ -102,7 +106,7 @@ class Command(BaseCommand):
             qs = Event.objects.filter(event_type=event_type).values('patient').annotate(count=Count('pk'))
             qs = qs.exclude(patient__case__condition__in=self.diabetes_conditions)
             patient_pks = qs.filter(count__gte=2).values_list('patient', flat=True).distinct()
-            log_query('Patient PKs for %s' % event_type, patient_pks)
+            log_query('Patient PKs for %s twice' % event_type, patient_pks)
             for ppk in patient_pks:
                 # Date of second event
                 trigger_date = Event.objects.filter(event_type=event_type, patient=ppk).order_by('date')[1].date
@@ -143,30 +147,45 @@ class Command(BaseCommand):
         log.info('%8s patients who matched general frank diabetes criteria, but not criteria for type 1 or 2' % unknown_counter)
             
     def check_type_1(self, patient_pk, trigger_date):
-            type_1_dxs = Event.objects.filter(patient=patient_pk, event_type='dx--diabetes_type_1', date__lte=trigger_date)
-            #type_1_dxs = Event.objects.filter(patient=patient_pk, event_type='dx--diabetes_type_1')
-            if not type_1_dxs.count() >= 2:
-                return False # No type 1 diabetes
-            begin = trigger_date - relativedelta(days=365)
-            end = trigger_date + relativedelta(days=365)
-            insulin_rxs = Event.objects.filter(patient=patient_pk, event_type='rx--insulin', date__gte=begin, date__lte=end)
-            if not insulin_rxs:
-                return False # No type 1 diabetes
-            case_date = type_1_dxs.order_by('date')[1].date # dx--diabetes_type_1 is the most specific criterion for type 1, so use it for case date
-            provider = type_1_dxs.order_by('date')[1].provider
-            patient = Patient.objects.get(pk=patient_pk)
-            new_case = Case(
-                patient = patient,
-                provider = provider,
-                date = case_date,
-                condition = 'diabetes_type_1',
-                pattern = self.pattern_type_1,
-                )
-            new_case.save()
-            new_case.events = type_1_dxs | insulin_rxs
-            new_case.save()
-            log.info('Created new frank diabetes type 1 case: %s' % new_case)
-            return True # Patient does have type 1
+        patient_events = Event.objects.filter(patient=patient_pk)
+        #
+        # Has patient been diagnosed with Type 1 now or in the past?
+        #
+        type_1_dxs = patient_events.filter(event_type='dx--diabetes_type_1', date__lte=trigger_date)
+        if not type_1_dxs.count() >= 2:
+            return False # No type 1 diabetes
+        #
+        # Prescription for insulin within a year of trigger date?
+        #
+        begin = trigger_date - relativedelta(days=365)
+        end = trigger_date + relativedelta(days=365)
+        insulin_rxs = patient_events.filter(event_type='rx--insulin', date__gte=begin, date__lte=end)
+        if not insulin_rxs:
+            return False # No type 1 diabetes
+        #
+        # No prescription for Type 2 diabetes meds now or in the past?
+        #
+        type_2_meds = patient_events.filter(event_type='rx--diabetes_type_2_meds', date__lte=trigger_date)
+        if type_2_meds:
+            return False # No type 1 diabetes
+        #
+        # Collect case data
+        #
+        case_date = type_1_dxs.order_by('date')[1].date # dx--diabetes_type_1 is the most specific criterion for type 1, so use it for case date
+        provider = type_1_dxs.order_by('date')[1].provider
+        patient = Patient.objects.get(pk=patient_pk)
+        new_case = Case(
+            patient = patient,
+            provider = provider,
+            date = case_date,
+            condition = 'diabetes_type_1',
+            pattern = self.pattern_type_1,
+            )
+        new_case.save()
+        new_case.events = type_1_dxs | insulin_rxs
+        new_case.save()
+        log.info('Created new frank diabetes type 1 case: %s' % new_case)
+        return True # Patient does have type 1
     
     def check_type_2(self, patient_pk, trigger_date):
         has_type_2 = False
@@ -205,19 +224,19 @@ class Command(BaseCommand):
             'patient_id', 
             'mrn', 
             'dob', 
-            'sex', 
+            'gender', 
             'race', 
             'bmi', 
             'zip', 
             'diabetes_type', 
             'max_a1c_value', 
             'max_a1c_date',
-            'max_fasting_glucose_value',
-            'max_fasting_glucose_date',
-            'high_rand_glucose_1_value',
-            'high_rand_glucose_1_date',
-            'high_rand_glucose_2_value',
-            'high_rand_glucose_2_date',
+            'max_glucose_fasting_value',
+            'max_glucose_fasting_date',
+            #'high_rand_glucose_1_value',
+            #'high_rand_glucose_1_date',
+            #'high_rand_glucose_2_value',
+            #'high_rand_glucose_2_date',
             'recent_icd9_250.x0_1_value',
             'recent_icd9_250.x0_1_text',
             'recent_icd9_250.x0_1_date',
@@ -242,8 +261,9 @@ class Command(BaseCommand):
             'recent_icd9_250.x3_2_value',
             'recent_icd9_250.x3_2_text',
             'recent_icd9_250.x3_2_date',
-            'recent_icd9_648.8_value',
-            'recent_icd9_648.8_text',
+            # These will always be the same
+            #'recent_icd9_648.8_value',
+            #'recent_icd9_648.8_text',
             'recent_icd9_648.8_date',
             'recent_insulin_date',
             'recent_insulin_drug',
@@ -260,6 +280,68 @@ class Command(BaseCommand):
             'recent_miglitol_date',
             'recent_miglitol_drug',
             ]
-        writer = csv.DictWriter(fields=FIELDS)
+        writer = csv.DictWriter(sys.stdout, fieldnames=FIELDS)
         for c in Case.objects.filter(condition__in=self.diabetes_conditions).order_by('date'):
-            pass
+            p = c.patient
+            pat_encs = Encounter.objects.filter(patient=p)
+            pat_rxs = Prescription.objects.filter(patient=p)
+            values = {
+                'patient_id': p.pk,
+                'mrn': p.mrn, 
+                'dob': p.date_of_birth, 
+                'gender': p.gender, 
+                'race': p.race, 
+                'bmi': p.bmi(), 
+                'zip': p.zip, 
+                'diabetes_type': c.condition, 
+                }
+            for name in ['a1c', 'glucose_fasting']:
+                alt = AbstractLabTest.objects.get(name=name)
+                pat_labs = alt.lab_results.filter(patient=p)
+                if pat_labs:
+                    max_result = pat_labs.order_by('-result_float')[0]
+                    values['max_%s_value' % name] = max_result.result_float
+                    values['max_%s_date' % name] = max_result.date
+                else:
+                    values['max_%s_value' % name] = None
+                    values['max_%s_date' % name] = None
+            for suffix in ['0', '2', '1', '3']:
+                q_obj = Q(icd9_codes__code__istartswith='250.', icd9_codes__code__endswith=suffix)
+                encs = pat_encs.filter(q_obj)
+                encs = encs.order_by('-date')
+                for item in [0, 1]:
+                    val_str = 'recent_icd9_250.x' + suffix + '_' + str(item + 1)
+                    try:
+                        this_enc = encs[item]
+                        icd9_code = this_enc.icd9_codes.filter(q_obj)[0]
+                        values['%s_value' % val_str] = icd9_code.code
+                        values['%s_text' % val_str] = icd9_code.name
+                        values['%s_date' % val_str] = this_enc.date
+                    except:
+                        values['%s_value' % val_str] = None
+                        values['%s_text' % val_str] = None
+                        values['%s_date' % val_str] = None
+            try:
+                values['recent_icd9_648.8_date'] = pat_encs.filter(icd9_codes__code='648.8').order_by('-date')[0].date
+            except IndexError:
+                values['recent_icd9_648.8_date'] = None
+            for drug in [
+                'insulin',
+                'metformin',
+                'acarbose',
+                'repaglinide',
+                'nateglinide',
+                'meglitinide',
+                'miglitol',
+                ]:
+                try:
+                    recent_rx = pat_rxs.filter(name__icontains=drug).order_by('-date')[0]
+                    values['recent_%s_date' % drug] = recent_rx.date
+                    values['recent_%s_drug' % drug] = recent_rx.name
+                except IndexError:
+                    values['recent_%s_date' % drug] = None
+                    values['recent_%s_drug' % drug] = None
+            # Coerce all values to unicode
+            for key in values:
+                values[key] = u'%s' % values[key]
+            writer.writerow(values)
