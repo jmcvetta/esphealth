@@ -221,6 +221,7 @@ class Command(BaseCommand):
     
     def linelist(self):
         FIELDS = [
+            'case_id',
             'patient_id', 
             'mrn', 
             'dob', 
@@ -280,18 +281,21 @@ class Command(BaseCommand):
             'recent_miglitol_date',
             'recent_miglitol_drug',
             ]
+        header = dict(zip(FIELDS, FIELDS)) 
         writer = csv.DictWriter(sys.stdout, fieldnames=FIELDS)
+        writer.writerow(header)
         for c in Case.objects.filter(condition__in=self.diabetes_conditions).order_by('date'):
             p = c.patient
             pat_encs = Encounter.objects.filter(patient=p)
             pat_rxs = Prescription.objects.filter(patient=p)
             values = {
+                'case_id': c.pk,
                 'patient_id': p.pk,
                 'mrn': p.mrn, 
                 'dob': p.date_of_birth, 
                 'gender': p.gender, 
                 'race': p.race, 
-                'bmi': p.bmi(), 
+                'bmi': p.bmi(c.date), 
                 'zip': p.zip, 
                 'diabetes_type': c.condition, 
                 }
@@ -343,5 +347,9 @@ class Command(BaseCommand):
                     values['recent_%s_drug' % drug] = None
             # Coerce all values to unicode
             for key in values:
-                values[key] = u'%s' % values[key]
+                val = values[key]
+                if val:
+                    values[key] = u'%s' % val
+                else:
+                    values[key] = None
             writer.writerow(values)
