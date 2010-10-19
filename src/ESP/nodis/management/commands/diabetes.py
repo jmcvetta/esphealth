@@ -23,6 +23,7 @@ from django.db.models import Max
 from django.db.models import Min
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
+from django.utils.encoding import smart_str, smart_unicode
 from optparse import make_option
 
 from ESP.utils import log
@@ -348,11 +349,11 @@ class Command(BaseCommand):
                 except IndexError:
                     values['recent_%s_date' % drug] = None
                     values['recent_%s_drug' % drug] = None
-            # Coerce all values to unicode
+            # Coerce all values to ascii string
             for key in values:
                 val = values[key]
                 if val:
-                    values[key] = u'%s' % val
+                    values[key] = smart_str(val)
                 else:
                     values[key] = None
             writer.writerow(values)
