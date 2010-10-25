@@ -52,6 +52,25 @@ class Command(BaseCommand):
     # Condition names for diabetes of both types
     diabetes_conditions = ['diabetes_type_1', 'diabetes_type_2', 'diabetes_unknown_type']
     
+    diabetes_rx_events = [
+        'rx--pramlintide',
+        'rx--exenatide',
+        'rx--sitagliptin',
+        'rx--meglitinide',
+        'rx--nateglinide',
+        'rx--repaglinide',
+        'rx--glimepiride',
+        'rx--glipizide',
+        'rx--gliclazide',
+        'rx--glyburide',
+        ]
+    
+    auto_antibodies_labs = [
+        'lx--ica512',
+        'lx--gad65',
+        'lx--islet_cell_antibody',
+        ]
+    
     pattern_type_1 = Pattern.objects.get_or_create(
         name = 'Frank DM Type 1 iterative code',
         pattern = 'Frank DM Type 1 iterative code',
@@ -85,8 +104,7 @@ class Command(BaseCommand):
             'lx--a1c--threshold--6.5',
             'lx--glucose_fasting--threshold--126.0',
             'rx--insulin',
-            'rx--diabetes',
-            ]
+            ] + self.diabetes_rx_events
         # If a patient has two or more of these events, he has frank diabetes
         frank_dm_twice_reqs = [
             'dx--diabetes_all_types',
@@ -95,130 +113,146 @@ class Command(BaseCommand):
         #
         # Find trigger dates for patients who have frank DM of either type, but no existing case
         # 
-        qs = Event.objects.filter(event_type__in=frank_dm_once_reqs).values('patient').annotate(trigger_date=Max('date'))
-        qs = qs.exclude(patient__case__condition__in=self.diabetes_conditions)
+        frank_dm = {}
+        qs = Event.objects.filter(event_type__in=frank_dm_once_reqs).exclude(patient__case__condition__in=self.diabetes_conditions)
         log_query('Frank DM once', qs)
-        patient_trigger_dates = {}
-        for i in qs:
+        for i in qs.values('patient').annotate(trigger_date=Min('date')):
             pat = i['patient']
-            td = i['trigger_date']
-            patient_trigger_dates[pat] = td
+            trigger_date = i['trigger_date']
+            events = qs.filter(patient=pat, date=trigger_date)
+            date_events = (trigger_date, events)
+            frank_dm[pat] = date_events
         for event_type in frank_dm_twice_reqs:
-            qs = Event.objects.filter(event_type=event_type).values('patient').annotate(count=Count('pk'))
+            qs = Event.objects.filter(event_type=event_type).values('patient')
             qs = qs.exclude(patient__case__condition__in=self.diabetes_conditions)
-            patient_pks = qs.filter(count__gte=2).values_list('patient', flat=True).distinct()
+            qs = qs.annotate(count=Count('pk'))
+            patient_pks = qs.filter(count__gte=2).values_list('patient', flat=True).distinct().order_by('-patient')
             log_query('Patient PKs for %s twice' % event_type, patient_pks)
             for ppk in patient_pks:
                 # Date of second event
-                trigger_date = Event.objects.filter(event_type=event_type, patient=ppk).order_by('date')[1].date
-                if (ppk not in patient_trigger_dates) or (patient_trigger_dates[ppk] > trigger_date):
-                    patient_trigger_dates[ppk] = trigger_date
+                pat_events = Event.objects.filter(event_type=event_type, patient=ppk)
+                if not pat_events:
+                    continue
+                trigger_date = pat_events.order_by('date').values_list('date', flat=True)[1]
+                if (ppk not in frank_dm) or (frank_dm[ppk][0] > trigger_date):
+                    frank_dm[ppk] = (trigger_date, pat_events.filter(date=trigger_date))
+                    log.debug('%s: %s' % (ppk, trigger_date))
         #
-        # Determine type 1 / type 2
+        # Determine type and create cases
         #
-        total_count = len(patient_trigger_dates)
+        total_count = len(frank_dm)
         counter = 0
         type_1_counter = 0
         type_2_counter = 0
         unknown_counter = 0
-        for pat_pk in patient_trigger_dates:
+        for pat_pk in frank_dm:
             counter += 1
-            trigger_date = patient_trigger_dates[pat_pk]
-            if self.check_type_1(pat_pk, trigger_date) == True:
-                type_1_counter += 1
-            # elif because we don't need to check type 2 if patient has type 1
-            elif self.check_type_2(pat_pk, trigger_date):
-                type_2_counter += 1
-            else:
-                patient = Patient.objects.get(pk=pat_pk)
-                all_event_types = frank_dm_twice_reqs + frank_dm_once_reqs
-                provider = Event.objects.filter(patient=patient, event_type__in=all_event_types, date=trigger_date)[0].provider
-                new_case = Case(
-                    patient = patient,
-                    provider = provider,
-                    date = trigger_date,
-                    condition = 'diabetes_unknown_type',
-                    pattern = self.pattern_type_unknown,
-                    )
-                new_case.save()
-                unknown_counter += 1
             log.debug('Checking patient %8s / %s' % (counter, total_count))
-        log.info('%8s new cases of type 1 diabetes' % type_1_counter)
-        log.info('%8s new cases of type 2 diabetes' % type_2_counter)
-        log.info('%8s patients who matched general frank diabetes criteria, but not criteria for type 1 or 2' % unknown_counter)
-            
-    def check_type_1(self, patient_pk, trigger_date):
-        patient_events = Event.objects.filter(patient=patient_pk)
-        #
-        # Has patient been diagnosed with Type 1 now or in the past?
-        #
-        type_1_dxs = patient_events.filter(event_type__startswith='dx--diabetes_type_1', date__lte=trigger_date)
-        if not type_1_dxs.count() >= 2:
-            return False # No type 1 diabetes
-        #
-        # Prescription for insulin within a year of trigger date?
-        #
-        begin = trigger_date - relativedelta(days=365)
-        end = trigger_date + relativedelta(days=365)
-        insulin_rxs = patient_events.filter(event_type='rx--insulin', date__gte=begin, date__lte=end)
-        if not insulin_rxs:
-            return False # No type 1 diabete
-        #
-        # No prescription for Type 2 diabetes meds now or in the past?
-        #
-        type_2_meds = patient_events.filter(event_type='rx--diabetes_type_2_meds', date__lte=trigger_date)
-        if type_2_meds:
-            return False # No type 1 diabetes
-        #
-        # Collect case data
-        #
-        case_date = type_1_dxs.order_by('date')[1].date # dx--diabetes_type_1 is the most specific criterion for type 1, so use it for case date
-        provider = type_1_dxs.order_by('date')[1].provider
-        patient = Patient.objects.get(pk=patient_pk)
-        new_case = Case(
-            patient = patient,
-            provider = provider,
-            date = case_date,
-            condition = 'diabetes_type_1',
-            pattern = self.pattern_type_1,
-            )
-        new_case.save()
-        new_case.events = type_1_dxs | insulin_rxs
-        new_case.save()
-        log.info('Created new frank diabetes type 1 case: %s' % new_case)
-        return True # Patient does have type 1
-    
-    def check_type_2(self, patient_pk, trigger_date):
-        has_type_2 = False
-        case_date = None
-        type_2_dxs = Event.objects.filter(patient=patient_pk, event_type_starts_with='dx--diabetes_type_2', date__lte=trigger_date)
-        if type_2_dxs.count() >= 2:
-            has_type_2 = True
-            case_date = type_2_dxs.order_by('date')[1].date
-            provider = type_2_dxs.order_by('date')[1].provider
-        rxs = Event.objects.filter(patient=patient_pk, event_type='rx--diabetes', date__lte=trigger_date)
-        if rxs:
-            has_type_2 = True
-            rx_date = rxs.order_by('date')[0].date
-            if (not case_date) or (case_date > rx_date):
-                provider = rxs.order_by('date')[0].provider
-                case_date = rx_date
-        if has_type_2:
-            patient = Patient.objects.get(pk=patient_pk)
+            patient = Patient.objects.get(pk=pat_pk)
+            trigger_date, trigger_events = frank_dm[pat_pk]
+            print trigger_events
+            condition, case_date, provider, events = self.determine_dm_type(patient, trigger_date, trigger_events)
+            if condition == 'diabetes_type_1':
+                pattern = self.pattern_type_1
+                type_1_counter += 1
+            elif condition == 'diabetes_type_2':
+                pattern = self.pattern_type_2
+                type_2_counter += 1
+            elif condition == 'diabetes_unknown_type':
+                pattern = self.pattern_type_unknown
+                unknown_counter += 1
+            else:
+                raise RuntimeError('WTF - invalid diabetes type')
             new_case = Case(
                 patient = patient,
                 provider = provider,
                 date = case_date,
-                condition = 'diabetes_type_2',
-                pattern = self.pattern_type_2,
+                condition =  condition,
+                pattern = pattern,
                 )
             new_case.save()
-            new_case.events = type_2_dxs | rxs
+            new_case.events = events | trigger_events
             new_case.save()
-            log.info('Created new frank diabetes type 2 case: %s' % new_case)
-            return True # Patient does have type 2
-        else:
-            return False # No type 2 diabetes for this patient
+            log.info('Generated new case: %s' % new_case)
+        log.info('%8s new cases of type 1 diabetes' % type_1_counter)
+        log.info('%8s new cases of type 2 diabetes' % type_2_counter)
+        log.info('%8s patients who matched general frank diabetes criteria, but not criteria for type 1 or 2' % unknown_counter)
+            
+    def determine_dm_type(self, patient, trigger_date, trigger_events):
+        '''
+        Determine if patient has Type 1, Type 2, or unknown type of diabetes
+        @param patient:  patient to be tested
+        @type patient:   Patient object
+        @param trigger_date: Date at which patient met frank diabetes criteria
+        @type trigger_date:  Date object
+        @return: (condition, case_date, provider, events)
+        '''
+        patient_events = Event.objects.filter(patient=patient)
+        #
+        # Patient ever prescribed insulin?
+        #
+        insulin_rx = patient_events.filter(event_type='rx--insulin')
+        if not insulin_rx:
+            provider = trigger_events[0].provider
+            return ('diabetes_type_2', trigger_date, provider, trigger_events)
+        #
+        # Insulin within the first year following trigger date for frank diabetes?
+        #
+        first_year_end = trigger_date + relativedelta(days=365)
+        insulin_first_year = insulin_rx.filter(date__gte=trigger_date, date__lte=first_year_end)
+        if not insulin_first_year:
+            provider = trigger_events[0].provider
+            return ('diabetes_type_2', trigger_date, provider, trigger_events)
+        #
+        # Patient ever prescribed any oral hypoglycaemics (all those on the 
+        # frank diabetes list + metformin, rosiglitizone, pioglitazone)
+        #
+        oral_hypoglycaemics = self.diabetes_rx_events + [
+            'rx--metformin',
+            'rx--rosiglitizone',
+            'rx--pioglitazone',
+            ]
+        oral_hypoglycaemic_rx = patient_events.filter(event_type__in=oral_hypoglycaemics)
+        if oral_hypoglycaemic_rx:
+            provider = trigger_events[0].provider
+            events = trigger_events | oral_hypoglycaemic_rx
+            return ('diabetes_type_2', trigger_date, provider, events)
+        #
+        # C-peptide test done?
+        #
+        # TODO: this section needs implementation
+        
+        #
+        # Diabetes auto-anDiabetes auto-antibodies test done?
+        #
+        pos_aa_event_types = ['%s--positive' % i for i in self.auto_antibodies_labs]
+        neg_aa_event_types = ['%s--negative' % i for i in self.auto_antibodies_labs]
+        aa_pos = patient_events.filter(event_type__in=pos_aa_event_types)
+        aa_neg = patient_events.filter(event_type__in=neg_aa_event_types)
+        if aa_pos:
+            provider = aa_pos[0].provider
+            case_date = aa_pos[0].date
+            events = trigger_events | aa_pos
+            return ('diabetes_type_1', case_date, provider, events)
+        if aa_neg:
+            provider = aa_neg[0].provider
+            case_date = aa_neg[0].date
+            events = trigger_events | aa_neg
+            return ('diabetes_type_2', case_date, provider, events)
+        
+        #
+        # Triglycerides > 200 or BMI >30
+        #
+        # TODO: Implement this!
+        
+        #
+        # None of the conditions above applies, so unknown type
+        #
+        provider = trigger_events[0].provider
+        return ('diabetes_unknown_type', trigger_date, provider, trigger_events)
+            
+            
+    
     
     def linelist(self):
         FIELDS = [
