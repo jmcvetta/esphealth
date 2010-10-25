@@ -475,7 +475,7 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
         verbose_name = 'Heuristic - Lab - Positive/Negative'
         verbose_name_plural = 'Heuristic - Lab - Positive/Negative'
         ordering = ['test']
-        unique_together = ['test', 'titer']
+        unique_together = ['test']
     
     def __get_name(self):
         return  u'lx--%s--positive' % self.test.name
@@ -531,12 +531,17 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
         # Build queries from LabTestMaps
         #
         for map in LabTestMap.objects.filter(test=self.test):
-            num_res_q = map.lab_results_q_obj & Q(result_float__isnull=False)
-            positive_q |= num_res_q & Q(ref_high_float__isnull=False, result_float__gte = F('ref_high_float'))
-            negative_q |= num_res_q & Q(ref_high_float__isnull=False, result_float__lt = F('ref_high_float'))
+            lab_q = map.lab_results_q_obj
+            ref_float_q = Q(ref_high_float__isnull=False)
+            num_res_q = lab_q & ref_float_q & Q(result_float__isnull=False)
+            positive_q |= num_res_q & Q(result_float__gte = F('ref_high_float'))
+            negative_q |= num_res_q & Q(result_float__lt = F('ref_high_float'))
             if map.threshold:
-                positive_q |= num_res_q & Q(ref_high_float__isnull=True, result_float__gte=map.threshold)
-                negative_q |= num_res_q & Q(ref_high_float__isnull=True, result_float__lt=map.threshold)
+                positive_q |= num_res_q & Q(result_float__gte=map.threshold)
+                negative_q |= num_res_q & Q(result_float__lt=map.threshold)
+            # Greater than ref high -- result string begins with '>' and ref_high_float is not null
+            positive_q |= lab_q & ref_float_q & Q(result_string__istartswith='>')
+            negative_q |= lab_q & ref_float_q & Q(result_string__istartswith='<')
             # String queries
             positive_q |= (map.positive_string_q_obj & map.lab_results_q_obj)
             negative_q |= (map.negative_string_q_obj & map.lab_results_q_obj)
