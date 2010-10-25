@@ -150,7 +150,6 @@ class Command(BaseCommand):
             log.debug('Checking patient %8s / %s' % (counter, total_count))
             patient = Patient.objects.get(pk=pat_pk)
             trigger_date, trigger_events = frank_dm[pat_pk]
-            print trigger_events
             condition, case_date, provider, events = self.determine_dm_type(patient, trigger_date, trigger_events)
             if condition == 'diabetes_type_1':
                 pattern = self.pattern_type_1
