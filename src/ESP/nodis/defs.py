@@ -14,7 +14,6 @@ from ESP.nodis.models import ComplexEventPattern
 from ESP.nodis.models import MultipleEventPattern
 from ESP.nodis.models import TuberculosisDefC
 from ESP.nodis.models import Condition
-from ESP.hef.defaults import diabetes_type_1_dx
 
 
 #===============================================================================
