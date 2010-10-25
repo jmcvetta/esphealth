@@ -1510,10 +1510,75 @@ pertussis_rx = PrescriptionHeuristic.objects.get_or_create(
 #
 #-------------------------------------------------------------------------------
 
-diabetes_type_2_meds = PrescriptionHeuristic.objects.get_or_create(
-    name = 'diabetes_type_2_meds',
-    drugs =  'glyburide, gliclazide, glipizide, glimepiride,pioglitazone, rosiglitazone, repaglinide, nateglinide, meglitinide, sitagliptin, exenatide, pramlintide',
-    )[0]
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'glyburide',
+    drugs =  'glyburide',
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'gliclazide',
+    drugs =  'gliclazide'
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'glipizide',
+    drugs =  'glipizide'
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'glimepiride',
+    drugs =  'glimepiride'
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'pioglitazone',
+    drugs =  'pioglitazone'
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'rosiglitazone',
+    drugs =  'rosiglitazone'
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'repaglinide',
+    drugs =  'repaglinide'
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'nateglinide',
+    drugs =  'nateglinide'
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'meglitinide',
+    drugs =  'meglitinide'
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'sitagliptin',
+    drugs =  'sitagliptin'
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'exenatide',
+    drugs =  'exenatide, pramlintide',
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'pramlintide',
+    drugs =  'pramlintide',
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'pramlintide',
+    drugs =  'pramlintide',
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'metformin',
+    drugs =  'metformin',
+    )
 
 diabetes_dx = DiagnosisHeuristic.objects.get_or_create(
     name = 'diabetes_all_types',
@@ -1562,4 +1627,45 @@ Icd9Query.objects.get_or_create(
     heuristic = diabetes_type_2_uncont_dx,
     icd9_starts_with = '250.',
     icd9_ends_with = '2',
+    )
+
+
+#-------------------------------------------------------------------------------
+#
+# Diabetes Auto-Antibody Tests
+#
+#-------------------------------------------------------------------------------
+
+gad65 = AbstractLabTest.objects.get_or_create(
+    name = 'gad65',
+    defaults = {
+        'verbose_name': 'Glutamic Acid Decarboxylase (GAD65) Antibodies',
+        },
+    )[0]
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = gad65,
+    )
+
+ica512 = AbstractLabTest.objects.get_or_create(
+    name = 'ica512',
+    defaults = {
+        'verbose_name': 'Islet cell autoantigen (ICA) 512',
+        },
+    )[0]
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ica512,
+    )
+
+ic_ab_screen = AbstractLabTest.objects.get_or_create(
+    name = 'islet_cell_antibody',
+    defaults = {
+        'verbose_name': 'Islet cell antibody screen',
+        },
+    )[0]
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ic_ab_screen,
+    titer = 4, # 1:4 titer
     )
