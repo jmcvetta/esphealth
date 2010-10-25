@@ -25,9 +25,9 @@ class AbstractLabTestAdmin(admin.ModelAdmin):
     list_display = ['name', 'reportable']
 
 class LabTestMapAdmin(admin.ModelAdmin):
-    list_display = ['test', 'code', 'record_type', 'code_match_type']
+    list_display = ['test', 'native_code', 'record_type', 'code_match_type']
     list_filter = ['record_type', 'test']
-    search_fields = ['code']
+    search_fields = ['native_code']
     filter_horizontal = [
         'extra_positive_strings', 
         'excluded_positive_strings',
@@ -41,7 +41,7 @@ class LabTestMapAdmin(admin.ModelAdmin):
             'fields': ('test',)
             }),
         ('Mapping', {
-            'fields': ('code', 'code_match_type', 'record_type'),
+            'fields': ('native_code', 'code_match_type', 'record_type'),
             }),
         ('Reporting', {
             'fields': ('reportable', 'output_code', 'output_name', 'snomed_pos', 'snomed_neg',  'snomed_ind'),
