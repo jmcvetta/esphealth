@@ -152,7 +152,7 @@ class Command(BaseCommand):
         #
         # Has patient been diagnosed with Type 1 now or in the past?
         #
-        type_1_dxs = patient_events.filter(event_type='dx--diabetes_type_1', date__lte=trigger_date)
+        type_1_dxs = patient_events.filter(event_type__startswith='dx--diabetes_type_1', date__lte=trigger_date)
         if not type_1_dxs.count() >= 2:
             return False # No type 1 diabetes
         #
@@ -162,7 +162,7 @@ class Command(BaseCommand):
         end = trigger_date + relativedelta(days=365)
         insulin_rxs = patient_events.filter(event_type='rx--insulin', date__gte=begin, date__lte=end)
         if not insulin_rxs:
-            return False # No type 1 diabetes
+            return False # No type 1 diabete
         #
         # No prescription for Type 2 diabetes meds now or in the past?
         #
@@ -191,7 +191,7 @@ class Command(BaseCommand):
     def check_type_2(self, patient_pk, trigger_date):
         has_type_2 = False
         case_date = None
-        type_2_dxs = Event.objects.filter(patient=patient_pk, event_type='dx--diabetes_type_2', date__lte=trigger_date)
+        type_2_dxs = Event.objects.filter(patient=patient_pk, event_type_starts_with='dx--diabetes_type_2', date__lte=trigger_date)
         if type_2_dxs.count() >= 2:
             has_type_2 = True
             case_date = type_2_dxs.order_by('date')[1].date
@@ -240,30 +240,30 @@ class Command(BaseCommand):
             #'high_rand_glucose_1_date',
             #'high_rand_glucose_2_value',
             #'high_rand_glucose_2_date',
-            'recent_icd9_250.x0_1_value',
-            'recent_icd9_250.x0_1_text',
-            'recent_icd9_250.x0_1_date',
-            'recent_icd9_250.x0_2_value',
-            'recent_icd9_250.x0_2_text',
-            'recent_icd9_250.x0_2_date',
-            'recent_icd9_250.x2_1_value',
-            'recent_icd9_250.x2_1_text',
-            'recent_icd9_250.x2_1_date',
-            'recent_icd9_250.x2_2_value',
-            'recent_icd9_250.x2_2_text',
-            'recent_icd9_250.x2_2_date',
-            'recent_icd9_250.x1_1_value',
-            'recent_icd9_250.x1_1_text',
-            'recent_icd9_250.x1_1_date',
-            'recent_icd9_250.x1_2_value',
-            'recent_icd9_250.x1_2_text',
-            'recent_icd9_250.x1_2_date',
-            'recent_icd9_250.x3_1_value',
-            'recent_icd9_250.x3_1_text',
-            'recent_icd9_250.x3_1_date',
-            'recent_icd9_250.x3_2_value',
-            'recent_icd9_250.x3_2_text',
-            'recent_icd9_250.x3_2_date',
+            'dx--diabetes_type_1_not_stated--recent_1--value',
+            'dx--diabetes_type_1_not_stated--recent_1--text',
+            'dx--diabetes_type_1_not_stated--recent_1--date',
+            'dx--diabetes_type_1_not_stated--recent_2--value',
+            'dx--diabetes_type_1_not_stated--recent_2--text',
+            'dx--diabetes_type_1_not_stated--recent_2--date',
+            'dx--diabetes_type_2_not_stated--recent_1--value',
+            'dx--diabetes_type_2_not_stated--recent_1--text',
+            'dx--diabetes_type_2_not_stated--recent_1--date',
+            'dx--diabetes_type_2_not_stated--recent_2--value',
+            'dx--diabetes_type_2_not_stated--recent_2--text',
+            'dx--diabetes_type_2_not_stated--recent_2--date',
+            'dx--diabetes_type_1_uncontrolled--recent_1--value',
+            'dx--diabetes_type_1_uncontrolled--recent_1--text',
+            'dx--diabetes_type_1_uncontrolled--recent_1--date',
+            'dx--diabetes_type_1_uncontrolled--recent_2--value',
+            'dx--diabetes_type_1_uncontrolled--recent_2--text',
+            'dx--diabetes_type_1_uncontrolled--recent_2--date',
+            'dx--diabetes_type_2_uncontrolled--recent_1--value',
+            'dx--diabetes_type_2_uncontrolled--recent_1--text',
+            'dx--diabetes_type_2_uncontrolled--recent_1--date',
+            'dx--diabetes_type_2_uncontrolled--recent_2--value',
+            'dx--diabetes_type_2_uncontrolled--recent_2--text',
+            'dx--diabetes_type_2_uncontrolled--recent_2--date',
             # These will always be the same
             #'recent_icd9_648.8_value',
             #'recent_icd9_648.8_text',
@@ -288,7 +288,7 @@ class Command(BaseCommand):
         writer.writerow(header)
         for c in Case.objects.filter(condition__in=self.diabetes_conditions).order_by('date'):
             p = c.patient
-            pat_encs = Encounter.objects.filter(patient=p)
+            pat_events = Event.objects.filter(patient=p)
             pat_rxs = Prescription.objects.filter(patient=p)
             values = {
                 'case_id': c.pk,
@@ -312,16 +312,20 @@ class Command(BaseCommand):
                 else:
                     values['max_%s_value' % name] = None
                     values['max_%s_date' % name] = None
-            for suffix in ['0', '2', '1', '3']:
-                enc_q_obj = Q(icd9_codes__code__istartswith='250.', icd9_codes__code__iendswith=suffix)
-                icd9_q_obj = Q(code__istartswith='250.', code__iendswith=suffix)
-                encs = pat_encs.filter(enc_q_obj)
-                encs = encs.order_by('-date')
+            event_type_suffix_map = {
+                'diabetes_type_1_not_stated': '1',
+                'diabetes_type_1_uncontrolled': '3',
+                'diabetes_type_2_not_stated': '0',
+                'diabetes_type_2_uncontrolled': '2',
+                }
+            for event_type in event_type_suffix_map:
+                suffix = event_type_suffix_map[event_type]
+                events = pat_events.filter(event_type=event_type).order_by('-date')
                 for item in [0, 1]:
-                    val_str = 'recent_icd9_250.x' + suffix + '_' + str(item + 1)
+                    val_str = event_type + 'recent_%s' % str(item)
                     try:
-                        this_enc = encs[item]
-                        icd9_code = this_enc.icd9_codes.filter(icd9_q_obj)[0]
+                        this_enc = events[item].tag_set.all()[item] # Get first or second most recent encounter
+                        icd9_code = this_enc.icd9_codes.filter(code__startswith='250.', code__endswith=suffix)[0]
                         values['%s_value' % val_str] = icd9_code.code
                         values['%s_text' % val_str] = icd9_code.name
                         values['%s_date' % val_str] = this_enc.date
@@ -330,7 +334,7 @@ class Command(BaseCommand):
                         values['%s_text' % val_str] = None
                         values['%s_date' % val_str] = None
             try:
-                values['recent_icd9_648.8_date'] = pat_encs.filter(icd9_codes__code='648.8').order_by('-date')[0].date
+                values['recent_icd9_648.8_date'] = pat_events.filter(event_type='dx--gestational_diabetes')
             except IndexError:
                 values['recent_icd9_648.8_date'] = None
             for drug in [

@@ -1524,34 +1524,42 @@ Icd9Query.objects.get_or_create(
     icd9_starts_with = '250.',
     )
 
-diabetes_type_1_dx = DiagnosisHeuristic.objects.get_or_create(
-    name = 'diabetes_type_1'
+diabetes_type_1_ns_dx = DiagnosisHeuristic.objects.get_or_create(
+    name = 'diabetes_type_1_not_stated'
     )[0]
 
 Icd9Query.objects.get_or_create(
-    heuristic = diabetes_type_1_dx,
+    heuristic = diabetes_type_1_ns_dx,
     icd9_starts_with = '250.',
     icd9_ends_with = '1',
     )
 
+diabetes_type_1_uncont_dx = DiagnosisHeuristic.objects.get_or_create(
+    name = 'diabetes_type_1_uncontrolled'
+    )[0]
+
 Icd9Query.objects.get_or_create(
-    heuristic = diabetes_type_1_dx,
+    heuristic = diabetes_type_1_uncont_dx,
     icd9_starts_with = '250.',
     icd9_ends_with = '3',
     )
 
-diabetes_type_2_dx = DiagnosisHeuristic.objects.get_or_create(
-    name = 'diabetes_type_2'
+diabetes_type_2_ns_dx = DiagnosisHeuristic.objects.get_or_create(
+    name = 'diabetes_type_2_not_stated'
     )[0]
 
 Icd9Query.objects.get_or_create(
-    heuristic = diabetes_type_2_dx,
+    heuristic = diabetes_type_2_ns_dx,
     icd9_starts_with = '250.',
     icd9_ends_with = '0',
     )
 
+diabetes_type_2_uncont_dx = DiagnosisHeuristic.objects.get_or_create(
+    name = 'diabetes_type_2_uncontrolled'
+    )[0]
+
 Icd9Query.objects.get_or_create(
-    heuristic = diabetes_type_2_dx,
+    heuristic = diabetes_type_2_uncont_dx,
     icd9_starts_with = '250.',
     icd9_ends_with = '2',
     )
