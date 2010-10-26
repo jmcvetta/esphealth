@@ -8,6 +8,8 @@ glucose_fasting = AbstractLabTest.objects.get(name='glucose_fasting')
 gad65 = AbstractLabTest.objects.get(name='gad65')
 ica512 = AbstractLabTest.objects.get(name='ica512')
 islet_cell_antibody = AbstractLabTest.objects.get(name='islet_cell_antibody')
+c_peptide = AbstractLabTest.objects.get(name='c_peptide')
+insulin_ab = AbstractLabTest.objects.get(name='insulin_antibody')
 
 for c in [
     '80061--258',
@@ -115,4 +117,39 @@ LabTestMap.objects.get_or_create(
     code_match_type = 'exact',
     record_type = 'both',
     threshold = 1.25,
+    )
+
+#
+# C-Peptide
+#
+LabTestMap.objects.get_or_create(
+    test = c_peptide,
+    native_code = '84681--1245',
+    code_match_type = 'exact',
+    record_type = 'both',
+    )
+LabTestMap.objects.get_or_create(
+    test = c_peptide,
+    native_code = '84681--5497',
+    code_match_type = 'exact',
+    record_type = 'both',
+    )
+
+
+#
+# Insulin AB
+#
+LabTestMap.objects.get_or_create(
+    test = insulin_ab,
+    native_code = '86337--2491',
+    code_match_type = 'exact',
+    record_type = 'both',
+    threshold = 0.4,
+    )
+LabTestMap.objects.get_or_create(
+    test = insulin_ab,
+    native_code = 'N1892--1655',
+    code_match_type = 'exact',
+    record_type = 'both',
+    threshold = 0.8,
     )

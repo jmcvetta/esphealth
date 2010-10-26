@@ -1506,7 +1506,7 @@ pertussis_rx = PrescriptionHeuristic.objects.get_or_create(
 
 #-------------------------------------------------------------------------------
 #
-# Diabetes
+#--- Diabetes Drugs
 #
 #-------------------------------------------------------------------------------
 
@@ -1580,10 +1580,27 @@ PrescriptionHeuristic.objects.get_or_create(
     drugs =  'metformin',
     )
 
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'glucagon',
+    drugs =  'glucagon',
+    )
+
+PrescriptionHeuristic.objects.get_or_create(
+    name = 'acetone',
+    drugs =  'acetone',
+    )
+
+
+#-------------------------------------------------------------------------------
+#
+#--- Diabetes Diagnoses
+#
+#-------------------------------------------------------------------------------
+
 diabetes_dx = DiagnosisHeuristic.objects.get_or_create(
     name = 'diabetes_all_types',
     )[0]
-
+    
 Icd9Query.objects.get_or_create(
     heuristic = diabetes_dx,
     icd9_starts_with = '250.',
@@ -1632,7 +1649,7 @@ Icd9Query.objects.get_or_create(
 
 #-------------------------------------------------------------------------------
 #
-# Diabetes Auto-Antibody Tests
+#--- Diabetes Lab Tests
 #
 #-------------------------------------------------------------------------------
 
@@ -1647,6 +1664,7 @@ LabResultPositiveHeuristic.objects.get_or_create(
     test = gad65,
     )
 
+
 ica512 = AbstractLabTest.objects.get_or_create(
     name = 'ica512',
     defaults = {
@@ -1658,6 +1676,7 @@ LabResultPositiveHeuristic.objects.get_or_create(
     test = ica512,
     )
 
+
 ic_ab_screen = AbstractLabTest.objects.get_or_create(
     name = 'islet_cell_antibody',
     defaults = {
@@ -1668,4 +1687,33 @@ ic_ab_screen = AbstractLabTest.objects.get_or_create(
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ic_ab_screen,
     titer = 4, # 1:4 titer
+    )
+
+
+insulin_ab = AbstractLabTest.objects.get_or_create(
+    name = 'insulin_antibody',
+    defaults = {
+        'verbose_name': 'Insulin Antibody',
+        },
+    )[0]
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = insulin_ab,
+    )
+
+
+c_peptide = AbstractLabTest.objects.get_or_create(
+    name = 'c_peptide',
+    defaults = {
+        'verbose_name': 'C-Peptide',
+        },
+    )[0]
+
+LabResultAnyHeuristic.objects.get_or_create(
+    test = c_peptide,
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = c_peptide,
+    threshold = 1,
     )

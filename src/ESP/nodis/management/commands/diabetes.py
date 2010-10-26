@@ -52,7 +52,7 @@ class Command(BaseCommand):
     # Condition names for diabetes of both types
     diabetes_conditions = ['diabetes_type_1', 'diabetes_type_2', 'diabetes_unknown_type']
     
-    diabetes_rx_events = [
+    oral_hypoglycaemics = [
         'rx--pramlintide',
         'rx--exenatide',
         'rx--sitagliptin',
@@ -63,6 +63,9 @@ class Command(BaseCommand):
         'rx--glipizide',
         'rx--gliclazide',
         'rx--glyburide',
+        'rx--metformin',
+        'rx--rosiglitizone',
+        'rx--pioglitazone',
         ]
     
     auto_antibodies_labs = [
@@ -104,7 +107,7 @@ class Command(BaseCommand):
             'lx--a1c--threshold--6.5',
             'lx--glucose_fasting--threshold--126.0',
             'rx--insulin',
-            ] + self.diabetes_rx_events
+            ] + self.oral_hypoglycaemics
         # If a patient has two or more of these events, he has frank diabetes
         frank_dm_twice_reqs = [
             'dx--diabetes_all_types',
@@ -172,7 +175,6 @@ class Command(BaseCommand):
             new_case.save()
             new_case.events = events | trigger_events
             new_case.save()
-            log.info('Generated new case: %s' % new_case)
         log.info('%8s new cases of type 1 diabetes' % type_1_counter)
         log.info('%8s new cases of type 2 diabetes' % type_2_counter)
         log.info('%8s patients who matched general frank diabetes criteria, but not criteria for type 1 or 2' % unknown_counter)
@@ -187,47 +189,43 @@ class Command(BaseCommand):
         @return: (condition, case_date, provider, events)
         '''
         patient_events = Event.objects.filter(patient=patient)
+        #===============================================================================
         #
         # Patient ever prescribed insulin?
         #
+        #-------------------------------------------------------------------------------
         insulin_rx = patient_events.filter(event_type='rx--insulin')
         if not insulin_rx:
             provider = trigger_events[0].provider
             return ('diabetes_type_2', trigger_date, provider, trigger_events)
-        #
-        # Insulin within the first year following trigger date for frank diabetes?
-        #
-        first_year_end = trigger_date + relativedelta(days=365)
-        insulin_first_year = insulin_rx.filter(date__gte=trigger_date, date__lte=first_year_end)
-        if not insulin_first_year:
-            provider = trigger_events[0].provider
-            return ('diabetes_type_2', trigger_date, provider, trigger_events)
-        #
-        # Patient ever prescribed any oral hypoglycaemics (all those on the 
-        # frank diabetes list + metformin, rosiglitizone, pioglitazone)
-        #
-        oral_hypoglycaemics = self.diabetes_rx_events + [
-            'rx--metformin',
-            'rx--rosiglitizone',
-            'rx--pioglitazone',
-            ]
-        oral_hypoglycaemic_rx = patient_events.filter(event_type__in=oral_hypoglycaemics)
-        if oral_hypoglycaemic_rx:
-            provider = trigger_events[0].provider
-            events = trigger_events | oral_hypoglycaemic_rx
-            return ('diabetes_type_2', trigger_date, provider, events)
+        
+        #===============================================================================
         #
         # C-peptide test done?
         #
-        # TODO: this section needs implementation
+        #-------------------------------------------------------------------------------
+        c_peptide_lx_thresh = patient_events.filter(event_type='lx--c_peptide--threshold--1.0').order_by('date')
+        c_peptide_lx_any = patient_events.filter(event_type='lx--c_peptide--any_result').order_by('date')
+        if c_peptide_lx_thresh:
+            provider = c_peptide_lx_thresh[0].provider
+            case_date = c_peptide_lx_thresh[0].date
+            case_events = trigger_events | c_peptide_lx_thresh
+            return ('diabetes_type_2', case_date, provider, case_events)
+        if c_peptide_lx_any: # Test was done, but result is below threshold
+            provider = c_peptide_lx_any[0].provider
+            case_date = c_peptide_lx_any[0].date
+            case_events = trigger_events | c_peptide_lx_any
+            return ('diabetes_type_1', case_date, provider, case_events)
         
+        #===============================================================================
         #
-        # Diabetes auto-anDiabetes auto-antibodies test done?
+        # Diabetes auto-antibodies test done?
         #
+        #-------------------------------------------------------------------------------
         pos_aa_event_types = ['%s--positive' % i for i in self.auto_antibodies_labs]
         neg_aa_event_types = ['%s--negative' % i for i in self.auto_antibodies_labs]
-        aa_pos = patient_events.filter(event_type__in=pos_aa_event_types)
-        aa_neg = patient_events.filter(event_type__in=neg_aa_event_types)
+        aa_pos = patient_events.filter(event_type__in=pos_aa_event_types).order_by('date')
+        aa_neg = patient_events.filter(event_type__in=neg_aa_event_types).order_by('date')
         if aa_pos:
             provider = aa_pos[0].provider
             case_date = aa_pos[0].date
@@ -239,18 +237,64 @@ class Command(BaseCommand):
             events = trigger_events | aa_neg
             return ('diabetes_type_2', case_date, provider, events)
         
+        #===============================================================================
         #
-        # Triglycerides > 200 or BMI >30
+        # Prescription for URINE ACETONE TEST STRIPS? (search on keyword: ACETONE)
         #
-        # TODO: Implement this!
+        #-------------------------------------------------------------------------------
+        acetone_rx = patient_events.filter(event_type='rx--acetone').order_by('date')
+        if acetone_rx:
+            provider = acetone_rx[0].provider
+            case_date = acetone_rx[0].date
+            case_events = trigger_events | acetone_rx
+            return ('diabetes_type_1', case_date, provider, case_events)
+            
+        #===============================================================================
+        #
+        # Prescription for GLUCAGON?
+        #
+        #-------------------------------------------------------------------------------
+        glucagon_rx = patient_events.filter(event_type='rx--glucagon').order_by('date')
+        if glucagon_rx:
+            provider = glucagon_rx[0].provider
+            case_date = glucagon_rx[0].date
+            case_events = trigger_events | glucagon_rx
+            return ('diabetes_type_1', case_date, provider, case_events)
         
+        #===============================================================================
         #
-        # None of the conditions above applies, so unknown type
+        # Patient ever prescribed any oral hypoglycaemics?
         #
-        provider = trigger_events[0].provider
-        return ('diabetes_unknown_type', trigger_date, provider, trigger_events)
-            
-            
+        #-------------------------------------------------------------------------------
+        oral_hypoglycaemic_rx = patient_events.filter(event_type__in=self.oral_hypoglycaemics).order_by('date')
+        if oral_hypoglycaemic_rx:
+            provider = oral_hypoglycaemic_rx[0].provider
+            case_date = oral_hypoglycaemic_rx[0].date
+            case_events = trigger_events | oral_hypoglycaemic_rx
+            return ('diabetes_type_2', trigger_date, provider, case_events)
+        
+        #===============================================================================
+        #
+        # >50% OF ICD9s in record for type 1?
+        #
+        #-------------------------------------------------------------------------------
+        type_1_dx = patient_events.filter(event_type__name__startswith='diabetes_type_1')
+        type_2_dx = patient_events.filter(event_type__name__startswith='diabetes_type_2')
+        count_1 = type_1_dx.count()
+        count_2 = type_2_dx.count()
+        if not (count_1 or count_2):
+            provider = trigger_events[0].provider
+            return ('diabetes_unknown_type', trigger_date, provider, trigger_events)
+        if (count_1 and not count_2) or ( ( count_1 / count_2 ) > 0.5 ):
+            provider = trigger_events[0].provider
+            case_date = trigger_events[0].date
+            case_events = trigger_events | type_1_dx
+            return ('diabetes_type_1', trigger_date, provider, case_events)
+        else:
+            provider = trigger_events[0].provider
+            case_date = trigger_events[0].date
+            case_events = trigger_events | type_2_dx
+            return ('diabetes_type_2', trigger_date, provider, case_events)
     
     
     def linelist(self):
