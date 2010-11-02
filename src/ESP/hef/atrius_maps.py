@@ -189,10 +189,12 @@ for code in [
     'DMA019--799',
     ]:
     obj, created = LabTestMap.objects.get_or_create(
-	    test = cholesterol_hdl,
-	    native_code = code,
-	    code_match_type = 'exact',
-	    record_type = 'both',
+        test = cholesterol_hdl,
+        native_code = code,
+        defaults = {
+            'code_match_type': 'exact',
+            'record_type': 'both',
+            }
         )
     if created:
         print 'Added new map: %s' % obj
@@ -234,10 +236,12 @@ for code in [
     'N1985--63',
     ]:
     obj, created = LabTestMap.objects.get_or_create(
-	    test = cholesterol_ldl,
-	    native_code = code,
-	    code_match_type = 'exact',
-	    record_type = 'both',
+        test = cholesterol_ldl,
+        native_code = code,
+        defaults = {
+            'code_match_type': 'exact',
+            'record_type': 'both',
+            }
         )
     if created:
         print 'Added new map: %s' % obj
@@ -270,10 +274,12 @@ for code in [
     '83715--4839',
     ]:
     obj, created = LabTestMap.objects.get_or_create(
-	    test = cholesterol_total,
-	    native_code = code,
-	    code_match_type = 'exact',
-	    record_type = 'both',
+        test = cholesterol_total,
+        native_code = code,
+        defaults = {
+            'code_match_type': 'exact',
+            'record_type': 'both',
+            }
         )
     if created:
         print 'Added new map: %s' % obj
@@ -308,10 +314,12 @@ for code in [
     '84478--4840',
     ]:
     obj, created = LabTestMap.objects.get_or_create(
-	    test = triglycerides,
-	    native_code = code,
-	    code_match_type = 'exact',
-	    record_type = 'both',
+        test = triglycerides,
+        native_code = code,
+        defaults = {
+            'code_match_type': 'exact',
+            'record_type': 'both',
+            }
         )
     if created:
         print 'Added new map: %s' % obj
@@ -346,10 +354,12 @@ for code in [
     '82947--286',
     ]:
     obj, created = LabTestMap.objects.get_or_create(
-	    test = alt,
-	    native_code = code,
-	    code_match_type = 'exact',
-	    record_type = 'both',
+        test = alt,
+        native_code = code,
+        defaults = {
+            'code_match_type': 'exact',
+            'record_type': 'both',
+            }
         )
     if created:
         print 'Added new map: %s' % obj
