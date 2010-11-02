@@ -14,6 +14,7 @@ import sys
 import csv
 import hashlib
 import datetime
+import pprint
 from dateutil.relativedelta import relativedelta
 
 from django.db.models import Q
@@ -327,8 +328,8 @@ class Command(BaseCommand):
             'pregnancy_edd--1',
             'pregnancy_edd--2',
             'pregnancy_edd--3',
-            'rx_ever--oral_hypoglycemic_any'
-            'rx_ever--oral_hypoglycemic_non_metformin'
+            'rx_ever--oral_hypoglycemic_any',
+            'rx_ever--oral_hypoglycemic_non_metformin',
             ]
         RECENT_DX = [
             'dx--abnormal_glucose'
@@ -370,7 +371,7 @@ class Command(BaseCommand):
                 s = '%s--min--%s' % (test, year)
                 FIELDS.append(s)
         for event_type in TOTAL_OCCURENCES:
-            s = '%s--total_count'
+            s = '%s--total_count' % event_type
             FIELDS.append(s)
         for event_type in RECENT_DX:
             FIELDS.append('%s--code' % event_type)
@@ -389,7 +390,12 @@ class Command(BaseCommand):
         #
         # Generate Report
         #
-        for c in Case.objects.filter(condition__in=self.diabetes_conditions).order_by('date'):
+        case_qs = Case.objects.filter(condition__in=self.diabetes_conditions).order_by('date')
+        total_case_count = case_qs.count()
+        counter = 0
+        for c in case_qs:
+            counter += 1
+            log.info('Reporting on frank diabetes case %8s / %s' % (counter, total_case_count))
             p = c.patient
             pat_events = Event.objects.filter(patient=p)
             pat_rxs = Prescription.objects.filter(patient=p)
@@ -408,10 +414,13 @@ class Command(BaseCommand):
             # 
             # Most recent three pregnancy EDDs
             #
-            preg_timespans = Timespan.objects.filter(patient=p, name='pregnancy', pattern__in=('EDD', 'ICD9_EOP')).order_by('-date')
+            preg_timespans = Timespan.objects.filter(patient=p, name='pregnancy', pattern__in=('EDD', 'ICD9_EOP')).order_by('-end_date')
             log_query('Pregnancy timespans', preg_timespans)
             for i in range(0, 3):
-                ts = preg_timespans[i]
+                try:
+                    ts = preg_timespans[i]
+                except IndexError:
+                    break # No more timespans
                 s = 'pregnancy_edd--%s' % i + 1 # i counts by 0
                 values[s] = ts.end_date
             #
@@ -421,9 +430,9 @@ class Command(BaseCommand):
                 for year in YEARS:
                     event_type = 'lx--%s--any_result' % test
                     events = pat_events.filter(event_type=event_type, date__year=year)
-                    lab_qs = LabResult.objects.filter(tags__event__in=events).aggregate(max=Max('result_float'))
+                    lab_qs = LabResult.objects.filter(tags__event__in=events)
                     log_query('Yearly Max', lab_qs)
-                    max = lab_qs['max']
+                    max = lab_qs.aggregate(max=Max('result_float'))['max']
                     s = '%s--max--%s' % (test, year)
                     values[s] = max
             #
@@ -433,9 +442,9 @@ class Command(BaseCommand):
                 for year in YEARS:
                     event_type = 'lx--%s--any_result' % test
                     events = pat_events.filter(event_type=event_type, date__year=year)
-                    lab_qs = LabResult.objects.filter(tags__event__in=events).aggregate(min=Min('result_float'))
+                    lab_qs = LabResult.objects.filter(tags__event__in=events)
                     log_query('Yearly Min', lab_qs)
-                    min = lab_qs['min']
+                    min = lab_qs.aggregate(min=Min('result_float'))['min']
                     s = '%s--min--%s' % (test, year)
                     values[s] = min
             #
@@ -457,6 +466,8 @@ class Command(BaseCommand):
                 icd9_q = heuristic.icd9_q_obj
                 enc_qs = Encounter.objects.filter(tags__event__in=events).order_by('-date')
                 log_query('Recent Dx %s' % event_type, enc_qs)
+                if not enc_qs:
+                    continue # Nothing to see here
                 enc = enc_qs[0] # Most recent encounter
                 icd9_code = enc.icd9_codes.filter(icd9_q)[0] # First relevant ICD9 
                 values['%s--code' % event_type] = icd9_code.code
@@ -469,6 +480,8 @@ class Command(BaseCommand):
                 events = pat_events.filter(event_type=event_type)
                 rx_qs = Prescription.objects.filter(tags__event__in=events).order_by('-date')
                 log_query('Recent Rx %s' % event_type, rx_qs)
+                if not rx_qs:
+                    continue # Nothing to see here
                 rx = rx_qs[0] # Most recent prescription
                 values['%s--drug' % event_type] = rx.name
                 values['%s--date' % event_type] = rx.date
@@ -485,9 +498,25 @@ class Command(BaseCommand):
                     labs |= abs_test.lab_results
                 lab_qs = labs.filter(patient=p, date__lte=cutoff_date).order_by('-date')
                 log_query('Recent Lx %s' % field, lab_qs)
+                if not lab_qs:
+                    continue # Nothing to see here
                 lab = lab_qs[0] # Most recent
                 values[field] = lab.result_string
             #
+            # Rx Ever
+            #
+            oral_hyp = pat_events.filter(event_type__in=self.oral_hypoglycaemics)
+            non_met = oral_hyp.exclude(event_type='rx--metformin')
+            values['rx_ever--oral_hypoglycemic_any'] = bool(oral_hyp)
+            values['rx_ever--oral_hypoglycemic_non_metformin'] = bool(non_met)
+            #
             # Write CSV
             #
-            writer.writerow(values)
+            try:
+                writer.writerow(values)
+            except ValueError, e:
+                print '*' * 80
+                pprint.pprint(FIELDS)
+                print '*' * 80
+                pprint.pprint(values)
+                raise e
