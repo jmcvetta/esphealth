@@ -13,6 +13,7 @@ Diabetes Case Generator Hack
 import sys
 import csv
 import hashlib
+import datetime
 from dateutil.relativedelta import relativedelta
 
 from django.db.models import Q
@@ -31,11 +32,17 @@ from ESP.utils import log_query
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
+from ESP.emr.models import LabResult
 from ESP.hef.models import Event
+from ESP.hef.models import EventType
 from ESP.hef.models import AbstractLabTest
+from ESP.hef.models import Timespan
 from ESP.nodis.models import Pattern
 from ESP.nodis.models import Case
 
+
+
+FIRST_YEAR = 2006
 
 
 class Command(BaseCommand):
@@ -301,71 +308,87 @@ class Command(BaseCommand):
     
     
     def linelist(self):
-        FIELDS = [
+        #
+        # Define fields & header
+        #
+        DEMOGRAPHICS = [
             'case_id',
             'diabetes_type', 
             'case_date',
             'patient_id', 
             'mrn', 
-            'dob', 
+            'date_of_birth', 
+            'date_of_death', 
             'gender', 
             'race', 
-            'bmi', 
             'zip', 
-            'max_a1c_value', 
-            'max_a1c_date',
-            'max_glucose_fasting_value',
-            'max_glucose_fasting_date',
-            #'high_rand_glucose_1_value',
-            #'high_rand_glucose_1_date',
-            #'high_rand_glucose_2_value',
-            #'high_rand_glucose_2_date',
-            'dx--diabetes_type_1_not_stated--recent_1--value',
-            'dx--diabetes_type_1_not_stated--recent_1--text',
-            'dx--diabetes_type_1_not_stated--recent_1--date',
-            'dx--diabetes_type_1_not_stated--recent_2--value',
-            'dx--diabetes_type_1_not_stated--recent_2--text',
-            'dx--diabetes_type_1_not_stated--recent_2--date',
-            'dx--diabetes_type_2_not_stated--recent_1--value',
-            'dx--diabetes_type_2_not_stated--recent_1--text',
-            'dx--diabetes_type_2_not_stated--recent_1--date',
-            'dx--diabetes_type_2_not_stated--recent_2--value',
-            'dx--diabetes_type_2_not_stated--recent_2--text',
-            'dx--diabetes_type_2_not_stated--recent_2--date',
-            'dx--diabetes_type_1_uncontrolled--recent_1--value',
-            'dx--diabetes_type_1_uncontrolled--recent_1--text',
-            'dx--diabetes_type_1_uncontrolled--recent_1--date',
-            'dx--diabetes_type_1_uncontrolled--recent_2--value',
-            'dx--diabetes_type_1_uncontrolled--recent_2--text',
-            'dx--diabetes_type_1_uncontrolled--recent_2--date',
-            'dx--diabetes_type_2_uncontrolled--recent_1--value',
-            'dx--diabetes_type_2_uncontrolled--recent_1--text',
-            'dx--diabetes_type_2_uncontrolled--recent_1--date',
-            'dx--diabetes_type_2_uncontrolled--recent_2--value',
-            'dx--diabetes_type_2_uncontrolled--recent_2--text',
-            'dx--diabetes_type_2_uncontrolled--recent_2--date',
-            # These will always be the same
-            #'recent_icd9_648.8_value',
-            #'recent_icd9_648.8_text',
-            'recent_icd9_648.8_date',
-            'recent_insulin_date',
-            'recent_insulin_drug',
-            'recent_metformin_date',
-            'recent_metformin_drug',
-            'recent_acarbose_date',
-            'recent_acarbose_drug',
-            'recent_repaglinide_date',
-            'recent_repaglinide_drug',
-            'recent_nateglinide_date',
-            'recent_nateglinide_drug',
-            'recent_meglitinide_date',
-            'recent_meglitinide_drug',
-            'recent_miglitol_date',
-            'recent_miglitol_drug',
             ]
+        MISC = [
+            'pregnancy_edd--1',
+            'pregnancy_edd--2',
+            'pregnancy_edd--3',
+            'rx_ever--oral_hypoglycemic_any'
+            'rx_ever--oral_hypoglycemic_non_metformin'
+            ]
+        RECENT_DX = [
+            'dx--abnormal_glucose'
+            ]
+        RECENT_RX = [
+            'rx--metformin',
+            'rx--insulin',
+            ]
+        RECENT_LX = [
+            ('dm_antibodies', ['gad65', 'ica512', 'islet_cell_antibody', 'insulin_antibody']),
+            ('c_peptide', ['c_peptide',]),
+            ]
+        YEARLY_MAX = [
+            'a1c',
+            'glucose_fasting',
+            'cholesterol_total',
+            'cholesterol_hdl',
+            'cholesterol_ldl',
+            'triglycerides',
+            ]
+        YEARLY_MIN = [
+            'cholesterol_hdl',
+            ]
+        TOTAL_OCCURENCES = [
+            'dx--diabetes_all_types',
+            'dx--diabetes_type_1_not_stated',
+            'dx--diabetes_type_1_uncontrolled',
+            'dx--diabetes_type_2_not_stated',
+            'dx--diabetes_type_2_uncontrolled',
+            ]
+        YEARS = range(FIRST_YEAR, datetime.datetime.now().year + 1)
+        FIELDS = list(DEMOGRAPHICS)
+        for test in YEARLY_MAX:
+            for year in YEARS:
+                s = '%s--max--%s' % (test, year)
+                FIELDS.append(s)
+        for test in YEARLY_MIN:
+            for year in YEARS:
+                s = '%s--min--%s' % (test, year)
+                FIELDS.append(s)
+        for event_type in TOTAL_OCCURENCES:
+            s = '%s--total_count'
+            FIELDS.append(s)
+        for event_type in RECENT_DX:
+            FIELDS.append('%s--code' % event_type)
+            FIELDS.append('%s--text' % event_type)
+            FIELDS.append('%s--date' % event_type)
+        for event_type in RECENT_RX:
+            FIELDS.append('%s--drug' % event_type)
+            FIELDS.append('%s--date' % event_type)
+        for tup in RECENT_LX:
+            FIELDS.append(tup[0])
+        FIELDS.extend(MISC)
+        #
         header = dict(zip(FIELDS, FIELDS)) 
         writer = csv.DictWriter(sys.stdout, fieldnames=FIELDS)
         writer.writerow(header)
+        #
+        # Generate Report
+        #
         for c in Case.objects.filter(condition__in=self.diabetes_conditions).order_by('date'):
             p = c.patient
             pat_events = Event.objects.filter(patient=p)
@@ -376,68 +399,95 @@ class Command(BaseCommand):
                 'case_date': c.date,
                 'patient_id': p.pk,
                 'mrn': p.mrn, 
-                'dob': p.date_of_birth, 
+                'date_of_birth': p.date_of_birth, 
+                'date_of_death': p.date_of_death, 
                 'gender': p.gender, 
                 'race': p.race, 
-                'bmi': p.bmi(c.date), 
                 'zip': p.zip, 
                 }
-            for name in ['a1c', 'glucose_fasting']:
-                alt = AbstractLabTest.objects.get(name=name)
-                pat_labs = alt.lab_results.filter(patient=p)
-                if pat_labs:
-                    max_result = pat_labs.order_by('-result_float')[0]
-                    values['max_%s_value' % name] = max_result.result_float
-                    values['max_%s_date' % name] = max_result.date
-                else:
-                    values['max_%s_value' % name] = None
-                    values['max_%s_date' % name] = None
-            event_type_suffix_map = {
-                'diabetes_type_1_not_stated': '1',
-                'diabetes_type_1_uncontrolled': '3',
-                'diabetes_type_2_not_stated': '0',
-                'diabetes_type_2_uncontrolled': '2',
-                }
-            for event_type in event_type_suffix_map:
-                suffix = event_type_suffix_map[event_type]
-                events = pat_events.filter(event_type=event_type).order_by('-date')
-                for item in [0, 1]:
-                    val_str = event_type + 'recent_%s' % str(item)
-                    try:
-                        this_enc = events[item].tag_set.all()[item] # Get first or second most recent encounter
-                        icd9_code = this_enc.icd9_codes.filter(code__startswith='250.', code__endswith=suffix)[0]
-                        values['%s_value' % val_str] = icd9_code.code
-                        values['%s_text' % val_str] = icd9_code.name
-                        values['%s_date' % val_str] = this_enc.date
-                    except:
-                        values['%s_value' % val_str] = None
-                        values['%s_text' % val_str] = None
-                        values['%s_date' % val_str] = None
-            try:
-                values['recent_icd9_648.8_date'] = pat_events.filter(event_type='dx--gestational_diabetes')
-            except IndexError:
-                values['recent_icd9_648.8_date'] = None
-            for drug in [
-                'insulin',
-                'metformin',
-                'acarbose',
-                'repaglinide',
-                'nateglinide',
-                'meglitinide',
-                'miglitol',
-                ]:
-                try:
-                    recent_rx = pat_rxs.filter(name__icontains=drug).order_by('-date')[0]
-                    values['recent_%s_date' % drug] = recent_rx.date
-                    values['recent_%s_drug' % drug] = recent_rx.name
-                except IndexError:
-                    values['recent_%s_date' % drug] = None
-                    values['recent_%s_drug' % drug] = None
-            # Coerce all values to ascii string
-            for key in values:
-                val = values[key]
-                if val:
-                    values[key] = smart_str(val)
-                else:
-                    values[key] = None
+            # 
+            # Most recent three pregnancy EDDs
+            #
+            preg_timespans = Timespan.objects.filter(patient=p, name='pregnancy', pattern__in=('EDD', 'ICD9_EOP')).order_by('-date')
+            log_query('Pregnancy timespans', preg_timespans)
+            for i in range(0, 3):
+                ts = preg_timespans[i]
+                s = 'pregnancy_edd--%s' % i + 1 # i counts by 0
+                values[s] = ts.end_date
+            #
+            # Max Yearly Lab Values
+            #
+            for test in YEARLY_MAX:
+                for year in YEARS:
+                    event_type = 'lx--%s--any_result' % test
+                    events = pat_events.filter(event_type=event_type, date__year=year)
+                    lab_qs = LabResult.objects.filter(tags__event__in=events).aggregate(max=Max('result_float'))
+                    log_query('Yearly Max', lab_qs)
+                    max = lab_qs['max']
+                    s = '%s--max--%s' % (test, year)
+                    values[s] = max
+            #
+            # Min Yearly Lab Values
+            #
+            for test in YEARLY_MIN:
+                for year in YEARS:
+                    event_type = 'lx--%s--any_result' % test
+                    events = pat_events.filter(event_type=event_type, date__year=year)
+                    lab_qs = LabResult.objects.filter(tags__event__in=events).aggregate(min=Min('result_float'))
+                    log_query('Yearly Min', lab_qs)
+                    min = lab_qs['min']
+                    s = '%s--min--%s' % (test, year)
+                    values[s] = min
+            #
+            # Total Occurrences
+            #
+            for event_type in TOTAL_OCCURENCES:
+                events = pat_events.filter(event_type=event_type)
+                log_query('Total Occurrences', events)
+                cnt = events.count()
+                s = '%s--total_count' % event_type
+                values[s] = cnt
+            #
+            # Most recent Dx
+            #
+            for event_type in RECENT_DX:
+                events = pat_events.filter(event_type=event_type)
+                log_query('Recent Dx', events)
+                heuristic = EventType.objects.get(name='dx--abnormal_glucose').heuristic.diagnosisheuristic
+                icd9_q = heuristic.icd9_q_obj
+                enc_qs = Encounter.objects.filter(tags__event__in=events).order_by('-date')
+                log_query('Recent Dx %s' % event_type, enc_qs)
+                enc = enc_qs[0] # Most recent encounter
+                icd9_code = enc.icd9_codes.filter(icd9_q)[0] # First relevant ICD9 
+                values['%s--code' % event_type] = icd9_code.code
+                values['%s--text' % event_type] = icd9_code.name
+                values['%s--date' % event_type] = enc.date
+            #
+            # Most recent Rx
+            #
+            for event_type in RECENT_RX:
+                events = pat_events.filter(event_type=event_type)
+                rx_qs = Prescription.objects.filter(tags__event__in=events).order_by('-date')
+                log_query('Recent Rx %s' % event_type, rx_qs)
+                rx = rx_qs[0] # Most recent prescription
+                values['%s--drug' % event_type] = rx.name
+                values['%s--date' % event_type] = rx.date
+            #
+            # Recent Lx
+            #
+            for tup in RECENT_LX:
+                field = tup[0]
+                lab_names = tup[1]
+                cutoff_date = c.date + relativedelta(days=365)
+                labs = LabResult.objects.none()
+                for name in lab_names:
+                    abs_test = AbstractLabTest.objects.get(name=name)
+                    labs |= abs_test.lab_results
+                lab_qs = labs.filter(patient=p, date__lte=cutoff_date).order_by('-date')
+                log_query('Recent Lx %s' % field, lab_qs)
+                lab = lab_qs[0] # Most recent
+                values[field] = lab.result_string
+            #
+            # Write CSV
+            #
             writer.writerow(values)
