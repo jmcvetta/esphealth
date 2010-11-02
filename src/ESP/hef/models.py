@@ -26,6 +26,7 @@ from ESP.utils import log_query
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
 from ESP.emr.models import Encounter
+from ESP.emr.models import Icd9
 from ESP.emr.models import LabResult
 from ESP.emr.models import LabOrder
 from ESP.emr.models import Prescription
@@ -980,7 +981,23 @@ class DiagnosisHeuristic(Heuristic):
             )
         if created:
             log.debug('Added %s for %s' % (obj, self))
+    
+    def __get_encounters(self):
+        encs = Encounter.objects.none()
+        for icd9_query in self.icd9query_set.all():
+            encs |= icd9_query.encounters
+        log_query('Encounters for %s' % self, encs)
+        return encs
+    encounters = property(__get_encounters)
+    
+    def __get_icd9_q_obj(self):
+        q_obj = Icd9.objects.none()
+        for icd9_query in self.icd9query_set.all():
+            q_obj |= Icd9.objects.filter(icd9_query.icd9_q_obj)
+        return q_obj
+    icd9_q_obj = property(__get_icd9_q_obj)
             
+    
     def generate_events(self):
         unbound = Encounter.objects.exclude(tags__event__event_type__heuristic=self)
         q_obj = Q(pk__isnull=True)
@@ -1023,7 +1040,7 @@ class Icd9Query(models.Model):
     icd9_contains = models.CharField(max_length=128, blank=True, null=True,
         help_text='Encounter must include an ICD9 code containing this string')
     
-    def __get_q_obj(self):
+    def __get_icd9_q_obj(self):
         '''
         Returns a Q object suitable for selecting Encounter objects that match this ICD9 query
         '''
@@ -1032,15 +1049,20 @@ class Icd9Query(models.Model):
             return 0
         q_obj = Q() # Null Q object (is there a less ugly way to do this?)
         if self.icd9_exact:
-            q_obj &= Q(icd9_codes__code__iexact=self.icd9_exact)
+            q_obj &= Q(code__iexact=self.icd9_exact)
         if self.icd9_starts_with:
-            q_obj &= Q(icd9_codes__code__istartswith=self.icd9_starts_with)
+            q_obj &= Q(code__istartswith=self.icd9_starts_with)
         if self.icd9_ends_with:
-            q_obj &= Q(icd9_codes__code__iendswith=self.icd9_ends_with)
+            q_obj &= Q(code__iendswith=self.icd9_ends_with)
         if self.icd9_contains:
-            q_obj &= Q(icd9_codes__code__icontains=self.icd9_contains)
+            q_obj &= Q(code__icontains=self.icd9_contains)
         return q_obj
-    q_obj = property(__get_q_obj)
+    icd9_q_obj = property(__get_icd9_q_obj)
+    
+    def __get_encounters(self):
+        codes = Icd9.objects.filter(self.icd9_q_obj)
+        return Encounter.objects.filter(icd9_codes__in=codes)
+    encounters = property(__get_encounters)
 
     class Meta:
         verbose_name = 'ICD9 Query'
