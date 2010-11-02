@@ -538,7 +538,7 @@ ogtt75_multi_intrapartum = MultipleEventPattern(
     require_timespan = ['pregnancy']
     )
 
-ogtt75_multi = MultipleEventPattern(
+ogtt75_multi_postpartum = MultipleEventPattern(
     events = [
         'lx--ogtt75_fasting--threshold--126.0',
         'lx--ogtt75_30min--threshold--200.0',
@@ -547,7 +547,7 @@ ogtt75_multi = MultipleEventPattern(
         'lx--ogtt75_2hr--threshold--200.0',
         ],
     count = 2,
-    require_timespan = ['pregnancy']
+    require_timespan = ['postpartum']
     )
 
 gdm_ogtt75 = ComplexEventPattern(

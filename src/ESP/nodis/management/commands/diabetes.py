@@ -282,10 +282,13 @@ class Command(BaseCommand):
         type_2_dx = patient_events.filter(event_type__name__startswith='diabetes_type_2')
         count_1 = type_1_dx.count()
         count_2 = type_2_dx.count()
-        if not (count_1 or count_2):
+        # Is there a less convoluted way to express this and still avoid divide-by-zero errors?
+        if (count_1 and not count_2):
             provider = trigger_events[0].provider
-            return ('diabetes_unknown_type', trigger_date, provider, trigger_events)
-        if (count_1 and not count_2) or ( ( count_1 / count_2 ) > 0.5 ):
+            case_date = trigger_events[0].date
+            case_events = trigger_events | type_1_dx
+            return ('diabetes_type_1', trigger_date, provider, case_events)
+        elif count_2 and ( ( count_1 / count_2 ) > 0.5 ):
             provider = trigger_events[0].provider
             case_date = trigger_events[0].date
             case_events = trigger_events | type_1_dx
