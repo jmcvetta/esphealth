@@ -1646,6 +1646,15 @@ Icd9Query.objects.get_or_create(
     icd9_ends_with = '2',
     )
 
+abnormal_glucose_dx = DiagnosisHeuristic.objects.get_or_create(
+    name = 'abnormal_glucose',
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = abnormal_glucose_dx,
+    icd9_starts_with = '648.8',
+    )
+
 
 #-------------------------------------------------------------------------------
 #
@@ -1717,3 +1726,67 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = c_peptide,
     threshold = 1,
     )
+
+cholesterol_hdl = AbstractLabTest.objects.get_or_create(
+    name = 'cholesterol_hdl',
+    defaults = {
+        'verbose_name': 'High Density Lipoprotein cholesterol',
+        },
+    )[0]
+
+LabResultAnyHeuristic.objects.get_or_create(
+    test = cholesterol_hdl,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = cholesterol_hdl,
+    )
+
+
+cholesterol_ldl = AbstractLabTest.objects.get_or_create(
+    name = 'cholesterol_ldl',
+    defaults = {
+        'verbose_name': 'Low Density Lipoprotein cholesterol',
+        },
+    )[0]
+
+LabResultAnyHeuristic.objects.get_or_create(
+    test = cholesterol_ldl,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = cholesterol_ldl,
+    )
+
+
+cholesterol_total = AbstractLabTest.objects.get_or_create(
+    name = 'cholesterol_total',
+    defaults = {
+        'verbose_name': 'Total Cholesterol',
+        },
+    )[0]
+
+LabResultAnyHeuristic.objects.get_or_create(
+    test = cholesterol_total,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = cholesterol_total,
+    )
+
+
+triglycerides = AbstractLabTest.objects.get_or_create(
+    name = 'triglycerides',
+    defaults = {
+        'verbose_name': 'Triglycerides',
+        },
+    )[0]
+
+LabResultAnyHeuristic.objects.get_or_create(
+    test = triglycerides,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = triglycerides,
+    )
+
