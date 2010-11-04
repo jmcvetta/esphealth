@@ -23,6 +23,7 @@ from django.db.models import Sum
 from django.db.models import Count
 from django.db.models import Max
 from django.db.models import Min
+from django.db.models import Avg
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 from django.utils.encoding import smart_str, smart_unicode
@@ -56,6 +57,9 @@ class Command(BaseCommand):
         make_option('--linelist', action='store_true', dest='linelist',  default=False,
             help='Produce diabetes patient line list report'),
         )
+    
+    # Cache field for more efficient linelist reporting
+    PATIENT_FIELD_VALUES = {} # {patient_pk: {field_name: value}}
     
     # Condition names for diabetes of both types
     diabetes_conditions = ['diabetes_type_1', 'diabetes_type_2', 'diabetes_unknown_type']
@@ -307,8 +311,18 @@ class Command(BaseCommand):
             case_events = trigger_events | type_2_dx
             return ('diabetes_type_2', trigger_date, provider, case_events)
     
+    def vqs_to_pfv(self, vqs, field):
+        '''
+        Adds a ValuesQuerySet, which must include both 'patient' and 'value' 
+        fields, to PATIENT_FIELD_VALUES 
+        '''
+        for item in vqs:
+            pat = item['patient']
+            val = item['value']
+            self.PATIENT_FIELD_VALUES[pat][field] = val
     
     def linelist(self):
+        log.info('Generating patient line list report for diabetes')
         #
         # Define fields & header
         #
@@ -362,17 +376,50 @@ class Command(BaseCommand):
             ]
         YEARS = range(FIRST_YEAR, datetime.datetime.now().year + 1)
         FIELDS = list(DEMOGRAPHICS)
+        case_qs = Case.objects.filter(condition__in=self.diabetes_conditions).order_by('-id')
+        patients_vqs = case_qs.values('patient')
+        # Populate self.PATIENT_FIELD_VALUES with all patients
+        for pk in case_qs.values_list('patient', flat=True):
+            self.PATIENT_FIELD_VALUES[pk] = {}
+        for year in YEARS:
+            diastolic_field = 'bp_diastolic--%s' % year
+            systolic_field = 'bp_systolic--%s' % year
+            FIELDS.append(diastolic_field)
+            FIELDS.append(systolic_field)
+            qs = Encounter.objects.filter(patient__in=patients_vqs)
+            qs = qs.filter(date__year=year)
+            vqs = qs.values('patient').annotate(bp_diastolic=Avg('bp_diastolic'), bp_systolic=Avg('bp_systolic'))
+            log.info('Querying aggregate data for %s and %s' % (systolic_field, diastolic_field))
+            log_query('average blood pressure %s' % year, vqs)
+            for item in vqs:
+                field_values = self.PATIENT_FIELD_VALUES[item['patient']]
+                field_values[diastolic_field] = item['bp_diastolic']
+                field_values[systolic_field] = item['bp_systolic']
         for test in YEARLY_MAX:
             for year in YEARS:
-                s = '%s--max--%s' % (test, year)
-                FIELDS.append(s)
+                field = '%s--max--%s' % (test, year)
+                FIELDS.append(field)
+                abs_test = AbstractLabTest.objects.get(name=test)
+                vqs = abs_test.lab_results.filter(patient__in=patients_vqs, date__year=year).values('patient').annotate(value=Max('result_float'))
+                log.info('Querying aggregate data for %s' % field)
+                log_query(field, vqs)
+                self.vqs_to_pfv(vqs, field)
         for test in YEARLY_MIN:
             for year in YEARS:
-                s = '%s--min--%s' % (test, year)
-                FIELDS.append(s)
+                field = '%s--min--%s' % (test, year)
+                FIELDS.append(field)
+                abs_test = AbstractLabTest.objects.get(name=test)
+                vqs = abs_test.lab_results.filter(patient__in=patients_vqs, date__year=year).values('patient').annotate(value=Min('result_float'))
+                log.info('Querying aggregate data for %s' % field)
+                log_query(field, vqs)
+                self.vqs_to_pfv(vqs, field)
         for event_type in TOTAL_OCCURENCES:
-            s = '%s--total_count' % event_type
-            FIELDS.append(s)
+            field = '%s--total_count' % event_type
+            FIELDS.append(field)
+            vqs = Event.objects.filter(patient__in=patients_vqs, event_type=event_type).values('patient').annotate(value=Count('id'))
+            log.info('Querying aggregate data for %s' % field)
+            log_query(field, vqs)
+            self.vqs_to_pfv(vqs, field)
         for event_type in RECENT_DX:
             FIELDS.append('%s--code' % event_type)
             FIELDS.append('%s--text' % event_type)
@@ -382,6 +429,26 @@ class Command(BaseCommand):
             FIELDS.append('%s--date' % event_type)
         for tup in RECENT_LX:
             FIELDS.append(tup[0])
+            field = tup[0]
+            lab_names = tup[1]
+            abs_test_qs = AbstractLabTest.objects.filter(name__in=lab_names)
+            lab_qs = abs_test_qs[0].lab_results
+            for abs_test in abs_test_qs[1:]:
+                lab_qs |= abs_test.lab_results
+            lab_qs = lab_qs.filter(patient__in=patients_vqs)
+            lab_qs = lab_qs.filter(date__lte=F('patient__case__date'))
+            lab_qs = lab_qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
+            vqs = lab_qs.values('patient', 'result_string')
+            log_query(field, vqs)
+            last_patient = None
+            for item in vqs:
+                patient_pk = item['patient']
+                result = item['result_string']
+                if patient_pk == last_patient:
+                    continue
+                field_values = self.PATIENT_FIELD_VALUES[patient_pk]
+                field_values[field] = result
+
         FIELDS.extend(MISC)
         #
         header = dict(zip(FIELDS, FIELDS)) 
@@ -390,7 +457,6 @@ class Command(BaseCommand):
         #
         # Generate Report
         #
-        case_qs = Case.objects.filter(condition__in=self.diabetes_conditions).order_by('id')
         total_case_count = case_qs.count()
         counter = 0
         report_start_time = datetime.datetime.now()
@@ -407,7 +473,7 @@ class Command(BaseCommand):
             p = c.patient
             pat_events = Event.objects.filter(patient=p)
             pat_rxs = Prescription.objects.filter(patient=p)
-            values = {
+            case_values = {
                 'case_id': c.pk,
                 'diabetes_type': c.condition, 
                 'case_date': c.date,
@@ -419,6 +485,10 @@ class Command(BaseCommand):
                 'race': p.race, 
                 'zip': p.zip, 
                 }
+            if p.pk in self.PATIENT_FIELD_VALUES:
+                field_values = self.PATIENT_FIELD_VALUES[p.pk]
+            else:
+                field_values = {}
             # 
             # Most recent three pregnancy EDDs
             #
@@ -430,40 +500,13 @@ class Command(BaseCommand):
                 except IndexError:
                     break # No more timespans
                 s = 'pregnancy_edd--%s' % (i + 1) # i counts by 0
-                values[s] = ts.end_date
+                case_values[s] = ts.end_date
             #
-            # Max Yearly Lab Values
+            # Populate everything we can get from patient_values
             #
-            for test in YEARLY_MAX:
-                for year in YEARS:
-                    event_type = 'lx--%s--any_result' % test
-                    events = pat_events.filter(event_type=event_type, date__year=year)
-                    lab_qs = LabResult.objects.filter(tags__event__in=events)
-                    log_query('Yearly Max', lab_qs)
-                    max = lab_qs.aggregate(max=Max('result_float'))['max']
-                    s = '%s--max--%s' % (test, year)
-                    values[s] = max
-            #
-            # Min Yearly Lab Values
-            #
-            for test in YEARLY_MIN:
-                for year in YEARS:
-                    event_type = 'lx--%s--any_result' % test
-                    events = pat_events.filter(event_type=event_type, date__year=year)
-                    lab_qs = LabResult.objects.filter(tags__event__in=events)
-                    log_query('Yearly Min', lab_qs)
-                    min = lab_qs.aggregate(min=Min('result_float'))['min']
-                    s = '%s--min--%s' % (test, year)
-                    values[s] = min
-            #
-            # Total Occurrences
-            #
-            for event_type in TOTAL_OCCURENCES:
-                events = pat_events.filter(event_type=event_type)
-                log_query('Total Occurrences', events)
-                cnt = events.count()
-                s = '%s--total_count' % event_type
-                values[s] = cnt
+            for field in FIELDS:
+                if field in field_values:
+                    case_values[field] = field_values[field]
             #
             # Most recent Dx
             #
@@ -486,9 +529,9 @@ class Command(BaseCommand):
                     print >> sys.stderr, event_type
                     print >> sys.stderr, c
                     raise e
-                values['%s--code' % event_type] = icd9_code.code
-                values['%s--text' % event_type] = icd9_code.name
-                values['%s--date' % event_type] = enc.date
+                case_values['%s--code' % event_type] = icd9_code.code
+                case_values['%s--text' % event_type] = icd9_code.name
+                case_values['%s--date' % event_type] = enc.date
             #
             # Most recent Rx
             #
@@ -499,45 +542,28 @@ class Command(BaseCommand):
                 if not rx_qs:
                     continue # Nothing to see here
                 rx = rx_qs[0] # Most recent prescription
-                values['%s--drug' % event_type] = rx.name
-                values['%s--date' % event_type] = rx.date
-            #
-            # Recent Lx
-            #
-            for tup in RECENT_LX:
-                field = tup[0]
-                lab_names = tup[1]
-                cutoff_date = c.date + relativedelta(days=365)
-                labs = LabResult.objects.none()
-                for name in lab_names:
-                    abs_test = AbstractLabTest.objects.get(name=name)
-                    labs |= abs_test.lab_results
-                lab_qs = labs.filter(patient=p, date__lte=cutoff_date).order_by('-date')
-                log_query('Recent Lx %s' % field, lab_qs)
-                if not lab_qs:
-                    continue # Nothing to see here
-                lab = lab_qs[0] # Most recent
-                values[field] = lab.result_string
+                case_values['%s--drug' % event_type] = rx.name
+                case_values['%s--date' % event_type] = rx.date
             #
             # Rx Ever
             #
             oral_hyp = pat_events.filter(event_type__in=self.oral_hypoglycaemics)
             non_met = oral_hyp.exclude(event_type='rx--metformin')
-            values['rx_ever--oral_hypoglycemic_any'] = bool(oral_hyp)
-            values['rx_ever--oral_hypoglycemic_non_metformin'] = bool(non_met)
+            case_values['rx_ever--oral_hypoglycemic_any'] = bool(oral_hyp)
+            case_values['rx_ever--oral_hypoglycemic_non_metformin'] = bool(non_met)
             #
             # Sanitize strings
             #
-            for key in values:
-                values[key] = smart_str(values[key])
+            for key in case_values:
+                case_values[key] = smart_str(case_values[key])
             #
             # Write CSV
             #
             try:
-                writer.writerow(values)
+                writer.writerow(case_values)
             except ValueError, e:
                 print '*' * 80
                 pprint.pprint(FIELDS)
                 print '*' * 80
-                pprint.pprint(values)
+                pprint.pprint(case_values)
                 raise e
