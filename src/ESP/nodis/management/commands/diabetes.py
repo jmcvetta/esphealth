@@ -390,12 +390,20 @@ class Command(BaseCommand):
         #
         # Generate Report
         #
-        case_qs = Case.objects.filter(condition__in=self.diabetes_conditions).order_by('date')
+        case_qs = Case.objects.filter(condition__in=self.diabetes_conditions).order_by('id')
         total_case_count = case_qs.count()
         counter = 0
+        report_start_time = datetime.datetime.now()
         for c in case_qs:
             counter += 1
-            log.info('Reporting on frank diabetes case %8s / %s' % (counter, total_case_count))
+            delta = datetime.datetime.now() - report_start_time
+            rate = float(delta.seconds) / float(counter) # Seconds per case
+            remaining_cases = total_case_count - counter
+            estimated_seconds = remaining_cases * rate # How many seconds til report is done
+            estimated_string = str(datetime.timedelta(seconds=estimated_seconds)) 
+            rd = relativedelta(datetime.datetime.now(), report_start_time) # Supposedly relativedelta is more accurate
+            elapsed_string = '%02d:%02d:%02d' % (rd.hours, rd.minutes, rd.seconds)
+            log.info('Reporting on frank diabetes case %8s / %s (%s elapsed, %s remaining)' % (counter, total_case_count, elapsed_string, estimated_string))
             p = c.patient
             pat_events = Event.objects.filter(patient=p)
             pat_rxs = Prescription.objects.filter(patient=p)
@@ -421,7 +429,7 @@ class Command(BaseCommand):
                     ts = preg_timespans[i]
                 except IndexError:
                     break # No more timespans
-                s = 'pregnancy_edd--%s' % i + 1 # i counts by 0
+                s = 'pregnancy_edd--%s' % (i + 1) # i counts by 0
                 values[s] = ts.end_date
             #
             # Max Yearly Lab Values
@@ -469,7 +477,15 @@ class Command(BaseCommand):
                 if not enc_qs:
                     continue # Nothing to see here
                 enc = enc_qs[0] # Most recent encounter
-                icd9_code = enc.icd9_codes.filter(icd9_q)[0] # First relevant ICD9 
+                try:
+                    icd9_code = enc.icd9_codes.filter(icd9_q)[0] # First relevant ICD9 
+                except BaseException, e:
+                    print >> sys.stderr, icd9_q
+                    print >> sys.stderr, heuristic
+                    print >> sys.stderr, type(icd9_q)
+                    print >> sys.stderr, event_type
+                    print >> sys.stderr, c
+                    raise e
                 values['%s--code' % event_type] = icd9_code.code
                 values['%s--text' % event_type] = icd9_code.name
                 values['%s--date' % event_type] = enc.date
@@ -509,6 +525,11 @@ class Command(BaseCommand):
             non_met = oral_hyp.exclude(event_type='rx--metformin')
             values['rx_ever--oral_hypoglycemic_any'] = bool(oral_hyp)
             values['rx_ever--oral_hypoglycemic_non_metformin'] = bool(non_met)
+            #
+            # Sanitize strings
+            #
+            for key in values:
+                values[key] = smart_str(values[key])
             #
             # Write CSV
             #

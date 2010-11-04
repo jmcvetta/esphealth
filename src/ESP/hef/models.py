@@ -962,15 +962,15 @@ class DiagnosisHeuristic(Heuristic):
     name = models.SlugField(blank=False, unique=True)
     
     class Meta:
-        verbose_name = 'Heuristic - Encounter'
-        verbose_name_plural = 'Heuristic - Encounter'
+        verbose_name = 'Heuristic - Diagnosis'
+        verbose_name_plural = 'Heuristic - Diagnosis'
         ordering = ['name']
 
     def __unicode__(self):
         return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
-        return 'Heuristic - Encounter - %s' % self.name
+        return 'Heuristic - Diagnosis - %s' % self.name
     verbose_name = property(__get_verbose_name)
     
     def save(self, *args, **kwargs):
@@ -991,9 +991,9 @@ class DiagnosisHeuristic(Heuristic):
     encounters = property(__get_encounters)
     
     def __get_icd9_q_obj(self):
-        q_obj = Icd9.objects.none()
-        for icd9_query in self.icd9query_set.all():
-            q_obj |= Icd9.objects.filter(icd9_query.icd9_q_obj)
+        q_obj = self.icd9query_set.all()[0].icd9_q_obj
+        for icd9_query in self.icd9query_set.all()[1:]:
+            q_obj |= icd9_query.icd9_q_obj
         return q_obj
     icd9_q_obj = property(__get_icd9_q_obj)
             
@@ -1074,7 +1074,7 @@ class Icd9Query(models.Model):
         return u'%s' % self.verbose_name
     
     def __get_verbose_name(self):
-        return 'ICD9 Query: %s | %s | %s | %s | %s' % (self.heuristic, self.icd9_exact, self.icd9_starts_with, self.icd9_ends_with, self.icd9_contains),
+        return 'ICD9 Query: %s | %s | %s | %s | %s' % (self.heuristic.name, self.icd9_exact, self.icd9_starts_with, self.icd9_ends_with, self.icd9_contains),
     verbose_name = property(__get_verbose_name)
     
 
