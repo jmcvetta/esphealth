@@ -12,6 +12,8 @@ CREATE INDEX emr_labresult_ts_native_code_and_result_float ON emr_labresult (upd
 CREATE INDEX emr_labresult_ts_native_code_and_result_string ON emr_labresult (updated_timestamp, native_code, result_string);
 CREATE INDEX emr_labresult_ts_code_high_float ON emr_labresult (updated_timestamp, native_code, ref_high_float, result_float);
 CREATE INDEX emr_labresult_native_code_native_name ON emr_labresult (native_code, native_name);
+-- Optimization for diabetes linelist report
+CREATE INDEX emr_labresult_native_code_date_patient ON emr_labresult (native_code, date, patient_id);
 CREATE INDEX emr_encounter_patient_date ON emr_encounter (patient_id, date);
 CREATE INDEX emr_encounter_patient_edc ON emr_encounter (patient_id, edc);
 CREATE INDEX emr_encounter_patient_date_edc ON emr_encounter (patient_id, date, edc);
