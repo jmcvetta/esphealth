@@ -1,0 +1,35 @@
+
+{% extends "espbase.html" %}
+
+{% block content %}
+
+<h2>Welcome to the <a href="http://www.phiconnect.org/">PHIConnect</a> ESP web interface</h2><p>
+<p>
+This is a demonstration of the ESP web application, which in production will only be accessible on a local private network. This 
+demonstration contains no real data - all the data here are synthetic and generally rather silly, but serve the purpose of 
+illustrating how the application works. Even this demonstration requires authentication with a userid/password. These are available
+from Ross. You will be challenged for these if you select any of the case viewing or administrative options. Once logged in, 
+an authorized user can examine all the currently known "cases", each of which has a "workflow state". 
+<p>
+A "case" is a patient identified by one of the sets of criteria. The workflow states go from "awaiting review" through to "approved for 
+sending". If you think a case does not really match, you can flag it as "false positive - do not send" - we should regularly review all of 
+these with our State colleagues to figure out how to improve our rules. Alternatively you can move it into a holding state - "under review" 
+while you contact the PCP for more information or wait for a test result to come in. When all is satisfactory, move it to "approved for 
+sending" and the system will send it off to the health department. The record will hang around as "sent" but after 90 days, all the relevant 
+clinical data will disappear - that raises an interesting problem for reviewing false positives - perhaps we should see if we can renegotiate 
+to keep data on those cases until it's reviewed.
+<p>
+We don't have any real data here of course, so it's all done with silly test data. One important thing I need to figure out is whether to 
+show *everything* known about each case, or just the items which met the criteria - I'd far prefer to show everything (all encounters/labs/rx in 
+the past 90 days) because I think it's more flexible (and it's a lot less programming!) Unfortunately, without real data, I have no idea 
+whether that's going to be overload? The other aspect I need advice on is whether the cases should be assigned to a specific reviewer or 
+whether this will generally be managed by only one person?
+<p>
+<a href="{{MEDIA_URL}}/images/ESPMay2006Talk.ppt">Here's a powerpoint presentation</a> which helps outline the context of this application
+<p>
+<h1>Use the navigation table on the left to select all cases, or the subset of cases in each workflow state</h1>
+<p>
+
+
+{% endblock%}
+

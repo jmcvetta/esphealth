@@ -1,0 +1,124 @@
+<h3>
+    Lab Results
+</h3>
+
+<table id="all_lab_results">
+    <tr>
+        <th>DB ID #</th>
+        <th>Order Date</th>
+        <th>Result Date</th>
+        <th>Test Code (native)</th>
+        <th>Test Name (native)</th>
+        <th>Test Results</th>
+        <th>Abnormal Flag</th>
+        <th>Normal Range</th>
+        <th>OrderID</th>
+        <th>Clinician</th>
+        <th>Comment</th>
+    </tr>
+    {% for lab in lab_results %}
+    <tr>
+        <td>{{ lab.pk }}</td>
+        <td>{{ lab.date }}</td>
+        <td>{{ lab.result_date }}</td>
+        <td>{{ lab.native_code }}</td>
+        <td>{{ lab.native_name }}</td>
+        <td>{{ lab.result_string }}</td>
+        <td>{{ lab.abnormal_flag|default:"-" }} </td>
+        <td>{{ lab.ref_low_string|default:"" }}  -  {{ lab.ref_high_string|default:"" }}</td>
+        <td>{{ lab.order_num }}</td>
+        <td>
+            <a href="{% url provider_detail lab.provider.pk %}">
+                {{ lab.provider.name }}
+            </a>
+        </td>
+        <td>
+            {{ lab.comment }}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h3>
+    Physician Encounters
+</h3>
+
+<table id="all_encounters">
+    <tr>
+        <th>DB ID #</th>
+        <th>Date</th>
+        <th>ICD9 Codes</td>
+        <th>Site</td>
+        <th>Pregnancy</th>
+        <th>Temperature</th>
+        <th>Clinician</th>
+    </tr>
+    {% for enc in encounters %}
+    <tr>
+        <td>{{ enc.pk }}</td>
+        <td>{{ enc.date }} </td>
+        <td>
+            {% for i in enc.icd9_codes.all %}
+                {{ i.code }} {{ i.name }}
+                {% if not forloop.last %}
+                <br>
+                {% endif %}
+            {% empty %}
+                -
+            {% endfor %}
+        </td>
+        <td>{{ enc.site_name }}</td>
+        <td>
+            {{ enc.pregnancy_status }}
+            {% if enc.pregnancy_status  %}
+            <hr>
+            EDC: {{enc.edc}}
+            {% endif %}
+        </td>
+        <td>{{ enc.temperature }}</td>
+        <td>
+            <a href="{% url provider_detail enc.provider.pk %}">
+            {{enc.provider.name}}
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h3>
+    Prescriptions
+</h3>
+
+<table id="all_prescriptions">
+    <tr>
+        <th>DB ID #</th>
+        <th>Date</th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Route</th>
+        <th>Dose</th>
+        <th>Frequency</th>
+        <th>Quantity</th>
+        <th>NDC</th>
+        <th>Clinician</th>
+    </tr>
+    {% for rx in prescriptions %}
+    <tr>
+        <td>{{ rx.pk }}</td>
+        <td>{{ rx.date }}</td>
+        <td>{{ rx.name }}</td>
+        <td>{{ rx.directions }}</td>
+        <td>{{ rx.route }}</td>
+        <td>{{ rx.dose }}</td>
+        <td>{{ rx.frequency }}
+        <td>{{ rx.quantity }}</td>
+        <td>{{rx.code}}</td>
+        <td>
+            <a href="{% url provider_detail rx.provider.pk %}">
+                {{ rx.provider.name }}
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+

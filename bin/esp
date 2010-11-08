@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+PYTHON='' # Optional path to your Python interpreter
+_script_path=$(readlink -f $0)
+_bin_dir=$(dirname $_script_path)
+ESP_HOME=$(dirname $_bin_dir)
+
+if [ -z "$PYTHON" ]; then
+    PYTHON=`which python`
+fi
+
+$PYTHON $ESP_HOME/src/ESP/manage.py $@
+
