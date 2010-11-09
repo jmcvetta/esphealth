@@ -1333,11 +1333,15 @@ class Condition(object):
         '''
         log.debug('Finding plausible patients for %s' % self.name)
         plausible = None # Plausible patients for all patterns combined
+        if self.recur_after == -1:
+            exclude_condition = self.name
+        else:
+            exclude_condition = None
         for pattern in self.patterns:
             if not plausible:
-                plausible = pattern.plausible_patients(exclude_condition=self.name)
+                plausible = pattern.plausible_patients(exclude_condition=exclude_condition)
             else:
-                plausible = plausible | pattern.plausible_patients(exclude_condition=self.name)
+                plausible = plausible | pattern.plausible_patients(exclude_condition=exclude_condition)
         # 
         # HACK: Finding plausible patient PKs first, then filtering Patient by 
         # pk in a separate step, makes django produce efficient queries on 
