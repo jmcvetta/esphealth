@@ -1,6 +1,7 @@
 '''
                                   ESP Health
-Diabetes Case Generator Hack
+                         Notifiable Diseases Framework
+                            Diabetes Case Generator
 
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
@@ -58,13 +59,10 @@ class Command(BaseCommand):
             help='Produce diabetes patient line list report'),
         )
     
-    # Cache field for more efficient linelist reporting
-    PATIENT_FIELD_VALUES = {} # {patient_pk: {field_name: value}}
-    
     # Condition names for diabetes of both types
-    diabetes_conditions = ['diabetes_type_1', 'diabetes_type_2', 'diabetes_unknown_type']
+    DIABETES_CONDITIONS = ['diabetes_type_1', 'diabetes_type_2', 'diabetes_unknown_type']
     
-    oral_hypoglycaemics = [
+    ORAL_HYPOGLYCAEMICS = [
         'rx--pramlintide',
         'rx--exenatide',
         'rx--sitagliptin',
@@ -80,25 +78,25 @@ class Command(BaseCommand):
         'rx--pioglitazone',
         ]
     
-    auto_antibodies_labs = [
+    AUTO_ANTIBODIES_LABS = [
         'lx--ica512',
         'lx--gad65',
         'lx--islet_cell_antibody',
         ]
     
-    pattern_type_1 = Pattern.objects.get_or_create(
+    PATTERN_TYPE_1 = Pattern.objects.get_or_create(
         name = 'Frank DM Type 1 iterative code',
         pattern = 'Frank DM Type 1 iterative code',
         hash = hashlib.sha224('Frank DM Type 1 iterative code').hexdigest(),
         )[0]
     
-    pattern_type_2 = Pattern.objects.get_or_create(
+    PATTERN_TYPE_2 = Pattern.objects.get_or_create(
         name = 'Frank DM Type 2 iterative code',
         pattern = 'Frank DM Type 2 iterative code',
         hash = hashlib.sha224('Frank DM Type 2 iterative code').hexdigest(),
         )[0]
     
-    pattern_type_unknown = Pattern.objects.get_or_create(
+    PATTERN_TYPE_UNKNOWN = Pattern.objects.get_or_create(
         name = 'Frank DM Unknown Type iterative code',
         pattern = 'Frank DM Unknown Type iterative code',
         hash = hashlib.sha224('Frank DM Unknown Type iterative code').hexdigest(),
@@ -119,7 +117,7 @@ class Command(BaseCommand):
             'lx--a1c--threshold--6.5',
             'lx--glucose_fasting--threshold--126.0',
             'rx--insulin',
-            ] + self.oral_hypoglycaemics
+            ] + self.ORAL_HYPOGLYCAEMICS
         # If a patient has two or more of these events, he has frank diabetes
         frank_dm_twice_reqs = [
             'dx--diabetes_all_types',
@@ -129,7 +127,7 @@ class Command(BaseCommand):
         # Find trigger dates for patients who have frank DM of either type, but no existing case
         # 
         frank_dm = {}
-        qs = Event.objects.filter(event_type__in=frank_dm_once_reqs).exclude(patient__case__condition__in=self.diabetes_conditions)
+        qs = Event.objects.filter(event_type__in=frank_dm_once_reqs).exclude(patient__case__condition__in=self.DIABETES_CONDITIONS)
         log_query('Frank DM once', qs)
         for i in qs.values('patient').annotate(trigger_date=Min('date')):
             pat = i['patient']
@@ -139,7 +137,7 @@ class Command(BaseCommand):
             frank_dm[pat] = date_events
         for event_type in frank_dm_twice_reqs:
             qs = Event.objects.filter(event_type=event_type).values('patient')
-            qs = qs.exclude(patient__case__condition__in=self.diabetes_conditions)
+            qs = qs.exclude(patient__case__condition__in=self.DIABETES_CONDITIONS)
             qs = qs.annotate(count=Count('pk'))
             patient_pks = qs.filter(count__gte=2).values_list('patient', flat=True).distinct().order_by('-patient')
             log_query('Patient PKs for %s twice' % event_type, patient_pks)
@@ -167,13 +165,13 @@ class Command(BaseCommand):
             trigger_date, trigger_events = frank_dm[pat_pk]
             condition, case_date, provider, events = self.determine_dm_type(patient, trigger_date, trigger_events)
             if condition == 'diabetes_type_1':
-                pattern = self.pattern_type_1
+                pattern = self.PATTERN_TYPE_1
                 type_1_counter += 1
             elif condition == 'diabetes_type_2':
-                pattern = self.pattern_type_2
+                pattern = self.PATTERN_TYPE_2
                 type_2_counter += 1
             elif condition == 'diabetes_unknown_type':
-                pattern = self.pattern_type_unknown
+                pattern = self.PATTERN_TYPE_UNKNOWN
                 unknown_counter += 1
             else:
                 raise RuntimeError('WTF - invalid diabetes type')
@@ -234,8 +232,8 @@ class Command(BaseCommand):
         # Diabetes auto-antibodies test done?
         #
         #-------------------------------------------------------------------------------
-        pos_aa_event_types = ['%s--positive' % i for i in self.auto_antibodies_labs]
-        neg_aa_event_types = ['%s--negative' % i for i in self.auto_antibodies_labs]
+        pos_aa_event_types = ['%s--positive' % i for i in self.AUTO_ANTIBODIES_LABS]
+        neg_aa_event_types = ['%s--negative' % i for i in self.AUTO_ANTIBODIES_LABS]
         aa_pos = patient_events.filter(event_type__in=pos_aa_event_types).order_by('date')
         aa_neg = patient_events.filter(event_type__in=neg_aa_event_types).order_by('date')
         if aa_pos:
@@ -278,7 +276,7 @@ class Command(BaseCommand):
         # Patient ever prescribed any oral hypoglycaemics?
         #
         #-------------------------------------------------------------------------------
-        oral_hypoglycaemic_rx = patient_events.filter(event_type__in=self.oral_hypoglycaemics).order_by('date')
+        oral_hypoglycaemic_rx = patient_events.filter(event_type__in=self.ORAL_HYPOGLYCAEMICS).order_by('date')
         if oral_hypoglycaemic_rx:
             provider = oral_hypoglycaemic_rx[0].provider
             case_date = oral_hypoglycaemic_rx[0].date
@@ -311,24 +309,233 @@ class Command(BaseCommand):
             case_events = trigger_events | type_2_dx
             return ('diabetes_type_2', trigger_date, provider, case_events)
     
-    def vqs_to_pfv(self, vqs, field):
+    def __vqs_to_pfv(self, vqs, field):
         '''
         Adds a ValuesQuerySet, which must include both 'patient' and 'value' 
-        fields, to PATIENT_FIELD_VALUES 
+        fields, to patient_field_values 
         '''
         for item in vqs:
             pat = item['patient']
             val = item['value']
-            self.PATIENT_FIELD_VALUES[pat][field] = val
+            self.patient_field_values[pat][field] = val
+    
+    def __recent_rx(self):
+        event_type_list = [
+            'rx--metformin',
+            'rx--insulin',
+            ]
+        for event_type in event_type_list:
+            field_drug = '%s--drug' % event_type
+            field_date = '%s--date' % event_type
+            self.FIELDS.append(field_drug)
+            self.FIELDS.append(field_date)
+            qs = Prescription.objects.filter(tags__event__event_type=event_type)
+            qs = qs.filter(patient__in=self.patient_qs)
+            qs = qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
+            log.info('Collecting data for %s' % event_type)
+            log_query('Recent Rx %s' % event_type, qs)
+            last_patient = None
+            for rx in qs:
+                if rx.patient == last_patient:
+                    continue
+                self.patient_field_values[rx.patient.pk][field_drug] = rx.name
+                self.patient_field_values[rx.patient.pk][field_date] = rx.date
+                last_patient = rx.patient
+    
+    def __recent_dx(self):
+        event_type_list = [
+            'dx--abnormal_glucose'
+            ]
+        for event_type in event_type_list:
+            field_code = '%s--code' % event_type
+            field_text = '%s--text' % event_type
+            field_date = '%s--date' % event_type
+            self.FIELDS.append(field_code)
+            self.FIELDS.append(field_date)
+            self.FIELDS.append(field_text)
+            #log_query('Recent Dx', events)
+            heuristic = EventType.objects.get(name=event_type).heuristic.diagnosisheuristic
+            icd9_q = heuristic.icd9_q_obj
+            qs = Encounter.objects.filter(tags__event__event_type=event_type)
+            qs = qs.filter(patient__in=self.patient_qs)
+            qs = qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
+            log_query('Recent Dx %s' % event_type, qs)
+            log.info('Collecting data for %s' % event_type)
+            last_patient = None
+            for enc in qs:
+                if enc.patient == last_patient:
+                    continue
+                field_values = self.patient_field_values[enc.patient.pk]
+                icd9_obj = enc.icd9_codes.filter(icd9_q)[0]
+                field_values[field_code] = icd9_obj.code
+                field_values[field_text] = icd9_obj.name
+                field_values[field_date] = enc.date
+                last_patient = enc.patient
+    
+    def __blood_pressure(self):
+        '''
+        Collect data on yearly average systolic and disastolic blood pressure 
+        '''
+        for year in self.YEARS:
+            diastolic_field = 'bp_diastolic--%s' % year
+            systolic_field = 'bp_systolic--%s' % year
+            self.FIELDS.append(diastolic_field)
+            self.FIELDS.append(systolic_field)
+            qs = Encounter.objects.filter(patient__in=self.patient_qs)
+            qs = qs.filter(date__year=year)
+            vqs = qs.values('patient').annotate(bp_diastolic=Avg('bp_diastolic'), bp_systolic=Avg('bp_systolic'))
+            log.info('Collecting aggregate data for %s and %s' % (systolic_field, diastolic_field))
+            log_query('average blood pressure %s' % year, vqs)
+            for item in vqs:
+                field_values = self.patient_field_values[item['patient']]
+                field_values[diastolic_field] = item['bp_diastolic']
+                field_values[systolic_field] = item['bp_systolic']
+                
+    def __recent_lx(self):
+        '''
+        Collect data on most recent result from test groups
+        '''
+        lx_tuple_list = [
+            ('dm_antibodies', ['gad65', 'ica512', 'islet_cell_antibody', 'insulin_antibody']),
+            ('c_peptide', ['c_peptide',]),
+            ]
+    
+        for tup in lx_tuple_list:
+            self.FIELDS.append(tup[0])
+            field = tup[0]
+            lab_names = tup[1]
+            abs_test_qs = AbstractLabTest.objects.filter(name__in=lab_names)
+            lab_qs = abs_test_qs[0].lab_results
+            for abs_test in abs_test_qs[1:]:
+                lab_qs |= abs_test.lab_results
+            lab_qs = lab_qs.filter(patient__in=self.patient_qs)
+            lab_qs = lab_qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
+            vqs = lab_qs.values('patient', 'result_string')
+            log_query(field, vqs)
+            last_patient = None
+            for item in vqs:
+                patient_pk = item['patient']
+                result = item['result_string']
+                if patient_pk == last_patient:
+                    continue
+                field_values = self.patient_field_values[patient_pk]
+                field_values[field] = result
+                last_patient = patient_pk
+
+    def __rx_ever(self):
+        self.FIELDS.append('__rx_ever--oral_hypoglycemic_any')
+        self.FIELDS.append('__rx_ever--oral_hypoglycemic_non_metformin')
+        rx_ever_events = Event.objects.filter(patient__in=self.patient_qs)
+        oral_hyp = rx_ever_events.filter(event_type__in=self.ORAL_HYPOGLYCAEMICS)
+        non_met = oral_hyp.exclude(event_type='rx--metformin')
+        oral_hyp_patients = oral_hyp.distinct('patient').values_list('patient', flat=True)
+        non_met_patients = non_met.distinct('patient').values_list('patient', flat=True)
+        for patient in self.patient_qs:
+            pat_pk = patient.pk
+            field_values = self.patient_field_values[pat_pk]
+            if pat_pk in oral_hyp_patients:
+                field_values['__rx_ever--oral_hypoglycemic_any'] = True
+            else:
+                field_values['__rx_ever--oral_hypoglycemic_any'] = False
+            if pat_pk in non_met_patients:
+                field_values['__rx_ever--oral_hypoglycemic_non_metformin'] = True
+            else:
+                field_values['__rx_ever--oral_hypoglycemic_non_metformin'] = False
+                
+    def __yearly_minimum(self):
+        test_list = [
+            'cholesterol_hdl',
+            ]
+        for test in test_list:
+            for year in self.YEARS:
+                field = '%s--min--%s' % (test, year)
+                self.FIELDS.append(field)
+                abs_test = AbstractLabTest.objects.get(name=test)
+                vqs = abs_test.lab_results.filter(patient__in=self.patient_qs, date__year=year).values('patient').annotate(value=Min('result_float'))
+                log.info('Collecting aggregate data for %s' % field)
+                log_query(field, vqs)
+                self.__vqs_to_pfv(vqs, field)
+    
+    
+    def __yearly_max(self):
+        test_list = [
+            'a1c',
+            'glucose_fasting',
+            'cholesterol_total',
+            'cholesterol_hdl',
+            'cholesterol_ldl',
+            'triglycerides',
+            ]
+        for test in test_list:
+            for year in self.YEARS:
+                field = '%s--max--%s' % (test, year)
+                self.FIELDS.append(field)
+                abs_test = AbstractLabTest.objects.get(name=test)
+                vqs = abs_test.lab_results.filter(patient__in=self.patient_qs, date__year=year).values('patient').annotate(value=Max('result_float'))
+                log.info('Collecting aggregate data for %s' % field)
+                log_query(field, vqs)
+                self.__vqs_to_pfv(vqs, field)
+                
+    def __total_occurrences(self):
+        event_type_list = [
+            'dx--diabetes_all_types',
+            'dx--diabetes_type_1_not_stated',
+            'dx--diabetes_type_1_uncontrolled',
+            'dx--diabetes_type_2_not_stated',
+            'dx--diabetes_type_2_uncontrolled',
+            ]
+        for event_type in event_type_list:
+            field = '%s--total_count' % event_type
+            self.FIELDS.append(field)
+            vqs = Event.objects.filter(patient__in=self.patient_qs, event_type=event_type).values('patient').annotate(value=Count('id'))
+            log.info('Collecting aggregate data for %s' % field)
+            log_query(field, vqs)
+            self.__vqs_to_pfv(vqs, field)
+    
+    def __recent_pregnancies(self):
+        self.FIELDS.append('pregnancy_edd--1')
+        self.FIELDS.append('pregnancy_edd--2')
+        self.FIELDS.append('pregnancy_edd--3')
+        last_patient = None
+        preg_timespan_qs = Timespan.objects.filter(name='pregnancy', pattern__in=('EDD', 'ICD9_EOP'))
+        preg_timespan_qs = preg_timespan_qs.filter(patient__in=self.patient_qs)
+        preg_timespan_qs = preg_timespan_qs.order_by('patient', '-end_date')
+        vqs = preg_timespan_qs.values('patient', 'end_date')
+        log.info('Collecting pregnancy data')
+        log_query('recent preg end dates', vqs)
+        recent_preg_end_dates = []
+        for item in vqs:
+            patient = item['patient']
+            if not patient == last_patient:
+                # On first item, there will be no last_patient 
+                if not last_patient:
+                    last_patient = patient
+                    continue
+                field_values = self.patient_field_values[patient]
+                for i in range(0, len(recent_preg_end_dates)):
+                    end_date = recent_preg_end_dates[i]
+                    ordinal = i + 1
+                    field_values['pregnancy_edd--%s' % ordinal] = end_date
+            if len(recent_preg_end_dates) < 3:
+                recent_preg_end_dates.append(item['end_date'])
+        
+    def __diabetes_case(self):
+        vqs = Case.objects.filter(condition__startswith='diabetes').values('patient', 'id', 'condition', 'date')
+        log_query('Diabetes cases', vqs)
+        log.info('Collecting diabetes case data')
+        for item in vqs:
+            field_values = self.patient_field_values[item['patient']]
+            field_values['case_id'] = item['id']
+            field_values['diabetes_type'] = item['condition']
+            field_values['case_date'] = item['date']
     
     def linelist(self):
-        log.info('Generating patient line list report for diabetes')
         #-------------------------------------------------------------------------------
         #
-        # Define fields & header
+        # Configuration
         #
         #-------------------------------------------------------------------------------
-        DEMOGRAPHICS = [
+        demographic_fields = [
             'case_id',
             'diabetes_type', 
             'case_date',
@@ -340,267 +547,79 @@ class Command(BaseCommand):
             'race', 
             'zip', 
             ]
-        MISC = [
-            'pregnancy_edd--1',
-            'pregnancy_edd--2',
-            'pregnancy_edd--3',
-            'rx_ever--oral_hypoglycemic_any',
-            'rx_ever--oral_hypoglycemic_non_metformin',
-            ]
-        RECENT_DX = [
-            'dx--abnormal_glucose'
-            ]
-        RECENT_RX = [
-            'rx--metformin',
-            'rx--insulin',
-            ]
-        RECENT_LX = [
-            ('dm_antibodies', ['gad65', 'ica512', 'islet_cell_antibody', 'insulin_antibody']),
-            ('c_peptide', ['c_peptide',]),
-            ]
-        YEARLY_MAX = [
-            'a1c',
-            'glucose_fasting',
-            'cholesterol_total',
-            'cholesterol_hdl',
-            'cholesterol_ldl',
-            'triglycerides',
-            ]
-        YEARLY_MIN = [
-            'cholesterol_hdl',
-            ]
-        TOTAL_OCCURENCES = [
+        # Any patient with at least one of these events is included in report
+        linelist_patient_criteria_once = [
             'dx--diabetes_all_types',
-            'dx--diabetes_type_1_not_stated',
-            'dx--diabetes_type_1_uncontrolled',
-            'dx--diabetes_type_2_not_stated',
-            'dx--diabetes_type_2_uncontrolled',
+            'rx--insulin',
+            'lx--a1c--threshold--6.5',
+            'lx--glucose_fasting--threshold--126.0',
+            ] + self.ORAL_HYPOGLYCAEMICS
+        # FIXME: Only item in this list should be 'random glucose >= 200', which is not yet implemented
+        linelist_patient_criteria_twice = [
             ]
-        YEARS = range(FIRST_YEAR, datetime.datetime.now().year + 1)
-        FIELDS = list(DEMOGRAPHICS)
-        FIELDS.extend(MISC)
-        case_qs = Case.objects.filter(condition__in=self.diabetes_conditions).order_by('-id')
-        #
-        # Populate self.PATIENT_FIELD_VALUES with all patients
-        #
-        for pk in case_qs.values_list('patient', flat=True):
-            self.PATIENT_FIELD_VALUES[pk] = {}
         #-------------------------------------------------------------------------------
         #
-        # Aggregate queries
+        # Report
         #
         #-------------------------------------------------------------------------------
-        patient_vqs = case_qs.values('patient').distinct()
+        log.info('Generating patient line list report for diabetes')
+        self.YEARS = range(FIRST_YEAR, datetime.datetime.now().year + 1)
+        self.FIELDS = list(demographic_fields)
         #
-        # Recent Rx
+        # Determine list of patients to be reported, and Populate self.patient_field_values 
+        # with all patient PKs.
         #
-        for event_type in RECENT_RX:
-            field_drug = '%s--drug' % event_type
-            field_date = '%s--date' % event_type
-            FIELDS.append(field_drug)
-            FIELDS.append(field_date)
-            qs = Prescription.objects.filter(tags__event__event_type=event_type)
-            #qs = qs.filter(patient__in=patient_vqs)
-            qs = qs.filter(patient__case__condition__startswith='diabetes', date__lte=F('patient__case__date'))
-            qs = qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
-            log.info('Querying aggregate data for %s' % event_type)
-            log_query('Recent Rx %s' % event_type, qs)
-            last_patient = None
-            for rx in qs:
-                if rx.patient == last_patient:
-                    continue
-                self.PATIENT_FIELD_VALUES[rx.patient.pk][field_drug] = rx.name
-                self.PATIENT_FIELD_VALUES[rx.patient.pk][field_date] = rx.date
-                last_patient = rx.patient
+        self.patient_qs = Patient.objects.filter(event__event_type__in=linelist_patient_criteria_once)
+        #self.patient_qs |= Patient.objects.filter(case__condition__in=self.DIABETES_CONDITIONS)
+        self.patient_qs = self.patient_qs.distinct()
+        log.info('Collecting list of patients for report')
+        log_query('Patients to report', self.patient_qs)
+        log.info('Reporting on %s patients' % self.patient_qs.count())
+        self.patient_field_values = {} # {patient_pk: {field_name: value}}
+        for pat_pk in self.patient_qs.values_list('id', flat=True):
+            self.patient_field_values[pat_pk] = {}
         #
-        # Recent Dx
+        # Collect data
         #
-        for event_type in RECENT_DX:
-            field_code = '%s--code' % event_type
-            field_text = '%s--text' % event_type
-            field_date = '%s--date' % event_type
-            FIELDS.append(field_code)
-            FIELDS.append(field_date)
-            FIELDS.append(field_text)
-            #log_query('Recent Dx', events)
-            heuristic = EventType.objects.get(name=event_type).heuristic.diagnosisheuristic
-            icd9_q = heuristic.icd9_q_obj
-            qs = Encounter.objects.filter(tags__event__event_type=event_type)
-            qs = qs.filter(patient__case__condition__startswith='diabetes', date__lte=F('patient__case__date'))
-            qs = qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
-            log_query('Recent Dx %s' % event_type, qs)
-            log.info('Querying aggregate data for %s' % event_type)
-            last_patient = None
-            for enc in qs:
-                if enc.patient == last_patient:
-                    continue
-                field_values = self.PATIENT_FIELD_VALUES[enc.patient.pk]
-                icd9_obj = enc.icd9_codes.filter(icd9_q)[0]
-                field_values[field_code] = icd9_obj.code
-                field_values[field_text] = icd9_obj.name
-                field_values[field_date] = enc.date
-                last_patient = enc.patient
-        #
-        # Blood Pressure
-        #
-        for year in YEARS:
-            diastolic_field = 'bp_diastolic--%s' % year
-            systolic_field = 'bp_systolic--%s' % year
-            FIELDS.append(diastolic_field)
-            FIELDS.append(systolic_field)
-            qs = Encounter.objects.filter(patient__in=patient_vqs)
-            qs = qs.filter(date__year=year)
-            vqs = qs.values('patient').annotate(bp_diastolic=Avg('bp_diastolic'), bp_systolic=Avg('bp_systolic'))
-            log.info('Querying aggregate data for %s and %s' % (systolic_field, diastolic_field))
-            log_query('average blood pressure %s' % year, vqs)
-            for item in vqs:
-                field_values = self.PATIENT_FIELD_VALUES[item['patient']]
-                field_values[diastolic_field] = item['bp_diastolic']
-                field_values[systolic_field] = item['bp_systolic']
-        #
-        # Yearly Maximum
-        #
-        for test in YEARLY_MAX:
-            for year in YEARS:
-                field = '%s--max--%s' % (test, year)
-                FIELDS.append(field)
-                abs_test = AbstractLabTest.objects.get(name=test)
-                vqs = abs_test.lab_results.filter(patient__in=patient_vqs, date__year=year).values('patient').annotate(value=Max('result_float'))
-                log.info('Querying aggregate data for %s' % field)
-                log_query(field, vqs)
-                self.vqs_to_pfv(vqs, field)
-        #
-        # Yearly Minimum
-        #
-        for test in YEARLY_MIN:
-            for year in YEARS:
-                field = '%s--min--%s' % (test, year)
-                FIELDS.append(field)
-                abs_test = AbstractLabTest.objects.get(name=test)
-                vqs = abs_test.lab_results.filter(patient__in=patient_vqs, date__year=year).values('patient').annotate(value=Min('result_float'))
-                log.info('Querying aggregate data for %s' % field)
-                log_query(field, vqs)
-                self.vqs_to_pfv(vqs, field)
-        #
-        # Total Occurences
-        #
-        for event_type in TOTAL_OCCURENCES:
-            field = '%s--total_count' % event_type
-            FIELDS.append(field)
-            vqs = Event.objects.filter(patient__in=patient_vqs, event_type=event_type).values('patient').annotate(value=Count('id'))
-            log.info('Querying aggregate data for %s' % field)
-            log_query(field, vqs)
-            self.vqs_to_pfv(vqs, field)
-        #
-        # Recent Lx
-        #
-        for tup in RECENT_LX:
-            FIELDS.append(tup[0])
-            field = tup[0]
-            lab_names = tup[1]
-            abs_test_qs = AbstractLabTest.objects.filter(name__in=lab_names)
-            lab_qs = abs_test_qs[0].lab_results
-            for abs_test in abs_test_qs[1:]:
-                lab_qs |= abs_test.lab_results
-            lab_qs = lab_qs.filter(patient__in=patient_vqs)
-            lab_qs = lab_qs.filter(date__lte=F('patient__case__date'))
-            lab_qs = lab_qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
-            vqs = lab_qs.values('patient', 'result_string')
-            log_query(field, vqs)
-            last_patient = None
-            for item in vqs:
-                patient_pk = item['patient']
-                result = item['result_string']
-                if patient_pk == last_patient:
-                    continue
-                field_values = self.PATIENT_FIELD_VALUES[patient_pk]
-                field_values[field] = result
-                last_patient = patient_pk
-
-        #
-        # Rx Ever
-        #
-        rx_ever_events = Event.objects.filter(patient__in=patient_vqs)
-        oral_hyp = rx_ever_events.filter(event_type__in=self.oral_hypoglycaemics)
-        non_met = oral_hyp.exclude(event_type='rx--metformin')
-        oral_hyp_patients = oral_hyp.distinct('patient').values_list('patient', flat=True)
-        non_met_patients = non_met.distinct('patient').values_list('patient', flat=True)
-        for item in patient_vqs:
-            pat_pk = item['patient']
-            field_values = self.PATIENT_FIELD_VALUES[pat_pk]
-            if pat_pk in oral_hyp_patients:
-                field_values['rx_ever--oral_hypoglycemic_any'] = True
-            else:
-                field_values['rx_ever--oral_hypoglycemic_any'] = False
-            if pat_pk in non_met_patients:
-                field_values['rx_ever--oral_hypoglycemic_non_metformin'] = True
-            else:
-                field_values['rx_ever--oral_hypoglycemic_non_metformin'] = False
+        self.__diabetes_case()
+        self.__recent_pregnancies()
+        self.__recent_rx()
+        self.__recent_dx()
+        self.__recent_lx()
+        self.__rx_ever()
+        self.__total_occurrences()
+        self.__yearly_max()
+        self.__yearly_minimum()
+        self.__blood_pressure()
         #
         # Write Header
         #
-        header = dict(zip(FIELDS, FIELDS)) 
-        writer = csv.DictWriter(sys.stdout, fieldnames=FIELDS)
+        header = dict(zip(self.FIELDS, self.FIELDS)) 
+        writer = csv.DictWriter(sys.stdout, fieldnames=self.FIELDS)
         writer.writerow(header)
         #
-        # Generate Report
+        # Compose Report
         #
-        total_case_count = case_qs.count()
+        total_line_count = self.patient_qs.count()
         counter = 0
-        report_start_time = datetime.datetime.now()
-        for c in case_qs:
+        for patient in self.patient_qs:
             counter += 1
-            delta = datetime.datetime.now() - report_start_time
-            rate = float(delta.seconds) / float(counter) # Seconds per case
-            remaining_cases = total_case_count - counter
-            estimated_seconds = remaining_cases * rate # How many seconds til report is done
-            estimated_string = str(datetime.timedelta(seconds=estimated_seconds)) 
-            rd = relativedelta(datetime.datetime.now(), report_start_time) # Supposedly relativedelta is more accurate
-            elapsed_string = '%02d:%02d:%02d' % (rd.hours, rd.minutes, rd.seconds)
-            log.info('Reporting on frank diabetes case %8s / %s (%s elapsed, %s remaining)' % (counter, total_case_count, elapsed_string, estimated_string))
-            p = c.patient
-            pat_events = Event.objects.filter(patient=p)
-            pat_rxs = Prescription.objects.filter(patient=p)
-            case_values = {
-                'case_id': c.pk,
-                'diabetes_type': c.condition, 
-                'case_date': c.date,
-                'patient_id': p.pk,
-                'mrn': p.mrn, 
-                'date_of_birth': p.date_of_birth, 
-                'date_of_death': p.date_of_death, 
-                'gender': p.gender, 
-                'race': p.race, 
-                'zip': p.zip, 
+            log.info('Reporting on patient %8s / %s' % (counter, total_line_count))
+            values = {
+                'patient_id': patient.pk,
+                'date_of_birth': patient.date_of_birth, 
+                'date_of_death': patient.date_of_death, 
+                'gender': patient.gender, 
+                'race': patient.race, 
+                'zip': patient.zip, 
                 }
-            if p.pk in self.PATIENT_FIELD_VALUES:
-                field_values = self.PATIENT_FIELD_VALUES[p.pk]
-            else:
-                field_values = {}
-            # 
-            # Most recent three pregnancy EDDs
-            #
-            preg_timespans = Timespan.objects.filter(patient=p, name='pregnancy', pattern__in=('EDD', 'ICD9_EOP')).order_by('-end_date')
-            log_query('Pregnancy timespans', preg_timespans)
-            for i in range(0, 3):
-                try:
-                    ts = preg_timespans[i]
-                except IndexError:
-                    break # No more timespans
-                s = 'pregnancy_edd--%s' % (i + 1) # i counts by 0
-                case_values[s] = ts.end_date
-            #
-            # Populate everything we can get from patient_values
-            #
-            for field in FIELDS:
-                if field in field_values:
-                    case_values[field] = field_values[field]
+            values.update(self.patient_field_values[patient.pk])
             #
             # Sanitize strings
             #
-            for key in case_values:
-                case_values[key] = smart_str(case_values[key])
+            for key in values:
+                values[key] = smart_str(values[key])
             #
             # Write CSV
             #
-            writer.writerow(case_values)
+            writer.writerow(values)
