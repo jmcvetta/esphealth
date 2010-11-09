@@ -30,9 +30,7 @@ DELIMITER = '\t' # MetroHealth
 #    ]
 FILE_FIELDS = [
     'mrn',
-    'request_num',
     'condition',
-    'result',
     'date',
     ]
 #MRN_TEMPLATE = '%s' # Atrius
