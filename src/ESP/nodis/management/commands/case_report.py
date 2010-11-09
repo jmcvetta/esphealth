@@ -1174,6 +1174,7 @@ class Command(BaseCommand):
                         if options.mark_sent:
                             for case in batch_cases:
                                 case.status = 'S'
+                                case.sent_timestamp = datetime.datetime.now()
                                 case.save()
                             log.debug("Set status to 'S' for this batch of cases")
                         report_obj.sent = True
