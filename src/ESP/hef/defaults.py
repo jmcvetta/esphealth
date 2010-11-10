@@ -953,6 +953,10 @@ LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt50_fasting,
     )
 
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ogtt50_fasting,
+    )
+
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt50_fasting,
     threshold = 95,
@@ -970,6 +974,10 @@ LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt50_random,
     )
 
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ogtt50_random,
+    )
+
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt50_random,
     threshold = 190,
@@ -984,6 +992,10 @@ ogtt50_1hr = AbstractLabTest.objects.get_or_create(
     )[0]
 
 LabResultAnyHeuristic.objects.get_or_create(
+    test = ogtt50_1hr,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt50_1hr,
     )
 
@@ -1025,6 +1037,10 @@ LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt75_fasting,
     )
 
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ogtt75_fasting,
+    )
+
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_fasting,
     threshold = 95,
@@ -1048,6 +1064,10 @@ LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt75_fasting_urine,
     )
 
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ogtt75_fasting_urine,
+    )
+
 LabOrderHeuristic.objects.get_or_create(
     test=ogtt75_fasting_urine,
     )
@@ -1065,6 +1085,10 @@ ogtt75_30min = AbstractLabTest.objects.get_or_create(
     )[0]
 
 LabResultAnyHeuristic.objects.get_or_create(
+    test = ogtt75_30min,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt75_30min,
     )
 
@@ -1086,6 +1110,10 @@ ogtt75_1hr = AbstractLabTest.objects.get_or_create(
     )[0]
 
 LabResultAnyHeuristic.objects.get_or_create(
+    test = ogtt75_1hr,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt75_1hr,
     )
 
@@ -1116,6 +1144,10 @@ LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt75_90min,
     )
 
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ogtt75_90min,
+    )
+
 LabOrderHeuristic.objects.get_or_create(
     test=ogtt75_90min,
     )
@@ -1140,6 +1172,10 @@ ogtt75_2hr = AbstractLabTest.objects.get_or_create(
     )[0]
 
 LabResultAnyHeuristic.objects.get_or_create(
+    test = ogtt75_2hr,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt75_2hr,
     )
 
@@ -1176,6 +1212,10 @@ LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt100_fasting,
     )
 
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ogtt100_fasting,
+    )
+
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_fasting,
     threshold = 95,
@@ -1195,6 +1235,10 @@ LabResultAnyHeuristic.objects.get_or_create(
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_fasting_urine,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ogtt100_fasting_urine,
     date_field = 'result'
     )
 
@@ -1206,6 +1250,10 @@ ogtt100_30min = AbstractLabTest.objects.get_or_create(
     )[0]
 
 LabResultAnyHeuristic.objects.get_or_create(
+    test = ogtt100_30min,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_30min,
     )
 
@@ -1226,6 +1274,10 @@ LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt100_1hr,
     )
 
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ogtt100_1hr,
+    )
+
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_1hr,
     threshold = 180,
@@ -1240,6 +1292,10 @@ ogtt100_90min = AbstractLabTest.objects.get_or_create(
     )[0]
 
 LabResultAnyHeuristic.objects.get_or_create(
+    test = ogtt100_90min,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_90min,
     )
 
@@ -1260,6 +1316,10 @@ LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt100_2hr,
     )
 
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ogtt100_2hr,
+    )
+
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_2hr,
     threshold = 155,
@@ -1274,6 +1334,10 @@ ogtt100_3hr = AbstractLabTest.objects.get_or_create(
     )[0]
 
 LabResultAnyHeuristic.objects.get_or_create(
+    test = ogtt100_3hr,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_3hr,
     )
 
@@ -1294,6 +1358,10 @@ LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt100_4hr,
     )
 
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = ogtt100_4hr,
+    )
+
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_4hr,
     threshold = 140,
@@ -1308,6 +1376,10 @@ ogtt100_5hr = AbstractLabTest.objects.get_or_create(
     )[0]
 
 LabResultAnyHeuristic.objects.get_or_create(
+    test = ogtt100_5hr,
+    )
+
+LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_5hr,
     )
 
