@@ -190,7 +190,7 @@ src/ESP/nodis/management/__init__.py -text
 src/ESP/nodis/management/commands/__init__.py -text
 src/ESP/nodis/management/commands/case_report.py -text
 src/ESP/nodis/management/commands/diabetes.py -text
-src/ESP/nodis/management/commands/gdm_report.py -text
+src/ESP/nodis/management/commands/gdm.py -text
 src/ESP/nodis/management/commands/nodis.py -text
 src/ESP/nodis/management/commands/patient_report.py -text
 src/ESP/nodis/management/commands/validate_cases.py -text
