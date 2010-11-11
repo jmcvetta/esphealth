@@ -33,8 +33,8 @@ from ESP.utils import utils as util
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 from ESP.static.models import Icd9
-from ESP.conf.models import STATUS_CHOICES
 #from ESP.conf.models import CodeMap
+from ESP.conf.models import STATUS_CHOICES
 from ESP.conf.models import ReportableLab
 from ESP.conf.models import ReportableIcd9
 from ESP.conf.models import ReportableMedication
@@ -1662,9 +1662,13 @@ class Case(models.Model):
     #
     # Events that define this case
     #
-    #
-    # The events that caused this case to be generated
     events = models.ManyToManyField(Event, blank=False)
+    timespans = models.ManyToManyField(Timespan, blank=False)
+    #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    #
+    # Deprecated fields:
+    #
+    #
     # The events that caused this case to be generated, but occured before the event window
     events_before = models.ManyToManyField(Event, blank=True, null=True, related_name='case_before')
     # The events that caused this case to be generated, but occurred after the event window
@@ -2031,3 +2035,4 @@ class Gdm(models.Model):
     event_name = models.CharField(max_length=128)
     class Meta:
         db_table = u'gdm'
+        
