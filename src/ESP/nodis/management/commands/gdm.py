@@ -1,52 +1,49 @@
-#!/usr/bin/python
 '''
-Created on Jul 9, 2009
+                                  ESP Health
+                         Notifiable Diseases Framework
+                      Gestational Diabetes Case Generator
 
-@author: jason
+
+@author: Jason McVetta <jason.mcvetta@gmail.com>
+@organization: Channing Laboratory http://www.channing.harvard.edu
+@contact: http://www.esphealth.org
+@copyright: (c) 2010 Channing Laboratory
+@license: LGPL
 '''
 
-import sys
-import re
-import pprint
 import csv
+import pprint
+import re
+import sys
+import hashlib
+from optparse import make_option
 from dateutil.relativedelta import relativedelta
 
-from django.db import connection
 from django.db.models import Q
 from django.db.models import F
 from django.db.models import Sum
 from django.db.models import Count
 from django.db.models import Max
 from django.db.models import Min
-from django.core.management.base import BaseCommand
+from django.db.models import Avg
+from django.core.management.base import BaseCommand, CommandError
 
+from ESP.nodis.models import Case
+from ESP.nodis.models import Pattern
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
-
-from ESP.conf.models import CodeMap
-
-from ESP.emr.models import Patient
-from ESP.emr.models import LabResult
-from ESP.emr.models import LabOrder
 from ESP.emr.models import Encounter
+from ESP.emr.models import LabOrder
+from ESP.emr.models import LabResult
+from ESP.emr.models import Patient
 from ESP.emr.models import Prescription
-
 from ESP.hef.models import Event
 from ESP.hef.models import EventType
 from ESP.hef.models import Timespan
 
-from ESP.nodis.models import Case
-from ESP.nodis.models import Pattern
 
-from ESP.nodis.defs import gdm_ogtt50
-from ESP.nodis.defs import ogtt75_multi_intrapartum
-from ESP.nodis.defs import ogtt75_multi_postpartum
-from ESP.nodis.defs import ogtt100_multi_intrapartum
-OGTT50_EVENTS = gdm_ogtt50.patterns
-OGTT75_INTRAPARTUM_EVENTS = ogtt75_multi_intrapartum.events
-OGTT75_POSTPARTUM_EVENTS = ogtt75_multi_postpartum.events
-OGTT100_EVENTS = ogtt100_multi_intrapartum.events
-OGTT75_RESULT_EVENTS = EventType.objects.filter(name__startswith='ogtt75', name__endswith='_order')
+
+
 
 FIELDS = [
     'patient db id',
@@ -82,7 +79,105 @@ class Command(BaseCommand):
     
     help = 'Generate report on all GDM cases'
     
+    option_list = BaseCommand.option_list + (
+        make_option('--generate', action='store_true', dest='generate',  default=False,
+            help='Generate cases of gestational diabetes'),
+        make_option('--report', action='store_true', dest='report',  default=False,
+            help='Produce gestational diabetes report'),
+        )
+    
+    GDM_PATTERN = Pattern.objects.get_or_create(
+        name = 'Gestational Diabetes',
+        pattern = 'Gestational Diabetes iterative code',
+        hash = hashlib.sha224('Gestational Diabetes iterative code'),
+        )[0]
+    
     def handle(self, *args, **options):
+        if not (options['generate'] or options['report']):
+            raise CommandError('Must specify either --generate or --report')
+        if options['generate']:
+            self.generate_cases()
+        if options['report']:
+            self.report()
+    
+    def generate_cases(self, *args, **options):
+        # One of these events, during pregnancy, is sufficient for a case of GDM
+        CRITERIA_ONCE = [
+            'lx--glucose_fasting--threshold--126.0',
+            'lx--ogtt50_1hr--threshold--190.0'
+            ]
+        # Two or more occurrences of these events, during pregnancy, is sufficient for a case of GDM
+        CRITERIA_TWICE = [
+            'lx--ogtt75_fasting--threshold--95.0',
+            'lx--ogtt75_30min--threshold--200.0',
+            'lx--ogtt75_1hr--threshold--180.0',
+            'lx--ogtt75_90min--threshold--180.0',
+            'lx--ogtt75_2hr--threshold--155.0',
+            'lx--ogtt100_fasting_urine--positive',
+            'lx--ogtt100_fasting--threshold--95.0',
+            'lx--ogtt100_30min--threshold--200.0',
+            'lx--ogtt100_1hr--threshold--180.0',
+            'lx--ogtt100_90min--threshold--180.0',
+            'lx--ogtt100_2hr--threshold--155.0',
+            'lx--ogtt100_3hr--threshold--140.0',
+            ]
+        #
+        # Build set of GDM pregnancy timespans
+        #
+        gdm_timespan_pks = set()
+        ts_qs = Timespan.objects.filter(name='pregnancy')
+        ts_qs = ts_qs.exclude(case__condition='diabetes_gestational')
+        once_qs = ts_qs.filter(
+            patient__event__event_type__in=CRITERIA_ONCE,
+            patient__event__date__gte=F('start_date'),
+            patient__event__date__lte=F('end_date'),
+            ).distinct().order_by('end_date')
+        log_query('Single event timespans', once_qs)
+        twice_qs = ts_qs.filter(
+            patient__event__event_type__in=CRITERIA_TWICE,
+            patient__event__date__gte=F('start_date'),
+            patient__event__date__lte=F('end_date'),
+            ).annotate(count=Count('patient__event__id')).filter(count__gte=2).distinct()
+        log_query('Single event timespans', once_qs)
+        log_query('Two event timespans', twice_qs)
+        gdm_timespan_pks.update(once_qs.values_list('pk', flat=True))
+        gdm_timespan_pks.update(twice_qs.values_list('pk', flat=True))
+        #
+        # Generate one case per timespan
+        #
+        all_criteria = CRITERIA_ONCE + CRITERIA_TWICE
+        counter = 0
+        for ts_pk in gdm_timespan_pks:
+            ts = Timespan.objects.get(pk=ts_pk)
+            case_events = Event.objects.filter(
+                event_type__in=all_criteria,
+                date__gte=ts.start_date, 
+                date__lte=ts.end_date
+                ).order_by('date')
+            first_event = case_events[0]
+            case_obj, created = Case.objects.get_or_create(
+                patient = ts.patient,
+                condition = 'diabetes_gestational',
+                date = first_event.date,
+                defaults = {
+                    'provider': first_event.provider,
+                    'pattern': self.GDM_PATTERN,
+                    },
+                )
+            if created:
+                case_obj.save()
+                counter += 1
+                log.info('Saved new case: %s' % case_obj)
+            else:
+                log.error('Found exisiting GDM case #%s for timespan #%s - this should not happen' % (case_obj.pk, ts.pk))
+                log.debug('Timespan & events will be added to existing case')
+            case_obj.events = case_obj.events.all() | case_events
+            case_obj.timespans.add(ts)
+            case_obj.save()
+        log.info('Generated %s new cases of diabetes_gestational' % counter)
+        return counter
+        
+    def report(self, *args, **options):
         writer = csv.DictWriter(sys.stdout, fieldnames=FIELDS)
         header = dict(zip(FIELDS, FIELDS)) 
         writer.writerow(header)
