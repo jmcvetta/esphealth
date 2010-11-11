@@ -1,11 +1,12 @@
 '''
                                   ESP Health
                          Notifiable Diseases Framework
-                            Diabetes Case Generator
+                         Frank Diabetes Case Generator
 
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
 @organization: Channing Laboratory http://www.channing.harvard.edu
+@contact: http://www.esphealth.org
 @copyright: (c) 2010 Channing Laboratory
 @license: LGPL
 '''
@@ -496,31 +497,36 @@ class Command(BaseCommand):
         self.FIELDS.append('pregnancy_edd--1')
         self.FIELDS.append('pregnancy_edd--2')
         self.FIELDS.append('pregnancy_edd--3')
-        last_patient = None
         preg_timespan_qs = Timespan.objects.filter(name='pregnancy', pattern__in=('EDD', 'ICD9_EOP'))
         preg_timespan_qs = preg_timespan_qs.filter(patient__in=self.patient_qs)
         preg_timespan_qs = preg_timespan_qs.order_by('patient', '-end_date')
-        vqs = preg_timespan_qs.values('patient', 'end_date')
+        vqs = preg_timespan_qs.values('patient', 'end_date').distinct()
         log.info('Collecting pregnancy data')
         log_query('recent preg end dates', vqs)
+        last_patient = None
         recent_preg_end_dates = []
         for item in vqs:
             patient = item['patient']
             if not patient == last_patient:
-                # On first item, there will be no last_patient 
-                if not last_patient:
-                    last_patient = patient
+                recent_preg_end_dates = []
+                last_patient = patient
+            recent_preg_end_dates.append(item['end_date'])
+            log.debug('pregnant patient: %s' % patient)
+            log.debug('Recent EDDs: %s' % recent_preg_end_dates)
+            if len(recent_preg_end_dates) > 3: # We only want the first three
+                continue
+            field_values = self.patient_field_values[patient]
+            for i in range(0, len(recent_preg_end_dates)):
+                ordinal = i + 1
+                field = 'pregnancy_edd--%s' % ordinal
+                if field in field_values:
                     continue
-                field_values = self.patient_field_values[patient]
-                for i in range(0, len(recent_preg_end_dates)):
-                    end_date = recent_preg_end_dates[i]
-                    ordinal = i + 1
-                    field_values['pregnancy_edd--%s' % ordinal] = end_date
-            if len(recent_preg_end_dates) < 3:
-                recent_preg_end_dates.append(item['end_date'])
+                end_date = recent_preg_end_dates[i]
+                log.debug('Added value %s for field %s' % (end_date, field))
+                field_values[field] = end_date
         
     def __diabetes_case(self):
-        vqs = Case.objects.filter(condition__startswith='diabetes').values('patient', 'id', 'condition', 'date')
+        vqs = Case.objects.filter(condition__in=self.DIABETES_CONDITIONS).values('patient', 'id', 'condition', 'date')
         log_query('Diabetes cases', vqs)
         log.info('Collecting diabetes case data')
         for item in vqs:
@@ -581,8 +587,8 @@ class Command(BaseCommand):
         #
         # Collect data
         #
-        self.__diabetes_case()
         self.__recent_pregnancies()
+        self.__diabetes_case()
         self.__recent_rx()
         self.__recent_dx()
         self.__recent_lx()
@@ -612,6 +618,7 @@ class Command(BaseCommand):
                 'gender': patient.gender, 
                 'race': patient.race, 
                 'zip': patient.zip, 
+                'mrn': patient.mrn,
                 }
             values.update(self.patient_field_values[patient.pk])
             #
