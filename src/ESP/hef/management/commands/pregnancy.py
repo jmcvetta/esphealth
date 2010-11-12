@@ -33,11 +33,11 @@ class Command(BaseCommand):
     help = 'Generate pregnancy timespans'
     
     def handle(self, *args, **options):
-        #-------------------------------------------------------------------------------
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #
         # Initialize
         #
-        #-------------------------------------------------------------------------------
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         preg_icd9_q = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
         self.ignore_bound_q = ~Q(timespan__name='pregnancy')
         has_edc_q = Q(edc__isnull=False)
@@ -48,16 +48,83 @@ class Command(BaseCommand):
         log_query('Pregnancy encounters by ICD9', self.icd9_encounters)
         all_preg_q = preg_icd9_q | has_edc_q
         self.all_preg_encounters = Encounter.objects.filter(all_preg_q).order_by('date')
-        preg_end_q = Q(icd9_codes__code__startswith='V24.')  # Postpartum care
-        preg_end_q |= Q(icd9_codes__code__startswith='630.') # Ectopic & molar pregnancy
-        preg_end_q |= Q(icd9_codes__code__startswith='631.') #  "
-        preg_end_q |= Q(icd9_codes__code__startswith='632.') #  "
-        preg_end_q |= Q(icd9_codes__code__startswith='633.') #  "
-        preg_end_q |= Q(icd9_codes__code__startswith='634.') # Abortion
-        preg_end_q |= Q(icd9_codes__code__startswith='635.') #  "
-        preg_end_q |= Q(icd9_codes__code__startswith='636.') #  "
-        preg_end_q |= Q(icd9_codes__code__startswith='637.') #  "
-        preg_end_q |= Q(icd9_codes__code__startswith='639.') #  "
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #
+        # Build End of Pregnancy query
+        #
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #
+        # Postpartum care
+        #
+        preg_end_q = Q(icd9_codes__code__startswith='V24.')  
+        #
+        # Ectopic & molar pregnancy
+        #
+        preg_end_q |= Q(icd9_codes__code__startswith='630.') 
+        preg_end_q |= Q(icd9_codes__code__startswith='631.')
+        preg_end_q |= Q(icd9_codes__code__startswith='632.')
+        preg_end_q |= Q(icd9_codes__code__startswith='633.')
+        #
+        # Abortion
+        #
+        preg_end_q |= Q(icd9_codes__code__startswith='634.')
+        preg_end_q |= Q(icd9_codes__code__startswith='635.')
+        preg_end_q |= Q(icd9_codes__code__startswith='636.')
+        preg_end_q |= Q(icd9_codes__code__startswith='637.')
+        preg_end_q |= Q(icd9_codes__code__startswith='639.')
+        #
+        # Complications of pregnancy with delivery
+        #
+        preg_end_q |= (
+            Q(icd9_codes__code__startswith='640.') |
+            Q(icd9_codes__code__startswith='641.') |
+            Q(icd9_codes__code__startswith='642.') |
+            Q(icd9_codes__code__startswith='643.') |
+            Q(icd9_codes__code__startswith='644.') |
+            Q(icd9_codes__code__startswith='645.') |
+            Q(icd9_codes__code__startswith='646.') |
+            Q(icd9_codes__code__startswith='647.') |
+            Q(icd9_codes__code__startswith='648.') |
+            Q(icd9_codes__code__startswith='649.') 
+            ) & (
+            Q(icd9_codes__code__endswith='1') |
+            Q(icd9_codes__code__endswith='2') |
+            Q(icd9_codes__code__endswith='4')
+            )
+        #
+        # Normal delivery
+        #
+        preg_end_q |= (
+            Q(icd9_codes__code__startswith='650.') |
+            Q(icd9_codes__code__startswith='651.') |
+            Q(icd9_codes__code__startswith='652.') |
+            Q(icd9_codes__code__startswith='653.') |
+            Q(icd9_codes__code__startswith='654.') |
+            Q(icd9_codes__code__startswith='655.') |
+            Q(icd9_codes__code__startswith='656.') |
+            Q(icd9_codes__code__startswith='657.') |
+            Q(icd9_codes__code__startswith='658.') |
+            Q(icd9_codes__code__startswith='659.')
+            ) & (
+            Q(icd9_codes__code__endswith='1') |
+            Q(icd9_codes__code__endswith='2') |
+            Q(icd9_codes__code__endswith='4')
+            )
+        #
+        # Complications of labor
+        #
+        preg_end_q |= Q(icd9_codes__code__startswith='660.') 
+        preg_end_q |= Q(icd9_codes__code__startswith='661.') 
+        preg_end_q |= Q(icd9_codes__code__startswith='662.') 
+        preg_end_q |= Q(icd9_codes__code__startswith='663.') 
+        preg_end_q |= Q(icd9_codes__code__startswith='664.') 
+        preg_end_q |= Q(icd9_codes__code__startswith='665.') 
+        preg_end_q |= Q(icd9_codes__code__startswith='666.') 
+        preg_end_q |= Q(icd9_codes__code__startswith='667.') 
+        preg_end_q |= Q(icd9_codes__code__startswith='668.') 
+        preg_end_q |= Q(icd9_codes__code__startswith='669.') 
+        #
+        #
         self.preg_end_encounters = Encounter.objects.filter(preg_end_q).order_by('date')
         #-------------------------------------------------------------------------------
         #
