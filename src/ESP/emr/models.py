@@ -14,6 +14,7 @@ import random
 import datetime
 import sys
 import re
+from dateutil.relativedelta import relativedelta
 
 from django.db import models
 from django.db.models import Q, F
@@ -448,67 +449,6 @@ class Patient(BaseMedicalRecord):
     def prescriptions(self):
         return Prescription.objects.filter(patient=self)
 
-    def __calc_bmi_from_enc(self, enc):
-        '''
-        Calculates BMI from an encounter.  Encounter MUST have both height
-        and weight data, or assertion is raised.
-        '''
-        assert enc.height
-        assert enc.weight
-        height_m = enc.height / 100  # Height is stored in centimeters
-        weight_kg = enc.weight # Already in kilograms
-        bmi = weight_kg / (height_m ** 2 )
-        return bmi
-        
-    def bmi(self, date=None, before=365, after=120):
-        '''
-        Returns this patient's BMI.  If no date is specified, returns most 
-        recent BMI.  If date is specified, returns most recent BMI in this 
-        range:
-            (date - before days) thru (date + after days)
-        Default before/after values are those required by GDM algorithm
-        
-        @param date:   Optional date for which to get BMI
-        @type date:    DateTime
-        @param before: How many days before date to consider?
-        @type before:  Integer
-        @param after:  How many days after date to consider?
-        @type after:   Integer
-        '''
-        # Encounters that have BMI provided from source EMR
-        bmi_encs = self.encounter_set.filter(bmi__isnull=False).order_by('-date')
-        # Encounters with height and weight can be used to calculate BMI
-        hw_q = Q(height__isnull=False, weight__isnull=False) & ~Q(height=0) & ~Q(weight=0)
-        hw_encs = self.encounter_set.filter(hw_q).order_by('-date')
-        if date:
-	        exact_date = Q(date=date)
-	        begin = date - datetime.timedelta(days=before)
-	        end = date + datetime.timedelta(days=after)
-	        range_dates = Q(date__gte=begin, date__lte=end)
-	        exact_bmi_encs = bmi_encs.filter(exact_date)
-	        range_bmi_encs = bmi_encs.filter(range_dates)
-	        exact_hw_encs = hw_encs.filter(exact_date)
-	        range_hw_encs = hw_encs.filter(range_dates)
-        else:
-            exact_bmi_encs = None
-            exact_hw_encs = None
-            range_bmi_encs = bmi_encs
-            range_hw_encs = hw_encs
-        if exact_bmi_encs:
-            log_query('Exact BMI Encs', exact_bmi_encs)
-            return exact_bmi_encs[0].bmi
-        elif exact_hw_encs:
-            log_query('Exact Ht/Wt Encs', exact_hw_encs)
-            return self.__calc_bmi_from_enc(exact_hw_encs[0])
-        elif range_bmi_encs:
-            log_query('Range BMI Encs', range_bmi_encs)
-            return range_bmi_encs[0].bmi
-        elif range_hw_encs:
-            log_query('Range Ht/Wt Encs', range_hw_encs)
-            return self.__calc_bmi_from_enc(range_hw_encs[0])
-        else:
-            return "Unknown"
-    
 
     def document_summary(self):
         '''
@@ -979,7 +919,11 @@ class Encounter(BasePatientRecord):
     o2_stat = models.FloatField(max_length=50, blank=True, null=True)
     peak_flow = models.FloatField(max_length=50, blank=True, null=True)
     diagnosis = models.TextField(null=True, blank=True)
+    # Field 'raw_bmi' is provided from soure EMR.  Field 'bmi' is same as 
+    # 'raw_bmi' if the latter is non-null; else, it is calculated from most 
+    # recent height / weight measurements
     bmi = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, db_index=True)
+    raw_bmi = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, db_index=True)
     # HEF
     tags = generic.GenericRelation('hef.EventRecordTag')
     #timespan = generic.GenericRelation('hef.Timespan')
@@ -1072,6 +1016,43 @@ class Encounter(BasePatientRecord):
         return ', '.join(self.icd9_codes.order_by('code').values_list('code', flat=True))
     icd9_codes_str = property(_get_icd9_codes_str)
 
+    def _populate_bmi(self):
+        '''
+        Calls _calculate_bmi() to populate 'bmi' field.
+        '''
+        self.bmi = self._calculate_bmi()
+        self.save()
+    
+    def _calculate_bmi(self):
+        '''
+        Returns this patient's BMI.  If this encounter has a non-null 'raw_bmi' 
+        field, that is returned.  Otherwise, BMI is calculated based on most recent 
+        height/weight.
+        '''
+        if self.raw_bmi:
+            return self.raw_bmi
+        if (self.height and self.weight):
+            height = self.height
+            weight = self.weight
+        else:
+            encs = Encounter.objects.filter(patient=self.patient)
+            start = self.date - relativedelta(days=365)
+            #end = self.date + relativedelta(days=120)
+            encs_before = encs.filter(date__gte=start, date__lte=self.date).order_by('-date')
+            bmi_encs = encs_before.filter(raw_bmi__isnull=False)
+            if bmi_encs:
+                return bmi_encs[0].raw_bmi
+            ht_wt_encs = encs_before.filter(height__isnull=False, weight__isnull=False)
+            if ht_wt_encs:
+                height = ht_wt_encs[0].height
+                weight = ht_wt_encs[0].weight
+            else:
+                log.warning('Cannot calculate BMI for encounter %s' % self.pk)
+                return None # Cannot calculate BMI
+        height_m = height / 100  # Height is stored in centimeters
+        weight_kg = weight # Already in kilograms
+        bmi = weight_kg / (height_m ** 2 )
+        return bmi
 
     def document_summary(self):
         return {
