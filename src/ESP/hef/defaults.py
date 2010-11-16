@@ -963,6 +963,11 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
     date_field = 'result'
     )
 
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt50_fasting,
+    threshold = 126,
+    )
+
 ogtt50_random = AbstractLabTest.objects.get_or_create(
     name = 'ogtt50_random',
     defaults = {
@@ -1050,7 +1055,6 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_fasting,
     threshold = 126,
-    date_field = 'result'
     )
 
 ogtt75_fasting_urine = AbstractLabTest.objects.get_or_create(
@@ -1220,6 +1224,11 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_fasting,
     threshold = 95,
     date_field = 'result'
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt100_fasting,
+    threshold = 126,
     )
 
 ogtt100_fasting_urine = AbstractLabTest.objects.get_or_create(
