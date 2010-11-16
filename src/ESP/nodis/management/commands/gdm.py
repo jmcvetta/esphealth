@@ -44,8 +44,11 @@ from ESP.hef.models import Timespan
 
 # One of these events, during pregnancy, is sufficient for a case of GDM
 CRITERIA_ONCE = [
-    'lx--glucose_fasting--threshold--126.0',
-    'lx--ogtt50_1hr--threshold--190.0'
+    'lx--ogtt100_fasting--threshold--126.0',
+    'lx--ogtt50_fasting--threshold--126.0',
+    'lx--ogtt75_fasting--threshold--126.0',
+    'lx--ogtt50_1hr--threshold--190.0',
+    'lx--ogtt50_random--threshold--190.0',
     ]
 # Two or more occurrences of these events, during pregnancy, is sufficient for a case of GDM
 CRITERIA_TWICE = [
@@ -93,6 +96,7 @@ FIELDS = [
     'gdm_case--date',
     'gdm_icd9--this_preg',
     'intrapartum--ogtt50--positive',
+    'intrapartum--ogtt50--threshold',
     'intrapartum--ogtt75--positive',
     'intrapartum--ogtt100--positive',
     'postpartum--ogtt75--order',
@@ -168,6 +172,9 @@ class Command(BaseCommand):
         #
         dx_ets=['dx--gestational_diabetes']
         rx_ets=['rx--lancets', 'rx--test_strips']
+        # FIXME: This date math works on PostgreSQL, but I think that's just 
+        # fortunate coincidence, as I don't think this is the righ way to 
+        # express the date query in ORM syntax.
         _event_qs = Event.objects.filter(
             event_type__in=rx_ets,
             patient__event__event_type__in=dx_ets, 
@@ -213,7 +220,7 @@ class Command(BaseCommand):
                 counter += 1
                 log.info('Saved new case: %s (%8s / %s)' % (case_obj, counter, total))
             else:
-                log.error('Found exisiting GDM case #%s for %s' % (case_obj.pk, ts))
+                log.debug('Found exisiting GDM case #%s for %s' % (case_obj.pk, ts))
                 log.debug('Timespan & events will be added to existing case')
                 case_obj.events = case_obj.events.all() | case_events
             log_query('case events', case_events)
@@ -225,11 +232,28 @@ class Command(BaseCommand):
     def report(self, *args, **options):
         log.info('Generating GDM report')
         writer = csv.DictWriter(sys.stdout, fieldnames=FIELDS)
+        pos_q = Q(event_type__name__endswith='--positive')
         a1c_q = Q(event_type__name__startswith='lx--a1c')
         ogtt50_q = Q(event_type__name__startswith='lx--ogtt50')
+        ogtt50_threshold_q = Q(event_type__name__in = [
+            'lx--ogtt50_1hr--threshold--190.0',
+            'lx--ogtt50_random--threshold--190.0',
+            ])
         ogtt75_q = Q(event_type__name__startswith='lx--ogtt75')
+        ogtt75_threshold_q = Q(event_type__name__in = [
+            'lx--ogtt75_1hr--threshold--180.0',
+            'lx--ogtt75_1hr--threshold--200.0',
+            'lx--ogtt75_2hr--threshold--155.0',
+            'lx--ogtt75_2hr--threshold--200.0',
+            'lx--ogtt75_30min--threshold--200.0',
+            'lx--ogtt75_90min--threshold--180.0',
+            'lx--ogtt75_90min--threshold--200.0',
+            'lx--ogtt75_fasting--threshold--126.0',
+            'lx--ogtt75_fasting--threshold--95.0',
+            ])
         ogtt100_q = Q(event_type__name__startswith='lx--ogtt100')
-        pos_q = Q(event_type__name__endswith='--positive')
+        ogtt100_threshold_q = Q(event_type__name__in = [
+            ])
         order_q = Q(event_type__name__endswith='--order')
         any_q = Q(event_type__name__endswith='--any_result')
         dxgdm_q = Q(event_type='dx--gestational_diabetes')
@@ -307,6 +331,9 @@ class Command(BaseCommand):
                     date__gt = preg_ts.end_date + relativedelta(weeks=12),
                     date__lte = preg_ts.end_date + relativedelta(days=365),
                     )
+                # FIXME: This date math works on PostgreSQL, but I think that's
+                # just fortunate coincidence, as I don't think this is the
+                # right way to express the date query in ORM syntax.
                 lancets_and_icd9 = intrapartum.filter(
                     lancets_q,
                     patient__event__event_type='dx--gestational_diabetes',
@@ -338,6 +365,7 @@ class Command(BaseCommand):
                     'gdm_case--date': gdm_date,
                     'gdm_icd9--this_preg': bool( intrapartum.filter(dxgdm_q) ),
                     'intrapartum--ogtt50--positive': bool( intrapartum.filter(ogtt50_q, pos_q) ),
+                    'intrapartum--ogtt50--threshold': bool( intrapartum.filter(ogtt50_threshold_q) ),
                     'intrapartum--ogtt75--positive': bool( intrapartum.filter(ogtt75_q, pos_q) ),
                     'intrapartum--ogtt100--positive': bool( intrapartum.filter(ogtt100_q, pos_q) ),
                     'postpartum--ogtt75--order': bool( postpartum.filter(ogtt75_q, order_q) ),
