@@ -289,6 +289,11 @@ class Command(BaseCommand):
             #
             # Populate values that will be used all of this patient's pregnancies
             #
+            zip_code = patient.zip[0:5]
+            try:
+                zip_code = '%05d' % int(zip_code)
+            except:
+                log.warning('Could not convert zip code: %s' % patient.zip)
             patient_values = {
                 'patient_id': patient.pk,
                 'mrn': patient.mrn,
@@ -296,7 +301,7 @@ class Command(BaseCommand):
                 'first_name': patient.first_name,
                 'date_of_birth': patient.date_of_birth,
                 'ethnicity': patient.race,
-                'zip_code': patient.zip,
+                'zip_code': zip_code,
                 'gdm_icd9--any_time': bool(event_qs.filter(dxgdm_q)),
                 'frank_diabetes--ever': bool(frank_dm_case_qs),
                 'lancets_test_strips--any_time': bool(event_qs.filter(lancets_q)),
