@@ -381,7 +381,7 @@ class LabOrderHeuristic(LabHeuristicBase):
             log.debug('Added %s for %s' % (obj, self))
     
     def generate_events(self):
-        log.debug('Generating events for "%s"' % self.verbose_name)
+        log.info('Generating events for "%s"' % self.verbose_name)
         unbound_orders = self.test.lab_orders.exclude(tags__event__event_type__heuristic=self)
         log_query('Unbound lab orders for %s' % self.name, unbound_orders)
         unbound_count = unbound_orders.count()
