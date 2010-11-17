@@ -40,6 +40,7 @@ from ESP.emr.models import Prescription
 from ESP.hef.models import Event
 from ESP.hef.models import EventType
 from ESP.hef.models import Timespan
+from ESP.hef.models import AbstractLabTest
 
 
 # One of these events, during pregnancy, is sufficient for a case of GDM
@@ -103,8 +104,8 @@ FIELDS = [
     'postpartum--ogtt75--any_result',
     'postpartum--ogtt75--positive',
     'early_postpartum--a1c--order',
-    'early_postpartum--a1c--any_result',
-    'late_postpartum--a1c--any_result',
+    'early_postpartum--a1c--max',
+    'late_postpartum--a1c--max',
     'lancets_test_strips--this_preg',
     'lancets_test_strips--14_days_gdm_icd9',
     'insulin_rx',
@@ -284,6 +285,7 @@ class Command(BaseCommand):
             preg_ts_qs = Timespan.objects.filter(name='pregnancy', patient=patient)
             gdm_case_qs = Case.objects.filter(condition='diabetes_gestational', patient=patient)
             frank_dm_case_qs = Case.objects.filter(condition__startswith='diabetes_type_', patient=patient).order_by('date')
+            a1c_lab_qs = AbstractLabTest.objects.get(name='a1c').lab_results.filter(patient=patient).filter(patient=patient)
             #
             # Populate values that will be used all of this patient's pregnancies
             #
@@ -327,7 +329,11 @@ class Command(BaseCommand):
                     date__gt = preg_ts.end_date,
                     date__lte = preg_ts.end_date + relativedelta(weeks=12),
                     )
-                late_pp = event_qs.filter(
+                early_pp_q = Q(
+                    date__gt = preg_ts.end_date,
+                    date__lte = preg_ts.end_date + relativedelta(weeks=12),
+                    )
+                late_pp_q = Q(
                     date__gt = preg_ts.end_date + relativedelta(weeks=12),
                     date__lte = preg_ts.end_date + relativedelta(days=365),
                     )
@@ -372,8 +378,8 @@ class Command(BaseCommand):
                     'postpartum--ogtt75--any_result': bool( postpartum.filter(ogtt75_q, any_q) ),
                     'postpartum--ogtt75--positive': bool( postpartum.filter(ogtt75_q, pos_q) ),
                     'early_postpartum--a1c--order': bool( early_pp.filter(a1c_q, order_q) ),
-                    'early_postpartum--a1c--any_result': bool( early_pp.filter(a1c_q, any_q)),
-                    'late_postpartum--a1c--any_result': bool(late_pp.filter(a1c_q, any_q)),
+                    'early_postpartum--a1c--max': a1c_lab_qs.filter(early_pp_q).aggregate(max=Max('result_float'))['max'],
+                    'late_postpartum--a1c--max': a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max'],
                     'lancets_test_strips--this_preg': bool( intrapartum.filter(lancets_q) ),
                     'lancets_test_strips--14_days_gdm_icd9': bool( lancets_and_icd9 ),
                     'insulin_rx': bool( intrapartum.filter(event_type='rx--insulin') ),
