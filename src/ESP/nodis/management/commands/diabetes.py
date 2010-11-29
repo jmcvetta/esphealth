@@ -117,7 +117,6 @@ class Command(BaseCommand):
         frank_dm_once_reqs = [
             'lx--a1c--threshold--6.5',
             'lx--glucose_fasting--threshold--126.0',
-            'rx--insulin',
             ] + self.ORAL_HYPOGLYCAEMICS
         # If a patient has two or more of these events, he has frank diabetes
         frank_dm_twice_reqs = [
@@ -128,7 +127,15 @@ class Command(BaseCommand):
         # Find trigger dates for patients who have frank DM of either type, but no existing case
         # 
         frank_dm = {}
-        qs = Event.objects.filter(event_type__in=frank_dm_once_reqs).exclude(patient__case__condition__in=self.DIABETES_CONDITIONS)
+        # Insulin once is a trigger, but only if not during pregnancy
+        insulin_events = Event.objects.filter(event_type='rx--insulin').exclude(
+            patient__timespan__name='pregnancy',
+            patient__timespan__start_date__lte = F('date'),
+            patient__timespan__end_date__gte = F('date'),
+            )
+        qs = Event.objects.filter(event_type__in=frank_dm_once_reqs)
+        qs |= insulin_events
+        qs = qs.exclude(patient__case__condition__in=self.DIABETES_CONDITIONS)
         log_query('Frank DM once', qs)
         for i in qs.values('patient').annotate(trigger_date=Min('date')):
             pat = i['patient']
