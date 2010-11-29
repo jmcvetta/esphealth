@@ -951,20 +951,23 @@ ogtt50_fasting = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt50_fasting,
+    date_field = 'result'
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt50_fasting,
-    )
-
-LabResultFixedThresholdHeuristic.objects.get_or_create(
-    test = ogtt50_fasting,
-    threshold = 95,
     date_field = 'result'
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt50_fasting,
+    date_field = 'result',
+    threshold = 95,
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt50_fasting,
+    date_field = 'result',
     threshold = 126,
     )
 
@@ -977,16 +980,18 @@ ogtt50_random = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt50_random,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt50_random,
+    date_field = 'result',
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt50_random,
+    date_field = 'result',
     threshold = 190,
-    date_field = 'result'
     )
 
 ogtt50_1hr = AbstractLabTest.objects.get_or_create(
@@ -998,16 +1003,18 @@ ogtt50_1hr = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt50_1hr,
+    date_field = 'result'
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt50_1hr,
+    date_field = 'result',
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt50_1hr,
+    date_field = 'result',
     threshold = 190,
-    date_field = 'result'
     )
 
 #-------------------------------------------------------------------------------
@@ -1040,20 +1047,23 @@ LabOrderHeuristic.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt75_fasting,
+    date_field = 'result'
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt75_fasting,
-    )
-
-LabResultFixedThresholdHeuristic.objects.get_or_create(
-    test = ogtt75_fasting,
-    threshold = 95,
     date_field = 'result'
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_fasting,
+    date_field = 'result',
+    threshold = 95,
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt75_fasting,
+    date_field = 'result',
     threshold = 126,
     )
 
@@ -1066,10 +1076,12 @@ ogtt75_fasting_urine = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt75_fasting_urine,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt75_fasting_urine,
+    date_field = 'result',
     )
 
 LabOrderHeuristic.objects.get_or_create(
@@ -1090,10 +1102,12 @@ ogtt75_30min = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt75_30min,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt75_30min,
+    date_field = 'result',
     )
 
 LabOrderHeuristic.objects.get_or_create(
@@ -1102,8 +1116,8 @@ LabOrderHeuristic.objects.get_or_create(
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_30min,
+    date_field = 'result',
     threshold = 200,
-    date_field = 'result'
     )
 
 ogtt75_1hr = AbstractLabTest.objects.get_or_create(
@@ -1115,10 +1129,12 @@ ogtt75_1hr = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt75_1hr,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt75_1hr,
+    date_field = 'result',
     )
 
 LabOrderHeuristic.objects.get_or_create(
@@ -1127,14 +1143,14 @@ LabOrderHeuristic.objects.get_or_create(
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_1hr,
+    date_field = 'result',
     threshold = 180,
-    date_field = 'result'
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_1hr,
+    date_field = 'result',
     threshold = 200,
-    date_field = 'result'
     )
 
 ogtt75_90min = AbstractLabTest.objects.get_or_create(
@@ -1146,10 +1162,12 @@ ogtt75_90min = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt75_90min,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt75_90min,
+    date_field = 'result',
     )
 
 LabOrderHeuristic.objects.get_or_create(
@@ -1158,14 +1176,14 @@ LabOrderHeuristic.objects.get_or_create(
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_90min,
+    date_field = 'result',
     threshold = 180,
-    date_field = 'result'
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_90min,
+    date_field = 'result',
     threshold = 200,
-    date_field = 'result'
     )
 
 ogtt75_2hr = AbstractLabTest.objects.get_or_create(
@@ -1177,10 +1195,12 @@ ogtt75_2hr = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt75_2hr,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt75_2hr,
+    date_field = 'result',
     )
 
 LabOrderHeuristic.objects.get_or_create(
@@ -1189,14 +1209,14 @@ LabOrderHeuristic.objects.get_or_create(
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_2hr,
+    date_field = 'result',
     threshold = 155,
-    date_field = 'result'
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_2hr,
+    date_field = 'result',
     threshold = 200,
-    date_field = 'result'
     )
 
 #-------------------------------------------------------------------------------
@@ -1214,20 +1234,23 @@ ogtt100_fasting = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt100_fasting,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_fasting,
+    date_field = 'result',
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_fasting,
+    date_field = 'result',
     threshold = 95,
-    date_field = 'result'
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_fasting,
+    date_field = 'result',
     threshold = 126,
     )
 
@@ -1240,15 +1263,12 @@ ogtt100_fasting_urine = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt100_fasting_urine,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_fasting_urine,
-    )
-
-LabResultPositiveHeuristic.objects.get_or_create(
-    test = ogtt100_fasting_urine,
-    date_field = 'result'
+    date_field = 'result',
     )
 
 ogtt100_30min = AbstractLabTest.objects.get_or_create(
@@ -1260,16 +1280,18 @@ ogtt100_30min = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt100_30min,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_30min,
+    date_field = 'result',
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_30min,
+    date_field = 'result',
     threshold = 200,
-    date_field = 'result'
     )
 
 ogtt100_1hr = AbstractLabTest.objects.get_or_create(
@@ -1281,16 +1303,18 @@ ogtt100_1hr = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt100_1hr,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_1hr,
+    date_field = 'result',
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_1hr,
+    date_field = 'result',
     threshold = 180,
-    date_field = 'result'
     )
 
 ogtt100_90min = AbstractLabTest.objects.get_or_create(
@@ -1302,16 +1326,18 @@ ogtt100_90min = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt100_90min,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_90min,
+    date_field = 'result',
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_90min,
+    date_field = 'result',
     threshold = 180,
-    date_field = 'result'
     )
 
 ogtt100_2hr = AbstractLabTest.objects.get_or_create(
@@ -1323,16 +1349,18 @@ ogtt100_2hr = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt100_2hr,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_2hr,
+    date_field = 'result',
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_2hr,
+    date_field = 'result',
     threshold = 155,
-    date_field = 'result'
     )
 
 ogtt100_3hr = AbstractLabTest.objects.get_or_create(
@@ -1344,16 +1372,18 @@ ogtt100_3hr = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt100_3hr,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_3hr,
+    date_field = 'result',
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_3hr,
+    date_field = 'result',
     threshold = 140,
-    date_field = 'result'
     )
 
 ogtt100_4hr = AbstractLabTest.objects.get_or_create(
@@ -1365,16 +1395,18 @@ ogtt100_4hr = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt100_4hr,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_4hr,
+    date_field = 'result',
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_4hr,
+    date_field = 'result',
     threshold = 140,
-    date_field = 'result'
     )
 
 ogtt100_5hr = AbstractLabTest.objects.get_or_create(
@@ -1386,16 +1418,18 @@ ogtt100_5hr = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = ogtt100_5hr,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = ogtt100_5hr,
+    date_field = 'result',
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt100_5hr,
+    date_field = 'result',
     threshold = 140,
-    date_field = 'result'
     )
 
 
@@ -1414,6 +1448,7 @@ a1c = AbstractLabTest.objects.get_or_create(
     
 LabResultAnyHeuristic.objects.get_or_create(
     test = a1c,
+    date_field = 'result',
     )
 
 LabOrderHeuristic.objects.get_or_create(
@@ -1422,11 +1457,13 @@ LabOrderHeuristic.objects.get_or_create(
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = a1c,
+    date_field = 'result',
     threshold = 6.0,
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = a1c,
+    date_field = 'result',
     threshold = 6.5,
     )
 
@@ -1805,6 +1842,7 @@ LabResultAnyHeuristic.objects.get_or_create(
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = c_peptide,
+    date_field = 'result',
     threshold = 1,
     )
 
@@ -1817,10 +1855,12 @@ cholesterol_hdl = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = cholesterol_hdl,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = cholesterol_hdl,
+    date_field = 'result',
     )
 
 
@@ -1833,10 +1873,12 @@ cholesterol_ldl = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = cholesterol_ldl,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = cholesterol_ldl,
+    date_field = 'result',
     )
 
 
@@ -1849,10 +1891,12 @@ cholesterol_total = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = cholesterol_total,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = cholesterol_total,
+    date_field = 'result',
     )
 
 
@@ -1865,9 +1909,11 @@ triglycerides = AbstractLabTest.objects.get_or_create(
 
 LabResultAnyHeuristic.objects.get_or_create(
     test = triglycerides,
+    date_field = 'result',
     )
 
 LabResultPositiveHeuristic.objects.get_or_create(
     test = triglycerides,
+    date_field = 'result',
     )
 
