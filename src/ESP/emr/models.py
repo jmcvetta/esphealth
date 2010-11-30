@@ -228,7 +228,6 @@ class Patient(BaseMedicalRecord):
     date_of_birth = models.DateField('Date of Birth', blank=True, null=True, db_index=True)
     date_of_death = models.DateField('Date of death', blank=True, null=True)
     gender = models.CharField('Gender', max_length=20, blank=True, null=True, db_index=True)
-    pregnant = models.NullBooleanField('Patient is pregnant?', blank=True, null=True, db_index=True)
     race = models.CharField('Race', max_length=20, blank=True, null=True, db_index=True)
     home_language = models.CharField('Home Language', max_length=128, blank=True, null=True)
     ssn = models.CharField('SSN', max_length=20, blank=True, null=True)
@@ -814,8 +813,8 @@ class Prescription(BasePatientRecord):
     frequency = models.CharField(max_length=200, blank=True, null=True)
     # This really should be quantity_string instead of quantity; but I don't 
     # want to break a bunch of other stuff right now.
-    quantity = models.CharField(max_length=200, blank=True, null=True)
-    quantity_float = models.FloatField(blank=True, null=True, db_index=True)
+    quantity_raw = models.CharField(max_length=200, blank=True, null=True)
+    quantity = models.FloatField(blank=True, null=True, db_index=True)
     refills = models.CharField(max_length=200, blank=True, null=True)
     route = models.CharField(max_length=200, blank=True, null=True)
     status = models.CharField('Order Status', max_length=20, blank=True, null=True)
@@ -907,26 +906,25 @@ class Encounter(BasePatientRecord):
     native_site_num = models.CharField('Site Id #', max_length=30, blank=True, null=True)
     native_encounter_num = models.CharField('Encounter ID #', max_length=20, blank=True, null=True, db_index=True)
     event_type = models.CharField(max_length=20, blank=True, null=True, db_index=True)
-    pregnancy_status = models.BooleanField(blank=False, default=False)
-    edc = models.DateField('Expected date of confinement', blank=True, null=True, db_index=True) 
-    temperature = models.FloatField('Temperature (C)', blank=True, null=True, db_index=True)
-    # WTF: What is an icd9_qualifier?
-    #icd9_qualifier = models.CharField(max_length=200, blank=True, null=True)
-    weight = models.FloatField('Weight (kg)', blank=True, null=True, db_index=True)
-    height = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
+    pregnancy_status = models.BooleanField('Patient is pregnant?', blank=False, default=False)
+    edd = models.DateField('Expected Date of Delivery (pregnant women only)', blank=True, null=True, db_index=True) 
+    temperature_raw = models.CharField('Temperature (raw string from ETL file)', max_length=64, blank=True, null=True)
+    temperature_c = models.FloatField('Temperature (Celsius)', blank=True, null=True, db_index=True)
+    weight_raw = models.CharField('Weight (raw string from ETL file', max_length=64, blank=True, null=True, editable=False)
+    weight_kg = models.FloatField('Weight (kg)', blank=True, null=True, db_index=True)
+    height_raw = models.CharField('Hieght (raw string from ETL file', max_length=64, blank=True, null=True, editable=False)
+    height_cm = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
     bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True)
     bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True)
-    o2_stat = models.FloatField(max_length=50, blank=True, null=True)
-    peak_flow = models.FloatField(max_length=50, blank=True, null=True)
+    o2_stat = models.FloatField(blank=True, null=True)
+    peak_flow = models.FloatField(blank=True, null=True)
     diagnosis = models.TextField(null=True, blank=True)
-    # Field 'raw_bmi' is provided from soure EMR.  Field 'bmi' is same as 
-    # 'raw_bmi' if the latter is non-null; else, it is calculated from most 
-    # recent height / weight measurements
-    bmi = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, db_index=True)
-    raw_bmi = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, db_index=True)
+    bmi = models.FloatField(null=True, blank=True, db_index=True)
+    bmi_raw = models.CharField(max_length=64, blank=True, null=True)
+    #
     # HEF
+    #
     tags = generic.GenericRelation('hef.EventRecordTag')
-    #timespan = generic.GenericRelation('hef.Timespan')
     
     class Meta:
         ordering = ['date']
