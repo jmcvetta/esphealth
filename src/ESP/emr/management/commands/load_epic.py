@@ -13,7 +13,8 @@
 
 EPIC_ENCODING = 'iso-8859-15'
 #EPIC_ENCODING = 'windows-1252'
-ROW_LOG_COUNT = 10000  # Log progress every N rows.  'None' to disable.
+#ROW_LOG_COUNT = 10000  # Log progress every N rows.  'None' to disable. '-1' to log progress every row
+ROW_LOG_COUNT = -1  # Log progress every N rows.  'None' to disable. '-1' to log progress every row
 
 
 import csv
@@ -31,13 +32,17 @@ import string
 from decimal import Decimal
 
 from django.db import transaction
+from django.utils.encoding import smart_str
+from django.utils.encoding import smart_unicode
 from ESP.emr.management.commands.common import LoaderCommand
 
-from ESP.utils.utils import str_from_date
 from ESP.settings import DATA_DIR
 from ESP.settings import DATE_FORMAT
-from ESP.utils.utils import log
-from ESP.utils.utils import date_from_str
+from ESP.utils import log
+from ESP.utils import str_from_date
+from ESP.utils import date_from_str
+from ESP.utils import height_str_to_cm
+from ESP.utils import weight_str_to_kg
 from ESP.static.models import Icd9, Allergen
 from ESP.emr.models import Provenance
 from ESP.emr.models import EtlError
@@ -137,12 +142,15 @@ class BaseLoader(object):
         path, filename = os.path.split(filepath)
         self.filename = filename
         self.filepath = filepath
-        prov, created = Provenance.objects.get_or_create(timestamp=TIMESTAMP, 
-            source=filename, 
-            hostname=socket.gethostname(),
-            status='attempted',
-            )
+        prov, created = Provenance.objects.get_or_create(source=filename)
+        prov.wtimestamp = TIMESTAMP
+        prov.hostname = socket.gethostname()
+        prov.status = 'attempted'
         prov.save()
+        if created:
+            log.debug('Creating new provenance record #%s for %s' % (prov.pk, filename))
+        else:
+            log.debug('Updating existing provenance record #%s for %s' % (prov.pk, filename))
         self.provenance = prov
         file_handle = open(filepath)
         self.line_count = len(file_handle.readlines())
@@ -178,10 +186,10 @@ class BaseLoader(object):
             self.__provider_cache[provider_id_num] = p
         return self.__provider_cache[provider_id_num]
     
-    def float_or_none(self, string):
-        if not string:
+    def float_or_none(self, str):
+        if not str:
             return None
-        m = self.float_catcher.match(string)
+        m = self.float_catcher.match(str)
         if m and m.groups():
             result = float(m.groups()[0])
         else:
@@ -190,17 +198,36 @@ class BaseLoader(object):
             result = None
         return result
     
-    def date_or_none(self, string):
-        if not string:
+    def date_or_none(self, str):
+        if not str:
             return None
         try:
-            return date_from_str(string)
+            return date_from_str(str)
         except ValueError:
             return None
         
-    def decimal_or_none(self, string):
-        return Decimal(string) if string else None
+    def decimal_or_none(self, str):
+        return Decimal(str) if str else None
         
+    def string_or_none(self, s):
+        '''
+        Returns a Django-safe version of string s.  If s evaluates to false, 
+        e.g. empty string, return None object.
+        '''
+        if s:
+            return smart_str(s)
+        else:
+            return None
+    
+    def capitalize(self, s):
+        '''
+        Returns a capitalized, Django-safe version of string s.  
+        Returns None if s evaluates to None, including blank string.
+        '''
+        if s:
+            return string.capwords( smart_str(s) )
+        else:
+            return None
     
     @transaction.commit_on_success
     def load(self):
@@ -221,20 +248,19 @@ class BaseLoader(object):
             # check this, too -- in case there are extra blank lines at end of file
             if row[self.fields[0]].upper() == 'CONTROL TOTALS':
                 break
+            # Coerce to unicode
+            for key in row:
+                if row[key]:
+                    row[key] = smart_unicode(row[key].strip())
             sid = transaction.savepoint()
+            # Load the data, with error handling
             try:
-                # Coerce to unicode
-                for key in row:
-                    if row[key]:
-                        try:
-                            row[key] = row[key].strip().decode(EPIC_ENCODING).encode('utf-8')
-                        except AttributeError:
-                            pass
                 self.load_row(row)
                 transaction.savepoint_commit(sid)
                 valid += 1
             except KeyboardInterrupt, e:
                 # Allow keyboard interrupt to rise to next catch in main()
+                transaction.savepoint_rollback(sid)
                 raise e
             except BaseException, e:
                 transaction.savepoint_rollback(sid)
@@ -255,7 +281,7 @@ class BaseLoader(object):
                 err.data = pprint.pformat(row)
                 err.save()
 
-            if ROW_LOG_COUNT and not (cur_row % ROW_LOG_COUNT):
+            if (ROW_LOG_COUNT == -1) or (ROW_LOG_COUNT and not (cur_row % ROW_LOG_COUNT) ):
                 now = datetime.datetime.now()
                 log.info('Loaded %s of %s rows:  %s %s' % (cur_row, self.line_count, now, self.filename))
         log.debug('Loaded %s records with %s errors.' % (valid, errors))
@@ -515,7 +541,7 @@ class EncounterLoader(BaseLoader):
         'event_type',
         'edc',
         'temp',
-        'cpt',
+        'cpt',#
         'weight',
         'height',
         'bp_systolic',
@@ -532,66 +558,65 @@ class EncounterLoader(BaseLoader):
 
     
     def load_row(self, row):
+        # Util methods
+        cap = self.capitalize
+        son = self.string_or_none
+        dton = self.date_or_none
+        flon = self.float_or_none
+        # Fetch required defaults
+        pat = self.get_patient(row['patient_id_num'])
+        pro = self.get_provider(row['provider_id_num'])
+        enc_date = dton(row['encounter_date'])
         e, created = Encounter.objects.get_or_create(
             native_encounter_num=row['encounter_id_num'],
             defaults = {
-                'provenance':self.provenance,
-                'patient':self.get_patient(row['patient_id_num']),
-                'provider':self.get_provider(row['provider_id_num']),
-                'date':self.date_or_none(row['encounter_date'])
-                })
-
-        message = 'Updating existing Encounter' if created else 'Creating new Encounter object'
+                'provenance': self.provenance,
+                'patient': pat,
+                'provider': pro,
+                'date': enc_date,
+                }
+            )
+        message =  'Creating new Encounter object' if created else 'Updating existing Encounter'
         log.debug(message)
-
-
-        # If the row contains new information about the record, we will update it
-        # Else, we will just keep it as it was (or default, if it's a new record).
-        
-        e.native_site_num = row['dept_id_num'] or e.native_site_num or None
-        e.event_type = row['event_type'] or e.event_type or None
-        e.closed_date = row['closed_date'] or e.closed_date or None
-        e.site_name = row['dept_name'] or e.site_name or None
-        e.temperature = self.float_or_none(row['temp']) or e.temperature or None
-        e.bp_systolic = self.float_or_none(row['bp_systolic'])  or e.bp_systolic or None
-        e.bp_diastolic = self.float_or_none(row['bp_diastolic']) or e.bp_diastolic or None
-        e.o2_stat = self.float_or_none(row['o2_stat']) or e.o2_stat or None
-        e.peak_flow = self.float_or_none(row['peak_flow']) or e.peak_flow or None
-        e.closed_date = self.date_or_none(row['closed_date']) or e.closed_date or None
-        e.edc = self.date_or_none(row['edc']) or e.edc or None
-        e.bmi = self.decimal_or_none(row['bmi']) or e.bmi or None               
-#        e.diagnosis = row['diagnosis'] or e.diagnosis or None
-
-
-        # Elements that derived from the information on the row.
-        if e.edc: e.pregnancy_status = True
-        raw_weight = row['weight'] 
-        raw_height = row['height'] 
-
-        if raw_weight:
-            try:
-                weight = self.float_or_none(raw_weight.split()[0])
-                if 'lb' in raw_weight: # Convert LBs to Kg
-                    e.weight = 0.45359237 * weight
-            except ValueError:
-                log.warning('Cannot cast weight to a number: %s' % raw_weight)
-        if raw_height:
-            match = self.feet_regex.match(raw_height)
-            if match: # Need to convert from feet to cm
-                feet = self.float_or_none(match.groupdict()['feet'])
-                inches = self.float_or_none(match.groupdict()['inches'])
-                inches = inches + (feet * 12)
-                e.height = inches * 2.54
-            else: # Assume height is in cm
-                try:
-                    e.height = self.float_or_none(raw_height.split()[0])
-                except ValueError:
-                    log.warning('Cannot cast height to a number: %s' % raw_height)
-                    
-        # We still need to process icd9 codes, but we 
-        # must save the encounter before using a ManyToMany relationship
+        # Populate fields
+        e.provenance = self.provenance
+        e.patient = pat
+        e.provider = pro
+        e.raw_date = enc_date
+        e.date = dton(row['encounter_date'])
+        e.native_site_num = son( row['dept_id_num'] )
+        e.event_type = cap(row['event_type'])
+        e.closed_date = cap(row['closed_date'])
+        e.site_name = cap(row['dept_name'])
+        e.raw_temperature = son(row['temp'])
+        e.temperature = flon(row['temp'])
+        e.raw_bp_systolic = son(row['bp_systolic'])
+        e.bp_systolic = flon(row['bp_systolic'])
+        e.raw_bp_diastolic = son(row['bp_diastolic'])
+        e.bp_diastolic = flon(row['bp_diastolic'])
+        e.raw_o2_stat = son(row['o2_stat'])
+        e.o2_stat = flon(row['o2_stat'])
+        e.raw_peak_flow = son(row['peak_flow'])
+        e.peak_flow = flon(row['peak_flow'])
+        e.raw_closed_date = son(row['closed_date'])
+        e.closed_date = dton(row['closed_date'])
+        e.raw_edd = son(row['edc'])
+        e.edd = dton(row['edc'])
+        e.diagnosis = son(row['diagnosis'])
+        if e.edd:  e.pregnancy_status = True
+        e.raw_weight = son(row['weight'])
+        e.weight = weight_str_to_kg(row['weight'])
+        e.raw_height = son(row['height'])
+        e.height = height_str_to_cm(row['height'])
+        e.raw_bmi = son(row['bmi'])
+        e.bmi = e._calculate_bmi()
+        # Must save Encounter object before populating the ManyToManyField
         e.save() 
-        
+        #
+        # ICD9 Codes
+        #
+        if not created: # If updating the record, purge old ICD9 list
+            e.icd9_codes = []
         for code_string in row['icd9s'].split(';'):
             if len(code_string.split()) >= 1: 
                 code = code_string.split()[0].strip()
@@ -824,9 +849,11 @@ class Command(LoaderCommand):
             filetype[item[0]] = []
             valid_count[item[0]] = 0
             error_count[item[0]] = 0
+        if options['reload']:
+            log.warning('You specified --reload, so files will be reloaded if already in database')
         for filepath in input_filepaths:
             path, filename = os.path.split(filepath)
-            if Provenance.objects.filter(source=filename, status__in=('loaded', 'errors')):
+            if (options['reload'] == False) and Provenance.objects.filter(source=filename, status__in=('loaded', 'errors')):
                 log.info('File "%s" has already been loaded; skipping' % filename)
                 self.archive(options, filepath, 'success')
                 continue
