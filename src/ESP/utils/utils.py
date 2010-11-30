@@ -395,6 +395,8 @@ def weight_str_to_kg(raw_string):
     Parses the content of raw_string and returns weight in kilograms as a Float.  
     '''
     match = WEIGHT_REGEX.match(raw_string)
+    if not raw_string:
+        return None
     if match:
         lbs = float(match.group('lbs'))
         if match.group('oz'):
@@ -414,6 +416,8 @@ def height_str_to_cm(raw_string):
     Parses the content of raw_string and returns height in centimeters as a Float.  
     '''
     match = HEIGHT_REGEX.match(raw_string)
+    if not raw_string:
+        return None
     if match:
         feet = float(match.group('feet'))
         if match.group('inches'):

@@ -8,8 +8,17 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         
+        # Changing field 'Encounter.status'
+        db.alter_column('emr_encounter', 'status', self.gf('django.db.models.fields.TextField')(null=True))
+
+        # Changing field 'Encounter.site_name'
+        db.alter_column('emr_encounter', 'site_name', self.gf('django.db.models.fields.TextField')(null=True))
+
         # Adding index on 'Prescription', fields ['dose']
         db.create_index('emr_prescription', ['dose'])
+
+        # Deleting field 'Patient.pregnant'
+        db.delete_column('emr_patient', 'pregnant')
 
         # Adding index on 'Patient', fields ['date_of_birth']
         db.create_index('emr_patient', ['date_of_birth'])
@@ -20,9 +29,227 @@ class Migration(SchemaMigration):
         # Adding index on 'Patient', fields ['gender']
         db.create_index('emr_patient', ['gender'])
 
+        # Deleting field 'Encounter.edc'
+        db.delete_column('emr_encounter', 'edc')
+
+        # Deleting field 'Encounter.event_type'
+        db.delete_column('emr_encounter', 'event_type')
+
+        # Deleting field 'Encounter.closed_date'
+        db.delete_column('emr_encounter', 'closed_date')
+
+        # Deleting field 'Encounter.diagnosis'
+        db.delete_column('emr_encounter', 'diagnosis')
+
+        # Deleting field 'Encounter.pregnancy_status'
+        db.delete_column('emr_encounter', 'pregnancy_status')
+
+        # Adding field 'Encounter.encounter_type'
+        db.add_column('emr_encounter', 'encounter_type', self.gf('django.db.models.fields.TextField')(db_index=True, null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.date_closed'
+        db.add_column('emr_encounter', 'date_closed', self.gf('django.db.models.fields.DateField')(db_index=True, null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.pregnant'
+        db.add_column('emr_encounter', 'pregnant', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True), keep_default=False)
+
+        # Adding field 'Encounter.edd'
+        db.add_column('emr_encounter', 'edd', self.gf('django.db.models.fields.DateField')(db_index=True, null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.raw_date'
+        db.add_column('emr_encounter', 'raw_date', self.gf('django.db.models.fields.TextField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.raw_date_closed'
+        db.add_column('emr_encounter', 'raw_date_closed', self.gf('django.db.models.fields.TextField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.raw_edd'
+        db.add_column('emr_encounter', 'raw_edd', self.gf('django.db.models.fields.TextField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.raw_temperature'
+        db.add_column('emr_encounter', 'raw_temperature', self.gf('django.db.models.fields.TextField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.raw_weight'
+        db.add_column('emr_encounter', 'raw_weight', self.gf('django.db.models.fields.TextField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.raw_height'
+        db.add_column('emr_encounter', 'raw_height', self.gf('django.db.models.fields.TextField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.raw_bp_systolic'
+        db.add_column('emr_encounter', 'raw_bp_systolic', self.gf('django.db.models.fields.TextField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.raw_bp_diastolic'
+        db.add_column('emr_encounter', 'raw_bp_diastolic', self.gf('django.db.models.fields.TextField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.raw_o2_stat'
+        db.add_column('emr_encounter', 'raw_o2_stat', self.gf('django.db.models.fields.TextField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.raw_peak_flow'
+        db.add_column('emr_encounter', 'raw_peak_flow', self.gf('django.db.models.fields.TextField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.raw_bmi'
+        db.add_column('emr_encounter', 'raw_bmi', self.gf('django.db.models.fields.TextField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.raw_diagnosis'
+        db.add_column('emr_encounter', 'raw_diagnosis', self.gf('django.db.models.fields.TextField')(null=True, blank=True), keep_default=False)
+
+        # Adding index on 'Encounter', fields ['status']
+        db.create_index('emr_encounter', ['status'])
+
+        # Changing field 'Encounter.bmi'
+        db.alter_column('emr_encounter', 'bmi', self.gf('django.db.models.fields.FloatField')(null=True))
+
+        # Adding index on 'Encounter', fields ['site_name']
+        db.create_index('emr_encounter', ['site_name'])
+
+        # Adding index on 'Encounter', fields ['bp_systolic']
+        db.create_index('emr_encounter', ['bp_systolic'])
+
+        # Adding index on 'Encounter', fields ['bp_diastolic']
+        db.create_index('emr_encounter', ['bp_diastolic'])
+
+        # Changing field 'Encounter.native_encounter_num'
+        db.alter_column('emr_encounter', 'native_encounter_num', self.gf('django.db.models.fields.TextField')(null=True))
+
+        # Changing field 'Encounter.o2_stat'
+        db.alter_column('emr_encounter', 'o2_stat', self.gf('django.db.models.fields.FloatField')(null=True))
+
+        # Adding index on 'Encounter', fields ['o2_stat']
+        db.create_index('emr_encounter', ['o2_stat'])
+
+        # Changing field 'Encounter.peak_flow'
+        db.alter_column('emr_encounter', 'peak_flow', self.gf('django.db.models.fields.FloatField')(null=True))
+
+        # Adding index on 'Encounter', fields ['peak_flow']
+        db.create_index('emr_encounter', ['peak_flow'])
+
+        # Changing field 'Encounter.native_site_num'
+        db.alter_column('emr_encounter', 'native_site_num', self.gf('django.db.models.fields.TextField')(null=True))
+
+        # Adding index on 'Encounter', fields ['native_site_num']
+        db.create_index('emr_encounter', ['native_site_num'])
+
 
     def backwards(self, orm):
-        raise RuntimeError("Cannot reverse this migration.")
+        
+        # Removing index on 'Encounter', fields ['native_site_num']
+        db.delete_index('emr_encounter', ['native_site_num'])
+
+        # Removing index on 'Encounter', fields ['peak_flow']
+        db.delete_index('emr_encounter', ['peak_flow'])
+
+        # Removing index on 'Encounter', fields ['o2_stat']
+        db.delete_index('emr_encounter', ['o2_stat'])
+
+        # Removing index on 'Encounter', fields ['bp_diastolic']
+        db.delete_index('emr_encounter', ['bp_diastolic'])
+
+        # Removing index on 'Encounter', fields ['bp_systolic']
+        db.delete_index('emr_encounter', ['bp_systolic'])
+
+        # Removing index on 'Encounter', fields ['site_name']
+        db.delete_index('emr_encounter', ['site_name'])
+
+        # Removing index on 'Encounter', fields ['status']
+        db.delete_index('emr_encounter', ['status'])
+
+        # Removing index on 'Patient', fields ['gender']
+        db.delete_index('emr_patient', ['gender'])
+
+        # Removing index on 'Patient', fields ['race']
+        db.delete_index('emr_patient', ['race'])
+
+        # Removing index on 'Patient', fields ['date_of_birth']
+        db.delete_index('emr_patient', ['date_of_birth'])
+
+        # Removing index on 'Prescription', fields ['dose']
+        db.delete_index('emr_prescription', ['dose'])
+
+        # Adding field 'Patient.pregnant'
+        db.add_column('emr_patient', 'pregnant', self.gf('django.db.models.fields.NullBooleanField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.edc'
+        db.add_column('emr_encounter', 'edc', self.gf('django.db.models.fields.DateField')(blank=True, null=True, db_index=True), keep_default=False)
+
+        # Adding field 'Encounter.event_type'
+        db.add_column('emr_encounter', 'event_type', self.gf('django.db.models.fields.CharField')(blank=True, max_length=20, null=True, db_index=True), keep_default=False)
+
+        # Adding field 'Encounter.closed_date'
+        db.add_column('emr_encounter', 'closed_date', self.gf('django.db.models.fields.DateField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.diagnosis'
+        db.add_column('emr_encounter', 'diagnosis', self.gf('django.db.models.fields.TextField')(null=True, blank=True), keep_default=False)
+
+        # Adding field 'Encounter.pregnancy_status'
+        db.add_column('emr_encounter', 'pregnancy_status', self.gf('django.db.models.fields.BooleanField')(default=False), keep_default=False)
+
+        # Deleting field 'Encounter.encounter_type'
+        db.delete_column('emr_encounter', 'encounter_type')
+
+        # Deleting field 'Encounter.date_closed'
+        db.delete_column('emr_encounter', 'date_closed')
+
+        # Deleting field 'Encounter.pregnant'
+        db.delete_column('emr_encounter', 'pregnant')
+
+        # Deleting field 'Encounter.edd'
+        db.delete_column('emr_encounter', 'edd')
+
+        # Deleting field 'Encounter.raw_date'
+        db.delete_column('emr_encounter', 'raw_date')
+
+        # Deleting field 'Encounter.raw_date_closed'
+        db.delete_column('emr_encounter', 'raw_date_closed')
+
+        # Deleting field 'Encounter.raw_edd'
+        db.delete_column('emr_encounter', 'raw_edd')
+
+        # Deleting field 'Encounter.raw_temperature'
+        db.delete_column('emr_encounter', 'raw_temperature')
+
+        # Deleting field 'Encounter.raw_weight'
+        db.delete_column('emr_encounter', 'raw_weight')
+
+        # Deleting field 'Encounter.raw_height'
+        db.delete_column('emr_encounter', 'raw_height')
+
+        # Deleting field 'Encounter.raw_bp_systolic'
+        db.delete_column('emr_encounter', 'raw_bp_systolic')
+
+        # Deleting field 'Encounter.raw_bp_diastolic'
+        db.delete_column('emr_encounter', 'raw_bp_diastolic')
+
+        # Deleting field 'Encounter.raw_o2_stat'
+        db.delete_column('emr_encounter', 'raw_o2_stat')
+
+        # Deleting field 'Encounter.raw_peak_flow'
+        db.delete_column('emr_encounter', 'raw_peak_flow')
+
+        # Deleting field 'Encounter.raw_bmi'
+        db.delete_column('emr_encounter', 'raw_bmi')
+
+        # Deleting field 'Encounter.raw_diagnosis'
+        db.delete_column('emr_encounter', 'raw_diagnosis')
+
+        # Changing field 'Encounter.status'
+        db.alter_column('emr_encounter', 'status', self.gf('django.db.models.fields.CharField')(max_length=20, null=True))
+
+        # Changing field 'Encounter.bmi'
+        db.alter_column('emr_encounter', 'bmi', self.gf('django.db.models.fields.DecimalField')(null=True, max_digits=10, decimal_places=2))
+
+        # Changing field 'Encounter.site_name'
+        db.alter_column('emr_encounter', 'site_name', self.gf('django.db.models.fields.CharField')(max_length=100, null=True))
+
+        # Changing field 'Encounter.native_encounter_num'
+        db.alter_column('emr_encounter', 'native_encounter_num', self.gf('django.db.models.fields.CharField')(max_length=20, null=True))
+
+        # Changing field 'Encounter.o2_stat'
+        db.alter_column('emr_encounter', 'o2_stat', self.gf('django.db.models.fields.FloatField')(max_length=50, null=True))
+
+        # Changing field 'Encounter.peak_flow'
+        db.alter_column('emr_encounter', 'peak_flow', self.gf('django.db.models.fields.FloatField')(max_length=50, null=True))
+
+        # Changing field 'Encounter.native_site_num'
+        db.alter_column('emr_encounter', 'native_site_num', self.gf('django.db.models.fields.CharField')(max_length=30, null=True))
 
 
     models = {
@@ -53,35 +280,42 @@ class Migration(SchemaMigration):
         'emr.encounter': {
             'Meta': {'ordering': "['date']", 'object_name': 'Encounter'},
             'bmi': ('django.db.models.fields.FloatField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
-            'bmi_raw': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'}),
-            'bp_diastolic': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'bp_systolic': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'closed_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
+            'bp_diastolic': ('django.db.models.fields.FloatField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
+            'bp_systolic': ('django.db.models.fields.FloatField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
             'created_timestamp': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'date': ('django.db.models.fields.DateField', [], {'db_index': 'True'}),
-            'diagnosis': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'date_closed': ('django.db.models.fields.DateField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
             'edd': ('django.db.models.fields.DateField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
-            'event_type': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'height_cm': ('django.db.models.fields.FloatField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
-            'height_raw': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'}),
+            'encounter_type': ('django.db.models.fields.TextField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
+            'height': ('django.db.models.fields.FloatField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
             'icd9_codes': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'to': "orm['static.Icd9']", 'null': 'True', 'db_index': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'mrn': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
-            'native_encounter_num': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'native_site_num': ('django.db.models.fields.CharField', [], {'max_length': '30', 'null': 'True', 'blank': 'True'}),
-            'o2_stat': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
+            'native_encounter_num': ('django.db.models.fields.TextField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
+            'native_site_num': ('django.db.models.fields.TextField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
+            'o2_stat': ('django.db.models.fields.FloatField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
             'patient': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['emr.Patient']", 'null': 'True', 'blank': 'True'}),
-            'peak_flow': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'}),
-            'pregnancy_status': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'peak_flow': ('django.db.models.fields.FloatField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
+            'pregnant': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'provenance': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['emr.Provenance']"}),
             'provider': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['emr.Provider']", 'null': 'True', 'blank': 'True'}),
-            'site_name': ('django.db.models.fields.CharField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
-            'status': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'temperature_c': ('django.db.models.fields.FloatField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
-            'temperature_raw': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'}),
+            'raw_bmi': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'raw_bp_diastolic': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'raw_bp_systolic': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'raw_date': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'raw_date_closed': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'raw_diagnosis': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'raw_edd': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'raw_height': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'raw_o2_stat': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'raw_peak_flow': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'raw_temperature': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'raw_weight': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'site_name': ('django.db.models.fields.TextField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
+            'status': ('django.db.models.fields.TextField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
+            'temperature': ('django.db.models.fields.FloatField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
             'updated_timestamp': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'weight_kg': ('django.db.models.fields.FloatField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
-            'weight_raw': ('django.db.models.fields.CharField', [], {'max_length': '64', 'null': 'True', 'blank': 'True'})
+            'weight': ('django.db.models.fields.FloatField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'})
         },
         'emr.etlerror': {
             'Meta': {'object_name': 'EtlError'},
@@ -217,8 +451,8 @@ class Migration(SchemaMigration):
             'patient': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['emr.Patient']", 'null': 'True', 'blank': 'True'}),
             'provenance': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['emr.Provenance']"}),
             'provider': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['emr.Provider']", 'null': 'True', 'blank': 'True'}),
+            'quantity': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'quantity_float': ('django.db.models.fields.FloatField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
-            'quantity_raw': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'refills': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'route': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'start_date': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),

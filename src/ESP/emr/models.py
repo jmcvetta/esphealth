@@ -9,6 +9,7 @@
 @license: LGPL
 '''
 
+
 import string
 import random
 import datetime
@@ -38,19 +39,11 @@ from ESP.utils.utils import log, log_query, date_from_str, str_from_date
 
 
 
-
-
-
-#class Hl7Message(models.Model):
-#    '''
-#    An HL7 file from which EMR data was loaded into the database.  Records when 
-#    we tried to import the file, and the status of our attempt.
-#    '''
-#    filename = models.CharField(max_length=255, blank=False, unique=True, db_index=True)
-#    timestamp = models.DateTimeField(blank=False)
-#    status = models.CharField(max_length=1, choices=HL7_MESSAGE_LOAD_STATUS, 
-#        blank=False, db_index=True)
-#    message = models.TextField('Status Message', blank=True, null=True)
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# Models
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 class Provenance(models.Model):
@@ -406,28 +399,6 @@ class Patient(BaseMedicalRecord):
         age = self._get_age(when=when)        
         return (interval * int(min(age.days/365.25, above_ceiling)/interval)) if age else None
         
-    
-    def _get_age_str(self):
-        '''
-        Returns patient's age as a string 
-        '''
-        if not self.date_of_birth: return None
-        today = datetime.datetime.today() 
-        days = today.day - self.date_of_birth.day
-        months = today.month - self.date_of_birth.month
-        years = today.year - self.date_of_birth.year
-        if days < 0:
-            months -= 1
-                
-        if months < 0:
-            years -= 1
-            months += 12
-        if years > 0:
-            return str(years) 
-        else:
-            return '%d Months' % months
-    age_str = property(_get_age_str)
-    
     def __get_tel_numeric(self):
         '''
         Returns telephone number string containing only numeric characters
@@ -813,8 +784,8 @@ class Prescription(BasePatientRecord):
     frequency = models.CharField(max_length=200, blank=True, null=True)
     # This really should be quantity_string instead of quantity; but I don't 
     # want to break a bunch of other stuff right now.
-    quantity_raw = models.CharField(max_length=200, blank=True, null=True)
     quantity_float = models.FloatField(blank=True, null=True, db_index=True)
+    quantity = models.CharField(max_length=200, blank=True, null=True)
     refills = models.CharField(max_length=200, blank=True, null=True)
     route = models.CharField(max_length=200, blank=True, null=True)
     status = models.CharField('Order Status', max_length=20, blank=True, null=True)
@@ -894,41 +865,57 @@ class Encounter(BasePatientRecord):
     '''
     A encounter between provider and patient
     '''
-
-    # Date is encounter date
-    #
-
     objects = EncounterManager()
     icd9_codes = models.ManyToManyField(Icd9,  blank=True,  null=True, db_index=True)
-    status = models.CharField(max_length=20, blank=True, null=True)
-    closed_date = models.DateField(blank=True, null=True)
-    site_name = models.CharField(max_length=100, blank=True, null=True)
-    native_site_num = models.CharField('Site Id #', max_length=30, blank=True, null=True)
-    native_encounter_num = models.CharField('Encounter ID #', max_length=20, blank=True, null=True, db_index=True)
-    event_type = models.CharField(max_length=20, blank=True, null=True, db_index=True)
-    pregnancy_status = models.BooleanField('Patient is pregnant?', blank=False, default=False)
-    edd = models.DateField('Expected Date of Delivery (pregnant women only)', blank=True, null=True, db_index=True) 
-    temperature_raw = models.CharField('Temperature (raw string from ETL file)', max_length=64, blank=True, null=True)
-    temperature_c = models.FloatField('Temperature (Celsius)', blank=True, null=True, db_index=True)
-    weight_raw = models.CharField('Weight (raw string from ETL file', max_length=64, blank=True, null=True, editable=False)
-    weight_kg = models.FloatField('Weight (kg)', blank=True, null=True, db_index=True)
-    height_raw = models.CharField('Hieght (raw string from ETL file', max_length=64, blank=True, null=True, editable=False)
-    height_cm = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
-    bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True)
-    bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True)
-    o2_stat = models.FloatField(blank=True, null=True)
-    peak_flow = models.FloatField(blank=True, null=True)
-    diagnosis = models.TextField(null=True, blank=True)
-    bmi = models.FloatField(null=True, blank=True, db_index=True)
-    bmi_raw = models.CharField(max_length=64, blank=True, null=True)
-    #
-    # HEF
-    #
     tags = generic.GenericRelation('hef.EventRecordTag')
+    #
+    # Fields taken directly from ETL file.  Some minimal processing, such as 
+    # standardizing capitalization, may be advisable in loader code.  
+    #
+    native_encounter_num = models.TextField('Native EMR system encounter ID', blank=True, null=True, db_index=True)
+    encounter_type = models.TextField('Type of encounter', blank=True, null=True, db_index=True)
+    status = models.TextField('Record status', blank=True, null=True, db_index=True)
+    native_site_num = models.TextField('Native EMR system site ID', blank=True, null=True, db_index=True)
+    site_name = models.TextField('Encounter site name', blank=True, null=True, db_index=True)
+    #
+    # Extracted & calculated fields
+    #
+    # date is encounter date
+    date_closed = models.DateField(blank=True, null=True, db_index=True)
+    pregnant = models.BooleanField('Patient is pregnant?', blank=False, default=False, db_index=True)
+    edd = models.DateField('Expected Date of Delivery (pregnant women only)', blank=True, null=True, db_index=True) 
+    temperature = models.FloatField('Temperature (Celsius)', blank=True, null=True, db_index=True)
+    weight = models.FloatField('Weight (kg)', blank=True, null=True, db_index=True)
+    height = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
+    bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True, db_index=True)
+    bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True, db_index=True)
+    o2_stat = models.FloatField(blank=True, null=True, db_index=True)
+    peak_flow = models.FloatField(blank=True, null=True, db_index=True)
+    bmi = models.FloatField(null=True, blank=True, db_index=True)
+    #
+    # Raw string fields 
+    #
+    # Please do not index these, lest you overburden your poor database.  Be 
+    # kind to it, it has done you no wrong that you did not bring on yourself.
+    #
+    raw_date = models.TextField(null=True, blank=True)
+    raw_date_closed = models.TextField(null=True, blank=True)
+    raw_edd = models.TextField(null=True, blank=True)
+    raw_temperature = models.TextField(null=True, blank=True)
+    raw_weight = models.TextField(null=True, blank=True)
+    raw_height = models.TextField(null=True, blank=True)
+    raw_bp_systolic = models.TextField(null=True, blank=True)
+    raw_bp_diastolic = models.TextField(null=True, blank=True)
+    raw_o2_stat = models.TextField(null=True, blank=True)
+    raw_peak_flow = models.TextField(null=True, blank=True)
+    raw_bmi = models.TextField(null=True, blank=True)
+    # Making diagnosis field available in a meaningful way requires full-text
+    # indexing.  Support for this is planned, but not currently implemented.
+    raw_diagnosis = models.TextField(null=True, blank=True)
     
     class Meta:
         ordering = ['date']
-
+    
     q_fake = Q(patient__patient_id_num__startswith='FAKE')
 
     @staticmethod
@@ -1014,39 +1001,41 @@ class Encounter(BasePatientRecord):
         return ', '.join(self.icd9_codes.order_by('code').values_list('code', flat=True))
     icd9_codes_str = property(_get_icd9_codes_str)
 
-    def _populate_bmi(self):
-        '''
-        Calls _calculate_bmi() to populate 'bmi' field.
-        '''
-        self.bmi = self._calculate_bmi()
-        self.save()
-    
     def _calculate_bmi(self):
         '''
-        Returns this patient's BMI.  If this encounter has a non-null 'raw_bmi' 
-        field, that is returned.  Otherwise, BMI is calculated based on most recent 
-        height/weight.
+        Calculate's patient's BMI as of this encounter
         '''
+        # If this encounter has a raw bmi value, convert it to float and return
         if self.raw_bmi:
-            return self.raw_bmi
+            try:
+                return float(self.raw_bmi)
+            except ValueError: # Can't convert raw_bmi to a float
+                log.warning('Could not convert raw_bmi "%s" to float - will try to calculate BMI' % self.raw_bmi)
+        # If this encounter has usable height & weight, calculate BMI based on that
         if (self.height and self.weight):
             height = self.height
             weight = self.weight
         else:
-            encs = Encounter.objects.filter(patient=self.patient)
-            start = self.date - relativedelta(days=365)
-            #end = self.date + relativedelta(days=120)
-            encs_before = encs.filter(date__gte=start, date__lte=self.date).order_by('-date')
-            bmi_encs = encs_before.filter(raw_bmi__isnull=False)
-            if bmi_encs:
-                return bmi_encs[0].raw_bmi
-            ht_wt_encs = encs_before.filter(height__isnull=False, weight__isnull=False)
-            if ht_wt_encs:
-                height = ht_wt_encs[0].height
-                weight = ht_wt_encs[0].weight
-            else:
-                log.warning('Cannot calculate BMI for encounter %s' % self.pk)
-                return None # Cannot calculate BMI
+            # If there was a valid BMI in the past year, go with that
+            pat_encs = Encounter.objects.filter(
+                patient = self.patient,
+                ).order_by('-date')
+            encs_last_year = pat_encs.filter(
+                date__gte = (self.date - relativedelta(days=365)),
+                date__lte = self.date,
+                )
+            recent_bmi = encs_last_year.filter(bmi__isnull=False)
+            if recent_bmi:
+                return recent_bmi[0].bmi
+            # Find the most recent height & weight for this patient
+            ht_encs = encs_last_year.filter(height__isnull=False)
+            wt_encs = encs_last_year.filter(weight__isnull=False)
+            if ht_encs and wt_encs:
+                height = ht_encs[0].height
+                weight = wt_encs[0].weight
+            else: # We don't know a recent height and weight for this patient
+                log.warning('Cannot calculate BMI for encounter # %s' % self.pk)
+                return None 
         height_m = height / 100  # Height is stored in centimeters
         weight_kg = weight # Already in kilograms
         bmi = weight_kg / (height_m ** 2 )
