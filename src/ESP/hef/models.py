@@ -1002,8 +1002,9 @@ class DiagnosisHeuristic(Heuristic):
         unbound = Encounter.objects.exclude(tags__event__event_type__heuristic=self)
         q_obj = Q(pk__isnull=True)
         for icd9_query in self.icd9query_set.all():
-            q_obj |= icd9_query.q_obj
-        encounters = unbound.filter(q_obj)
+            q_obj |= icd9_query.icd9_q_obj
+        icd9s = Icd9.objects.filter(q_obj)
+        encounters = unbound.filter(icd9_codes__in=icd9s)
         log_query('Encounters for %s' % self.name, encounters)
         log.info('Generating events for "%s"' % self.verbose_name)
         event_type = EventType.objects.get(name='dx--%s' % self.name)
@@ -1042,7 +1043,7 @@ class Icd9Query(models.Model):
     
     def __get_icd9_q_obj(self):
         '''
-        Returns a Q object suitable for selecting Encounter objects that match this ICD9 query
+        Returns a Q object suitable for selecting ICD9 objects that match this query
         '''
         if not (self.icd9_exact or self.icd9_starts_with or self.icd9_ends_with or self.icd9_contains):
             log.error('%s does not contain any ICD9 search terms, and will not be processed.' % self)
