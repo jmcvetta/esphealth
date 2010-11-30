@@ -378,3 +378,49 @@ class TableSelectMultiple(SelectMultiple):
         return mark_safe(u'\n'.join(output))
 
 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#--- Unit Conversion
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+WEIGHT_REGEX = re.compile(r'''
+(?P<lbs>\d+(\.\d*)?) \s* lbs? \s* ( (?P<oz>\d+(\.\d*)?) \s* (o|oz)?)?
+''', 
+re.VERBOSE)
+
+def weight_str_to_kg(raw_string):
+    '''
+    Parses the content of raw_string and returns weight in kilograms as a Float.  
+    '''
+    match = WEIGHT_REGEX.match(raw_string)
+    if match:
+        lbs = float(match.group('lbs'))
+        if match.group('oz'):
+            lbs += ( float(match.group('oz')) / 16 )
+        kg = lbs / 2.20462262185
+        return kg
+    else:
+        log.debug('Could not extract numeric weight from raw string: "%s"' % raw_string)
+        return None
+        
+HEIGHT_REGEX = re.compile(r'''
+(?P<feet>\d+(\.\d*)?) \s* ' \s* ( (?P<inches>\d+\.?\d*) \s* " )?
+''', re.VERBOSE)
+
+def height_str_to_cm(raw_string):
+    '''
+    Parses the content of raw_string and returns height in centimeters as a Float.  
+    '''
+    match = HEIGHT_REGEX.match(raw_string)
+    if match:
+        feet = float(match.group('feet'))
+        if match.group('inches'):
+            feet += ( float(match.group('inches')) / 12 )
+        cm = feet / 30.48
+        return cm
+    else:
+        log.debug('Could not extract numeric height from raw string: "%s"' % raw_string)
+        return None
+
