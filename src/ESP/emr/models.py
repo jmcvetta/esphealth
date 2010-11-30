@@ -814,7 +814,7 @@ class Prescription(BasePatientRecord):
     # This really should be quantity_string instead of quantity; but I don't 
     # want to break a bunch of other stuff right now.
     quantity_raw = models.CharField(max_length=200, blank=True, null=True)
-    quantity = models.FloatField(blank=True, null=True, db_index=True)
+    quantity_float = models.FloatField(blank=True, null=True, db_index=True)
     refills = models.CharField(max_length=200, blank=True, null=True)
     route = models.CharField(max_length=200, blank=True, null=True)
     status = models.CharField('Order Status', max_length=20, blank=True, null=True)
