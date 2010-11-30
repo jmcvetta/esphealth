@@ -17,7 +17,6 @@ import threading
 import Queue
 import thread
 import signal
-import cherrypy
 import dowser
 
 from django.db import connection
@@ -25,7 +24,7 @@ from django.db import transaction
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
-
+from ESP.settings import HEF_THREAD_COUNT
 from ESP.hef.models import AbstractLabTest
 from ESP.hef.models import DiagnosisHeuristic
 from ESP.hef.models import PrescriptionHeuristic
@@ -33,10 +32,6 @@ from ESP.nodis.models import Case # hef.core and .models are dependencies of nod
 from ESP import settings
 from ESP.utils import log
 from ESP.utils import log_query
-
-
-DEFAULT_THREAD_COUNT = 15
-
 
 
 #===============================================================================
@@ -57,7 +52,7 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('--list', action='store_true', dest='list', 
             help='List all abstract tests'),
-        make_option('--threads', action='store', dest='thread_count', default=DEFAULT_THREAD_COUNT,
+        make_option('--threads', action='store', dest='thread_count', default=HEF_THREAD_COUNT,
             type='int', metavar='COUNT', help='Run in COUNT threads'),
         )
 

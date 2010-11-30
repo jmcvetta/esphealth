@@ -426,3 +426,8 @@ LOG_LEVEL_SYSLOG = _levels[config['Logging']['log_level_syslog']]
 
 # Sphinx 0.9.9
 SPHINX_API_VERSION = 0x116
+
+#
+#--- HEF
+#
+HEF_THREAD_COUNT = config['HEF']['thread_count']
