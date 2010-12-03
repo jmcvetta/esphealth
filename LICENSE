@@ -15,7 +15,7 @@ django-sphinx      BSD
 django-tables      BSD
 South              Apache
 Dowser             Unknown, presumed open source
-
+CherryPy           BSD
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
