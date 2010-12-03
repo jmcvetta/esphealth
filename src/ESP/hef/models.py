@@ -5,8 +5,9 @@
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
 @organization: Channing Laboratory http://www.channing.harvard.edu
-@copyright: (c) 2009 Channing Laboratory
-@license: LGPL
+@contact: http://esphealth.org
+@copyright: (c) 2009-2010 Channing Laboratory
+@license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
 import math
@@ -585,7 +586,7 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
         log_query('Negative labs for %s' % self.name, negative_labs)
         log.info('Generating negative events for %s' % self.test.name)
         neg_event_type = EventType.objects.get(name='lx--%s--negative' % self.test.name)
-        for lab in negative_labs:
+        for lab in negative_labs.iterator():
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -604,7 +605,7 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
         log_query('Indeterminate labs for %s' % self.name, indeterminate_labs)
         log.info('Generating indeterminate events for %s' % self.test.name)
         ind_event_type = EventType.objects.get(name='lx--%s--indeterminate' % self.test.name)
-        for lab in indeterminate_labs:
+        for lab in indeterminate_labs.iterator():
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
