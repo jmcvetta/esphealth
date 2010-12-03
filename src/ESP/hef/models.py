@@ -386,7 +386,7 @@ class LabOrderHeuristic(LabHeuristicBase):
         log_query('Unbound lab orders for %s' % self.name, unbound_orders)
         unbound_count = unbound_orders.count()
         event_type = EventType.objects.get(name=self.name)
-        for order in unbound_orders:
+        for order in unbound_orders.iterator():
             e = Event(
                 event_type = event_type,
                 date = order.date,
@@ -447,7 +447,7 @@ class LabResultAnyHeuristic(LabResultHeuristicBase):
         log_query('Unbound lab results for %s' % self.name, unbound_results)
         unbound_count = unbound_results.count()
         event_type = EventType.objects.get(name=self.name)
-        for lab in unbound_results:
+        for lab in unbound_results.iterator():
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -566,7 +566,7 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
         log_query('Positive labs for %s' % self.name, positive_labs)
         log.info('Generating positive events for %s' % self.test.name)
         pos_event_type = EventType.objects.get(name='lx--%s--positive' % self.test.name)
-        for lab in positive_labs:
+        for lab in positive_labs.iterator():
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -673,7 +673,7 @@ class LabResultRatioHeuristic(LabResultHeuristicBase):
         log_query(self.name, positive_labs)
         log.info('Generating new events for %s' % self.name)
         event_type = EventType.objects.get(name=self.name)
-        for lab in positive_labs:
+        for lab in positive_labs.iterator():
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -731,7 +731,7 @@ class LabResultFixedThresholdHeuristic(LabResultHeuristicBase):
         log_query(self.name, positive_labs)
         log.info('Generating events for "%s"' % self.name)
         event_type = EventType.objects.get(name=self.name)
-        for lab in positive_labs:
+        for lab in positive_labs.iterator():
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -807,7 +807,7 @@ class LabResultWesternBlotHeuristic(LabResultHeuristicBase):
         potential_positives = unbound_labs.filter(q_obj)
         negatives = unbound_labs.exclude(potential_positives)
         neg_event_type = EventType.objects.get(name='%s--negative' % self.name)
-        for lab in negatives:
+        for lab in negatives.iterator():
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -941,7 +941,7 @@ class PrescriptionHeuristic(Heuristic):
         log_query('Prescriptions for %s' % self.name, prescriptions)
         log.info('Generating events for "%s"' % self.verbose_name)
         event_type = EventType.objects.get(name='rx--%s' % self.name)
-        for rx in prescriptions:
+        for rx in prescriptions.iterator():
             new_event = Event(
                 event_type = event_type,
                 patient = rx.patient,
@@ -1008,7 +1008,7 @@ class DiagnosisHeuristic(Heuristic):
         log_query('Encounters for %s' % self.name, encounters)
         log.info('Generating events for "%s"' % self.verbose_name)
         event_type = EventType.objects.get(name='dx--%s' % self.name)
-        for enc in encounters:
+        for enc in encounters.iterator():
             new_event = Event(
                 event_type = event_type,
                 patient = enc.patient,
