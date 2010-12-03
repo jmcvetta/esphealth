@@ -414,6 +414,8 @@ HEIGHT_REGEX = re.compile(r'''
 def height_str_to_cm(raw_string):
     '''
     Parses the content of raw_string and returns height in centimeters as a Float.  
+    If string parses to a height of 0, method will return None instead, to avoid 
+    divide by zero issues in BMI calculation.
     '''
     match = HEIGHT_REGEX.match(raw_string)
     if not raw_string:
@@ -423,8 +425,8 @@ def height_str_to_cm(raw_string):
         if match.group('inches'):
             feet += ( float(match.group('inches')) / 12 )
         cm = feet / 30.48
-        return cm
-    else:
-        log.debug('Could not extract numeric height from raw string: "%s"' % raw_string)
-        return None
+        if cm: # Don't return 0 height
+            return cm
+    log.debug('Could not extract valid numeric height from raw string: "%s"' % raw_string)
+    return None
 
