@@ -1028,8 +1028,8 @@ class Encounter(BasePatientRecord):
             if recent_bmi:
                 return recent_bmi[0].bmi
             # Find the most recent height & weight for this patient
-            ht_encs = encs_last_year.filter(height__isnull=False)
-            wt_encs = encs_last_year.filter(weight__isnull=False)
+            ht_encs = encs_last_year.filter(height__isnull=False).exclude(height=0)
+            wt_encs = encs_last_year.filter(weight__isnull=False).exclude(weight=0)
             if ht_encs and wt_encs:
                 height = ht_encs[0].height
                 weight = wt_encs[0].weight
