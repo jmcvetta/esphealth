@@ -145,7 +145,7 @@ class AbstractLabTest(models.Model):
 
     def generate_events(self):
         count = 0
-        log.info('Generating events for abstract test: %s' % self)
+        log.info('Generating events for %s' % self)
         for heuristic in self.heuristic_set:
             count += heuristic.generate_events()
         return count
@@ -382,7 +382,7 @@ class LabOrderHeuristic(LabHeuristicBase):
             log.debug('Added %s for %s' % (obj, self))
     
     def generate_events(self):
-        log.info('Generating events for "%s"' % self.verbose_name)
+        log.info('Generating events for %s' % self)
         unbound_orders = self.test.lab_orders.exclude(tags__event__event_type__heuristic=self)
         log_query('Unbound lab orders for %s' % self.name, unbound_orders)
         unbound_count = unbound_orders.count()
@@ -565,7 +565,7 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
         #
         positive_labs = unbound_labs.filter(positive_q)
         log_query('Positive labs for %s' % self.name, positive_labs)
-        log.info('Generating positive events for %s' % self.test.name)
+        log.info('Generating positive events for %s' % self)
         pos_event_type = EventType.objects.get(name='lx--%s--positive' % self.test.name)
         for lab in positive_labs.iterator():
             if self.date_field == 'order':
@@ -584,7 +584,7 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
         log.info('Generated %s new positive events for %s' % (positive_labs.count(), self.name))
         negative_labs = unbound_labs.filter(negative_q)
         log_query('Negative labs for %s' % self.name, negative_labs)
-        log.info('Generating negative events for %s' % self.test.name)
+        log.info('Generating negative events for %s' % self)
         neg_event_type = EventType.objects.get(name='lx--%s--negative' % self.test.name)
         for lab in negative_labs.iterator():
             if self.date_field == 'order':
@@ -603,7 +603,7 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
         log.info('Generated %s new negative events for %s' % (negative_labs.count(), self.name))
         indeterminate_labs = unbound_labs.filter(indeterminate_q)
         log_query('Indeterminate labs for %s' % self.name, indeterminate_labs)
-        log.info('Generating indeterminate events for %s' % self.test.name)
+        log.info('Generating indeterminate events for %s' % self)
         ind_event_type = EventType.objects.get(name='lx--%s--indeterminate' % self.test.name)
         for lab in indeterminate_labs.iterator():
             if self.date_field == 'order':
