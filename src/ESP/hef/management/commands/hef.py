@@ -127,11 +127,12 @@ class Command(BaseCommand):
                 t.setDaemon(True)
                 t.start()
             for name in name_list:
-                dispatcher = dispatch[name]
-                if isinstance(dispatcher, AbstractLabTest):
-                    for heuristic in dispatcher.heuristic_set:
+                event_generating_obj = dispatch[name]
+                if isinstance(event_generating_obj, AbstractLabTest):
+                    for heuristic in event_generating_obj.heuristic_set:
                         queue.put(heuristic)
-                queue.put(dispatcher)
+                else:
+                    queue.put(event_generating_obj)
             queue.join()
             count = counter.get()
         log.info('Generated %s total new events' % count)
