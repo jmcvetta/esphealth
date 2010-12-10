@@ -33,12 +33,14 @@ import string
 from decimal import Decimal
 
 from django.db import transaction
+from django.db import IntegrityError
 from django.utils.encoding import smart_str
 from django.utils.encoding import smart_unicode
 from ESP.emr.management.commands.common import LoaderCommand
 
 from ESP.settings import DATA_DIR
 from ESP.settings import DATE_FORMAT
+from ESP.settings import DEBUG
 from ESP.utils import log
 from ESP.utils import str_from_date
 from ESP.utils import date_from_str
@@ -166,9 +168,11 @@ class BaseLoader(object):
             try:
                 p = Patient.objects.get(patient_id_num=patient_id_num)
             except Patient.DoesNotExist:
-                p = Patient(patient_id_num=patient_id_num)
-                p.provenance = self.provenance
-                p.updated_by = UPDATED_BY
+                p = Patient(
+                    patient_id_num=patient_id_num,
+                    provenance = self.provenance,
+                    updated_by = UPDATED_BY,
+                    )
                 p.save()
             self.__patient_cache[patient_id_num] = p
         return self.__patient_cache[patient_id_num]
@@ -187,6 +191,41 @@ class BaseLoader(object):
             self.__provider_cache[provider_id_num] = p
         return self.__provider_cache[provider_id_num]
     
+    def insert_or_update(self, model, field_values, key_fields):
+        '''
+        Attempts to create a new instance of model using field_values.  If 
+        create fails due to constraint (e.g. unique key), fetches existing 
+        object using fields named in key_fields.
+        
+        @param model: Model to insert/update 
+        @type model:  Django ORM Model
+        @param field_values: Field names/values to create/update
+        @type field_values:  Dict {field_name: value}
+        @type key_fields: The field(s) to use as lookup key for updates
+        @type key_fields: List [field_name, field_name, ...]
+        @return: (obj, created)  Where obj is an instance of model, and created is boolean
+        '''
+        sid = transaction.savepoint()
+        try:
+            obj = model(**field_values)
+            obj.save()
+            transaction.savepoint_commit(sid)
+            created = True
+        except IntegrityError:
+            transaction.savepoint_rollback(sid)
+            keys = {}
+            for field_name in key_fields:
+                keys[field_name] = field_values[field_name]
+                del field_values[field_name]
+            log.debug('Could not insert new %s with keys %s' % (model, keys))
+            # We use get_or_create() rather than get(), to increase the likelihood
+            # of successful load in unforseen circumstances
+            obj, created = model.objects.get_or_create(defaults=field_values, **keys)
+            for field_name in field_values:
+                setattr(obj, field_name, field_values[field_name])
+            obj.save()
+        return obj, created
+        
     def float_or_none(self, str):
         if not str:
             return None
@@ -255,6 +294,10 @@ class BaseLoader(object):
                     row[key] = smart_unicode(row[key].strip())
             sid = transaction.savepoint()
             # Load the data, with error handling
+            if DEBUG:
+                ex_to_catch = []
+            else:
+                ex_to_catch = [BaseException]
             try:
                 self.load_row(row)
                 transaction.savepoint_commit(sid)
@@ -263,7 +306,7 @@ class BaseLoader(object):
                 # Allow keyboard interrupt to rise to next catch in main()
                 transaction.savepoint_rollback(sid)
                 raise e
-            except BaseException, e:
+            except ex_to_catch, e:
                 transaction.savepoint_rollback(sid)
                 log.error('Caught Exception:')
                 log.error('  File: %s' % self.filename)
@@ -564,55 +607,41 @@ class EncounterLoader(BaseLoader):
         son = self.string_or_none
         dton = self.date_or_none
         flon = self.float_or_none
-        # Fetch required defaults
-        pat = self.get_patient(row['patient_id_num'])
-        pro = self.get_provider(row['provider_id_num'])
-        enc_date = dton(row['encounter_date'])
-        e, created = Encounter.objects.get_or_create(
-            native_encounter_num=row['encounter_id_num'],
-            defaults = {
-                'provenance': self.provenance,
-                'patient': pat,
-                'provider': pro,
-                'date': enc_date,
-                }
-            )
-        message =  'Creating new Encounter object' if created else 'Updating existing Encounter'
-        log.debug(message)
-        # Populate fields
-        e.provenance = self.provenance
-        e.patient = pat
-        e.provider = pro
-        e.raw_date = enc_date
-        e.date = dton(row['encounter_date'])
-        e.native_site_num = son( row['dept_id_num'] )
-        e.event_type = cap(row['event_type'])
-        e.closed_date = cap(row['closed_date'])
-        e.site_name = cap(row['dept_name'])
-        e.raw_temperature = son(row['temp'])
-        e.temperature = flon(row['temp'])
-        e.raw_bp_systolic = son(row['bp_systolic'])
-        e.bp_systolic = flon(row['bp_systolic'])
-        e.raw_bp_diastolic = son(row['bp_diastolic'])
-        e.bp_diastolic = flon(row['bp_diastolic'])
-        e.raw_o2_stat = son(row['o2_stat'])
-        e.o2_stat = flon(row['o2_stat'])
-        e.raw_peak_flow = son(row['peak_flow'])
-        e.peak_flow = flon(row['peak_flow'])
-        e.raw_closed_date = son(row['closed_date'])
-        e.closed_date = dton(row['closed_date'])
-        e.raw_edd = son(row['edc'])
-        e.edd = dton(row['edc'])
-        e.diagnosis = son(row['diagnosis'])
-        if e.edd:  e.pregnancy_status = True
-        e.raw_weight = son(row['weight'])
-        e.weight = weight_str_to_kg(row['weight'])
-        e.raw_height = son(row['height'])
-        e.height = height_str_to_cm(row['height'])
-        e.raw_bmi = son(row['bmi'])
-        e.bmi = e._calculate_bmi()
-        # Must save Encounter object before populating the ManyToManyField
-        e.save() 
+        values = {
+            'native_encounter_num': row['encounter_id_num'].strip(),
+            'provenance': self.provenance,
+            'patient': self.get_patient(row['patient_id_num']),
+            'provider': self.get_provider(row['provider_id_num']),
+            'date': dton(row['encounter_date']),
+            'raw_date': son(row['encounter_date']),
+            'native_site_num': son( row['dept_id_num'] ),
+            'encounter_type': cap(row['event_type']),
+            'date_closed': dton(row['closed_date']),
+            'raw_date_closed': son(row['closed_date']),
+            'site_name': cap(row['dept_name']),
+            'raw_temperature': son(row['temp']),
+            'temperature': flon(row['temp']),
+            'raw_bp_systolic': son(row['bp_systolic']),
+            'bp_systolic': flon(row['bp_systolic']),
+            'raw_bp_diastolic': son(row['bp_diastolic']),
+            'bp_diastolic': flon(row['bp_diastolic']),
+            'raw_o2_stat': son(row['o2_stat']),
+            'o2_stat': flon(row['o2_stat']),
+            'raw_peak_flow': son(row['peak_flow']),
+            'peak_flow': flon(row['peak_flow']),
+            'raw_edd': son(row['edc']),
+            'edd': dton(row['edc']),
+            'raw_diagnosis': son(row['diagnosis']),
+            'raw_weight': son(row['weight']),
+            'weight': weight_str_to_kg(row['weight']),
+            'raw_height': son(row['height']),
+            'height': height_str_to_cm(row['height']),
+            'raw_bmi': son(row['bmi']),
+            }
+        if values['edd']:  
+            values['pregnant'] = True
+        e, created = self.insert_or_update(Encounter, values, ['native_encounter_num'])
+        e.bmi = e._calculate_bmi() # No need to save until we finish ICD9s
         #
         # ICD9 Codes
         #
@@ -872,6 +901,10 @@ class Command(LoaderCommand):
             for filepath in filepath_list:
                 loader_class = loader[ft]
                 l = loader_class(filepath) # BaseLoader child instance
+                if DEBUG:
+                    ex_to_catch = []
+                else:
+                    ex_to_catch = [BaseException]
                 try:
                     valid, error = l.load()
                     valid_count[ft] += valid
@@ -885,7 +918,7 @@ class Command(LoaderCommand):
                 except KeyboardInterrupt:
                     log.critical('Keyboard interrupt: exiting.')
                     sys.exit(-255)
-                except BaseException, e: # Unhandled exception!
+                except ex_to_catch, e: # Unhandled exception!
                     log.critical('Unhandled exception loading file "%s":' % filepath)
                     log.critical('\t%s' % e)
                     l.provenance.status = 'failure'
