@@ -80,20 +80,22 @@ class Command(BaseCommand):
         make_option('--provenance', action='store', dest='provenance', metavar='ID', 
             help='Purge records with provenance_id = ID', default=None),
         make_option('--no-prompt', action='store_false', dest='prompt', default=True,
-            help='Do not prompt user for input.  Will abort if cases are bound to selected provenances.')
+            help='Do not prompt user for input.  Will abort if cases are bound to selected provenances.'),
+        make_option('--orphan', action='store_true', dest='orphan', default=False,
+            help='Orphan records instead of deleting them. Does not impact Cases'),
         )
 
     def handle(self, *fixture_labels, **options):
         log.debug('options: %s' % pprint.pformat(options))
         status = options['status']
         provenance = options['provenance']
-        prompt = options['prompt']
         if not (status or provenance):
             self.bad_options('You must specify either --status or --provenance')
         if (status and provenance):
             self.bad_options( 'You cannot specify both --status and --provenance')
         if status:
-            if not status in ['failure', 'attempted', 'errors']:
+            # 'purge' status is not mentioned in help text, not sure if it should be
+            if not status in ['failure', 'attempted', 'errors', 'purge']:
                 self.bad_options("Status must be either 'failure', 'attempted', or 'errors'.'")
             print 'Provenance status to be deleted: %s' % status
         if provenance:
@@ -113,24 +115,24 @@ class Command(BaseCommand):
             bad_prov = Provenance.objects.filter(status=status)
         else: # provenance
             bad_prov = Provenance.objects.filter(pk=provenance)
-        prov_stat_q = Q(provenance__in=bad_prov)
+        self.prov_stat_q = Q(provenance__in=bad_prov)
         log_query('Bad provenance query:', bad_prov)
         if not bad_prov.count():
             print
             print 'No matching provenance entries found.  Nothing to do.'
             print
             sys.exit(14)
-        if prompt:
+        if options['prompt']:
             #
             # Have user confirm script is being run safely
             #
             print
             print 'This script requires exclusive write access to the database.  Please ensure'
-            print 'none of the following scripts are running at the same time:'
-            print '    emr/etl/load_epic.py'
-            print '    emr/etl/load_hl7.py'
-            print '    hef/run.py'
-            print '    nodis/run.py'
+            print 'none of the following commands are running at the same time:'
+            print '    load_epic'
+            print '    load_hl7'
+            print '    hef'
+            print '    nodis'
             print
             decision = raw_input('Type OKAY to proceed:\n')
             if not decision == 'OKAY':
@@ -140,9 +142,40 @@ class Command(BaseCommand):
         else:
             log.debug('Not prompting user to ensure exclusive db access, per --no-input option.')
         # Patient & Provider data must be retained and marked as orphaned.  Other 
-        # EMR records should be purged.
-        persistent_models = [Provider, Patient]
-        purgeable_models = [LabResult, Encounter, Prescription, Immunization]
+        # EMR records should be purged unless --orphan is specified.
+        if options['orphan']:
+            self.persistent_models = [Provider, Patient, LabResult, Encounter, Prescription, Immunization]
+            self.purgeable_models = []
+        else: 
+            self.persistent_models = [Provider, Patient]
+            self.purgeable_models = [LabResult, Encounter, Prescription, Immunization]
+            self.__purge_bad_cases(options)
+        #
+        # Orphan Patient & Provider models
+        #
+        orphan_provenance = Provenance.objects.get(source='CLEANUP')
+        for rec_type in self.persistent_models:
+            orphans = rec_type.objects.filter(self.prov_stat_q)
+            log_query('To be orphaned', orphans)
+            log.debug('Counting %s records to be orphaned' % rec_type)
+            log.debug('Orphaning %s %s records' % (orphans.count(), rec_type))
+            orphans.update(provenance=orphan_provenance)
+        for rec_type in self.purgeable_models:
+            to_be_deleted = rec_type.objects.filter(self.prov_stat_q)
+            log_query('To be deleted', to_be_deleted)
+            del_count = to_be_deleted.count()
+            log.debug('Deleting %s %s records' % (del_count, rec_type))
+            # TODO: Django does this in a super-inefficient way.  Need to write a 
+            # PostgreSQL-specific optimization here using DELETE .. CASCADE.
+            if del_count:
+                to_be_deleted.delete()
+        bad_prov_count = bad_prov.count()
+        log_query('Deleting %s provenance entries' % bad_prov_count, bad_prov)
+        # Only attempt to delete records with bad provenance  this if necessary, as it involves an additional complex DB query 
+        if bad_prov_count: 
+            bad_prov.delete()
+        
+    def __purge_bad_cases(self, options):
         #
         # Discover "bad" cases -- those based on events with bad provenance
         #
@@ -152,19 +185,19 @@ class Command(BaseCommand):
         log.debug('Searching for cases with bad provenance.')
         bad_events = None
         rec_type = Prescription
-        for rec_type in purgeable_models:
+        bad_events = Event.objects.none()
+        for rec_type in self.purgeable_models:
             content_type = ContentType.objects.get_for_model(rec_type)
-            bad_records = rec_type.objects.filter(prov_stat_q)
-            new_bad_events = Event.objects.filter(content_type=content_type, object_id__in=bad_records)
-            try:
-                bad_events = bad_events | new_bad_events
-            except TypeError:
-                bad_events = new_bad_events
+            bad_records = rec_type.objects.filter(self.prov_stat_q)
+            bad_events |= Event.objects.filter(tag_set__content_type=content_type, tag_set__object_id__in=bad_records)
         bad_cases = Case.objects.filter(events__in=bad_events)
+        log_query('Bad Cases', bad_cases)
         sent_bad_cases = bad_cases.filter(status='S')
+        bad_case_count = bad_cases.count()
+        sent_bad_case_count = sent_bad_cases.count()
         log.debug('Found %s unsent cases with bad provenance' % bad_cases.count())
         log.debug('Found %s SENT cases with bad provenance' % sent_bad_cases.count())
-        if sent_bad_cases:
+        if sent_bad_case_count:
             print
             print '!!! NOTICE !!!'
             print
@@ -175,8 +208,8 @@ class Command(BaseCommand):
             for case in sent_bad_cases:
                 print case
             sys.exit(10)
-        if bad_cases:
-            if prompt:
+        if bad_case_count:
+            if options['prompt']:
                 print
                 print 'WARNING:'
                 print
@@ -208,25 +241,7 @@ class Command(BaseCommand):
             print
         print 'Please wait -- this may take a few minutes.'
         print
-        # Orphan Patient & Provider models
-        orphan_provenance = Provenance.objects.get(source='CLEANUP')
-        for rec_type in persistent_models:
-            orphans = rec_type.objects.filter(prov_stat_q)
-            log_query('To be orphaned', orphans)
-            log.debug('Orphaning %s %s records' % (orphans.count(), rec_type))
-            orphans.update(provenance=orphan_provenance)
-        for rec_type in purgeable_models:
-            to_be_deleted = rec_type.objects.filter(prov_stat_q)
-            log_query('To be deleted', to_be_deleted)
-            log.debug('Deleting %s %s records' % (to_be_deleted.count(), rec_type))
-            #
-            # TODO: Django does this in a super-inefficient way.  Need to write a 
-            # PostgreSQL-specific optimization here using DELETE .. CASCADE.
-            #
-            to_be_deleted.delete()
-        log_query('Deleting %s provenance entries' % bad_prov.count(), bad_prov)
-        bad_prov.delete()
-        
+
     def bad_options(self, msg):
         log.error(msg)
         sys.stderr.write('\n')
