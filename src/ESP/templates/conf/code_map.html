@@ -1,0 +1,27 @@
+{% extends 'esp/espbase.html' %}
+{% load esplib %}
+
+
+{% block extrastyle %}
+{% endblock %}
+
+
+{% block extrascript %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+        });
+    </script>
+{% endblock %}
+
+
+
+{% block content %}
+
+<h1 align='center'>
+    Map Native Code to LOINC
+</h1>
+
+
+{{ form }}
+
+{% endblock %}

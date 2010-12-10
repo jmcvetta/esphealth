@@ -1,0 +1,16 @@
+{% extends "vaers.html" %}
+{% block content %}
+<div>
+    Please confirm that you are {{ case.patient.pcp.full_name }} 
+    and that you are the care provider for {{ case.patient.full_name }}
+    <div>
+      <form action="{% url verify_case case.digest %}" method="POST">
+	<input type="hidden" value="{{ case.patient.pcp.id }}"/>
+	<input type="radio" name="provider_confirmation" value="confirmed">Yes</input>
+	<input type="radio" name="provider_confirmation" value="">No</input>
+	<input type="submit" value="Submit" />
+        {% csrf_token %}
+      </form>
+    </div>
+</div>
+{% endblock %}
