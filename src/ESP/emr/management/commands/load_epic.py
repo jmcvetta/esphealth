@@ -278,6 +278,7 @@ class BaseLoader(object):
         cur_row = 0 # Row counter
         valid = 0 # Number of valid records loaded
         errors = 0 # Number of non-fatal errors encountered
+        start_time = datetime.datetime.now()
         for row in self.reader:
             if not row:
                 continue # Skip None objects
@@ -327,7 +328,10 @@ class BaseLoader(object):
 
             if (ROW_LOG_COUNT == -1) or (ROW_LOG_COUNT and not (cur_row % ROW_LOG_COUNT) ):
                 now = datetime.datetime.now()
-                log.info('Loaded %s of %s rows:  %s %s' % (cur_row, self.line_count, now, self.filename))
+                elapsed_time = now - start_time
+                elapsed_seconds = elapsed_time.seconds or 1 # Avoid divide by zero on first few records if startup is quick
+                rows_per_sec = float(cur_row) / elapsed_seconds
+                log.info('Loaded %s of %s rows:  %s %s (%.2f rows/sec)' % (cur_row, self.line_count, now, self.filename, rows_per_sec))
         log.debug('Loaded %s records with %s errors.' % (valid, errors))
 
         self.provenance.status = 'loaded' if not errors else 'errors'
