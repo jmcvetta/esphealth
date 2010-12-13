@@ -23,20 +23,18 @@ import sys
 import os
 import socket
 import datetime
-import optparse
-from optparse import make_option
 import re
 import pprint
 import shutil
-import codecs
 import string
+from optparse import make_option
 from decimal import Decimal
 
 from django.db import transaction
 from django.db import IntegrityError
 from django.utils.encoding import smart_str
 from django.utils.encoding import smart_unicode
-from ESP.emr.management.commands.common import LoaderCommand
+from django.utils.encoding import DjangoUnicodeDecodeError
 
 from ESP.settings import DATA_DIR
 from ESP.settings import DATE_FORMAT
@@ -56,6 +54,7 @@ from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import SocialHistory, Problem, Allergy
+from ESP.emr.management.commands.common import LoaderCommand
 
 
     
@@ -63,7 +62,7 @@ from ESP.emr.models import SocialHistory, Problem, Allergy
 # Set global values that will be used by all functions
 #
 global UPDATED_BY, TIMESTAMP, UNKNOWN_PROVIDER
-UPDATED_BY = 'load_epic.py'
+UPDATED_BY = 'load_epic'
 TIMESTAMP = datetime.datetime.now()
 UNKNOWN_PROVIDER = Provider.objects.get(provider_id_num='UNKNOWN')
 ETL_FILE_REGEX = re.compile(r'^epic\D\D\D\.esp\.(\d\d)(\d\d)(\d\d\d\d)$')
@@ -292,7 +291,18 @@ class BaseLoader(object):
             # Coerce to unicode
             for key in row:
                 if row[key]:
-                    row[key] = smart_unicode(row[key].strip())
+                    try:
+                        row[key] = smart_unicode(row[key].strip())
+                    except DjangoUnicodeDecodeError, e:
+                        #
+                        # Log character set errors to db
+                        #
+                        err = EtlError()
+                        err.provenance = self.provenance
+                        err.line = cur_row
+                        err.err_msg = str(e)
+                        err.data = pprint.pformat(row)
+                        err.save()
             sid = transaction.savepoint()
             # Load the data, with error handling
             if DEBUG:
