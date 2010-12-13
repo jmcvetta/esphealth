@@ -667,7 +667,7 @@ class EncounterLoader(BaseLoader):
         code = code.upper()
         if not code in self.__icd9_cache:
             try:
-                i = Icd9.objects.get(code__iexact=code)
+                i = Icd9.objects.get(code__exact=code)
             except Icd9.DoesNotExist:
                 log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
                 i = Icd9()
