@@ -872,7 +872,7 @@ class Encounter(BasePatientRecord):
     # Fields taken directly from ETL file.  Some minimal processing, such as 
     # standardizing capitalization, may be advisable in loader code.  
     #
-    native_encounter_num = models.TextField('Native EMR system encounter ID', blank=True, null=True, db_index=True)
+    native_encounter_num = models.TextField('Native EMR system encounter ID', blank=False, db_index=True, unique=True)
     encounter_type = models.TextField('Type of encounter', blank=True, null=True, db_index=True)
     status = models.TextField('Record status', blank=True, null=True, db_index=True)
     native_site_num = models.TextField('Native EMR system site ID', blank=True, null=True, db_index=True)
