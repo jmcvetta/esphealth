@@ -8,6 +8,7 @@
 
 
 import os
+import gc
 import re
 import sys
 import string
@@ -394,9 +395,9 @@ def weight_str_to_kg(raw_string):
     '''
     Parses the content of raw_string and returns weight in kilograms as a Float.  
     '''
-    match = WEIGHT_REGEX.match(raw_string)
     if not raw_string:
         return None
+    match = WEIGHT_REGEX.match(raw_string)
     if match:
         lbs = float(match.group('lbs'))
         if match.group('oz'):
@@ -408,7 +409,7 @@ def weight_str_to_kg(raw_string):
         return None
         
 HEIGHT_REGEX = re.compile(r'''
-(?P<feet>\d+(\.\d*)?) \s* ' \s* ( (?P<inches>\d+\.?\d*) \s* " )?
+(?P<feet>\d+(\.\d*)?) \s* ' \s* (?P<inches>\d+\.?\d*)?
 ''', re.VERBOSE)
 
 def height_str_to_cm(raw_string):
@@ -417,16 +418,38 @@ def height_str_to_cm(raw_string):
     If string parses to a height of 0, method will return None instead, to avoid 
     divide by zero issues in BMI calculation.
     '''
-    match = HEIGHT_REGEX.match(raw_string)
     if not raw_string:
         return None
+    match = HEIGHT_REGEX.match(raw_string)
     if match:
         feet = float(match.group('feet'))
         if match.group('inches'):
             feet += ( float(match.group('inches')) / 12 )
-        cm = feet / 30.48
+        cm = feet * 30.48
         if cm: # Don't return 0 height
             return cm
     log.debug('Could not extract valid numeric height from raw string: "%s"' % raw_string)
     return None
 
+
+def queryset_iterator(queryset, chunksize=1000):
+    '''''
+    Iterate over a Django Queryset ordered by the primary key
+
+    This method loads a maximum of chunksize (default: 1000) rows in it's
+    memory at the same time while django normally would load all rows in it's
+    memory. Using the iterator() method only causes it to not preload all the
+    classes.
+
+    Note that the implementation of the iterator does not support ordered query sets.
+    
+    Copied verbatim from http://djangosnippets.org/snippets/1949/
+    '''
+    pk = 0
+    last_pk = queryset.order_by('-pk')[0].pk
+    queryset = queryset.order_by('pk')
+    while pk < last_pk:
+        for row in queryset.filter(pk__gt=pk)[:chunksize]:
+            pk = row.pk
+            yield row
+        gc.collect()
