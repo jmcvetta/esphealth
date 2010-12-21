@@ -170,7 +170,6 @@ class BaseLoader(object):
                 p = Patient(
                     patient_id_num=patient_id_num,
                     provenance = self.provenance,
-                    updated_by = UPDATED_BY,
                     )
                 p.save()
             self.__patient_cache[patient_id_num] = p
@@ -185,7 +184,6 @@ class BaseLoader(object):
             except Provider.DoesNotExist:
                 p = Provider(provider_id_num=provider_id_num)
                 p.provenance = self.provenance
-                p.updated_by = UPDATED_BY
                 p.save()
             self.__provider_cache[provider_id_num] = p
         return self.__provider_cache[provider_id_num]
@@ -300,7 +298,7 @@ class BaseLoader(object):
                         err = EtlError()
                         err.provenance = self.provenance
                         err.line = cur_row
-                        err.err_msg = str(e)
+                        err.err_msg = str(e)[:512]
                         err.data = pprint.pformat(row)
                         err.save()
             sid = transaction.savepoint()
