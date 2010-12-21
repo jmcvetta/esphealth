@@ -15,6 +15,9 @@ CREATE INDEX emr_labresult_native_code_native_name ON emr_labresult (native_code
 -- Optimization for reporting
 CREATE INDEX emr_labresult_native_code_date_patient ON emr_labresult (native_code, date, patient_id);
 CREATE INDEX emr_encounter_patient_date ON emr_encounter (patient_id, date);
+CREATE INDEX emr_encounter_patient_date_bmi ON emr_encounter (patient_id, date, bmi);
+CREATE INDEX emr_encounter_patient_date_height ON emr_encounter (patient_id, date, height);
+CREATE INDEX emr_encounter_patient_date_weight ON emr_encounter (patient_id, date, weight);
 CREATE INDEX emr_encounter_patient_edc ON emr_encounter (patient_id, edc);
 CREATE INDEX emr_encounter_patient_date_edc ON emr_encounter (patient_id, date, edc);
 CREATE INDEX emr_prescription_ts_name_like ON emr_prescription (updated_timestamp, name text_pattern_ops);
