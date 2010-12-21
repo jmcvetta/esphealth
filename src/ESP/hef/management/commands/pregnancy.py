@@ -40,13 +40,13 @@ class Command(BaseCommand):
         #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         preg_icd9_q = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
         self.ignore_bound_q = ~Q(timespan__name='pregnancy')
-        has_edc_q = Q(edc__isnull=False)
-        self.edc_encounters = Encounter.objects.filter(has_edc_q).order_by('date')
-        log_query('Pregnancy encounters by EDC', self.edc_encounters)
+        has_edd_q = Q(edd__isnull=False)
+        self.edd_encounters = Encounter.objects.filter(has_edd_q).order_by('date')
+        log_query('Pregnancy encounters by edd', self.edd_encounters)
         preg_icd9_q = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
-        self.icd9_encounters = Encounter.objects.filter(~has_edc_q & preg_icd9_q).order_by('date')
+        self.icd9_encounters = Encounter.objects.filter(~has_edd_q & preg_icd9_q).order_by('date')
         log_query('Pregnancy encounters by ICD9', self.icd9_encounters)
-        all_preg_q = preg_icd9_q | has_edc_q
+        all_preg_q = preg_icd9_q | has_edd_q
         self.all_preg_encounters = Encounter.objects.filter(all_preg_q).order_by('date')
         #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #
@@ -135,7 +135,7 @@ class Command(BaseCommand):
         #
         # EDD
         #
-        q_obj = Q(encounter__edc__isnull=False) & ~Q(encounter__timespan__name='pregnancy')
+        q_obj = Q(encounter__edd__isnull=False) & ~Q(encounter__timespan__name='pregnancy')
         patient_qs = Patient.objects.filter(q_obj).distinct().order_by('pk')
         log_query('Patients to consider for EDD pregnancy', patient_qs)
         pat_count = patient_qs.count()
@@ -143,12 +143,12 @@ class Command(BaseCommand):
         for patient in patient_qs:
             index += 1
             log.debug('Patient %s [%6s/%6s]' % (patient.pk, index, pat_count))
-            self.pregnancy_from_edc(patient)
+            self.pregnancy_from_edd(patient)
         #
         # ICD9
         #
         q_obj = Q(encounter__icd9_codes__code__startswith='V22.') | Q(encounter__icd9_codes__code__startswith='V23.')
-        q_obj &= Q(encounter__edc__isnull=True) 
+        q_obj &= Q(encounter__edd__isnull=True) 
         q_obj &= ~Q(encounter__timespan__name='pregnancy')
         patient_qs = Patient.objects.filter(q_obj).distinct().order_by('pk')
         log_query('Patients to consider for ICD9 pregnancy', patient_qs)
@@ -165,8 +165,8 @@ class Command(BaseCommand):
         If enc overlaps an existing pregnancy timespan, attach it and return the timespan object; 
         else return False
         '''
-        if enc.edc:
-            comp_date = enc.edc
+        if enc.edd:
+            comp_date = enc.edd
         else:
             comp_date = enc.date
         q_obj = Q(name__in='pregnancy')
@@ -184,29 +184,29 @@ class Command(BaseCommand):
         else:
             return False
     
-    def pregnancy_from_edc(self, patient):
+    def pregnancy_from_edd(self, patient):
         '''
-        Generates pregnancy timespans for a given patient, based on encounters with EDC value
+        Generates pregnancy timespans for a given patient, based on encounters with edd value
         '''
         pregnancies = Timespan.objects.filter(name='pregnancy', patient=patient).order_by('start_date')
         #
-        # EDC
+        # edd
         #
-        for enc in self.edc_encounters.filter(patient=patient).filter(self.ignore_bound_q):
+        for enc in self.edd_encounters.filter(patient=patient).filter(self.ignore_bound_q):
             if self.check_existing(enc): # Oops, this one overlaps an existing pregnancy
                 continue
-            # EDC is the taken from the chronologically most recent encounter that falls within 
-            # the tentative pregnancy window established by the first encounter and its EDC, thereby
-            # (hopefully) capturing any revisions made to the EDC over the course of pregnancy.
-            low_edc = enc.edc - PREG_END_MARGIN
-            high_edc = enc.edc + PREG_END_MARGIN
-            edc = self.edc_encounters.filter(patient=patient, edc__gte=low_edc, edc__lte=high_edc).order_by('-date')[0].edc
-            start_date = edc - datetime.timedelta(days=280)
+            # edd is the taken from the chronologically most recent encounter that falls within 
+            # the tentative pregnancy window established by the first encounter and its edd, thereby
+            # (hopefully) capturing any revisions made to the edd over the course of pregnancy.
+            low_edd = enc.edd - PREG_END_MARGIN
+            high_edd = enc.edd + PREG_END_MARGIN
+            edd = self.edd_encounters.filter(patient=patient, edd__gte=low_edd, edd__lte=high_edd).order_by('-date')[0].edd
+            start_date = edd - datetime.timedelta(days=280)
             if start_date > enc.date:
                 enc_start = enc.date
             else:
                 enc_start = start_date
-            enc_end = edc + PREG_END_MARGIN
+            enc_end = edd + PREG_END_MARGIN
             #
             # Create a new pregnancy timespan
             #
@@ -214,19 +214,19 @@ class Command(BaseCommand):
                 name = 'pregnancy',
                 patient = enc.patient,
                 start_date = start_date,
-                end_date = edc,
+                end_date = edd,
                 pattern = 'EDD',
                 )
             new_postpartum = Timespan(
                 name = 'postpartum',
                 patient = enc.patient,
-                start_date = edc,
-                end_date = edc + datetime.timedelta(days=120),
+                start_date = edd,
+                end_date = edd + datetime.timedelta(days=120),
                 pattern = 'EDD_+_120_days',
                 )
             new_preg.save() # Must save before adding M2M relations
             new_preg.encounters = self.all_preg_encounters.filter(patient=patient, date__gte=enc_start, date__lte=enc_end)
-            new_preg.encounters.add(enc) # Add this one, in case it is dated after EDC
+            new_preg.encounters.add(enc) # Add this one, in case it is dated after edd
             new_preg.save()
             new_postpartum.save()
             log.debug('New pregnancy %s by EDD (patient %s):  %s - %s' % (new_preg.pk, patient.pk, new_preg.start_date, new_preg.end_date))
