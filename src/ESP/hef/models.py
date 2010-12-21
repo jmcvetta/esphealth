@@ -24,6 +24,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from ESP.utils import log
 from ESP.utils import log_query
+from ESP.utils.utils import queryset_iterator
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
 from ESP.emr.models import Encounter
@@ -387,7 +388,7 @@ class LabOrderHeuristic(LabHeuristicBase):
         log_query('Unbound lab orders for %s' % self.name, unbound_orders)
         unbound_count = unbound_orders.count()
         event_type = EventType.objects.get(name=self.name)
-        for order in unbound_orders.iterator():
+        for order in queryset_iterator(unbound_orders):
             e = Event(
                 event_type = event_type,
                 date = order.date,
@@ -448,7 +449,7 @@ class LabResultAnyHeuristic(LabResultHeuristicBase):
         log_query('Unbound lab results for %s' % self.name, unbound_results)
         unbound_count = unbound_results.count()
         event_type = EventType.objects.get(name=self.name)
-        for lab in unbound_results.iterator():
+        for lab in queryset_iterator(unbound_results):
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -567,7 +568,7 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
         log_query('Positive labs for %s' % self.name, positive_labs)
         log.info('Generating positive events for %s' % self)
         pos_event_type = EventType.objects.get(name='lx--%s--positive' % self.test.name)
-        for lab in positive_labs.iterator():
+        for lab in queryset_iterator(positive_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -586,7 +587,7 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
         log_query('Negative labs for %s' % self.name, negative_labs)
         log.info('Generating negative events for %s' % self)
         neg_event_type = EventType.objects.get(name='lx--%s--negative' % self.test.name)
-        for lab in negative_labs.iterator():
+        for lab in queryset_iterator(negative_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -605,7 +606,7 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
         log_query('Indeterminate labs for %s' % self.name, indeterminate_labs)
         log.info('Generating indeterminate events for %s' % self)
         ind_event_type = EventType.objects.get(name='lx--%s--indeterminate' % self.test.name)
-        for lab in indeterminate_labs.iterator():
+        for lab in queryset_iterator(indeterminate_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -674,7 +675,7 @@ class LabResultRatioHeuristic(LabResultHeuristicBase):
         log_query(self.name, positive_labs)
         log.info('Generating new events for %s' % self.name)
         event_type = EventType.objects.get(name=self.name)
-        for lab in positive_labs.iterator():
+        for lab in queryset_iterator(positive_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -732,7 +733,7 @@ class LabResultFixedThresholdHeuristic(LabResultHeuristicBase):
         log_query(self.name, positive_labs)
         log.info('Generating events for "%s"' % self.name)
         event_type = EventType.objects.get(name=self.name)
-        for lab in positive_labs.iterator():
+        for lab in queryset_iterator(positive_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -808,7 +809,7 @@ class LabResultWesternBlotHeuristic(LabResultHeuristicBase):
         potential_positives = unbound_labs.filter(q_obj)
         negatives = unbound_labs.exclude(potential_positives)
         neg_event_type = EventType.objects.get(name='%s--negative' % self.name)
-        for lab in negatives.iterator():
+        for lab in queryset_iterator(negatives):
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -942,7 +943,7 @@ class PrescriptionHeuristic(Heuristic):
         log_query('Prescriptions for %s' % self.name, prescriptions)
         log.info('Generating events for "%s"' % self.verbose_name)
         event_type = EventType.objects.get(name='rx--%s' % self.name)
-        for rx in prescriptions.iterator():
+        for rx in queryset_iterator(prescriptions):
             new_event = Event(
                 event_type = event_type,
                 patient = rx.patient,
@@ -1000,16 +1001,13 @@ class DiagnosisHeuristic(Heuristic):
             
     
     def generate_events(self):
-        unbound = Encounter.objects.exclude(tags__event__event_type__heuristic=self)
-        q_obj = Q(pk__isnull=True)
-        for icd9_query in self.icd9query_set.all():
-            q_obj |= icd9_query.icd9_q_obj
-        icd9s = Icd9.objects.filter(q_obj)
-        encounters = unbound.filter(icd9_codes__in=icd9s)
+        icd9s = Icd9.objects.filter(self.icd9_q_obj)
+        encounters = Encounter.objects.filter(icd9_codes__in=icd9s)
+        encounters = encounters.exclude(tags__event__event_type__heuristic=self)
         log_query('Encounters for %s' % self.name, encounters)
         log.info('Generating events for "%s"' % self.verbose_name)
         event_type = EventType.objects.get(name='dx--%s' % self.name)
-        for enc in encounters.iterator():
+        for enc in queryset_iterator(encounters):
             new_event = Event(
                 event_type = event_type,
                 patient = enc.patient,
@@ -1048,8 +1046,8 @@ class Icd9Query(models.Model):
         '''
         if not (self.icd9_exact or self.icd9_starts_with or self.icd9_ends_with or self.icd9_contains):
             log.error('%s does not contain any ICD9 search terms, and will not be processed.' % self)
-            return 0
-        q_obj = Q() # Null Q object (is there a less ugly way to do this?)
+            return
+        q_obj = Q() # Null Q object
         if self.icd9_exact:
             q_obj &= Q(code__iexact=self.icd9_exact)
         if self.icd9_starts_with:
