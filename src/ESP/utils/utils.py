@@ -39,6 +39,7 @@ from ESP.settings import LOG_LEVEL_SYSLOG
 from ESP.settings import LOG_FORMAT_FILE
 from ESP.settings import LOG_FORMAT_CONSOLE
 from ESP.settings import LOG_FORMAT_SYSLOG
+from ESP.settings import QUERYSET_ITERATOR_CHUNKSIZE
 
 
 
@@ -432,10 +433,12 @@ def height_str_to_cm(raw_string):
     return None
 
 
-def queryset_iterator(queryset, chunksize=1000):
+def queryset_iterator(queryset, chunksize=QUERYSET_ITERATOR_CHUNKSIZE):
     '''''
     Iterate over a Django Queryset ordered by the primary key
 
+    If chunksize is -1, just returns the QuerySet that was passed in.
+    
     This method loads a maximum of chunksize (default: 1000) rows in it's
     memory at the same time while django normally would load all rows in it's
     memory. Using the iterator() method only causes it to not preload all the
@@ -443,8 +446,16 @@ def queryset_iterator(queryset, chunksize=1000):
 
     Note that the implementation of the iterator does not support ordered query sets.
     
-    Copied verbatim from http://djangosnippets.org/snippets/1949/
+    
+    --------------------------------------------------------------------------------
+    
+    Copied from http://djangosnippets.org/snippets/1949/ with modifications.
     '''
+    if not queryset:
+        return
+    if chunksize < 0:
+        for row in queryset.iterator():
+            yield row
     pk = 0
     last_pk = queryset.order_by('-pk')[0].pk
     queryset = queryset.order_by('pk')

@@ -427,6 +427,9 @@ LOG_LEVEL_SYSLOG = _levels[config['Logging']['log_level_syslog']]
 # Sphinx 0.9.9
 SPHINX_API_VERSION = 0x116
 
+# queryset_iterator() support
+QUERYSET_ITERATOR_CHUNKSIZE = config['General']['queryset_iterator_chunksize']
+
 #
 #--- HEF
 #
