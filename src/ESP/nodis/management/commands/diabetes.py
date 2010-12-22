@@ -128,10 +128,12 @@ class Command(BaseCommand):
         # 
         frank_dm = {}
         # Insulin once is a trigger, but only if not during pregnancy
-        insulin_events = Event.objects.filter(event_type='rx--insulin').exclude(
+        insulin_events = Event.objects.filter(
+            event_type='rx--insulin',
             patient__timespan__name='pregnancy',
             patient__timespan__start_date__lte = F('date'),
             patient__timespan__end_date__gte = F('date'),
+            patient__timespan__pk__isnull=True,
             )
         qs = Event.objects.filter(event_type__in=frank_dm_once_reqs)
         qs |= insulin_events
