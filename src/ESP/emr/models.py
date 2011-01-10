@@ -14,6 +14,7 @@ import random
 import datetime
 import sys
 import re
+import os
 
 from django.db import models
 from django.db.models import Q, F
@@ -404,27 +405,6 @@ class Patient(BaseMedicalRecord):
         age = self._get_age(when=when)        
         return (interval * int(min(age.days/365.25, above_ceiling)/interval)) if age else None
         
-    
-    def _get_age_str(self):
-        '''
-        Returns patient's age as a string 
-        '''
-        if not self.date_of_birth: return None
-        today = datetime.datetime.today() 
-        days = today.day - self.date_of_birth.day
-        months = today.month - self.date_of_birth.month
-        years = today.year - self.date_of_birth.year
-        if days < 0:
-            months -= 1
-                
-        if months < 0:
-            years -= 1
-            months += 12
-        if years > 0:
-            return str(years) 
-        else:
-            return '%d Months' % months
-    age_str = property(_get_age_str)
     
     def __get_tel_numeric(self):
         '''
