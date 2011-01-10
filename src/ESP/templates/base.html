@@ -56,14 +56,7 @@
     <div id="navigation">
         <ul class='jd_menu'>
             <li><a href="{% url status %}">Status</a></li>
-            <li>Nodis &raquo;
-                <ul>
-                    <li><a href="{% url nodis_cases_all %}">Cases - All</a></li>
-                    <li><a href="{% url nodis_cases_awaiting_review %}">Cases - Awaiting Review</a></li>
-                    <li><a href="{% url nodis_cases_under_review %}">Cases - Under Review</a></li>
-                    <li><a href="{% url nodis_cases_queued %}">Cases - Queued</a></li>
-                    <li><a href="{% url nodis_cases_sent %}">Cases - Sent</a></li>
-                </ul>
+            <li><a href="{% url nodis_cases %}">Nodis </a>
             </li>
             <li><a href="{% url vaers.views.index %}">Vaers &raquo;</a>
 	      <ul>

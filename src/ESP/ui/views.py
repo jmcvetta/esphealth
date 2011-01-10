@@ -408,12 +408,12 @@ class CaseTablePHI(tables.ModelTable):
     
 
 class CaseFilterFormPHI(forms.Form):
-    __status_choices = [('', '---')] + STATUS_CHOICES
-    __condition_choices = [('', '---')] + Condition.condition_choices()
+    __condition_choices = Condition.condition_choices()
     __provider_sites = Provider.objects.values_list('dept', flat=True).distinct()
     __ps_choices = zip(__provider_sites, __provider_sites)
     case_id = forms.CharField(required=False, label="Case ID")
-    condition = forms.ChoiceField(choices=__condition_choices, required=False)
+    status = forms.MultipleChoiceField(choices=STATUS_CHOICES, required=False)
+    condition = forms.MultipleChoiceField(choices=__condition_choices, required=False)
     date_after = forms.DateField(required=False, label='Date After')
     date_before = forms.DateField(required=False, label='Date Before')
     patient_mrn = forms.CharField(required=False, label='Patient MRN')
@@ -422,15 +422,15 @@ class CaseFilterFormPHI(forms.Form):
 
 
 class CaseFilterFormNoPHI(forms.Form):
-    __status_choices = [('', '---')] + STATUS_CHOICES
     __condition_choices = [('', '---')] + Condition.condition_choices()
     case_id = forms.CharField(required=False)
+    status = forms.MultipleChoiceField(choices=STATUS_CHOICES, required=False)
     condition = forms.ChoiceField(choices=__condition_choices, required=False)
     date_after = forms.DateField(required=False)
     date_before = forms.DateField(required=False)
 
 @login_required
-def case_list(request, status):
+def case_list(request):
     values = {}
     if request.user.has_perm('nodis.view_phi'):
         CaseTable = CaseTablePHI
@@ -439,43 +439,70 @@ def case_list(request, status):
         CaseTable = CaseTableNoPHI
         CaseFilterForm = CaseFilterFormNoPHI
     qs = Case.objects.all()
-    if status == 'await':
-        qs = qs.filter(status='AR')
-    elif status == 'under':
-        qs = qs.filter(status='UR')
-    elif status == 'queued':
-        qs = qs.filter(status='Q')
-    elif status == 'sent':
-        qs = qs.filter(status='S')
     search_form = CaseFilterForm(request.GET)
     if search_form.is_valid():
+        #-------------------------------------------------------------------------------
+        #
+        # Filter
+        #
+        #-------------------------------------------------------------------------------
         log.debug(search_form.cleaned_data)
+        #
+        # Case ID
+        #
         case_id = search_form.cleaned_data['case_id']
-        condition = search_form.cleaned_data['condition']
-        date_before = search_form.cleaned_data['date_before']
-        date_after = search_form.cleaned_data['date_after']
-        sites = search_form.cleaned_data['provider_site']
         if case_id:
             qs = qs.filter(pk=case_id)
-        if condition:
-            qs = qs.filter(condition=condition)
+        #
+        # Status
+        #
+        statuses = search_form.cleaned_data['status']
+        #
+        # Condition
+        #
+        conditions = search_form.cleaned_data['condition']
+        if conditions:
+            condition_q = Q(condition=conditions[0])
+            for c in conditions:
+                condition_q |= Q(condition=c)
+            qs = qs.filter(condition_q)
+        # 
+        # Date Range
+        #
+        date_before = search_form.cleaned_data['date_before']
         if date_before:
             qs = qs.filter(date__lte=date_before)
+        date_after = search_form.cleaned_data['date_after']
         if date_after:
             qs = qs.filter(date__gte=date_after)
-        if sites:
-            site_q = Q(provider__dept__iexact=sites[0])
-            for site_name in sites[1:]:
-                site_q |= Q(provider__dept__iexact=site_name)
-            qs = qs.filter(site_q)
+        #
+        # PHI Fields
+        #
         if request.user.has_perm('nodis.view_phi'):
+            #
+            # Patient
+            #
             patient_mrn = search_form.cleaned_data['patient_mrn']
             patient_last_name = search_form.cleaned_data['patient_last_name']
             if patient_mrn:
                 qs = qs.filter(patient__mrn__istartswith=patient_mrn)
             if patient_last_name:
                 qs = qs.filter(patient__last_name__istartswith=patient_last_name)
+            #
+            # Provider Site
+            #
+            sites = search_form.cleaned_data['provider_site']
+            if sites:
+                site_q = Q(provider__dept__iexact=sites[0])
+                for site_name in sites[1:]:
+                    site_q |= Q(provider__dept__iexact=site_name)
+                qs = qs.filter(site_q)
     log_query('Nodis case list', qs)
+    #-------------------------------------------------------------------------------
+    #
+    # Build Page
+    #
+    #-------------------------------------------------------------------------------
     table = CaseTable(qs, order_by=request.GET.get('sort', '-id'))
     page = Paginator(table.rows, ROWS_PER_PAGE).page(request.GET.get('page', 1))
     # Remove '?sort=' bit from full URL path
