@@ -158,9 +158,7 @@ INSTALLED_APPS = (
     'ESP.nodis',
     'ESP.vaers',
     'ESP.ss',
-    'ESP.phit',
     'ESP.ui',
-    'south',
 )
 CASE_REPORT_OUTPUT_FOLDER = os.path.join(DATA_DIR, 'case_reports')
 CASE_REPORT_MDPH = config['Reporting']['use_mdph_format']
