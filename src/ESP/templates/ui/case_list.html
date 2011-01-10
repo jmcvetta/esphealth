@@ -25,7 +25,28 @@
     </p>
 </form>
 
-<table id="case_table">
+
+<hr>
+
+<p>
+<table id="case_summary_table">
+    <tr>
+        <th>Condition</th>
+        <th>Count</th>
+    </tr>
+    {% for item in condition_counts %}
+    <tr>
+        <td>{{ item.condition }}</td>
+        <td>{{ item.count }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</p>
+
+
+<hr>
+
+<table id="case_patient_table">
     <tr>
         <th>&nbsp;</th>
         {% for column in table.columns %}
