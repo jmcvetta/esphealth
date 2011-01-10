@@ -457,6 +457,11 @@ def case_list(request):
         # Status
         #
         statuses = search_form.cleaned_data['status']
+        if statuses:
+            status_q = Q(status=statuses[0])
+            for s in statuses:
+                status_q |= Q(status=s)
+            qs = qs.filter(status_q)
         #
         # Condition
         #
