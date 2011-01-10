@@ -21,6 +21,7 @@ from django.db import connection
 from django.db.models import Q
 from django.db.models import F
 from django.db.models import Sum
+from django.db.models import Max
 from django.db.models import Model
 from django.db.models import Count
 from django.db.models.query import QuerySet
@@ -1637,6 +1638,26 @@ class Case(models.Model):
     # The events that caused this case to be generated, but occurred after the event window
     events_ever = models.ManyToManyField(Event, blank=True, null=True, related_name='case_ever')
     # The events that caused this case to be generated, but occurred after the event window
+    
+    def __get_collection_date(self):
+        '''
+        Returns the earliest specimen collection date
+        '''
+        if self.lab_results:
+            return self.lab_results.aggregate(maxdate=Max('collection_date'))['maxdate']
+        else:
+            return None
+    collection_date = property(__get_collection_date)
+    
+    def __get_result_date(self):
+        '''
+        Returns the earliest specimen collection date
+        '''
+        if self.lab_results:
+            return self.lab_results.aggregate(maxdate=Max('result_date'))['maxdate']
+        else:
+            return None
+    result_date = property(__get_result_date)
     
     def __get_condition_config(self):
         '''

@@ -158,7 +158,9 @@ INSTALLED_APPS = (
     'ESP.nodis',
     'ESP.vaers',
     'ESP.ss',
+    'ESP.phit',
     'ESP.ui',
+    'south',
 )
 CASE_REPORT_OUTPUT_FOLDER = os.path.join(DATA_DIR, 'case_reports')
 CASE_REPORT_MDPH = config['Reporting']['use_mdph_format']
@@ -413,7 +415,7 @@ _levels = {
     'error': logging.ERROR,
     'critical': logging.CRITICAL,
     }
-LOG_FILE = '/var/log/esp' # Used only if LOG_LEVEL_FILE != None
+LOG_FILE = config['Logging']['log_file'] # Used only if LOG_LEVEL_FILE != None
 LOG_FORMAT_CONSOLE = config['Logging']['log_format_console']
 LOG_FORMAT_FILE = config['Logging']['log_format_file']
 LOG_FORMAT_SYSLOG = config['Logging']['log_format_syslog']
@@ -421,3 +423,6 @@ LOG_FORMAT_SYSLOG = config['Logging']['log_format_syslog']
 LOG_LEVEL_CONSOLE = _levels[config['Logging']['log_level_console']]
 LOG_LEVEL_FILE = _levels[config['Logging']['log_level_file']]
 LOG_LEVEL_SYSLOG = _levels[config['Logging']['log_level_syslog']]
+
+# queryset_iterator() support
+QUERYSET_ITERATOR_CHUNKSIZE = config['General']['queryset_iterator_chunksize']

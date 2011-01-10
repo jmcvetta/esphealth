@@ -1,5 +1,5 @@
 This is an at least partial list of people who have contributed to the ESP
-Health project.  The structure of this file shamelessly apes that of the the
+Health project.  The structure of this file shamelessly apes that of the 
 Linux Kernel's CREDITS file.  It is sorted by name, and formatted in a format
 that allows for easy grepping and beautification by scripts.  The fields are:
 name (N), email (E), web-address (W), PGP key ID and fingerprint (P),
@@ -54,6 +54,12 @@ S: Channing Laboratory, 4Fl
 S: 181 Longwood Ave
 S: Boston, MA 02215
 
+N: Jim LaPlante
+E: JLaPlante@challiance.org
+D: Clarity to ESP field mapping
+S: Cambridge Health Alliance
+S: Cambridge, MA 
+
 N: Raphael Lullis
 E: raphael.lullis@channing.harvard.edu
 D: Syndromic surveillance & VAERS; data faker; most tests
@@ -65,7 +71,7 @@ S: Boston, MA 02215
 N: Jason McVetta
 E: jason.mcvetta@channing.harvard.edu
 D: Overall architecture; HEF & Nodis; most documentation
-S: Bioinformatics Group
+S: Bioinformatics Group (Consultant)
 S: Channing Laboratory, 4Fl
 S: 181 Longwood Ave
 S: Boston, MA 02215

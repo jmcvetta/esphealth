@@ -8,6 +8,7 @@
 
 
 import os
+import gc
 import re
 import sys
 import string
@@ -19,7 +20,7 @@ import logging
 import simplejson
 import types
 import sqlparse
-from logging.handlers import SysLogHandler
+#from logging.handlers import SysLogHandler
 
 from django.db.models import Q
 from django.core.paginator import Paginator
@@ -38,6 +39,7 @@ from ESP.settings import LOG_LEVEL_SYSLOG
 from ESP.settings import LOG_FORMAT_FILE
 from ESP.settings import LOG_FORMAT_CONSOLE
 from ESP.settings import LOG_FORMAT_SYSLOG
+from ESP.settings import QUERYSET_ITERATOR_CHUNKSIZE
 
 
 
@@ -64,11 +66,11 @@ def __get_logger():
         console.setLevel(LOG_LEVEL_CONSOLE)
         console.setFormatter(logging.Formatter(LOG_FORMAT_CONSOLE))
         log.addHandler(console)
-    if LOG_LEVEL_SYSLOG:
-        sl = SysLogHandler('/dev/log')
-        sl.setLevel(LOG_LEVEL_SYSLOG)
-        sl.setFormatter(logging.Formatter(LOG_FORMAT_SYSLOG))
-        log.addHandler(sl)
+#    if LOG_LEVEL_SYSLOG:
+#        sl = SysLogHandler('/dev/log')
+#        sl.setLevel(LOG_LEVEL_SYSLOG)
+#        sl.setFormatter(logging.Formatter(LOG_FORMAT_SYSLOG))
+#        log.addHandler(sl)
     return log
 log = __get_logger()
 #===============================================================================
@@ -378,3 +380,87 @@ class TableSelectMultiple(SelectMultiple):
         return mark_safe(u'\n'.join(output))
 
 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#--- Unit Conversion
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+WEIGHT_REGEX = re.compile(r'''
+(?P<lbs>\d+(\.\d*)?) \s* lbs? \s* ( (?P<oz>\d+(\.\d*)?) \s* (o|oz)?)?
+''', 
+re.VERBOSE)
+
+def weight_str_to_kg(raw_string):
+    '''
+    Parses the content of raw_string and returns weight in kilograms as a Float.  
+    '''
+    if not raw_string:
+        return None
+    match = WEIGHT_REGEX.match(raw_string)
+    if match:
+        lbs = float(match.group('lbs'))
+        if match.group('oz'):
+            lbs += ( float(match.group('oz')) / 16 )
+        kg = lbs / 2.20462262185
+        return kg
+    else:
+        log.debug('Could not extract numeric weight from raw string: "%s"' % raw_string)
+        return None
+        
+HEIGHT_REGEX = re.compile(r'''
+(?P<feet>\d+(\.\d*)?) \s* ' \s* (?P<inches>\d+\.?\d*)?
+''', re.VERBOSE)
+
+def height_str_to_cm(raw_string):
+    '''
+    Parses the content of raw_string and returns height in centimeters as a Float.  
+    If string parses to a height of 0, method will return None instead, to avoid 
+    divide by zero issues in BMI calculation.
+    '''
+    if not raw_string:
+        return None
+    match = HEIGHT_REGEX.match(raw_string)
+    if match:
+        feet = float(match.group('feet'))
+        if match.group('inches'):
+            feet += ( float(match.group('inches')) / 12 )
+        cm = feet * 30.48
+        if cm: # Don't return 0 height
+            return cm
+    log.debug('Could not extract valid numeric height from raw string: "%s"' % raw_string)
+    return None
+
+
+def queryset_iterator(queryset, chunksize=QUERYSET_ITERATOR_CHUNKSIZE):
+    '''''
+    Iterate over a Django Queryset ordered by the primary key
+
+    If chunksize is -1, just returns the QuerySet that was passed in.
+    
+    This method loads a maximum of chunksize (default: 1000) rows in it's
+    memory at the same time while django normally would load all rows in it's
+    memory. Using the iterator() method only causes it to not preload all the
+    classes.
+
+    Note that the implementation of the iterator does not support ordered query sets.
+    
+    
+    --------------------------------------------------------------------------------
+    
+    Copied from http://djangosnippets.org/snippets/1949/ with modifications.
+    '''
+    if not queryset:
+        return
+    if chunksize < 0:
+        for row in queryset.iterator():
+            yield row
+    pk = 0
+    last_pk = queryset.order_by('-pk')[0].pk
+    queryset = queryset.order_by('pk')
+    while pk < last_pk:
+        for row in queryset.filter(pk__gt=pk)[:chunksize]:
+            pk = row.pk
+            yield row
+        gc.collect()

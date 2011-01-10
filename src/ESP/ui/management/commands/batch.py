@@ -150,7 +150,7 @@ class Command(BaseCommand):
                 del cmnd
                 progress('Successfully emailed status report.')
             progress('Batch run complete')
-        except KeyboardInterrupt:
+        except [KeyboardInterrupt, "-255"]:
             sys.stderr.write('Keyboard interrupt - exiting now.')
             sys.exit(-255)
         except BaseException, e:

@@ -79,9 +79,7 @@
 
 {# Do we need this? #}
 
-{% comment %}
 {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
-{% endcomment %}
 
 
 <p id="suspected_condition">
@@ -145,6 +143,15 @@
         <td> {{ case.comments|default:"-" }}</td>
     </tr>
 </table>
+
+<h2>
+    Case Pattern
+</h2>
+
+<p>
+    {{ case.pattern }}
+</p>
+
 
 <h2>
     Case Components
