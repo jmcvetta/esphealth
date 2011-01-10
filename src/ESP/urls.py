@@ -56,7 +56,7 @@ urlpatterns = patterns('',
     #url(r'^nodis/', include('ESP.nodis.urls')),
     
     # Nodis
-    url(r'^util/', include('ESP.ui.urls')),
+    url(r'^ui/', include('ESP.ui.urls')),
     
     #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
