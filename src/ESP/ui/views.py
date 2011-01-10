@@ -17,6 +17,8 @@ import csv
 import cStringIO as StringIO
 import django_tables as tables
 
+from dateutil.relativedelta import relativedelta
+
 from django import forms
 from django import http
 from django.core import serializers
@@ -116,6 +118,8 @@ def _populate_status_values():
     yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
     new_cases = Case.objects.filter(created_timestamp__gte=yesterday)
     reports = Report.objects.filter(timestamp__gte=yesterday, sent=True)
+    this_calendar_year = datetime.datetime.now().year
+    date_365_days_ago = datetime.datetime.now() - relativedelta(days=+365)
     values = {
         'title': _('Status Report'),
         'today_string': today_string,
@@ -127,6 +131,8 @@ def _populate_status_values():
         'provenances': Provenance.objects.filter(timestamp__gte=yesterday).order_by('-timestamp'),
         'unmapped_labs': _get_unmapped_labs().select_related(),
         'reports': reports.order_by('timestamp'),
+        'cases_calendar_year': Case.objects.filter(date__year=this_calendar_year).values('condition').annotate(count=Count('pk')).order_by('condition'),
+        'cases_365_days': Case.objects.filter(date__gte=date_365_days_ago).values('condition').annotate(count=Count('pk')).order_by('condition'),
         }
     return values
 
