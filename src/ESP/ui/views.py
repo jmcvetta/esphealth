@@ -543,7 +543,7 @@ def case_detail(request, case_id):
         'updated': updated,
         'status_form': status_form,
         }
-    return render_to_response('nodis/case_detail.html', values, context_instance=RequestContext(request))
+    return render_to_response('ui/case_detail.html', values, context_instance=RequestContext(request))
 
 def case_status_update(request, case_id):
     '''
