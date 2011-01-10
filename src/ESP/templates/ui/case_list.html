@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 
 {% block extrascript %}
+    
+    <script type="text/javascript" src="{{ site_javascript_folder }}dropdown-check-list.1.1/js/ui.dropdownchecklist-1.1-min.js"></script>
+    <link type="text/css" rel="stylesheet" media="screen" href="{{ site_javascript_folder }}dropdown-check-list.1.1/css/ui.dropdownchecklist.standalone.css" />
+
+
     <script type="text/javascript">
         $(document).ready(function() {
             $.datepicker.setDefaults({
@@ -9,6 +14,9 @@
             });
             $('#id_date_after').datepicker();
             $('#id_date_before').datepicker();
+            $('#id_status').dropdownchecklist({ emptyText: "Select..." });
+            $('#id_condition').dropdownchecklist({ emptyText: "Select..." });
+            $('#id_provider_site').dropdownchecklist({ maxDropHeight: 350, emptyText: "Select..." });
         });
     </script>
 {% endblock %}

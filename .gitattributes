@@ -103,6 +103,40 @@ src/ESP/media/images/esplogo.gif -text
 src/ESP/media/images/nav-bg-grabber.gif -text
 src/ESP/media/images/nav-bg-reverse.gif -text
 src/ESP/media/images/nav-bg.gif -text
+src/ESP/media/js/dropdown-check-list.1.1/css/ui.dropdownchecklist.standalone.css -text
+src/ESP/media/js/dropdown-check-list.1.1/css/ui.dropdownchecklist.themeroller.css -text
+src/ESP/media/js/dropdown-check-list.1.1/doc/ddcl-tests.html -text
+src/ESP/media/js/dropdown-check-list.1.1/doc/demo.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/dropdownchecklist.html -text
+src/ESP/media/js/dropdown-check-list.1.1/doc/jquery-1.4.2.min.js -text
+src/ESP/media/js/dropdown-check-list.1.1/doc/jquery-ui-1.8.4.custom.min.js -text
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/images/ui-bg_flat_0_aaaaaa_40x100.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/images/ui-bg_flat_75_ffffff_40x100.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/images/ui-bg_glass_55_fbf9ee_1x400.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/images/ui-bg_glass_65_ffffff_1x400.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/images/ui-bg_glass_75_dadada_1x400.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/images/ui-bg_glass_95_fef1ec_1x400.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/images/ui-bg_highlight-soft_75_cccccc_1x100.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/images/ui-icons_222222_256x240.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/images/ui-icons_2e83ff_256x240.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/images/ui-icons_454545_256x240.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/images/ui-icons_888888_256x240.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/images/ui-icons_cd0a0a_256x240.png -text svneol=unset#unset
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/jquery-ui-1.7.3.custom.css -text
+src/ESP/media/js/dropdown-check-list.1.1/doc/smoothness/jquery-ui-1.8.4.custom.css -text
+src/ESP/media/js/dropdown-check-list.1.1/doc/ui.dropdownchecklist-1.1-min.js -text
+src/ESP/media/js/dropdown-check-list.1.1/doc/ui.dropdownchecklist.js -text
+src/ESP/media/js/dropdown-check-list.1.1/doc/ui.dropdownchecklist.themeroller.css -text
+src/ESP/media/js/dropdown-check-list.1.1/js/ui.dropdownchecklist-1.1-min.js -text
+src/ESP/media/js/dropdown-check-list.1.1/src/GPL-LICENSE.txt -text
+src/ESP/media/js/dropdown-check-list.1.1/src/MIT-LICENSE.txt -text
+src/ESP/media/js/dropdown-check-list.1.1/src/changes.txt -text
+src/ESP/media/js/dropdown-check-list.1.1/src/jquery-1.4.2.min.js -text
+src/ESP/media/js/dropdown-check-list.1.1/src/jquery-ui-1.8.4.custom.min.js -text
+src/ESP/media/js/dropdown-check-list.1.1/src/ui.dropdownchecklist.js -text
+src/ESP/media/js/dropdown-check-list.1.1/src/ui.dropdownchecklist.standalone.css -text
+src/ESP/media/js/dropdown-check-list.1.1/src/ui.dropdownchecklist.themeroller.css -text
 src/ESP/media/js/flexigrid/accept.png -text
 src/ESP/media/js/flexigrid/coffee.png -text
 src/ESP/media/js/flexigrid/css/flexigrid/flexigrid.css -text
