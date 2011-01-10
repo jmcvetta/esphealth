@@ -8,33 +8,10 @@
 
 <h2>
     <hr>
-    Nodis
+    New Cases
     <hr>
 </h2>
 
-
-<div id="all_case_summary" style="float:right;">
-    <h3>
-        All Cases:
-    </h3>
-    {% if all_case_summary.count %}
-    <table id="new_case_summary_table">
-        <tr>
-            <th>Condition
-            <th>Count
-        {% for item in all_case_summary %}
-        <tr>
-            <td>{{ item.condition }}
-            <td>{{ item.count }}
-        </tr>
-        {% endfor %}
-    </table>
-    {% else %}
-    <p>
-        <em>No cases</em>
-    </p>
-    {% endif %}
-</div>
 
 <div id="new_case_summary" style="float: left;">
     <h3>
@@ -184,5 +161,81 @@
 </div>
 
 {% endcomment %}
+
+
+<h2 style="clear: both;">
+    <hr>
+    Case Statistics
+    <hr>
+</h2>
+
+<div id="cases_365_days">
+    <h3>
+        Cases Previous 365 Days:
+    </h3>
+    {% if cases_365_days.count %}
+    <table id="cases_365_days_table">
+        <tr>
+            <th>Condition
+            <th>Count
+        {% for item in all_case_summary %}
+        <tr>
+            <td>{{ item.condition }}
+            <td>{{ item.count }}
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>
+        <em>No cases</em>
+    </p>
+    {% endif %}
+</div>
+<div id="cases_calendar_year">
+    <h3>
+        Cases This Calendar year:
+    </h3>
+    {% if cases_calendar_year.count %}
+    <table id="cases_calendar_year_table">
+        <tr>
+            <th>Condition
+            <th>Count
+        {% for item in all_case_summary %}
+        <tr>
+            <td>{{ item.condition }}
+            <td>{{ item.count }}
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>
+        <em>No cases</em>
+    </p>
+    {% endif %}
+</div>
+
+<div id="all_case_summary">
+    <h3>
+        Cases Ever:
+    </h3>
+    {% if all_case_summary.count %}
+    <table id="new_case_summary_table">
+        <tr>
+            <th>Condition
+            <th>Count
+        {% for item in all_case_summary %}
+        <tr>
+            <td>{{ item.condition }}
+            <td>{{ item.count }}
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>
+        <em>No cases</em>
+    </p>
+    {% endif %}
+</div>
+
 
 {% endblock %}
