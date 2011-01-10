@@ -401,16 +401,18 @@ class CaseTablePHI(tables.ModelTable):
     sent_timestamp = tables.Column(verbose_name='Sent Date')
     
 
-
 class CaseFilterFormPHI(forms.Form):
     __status_choices = [('', '---')] + STATUS_CHOICES
     __condition_choices = [('', '---')] + Condition.condition_choices()
+    __provider_sites = Provider.objects.values_list('dept', flat=True).distinct()
+    __ps_choices = zip(__provider_sites, __provider_sites)
     case_id = forms.CharField(required=False, label="Case ID")
     condition = forms.ChoiceField(choices=__condition_choices, required=False)
     date_after = forms.DateField(required=False, label='Date After')
     date_before = forms.DateField(required=False, label='Date Before')
     patient_mrn = forms.CharField(required=False, label='Patient MRN')
     patient_last_name = forms.CharField(required=False, label='Patient Surname')
+    provider_site = forms.MultipleChoiceField(choices=__ps_choices, required=False)
 
 
 class CaseFilterFormNoPHI(forms.Form):
@@ -446,6 +448,7 @@ def case_list(request, status):
         condition = search_form.cleaned_data['condition']
         date_before = search_form.cleaned_data['date_before']
         date_after = search_form.cleaned_data['date_after']
+        sites = search_form.cleaned_data['provider_site']
         if case_id:
             qs = qs.filter(pk=case_id)
         if condition:
@@ -454,6 +457,11 @@ def case_list(request, status):
             qs = qs.filter(date__lte=date_before)
         if date_after:
             qs = qs.filter(date__gte=date_after)
+        if sites:
+            site_q = Q(provider__dept__iexact=sites[0])
+            for site_name in sites[1:]:
+                site_q |= Q(provider__dept__iexact=site_name)
+            qs = qs.filter(site_q)
         if request.user.has_perm('nodis.view_phi'):
             patient_mrn = search_form.cleaned_data['patient_mrn']
             patient_last_name = search_form.cleaned_data['patient_last_name']
