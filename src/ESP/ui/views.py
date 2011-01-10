@@ -409,7 +409,7 @@ class CaseTablePHI(tables.ModelTable):
 
 class CaseFilterFormPHI(forms.Form):
     __condition_choices = Condition.condition_choices()
-    __provider_sites = Provider.objects.values_list('dept', flat=True).distinct()
+    __provider_sites = Provider.objects.values_list('dept', flat=True).order_by('dept').distinct()
     __ps_choices = zip(__provider_sites, __provider_sites)
     case_id = forms.CharField(required=False, label="Case ID")
     status = forms.MultipleChoiceField(choices=STATUS_CHOICES, required=False)
