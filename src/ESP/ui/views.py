@@ -397,8 +397,8 @@ class CaseTablePHI(tables.ModelTable):
     provider__dept = tables.Column(verbose_name='Provider Department')
     # Begin PHI
     patient__mrn = tables.Column(verbose_name='Patient MRN')
-    patient__last_name = tables.Column(verbose_name='Patient Last Name')
-    patient__first_name = tables.Column(verbose_name='Patient First Name')
+    patient__last_name = tables.Column(verbose_name='Last Name')
+    patient__first_name = tables.Column(verbose_name='First Name')
     patient__date_of_birth = tables.Column(verbose_name='Date of Birth')
     # End PHI
     collection_date = tables.Column(verbose_name='Collection Date', sortable=False)
