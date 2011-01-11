@@ -23,38 +23,37 @@
 
 {% block content %}
 
-<form id="search_form" method="GET" action="{% url nodis_cases %}">
-    <p>
-        {{ search_form.as_p }}
-    </p>
-    <p>
-        <input type="submit" value="Search" />
-        <a href="{{ clear_search_path }}">Reset</a>
-    </p>
-</form>
+<div style="float: left;">
+    <h2>Filter</h2>
+    <form id="search_form" method="GET" action="{% url nodis_cases %}">
+        <p>
+            {{ search_form.as_p }}
+        </p>
+        <p>
+            <input type="submit" value="Update Results" />
+            <a href="{{ clear_search_path }}">Reset Filter</a>
+        </p>
+    </form>
+</div>
+
+<div style="float:right;">
+    <h2>Summary of Cases</h2>
+    <table id="case_summary_table">
+        <tr>
+            <th>Condition</th>
+            <th>Count</th>
+        </tr>
+        {% for item in condition_counts %}
+        <tr>
+            <td>{{ item.condition }}</td>
+            <td>{{ item.count }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
 
 
-<hr>
-
-<h2>Summary of Cases</h2>
-
-<p>
-<table id="case_summary_table">
-    <tr>
-        <th>Condition</th>
-        <th>Count</th>
-    </tr>
-    {% for item in condition_counts %}
-    <tr>
-        <td>{{ item.condition }}</td>
-        <td>{{ item.count }}</td>
-    </tr>
-    {% endfor %}
-</table>
-</p>
-
-
-<hr>
+<div style="clear:both;" />
 
 <h2>Cases by Patient</h2>
 
