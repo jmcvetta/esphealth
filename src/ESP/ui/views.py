@@ -410,8 +410,8 @@ class CaseTablePHI(tables.ModelTable):
 
 class CaseFilterFormPHI(forms.Form):
     __condition_choices = Condition.condition_choices()
-    __provider_sites = Provider.objects.values_list('dept', flat=True).order_by('dept').distinct()
-    __ps_choices = zip(__provider_sites, __provider_sites)
+    __provider_depts = Provider.objects.values_list('dept', flat=True).order_by('dept').distinct()
+    __pd_choices = zip(__provider_depts, __provider_depts)
     case_id = forms.CharField(required=False, label="Case ID")
     status = forms.MultipleChoiceField(choices=STATUS_CHOICES, required=False)
     condition = forms.MultipleChoiceField(choices=__condition_choices, required=False)
@@ -419,7 +419,7 @@ class CaseFilterFormPHI(forms.Form):
     date_before = forms.DateField(required=False, label='Occurs Before Date')
     patient_mrn = forms.CharField(required=False, label='Patient MRN')
     patient_last_name = forms.CharField(required=False, label='Patient Surname')
-    provider_site = forms.MultipleChoiceField(choices=__ps_choices, required=False)
+    provider_dept = forms.MultipleChoiceField(choices=__pd_choices, label='Provider Department', required=False)
 
 
 class CaseFilterFormNoPHI(forms.Form):
@@ -495,14 +495,14 @@ def case_list(request):
             if patient_last_name:
                 qs = qs.filter(patient__last_name__istartswith=patient_last_name)
             #
-            # Provider Site
+            # Provider Department
             #
-            sites = search_form.cleaned_data['provider_site']
-            if sites:
-                site_q = Q(provider__dept__iexact=sites[0])
-                for site_name in sites[1:]:
-                    site_q |= Q(provider__dept__iexact=site_name)
-                qs = qs.filter(site_q)
+            departments = search_form.cleaned_data['provider_dept']
+            if departments:
+                dept_q = Q(provider__dept__iexact=departments[0])
+                for dept in departments[1:]:
+                    dept_q |= Q(provider__dept__iexact=dept)
+                qs = qs.filter(dept_q)
     log_query('Nodis case list', qs)
     #-------------------------------------------------------------------------------
     #
