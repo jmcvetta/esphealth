@@ -21,6 +21,7 @@ doc/specifications/gipse.xsd -text
 doc/specifications/reduced-gipse.xsd -text
 etc/templates/case_report/odh_hl7.txt -text
 share/apache.conf.sample -text
+share/data-quality-check.sh -text
 share/django.wsgi.sample -text
 share/epic_etl/AdditionalStepsAfterCompile.doc -text svneol=unset#unset
 share/epic_etl/ESPFileLayout.doc -text svneol=unset#unset
