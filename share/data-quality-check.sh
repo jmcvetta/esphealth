@@ -68,8 +68,8 @@ rm $ordernums_test
 #
 encounters_prod=`mktemp`
 encounters_test=`mktemp`
-cat $folder/epicres.esp.* | cut -d'^' -f3 | sort | uniq > $encounters_prod
-cat $folder/epicres.test.* | cut -d'^' -f3 | sort | uniq > $encounters_test
+cat $folder/epicvis.esp.* | cut -d'^' -f3 | sort | uniq > $encounters_prod
+cat $folder/epicvis.test.* | cut -d'^' -f3 | sort | uniq > $encounters_test
 encounters_all=`cat $encounters_prod $encounters_test | sort| uniq | wc -l`
 encounters_missing=`diff $encounters_prod $encounters_test  | grep '^<' | wc -l`
 encounters_new=`diff $encounters_prod $encounters_test  | grep '^>' | wc -l`
@@ -82,8 +82,8 @@ rm $encounters_test
 #
 prescriptions_prod=`mktemp`
 prescriptions_test=`mktemp`
-cat $folder/epicres.esp.* | cut -d'^' -f3 | sort | uniq > $prescriptions_prod
-cat $folder/epicres.test.* | cut -d'^' -f3 | sort | uniq > $prescriptions_test
+cat $folder/epicmed.esp.* | cut -d'^' -f3 | sort | uniq > $prescriptions_prod
+cat $folder/epicmed.test.* | cut -d'^' -f3 | sort | uniq > $prescriptions_test
 prescriptions_all=`cat $prescriptions_prod $prescriptions_test | sort| uniq | wc -l`
 prescriptions_missing=`diff $prescriptions_prod $prescriptions_test  | grep '^<' | wc -l`
 prescriptions_new=`diff $prescriptions_prod $prescriptions_test  | grep '^>' | wc -l`
