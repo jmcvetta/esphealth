@@ -42,6 +42,7 @@ patients_prod=`mktemp`
 patients_test=`mktemp`
 cat $folder/epic*.esp.* | cut -d'^' -f1 | sort | uniq > $patients_prod
 cat $folder/epic*.test.* | cut -d'^' -f1 | sort | uniq > $patients_test
+patients_all=`cat $patients_prod $patients_test | sort| uniq | wc -l`
 patients_missing=`diff $patients_prod $patients_test  | grep '^<' | wc -l`
 patients_new=`diff $patients_prod $patients_test  | grep '^>' | wc -l`
 rm $patients_prod
@@ -55,6 +56,7 @@ ordernums_prod=`mktemp`
 ordernums_test=`mktemp`
 cat $folder/epicres.esp.* | cut -d'^' -f3 | sort | uniq > $ordernums_prod
 cat $folder/epicres.test.* | cut -d'^' -f3 | sort | uniq > $ordernums_test
+ordernums_all=`cat $ordernums_prod $ordernums_test | sort| uniq | wc -l`
 ordernums_missing=`diff $ordernums_prod $ordernums_test  | grep '^<' | wc -l`
 ordernums_new=`diff $ordernums_prod $ordernums_test  | grep '^>' | wc -l`
 rm $ordernums_prod
@@ -68,6 +70,7 @@ encounters_prod=`mktemp`
 encounters_test=`mktemp`
 cat $folder/epicres.esp.* | cut -d'^' -f3 | sort | uniq > $encounters_prod
 cat $folder/epicres.test.* | cut -d'^' -f3 | sort | uniq > $encounters_test
+encounters_all=`cat $encounters_prod $encounters_test | sort| uniq | wc -l`
 encounters_missing=`diff $encounters_prod $encounters_test  | grep '^<' | wc -l`
 encounters_new=`diff $encounters_prod $encounters_test  | grep '^>' | wc -l`
 rm $encounters_prod
@@ -81,6 +84,7 @@ prescriptions_prod=`mktemp`
 prescriptions_test=`mktemp`
 cat $folder/epicres.esp.* | cut -d'^' -f3 | sort | uniq > $prescriptions_prod
 cat $folder/epicres.test.* | cut -d'^' -f3 | sort | uniq > $prescriptions_test
+prescriptions_all=`cat $prescriptions_prod $prescriptions_test | sort| uniq | wc -l`
 prescriptions_missing=`diff $prescriptions_prod $prescriptions_test  | grep '^<' | wc -l`
 prescriptions_new=`diff $prescriptions_prod $prescriptions_test  | grep '^>' | wc -l`
 rm $prescriptions_prod
@@ -90,17 +94,21 @@ rm $prescriptions_test
 
 echo
 echo "Patients"
+echo "    All:     $patients_all"
 echo "    Missing: $patients_missing"
 echo "    New:     $patients_new"
 echo
 echo "Lab Result Order Numbers"
+echo "    All:     $ordernums_all"
 echo "    Missing: $ordernums_missing"
 echo "    New:     $ordernums_new"
 echo
 echo "Encounters"
+echo "    All:     $encounters_all"
 echo "    Missing: $encounters_missing"
 echo "    New:     $encounters_new"
 echo
 echo "Prescriptions"
+echo "    All:     $prescriptions_all"
 echo "    Missing: $prescriptions_missing"
 echo "    New:     $prescriptions_new"
