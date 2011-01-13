@@ -512,6 +512,13 @@ def case_list(request):
     values['condition_counts'] = qs.values('condition').annotate(count=Count('pk')).order_by('condition')
     #-------------------------------------------------------------------------------
     #
+    # Export to CSV
+    #
+    #-------------------------------------------------------------------------------
+    if request.GET.get('export_csv', None) == 'case_list':
+        return export_case_list(request, qs)
+    #-------------------------------------------------------------------------------
+    #
     # Build Page
     #
     #-------------------------------------------------------------------------------
@@ -519,22 +526,77 @@ def case_list(request):
     page = Paginator(table.rows, ROWS_PER_PAGE).page(request.GET.get('page', 1))
     # Remove '?sort=' bit from full URL path
     full_path = request.get_full_path()
+    unsorted_path = str(full_path) # Copy not reference
     sort_index = full_path.find('&sort')
     if sort_index != -1:
-        full_path = full_path[:sort_index]
+        unsorted_path = full_path[:sort_index]
     # If path does not contain a query string (beginning with '?'), add a '?' 
     # so the template's "&sort=" html forms a valid query
     query_index = full_path.find('?')
     if query_index == -1:
+        # full path and unsorted path will have same query index
         full_path += '?'
+        unsorted_path += '?'
     clear_search_path = full_path[:query_index]
     values['full_path'] = full_path
+    values['unsorted_path'] = unsorted_path
     values['clear_search_path'] = clear_search_path
     values['table'] = table
     values['page'] = page
     values['search_form'] = search_form
     return render_to_response('ui/case_list.html', values, context_instance=RequestContext(request))
 
+
+@permission_required('nodis.view_phi')
+def export_case_list(request, qs):
+    '''
+    Exports case list from a queryset as a CSV file
+    '''
+    header = [
+        'case_id',
+        'condition',
+        'case_date',
+        'case_detected',
+        'provider_dept',
+        'mrn',
+        'last_name',
+        'first_name',
+        'date_of_birth',
+        'collection_date',
+        'result_date',
+        'status',
+        'sent_date',
+        ]
+    response = HttpResponse(mimetype='text/csv')
+    response['Content-Disposition'] = 'attachment;filename=case_list.csv'
+    writer = csv.writer(response)
+    writer.writerow(header)
+    for a_case in qs:
+        if a_case.created_timestamp:
+            created_date = a_case.created_timestamp.date()
+        else:
+            created_date = None
+        if a_case.sent_timestamp:
+            sent_date = a_case.sent_timestamp.date()
+        else:
+            sent_date = None
+        row = [
+            a_case.id,
+            a_case.condition,
+            a_case.date,
+            created_date,
+            a_case.provider.dept,
+            a_case.patient.mrn,
+            a_case.patient.last_name,
+            a_case.patient.first_name,
+            a_case.patient.date_of_birth,
+            a_case.collection_date,
+            a_case.result_date,
+            a_case.status,
+            sent_date,
+            ]
+        writer.writerow(row)
+    return response
 
 
 @login_required

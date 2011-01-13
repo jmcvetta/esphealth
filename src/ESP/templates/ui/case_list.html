@@ -59,7 +59,9 @@
         <p>
             <input type="submit" value="Update Results" />
             <a href="{{ clear_search_path }}">Reset Filter</a>
-        </p>
+        <p>
+            <a href="{{ full_path }}&export_csv=case_list">Export case list to CSV file</a>
+        <p>
     </form>
 </div>
 
@@ -89,7 +91,7 @@
         <th>&nbsp;</th>
         {% for column in table.columns %}
             {% if column.sortable %}
-                <th><a href="{{ full_path }}&sort={{ column.name_toggled }}">{{ column }}</a></th>
+                <th><a href="{{ unsorted_path }}&sort={{ column.name_toggled }}">{{ column }}</a></th>
             {% else %}
                 <th>{{ column }}</th>
             {% endif %}
@@ -112,7 +114,7 @@
     <p>
     <span class="step-links">
         {% if page.has_previous %}
-            <a href="?page={{ page.previous_page_number }}">previous</a> |
+            <a href="{{ full_path }}&page={{ page.previous_page_number }}">previous</a> |
         {% endif %}
 
 
@@ -121,7 +123,7 @@
         </span>
 
         {% if page.has_next %}
-            | <a href="?page={{ page.next_page_number }}">next</a>
+            | <a href="{{ full_path }}&page={{ page.next_page_number }}">next</a>
         {% endif %}
     </span>
     </p>
