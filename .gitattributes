@@ -113,6 +113,7 @@ src/ESP/hef/migrations/0014_auto__del_encounterheuristic__add_diagnosisheuristic
 src/ESP/hef/migrations/0015_auto__add_calculatedbilirubinheuristic__del_field_labresultfixedthresh.py -text
 src/ESP/hef/migrations/0016_auto__del_field_calculatedbilirubinheuristic_id__add_field_calculatedb.py -text
 src/ESP/hef/migrations/0017_auto__add_labresultwesternblotheuristic__add_unique_labresultwesternbl.py -text
+src/ESP/hef/migrations/0018_auto__del_unique_labresultpositiveheuristic_test_titer__add_unique_lab.py -text
 src/ESP/hef/migrations/__init__.py -text
 src/ESP/hef/models.py -text
 src/ESP/hef/sql/multicolumn-indices.postgresql.sql -text
