@@ -63,6 +63,16 @@ DOSE_UNIT_VARIANTS = {
     'ug': ['microgram', 'mcg', 'ug'],
     }
 
+GT_CHOICES = [
+    ('gte', 'Greater Than or Equal To: >='),
+    ('gt', 'Greater Than: >'),
+    ]
+
+LT_CHOICES = [
+    ('lte', 'Less Than or Equal To: <='),
+    ('lt', 'Less Than: <'),
+    ]
+
 TITER_DILUTION_CHOICES = [
     (1, '1:1'),  
     (2, '1:2'),
@@ -140,6 +150,7 @@ class AbstractLabTest(models.Model):
         heuristic_set |= set(self.labresultanyheuristic_set.all())
         heuristic_set |= set(self.labresultpositiveheuristic_set.all())
         heuristic_set |= set(self.labresultratioheuristic_set.all())
+        heuristic_set |= set(self.labresultrangeheuristic_set.all())
         heuristic_set |= set(self.labresultfixedthresholdheuristic_set.all())
         return heuristic_set
     heuristic_set = property(__get_heuristic_set)
@@ -702,7 +713,7 @@ class LabResultFixedThresholdHeuristic(LabResultHeuristicBase):
     
     class Meta:
         verbose_name = 'Heuristic - Lab - Fixed Threshold'
-        verbose_name_plural = 'Heuristic - Lab - Fixed Threshold'
+        verbose_name_plural = verbose_name
         ordering = ['test']
         unique_together = ['test', 'threshold']
     
@@ -711,7 +722,7 @@ class LabResultFixedThresholdHeuristic(LabResultHeuristicBase):
     name = property(__get_name)
     
     def __get_verbose_name(self):
-        return 'Heuristic - Lab - Fixed Threshold - %s' % self.test.name
+        return 'Heuristic - Lab - Fixed Threshold - %s - %s' % (self.test.name, self.threshold)
     verbose_name = property(__get_verbose_name)
     
     def __unicode__(self):
@@ -749,6 +760,76 @@ class LabResultFixedThresholdHeuristic(LabResultHeuristicBase):
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (positive_labs.count(), self.name))
         return positive_labs.count() 
+
+
+class LabResultRangeHeuristic(LabResultHeuristicBase):
+    '''
+    A heuristic for detecting lab results falling within a certain fixed range
+    '''
+    minimum = models.FloatField(blank=False)
+    minimum_match_type = models.CharField(max_length=3, choices=GT_CHOICES)
+    maximum = models.FloatField(blank=False)
+    maximum_match_type = models.CharField(max_length=3, choices=LT_CHOICES)
+    
+    
+    class Meta:
+        verbose_name = 'Heuristic - Lab - Range'
+        verbose_name_plural = verbose_name
+        ordering = ['test']
+        unique_together = ['test', 'minimum', 'maximum']
+    
+    def __get_name(self):
+        return  u'lx--%s--range--%s-%s' % (self.test.name, float(self.minimum), float(self.maximum))
+    name = property(__get_name)
+    
+    def __get_verbose_name(self):
+        return 'Heuristic - Lab - Range - %s - %s <> %s' % (self.test.name, self.minimum, self.maximum)
+    verbose_name = property(__get_verbose_name)
+    
+    def __unicode__(self):
+        return u'%s' % self.verbose_name
+    
+    def save(self, *args, **kwargs):
+        super(LabResultRangeHeuristic, self).save(*args, **kwargs) # Call the "real" save() method.
+        obj, created = EventType.objects.get_or_create(
+            name = self.name,
+            heuristic = self,
+            )
+        if created:
+            log.debug('Added %s for %s' % (obj, self))
+    
+    def generate_events(self):
+        qs = self.test.lab_results.filter(
+            result_float__isnull=False, 
+            )
+        if self.minimum_match_type == 'gte':
+            qs = qs.filter(result_float__gte=self.minimum)
+        elif self.minimum_match_type == 'gt':
+            qs = qs.filter(result_float__gt=self.minimum)
+        if self.maximum_match_type == 'lte':
+            qs = qs.filter(result_float__lte=self.maximum)
+        elif self.maximum_match_type == 'lt':
+            qs = qs.filter(result_float__lt=self.maximum)
+        qs = qs.exclude(tags__event__event_type__heuristic=self)
+        log_query(self.name, qs)
+        log.info('Generating events for "%s"' % self.name)
+        event_type = EventType.objects.get(name=self.name)
+        for lab in queryset_iterator(qs):
+            if self.date_field == 'order':
+                lab_date = lab.date
+            elif self.date_field == 'result':
+                lab_date = lab.result_date
+            new_event = Event(
+                event_type = event_type,
+                patient = lab.patient,
+                date = lab_date,
+                provider = lab.provider,
+                )
+            new_event.save()
+            new_event.tag_object(lab)
+            log.debug('Saved new event: %s' % new_event)
+        log.info('Generated %s new events for %s' % (qs.count(), self.name))
+        return qs.count() 
 
 
 class LabResultWesternBlotHeuristic(LabResultHeuristicBase):

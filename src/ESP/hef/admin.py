@@ -11,6 +11,7 @@ from ESP.hef.models import LabTestMap
 from ESP.hef.models import LabOrderHeuristic
 from ESP.hef.models import LabResultPositiveHeuristic
 from ESP.hef.models import LabResultRatioHeuristic
+from ESP.hef.models import LabResultRangeHeuristic
 from ESP.hef.models import LabResultFixedThresholdHeuristic
 from ESP.hef.models import DiagnosisHeuristic
 from ESP.hef.models import PrescriptionHeuristic
@@ -75,6 +76,10 @@ class LabResultPositiveHeuristicAdmin(admin.ModelAdmin):
 class LabResultRatioHeuristicAdmin(admin.ModelAdmin):
     list_display = ['test', 'ratio']
     list_filter = ['test']
+    
+class LabResultRangeHeuristicAdmin(admin.ModelAdmin):
+    list_display = ['test', 'minimum', 'maximum']
+    list_filter = ['test']
 
 class LabResultFixedThresholdHeuristicAdmin(admin.ModelAdmin):
     list_display = ['test', 'threshold']
@@ -100,6 +105,7 @@ admin.site.register(LabTestMap, LabTestMapAdmin)
 admin.site.register(LabOrderHeuristic, LabOrderHeuristicAdmin)
 admin.site.register(LabResultPositiveHeuristic, LabResultPositiveHeuristicAdmin)
 admin.site.register(LabResultRatioHeuristic, LabResultRatioHeuristicAdmin)
+admin.site.register(LabResultRangeHeuristic, LabResultRangeHeuristicAdmin)
 admin.site.register(LabResultFixedThresholdHeuristic, LabResultFixedThresholdHeuristicAdmin)
 admin.site.register(DiagnosisHeuristic, EncounterHeuristicAdmin)
 admin.site.register(PrescriptionHeuristic, PrescriptionHeuristicAdmin)
