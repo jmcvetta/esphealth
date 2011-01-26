@@ -16,6 +16,7 @@ from ESP.hef.models import LabResultAnyHeuristic
 from ESP.hef.models import LabResultPositiveHeuristic
 from ESP.hef.models import LabResultRatioHeuristic
 from ESP.hef.models import LabResultFixedThresholdHeuristic
+from ESP.hef.models import LabResultRangeHeuristic
 from ESP.hef.models import Icd9Query
 from ESP.hef.models import DiagnosisHeuristic
 from ESP.hef.models import PrescriptionHeuristic
@@ -1055,6 +1056,14 @@ LabResultPositiveHeuristic.objects.get_or_create(
     date_field = 'result'
     )
 
+LabResultRangeHeuristic.objects.get_or_create(
+    test=ogtt75_fasting,
+    minimum = 100,
+    minimum_match_type = 'gte',
+    maximum = 125,
+    maximum_match_type = 'lt',
+    )
+
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_fasting,
     date_field = 'result',
@@ -1114,6 +1123,14 @@ LabOrderHeuristic.objects.get_or_create(
     test=ogtt75_30min,
     )
 
+LabResultRangeHeuristic.objects.get_or_create(
+    test=ogtt75_30min,
+    minimum = 140,
+    minimum_match_type = 'gte',
+    maximum = 200,
+    maximum_match_type = 'lt',
+    )
+
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_30min,
     date_field = 'result',
@@ -1139,6 +1156,14 @@ LabResultPositiveHeuristic.objects.get_or_create(
 
 LabOrderHeuristic.objects.get_or_create(
     test=ogtt75_1hr,
+    )
+
+LabResultRangeHeuristic.objects.get_or_create(
+    test=ogtt75_1hr,
+    minimum = 140,
+    minimum_match_type = 'gte',
+    maximum = 200,
+    maximum_match_type = 'lt',
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
@@ -1174,6 +1199,14 @@ LabOrderHeuristic.objects.get_or_create(
     test=ogtt75_90min,
     )
 
+LabResultRangeHeuristic.objects.get_or_create(
+    test=ogtt75_90min,
+    minimum = 140,
+    minimum_match_type = 'gte',
+    maximum = 200,
+    maximum_match_type = 'lt',
+    )
+
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_90min,
     date_field = 'result',
@@ -1205,6 +1238,14 @@ LabResultPositiveHeuristic.objects.get_or_create(
 
 LabOrderHeuristic.objects.get_or_create(
     test=ogtt75_2hr,
+    )
+
+LabResultRangeHeuristic.objects.get_or_create(
+    test=ogtt75_2hr,
+    minimum = 140,
+    minimum_match_type = 'gte',
+    maximum = 200,
+    maximum_match_type = 'lt',
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
