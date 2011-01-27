@@ -188,8 +188,6 @@ src/ESP/media/js/syndrome_map.js -text
 src/ESP/media/js/vaers.js -text
 src/ESP/nodis/__init__.py -text
 src/ESP/nodis/admin.py -text
-src/ESP/nodis/defs.py -text
-src/ESP/nodis/forms.py -text
 src/ESP/nodis/management/__init__.py -text
 src/ESP/nodis/management/commands/__init__.py -text
 src/ESP/nodis/management/commands/case_report.py -text
@@ -197,7 +195,6 @@ src/ESP/nodis/management/commands/diabetes.py -text
 src/ESP/nodis/management/commands/gdm.py -text
 src/ESP/nodis/management/commands/nodis.py -text
 src/ESP/nodis/management/commands/patient_report.py -text
-src/ESP/nodis/management/commands/validate_cases.py -text
 src/ESP/nodis/migrations/0001_initial.py -text
 src/ESP/nodis/migrations/0002__add_case_timespans.py -text
 src/ESP/nodis/migrations/__init__.py -text
@@ -327,10 +324,12 @@ src/ESP/templates/widgets/vaers/case_grid.json -text
 src/ESP/templates/widgets/vaers/case_table.html -text
 src/ESP/templates/widgets/vaers/feedback_form.html -text
 src/ESP/ui/__init__.py -text
+src/ESP/ui/forms.py -text
 src/ESP/ui/management/__init__.py -text
 src/ESP/ui/management/commands/__init__.py -text
 src/ESP/ui/management/commands/batch.py -text
 src/ESP/ui/management/commands/status_report.py -text
+src/ESP/ui/management/commands/validate_cases.py -text
 src/ESP/ui/tests.py -text
 src/ESP/ui/urls.py -text
 src/ESP/ui/views.py -text

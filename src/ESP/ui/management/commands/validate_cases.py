@@ -81,7 +81,6 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.hef.models import Event
-from ESP.nodis import defs # Condition defintions
 from ESP.nodis.models import Case
 from ESP.nodis.models import ReferenceCase
 from ESP.nodis.models import ReferenceCaseList

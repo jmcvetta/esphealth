@@ -70,7 +70,7 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import LabTestConcordance
-#from ESP.hef.core import BaseHeuristic
+from ESP.hef.models import Heuristic
 #from ESP.hef import events # Required to register hef events
 from ESP.nodis.models import Condition
 from ESP.nodis.models import Case
@@ -80,11 +80,11 @@ from ESP.nodis.models import ReferenceCaseList
 from ESP.nodis.models import ReferenceCase
 from ESP.nodis.models import ValidatorRun
 from ESP.nodis.models import ValidatorResult
-from ESP.nodis.forms import CaseStatusForm
-from ESP.nodis.forms import CodeMapForm
-from ESP.nodis.forms import ConditionForm
-from ESP.nodis.forms import ReferenceCaseForm
-from ESP.nodis.management.commands.validate_cases import RELATED_MARGIN
+from ESP.ui.forms import CaseStatusForm
+from ESP.ui.forms import CodeMapForm
+from ESP.ui.forms import ConditionForm
+from ESP.ui.forms import ReferenceCaseForm
+from ESP.ui.management.commands.validate_cases import RELATED_MARGIN
 from ESP.utils import log
 from ESP.utils import log_query
 from ESP.utils.utils import Flexigrid
@@ -297,7 +297,7 @@ def map_native_code(request, native_code):
         form = CodeMapForm(request.POST)
         if form.is_valid():
             heuristic_name = form.cleaned_data['heuristic']
-            assert BaseHeuristic.get_heuristic(heuristic_name)
+            assert Heuristic.get_heuristic(heuristic_name)
             threshold = form.cleaned_data['threshold']
             cm, created = CodeMap.objects.get_or_create(native_code=native_code, heuristic=heuristic_name)
             cm.notes = form.cleaned_data['notes']

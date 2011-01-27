@@ -23,7 +23,6 @@ from ESP.nodis.models import Condition
 from ESP.hef.models import AbstractLabTest
 from ESP.static.models import Loinc
 
-from ESP.nodis import defs
 
 
 
