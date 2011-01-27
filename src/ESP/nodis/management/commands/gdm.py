@@ -103,6 +103,8 @@ FIELDS = [
     'postpartum--ogtt75--order',
     'postpartum--ogtt75--any_result',
     'postpartum--ogtt75--positive',
+    'postpartum--ogtt75--dm_threshold',
+    'postpartum--ogtt75--igt_range',
     'early_postpartum--a1c--order',
     'early_postpartum--a1c--max',
     'late_postpartum--a1c--max',
@@ -252,6 +254,13 @@ class Command(BaseCommand):
             'lx--ogtt75_fasting--threshold--126.0',
             'lx--ogtt75_fasting--threshold--95.0',
             ])
+        ogtt75_igt_q = Q(event_type__name__in = [
+            'lx--ogtt75_1hr--range--140.0-200.0',
+            'lx--ogtt75_2hr--range--140.0-200.0',
+            'lx--ogtt75_30min--range--140.0-200.0',
+            'lx--ogtt75_90min--range--140.0-200.0',
+            'lx--ogtt75_fasting--range--100.0-125.0',
+            ])
         ogtt100_q = Q(event_type__name__startswith='lx--ogtt100')
         ogtt100_threshold_q = Q(event_type__name__in = [
             ])
@@ -377,11 +386,12 @@ class Command(BaseCommand):
                     'gdm_icd9--this_preg': bool( intrapartum.filter(dxgdm_q) ),
                     'intrapartum--ogtt50--positive': bool( intrapartum.filter(ogtt50_q, pos_q) ),
                     'intrapartum--ogtt50--threshold': bool( intrapartum.filter(ogtt50_threshold_q) ),
-                    'intrapartum--ogtt75--positive': bool( intrapartum.filter(ogtt75_q, pos_q) ),
-                    'intrapartum--ogtt100--positive': bool( intrapartum.filter(ogtt100_q, pos_q) ),
                     'postpartum--ogtt75--order': bool( postpartum.filter(ogtt75_q, order_q) ),
                     'postpartum--ogtt75--any_result': bool( postpartum.filter(ogtt75_q, any_q) ),
                     'postpartum--ogtt75--positive': bool( postpartum.filter(ogtt75_q, pos_q) ),
+                    'postpartum--ogtt75--dm_threshold': bool( postpartum.filter(ogtt75_threshold_q) ),
+                    'postpartum--ogtt75--igt_range': bool( postpartum.filter(ogtt75_igt_q) ),
+                    'intrapartum--ogtt100--positive': bool( intrapartum.filter(ogtt100_q, pos_q) ),
                     'early_postpartum--a1c--order': bool( early_pp.filter(a1c_q, order_q) ),
                     'early_postpartum--a1c--max': a1c_lab_qs.filter(early_pp_q).aggregate(max=Max('result_float'))['max'],
                     'late_postpartum--a1c--max': a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max'],
