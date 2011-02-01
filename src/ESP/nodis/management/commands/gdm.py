@@ -298,9 +298,8 @@ class Command(BaseCommand):
             #
             # Populate values that will be used all of this patient's pregnancies
             #
-            zip_code = patient.zip[0:5]
             try:
-                zip_code = '%05d' % int(zip_code)
+                zip_code = '%05d' % int( patient.zip[0:5] )
             except:
                 log.warning('Could not convert zip code: %s' % patient.zip)
             patient_values = {
