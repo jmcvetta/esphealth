@@ -327,11 +327,27 @@ class Command(BaseCommand):
                 writer.writerow(patient_values)
                 continue
             for preg_ts in preg_ts_qs:
-                bmi = Encounter.objects.filter(
+                #
+                # Find BMI closes to onset of pregnancy
+                #
+                bmi_qs = Encounter.objects.filter(
                     patient = patient,
+                    bmi__isnull=False,
+                    )
+                preg_bmi_qs = bmi_qs.filter(
                     date__gte = preg_ts.start_date,
-                    date__lte = preg_ts.end_date,
-                    ).aggregate(Max('bmi'))['bmi__max']
+                    date__lte = preg_ts.start_date + relativedelta(months=4),
+                    ).order_by('date')
+                pre_preg_bmi_qs = bmi_qs.filter(
+                    date__gte = preg_ts.start_date - relativedelta(years=1),
+                    date__lte = preg_ts.start_date,
+                    ).order_by('-date')
+                if preg_bmi_qs:
+                    bmi = preg_bmi_qs[0].bmi
+                elif pre_preg_bmi_qs:
+                    bmi = pre_preg_bmi_qs[0].bmi
+                else:
+                    bmi = None
                 gdm_this_preg = gdm_case_qs.filter(
                     date__gte = preg_ts.start_date,
                     date__lte = preg_ts.end_date,
