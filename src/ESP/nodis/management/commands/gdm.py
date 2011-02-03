@@ -327,6 +327,11 @@ class Command(BaseCommand):
                 writer.writerow(patient_values)
                 continue
             for preg_ts in preg_ts_qs:
+                bmi = Encounter.objects.filter(
+                    patient = patient,
+                    date__gte = preg_ts.start_date,
+                    date__lte = preg_ts.end_date,
+                    ).aggregate(Max('bmi'))['bmi__max']
                 gdm_this_preg = gdm_case_qs.filter(
                     date__gte = preg_ts.start_date,
                     date__lte = preg_ts.end_date,
@@ -381,6 +386,7 @@ class Command(BaseCommand):
                     'preg_start': preg_ts.start_date,
                     'preg_end': preg_ts.end_date,
                     'edd': edd,
+                    'bmi': bmi,
                     'gdm_case': bool( gdm_this_preg ),
                     'gdm_case--date': gdm_date,
                     'gdm_icd9--this_preg': bool( intrapartum.filter(dxgdm_q) ),
