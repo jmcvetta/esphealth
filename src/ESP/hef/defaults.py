@@ -1550,8 +1550,10 @@ test_strips_rx = PrescriptionHeuristic.objects.get_or_create(
 
 insulin_rx = PrescriptionHeuristic.objects.get_or_create(
     name = 'insulin',
-    drugs = 'insulin',
-    exclude = 'syringe',
+    defaults = {
+	    'drugs': 'insulin',
+	    'exclude': 'syringe',
+	    }
     )
 
 #-------------------------------------------------------------------------------
