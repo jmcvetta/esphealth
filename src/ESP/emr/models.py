@@ -1024,11 +1024,14 @@ class Encounter(BasePatientRecord):
                 date__gte = (self.date - relativedelta(days=365)),
                 date__lte = self.date,
                 )
-            recent_bmi = encs_last_year.filter(bmi__isnull=False)
-            if recent_bmi:
-                return recent_bmi[0].bmi
-            # Find the most recent height & weight for this patient
-            ht_encs = encs_last_year.filter(height__isnull=False).exclude(height=0)
+            recent_bmi_encs = encs_last_year.filter(bmi__isnull=False)
+            if recent_bmi_encs:
+                return recent_bmi_encs[0].bmi
+            # Find the most recent height for this patient, looking back as far 
+            # as their 16th birthday if necessary
+            sixteenth_bday = self.patient.date_of_birth + relativedelta(years=16)
+            ht_encs = pat_encs.filter(date__gte=sixteenth_bday, height__isnull=False).exclude(height=0)
+            # Find the most recent weight this patient within the past year
             wt_encs = encs_last_year.filter(weight__isnull=False).exclude(weight=0)
             if ht_encs and wt_encs:
                 height = ht_encs[0].height
