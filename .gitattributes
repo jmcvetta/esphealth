@@ -195,6 +195,7 @@ src/ESP/nodis/management/commands/diabetes.py -text
 src/ESP/nodis/management/commands/gdm.py -text
 src/ESP/nodis/management/commands/nodis.py -text
 src/ESP/nodis/management/commands/patient_report.py -text
+src/ESP/nodis/management/commands/prediabetes.py -text
 src/ESP/nodis/migrations/0001_initial.py -text
 src/ESP/nodis/migrations/0002__add_case_timespans.py -text
 src/ESP/nodis/migrations/__init__.py -text
