@@ -117,6 +117,8 @@ FIELDS = [
     'lancets_test_strips--this_preg',
     'lancets_test_strips--14_days_gdm_icd9',
     'insulin_rx',
+    'metformin_rx',
+    'glyburide_rx',
     'referral_to_nutrition',
     ]
 
@@ -426,6 +428,8 @@ class Command(BaseCommand):
                     'lancets_test_strips--this_preg': bool( intrapartum.filter(lancets_q) ),
                     'lancets_test_strips--14_days_gdm_icd9': bool( lancets_and_icd9 ),
                     'insulin_rx': bool( intrapartum.filter(event_type='rx--insulin') ),
+                    'metformin_rx': bool( intrapartum.filter(event_type='rx--metformin') ),
+                    'glyburide_rx': bool( intrapartum.filter(event_type='rx--glyburide') ),
                     'referral_to_nutrition': bool(nutrition_referral),
                     }
                 values.update(patient_values)
