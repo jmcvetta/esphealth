@@ -17,7 +17,6 @@ import threading
 import Queue
 import thread
 import signal
-import dowser
 
 from django.db import connection
 from django.db import transaction
@@ -57,23 +56,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # 
-        # TODO: We need a lockfile or some othermeans to prevent multiple 
+        # TODO: We need a lockfile or some other means to prevent multiple 
         # instances running at once.
-        #
         log.debug('options: %s' % options)
-        #
-        # Start Dowswer to track memory usage -- this should have a toggle to en-/dis-able 
-        #
-#        dowser.Root.period = 10
-#        cherrypy.tree.mount(dowser.Root())
-#        cherrypy.config.update({
-#        	'environment': 'embedded',
-#        	'server.socket_port': 8080,
-#    	})
-#        cherrypy.server.quickstart()
-#        cherrypy.engine.start()
-
         # 
         # Create dispatch dictionary of abstract tests and heuristics
         #
