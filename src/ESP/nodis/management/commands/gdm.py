@@ -50,6 +50,12 @@ CRITERIA_ONCE = [
     'lx--ogtt75_fasting--threshold--126.0',
     'lx--ogtt50_1hr--threshold--190.0',
     'lx--ogtt50_random--threshold--190.0',
+    
+    'lx--ogtt75_fasting--threshold--92.0',
+    'lx--ogtt75_30min--threshold--200.0',
+    'lx--ogtt75_1hr--threshold--180.0',
+    'lx--ogtt75_90min--threshold--180.0',
+    'lx--ogtt75_2hr--threshold--155.0',
     ]
 # Two or more occurrences of these events, during pregnancy, is sufficient for a case of GDM
 CRITERIA_TWICE = [

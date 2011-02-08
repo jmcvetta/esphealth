@@ -1067,6 +1067,12 @@ LabResultRangeHeuristic.objects.get_or_create(
 LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt75_fasting,
     date_field = 'result',
+    threshold = 92,
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt75_fasting,
+    date_field = 'result',
     threshold = 95,
     )
 
@@ -1246,6 +1252,12 @@ LabResultRangeHeuristic.objects.get_or_create(
     minimum_match_type = 'gte',
     maximum = 200,
     maximum_match_type = 'lt',
+    )
+
+LabResultFixedThresholdHeuristic.objects.get_or_create(
+    test = ogtt75_2hr,
+    date_field = 'result',
+    threshold = 153,
     )
 
 LabResultFixedThresholdHeuristic.objects.get_or_create(
