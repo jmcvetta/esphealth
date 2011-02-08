@@ -936,6 +936,13 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
     date_field = 'result'
     )
 
+LabResultRangeHeuristic.objects.get_or_create(
+    test = glucose_fasting,
+    minimum = 100,
+    minimum_match_type = 'gte',
+    maximum = 125,
+    maximum_match_type = 'lte',
+    )
 
 #-------------------------------------------------------------------------------
 #
@@ -993,6 +1000,14 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = ogtt50_random,
     date_field = 'result',
     threshold = 190,
+    )
+
+LabResultRangeHeuristic.objects.get_or_create(
+    test = ogtt50_random,
+    minimum = 140,
+    minimum_match_type = 'gte',
+    maximum = 200,
+    maximum_match_type = 'lt',
     )
 
 ogtt50_1hr = AbstractLabTest.objects.get_or_create(
@@ -1057,7 +1072,7 @@ LabResultPositiveHeuristic.objects.get_or_create(
     )
 
 LabResultRangeHeuristic.objects.get_or_create(
-    test=ogtt75_fasting,
+    test = ogtt75_fasting,
     minimum = 100,
     minimum_match_type = 'gte',
     maximum = 125,
@@ -1520,6 +1535,13 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
     threshold = 6.5,
     )
 
+LabResultRangeHeuristic.objects.get_or_create(
+    test = a1c,
+    minimum = 5.7,
+    minimum_match_type = 'gte',
+    maximum = 6.4,
+    maximum_match_type = 'lte',
+    )
 
 pregnancy_diagnosis = DiagnosisHeuristic.objects.get_or_create(
     name = 'pregnancy',
