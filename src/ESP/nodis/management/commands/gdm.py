@@ -43,86 +43,6 @@ from ESP.hef.models import Timespan
 from ESP.hef.models import AbstractLabTest
 
 
-# One of these events, during pregnancy, is sufficient for a case of GDM
-CRITERIA_ONCE = [
-    'lx--ogtt100_fasting--threshold--126.0',
-    'lx--ogtt50_fasting--threshold--126.0',
-    'lx--ogtt75_fasting--threshold--126.0',
-    'lx--ogtt50_1hr--threshold--190.0',
-    'lx--ogtt50_random--threshold--190.0',
-    'lx--ogtt75_fasting--threshold--92.0',
-    'lx--ogtt75_30min--threshold--200.0',
-    'lx--ogtt75_1hr--threshold--180.0',
-    'lx--ogtt75_90min--threshold--180.0',
-    'lx--ogtt75_2hr--threshold--153.0',
-    ]
-# Two or more occurrences of these events, during pregnancy, is sufficient for a case of GDM
-CRITERIA_TWICE = [
-    'lx--ogtt75_fasting--threshold--95.0',
-    'lx--ogtt75_30min--threshold--200.0',
-    'lx--ogtt75_1hr--threshold--180.0',
-    'lx--ogtt75_90min--threshold--180.0',
-    'lx--ogtt75_2hr--threshold--155.0',
-    'lx--ogtt100_fasting_urine--positive',
-    'lx--ogtt100_fasting--threshold--95.0',
-    'lx--ogtt100_30min--threshold--200.0',
-    'lx--ogtt100_1hr--threshold--180.0',
-    'lx--ogtt100_90min--threshold--180.0',
-    'lx--ogtt100_2hr--threshold--155.0',
-    'lx--ogtt100_3hr--threshold--140.0',
-    ]
-
-
-FIELDS = [
-    #
-    # Per-patient fields
-    #
-    'patient_id',
-    'mrn',
-    'last_name',
-    'first_name',
-    'date_of_birth',
-    'ethnicity',
-    'zip_code',
-    'bmi',
-    'gdm_icd9--any_time',
-    'frank_diabetes--ever',
-    'frank_diabetes--date',
-    'frank_diabetes--case_id',
-    'lancets_test_strips--any_time',
-    #
-    # Per-pregnancy fields
-    #
-    'pregnancy_id',
-    'pregnancy', # Boolean
-    'preg_start',
-    'preg_end',
-    'edd',
-    'gdm_case', # Boolean
-    'gdm_case--date',
-    'gdm_icd9--this_preg',
-    'intrapartum--ogtt50--positive',
-    'intrapartum--ogtt50--threshold',
-    'intrapartum--ogtt75--positive',
-    'intrapartum--ogtt100--positive',
-    'postpartum--ogtt75--order',
-    'postpartum--ogtt75--any_result',
-    'postpartum--ogtt75--positive',
-    'postpartum--ogtt75--dm_threshold',
-    'postpartum--ogtt75--igt_range',
-    'postpartum--ogtt75--ifg_range',
-    'early_postpartum--a1c--order',
-    'early_postpartum--a1c--max',
-    'late_postpartum--a1c--max',
-    'lancets_test_strips--this_preg',
-    'lancets_test_strips--14_days_gdm_icd9',
-    'insulin_rx',
-    'metformin_rx',
-    'glyburide_rx',
-    'referral_to_nutrition',
-    ]
-
-
 class Command(BaseCommand):
     
     help = 'Generate report on all GDM cases'
@@ -132,6 +52,8 @@ class Command(BaseCommand):
             help='Generate cases of gestational diabetes'),
         make_option('--report', action='store_true', dest='report',  default=False,
             help='Produce gestational diabetes report'),
+        make_option('--riskscape', action='store_true', dest='riskscape', default=False,
+            help='Produce Riskscape GDM report'),
         )
     
     GDM_PATTERN = Pattern.objects.get_or_create(
@@ -140,13 +62,125 @@ class Command(BaseCommand):
         hash = hashlib.sha224('Gestational Diabetes iterative code'),
         )[0]
     
+    # One of these events, during pregnancy, is sufficient for a case of GDM
+    CRITERIA_ONCE = [
+        'lx--ogtt100_fasting--threshold--126.0',
+        'lx--ogtt50_fasting--threshold--126.0',
+        'lx--ogtt75_fasting--threshold--126.0',
+        'lx--ogtt50_1hr--threshold--190.0',
+        'lx--ogtt50_random--threshold--190.0',
+        'lx--ogtt75_fasting--threshold--92.0',
+        'lx--ogtt75_30min--threshold--200.0',
+        'lx--ogtt75_1hr--threshold--180.0',
+        'lx--ogtt75_90min--threshold--180.0',
+        'lx--ogtt75_2hr--threshold--153.0',
+        ]
+    # Two or more occurrences of these events, during pregnancy, is sufficient for a case of GDM
+    CRITERIA_TWICE = [
+        'lx--ogtt75_fasting--threshold--95.0',
+        'lx--ogtt75_30min--threshold--200.0',
+        'lx--ogtt75_1hr--threshold--180.0',
+        'lx--ogtt75_90min--threshold--180.0',
+        'lx--ogtt75_2hr--threshold--155.0',
+        'lx--ogtt100_fasting_urine--positive',
+        'lx--ogtt100_fasting--threshold--95.0',
+        'lx--ogtt100_30min--threshold--200.0',
+        'lx--ogtt100_1hr--threshold--180.0',
+        'lx--ogtt100_90min--threshold--180.0',
+        'lx--ogtt100_2hr--threshold--155.0',
+        'lx--ogtt100_3hr--threshold--140.0',
+        ]
+    
+    
+    LINELIST_FIELDS = [
+        #
+        # Per-patient fields
+        #
+        'patient_id',
+        'mrn',
+        'last_name',
+        'first_name',
+        'date_of_birth',
+        'ethnicity',
+        'zip_code',
+        'bmi',
+        'gdm_icd9--any_time',
+        'frank_diabetes--ever',
+        'frank_diabetes--date',
+        'frank_diabetes--case_id',
+        'lancets_test_strips--any_time',
+        #
+        # Per-pregnancy fields
+        #
+        'pregnancy_id',
+        'pregnancy', # Boolean
+        'preg_start',
+        'preg_end',
+        'edd',
+        'gdm_case', # Boolean
+        'gdm_case--date',
+        'gdm_icd9--this_preg',
+        'intrapartum--ogtt50--positive',
+        'intrapartum--ogtt50--threshold',
+        'intrapartum--ogtt75--positive',
+        'intrapartum--ogtt100--positive',
+        'postpartum--ogtt75--order',
+        'postpartum--ogtt75--any_result',
+        'postpartum--ogtt75--positive',
+        'postpartum--ogtt75--dm_threshold',
+        'postpartum--ogtt75--igt_range',
+        'postpartum--ogtt75--ifg_range',
+        'early_postpartum--a1c--order',
+        'early_postpartum--a1c--max',
+        'late_postpartum--a1c--max',
+        'lancets_test_strips--this_preg',
+        'lancets_test_strips--14_days_gdm_icd9',
+        'insulin_rx',
+        'metformin_rx',
+        'glyburide_rx',
+        'referral_to_nutrition',
+        ]
+    
+    
+    RISKSCAPE_FIELDS = [
+        'A',
+        'B',
+        'C',
+        'D',
+        'E',
+        'F',
+        'G',
+        'H',
+        'I',
+        'J',
+        'K',
+        'L',
+        'M',
+        'N',
+        'O',
+        'P',
+        'Q',
+        'R',
+        'S',
+        'T',
+        'U',
+        'V',
+        'W',
+        'X',
+        'Y',
+        'Z',
+        ]
+   
+  
     def handle(self, *args, **options):
-        if not (options['generate'] or options['report']):
-            raise CommandError('Must specify either --generate or --report')
+        if not (options['generate'] or options['report'] or options['riskscape']):
+            raise CommandError('Must specify either --generate, --report, or --riskscape')
         if options['generate']:
             self.generate_cases()
         if options['report']:
             self.report()
+        if options['riskscape']:
+            self.report(riskscape=True)
     
     def generate_cases(self, *args, **options):
         log.info('Generating cases for diabetes_gestational')
@@ -162,7 +196,7 @@ class Command(BaseCommand):
         # Single event
         #
         once_qs = ts_qs.filter(
-            patient__event__event_type__in=CRITERIA_ONCE,
+            patient__event__event_type__in=self.CRITERIA_ONCE,
             patient__event__date__gte=F('start_date'),
             patient__event__date__lte=F('end_date'),
             ).distinct().order_by('end_date')
@@ -172,7 +206,7 @@ class Command(BaseCommand):
         # 2 or more events
         #
         twice_qs = ts_qs.filter(
-            patient__event__event_type__in=CRITERIA_TWICE,
+            patient__event__event_type__in=self.CRITERIA_TWICE,
             patient__event__date__gte=F('start_date'),
             patient__event__date__lte=F('end_date'),
             ).annotate(count=Count('patient__event__id')).filter(count__gte=2).distinct()
@@ -204,7 +238,7 @@ class Command(BaseCommand):
         # Generate one case per timespan
         #
         #===============================================================================
-        all_criteria = CRITERIA_ONCE + CRITERIA_TWICE + dx_ets + rx_ets
+        all_criteria = self.CRITERIA_ONCE + self.CRITERIA_TWICE + dx_ets + rx_ets
         counter = 0
         total = len(gdm_timespan_pks)
         for ts_pk in gdm_timespan_pks:
@@ -240,9 +274,13 @@ class Command(BaseCommand):
         log.info('Generated %s new cases of diabetes_gestational' % counter)
         return counter
         
-    def report(self, *args, **options):
+    def report(self, riskscape=False):
         log.info('Generating GDM report')
-        writer = csv.DictWriter(sys.stdout, fieldnames=FIELDS)
+        if riskscape:
+            fields = self.RISKSCAPE_FIELDS
+        else:
+            fields = self.LINELIST_FIELDS
+        writer = csv.DictWriter(sys.stdout, fieldnames=fields)
         pos_q = Q(event_type__name__endswith='--positive')
         a1c_q = Q(event_type__name__startswith='lx--a1c')
         ogtt50_q = Q(event_type__name__startswith='lx--ogtt50')
@@ -279,7 +317,7 @@ class Command(BaseCommand):
         #
         # Header
         #
-        header = dict(zip(FIELDS, FIELDS)) 
+        header = dict(zip(fields, fields))
         writer.writerow(header)
         #
         # Report on all patients with GDM ICD9 or a pregnancy
@@ -310,19 +348,58 @@ class Command(BaseCommand):
                 zip_code = '%05d' % int( patient.zip[0:5] )
             except:
                 log.warning('Could not convert zip code: %s' % patient.zip)
-            patient_values = {
-                'patient_id': patient.pk,
-                'mrn': patient.mrn,
-                'last_name': patient.last_name,
-                'first_name': patient.first_name,
-                'date_of_birth': patient.date_of_birth,
-                'ethnicity': patient.race,
-                'zip_code': zip_code,
-                'gdm_icd9--any_time': bool(event_qs.filter(dxgdm_q)),
-                'frank_diabetes--ever': bool(frank_dm_case_qs),
-                'lancets_test_strips--any_time': bool(event_qs.filter(lancets_q)),
-                }
-            if frank_dm_case_qs:
+            if riskscape:
+                # Age
+                years = patient.age.years
+                if years < 20:
+                    age = 1
+                elif 20 <= years < 25:
+                    age = 2
+                elif 25 <= years < 30:
+                    age = 3
+                elif 30 <= years < 35:
+                    age = 4
+                elif 35 <= years < 40:
+                    age = 5
+                else:
+                    age = 6
+                # Race
+                if patient.race:
+                    race_string = patient.race.lower()
+                else:
+                    race_string = None
+                if race_string == 'caucasian':
+                    race = 1
+                elif race_string == 'asian':
+                    race = 2
+                elif race_string == 'black':
+                    race = 3
+                elif race_string == 'hispanic':
+                    race = 4
+                elif race_string == 'other':
+                    race = 5
+                else:
+                    race = 6
+                patient_values = {
+                    'A': patient.pk,
+                    'B': age,
+                    'C': race,
+                    'D': zip_code,
+                    }
+            else:
+                patient_values = {
+                    'patient_id': patient.pk,
+                    'mrn': patient.mrn,
+                    'last_name': patient.last_name,
+                    'first_name': patient.first_name,
+                    'date_of_birth': patient.date_of_birth,
+                    'ethnicity': patient.race,
+                    'zip_code': zip_code,
+                    'gdm_icd9--any_time': bool(event_qs.filter(dxgdm_q)),
+                    'frank_diabetes--ever': bool(frank_dm_case_qs),
+                    'lancets_test_strips--any_time': bool(event_qs.filter(lancets_q)),
+                    }
+            if frank_dm_case_qs and not riskscape:
                 first_dm_case = frank_dm_case_qs[0]
                 patient_values['frank_diabetes--date'] = first_dm_case.date
                 patient_values['frank_diabetes--case_id'] = first_dm_case.pk
@@ -330,7 +407,8 @@ class Command(BaseCommand):
             # Generate a row for each pregnancy (or 1 row if no pregs found)
             #
             if not preg_ts_qs:
-                patient_values['pregnancy'] = False
+                if not riskscape:
+                    patient_values['pregnancy'] = False
                 writer.writerow(patient_values)
                 continue
             for preg_ts in preg_ts_qs:
@@ -355,10 +433,25 @@ class Command(BaseCommand):
                     bmi = pre_preg_bmi_qs[0].bmi
                 else:
                     bmi = None
+                #
+                # Patient's frank and gestational DM history
+                #
                 gdm_this_preg = gdm_case_qs.filter(
                     date__gte = preg_ts.start_date,
                     date__lte = preg_ts.end_date,
                     ).order_by('date')
+                gdm_prior = gdm_case_qs.filter(date__lt=preg_ts.start_date)
+                frank_dm_early_preg = frank_dm_case_qs.filter(
+                    date__gte = preg_ts.start_date,
+                    date__lte = preg_ts.end_date - relativedelta(weeks=24),
+                    )
+                frank_dm_late_preg = frank_dm_case_qs.filter(
+                    date__gte = preg_ts.end_date - relativedelta(weeks=24),
+                    date__lte = preg_ts.end_date,
+                    )
+                #
+                # Events by time period
+                #
                 intrapartum = event_qs.filter(
                     date__gte = preg_ts.start_date,
                     date__lte = preg_ts.end_date,
@@ -403,35 +496,70 @@ class Command(BaseCommand):
                     gdm_date = gdm_this_preg[0].date
                 else:
                     gdm_date = None
-                values = {
-                    'pregnancy_id': preg_ts.pk,
-                    'pregnancy': True,
-                    'preg_start': preg_ts.start_date,
-                    'preg_end': preg_ts.end_date,
-                    'edd': edd,
-                    'bmi': bmi,
-                    'gdm_case': bool( gdm_this_preg ),
-                    'gdm_case--date': gdm_date,
-                    'gdm_icd9--this_preg': bool( intrapartum.filter(dxgdm_q) ),
-                    'intrapartum--ogtt50--positive': bool( intrapartum.filter(ogtt50_q, pos_q) ),
-                    'intrapartum--ogtt50--threshold': bool( intrapartum.filter(ogtt50_threshold_q) ),
-                    'postpartum--ogtt75--order': bool( postpartum.filter(ogtt75_q, order_q) ),
-                    'postpartum--ogtt75--any_result': bool( postpartum.filter(ogtt75_q, any_q) ),
-                    'postpartum--ogtt75--positive': bool( postpartum.filter(ogtt75_q, pos_q) ),
-                    'postpartum--ogtt75--dm_threshold': bool( postpartum.filter(ogtt75_threshold_q) ),
-                    'postpartum--ogtt75--igt_range': bool( postpartum.filter(ogtt75_igt_q) ),
-                    'postpartum--ogtt75--ifg_range': bool( postpartum.filter(ogtt75_ifg_q) ),
-                    'intrapartum--ogtt100--positive': bool( intrapartum.filter(ogtt100_q, pos_q) ),
-                    'early_postpartum--a1c--order': bool( early_pp.filter(a1c_q, order_q) ),
-                    'early_postpartum--a1c--max': a1c_lab_qs.filter(early_pp_q).aggregate(max=Max('result_float'))['max'],
-                    'late_postpartum--a1c--max': a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max'],
-                    'lancets_test_strips--this_preg': bool( intrapartum.filter(lancets_q) ),
-                    'lancets_test_strips--14_days_gdm_icd9': bool( lancets_and_icd9 ),
-                    'insulin_rx': bool( intrapartum.filter(event_type='rx--insulin') ),
-                    'metformin_rx': bool( intrapartum.filter(event_type='rx--metformin') ),
-                    'glyburide_rx': bool( intrapartum.filter(event_type='rx--glyburide') ),
-                    'referral_to_nutrition': bool(nutrition_referral),
-                    }
+                early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate(max=Max('result_float'))['max'],
+                late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max'],
+                if riskscape:
+                    bmi_value = None
+                    if bmi < 25:
+                        bmi_value = 1
+                    elif 25 <= bmi <= 30:
+                        bmi_value = 2
+                    elif bmi > 30:
+                        bmi_value = 3
+                    values = {
+                        'E': preg_ts.start_date.year,
+                        'F': bmi_value,
+                        'G': int( bool( gdm_this_preg ) ),
+                        'H': int( bool( gdm_prior ) ),
+                        'I': int( bool( frank_dm_early_preg ) ),
+                        'J': int( bool( frank_dm_late_preg ) ),
+                        'K': int( bool( intrapartum.filter(ogtt50_q, pos_q) ) ),
+                        'L': int( bool( intrapartum.filter(ogtt50_threshold_q) ) ),
+                        'M': int( bool( intrapartum.filter(ogtt75_q, pos_q) ) ),
+                        'N': int( bool( intrapartum.filter(ogtt100_q, pos_q) ) ),
+                        'O': int( bool( postpartum.filter(ogtt75_q, order_q) ) ),
+                        'P': int( bool( intrapartum.filter(event_type='rx--insulin') ) ),
+                        'Q': int( bool( intrapartum.filter(event_type='rx--metformin') ) ),
+                        'R': int( bool( intrapartum.filter(event_type='rx--glyburide_rx') ) ),
+                        'S': int( bool( nutrition_referral ) ),
+                        'T': int( bool( postpartum.filter(ogtt75_q, any_q) ) ),
+                        'U': int( bool( postpartum.filter(ogtt75_ifg_q) ) ),
+                        'V': int( bool( postpartum.filter(ogtt75_igt_q) ) ),
+                        'W': int( bool( postpartum.filter(ogtt75_ifg_q) | postpartum.filter(ogtt75_igt_q) ) ),
+                        'X': int( bool( postpartum.filter(ogtt75_threshold_q) ) ),
+                        'Y': int( early_a1c_max >= 6.5 ),
+                        'Z': int( late_a1c_max >= 6.5 ),
+                        }
+                else:
+                    values = {
+                        'pregnancy_id': preg_ts.pk,
+                        'pregnancy': True,
+                        'preg_start': preg_ts.start_date,
+                        'preg_end': preg_ts.end_date,
+                        'edd': edd,
+                        'bmi': bmi,
+                        'gdm_case': bool( gdm_this_preg ),
+                        'gdm_case--date': gdm_date,
+                        'gdm_icd9--this_preg': bool( intrapartum.filter(dxgdm_q) ),
+                        'intrapartum--ogtt50--positive': bool( intrapartum.filter(ogtt50_q, pos_q) ),
+                        'intrapartum--ogtt50--threshold': bool( intrapartum.filter(ogtt50_threshold_q) ),
+                        'postpartum--ogtt75--order': bool( postpartum.filter(ogtt75_q, order_q) ),
+                        'postpartum--ogtt75--any_result': bool( postpartum.filter(ogtt75_q, any_q) ),
+                        'postpartum--ogtt75--positive': bool( postpartum.filter(ogtt75_q, pos_q) ),
+                        'postpartum--ogtt75--dm_threshold': bool( postpartum.filter(ogtt75_threshold_q) ),
+                        'postpartum--ogtt75--igt_range': bool( postpartum.filter(ogtt75_igt_q) ),
+                        'postpartum--ogtt75--ifg_range': bool( postpartum.filter(ogtt75_ifg_q) ),
+                        'intrapartum--ogtt100--positive': bool( intrapartum.filter(ogtt100_q, pos_q) ),
+                        'early_postpartum--a1c--order': bool( early_pp.filter(a1c_q, order_q) ),
+                        'early_postpartum--a1c--max': early_a1c_max,
+                        'late_postpartum--a1c--max': late_a1c_max,
+                        'lancets_test_strips--this_preg': bool( intrapartum.filter(lancets_q) ),
+                        'lancets_test_strips--14_days_gdm_icd9': bool( lancets_and_icd9 ),
+                        'insulin_rx': bool( intrapartum.filter(event_type='rx--insulin') ),
+                        'metformin_rx': bool( intrapartum.filter(event_type='rx--metformin') ),
+                        'glyburide_rx': bool( intrapartum.filter(event_type='rx--glyburide') ),
+                        'referral_to_nutrition': bool(nutrition_referral),
+                        }
                 values.update(patient_values)
                 writer.writerow(values)
     
