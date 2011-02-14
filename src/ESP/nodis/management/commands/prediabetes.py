@@ -79,11 +79,10 @@ class Command(BaseCommand):
             'lx--glucose_fasting--range--100.0-125.0',
             ]
         qs = Event.objects.filter(event_type='lx--ogtt50_random--range--140.0-200.0').values('patient')
-        qs = qs.exclude(patient__case__condition__in=self.DIABETES_CONDITIONS)
         qs = qs.annotate(count=Count('pk'))
         patient_pks = qs.filter(count__gte=2).values_list('patient', flat=True).distinct()
         patient_pks = set(patient_pks)
-        patient_pks |= set( Event.objects.filter(event_type_id__in=ONCE_CRITERIA).values_list('patient', flat=True).distinct() )
+        patient_pks |= set( Event.objects.filter(event_type__in=ONCE_CRITERIA).values_list('patient', flat=True).distinct() )
         # Ignore patients who already have a prediabetes case
         patient_pks = patient_pks - set( Case.objects.filter(condition='prediabetes').values_list('patient', flat=True) )
         total = len(patient_pks)
@@ -92,7 +91,7 @@ class Command(BaseCommand):
             counter += 1
             event_qs = Event.objects.filter(
                 patient = pat_pk,
-                event_type_id__in = ALL_CRITERIA,
+                event_type__in = ALL_CRITERIA,
                 ).order_by('date')
             trigger_event = event_qs[0]
             trigger_date = trigger_event.date
@@ -102,6 +101,7 @@ class Command(BaseCommand):
                 date__lte = trigger_date,
                 )
             if prior_dm_case_qs.count():
+                log.info('Patient already has diabetes, skipping. (%8s / %s)' % (counter, total))
                 continue # This patient already has diabetes, and as such does not have prediabetes
             new_case = Case(
                 patient = trigger_event.patient,
