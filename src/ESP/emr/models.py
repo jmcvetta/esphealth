@@ -380,14 +380,16 @@ class Patient(BaseMedicalRecord):
 
     street_address = property(lambda x: (u'%s %s' % (x.address1, x.address2)).strip())
     
-    def _get_age(self, **kw):
+    def get_age(self, when=None):
         '''
-        Returns patient's age as a TimeDelta
+        Returns patient's age as a relativedelta
         '''
-        if not self.date_of_birth: return None
-        when = kw.get('when') or datetime.date.today()
-        return when - self.date_of_birth
-    age = property(_get_age)
+        if not self.date_of_birth: 
+            return None
+        if not when:
+            when = datetime.date.today()
+        return relativedelta(when, self.date_of_birth)
+    age = property(get_age)
 
     def age_group(self, **kw):
         when = kw.get('when', None)
