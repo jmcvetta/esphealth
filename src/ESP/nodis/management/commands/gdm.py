@@ -350,19 +350,22 @@ class Command(BaseCommand):
                 log.warning('Could not convert zip code: %s' % patient.zip)
             if riskscape:
                 # Age
-                years = patient.age.years
-                if years < 20:
-                    age = 1
-                elif 20 <= years < 25:
-                    age = 2
-                elif 25 <= years < 30:
-                    age = 3
-                elif 30 <= years < 35:
-                    age = 4
-                elif 35 <= years < 40:
-                    age = 5
+                if patient.age:
+                    years = patient.age.years
+                    if years < 20:
+                        age = 1
+                    elif 20 <= years < 25:
+                        age = 2
+                    elif 25 <= years < 30:
+                        age = 3
+                    elif 30 <= years < 35:
+                        age = 4
+                    elif 35 <= years < 40:
+                        age = 5
+                    else:
+                        age = 6
                 else:
-                    age = 6
+                    age = None
                 # Race
                 if patient.race:
                     race_string = patient.race.lower()
