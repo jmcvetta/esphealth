@@ -21,6 +21,7 @@ doc/specifications/gipse.xsd -text
 doc/specifications/reduced-gipse.xsd -text
 etc/templates/case_report/odh_hl7.txt -text
 share/apache.conf.sample -text
+share/cpt_codes.csv.bz2 -text svneol=unset#unset
 share/data-quality-check.py -text
 share/django.wsgi.sample -text
 share/epic_etl/AdditionalStepsAfterCompile.doc -text svneol=unset#unset
@@ -28,6 +29,7 @@ share/epic_etl/ESPFileLayout.doc -text svneol=unset#unset
 share/epic_etl/README.txt -text
 share/epic_etl/mhslespftp.sh -text
 share/esp-postgres.logrotate -text
+share/ndc_codes.txt.bz2 -text svneol=unset#unset
 src/ESP/application.spec.ini -text
 src/ESP/axis-1_4/activation.jar -text
 src/ESP/axis-1_4/mail.jar -text
@@ -37,13 +39,13 @@ src/ESP/conf/admin.py -text
 src/ESP/conf/choices.py -text
 src/ESP/conf/common.py -text
 src/ESP/conf/context_processors.py -text
-src/ESP/conf/fixtures/conf-test-native-codes.json -text
-src/ESP/conf/fixtures/icd9.json -text
-src/ESP/conf/fixtures/immunization_manufacturers.json -text
-src/ESP/conf/fixtures/native_manufacturers.sql -text
-src/ESP/conf/fixtures/native_vaccines.sql -text
-src/ESP/conf/fixtures/vaccines.json -text
-src/ESP/conf/fixtures/vaccines.sql -text
+src/ESP/conf/fixtures/conf-test-native-codes.json.bz2 -text svneol=unset#unset
+src/ESP/conf/fixtures/icd9.json.bz2 -text svneol=unset#unset
+src/ESP/conf/fixtures/immunization_manufacturers.json.bz2 -text svneol=unset#unset
+src/ESP/conf/fixtures/native_manufacturers.sql.bz2 -text svneol=unset#unset
+src/ESP/conf/fixtures/native_vaccines.sql.bz2 -text svneol=unset#unset
+src/ESP/conf/fixtures/vaccines.json.bz2 -text svneol=unset#unset
+src/ESP/conf/fixtures/vaccines.sql.bz2 -text svneol=unset#unset
 src/ESP/conf/forms.py -text
 src/ESP/conf/migrations/0001_initial.py -text
 src/ESP/conf/migrations/__init__.py -text
@@ -51,13 +53,13 @@ src/ESP/conf/models.py -text
 src/ESP/conf/tests.py -text
 src/ESP/conf/urls.py -text
 src/ESP/conf/views.py -text
-src/ESP/data/atrius-map.csv -text
-src/ESP/data/diseases.txt -text
-src/ESP/data/icd9.txt -text
-src/ESP/data/loinc_additions.txt -text
-src/ESP/data/loincdb.txt -text
-src/ESP/data/ndc_codes.txt -text
-src/ESP/data/source_systems.txt -text
+src/ESP/data/atrius-map.csv.bz2 -text svneol=unset#unset
+src/ESP/data/diseases.txt.bz2 -text svneol=unset#unset
+src/ESP/data/icd9.txt.bz2 -text svneol=unset#unset
+src/ESP/data/loinc_additions.txt.bz2 -text svneol=unset#unset
+src/ESP/data/loincdb.txt.bz2 -text svneol=unset#unset
+src/ESP/data/ndc_codes.txt.bz2 -text svneol=unset#unset
+src/ESP/data/source_systems.txt.bz2 -text svneol=unset#unset
 src/ESP/emr/__init__.py -text
 src/ESP/emr/admin.py -text
 src/ESP/emr/choices.py -text
@@ -347,10 +349,10 @@ src/ESP/vaers/VAERSevents.py -text
 src/ESP/vaers/__init__.py -text
 src/ESP/vaers/admin.py -text
 src/ESP/vaers/fake.py -text
-src/ESP/vaers/fixtures/encounters.sql -text
-src/ESP/vaers/fixtures/immunizations.sql -text
-src/ESP/vaers/fixtures/initial_data.json -text
-src/ESP/vaers/fixtures/lab_results.sql -text
+src/ESP/vaers/fixtures/encounters.sql.bz2 -text svneol=unset#unset
+src/ESP/vaers/fixtures/immunizations.sql.bz2 -text svneol=unset#unset
+src/ESP/vaers/fixtures/initial_data.json.bz2 -text svneol=unset#unset
+src/ESP/vaers/fixtures/lab_results.sql.bz2 -text svneol=unset#unset
 src/ESP/vaers/forms.py -text
 src/ESP/vaers/heuristics.py -text
 src/ESP/vaers/hl7_report.py -text

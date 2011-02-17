@@ -1,2 +1,0 @@
-loinc_num	long_name
-"MDPH-144"	"Hepatitis C virus Ab:Pt:Ser:Ord:EIA Signal-to-cutoff ratio"

@@ -1,6 +1,0 @@
-Disease_Name
-"Chlamydia"
-"Gonorrhea"
-"Hepatitis A"
-"Hepatitis B"
-"Hepatitis C"

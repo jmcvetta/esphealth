@@ -1,3 +1,0 @@
-name	software	notes
-"North Adams"		
-"Atrius"		
