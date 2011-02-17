@@ -216,6 +216,7 @@ src/ESP/phit/phit.diabetes.3.sql -text
 src/ESP/secrets.spec.ini -text
 src/ESP/sendMsgs/bcdc.jar -text
 src/ESP/settings.py -text
+src/ESP/setup.py -text
 src/ESP/ss/__init__.py -text
 src/ESP/ss/definitions.py -text
 src/ESP/ss/heuristics.py -text
