@@ -235,7 +235,7 @@ src/ESP/ss/utils.py -text
 src/ESP/ss/views.py -text
 src/ESP/static/__init__.py -text
 src/ESP/static/admin.py -text
-src/ESP/static/fixtures/initial_data.json -text
+src/ESP/static/fixtures/initial_data.json.bz2 -text svneol=unset#unset
 src/ESP/static/migrations/0001_initial.py -text
 src/ESP/static/migrations/__init__.py -text
 src/ESP/static/models.py -text
