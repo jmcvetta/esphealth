@@ -20,6 +20,7 @@ doc/specifications/PHIN_ELR_Implementation_Guide--HL7_2.3.1--21_May_2004.pdf -te
 doc/specifications/gipse.xsd -text
 doc/specifications/reduced-gipse.xsd -text
 etc/templates/case_report/odh_hl7.txt -text
+/install.sh -text
 share/apache.conf.sample -text
 share/cpt_codes.csv.bz2 -text svneol=unset#unset
 share/data-quality-check.py -text
