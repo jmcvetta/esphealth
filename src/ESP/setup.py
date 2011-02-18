@@ -17,7 +17,8 @@ setup(
     version = '3.0a',
     packages = find_packages(),
     install_requires = [
-        'distribute',
+        'Django >= 1.2',
+        'south',
         ],
     package_data = {
         '': ['*.bz2',],
