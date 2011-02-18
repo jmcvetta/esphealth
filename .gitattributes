@@ -378,5 +378,3 @@ src/ESP/vaers/vaccine/urls.py -text
 src/ESP/vaers/vaccine/views.py -text
 src/ESP/vaers/views.py -text
 src/ESP/version.txt -text
-src/scripts/daily_batch.sh -text
-src/scripts/post_batch_run.sh -text
