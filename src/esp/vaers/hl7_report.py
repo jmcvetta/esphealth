@@ -1,10 +1,10 @@
 #-*- coding:utf-8 -*-
 
-from ESP.static.models import Vaccine, ImmunizationManufacturer
-from ESP.emr.models import Patient, Provider, Immunization
-from ESP.vaers.models import AdverseEvent
-from ESP.utils import utils
-from ESP.settings import SITE_NAME
+from esp.static.models import Vaccine, ImmunizationManufacturer
+from esp.emr.models import Patient, Provider, Immunization
+from esp.vaers.models import AdverseEvent
+from esp.utils import utils
+from esp.settings import SITE_NAME
 
 from hl7.core import Field, SegmentTree
 from hl7.segments import MSH, PID, ORC, OBR, OBX

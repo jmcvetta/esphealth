@@ -6,11 +6,11 @@ import unittest
 import random
 import pdb
 
-from ESP.utils.utils import date_from_str, str_from_date
-from ESP.emr.models import Encounter, Patient
-from ESP.ss.models import Site, NonSpecialistVisitEvent
-from ESP.ss.reports import Report
-from ESP.ss.heuristics import syndrome_heuristics
+from esp.utils.utils import date_from_str, str_from_date
+from esp.emr.models import Encounter, Patient
+from esp.ss.models import Site, NonSpecialistVisitEvent
+from esp.ss.reports import Report
+from esp.ss.heuristics import syndrome_heuristics
 
 
 

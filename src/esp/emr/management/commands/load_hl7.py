@@ -38,23 +38,23 @@ from django.db import transaction
 
 from hl7 import hl7
 
-from ESP.settings import DEBUG
-from ESP.settings import TOPDIR
-from ESP.settings import DATA_DIR
-from ESP.conf.models import VaccineCodeMap
-from ESP.conf.models import VaccineManufacturerMap
-from ESP.static.models import Icd9
-from ESP.emr.management.commands.common import LoaderCommand
-from ESP.emr.models import Provider
-from ESP.emr.models import Patient
-from ESP.emr.models import Encounter
-from ESP.emr.models import LabResult
-from ESP.emr.models import Prescription
-from ESP.emr.models import Immunization
-from ESP.emr.models import Provenance
-from ESP.emr.choices import LOAD_STATUS
-from ESP.utils.utils import log
-from ESP.utils.utils import str_from_date, date_from_str
+from esp.settings import DEBUG
+from esp.settings import TOPDIR
+from esp.settings import DATA_DIR
+from esp.conf.models import VaccineCodeMap
+from esp.conf.models import VaccineManufacturerMap
+from esp.static.models import Icd9
+from esp.emr.management.commands.common import LoaderCommand
+from esp.emr.models import Provider
+from esp.emr.models import Patient
+from esp.emr.models import Encounter
+from esp.emr.models import LabResult
+from esp.emr.models import Prescription
+from esp.emr.models import Immunization
+from esp.emr.models import Provenance
+from esp.emr.choices import LOAD_STATUS
+from esp.utils.utils import log
+from esp.utils.utils import str_from_date, date_from_str
 
 #
 # Populate tables in old schema (Demog, Lx, Rx, etc)?

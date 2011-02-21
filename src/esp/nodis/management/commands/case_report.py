@@ -21,23 +21,23 @@ EXIT CODES
 '''
 
 
-from ESP.settings import CASE_REPORT_OUTPUT_FOLDER
-from ESP.settings import CASE_REPORT_TEMPLATE
-from ESP.settings import CASE_REPORT_FILENAME_FORMAT
-from ESP.settings import CASE_REPORT_BATCH_SIZE
-from ESP.settings import CASE_REPORT_TRANSMIT
-from ESP.settings import CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP
-from ESP.settings import FAKE_PATIENT_MRN
-from ESP.settings import FAKE_PATIENT_SURNAME
-from ESP.settings import CODEDIR
-from ESP.settings import JAVA_DIR
-from ESP.settings import JAVA_CLASSPATH
-from ESP.settings import JAVA_JARS
-from ESP.settings import LOG_FILE
-from ESP.settings import UPLOAD_SERVER
-from ESP.settings import UPLOAD_USER
-from ESP.settings import UPLOAD_PASSWORD
-from ESP.settings import UPLOAD_PATH
+from esp.settings import CASE_REPORT_OUTPUT_FOLDER
+from esp.settings import CASE_REPORT_TEMPLATE
+from esp.settings import CASE_REPORT_FILENAME_FORMAT
+from esp.settings import CASE_REPORT_BATCH_SIZE
+from esp.settings import CASE_REPORT_TRANSMIT
+from esp.settings import CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP
+from esp.settings import FAKE_PATIENT_MRN
+from esp.settings import FAKE_PATIENT_SURNAME
+from esp.settings import CODEDIR
+from esp.settings import JAVA_DIR
+from esp.settings import JAVA_CLASSPATH
+from esp.settings import JAVA_JARS
+from esp.settings import LOG_FILE
+from esp.settings import UPLOAD_SERVER
+from esp.settings import UPLOAD_USER
+from esp.settings import UPLOAD_PASSWORD
+from esp.settings import UPLOAD_PATH
 
 
 import optparse
@@ -63,23 +63,23 @@ from django.template.loader import render_to_string
 from django.template.loader import get_template
 from django.core.management.base import BaseCommand
 
-from ESP.static.models import Icd9
-from ESP.emr.models import Patient
-from ESP.emr.models import Provider
-from ESP.emr.models import LabResult
-from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.emr.models import Immunization
+from esp.static.models import Icd9
+from esp.emr.models import Patient
+from esp.emr.models import Provider
+from esp.emr.models import LabResult
+from esp.emr.models import Encounter
+from esp.emr.models import Prescription
+from esp.emr.models import Immunization
 
-from ESP.nodis import defs # Not sure if this is necessary
-from ESP.nodis.models import Condition
-from ESP.nodis.models import Case
-from ESP.nodis.models import ReportRun
-from ESP.nodis.models import Report
-from ESP.nodis.models import STATUS_CHOICES
+from esp.nodis import defs # Not sure if this is necessary
+from esp.nodis.models import Condition
+from esp.nodis.models import Case
+from esp.nodis.models import ReportRun
+from esp.nodis.models import Report
+from esp.nodis.models import STATUS_CHOICES
 
-from ESP.utils.utils import log
-from ESP.utils.utils import log_query
+from esp.utils.utils import log
+from esp.utils.utils import log_query
 
 
 

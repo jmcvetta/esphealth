@@ -44,19 +44,19 @@ import smtplib
 
 from django.db.models import Max
 
-from ESP.settings import ADMINS
-from ESP.settings import DATE_FORMAT
-from ESP.settings import SITE_NAME
-from ESP.settings import EMAIL_HOST
-from ESP.settings import EMAIL_PORT
-from ESP.settings import SERVER_EMAIL as EMAIL_SENDER
-from ESP.emr.models import Patient
-from ESP.emr.models import Provenance
-#from ESP.emr.models import Hl7Message
-from ESP.nodis.models import Case
-from ESP.nodis import defs
-from ESP.nodis.models import Condition
-from ESP.utils.utils import log
+from esp.settings import ADMINS
+from esp.settings import DATE_FORMAT
+from esp.settings import SITE_NAME
+from esp.settings import EMAIL_HOST
+from esp.settings import EMAIL_PORT
+from esp.settings import SERVER_EMAIL as EMAIL_SENDER
+from esp.emr.models import Patient
+from esp.emr.models import Provenance
+#from esp.emr.models import Hl7Message
+from esp.nodis.models import Case
+from esp.nodis import defs
+from esp.nodis.models import Condition
+from esp.utils.utils import log
 
 
 def new_cases(template):

@@ -15,7 +15,7 @@ def make_clustering_event_report_file(filename, events, newline_separator='\r\n'
 
 def send_event_alert(**kw):
     '''Send newly found adverse events'''
-    from ESP.vaers.models import AdverseEvent
+    from esp.vaers.models import AdverseEvent
     tests_only = kw.pop('test', False)
     yesterday = datetime.date.today() - datetime.timedelta(days=1)
     for ev in AdverseEvent.objects.filter(created_on__gt=yesterday):

@@ -1,7 +1,7 @@
 from django.db.models import Count
 
-from ESP.emr.models import Immunization
-from ESP.vaers.models import AdverseEvent, EncounterEvent, LabResultEvent
+from esp.emr.models import Immunization
+from esp.vaers.models import AdverseEvent, EncounterEvent, LabResultEvent
 
 imm_count = Immunization.objects.values('name').distinct().annotate(count=Count('name')).filter(count__gt=0)
 

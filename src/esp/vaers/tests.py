@@ -7,11 +7,11 @@ import pdb
 from django.db.models import Max
 
 # Models
-from ESP.static.models import Icd9, Loinc
-from ESP.emr.models import Patient, Immunization, LabResult, Encounter
-from ESP.vaers.models import AdverseEvent, EncounterEvent, LabResultEvent
+from esp.static.models import Icd9, Loinc
+from esp.emr.models import Patient, Immunization, LabResult, Encounter
+from esp.vaers.models import AdverseEvent, EncounterEvent, LabResultEvent
 
-from ESP.vaers.models import DiagnosticsEventRule
+from esp.vaers.models import DiagnosticsEventRule
 
 from heuristics import lab_heuristics, diagnostic_heuristics, fever_heuristic
 from rules import VAERS_DIAGNOSTICS, VAERS_LAB_RESULTS, TIME_WINDOW_POST_EVENT

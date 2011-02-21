@@ -5,9 +5,9 @@ import sys
 import datetime
 from optparse import OptionParser
 
-from ESP.utils.utils import date_from_str, str_from_date, log, days_in_interval, make_date_folders
-from ESP.conf.common import EPOCH
-from ESP.vaers.models import EncounterEvent, LabResultEvent, HL7_MESSAGES_DIR
+from esp.utils.utils import date_from_str, str_from_date, log, days_in_interval, make_date_folders
+from esp.conf.common import EPOCH
+from esp.vaers.models import EncounterEvent, LabResultEvent, HL7_MESSAGES_DIR
 
 from heuristics import fever_heuristic, diagnostic_heuristics, lab_heuristics
 

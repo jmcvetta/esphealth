@@ -6,7 +6,7 @@ from django.conf.urls.defaults import handler404
 from django.conf.urls.defaults import handler500
 
 
-from ESP.ss import views
+from esp.ss import views
 
 urlpatterns = patterns(
     '',

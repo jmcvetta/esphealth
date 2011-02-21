@@ -18,11 +18,11 @@ from django.db.models import Min
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
-from ESP.utils import log
-from ESP.utils import log_query
-from ESP.emr.models import Patient
-from ESP.emr.models import Encounter
-from ESP.hef.models import Timespan
+from esp.utils import log
+from esp.utils import log_query
+from esp.emr.models import Patient
+from esp.emr.models import Encounter
+from esp.hef.models import Timespan
 
 
 PREG_END_MARGIN = datetime.timedelta(days=20)

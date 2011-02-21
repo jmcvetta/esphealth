@@ -22,20 +22,20 @@ from django.db.models import Q, F
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
-from ESP.settings import DATABASE_ENGINE, DATA_DIR
-from ESP.emr.choices import DATA_SOURCE
-from ESP.emr.choices import LOAD_STATUS
-from ESP.emr.choices import LAB_ORDER_TYPES
-from ESP.conf.common import EPOCH
-from ESP.conf.models import CodeMap
-from ESP.static.models import Loinc
-from ESP.static.models import Ndc
-from ESP.static.models import Icd9, Allergen
-from ESP.static.models import Vaccine
-from ESP.static.models import ImmunizationManufacturer
-from ESP.conf.models import VaccineManufacturerMap
-from ESP.utils import randomizer
-from ESP.utils.utils import log, log_query, date_from_str, str_from_date
+from esp.settings import DATABASE_ENGINE, DATA_DIR
+from esp.emr.choices import DATA_SOURCE
+from esp.emr.choices import LOAD_STATUS
+from esp.emr.choices import LAB_ORDER_TYPES
+from esp.conf.common import EPOCH
+from esp.conf.models import CodeMap
+from esp.static.models import Loinc
+from esp.static.models import Ndc
+from esp.static.models import Icd9, Allergen
+from esp.static.models import Vaccine
+from esp.static.models import ImmunizationManufacturer
+from esp.conf.models import VaccineManufacturerMap
+from esp.utils import randomizer
+from esp.utils.utils import log, log_query, date_from_str, str_from_date
 
 
 

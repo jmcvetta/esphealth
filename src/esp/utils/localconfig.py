@@ -1,7 +1,7 @@
 import os
-from ESP.settings import TOPDIR,CODEDIR
+from esp.settings import TOPDIR,CODEDIR
 import datetime,logging
-from ESP.esp.models import config
+from esp.esp.models import config
 locals = config.objects.all()
 LOCALSITE='HVMA' # hack!
 for l in locals:

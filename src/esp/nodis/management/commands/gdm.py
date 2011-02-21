@@ -28,19 +28,19 @@ from django.db.models import Min
 from django.db.models import Avg
 from django.core.management.base import BaseCommand, CommandError
 
-from ESP.nodis.models import Case
-from ESP.nodis.models import Pattern
-from ESP.utils.utils import log
-from ESP.utils.utils import log_query
-from ESP.emr.models import Encounter
-from ESP.emr.models import LabOrder
-from ESP.emr.models import LabResult
-from ESP.emr.models import Patient
-from ESP.emr.models import Prescription
-from ESP.hef.models import Event
-from ESP.hef.models import EventType
-from ESP.hef.models import Timespan
-from ESP.hef.models import AbstractLabTest
+from esp.nodis.models import Case
+from esp.nodis.models import Pattern
+from esp.utils.utils import log
+from esp.utils.utils import log_query
+from esp.emr.models import Encounter
+from esp.emr.models import LabOrder
+from esp.emr.models import LabResult
+from esp.emr.models import Patient
+from esp.emr.models import Prescription
+from esp.hef.models import Event
+from esp.hef.models import EventType
+from esp.hef.models import Timespan
+from esp.hef.models import AbstractLabTest
 
 
 class Command(BaseCommand):

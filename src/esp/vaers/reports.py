@@ -3,10 +3,10 @@
 
 import optparse
 
-from ESP.conf.common import EPOCH
-from ESP.vaers.models import EncounterEvent, LabResultEvent
-from ESP.utils.utils import date_from_str
-from ESP import settings
+from esp.conf.common import EPOCH
+from esp.vaers.models import EncounterEvent, LabResultEvent
+from esp.utils.utils import date_from_str
+from esp import settings
 
 USAGE_MSG = '''\
 %prog [options]

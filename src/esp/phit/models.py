@@ -15,12 +15,12 @@ from django.db.models import Count
 from django.db.transaction import commit_on_success
 from dateutil.relativedelta import relativedelta
 
-from ESP.emr.models import Encounter
-from ESP.emr.models import LabResult
-from ESP.emr.models import LabOrder
-from ESP.emr.models import Prescription
-from ESP.utils import log
-from ESP.utils import log_query
+from esp.emr.models import Encounter
+from esp.emr.models import LabResult
+from esp.emr.models import LabOrder
+from esp.emr.models import Prescription
+from esp.utils import log
+from esp.utils import log_query
 
 
 class MonthlyStatistic(models.Model):

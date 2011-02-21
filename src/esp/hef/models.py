@@ -22,16 +22,16 @@ from django.db.models import Max
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
-from ESP.utils import log
-from ESP.utils import log_query
-from ESP.utils.utils import queryset_iterator
-from ESP.emr.models import Patient
-from ESP.emr.models import Provider
-from ESP.emr.models import Encounter
-from ESP.emr.models import Icd9
-from ESP.emr.models import LabResult
-from ESP.emr.models import LabOrder
-from ESP.emr.models import Prescription
+from esp.utils import log
+from esp.utils import log_query
+from esp.utils.utils import queryset_iterator
+from esp.emr.models import Patient
+from esp.emr.models import Provider
+from esp.emr.models import Encounter
+from esp.emr.models import Icd9
+from esp.emr.models import LabResult
+from esp.emr.models import LabOrder
+from esp.emr.models import Prescription
 
 
 POSITIVE_STRINGS = ['reactiv', 'pos', 'detec', 'confirm']

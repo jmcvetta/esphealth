@@ -15,13 +15,13 @@ import csv
 import sys
 import optparse
 
-from ESP.emr.models import Provenance
-from ESP.emr.models import Provider
-from ESP.emr.models import Patient
-from ESP.emr.models import LabResult
-from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.emr.models import Immunization
+from esp.emr.models import Provenance
+from esp.emr.models import Provider
+from esp.emr.models import Patient
+from esp.emr.models import LabResult
+from esp.emr.models import Encounter
+from esp.emr.models import Prescription
+from esp.emr.models import Immunization
 
 
 def data_flow_summary_generator(provenances=None):

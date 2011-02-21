@@ -23,13 +23,13 @@ from django.db.models import F
 from django.db.models import Count
 from django.db.transaction import commit_on_success
 
-from ESP.emr.models import Patient
-from ESP.emr.models import Encounter
-from ESP.emr.models import LabResult
-from ESP.phit.models import MonthlyStatistic
-from ESP.hef.models import Event
-from ESP.utils import log
-from ESP.utils import log_query
+from esp.emr.models import Patient
+from esp.emr.models import Encounter
+from esp.emr.models import LabResult
+from esp.phit.models import MonthlyStatistic
+from esp.hef.models import Event
+from esp.utils import log
+from esp.utils import log_query
 
 
 #===============================================================================

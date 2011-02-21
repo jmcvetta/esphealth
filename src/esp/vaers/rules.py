@@ -1,8 +1,8 @@
 #-*- coding:utf-8 -*-
 
-from ESP.conf.models import CodeMap
-from ESP.static.models import Icd9, Vaccine, ImmunizationManufacturer
-from ESP.utils.utils import log
+from esp.conf.models import CodeMap
+from esp.static.models import Icd9, Vaccine, ImmunizationManufacturer
+from esp.utils.utils import log
 
 # Constants defined in the VAERS documents.
 TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
@@ -527,7 +527,7 @@ def define_active_rules():
     dict to create the Rule objects. The keys in the dict define a
     whole set of icd9 codes that are indication of a VAERS Event'''
 
-    from ESP.vaers.models import DiagnosticsEventRule
+    from esp.vaers.models import DiagnosticsEventRule
     
     def find_and_add_codes(code_expression_list, code_set):
         for code_expression in code_expression_list:

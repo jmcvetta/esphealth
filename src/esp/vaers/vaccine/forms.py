@@ -1,6 +1,6 @@
 from django import forms
 
-from ESP.conf.models import Vaccine, ImmunizationManufacturer
+from esp.conf.models import Vaccine, ImmunizationManufacturer
 
 STANDARD_VACCINES = ((x.code, unicode(x)) for x in 
                      Vaccine.acceptable_mapping_values())

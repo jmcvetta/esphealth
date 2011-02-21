@@ -5,11 +5,11 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
 import django, datetime
-from ESP.utils import hl7XML
-from ESP.esp.models import *
+from esp.utils import hl7XML
+from esp.esp.models import *
 from django.db.models import Q
 import ESP.utils.localconfig as localconfig
-from ESP.settings import TOPDIR
+from esp.settings import TOPDIR
 import shutil
 import traceback
 

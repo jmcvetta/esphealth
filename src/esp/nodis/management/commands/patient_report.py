@@ -12,12 +12,12 @@ encounters, prescriptions, heuristic events, and disease cases.
 import optparse
 import sys
 
-from ESP.emr.models import Patient
-from ESP.emr.models import LabResult
-from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.hef.models import HeuristicEvent
-from ESP.nodis.models import Case
+from esp.emr.models import Patient
+from esp.emr.models import LabResult
+from esp.emr.models import Encounter
+from esp.emr.models import Prescription
+from esp.hef.models import HeuristicEvent
+from esp.nodis.models import Case
 
 
 def patient_report(patient, options):

@@ -54,41 +54,41 @@ from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
 
-from ESP.settings import ROWS_PER_PAGE
-from ESP.settings import DATE_FORMAT
-from ESP.settings import SITE_NAME
+from esp.settings import ROWS_PER_PAGE
+from esp.settings import DATE_FORMAT
+from esp.settings import SITE_NAME
 
-from ESP.conf.models import CodeMap
-from ESP.conf.models import IgnoredCode
-from ESP.conf.models import STATUS_CHOICES
-from ESP.static.models import Loinc
-from ESP.emr.models import Provenance
-from ESP.emr.models import Patient
-from ESP.emr.models import Provider
-from ESP.emr.models import Encounter
-from ESP.emr.models import LabResult
-from ESP.emr.models import Prescription
-from ESP.emr.models import Immunization
-from ESP.emr.models import LabTestConcordance
-from ESP.hef.models import Heuristic
-#from ESP.hef import events # Required to register hef events
-from ESP.nodis.models import Condition
-from ESP.nodis.models import Case
-from ESP.nodis.models import CaseStatusHistory
-from ESP.nodis.models import Report
-from ESP.nodis.models import ReferenceCaseList
-from ESP.nodis.models import ReferenceCase
-from ESP.nodis.models import ValidatorRun
-from ESP.nodis.models import ValidatorResult
-from ESP.ui.forms import CaseStatusForm
-from ESP.ui.forms import CodeMapForm
-from ESP.ui.forms import ConditionForm
-from ESP.ui.forms import ReferenceCaseForm
-from ESP.ui.management.commands.validate_cases import RELATED_MARGIN
-from ESP.utils import log
-from ESP.utils import log_query
-from ESP.utils.utils import Flexigrid
-from ESP.utils import TableSelectMultiple
+from esp.conf.models import CodeMap
+from esp.conf.models import IgnoredCode
+from esp.conf.models import STATUS_CHOICES
+from esp.static.models import Loinc
+from esp.emr.models import Provenance
+from esp.emr.models import Patient
+from esp.emr.models import Provider
+from esp.emr.models import Encounter
+from esp.emr.models import LabResult
+from esp.emr.models import Prescription
+from esp.emr.models import Immunization
+from esp.emr.models import LabTestConcordance
+from esp.hef.models import Heuristic
+#from esp.hef import events # Required to register hef events
+from esp.nodis.models import Condition
+from esp.nodis.models import Case
+from esp.nodis.models import CaseStatusHistory
+from esp.nodis.models import Report
+from esp.nodis.models import ReferenceCaseList
+from esp.nodis.models import ReferenceCase
+from esp.nodis.models import ValidatorRun
+from esp.nodis.models import ValidatorResult
+from esp.ui.forms import CaseStatusForm
+from esp.ui.forms import CodeMapForm
+from esp.ui.forms import ConditionForm
+from esp.ui.forms import ReferenceCaseForm
+from esp.ui.management.commands.validate_cases import RELATED_MARGIN
+from esp.utils import log
+from esp.utils import log_query
+from esp.utils.utils import Flexigrid
+from esp.utils import TableSelectMultiple
 
 
 

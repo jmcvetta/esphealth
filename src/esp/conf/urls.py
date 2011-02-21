@@ -17,7 +17,7 @@ from django.conf.urls.defaults import handler404
 from django.conf.urls.defaults import handler500
 from django.contrib import admin
 
-from ESP.settings import MEDIA_ROOT, MEDIA_URL
+from esp.settings import MEDIA_ROOT, MEDIA_URL
 
 
 urlpatterns = patterns('ESP.conf.views',

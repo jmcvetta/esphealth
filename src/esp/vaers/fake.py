@@ -3,15 +3,15 @@ import random
 import optparse
 import pdb
 
-from ESP.conf.common import EPOCH
-from ESP.static.models import Icd9, Loinc
-from ESP.emr.models import Provider, Patient, Encounter, Immunization, LabResult
-from ESP.conf.models import Vaccine
-from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
+from esp.conf.common import EPOCH
+from esp.static.models import Icd9, Loinc
+from esp.emr.models import Provider, Patient, Encounter, Immunization, LabResult
+from esp.conf.models import Vaccine
+from esp.vaers.models import DiagnosticsEventRule, AdverseEvent
 
-from ESP.utils.utils import log
-from ESP.utils import randomizer
-from ESP.utils import utils
+from esp.utils.utils import log
+from esp.utils import randomizer
+from esp.utils import utils
 
 import rules
 from rules import TIME_WINDOW_POST_EVENT, VAERS_LAB_RESULTS

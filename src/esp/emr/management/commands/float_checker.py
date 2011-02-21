@@ -14,9 +14,9 @@ from django.db.models import Q
 from django.core.management.base import BaseCommand
 from django.core.management.color import no_style
 from optparse import make_option
-from ESP.emr.models import LabResult
-from ESP.emr.models import Prescription
-from ESP.utils.utils import log_query
+from esp.emr.models import LabResult
+from esp.emr.models import Prescription
+from esp.utils.utils import log_query
 
 
     

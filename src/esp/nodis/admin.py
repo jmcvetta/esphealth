@@ -4,11 +4,11 @@
 from django.contrib import admin
 #from django.utils.translation import ugettext_lazy as _
 
-from ESP.nodis.models import Case
-from ESP.nodis.models import Report
-from ESP.nodis.models import CaseStatusHistory
-from ESP.nodis.models import ValidatorResult
-from ESP.nodis.models import ReferenceCase
+from esp.nodis.models import Case
+from esp.nodis.models import Report
+from esp.nodis.models import CaseStatusHistory
+from esp.nodis.models import ValidatorResult
+from esp.nodis.models import ReferenceCase
 
 
 

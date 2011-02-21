@@ -127,7 +127,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 )
-ROOT_URLCONF = 'ESP.urls'
+ROOT_URLCONF = 'esp.urls'
 LOGIN_URL = config['Web']['login_url']
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.auth',
@@ -151,15 +151,15 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.admin',
-    'ESP.static', 
-    'ESP.conf', 
-    'ESP.emr',
-    'ESP.hef',
-    'ESP.nodis',
-    'ESP.vaers',
-    'ESP.ss',
-    'ESP.phit',
-    'ESP.ui',
+    'esp.static', 
+    'esp.conf', 
+    'esp.emr',
+    'esp.hef',
+    'esp.nodis',
+    'esp.vaers',
+    'esp.ss',
+    'esp.phit',
+    'esp.ui',
     'south',
 )
 CASE_REPORT_OUTPUT_FOLDER = os.path.join(DATA_DIR, 'case_reports')

@@ -153,7 +153,7 @@ import logging
 
 from optparse import OptionParser
 
-from ESP.esp.models import *
+from esp.esp.models import *
 from django.db.models import Q
 
 sendEmailToList = ['raphael.lullis@gmail.com']

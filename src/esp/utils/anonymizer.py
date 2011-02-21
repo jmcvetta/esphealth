@@ -1,5 +1,5 @@
 
-from ESP.settings import TOPDIR
+from esp.settings import TOPDIR
 import localconfig
 import validator
 import string

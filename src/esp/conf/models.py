@@ -12,14 +12,14 @@
 '''
 
 
-from ESP.conf.choices import DEST_TYPES
-from ESP.conf.choices import EMR_SOFTWARE
-from ESP.conf.choices import FORMAT_TYPES
-from ESP.conf.choices import WORKFLOW_STATES
-from ESP.static.models import Icd9
-from ESP.static.models import ImmunizationManufacturer
-from ESP.static.models import Loinc
-from ESP.static.models import Vaccine
+from esp.conf.choices import DEST_TYPES
+from esp.conf.choices import EMR_SOFTWARE
+from esp.conf.choices import FORMAT_TYPES
+from esp.conf.choices import WORKFLOW_STATES
+from esp.static.models import Icd9
+from esp.static.models import ImmunizationManufacturer
+from esp.static.models import Loinc
+from esp.static.models import Vaccine
 from django.db import models
 
 

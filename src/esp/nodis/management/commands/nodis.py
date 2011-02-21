@@ -20,11 +20,11 @@ from django.db import connection
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
-from ESP import settings
-from ESP.utils import utils as util
-from ESP.utils.utils import log
-from ESP.nodis.models import Condition
-from ESP.nodis import defs  # Register definitions
+from esp import settings
+from esp.utils import utils as util
+from esp.utils.utils import log
+from esp.nodis.models import Condition
+from esp.nodis import defs  # Register definitions
 
     
 class Command(BaseCommand):

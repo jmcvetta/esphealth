@@ -1,7 +1,7 @@
 import os
 
 
-from ESP.emr.models import Patient
+from esp.emr.models import Patient
 
 
 DOC_FOLDER = os.path.join(os.path.dirname(__file__), 'assets', 'documents')

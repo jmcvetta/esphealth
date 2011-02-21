@@ -1,7 +1,7 @@
 import datetime
 
-from ESP.emr.models import Provider, Patient
-from ESP.conf.common import EPOCH
+from esp.emr.models import Provider, Patient
+from esp.conf.common import EPOCH
 
 TODAY = datetime.date.today()
 

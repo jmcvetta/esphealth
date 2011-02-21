@@ -13,9 +13,9 @@ from django.contrib.auth.views import login
 from django.contrib.auth.views import logout
 from django.contrib.auth.forms import AuthenticationForm
 
-from ESP.settings import MEDIA_ROOT, MEDIA_URL
-#from ESP.esp.views import index, esplogin
-from ESP.ui.views import status_page
+from esp.settings import MEDIA_ROOT, MEDIA_URL
+#from esp.esp.views import index, esplogin
+from esp.ui.views import status_page
 
 
 admin.autodiscover()

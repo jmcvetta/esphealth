@@ -5,9 +5,9 @@ from ftplib import FTP
 
 from django.core.management.base import BaseCommand
 
-from ESP.emr.models import Provenance
-from ESP.settings import DATA_DIR, FTP_USER, FTP_PASSWORD, FTP_SERVER, FTP_PATH
-from ESP.utils.utils import log, days_in_interval, str_from_date, date_from_str
+from esp.emr.models import Provenance
+from esp.settings import DATA_DIR, FTP_USER, FTP_PASSWORD, FTP_SERVER, FTP_PATH
+from esp.utils.utils import log, days_in_interval, str_from_date, date_from_str
 
 
 class Command(BaseCommand):

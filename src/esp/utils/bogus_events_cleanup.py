@@ -2,8 +2,8 @@ import sys
 
 from django.db.models import Q
 
-from ESP.hef.models import Event
-from ESP.emr.models import  LabResult
+from esp.hef.models import Event
+from esp.emr.models import  LabResult
 
 
 raise RuntimeError("Don't use this script unless you REALLY know what you're doing.")

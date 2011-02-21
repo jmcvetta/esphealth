@@ -18,10 +18,10 @@ from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
-from ESP.nodis.models import STATUS_CHOICES
-from ESP.nodis.models import Condition
-from ESP.hef.models import AbstractLabTest
-from ESP.static.models import Loinc
+from esp.nodis.models import STATUS_CHOICES
+from esp.nodis.models import Condition
+from esp.hef.models import AbstractLabTest
+from esp.static.models import Loinc
 
 
 

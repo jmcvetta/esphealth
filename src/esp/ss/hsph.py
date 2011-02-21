@@ -4,10 +4,10 @@ import pdb
 
 from django.db.models import Count
 
-from ESP.emr.models import Encounter
-from ESP.ss.models import NonSpecialistVisitEvent, Site, age_group_filter
-from ESP.ss.utils import report_folder, age_identifier
-from ESP.utils.utils import log, str_from_date, days_in_interval
+from esp.emr.models import Encounter
+from esp.ss.models import NonSpecialistVisitEvent, Site, age_group_filter
+from esp.ss.utils import report_folder, age_identifier
+from esp.utils.utils import log, str_from_date, days_in_interval
 
 def make_age_group_column(prefix, age_group):
     lower = age_group[0] if type(age_group[0]) is int else 'under'

@@ -9,7 +9,7 @@ import os
 import shutil
 import re
 
-from ESP.utils.utils import log
+from esp.utils.utils import log
 
 
 INPUT_DIR = '/srv/esp/epic/broken'

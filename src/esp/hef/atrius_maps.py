@@ -1,5 +1,5 @@
-from ESP.hef.models import AbstractLabTest
-from ESP.hef.models import LabTestMap
+from esp.hef.models import AbstractLabTest
+from esp.hef.models import LabTestMap
 
 
 a1c = AbstractLabTest.objects.get(name='a1c')

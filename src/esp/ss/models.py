@@ -15,8 +15,8 @@ import datetime
 from django.db import models
 from django.db.models import Q, F
 
-from ESP.emr.models import Encounter
-from ESP.hef.models import Event
+from esp.emr.models import Encounter
+from esp.hef.models import Event
 
 from definitions import AGE_GROUP_CAP, MAXIMUM_AGE
 

@@ -35,12 +35,12 @@ from django.views.generic.simple import redirect_to
 from django.template.defaultfilters import slugify
 from django.http import HttpResponse, HttpResponseRedirect
 
-from ESP.settings import ROWS_PER_PAGE
-from ESP.conf.models import CodeMap
-from ESP.conf.models import IgnoredCode
-from ESP.emr.models import LabResult
-from ESP.utils.utils import log
-from ESP.utils.utils import Flexigrid
+from esp.settings import ROWS_PER_PAGE
+from esp.conf.models import CodeMap
+from esp.conf.models import IgnoredCode
+from esp.emr.models import LabResult
+from esp.utils.utils import log
+from esp.utils.utils import Flexigrid
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

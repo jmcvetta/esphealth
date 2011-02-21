@@ -8,15 +8,15 @@ import datetime
 from django.db.models import Q, F, Max
 from django.contrib.contenttypes.models import ContentType
 
-from ESP.hef.core import BaseHeuristic
-from ESP.conf.common import EPOCH
-from ESP.conf.models import CodeMap
-from ESP.static.models import Icd9
-from ESP.emr.models import Immunization, Encounter, LabResult
-from ESP.vaers.models import AdverseEvent
-from ESP.vaers.models import EncounterEvent, LabResultEvent
-from ESP.vaers.models import DiagnosticsEventRule
-from ESP.utils.utils import log
+from esp.hef.core import BaseHeuristic
+from esp.conf.common import EPOCH
+from esp.conf.models import CodeMap
+from esp.static.models import Icd9
+from esp.emr.models import Immunization, Encounter, LabResult
+from esp.vaers.models import AdverseEvent
+from esp.vaers.models import EncounterEvent, LabResultEvent
+from esp.vaers.models import DiagnosticsEventRule
+from esp.utils.utils import log
 
 import rules
 

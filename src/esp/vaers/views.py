@@ -12,9 +12,9 @@ from django.shortcuts import render_to_response
 from django.views.generic.simple import direct_to_template
 from django.contrib.sites.models import Site
 
-from ESP.vaers.models import AdverseEvent, ProviderComment
-from ESP.vaers.forms import CaseConfirmForm
-from ESP.utils.utils import log, Flexigrid
+from esp.vaers.models import AdverseEvent, ProviderComment
+from esp.vaers.forms import CaseConfirmForm
+from esp.utils.utils import log, Flexigrid
 
 
 import datetime

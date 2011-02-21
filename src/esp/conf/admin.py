@@ -1,11 +1,11 @@
 from django.contrib import admin
 
-from ESP.conf.models import CodeMap
-from ESP.conf.models import IgnoredCode
-from ESP.conf.models import ConditionConfig
-from ESP.conf.models import ReportableLab
-from ESP.conf.models import ReportableIcd9
-from ESP.conf.models import ReportableMedication
+from esp.conf.models import CodeMap
+from esp.conf.models import IgnoredCode
+from esp.conf.models import ConditionConfig
+from esp.conf.models import ReportableLab
+from esp.conf.models import ReportableIcd9
+from esp.conf.models import ReportableMedication
 
 
 class CodeMapAdmin(admin.ModelAdmin):

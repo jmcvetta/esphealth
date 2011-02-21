@@ -17,10 +17,10 @@ from optparse import Values
 
 from django.core.management.base import BaseCommand
 
-from ESP.utils.utils import log
-from ESP.settings import DATA_DIR
-from ESP.settings import ETL_SOURCE
-from ESP.settings import ETL_ARCHIVE
+from esp.utils.utils import log
+from esp.settings import DATA_DIR
+from esp.settings import ETL_SOURCE
+from esp.settings import ETL_ARCHIVE
 
 
 class LoaderCommand(BaseCommand):

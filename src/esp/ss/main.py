@@ -5,9 +5,9 @@ import sys
 import datetime
 from optparse import OptionParser
 
-from ESP.utils.utils import date_from_str, str_from_date, log, days_in_interval, timeit
-from ESP.conf.common import EPOCH
-from ESP.ss.models import Site
+from esp.utils.utils import date_from_str, str_from_date, log, days_in_interval, timeit
+from esp.conf.common import EPOCH
+from esp.ss.models import Site
 
 
 import reports

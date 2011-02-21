@@ -14,13 +14,13 @@ from django.template.loader import get_template
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
-from ESP.emr.choices import WORKFLOW_STATES # FIXME: 'esp' module is deprecated
-from ESP.emr.models import Patient, Immunization, Encounter, LabResult, Provider
-from ESP.static.models import Icd9, Loinc
-from ESP.conf.models import CodeMap
-from ESP.conf.common import DEIDENTIFICATION_TIMEDELTA, EPOCH
-from ESP.utils.utils import log, make_date_folders
-from ESP.settings import DATA_DIR
+from esp.emr.choices import WORKFLOW_STATES # FIXME: 'esp' module is deprecated
+from esp.emr.models import Patient, Immunization, Encounter, LabResult, Provider
+from esp.static.models import Icd9, Loinc
+from esp.conf.models import CodeMap
+from esp.conf.common import DEIDENTIFICATION_TIMEDELTA, EPOCH
+from esp.utils.utils import log, make_date_folders
+from esp.settings import DATA_DIR
 
 from rules import TEMP_TO_REPORT, TIME_WINDOW_POST_EVENT
 from utils import make_clustering_event_report_file
@@ -265,7 +265,7 @@ class AdverseEvent(models.Model):
 
     def mail_notification(self, email_address=None):
         from django.contrib.sites.models import Site
-        from ESP.settings import ADMINS, DEBUG
+        from esp.settings import ADMINS, DEBUG
 
         current_site = Site.objects.get_current()
 

@@ -3,10 +3,10 @@
 
 import os
 
-from ESP.emr.models import Patient
-from ESP.ss.models import Site, NonSpecialistVisitEvent
-from ESP.ss.definitions import btzip, localSiteSites
-from ESP.settings import DATA_DIR
+from esp.emr.models import Patient
+from esp.ss.models import Site, NonSpecialistVisitEvent
+from esp.ss.definitions import btzip, localSiteSites
+from esp.settings import DATA_DIR
 
 def report_folder(begin_date, end_date, subfolder=None, resolution='day'):
     folder = os.path.join(DATA_DIR, 'ss')

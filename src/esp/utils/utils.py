@@ -31,15 +31,15 @@ from django.utils.encoding import force_unicode
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
-from ESP import settings
-from ESP.settings import LOG_FILE
-from ESP.settings import LOG_LEVEL_FILE
-from ESP.settings import LOG_LEVEL_CONSOLE
-from ESP.settings import LOG_LEVEL_SYSLOG
-from ESP.settings import LOG_FORMAT_FILE
-from ESP.settings import LOG_FORMAT_CONSOLE
-from ESP.settings import LOG_FORMAT_SYSLOG
-from ESP.settings import QUERYSET_ITERATOR_CHUNKSIZE
+from esp import settings
+from esp.settings import LOG_FILE
+from esp.settings import LOG_LEVEL_FILE
+from esp.settings import LOG_LEVEL_CONSOLE
+from esp.settings import LOG_LEVEL_SYSLOG
+from esp.settings import LOG_FORMAT_FILE
+from esp.settings import LOG_FORMAT_CONSOLE
+from esp.settings import LOG_FORMAT_SYSLOG
+from esp.settings import QUERYSET_ITERATOR_CHUNKSIZE
 
 
 

@@ -7,13 +7,13 @@ import datetime
 from django.db.models import Q, Count, Max
 from django.contrib.contenttypes.models import ContentType
 
-from ESP.conf.common import EPOCH
-from ESP.emr.models import Encounter, Patient
-from ESP.hef.core import DiagnosisHeuristic
-from ESP.hef.models import Event
-from ESP.utils.utils import log, date_from_str, str_from_date, days_in_interval, timeit
-from ESP.ss.utils import report_folder
-from ESP.ss.models import NonSpecialistVisitEvent, Site
+from esp.conf.common import EPOCH
+from esp.emr.models import Encounter, Patient
+from esp.hef.core import DiagnosisHeuristic
+from esp.hef.models import Event
+from esp.utils.utils import log, date_from_str, str_from_date, days_in_interval, timeit
+from esp.ss.utils import report_folder
+from esp.ss.models import NonSpecialistVisitEvent, Site
 
 from definitions import AGGREGATE_BY_RESIDENTIAL_ZIP_FILENAME, AGGREGATE_BY_SITE_ZIP_FILENAME
 from definitions import INDIVIDUAL_BY_SYNDROME_FILENAME

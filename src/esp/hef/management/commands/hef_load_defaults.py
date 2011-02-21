@@ -32,5 +32,5 @@ class Command(BaseCommand):
     
     def handle(self, *args, **options):
         print 'Loading defaults...'
-        from ESP.hef import defaults
+        from esp.hef import defaults
         print 'Defaults loaded.'

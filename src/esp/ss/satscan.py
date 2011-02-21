@@ -8,10 +8,10 @@ from django.template import Context
 from django.template.loader import get_template
 from django.core.mail import mail_admins, send_mail
 
-from ESP.settings import SERVER_EMAIL, SS_EMAIL_RECIPIENT, DEBUG
-from ESP.ss.models import NonSpecialistVisitEvent, Site, age_group_filter
-from ESP.ss.utils import report_folder, age_identifier
-from ESP.utils.utils import log, str_from_date, days_in_interval
+from esp.settings import SERVER_EMAIL, SS_EMAIL_RECIPIENT, DEBUG
+from esp.ss.models import NonSpecialistVisitEvent, Site, age_group_filter
+from esp.ss.utils import report_folder, age_identifier
+from esp.utils.utils import log, str_from_date, days_in_interval
 
 class Satscan(object):
     EXECUTABLE_PATH = '/usr/local/bin/satscan'

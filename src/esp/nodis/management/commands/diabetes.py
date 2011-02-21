@@ -31,18 +31,18 @@ from django.core.management.base import CommandError
 from django.utils.encoding import smart_str, smart_unicode
 from optparse import make_option
 
-from ESP.utils import log
-from ESP.utils import log_query
-from ESP.emr.models import Patient
-from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.emr.models import LabResult
-from ESP.hef.models import Event
-from ESP.hef.models import EventType
-from ESP.hef.models import AbstractLabTest
-from ESP.hef.models import Timespan
-from ESP.nodis.models import Pattern
-from ESP.nodis.models import Case
+from esp.utils import log
+from esp.utils import log_query
+from esp.emr.models import Patient
+from esp.emr.models import Encounter
+from esp.emr.models import Prescription
+from esp.emr.models import LabResult
+from esp.hef.models import Event
+from esp.hef.models import EventType
+from esp.hef.models import AbstractLabTest
+from esp.hef.models import Timespan
+from esp.nodis.models import Pattern
+from esp.nodis.models import Case
 
 
 

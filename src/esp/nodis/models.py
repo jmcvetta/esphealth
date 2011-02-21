@@ -30,48 +30,48 @@ from django.db.models.query import QuerySet
 from django.contrib.contenttypes.models import ContentType
 
 
-from ESP import settings
-#from ESP.hef import events # Ensure events are loaded
-from ESP.utils import utils as util
-from ESP.utils.utils import log
-from ESP.utils.utils import log_query
-from ESP.static.models import Icd9
-#from ESP.conf.models import CodeMap
-from ESP.conf.models import STATUS_CHOICES
-from ESP.conf.models import ReportableLab
-from ESP.conf.models import ReportableIcd9
-from ESP.conf.models import ReportableMedication
-from ESP.conf.models import IgnoredCode
-from ESP.emr.models import LabResult
-from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.emr.models import Immunization
-from ESP.emr.models import Patient
-from ESP.emr.models import Provider
-from ESP.hef.models import Heuristic
-from ESP.hef.models import DiagnosisHeuristic
-from ESP.hef.models import PrescriptionHeuristic
-#from ESP.hef.core import TimespanHeuristic
-from ESP.hef.models import Timespan
-from ESP.hef.models import Event
-from ESP.hef.models import EventType
-from ESP.conf.models import ConditionConfig
+from esp import settings
+#from esp.hef import events # Ensure events are loaded
+from esp.utils import utils as util
+from esp.utils.utils import log
+from esp.utils.utils import log_query
+from esp.static.models import Icd9
+#from esp.conf.models import CodeMap
+from esp.conf.models import STATUS_CHOICES
+from esp.conf.models import ReportableLab
+from esp.conf.models import ReportableIcd9
+from esp.conf.models import ReportableMedication
+from esp.conf.models import IgnoredCode
+from esp.emr.models import LabResult
+from esp.emr.models import Encounter
+from esp.emr.models import Prescription
+from esp.emr.models import Immunization
+from esp.emr.models import Patient
+from esp.emr.models import Provider
+from esp.hef.models import Heuristic
+from esp.hef.models import DiagnosisHeuristic
+from esp.hef.models import PrescriptionHeuristic
+#from esp.hef.core import TimespanHeuristic
+from esp.hef.models import Timespan
+from esp.hef.models import Event
+from esp.hef.models import EventType
+from esp.conf.models import ConditionConfig
 
 import datetime
 
 from django.db import models
 from django.db.models import Q
 
-from ESP.emr.models import Encounter
-from ESP.emr.models import Immunization
-from ESP.emr.models import LabResult
-from ESP.emr.models import Patient
-from ESP.emr.models import Prescription
-from ESP.emr.models import Provider
-from ESP.hef.models import Event
+from esp.emr.models import Encounter
+from esp.emr.models import Immunization
+from esp.emr.models import LabResult
+from esp.emr.models import Patient
+from esp.emr.models import Prescription
+from esp.emr.models import Provider
+from esp.hef.models import Event
 
-from ESP.utils.utils import log
-from ESP.utils.utils import log_query
+from esp.utils.utils import log
+from esp.utils.utils import log_query
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

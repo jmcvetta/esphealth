@@ -7,7 +7,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'ESP.settings'
 
 
 import utils
-from ESP.esp.models import *
+from esp.esp.models import *
 
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from xml.dom.minidom import Document

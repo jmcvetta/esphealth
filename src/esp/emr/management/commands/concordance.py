@@ -17,10 +17,10 @@ from django.db.models import Count
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
-from ESP.utils.utils import log
-from ESP.utils.utils import log_query
-from ESP.emr.models import LabResult
-from ESP.emr.models import LabTestConcordance
+from esp.utils.utils import log
+from esp.utils.utils import log_query
+from esp.emr.models import LabResult
+from esp.emr.models import LabTestConcordance
 
 
 

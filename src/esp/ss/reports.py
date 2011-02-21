@@ -7,10 +7,10 @@ from django.db.models import Count
 from django.template import Context
 from django.template.loader import get_template
 
-from ESP.emr.models import Encounter, Patient
-from ESP.utils.utils import str_from_date, days_in_interval, log, timeit
-from ESP.ss.models import Site, NonSpecialistVisitEvent, age_group_filter
-from ESP.ss.utils import report_folder
+from esp.emr.models import Encounter, Patient
+from esp.utils.utils import str_from_date, days_in_interval, log, timeit
+from esp.ss.models import Site, NonSpecialistVisitEvent, age_group_filter
+from esp.ss.utils import report_folder
 
 from definitions import ENCOUNTERS_BY_RESIDENTIAL_ZIP_FILENAME, ENCOUNTERS_BY_SITE_ZIP_FILENAME
 from definitions import MINIMUM_RESIDENTIAL_CASE_THRESHOLD

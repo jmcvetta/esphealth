@@ -31,24 +31,24 @@ from decimal import Decimal
 import random
 
 from django.db import transaction
-from ESP.emr.management.commands.common import LoaderCommand
+from esp.emr.management.commands.common import LoaderCommand
 
-from ESP.utils.utils import str_from_date
-from ESP.settings import DATA_DIR
-from ESP.settings import DATE_FORMAT
-from ESP.utils.utils import log
-from ESP.utils.utils import date_from_str, Profiler
-from ESP.static.models import Icd9, Allergen, Loinc
-from ESP.emr.models import Provenance
-from ESP.emr.models import EtlError
-from ESP.emr.models import Provider
-from ESP.emr.models import Patient
-from ESP.emr.models import LabResult, LabOrder
-from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.emr.models import Immunization
-from ESP.emr.models import SocialHistory, Problem, Allergy
-from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
+from esp.utils.utils import str_from_date
+from esp.settings import DATA_DIR
+from esp.settings import DATE_FORMAT
+from esp.utils.utils import log
+from esp.utils.utils import date_from_str, Profiler
+from esp.static.models import Icd9, Allergen, Loinc
+from esp.emr.models import Provenance
+from esp.emr.models import EtlError
+from esp.emr.models import Provider
+from esp.emr.models import Patient
+from esp.emr.models import LabResult, LabOrder
+from esp.emr.models import Encounter
+from esp.emr.models import Prescription
+from esp.emr.models import Immunization
+from esp.emr.models import SocialHistory, Problem, Allergy
+from esp.vaers.fake import ImmunizationHistory, check_for_reactions
 
 
 POPULATION_SIZE = 10**3

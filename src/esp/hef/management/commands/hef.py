@@ -23,14 +23,14 @@ from django.db import transaction
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
-from ESP.settings import HEF_THREAD_COUNT
-from ESP.hef.models import AbstractLabTest
-from ESP.hef.models import DiagnosisHeuristic
-from ESP.hef.models import PrescriptionHeuristic
-from ESP.nodis.models import Case # hef.core and .models are dependencies of nodis/models, but this command script is not
-from ESP import settings
-from ESP.utils import log
-from ESP.utils import log_query
+from esp.settings import HEF_THREAD_COUNT
+from esp.hef.models import AbstractLabTest
+from esp.hef.models import DiagnosisHeuristic
+from esp.hef.models import PrescriptionHeuristic
+from esp.nodis.models import Case # hef.core and .models are dependencies of nodis/models, but this command script is not
+from esp import settings
+from esp.utils import log
+from esp.utils import log_query
 
 
 #===============================================================================

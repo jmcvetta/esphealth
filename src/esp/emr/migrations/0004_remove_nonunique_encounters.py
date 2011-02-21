@@ -3,8 +3,8 @@ import datetime
 from south.db import db
 from south.v2 import DataMigration
 from django.db import models
-from ESP.utils import log
-from ESP.utils import log_query
+from esp.utils import log
+from esp.utils import log_query
 
 
 

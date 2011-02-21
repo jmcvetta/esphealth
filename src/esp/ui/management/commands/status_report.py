@@ -22,20 +22,20 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 
 
-from ESP.utils.utils import log
-from ESP.emr.management.commands.download_ftp  import Command as FtpCommand
-from ESP.emr.management.commands.load_epic     import Command as LoadEpicCommand
-from ESP.emr.management.commands.load_hl7      import Command as LoadHl7Command
-from ESP.emr.management.commands.concordance   import Command as ConcordanceCommand
-from ESP.hef.management.commands.hef           import Command as HefCommand
-from ESP.nodis.management.commands.nodis       import Command as NodisCommand
-from ESP.nodis.management.commands.case_report import Command as CaseReportCommand
-from ESP.ui.views import _populate_status_values
+from esp.utils.utils import log
+from esp.emr.management.commands.download_ftp  import Command as FtpCommand
+from esp.emr.management.commands.load_epic     import Command as LoadEpicCommand
+from esp.emr.management.commands.load_hl7      import Command as LoadHl7Command
+from esp.emr.management.commands.concordance   import Command as ConcordanceCommand
+from esp.hef.management.commands.hef           import Command as HefCommand
+from esp.nodis.management.commands.nodis       import Command as NodisCommand
+from esp.nodis.management.commands.case_report import Command as CaseReportCommand
+from esp.ui.views import _populate_status_values
 
-from ESP.settings import SITE_NAME
-from ESP.settings import EMAIL_SUBJECT_PREFIX
-from ESP.settings import SERVER_EMAIL
-from ESP.settings import MANAGERS
+from esp.settings import SITE_NAME
+from esp.settings import EMAIL_SUBJECT_PREFIX
+from esp.settings import SERVER_EMAIL
+from esp.settings import MANAGERS
 
 
 class Command(BaseCommand):

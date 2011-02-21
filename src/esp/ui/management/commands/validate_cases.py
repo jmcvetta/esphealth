@@ -73,20 +73,20 @@ from django.template.loader import get_template
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
-from ESP.utils.utils import log
-from ESP.utils.utils import log_query
-from ESP.utils.utils import date_from_str
-from ESP.emr.models import Patient
-from ESP.emr.models import LabResult
-from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.hef.models import Event
-from ESP.nodis.models import Case
-from ESP.nodis.models import ReferenceCase
-from ESP.nodis.models import ReferenceCaseList
-from ESP.nodis.models import ValidatorRun
-from ESP.nodis.models import ValidatorResult
-from ESP.nodis.models import Condition
+from esp.utils.utils import log
+from esp.utils.utils import log_query
+from esp.utils.utils import date_from_str
+from esp.emr.models import Patient
+from esp.emr.models import LabResult
+from esp.emr.models import Encounter
+from esp.emr.models import Prescription
+from esp.hef.models import Event
+from esp.nodis.models import Case
+from esp.nodis.models import ReferenceCase
+from esp.nodis.models import ReferenceCaseList
+from esp.nodis.models import ValidatorRun
+from esp.nodis.models import ValidatorResult
+from esp.nodis.models import Condition
 
 
 

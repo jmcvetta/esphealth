@@ -13,17 +13,17 @@ from django.shortcuts import render_to_response
 from django.views.generic.simple import direct_to_template
 from django.contrib.sites.models import Site
 
-from ESP.static.models import Vaccine
-from ESP.static.models import ImmunizationManufacturer
-from ESP.conf.models import VaccineCodeMap
-from ESP.conf.models import VaccineManufacturerMap
-from ESP.vaers.models import AdverseEvent
-from ESP.vaers.models import ProviderComment
+from esp.static.models import Vaccine
+from esp.static.models import ImmunizationManufacturer
+from esp.conf.models import VaccineCodeMap
+from esp.conf.models import VaccineManufacturerMap
+from esp.vaers.models import AdverseEvent
+from esp.vaers.models import ProviderComment
 
-from ESP.vaers.forms import CaseConfirmForm
-from ESP.utils.utils import log
-from ESP.utils.utils import Flexigrid
-from ESP.vaers.vaccine.forms import StandardVaccinesForm, StandardManufacturersForm
+from esp.vaers.forms import CaseConfirmForm
+from esp.utils.utils import log
+from esp.utils.utils import Flexigrid
+from esp.vaers.vaccine.forms import StandardVaccinesForm, StandardManufacturersForm
 
 PAGE_TEMPLATE_DIR = 'pages/vaers/'
 WIDGET_TEMPLATE_DIR = 'widgets/vaers/'

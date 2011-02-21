@@ -1,8 +1,8 @@
 import datetime
-from ESP.settings import MEDIA_URL
-from ESP.settings import VERSION
-from ESP.settings import SITE_NAME
-from ESP.settings import DATE_FORMAT
+from esp.settings import MEDIA_URL
+from esp.settings import VERSION
+from esp.settings import SITE_NAME
+from esp.settings import DATE_FORMAT
 
 def path_definitions(request):
     return {

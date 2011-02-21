@@ -1,5 +1,5 @@
-from ESP.emr.fake import fiat_mondo
-from ESP.vaers.fake import massive_immunization_action
+from esp.emr.fake import fiat_mondo
+from esp.vaers.fake import massive_immunization_action
 
 
 if __name__ == '__main__':

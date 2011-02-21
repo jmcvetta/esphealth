@@ -13,7 +13,7 @@ provenance.
 @copyright: (c) 2009 Channing Laboratory
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
-from ESP.utils.utils import log_query
+from esp.utils.utils import log_query
 
 
 #-------------------------------------------------------------------------------
@@ -56,16 +56,16 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
-from ESP.utils.utils import log
-from ESP.nodis.models import Case
-from ESP.hef.models import Event
-from ESP.emr.models import Provenance
-from ESP.emr.models import Patient
-from ESP.emr.models import Provider
-from ESP.emr.models import LabResult
-from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.emr.models import Immunization
+from esp.utils.utils import log
+from esp.nodis.models import Case
+from esp.hef.models import Event
+from esp.emr.models import Provenance
+from esp.emr.models import Patient
+from esp.emr.models import Provider
+from esp.emr.models import LabResult
+from esp.emr.models import Encounter
+from esp.emr.models import Prescription
+from esp.emr.models import Immunization
 
 
 
