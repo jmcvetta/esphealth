@@ -1,36 +1,36 @@
 * text=auto !eol
-/CREDITS -text
-/LICENSE -text
-/README -text
 analysis/dm_esp.schema.xml -text
 analysis/new_hef_analysis.xml -text
 analysis/pat.hibernate.pg.sql -text
-bin/esp -text
-doc/ESP-architecture.xmind -text svneol=unset#unset
-doc/LGPL-3.0.txt -text
-doc/README.docs.txt -text
-doc/disease-protocols/Chlamydia.doc -text
-doc/disease-protocols/Combined_Hepatitis_B.doc -text
-doc/disease-protocols/Gonorrhea.doc -text
-doc/disease-protocols/Hepatitis_A.doc -text
-doc/planning/Changing[!!-~]Disease[!!-~]States.xmind -text svneol=unset#unset
-doc/specifications/EpicCare_ETL_file_spec.doc -text
-doc/specifications/MDPH_ELR_EMR_Query_Specification_v1.0.doc -text
-doc/specifications/PHIN_ELR_Implementation_Guide--HL7_2.3.1--21_May_2004.pdf -text svneol=unset#unset
-doc/specifications/gipse.xsd -text
-doc/specifications/reduced-gipse.xsd -text
-etc/templates/case_report/odh_hl7.txt -text
-/install.sh -text
-share/apache.conf.sample -text
-share/cpt_codes.csv.bz2 -text svneol=unset#unset
-share/data-quality-check.py -text
-share/django.wsgi.sample -text
-share/epic_etl/AdditionalStepsAfterCompile.doc -text svneol=unset#unset
-share/epic_etl/ESPFileLayout.doc -text svneol=unset#unset
-share/epic_etl/README.txt -text
-share/epic_etl/mhslespftp.sh -text
-share/esp-postgres.logrotate -text
-share/ndc_codes.txt.bz2 -text svneol=unset#unset
+esphealth/CREDITS -text
+esphealth/LICENSE -text
+esphealth/README -text
+esphealth/bin/esp -text
+esphealth/doc/ESP-architecture.xmind -text svneol=unset#unset
+esphealth/doc/LGPL-3.0.txt -text
+esphealth/doc/README.docs.txt -text
+esphealth/doc/disease-protocols/Chlamydia.doc -text
+esphealth/doc/disease-protocols/Combined_Hepatitis_B.doc -text
+esphealth/doc/disease-protocols/Gonorrhea.doc -text
+esphealth/doc/disease-protocols/Hepatitis_A.doc -text
+esphealth/doc/planning/Changing[!!-~]Disease[!!-~]States.xmind -text svneol=unset#unset
+esphealth/doc/specifications/EpicCare_ETL_file_spec.doc -text
+esphealth/doc/specifications/MDPH_ELR_EMR_Query_Specification_v1.0.doc -text
+esphealth/doc/specifications/PHIN_ELR_Implementation_Guide--HL7_2.3.1--21_May_2004.pdf -text svneol=unset#unset
+esphealth/doc/specifications/gipse.xsd -text
+esphealth/doc/specifications/reduced-gipse.xsd -text
+esphealth/etc/templates/case_report/odh_hl7.txt -text
+esphealth/install.sh -text
+esphealth/share/apache.conf.sample -text
+esphealth/share/cpt_codes.csv.bz2 -text svneol=unset#unset
+esphealth/share/data-quality-check.py -text
+esphealth/share/django.wsgi.sample -text
+esphealth/share/epic_etl/AdditionalStepsAfterCompile.doc -text svneol=unset#unset
+esphealth/share/epic_etl/ESPFileLayout.doc -text svneol=unset#unset
+esphealth/share/epic_etl/README.txt -text
+esphealth/share/epic_etl/mhslespftp.sh -text
+esphealth/share/esp-postgres.logrotate -text
+esphealth/share/ndc_codes.txt.bz2 -text svneol=unset#unset
 src/esp/application.spec.ini -text
 src/esp/axis-1_4/activation.jar -text
 src/esp/axis-1_4/mail.jar -text
