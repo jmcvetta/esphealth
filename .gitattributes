@@ -21,6 +21,7 @@ esphealth/doc/specifications/gipse.xsd -text
 esphealth/doc/specifications/reduced-gipse.xsd -text
 esphealth/etc/templates/case_report/odh_hl7.txt -text
 esphealth/install.sh -text
+esphealth/requirements.txt -text
 esphealth/share/apache.conf.sample -text
 esphealth/share/cpt_codes.csv.bz2 -text svneol=unset#unset
 esphealth/share/data-quality-check.py -text

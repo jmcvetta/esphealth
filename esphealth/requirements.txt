@@ -1,0 +1,17 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#                    Electronic Support for Public Health
+#                              PIP Requirements
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+django >= 1.2
+south
+python-dateutil
+simplejson
+sqlparse
+hl7
+django_tables
+configobj
+psycopg2
+-e svn+http://esphealth.org/svn/ESP/trunk/src/esp#egg=esp
