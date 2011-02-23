@@ -219,7 +219,6 @@ src/esp/phit/phit.diabetes.3.sql -text
 src/esp/secrets.spec.ini -text
 src/esp/sendMsgs/bcdc.jar -text
 src/esp/settings.py -text
-src/esp/setup.py -text
 src/esp/ss/__init__.py -text
 src/esp/ss/definitions.py -text
 src/esp/ss/heuristics.py -text
@@ -380,3 +379,4 @@ src/esp/vaers/vaccine/urls.py -text
 src/esp/vaers/vaccine/views.py -text
 src/esp/vaers/views.py -text
 src/esp/version.txt -text
+src/setup.py -text
