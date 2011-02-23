@@ -34,5 +34,6 @@ ESP_HOME=$(dirname $_bin_dir)
 # Activate virtualenv
 . $ESP_HOME/bin/activate
 
+echo $ESP_HOME
 # Call manage.py
-python $ESP_HOME/src/esp/manage.py $@
+$ESP_HOME/bin/python $ESP_HOME/src/esp/manage.py $@
