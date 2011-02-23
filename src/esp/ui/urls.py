@@ -1,6 +1,6 @@
 '''
                               ESP Health Project
-User Interface Module
+                             User Interface Module
                                URL Configuration
 
 @authors: Jason McVetta <jason.mcvetta@gmail.com>
@@ -20,7 +20,7 @@ from django.contrib import admin
 from esp.settings import MEDIA_ROOT, MEDIA_URL
 
 
-urlpatterns = patterns('ESP.ui.views',
+urlpatterns = patterns('esp.ui.views',
     url(r'^labtest/lookup/$', 'labtest_lookup', name='labtest_lookup'),
     url(r'^labtest/detail/$', 'labtest_detail', name='labtest_detail'),
     url(r'^labtest/linelist/(?P<native_code>.*)$', 'labtest_csv', name='labtest_csv'),

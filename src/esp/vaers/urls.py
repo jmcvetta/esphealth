@@ -14,7 +14,7 @@ urlpatterns = patterns(
     (r'^report$', views.report),
 
     # Vaccine and Manufacturer Mapping
-    url(r'^vaccines/', include('ESP.vaers.vaccine.urls')),
+    url(r'^vaccines/', include('esp.vaers.vaccine.urls')),
     
     
     url(r'^verify/(?P<key>\w*)/$', views.verify, name='verify_case'),

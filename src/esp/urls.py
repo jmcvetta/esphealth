@@ -26,10 +26,10 @@ urlpatterns = patterns('',
     url(r'^$', status_page, name='status'),
     
     # Vaers
-    url(r'^vaers/', include('ESP.vaers.urls')),
+    url(r'^vaers/', include('esp.vaers.urls')),
 
     # Syndromic Surveillance
-    url(r'^ss/', include('ESP.ss.urls')),
+    url(r'^ss/', include('esp.ss.urls')),
 
     
     # Login and Logout
@@ -50,13 +50,13 @@ urlpatterns = patterns('',
     url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': MEDIA_ROOT}),
     
     # Configuration
-    url(r'^conf/', include('ESP.conf.urls')),
+    url(r'^conf/', include('esp.conf.urls')),
     
     # Nodis
     #url(r'^nodis/', include('ESP.nodis.urls')),
     
     # Nodis
-    url(r'^util/', include('ESP.ui.urls')),
+    url(r'^util/', include('esp.ui.urls')),
     
     #
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

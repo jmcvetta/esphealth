@@ -20,7 +20,7 @@ from django.contrib import admin
 from esp.settings import MEDIA_ROOT, MEDIA_URL
 
 
-urlpatterns = patterns('ESP.conf.views',
+urlpatterns = patterns('esp.conf.views',
     url(r'^codes/ignore/(?P<native_code>.+)/$', 'ignore_code', name='ignore_code'),
     url(r'^codes/report', 'heuristic_mapping_report', name='heuristic_mapping_report'),
     #url(r'^json_code_grid', json_code_grid, name='json_code_grid'),
