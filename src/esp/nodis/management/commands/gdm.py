@@ -280,7 +280,7 @@ class Command(BaseCommand):
             fields = self.RISKSCAPE_FIELDS
         else:
             fields = self.LINELIST_FIELDS
-        writer = csv.DictWriter(sys.stdout, fieldnames=fields)
+        writer = csv.DictWriter(sys.stdout, fieldnames=fields, quoting=csv.QUOTE_ALL)
         pos_q = Q(event_type__name__endswith='--positive')
         a1c_q = Q(event_type__name__startswith='lx--a1c')
         ogtt50_q = Q(event_type__name__startswith='lx--ogtt50')
