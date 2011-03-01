@@ -1,8 +1,8 @@
 '''
                                   ESP Health
-Packaging Information
+                             Packaging Information
                                   
-@author: Jason McVetta <jason.mcvetta@gmail.com>
+@author: Jason McVetta <jason.mcvetta@heliotropi.cc>
 @organization: Channing Laboratory http://www.channing.harvard.edu
 @contact: http://esphealth.org
 @copyright: (c) 2011 Channing Laboratory
