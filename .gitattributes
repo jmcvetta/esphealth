@@ -95,6 +95,7 @@ src/esp/env-setup.sh -text
 src/esp/hef/__init__.py -text
 src/esp/hef/admin.py -text
 src/esp/hef/atrius_maps.py -text
+src/esp/hef/core.py -text
 src/esp/hef/defaults.py -text
 src/esp/hef/management/__init__.py -text
 src/esp/hef/management/commands/__init__.py -text
