@@ -17,7 +17,7 @@ from validate import Validator
 
 
 TOPDIR = os.path.dirname(__file__)
-PACKAGE_ROOT = os.path.normpath(os.path.join(TOPDIR, '..', '..'))
+PACKAGE_ROOT = os.path.normpath(os.path.join(TOPDIR, '..', '..', '..'))
 # One could also set CONFIG_FOLDER manually, to something like '/etc/esp', if 
 # so desired.
 CONFIG_FOLDER = os.path.join(PACKAGE_ROOT, 'etc')
