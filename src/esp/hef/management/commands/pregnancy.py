@@ -245,41 +245,41 @@ class Command(BaseCommand):
             #
             end_encs = self.preg_end_encounters.filter(patient=patient, date__gte=enc.date, 
                 date__lte=(enc.date + datetime.timedelta(days=300)) )
-            if end_encs: # If there is no plausible end date for this pregnancy, so we create 
-                name = 'pregnancy'
+            if end_encs: 
                 end_date = end_encs.aggregate(end_date=Min('date'))['end_date']
                 start_date = end_date - datetime.timedelta(days=280)
                 pattern = 'ICD9_EOP' # EOP = End of Pregnancy
-                enc_start = enc.date # Attach encounters from this date or later
-                enc_end = end_date + PREG_END_MARGIN # Attach encounters up until this date
-                new_postpartum = Timespan(
-                    name = 'postpartum',
-                    patient = enc.patient,
-                    start_date = end_date,
-                    end_date = end_date + datetime.timedelta(days=120),
-                    pattern = 'ICD9_EOP_+_120_days',
-                    )
             else: # There is no plausible end date for this pregnancy, so we create a mini-pregnancy
-                name = 'pregnancy'
                 start_date = enc.date - datetime.timedelta(days=15)
-                end_date =  enc.date + datetime.timedelta(days=15)
+                end_date =  enc.date + datetime.timedelta(days=270)
                 pattern = 'ICD9_ONLY'
-                enc_start = enc.date # Attach only encounters that are stricly within the mini-preg window
-                enc_end = end_date     #  "
-                new_postpartum = None
+            #
+            # Create Timespans
+            #
             new_preg = Timespan(
-                name = name,
+                name = 'pregnancy',
                 patient = enc.patient,
                 start_date = start_date,
                 end_date = end_date,
                 pattern = pattern,
                 )
             new_preg.save() # Must save before adding many-to-many objects
+            new_postpartum = Timespan(
+                name = 'postpartum',
+                patient = enc.patient,
+                start_date = end_date,
+                end_date = end_date + datetime.timedelta(days=120),
+                pattern = 'ICD9_EOP_+_120_days',
+                )
+            new_postpartum.save()
+            #
+            # Attach encounters within preg window
+            #
+            enc_start = enc.date # Attach encounters from this date or later
+            enc_end = end_date + PREG_END_MARGIN # Attach encounters up until this date
             new_preg.encounters = self.all_preg_encounters.filter(patient=patient, date__gte=enc_start, date__lte=enc_end)
             new_preg.encounters.add(enc) # Add this one, in case it is dated after EDD
             new_preg.save() 
-            if new_postpartum:
-                new_postpartum.save()
             log.debug('New pregnancy %s by %s (patient %s):  %s - %s' % (new_preg.pk, pattern, patient.pk, new_preg.start_date, new_preg.end_date))
         return 
             
