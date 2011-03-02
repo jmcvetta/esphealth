@@ -12,4 +12,4 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/application#egg=esphealth
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes#egg=diabetes
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes#egg=disease-diabetes
