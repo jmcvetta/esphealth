@@ -352,6 +352,4 @@ modules/core/ESP/vaers/vaccine/urls.py -text
 modules/core/ESP/vaers/vaccine/views.py -text
 modules/core/ESP/vaers/views.py -text
 modules/core/ESP/version.txt -text
-modules/core/scripts/daily_batch.sh -text
-modules/core/scripts/post_batch_run.sh -text
 modules/core/setup.py -text
