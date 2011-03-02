@@ -11,11 +11,4 @@
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-django >= 1.2
-python-dateutil
-simplejson
-sqlparse
-hl7
-django_tables
-configobj
 -e svn+http://esphealth.org/svn/ESP/branches/2.1.0/modules/core#egg=esp-core

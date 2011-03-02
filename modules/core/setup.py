@@ -17,6 +17,13 @@ setup(
     version = '2.1a',
     packages = find_packages(),
     install_requires = [
+        'django >= 1.2',
+        'python-dateutil',
+        'simplejson',
+        'sqlparse',
+        'hl7',
+        'django_tables',
+        'configobj',
         ],
     package_data = {
         '': ['*.bz2',],
