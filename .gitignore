@@ -28,4 +28,3 @@ modules/esp-application/ESP/vaers/assets
 modules/esp-application/ESP/vaers/fixtures/events/*.json
 modules/esp-application/ESP/vaers/fixtures/lab_results.sql
 modules/esp-application/ESP/vaers/vaccine/*.pyc
-src/*.pyc
