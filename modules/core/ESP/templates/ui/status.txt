@@ -1,0 +1,76 @@
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++                                                                              + 
++                              ESP Status Report                               +
++                                                                              + 
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Date:  {{ today_string }}
+Site:  {{ site_name }}
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                     Nodis
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NEW CASE SUMMARY:
+{% if new_case_summary.count %}
+Condition            Count    
+--------------------------------------------------------------------------------
+{% for item in new_case_summary %}{{ item.condition|stringformat:"-20s" }} {{ item.count }}
+{% endfor %}
+
+NEW CASE DETAILS:
+
+Case ID     Condition        Date          Department
+--------------------------------------------------------------------------------
+{% for case in new_cases %}{{ case.id|stringformat:"-10s" }}  {{ case.condition|stringformat:"-15s" }}  {{ case.date|stringformat:"-12s" }}  {{ case.provider.dept }}
+{% endfor %}
+{% else %}
+No new cases today.</em>
+{% endif %}
+
+ALL CASES:
+{% if all_case_summary.count %}
+Condition            Count    
+--------------------------------------------------------------------------------
+{% for item in all_case_summary %}{{ item.condition|stringformat:"-20.20s" }} {{ item.count }}
+{% endfor %}
+{% else %}
+No new cases today.</em>
+{% endif %}
+
+
+CASES REPORTED:
+{% if reports %}
+Case #   Condition   Case Date   Patient   Sent?   Filename
+--------------------------------------------------------------------------------
+{% for rep in reports %}{% for c in rep.cases.all %}{{ c.pk|stringformat:"-9s" }}{{ c.condition|stringformat:"-12s" }}{{ c.date|stringformat:"-12s" }}{{ c.patient.pk|stringformat:"-10s" }}{{ rep.sent|stringformat:"-8s" }}{{ rep.filename }}
+{% endfor %}
+{% endfor %}
+{% else %}
+No cases reported in past day.
+{% endif %}
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                               Data Load Status
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+{% if data_status %}
+Status              Count
+--------------------------------------------------------------------------------
+{% for item in data_status %}{{ item.status|stringformat:"-20s" }}{{ item.count }}
+{% endfor %}
+{% else %}
+No data loading attempted in the past day
+{% endif %}
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                              Unmapped Lab Tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Native Name                    Native Code                    Lab Record Count
+--------------------------------------------------------------------------------
+{% for item in unmapped_labs %}{{ item.native_name|stringformat:"-30.30s" }} {{ item.native_code|stringformat:"-30s" }} {{ item.count }}
+{% endfor %}
+

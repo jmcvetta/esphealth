@@ -1,0 +1,187 @@
+/* Common Classes */
+.left {
+    float: left;
+}
+
+.right{
+    float: right;
+}
+
+/* Common Elements */
+button {
+    font-size: 9pt;
+    margin: auto;
+    padding: 0px 2px;
+    border: 1px solid #999;
+}
+
+button:hover {
+    background-color: #333;
+    color: #CCC;
+}
+
+div.warning {
+    font-weight: bold;
+    background-color: lightyellow;
+    padding: 10px 1em;
+    margin-bottom: 15px;
+    border: 1px dashed #CC9;
+}
+
+div.info {
+    font-weight: bold;
+    background-color: lightblue;
+    padding: 10px 1em;
+    margin-bottom: 15px;
+    border: 1px dashed #9CC;
+}
+
+#email_address {
+    font-size: 125%;
+    font-style: italic;
+}
+
+
+span.button {
+    color: #D22;
+    }
+
+span.button:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+
+
+/* Banner and Widgets */
+#btn_close_banner {
+    float: right;
+    position: relative;
+    top: 0;
+    right: 0;
+}
+
+#case_table {
+    width: 700px;
+}
+
+#case_table td, #case_table th {
+    width: 130px;
+    
+}
+
+
+/* Sidebar */
+ul.vaers_menu_action{
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #999;
+    line-height: 13px;
+}
+
+ul.vaers_menu_action li{
+    display: block;
+    width: 96px;
+    border-top: 1px solid #999;
+    padding: 5px;
+}
+
+#frm_case_confirmation{
+    width: 75%;
+}
+
+#frm_case_confirmation li{
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    clear: left;
+}
+
+#frm_case_confirmation textarea {
+    width: 100%;
+    margin: 20px 50px;
+    height: 250px;
+}
+
+#frm_case_confirmation div {
+    margin: 10px 50px;
+}
+
+#frm_case_confirmation input[type="submit"] {
+    margin-left: 360px;
+    width: 80px;
+}
+
+ 
+#case_comments_list {
+    width:75%;
+    margin-bottom: 30px;
+}
+
+
+#case_comments_list > div.comment_entry {
+    font-size: 11pt;
+    clear: both;
+    background-color: #EEE;
+    border-bottom: 1pt solid #999;
+    margin: 10px 0;
+}
+
+
+
+#case_comments_list div.comment_time{
+    font-size: 75%;
+    color: #999;
+    float: right;
+    width: 20%;
+    text-align: right;
+    margin: 5px;
+}
+
+#case_comments_list div.comment {
+    padding: 5px 0;
+    padding-bottom: 10px;
+    margin-left: 50px;
+    width: 75%;
+    clear: left;
+}
+
+
+#tbl_case_details {
+    width: 75%;
+    margin: 20px 50px;
+}
+
+#tbl_case_details tr > th {
+    width: 350px;
+    background-color: #333;
+    color: #CCC;
+    vertical-align: top;
+}
+
+#tbl_case_details tr > td {
+    border-left: 3px solid #CCC;
+    vertical-align: top;
+   
+}
+
+
+ul.lx_summary li  {
+    list-style-type: none;
+    margin-left: -40px;
+    padding: 0;
+    background-color: #FFF;
+}
+
+.patient_name {
+    font-size: 125%;
+    font-weight: bold;
+}
+
+.msg_case_category {
+    color: #333;
+    font-weight: 600;
+}
+
+

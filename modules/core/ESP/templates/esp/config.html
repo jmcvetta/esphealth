@@ -1,0 +1,155 @@
+{% extends "espbase.html" %}
+
+{% block content %}
+
+<h2><a href="javascript:history.go(-1)">Go Back</a></h2>
+
+<center>
+<h2><font color="#800000">preLoad Config Information</font></h2>
+</center>
+<br>
+{% if msg %}
+     <br><br>
+     <center>
+     <h3><font color="blue"> {{msg}}</font></h3>
+      </center> 
+{% endif %}
+
+
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="{{SITEROOT}}/preload/config/update/" method="post">
+<center>
+<input type="submit" name="submit" value="Save into a file" >
+</center>
+<br>
+<table cellspacing="10" cellpadding="3" border="1" width="95%">
+<tr class="{% cycle row1,row2 as rowcolors %}">
+  <th>ID</th>
+  <th>Application & Facility</th>
+  <th>Technical Info</th>
+  <th>Institution</th>
+  <th>Disease contact</th>
+  <th>Comments</th>
+</tr>
+ {% for mapobj in maps %} 
+     <tr class="{% cycle rowcolors %}" >    
+      <td width="5%"> {{ mapobj.id }}<input type="hidden" name="ID_{{ mapobj.id }}" value={{ mapobj.id }}></td>
+      <td width="15%">
+       <table cellspacing="0" cellpadding="0" border="0" width="95%">
+         <tr><td>AppName:</td><td><input type="text" name="APP_{{ mapobj.id }}" size="15" value="{{ mapobj.appName}}"></td></tr>
+         <tr><td>Facility:</td><td><input type="text" name="FACI_{{ mapobj.id }}" size="15" value="{{ mapobj.FacilityID}}"> </td></tr>
+         <tr><td>SendingFacility:</td><td><input type="text" name="SENDFAC_{{ mapobj.id }}" size="15" value="{{mapobj.sendingFac}}" ></td></tr>
+       </table>
+      </td>
+
+      <td width="20%">
+        <table cellspacing="0" cellpadding="0" border="0" width="95%">
+		  <tr><td>Name:</td><td><input type="text" name="TECHNAME_{{ mapobj.id }}" size="15" value="{{mapobj.instTechName}}" ></td></tr>
+		  <tr><td>Email:</td><td><input type="text" name="TECHEMAIL_{{ mapobj.id }}" size="20" value="{{mapobj.instTechEmail}}" ></td></tr>
+		  <tr><td>Phone:</td><td> <input type="text" name="TECHTEL_{{ mapobj.id }}" size="15" value="{{mapobj.instTechTel}}" ></td></tr>
+		  <tr><td>Cell Phone:</td><td><input type="text" name="TECHCELL_{{ mapobj.id }}" size="15" value="{{mapobj.instTechcel}}" ></td></tr>
+		</table>
+      </td>
+      <td width="15%">
+        <table cellspacing="0" cellpadding="0" border="0" width="95%">
+		  <tr><td>Name:</td><td><input type="text" name="INSTNAME_{{ mapobj.id }}" size="15" value="{{mapobj.institution_name}}" ></td></tr>
+		  <tr><td>CLIA:</td><td><input type="text" name="INSTCLIA_{{ mapobj.id }}" size="15" value="{{mapobj.institution_CLIA}}" ></td></tr>
+		  <tr><td>Address1:</td><td><input type="text" name="INSTADRS1_{{ mapobj.id }}" size="25" value="{{mapobj.instAddress1 }}" ></td></tr>
+		  <tr><td>Address2:</td><td> <input type="text" name="INSTADRS2_{{ mapobj.id }}" size="15" value="{{mapobj.instAddress2 }}" ></td></tr>
+		  <tr><td>City:</td><td><input type="text" name="INSTCITY_{{ mapobj.id }}" size="15" value="{{mapobj.instCity}}" ></td></tr>
+		  <tr><td>State:</td>
+		     <td>
+		      <input type="text" name="INSTST_{{ mapobj.id }}" size="3" value="{{mapobj.instState}}" >&nbsp;
+		      Zip:<input type="text" name="INSTZIP_{{ mapobj.id }}" size="6" value="{{mapobj.instZip}}" >
+		      </td></tr>
+		  <tr><td>Country:</td><td><input type="text" name="INSTCOUNT_{{ mapobj.id }}" size="15" value="{{mapobj.instCountry}}" ></td></tr>
+		  <tr><td>Phone:</td><td><input type="text" name="INSTPHONE_{{ mapobj.id }}" size="15" value="{{mapobj.instTel}}" ></td></tr>
+		  <tr><td>Fax:</td><td><input type="text" name="INSTFAX_{{ mapobj.id }}" size="15" value="{{mapobj.instFax}}" ></td></tr>
+		</table>
+      </td>
+      <td width="15%">
+        <table cellspacing="0" cellpadding="0" border="0" width="95%">
+		  <tr><td>First Name:</td><td><input type="text" name="INFEFNAME_{{ mapobj.id }}" size="15" value="{{mapobj.instIDFName}}" ></td></tr>
+		  <tr><td>Last Name:</td><td><input type="text" name="INFELNAME_{{ mapobj.id }}" size="15" value="{{mapobj.instIDLName}}" ></td></tr>
+		  <tr><td>Email:</td><td><input type="text" name="INFEEMAIL_{{ mapobj.id }}" size="25" value="{{mapobj.instIDEmail}}" ></td></tr>
+		  <tr><td>Phone:</td><td>
+			<input type="text" name="INFETELAREA_{{ mapobj.id }}" size="5" value="{{mapobj.instIDTelArea}}" >-
+		    <input type="text" name="INFETEL_{{ mapobj.id }}" size="7" value="{{mapobj.instIDTel}}" ></td></tr>
+		  <tr><td>Ext:</td><td>
+			<input type="text" name="INFETELEXT_{{ mapobj.id }}" size="5" value="{{mapobj.instIDTelExt}}" ></td></tr>
+		    
+		    
+		  <tr><td>Cell Phone:</td><td><input type="text" name="INFECEL_{{ mapobj.id }}" size="15" value="{{mapobj.instIDcel}}" ></td></tr>
+		</table>
+      </td>
+      <td width="15%"> <TEXTAREA name="NOTE_{{ mapobj.id }}" rows="2" cols="15">{{mapobj.instComments}}</textarea></td>
+    </tr>
+
+    {% endfor %}
+
+
+ {% for i in newrec %}
+     <tr class="{% cycle rowcolors %}" >
+     <td width="5%"> Add New<input type="hidden" name="ID_NEW{{ i }}" value="NEW{{i}}"></td>
+      <td width="15%">
+      <table cellspacing="0" cellpadding="0" border="0" width="95%">
+         <tr><td>AppName:</td><td><input type="text" name="APP_NEW{{i}}" size="15"></td></tr>
+         <tr><td>Facility:</td><td><input type="text" name="FACI_NEW{{ i }}" size="15" > </td></tr>
+         <tr><td>SendingFacility:</td><td><input type="text" name="SENDFAC_NEW{{ i }}" size="15"  ></td></tr>
+       </table>
+      </td>
+      <td width="20%">
+        <table cellspacing="0" cellpadding="0" border="0" width="95%">
+		  <tr><td>Name:</td><td><input type="text" name="TECHNAME_NEW{{ i }}" size="15"  ></td></tr>
+		  <tr><td>Email:</td><td><input type="text" name="TECHEMAIL_NEW{{ i }}" size="20"></td></tr>
+		  <tr><td>Phone:</td><td> <input type="text" name="TECHTEL_NEW{{ i }}" size="15" ></td></tr>
+		  <tr><td>Cell Phone:</td><td><input type="text" name="TECHCELL_NEW{{ i }}" size="15" ></td></tr>
+		</table>
+      </td>
+      <td width="15%">
+        <table cellspacing="0" cellpadding="0" border="0" width="95%">
+		  <tr><td>Name:</td><td><input type="text" name="INSTNAME_NEW{{ i }}" size="15"  ></td></tr>
+		  <tr><td>CLIA:</td><td><input type="text" name="INSTCLIA_NEW{{ i}}" size="15" ></td></tr>
+		  <tr><td>Address1:</td><td><input type="text" name="INSTADRS1_NEW{{i }}" size="25" ></td></tr>
+		  <tr><td>Address2:</td><td> <input type="text" name="INSTADRS2_NEW{{i }}" size="15"  ></td></tr>
+		  <tr><td>City:</td><td><input type="text" name="INSTCITY_NEW{{i }}" size="15" ></td></tr>
+		  <tr><td>State:</td>
+		     <td>
+		      <input type="text" name="INSTST_NEW{{ i}}" size="3"  >&nbsp;
+		      Zip:<input type="text" name="INSTZIP_NEW{{i}}" size="6">
+		      </td></tr>
+		  <tr><td>Country:</td><td><input type="text" name="INSTCOUNT_NEW{{ i}}" size="15"  ></td></tr>
+		  <tr><td>Phone:</td><td><input type="text" name="INSTPHONE_NEW{{i}}" size="15" ></td></tr>
+		  <tr><td>Fax:</td><td><input type="text" name="INSTFAX_NEW{{ i }}" size="15"></td></tr>
+		</table>
+      </td>
+      <td width="15%">
+        <table cellspacing="0" cellpadding="0" border="0" width="95%">
+		  <tr><td>First Name:</td><td><input type="text" name="INFEFNAME_NEW{{ i }}" size="15" ></td></tr>
+		  <tr><td>Last Name:</td><td><input type="text" name="INFELNAME_NEW{{ i }}" size="15" ></td></tr>
+		  <tr><td>Email:</td><td><input type="text" name="INFEEMAIL_NEW{{ i }}" size="25"  ></td></tr>
+		  <tr><td>Phone:</td><td>
+		        <input type="text" name="INFETELAREA_NEW{{ i }}" size="5">-
+			     <input type="text" name="INFETEL_NEW{{ i }}" size="7"></td></tr>
+		   <tr><td>Ext:</td><td>
+			<input type="text" name="INFETELEXT_NEW{{i }}" size="5"  ></td></tr>
+			    
+		  <tr><td>Cell Phone:</td><td><input type="text" name="INFECEL_NEW{{ i}}" size="15"  ></td></tr>
+		</table>
+      </td>
+      <td width="15%"> <TEXTAREA name="NOTE_NEW{{ i }}" rows="2" cols="15"></textarea></td>
+    </tr>
+
+    {% endfor %}
+  
+</table>
+<br>
+<center>
+<input type="submit" name="submit" value="Save into a file" >
+</center>
+</form>
+
+
+{% endblock %}
