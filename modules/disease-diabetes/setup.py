@@ -25,7 +25,7 @@ setup(
     url = 'http://esphealth.org',
     packages = find_packages(exclude=['ez_setup']),
     install_requires = [
-#        'esphealth >= 3',
+        'esphealth >= 3',
         ],
     entry_points = '''
         [esphealth]
