@@ -382,3 +382,5 @@ modules/application/ESP/vaers/vaccine/views.py -text
 modules/application/ESP/vaers/views.py -text
 modules/application/ESP/version.txt -text
 modules/application/setup.py -text
+modules/disease-diabetes/__init__.py -text
+modules/disease-diabetes/setup.py -text
