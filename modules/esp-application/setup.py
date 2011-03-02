@@ -13,10 +13,18 @@ from setuptools import setup
 from setuptools import find_packages
 
 setup(
-    name = 'esphealth',
+    name = 'Electronic Support for Public Health',
     version = '3.0a',
     packages = find_packages(),
     install_requires = [
+        'django >= 1.2',
+        'south',
+        'python-dateutil',
+        'simplejson',
+        'sqlparse',
+        'hl7',
+        'django_tables',
+        'configobj',
         ],
     package_data = {
         '': ['*.bz2',],
