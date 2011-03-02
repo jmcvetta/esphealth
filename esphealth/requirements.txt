@@ -1,0 +1,22 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#                    Electronic Support for Public Health
+#                              PIP Requirements
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# NOTE: no database adapter is installed via Pip, because they typically
+# require non-Python dependencies.  Instead, please install your database
+# driver via your system's package manager.
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+django >= 1.2
+south
+python-dateutil
+simplejson
+sqlparse
+hl7
+django_tables
+configobj
+-e svn+http://esphealth.org/svn/ESP/trunk/src#egg=esphealth
