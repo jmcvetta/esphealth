@@ -195,6 +195,7 @@ class Command(BaseCommand):
             new_case.save()
             new_case.events = events | trigger_events
             new_case.save()
+            log.debug('Generated new case: %s' % new_case)
         log.info('%8s new cases of type 1 diabetes' % type_1_counter)
         log.info('%8s new cases of type 2 diabetes' % type_2_counter)
         log.info('%8s patients who matched general frank diabetes criteria, but not criteria for type 1 or 2' % unknown_counter)

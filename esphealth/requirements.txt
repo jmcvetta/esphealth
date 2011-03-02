@@ -19,4 +19,4 @@ sqlparse
 hl7
 django_tables
 configobj
--e svn+http://esphealth.org/svn/ESP/trunk/src#egg=esphealth
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/esp-application#egg=esp-application
