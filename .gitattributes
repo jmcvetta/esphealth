@@ -32,12 +32,12 @@ modules/core/ESP/conf/admin.py -text
 modules/core/ESP/conf/choices.py -text
 modules/core/ESP/conf/common.py -text
 modules/core/ESP/conf/context_processors.py -text
-modules/core/ESP/conf/fixtures/conf-test-native-codes.json -text
-modules/core/ESP/conf/fixtures/icd9.json -text
-modules/core/ESP/conf/fixtures/immunization_manufacturers.json -text
+modules/core/ESP/conf/fixtures/conf-test-native-codes.json.bz2 -text
+modules/core/ESP/conf/fixtures/icd9.json.bz2 -text
+modules/core/ESP/conf/fixtures/immunization_manufacturers.json.bz2 -text
 modules/core/ESP/conf/fixtures/native_manufacturers.sql -text
 modules/core/ESP/conf/fixtures/native_vaccines.sql -text
-modules/core/ESP/conf/fixtures/vaccines.json -text
+modules/core/ESP/conf/fixtures/vaccines.json.bz2 -text
 modules/core/ESP/conf/fixtures/vaccines.sql -text
 modules/core/ESP/conf/forms.py -text
 modules/core/ESP/conf/models.py -text
@@ -56,8 +56,8 @@ modules/core/ESP/emr/admin.py -text
 modules/core/ESP/emr/choices.py -text
 modules/core/ESP/emr/data_flow_summary.py -text
 modules/core/ESP/emr/fake.py -text
-modules/core/ESP/emr/fixtures/demo.json -text
-modules/core/ESP/emr/fixtures/initial_data.json -text
+modules/core/ESP/emr/fixtures/demo.json.bz2 -text
+modules/core/ESP/emr/fixtures/initial_data.json.bz2 -text
 modules/core/ESP/emr/management/__init__.py -text
 modules/core/ESP/emr/management/commands/__init__.py -text
 modules/core/ESP/emr/management/commands/cleanup.py -text
@@ -222,7 +222,7 @@ modules/core/ESP/ss/utils.py -text
 modules/core/ESP/ss/views.py -text
 modules/core/ESP/static/__init__.py -text
 modules/core/ESP/static/admin.py -text
-modules/core/ESP/static/fixtures/initial_data.json -text
+modules/core/ESP/static/fixtures/initial_data.json.bz2 -text
 modules/core/ESP/static/models.py -text
 modules/core/ESP/static/sql/indices.postgresql.sql -text
 modules/core/ESP/static/tests.py -text
@@ -332,7 +332,7 @@ modules/core/ESP/vaers/admin.py -text
 modules/core/ESP/vaers/fake.py -text
 modules/core/ESP/vaers/fixtures/encounters.sql -text
 modules/core/ESP/vaers/fixtures/immunizations.sql -text
-modules/core/ESP/vaers/fixtures/initial_data.json -text
+modules/core/ESP/vaers/fixtures/initial_data.json.bz2 -text
 modules/core/ESP/vaers/fixtures/lab_results.sql -text
 modules/core/ESP/vaers/forms.py -text
 modules/core/ESP/vaers/heuristics.py -text
