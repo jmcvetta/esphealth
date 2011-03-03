@@ -13,8 +13,8 @@ from setuptools import setup
 from setuptools import find_packages
 
 setup(
-    name = 'Electronic Support for Public Health',
-    version = '3.0a',
+    name = 'esphealth',
+    version = '3.0',
     packages = find_packages(),
     install_requires = [
         'django >= 1.2',
