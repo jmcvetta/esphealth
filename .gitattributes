@@ -384,3 +384,6 @@ modules/application/ESP/version.txt -text
 modules/application/setup.py -text
 modules/disease-diabetes/__init__.py -text
 modules/disease-diabetes/setup.py -text
+modules/heuristic-pregnancy/__init__.py -text
+modules/heuristic-pregnancy/pregnancy.py -text
+modules/heuristic-pregnancy/setup.py -text
