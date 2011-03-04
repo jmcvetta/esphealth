@@ -10,8 +10,6 @@ modules/esphealth/ESP/assets
 modules/esphealth/ESP/conf/*.pyc
 modules/esphealth/ESP/database_password.txt
 modules/esphealth/ESP/emr/*.pyc
-modules/esphealth/ESP/esp/*.pyc
-modules/esphealth/ESP/esp/templatetags/*.pyc
 modules/esphealth/ESP/ftp_password.txt
 modules/esphealth/ESP/hef/*.pyc
 modules/esphealth/ESP/localsettings.py
