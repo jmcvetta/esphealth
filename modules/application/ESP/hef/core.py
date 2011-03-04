@@ -10,6 +10,15 @@
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# The VERSION_URI string uniquely describes this version of HEF core.  
+# It MUST be incremented whenever any core functionality is changed!
+VERSION_URI = 'https://esphealth.org/reference/hef/core/v1.0'
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 import abc
 
 from django.db import models
@@ -83,7 +92,7 @@ class BaseHeuristic(object):
         '''
     
     @abc.abstractproperty
-    def core_versions(self):
+    def core_uris(self):
         '''
         A list of one or more URIs indicating the version(s) of HEF core with 
         which this heuristic is compatible

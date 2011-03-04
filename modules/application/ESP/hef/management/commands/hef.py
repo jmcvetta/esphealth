@@ -18,6 +18,8 @@ import Queue
 import thread
 import signal
 
+from pkg_resources import iter_entry_points
+
 from django.db import connection
 from django.db import transaction
 from django.core.management.base import BaseCommand
@@ -53,12 +55,16 @@ class Command(BaseCommand):
             help='List all abstract tests'),
         make_option('--threads', action='store', dest='thread_count', default=HEF_THREAD_COUNT,
             type='int', metavar='COUNT', help='Run in COUNT threads'),
+        make_option('-n', '--new', action='store_true', dest='new'),
         )
 
     def handle(self, *args, **options):
         # TODO: We need a lockfile or some other means to prevent multiple 
         # instances running at once.
         log.debug('options: %s' % options)
+        if options['new']:
+            self.new_hef()
+            return
         # 
         # Create dispatch dictionary of abstract tests and heuristics
         #
@@ -121,6 +127,13 @@ class Command(BaseCommand):
             queue.join()
             count = counter.get()
         log.info('Generated %s total new events' % count)
+    
+    def new_hef(self):
+        ts_counter = 0
+        for entry_point in iter_entry_points(group='esphealth', name='timespanheuristic'):
+            timespan_heuristic = entry_point.load()
+            log.info('Running %s' % timespan_heuristic)
+            ts_counter += timespan_heuristic.generate_timespans()
 
 
 class ThreadedEventGenerator(threading.Thread):
