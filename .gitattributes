@@ -35,6 +35,9 @@ esphealth/share/esp-postgres.logrotate -text
 esphealth/share/ndc_codes.txt.bz2 -text svneol=unset#unset
 modules/esphealth-disease-diabetes/__init__.py -text
 modules/esphealth-disease-diabetes/setup.py -text
+modules/esphealth-heuristic-compound_random_fasting_glucose/__init__.py -text
+modules/esphealth-heuristic-compound_random_fasting_glucose/crfg.py -text
+modules/esphealth-heuristic-compound_random_fasting_glucose/setup.py -text
 modules/esphealth-heuristic-pregnancy/__init__.py -text
 modules/esphealth-heuristic-pregnancy/pregnancy.py -text
 modules/esphealth-heuristic-pregnancy/setup.py -text
