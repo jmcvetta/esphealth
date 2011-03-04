@@ -12,4 +12,5 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/application#egg=esphealth
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes#egg=disease-diabetes
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes#egg=esphealth-disease-diabetes
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-pregnancy#egg=esphealth-heuristic-pregnancy
