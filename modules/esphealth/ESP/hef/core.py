@@ -14,35 +14,17 @@
 #
 # The VERSION_URI string uniquely describes this version of HEF core.  
 # It MUST be incremented whenever any core functionality is changed!
-VERSION_URI = 'https://esphealth.org/reference/hef/core/v1.0'
+VERSION_URI = 'https://esphealth.org/reference/hef/core/1.0'
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 import abc
 
-from django.db import models
-from django.db.models import Q
-from django.db.models import F
-from django.db.models import Sum
-from django.db.models import Min
-from django.db.models import Max
-from django.contrib.contenttypes import generic
-from django.contrib.contenttypes.models import ContentType
 from django.utils.encoding import force_unicode
 from django.utils.encoding import smart_str
 
-
 from ESP.utils import log
-from ESP.utils import log_query
-from ESP.utils.utils import queryset_iterator
-from ESP.emr.models import Patient
-from ESP.emr.models import Provider
-from ESP.emr.models import Encounter
-from ESP.emr.models import Icd9
-from ESP.emr.models import LabResult
-from ESP.emr.models import LabOrder
-from ESP.emr.models import Prescription
 
 
 class EventType(object):

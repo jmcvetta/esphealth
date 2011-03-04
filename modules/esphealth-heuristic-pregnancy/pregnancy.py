@@ -11,18 +11,15 @@ Pregnancy Timespan Detector
 '''
 
 import datetime
-import optparse
 
 from django.db.models import Q
 from django.db.models import Min
-from django.core.management.base import BaseCommand
-from optparse import make_option
 
 from ESP.utils import log
 from ESP.utils import log_query
-from ESP.hef.core import BaseTimespanHeuristic
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
+from ESP.hef.core import BaseTimespanHeuristic
 from ESP.hef.models import Timespan
 
 
@@ -30,7 +27,7 @@ from ESP.hef.models import Timespan
 #
 # The VERSION_URI string uniquely describes this heuristic.
 # It MUST be incremented whenever any functionality is changed!
-VERSION_URI = 'https://esphealth.org/reference/hef/core/v1.0'
+VERSION_URI = 'https://esphealth.org/reference/hef/heuristic/pregnancy/1.0'
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -45,7 +42,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
     uri = VERSION_URI
     
     core_uris = [
-        'https://esphealth.org/reference/hef/core/v1.0',
+        'https://esphealth.org/reference/hef/core/1.0',
         ]
     
     
