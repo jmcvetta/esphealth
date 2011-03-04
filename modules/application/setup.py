@@ -15,7 +15,12 @@ from setuptools import find_packages
 setup(
     name = 'esphealth',
     version = '3.0',
-    packages = find_packages(),
+    author = 'Jason McVetta',
+    author_email = 'jason.mcvetta@heliotropi.cc',
+    description = 'Disease surveillance application',
+    license = 'LGPLv3',
+    keywords = 'disease surveillance public health epidemiology',
+    url = 'http://esphealth.org',
     install_requires = [
         'django >= 1.2',
         'south',
@@ -26,14 +31,9 @@ setup(
         'django_tables',
         'configobj',
         ],
+    packages = find_packages(exclude=['ez_setup']),
     package_data = {
         '': ['*.bz2',],
         'ui': ['*.html', '*.txt',], 
         },
-    author = 'Jason McVetta',
-    author_email = 'jason.mcvetta@heliotropi.cc',
-    description = 'Disease surveillance application',
-    license = 'LGPLv3',
-    keywords = 'disease surveillance public health epidemiology',
-    url = 'http://esphealth.org',
     )
