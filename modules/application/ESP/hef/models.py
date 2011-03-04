@@ -3,10 +3,10 @@
                           Heuristic Events Framework
                                   Data Models
 
-@author: Jason McVetta <jason.mcvetta@gmail.com>
+@author: Jason McVetta <jason.mcvetta@heliotropi.cc>
 @organization: Channing Laboratory http://www.channing.harvard.edu
 @contact: http://esphealth.org
-@copyright: (c) 2009-2010 Channing Laboratory
+@copyright: (c) 2009-2011 Channing Laboratory
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 

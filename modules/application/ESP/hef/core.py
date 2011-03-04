@@ -20,17 +20,20 @@ from django.db.models import Min
 from django.db.models import Max
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
+from django.utils.encoding import force_unicode
+from django.utils.encoding import smart_str
 
-from esp.utils import log
-from esp.utils import log_query
-from esp.utils import queryset_iterator
-from esp.emr.models import Patient
-from esp.emr.models import Provider
-from esp.emr.models import Encounter
-from esp.emr.models import Icd9
-from esp.emr.models import LabResult
-from esp.emr.models import LabOrder
-from esp.emr.models import Prescription
+
+from ESP.utils import log
+from ESP.utils import log_query
+from ESP.utils.utils import queryset_iterator
+from ESP.emr.models import Patient
+from ESP.emr.models import Provider
+from ESP.emr.models import Encounter
+from ESP.emr.models import Icd9
+from ESP.emr.models import LabResult
+from ESP.emr.models import LabOrder
+from ESP.emr.models import Prescription
 
 
 class EventType(object):
@@ -86,15 +89,38 @@ class BaseHeuristic(object):
         which this heuristic is compatible
         '''
     
+    def __str__(self):
+        return smart_str(self.name)
+    
+
+class BaseEventHeuristic(BaseHeuristic):
+    '''
+    A heuristic for generating Events from raw medical records
+    (Abstract base class)
+    '''
+    
     @abc.abstractproperty
     def event_types(self):
         '''
         A list of one or more EventType objects describing all the possible 
         event types this heuristic can generate
         '''
-    
+
     @abc.abstractmethod
     def generate_events(self):
+        '''
+        Generate Event objects from raw medical records in database
+        '''
+
+
+class BaseTimespanHeuristic(BaseHeuristic):
+    '''
+    A heuristic for generating Timespans from Events
+    (Abstract base class)
+    '''
+    
+    @abc.abstractmethod
+    def generate_timespans(self):
         '''
         Generate Event objects from raw medical records in database
         '''
