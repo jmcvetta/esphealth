@@ -20,19 +20,36 @@ from optparse import make_option
 
 from ESP.utils import log
 from ESP.utils import log_query
+from ESP.hef.core import BaseTimespanHeuristic
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
 from ESP.hef.models import Timespan
 
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# The VERSION_URI string uniquely describes this heuristic.
+# It MUST be incremented whenever any functionality is changed!
+VERSION_URI = 'https://esphealth.org/reference/hef/core/v1.0'
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 PREG_END_MARGIN = datetime.timedelta(days=20)
 
 
-class Command(BaseCommand):
+class PregnancyHeuristic(BaseTimespanHeuristic):
     
-    help = 'Generate pregnancy timespans'
+    name = 'pregnancy'
     
-    def handle(self, *args, **options):
+    uri = VERSION_URI
+    
+    core_uris = [
+        'https://esphealth.org/reference/hef/core/v1.0',
+        ]
+    
+    
+    def generate_timespans(self):
         #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #
         # Initialize
@@ -283,3 +300,4 @@ class Command(BaseCommand):
             log.debug('New pregnancy %s by %s (patient %s):  %s - %s' % (new_preg.pk, pattern, patient.pk, new_preg.start_date, new_preg.end_date))
         return 
             
+pregnancy_heuristic = PregnancyHeuristic()
