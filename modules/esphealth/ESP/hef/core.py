@@ -21,10 +21,12 @@ VERSION_URI = 'https://esphealth.org/reference/hef/core/1.0'
 
 import abc
 
+from django.db.models import Q
 from django.utils.encoding import force_unicode
 from django.utils.encoding import smart_str
 
 from ESP.utils import log
+from ESP.hef.models import Event
 
 
 class EventType(object):
@@ -102,6 +104,30 @@ class BaseEventHeuristic(BaseHeuristic):
         '''
         Generate Event objects from raw medical records in database
         '''
+    
+    @property
+    def event_uri_q(self):
+        '''
+        Returns a Q object to select events related to this heuristic based 
+        on their URI.
+        '''
+        q_obj = None
+        for et in self.event_types:
+            if q_obj:
+                q_obj |= Q(uri=et.uri)
+            else:
+                q_obj = Q(uri=et.uri)
+        return q_obj
+    
+    @property
+    def bound_record_q(self):
+        '''
+        Returns a Q object to select EMR records which are bound to events 
+        related to this heuristic.
+        '''
+        event_qs = Event.objects.filter(self.event_uri_q)
+        q_obj = Q(tags__event__in=event_qs)
+        return q_obj
 
 
 class BaseTimespanHeuristic(BaseHeuristic):
