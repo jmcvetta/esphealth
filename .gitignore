@@ -2,6 +2,7 @@
 /*.pyo
 /.project
 /.pydevproject
+esphealth/*.egg-info
 modules/esphealth/ESP/*.db
 modules/esphealth/ESP/*.pyc
 modules/esphealth/ESP/.ropeproject
