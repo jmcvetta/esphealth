@@ -15,8 +15,8 @@ from setuptools import setup
 from setuptools import find_packages
 
 setup(
-    name = 'esp-disease-diabetes',
-    version = '1a',
+    name = 'esphealth-disease-diabetes',
+    version = '1.0',
     author = 'Jason McVetta',
     author_email = 'jason.mcvetta@heliotropi.cc',
     description = 'Diabetes disease definition module for ESP Health application',
