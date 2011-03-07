@@ -109,7 +109,6 @@ modules/esphealth/ESP/hef/management/__init__.py -text
 modules/esphealth/ESP/hef/management/commands/__init__.py -text
 modules/esphealth/ESP/hef/management/commands/hef.py -text
 modules/esphealth/ESP/hef/management/commands/hef_load_defaults.py -text
-modules/esphealth/ESP/hef/management/commands/pregnancy.py -text
 modules/esphealth/ESP/hef/migrations/0001_initial.py -text
 modules/esphealth/ESP/hef/migrations/0002_new_schema_no_constraints.py -text
 modules/esphealth/ESP/hef/migrations/0003_legacy_heuristics.py -text
