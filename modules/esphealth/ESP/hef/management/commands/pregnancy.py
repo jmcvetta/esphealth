@@ -170,7 +170,6 @@ class Command(BaseCommand):
         else:
             comp_date = enc.date
         q_obj = Q(name__in='pregnancy')
-        q_obj = ~Q(pattern='ICD9_ONLY')
         q_obj &= Q(patient=enc.patient)
         q_obj &= Q(start_date__lte=comp_date)
         q_obj &= Q(end_date__gte=comp_date)
@@ -245,13 +244,13 @@ class Command(BaseCommand):
             #
             end_encs = self.preg_end_encounters.filter(patient=patient, date__gte=enc.date, 
                 date__lte=(enc.date + datetime.timedelta(days=300)) )
-            if end_encs: 
+            if end_encs:  # Plausible end date, so start 280 days before that
                 end_date = end_encs.aggregate(end_date=Min('date'))['end_date']
                 start_date = end_date - datetime.timedelta(days=280)
                 pattern = 'ICD9_EOP' # EOP = End of Pregnancy
-            else: # There is no plausible end date for this pregnancy, so we create a mini-pregnancy
+            else:  # No plausible end date, so assume 270 days after start date
                 start_date = enc.date - datetime.timedelta(days=15)
-                end_date =  enc.date + datetime.timedelta(days=270)
+                end_date =  start_date + datetime.timedelta(days=280)
                 pattern = 'ICD9_ONLY'
             #
             # Create Timespans
@@ -269,7 +268,7 @@ class Command(BaseCommand):
                 patient = enc.patient,
                 start_date = end_date,
                 end_date = end_date + datetime.timedelta(days=120),
-                pattern = 'ICD9_EOP_+_120_days',
+                pattern = '%s+_120_days' % pattern,
                 )
             new_postpartum.save()
             #
