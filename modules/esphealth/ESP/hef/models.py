@@ -1254,7 +1254,8 @@ class Timespan(models.Model):
     '''
     A condition, such as pregnancy, which occurs over a defined span of time.  
     '''   
-    name = models.SlugField(max_length=128, null=False, blank=False, db_index=True)
+    name = models.SlugField('Common name of this type of timespan', max_length=127, blank=False, db_index=True)
+    uri = models.CharField('URI for this type of timespan', max_length=255, blank=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False)
     start_date = models.DateField(blank=False, db_index=True)
     end_date = models.DateField(blank=False, db_index=True)
