@@ -216,6 +216,11 @@ class Command(BaseCommand):
                 end_date = edd,
                 pattern = 'EDD',
                 )
+            new_preg.save() # Must save before adding M2M relations
+            new_preg.encounters = self.all_preg_encounters.filter(patient=patient, date__gte=enc_start, date__lte=enc_end)
+            new_preg.encounters.add(enc) # Add this one, in case it is dated after edd
+            new_preg.save()
+            log.debug('New pregnancy: %s' % new_preg)
             new_postpartum = Timespan(
                 name = 'postpartum',
                 patient = enc.patient,
@@ -223,10 +228,6 @@ class Command(BaseCommand):
                 end_date = edd + datetime.timedelta(days=120),
                 pattern = 'EDD_+_120_days',
                 )
-            new_preg.save() # Must save before adding M2M relations
-            new_preg.encounters = self.all_preg_encounters.filter(patient=patient, date__gte=enc_start, date__lte=enc_end)
-            new_preg.encounters.add(enc) # Add this one, in case it is dated after edd
-            new_preg.save()
             new_postpartum.save()
             log.debug('New pregnancy %s by EDD (patient %s):  %s - %s' % (new_preg.pk, patient.pk, new_preg.start_date, new_preg.end_date))
         return
@@ -252,6 +253,11 @@ class Command(BaseCommand):
                 start_date = enc.date - datetime.timedelta(days=15)
                 end_date =  start_date + datetime.timedelta(days=280)
                 pattern = 'ICD9_ONLY'
+            if start_date > enc.date:
+                enc_start = enc.date
+            else:
+                enc_start = start_date
+            enc_end = end_date + PREG_END_MARGIN
             #
             # Create Timespans
             #
@@ -263,6 +269,10 @@ class Command(BaseCommand):
                 pattern = pattern,
                 )
             new_preg.save() # Must save before adding many-to-many objects
+            new_preg.encounters = self.all_preg_encounters.filter(patient=patient, date__gte=enc_start, date__lte=enc_end)
+            new_preg.encounters.add(enc) # Add this one, in case it is dated after edd
+            new_preg.save()
+            log.debug('New pregnancy: %s' % new_preg)
             new_postpartum = Timespan(
                 name = 'postpartum',
                 patient = enc.patient,
