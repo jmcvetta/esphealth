@@ -53,7 +53,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         preg_icd9_q = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
-        self.bound_q = Q(timespan__name='pregnancy')
+        self.ignore_bound_q = ~Q(timespan__name='pregnancy')
         has_edd_q = Q(edd__isnull=False)
         self.edd_encounters = Encounter.objects.filter(has_edd_q).order_by('date')
         log_query('Pregnancy encounters by edd', self.edd_encounters)
@@ -205,7 +205,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         # edd
         #
-        for enc in self.edd_encounters.filter(patient=patient).exclude(self.bound_q):
+        for enc in self.edd_encounters.filter(patient=patient).filter(self.ignore_bound_q):
             if self.check_existing(enc): # Oops, this one overlaps an existing pregnancy
                 continue
             # edd is the taken from the chronologically most recent encounter that falls within 
@@ -254,7 +254,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         Generates pregnancy timespans for a given patient, based on a
         combination of encounters with pregnancy ICD9s and end-of-pregnancy ICD9s
         '''
-        for enc in self.icd9_encounters.filter(patient=patient).exclude(self.bound_q):
+        for enc in self.icd9_encounters.filter(patient=patient).filter(self.ignore_bound_q):
             if self.check_existing(enc): # Oops, this one overlaps an existing pregnancy
                 continue
             #
