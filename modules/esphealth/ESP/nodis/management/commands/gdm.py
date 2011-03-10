@@ -564,5 +564,14 @@ class Command(BaseCommand):
                         'referral_to_nutrition': bool(nutrition_referral),
                         }
                 values.update(patient_values)
+                # Clean data before output
+                for key in values:
+                    val = values[key]
+                    if val == None:
+                        val = ''
+                    elif val == True:
+                        val = 1
+                    elif val == False:
+                        val = 0
                 writer.writerow(values)
     
