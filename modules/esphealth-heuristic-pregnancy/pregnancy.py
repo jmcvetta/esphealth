@@ -32,6 +32,7 @@ VERSION_URI = 'https://esphealth.org/reference/hef/heuristic/pregnancy/1.0'
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+PREG_START_MARGIN = datetime.timedelta(days=20)
 PREG_END_MARGIN = datetime.timedelta(days=20)
 
 
@@ -183,10 +184,12 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             comp_date = enc.edd
         else:
             comp_date = enc.date
+        start_comp_date = comp_date + PREG_START_MARGIN
+        end_comp_date = comp_date - PREG_END_MARGIN
         q_obj = Q(name='pregnancy')
         q_obj &= Q(patient=enc.patient)
-        q_obj &= Q(start_date__lte=comp_date)
-        q_obj &= Q(end_date__gte=comp_date)
+        q_obj &= Q(start_date__lte=start_comp_date)
+        q_obj &= Q(end_date__gte=end_comp_date)
         spans = Timespan.objects.filter(q_obj)
         if spans:
             ts = spans[0]
