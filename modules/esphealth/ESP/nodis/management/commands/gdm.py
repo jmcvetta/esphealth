@@ -567,11 +567,12 @@ class Command(BaseCommand):
                 # Clean data before output
                 for key in values:
                     val = values[key]
-                    if val == None:
+                    if val in (None, 'None'):
                         val = ''
-                    elif val == True:
+                    elif val in (True, 'True'):
                         val = 1
-                    elif val == False:
+                    elif val in (False, 'False'):
                         val = 0
+                    values[key] = val
                 writer.writerow(values)
     
