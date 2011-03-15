@@ -944,6 +944,21 @@ LabResultRangeHeuristic.objects.get_or_create(
     maximum_match_type = 'lte',
     )
 
+
+gcrf_result = AbstractLabTest.objects.get_or_create(
+    name = 'glucose_compound_random_fasting_result',
+    defaults = {
+        'verbose_name':  'Compound Random/Fasting glucose test, result component',
+        }
+    )[0]
+    
+gcrf_flag = AbstractLabTest.objects.get_or_create(
+    name = 'glucose_compound_random_fasting_flag',
+    defaults = {
+        'verbose_name':  'Compound Random/Fasting glucose test, flag component',
+        }
+    )[0]
+
 #-------------------------------------------------------------------------------
 #
 # Oral Glucose Tolerance Test 50g (OGTT50)
