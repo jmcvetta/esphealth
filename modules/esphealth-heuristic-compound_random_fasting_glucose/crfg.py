@@ -22,7 +22,8 @@ from optparse import make_option
 from ESP.utils import log
 from ESP.utils import log_query
 from ESP.hef.core import BaseEventHeuristic
-from ESP.hef.models import AbstractLabTest
+from ESP.hef.core import EventType
+from ESP.hef.core import AbstractLabTest
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
 from ESP.hef.models import Timespan
@@ -32,52 +33,56 @@ from ESP.hef.models import Timespan
 #
 # The VERSION_URI string uniquely describes this heuristic.
 # It MUST be incremented whenever any functionality is changed!
-VERSION_URI = 'https://esphealth.org/reference/hef/heuristic/compound_random_fasting_glucose/1.0'
+VERSION_URI = 'urn:x-esphealth:heuristic:compound-random-fasting-glucose:v1'
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
-crfg_test = AbstractLabTest.objects.get_or_create(
-    name = 'compound_random_fasting_glucose',
-    defaults = {
-        'verbose_name': 'Compound random/fasting glucose test',
-        },
-    )[0]
+cfrg_result = AbstractLabTest(
+    name = 'crfg_result',
+    uri = 'urn:x-esphealth:abstractlabtest:compound-random-fasting-glucose-result:v1'
+    )
+
+cfrg_flag = AbstractLabTest(
+    name = 'crfg_flag',
+    uri = 'urn:x-esphealth:abstractlabtest:compound-random-fasting-glucose-flag:v1'
+    )
+
 
 class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
     
-    name = 'compound_random_fasting_glucose'
+    name = 'crf_glucose'
     
     uri = VERSION_URI
     
     core_uris = [
-        'https://esphealth.org/reference/hef/core/1.0',
+        'urn:x-esphealth:core:v1',
         ]
     
     __rand_pos = EventType(
         name = 'glucose_random_positive',
-        uri = 'https://esphealth.org/reference/event/lab/glucose_random/positive/1.0',
+        uri = 'urn:x-esphealth:event:labresult:glucose-random:v1:positive',
         )
     __rand_neg = EventType(
         name = 'glucose_random_negative',
-        uri = 'https://esphealth.org/reference/event/lab/glucose_random/negative/1.0',
+        uri = 'urn:x-esphealth:event:labresult:glucose-random:v1:negative',
         )
     __rand_ind = EventType(
         name = 'glucose_random_indeterminate',
-        uri = 'https://esphealth.org/reference/event/lab/glucose_random/indeterminate/1.0',
+        uri = 'urn:x-esphealth:event:labresult:glucose-random:v1:indeterminate',
         )
     __fast_pos = EventType(
         name = 'glucose_fasting_positive',
-        uri = 'https://esphealth.org/reference/event/lab/glucose_fasting/positive/1.0',
+        uri = 'urn:x-esphealth:event:labresult:glucose-fasting:v1:positive',
         )
     __fast_neg = EventType(
         name = 'glucose_fasting_negative',
-        uri = 'https://esphealth.org/reference/event/lab/glucose_fasting/negative/1.0',
+        uri = 'urn:x-esphealth:event:labresult:glucose-fasting:v1:negative',
         )
     __fast_ind = EventType(
         name = 'glucose_fasting_indeterminate',
-        uri = 'https://esphealth.org/reference/event/lab/glucose_fasting/indeterminate/1.0',
+        uri = 'urn:x-esphealth:event:labresult:glucose-fasting:v1:indeterminate',
         )
     
     def event_types(self):
