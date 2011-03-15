@@ -307,4 +307,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             new_postpartum.save()
         return 
             
-pregnancy_heuristic = PregnancyHeuristic()
+
+def get_timespan_heuristics():
+    return [
+        PregnancyHeuristic(),
+        ]

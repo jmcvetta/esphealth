@@ -63,7 +63,7 @@ class Command(BaseCommand):
         # instances running at once.
         log.debug('options: %s' % options)
         if options['new']:
-            self.new_hef()
+            self.new_hef(args, options)
             return
         # 
         # Create dispatch dictionary of abstract tests and heuristics
@@ -128,12 +128,24 @@ class Command(BaseCommand):
             count = counter.get()
         log.info('Generated %s total new events' % count)
     
-    def new_hef(self):
+    def new_hef(self, args, options):
+        if options['list']:
+            return self.list()
         ts_counter = 0
         for entry_point in iter_entry_points(group='esphealth', name='timespanheuristic'):
             timespan_heuristic = entry_point.load()
             log.info('Running %s' % timespan_heuristic)
             ts_counter += timespan_heuristic.generate_timespans()
+    
+    def list(self):
+        heuristics = set()
+        for entry_point in iter_entry_points(group='esphealth', name='event_heuristics'):
+            factory = entry_point.load()
+            heuristics.update(factory())
+        for entry_point in iter_entry_points(group='esphealth', name='timespan_heuristics'):
+            factory = entry_point.load()
+            heuristics.update(factory())
+        print heuristics
 
 
 class ThreadedEventGenerator(threading.Thread):

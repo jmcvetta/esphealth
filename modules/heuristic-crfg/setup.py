@@ -27,8 +27,7 @@ setup(
         ],
     entry_points = '''
         [esphealth]
-        heuristic = crfg.crfg
-        abstractlabtest = crfg.crfg_flag
-        abstractlabtest = crfg.crfg_result
+        event_heuristics = crfg:get_heuristics
+        abstract_lab_tests = crfg:get_tests
     '''
     )

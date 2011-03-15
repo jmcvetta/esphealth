@@ -248,3 +248,58 @@ class DiagnosisHeuristic(BaseHeuristic):
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (encounters.count(), self.name))
         return encounters.count()
+
+
+class AbstractLabTest(object):
+    '''
+    Represents an abstract type of lab test
+    '''
+    
+    def __init__(self, name, uri):
+        '''
+        @param name: Common English name for this ALT
+        @type name:  String
+        @param uri:  URI that uniquely describes this ALT
+        @type uri:   String
+        '''
+        assert name and uri
+        self.name = name
+        self.uri = uri
+        
+        
+    def __unicode__(self):
+        return u'Abstract Lab Test - %s' % self.name
+    
+    def __get_lab_results(self):
+        result = LabResult.objects.none()
+        for cm in self.labtestmap_set.filter( Q(record_type='result') | Q(record_type='both') ):
+            result |= LabResult.objects.filter(cm.lab_results_q_obj)
+        return result
+    lab_results = property(__get_lab_results)
+    
+    def __get_lab_orders(self):
+        result = LabOrder.objects.none()
+        for cm in self.labtestmap_set.filter( Q(record_type='order') | Q(record_type='both') ):
+            result |= LabOrder.objects.filter(cm.lab_orders_q_obj)
+        log_query('Lab Orders for %s' % self.name, result)
+        return result
+    lab_orders = property(__get_lab_orders)
+    
+    def __get_heuristic_set(self):
+        heuristic_set = set(self.laborderheuristic_set.all())
+        heuristic_set |= set(self.labresultanyheuristic_set.all())
+        heuristic_set |= set(self.labresultpositiveheuristic_set.all())
+        heuristic_set |= set(self.labresultratioheuristic_set.all())
+        heuristic_set |= set(self.labresultrangeheuristic_set.all())
+        heuristic_set |= set(self.labresultfixedthresholdheuristic_set.all())
+        return heuristic_set
+    heuristic_set = property(__get_heuristic_set)
+
+    def generate_events(self):
+        count = 0
+        log.info('Generating events for %s' % self)
+        for heuristic in self.heuristic_set:
+            count += heuristic.generate_events()
+        return count
+
+

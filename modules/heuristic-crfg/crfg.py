@@ -101,4 +101,7 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
     
     
 
-crfg = CompoundRandomFastingGlucoseHeuristic()
+def get_heuristics():
+    return [
+        CompoundRandomFastingGlucoseHeuristic(),
+        ]

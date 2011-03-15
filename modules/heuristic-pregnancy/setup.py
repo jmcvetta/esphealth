@@ -27,6 +27,6 @@ setup(
         ],
     entry_points = '''
         [esphealth]
-        timespanheuristic = pregnancy:pregnancy_heuristic
+        timespan_heuristics = pregnancy:get_timespan_heuristics
     '''
     )
