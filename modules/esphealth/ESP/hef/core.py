@@ -26,6 +26,12 @@ from django.utils.encoding import force_unicode
 from django.utils.encoding import smart_str
 
 from ESP.utils import log
+from ESP.utils import log_query
+from ESP.utils.utils import queryset_iterator
+from ESP.static.models import Icd9
+from ESP.emr.models import Encounter
+from ESP.emr.models import LabResult
+from ESP.emr.models import LabOrder
 from ESP.hef.models import Event
 
 
@@ -141,3 +147,104 @@ class BaseTimespanHeuristic(BaseHeuristic):
         '''
         Generate Event objects from raw medical records in database
         '''
+
+class Icd9Query(object):
+    '''
+    A query for selecting encounters based on ICD9 codes
+    '''
+    
+    def __init__(self, exact, starts_with, ends_with, contains):
+        '''
+        @param exact: Encounter must include this exact ICD9 code
+        @type exact:  String
+        #
+        # We use "starts_with" instead of Django-style "startswith", to
+        # discourage people from thinking this argument is case-sensistive,
+        # like a Django startswith query would be.
+        #
+        # Let's hope we never need to deal with case-sensitive ICD9 codes.
+        #
+        @param starts_with: Encounter must include an ICD9 code starting with this string
+        @type exact:  String
+        @param ends_with: Encounter must include an ICD9 code ending with this string
+        @type exact:  String
+        @param contains: Encounter must include an ICD9 code containing this string
+        @type exact:  String
+        '''
+        assert (exact or starts_with or ends_with or contains) # Sanity check
+        self.exact = exact
+        self.starts_with = starts_with
+        self.ends_with = ends_with
+        self.contains = contains
+        
+    
+    def __get_icd9_q_obj(self):
+        '''
+        Returns a Q object suitable for selecting ICD9 objects that match this query
+        '''
+        q_obj = Q() # Null Q object
+        if self.exact:
+            q_obj &= Q(code__iexact=self.exact)
+        if self.starts_with:
+            q_obj &= Q(code__istartswith=self.starts_with)
+        if self.ends_with:
+            q_obj &= Q(code__iendswith=self.ends_with)
+        if self.contains:
+            q_obj &= Q(code__icontains=self.contains)
+        return q_obj
+    icd9_q_obj = property(__get_icd9_q_obj)
+    
+    def __get_encounters(self):
+        codes = Icd9.objects.filter(self.icd9_q_obj)
+        return Encounter.objects.filter(icd9_codes__in=codes)
+    encounters = property(__get_encounters)
+
+    def __unicode__(self):
+        return u'%s' % self.verbose_name
+    
+    def __get_verbose_name(self):
+        return 'ICD9 Query: %s | %s | %s | %s' % (self.exact, self.starts_with, self.ends_with, self.contains),
+    verbose_name = property(__get_verbose_name)
+
+
+class DiagnosisHeuristic(BaseHeuristic):
+    '''
+    A heuristic for detecting events based on one or more ICD9 diagnosis codes
+    from a physician encounter.
+    '''
+
+    def __get_encounters(self):
+        encs = Encounter.objects.none()
+        for icd9_query in self.icd9query_set.all():
+            encs |= icd9_query.encounters
+        log_query('Encounters for %s' % self, encs)
+        return encs
+    encounters = property(__get_encounters)
+    
+    def __get_icd9_q_obj(self):
+        q_obj = self.icd9query_set.all()[0].icd9_q_obj
+        for icd9_query in self.icd9query_set.all()[1:]:
+            q_obj |= icd9_query.icd9_q_obj
+        return q_obj
+    icd9_q_obj = property(__get_icd9_q_obj)
+    
+    def generate_events(self):
+        icd9s = Icd9.objects.filter(self.icd9_q_obj)
+        encounters = Encounter.objects.filter(icd9_codes__in=icd9s)
+        encounters = encounters.exclude(tags__event__event_type__heuristic=self)
+        log_query('Encounters for %s' % self.name, encounters)
+        log.info('Generating events for "%s"' % self.verbose_name)
+        event_type = EventType.objects.get(name='dx--%s' % self.name)
+        for enc in queryset_iterator(encounters):
+            new_event = Event(
+                name = self.name,
+                uri = self.uri,
+                patient = enc.patient,
+                date = enc.date,
+                provider = enc.provider,
+                )
+            new_event.save()
+            new_event.tag_object(enc)
+            log.debug('Saved new event: %s' % new_event)
+        log.info('Generated %s new events for %s' % (encounters.count(), self.name))
+        return encounters.count()
