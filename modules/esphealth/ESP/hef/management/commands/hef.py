@@ -141,10 +141,7 @@ class Command(BaseCommand):
             ts_counter += timespan_heuristic.generate_timespans()
     
     def list(self):
-        heuristics = BaseHeuristic.get_all()
-        heuristics = list(heuristics)
-        heuristics.sort(key = lambda h: h.name)
-        for h in heuristics:
+        for h in BaseHeuristic.get_all():
             print h.name
 
 

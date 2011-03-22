@@ -97,11 +97,13 @@ class BaseHeuristic(object):
     def get_all(cls):
         '''
         @return: All known heuristics of any type
-        @rtype:  Set
+        @rtype:  List
         '''
         heuristics = set()
         heuristics.update(BaseEventHeuristic.get_all())
         heuristics.update(BaseTimespanHeuristic.get_all())
+        heuristics = list(heuristics)
+        heuristics.sort(key = lambda h: h.name)
         return heuristics
 
 
@@ -152,12 +154,14 @@ class BaseEventHeuristic(BaseHeuristic):
     def get_all(cls):
         '''
         @return: All known event heuristics
-        @rtype:  Set
+        @rtype:  List
         '''
         heuristics = set()
         for entry_point in iter_entry_points(group='esphealth', name='event_heuristics'):
             factory = entry_point.load()
             heuristics.update(factory())
+        heuristics = list(heuristics)
+        heuristics.sort(key = lambda h: h.name)
         return heuristics
 
 
@@ -177,12 +181,14 @@ class BaseTimespanHeuristic(BaseHeuristic):
     def get_all(cls):
         '''
         @return: All known timespan heuristics
-        @rtype:  Set
+        @rtype:  List
         '''
         heuristics = set()
         for entry_point in iter_entry_points(group='esphealth', name='timespan_heuristics'):
             factory = entry_point.load()
             heuristics.update(factory())
+        heuristics = list(heuristics)
+        heuristics.sort(key = lambda h: h.name)
         return heuristics
 
 
