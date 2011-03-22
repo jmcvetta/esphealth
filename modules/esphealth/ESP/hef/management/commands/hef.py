@@ -26,6 +26,9 @@ from django.core.management.base import BaseCommand
 from optparse import make_option
 
 from ESP.settings import HEF_THREAD_COUNT
+from ESP.hef.core import BaseHeuristic
+from ESP.hef.core import BaseEventHeuristic
+from ESP.hef.core import BaseTimespanHeuristic
 from ESP.hef.models import AbstractLabTest
 from ESP.hef.models import DiagnosisHeuristic
 from ESP.hef.models import PrescriptionHeuristic
@@ -138,14 +141,11 @@ class Command(BaseCommand):
             ts_counter += timespan_heuristic.generate_timespans()
     
     def list(self):
-        heuristics = set()
-        for entry_point in iter_entry_points(group='esphealth', name='event_heuristics'):
-            factory = entry_point.load()
-            heuristics.update(factory())
-        for entry_point in iter_entry_points(group='esphealth', name='timespan_heuristics'):
-            factory = entry_point.load()
-            heuristics.update(factory())
-        print heuristics
+        heuristics = BaseHeuristic.get_all()
+        heuristics = list(heuristics)
+        heuristics.sort(key = lambda h: h.name)
+        for h in heuristics:
+            print h.name
 
 
 class ThreadedEventGenerator(threading.Thread):

@@ -21,6 +21,8 @@ VERSION_URI = 'https://esphealth.org/reference/hef/core/1.0'
 
 import abc
 
+from pkg_resources import iter_entry_points
+
 from django.db.models import Q
 from django.utils.encoding import force_unicode
 from django.utils.encoding import smart_str
@@ -91,6 +93,17 @@ class BaseHeuristic(object):
     def __str__(self):
         return smart_str(self.name)
     
+    @classmethod
+    def get_all(cls):
+        '''
+        @return: All known heuristics of any type
+        @rtype:  Set
+        '''
+        heuristics = set()
+        heuristics.update(BaseEventHeuristic.get_all())
+        heuristics.update(BaseTimespanHeuristic.get_all())
+        return heuristics
+
 
 class BaseEventHeuristic(BaseHeuristic):
     '''
@@ -134,6 +147,18 @@ class BaseEventHeuristic(BaseHeuristic):
         event_qs = Event.objects.filter(self.event_uri_q)
         q_obj = Q(tags__event__in=event_qs)
         return q_obj
+    
+    @classmethod
+    def get_all(cls):
+        '''
+        @return: All known event heuristics
+        @rtype:  Set
+        '''
+        heuristics = set()
+        for entry_point in iter_entry_points(group='esphealth', name='event_heuristics'):
+            factory = entry_point.load()
+            heuristics.update(factory())
+        return heuristics
 
 
 class BaseTimespanHeuristic(BaseHeuristic):
@@ -147,6 +172,19 @@ class BaseTimespanHeuristic(BaseHeuristic):
         '''
         Generate Event objects from raw medical records in database
         '''
+    
+    @classmethod
+    def get_all(cls):
+        '''
+        @return: All known timespan heuristics
+        @rtype:  Set
+        '''
+        heuristics = set()
+        for entry_point in iter_entry_points(group='esphealth', name='timespan_heuristics'):
+            factory = entry_point.load()
+            heuristics.update(factory())
+        return heuristics
+
 
 class Icd9Query(object):
     '''
