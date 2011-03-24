@@ -11,26 +11,14 @@ class Migration(SchemaMigration):
         # Removing unique constraint on 'CodeMap', fields ['native_code', 'heuristic']
         db.delete_unique('conf_codemap', ['native_code', 'heuristic'])
 
-        # Deleting field 'CodeMap.heuristic'
-        db.rename_column('conf_codemap', 'heuristic', 'heuristic_uri')
-
-        # Adding field 'CodeMap.heuristic_uri'
-        db.alter_column('conf_codemap', 'heuristic_uri', self.gf('django.db.models.fields.SlugField')(default='legacy', max_length=255, db_index=True))
-
-        # Adding unique constraint on 'CodeMap', fields ['native_code', 'heuristic_uri']
-        db.create_unique('conf_codemap', ['native_code', 'heuristic_uri'])
+        # Adding field 'CodeMap.test_uri'
+        db.add_column('conf_codemap', 'test_uri', self.gf('django.db.models.fields.TextField')(default='legacy', db_index=True), keep_default=False)
 
 
     def backwards(self, orm):
         
-        # Removing unique constraint on 'CodeMap', fields ['native_code', 'heuristic_uri']
-        db.delete_unique('conf_codemap', ['native_code', 'heuristic_uri'])
-
-        # User chose to not deal with backwards NULL issues for 'CodeMap.heuristic'
-        raise RuntimeError("Cannot reverse this migration. 'CodeMap.heuristic' and its values cannot be restored.")
-
-        # Deleting field 'CodeMap.heuristic_uri'
-        db.delete_column('conf_codemap', 'heuristic_uri')
+        # Deleting field 'CodeMap.test_uri'
+        db.delete_column('conf_codemap', 'test_uri')
 
         # Adding unique constraint on 'CodeMap', fields ['native_code', 'heuristic']
         db.create_unique('conf_codemap', ['native_code', 'heuristic'])
@@ -38,8 +26,8 @@ class Migration(SchemaMigration):
 
     models = {
         'conf.codemap': {
-            'Meta': {'unique_together': "(['heuristic_uri', 'native_code'],)", 'object_name': 'CodeMap'},
-            'heuristic_uri': ('django.db.models.fields.SlugField', [], {'max_length': '255', 'db_index': 'True'}),
+            'Meta': {'object_name': 'CodeMap'},
+            'heuristic': ('django.db.models.fields.SlugField', [], {'max_length': '255', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'native_code': ('django.db.models.fields.CharField', [], {'max_length': '100', 'db_index': 'True'}),
             'native_name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
@@ -50,6 +38,7 @@ class Migration(SchemaMigration):
             'snomed_ind': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
             'snomed_neg': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
             'snomed_pos': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
+            'test_uri': ('django.db.models.fields.TextField', [], {'db_index': 'True'}),
             'threshold': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'})
         },
         'conf.conditionconfig': {
