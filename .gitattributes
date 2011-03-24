@@ -44,6 +44,7 @@ modules/esphealth/ESP/conf/admin.py -text
 modules/esphealth/ESP/conf/choices.py -text
 modules/esphealth/ESP/conf/common.py -text
 modules/esphealth/ESP/conf/context_processors.py -text
+modules/esphealth/ESP/conf/dev_maps.py -text
 modules/esphealth/ESP/conf/fixtures/conf-test-native-codes.json.bz2 -text svneol=unset#unset
 modules/esphealth/ESP/conf/fixtures/icd9.json.bz2 -text svneol=unset#unset
 modules/esphealth/ESP/conf/fixtures/immunization_manufacturers.json.bz2 -text svneol=unset#unset
