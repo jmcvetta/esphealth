@@ -27,7 +27,7 @@ from ESP.emr.choices import DATA_SOURCE
 from ESP.emr.choices import LOAD_STATUS
 from ESP.emr.choices import LAB_ORDER_TYPES
 from ESP.conf.common import EPOCH
-from ESP.conf.models import CodeMap
+#from ESP.conf.models import CodeMap
 from ESP.static.models import Loinc
 from ESP.static.models import Ndc
 from ESP.static.models import Icd9, Allergen

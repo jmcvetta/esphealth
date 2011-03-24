@@ -39,16 +39,6 @@ VERSION_URI = 'urn:x-esphealth:heuristic:compound-random-fasting-glucose:v1'
 
 
 
-cfrg_result = AbstractLabTest(
-    name = 'crfg_result',
-    uri = 'urn:x-esphealth:abstractlabtest:compound-random-fasting-glucose-result:v1'
-    )
-
-cfrg_flag = AbstractLabTest(
-    name = 'crfg_flag',
-    uri = 'urn:x-esphealth:abstractlabtest:compound-random-fasting-glucose-flag:v1'
-    )
-
 
 class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
     
@@ -85,6 +75,17 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
         uri = 'urn:x-esphealth:event:labresult:glucose-fasting:v1:indeterminate',
         )
     
+    result_test = AbstractLabTest(
+    	name = 'crfg_result',
+    	uri = 'urn:x-esphealth:abstractlabtest:glucose-compound-random-fasting-result:v1'
+    	)
+
+    flag_test = AbstractLabTest(
+    	name = 'crfg_flag',
+    	uri = 'urn:x-esphealth:abstractlabtest:glucose-compound-random-fasting-flag:v1'
+    	)
+
+    
     def event_types(self):
         return [
             self.__rand_pos,
@@ -96,8 +97,10 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
             ]
     
     def generate_events(self):
-        for lab in self.test.lab_results.exclude(self.bound_record_q):
-            print lab
+        for res in self.result_test.lab_results:
+            print res
+        return 0
+        
     
     
 

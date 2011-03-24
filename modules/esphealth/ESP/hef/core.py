@@ -31,6 +31,7 @@ from ESP.utils import log
 from ESP.utils import log_query
 from ESP.utils.utils import queryset_iterator
 from ESP.static.models import Icd9
+from ESP.conf.models import LabTestMap
 from ESP.emr.models import Encounter
 from ESP.emr.models import LabResult
 from ESP.emr.models import LabOrder
@@ -316,15 +317,15 @@ class AbstractLabTest(object):
     
     def __get_lab_results(self):
         result = LabResult.objects.none()
-        for cm in self.labtestmap_set.filter( Q(record_type='result') | Q(record_type='both') ):
-            result |= LabResult.objects.filter(cm.lab_results_q_obj)
+        for testmap in LabTestMap.objects.filter(test_uri = self.uri).filter( Q(record_type='result') | Q(record_type='both') ):
+            result |= LabResult.objects.filter(testmap.lab_results_q_obj)
         return result
     lab_results = property(__get_lab_results)
     
     def __get_lab_orders(self):
         result = LabOrder.objects.none()
-        for cm in self.labtestmap_set.filter( Q(record_type='order') | Q(record_type='both') ):
-            result |= LabOrder.objects.filter(cm.lab_orders_q_obj)
+        for testmap in LabTestMap.objects.filter(test_uri = self.uri).filter( Q(record_type='order') | Q(record_type='both') ):
+            result |= LabOrder.objects.filter(testmap.lab_orders_q_obj)
         log_query('Lab Orders for %s' % self.name, result)
         return result
     lab_orders = property(__get_lab_orders)

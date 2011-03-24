@@ -12,6 +12,9 @@
 '''
 
 
+from django.db import models
+from django.db.models import Q
+
 from ESP.conf.choices import DEST_TYPES
 from ESP.conf.choices import EMR_SOFTWARE
 from ESP.conf.choices import FORMAT_TYPES
@@ -20,25 +23,149 @@ from ESP.static.models import Icd9
 from ESP.static.models import ImmunizationManufacturer
 from ESP.static.models import Loinc
 from ESP.static.models import Vaccine
-from django.db import models
+
+POSITIVE_STRINGS = ['reactiv', 'pos', 'detec', 'confirm']
+NEGATIVE_STRINGS = ['non', 'neg', 'not det', 'nr']
+INDETERMINATE_STRINGS = ['indeterminate', 'not done', 'tnp']
+
+POS_NEG_IND = [
+    ('pos', 'Positive'),
+    ('neg', 'Negative'),
+    ('ind', 'Indeterminate'),
+    ]
+
+DATE_FIELD_CHOICES = [
+    ('order', 'Order'),
+    ('result', 'Result')
+    ]
+
+DOSE_UNIT_CHOICES = [
+    ('ml', 'Milliliters'),
+    ('mg', 'Milligrams'),
+    ('g', 'Grams'),
+    ('ug', 'Micrograms'),
+    ]
+
+DOSE_UNIT_VARIANTS = {
+    'ml': ['milliliter', 'ml'],
+    'g': ['gram', 'g', 'gm'],
+    'mg': ['milligram', 'mg'],
+    'ug': ['microgram', 'mcg', 'ug'],
+    }
+
+GT_CHOICES = [
+    ('gte', 'Greater Than or Equal To: >='),
+    ('gt', 'Greater Than: >'),
+    ]
+
+LT_CHOICES = [
+    ('lte', 'Less Than or Equal To: <='),
+    ('lt', 'Less Than: <'),
+    ]
+
+TITER_DILUTION_CHOICES = [
+    (1, '1:1'),  
+    (2, '1:2'),
+    (4, '1:4'),
+    (8, '1:8'),
+    (16, '1:16'),
+    (32, '1:32'),
+    (64, '1:64'),
+    (128, '1:128'),
+    (256, '1:256'),
+    (512, '1:512'),
+    (1024, '1:1024'),
+    (2048, '1:2048'),
+    ]
+
+MATCH_TYPE_CHOICES = [
+    ('exact', 'Exact Match (case sensitive)'),
+    ('iexact', 'Exact Match (NOT case sensitive)'),
+    ('startswith', 'Starts With (case sensitive)'),
+    ('istartswith', 'Starts With (NOT case sensitive)'),
+    ('endswith', 'Ends With (case sensitive)'),
+    ('iendswith', 'Ends With (NOT case sensitive)'),
+    ('contains', 'Contains (case sensitive)'),
+    ('icontains', 'Contains (NOT case sensitive)'),
+    ]
+
+ORDER_RESULT_RECORD_TYPES = [
+    ('order', 'Lab Test Orders'),
+    ('result', 'Lab Test Results'),
+    ('both', 'Both Lab Test Orders and Results'),
+    ]
 
 
 
-class CodeMap(models.Model):
+class ResultString(models.Model):
     '''
-    Map associating lab test native_code with a HEF event
+    A string indicating a positive, negative, or indeterminate lab result
     '''
-    heuristic = models.SlugField(max_length=255, blank=False, db_index=True)
+    value = models.CharField(max_length=128, blank=False)
+    indicates = models.CharField(max_length=8, blank=False, choices=POS_NEG_IND)
+    match_type = models.CharField(max_length=32, blank=False, choices=MATCH_TYPE_CHOICES, 
+        help_text='Match type for string', default='istartswith')
+    applies_to_all = models.BooleanField(blank=False, default=False, 
+        help_text='Match this string for ALL tests.  If not checked, string must be explicitly specified in Lab Test Map')
+    
+    class Meta:
+        ordering = ['value']
+        verbose_name = 'Result String'
+    
+    def __get_q_obj(self):
+        '''
+        Returns a Q object to search for this result string
+        '''
+        if self.match_type == 'exact':
+            return Q(result_string__exact=self.value)
+        elif self.match_type == 'iexact':
+            return Q(result_string__iexact=self.value)
+        elif self.match_type == 'startswith':
+            return Q(result_string__startswith=self.value)
+        elif self.match_type == 'istartswith':
+            return Q(result_string__istartswith=self.value)
+        elif self.match_type == 'endswith':
+            return Q(result_string__endswith=self.value)
+        elif self.match_type == 'iendswith':
+            return Q(result_string__iendswith=self.value)
+        elif self.match_type == 'contains':
+            return Q(result_string__contains=self.value)
+        elif self.match_type == 'icontains':
+            return Q(result_string__icontains=self.value)
+    q_obj = property(__get_q_obj)
+
+
+class LabTestMap(models.Model):
+    '''
+    Mapping object to associate an abstract lab test type with a concrete, 
+    source-EMR-specific lab test type
+    '''
     test_uri = models.TextField('URI for Abstract Lab Test', blank=False, db_index=True)
-    native_code = models.CharField(max_length=100, blank=False, db_index=True)
-    native_name = models.CharField(max_length=255, blank=True, null=True)
-    threshold = models.FloatField(help_text='Numeric threshold for positive test', blank=True, null=True)
-    output_code = models.CharField('Test code for template output', max_length=100, blank=True, null=True, db_index=True)
-    output_name = models.CharField('Test name for template output', max_length=255, blank=True, null=True)
+    native_code = models.CharField(max_length=100, verbose_name='Test Code', db_index=True,
+        help_text='Native test code from source EMR system', blank=False)
+    code_match_type = models.CharField(max_length=32, blank=False, choices=MATCH_TYPE_CHOICES, 
+        help_text='Match type for test code', default='exact')
+    record_type = models.CharField(max_length=8, blank=False, choices=ORDER_RESULT_RECORD_TYPES, 
+        help_text='Does this map relate to lab orders, results, or both?', default='both')
+    threshold = models.FloatField(help_text='Fallback positive threshold for tests without reference high', blank=True, null=True)
+    extra_positive_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='extra_positive_set',
+        limit_choices_to={'indicates': 'pos', 'applies_to_all': False})
+    excluded_positive_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='excluded_positive_set',
+        limit_choices_to={'indicates': 'pos', 'applies_to_all': True})
+    extra_negative_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='extra_negative_set',
+        limit_choices_to={'indicates': 'neg', 'applies_to_all': False})
+    excluded_negative_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='excluded_negative_set',
+        limit_choices_to={'indicates': 'neg', 'applies_to_all': True})
+    extra_indeterminate_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='extra_indeterminate_set',
+        limit_choices_to={'indicates': 'ind', 'applies_to_all': False})
+    excluded_indeterminate_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='excluded_indeterminate_set',
+        limit_choices_to={'indicates': 'ind', 'applies_to_all': True})
     #
     # Reporting
     # 
     reportable = models.BooleanField('Is test reportable?', default=True, db_index=True)
+    output_code = models.CharField('Test code for template output', max_length=100, blank=True, null=True)
+    output_name = models.CharField('Test name for template output', max_length=255, blank=True, null=True)
     snomed_pos = models.CharField('SNOMED positive code', max_length=255, blank=True, null=True)
     snomed_neg = models.CharField('SNOMED neg code', max_length=255, blank=True, null=True)
     snomed_ind = models.CharField('SNOMED indeterminate code', max_length=255, blank=True, null=True)
@@ -46,15 +173,89 @@ class CodeMap(models.Model):
     # Notes
     #
     notes = models.TextField(blank=True, null=True)
+    
     class Meta:
-        verbose_name = 'Code Map'
-        #unique_together = ['test_uri', 'native_code']
+        verbose_name = 'Lab Test Map'
+        unique_together = ['test_uri', 'native_code']
     
     def __str__(self):
-        msg = '%s (%s) --> %s' % (self.native_name, self.native_code, self.heuristic_uri)
-        if self.threshold:
-            msg += ' (threshold %s)' % self.threshold
-        return msg
+        return u'LabTestMap (%s --> %s)' % (self.native_code, self.test_uri)
+    
+    def __get_lab_results_q_obj(self):
+        if self.code_match_type == 'exact':
+            return Q(native_code__exact=self.native_code)
+        elif self.code_match_type == 'iexact':
+            return Q(native_code__iexact=self.native_code)
+        elif self.code_match_type == 'startswith':
+            return Q(native_code__startswith=self.native_code)
+        elif self.code_match_type == 'istartswith':
+            return Q(native_code__istartswith=self.native_code)
+        elif self.code_match_type == 'endswith':
+            return Q(native_code__endswith=self.native_code)
+        elif self.code_match_type == 'iendswith':
+            return Q(native_code__iendswith=self.native_code)
+        elif self.code_match_type == 'contains':
+            return Q(native_code__contains=self.native_code)
+        elif self.code_match_type == 'icontains':
+            return Q(native_code__icontains=self.native_code)
+    lab_results_q_obj = property(__get_lab_results_q_obj)
+    
+    def __get_lab_orders_q_obj(self):
+        #
+        # 'procedure_master_num' is a crappy field name, and needs to be changed
+        if self.code_match_type == 'exact':
+            return Q(procedure_master_num__exact=self.native_code)
+        elif self.code_match_type == 'iexact':
+            return Q(procedure_master_num__iexact=self.native_code)
+        elif self.code_match_type == 'startswith':
+            return Q(procedure_master_num__startswith=self.native_code)
+        elif self.code_match_type == 'istartswith':
+            return Q(procedure_master_num__istartswith=self.native_code)
+        elif self.code_match_type == 'endswith':
+            return Q(procedure_master_num__endswith=self.native_code)
+        elif self.code_match_type == 'iendswith':
+            return Q(procedure_master_num__iendswith=self.native_code)
+        elif self.code_match_type == 'contains':
+            return Q(procedure_master_num__contains=self.native_code)
+        elif self.code_match_type == 'icontains':
+            return Q(procedure_master_num__icontains=self.native_code)
+    lab_orders_q_obj = property(__get_lab_orders_q_obj)
+    
+    def __get_positive_string_q_obj(self):
+        # Build pos q for this lab test based on q_obj for each result string object
+        pos_rs = ResultString.objects.filter(indicates='pos', applies_to_all=True)
+        pos_rs |= self.extra_positive_strings.all()
+        if self.excluded_positive_strings.all():
+            pos_rs = pos_rs.exclude(self.excluded_positive_strings.all())
+        q_obj = pos_rs[0].q_obj
+        for rs in pos_rs[1:]:
+            q_obj |= rs.q_obj
+        return q_obj
+    positive_string_q_obj = property(__get_positive_string_q_obj)
+    
+    def __get_negative_string_q_obj(self):
+        neg_rs = ResultString.objects.filter(indicates='neg', applies_to_all=True)
+        neg_rs |= self.extra_negative_strings.all()
+        if self.excluded_negative_strings.all():
+            neg_rs = neg_rs.exclude(self.excluded_negative_strings.all())
+        q_obj = neg_rs[0].q_obj
+        for rs in neg_rs[1:]:
+            q_obj |= rs.q_obj
+        return q_obj
+    negative_string_q_obj = property(__get_negative_string_q_obj)
+    
+    def __get_indeterminate_string_q_obj(self):
+        rs_set = ResultString.objects.filter(indicates='ind', applies_to_all=True)
+        rs_set |= self.extra_indeterminate_strings.all()
+        if self.excluded_indeterminate_strings.all():
+            rs_set = rs_set.exclude(self.excluded_indeterminate_strings.all())
+        q_obj = rs_set[0].q_obj
+        for rs in rs_set[1:]:
+            q_obj |= rs.q_obj
+        return q_obj
+    indeterminate_string_q_obj = property(__get_indeterminate_string_q_obj)
+
+
 
 
 class IgnoredCode(models.Model):

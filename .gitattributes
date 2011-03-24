@@ -52,9 +52,6 @@ modules/esphealth/ESP/conf/fixtures/native_vaccines.sql.bz2 -text svneol=unset#u
 modules/esphealth/ESP/conf/fixtures/vaccines.json.bz2 -text svneol=unset#unset
 modules/esphealth/ESP/conf/fixtures/vaccines.sql.bz2 -text svneol=unset#unset
 modules/esphealth/ESP/conf/forms.py -text
-modules/esphealth/ESP/conf/migrations/0001_initial.py -text
-modules/esphealth/ESP/conf/migrations/0002_auto__add_field_codemap_test_uri__del_unique_codemap_native_code_heuri.py -text
-modules/esphealth/ESP/conf/migrations/__init__.py -text
 modules/esphealth/ESP/conf/models.py -text
 modules/esphealth/ESP/conf/tests.py -text
 modules/esphealth/ESP/conf/urls.py -text
