@@ -133,12 +133,22 @@ class Command(BaseCommand):
     
     def new_hef(self, args, options):
         if options['list']:
-            return self.list()
+            return self.list(args, options)
+        else:
+            return self.all(args, options)
+    
+    def all(self, args, options):
+        event_counter = 0
         ts_counter = 0
-        for entry_point in iter_entry_points(group='esphealth', name='timespanheuristic'):
-            timespan_heuristic = entry_point.load()
-            log.info('Running %s' % timespan_heuristic)
-            ts_counter += timespan_heuristic.generate_timespans()
+        for heuristic in BaseEventHeuristic.get_all():
+            log.info('Running %s' % heuristic)
+            event_counter += heuristic.generate_events()
+        for heuristic in BaseTimespanHeuristic.get_all():
+            log.info('Running %s' % heuristic)
+            ts_counter += heuristic.generate_timespans()
+        log.info('Generated %20s events' % event_counter)
+        log.info('Generated %20s timespans' % ts_counter)
+        return event_counter + ts_counter
     
     def list(self):
         for h in BaseHeuristic.get_all():
