@@ -28,7 +28,7 @@ class CodeMap(models.Model):
     '''
     Map associating lab test native_code with a HEF event
     '''
-    heuristic = models.SlugField(max_length=255, blank=False, db_index=True)
+    heuristic_uri = models.SlugField(max_length=255, blank=False, db_index=True)
     native_code = models.CharField(max_length=100, blank=False, db_index=True)
     native_name = models.CharField(max_length=255, blank=True, null=True)
     threshold = models.FloatField(help_text='Numeric threshold for positive test', blank=True, null=True)
@@ -47,10 +47,10 @@ class CodeMap(models.Model):
     notes = models.TextField(blank=True, null=True)
     class Meta:
         verbose_name = 'Code Map'
-        unique_together = ['native_code', 'heuristic']
+        unique_together = ['heuristic_uri', 'native_code']
     
     def __str__(self):
-        msg = '%s (%s) --> %s' % (self.native_name, self.native_code, self.heuristic)
+        msg = '%s (%s) --> %s' % (self.native_name, self.native_code, self.heuristic_uri)
         if self.threshold:
             msg += ' (threshold %s)' % self.threshold
         return msg

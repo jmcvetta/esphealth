@@ -53,6 +53,7 @@ modules/esphealth/ESP/conf/fixtures/vaccines.json.bz2 -text svneol=unset#unset
 modules/esphealth/ESP/conf/fixtures/vaccines.sql.bz2 -text svneol=unset#unset
 modules/esphealth/ESP/conf/forms.py -text
 modules/esphealth/ESP/conf/migrations/0001_initial.py -text
+modules/esphealth/ESP/conf/migrations/0002_auto__del_field_codemap_heuristic__add_field_codemap_heuristic_uri__de.py -text
 modules/esphealth/ESP/conf/migrations/__init__.py -text
 modules/esphealth/ESP/conf/models.py -text
 modules/esphealth/ESP/conf/tests.py -text
