@@ -384,9 +384,9 @@ modules/esphealth/ESP/vaers/vaccine/views.py -text
 modules/esphealth/ESP/vaers/views.py -text
 modules/esphealth/ESP/version.txt -text
 modules/esphealth/setup.py -text
-modules/heuristic-crfg/__init__.py -text
-modules/heuristic-crfg/crfg.py -text
-modules/heuristic-crfg/setup.py -text
+modules/heuristic-glucose_crf/__init__.py -text
+modules/heuristic-glucose_crf/crfg.py -text
+modules/heuristic-glucose_crf/setup.py -text
 modules/heuristic-pregnancy/__init__.py -text
 modules/heuristic-pregnancy/pregnancy.py -text
 modules/heuristic-pregnancy/setup.py -text
