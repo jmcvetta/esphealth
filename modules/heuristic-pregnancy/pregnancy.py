@@ -47,7 +47,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         ]
     
     
-    def generate_timespans(self):
+    def generate(self):
         #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #
         # Initialize
