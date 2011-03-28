@@ -24,7 +24,7 @@ from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
 from ESP.nodis.models import Condition
-from ESP.nodis import defs  # Register definitions
+#from ESP.nodis import defs  # Register definitions
 
     
 class Command(BaseCommand):
