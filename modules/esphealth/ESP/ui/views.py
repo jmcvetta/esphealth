@@ -58,7 +58,7 @@ from ESP.settings import ROWS_PER_PAGE
 from ESP.settings import DATE_FORMAT
 from ESP.settings import SITE_NAME
 
-from ESP.conf.models import CodeMap
+from ESP.conf.models import LabTestMap # FIXME
 from ESP.conf.models import IgnoredCode
 from ESP.conf.models import STATUS_CHOICES
 from ESP.static.models import Loinc
@@ -604,7 +604,9 @@ def _get_unmapped_labs():
     as well as unmapped_labs_report() below.
     '''
     ignored = IgnoredCode.objects.values('native_code')
-    mapped = CodeMap.objects.values('native_code').distinct()
+    # FIXME:
+    # This may need to be updated when LabTestMap is finalized
+    mapped = LabTestMap.objects.values('native_code').distinct()
     all_strings = Condition.all_test_name_search_strings()
     q_obj = Q(native_name__icontains=all_strings[0])
     for string in all_strings[1:]:
