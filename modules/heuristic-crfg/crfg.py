@@ -33,7 +33,7 @@ from ESP.hef.models import Timespan
 #
 # The VERSION_URI string uniquely describes this heuristic.
 # It MUST be incremented whenever any functionality is changed!
-VERSION_URI = 'urn:x-esphealth:heuristic:compound-random-fasting-glucose:v1'
+VERSION_URI = 'urn:x-esphealth:heuristic:glucose-compound-random-fasting:v1'
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -42,7 +42,7 @@ VERSION_URI = 'urn:x-esphealth:heuristic:compound-random-fasting-glucose:v1'
 
 class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
     
-    name = 'crf_glucose'
+    name = 'glucose_crf'
     
     uri = VERSION_URI
     
@@ -96,7 +96,7 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
             self.__fast_ind
             ]
     
-    def generate_events(self):
+    def generate(self):
         for res in self.result_test.lab_results:
             print res
         return 0
