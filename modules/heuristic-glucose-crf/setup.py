@@ -13,7 +13,7 @@ from setuptools import setup
 from setuptools import find_packages
 
 setup(
-    name = 'esphealth-heuristic-compound_random_fasting_glucose',
+    name = 'esphealth-heuristic-glucose-crf',
     version = '1.0',
     author = 'Jason McVetta',
     author_email = 'jason.mcvetta@heliotropi.cc',
@@ -27,7 +27,7 @@ setup(
         ],
     entry_points = '''
         [esphealth]
-        event_heuristics = crfg:get_heuristics
-        abstract_lab_tests = crfg:get_tests
+        event_heuristics = glucose_crf:get_heuristics
+        abstract_lab_tests = glucose_crf:get_tests
     '''
     )
