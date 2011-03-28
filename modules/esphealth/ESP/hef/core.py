@@ -12,9 +12,9 @@
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-# The VERSION_URI string uniquely describes this version of HEF core.  
+# The HEF_CORE_URI string uniquely describes this version of HEF core.  
 # It MUST be incremented whenever any core functionality is changed!
-VERSION_URI = 'https://esphealth.org/reference/hef/core/1.0'
+HEF_CORE_URI = 'https://esphealth.org/reference/hef/core/1.0'
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -91,8 +91,18 @@ class BaseHeuristic(object):
         which this heuristic is compatible
         '''
     
+    @abc.abstractmethod
+    def generate(self):
+        '''
+        Examine data and generate new objects
+        @return: Count of new objects generated
+        @rtype:  Integer
+        '''
+    
     def __str__(self):
         return smart_str(self.name)
+    
+    __registered_heuristics = {}
     
     @classmethod
     def get_all(cls):
@@ -121,12 +131,6 @@ class BaseEventHeuristic(BaseHeuristic):
         event types this heuristic can generate
         '''
 
-    @abc.abstractmethod
-    def generate_events(self):
-        '''
-        Generate Event objects from raw medical records in database
-        '''
-    
     @property
     def event_uri_q(self):
         '''
@@ -171,12 +175,6 @@ class BaseTimespanHeuristic(BaseHeuristic):
     A heuristic for generating Timespans from Events
     (Abstract base class)
     '''
-    
-    @abc.abstractmethod
-    def generate_timespans(self):
-        '''
-        Generate Event objects from raw medical records in database
-        '''
     
     @classmethod
     def get_all(cls):
@@ -273,7 +271,7 @@ class DiagnosisHeuristic(BaseHeuristic):
         return q_obj
     icd9_q_obj = property(__get_icd9_q_obj)
     
-    def generate_events(self):
+    def generate(self):
         icd9s = Icd9.objects.filter(self.icd9_q_obj)
         encounters = Encounter.objects.filter(icd9_codes__in=icd9s)
         encounters = encounters.exclude(tags__event__event_type__heuristic=self)
@@ -340,11 +338,11 @@ class AbstractLabTest(object):
         return heuristic_set
     heuristic_set = property(__get_heuristic_set)
 
-    def generate_events(self):
+    def generate(self):
         count = 0
         log.info('Generating events for %s' % self)
         for heuristic in self.heuristic_set:
-            count += heuristic.generate_events()
+            count += heuristic.generate()
         return count
 
 

@@ -9,7 +9,7 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
         
         # Adding field 'Timespan.uri'
-        db.add_column('hef_timespan', 'uri', self.gf('django.db.models.fields.CharField')(default=None, max_length=255, db_index=True), keep_default=False)
+        db.add_column('hef_timespan', 'uri', self.gf('django.db.models.fields.CharField')(default='legacy', max_length=255, db_index=True), keep_default=False)
 
         # Changing field 'Timespan.name'
         db.alter_column('hef_timespan', 'name', self.gf('django.db.models.fields.SlugField')(max_length=127))

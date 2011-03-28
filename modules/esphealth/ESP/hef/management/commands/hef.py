@@ -134,8 +134,25 @@ class Command(BaseCommand):
     def new_hef(self, args, options):
         if options['list']:
             return self.list(args, options)
+        elif args:
+            return self.by_name(args, options)
         else:
             return self.all(args, options)
+    
+    def by_name(self, args, options):
+        '''
+        Run heuristic(s) specified by name as arguments
+        '''
+        heuristics = {}
+        selected_heuristics = []
+        for h in BaseHeuristic.get_all():
+            heuristics[h.name] = h
+        for name in args:
+            if not name in heuristics:
+                print >> sys.stderr, 'Unknown heuristic specified:  %s' % name
+            selected_heuristics.append(heuristics[name])
+        for h in selected_heuristics:
+            h.generate()
     
     def all(self, args, options):
         event_counter = 0
@@ -150,7 +167,7 @@ class Command(BaseCommand):
         log.info('Generated %20s timespans' % ts_counter)
         return event_counter + ts_counter
     
-    def list(self):
+    def list(self, args, options):
         for h in BaseHeuristic.get_all():
             print h.name
 

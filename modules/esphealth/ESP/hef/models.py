@@ -1207,7 +1207,7 @@ class Event(models.Model):
     A medical event
     '''
     name = models.SlugField('Common name of this event type', max_length=127, blank=False)
-    uri = models.CharField('URI of this event type', max_length=255, blank=False)
+    uri = models.CharField('URI of this event type', max_length=255, blank=True, null=True) # Make blank=False after event type is deprecated
     # event_type is deprecated and will be removed soon
     event_type = models.ForeignKey(EventType, blank=True, null=True)
     date = models.DateField('Date event occured', blank=False, db_index=True)
