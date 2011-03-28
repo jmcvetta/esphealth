@@ -150,6 +150,7 @@ class Command(BaseCommand):
         for name in args:
             if not name in heuristics:
                 print >> sys.stderr, 'Unknown heuristic specified:  %s' % name
+                sys.exit('-1')
             selected_heuristics.append(heuristics[name])
         for h in selected_heuristics:
             h.generate()

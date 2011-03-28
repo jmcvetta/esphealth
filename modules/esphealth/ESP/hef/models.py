@@ -1209,14 +1209,14 @@ class Event(models.Model):
     name = models.SlugField('Common name of this event type', max_length=127, blank=False)
     uri = models.CharField('URI of this event type', max_length=255, blank=True, null=True) # Make blank=False after event type is deprecated
     # event_type is deprecated and will be removed soon
-    event_type = models.ForeignKey(EventType, blank=True, null=True)
+    #event_type = models.ForeignKey(EventType, blank=True, null=True)
     date = models.DateField('Date event occured', blank=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
     provider = models.ForeignKey(Provider, blank=False, db_index=True)
     timestamp = models.DateTimeField('Time event was created in db', blank=False, auto_now_add=True)
     
     def __unicode__(self):
-        return u'Event # %s (%s %s)' % (self.pk, self.event_type.name, self.date)
+        return u'Event # %s (%s %s)' % (self.pk, self.date, self.uri)
     
     def tag_object(self, obj):
         '''

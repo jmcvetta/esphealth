@@ -21,6 +21,7 @@ from optparse import make_option
 
 from ESP.utils import log
 from ESP.utils import log_query
+from ESP.hef.models import Event
 from ESP.hef.core import BaseEventHeuristic
 from ESP.hef.core import EventType
 from ESP.hef.core import AbstractLabTest
@@ -86,20 +87,30 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
     	)
 
     
-    def event_types(self):
-        return [
-            self.__rand_pos,
-            self.__rand_neg,
-            self.__rand_ind,
-            self.__fast_pos,
-            self.__fast_neg,
-            self.__fast_ind
-            ]
+    event_types = [
+        __rand_pos,
+        __rand_neg,
+        __rand_ind,
+        __fast_pos,
+        __fast_neg,
+        __fast_ind
+        ]
     
     def generate(self):
-        for res in self.result_test.lab_results:
-            print res
-        return 0
+        counter = 0
+        bound_events = Event.objects.filter(self.event_uri_q)
+        unbound_results = self.result_test.lab_results.exclude(tags__event__in=bound_events)
+        result_order_nums = set(unbound_results.values_list('order_id_num', flat=True).distinct())
+        print len(result_order_nums)
+        #print result_order_nums.count()
+        flag_results = self.flag_test.lab_results.exclude(tags__event__in=bound_events)
+        fasting_flags = flag_results.filter(result_string__istartswith='fast').exclude(result_string__iendswith='rand')
+        fasting_flag_order_nums = set(fasting_flags.values_list('order_id_num', flat=True).distinct())
+        print len(fasting_flag_order_nums)
+        fasting_result_order_nums = result_order_nums & fasting_flag_order_nums
+        print len(fasting_result_order_nums)
+        
+        return counter
         
     
     
