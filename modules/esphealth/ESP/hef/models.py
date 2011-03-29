@@ -1228,6 +1228,13 @@ class Event(models.Model):
             )
         ert.save()
         return ert
+    
+    def tag_qs(self, qs):
+        '''
+        Tags every record in qs with this event
+        '''
+        for obj in qs:
+            self.tag(obj)
 
 
 class EventRecordTag(models.Model):
