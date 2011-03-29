@@ -407,7 +407,7 @@ class LabOrderHeuristic(LabHeuristicBase):
                 provider = order.provider,
                 )
             e.save()
-            e.tag_object(order)
+            e.tag(order)
             log.debug('Saved new event: %s' % e)
         log.info('Generated %s new %s events' % (unbound_count, self.name))
         return unbound_count
@@ -472,7 +472,7 @@ class LabResultAnyHeuristic(LabResultHeuristicBase):
                 provider = lab.provider,
                 )
             e.save()
-            e.tag_object(lab)
+            e.tag(lab)
             log.debug('Saved new event: %s' % e)
         log.info('Generated %s new %s events' % (unbound_count, self.name))
         return unbound_count
@@ -591,7 +591,7 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
                 provider = lab.provider,
                 )
             new_event.save()
-            new_event.tag_object(lab)
+            new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new positive events for %s' % (positive_labs.count(), self.name))
         negative_labs = unbound_labs.filter(negative_q)
@@ -610,7 +610,7 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
                 provider = lab.provider,
                 )
             new_event.save()
-            new_event.tag_object(lab)
+            new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new negative events for %s' % (negative_labs.count(), self.name))
         indeterminate_labs = unbound_labs.filter(indeterminate_q)
@@ -629,7 +629,7 @@ class LabResultPositiveHeuristic(LabResultHeuristicBase):
                 provider = lab.provider,
                 )
             new_event.save()
-            new_event.tag_object(lab)
+            new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new indeterminate events for %s' % (indeterminate_labs.count(), self.name))
         return positive_labs.count() + negative_labs.count() + indeterminate_labs.count()
@@ -698,7 +698,7 @@ class LabResultRatioHeuristic(LabResultHeuristicBase):
                 provider = lab.provider,
                 )
             new_event.save()
-            new_event.tag_object(lab)
+            new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (positive_labs.count(), self.name))
         return positive_labs.count()
@@ -756,7 +756,7 @@ class LabResultFixedThresholdHeuristic(LabResultHeuristicBase):
                 provider = lab.provider,
                 )
             new_event.save()
-            new_event.tag_object(lab)
+            new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (positive_labs.count(), self.name))
         return positive_labs.count() 
@@ -826,7 +826,7 @@ class LabResultRangeHeuristic(LabResultHeuristicBase):
                 provider = lab.provider,
                 )
             new_event.save()
-            new_event.tag_object(lab)
+            new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (qs.count(), self.name))
         return qs.count() 
@@ -1032,7 +1032,7 @@ class PrescriptionHeuristic(Heuristic):
                 provider = rx.provider,
                 )
             new_event.save()
-            new_event.tag_object(rx)
+            new_event.tag(rx)
             log.debug('Saved new event: %s' % new_event)
         return prescriptions.count()
 
@@ -1096,7 +1096,7 @@ class DiagnosisHeuristic(Heuristic):
                 provider = enc.provider,
                 )
             new_event.save()
-            new_event.tag_object(enc)
+            new_event.tag(enc)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (encounters.count(), self.name))
         return encounters.count()
@@ -1218,7 +1218,7 @@ class Event(models.Model):
     def __unicode__(self):
         return u'Event # %s (%s %s)' % (self.pk, self.date, self.uri)
     
-    def tag_object(self, obj):
+    def tag(self, obj):
         '''
         Tags a medical record with this event. 
         '''

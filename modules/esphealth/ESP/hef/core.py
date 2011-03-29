@@ -305,7 +305,7 @@ class DiagnosisHeuristic(BaseHeuristic):
                 provider = enc.provider,
                 )
             new_event.save()
-            new_event.tag_object(enc)
+            new_event.tag(enc)
             log.debug('Saved new event: %s' % new_event)
         log.info('Generated %s new events for %s' % (encounters.count(), self.name))
         return encounters.count()
