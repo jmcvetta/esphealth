@@ -62,6 +62,24 @@ class EventType(object):
         '''
         return self.__uri
     uri = property(__get_uri)
+    
+    def create_event(self, patient, provider, date):
+        '''
+        Creates an event of this type
+        @type patient: ESP.emr.models.Patient
+        @type provider: ESP.emr.models.Provider
+        @type date: datetime.date
+        '''
+        new_event = Event(
+            name = self.name,
+            uri = self.uri,
+            patient = patient,
+            provider = provider,
+            date = date, 
+            )
+        new_event.save()
+        log.debug('Created new event: %s' % new_event)
+        return new_event
 
 
 class BaseHeuristic(object):
@@ -314,18 +332,17 @@ class AbstractLabTest(object):
         return u'Abstract Lab Test - %s' % self.name
     
     def __get_lab_results(self):
-        result = LabResult.objects.none()
-        for testmap in LabTestMap.objects.filter(test_uri = self.uri).filter( Q(record_type='result') | Q(record_type='both') ):
-            result |= LabResult.objects.filter(testmap.lab_results_q_obj)
-        return result
+        testmaps = LabTestMap.objects.filter(test_uri = self.uri).filter( Q(record_type='result') | Q(record_type='both') )
+        qs = LabResult.objects.filter(native_code__in=testmaps.values('native_code'))
+        log_query('Lab Results for %s' % self.name, qs)
+        return qs
     lab_results = property(__get_lab_results)
     
     def __get_lab_orders(self):
-        result = LabOrder.objects.none()
-        for testmap in LabTestMap.objects.filter(test_uri = self.uri).filter( Q(record_type='order') | Q(record_type='both') ):
-            result |= LabOrder.objects.filter(testmap.lab_orders_q_obj)
-        log_query('Lab Orders for %s' % self.name, result)
-        return result
+        testmaps = LabTestMap.objects.filter(test_uri = self.uri).filter( Q(record_type='order') | Q(record_type='both') )
+        qs = LabOrder.objects.filter(native_code__in=testmaps.values('native_code'))
+        log_query('Lab Orders for %s' % self.name, qs)
+        return qs
     lab_orders = property(__get_lab_orders)
     
     def __get_heuristic_set(self):
