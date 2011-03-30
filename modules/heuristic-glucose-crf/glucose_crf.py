@@ -54,11 +54,11 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
         uri = 'urn:x-esphealth:event:labresult:glucose-random:v1:threshold:200',
         )
     __fast_140 = EventType(
-        name = 'glucose_fasting_positive',
+        name = 'glucose_fasting_140',
         uri = 'urn:x-esphealth:event:labresult:glucose-fasting:v1:threshold:140',
         )
     __fast_200 = EventType(
-        name = 'glucose_fasting_negative',
+        name = 'glucose_fasting_200',
         uri = 'urn:x-esphealth:event:labresult:glucose-fasting:v1:threshold:200',
         )
     
