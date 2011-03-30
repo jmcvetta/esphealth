@@ -34,6 +34,7 @@ esphealth/share/epic_etl/mhslespftp.sh -text
 esphealth/share/esp-postgres.logrotate -text
 esphealth/share/ndc_codes.txt.bz2 -text svneol=unset#unset
 modules/disease-diabetes/__init__.py -text
+modules/disease-diabetes/diabetes.py -text
 modules/disease-diabetes/setup.py -text
 modules/esphealth/ESP/application.spec.ini -text
 modules/esphealth/ESP/axis-1_4/activation.jar -text
