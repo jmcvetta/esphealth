@@ -1207,9 +1207,8 @@ class Event(models.Model):
     A medical event
     '''
     name = models.SlugField('Common name of this event type', max_length=127, blank=False)
-    uri = models.CharField('URI of this event type', max_length=255, blank=True, null=True) # Make blank=False after event type is deprecated
-    # event_type is deprecated and will be removed soon
-    #event_type = models.ForeignKey(EventType, blank=True, null=True)
+    uri = models.CharField('URI of this event type', max_length=255, blank=False, db_index=True)
+    heuristic_uri = models.CharField('URI of the heuristic that generated this event', max_length=255, blank=False, db_index=True)
     date = models.DateField('Date event occured', blank=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
     provider = models.ForeignKey(Provider, blank=False, db_index=True)
@@ -1222,12 +1221,13 @@ class Event(models.Model):
         '''
         Tags a medical record with this event. 
         '''
-        ert = EventRecordTag(
-            event=self,
-            content_object=obj,
+        tag = EventTag(
+            event = self,
+            event_uri = self.uri,
+            content_object = obj,
             )
-        ert.save()
-        return ert
+        tag.save()
+        return tag
     
     def tag_qs(self, qs):
         '''
@@ -1237,13 +1237,14 @@ class Event(models.Model):
             self.tag(obj)
 
 
-class EventRecordTag(models.Model):
+class EventTag(models.Model):
     '''
     A tag associating an Event instance with a medical record
     '''
     event = models.ForeignKey(Event, blank=False, related_name='tag_set')
+    event_uri = models.CharField('URI of the event above', max_length=255, blank=False, db_index=True)
     #
-    # Standard generic relation support
+    # Generic foreign key - any kind of EMR record can be tagged
     #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
     #
     content_type = models.ForeignKey(ContentType, db_index=True)
