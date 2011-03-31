@@ -197,6 +197,7 @@ modules/esphealth-core/ESP/media/js/syndrome_map.js -text
 modules/esphealth-core/ESP/media/js/vaers.js -text
 modules/esphealth-core/ESP/nodis/__init__.py -text
 modules/esphealth-core/ESP/nodis/admin.py -text
+modules/esphealth-core/ESP/nodis/base.py -text
 modules/esphealth-core/ESP/nodis/management/__init__.py -text
 modules/esphealth-core/ESP/nodis/management/commands/__init__.py -text
 modules/esphealth-core/ESP/nodis/management/commands/case_report.py -text
