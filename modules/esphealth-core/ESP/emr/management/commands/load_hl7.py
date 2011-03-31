@@ -36,7 +36,7 @@ from optparse import Values
 
 from django.db import transaction
 
-from hl7 import hl7
+import hl7
 
 from ESP.settings import DEBUG
 from ESP.settings import TOPDIR
