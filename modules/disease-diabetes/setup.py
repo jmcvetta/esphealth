@@ -23,10 +23,12 @@ setup(
     url = 'http://esphealth.org',
     packages = find_packages(exclude=['ez_setup']),
     install_requires = [
-        'esphealth-core >= 3',
+        'esphealth >= 3',
         ],
     entry_points = '''
         [esphealth]
-        condition = diabetes
+        disease = diabetes.get_diseases
+        event_heuristics = diabetes.get_event_heuristics
+        timespan_heuristics = diabetes.get_timespan_heuristics
     '''
     )
