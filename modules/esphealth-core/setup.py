@@ -13,7 +13,7 @@ from setuptools import setup
 from setuptools import find_packages
 
 setup(
-    name = 'Electronic Support for Public Health',
+    name = 'esphealth-core',
     version = '2.1a',
     packages = find_packages(),
     install_requires = [
