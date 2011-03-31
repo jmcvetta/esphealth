@@ -63,16 +63,22 @@ class EventType(object):
         return self.__uri
     uri = property(__get_uri)
     
-    def create_event(self, patient, provider, date):
+    def create_event(self, patient, provider, date, heuristic_uri):
         '''
         Creates an event of this type
-        @type patient: ESP.emr.models.Patient
-        @type provider: ESP.emr.models.Provider
-        @type date: datetime.date
+        @param patient: Patient to whom this event relates
+        @type patient:  ESP.emr.models.Patient
+        @param provider: Medical service provider for this event
+        @type provider:  ESP.emr.models.Provider
+        @param date: Date of this event
+        @type date:  datetime.date
+        @param heuristic_uri: URI for the heuristic that created this event
+        @type heuristic_uri:  String
         '''
         new_event = Event(
             name = self.name,
             uri = self.uri,
+            heuristic_uri = heuristic_uri,
             patient = patient,
             provider = provider,
             date = date, 
