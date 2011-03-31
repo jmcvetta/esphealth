@@ -11,4 +11,5 @@
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+psycopg2
 -e svn+http://esphealth.org/svn/ESP/branches/2.1.0/modules/esphealth-core#egg=esphealth-core
