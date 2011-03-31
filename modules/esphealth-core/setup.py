@@ -13,7 +13,7 @@ from setuptools import setup
 from setuptools import find_packages
 
 setup(
-    name = 'esphealth',
+    name = 'esphealth-core',
     version = '3.0',
     author = 'Jason McVetta',
     author_email = 'jason.mcvetta@heliotropi.cc',

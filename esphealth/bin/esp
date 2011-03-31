@@ -36,4 +36,4 @@ ESP_HOME=$(dirname $_bin_dir)
 
 # Call manage.py
 export DJANGO_SETTINGS_MODULE=ESP.settings
-$ESP_HOME/bin/python $ESP_HOME/src/esphealth/ESP/manage.py $@
+$ESP_HOME/bin/python $ESP_HOME/src/esphealth-core/ESP/manage.py $@
