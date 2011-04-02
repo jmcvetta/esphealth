@@ -140,7 +140,7 @@ class LabTestMap(models.Model):
     Mapping object to associate an abstract lab test type with a concrete, 
     source-EMR-specific lab test type
     '''
-    test_uri = models.TextField('URI for Abstract Lab Test', blank=False, db_index=True)
+    test_name = models.SlugField('URI for Abstract Lab Test', blank=False, db_index=True)
     native_code = models.CharField(max_length=100, verbose_name='Test Code', db_index=True,
         help_text='Native test code from source EMR system', blank=False)
     code_match_type = models.CharField(max_length=32, blank=False, choices=MATCH_TYPE_CHOICES, 
@@ -176,7 +176,7 @@ class LabTestMap(models.Model):
     
     class Meta:
         verbose_name = 'Lab Test Map'
-        unique_together = ['test_uri', 'native_code']
+        unique_together = ['test_name', 'native_code']
     
     def __str__(self):
         return u'LabTestMap (%s --> %s)' % (self.native_code, self.test_uri)

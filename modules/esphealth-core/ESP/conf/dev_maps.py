@@ -15,7 +15,7 @@ for c in [
     '82947--6748',
     ]:
     obj, created = LabTestMap.objects.get_or_create(
-        test_uri = 'urn:x-esphealth:abstractlabtest:glucose-compound-random-fasting-flag:v1',
+        test_name = 'glucose-compound-random-fasting-flag',
         native_code = c,
         defaults = {
             'code_match_type': 'exact',
