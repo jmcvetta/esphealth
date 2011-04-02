@@ -127,7 +127,7 @@ class Case(models.Model):
     condition_uri = models.TextField('URI describing this medical condition', blank=False, db_index=True)
     provider = models.ForeignKey(Provider, blank=False)
     date = models.DateField(blank=False, db_index=True)
-    pattern = models.ForeignKey(Pattern, blank=False, db_index=True)
+    source = models.TextField('What created this case?', blank=False, db_index=True)
     status = models.TextField('Case status', blank=False, choices=STATUS_CHOICES, default='AR') # Is it sensible to have default here?
     notes = models.TextField(blank=True, null=True)
     # Timestamps:
