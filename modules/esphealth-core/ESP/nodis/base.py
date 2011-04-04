@@ -29,6 +29,16 @@ class Condition(object):
         self.name = name
         self.uri = uri
         self.description = description
+    
+    @classmethod
+    def condition_choices(cls):
+        # TODO: write me!
+        return ['foo', 'bar']
+
+    @classmethod
+    def all_test_name_search_strings(cls):
+        # TODO: write me!
+        return ['foo', 'bar']
 
 
 class DiseaseDefinition(object):

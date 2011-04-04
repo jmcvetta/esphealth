@@ -19,7 +19,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
 from ESP.nodis.models import STATUS_CHOICES
-from ESP.nodis.models import Condition
+from ESP.nodis.base import Condition
 from ESP.hef.models import AbstractLabTest
 from ESP.static.models import Loinc
 
@@ -43,7 +43,8 @@ class CodeMapForm(forms.Form):
     output_code = forms.CharField(max_length=100, required=False)
 
 class ConditionForm(forms.Form):
-    condition = forms.ChoiceField(choices=Condition.condition_choices(wildcard=True))
+    #condition = forms.ChoiceField(choices=Condition.condition_choices(wildcard=True))
+    pass
 
 class ReferenceCaseForm(forms.Form):
     notes = forms.CharField(required=False, widget=forms.Textarea)

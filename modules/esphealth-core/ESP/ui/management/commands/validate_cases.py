@@ -86,7 +86,7 @@ from ESP.nodis.models import ReferenceCase
 from ESP.nodis.models import ReferenceCaseList
 from ESP.nodis.models import ValidatorRun
 from ESP.nodis.models import ValidatorResult
-from ESP.nodis.models import Condition
+from ESP.nodis.base import Condition
 
 
 

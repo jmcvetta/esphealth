@@ -39,7 +39,6 @@ from ESP.static.models import Icd9
 #from ESP.conf.models import CodeMap
 from ESP.conf.models import STATUS_CHOICES
 from ESP.conf.models import ReportableLab
-from ESP.conf.models import ReportableIcd9
 from ESP.conf.models import ReportableMedication
 from ESP.conf.models import IgnoredCode
 from ESP.emr.models import LabResult
@@ -48,13 +47,10 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
-from ESP.hef.models import Heuristic
-from ESP.hef.models import DiagnosisHeuristic
-from ESP.hef.models import PrescriptionHeuristic
+from ESP.hef.core import BaseHeuristic
 #from ESP.hef.core import TimespanHeuristic
 from ESP.hef.models import Timespan
 from ESP.hef.models import Event
-from ESP.hef.models import EventType
 from ESP.conf.models import ConditionConfig
 
 import datetime

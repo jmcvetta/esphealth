@@ -29,9 +29,9 @@ from ESP.settings import HEF_THREAD_COUNT
 from ESP.hef.core import BaseHeuristic
 from ESP.hef.core import BaseEventHeuristic
 from ESP.hef.core import BaseTimespanHeuristic
-from ESP.hef.models import AbstractLabTest
-from ESP.hef.models import DiagnosisHeuristic
-from ESP.hef.models import PrescriptionHeuristic
+from ESP.hef.core import AbstractLabTest
+from ESP.hef.core import DiagnosisHeuristic
+from ESP.hef.core import PrescriptionHeuristic
 from ESP.nodis.models import Case # hef.core and .models are dependencies of nodis/models, but this command script is not
 from ESP import settings
 from ESP.utils import log
