@@ -38,12 +38,13 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Patient
 from ESP.emr.models import Prescription
 from ESP.hef.models import Event
-from ESP.hef.models import EventType
 from ESP.hef.models import Timespan
-from ESP.hef.models import AbstractLabTest
+from ESP.hef.base import AbstractLabTest
+from ESP.hef.base import 
+from ESP.nodis.base import Condition
 
 
-class Command(BaseCommand):
+class Diabetes(Condition):
     
     help = 'Generate report on all GDM cases'
     
@@ -565,4 +566,11 @@ class Command(BaseCommand):
                         }
                 values.update(patient_values)
                 writer.writerow(values)
-    
+
+
+
+
+def get_heuristics():
+    return [
+        
+        ]

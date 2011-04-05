@@ -9,7 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from ESP.conf.common import EPOCH
 from ESP.emr.models import Encounter, Patient
-from ESP.hef.core import DiagnosisHeuristic
+from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.models import Event
 from ESP.utils.utils import log, date_from_str, str_from_date, days_in_interval, timeit
 from ESP.ss.utils import report_folder

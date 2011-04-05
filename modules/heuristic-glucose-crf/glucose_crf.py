@@ -12,7 +12,7 @@
 '''
 
 from ESP.emr.models import Encounter, Patient
-from ESP.hef.core import AbstractLabTest, BaseEventHeuristic, EventType
+from ESP.hef.base import AbstractLabTest, BaseEventHeuristic, EventType
 from ESP.hef.models import Event, Timespan
 from ESP.utils import log, log_query
 from django.core.management.base import BaseCommand

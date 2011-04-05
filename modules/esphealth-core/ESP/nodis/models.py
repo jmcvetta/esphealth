@@ -47,8 +47,8 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
-from ESP.hef.core import BaseHeuristic
-#from ESP.hef.core import TimespanHeuristic
+from ESP.hef.base import BaseHeuristic
+#from ESP.hef.base import TimespanHeuristic
 from ESP.hef.models import Timespan
 from ESP.hef.models import Event
 from ESP.conf.models import ConditionConfig

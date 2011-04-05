@@ -97,7 +97,7 @@ modules/esphealth-core/ESP/env-setup.sh -text
 modules/esphealth-core/ESP/hef/__init__.py -text
 modules/esphealth-core/ESP/hef/admin.py -text
 modules/esphealth-core/ESP/hef/atrius_maps.py -text
-modules/esphealth-core/ESP/hef/core.py -text
+modules/esphealth-core/ESP/hef/base.py -text
 modules/esphealth-core/ESP/hef/defaults.py -text
 modules/esphealth-core/ESP/hef/management/__init__.py -text
 modules/esphealth-core/ESP/hef/management/commands/__init__.py -text

@@ -26,12 +26,12 @@ from django.core.management.base import BaseCommand
 from optparse import make_option
 
 from ESP.settings import HEF_THREAD_COUNT
-from ESP.hef.core import BaseHeuristic
-from ESP.hef.core import BaseEventHeuristic
-from ESP.hef.core import BaseTimespanHeuristic
-from ESP.hef.core import AbstractLabTest
-from ESP.hef.core import DiagnosisHeuristic
-from ESP.hef.core import PrescriptionHeuristic
+from ESP.hef.base import BaseHeuristic
+from ESP.hef.base import BaseEventHeuristic
+from ESP.hef.base import BaseTimespanHeuristic
+from ESP.hef.base import AbstractLabTest
+from ESP.hef.base import DiagnosisHeuristic
+from ESP.hef.base import PrescriptionHeuristic
 from ESP.nodis.models import Case # hef.core and .models are dependencies of nodis/models, but this command script is not
 from ESP import settings
 from ESP.utils import log

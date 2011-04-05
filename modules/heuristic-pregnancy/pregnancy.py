@@ -19,7 +19,7 @@ from ESP.utils import log
 from ESP.utils import log_query
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
-from ESP.hef.core import BaseTimespanHeuristic
+from ESP.hef.base import BaseTimespanHeuristic
 from ESP.hef.models import Timespan
 
 

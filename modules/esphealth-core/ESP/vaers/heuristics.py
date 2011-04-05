@@ -8,7 +8,7 @@ import datetime
 from django.db.models import Q, F, Max
 from django.contrib.contenttypes.models import ContentType
 
-from ESP.hef.core import BaseHeuristic
+from ESP.hef.base import BaseHeuristic
 from ESP.conf.common import EPOCH
 from ESP.conf.models import CodeMap
 from ESP.static.models import Icd9
