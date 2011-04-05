@@ -78,10 +78,9 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
         #
         # Find unbound test results
         #
-        relevant_events = Event.objects.filter(self.event_uri_q)
         lab_qs = self.result_test.lab_results
         lab_qs = lab_qs.filter(result_float__gte=140) # Only scores over 140 have events defined
-        lab_qs = lab_qs.exclude(tags__event__in=relevant_events)
+        lab_qs = lab_qs.exclude(tags__event_name__in=self.event_names)
         #
         # Find flags
         #
