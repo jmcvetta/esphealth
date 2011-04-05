@@ -27,7 +27,7 @@ from ESP.hef.models import Timespan
 #
 # The VERSION_URI string uniquely describes this heuristic.
 # It MUST be incremented whenever any functionality is changed!
-VERSION_URI = 'https://esphealth.org/reference/hef/heuristic/pregnancy/1.0'
+VERSION_URI = 'urn:x-esphealth:heuristic:timespan:pregnancy'
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -45,6 +45,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
     core_uris = [
         'https://esphealth.org/reference/hef/core/1.0',
         ]
+    
+    timespan_names = ['pregnancy', 'postpartum',]
     
     
     def generate(self):
