@@ -29,7 +29,7 @@ from django.db.models import Avg
 from django.core.management.base import BaseCommand, CommandError
 
 from ESP.nodis.models import Case
-from ESP.nodis.models import Pattern
+
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 from ESP.emr.models import Encounter
@@ -40,11 +40,21 @@ from ESP.emr.models import Prescription
 from ESP.hef.models import Event
 from ESP.hef.models import Timespan
 from ESP.hef.base import AbstractLabTest
-from ESP.hef.base import 
+from ESP.hef.base import LabOrderHeuristic
+from ESP.hef.base import LabResultAnyHeuristic
+from ESP.hef.base import LabResultFixedThresholdHeuristic
+from ESP.hef.base import LabResultPositiveHeuristic
+from ESP.hef.base import LabResultRangeHeuristic
+from ESP.hef.base import LabResultRatioHeuristic
+from ESP.hef.base import LabResultWesternBlotHeuristic
+from ESP.hef.base import Icd9Query
+from ESP.hef.base import DiagnosisHeuristic
+from ESP.hef.base import Dose
+from ESP.hef.base import PrescriptionHeuristic
 from ESP.nodis.base import Condition
 
 
-class Diabetes(Condition):
+class GestationalDiabetes(Condition):
     
     help = 'Generate report on all GDM cases'
     
@@ -57,11 +67,11 @@ class Diabetes(Condition):
             help='Produce Riskscape GDM report'),
         )
     
-    GDM_PATTERN = Pattern.objects.get_or_create(
-        name = 'Gestational Diabetes',
-        pattern = 'Gestational Diabetes iterative code',
-        hash = hashlib.sha224('Gestational Diabetes iterative code'),
-        )[0]
+#    GDM_PATTERN = Pattern.objects.get_or_create(
+#        name = 'Gestational Diabetes',
+#        pattern = 'Gestational Diabetes iterative code',
+#        hash = hashlib.sha224('Gestational Diabetes iterative code'),
+#        )[0]
     
     # One of these events, during pregnancy, is sufficient for a case of GDM
     CRITERIA_ONCE = [
@@ -570,7 +580,81 @@ class Diabetes(Condition):
 
 
 
-def get_heuristics():
-    return [
-        
-        ]
+def get_event_heuristics():
+    heuristics = []
+    #
+    # Fasting Glucose
+    #
+    for test_name in [
+        'ogtt50_fasting',
+        'ogtt75_fasting',
+        'ogtt100_fasting',
+        ]:
+        h = LabResultFixedThresholdHeuristic(
+            test_name = test_name,
+            threshold = 126,
+            )
+        heuristics.append(h)
+    #
+    # OGTT50
+    #
+    for test_name in [
+        'ogtt50_fasting',
+        'ogtt50_1hr',
+        ]:
+        h = LabResultFixedThresholdHeuristic(
+            test_name = test_name,
+            threshold = 190,
+            )
+        heuristics.append(h)
+    #
+    # OGTT75
+    #
+    for pair in [
+        ('ogtt75_fasting', 92),
+        ('ogtt75_fasting', 126),
+        ('ogtt75_30m', 200),
+        ('ogtt75_1hr', 180),
+        ('ogtt75_1hr', 200),
+        ('ogtt75_90m', 180),
+        ('ogtt75_90m', 200),
+        ('ogtt75_2hr', 153),
+        ('ogtt75_2hr', 200),
+        ]:
+        h = LabResultFixedThresholdHeuristic(
+            test_name = pair[0],
+            threshold = pair[1],
+            )
+        heuristics.append(h)
+    #
+    # OGTT100
+    #
+    heuristics.append( LabResultPositiveHeuristic(test_name = 'ogtt100_fasting_urine'))
+    for pair in [
+        ('ogtt100_fasting', 95),
+        ('ogtt100_30m', 200),
+        ('ogtt100_1hr', 180),
+        ('ogtt100_90m', 180),
+        ('ogtt100_2hr', 155),
+        ('ogtt100_3hr', 140),
+        ('ogtt100_4hr', 140),
+        ('ogtt100_5hr', 140),
+        ]:
+        h = LabResultFixedThresholdHeuristic(
+            test_name = pair[0],
+            threshold = pair[1],
+            )
+        heuristics.append(h)
+    #
+    # Prescriptions
+    #
+    for drug in ['insulin', 'metformin', 'glyburide']:
+        h = PrescriptionHeuristic(
+            name = drug,
+            drugs = [drug],
+            )
+        heuristics.append(h)
+    return heuristics
+
+def get_timespan_heuristics():
+    return []

@@ -11,8 +11,10 @@
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
-from ESP.emr.models import Encounter, Patient
-from ESP.hef.base import AbstractLabTest, BaseEventHeuristic, EventType
+from ESP.emr.models import Encounter
+from ESP.emr.models import Patient
+from ESP.hef.base import AbstractLabTest
+from ESP.hef.base import BaseEventHeuristic
 from ESP.hef.models import Event, Timespan
 from ESP.utils import log, log_query
 from django.core.management.base import BaseCommand
@@ -42,42 +44,17 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
     uri = VERSION_URI
     
     core_uris = [
-        'urn:x-esphealth:core:v1',
+        'urn:x-esphealth:hef:core:v1',
         ]
     
-    __rand_140 = EventType(
-        name = 'glucose_random_140',
-        uri = 'urn:x-esphealth:event:labresult:glucose-random:v1:threshold:140',
-        )
-    __rand_200 = EventType(
-        name = 'glucose_random_200',
-        uri = 'urn:x-esphealth:event:labresult:glucose-random:v1:threshold:200',
-        )
-    __fast_140 = EventType(
-        name = 'glucose_fasting_140',
-        uri = 'urn:x-esphealth:event:labresult:glucose-fasting:v1:threshold:140',
-        )
-    __fast_200 = EventType(
-        name = 'glucose_fasting_200',
-        uri = 'urn:x-esphealth:event:labresult:glucose-fasting:v1:threshold:200',
-        )
+    result_test = AbstractLabTest('glucose-compound-random-fasting-result')
+    flag_test = AbstractLabTest('glucose-compound-random-fasting-flag')
     
-    result_test = AbstractLabTest(
-    	name = 'crfg_result',
-    	uri = 'urn:x-esphealth:abstractlabtest:glucose-compound-random-fasting-result:v1'
-    	)
-
-    flag_test = AbstractLabTest(
-    	name = 'crfg_flag',
-    	uri = 'urn:x-esphealth:abstractlabtest:glucose-compound-random-fasting-flag:v1'
-    	)
-
-    
-    event_types = [
-        __rand_140,
-        __rand_200,
-        __fast_140,
-        __fast_200,
+    event_names = [
+        'lx:glucose-random:threshold:140',
+        'lx:glucose-random:threshold:200',
+        'lx:glucose-fasting:threshold:140',
+        'lx:glucose-fasting:threshold:200',
         ]
     
     def generate(self):
