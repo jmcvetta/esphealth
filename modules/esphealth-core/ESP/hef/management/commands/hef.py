@@ -146,12 +146,12 @@ class Command(BaseCommand):
         heuristics = {}
         selected_heuristics = []
         for h in BaseHeuristic.get_all():
-            heuristics[h.name] = h
-        for name in args:
-            if not name in heuristics:
-                print >> sys.stderr, 'Unknown heuristic specified:  %s' % name
+            heuristics[h.uri] = h
+        for uri in args:
+            if not uri in heuristics:
+                print >> sys.stderr, 'Unknown heuristic specified:  %s' % uri
                 sys.exit('-1')
-            selected_heuristics.append(heuristics[name])
+            selected_heuristics.append(heuristics[uri])
         for h in selected_heuristics:
             h.generate()
     
@@ -170,7 +170,7 @@ class Command(BaseCommand):
     
     def list(self, args, options):
         for h in BaseHeuristic.get_all():
-            print h.name
+            print h.uri
 
 
 class ThreadedEventGenerator(threading.Thread):

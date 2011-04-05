@@ -14,7 +14,7 @@
 #
 # The HEF_CORE_URI string uniquely describes this version of HEF core.  
 # It MUST be incremented whenever any core functionality is changed!
-HEF_CORE_URI = 'https://esphealth.org/reference/hef/core/1.0'
+HEF_CORE_URI = 'urn:x-esphealth:hef:core:3.0'
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -111,57 +111,6 @@ ORDER_RESULT_RECORD_TYPES = [
     ]
 
 
-
-class EventType(object):
-    '''
-    A distinct type of medical event
-    '''
-    
-    def __init__(self, name, uri):
-        assert name
-        assert uri
-        self.__name = name
-        self.__uri = uri
-    
-    def __get_name(self):
-        '''
-        Common English name for this kind of event
-        '''
-        return self.__name
-    name = property(__get_name)
-    
-    def __get_uri(self):
-        '''
-        URI which uniquely describes this kind of event
-        '''
-        return self.__uri
-    uri = property(__get_uri)
-    
-    def create_event(self, patient, provider, date, heuristic_uri):
-        '''
-        Creates an event of this type
-        @param patient: Patient to whom this event relates
-        @type patient:  ESP.emr.models.Patient
-        @param provider: Medical service provider for this event
-        @type provider:  ESP.emr.models.Provider
-        @param date: Date of this event
-        @type date:  datetime.date
-        @param heuristic_uri: URI for the heuristic that created this event
-        @type heuristic_uri:  String
-        '''
-        new_event = Event(
-            name = self.name,
-            uri = self.uri,
-            heuristic_uri = heuristic_uri,
-            patient = patient,
-            provider = provider,
-            date = date, 
-            )
-        new_event.save()
-        log.debug('Created new event: %s' % new_event)
-        return new_event
-
-
 class BaseHeuristic(object):
     '''
     A heuristic for generating Events from raw medical records
@@ -169,12 +118,6 @@ class BaseHeuristic(object):
     '''
     
     __metaclass__ = abc.ABCMeta
-    
-    @abc.abstractproperty
-    def name(self):
-        '''
-        Common English name for this heuristic
-        '''
     
     @abc.abstractproperty
     def uri(self):
@@ -212,7 +155,7 @@ class BaseHeuristic(object):
         heuristics.update(BaseEventHeuristic.get_all())
         heuristics.update(BaseTimespanHeuristic.get_all())
         heuristics = list(heuristics)
-        heuristics.sort(key = lambda h: h.name)
+        heuristics.sort(key = lambda h: h.uri)
         return heuristics
 
 
@@ -240,7 +183,7 @@ class BaseEventHeuristic(BaseHeuristic):
             factory = entry_point.load()
             heuristics.update(factory())
         heuristics = list(heuristics)
-        heuristics.sort(key = lambda h: h.name)
+        heuristics.sort(key = lambda h: h.uri)
         return heuristics
 
 
@@ -346,7 +289,7 @@ class LabOrderHeuristic(BaseEventHeuristic):
         log.info('Generating events for %s' % self)
         alt = AbstractLabTest(self.test_name)
         unbound_orders = alt.lab_orders.exclude(tags__event_name=self.order_event_name)
-        log_query('Unbound lab orders for %s' % self.name, unbound_orders)
+        log_query('Unbound lab orders for %s' % self.uri, unbound_orders)
         unbound_count = unbound_orders.count()
         for order in queryset_iterator(unbound_orders):
             e = Event(
@@ -359,7 +302,7 @@ class LabOrderHeuristic(BaseEventHeuristic):
             e.save()
             e.tag(order)
             log.debug('Saved new event: %s' % e)
-        log.info('Generated %s new %s events' % (unbound_count, self.name))
+        log.info('Generated %s new %s events' % (unbound_count, self.uri))
         return unbound_count
     
     
@@ -367,6 +310,11 @@ class BaseLabResultHeuristic(BaseEventHeuristic):
     '''
     Parent for lab heuristics, supplying some convenience methods
     '''
+    
+    @property
+    def core_uris(self):
+        # Only this version of HEF is supported
+        return [HEF_CORE_URI]
     
     @property
     def alt(self):
@@ -383,6 +331,7 @@ class BaseLabResultHeuristic(BaseEventHeuristic):
         '''
         unbound_results = self.alt.lab_results.exclude(tags__event_name__in=self.event_names)
         return unbound_results
+    
 
 
 class LabResultAnyHeuristic(BaseLabResultHeuristic): 
@@ -430,7 +379,7 @@ class LabResultAnyHeuristic(BaseLabResultHeuristic):
             e.save()
             e.tag(lab)
             log.debug('Saved new event: %s' % e)
-        log.info('Generated %s new %s events' % (unbound_count, self.name))
+        log.info('Generated %s new %s events' % (unbound_count, self.uri))
         return unbound_count
 
 
@@ -539,7 +488,7 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
         # Generate Events
         #
         positive_labs = self.unbound_labs.filter(positive_q)
-        log_query('Positive labs for %s' % self.name, positive_labs)
+        log_query('Positive labs for %s' % self.uri, positive_labs)
         log.info('Generating positive events for %s' % self)
         for lab in queryset_iterator(positive_labs):
             if self.date_field == 'order':
@@ -621,6 +570,7 @@ class LabResultRatioHeuristic(BaseLabResultHeuristic):
         name = u'lx:%s:ratio:%s' % (self.test_name, self.ratio)
         if not self.date_field == 'order':
             name += ':%s-date' % self.date_field
+        return name
     
     @property
     def event_names(self):
@@ -663,28 +613,29 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
     '''
     A heuristic for detecting fixed-threshold-based positive lab result events
     '''
-    def __init__(self, test_name, treshold, date_field='order'):
+    def __init__(self, test_name, threshold, date_field='order'):
         '''
         @param threshold: Events are generated for lab results greater than or equal to this value
         @type threshold:  Float
         '''
         assert test_name and date_field
         self.test_name = test_name
-        self.treshold = float(treshold)
+        self.threshold = float(threshold)
         self.date_field = date_field
     
     @property
     def uri(self):
-        uri = 'urn:x-esphealth:heuristic:labresult:%s:treshold:%s' % (self.test_name, self.treshold)
+        uri = 'urn:x-esphealth:heuristic:labresult:%s:threshold:%s' % (self.test_name, self.threshold)
         if not self.date_field == 'order':
             uri += ':%s-date' % self.date_field
         return uri
     
     @property
     def threshold_event_name(self):
-        name = u'lx:%s:treshold:%s' % (self.test_name, self.treshold)
+        name = u'lx:%s:threshold:%s' % (self.test_name, self.threshold)
         if not self.date_field == 'order':
             name += ':%s-date' % self.date_field
+        return name
     
     @property
     def event_names(self):
@@ -692,8 +643,8 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
     
     def generate(self):
         positive_labs = self.unbound_labs.filter(result_float__isnull=False, result_float__gte=self.threshold)
-        log_query(self.name, positive_labs)
-        log.info('Generating events for "%s"' % self.name)
+        log_query(self.uri, positive_labs)
+        log.info('Generating events for "%s"' % self.uri)
         for lab in queryset_iterator(positive_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -709,7 +660,7 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
             new_event.save()
             new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
-        log.info('Generated %s new events for %s' % (positive_labs.count(), self.name))
+        log.info('Generated %s new events for %s' % (positive_labs.count(), self.uri))
         return positive_labs.count() 
 
 
@@ -753,6 +704,7 @@ class LabResultRangeHeuristic(BaseLabResultHeuristic):
         name = 'lx:%s:range:%s:%s:%s:%s' % (self.test_name, self.min_match, self.min, self.max_match, self.max)
         if not self.date_field == 'order':
             name += ':%s-date' % self.date_field
+        return name
     
     @property
     def event_names(self):
@@ -770,8 +722,8 @@ class LabResultRangeHeuristic(BaseLabResultHeuristic):
             qs = qs.filter(result_float__lte=self.maximum)
         elif self.maximum_match_type == 'lt':
             qs = qs.filter(result_float__lt=self.maximum)
-        log_query(self.name, qs)
-        log.info('Generating events for "%s"' % self.name)
+        log_query(self.uri, qs)
+        log.info('Generating events for "%s"' % self.uri)
         for lab in queryset_iterator(qs):
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -787,7 +739,7 @@ class LabResultRangeHeuristic(BaseLabResultHeuristic):
             new_event.save()
             new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
-        log.info('Generated %s new events for %s' % (qs.count(), self.name))
+        log.info('Generated %s new events for %s' % (qs.count(), self.uri))
         return qs.count() 
 
 
@@ -826,12 +778,14 @@ class LabResultWesternBlotHeuristic(BaseLabResultHeuristic):
         name = 'lx:%s:westernblot:%s:positive' % (self.test_name, self.bands_str)
         if not self.date_field == 'order':
             name += ':%s-date' % self.date_field
+        return name
     
     @property
     def negative_event_name(self):
         name = 'lx:%s:westernblot:%s:negative' % (self.test_name, self.bands_str)
         if not self.date_field == 'order':
             name += ':%s-date' % self.date_field
+        return name
     
     @property
     def event_names(self):
@@ -964,6 +918,11 @@ class PrescriptionHeuristic(BaseEventHeuristic):
     def uri(self):
         uri = 'urn:x-esphealth:heuristic:prescription:%s' % self.name
         return uri
+    
+    @property
+    def core_uris(self):
+        # Only this version of HEF is supported
+        return [HEF_CORE_URI]
     
     @property
     def rx_event_name(self):
