@@ -160,10 +160,10 @@ class Command(BaseCommand):
         ts_counter = 0
         for heuristic in BaseEventHeuristic.get_all():
             log.info('Running %s' % heuristic)
-            event_counter += heuristic.generate_events()
+            event_counter += heuristic.generate()
         for heuristic in BaseTimespanHeuristic.get_all():
             log.info('Running %s' % heuristic)
-            ts_counter += heuristic.generate_timespans()
+            ts_counter += heuristic.generate()
         log.info('Generated %20s events' % event_counter)
         log.info('Generated %20s timespans' % ts_counter)
         return event_counter + ts_counter
