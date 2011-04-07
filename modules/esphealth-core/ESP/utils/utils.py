@@ -20,7 +20,7 @@ import logging
 import simplejson
 import types
 import sqlparse
-#from logging.handlers import SysLogHandler
+from decimal import Decimal
 
 from django.db.models import Q
 from django.core.paginator import Paginator
@@ -394,15 +394,15 @@ re.VERBOSE)
 
 def weight_str_to_kg(raw_string):
     '''
-    Parses the content of raw_string and returns weight in kilograms as a Float.  
+    Parses the content of raw_string and returns weight in kilograms as a Decimal.  
     '''
     if not raw_string:
         return None
     match = WEIGHT_REGEX.match(raw_string)
     if match:
-        lbs = float(match.group('lbs'))
+        lbs = Decimal(match.group('lbs'))
         if match.group('oz'):
-            lbs += ( float(match.group('oz')) / 16 )
+            lbs += ( Decimal(match.group('oz')) / 16 )
         kg = lbs / 2.20462262185
         return kg
     else:
@@ -415,7 +415,7 @@ HEIGHT_REGEX = re.compile(r'''
 
 def height_str_to_cm(raw_string):
     '''
-    Parses the content of raw_string and returns height in centimeters as a Float.  
+    Parses the content of raw_string and returns height in centimeters as a Decimal.  
     If string parses to a height of 0, method will return None instead, to avoid 
     divide by zero issues in BMI calculation.
     '''
@@ -423,9 +423,9 @@ def height_str_to_cm(raw_string):
         return None
     match = HEIGHT_REGEX.match(raw_string)
     if match:
-        feet = float(match.group('feet'))
+        feet = Decimal(match.group('feet'))
         if match.group('inches'):
-            feet += ( float(match.group('inches')) / 12 )
+            feet += ( Decimal(match.group('inches')) / 12 )
         cm = feet * 30.48
         if cm: # Don't return 0 height
             return cm

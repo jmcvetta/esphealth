@@ -122,7 +122,7 @@ class LoadException(BaseException):
 
 class BaseLoader(object):
     
-    float_catcher = re.compile(r'(\d+\.?\d*)') 
+    decimal_catcher = re.compile(r'(\d+\.?\d*)') 
     #
     # Caching Note
     #
@@ -223,15 +223,15 @@ class BaseLoader(object):
             obj.save()
         return obj, created
         
-    def float_or_none(self, str):
+    def decimal_or_none(self, str):
         if not str:
             return None
-        m = self.float_catcher.match(str)
+        m = self.decimal_catcher.match(str)
         if m and m.groups():
-            result = float(m.groups()[0])
+            result = Decimal(m.groups()[0])
         else:
             result = None
-        if result == float('infinity'): # Rare edge case, but it does happen
+        if result == Decimal('infinity'): # Rare edge case, but it does happen
             result = None
         return result
     
@@ -242,9 +242,6 @@ class BaseLoader(object):
             return date_from_str(str)
         except ValueError:
             return None
-        
-    def decimal_or_none(self, str):
-        return Decimal(str) if str else None
         
     def string_or_none(self, s):
         '''
@@ -527,11 +524,11 @@ class LabResultLoader(BaseLoader):
         l.native_name = row['component_name']
         res = row['result_string']
         l.result_string = res
-        l.result_float = self.float_or_none(l.result_string)
+        l.result_float = self.decimal_or_none(l.result_string)
         l.ref_low_string = row['ref_low']
         l.ref_high_string = row['ref_high']
-        l.ref_low_float = self.float_or_none(row['ref_low'])
-        l.ref_high_float = self.float_or_none(row['ref_high'])
+        l.ref_low_float = self.decimal_or_none(row['ref_low'])
+        l.ref_high_float = self.decimal_or_none(row['ref_high'])
         l.ref_unit = row['unit']
         l.abnormal_flag = row['normal_flag']
         l.status = row['status']
@@ -617,43 +614,31 @@ class EncounterLoader(BaseLoader):
         # Util methods
         cap = self.capitalize
         son = self.string_or_none
-        dton = self.date_or_none
-        flon = self.float_or_none
+        daton = self.date_or_none
+        decon = self.decimal_or_none
         values = {
             'native_encounter_num': row['encounter_id_num'].strip(),
             'provenance': self.provenance,
             'patient': self.get_patient(row['patient_id_num']),
             'provider': self.get_provider(row['provider_id_num']),
-            'date': dton(row['encounter_date']),
-            'raw_date': son(row['encounter_date']),
+            'date': daton(row['encounter_date']),
             'native_site_num': son( row['dept_id_num'] ),
-            'encounter_type': cap(row['event_type']),
-            'date_closed': dton(row['closed_date']),
-            'raw_date_closed': son(row['closed_date']),
+            'event_type': cap(row['event_type']),
+            'closed_date': daton(row['closed_date']),
             'site_name': cap(row['dept_name']),
-            'raw_temperature': son(row['temp']),
-            'temperature': flon(row['temp']),
-            'raw_bp_systolic': son(row['bp_systolic']),
-            'bp_systolic': flon(row['bp_systolic']),
-            'raw_bp_diastolic': son(row['bp_diastolic']),
-            'bp_diastolic': flon(row['bp_diastolic']),
-            'raw_o2_stat': son(row['o2_stat']),
-            'o2_stat': flon(row['o2_stat']),
-            'raw_peak_flow': son(row['peak_flow']),
-            'peak_flow': flon(row['peak_flow']),
-            'raw_edd': son(row['edc']),
-            'edd': dton(row['edc']),
-            'raw_diagnosis': son(row['diagnosis']),
-            'raw_weight': son(row['weight']),
+            'temperature': decon(row['temp']),
+            'bp_systolic': decon(row['bp_systolic']),
+            'bp_diastolic': decon(row['bp_diastolic']),
+            'o2_stat': decon(row['o2_stat']),
+            'peak_flow': decon(row['peak_flow']),
+            'edc': daton(row['edc']),
             'weight': weight_str_to_kg(row['weight']),
-            'raw_height': son(row['height']),
             'height': height_str_to_cm(row['height']),
-            'raw_bmi': son(row['bmi']),
             }
-        if values['edd']:  
-            values['pregnant'] = True
+        if values['edc']:  
+            values['pregnancy_status'] = True
         e, created = self.insert_or_update(Encounter, values, ['native_encounter_num'])
-        e.bmi = e._calculate_bmi() # No need to save until we finish ICD9s
+        e.bmi = e.calculate_bmi( row['bmi'] ) # No need to save until we finish ICD9s
         #
         # ICD9 Codes
         #
@@ -719,7 +704,7 @@ class PrescriptionLoader(BaseLoader):
         p.name = row['drug_name']
         p.code = row['ndc']
         p.quantity = row['quantity']
-        p.quantity_float = self.float_or_none(row['quantity'])
+        p.quantity_float = self.decimal_or_none(row['quantity'])
         p.refills = row['refills']
         p.start_date = self.date_or_none(row['start_date'])
         p.end_date = self.date_or_none(row['end_date'])
@@ -895,7 +880,7 @@ class Command(LoaderCommand):
             log.warning('You specified --reload, so files will be reloaded if already in database')
         for filepath in input_filepaths:
             path, filename = os.path.split(filepath)
-            if (options['reload'] == False) and Provenance.objects.filter(source=filename, status__in=('loaded', 'errors')):
+            if (not options['reload'] ) and Provenance.objects.filter(source=filename, status__in=('loaded', 'errors')):
                 log.info('File "%s" has already been loaded; skipping' % filename)
                 self.archive(options, filepath, 'success')
                 continue

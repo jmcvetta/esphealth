@@ -16,6 +16,8 @@ import sys
 import re
 import os
 
+from decimal import Decimal
+
 from django.db import models
 from django.db.models import Q, F
 from django.contrib.contenttypes.models import ContentType
@@ -984,6 +986,54 @@ class Encounter(BasePatientRecord):
     def _get_icd9_codes_str(self):
         return ', '.join(self.icd9_codes.order_by('code').values_list('code', flat=True))
     icd9_codes_str = property(_get_icd9_codes_str)
+
+    def calculate_bmi(self, raw_bmi):
+        '''
+        Calculate's patient's BMI as of this encounter
+        @param raw_bmi: String representing BMI as found in ETL file
+        @type  raw_bmi: String
+        @return: Calculated BMI
+        @rtype:  Decimal
+        '''
+        # If this encounter has a raw bmi value, convert it to float and return
+        if raw_bmi:
+            try:
+                return Decimal(raw_bmi)
+            except ValueError: # Can't convert raw_bmi to a decimal
+                log.warning('Could not convert raw_bmi "%s" to decimal - will try to calculate BMI' % raw_bmi)
+        # If this encounter has usable height & weight, calculate BMI based on that
+        if (self.height and self.weight):
+            height = self.height
+            weight = self.weight
+        else:
+            # If there was a valid BMI in the past year, go with that
+            pat_encs = Encounter.objects.filter(
+                patient = self.patient,
+                ).order_by('-date')
+            encs_last_year = pat_encs.filter(
+                date__gte = (self.date - relativedelta(days=365)),
+                date__lte = self.date,
+                )
+            recent_bmi_encs = encs_last_year.filter(bmi__isnull=False)
+            if recent_bmi_encs:
+                return recent_bmi_encs[0].bmi
+            # Find the most recent height for this patient, looking back as far 
+            # as their 16th birthday if necessary
+            sixteenth_bday = self.patient.date_of_birth + relativedelta(years=16)
+            ht_encs = pat_encs.filter(date__gte=sixteenth_bday, height__isnull=False).exclude(height=0)
+            # Find the most recent weight this patient within the past year
+            wt_encs = encs_last_year.filter(weight__isnull=False).exclude(weight=0)
+            if ht_encs and wt_encs:
+                height = ht_encs[0].height
+                weight = wt_encs[0].weight
+            else: # We don't know a recent height and weight for this patient
+                log.warning('Cannot calculate BMI for encounter # %s' % self.pk)
+                return None 
+        height_m = height / 100  # Height is stored in centimeters
+        weight_kg = weight # Already in kilograms
+        bmi = weight_kg / (height_m ** 2 )
+        bmi = Decimal(bmi)
+        return bmi
 
 
     def document_summary(self):

@@ -14,7 +14,7 @@ from setuptools import find_packages
 
 setup(
     name = 'esphealth-core',
-    version = '2.1a',
+    version = '2.1',
     packages = find_packages(),
     install_requires = [
         'django >= 1.2',

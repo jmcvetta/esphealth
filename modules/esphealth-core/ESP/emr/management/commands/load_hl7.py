@@ -11,13 +11,6 @@
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#
-# TODO:  This script must be refactored to work as a manage.py command.
-#
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
 
 import os
 import datetime
@@ -122,12 +115,12 @@ class Hl7MessageLoader(object):
         self.filepath = filepath
         self.basename = os.path.basename(filepath)
         
-    float_catcher = re.compile(r'(\d+\.?\d*)') 
+    decimal_catcher = re.compile(r'(\d+\.?\d*)') 
     
     def float_or_none(self, string):
         if not string:
             return None
-        m = self.float_catcher.match(string)
+        m = self.decimal_catcher.match(string)
         if m and m.groups():
             result = float(m.groups()[0])
         else:
