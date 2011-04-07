@@ -39,6 +39,8 @@ class LoaderCommand(BaseCommand):
             metavar='FOLDER', help='Folder from which to read incoming HL7 messages'),
         make_option('--no-archive', action='store_false', dest='archive', default=ETL_ARCHIVE, 
             help='Do NOT archive files after they have been loaded'),
+        make_option('--reload', action='store_true', dest='reload', default=False, 
+            help='Load files even if they have already been loaded in the past'),
         )
 
     def archive(self, options, filepath, disposition):
