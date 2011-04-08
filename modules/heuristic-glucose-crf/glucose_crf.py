@@ -50,11 +50,16 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
     result_test = AbstractLabTest('glucose-compound-random-fasting-result')
     flag_test = AbstractLabTest('glucose-compound-random-fasting-flag')
     
+    _rand_140 = 'lx:glucose-random:threshold:140'
+    _rand_200 = 'lx:glucose-random:threshold:200'
+    _fast_140 = 'lx:glucose-fasting:threshold:140'
+    _fast_200 = 'lx:glucose-fasting:threshold:200'
+    
     event_names = [
-        'lx:glucose-random:threshold:140',
-        'lx:glucose-random:threshold:200',
-        'lx:glucose-fasting:threshold:140',
-        'lx:glucose-fasting:threshold:200',
+        _rand_140,
+        _rand_200,
+        _fast_140,
+        _fast_200,
         ]
     
     def generate(self):
@@ -85,9 +90,9 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
         # Find flags
         #
         flag_results = self.flag_test.lab_results
-        fasting_flag_records = flag_results.filter(result_string__istartswith='fast').exclude(result_string__iendswith='rand')
-        fasting_patients = fasting_flag_records.values_list('patient', flat=True)
-        fasting_qs = fasting_flag_records.values('patient', 'date').distinct()
+        fasting_qs = flag_results.filter(result_string__istartswith='fast').exclude(result_string__iendswith='rand')
+        fasting_qs = fasting_qs.exclude(tags__event_name__in=self.event_names)
+        fasting_qs = fasting_qs.values('patient', 'date').distinct()
         log_query('fasting flag patients & dates', fasting_qs)
         fasting_pat_dates = {}
         for pat_date in fasting_qs:
@@ -102,24 +107,51 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
         log_query('random/fasting glucose labs', lab_qs)
         #
         for lab in lab_qs:
-            fasting = False # Assume random glucose by default
             over_200 = lab.result_float >= 200 # Is test score over 200?
             if lab.date in fasting_pat_dates.get(lab.patient.id, []):
-                e = self.__fast_140.create_event(lab.patient, lab.provider, lab.date)
+                e = Event(
+                    name = self._fast_140,
+                    source = self.uri,
+                    patient = lab.patient,
+                    provider = lab.provider,
+                    date = lab.date,
+                    )
+                e.save()
                 e.tag(lab)
-                e.tag_qs( fasting_flag_records.filter(patient=lab.patient, date=lab.date) )
+                e.tag_qs( fasting_qs.filter(patient=lab.patient, date=lab.date) )
                 counter += 1
                 if over_200:
-                    e = self.__fast_200.create_event(lab.patient, lab.provider, lab.date)
+                    e = Event(
+                        name = self._fast_200,
+                        source = self.uri,
+                        patient = lab.patient,
+                        provider = lab.provider,
+                        date = lab.date,
+                        )
+                    e.save()
                     e.tag(lab)
-                    e.tag_qs( fasting_flag_records.filter(patient=lab.patient, date=lab.date) )
+                    e.tag_qs( fasting_qs.filter(patient=lab.patient, date=lab.date) )
                     counter += 1
             else:
-                e = self.__rand_140.create_event(lab.patient, lab.provider, lab.date)
+                e = Event(
+                    name = self._fast_140,
+                    source = self.uri,
+                    patient = lab.patient,
+                    provider = lab.provider,
+                    date = lab.date,
+                    )
+                e.save()
                 e.tag(lab)
                 counter += 1
                 if over_200:
-                    e = self.__rand_200.create_event(lab.patient, lab.provider, lab.date)
+                    e = Event(
+                        name = self._rand_200,
+                        source = self.uri,
+                        patient = lab.patient,
+                        provider = lab.provider,
+                        date = lab.date,
+                        )
+                    e.save()
                     e.tag(lab)
                     counter += 1
         return counter

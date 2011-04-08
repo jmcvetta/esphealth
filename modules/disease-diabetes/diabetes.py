@@ -75,31 +75,31 @@ class GestationalDiabetes(Condition):
     
     # One of these events, during pregnancy, is sufficient for a case of GDM
     CRITERIA_ONCE = [
-        'lx--ogtt100_fasting--threshold--126.0',
-        'lx--ogtt50_fasting--threshold--126.0',
-        'lx--ogtt75_fasting--threshold--126.0',
-        'lx--ogtt50_1hr--threshold--190.0',
-        'lx--ogtt50_random--threshold--190.0',
-        'lx--ogtt75_fasting--threshold--92.0',
-        'lx--ogtt75_30min--threshold--200.0',
-        'lx--ogtt75_1hr--threshold--180.0',
-        'lx--ogtt75_90min--threshold--180.0',
-        'lx--ogtt75_2hr--threshold--153.0',
+        'lx:ogtt100-fasting:threshold:126.0',
+        'lx:ogtt50-fasting:threshold:126.0',
+        'lx:ogtt75-fasting:threshold:126.0',
+        'lx:ogtt50-1hr:threshold:190.0',
+        'lx:ogtt50-random:threshold:190.0',
+        'lx:ogtt75-fasting:threshold:92.0',
+        'lx:ogtt75-30min:threshold:200.0',
+        'lx:ogtt75-1hr:threshold:180.0',
+        'lx:ogtt75-90min:threshold:180.0',
+        'lx:ogtt75-2hr:threshold:153.0',
         ]
     # Two or more occurrences of these events, during pregnancy, is sufficient for a case of GDM
     CRITERIA_TWICE = [
-        'lx--ogtt75_fasting--threshold--95.0',
-        'lx--ogtt75_30min--threshold--200.0',
-        'lx--ogtt75_1hr--threshold--180.0',
-        'lx--ogtt75_90min--threshold--180.0',
-        'lx--ogtt75_2hr--threshold--155.0',
-        'lx--ogtt100_fasting_urine--positive',
-        'lx--ogtt100_fasting--threshold--95.0',
-        'lx--ogtt100_30min--threshold--200.0',
-        'lx--ogtt100_1hr--threshold--180.0',
-        'lx--ogtt100_90min--threshold--180.0',
-        'lx--ogtt100_2hr--threshold--155.0',
-        'lx--ogtt100_3hr--threshold--140.0',
+        'lx:ogtt75-fasting:threshold:95.0',
+        'lx:ogtt75-30min:threshold:200.0',
+        'lx:ogtt75-1hr:threshold:180.0',
+        'lx:ogtt75-90min:threshold:180.0',
+        'lx:ogtt75-2hr:threshold:155.0',
+        'lx:ogtt100-fasting-urine:positive',
+        'lx:ogtt100-fasting:threshold:95.0',
+        'lx:ogtt100-30min:threshold:200.0',
+        'lx:ogtt100-1hr:threshold:180.0',
+        'lx:ogtt100-90min:threshold:180.0',
+        'lx:ogtt100-2hr:threshold:155.0',
+        'lx:ogtt100-3hr:threshold:140.0',
         ]
     
     
@@ -586,9 +586,9 @@ def get_event_heuristics():
     # Fasting Glucose
     #
     for test_name in [
-        'ogtt50_fasting',
-        'ogtt75_fasting',
-        'ogtt100_fasting',
+        'ogtt50-fasting',
+        'ogtt75-fasting',
+        'ogtt100-fasting',
         ]:
         h = LabResultFixedThresholdHeuristic(
             test_name = test_name,
@@ -599,8 +599,8 @@ def get_event_heuristics():
     # OGTT50
     #
     for test_name in [
-        'ogtt50_fasting',
-        'ogtt50_1hr',
+        'ogtt50-fasting',
+        'ogtt50-1hr',
         ]:
         h = LabResultFixedThresholdHeuristic(
             test_name = test_name,
@@ -611,15 +611,15 @@ def get_event_heuristics():
     # OGTT75
     #
     for pair in [
-        ('ogtt75_fasting', 92),
-        ('ogtt75_fasting', 126),
-        ('ogtt75_30m', 200),
-        ('ogtt75_1hr', 180),
-        ('ogtt75_1hr', 200),
-        ('ogtt75_90m', 180),
-        ('ogtt75_90m', 200),
-        ('ogtt75_2hr', 153),
-        ('ogtt75_2hr', 200),
+        ('ogtt75-fasting', 92),
+        ('ogtt75-fasting', 126),
+        ('ogtt75-30m', 200),
+        ('ogtt75-1hr', 180),
+        ('ogtt75-1hr', 200),
+        ('ogtt75-90m', 180),
+        ('ogtt75-90m', 200),
+        ('ogtt75-2hr', 153),
+        ('ogtt75-2hr', 200),
         ]:
         h = LabResultFixedThresholdHeuristic(
             test_name = pair[0],
@@ -631,14 +631,14 @@ def get_event_heuristics():
     #
     heuristics.append( LabResultPositiveHeuristic(test_name = 'ogtt100_fasting_urine'))
     for pair in [
-        ('ogtt100_fasting', 95),
-        ('ogtt100_30m', 200),
-        ('ogtt100_1hr', 180),
-        ('ogtt100_90m', 180),
-        ('ogtt100_2hr', 155),
-        ('ogtt100_3hr', 140),
-        ('ogtt100_4hr', 140),
-        ('ogtt100_5hr', 140),
+        ('ogtt100-fasting', 95),
+        ('ogtt100-30m', 200),
+        ('ogtt100-1hr', 180),
+        ('ogtt100-90m', 180),
+        ('ogtt100-2hr', 155),
+        ('ogtt100-3hr', 140),
+        ('ogtt100-4hr', 140),
+        ('ogtt100-5hr', 140),
         ]:
         h = LabResultFixedThresholdHeuristic(
             test_name = pair[0],
