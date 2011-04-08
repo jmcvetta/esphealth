@@ -12,7 +12,14 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 psycopg2
--e svn+http://esphealth.org/svn/ESP/trunk/modules/esphealth-core#egg=esphealth-core
+django >= 1.2
+south
+python-dateutil
+simplejson
+sqlparse
+hl7
+django_tables
+configobj
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes#egg=disease-diabetes
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-pregnancy#egg=heuristic-pregnancy
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-glucose-crf#egg=heuristic-glucose-crf
