@@ -84,18 +84,17 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
         # Find unbound test results
         #
         lab_qs = self.result_test.lab_results
-        lab_qs = lab_qs.filter(result_float__gte=140) # Only scores over 140 have events defined
         lab_qs = lab_qs.exclude(tags__event_name__in=self.event_names)
+        lab_qs = lab_qs.filter(result_float__gte=140) # Only scores over 140 have events defined
         #
         # Find flags
         #
         flag_results = self.flag_test.lab_results
         fasting_qs = flag_results.filter(result_string__istartswith='fast').exclude(result_string__iendswith='rand')
         fasting_qs = fasting_qs.exclude(tags__event_name__in=self.event_names)
-        fasting_qs = fasting_qs.values('patient', 'date').distinct()
         log_query('fasting flag patients & dates', fasting_qs)
         fasting_pat_dates = {}
-        for pat_date in fasting_qs:
+        for pat_date in fasting_qs.values('patient', 'date').distinct():
             p = pat_date['patient']
             d = pat_date['date']
             if p in fasting_pat_dates:
@@ -119,6 +118,7 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
                 e.save()
                 e.tag(lab)
                 e.tag_qs( fasting_qs.filter(patient=lab.patient, date=lab.date) )
+                log.debug('Created event: %s' % e)
                 counter += 1
                 if over_200:
                     e = Event(
@@ -131,10 +131,11 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
                     e.save()
                     e.tag(lab)
                     e.tag_qs( fasting_qs.filter(patient=lab.patient, date=lab.date) )
+                    log.debug('Created event: %s' % e)
                     counter += 1
             else:
                 e = Event(
-                    name = self._fast_140,
+                    name = self._rand_140,
                     source = self.uri,
                     patient = lab.patient,
                     provider = lab.provider,
@@ -142,6 +143,7 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
                     )
                 e.save()
                 e.tag(lab)
+                log.debug('Created event: %s' % e)
                 counter += 1
                 if over_200:
                     e = Event(
@@ -153,6 +155,7 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
                         )
                     e.save()
                     e.tag(lab)
+                    log.debug('Created event: %s' % e)
                     counter += 1
         return counter
         
