@@ -158,9 +158,24 @@ class Command(BaseCommand):
     def all(self, args, options):
         event_counter = 0
         ts_counter = 0
-        for heuristic in BaseEventHeuristic.get_all():
-            log.info('Running %s' % heuristic)
-            event_counter += heuristic.generate()
+        if options['thread_count'] == 0:
+            count = 0
+            for heuristic in BaseEventHeuristic.get_all():
+                log.info('Running %s' % heuristic)
+                count += heuristic.generate()
+        else:
+            queue = Queue.Queue()
+            counter = Queue.Queue()
+            counter.put(0)
+            for i in range(options['thread_count']):
+                t = ThreadedEventGenerator(queue, counter)
+                t.setDaemon(True)
+                t.start()
+            for heuristic in BaseEventHeuristic.get_all():
+                log.info('Running %s' % heuristic)
+                queue.put(heuristic)
+            queue.join()
+            count = counter.get()
         for heuristic in BaseTimespanHeuristic.get_all():
             log.info('Running %s' % heuristic)
             ts_counter += heuristic.generate()
@@ -187,7 +202,7 @@ class ThreadedEventGenerator(threading.Thread):
         try:
             while self.alive:
                 event_generating_obj = self.queue.get()
-                count = event_generating_obj.generate_events()
+                count = event_generating_obj.generate()
                 i = self.counter.get()
                 self.counter.put(i+count)
                 del event_generating_obj
