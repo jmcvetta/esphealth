@@ -407,7 +407,7 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
     def positive_event_name(self):
         # Order date is default
         if self.date_field == 'order':
-            return u'lx:%s:positive' % (self.test_name, self.date_field)
+            return u'lx:%s:positive' % self.test_name
         else:
             return u'lx:%s:positive:%s-date' % (self.test_name, self.date_field)
     
@@ -415,7 +415,7 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
     def negative_event_name(self):
         # Order date is default
         if self.date_field == 'order':
-            return u'lx:%s:negative' % (self.test_name, self.date_field)
+            return u'lx:%s:negative' % self.test_name
         else:
             return u'lx:%s:negative:%s-date' % (self.test_name, self.date_field)
     
@@ -423,7 +423,7 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
     def indeterminate_event_name(self):
         # Order date is default
         if self.date_field == 'order':
-            return u'lx:%s:indeterminate' % (self.test_name, self.date_field)
+            return u'lx:%s:indeterminate' % self.test_name
         else:
             return u'lx:%s:indeterminate:%s-date' % (self.test_name, self.date_field)
     
@@ -438,7 +438,7 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
         # those events are ignored.  This will allow negative lab query to much
         # simpler.
         #
-        log.debug('Generating events for "%s"' % self.verbose_name)
+        log.debug('Generating events for "%s"' % self)
         #
         # Build numeric query
         #
@@ -456,7 +456,7 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
         #
         # Build queries from LabTestMaps
         #
-        for map in LabTestMap.objects.filter(test=self.test):
+        for map in LabTestMap.objects.filter(test_name=self.test_name):
             lab_q = map.lab_results_q_obj
             ref_float_q = Q(ref_high_float__isnull=False)
             num_res_q = lab_q & ref_float_q & Q(result_float__isnull=False)
@@ -505,9 +505,9 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
             new_event.save()
             new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
-        log.info('Generated %s new positive events for %s' % (positive_labs.count(), self.name))
+        log.info('Generated %s new positive events for %s' % (positive_labs.count(), self))
         negative_labs = self.unbound_labs.filter(negative_q)
-        log_query('Negative labs for %s' % self.name, negative_labs)
+        log_query('Negative labs for %s' % self, negative_labs)
         log.info('Generating negative events for %s' % self)
         for lab in queryset_iterator(negative_labs):
             if self.date_field == 'order':
@@ -524,9 +524,9 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
             new_event.save()
             new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
-        log.info('Generated %s new negative events for %s' % (negative_labs.count(), self.name))
+        log.info('Generated %s new negative events for %s' % (negative_labs.count(), self))
         indeterminate_labs = self.unbound_labs.filter(indeterminate_q)
-        log_query('Indeterminate labs for %s' % self.name, indeterminate_labs)
+        log_query('Indeterminate labs for %s' % self, indeterminate_labs)
         log.info('Generating indeterminate events for %s' % self)
         for lab in queryset_iterator(indeterminate_labs):
             if self.date_field == 'order':
@@ -543,7 +543,7 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
             new_event.save()
             new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
-        log.info('Generated %s new indeterminate events for %s' % (indeterminate_labs.count(), self.name))
+        log.info('Generated %s new indeterminate events for %s' % (indeterminate_labs.count(), self))
         return positive_labs.count() + negative_labs.count() + indeterminate_labs.count()
 
 
@@ -588,7 +588,7 @@ class LabResultRatioHeuristic(BaseLabResultHeuristic):
             positive_labs |= num_res_labs.filter(ref_high_float__isnull=False, result_float__gte = (self.ratio * F('ref_high_float')))
             if map.threshold:
                 positive_labs |= num_res_labs.filter(ref_high_float__isnull=True, result_float__gte = (self.ratio * map.threshold))
-        log_query(self.name, positive_labs)
+        log_query(self, positive_labs)
         log.info('Generating new events for %s' % self)
         for lab in queryset_iterator(positive_labs):
             if self.date_field == 'order':
@@ -605,7 +605,7 @@ class LabResultRatioHeuristic(BaseLabResultHeuristic):
             new_event.save()
             new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
-        log.info('Generated %s new events for %s' % (positive_labs.count(), self.name))
+        log.info('Generated %s new events for %s' % (positive_labs.count(), self))
         return positive_labs.count()
 
 
@@ -891,14 +891,14 @@ class PrescriptionHeuristic(BaseEventHeuristic):
     A heuristic for detecting prescription events
     '''
     
-    def __init__(self, name, drugs, dose=None, min_quantity=None, require=None, exclude=None):
+    def __init__(self, name, drugs, doses=[], min_quantity=None, require=None, exclude=None):
         '''
         @param name: Name of event to be generated
         @type name:  String
         @param drugs: Generate event if one of these drugs was prescribed
         @type drugs:  List of strings
-        @param dose: Only generate events if this dose was prescribed
-        @type dose:  Dose object
+        @param doses: Only generate events if this doses was prescribed
+        @type doses:  List of Dose objects
         @param min_quanity: Minimum value for quantity field
         @type min_quanity:  Integer
         @param require: Prescription must include one or more of these strings.
@@ -909,7 +909,9 @@ class PrescriptionHeuristic(BaseEventHeuristic):
         assert name and drugs
         self.name = name
         self.drugs = [d.strip() for d in drugs]
-        self.dose = dose
+        for dose_obj in doses:
+            assert isinstance(Dose, dose_obj)
+        self.doses = doses
         self.min_quantity = min_quantity
         self.require = require
         self.exclude = exclude
@@ -945,9 +947,9 @@ class PrescriptionHeuristic(BaseEventHeuristic):
         prescriptions = Prescription.objects.none()
         for drug_name in self.drugs:
             prescriptions |= Prescription.objects.filter(name__icontains=drug_name)
-        if self.dose.all():
+        if self.doses:
             rxs_by_dose = Prescription.objects.none()
-            for dose_obj in self.dose.all():
+            for dose_obj in self.doses:
                 for dose_string in dose_obj.string_variants:
                     rxs_by_dose |= Prescription.objects.filter(name__icontains=dose_string)
                     rxs_by_dose |= Prescription.objects.filter(dose__icontains=dose_string)
@@ -959,9 +961,9 @@ class PrescriptionHeuristic(BaseEventHeuristic):
         for excluded_string in exclude:
             prescriptions = prescriptions.exclude(name__icontains=excluded_string)
         # Exclude prescriptions already bound to this heuristic
-        prescriptions = prescriptions.exclude(tags__event__event_type__heuristic=self)
-        log_query('Prescriptions for %s' % self.name, prescriptions)
-        log.info('Generating events for "%s"' % self.verbose_name)
+        prescriptions = prescriptions.exclude(tags__event_name__in=self.event_names)
+        log_query('Prescriptions for %s' % self, prescriptions)
+        log.info('Generating events for "%s"' % self)
         for rx in queryset_iterator(prescriptions):
             new_event = Event(
                 name = self.rx_event_name,
@@ -1030,9 +1032,9 @@ class Icd9Query(object):
     def __unicode__(self):
         return u'%s' % self.verbose_name
     
-    def __get_verbose_name(self):
+    @property
+    def verbose_name(self):
         return 'ICD9 Query: %s | %s | %s | %s' % (self.exact, self.starts_with, self.ends_with, self.contains),
-    verbose_name = property(__get_verbose_name)
 
 
 class DiagnosisHeuristic(BaseEventHeuristic):
@@ -1053,6 +1055,14 @@ class DiagnosisHeuristic(BaseEventHeuristic):
         self.icd9_queries = icd9_queries
 
     @property
+    def uri(self):
+        uri = 'urn:x-esphealth:heuristic:diagnosis:%s' % self.name
+        return uri
+    
+    def __str__(self):
+        return self.uri
+    
+    @property
     def encounters(self):
         encs = Encounter.objects.none()
         for icd9_query in self.icd9_queries:
@@ -1071,8 +1081,8 @@ class DiagnosisHeuristic(BaseEventHeuristic):
         icd9s = Icd9.objects.filter(self.icd9_q_obj)
         enc_qs = Encounter.objects.filter(icd9_codes__in=icd9s)
         enc_qs = enc_qs.exclude(tags__event_name__in=self.event_names)
-        log_query('Encounters for %s' % self.name, enc_qs)
-        log.info('Generating events for "%s"' % self.verbose_name)
+        log_query('Encounters for %s' % self, enc_qs)
+        log.info('Generating events for "%s"' % self)
         for enc in queryset_iterator(enc_qs):
             new_event = Event(
                 name = self.name,
@@ -1084,7 +1094,7 @@ class DiagnosisHeuristic(BaseEventHeuristic):
             new_event.save()
             new_event.tag(enc)
             log.debug('Saved new event: %s' % new_event)
-        log.info('Generated %s new events for %s' % (enc_qs.count(), self.name))
+        log.info('Generated %s new events for %s' % (enc_qs.count(), self))
         return enc_qs.count()
 
 
