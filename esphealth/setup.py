@@ -12,6 +12,10 @@
 from setuptools import setup
 from setuptools import find_packages
 
+#
+# FIXME: Update this file to reflect current ESP setup
+#
+'''
 setup(
     name = 'esphealth-core',
     version = '3.0',
@@ -37,3 +41,4 @@ setup(
         'ui': ['*.html', '*.txt',], 
         },
     )
+'''
