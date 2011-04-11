@@ -226,7 +226,7 @@ class GestationalDiabetes(Condition):
         #
         # Dx or Rx
         #
-        dx_ets=['dx--gestational_diabetes']
+        dx_ets=['dx:gestational-diabetes']
         rx_ets=['rx--lancets', 'rx--test_strips']
         # FIXME: This date math works on PostgreSQL, but I think that's just 
         # fortunate coincidence, as I don't think this is the righ way to 
@@ -323,7 +323,7 @@ class GestationalDiabetes(Condition):
             ])
         order_q = Q(event_type__name__endswith='--order')
         any_q = Q(event_type__name__endswith='--any_result')
-        dxgdm_q = Q(event_type='dx--gestational_diabetes')
+        dxgdm_q = Q(event_type='dx:gestational-diabetes')
         lancets_q = Q(event_type__in=['rx--test_strips', 'rx--lancets'])
         #
         # Header
@@ -333,12 +333,12 @@ class GestationalDiabetes(Condition):
         #
         # Report on all patients with GDM ICD9 or a pregnancy
         #
-        #patient_qs = Patient.objects.filter(event__event_type='dx--gestational_diabetes')
+        #patient_qs = Patient.objects.filter(event__event_type='dx:gestational-diabetes')
         #patient_qs |= Patient.objects.filter(timespan__name='pregnancy')
         #patient_qs = patient_qs.distinct()
         #log_query('patient_qs', patient_qs)
         patient_pks = set()
-        patient_pks.update( Event.objects.filter(event_type='dx--gestational_diabetes').values_list('patient', flat=True) )
+        patient_pks.update( Event.objects.filter(event_type='dx:gestational-diabetes').values_list('patient', flat=True) )
         patient_pks.update( Timespan.objects.filter(name='pregnancy').values_list('patient', flat=True))
         counter = 0
         #total = patient_qs.count()
@@ -491,7 +491,7 @@ class GestationalDiabetes(Condition):
                 # right way to express the date query in ORM syntax.
                 lancets_and_icd9 = intrapartum.filter(
                     lancets_q,
-                    patient__event__event_type='dx--gestational_diabetes',
+                    patient__event__event_type='dx:gestational-diabetes',
                     patient__event__date__gte =  (F('date') - 14),
                     patient__event__date__lte =  (F('date') + 14),
                     )
@@ -646,11 +646,21 @@ def get_event_heuristics():
             )
         heuristics.append(h)
     #
+    # Encounters
+    #
+    dxh = DiagnosisHeuristic(
+        name = 'gestational-diabetes',
+        icd9_queries = [
+            Icd9Query(starts_with = '648.8'),
+            ]
+        )
+    heuristics.append(dxh)
+    #
     # Prescriptions
     #
-    for drug in ['insulin', 'metformin', 'glyburide']:
+    for drug in ['insulin', 'metformin', 'glyburide', 'test strips', 'lancets',]:
         h = PrescriptionHeuristic(
-            name = drug,
+            name = drug.replace(' ', '-'),
             drugs = [drug],
             )
         heuristics.append(h)
