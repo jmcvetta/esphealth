@@ -372,6 +372,7 @@ esphealth/doc/specifications/reduced-gipse.xsd -text
 esphealth/etc/templates/case_report/odh_hl7.txt -text
 esphealth/install.sh -text
 esphealth/requirements.txt -text
+esphealth/setup.py -text
 esphealth/share/apache.conf.sample -text
 esphealth/share/cpt_codes.csv.bz2 -text svneol=unset#unset
 esphealth/share/data-quality-check.py -text
@@ -385,7 +386,6 @@ esphealth/share/ndc_codes.txt.bz2 -text svneol=unset#unset
 modules/disease-diabetes/__init__.py -text
 modules/disease-diabetes/diabetes.py -text
 modules/disease-diabetes/setup.py -text
-modules/esphealth-core/setup.py -text
 modules/heuristic-glucose-crf/__init__.py -text
 modules/heuristic-glucose-crf/glucose_crf.py -text
 modules/heuristic-glucose-crf/setup.py -text
