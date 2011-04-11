@@ -983,7 +983,7 @@ class Icd9Query(object):
     A query for selecting encounters based on ICD9 codes
     '''
     
-    def __init__(self, exact, starts_with, ends_with, contains):
+    def __init__(self, exact=None, starts_with=None, ends_with=None, contains=None):
         '''
         @param exact: Encounter must include this exact ICD9 code
         @type exact:  String
@@ -1059,6 +1059,9 @@ class DiagnosisHeuristic(BaseEventHeuristic):
         uri = 'urn:x-esphealth:heuristic:diagnosis:%s' % self.name
         return uri
     
+    # Only this version of HEF is supported
+    core_uris = [HEF_CORE_URI]
+    
     def __str__(self):
         return self.uri
     
@@ -1072,10 +1075,19 @@ class DiagnosisHeuristic(BaseEventHeuristic):
     
     @property
     def icd9_q_obj(self):
-        q_obj = self.icd9query_set.all()[0].icd9_q_obj
+        q_obj = None
         for icd9_query in self.icd9_queries:
-            q_obj |= icd9_query.icd9_q_obj
+            if q_obj:
+                q_obj |= icd9_query.icd9_q_obj
+            else:
+                q_obj = icd9_query.icd9_q_obj
         return q_obj
+    
+    @property
+    def dx_event_name(self):
+        return 'dx:%s' % self.name
+    
+    event_names = [dx_event_name]
     
     def generate(self):
         icd9s = Icd9.objects.filter(self.icd9_q_obj)
@@ -1085,8 +1097,8 @@ class DiagnosisHeuristic(BaseEventHeuristic):
         log.info('Generating events for "%s"' % self)
         for enc in queryset_iterator(enc_qs):
             new_event = Event(
-                name = self.name,
-                uri = self.uri,
+                name = self.dx_event_name,
+                source = self.uri,
                 patient = enc.patient,
                 date = enc.date,
                 provider = enc.provider,

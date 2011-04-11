@@ -95,7 +95,7 @@ class Event(models.Model):
     '''
     A medical event
     '''
-    name = models.SlugField('Name for this event type', max_length=127, blank=False, db_index=True)
+    name = models.SlugField('Name for this event type', max_length=128, blank=False, db_index=True)
     source = models.TextField('What created this event?', blank=False, db_index=True)
     date = models.DateField('Date event occured', blank=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
@@ -132,7 +132,7 @@ class EventTag(models.Model):
     event = models.ForeignKey(Event, blank=False)
     # We store event_name here even tho the same info is stored in the 
     # foreign-keyed Event object, in order to improve query performance.
-    event_name = models.TextField(blank=False, db_index=True)
+    event_name = models.CharField(max_length=128, blank=False, db_index=True)
     # Generic foreign key - any kind of EMR record can be tagged
     #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
     content_type = models.ForeignKey(ContentType, db_index=True)
@@ -150,7 +150,7 @@ class Timespan(models.Model):
     '''
     A condition, such as pregnancy, which occurs over a defined span of time.  
     '''   
-    name = models.SlugField('Common name of this type of timespan', max_length=127, blank=False, db_index=True)
+    name = models.SlugField('Common name of this type of timespan', max_length=128, blank=False, db_index=True)
     source = models.TextField('What created this timespan?', blank=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False)
     start_date = models.DateField(blank=False, db_index=True)
