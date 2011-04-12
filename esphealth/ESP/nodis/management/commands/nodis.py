@@ -23,8 +23,7 @@ from optparse import make_option
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
-from ESP.nodis.base import Condition
-#from ESP.nodis import defs  # Register definitions
+from ESP.nodis.base import DiseaseDefinition
 
     
 class Command(BaseCommand):
@@ -34,33 +33,22 @@ class Command(BaseCommand):
     args = '[conditions]'
     
     option_list = BaseCommand.option_list + (
-        make_option('--regenerate', action='store_true', dest='regenerate', 
-            help='Purge and regenerate cases'),
+        make_option('--list', action='store_true', dest='list', 
+            help='List available diseases'),
         )
-    # TODO: Add --list argument
 
     def handle(self, *args, **options):
-        # 
-        # TODO: We need a lockfile or some othermeans to prevent multiple 
-        # instances running at once.
-        #
-        all_condition_names = [c.name for c in Condition.all_conditions()]
-        if args: 
-            conditions = set()
-            for name in args:
-                if name not in all_condition_names:
-                    sys.stderr.write("Unknown condition: '%s'.  Exiting.\n" % name)
-                con = Condition.get_condition(name)
-                assert con, 'Unknown condition: %s' % name
-                conditions.add(con)
+        if options['list']:
+            self.list(args, options)
+        elif args:
+            self.by_name(args, options)
         else:
-            conditions = Condition.all_conditions()
-        #
-        # (Re)generate Cases
-        #
-        for c in conditions:
-            if options['regenerate']:
-                c.regenerate()
-            else:
-                c.generate_cases()
+            self.all(args, options)
     
+    def all(self, args, options):
+        for disease in DiseaseDefinition.get_all():
+            disease.generate()
+    
+    def list(self, args, options):
+        for disease in DiseaseDefinition.get_all():
+            print disease.uri

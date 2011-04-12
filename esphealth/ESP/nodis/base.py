@@ -12,33 +12,7 @@ Base Classes
 
 
 import abc
-
-
-class Condition(object):
-    '''
-    A disease or medical condition
-    '''
-    
-    def __init__(self, name, uri, description):
-        '''
-        @param name: Short English name for this condition
-        @param uri: A URI that uniquely describes this condition
-        @param description: Detailed description of this disease
-        '''
-        assert name and uri and description # Sanity check
-        self.name = name
-        self.uri = uri
-        self.description = description
-    
-    @classmethod
-    def condition_choices(cls):
-        # TODO: write me!
-        return ['foo', 'bar']
-
-    @classmethod
-    def all_test_name_search_strings(cls):
-        # TODO: write me!
-        return ['foo', 'bar']
+from pkg_resources import iter_entry_points
 
 
 class DiseaseDefinition(object):
@@ -49,11 +23,34 @@ class DiseaseDefinition(object):
     def conditions(self):
         '''
         Conditions which this disease definition can detect
-        @rtype: List of Condition objects
+        @rtype: List of strings
+        '''
+    
+    @abc.abstractproperty
+    def uri(self):
+        '''
+        A URI which uniquely describes this disease definition
+        @rtype: String
         '''
     
     @abc.abstractmethod
     def generate(self):
         '''
         Examine the database and generate new cases of this disease
+        @return: The count of new cases generated
+        @rtype:  Integer
         '''
+    
+    @classmethod
+    def get_all(cls):
+        '''
+        @return: All known disease definitions
+        @rtype:  List
+        '''
+        diseases = set()
+        for entry_point in iter_entry_points(group='esphealth', name='disease_definitions'):
+            factory = entry_point.load()
+            diseases.update(factory())
+        diseases = list(diseases)
+        diseases.sort(key = lambda h: h.uri)
+        return diseases
