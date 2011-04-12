@@ -18,6 +18,11 @@ HEF_CORE_URI = 'urn:x-esphealth:hef:core:3.0'
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+import abc
+import math
+import re
+
+from decimal import Decimal
 
 from ESP.conf.models import LabTestMap
 from ESP.emr.models import Encounter
@@ -31,9 +36,6 @@ from ESP.utils.utils import queryset_iterator
 from django.db.models import F, Q
 from django.utils.encoding import force_unicode, smart_str
 from pkg_resources import iter_entry_points
-import abc
-import math
-import re
 
 
 
@@ -398,7 +400,10 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
         assert test_name
         self.test_name = test_name
         self.date_field = date_field
-        self.titer_dilution = titer_dilution
+        if titer_dilution:
+            self.titer_dilution = Decimal('%.2g' % titer_dilution)
+        else:
+            self.titer_dilution = None
     
     @property
     def short_name(self):
@@ -563,7 +568,7 @@ class LabResultRatioHeuristic(BaseLabResultHeuristic):
     def __init__(self, test_name, ratio, date_field='order'):
         assert test_name and ratio and date_field
         self.test_name = test_name
-        self.ratio = ratio
+        self.ratio = Decimal('%.2g' % ratio)
         self.date_field = date_field
     
     @property
@@ -630,7 +635,7 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
         '''
         assert test_name and date_field
         self.test_name = test_name
-        self.threshold = float(threshold)
+        self.threshold = Decimal('%.2g' % threshold)
         self.date_field = date_field
     
     @property
@@ -698,8 +703,8 @@ class LabResultRangeHeuristic(BaseLabResultHeuristic):
         assert max_match in ['lt', 'lte']
         self.test_name = test_name
         self.date_field = date_field
-        self.min = float(min)
-        self.max = float(max)
+        self.min = Decimal('%.2g' % min)
+        self.max = Decimal('%.2g' % max)
         self.min_match = min_match
         self.max_match = max_match
     
