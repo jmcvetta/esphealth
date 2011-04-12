@@ -76,8 +76,7 @@ class Diabetes(DiseaseDefinition):
         counter += self.generate_frank_diabetes()
         return counter
     
-    @property
-    def event_heuristics(self):
+    def get_event_heuristics(self):
         heuristics = []
         #
         # Positive Tests
@@ -1273,14 +1272,13 @@ class GestationalDiabetes(object):
                 writer.writerow(values)
 
 
+diabetes_definition = Diabetes()
 
 def get_event_heuristics():
-    heuristics = []
-    heuristics.append(object)
-    return 
+    return diabetes_definition.get_event_heuristics
 
 def get_timespan_heuristics():
     return []
 
 def get_disease_definitions():
-    return [Diabetes()]
+    return [diabetes_definition]
