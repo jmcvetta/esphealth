@@ -68,16 +68,6 @@ DOSE_UNIT_VARIANTS = {
     'ug': ['microgram', 'mcg', 'ug'],
     }
 
-GT_CHOICES = [
-    ('gte', 'Greater Than or Equal To: >='),
-    ('gt', 'Greater Than: >'),
-    ]
-
-LT_CHOICES = [
-    ('lte', 'Less Than or Equal To: <='),
-    ('lt', 'Less Than: <'),
-    ]
-
 TITER_DILUTION_CHOICES = [
     (1, '1:1'),  
     (2, '1:2'),
@@ -704,8 +694,8 @@ class LabResultRangeHeuristic(BaseLabResultHeuristic):
         @type max_match:  String, either 'lt' or 'lte'
         '''
         assert test_name and date_field
-        assert min_match in GT_CHOICES
-        assert max_match in LT_CHOICES
+        assert min_match in ['gt', 'gte']
+        assert max_match in ['lt', 'lte']
         self.test_name = test_name
         self.date_field = date_field
         self.min = float(min)
