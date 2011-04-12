@@ -27,7 +27,6 @@ from ESP.hef.models import Timespan
 #
 # The VERSION_URI string uniquely describes this heuristic.
 # It MUST be incremented whenever any functionality is changed!
-VERSION_URI = 'urn:x-esphealth:heuristic:timespan:pregnancy'
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -38,13 +37,11 @@ PREG_END_MARGIN = datetime.timedelta(days=20)
 
 class PregnancyHeuristic(BaseTimespanHeuristic):
     
-    name = 'pregnancy'
+    short_name = 'timespan:pregnancy'
     
-    uri = VERSION_URI
+    uri = 'urn:x-esphealth:heuristic:channing:timespan:pregnancy:v1'
     
-    core_uris = [
-        'https://esphealth.org/reference/hef/core/1.0',
-        ]
+    core_uris = ['urn:x-esphealth:hef:core:v1']
     
     timespan_names = ['pregnancy', 'postpartum',]
     

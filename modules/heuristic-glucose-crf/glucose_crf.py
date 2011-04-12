@@ -24,24 +24,11 @@ import datetime
 import optparse
 
 
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-# The VERSION_URI string uniquely describes this heuristic.
-# It MUST be incremented whenever any functionality is changed!
-VERSION_URI = 'urn:x-esphealth:heuristic:glucose-compound-random-fasting:v1'
-#
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-
-
 class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
     
-    name = 'glucose_crf'
+    short_name = 'labresult:glucose-crf'
     
-    uri = VERSION_URI
+    uri = 'urn:x-esphealth:heuristic:channing:glucose-compound-random-fasting:v1'
     
     core_uris = [
         'urn:x-esphealth:hef:core:v1',
