@@ -1275,7 +1275,7 @@ class GestationalDiabetes(object):
 diabetes_definition = Diabetes()
 
 def get_event_heuristics():
-    return diabetes_definition.get_event_heuristics
+    return diabetes_definition.get_event_heuristics()
 
 def get_timespan_heuristics():
     return []
