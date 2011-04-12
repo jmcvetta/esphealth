@@ -146,7 +146,7 @@ class Command(BaseCommand):
         heuristics = {}
         selected_heuristics = []
         for h in BaseHeuristic.get_all():
-            heuristics[h.uri] = h
+            heuristics[h.short_name] = h
         for uri in args:
             if not uri in heuristics:
                 print >> sys.stderr, 'Unknown heuristic specified:  %s' % uri

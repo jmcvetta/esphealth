@@ -656,7 +656,7 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
     def generate(self):
         positive_labs = self.unbound_labs.filter(result_float__isnull=False, result_float__gte=self.threshold)
         log_query(self.uri, positive_labs)
-        log.info('Generating events for "%s"' % self.uri)
+        log.info('Generating events for "%s"' % self)
         for lab in queryset_iterator(positive_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -728,16 +728,16 @@ class LabResultRangeHeuristic(BaseLabResultHeuristic):
         qs = self.unbound_labs.filter(
             result_float__isnull=False, 
             )
-        if self.minimum_match_type == 'gte':
-            qs = qs.filter(result_float__gte=self.minimum)
-        elif self.minimum_match_type == 'gt':
-            qs = qs.filter(result_float__gt=self.minimum)
-        if self.maximum_match_type == 'lte':
-            qs = qs.filter(result_float__lte=self.maximum)
-        elif self.maximum_match_type == 'lt':
-            qs = qs.filter(result_float__lt=self.maximum)
+        if self.min_match == 'gte':
+            qs = qs.filter(result_float__gte=self.min)
+        elif self.min_match == 'gt':
+            qs = qs.filter(result_float__gt=self.min)
+        if self.max_match == 'lte':
+            qs = qs.filter(result_float__lte=self.max)
+        elif self.max_match == 'lt':
+            qs = qs.filter(result_float__lt=self.max)
         log_query(self.uri, qs)
-        log.info('Generating events for "%s"' % self.uri)
+        log.info('Generating events for "%s"' % self)
         for lab in queryset_iterator(qs):
             if self.date_field == 'order':
                 lab_date = lab.date
