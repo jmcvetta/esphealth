@@ -120,9 +120,18 @@ class BaseHeuristic(object):
     __metaclass__ = abc.ABCMeta
     
     @abc.abstractproperty
+    def short_name(self):
+        '''
+        Short name (SlugField-compatible) for this instance.  Name should
+        reflect any arguments used to instantiate the heuristic.
+        '''
+        
+    @abc.abstractproperty
     def uri(self):
         '''
-        URI which uniquely describes this heuristic, including its version
+        URI which uniquely describes this heuristic, including its version.  
+        This should describe the heuristic itself, regardless of any 
+        arguments with which it may be instantiated.
         '''
     
     @abc.abstractproperty
@@ -155,7 +164,7 @@ class BaseHeuristic(object):
         heuristics.update(BaseEventHeuristic.get_all())
         heuristics.update(BaseTimespanHeuristic.get_all())
         heuristics = list(heuristics)
-        heuristics.sort(key = lambda h: h.uri)
+        heuristics.sort(key = lambda h: h.short_name)
         return heuristics
 
 
@@ -183,7 +192,7 @@ class BaseEventHeuristic(BaseHeuristic):
             factory = entry_point.load()
             heuristics.update(factory())
         heuristics = list(heuristics)
-        heuristics.sort(key = lambda h: h.uri)
+        heuristics.sort(key = lambda h: h.short_name)
         return heuristics
 
 
@@ -204,7 +213,7 @@ class BaseTimespanHeuristic(BaseHeuristic):
             factory = entry_point.load()
             heuristics.update(factory())
         heuristics = list(heuristics)
-        heuristics.sort(key = lambda h: h.name)
+        heuristics.sort(key = lambda h: h.short_name)
         return heuristics
 
     @abc.abstractproperty
@@ -274,8 +283,10 @@ class LabOrderHeuristic(BaseEventHeuristic):
         self.test_name = test_name
     
     @property
-    def uri(self):
-        return 'urn:x-esphealth:heuristic:laborder:%s' % self.test_name
+    def short_name(self):
+        return 'laborder:%s' % self.test_name
+    
+    uri = 'urn:x-esphealth:heuristic:channing:laborder:v1'
     
     @property
     def order_event_name(self):
@@ -346,8 +357,13 @@ class LabResultAnyHeuristic(BaseLabResultHeuristic):
         self.date_field = date_field
     
     @property
-    def uri(self):
-        return 'urn:x-esphealth:heuristic:labresult:%s:any-result' % self.test_name
+    def short_name(self):
+        name = 'labresult:%s:any-result' % self.test_name
+        if not self.date_field == 'order':
+            name += ':%s-date' % self.date_field
+        return name
+    
+    uri = 'urn:x-esphealth:heuristic:channing:labresult:any-result:v1'
     
     @property
     def any_result_event_name(self):
@@ -388,20 +404,22 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
     A heuristic for detecting positive (& negative) lab result events
     '''
     
-    def __init__(self, test_name, date_field='order', titer=None):
+    def __init__(self, test_name, date_field='order', titer_dilution=None):
         assert test_name
         self.test_name = test_name
         self.date_field = date_field
-        self.titer = titer
+        self.titer_dilution = titer_dilution
     
     @property
-    def uri(self):
-        uri = 'urn:x-esphealth:heuristic:labresult:%s:positive' % self.test_name
+    def short_name(self):
+        name = 'labresult:%s:positive' % self.test_name
         if not self.date_field == 'order':
-            uri += ':%s-date' % self.date_field
-        if self.titer:
-            uri += ':titer:%s' % self.titer
-        return uri
+            name += ':%s-date' % self.date_field
+        if self.titer_dilution:
+            name += ':titer:%s' % self.titer_dilution
+        return name
+    
+    uri = 'urn:x-esphealth:heuristic:channing:labresult:positive:v1'
     
     @property
     def positive_event_name(self):
@@ -475,9 +493,9 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
         #
         # Add titer string queries
         #
-        if self.titer:
-            positive_titer_strings = ['1:%s' % 2**i for i in range(math.log(self.titer, 2), math.log(4096,2))]
-            negative_titer_strings = ['1:%s' % 2**i for i in range(math.log(self.titer, 2))]
+        if self.titer_dilution:
+            positive_titer_strings = ['1:%s' % 2**i for i in range(math.log(self.titer_dilution, 2), math.log(4096,2))]
+            negative_titer_strings = ['1:%s' % 2**i for i in range(math.log(self.titer_dilution, 2))]
             log.debug('positive_titer_strings: %s' % positive_titer_strings)
             log.debug('negative_titer_strings: %s' % negative_titer_strings)
             for s in positive_titer_strings:
@@ -559,11 +577,13 @@ class LabResultRatioHeuristic(BaseLabResultHeuristic):
         self.date_field = date_field
     
     @property
-    def uri(self):
-        uri = 'urn:x-esphealth:heuristic:labresult:%s:ratio:%s' % (self.test_name, self.ratio)
+    def short_name(self):
+        name = 'labresult:%s:ratio:%s' % (self.test_name, self.ratio)
         if not self.date_field == 'order':
-            uri += ':%s-date' % self.date_field
-        return uri
+            name += ':%s-date' % self.date_field
+        return name
+    
+    uri = 'urn:x-esphealth:heuristic:channing:labresult:ratio:v1'
     
     @property
     def ratio_event_name(self):
@@ -624,11 +644,13 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
         self.date_field = date_field
     
     @property
-    def uri(self):
-        uri = 'urn:x-esphealth:heuristic:labresult:%s:threshold:%s' % (self.test_name, self.threshold)
+    def short_name(self):
+        name = 'labresult:%s:threshold:%s' % (self.test_name, self.threshold)
         if not self.date_field == 'order':
-            uri += ':%s-date' % self.date_field
-        return uri
+            name += ':%s-date' % self.date_field
+        return name
+    
+    uri = 'urn:x-esphealth:heuristic:channing:labresult:threshold:v1'
     
     @property
     def threshold_event_name(self):
@@ -692,12 +714,14 @@ class LabResultRangeHeuristic(BaseLabResultHeuristic):
         self.max_match = max_match
     
     @property
-    def uri(self):
-        uri = 'urn:x-esphealth:heuristic:labresult:%s:range:%s:%s:%s:%s' % (self.test_name, 
+    def short_name(self):
+        name = 'labresult:%s:range:%s:%s:%s:%s' % (self.test_name, 
             self.min_match, self.min, self.max_match, self.max)
         if not self.date_field == 'order':
-            uri += ':%s-date' % self.date_field
-        return uri
+            name += ':%s-date' % self.date_field
+        return name
+    
+    uri = 'urn:x-esphealth:heuristic:channing:labresult:range:v1'
     
     @property
     def ratio_event_name(self):
@@ -767,11 +791,13 @@ class LabResultWesternBlotHeuristic(BaseLabResultHeuristic):
         return '|'.join(self.bands)
     
     @property
-    def uri(self):
-        uri = 'urn:x-esphealth:heuristic:labresult:%s:westernblot:%s' % (self.test_name, self.bands_str)
+    def short_name(self):
+        name = 'labresult:%s:westernblot:%s' % (self.test_name, self.bands_str)
         if not self.date_field == 'order':
-            uri += ':%s-date' % self.date_field
-        return uri
+            name += ':%s-date' % self.date_field
+        return name
+    
+    uri = 'urn:x-esphealth:heuristic:channing:labresult:westernblot:v1'
     
     @property
     def positive_event_name(self):
@@ -917,9 +943,10 @@ class PrescriptionHeuristic(BaseEventHeuristic):
         self.exclude = exclude
         
     @property
-    def uri(self):
-        uri = 'urn:x-esphealth:heuristic:prescription:%s' % self.name
-        return uri
+    def short_name(self):
+        return 'prescription:%s' % self.name
+    
+    uri = 'urn:x-esphealth:heuristic:channing:prescription:v1'
     
     @property
     def core_uris(self):
@@ -1055,9 +1082,11 @@ class DiagnosisHeuristic(BaseEventHeuristic):
         self.icd9_queries = icd9_queries
 
     @property
-    def uri(self):
-        uri = 'urn:x-esphealth:heuristic:diagnosis:%s' % self.name
-        return uri
+    def short_name(self):
+        sn = 'diagnosis:%s' % self.name
+        return sn
+    
+    uri = 'urn:x-esphealth:heuristic:channing:diagnosis:v1'
     
     # Only this version of HEF is supported
     core_uris = [HEF_CORE_URI]

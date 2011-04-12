@@ -185,7 +185,7 @@ class Command(BaseCommand):
     
     def list(self, args, options):
         for h in BaseHeuristic.get_all():
-            print h.uri
+            print h.short_name
 
 
 class ThreadedEventGenerator(threading.Thread):
