@@ -155,7 +155,7 @@ INSTALLED_APPS = (
     'ESP.conf', 
     'ESP.emr',
     'ESP.hef',
-    #'ESP.nodis',
+    'ESP.nodis',
     #'ESP.vaers',
     #'ESP.ss',
     'ESP.phit',
