@@ -126,6 +126,20 @@ class Diabetes(DiseaseDefinition):
                 )
             heuristics.append(h)
         #
+        # Range Tests
+        #
+        for triple in [
+            ('a1c', 5.7, 6.4),
+            ('glucose_fasting', 100.0, 125.0),
+            ('ogtt50_random', 140.0, 200.0),
+            ]:
+            h = LabResultRangeHeuristic(
+                test_name = triple[0],
+                min = triple[1],
+                max = triple[2],
+                )
+            heuristics.append(h)
+        #
         # Encounters
         #
         heuristics.append (DiagnosisHeuristic(
@@ -682,6 +696,52 @@ class Diabetes(DiseaseDefinition):
             field_values['diabetes_type'] = item['condition']
             field_values['case_date'] = item['date']
     
+    def generate_prediabetes(self, args, options):
+        ALL_CRITERIA = [
+            'lx:a1c:range:5.7:6.4',
+            'lx:glucose-fasting:range:100.0:125.0',
+            'lx:ogtt50-random:range:140.0:200.0',
+            ]
+        ONCE_CRITERIA = [
+            'lx:a1c:range:5.7:6.4',
+            'lx:glucose-fasting:range:100.0:125.0',
+            ]
+        qs = Event.objects.filter(event_type='lx:ogtt50-random:range:140.0:200.0').values('patient')
+        qs = qs.annotate(count=Count('pk'))
+        patient_pks = qs.filter(count__gte=2).values_list('patient', flat=True).distinct()
+        patient_pks = set(patient_pks)
+        patient_pks |= set( Event.objects.filter(event_type__in=ONCE_CRITERIA).values_list('patient', flat=True).distinct() )
+        # Ignore patients who already have a prediabetes case
+        patient_pks = patient_pks - set( Case.objects.filter(condition='prediabetes').values_list('patient', flat=True) )
+        total = len(patient_pks)
+        counter = 0
+        for pat_pk in patient_pks:
+            counter += 1
+            event_qs = Event.objects.filter(
+                patient = pat_pk,
+                event_type__in = ALL_CRITERIA,
+                ).order_by('date')
+            trigger_event = event_qs[0]
+            trigger_date = trigger_event.date
+            prior_dm_case_qs = Case.objects.filter(
+                patient = pat_pk,
+                condition__startswith = 'diabetes_type_',
+                date__lte = trigger_date,
+                )
+            if prior_dm_case_qs.count():
+                log.info('Patient already has diabetes, skipping. (%8s / %s)' % (counter, total))
+                continue # This patient already has diabetes, and as such does not have prediabetes
+            new_case = Case(
+                patient = trigger_event.patient,
+                provider = trigger_event.provider,
+                date = trigger_event.date,
+                condition =  'diabetes:prediabetes',
+                source = self.uri,
+                )
+            new_case.save()
+            new_case.events = event_qs
+            new_case.save()
+            log.info('Saved new case: %s (%8s / %s)' % (new_case, counter, total))
     def linelist(self):
         #-------------------------------------------------------------------------------
         #
@@ -1271,6 +1331,12 @@ class GestationalDiabetes(object):
                 values.update(patient_values)
                 writer.writerow(values)
 
+
+#-------------------------------------------------------------------------------
+#
+# Packaging
+#
+#-------------------------------------------------------------------------------
 
 diabetes_definition = Diabetes()
 
