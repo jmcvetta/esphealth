@@ -54,3 +54,22 @@ class DiseaseDefinition(object):
         diseases = list(diseases)
         diseases.sort(key = lambda h: h.uri)
         return diseases
+
+
+class Report(object):
+    
+    __metaclass__ = abc.ABCMeta
+    
+    @abc.abstractproperty
+    def short_name(self):
+        '''
+        Short name (SlugField-compatible) for this report.
+        '''
+    
+    @abc.abstractproperty
+    def generate(self):
+        '''
+        Produce the report
+        @return: The report as a printable string
+        @rtype:  String
+        '''
