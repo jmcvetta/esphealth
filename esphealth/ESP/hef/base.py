@@ -14,7 +14,7 @@
 #
 # The HEF_CORE_URI string uniquely describes this version of HEF core.  
 # It MUST be incremented whenever any core functionality is changed!
-HEF_CORE_URI = 'urn:x-esphealth:hef:core:3.0'
+HEF_CORE_URI = 'urn:x-esphealth:hef:core:v1'
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -179,13 +179,20 @@ class BaseEventHeuristic(BaseHeuristic):
         @return: All known event heuristics
         @rtype:  List
         '''
-        heuristics = set()
+        available_heuristics = set()
         for entry_point in iter_entry_points(group='esphealth', name='event_heuristics'):
             factory = entry_point.load()
-            heuristics.update(factory())
-        heuristics = list(heuristics)
-        heuristics.sort(key = lambda h: h.short_name)
-        return heuristics
+            available_heuristics.update(factory())
+        valid_heuristics = []
+        for heuristic in available_heuristics:
+            if HEF_CORE_URI in heuristic.core_uris:
+                valid_heuristics.append(heuristic)
+            else:
+                log.warning('Core version error.  Could not load %s' % heuristic.uri)
+                log.warning('    Running core version: %s' % HEF_CORE_URI)
+                log.warning('    Heuristic requires: %s' % heuristic.core_uris)
+        valid_heuristics.sort(key = lambda h: h.short_name)
+        return valid_heuristics
 
 
 class BaseTimespanHeuristic(BaseHeuristic):
@@ -200,13 +207,20 @@ class BaseTimespanHeuristic(BaseHeuristic):
         @return: All known timespan heuristics
         @rtype:  List
         '''
-        heuristics = set()
+        available_heuristics = set()
         for entry_point in iter_entry_points(group='esphealth', name='timespan_heuristics'):
             factory = entry_point.load()
-            heuristics.update(factory())
-        heuristics = list(heuristics)
-        heuristics.sort(key = lambda h: h.short_name)
-        return heuristics
+            available_heuristics.update(factory())
+        valid_heuristics = []
+        for heuristic in available_heuristics:
+            if HEF_CORE_URI in heuristic.core_uris:
+                valid_heuristics.append(heuristic)
+            else:
+                log.warning('Mismatched core version error.  Could not load %s' % heuristic.uri)
+                log.warning('    Running core version: %s' % HEF_CORE_URI)
+                log.warning('    Heuristic requires: %s' % heuristic.core_uris)
+        valid_heuristics.sort(key = lambda h: h.short_name)
+        return valid_heuristics
 
     @abc.abstractproperty
     def timespan_names(self):
