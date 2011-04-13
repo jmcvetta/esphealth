@@ -411,11 +411,16 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
     '''
     
     def __init__(self, test_name, date_field='order', titer_dilution=None):
+        '''
+        @param titer_dilution: The demoninator showing titer dilution
+        @type  titer_dilution: Integer
+        '''
         assert test_name
         self.test_name = test_name
         self.date_field = date_field
         if titer_dilution:
-            self.titer_dilution = Decimal('%.2g' % titer_dilution)
+            assert isinstance(titer_dilution, int)
+            self.titer_dilution = titer_dilution
         else:
             self.titer_dilution = None
     
@@ -580,9 +585,15 @@ class LabResultRatioHeuristic(BaseLabResultHeuristic):
     '''
     
     def __init__(self, test_name, ratio, date_field='order'):
-        assert test_name and ratio and date_field
+        '''
+        @param ratio: Result must be greater than ref_high * ratio to generate
+            an event.
+        @type  ratio: Decimal
+        '''
+        assert test_name and date_field
+        assert isinstance(ratio, Decimal)
         self.test_name = test_name
-        self.ratio = Decimal('%.2g' % ratio)
+        self.ratio = ratio
         self.date_field = date_field
     
     @property
@@ -645,11 +656,12 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
     def __init__(self, test_name, threshold, date_field='order'):
         '''
         @param threshold: Events are generated for lab results greater than or equal to this value
-        @type threshold:  Float
+        @type threshold:  Decimal
         '''
         assert test_name and date_field
+        assert isinstance(threshold, Decimal)
         self.test_name = test_name
-        self.threshold = Decimal('%.2g' % threshold)
+        self.threshold = threshold
         self.date_field = date_field
     
     @property
@@ -704,21 +716,23 @@ class LabResultRangeHeuristic(BaseLabResultHeuristic):
         '''
         Generates events for lab results with numeric values falling within a specified range.
         @param min: Minimum result value to generate an event
-        @type min:  Float
+        @type min:  Decimal
         @param max: Maximum result value to generate an event
-        @type max:  Float
+        @type max:  Decimal
         @param min_match: Match type for min value 
         @type min_match:  String, either 'gt' or 'gte'
         @param max_match: Match type for max value 
         @type max_match:  String, either 'lt' or 'lte'
         '''
         assert test_name and date_field
+        assert isinstance(min, Decimal)
+        assert isinstance(max, Decimal)
         assert min_match in ['gt', 'gte']
         assert max_match in ['lt', 'lte']
         self.test_name = test_name
         self.date_field = date_field
-        self.min = Decimal('%.2g' % min)
-        self.max = Decimal('%.2g' % max)
+        self.min = min
+        self.max = max
         self.min_match = min_match
         self.max_match = max_match
     
