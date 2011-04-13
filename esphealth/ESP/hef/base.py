@@ -142,7 +142,7 @@ class BaseHeuristic(object):
         '''
     
     def __str__(self):
-        return smart_str(self.uri)
+        return smart_str(self.short_name)
     
     __registered_heuristics = {}
     
@@ -1078,16 +1078,16 @@ class DiagnosisHeuristic(BaseEventHeuristic):
 
     @property
     def short_name(self):
-        sn = 'diagnosis:%s' % self.name
+        sn = u'diagnosis:%s' % self.name
         return sn
     
-    uri = 'urn:x-esphealth:heuristic:channing:diagnosis:v1'
+    uri = u'urn:x-esphealth:heuristic:channing:diagnosis:v1'
     
     # Only this version of HEF is supported
     core_uris = [HEF_CORE_URI]
     
     def __str__(self):
-        return self.uri
+        return self.short_name
     
     @property
     def encounters(self):
@@ -1111,7 +1111,9 @@ class DiagnosisHeuristic(BaseEventHeuristic):
     def dx_event_name(self):
         return 'dx:%s' % self.name
     
-    event_names = [dx_event_name]
+    @property
+    def event_names(self):
+         return [self.dx_event_name]
     
     def generate(self):
         icd9s = Icd9.objects.filter(self.icd9_q_obj)
