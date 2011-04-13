@@ -17,6 +17,7 @@ import re
 import sys
 import hashlib
 from optparse import make_option
+from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 
 from django.db.models import Q
@@ -52,6 +53,7 @@ from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import Dose
 from ESP.hef.base import PrescriptionHeuristic
 from ESP.nodis.base import DiseaseDefinition
+from ESP.nodis.base import Report
 
 
 class Diabetes(DiseaseDefinition):
@@ -122,7 +124,7 @@ class Diabetes(DiseaseDefinition):
             ]:
             h = LabResultFixedThresholdHeuristic(
                 test_name = pair[0],
-                threshold = pair[1],
+                threshold = Decimal(str(pair[1])),
                 )
             heuristics.append(h)
         #
@@ -135,8 +137,8 @@ class Diabetes(DiseaseDefinition):
             ]:
             h = LabResultRangeHeuristic(
                 test_name = triple[0],
-                min = triple[1],
-                max = triple[2],
+                min = Decimal(str(triple[1])),
+                max = Decimal(str(triple[2])),
                 )
             heuristics.append(h)
         #
@@ -242,7 +244,7 @@ class Diabetes(DiseaseDefinition):
         heuristics.append( LabResultFixedThresholdHeuristic(
             test_name = 'c-peptide',
             date_field = 'result',
-            threshold = 1,
+            threshold = Decimal(str(1)),
             ) )
         log.debug('All heuristics for %s: %s' % (self, heuristics))
         return heuristics
@@ -742,6 +744,7 @@ class Diabetes(DiseaseDefinition):
             new_case.events = event_qs
             new_case.save()
             log.info('Saved new case: %s (%8s / %s)' % (new_case, counter, total))
+    
     def linelist(self):
         #-------------------------------------------------------------------------------
         #
@@ -1331,6 +1334,12 @@ class GestationalDiabetes(object):
                 values.update(patient_values)
                 writer.writerow(values)
 
+class PrediabetesReport(Report):
+    
+    short_name = 'prediabetes'
+    
+    def generate(self):
+        pass
 
 #-------------------------------------------------------------------------------
 #
