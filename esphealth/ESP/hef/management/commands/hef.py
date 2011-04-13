@@ -17,6 +17,7 @@ import threading
 import Queue
 import thread
 import signal
+import time
 
 from pkg_resources import iter_entry_points
 
@@ -118,7 +119,7 @@ class Command(BaseCommand):
             counter.put(0)
             for i in range(options['thread_count']):
                 t = ThreadedEventGenerator(queue, counter)
-                t.setDaemon(True)
+                t.daemon = True
                 t.start()
             for name in name_list:
                 event_generating_obj = dispatch[name]
@@ -127,7 +128,8 @@ class Command(BaseCommand):
                         queue.put(heuristic)
                 else:
                     queue.put(event_generating_obj)
-            queue.join()
+            while threading.active_count() > 0:
+                time.sleep(0.1)
             count = counter.get()
         log.info('Generated %s total new events' % count)
     
@@ -169,12 +171,14 @@ class Command(BaseCommand):
             counter.put(0)
             for i in range(options['thread_count']):
                 t = ThreadedEventGenerator(queue, counter)
-                t.setDaemon(True)
+                t.daemon = True
                 t.start()
             for heuristic in BaseEventHeuristic.get_all():
                 log.info('Running %s' % heuristic)
                 queue.put(heuristic)
-            queue.join()
+            while threading.active_count() > 1:
+                print 'thread count: %s' % threading.active_count()
+                time.sleep(0.1)
             count = counter.get()
         for heuristic in BaseTimespanHeuristic.get_all():
             log.info('Running %s' % heuristic)
@@ -192,15 +196,18 @@ class ThreadedEventGenerator(threading.Thread):
     '''
     Thread subclass to call generate_events() on various HEF objects
     '''
+    
+    alive = True
+    
     def __init__(self, queue, counter):
         self.queue = queue
         self.counter = counter
-        self.alive = True
         threading.Thread.__init__(self)
     
     def run(self):
         try:
             while self.alive:
+                raise "foo"
                 event_generating_obj = self.queue.get()
                 count = event_generating_obj.generate()
                 i = self.counter.get()
