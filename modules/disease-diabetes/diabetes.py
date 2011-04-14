@@ -95,7 +95,7 @@ class Diabetes(DiseaseDefinition):
         # Threshold Tests
         #
         for pair in [
-	        # Fasting Glucose
+	        # Fasting OGTT
             ('ogtt50-fasting', 126),
             ('ogtt75-fasting', 126),
             ('ogtt100-fasting', 126),
@@ -221,9 +221,9 @@ class Diabetes(DiseaseDefinition):
         # Cholesterol
         #
         for test_name in [
-            'cholesterol_hdl',
-            'cholesterol_ldl',
-            'cholesterol_total',
+            'cholesterol-hdl',
+            'cholesterol-ldl',
+            'cholesterol-total',
             'triglycerides',
             ]:
 	        heuristics.append( LabResultAnyHeuristic(
@@ -238,7 +238,7 @@ class Diabetes(DiseaseDefinition):
         # Misc
         #
         heuristics.append( LabResultPositiveHeuristic(
-            test_name = 'islet_cell_antibody',
+            test_name = 'islet-cell-antibody',
             titer_dilution = 4, # 1:4 titer
             ) )
         heuristics.append( LabResultFixedThresholdHeuristic(
@@ -625,9 +625,9 @@ class Diabetes(DiseaseDefinition):
         test_list = [
             'a1c',
             'glucose_fasting',
-            'cholesterol_total',
-            'cholesterol_hdl',
-            'cholesterol_ldl',
+            'cholesterol-total',
+            'cholesterol-hdl',
+            'cholesterol-ldl',
             'triglycerides',
             ]
         for test in test_list:
