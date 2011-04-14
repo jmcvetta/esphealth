@@ -385,8 +385,8 @@ class LabResultAnyHeuristic(BaseLabResultHeuristic):
     
     def generate(self):
         log.debug('Generating events for "%s"' % self)
-        unbound_count = self.unbound_results.count()
-        for lab in queryset_iterator(self.unbound_results):
+        unbound_count = self.unbound_labs.count()
+        for lab in queryset_iterator(self.unbound_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
