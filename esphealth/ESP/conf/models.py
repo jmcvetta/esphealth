@@ -176,7 +176,7 @@ class LabTestMap(models.Model):
     
     class Meta:
         verbose_name = 'Lab Test Map'
-        unique_together = ['test_name', 'native_code']
+        unique_together = ['test_name', 'native_code', 'code_match_type', 'record_type']
     
     def __str__(self):
         return u'LabTestMap (%s --> %s)' % (self.native_code, self.test_name)
