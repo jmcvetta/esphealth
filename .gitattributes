@@ -64,7 +64,6 @@ esphealth/ESP/emr/sql/patient.postgresql.sql -text
 esphealth/ESP/env-setup.sh -text
 esphealth/ESP/hef/__init__.py -text
 esphealth/ESP/hef/admin.py -text
-esphealth/ESP/hef/atrius_maps.py -text
 esphealth/ESP/hef/base.py -text
 esphealth/ESP/hef/defaults.py -text
 esphealth/ESP/hef/management/__init__.py -text
