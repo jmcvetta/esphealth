@@ -401,7 +401,7 @@ class LabResultAnyHeuristic(BaseLabResultHeuristic):
             e.save()
             e.tag(lab)
             log.debug('Saved new event: %s' % e)
-        log.info('Generated %s new %s events' % (unbound_count, self.uri))
+        log.info('Generated %s new %s events' % (unbound_count, self))
         return unbound_count
 
 
