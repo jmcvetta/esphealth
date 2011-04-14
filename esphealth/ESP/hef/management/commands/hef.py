@@ -168,17 +168,19 @@ class Command(BaseCommand):
         else:
             queue = Queue.Queue()
             counter = Queue.Queue()
+            error = Queue.Queue()
             counter.put(0)
             for i in range(options['thread_count']):
-                t = ThreadedEventGenerator(queue, counter)
+                t = ThreadedEventGenerator(queue, counter, error)
                 t.daemon = True
                 t.start()
             for heuristic in BaseEventHeuristic.get_all():
                 log.info('Running %s' % heuristic)
                 queue.put(heuristic)
-            while threading.active_count() > 1:
-                print 'thread count: %s' % threading.active_count()
+            while error.empty() and threading.active_count() > 1:
                 time.sleep(0.1)
+            if not error.empty():
+                sys.exit(-1)
             count = counter.get()
         for heuristic in BaseTimespanHeuristic.get_all():
             log.info('Running %s' % heuristic)
@@ -197,25 +199,22 @@ class ThreadedEventGenerator(threading.Thread):
     Thread subclass to call generate_events() on various HEF objects
     '''
     
-    alive = True
-    
-    def __init__(self, queue, counter):
+    def __init__(self, queue, counter, error):
         self.queue = queue
         self.counter = counter
+        self.error = error
         threading.Thread.__init__(self)
     
     def run(self):
         try:
-            while self.alive:
-                raise "foo"
-                event_generating_obj = self.queue.get()
-                count = event_generating_obj.generate()
-                i = self.counter.get()
-                self.counter.put(i+count)
-                del event_generating_obj
-                self.queue.task_done()
+            event_generating_obj = self.queue.get()
+            count = event_generating_obj.generate()
+            i = self.counter.get()
+            self.counter.put(i+count)
+            del event_generating_obj
+            self.queue.task_done()
         except BaseException, e:
-            self.alive = False
+            self.error.put(e)
             raise e
                     
             
