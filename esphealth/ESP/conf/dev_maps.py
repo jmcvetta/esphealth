@@ -2,7 +2,83 @@
 Code maps for development - remove before release
 '''
 
+from ESP.conf.models import ResultString
 from ESP.conf.models import LabTestMap
+
+
+#-------------------------------------------------------------------------------
+#
+# Result Strings
+#
+#-------------------------------------------------------------------------------
+ResultString.objects.get_or_create(
+    value = 'reactiv',
+    indicates = 'pos',
+    match_type = 'istartswith',
+    applies_to_all = True,
+    )
+ResultString.objects.get_or_create(
+    value = 'pos',
+    indicates = 'pos',
+    match_type = 'istartswith',
+    applies_to_all = True,
+    )
+ResultString.objects.get_or_create(
+    value = 'detec',
+    indicates = 'pos',
+    match_type = 'istartswith',
+    applies_to_all = True,
+    )
+ResultString.objects.get_or_create(
+    value = 'confirm',
+    indicates = 'pos',
+    match_type = 'istartswith',
+    applies_to_all = True,
+    )
+ResultString.objects.get_or_create(
+    value = 'non',
+    indicates = 'neg',
+    match_type = 'istartswith',
+    applies_to_all = True,
+    )
+ResultString.objects.get_or_create(
+    value = 'neg',
+    indicates = 'neg',
+    match_type = 'istartswith',
+    applies_to_all = True,
+    )
+ResultString.objects.get_or_create(
+    value = 'not det',
+    indicates = 'neg',
+    match_type = 'istartswith',
+    applies_to_all = True,
+    )
+ResultString.objects.get_or_create(
+    value = 'nr',
+    indicates = 'neg',
+    match_type = 'istartswith',
+    applies_to_all = True,
+    )
+ResultString.objects.get_or_create(
+    value = 'indeterminate',
+    indicates = 'ind',
+    match_type = 'istartswith',
+    applies_to_all = True,
+    )
+ResultString.objects.get_or_create(
+    value = 'not done',
+    indicates = 'ind',
+    match_type = 'istartswith',
+    applies_to_all = True,
+    )
+ResultString.objects.get_or_create(
+    value = 'tnp',
+    indicates = 'ind',
+    match_type = 'istartswith',
+    applies_to_all = True,
+    )
+
+
 
 #-------------------------------------------------------------------------------
 #
@@ -450,3 +526,4 @@ for code in [
         )
     if created:
         print 'Added new map: %s' % obj
+
