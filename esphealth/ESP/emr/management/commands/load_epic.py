@@ -431,41 +431,53 @@ class PatientLoader(BaseLoader):
         'mother_mrn',
         'date_of_death',
         ]
-    
+
+    def populate_from_row(self, field_map, row):
+        '''
+        Populate objects based on fields in a row
+        '''
+        for field in field_map:
+            value = row[field_map[field]]
+            if value:
+                field = smart_str(value)
+            else:
+                field = None
+        
     def load_row(self, row):
         p = self.get_patient(row['patient_id_num'])
+        field_map = {
+            p.mrn: 'mrn',
+            p.last_name: 'last_name',
+            p.first_name: 'first_name',
+            p.middle_name: 'middle_name',
+            p.address1: 'address1',
+            p.address2: 'address2',
+            p.city: 'city',
+            p.state: 'state',
+            p.zip: 'zip',
+            p.country: 'country',
+            p.areacode: 'areacode',
+            p.tel: 'tel',
+            p.tel_ext: 'tel_ext',
+            p.gender: 'gender',
+            p.race: 'race',
+            p.home_language: 'home_language',
+            p.ssn: 'ssn',
+            p.marital_stat: 'marital_stat',
+            p.religion: 'religion',
+            p.aliases: 'aliases',
+            p.mother_mrn: 'mother_mrn',
+            }
+        self.populate_from_row(field_map, row)
         p.provenance = self.provenance
         p.updated_by = UPDATED_BY
-        p.mrn = row['mrn']
-        p.last_name = row['last_name']
-        p.first_name = row['first_name']
-        p.middle_name = row['middle_name']
         p.pcp = self.get_provider(row['provider_id_num'])
-        p.address1 = row['address1']
-        p.address2 = row['address2']
-        p.city = row['city']
-        p.state = row['state']
-        p.zip = row['zip']
         p.zip5 = p._calculate_zip5()
-        p.country = row['country']
-        p.areacode = row['areacode']
-        p.tel = row['tel']
-        p.tel_ext = row['tel_ext']
-        if row['date_of_birth']:
-            p.date_of_birth = self.date_or_none(row['date_of_birth'])
-        if row['date_of_death']:
-            p.date_of_death = self.date_or_none(row['date_of_death'])
-        p.gender = row['gender']
-        p.race = row['race']
-        p.home_language = row['home_language']
-        p.ssn = row['ssn']
-        p.marital_stat = row['marital_stat']
-        p.religion = row['religion']
-        p.aliases = row['aliases']
-        p.mother_mrn = row['mother_mrn']
+        p.date_of_birth = self.date_or_none(row['date_of_birth'])
+        p.date_of_death = self.date_or_none(row['date_of_death'])
+        
         p.save()
         log.debug('Saved patient object: %s' % p)
-
 
 class LabResultLoader(BaseLoader):
     
