@@ -403,7 +403,8 @@ def weight_str_to_kg(raw_string):
         lbs = Decimal(match.group('lbs'))
         if match.group('oz'):
             lbs += ( Decimal(match.group('oz')) / 16 )
-        kg = lbs / 2.20462262185
+        kg = float(lbs) / 2.20462262185
+        kg = Decimal('%.2f' % kg)
         return kg
     else:
         log.debug('Could not extract numeric weight from raw string: "%s"' % raw_string)
@@ -426,7 +427,8 @@ def height_str_to_cm(raw_string):
         feet = Decimal(match.group('feet'))
         if match.group('inches'):
             feet += ( Decimal(match.group('inches')) / 12 )
-        cm = feet * 30.48
+        cm = float(feet) * 30.48
+        cm = Decimal('%.2f' % cm)
         if cm: # Don't return 0 height
             return cm
     log.debug('Could not extract valid numeric height from raw string: "%s"' % raw_string)

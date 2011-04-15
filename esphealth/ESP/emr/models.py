@@ -17,6 +17,7 @@ import re
 import os
 
 from decimal import Decimal
+from dateutil.relativedelta import relativedelta
 
 from django.db import models
 from django.db.models import Q, F
@@ -1032,7 +1033,7 @@ class Encounter(BasePatientRecord):
         height_m = height / 100  # Height is stored in centimeters
         weight_kg = weight # Already in kilograms
         bmi = weight_kg / (height_m ** 2 )
-        bmi = Decimal(bmi)
+        bmi = Decimal('%.2f' % bmi)
         return bmi
 
 
