@@ -311,15 +311,15 @@ class Diabetes(DiseaseDefinition):
             events = qs.filter(patient=pat, date=trigger_date)
             date_events = (trigger_date, events)
             frank_dm[pat] = date_events
-        for event_type in frank_dm_twice_reqs:
-            qs = Event.objects.filter(event_type=event_type).values('patient')
+        for event_name in frank_dm_twice_reqs:
+            qs = Event.objects.filter(name=event_name).values('patient')
             qs = qs.exclude(patient__case__condition__in=self.DIABETES_CONDITIONS)
             qs = qs.annotate(count=Count('pk'))
             patient_pks = qs.filter(count__gte=2).values_list('patient', flat=True).distinct().order_by('-patient')
-            log_query('Patient PKs for %s twice' % event_type, patient_pks)
+            log_query('Patient PKs for %s twice' % event_name, patient_pks)
             for ppk in patient_pks:
                 # Date of second event
-                pat_events = Event.objects.filter(event_type=event_type, patient=ppk)
+                pat_events = Event.objects.filter(name=event_name, patient=ppk)
                 if not pat_events:
                     continue
                 trigger_date = pat_events.order_by('date').values_list('date', flat=True)[1]
@@ -368,7 +368,7 @@ class Diabetes(DiseaseDefinition):
         # Patient ever prescribed insulin?
         #
         #-------------------------------------------------------------------------------
-        insulin_rx = patient_events.filter(event_type='rx:insulin')
+        insulin_rx = patient_events.filter(name='rx:insulin')
         if not insulin_rx:
             provider = trigger_events[0].provider
             return ('diabetes:type-2', trigger_date, provider, trigger_events)
@@ -378,8 +378,8 @@ class Diabetes(DiseaseDefinition):
         # C-peptide test done?
         #
         #-------------------------------------------------------------------------------
-        c_peptide_lx_thresh = patient_events.filter(event_type='lx:c-peptide:threshold:1.0').order_by('date')
-        c_peptide_lx_any = patient_events.filter(event_type='lx:c-peptide:any-result').order_by('date')
+        c_peptide_lx_thresh = patient_events.filter(name='lx:c-peptide:threshold:1.0').order_by('date')
+        c_peptide_lx_any = patient_events.filter(name='lx:c-peptide:any-result').order_by('date')
         if c_peptide_lx_thresh:
             provider = c_peptide_lx_thresh[0].provider
             case_date = c_peptide_lx_thresh[0].date
@@ -398,8 +398,8 @@ class Diabetes(DiseaseDefinition):
         #-------------------------------------------------------------------------------
         pos_aa_event_types = ['%s:positive' % i for i in self.AUTO_ANTIBODIES_LABS]
         neg_aa_event_types = ['%s:negative' % i for i in self.AUTO_ANTIBODIES_LABS]
-        aa_pos = patient_events.filter(event_type__in=pos_aa_event_types).order_by('date')
-        aa_neg = patient_events.filter(event_type__in=neg_aa_event_types).order_by('date')
+        aa_pos = patient_events.filter(name__in=pos_aa_event_types).order_by('date')
+        aa_neg = patient_events.filter(name__in=neg_aa_event_types).order_by('date')
         if aa_pos:
             provider = aa_pos[0].provider
             case_date = aa_pos[0].date
@@ -416,7 +416,7 @@ class Diabetes(DiseaseDefinition):
         # Prescription for URINE ACETONE TEST STRIPS? (search on keyword: ACETONE)
         #
         #-------------------------------------------------------------------------------
-        acetone_rx = patient_events.filter(event_type='rx:acetone').order_by('date')
+        acetone_rx = patient_events.filter(name='rx:acetone').order_by('date')
         if acetone_rx:
             provider = acetone_rx[0].provider
             case_date = acetone_rx[0].date
@@ -428,7 +428,7 @@ class Diabetes(DiseaseDefinition):
         # Prescription for GLUCAGON?
         #
         #-------------------------------------------------------------------------------
-        glucagon_rx = patient_events.filter(event_type='rx:glucagon').order_by('date')
+        glucagon_rx = patient_events.filter(name='rx:glucagon').order_by('date')
         if glucagon_rx:
             provider = glucagon_rx[0].provider
             case_date = glucagon_rx[0].date
@@ -440,7 +440,7 @@ class Diabetes(DiseaseDefinition):
         # Patient ever prescribed any oral hypoglycaemics?
         #
         #-------------------------------------------------------------------------------
-        oral_hypoglycaemic_rx = patient_events.filter(event_type__in=self.ORAL_HYPOGLYCAEMICS).order_by('date')
+        oral_hypoglycaemic_rx = patient_events.filter(name__in=self.ORAL_HYPOGLYCAEMICS).order_by('date')
         if oral_hypoglycaemic_rx:
             provider = oral_hypoglycaemic_rx[0].provider
             case_date = oral_hypoglycaemic_rx[0].date
@@ -452,8 +452,8 @@ class Diabetes(DiseaseDefinition):
         # >50% OF ICD9s in record for type 1?
         #
         #-------------------------------------------------------------------------------
-        type_1_dx = patient_events.filter(event_type__name__startswith='diabetes:type-1')
-        type_2_dx = patient_events.filter(event_type__name__startswith='diabetes:type-2')
+        type_1_dx = patient_events.filter(name__startswith='diabetes:type-1')
+        type_2_dx = patient_events.filter(name__startswith='diabetes:type-2')
         count_1 = type_1_dx.count()
         count_2 = type_2_dx.count()
         # Is there a less convoluted way to express this and still avoid divide-by-zero errors?
