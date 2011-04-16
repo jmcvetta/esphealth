@@ -83,6 +83,13 @@ class Diabetes(DiseaseDefinition):
     def get_event_heuristics(self):
         heuristics = []
         #
+        # Any Result Tests
+        #
+        for test_name in [
+            'c-peptide',
+            ]:
+            heuristics.append(LabResultAnyHeuristic(test_name=test_name))
+        #
         # Positive Tests
         #
         for test_name in [
@@ -304,12 +311,12 @@ class Diabetes(DiseaseDefinition):
             patient__timespan__end_date__gte = F('date'),
             patient__timespan__pk__isnull=True,
             )
-        qs = Event.objects.filter(name__in=frank_dm_once_reqs)
-        qs |= insulin_events
-        qs = qs.exclude(patient__case__condition__in=self.DIABETES_CONDITIONS)
-        qs = qs.values('patient').distinct().annotate(trigger_date=Min('date'))
-        log_query('Frank DM once', qs)
-        for i in qs:
+        once_qs = Event.objects.filter(name__in=frank_dm_once_reqs)
+        once_qs |= insulin_events
+        once_qs = once_qs.exclude(patient__case__condition__in=self.DIABETES_CONDITIONS)
+        once_qs = once_qs.values('patient').distinct().annotate(trigger_date=Min('date'))
+        log_query('Frank DM once', once_qs)
+        for i in once_qs:
             pat = i['patient']
             trigger_date = i['trigger_date']
             #events = qs.filter(patient=pat, date=trigger_date)
@@ -319,14 +326,14 @@ class Diabetes(DiseaseDefinition):
             if not (size % 1000):
                 log.debug('Frank DM trigger date count: %s' % size)
         for event_name in frank_dm_twice_reqs:
-            qs = Event.objects.filter(name=event_name).values('patient')
-            qs = qs.exclude(patient__case__condition__in=self.DIABETES_CONDITIONS)
-            qs = qs.annotate(count=Count('pk'))
+            twice_qs = Event.objects.filter(name=event_name).values('patient')
+            twice_qs = twice_qs.exclude(patient__case__condition__in=self.DIABETES_CONDITIONS)
+            twice_qs = twice_qs.annotate(count=Count('pk'))
             #patient_pks = qs.filter(count__gte=2).values_list('patient', flat=True).distinct().order_by('-patient')
-            qs = qs.filter(count__gte=2)
-            qs = qs.values('patient').distinct().annotate(trigger_date=Min('date'))
-            log_query('Patient dates for %s twice' % event_name, qs)
-            for i in qs:
+            twice_qs = twice_qs.filter(count__gte=2)
+            twice_qs = twice_qs.values('patient').distinct().annotate(trigger_date=Min('date'))
+            log_query('Patient dates for %s twice' % event_name, twice_qs)
+            for i in twice_qs:
                 pat = i['patient']
                 trigger_date = i['trigger_date']
                 #events = qs.filter(patient=pat, date=trigger_date)
@@ -349,12 +356,17 @@ class Diabetes(DiseaseDefinition):
             log.debug('Checking patient %8s / %s' % (counter, total_count))
             patient = Patient.objects.get(pk=pat_pk)
             trigger_date = frank_dm[pat_pk]
-            trigger_events = Event.objects.filter(
-                name__in = all_frank_dm_event_names, 
+            trigger_events = insulin_events | Event.objects.filter(name__in = all_frank_dm_event_names)
+            trigger_events = trigger_events.filter(
                 patient = patient, 
                 date = trigger_date,
-                ).order_by('date')
+                )
+            trigger_events = trigger_events.order_by('date')
             condition, case_date, provider, case_events = self._determine_dm_type(patient, trigger_date, trigger_events)
+            if condition == 'diabtes:type-1':
+                type_1_counter += 1
+            elif condition == 'diabtes:type-2':
+                type_2_counter += 1
             new_case = Case(
                 patient = patient,
                 provider = provider,
@@ -389,6 +401,7 @@ class Diabetes(DiseaseDefinition):
         insulin_rx = patient_events.filter(name='rx:insulin')
         if not insulin_rx:
             provider = trigger_events[0].provider
+            log.debug('No insulin Rx ever: Type 2')
             return ('diabetes:type-2', trigger_date, provider, trigger_events)
         
         #===============================================================================
@@ -396,17 +409,19 @@ class Diabetes(DiseaseDefinition):
         # C-peptide test done?
         #
         #-------------------------------------------------------------------------------
-        c_peptide_lx_thresh = patient_events.filter(name='lx:c-peptide:threshold:1.0').order_by('date')
+        c_peptide_lx_thresh = patient_events.filter(name='lx:c-peptide:threshold:1:result-date').order_by('date')
         c_peptide_lx_any = patient_events.filter(name='lx:c-peptide:any-result').order_by('date')
         if c_peptide_lx_thresh:
             provider = c_peptide_lx_thresh[0].provider
             case_date = c_peptide_lx_thresh[0].date
             case_events = trigger_events | c_peptide_lx_thresh
+            log.debug('C-Peptide result above threshold: Type 2')
             return ('diabetes:type-2', case_date, provider, case_events)
         if c_peptide_lx_any: # Test was done, but result is below threshold
             provider = c_peptide_lx_any[0].provider
             case_date = c_peptide_lx_any[0].date
             case_events = trigger_events | c_peptide_lx_any
+            log.debug('C-Peptide result below threshold: Type 1')
             return ('diabetes:type-1', case_date, provider, case_events)
         
         #===============================================================================
@@ -422,11 +437,13 @@ class Diabetes(DiseaseDefinition):
             provider = aa_pos[0].provider
             case_date = aa_pos[0].date
             events = trigger_events | aa_pos
+            log.debug('Diabetes auto-antibodies positive: Type 1')
             return ('diabetes:type-1', case_date, provider, events)
         if aa_neg:
             provider = aa_neg[0].provider
             case_date = aa_neg[0].date
             events = trigger_events | aa_neg
+            log.debug('Diabetes auto-antibodies negative: Type 2')
             return ('diabetes:type-2', case_date, provider, events)
         
         #===============================================================================
@@ -439,6 +456,7 @@ class Diabetes(DiseaseDefinition):
             provider = acetone_rx[0].provider
             case_date = acetone_rx[0].date
             case_events = trigger_events | acetone_rx
+            log.debug('Acetone Rx: Type 1')
             return ('diabetes:type-1', case_date, provider, case_events)
             
         #===============================================================================
@@ -451,6 +469,7 @@ class Diabetes(DiseaseDefinition):
             provider = glucagon_rx[0].provider
             case_date = glucagon_rx[0].date
             case_events = trigger_events | glucagon_rx
+            log.debug('Glucagon Rx: Type 1')
             return ('diabetes:type-1', case_date, provider, case_events)
         
         #===============================================================================
@@ -463,6 +482,7 @@ class Diabetes(DiseaseDefinition):
             provider = oral_hypoglycaemic_rx[0].provider
             case_date = oral_hypoglycaemic_rx[0].date
             case_events = trigger_events | oral_hypoglycaemic_rx
+            log.debug('Oral hypoglycaemic Rx: Type 2')
             return ('diabetes:type-2', trigger_date, provider, case_events)
         
         #===============================================================================
@@ -470,8 +490,8 @@ class Diabetes(DiseaseDefinition):
         # >50% OF ICD9s in record for type 1?
         #
         #-------------------------------------------------------------------------------
-        type_1_dx = patient_events.filter(name__startswith='diabetes:type-1')
-        type_2_dx = patient_events.filter(name__startswith='diabetes:type-2')
+        type_1_dx = patient_events.filter(name__startswith='dx:diabetes:type-1')
+        type_2_dx = patient_events.filter(name__startswith='dx:diabetes:type-2')
         count_1 = type_1_dx.count()
         count_2 = type_2_dx.count()
         # Is there a less convoluted way to express this and still avoid divide-by-zero errors?
@@ -479,16 +499,19 @@ class Diabetes(DiseaseDefinition):
             provider = trigger_events[0].provider
             case_date = trigger_events[0].date
             case_events = trigger_events | type_1_dx
+            log.debug('More than 50% of ICD9s: Type 1')
             return ('diabetes:type-1', trigger_date, provider, case_events)
         elif count_2 and ( ( count_1 / count_2 ) > 0.5 ):
             provider = trigger_events[0].provider
             case_date = trigger_events[0].date
             case_events = trigger_events | type_1_dx
+            log.debug('More than 50% of ICD9s: Type 1')
             return ('diabetes:type-1', trigger_date, provider, case_events)
         else:
             provider = trigger_events[0].provider
             case_date = trigger_events[0].date
             case_events = trigger_events | type_2_dx
+            log.debug('Less than 50% of ICD9s: Type 2')
             return ('diabetes:type-2', trigger_date, provider, case_events)
     
     def __vqs_to_pfv(self, vqs, field):
