@@ -331,7 +331,10 @@ class Diabetes(DiseaseDefinition):
                 trigger_date = i['trigger_date']
                 #events = qs.filter(patient=pat, date=trigger_date)
                 #date_events = (trigger_date, events)
-                frank_dm[pat] = trigger_date
+                if pat not in frank_dm:
+                    frank_dm[pat] = trigger_date
+                elif frank_dm[pat] > trigger_date:
+                    frank_dm[pat] = trigger_date
                 size = len(frank_dm)
                 if not (size % 1000):
                     log.debug('Frank DM trigger date count: %s' % size)
