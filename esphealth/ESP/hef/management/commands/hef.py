@@ -62,7 +62,7 @@ class Command(BaseCommand):
         make_option('-n', '--new', action='store_true', dest='new'),
         )
 
-    def handle(self, *args, **options):
+    def old(self, *args, **options):
         # TODO: We need a lockfile or some other means to prevent multiple 
         # instances running at once.
         log.debug('options: %s' % options)
@@ -133,7 +133,7 @@ class Command(BaseCommand):
             count = counter.get()
         log.info('Generated %s total new events' % count)
     
-    def new_hef(self, args, options):
+    def handle(self, *args, **options):
         if options['list']:
             return self.list(args, options)
         elif args:
