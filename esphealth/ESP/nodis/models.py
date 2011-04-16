@@ -120,10 +120,9 @@ class Case(models.Model):
     '''
     patient = models.ForeignKey(Patient, blank=False)
     condition = models.TextField('Common English name for this medical condition', blank=False, db_index=True)
-    condition_uri = models.TextField('URI describing this medical condition', blank=False, db_index=True)
     provider = models.ForeignKey(Provider, blank=False)
     date = models.DateField(blank=False, db_index=True)
-    source = models.TextField('What created this case?', blank=False, db_index=True)
+    source = models.TextField('What created this case?', blank=False)
     status = models.TextField('Case status', blank=False, choices=STATUS_CHOICES, default='AR') # Is it sensible to have default here?
     notes = models.TextField(blank=True, null=True)
     # Timestamps:
@@ -138,7 +137,7 @@ class Case(models.Model):
 
     class Meta:
         permissions = [ ('view_phi', 'Can view protected health information'), ]
-        unique_together = ['patient', 'condition_uri', 'date']
+        unique_together = ['patient', 'condition', 'date', 'source']
         ordering = ['id']
 
     def __get_condition_config(self):
