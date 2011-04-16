@@ -76,6 +76,8 @@ class Diabetes(DiseaseDefinition):
     def generate(self):
         counter = 0
         counter += self.generate_frank_diabetes()
+        counter += self.generate_prediabetes()
+        counter += self.generate_gestational_diabetes()
         return counter
     
     def get_event_heuristics(self):
@@ -95,14 +97,14 @@ class Diabetes(DiseaseDefinition):
         # Threshold Tests
         #
         for pair in [
-	        # Fasting OGTT
+            # Fasting OGTT
             ('ogtt50-fasting', 126),
             ('ogtt75-fasting', 126),
             ('ogtt100-fasting', 126),
-	        # OGTT50
+            # OGTT50
             ('ogtt50-fasting', 190),
             ('ogtt50-1hr', 190),
-	        # OGTT75
+            # OGTT75
             ('ogtt75-fasting', 92),
             ('ogtt75-fasting', 126),
             ('ogtt75-30m', 200),
@@ -112,7 +114,7 @@ class Diabetes(DiseaseDefinition):
             ('ogtt75-90m', 200),
             ('ogtt75-2hr', 153),
             ('ogtt75-2hr', 200),
-	        # OGTT100
+            # OGTT100
             ('ogtt100-fasting', 95),
             ('ogtt100-30m', 200),
             ('ogtt100-1hr', 180),
@@ -226,14 +228,14 @@ class Diabetes(DiseaseDefinition):
             'cholesterol-total',
             'triglycerides',
             ]:
-	        heuristics.append( LabResultAnyHeuristic(
-	            test_name = test_name,
-	            date_field = 'result',
-	            ) )
-	        heuristics.append( LabResultPositiveHeuristic(
-	            test_name = test_name,
-	            date_field = 'result',
-	            ) )
+            heuristics.append( LabResultAnyHeuristic(
+                test_name = test_name,
+                date_field = 'result',
+                ) )
+            heuristics.append( LabResultPositiveHeuristic(
+                test_name = test_name,
+                date_field = 'result',
+                ) )
         #
         # Misc
         #
@@ -289,6 +291,7 @@ class Diabetes(DiseaseDefinition):
             'dx:diabetes-all-types',
             # FIXME: Not yet implemented:  "Random glucoses (RG) >=200 on two or more occasions"
             ]
+        all_frank_dm_event_names = frank_dm_once_reqs + frank_dm_twice_reqs
         #
         # Find trigger dates for patients who have frank DM of either type, but no existing case
         # 
@@ -304,28 +307,34 @@ class Diabetes(DiseaseDefinition):
         qs = Event.objects.filter(name__in=frank_dm_once_reqs)
         qs |= insulin_events
         qs = qs.exclude(patient__case__condition__in=self.DIABETES_CONDITIONS)
+        qs = qs.values('patient').distinct().annotate(trigger_date=Min('date'))
         log_query('Frank DM once', qs)
-        for i in qs.values('patient').annotate(trigger_date=Min('date')):
+        for i in qs:
             pat = i['patient']
             trigger_date = i['trigger_date']
-            events = qs.filter(patient=pat, date=trigger_date)
-            date_events = (trigger_date, events)
-            frank_dm[pat] = date_events
+            #events = qs.filter(patient=pat, date=trigger_date)
+            #date_events = (trigger_date, events)
+            frank_dm[pat] = trigger_date
+            size = len(frank_dm)
+            if not (size % 1000):
+                log.debug('Frank DM trigger date count: %s' % size)
         for event_name in frank_dm_twice_reqs:
             qs = Event.objects.filter(name=event_name).values('patient')
             qs = qs.exclude(patient__case__condition__in=self.DIABETES_CONDITIONS)
             qs = qs.annotate(count=Count('pk'))
-            patient_pks = qs.filter(count__gte=2).values_list('patient', flat=True).distinct().order_by('-patient')
-            log_query('Patient PKs for %s twice' % event_name, patient_pks)
-            for ppk in patient_pks:
-                # Date of second event
-                pat_events = Event.objects.filter(name=event_name, patient=ppk)
-                if not pat_events:
-                    continue
-                trigger_date = pat_events.order_by('date').values_list('date', flat=True)[1]
-                if (ppk not in frank_dm) or (frank_dm[ppk][0] > trigger_date):
-                    frank_dm[ppk] = (trigger_date, pat_events.filter(date=trigger_date))
-                    log.debug('%s: %s' % (ppk, trigger_date))
+            #patient_pks = qs.filter(count__gte=2).values_list('patient', flat=True).distinct().order_by('-patient')
+            qs = qs.filter(count__gte=2)
+            qs = qs.values('patient').distinct().annotate(trigger_date=Min('date'))
+            log_query('Patient dates for %s twice' % event_name, qs)
+            for i in qs:
+                pat = i['patient']
+                trigger_date = i['trigger_date']
+                #events = qs.filter(patient=pat, date=trigger_date)
+                #date_events = (trigger_date, events)
+                frank_dm[pat] = trigger_date
+                size = len(frank_dm)
+                if not (size % 1000):
+                    log.debug('Frank DM trigger date count: %s' % size)
         #
         # Determine type and create cases
         #
@@ -337,8 +346,13 @@ class Diabetes(DiseaseDefinition):
             counter += 1
             log.debug('Checking patient %8s / %s' % (counter, total_count))
             patient = Patient.objects.get(pk=pat_pk)
-            trigger_date, trigger_events = frank_dm[pat_pk]
-            condition, case_date, provider, events = self._determine_dm_type(patient, trigger_date, trigger_events)
+            trigger_date = frank_dm[pat_pk]
+            trigger_events = Event.objects.filter(
+                name__in = all_frank_dm_event_names, 
+                patient = patient, 
+                date = trigger_date,
+                ).order_by('date')
+            condition, case_date, provider, case_events = self._determine_dm_type(patient, trigger_date, trigger_events)
             new_case = Case(
                 patient = patient,
                 provider = provider,
@@ -347,7 +361,7 @@ class Diabetes(DiseaseDefinition):
                 source = self.uri,
                 )
             new_case.save()
-            new_case.events = events | trigger_events
+            new_case.events = case_events
             new_case.save()
             log.debug('Generated new case: %s' % new_case)
         log.info('%8s new cases of type 1 diabetes' % type_1_counter)
@@ -697,6 +711,10 @@ class Diabetes(DiseaseDefinition):
             field_values['case_id'] = item['id']
             field_values['diabetes_type'] = item['condition']
             field_values['case_date'] = item['date']
+    
+    def generate_gestational_diabetes(self):
+        log.warning('GDM not yet ported!')
+        return 0
     
     def generate_prediabetes(self, args, options):
         ALL_CRITERIA = [
