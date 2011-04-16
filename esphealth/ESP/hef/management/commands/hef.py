@@ -158,13 +158,17 @@ class Command(BaseCommand):
             h.generate()
     
     def all(self, args, options):
+        event_heuristics = BaseEventHeuristic.get_all()
+        timespan_heuristics = BaseTimespanHeuristic.get_all()
         event_counter = 0
         ts_counter = 0
         if options['thread_count'] == 0:
-            count = 0
             for heuristic in BaseEventHeuristic.get_all():
                 log.info('Running %s' % heuristic)
-                count += heuristic.generate()
+                event_counter += heuristic.generate()
+            for heuristic in BaseTimespanHeuristic.get_all():
+                log.info('Running %s' % heuristic)
+                ts_counter += heuristic.generate()
         else:
             queue = Queue.Queue()
             counter = Queue.Queue()
@@ -174,17 +178,18 @@ class Command(BaseCommand):
                 t = ThreadedEventGenerator(queue, counter, error)
                 t.daemon = True
                 t.start()
+                log.debug('Starting thread %s' % i)
             for heuristic in BaseEventHeuristic.get_all():
                 log.info('Running %s' % heuristic)
                 queue.put(heuristic)
             while error.empty() and threading.active_count() > 1:
                 time.sleep(0.1)
-            if not error.empty():
-                sys.exit(-1)
-            count = counter.get()
-        for heuristic in BaseTimespanHeuristic.get_all():
-            log.info('Running %s' % heuristic)
-            ts_counter += heuristic.generate()
+            event_counter = counter.get()
+            counter.put(0)
+            for heuristic in BaseTimespanHeuristic.get_all():
+                log.info('Running %s' % heuristic)
+                ts_counter += heuristic.generate()
+            ts_counter = counter.get()
         log.info('Generated %20s events' % event_counter)
         log.info('Generated %20s timespans' % ts_counter)
         return event_counter + ts_counter
