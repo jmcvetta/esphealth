@@ -346,7 +346,6 @@ class Diabetes(DiseaseDefinition):
         type_1_counter = 0
         type_2_counter = 0
         for pat_pk in frank_dm:
-            counter += 1
             log.debug('Checking patient %8s / %s' % (counter, total_count))
             patient = Patient.objects.get(pk=pat_pk)
             trigger_date = frank_dm[pat_pk]
@@ -366,9 +365,11 @@ class Diabetes(DiseaseDefinition):
             new_case.save()
             new_case.events = case_events
             new_case.save()
+            counter += 1
             log.debug('Generated new case: %s' % new_case)
         log.info('%8s new cases of type 1 diabetes' % type_1_counter)
         log.info('%8s new cases of type 2 diabetes' % type_2_counter)
+        return counter
             
     def _determine_dm_type(self, patient, trigger_date, trigger_events):
         '''
