@@ -35,6 +35,8 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('--list', action='store_true', dest='list', 
             help='List available diseases'),
+        make_option('--dependencies', action='store_true', dest='dependencies', 
+            help='Generate dependencies before generating diseases')
         )
 
     def handle(self, *args, **options):
@@ -47,6 +49,8 @@ class Command(BaseCommand):
     
     def all(self, args, options):
         for disease in DiseaseDefinition.get_all():
+            if options['dependencies']:
+                disease.generate_dependencies()
             disease.generate()
     
     def list(self, args, options):

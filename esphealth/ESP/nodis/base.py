@@ -14,6 +14,10 @@ Base Classes
 import abc
 from pkg_resources import iter_entry_points
 
+from ESP.settings import HEF_THREAD_COUNT
+from ESP.utils import log
+from ESP.hef.base import BaseHeuristic
+
 
 class DiseaseDefinition(object):
 
@@ -31,6 +35,20 @@ class DiseaseDefinition(object):
         '''
         A URI which uniquely describes this disease definition
         @rtype: String
+        '''
+    
+    @abc.abstractproperty
+    def event_heuristics(self):
+        '''
+        Event heuristics on which this disease definition depends.
+        @rtype: List of EventHeuristic instances
+        '''
+    
+    @abc.abstractproperty
+    def timespan_heuristics(self):
+        '''
+        Timespan heuristics on which this disease definition depends.
+        @rtype: List of TimespanHeuristic instances
         '''
     
     @abc.abstractmethod
@@ -54,6 +72,19 @@ class DiseaseDefinition(object):
         diseases = list(diseases)
         diseases.sort(key = lambda h: h.uri)
         return diseases
+    
+    def generate_dependencies(self, thread_count=HEF_THREAD_COUNT):
+        '''
+        Generates events & timespans for all heuristics on which this disease 
+        definition depends.  
+        '''
+        log.info('Generating dependencies for %s' % self)
+        heuristic_list = []
+        heuristic_list.append(self.event_heuristics)
+        heuristic_list.append(self.timespan_heuristics)
+        return BaseHeuristic.generate_all(heuristic_list, thread_count)
+    
+        
 
 
 class Report(object):
