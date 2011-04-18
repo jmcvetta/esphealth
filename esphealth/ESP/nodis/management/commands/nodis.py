@@ -58,6 +58,8 @@ class Command(BaseCommand):
             dependencies = set()
             for disease in DiseaseDefinition.get_all():
                 dependencies |= set(disease.dependencies)
+            for dep in dependencies:
+                log.debug('Dependency: %s' % dep)
             BaseHeuristic.generate_all(heuristic_list=dependencies)
         for disease in DiseaseDefinition.get_all():
             disease.generate()
