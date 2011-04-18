@@ -256,7 +256,6 @@ class Diabetes(DiseaseDefinition):
             date_field = 'result',
             threshold = Decimal(str(1)),
             ) )
-        log.debug('All heuristics for %s: %s' % (self, heuristics))
         return heuristics
     
     @property
@@ -748,7 +747,7 @@ class Diabetes(DiseaseDefinition):
         log.warning('GDM not yet ported!')
         return 0
     
-    def generate_prediabetes(self, args, options):
+    def generate_prediabetes(self):
         ALL_CRITERIA = [
             'lx:a1c:range:5.7:6.4',
             'lx:glucose-fasting:range:100.0:125.0',
