@@ -21,9 +21,14 @@ HEF_CORE_URI = 'urn:x-esphealth:hef:core:v1'
 import abc
 import math
 import re
+import threading
+import Queue
+import time
+import sys
 
 from decimal import Decimal
 
+from ESP.settings import HEF_THREAD_COUNT
 from ESP.conf.models import LabTestMap
 from ESP.emr.models import Encounter
 from ESP.emr.models import LabOrder
@@ -158,7 +163,34 @@ class BaseHeuristic(object):
         heuristics = list(heuristics)
         heuristics.sort(key = lambda h: h.short_name)
         return heuristics
-
+    
+    @classmethod
+    def generate_all(cls, heuristic_list=None, thread_count=HEF_THREAD_COUNT):
+        counter = 0
+        counter += BaseEventHeuristic.generate_all(heuristic_list=heuristic_list, thread_count=thread_count)
+        counter += BaseTimespanHeuristic.generate_all(heuristic_list=heuristic_list, thread_count=thread_count)
+        return counter
+    
+    @classmethod
+    def generate_by_name(cls, name_list, thread_count=HEF_THREAD_COUNT):
+        '''
+        Run heuristic(s) specified by name as arguments
+        '''
+        class UnknownHeuristicException(Exception):
+            '''
+            Exception raised no heuristic can be found matching the requested name
+            '''
+            pass
+        heuristics = {}
+        selected_heuristics = []
+        for h in cls.get_all():
+            heuristics[h.short_name] = h
+        for short_name in name_list:
+            if not short_name in heuristics:
+                raise UnknownHeuristicException
+            selected_heuristics.append(heuristics[short_name])
+        return cls.generate_all(heuristic_list=selected_heuristics, thread_count=thread_count)
+    
 
 class BaseEventHeuristic(BaseHeuristic):
     '''
@@ -193,6 +225,49 @@ class BaseEventHeuristic(BaseHeuristic):
                 log.warning('    Heuristic requires: %s' % heuristic.core_uris)
         valid_heuristics.sort(key = lambda h: h.short_name)
         return valid_heuristics
+    
+    @classmethod
+    def generate_all(cls, heuristic_list=None, thread_count=HEF_THREAD_COUNT):
+        '''
+        Generate events all specified heuristics.  If event_heuristic_list is None, then
+        use all known EventHeuristic instances.
+        '''
+        if heuristic_list:
+            relevant_heuristics = set()
+            for item in heuristic_list:
+                if isinstance(item, cls):
+                    relevant_heuristics.add(item)
+            heuristic_list = relevant_heuristics
+            if not heuristic_list:
+                return 0
+        else:
+            heuristic_list = cls.get_all()
+        counter = Queue.Queue()
+        counter.put(0)
+        if thread_count == 0:
+            #
+            # No threads
+            # 
+            for heuristic in heuristic_list:
+                log.info('Running %s' % heuristic)
+                counter.put( heuristic.generate() )
+        else:
+            #
+            # Threaded
+            #
+            queue = Queue.Queue()
+            error = Queue.Queue()
+            for i in range(thread_count):
+                t = ThreadedHeuristicGenerator(queue, counter, error)
+                t.daemon = True
+                t.start()
+                log.debug('Starting thread %s' % i)
+            for heuristic in heuristic_list:
+                queue.put(heuristic)
+            while error.empty() and threading.active_count() > 1:
+                time.sleep(0.1)
+        log.info('Generated %20s events' % counter.get())
+        return counter.get()
 
 
 class BaseTimespanHeuristic(BaseHeuristic):
@@ -228,7 +303,76 @@ class BaseTimespanHeuristic(BaseHeuristic):
         A list of one or more strings naming all the possible 
         kinds of timespan this heuristic can generate
         '''
-        
+    
+    @classmethod
+    def generate_all(cls, heuristic_list=None, thread_count=HEF_THREAD_COUNT):
+        '''
+        Generate events all specified heuristics.  If heuristic_list is None, then
+        use all known TimespanHeuristic instances.
+        '''
+        if heuristic_list:
+            relevant_heuristics = set()
+            for item in heuristic_list:
+                if isinstance(item, cls):
+                    relevant_heuristics.add(item)
+            heuristic_list = relevant_heuristics
+            if not heuristic_list:
+                return 0
+        else:
+            heuristic_list = cls.get_all()
+        log.debug('heuristic list: %s' % heuristic_list)
+        counter = Queue.Queue()
+        counter.put(0)
+        if thread_count == 0:
+            #
+            # No threads
+            # 
+            for heuristic in heuristic_list:
+                log.info('Running %s' % heuristic)
+                counter.put( heuristic.generate() )
+        else:
+            #
+            # Threaded
+            #
+            queue = Queue.Queue()
+            error = Queue.Queue()
+            for i in range(thread_count):
+                t = ThreadedHeuristicGenerator(queue, counter, error)
+                t.daemon = True
+                t.start()
+                log.debug('Starting thread %s' % i)
+            for heuristic in heuristic_list:
+                queue.put(heuristic)
+            while error.empty() and threading.active_count() > 1:
+                time.sleep(0.1)
+        log.info('Generated %20s timespans' % counter.get())
+        return counter.get()
+
+
+class ThreadedHeuristicGenerator(threading.Thread):
+    '''
+    Thread subclass to call generate_events() on various HEF objects
+    '''
+    
+    def __init__(self, queue, counter, error):
+        self.queue = queue
+        self.counter = counter
+        self.error = error
+        threading.Thread.__init__(self)
+    
+    def run(self):
+        try:
+            heuristic = self.queue.get()
+            log.info('Running %s' % heuristic)
+            count = heuristic.generate()
+            i = self.counter.get()
+            self.counter.put(i+count)
+            del heuristic
+            self.queue.task_done()
+        except BaseException, e:
+            self.error.put(e)
+            raise e
+
 
 class AbstractLabTest(object):
     '''
