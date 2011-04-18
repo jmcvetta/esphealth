@@ -94,7 +94,7 @@ class Diabetes(DiseaseDefinition):
         # Positive Tests
         #
         for test_name in [
-            'ogtt100_fasting_urine',
+            'ogtt100-fasting-urine',
             'gad65',
             'ica512',
             'insulin-antibody',
@@ -142,8 +142,8 @@ class Diabetes(DiseaseDefinition):
         #
         for triple in [
             ('a1c', 5.7, 6.4),
-            ('glucose_fasting', 100.0, 125.0),
-            ('ogtt50_random', 140.0, 200.0),
+            ('glucose-fasting', 100.0, 125.0),
+            ('ogtt50-random', 140.0, 200.0),
             ]:
             h = LabResultRangeHeuristic(
                 test_name = triple[0],
@@ -216,6 +216,8 @@ class Diabetes(DiseaseDefinition):
             'gliclazide',
             'rosiglitizone',
             'pioglitazone',
+            'acetone',
+            'glucagon',
             ]:
             h = PrescriptionHeuristic(
                 name = drug.replace(' ', '-'),
@@ -1383,9 +1385,15 @@ class GestationalDiabetes(object):
                 values.update(patient_values)
                 writer.writerow(values)
 
+
+class FrankDiabetesReport(Report):
+    
+    short_name = 'diabetes:frank-diabetes'
+
+
 class PrediabetesReport(Report):
     
-    short_name = 'prediabetes'
+    short_name = 'diabetes:prediabetes'
     
     def generate(self):
         pass
