@@ -80,7 +80,8 @@ class Diabetes(DiseaseDefinition):
         counter += self.generate_gestational_diabetes()
         return counter
     
-    def get_event_heuristics(self):
+    @property
+    def event_heuristics(self):
         heuristics = []
         #
         # Any Result Tests
@@ -257,6 +258,10 @@ class Diabetes(DiseaseDefinition):
             ) )
         log.debug('All heuristics for %s: %s' % (self, heuristics))
         return heuristics
+    
+    @property
+    def timespan_heuristics(self):
+        return []
     
     #-------------------------------------------------------------------------------
     #
@@ -1395,7 +1400,7 @@ class PrediabetesReport(Report):
 diabetes_definition = Diabetes()
 
 def get_event_heuristics():
-    return diabetes_definition.get_event_heuristics()
+    return diabetes_definition.event_heuristics
 
 def get_timespan_heuristics():
     return []
