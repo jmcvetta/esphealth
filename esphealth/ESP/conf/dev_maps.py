@@ -309,14 +309,14 @@ LabTestMap.objects.get_or_create(
 # Insulin AB
 #
 LabTestMap.objects.get_or_create(
-    test_name = 'insulin-ab',
+    test_name = 'insulin-antibody',
     native_code = '86337--2491',
     code_match_type = 'exact',
     record_type = 'both',
     threshold = 0.4,
     )
 LabTestMap.objects.get_or_create(
-    test_name = 'insulin-ab',
+    test_name = 'insulin-antibody',
     native_code = 'N1892--1655',
     code_match_type = 'exact',
     record_type = 'both',
