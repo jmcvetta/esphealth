@@ -80,8 +80,9 @@ class DiseaseDefinition(object):
         '''
         log.info('Generating dependencies for %s' % self)
         heuristic_list = []
-        heuristic_list.append(self.event_heuristics)
-        heuristic_list.append(self.timespan_heuristics)
+        heuristic_list.extend(self.event_heuristics)
+        heuristic_list.extend(self.timespan_heuristics)
+        log.debug('heuristic_list: %s' % heuristic_list)
         return BaseHeuristic.generate_all(heuristic_list, thread_count)
     
         
