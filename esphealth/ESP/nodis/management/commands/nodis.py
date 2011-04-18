@@ -23,6 +23,7 @@ from optparse import make_option
 from ESP import settings
 from ESP.utils import utils as util
 from ESP.utils.utils import log
+from ESP.hef.base import BaseHeuristic
 from ESP.nodis.base import DiseaseDefinition
 
     
@@ -48,9 +49,17 @@ class Command(BaseCommand):
             self.all(args, options)
     
     def all(self, args, options):
+        if options['dependencies']:
+            log.info('Generating all dependencies before generating cases of disease')
+            #
+            # Build a set of all distinct dependencies, so each one is run
+            # only once.
+            #
+            dependencies = set()
+            for disease in DiseaseDefinition.get_all():
+                dependencies |= set(disease.dependencies)
+            BaseHeuristic.generate_all(heuristic_list=dependencies)
         for disease in DiseaseDefinition.get_all():
-            if options['dependencies']:
-                disease.generate_dependencies()
             disease.generate()
     
     def list(self, args, options):

@@ -73,17 +73,23 @@ class DiseaseDefinition(object):
         diseases.sort(key = lambda h: h.uri)
         return diseases
     
+    @property
+    def dependencies(self):
+        '''
+        Returns the set of all heuristics on which this disease definition depends
+        '''
+        heuristics = set()
+        heuristics |= set(self.event_heuristics)
+        heuristics |= set(self.timespan_heuristics)
+        return heuristics
+    
     def generate_dependencies(self, thread_count=HEF_THREAD_COUNT):
         '''
         Generates events & timespans for all heuristics on which this disease 
         definition depends.  
         '''
         log.info('Generating dependencies for %s' % self)
-        heuristic_list = []
-        heuristic_list.extend(self.event_heuristics)
-        heuristic_list.extend(self.timespan_heuristics)
-        log.debug('heuristic_list: %s' % heuristic_list)
-        return BaseHeuristic.generate_all(heuristic_list, thread_count)
+        return BaseHeuristic.generate_all(self.dependencies, thread_count)
     
         
 
