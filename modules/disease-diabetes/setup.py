@@ -27,8 +27,9 @@ setup(
         ],
     entry_points = '''
         [esphealth]
-        disease_definitions = diabetes:get_disease_definitions
-        event_heuristics = diabetes:get_event_heuristics
-        timespan_heuristics = diabetes:get_timespan_heuristics
+        disease_definitions = diabetes:disease_definitions
+        event_heuristics = diabetes:event_heuristics
+        timespan_heuristics = diabetes:timespan_heuristics
+        reports = diabetes:reports
     '''
     )
