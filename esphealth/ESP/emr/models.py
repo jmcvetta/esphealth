@@ -15,6 +15,7 @@ import random
 import datetime
 import sys
 import re
+import os
 from dateutil.relativedelta import relativedelta
 
 from django.db import models
@@ -22,11 +23,12 @@ from django.db.models import Q, F
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
-from ESP.settings import DATABASE_ENGINE, DATA_DIR
+from ESP.settings import DATA_DIR
 from ESP.emr.choices import DATA_SOURCE
 from ESP.emr.choices import LOAD_STATUS
 from ESP.emr.choices import LAB_ORDER_TYPES
 from ESP.conf.common import EPOCH
+from ESP.conf.models import LabTestMap
 #from ESP.conf.models import CodeMap
 from ESP.static.models import Loinc
 from ESP.static.models import Ndc
@@ -659,7 +661,7 @@ class LabResult(BasePatientRecord):
         return '%(date)-10s    %(id)-8s    %(short_name)-15s    %(native_code)-11s    %(res)-20s' % values
 
     def __get_codemap(self):
-        maps = CodeMap.objects.filter(native_code=self.native_code)
+        maps = LabTestMap.objects.filter(native_code=self.native_code)
         if maps:
             return maps[0]
         else:

@@ -85,12 +85,16 @@ SITE_NAME = config['General']['site_name']
 DATA_DIR = config['General']['data_folder']
 FAKE_PATIENT_SURNAME = config['Reporting']['fake_patient_surname']
 FAKE_PATIENT_MRN = config['Reporting']['fake_patient_mrn']
-DATABASE_ENGINE = config['Database']['engine']
-DATABASE_NAME = config['Database']['db_name']
-DATABASE_USER = config['Database']['username']
-DATABASE_PASSWORD = secrets['General']['database_password']
-DATABASE_HOST = config['Database']['host']
-DATABASE_PORT = config['Database']['port']
+DATABASES = {
+    'default': {
+        'ENGINE': config['Database']['engine'],
+        'NAME': config['Database']['db_name'],
+        'USER': config['Database']['username'],
+        'PASSWORD': secrets['General']['database_password'],
+        'HOST': config['Database']['host'],
+        'PORT': config['Database']['port'],
+        },
+    }
 # Do we need to include DATABASE_OPTIONS in esp.ini?
 DATABASE_OPTIONS = {
     # Make PostgreSQL recover gracefully from caught exceptions
