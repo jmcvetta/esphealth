@@ -11,6 +11,7 @@ Pregnancy Timespan Detector
 '''
 
 import datetime
+from dateutil.relativedelta import relativedelta
 
 from django.db.models import Q
 from django.db.models import Min
@@ -31,8 +32,8 @@ from ESP.hef.models import Timespan
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-PREG_START_MARGIN = datetime.timedelta(days=20)
-PREG_END_MARGIN = datetime.timedelta(days=20)
+#PREG_START_MARGIN = datetime.timedelta(days=20)
+PREG_MARGIN = relativedelta(days=30)
 
 
 class PregnancyHeuristic(BaseTimespanHeuristic):
@@ -46,27 +47,38 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
     timespan_names = ['pregnancy', 'postpartum',]
     
     
-    def generate(self):
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    def __init__(self):
         #
-        # Initialize
+        self.timespan_names = [
+            'pregnancy:edd',
+            'pregnancy:icd9-eop',
+            'pregnancy:icd9-only',
+            ]
+        #-------------------------------------------------------------------------------
         #
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        # EDD Encounters
+        #
+        #-------------------------------------------------------------------------------
+        edd_enc_qs = Encounter.objects.all()
+        edd_enc_qs = edd_enc_qs.filter(edd__isnull=False)
+        edd_enc_qs = edd_enc_qs.exclude(timespan__name__in=self.timespan_names)
+        self.edd_enc_qs = edd_enc_qs
+        #-------------------------------------------------------------------------------
+        #
+        # ICD9 Encounters
+        #
+        #-------------------------------------------------------------------------------
         preg_icd9_q = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
-        self.ignore_bound_q = ~Q(timespan__name='pregnancy')
-        has_edd_q = Q(edd__isnull=False)
-        self.edd_encounters = Encounter.objects.filter(has_edd_q).order_by('date')
-        log_query('Pregnancy encounters by edd', self.edd_encounters)
-        preg_icd9_q = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
-        self.icd9_encounters = Encounter.objects.filter(~has_edd_q & preg_icd9_q).order_by('date')
-        log_query('Pregnancy encounters by ICD9', self.icd9_encounters)
-        all_preg_q = preg_icd9_q | has_edd_q
-        self.all_preg_encounters = Encounter.objects.filter(all_preg_q).order_by('date')
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        icd9_enc_qs = Encounter.objects.all()
+        icd9_enc_qs = icd9_enc_qs.filter(preg_icd9_q)
+        icd9_enc_qs = icd9_enc_qs.filter(edd__isnull=True)
+        icd9_enc_qs = icd9_enc_qs.exclude(timespan__name='pregnancy')
+        self.icd9_enc_qs = icd9_enc_qs
+        #-------------------------------------------------------------------------------
         #
-        # Build End of Pregnancy query
+        # End of Pregnancy
         #
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #-------------------------------------------------------------------------------
         #
         # Postpartum care
         #
@@ -138,119 +150,121 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         preg_end_q |= Q(icd9_codes__code__startswith='668.') 
         preg_end_q |= Q(icd9_codes__code__startswith='669.') 
         #
+        # Encounter QS
         #
-        self.preg_end_encounters = Encounter.objects.filter(preg_end_q).order_by('date')
-        #-------------------------------------------------------------------------------
+        eop_qs = Encounter.objects.all() # EoP = End of Pregnancy
+        eop_qs = eop_qs.filter(preg_end_q)
+        self.eop_qs = eop_qs
         #
-        # Generate pregnancies
+        # All relevant encounters
         #
-        #-------------------------------------------------------------------------------
+        self.relevant_enc_qs = edd_enc_qs | icd9_enc_qs | eop_qs
+        
+    def generate(self):
         log.info('Generating pregnancy events')
+        ts_count = 0 # Counter for new timespans generated
         #
         # EDD
         #
-        q_obj = Q(encounter__edd__isnull=False) & ~Q(encounter__timespan__name='pregnancy')
-        patient_qs = Patient.objects.filter(q_obj).distinct().order_by('pk')
-        log_query('Patients to consider for EDD pregnancy', patient_qs)
-        pat_count = patient_qs.count()
+        edd_patient_qs = self.edd_enc_qs.values_list('patient', flat=True).distinct()
+        log_query('Patients to consider for EDD pregnancy', edd_patient_qs)
+        pat_count = edd_patient_qs.count()
         index = 0
-        for patient in patient_qs:
+        for patient in edd_patient_qs:
             index += 1
-            log.debug('Patient %s [%6s/%6s]' % (patient.pk, index, pat_count))
-            self.pregnancy_from_edd(patient)
+            log.debug('Patient %s [%6s/%6s]' % (patient, index, pat_count))
+            ts_count += self.pregnancy_from_edd(patient)
         #
         # ICD9
         #
-        q_obj = Q(encounter__icd9_codes__code__startswith='V22.') | Q(encounter__icd9_codes__code__startswith='V23.')
-        q_obj &= Q(encounter__edd__isnull=True) 
-        q_obj &= ~Q(encounter__timespan__name='pregnancy')
-        patient_qs = Patient.objects.filter(q_obj).distinct().order_by('pk')
-        log_query('Patients to consider for ICD9 pregnancy', patient_qs)
-        pat_count = patient_qs.count()
+        log_query('Patients to consider for ICD9 pregnancy', icd9_patient_qs)
+        icd9_patient_qs = self
+        pat_count = icd9_patient_qs.count()
         index = 0
-        for patient in patient_qs:
+        for patient in icd9_patient_qs:
             index += 1
             log.debug('Patient %s [%6s/%6s]' % (patient.pk, index, pat_count))
-            self.pregnancy_from_icd9(patient)
-        return Timespan.objects.filter(name='pregnancy').count()
+            ts_count += self.pregnancy_from_icd9(patient)
+        return ts_count
     
-    def check_existing(self, enc):
+    def overlaps_existing(self, enc):
         '''
         If enc overlaps an existing pregnancy timespan, attach it and return the timespan object; 
         else return False
         '''
-        if enc.edd:
-            comp_date = enc.edd
-        else:
-            comp_date = enc.date
-        start_comp_date = comp_date + PREG_START_MARGIN
-        end_comp_date = comp_date - PREG_END_MARGIN
-        q_obj = Q(name='pregnancy')
-        q_obj &= Q(patient=enc.patient)
-        q_obj &= Q(start_date__lte=start_comp_date)
-        q_obj &= Q(end_date__gte=end_comp_date)
-        spans = Timespan.objects.filter(q_obj)
-        if spans:
-            ts = spans[0]
-            ts.encounters.add(enc)
-            ts.save()
-            log.debug('Added %s to %s' % (enc, ts))
-            return ts
-        else:
+        spans = Timespan.objects.filter(
+            name__in = self.timespan_names,
+            patient = enc.patient,
+            start_date__lte = enc.date,
+            end_date__gte = enc.edd - PREG_MARGIN,
+            ).order_by('start_date')
+        if not spans.count():
             return False
+        if spans.count() > 1:
+            log.warning('Something is wrong - encounter %s overlaps more than one pregnancy timespan!' % enc)
+        ts = spans[0]
+        ts.encounters.add(enc)
+        ts.save()
+        log.debug('Added %s to %s' % (enc, ts))
+        return ts
     
     def pregnancy_from_edd(self, patient):
         '''
         Generates pregnancy timespans for a given patient, based on encounters with edd value
         '''
-        pregnancies = Timespan.objects.filter(name='pregnancy', patient=patient).order_by('start_date')
-        #
-        # edd
-        #
-        for enc in self.edd_encounters.filter(patient=patient).filter(self.ignore_bound_q):
-            if self.check_existing(enc): # Oops, this one overlaps an existing pregnancy
+        counter = 0
+        pat_edd_encs = self.edd_enc_qs.filter(patient=patient)
+        next_preg_min_edd = None
+        for enc in pat_edd_encs.order_by('edd'):
+            # When we create a new pregnancy timespan we attach all relevant 
+            # encounters.  So we do not need to individuall re-attach each of 
+            # those encounters as we iterate through them.
+            if next_preg_min_edd and (enc.edd < next_preg_min_edd):
                 continue
-            # edd is the taken from the chronologically most recent encounter that falls within 
-            # the tentative pregnancy window established by the first encounter and its edd, thereby
-            # (hopefully) capturing any revisions made to the edd over the course of pregnancy.
-            low_edd = enc.edd - PREG_END_MARGIN
-            high_edd = enc.edd + PREG_END_MARGIN
-            edd = self.edd_encounters.filter(patient=patient, edd__gte=low_edd, edd__lte=high_edd).order_by('-date')[0].edd
-            start_date = edd - datetime.timedelta(days=280)
+            # This encounter *should* fall outside any existing timespan.  Just
+            # to be sure, we check with a db query.
+            if self.overlaps_existing(enc):
+                continue
+            # "If patient has multiple qualifying events for preg_start and
+            # preg_end that generate overlapping periods of pregnancy, use the
+            # minimum for each of preg_start and preg_end"
             #
-            # Create a new pregnancy timespan
-            #
+            # "Patient can have multiple episodes of pregnancy - define minimum
+            # interval between pregnancy end and start of new pregnancy as 3
+            # months."
+            onset = enc.edd - relativedelta(days=280)
             new_preg = Timespan(
-                name = 'pregnancy',
+                name = 'pregnancy:edd',
                 patient = enc.patient,
-                start_date = start_date,
-                end_date = edd,
-                pattern = 'EDD',
+                start_date = onset,
+                end_date = enc.edd,
+                source = self.uri,
                 )
             new_preg.save() # Must save before adding M2M relations
+            counter += 1
+            log.debug('Created timespan: %s' % new_preg)
+            #
             # Attach encounters
-            if start_date > enc.date:
-                enc_start = enc.date
+            #
+            if onset > enc.date:
+                start_date = enc.date
             else:
-                enc_start = start_date
-            enc_end = edd + PREG_END_MARGIN
-            new_preg.encounters = self.all_preg_encounters.filter(patient=patient, date__gte=enc_start, date__lte=enc_end)
-            new_preg.encounters.add(enc) # Add this one, in case it is dated after edd
+                start_date = onset
+            # The next new pregnancy cannot start until EDD + 30 days.  First valid
+            # EDD for a subsequent pregnancy is therefore this EDD + 30 days + 280 days.
+            next_preg_min_edd = enc.edd + PREG_MARGIN + relativedelta(days=280)
+            new_preg.encounters = self.relevant_enc_qs.filter(patient=patient, 
+                date__gte=start_date, 
+                edd__lt=next_preg_min_edd)
             new_preg.save()
-            #
-            # New postpartum timespan
-            #
-            new_postpartum = Timespan(
-                name = 'postpartum',
-                patient = enc.patient,
-                start_date = edd,
-                end_date = edd + datetime.timedelta(days=120),
-                pattern = 'EDD_+_120_days',
-                )
-            new_postpartum.save()
-            log.debug('New pregnancy %s by EDD (patient %s):  %s - %s' % (new_preg.pk, patient.pk, new_preg.start_date, new_preg.end_date))
-        return
+        return counter
     
+    def get_end_date(self, ):
+        '''
+        Ret
+        '''
+        
+        
     def pregnancy_from_icd9(self, patient):
         '''
         Generates pregnancy timespans for a given patient, based on a
