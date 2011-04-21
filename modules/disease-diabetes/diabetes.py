@@ -1406,11 +1406,11 @@ class PrediabetesReport(Report):
 
 diabetes_definition = Diabetes()
 
-def get_event_heuristics():
+def event_heuristics():
     return diabetes_definition.event_heuristics
 
-def get_timespan_heuristics():
+def timespan_heuristics():
     return []
 
-def get_disease_definitions():
+def disease_definitions():
     return [diabetes_definition]
