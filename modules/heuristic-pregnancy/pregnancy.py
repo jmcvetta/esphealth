@@ -167,6 +167,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         # EDD
         #
         edd_patient_qs = self.edd_enc_qs.values_list('patient', flat=True).distinct()
+        #edd_patient_qs = Patient.objects.filter(encounter__in=self.edd_enc_qs).distinct()
         log_query('Patients to consider for EDD pregnancy', edd_patient_qs)
         pat_count = edd_patient_qs.count()
         index = 0
@@ -213,11 +214,10 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         Generates pregnancy timespans for a given patient, based on encounters with edd value
         '''
         counter = 0
-        pat_edd_encs = self.edd_enc_qs.filter(patient=patient)
         next_preg_min_edd = None
-        for enc in pat_edd_encs.order_by('edd'):
+        for enc in  self.edd_enc_qs.filter(patient=patient).order_by('edd'):
             # When we create a new pregnancy timespan we attach all relevant 
-            # encounters.  So we do not need to individuall re-attach each of 
+            # encounters.  So we do not need to individually re-attach each of 
             # those encounters as we iterate through them.
             if next_preg_min_edd and (enc.edd < next_preg_min_edd):
                 continue
@@ -257,68 +257,89 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 date__gte=start_date, 
                 edd__lt=next_preg_min_edd)
             new_preg.save()
+            #
+            # Create postpartum timespan
+            #
+            new_postpartum = Timespan(
+                name = 'postpartum',
+                patient = new_preg.patient,
+                start_date = new_preg.end_date,
+                end_date = new_preg.end_date + relativedelta(days=120),
+                source = self.uri,
+                )
+            new_postpartum.save()
         return counter
     
-    def get_end_date(self, ):
-        '''
-        Ret
-        '''
-        
-        
     def pregnancy_from_icd9(self, patient):
         '''
         Generates pregnancy timespans for a given patient, based on a
         combination of encounters with pregnancy ICD9s and end-of-pregnancy ICD9s
         '''
-        for enc in self.icd9_encounters.filter(patient=patient).filter(self.ignore_bound_q):
-            if self.check_existing(enc): # Oops, this one overlaps an existing pregnancy
+        counter = 0
+        min_date_next_preg_enc = None
+        for enc in self.icd9_enc_qs.filter(patient=patient).order_by('date'):
+            # When we create a new pregnancy timespan we attach all relevant 
+            # encounters.  So we do not need to individually re-attach each of 
+            # those encounters as we iterate through them.
+            if min_date_next_preg_enc and enc.date < (min_date_next_preg_enc):
+                pass
+            # This encounter *should* fall outside any existing timespan.  Just
+            # to be sure, we check with a db query.
+            if self.overlaps_existing(enc):
                 continue
             #
-            # Are there any pregnancy-end events? (postnatal care, stillbirth, abortion)
+            # Are there any end-of-pregnancy events?
             #
-            end_encs = self.preg_end_encounters.filter(patient=patient, date__gte=enc.date, 
-                date__lte=(enc.date + datetime.timedelta(days=300)) )
-            if end_encs: # Plausible end date, so start 280 days before that
-                end_date = end_encs.aggregate(end_date=Min('date'))['end_date']
-                start_date = end_date - datetime.timedelta(days=280)
-                pattern = 'ICD9_EOP' # EOP = End of Pregnancy
+            eop_qs = self.eop_qs.filter(
+                patient = patient,
+                date__gte = enc.date,
+                date__lt = enc.date + PREG_MARGIN + relativedelta(days=280),
+                ).order_by()
+            if eop_qs: # Plausible end date, so start 280 days before that
+                preg_end = eop_qs.aggregate(Min('date'))['date__min']
+                onset = preg_end - relativedelta(days=280)
+                ts_name = 'pregnancy:icd9-eop'
             else: # No plausible end date, so assume 280 days after start date
-                start_date = enc.date - datetime.timedelta(days=15)
-                end_date =  start_date + datetime.timedelta(days=280)
-                pattern = 'ICD9_ONLY'
+                onset = enc.date - relativedelta(days=30)
+                preg_end =  onset + relativedelta(days=280)
+                ts_name = 'pregnancy:icd9-only'
             #
-            # Create Timespans
+            # Create pregnancy timespan
             #
             new_preg = Timespan(
-                name = 'pregnancy',
+                name = ts_name,
                 patient = enc.patient,
-                start_date = start_date,
-                end_date = end_date,
-                pattern = pattern,
+                start_date = onset,
+                end_date = preg_end,
+                source = self.uri,
                 )
             new_preg.save() # Must save before adding many-to-many objects
+            counter += 1
             # Attach encounters
-            if start_date > enc.date:
-                enc_start = enc.date
+            if onset > enc.date:
+                enc_range_start_date = enc.date
             else:
-                enc_start = start_date
-            enc_end = start_date + PREG_END_MARGIN
-            new_preg.encounters = self.all_preg_encounters.filter(patient=patient, date__gte=enc_start, date__lte=enc_end)
-            new_preg.encounters.add(enc) # Add this one, in case it is dated after end date
+                enc_range_start_date = onset
+            min_date_next_preg_enc = preg_end + relativedelta(30) + PREG_MARGIN
+            new_preg.encounters = self.relevant_enc_qs.filter(
+                patient = patient, 
+                date__gte = enc_range_start_date,
+                date__lte = min_date_next_preg_enc,
+                )
             new_preg.save()
-            log.debug('New pregnancy %s by %s (patient %s):  %s - %s' % (new_preg.pk, pattern, patient.pk, new_preg.start_date, new_preg.end_date))
+            log.debug('New pregnancy: %s' % new_preg)
             #
-            # New postpartum timespan
+            # Create postpartum timespan
             #
             new_postpartum = Timespan(
                 name = 'postpartum',
-                patient = enc.patient,
-                start_date = end_date,
-                end_date = end_date + datetime.timedelta(days=120),
-                pattern = '%s+_120_days' % pattern,
+                patient = new_preg.patient,
+                start_date = new_preg.end_date,
+                end_date = new_preg.end_date + relativedelta(days=120),
+                source = self.uri,
                 )
             new_postpartum.save()
-        return 
+        return counter
             
 
 def get_timespan_heuristics():
