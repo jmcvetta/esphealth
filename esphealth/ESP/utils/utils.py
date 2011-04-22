@@ -469,13 +469,13 @@ def queryset_iterator(queryset, chunksize=QUERYSET_ITERATOR_CHUNKSIZE):
 
 
 
-class RunnerFactory(object):
+class ThreadPool(object):
     '''
     Convenience class for running time consuming, independent functions in 
     their own threads.
-    '''
+u   '''
     
-    class ThreadedRunner(threading.Thread):
+    class WorkerThread(threading.Thread):
         '''
         Thread class for running arbitrary functions
         '''
@@ -514,7 +514,7 @@ class RunnerFactory(object):
     
     def start(self):
         for i in range(self.thread_count):
-            t = self.ThreadedRunner(self.alive, self.exceptions, self.queue, self.counter)
+            t = self.WorkerThread(self.alive, self.exceptions, self.queue, self.counter)
             t.daemon = True
             t.start()
             log.debug('Starting thread %s' % i)
