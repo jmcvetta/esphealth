@@ -665,5 +665,6 @@ MedicationHeuristic(
         'Clarithromycin',
         'Azithromycin',
         'Trimethoprim-sulfamethoxazole',
+        'Sulfamethoxazole-trimethoprim',
         ],
     )
