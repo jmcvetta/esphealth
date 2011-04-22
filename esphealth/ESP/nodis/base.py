@@ -105,9 +105,24 @@ class Report(object):
         '''
     
     @abc.abstractproperty
-    def generate(self):
+    def run(self):
         '''
-        Produce the report
+        Run the report
         @return: The report as a printable string
         @rtype:  String
         '''
+
+    @classmethod
+    def get_all(cls):
+        '''
+        @return: All known reports
+        @rtype:  List of Report child instances
+        '''
+        report_set = set()
+        for entry_point in iter_entry_points(group='esphealth', name='reports'):
+            factory = entry_point.load()
+            report_set.update(factory())
+        report_list = list(report_set)
+        report_list.sort(key = lambda h: h.short_name)
+        return report_list
+    
