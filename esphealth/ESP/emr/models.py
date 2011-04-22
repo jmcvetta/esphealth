@@ -1019,11 +1019,13 @@ class Encounter(BasePatientRecord):
             if recent_bmi_encs:
                 return recent_bmi_encs[0].bmi
             # Find the most recent height for this patient, looking back as far 
-            # as their 16th birthday if necessary.  
-            if not self.patient.date_of_birth:
-                return None
-            sixteenth_bday = self.patient.date_of_birth + relativedelta(years=16)
-            ht_encs = pat_encs.filter(date__gte=sixteenth_bday, height__isnull=False).exclude(height=0)
+            # as their 16th birthday if necessary.  If no birthdate is known, then 
+            # assume any height > 150cm is an adult height.
+            if self.patient.date_of_birth:
+                sixteenth_bday = self.patient.date_of_birth + relativedelta(years=16)
+                ht_encs = pat_encs.filter(date__gte=sixteenth_bday, height__isnull=False).exclude(height=0)
+            else:
+                ht_encs = pat_encs.filter(height__isnull=False, height__gte=150)
             # Find the most recent weight this patient within the past year
             wt_encs = encs_last_year.filter(weight__isnull=False).exclude(weight=0)
             if ht_encs and wt_encs:
