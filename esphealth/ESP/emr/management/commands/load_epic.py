@@ -136,8 +136,8 @@ class BaseLoader(object):
     # a preference toggle -- or file a ticket w/ the project requesting
     # the same.
     #
-    __patient_cache = {} # {patient_id_num: Patient instance}
-    __provider_cache = {} # {provider_id_num: Provider instance}
+    _patient_cache = {} # {patient_id_num: Patient instance}
+    _provider_cache = {} # {provider_id_num: Provider instance}
     
     def __init__(self, filepath):
         assert os.path.isfile(filepath)
@@ -163,7 +163,7 @@ class BaseLoader(object):
     def get_patient(self, patient_id_num):
         if not patient_id_num:
             raise LoadException('Called get_patient() with empty patient_id_num')
-        if not patient_id_num in self.__patient_cache:
+        if not patient_id_num in self._patient_cache:
             try:
                 p = Patient.objects.get(patient_id_num=patient_id_num)
             except Patient.DoesNotExist:
@@ -172,21 +172,21 @@ class BaseLoader(object):
                     provenance = self.provenance,
                     )
                 p.save()
-            self.__patient_cache[patient_id_num] = p
-        return self.__patient_cache[patient_id_num]
+            self._patient_cache[patient_id_num] = p
+        return self._patient_cache[patient_id_num]
     
     def get_provider(self, provider_id_num):
         if not provider_id_num:
             return UNKNOWN_PROVIDER
-        if not provider_id_num in self.__provider_cache:
+        if not provider_id_num in self._provider_cache:
             try:
                 p = Provider.objects.get(provider_id_num=provider_id_num)
             except Provider.DoesNotExist:
                 p = Provider(provider_id_num=provider_id_num)
                 p.provenance = self.provenance
                 p.save()
-            self.__provider_cache[provider_id_num] = p
-        return self.__provider_cache[provider_id_num]
+            self._provider_cache[provider_id_num] = p
+        return self._provider_cache[provider_id_num]
     
     def insert_or_update(self, model, field_values, key_fields):
         '''
@@ -381,7 +381,12 @@ class ProviderLoader(BaseLoader):
         pin = row['provider_id_num']
         if not pin:
             raise LoadException('Record has blank provider_id_num, which is required')
-        p = self.get_provider(pin)
+        p = Provider.objects.get_or_create(
+            provider_id_num = pin,
+            defaults = {
+                'provenance': self.provenance,
+                },
+            )
         p.provenance = self.provenance
         p.updated_by = UPDATED_BY
         p.last_name = unicode(row['last_name'])
@@ -398,6 +403,7 @@ class ProviderLoader(BaseLoader):
         p.area_code = row['area_code']
         p.telephone = row['telephone']
         p.save()
+        self._provider_cache[pin] = p
         log.debug('Saved provider object: %s' % p)
 
 
@@ -445,6 +451,12 @@ class PatientLoader(BaseLoader):
         
     def load_row(self, row):
         p = self.get_patient(row['patient_id_num'])
+        p, created = Patient.objects.get_or_create(
+            patient_id_num = row['patient_id_num'],
+            defaults = {
+                'provenance': self.provenance,
+                }
+            )
         field_map = {
             p.mrn: 'mrn',
             p.last_name: 'last_name',
@@ -475,9 +487,10 @@ class PatientLoader(BaseLoader):
         p.zip5 = p._calculate_zip5()
         p.date_of_birth = self.date_or_none(row['date_of_birth'])
         p.date_of_death = self.date_or_none(row['date_of_death'])
-        
         p.save()
+        self._patient_cache[p.patient_id_num] = p
         log.debug('Saved patient object: %s' % p)
+        
 
 class LabResultLoader(BaseLoader):
     
