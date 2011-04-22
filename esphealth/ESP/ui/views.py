@@ -701,7 +701,7 @@ def case_queue_for_transmit(request, case_id):
     log.debug('Added new CaseStatusHistory object #%s for Case #%s.' % (hist.pk, case.pk))
     msg = 'Case #%s has been queued for transmission to the Health Department' % case.pk
     request.user.message_set.create(message=msg)
-    return redirect_to(request, reverse('nodis_cases_all'))
+    return redirect_to(request, reverse('nodis_cases'))
 
 
 @login_required
