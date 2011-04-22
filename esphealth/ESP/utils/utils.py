@@ -20,6 +20,8 @@ import logging
 import simplejson
 import types
 import sqlparse
+import threading
+import Queue
 #from logging.handlers import SysLogHandler
 
 from django.db.models import Q
@@ -464,3 +466,64 @@ def queryset_iterator(queryset, chunksize=QUERYSET_ITERATOR_CHUNKSIZE):
             pk = row.pk
             yield row
         gc.collect()
+
+
+
+class RunnerFactory(object):
+    '''
+    Convenience class for running time consuming, independent functions in 
+    their own threads.
+    '''
+    
+    class ThreadedRunner(threading.Thread):
+        '''
+        Thread class for running arbitrary functions
+        '''
+        
+        def __init__(self, alive, exceptions, queue, counter):
+            self.alive = alive
+            self.exceptions = exceptions
+            self.queue = queue
+            self.counter = counter
+            threading.Thread.__init__(self)
+        
+        def run(self):
+            while self.alive.full():
+                try:
+                    function = self.queue.get(timeout=1)
+                    count = function()
+                    i = self.counter.get()
+                    self.counter.put(i+count)
+                    self.queue.task_done()
+                except Queue.Empty:
+                    pass
+                except BaseException, e:
+                    self.alive.get() # Kill threads
+                    log.error(e)
+                    self.exceptions.put(e)
+        
+    def __init__(self, thread_count, die_when_empty=True):
+        self.thread_count = thread_count
+        self.die_when_empty = die_when_empty
+        self.queue = Queue.Queue()
+        self.exceptions = Queue.Queue()
+        self.alive = Queue.Queue(maxsize=1)
+        self.alive.put(True)
+        self.counter = Queue.Queue()
+        self.counter.put(0)
+    
+    def start(self):
+        for i in range(self.thread_count):
+            t = self.ThreadedRunner(self.alive, self.exceptions, self.queue, self.counter)
+            t.daemon = True
+            t.start()
+            log.debug('Starting thread %s' % i)
+    
+    def join(self):
+        while self.alive.full():
+            time.sleep(0.1)
+        while not self.exceptions.empty():
+            raise self.exceptions.get()
+        return self.counter.get()
+
+
