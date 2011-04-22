@@ -38,6 +38,7 @@ from ESP.hef.models import Event
 from ESP.static.models import Icd9
 from ESP.utils import log, log_query
 from ESP.utils.utils import queryset_iterator
+from ESP.utils.utils import ThreadPool
 from django.db.models import F, Q
 from django.utils.encoding import force_unicode, smart_str
 from pkg_resources import iter_entry_points
@@ -172,6 +173,23 @@ class BaseHeuristic(object):
         return counter
     
     @classmethod
+    def get_heuristic_by_name(cls, short_name):
+        '''
+        Returns the named heuristic
+        '''
+        class UnknownHeuristicException(Exception):
+            '''
+            Exception raised no heuristic can be found matching the requested name
+            '''
+            pass
+        heuristics = {}
+        for h in cls.get_all():
+            heuristics[h.short_name] = h
+        if not short_name in heuristics:
+            raise UnknownHeuristicException
+        return heuristics[short_name]
+    
+    @classmethod
     def generate_by_name(cls, name_list, thread_count=HEF_THREAD_COUNT):
         '''
         Run heuristic(s) specified by name as arguments
@@ -181,14 +199,9 @@ class BaseHeuristic(object):
             Exception raised no heuristic can be found matching the requested name
             '''
             pass
-        heuristics = {}
-        selected_heuristics = []
-        for h in cls.get_all():
-            heuristics[h.short_name] = h
+        selected_heuristics = set()
         for short_name in name_list:
-            if not short_name in heuristics:
-                raise UnknownHeuristicException
-            selected_heuristics.append(heuristics[short_name])
+            selected_heuristics.add( cls.get_heuristic_by_name(short_name) )
         return cls.generate_all(heuristic_list=selected_heuristics, thread_count=thread_count)
     
 
@@ -255,19 +268,12 @@ class BaseEventHeuristic(BaseHeuristic):
             #
             # Threaded
             #
-            queue = Queue.Queue()
-            error = Queue.Queue()
-            for i in range(thread_count):
-                t = ThreadedHeuristicGenerator(queue, counter, error)
-                t.daemon = True
-                t.start()
-                log.debug('Starting thread %s' % i)
+            pool = ThreadPool(thread_count=thread_count)
             for heuristic in heuristic_list:
-                queue.put(heuristic)
-            while error.empty() and threading.active_count() > 1:
-                time.sleep(0.1)
-            if not error.empty():
-                sys.exit()
+                print heuristic
+                pool.queue.put(heuristic.generate)
+            pool.start()
+            counter.put( pool.join() )
         log.info('Generated %20s events' % counter.get())
         return counter.get()
 
@@ -323,61 +329,24 @@ class BaseTimespanHeuristic(BaseHeuristic):
         else:
             heuristic_list = cls.get_all()
         log.debug('heuristic list: %s' % heuristic_list)
-        counter = Queue.Queue()
-        counter.put(0)
         if thread_count == 0:
             #
             # No threads
             # 
             for heuristic in heuristic_list:
                 log.info('Running %s' % heuristic)
-                counter.put( heuristic.generate() )
+                counter = heuristic.generate() 
         else:
             #
             # Threaded
             #
-            queue = Queue.Queue()
-            error = Queue.Queue()
-            for i in range(thread_count):
-                t = ThreadedHeuristicGenerator(queue, counter, error)
-                t.daemon = True
-                t.start()
-                log.debug('Starting thread %s' % i)
+            pool = ThreadPool(thread_count=thread_count)
             for heuristic in heuristic_list:
-                queue.put(heuristic)
-            while error.empty() and threading.active_count() > 1:
-                time.sleep(0.1)
-            if not error.empty():
-                sys.exit()
-        log.info('Generated %20s timespans' % counter.get())
-        return counter.get()
-
-
-class ThreadedHeuristicGenerator(threading.Thread):
-    '''
-    Thread subclass to call generate_events() on various HEF objects
-    '''
-    
-    def __init__(self, queue, counter, error):
-        self.queue = queue
-        self.counter = counter
-        self.error = error
-        threading.Thread.__init__(self)
-    
-    def run(self):
-        try:
-            while True:
-                heuristic = self.queue.get()
-                log.info('Running %s' % heuristic)
-                count = heuristic.generate()
-                i = self.counter.get()
-                self.counter.put(i+count)
-                del heuristic
-                self.queue.task_done()
-        except BaseException, e:
-            self.error.put(e)
-            log.error(e)
-            raise e
+                pool.queue.put( heuristic.generate )
+            pool.start()
+            counter = pool.join()
+        log.info('Generated %20s timespans' % counter)
+        return counter
 
 
 class AbstractLabTest(object):

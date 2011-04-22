@@ -473,57 +473,61 @@ class ThreadPool(object):
     '''
     Convenience class for running time consuming, independent functions in 
     their own threads.
-u   '''
+    '''
     
     class WorkerThread(threading.Thread):
         '''
         Thread class for running arbitrary functions
         '''
         
-        def __init__(self, alive, exceptions, queue, counter):
+        def __init__(self, alive, live_threads, exceptions, queue, counter):
             self.alive = alive
+            self.live_threads = live_threads
             self.exceptions = exceptions
             self.queue = queue
             self.counter = counter
             threading.Thread.__init__(self)
         
         def run(self):
-            while self.alive.full():
-                try:
-                    function = self.queue.get(timeout=1)
+            self.live_threads.put(1)
+            try:
+                while self.alive.full():
+                    function = self.queue.get(block=False)
                     count = function()
                     i = self.counter.get()
                     self.counter.put(i+count)
                     self.queue.task_done()
-                except Queue.Empty:
-                    pass
-                except BaseException, e:
-                    self.alive.get() # Kill threads
-                    log.error(e)
-                    self.exceptions.put(e)
+            except Queue.Empty, qe:
+                log.debug('Empty queue, terminating thread %s' % self)
+                return
+            except BaseException, e:
+                self.alive.get() # Kill threads
+                log.error(e)
+                self.exceptions.put(e)
+            finally:
+                self.live_threads.get()
         
-    def __init__(self, thread_count, die_when_empty=True):
+    def __init__(self, thread_count):
         self.thread_count = thread_count
-        self.die_when_empty = die_when_empty
         self.queue = Queue.Queue()
         self.exceptions = Queue.Queue()
         self.alive = Queue.Queue(maxsize=1)
         self.alive.put(True)
+        self.live_threads = Queue.Queue()
         self.counter = Queue.Queue()
         self.counter.put(0)
     
     def start(self):
         for i in range(self.thread_count):
-            t = self.WorkerThread(self.alive, self.exceptions, self.queue, self.counter)
+            t = self.WorkerThread(self.alive, self.live_threads, self.exceptions, self.queue, self.counter)
             t.daemon = True
             t.start()
             log.debug('Starting thread %s' % i)
     
     def join(self):
-        while self.alive.full():
+        while self.alive.full() and self.live_threads.qsize():
             time.sleep(0.1)
         while not self.exceptions.empty():
             raise self.exceptions.get()
         return self.counter.get()
-
 
