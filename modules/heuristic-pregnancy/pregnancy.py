@@ -11,6 +11,7 @@ Pregnancy Timespan Detector
 '''
 
 import datetime
+from functools import partial
 from dateutil.relativedelta import relativedelta
 
 from django.db.models import Q
@@ -18,6 +19,7 @@ from django.db.models import Min
 
 from ESP.utils import log
 from ESP.utils import log_query
+from ESP.utils.utils import ThreadPool
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
 from ESP.hef.base import BaseTimespanHeuristic
@@ -166,26 +168,27 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         # EDD
         #
-        edd_patient_qs = self.edd_enc_qs.values_list('patient', flat=True).distinct()
+        # order_by necessary to overcome bug in Django ORM
+        edd_patient_qs = self.edd_enc_qs.values_list('patient', flat=True).order_by('patient').distinct()
         #edd_patient_qs = Patient.objects.filter(encounter__in=self.edd_enc_qs).distinct()
         log_query('Patients to consider for EDD pregnancy', edd_patient_qs)
-        pat_count = edd_patient_qs.count()
-        index = 0
+        pool = ThreadPool(thread_count=10)
+        log.debug('Queuing %s EDD patients' % edd_patient_qs.count() )
         for patient in edd_patient_qs:
-            index += 1
-            log.debug('Patient %s [%6s/%6s]' % (patient, index, pat_count))
-            ts_count += self.pregnancy_from_edd(patient)
+            pool.queue.put( partial(self.pregnancy_from_edd, patient) )
+        pool.start()
+        ts_count += pool.join()
         #
         # ICD9
         #
+        # order_by necessary to overcome bug in Django ORM
+        icd9_patient_qs = self.icd9_enc_qs.values_list('patient', flat=True).order_by('patient').distinct()
         log_query('Patients to consider for ICD9 pregnancy', icd9_patient_qs)
-        icd9_patient_qs = self
-        pat_count = icd9_patient_qs.count()
-        index = 0
+        pool = ThreadPool(thread_count=10) # Reinitialize pool
+        log.debug('Queuing %s ICD9 patients' % icd9_patient_qs.count() )
         for patient in icd9_patient_qs:
-            index += 1
-            log.debug('Patient %s [%6s/%6s]' % (patient.pk, index, pat_count))
-            ts_count += self.pregnancy_from_icd9(patient)
+            pool.queue.put( partial(self.pregnancy_from_icd9, patient) )
+        ts_count += pool.join()
         return ts_count
     
     def overlaps_existing(self, enc):
@@ -213,13 +216,17 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         '''
         Generates pregnancy timespans for a given patient, based on encounters with edd value
         '''
+        log.info('Generating pregnancies by EDD for patient %s' % patient)
         counter = 0
         next_preg_min_edd = None
-        for enc in  self.edd_enc_qs.filter(patient=patient).order_by('edd'):
+        for enc in self.edd_enc_qs.filter(patient=patient).order_by('edd'):
             # When we create a new pregnancy timespan we attach all relevant 
             # encounters.  So we do not need to individually re-attach each of 
             # those encounters as we iterate through them.
             if next_preg_min_edd and (enc.edd < next_preg_min_edd):
+                log.debug('Skipping %s' % enc)
+                log.debug('  next_preg_min_edd: %s' % next_preg_min_edd)
+                log.debug('  EDD:               %s' % enc.edd)
                 continue
             # This encounter *should* fall outside any existing timespan.  Just
             # to be sure, we check with a db query.
@@ -256,12 +263,13 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             new_preg.encounters = self.relevant_enc_qs.filter(patient=patient, 
                 date__gte=start_date, 
                 edd__lt=next_preg_min_edd)
+            new_preg.encounters.add(enc)
             new_preg.save()
             #
             # Create postpartum timespan
             #
             new_postpartum = Timespan(
-                name = 'postpartum',
+                name = 'postpartum:edd',
                 patient = new_preg.patient,
                 start_date = new_preg.end_date,
                 end_date = new_preg.end_date + relativedelta(days=120),
@@ -299,10 +307,12 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 preg_end = eop_qs.aggregate(Min('date'))['date__min']
                 onset = preg_end - relativedelta(days=280)
                 ts_name = 'pregnancy:icd9-eop'
+                pp_name = 'postpartum:icd9-eop'
             else: # No plausible end date, so assume 280 days after start date
                 onset = enc.date - relativedelta(days=30)
                 preg_end =  onset + relativedelta(days=280)
                 ts_name = 'pregnancy:icd9-only'
+                pp_name = 'postpartum:icd9-only'
             #
             # Create pregnancy timespan
             #
@@ -326,13 +336,14 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 date__gte = enc_range_start_date,
                 date__lte = min_date_next_preg_enc,
                 )
+            new_preg.encounters.add(enc)
             new_preg.save()
             log.debug('New pregnancy: %s' % new_preg)
             #
             # Create postpartum timespan
             #
             new_postpartum = Timespan(
-                name = 'postpartum',
+                name = pp_name,
                 patient = new_preg.patient,
                 start_date = new_preg.end_date,
                 end_date = new_preg.end_date + relativedelta(days=120),
