@@ -530,4 +530,6 @@ class ThreadPool(object):
         while not self.exceptions.empty():
             raise self.exceptions.get()
         return self.counter.get()
-
+    
+    def __del__(self):
+        self.alive.get()
