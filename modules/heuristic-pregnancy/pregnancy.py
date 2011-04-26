@@ -9,17 +9,19 @@ Pregnancy Timespan Detector
 @copyright: (c) 2010 Channing Laboratory
 @license: LGPL
 '''
-
 import datetime
+from decimal import Decimal
 from functools import partial
+from concurrent import futures
 from dateutil.relativedelta import relativedelta
 
 from django.db.models import Q
 from django.db.models import Min
 
+from ESP.settings import HEF_THREAD_COUNT
 from ESP.utils import log
 from ESP.utils import log_query
-from ESP.utils.utils import ThreadPool
+from ESP.utils.utils import wait_for_threads
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
 from ESP.hef.base import BaseTimespanHeuristic
@@ -172,23 +174,16 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         edd_patient_qs = self.edd_enc_qs.values_list('patient', flat=True).order_by('patient').distinct()
         #edd_patient_qs = Patient.objects.filter(encounter__in=self.edd_enc_qs).distinct()
         log_query('Patients to consider for EDD pregnancy', edd_patient_qs)
-        pool = ThreadPool(thread_count=10)
-        log.debug('Queuing %s EDD patients' % edd_patient_qs.count() )
-        for patient in edd_patient_qs:
-            pool.queue.put( partial(self.pregnancy_from_edd, patient) )
-        pool.start()
-        ts_count += pool.join()
+        funcs = [(self.pregnancy_from_edd, patient) for patient in edd_patient_qs]
+        ts_count += wait_for_threads(funcs)
         #
         # ICD9
         #
         # order_by necessary to overcome bug in Django ORM
         icd9_patient_qs = self.icd9_enc_qs.values_list('patient', flat=True).order_by('patient').distinct()
         log_query('Patients to consider for ICD9 pregnancy', icd9_patient_qs)
-        pool = ThreadPool(thread_count=10) # Reinitialize pool
-        log.debug('Queuing %s ICD9 patients' % icd9_patient_qs.count() )
-        for patient in icd9_patient_qs:
-            pool.queue.put( partial(self.pregnancy_from_icd9, patient) )
-        ts_count += pool.join()
+        funcs = [partial(self.pregnancy_from_edd, patient) for patient in icd9_patient_qs]
+        ts_count += wait_for_threads(funcs)
         return ts_count
     
     def overlaps_existing(self, enc):
