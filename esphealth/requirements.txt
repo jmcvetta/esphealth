@@ -20,6 +20,7 @@ sqlparse
 hl7
 django_tables
 configobj
+futures
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes#egg=disease-diabetes
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-pregnancy#egg=heuristic-pregnancy
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-glucose-crf#egg=heuristic-glucose-crf

@@ -25,6 +25,7 @@ import threading
 import Queue
 import time
 import sys
+from concurrent import futures
 
 from decimal import Decimal
 
@@ -38,7 +39,7 @@ from ESP.hef.models import Event
 from ESP.static.models import Icd9
 from ESP.utils import log, log_query
 from ESP.utils.utils import queryset_iterator
-from ESP.utils.utils import ThreadPool
+from ESP.utils.utils import wait_for_threads
 from django.db.models import F, Q
 from django.utils.encoding import force_unicode, smart_str
 from pkg_resources import iter_entry_points
@@ -255,27 +256,22 @@ class BaseEventHeuristic(BaseHeuristic):
                 return 0
         else:
             heuristic_list = cls.get_all()
-        counter = Queue.Queue()
-        counter.put(0)
+        counter = 0
         if thread_count == 0:
             #
             # No threads
             # 
             for heuristic in heuristic_list:
                 log.info('Running %s' % heuristic)
-                counter.put( heuristic.generate() )
+                counter += heuristic.generate()
         else:
             #
             # Threaded
             #
-            pool = ThreadPool(thread_count=thread_count)
-            for heuristic in heuristic_list:
-                print heuristic
-                pool.queue.put(heuristic.generate)
-            pool.start()
-            counter.put( pool.join() )
-        log.info('Generated %20s events' % counter.get())
-        return counter.get()
+            funcs = [heuristic.generate for heuristic in heuristic_list]
+            counter = wait_for_threads(funcs)
+        log.info('Generated %20s events' % counter)
+        return counter
 
 
 class BaseTimespanHeuristic(BaseHeuristic):
@@ -340,11 +336,8 @@ class BaseTimespanHeuristic(BaseHeuristic):
             #
             # Threaded
             #
-            pool = ThreadPool(thread_count=thread_count)
-            for heuristic in heuristic_list:
-                pool.queue.put( heuristic.generate )
-            pool.start()
-            counter = pool.join()
+            funcs = [heuristic.generate for heuristic in heuristic_list]
+            counter = wait_for_threads(funcs)
         log.info('Generated %20s timespans' % counter)
         return counter
 

@@ -11,9 +11,6 @@ import os
 import gc
 import re
 import sys
-import string
-import traceback
-import smtplib
 import datetime
 import time
 import logging
@@ -22,11 +19,12 @@ import types
 import sqlparse
 import threading
 import Queue
-#from logging.handlers import SysLogHandler
+from concurrent import futures
+from decimal import Decimal
 
+from django.db import connection
 from django.db.models import Q
 from django.core.paginator import Paginator
-from django.core.mail import send_mail
 from django.db.models.query import QuerySet
 from django.forms.widgets import CheckboxInput, SelectMultiple
 from django.utils.encoding import force_unicode
@@ -469,67 +467,42 @@ def queryset_iterator(queryset, chunksize=QUERYSET_ITERATOR_CHUNKSIZE):
 
 
 
-class ThreadPool(object):
+def wait_for_threads(fs, max_workers=settings.HEF_THREAD_COUNT):
     '''
-    Convenience class for running time consuming, independent functions in 
-    their own threads.
+    Utility function for running time consuming tasks in threads.  
+    @param fs: Functions to be run concurrently.  Each function should return an integer 'count' value
+    @type  fs: List of callables
+    @return: Sum of all count values returned by functions
+    @rtype:  Integer
     '''
-    
-    class WorkerThread(threading.Thread):
-        '''
-        Thread class for running arbitrary functions
-        '''
-        
-        def __init__(self, alive, live_threads, exceptions, queue, counter):
-            self.alive = alive
-            self.live_threads = live_threads
-            self.exceptions = exceptions
-            self.queue = queue
-            self.counter = counter
-            threading.Thread.__init__(self)
-        
-        def run(self):
-            self.live_threads.put(1)
-            try:
-                while self.alive.full():
-                    function = self.queue.get(block=False)
-                    count = function()
-                    i = self.counter.get()
-                    self.counter.put(i+count)
-                    self.queue.task_done()
-            except Queue.Empty, qe:
-                log.debug('Empty queue, terminating thread %s' % self)
-                return
-            except BaseException, e:
-                self.alive.get() # Kill threads
-                log.error(e)
-                self.exceptions.put(e)
-            finally:
-                self.live_threads.get()
-        
-    def __init__(self, thread_count):
-        self.thread_count = thread_count
-        self.queue = Queue.Queue()
-        self.exceptions = Queue.Queue()
-        self.alive = Queue.Queue(maxsize=1)
-        self.alive.put(True)
-        self.live_threads = Queue.Queue()
-        self.counter = Queue.Queue()
-        self.counter.put(0)
-    
-    def start(self):
-        for i in range(self.thread_count):
-            t = self.WorkerThread(self.alive, self.live_threads, self.exceptions, self.queue, self.counter)
-            t.daemon = True
-            t.start()
-            log.debug('Starting thread %s' % i)
-    
-    def join(self):
-        while self.alive.full() and self.live_threads.qsize():
-            time.sleep(0.1)
-        while not self.exceptions.empty():
-            raise self.exceptions.get()
-        return self.counter.get()
-    
-    def __del__(self):
-        self.alive.get()
+    log.debug('Starting thread pool executor with max %s workers' % max_workers)
+    if not max_workers > 0:
+        raise RuntimeError('Cannot call wait_for_threads with max_workers less than 1, but you called it with %s workers' % max_workers)
+    counter = 0
+    with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        submitted = []
+        for func in fs:
+            log.debug('Submitting to thread pool: %s' % func)
+            if type(func) is tuple: # If this function has arguments
+                submitted.append( executor.submit(*func) )
+            else:
+                submitted.append( executor.submit(func) )
+        try:
+            log.debug('Waiting for thread completion')
+            #while futures.wait(submitted, timeout=1).not_done: # Wait until all futures are done
+                #pass
+            for future in futures.as_completed(submitted):
+                log.debug('Completed: %s' % future)
+                error = future.exception(timeout=0.1)
+                if error is not None:
+                    log.critical('Unhandled exception in %s:\n%s' % (future, error))
+                    raise error
+                result = future.result(timeout=0.1)
+                if type(result) in [int, float, Decimal]:
+                    counter += result
+        except BaseException, e:
+            for future in submitted:
+                future.cancel()
+            executor.shutdown(wait=False)
+            raise e
+    return counter
