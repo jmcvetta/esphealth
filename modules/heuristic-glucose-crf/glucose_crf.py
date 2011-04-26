@@ -37,14 +37,18 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
     result_test = AbstractLabTest('glucose-compound-random-fasting-result')
     flag_test = AbstractLabTest('glucose-compound-random-fasting-flag')
     
+    _rand_any = 'lx:glucose-random:any-result'
     _rand_140 = 'lx:glucose-random:threshold:140'
     _rand_200 = 'lx:glucose-random:threshold:200'
+    _fast_any = 'lx:glucose-fasting:any-result'
     _fast_140 = 'lx:glucose-fasting:threshold:140'
     _fast_200 = 'lx:glucose-fasting:threshold:200'
     
     event_names = [
+        _rand_any,
         _rand_140,
         _rand_200,
+        _fast_any,
         _fast_140,
         _fast_200,
         ]
@@ -72,7 +76,7 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
         #
         lab_qs = self.result_test.lab_results
         lab_qs = lab_qs.exclude(tags__event_name__in=self.event_names)
-        lab_qs = lab_qs.filter(result_float__gte=140) # Only scores over 140 have events defined
+        #lab_qs = lab_qs.filter(result_float__gte=140) # Only scores over 140 have events defined
         #
         # Find flags
         #
@@ -93,10 +97,11 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
         log_query('random/fasting glucose labs', lab_qs)
         #
         for lab in lab_qs:
+            over_140 = lab.result_float >= 140 # Is test score over 200?
             over_200 = lab.result_float >= 200 # Is test score over 200?
             if lab.date in fasting_pat_dates.get(lab.patient.id, []):
                 e = Event(
-                    name = self._fast_140,
+                    name = self._fast_any,
                     source = self.uri,
                     patient = lab.patient,
                     provider = lab.provider,
@@ -106,6 +111,19 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
                 e.tag(lab)
                 e.tag_qs( fasting_qs.filter(patient=lab.patient, date=lab.date) )
                 log.debug('Created event: %s' % e)
+                counter += 1
+                if over_140:
+                    e = Event(
+                        name = self._fast_140,
+                        source = self.uri,
+                        patient = lab.patient,
+                        provider = lab.provider,
+                        date = lab.date,
+                        )
+                    e.save()
+                    e.tag(lab)
+                    e.tag_qs( fasting_qs.filter(patient=lab.patient, date=lab.date) )
+                    log.debug('Created event: %s' % e)
                 counter += 1
                 if over_200:
                     e = Event(
@@ -122,7 +140,7 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
                     counter += 1
             else:
                 e = Event(
-                    name = self._rand_140,
+                    name = self._rand_any,
                     source = self.uri,
                     patient = lab.patient,
                     provider = lab.provider,
@@ -132,6 +150,18 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
                 e.tag(lab)
                 log.debug('Created event: %s' % e)
                 counter += 1
+                if over_140:
+                    e = Event(
+                        name = self._rand_140,
+                        source = self.uri,
+                        patient = lab.patient,
+                        provider = lab.provider,
+                        date = lab.date,
+                        )
+                    e.save()
+                    e.tag(lab)
+                    log.debug('Created event: %s' % e)
+                    counter += 1
                 if over_200:
                     e = Event(
                         name = self._rand_200,
