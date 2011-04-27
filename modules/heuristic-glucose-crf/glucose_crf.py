@@ -95,7 +95,8 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
         #
         # Examine labs
         #
-        log.debug('Preparing threads')
+        log.debug('Querying labs')
+        log.debug('Preparing to examine %s labs' % lab_qs.count())
         funcs = [partial(self.events_from_lab, lab) for lab in lab_qs]
         event_counter = wait_for_threads(funcs)
         return event_counter
