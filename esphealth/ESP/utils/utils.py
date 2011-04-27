@@ -482,7 +482,6 @@ def wait_for_threads(fs, max_workers=settings.HEF_THREAD_COUNT):
     with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         submitted = []
         for func in fs:
-            log.debug('Submitting to thread pool: %s' % func)
             if type(func) is tuple: # If this function has arguments
                 submitted.append( executor.submit(*func) )
             else:
