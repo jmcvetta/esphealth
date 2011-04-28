@@ -75,7 +75,6 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         preg_icd9_q = Q(icd9_codes__code__startswith='V22.') | Q(icd9_codes__code__startswith='V23.')
         icd9_enc_qs = Encounter.objects.all()
         icd9_enc_qs = icd9_enc_qs.filter(preg_icd9_q)
-        icd9_enc_qs = icd9_enc_qs.filter(edd__isnull=True)
         self.icd9_enc_qs = icd9_enc_qs.exclude(timespan__name__in=self.timespan_names)
         #-------------------------------------------------------------------------------
         #
