@@ -269,7 +269,7 @@ class BaseEventHeuristic(BaseHeuristic):
             # Threaded
             #
             funcs = [heuristic.generate for heuristic in heuristic_list]
-            counter = wait_for_threads(funcs)
+            counter = wait_for_threads(funcs, max_workers=thread_count)
         log.info('Generated %20s events' % counter)
         return counter
 
@@ -337,7 +337,7 @@ class BaseTimespanHeuristic(BaseHeuristic):
             # Threaded
             #
             funcs = [heuristic.generate for heuristic in heuristic_list]
-            counter = wait_for_threads(funcs)
+            counter = wait_for_threads(funcs, max_workers=thread_count)
         log.info('Generated %20s timespans' % counter)
         return counter
 
