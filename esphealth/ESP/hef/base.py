@@ -361,7 +361,7 @@ class AbstractLabTest(object):
         assert len(name) <= 50 
         #
         self.name = name
-        
+    
     def __unicode__(self):
         return u'Abstract Lab Test - %s' % self.name
     
@@ -1287,4 +1287,3 @@ class CalculatedBilirubinHeuristic(object):
     #
     # Write me!
     #
-

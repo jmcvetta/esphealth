@@ -10,26 +10,15 @@
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
-import datetime
-import sys
-
 from optparse import make_option
 from optparse import Values
 
 from django.core.management.base import BaseCommand
-from django.core.mail import mail_managers
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 
 
 from ESP.utils.utils import log
-from ESP.emr.management.commands.download_ftp  import Command as FtpCommand
-from ESP.emr.management.commands.load_epic     import Command as LoadEpicCommand
-from ESP.emr.management.commands.load_hl7      import Command as LoadHl7Command
-from ESP.emr.management.commands.concordance   import Command as ConcordanceCommand
-from ESP.hef.management.commands.hef           import Command as HefCommand
-from ESP.nodis.management.commands.nodis       import Command as NodisCommand
-from ESP.nodis.management.commands.case_report import Command as CaseReportCommand
 from ESP.ui.views import _populate_status_values
 
 from ESP.settings import SITE_NAME

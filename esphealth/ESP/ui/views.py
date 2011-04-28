@@ -10,48 +10,25 @@
 '''
 
 
-import re
-import sys
 import datetime
 import csv
-import cStringIO as StringIO
 import django_tables as tables
 
 from django import forms
-from django import http
-from django.core import serializers
-from django.core import urlresolvers
-from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.decorators import user_passes_test
-from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.db.models import Count
 from django.db.models import Max
 from django.db.models import Min
-from django.forms.models import formset_factory
-from django.forms.models import modelformset_factory
-from django.forms.util import ErrorList
 from django.shortcuts import render_to_response
 from django.shortcuts import get_object_or_404
 from django.template import RequestContext
-from django.utils.translation import ugettext
 from django.utils.translation import ugettext_lazy as _
-from django.views.generic import create_update
-from django.views.generic import list_detail
 from django.views.generic.simple import redirect_to
-from django.template.defaultfilters import slugify
 from django.http import HttpResponse
-from django.http import HttpResponseRedirect
-
-from django.forms.widgets import CheckboxInput, SelectMultiple
-from django.forms.extras.widgets import SelectDateWidget
-from django.utils.encoding import force_unicode
-from django.utils.html import escape
-from django.utils.safestring import mark_safe
 
 
 from ESP.settings import ROWS_PER_PAGE
@@ -61,7 +38,6 @@ from ESP.settings import SITE_NAME
 from ESP.conf.models import LabTestMap # FIXME
 from ESP.conf.models import IgnoredCode
 from ESP.conf.models import STATUS_CHOICES
-from ESP.static.models import Loinc
 from ESP.emr.models import Provenance
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
@@ -70,13 +46,11 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import LabTestConcordance
-from ESP.hef.base import BaseHeuristic
 #from ESP.hef import events # Required to register hef events
-from ESP.nodis.base import Condition
+#from ESP.nodis.base import Condition
 from ESP.nodis.models import Case
 from ESP.nodis.models import CaseStatusHistory
 from ESP.nodis.models import Report
-from ESP.nodis.models import ReferenceCaseList
 from ESP.nodis.models import ReferenceCase
 from ESP.nodis.models import ValidatorRun
 from ESP.nodis.models import ValidatorResult
@@ -84,10 +58,9 @@ from ESP.ui.forms import CaseStatusForm
 from ESP.ui.forms import CodeMapForm
 from ESP.ui.forms import ConditionForm
 from ESP.ui.forms import ReferenceCaseForm
-from ESP.ui.management.commands.validate_cases import RELATED_MARGIN
+#from ESP.ui.management.commands.validate_cases import RELATED_MARGIN
 from ESP.utils import log
 from ESP.utils import log_query
-from ESP.utils.utils import Flexigrid
 from ESP.utils import TableSelectMultiple
 
 

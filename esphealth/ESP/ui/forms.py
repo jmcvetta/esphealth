@@ -19,7 +19,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 
 from ESP.nodis.models import STATUS_CHOICES
-from ESP.nodis.base import Condition
+#from ESP.nodis.base import Condition
 from ESP.hef.models import AbstractLabTest
 from ESP.static.models import Loinc
 
