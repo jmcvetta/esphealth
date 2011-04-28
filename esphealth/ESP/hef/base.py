@@ -187,7 +187,7 @@ class BaseHeuristic(object):
         for h in cls.get_all():
             heuristics[h.short_name] = h
         if not short_name in heuristics:
-            raise UnknownHeuristicException
+            raise UnknownHeuristicException('Could not get heuristic for name: "%s"' % short_name)
         return heuristics[short_name]
     
     @classmethod
@@ -900,7 +900,7 @@ class LabResultRangeHeuristic(BaseLabResultHeuristic):
             new_event.save()
             new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
-        log.info('Generated %s new events for %s' % (qs.count(), self.uri))
+        log.info('Generated %s new events for %s' % (qs.count(), self))
         return qs.count() 
 
 
