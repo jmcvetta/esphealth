@@ -56,8 +56,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         self.timespan_names = [
             'pregnancy:edd',
-            'pregnancy:icd9-eop',
-            'pregnancy:icd9-only',
+            'pregnancy:eop',
+            'pregnancy:icd9',
             ]
         #-------------------------------------------------------------------------------
         #
@@ -66,8 +66,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #-------------------------------------------------------------------------------
         edd_enc_qs = Encounter.objects.all()
         edd_enc_qs = edd_enc_qs.filter(edd__isnull=False)
-        edd_enc_qs = edd_enc_qs.exclude(timespan__name__in=self.timespan_names)
-        self.edd_enc_qs = edd_enc_qs
+        self.edd_enc_qs = edd_enc_qs.exclude(timespan__name__in=self.timespan_names)
         #-------------------------------------------------------------------------------
         #
         # ICD9 Encounters
@@ -77,8 +76,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         icd9_enc_qs = Encounter.objects.all()
         icd9_enc_qs = icd9_enc_qs.filter(preg_icd9_q)
         icd9_enc_qs = icd9_enc_qs.filter(edd__isnull=True)
-        icd9_enc_qs = icd9_enc_qs.exclude(timespan__name='pregnancy')
-        self.icd9_enc_qs = icd9_enc_qs
+        self.icd9_enc_qs = icd9_enc_qs.exclude(timespan__name__in=self.timespan_names)
         #-------------------------------------------------------------------------------
         #
         # End of Pregnancy
@@ -161,11 +159,24 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         eop_qs = eop_qs.filter(preg_end_q)
         self.eop_qs = eop_qs
         #
-        # All relevant encounters
+        # Relevant encounters
         #
-        self.relevant_enc_qs = edd_enc_qs | icd9_enc_qs | eop_qs
+        preg_enc_qs = edd_enc_qs | icd9_enc_qs
+        self.preg_enc_qs = preg_enc_qs.exclude(timespan__name__in=self.timespan_names)
+        self.relevant_enc_qs = edd_enc_qs | icd9_enc_qs | eop_qs # Does NOT exclude bound events!!
         
     def generate(self):
+        log.info('Generating pregnancy events')
+        #
+        # Get possible patients
+        #
+        patient_qs = self.preg_enc_qs.values_list('patient', flat=True).order_by('patient').distinct()
+        log_query('Pregnant patients', patient_qs)
+        funcs = [(self.pregnancies_for_patient, patient) for patient in patient_qs]
+        ts_count = wait_for_threads(funcs)
+        return ts_count
+    
+    def old_generate(self):
         log.info('Generating pregnancy events')
         ts_count = 0 # Counter for new timespans generated
         #
@@ -210,6 +221,81 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         log.debug('Added %s to %s' % (enc, ts))
         return ts
     
+    @transaction.commit_on_success
+    def pregnancies_for_patient(self, patient):
+        counter = 0
+        last_preg = None
+        min_date_next_preg = None
+        for enc in self.preg_enc_qs.filter(patient=patient).order_by('date'):
+            #
+            # Does this encounter fit into an existing pregnancy?  
+            #
+            if min_date_next_preg and (enc.date < min_date_next_preg):
+                last_preg.encounters.add(enc)
+                log.debug('Adding event %s to pregnancy %s' % (enc, last_preg))
+                continue
+            #
+            # This encounter must be part of a new pregnancy.  We need to find
+            # the end-of-pregnancy date.  
+            #
+            # * First we will look for an EoP event.
+            # * If we cannot find an EoP event we will look for an estimated 
+            #   date of delivery. 
+            # * If we cannot find either, we calculate timespan dates based
+            #   soley on the encounter date.
+            #
+            pat_date_q = Q(
+                patient = patient,
+                date__gte = enc.date,
+                date__lt = enc.date + PREG_MARGIN + relativedelta(days=280),
+                )
+            eop_qs = self.eop_qs.filter(pat_date_q).order_by('date')
+            edd_qs = self.edd_enc_qs.filter(pat_date_q).order_by('edd')
+            if eop_qs: # Plausible end date, so start 280 days before that
+                name = 'pregnancy:eop'
+                preg_end = eop_qs[0].date
+                onset = preg_end - relativedelta(days=280)
+            elif edd_qs:
+                name = 'pregnancy:edd'
+                preg_end = edd_qs[0].date
+                onset = preg_end - relativedelta(days=280)
+            else:
+                name = 'pregnancy:icd9'
+                onset = enc.date - relativedelta(days=30)
+                preg_end =  onset + relativedelta(days=280)
+            #
+            # Now we know the begin/end dates, so we create a pregnancy timespan
+            #
+            new_preg = Timespan(
+                name = name,
+                patient = enc.patient,
+                start_date = onset,
+                end_date = preg_end,
+                source = self.uri,
+                )
+            new_preg.save() # Must save before tagging
+            log.info('Created new pregnancy: %s' % new_preg)
+            counter += 1
+            min_date_next_preg = new_preg.end_date + PREG_MARGIN
+            #
+            # Tag the current event, as well as all EoP and EDD events 
+            # occurring within this timespan and PREG_MARGIN days 
+            # afterward.
+            #
+            new_preg.encounters.add(enc)
+            for item in eop_qs.filter(date__lt=min_date_next_preg):
+                new_preg.encounters.add(item)
+            for item in edd_qs.filter(date__lt=min_date_next_preg):
+                new_preg.encounters.add(item)
+            new_preg.save()
+            #
+            # Make sure all changes to last_preg are saved, and start the loop again
+            #
+            if last_preg:
+                last_preg.save()
+            last_preg = new_preg
+        return counter
+        
     @transaction.commit_on_success
     def pregnancy_from_edd(self, patient):
         '''
