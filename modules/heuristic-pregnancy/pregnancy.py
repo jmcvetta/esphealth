@@ -15,6 +15,7 @@ from functools import partial
 from concurrent import futures
 from dateutil.relativedelta import relativedelta
 
+from django.db import transaction
 from django.db.models import Q
 from django.db.models import Min
 
@@ -200,13 +201,16 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         if not spans.count():
             return False
         if spans.count() > 1:
-            log.warning('Something is wrong - encounter %s overlaps more than one pregnancy timespan!' % enc)
+            log.warning('Encounter %s overlaps multiple timespans:' % enc)
+            log.warning('   %s' % spans)
+            raise RuntimeError('Encounter %s overlaps multiple timespans' % enc)
         ts = spans[0]
         ts.encounters.add(enc)
         ts.save()
         log.debug('Added %s to %s' % (enc, ts))
         return ts
     
+    @transaction.commit_on_success
     def pregnancy_from_edd(self, patient):
         '''
         Generates pregnancy timespans for a given patient, based on encounters with edd value
@@ -273,6 +277,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             new_postpartum.save()
         return counter
     
+    @transaction.commit_on_success
     def pregnancy_from_icd9(self, patient):
         '''
         Generates pregnancy timespans for a given patient, based on a
