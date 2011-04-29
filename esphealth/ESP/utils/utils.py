@@ -482,20 +482,20 @@ def wait_for_threads(fs, max_workers=settings.HEF_THREAD_COUNT):
     with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         submitted = []
         for func in fs:
-            if type(func) is tuple: # If this function has arguments
-                submitted.append( executor.submit(*func) )
-            else:
-                submitted.append( executor.submit(func) )
+            wrapped_func = _ThreadedFuncWrapper(func)
+            submitted.append( executor.submit(wrapped_func) )
         try:
             log.debug('Waiting for thread completion')
-            #while futures.wait(submitted, timeout=1).not_done: # Wait until all futures are done
-                #pass
             for future in futures.as_completed(submitted):
                 log.debug('Completed: %s' % future)
                 error = future.exception(timeout=0.1)
                 if error is not None:
                     log.critical('Unhandled exception in %s:\n%s' % (future, error))
-                    raise error
+                    last_exc = _ThreadedFuncWrapper.LAST_EXC_INFO
+                    if last_exc:
+                        raise last_exc.exc_info[1], None, last_exc.exc_info[2]
+                    else:
+                        raise error
                 result = future.result(timeout=0.1)
                 if type(result) in [int, float, Decimal]:
                     counter += result
@@ -504,4 +504,25 @@ def wait_for_threads(fs, max_workers=settings.HEF_THREAD_COUNT):
                 future.cancel()
             executor.shutdown(wait=False)
             raise e
+            #raise error.exc_info[1], None, error.exc_info[2]
     return counter
+
+class _ThreadedFuncWrapper(object):
+    '''
+    Wrapper for handling exceptions & killing 
+    '''
+    
+    ALIVE = True # Class variable
+    LAST_EXC_INFO = None
+    
+    def __init__(self, func):
+        self.func = func
+    
+    def __call__(self):
+        try:
+            while self.ALIVE:
+                return self.func()
+        except:
+            self.LAST_EXC_INFO = sys.exc_info()
+            self.ALIVE = False
+            raise
