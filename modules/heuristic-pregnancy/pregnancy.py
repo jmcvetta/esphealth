@@ -171,7 +171,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         patient_qs = self.preg_enc_qs.values_list('patient', flat=True).order_by('patient').distinct()
         log_query('Pregnant patients', patient_qs)
-        funcs = [(self.pregnancies_for_patient, patient) for patient in patient_qs]
+        funcs = [partial(self.pregnancies_for_patient, patient) for patient in patient_qs]
         ts_count = wait_for_threads(funcs)
         return ts_count
     
@@ -227,11 +227,31 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         min_date_next_preg = None
         for enc in self.preg_enc_qs.filter(patient=patient).order_by('date'):
             #
-            # Does this encounter fit into an existing pregnancy?  
+            # Should this encounter be bound to the most recently generated 
+            # pregnancy?
             #
             if min_date_next_preg and (enc.date < min_date_next_preg):
                 last_preg.encounters.add(enc)
-                log.debug('Adding event %s to pregnancy %s' % (enc, last_preg))
+                log.debug('Added event %s to pregnancy %s' % (enc, last_preg))
+                continue
+            #
+            # Does this encounter fit into an existing pregnancy?  
+            #
+            existing_pregs = Timespan.objects.filter(
+                name__in = self.timespan_names,
+                patient = enc.patient,
+                start_date__lte = enc.date,
+                end_date__gte = enc.date,
+                ).order_by('start_date')
+            if existing_pregs:
+                if existing_pregs.count() > 1:
+                    log.warning('Encounter overlaps more than one existing pregnancy!')
+                    log.warning('    encounter: %s' % enc)
+                    log.warning('    timespans: %s' % existing_pregs)
+                preg = existing_pregs[0]
+                preg.encounters.add(enc)
+                preg.save()
+                log.debug('Added event %s to pregnancy %s' % (enc, preg))
                 continue
             #
             # This encounter must be part of a new pregnancy.  We need to find
@@ -246,7 +266,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             pat_date_q = Q(
                 patient = patient,
                 date__gte = enc.date,
-                date__lt = enc.date + PREG_MARGIN + relativedelta(days=280),
+                date__lt = enc.date + relativedelta(days=280),
                 )
             eop_qs = self.eop_qs.filter(pat_date_q).order_by('date')
             edd_qs = self.edd_enc_qs.filter(pat_date_q).order_by('edd')
