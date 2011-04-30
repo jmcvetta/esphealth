@@ -484,27 +484,17 @@ def wait_for_threads(fs, max_workers=settings.HEF_THREAD_COUNT):
         for func in fs:
             wrapped_func = _ThreadedFuncWrapper(func)
             submitted.append( executor.submit(wrapped_func) )
-        try:
-            log.debug('Waiting for thread completion')
-            for future in futures.as_completed(submitted):
-                log.debug('Completed: %s' % future)
-                error = future.exception(timeout=0.1)
-                if error is not None:
-                    log.critical('Unhandled exception in %s:\n%s' % (future, error))
-                    last_exc = _ThreadedFuncWrapper.LAST_EXC_INFO
-                    if last_exc:
-                        raise last_exc.exc_info[1], None, last_exc.exc_info[2]
-                    else:
-                        raise error
-                result = future.result(timeout=0.1)
-                if type(result) in [int, float, Decimal]:
-                    counter += result
-        except BaseException, e:
-            for future in submitted:
-                future.cancel()
-            executor.shutdown(wait=False)
-            raise e
-            #raise error.exc_info[1], None, error.exc_info[2]
+        log.debug('Waiting for thread completion')
+        for future in futures.as_completed(submitted):
+            log.debug('Completed: %s' % future)
+            error = future.exception(timeout=0.1)
+            if error is not None:
+                log.critical('Unhandled exception in %s:\n%s' % (future, error))
+                exc_info = _ThreadedFuncWrapper.EXC_INFO.get(block=False)
+                raise exc_info[0], exc_info[1], exc_info[2]
+            result = future.result(timeout=0.1)
+            if type(result) in [int, float, Decimal]:
+                counter += result
     return counter
 
 class _ThreadedFuncWrapper(object):
@@ -512,17 +502,15 @@ class _ThreadedFuncWrapper(object):
     Wrapper for handling exceptions & killing 
     '''
     
-    ALIVE = True # Class variable
-    LAST_EXC_INFO = None
+    EXC_INFO = Queue.Queue()
     
     def __init__(self, func):
         self.func = func
     
     def __call__(self):
         try:
-            while self.ALIVE:
                 return self.func()
         except:
-            self.LAST_EXC_INFO = sys.exc_info()
-            self.ALIVE = False
+            log.error( sys.exc_info() )
+            self.EXC_INFO.put( sys.exc_info() )
             raise
