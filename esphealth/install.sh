@@ -13,8 +13,14 @@
 #
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+if [ `lsb_release -is` = "Ubuntu" ]; then
+    sudo apt-get install python-setuptools python-dev libpq-dev
+    sudo easy_install -U pip virtualenv
+fi
+
 set -x
-virtualenv --no-site-packages . || exit
+virtualenv --no-site-packages . 
 . bin/activate
 export PIP_RESPECT_VIRTUALENV=true
 export PIP_REQUIRE_VIRTUALENV=true
