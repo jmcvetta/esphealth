@@ -29,6 +29,14 @@ class DiseaseDefinition(object):
         Conditions which this disease definition can detect
         @rtype: List of strings
         '''
+        
+    @abc.abstractproperty
+    def short_name(self):
+        '''
+        Short name (SlugField-compatible) for this report.
+        @rtype: String
+        '''
+    
     
     @abc.abstractproperty
     def uri(self):
@@ -65,13 +73,51 @@ class DiseaseDefinition(object):
         @return: All known disease definitions
         @rtype:  List
         '''
-        diseases = set()
+        #
+        # Retrieve from modules
+        #
+        diseases = []
         for entry_point in iter_entry_points(group='esphealth', name='disease_definitions'):
             factory = entry_point.load()
-            diseases.update(factory())
-        diseases = list(diseases)
-        diseases.sort(key = lambda h: h.uri)
+            diseases += factory()
+        diseases.sort(key = lambda h: h.short_name)
+        # 
+        # Sanity check
+        #
+        names = {}
+        uris = {}
+        for d in diseases:
+            if d.uri in uris:
+                msg = 'Cannot load: %s' % d
+                msg = 'Duplicate disease URI: "%s"' % d.uri
+                log.critical(msg)
+                raise RuntimeError(msg)
+            else:
+                uris[d.uri] = d
+            if d.short_name in names:
+                msg = 'Cannot load: %s' % d
+                msg = 'Duplicate disease name "%s"' % d.short_name
+                log.critical(msg)
+                raise RuntimeError(msg)
+            else:
+                names[d.short_name] = d
         return diseases
+    
+    @classmethod
+    def get_by_name(cls, short_name):
+        '''
+        Returns the named heuristic
+        '''
+        class UnknownDiseaseException(BaseException):
+            '''
+            Raised when a named disease cannot be found
+            '''
+        diseases = {}
+        for d in cls.get_all():
+            diseases[d.short_name] = d
+        if not short_name in diseases:
+            raise UnknownDiseaseException('Could not get disease definition for name: "%s"' % short_name)
+        return diseases[short_name]
     
     @property
     def dependencies(self):
