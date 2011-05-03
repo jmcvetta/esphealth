@@ -40,6 +40,7 @@ from ESP.static.models import Icd9
 from ESP.utils import log, log_query
 from ESP.utils.utils import queryset_iterator
 from ESP.utils.utils import wait_for_threads
+from ESP.utils.utils import EquivalencyMixin
 from django.db.models import F, Q
 from django.utils.encoding import force_unicode, smart_str
 from pkg_resources import iter_entry_points
@@ -110,7 +111,7 @@ ORDER_RESULT_RECORD_TYPES = [
     ]
 
 
-class BaseHeuristic(object):
+class BaseHeuristic(EquivalencyMixin):
     '''
     A heuristic for generating Events from raw medical records
     (Abstract base class)
@@ -152,16 +153,6 @@ class BaseHeuristic(object):
     
     def __str__(self):
         return smart_str(self.short_name)
-    
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        else:
-            return False
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
     
     @classmethod
     def get_all(cls):
