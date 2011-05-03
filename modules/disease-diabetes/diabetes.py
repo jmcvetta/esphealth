@@ -347,7 +347,7 @@ class DiabetesDefinition(DiseaseDefinition):
             pat_serial += 1
             f = partial(self._frank_dm, pat_pk, trigger_date, pat_serial, total_pats)
             funcs.append( f )
-        return wait_for_threads(funcs, max_workers=4)
+        return wait_for_threads(funcs)
     
     def _frank_dm(self, pat_pk, trigger_date, pat_serial, total_pats):
         '''
