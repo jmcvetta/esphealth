@@ -516,7 +516,7 @@ def wait_for_threads(fs, max_workers=settings.HEF_THREAD_COUNT):
             for future in submitted:
                 future.cancel()
             executor.shutdown(wait=False)
-            _ThreadedFuncWrapper.EXCEPTIONS.put(True)
+            _ThreadedFuncWrapper.EXCEPTIONS.put(sys.exc_info())
             raise
             
     return counter
@@ -537,5 +537,5 @@ class _ThreadedFuncWrapper(object):
                 return self.func()
         except:
             log.error( sys.exc_info() )
-            self.EXC_INFO.put( sys.exc_info() )
-            raise thiswillbreak
+            self.EXCEPTIONS.put( sys.exc_info() )
+            raise 
