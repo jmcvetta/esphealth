@@ -4,23 +4,35 @@
 #                              PIP Requirements
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-# NOTE: no database adapter is installed via Pip, because they typically
-# require non-Python dependencies.  Instead, please install your database
-# driver via your system's package manager.
-#
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-psycopg2
-django >= 1.3
-south
-python-dateutil
-simplejson
-sqlparse
-hl7
-django_tables
-configobj
-futures
+
+#-------------------------------------------------------------------------------
+#
+# Standard PyPI Packages
+#
+#-------------------------------------------------------------------------------
+
+psycopg2         # Database Adapter
+django >= 1.3    # Web application framework with ORM
+south            # Database migration framework
+python-dateutil  # Date-math utilities
+simplejson       # JSON data formatting
+sqlparse         # SQL pretty-printer
+hl7              # Utilities for working with HL7 message
+django_tables    # Utilities for working with HTML tables in Django
+configobj        # Advanced configuration file support
+futures          # Python implementation of "futures" threading paradigm
+ipython          # Interactive Python shell
+
+#-------------------------------------------------------------------------------
+#
+# ESP Modules
+#
+#-------------------------------------------------------------------------------
+
+# Diabetes
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes#egg=disease-diabetes
+# Pregnancy
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-pregnancy#egg=heuristic-pregnancy
+# Combined random/fasting glucose lab test
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-glucose-crf#egg=heuristic-glucose-crf
