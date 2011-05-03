@@ -148,10 +148,20 @@ class BaseHeuristic(object):
         @rtype:  Integer
         '''
     
+    __registered_heuristics = {}
+    
     def __str__(self):
         return smart_str(self.short_name)
     
-    __registered_heuristics = {}
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     
     @classmethod
     def get_all(cls):
