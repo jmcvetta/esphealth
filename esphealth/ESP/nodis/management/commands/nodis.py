@@ -25,6 +25,7 @@ from ESP.utils import utils as util
 from ESP.utils.utils import log
 from ESP.hef.base import BaseHeuristic
 from ESP.nodis.base import DiseaseDefinition
+from ESP.utils.utils import wait_for_threads
 
     
 class Command(BaseCommand):
@@ -42,13 +43,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if options['list']:
-            self.list(args, options)
-        elif args:
-            self.by_name(args, options)
-        else:
-            self.all(args, options)
-    
-    def all(self, args, options):
+            for disease in DiseaseDefinition.get_all():
+                print disease.short_name
+            return 
+        disease_list = set()
+        for short_name in args:
+            disease_list.add(DiseaseDefinition.get_by_name(short_name))
+        if not args:
+            disease_list = DiseaseDefinition.get_all()
         if options['dependencies']:
             log.info('Generating all dependencies before generating cases of disease')
             #
@@ -56,14 +58,10 @@ class Command(BaseCommand):
             # only once.
             #
             dependencies = set()
-            for disease in DiseaseDefinition.get_all():
+            for disease in disease_list():
                 dependencies |= set(disease.dependencies)
             for dep in dependencies:
                 log.debug('Dependency: %s' % dep)
             BaseHeuristic.generate_all(heuristic_list=dependencies)
-        for disease in DiseaseDefinition.get_all():
-            disease.generate()
-    
-    def list(self, args, options):
-        for disease in DiseaseDefinition.get_all():
-            print disease.uri
+        funcs = [disease.generate for disease in disease_list]
+        wait_for_threads(funcs)
