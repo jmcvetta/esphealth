@@ -393,7 +393,7 @@ class DiabetesDefinition(DiseaseDefinition):
         if not insulin_rx:
             provider = trigger_events[0].provider
             log.debug('No insulin Rx ever: Type 2')
-            return ('diabetes:type-2', trigger_date, provider, trigger_events)
+            condition = 'diabetes:type-2'
         
         #===============================================================================
         #
