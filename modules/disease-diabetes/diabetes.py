@@ -37,7 +37,7 @@ from ESP.utils.utils import wait_for_threads
 
 
 
-class DiabetesDefinition(DiseaseDefinition):
+class Diabetes(DiseaseDefinition):
     '''
     Diabetes Mellitus:
     - Pre-diabetes
@@ -1219,7 +1219,8 @@ class BaseDiabetesReport(Report):
                 field = '%s--min--%s' % (test, year)
                 self.FIELDS.append(field)
                 abs_test = AbstractLabTest(name=test)
-                vqs = abs_test.lab_results.filter(patient__in=self.patient_qs, date__year=year).values('patient').annotate(value=Min('result_float'))
+                vqs = abs_test.lab_results.filter(patient__in=self.patient_qs, 
+                    date__year=year).values('patient').annotate(value=Min('result_float'))
                 log.info('Collecting aggregate data for %s' % field)
                 log_query(field, vqs)
                 self._vqs_to_pfv(vqs, field)
@@ -1232,7 +1233,8 @@ class BaseDiabetesReport(Report):
                 field = '%s--max--%s' % (test, year)
                 self.FIELDS.append(field)
                 abs_test = AbstractLabTest(name=test)
-                vqs = abs_test.lab_results.filter(patient__in=self.patient_qs, date__year=year).values('patient').annotate(value=Max('result_float'))
+                vqs = abs_test.lab_results.filter(patient__in=self.patient_qs, 
+                    date__year=year).values('patient').annotate(value=Max('result_float'))
                 log.info('Collecting aggregate data for %s' % field)
                 log_query(field, vqs)
                 self._vqs_to_pfv(vqs, field)
@@ -1242,7 +1244,8 @@ class BaseDiabetesReport(Report):
         for year in self.YEARS:
             field = '%s--max--%s' % (name, year)
             self.FIELDS.append(field)
-            vqs = LabResult.objects.filter(tags__event_name__in=event_names).values('patient').annotate(value=Max('result_float'))
+            vqs = LabResult.objects.filter(patient__in=self.patient_qs, 
+                tags__event_name__in=event_names).values('patient').annotate(value=Max('result_float'))
             log.info('Collecting aggregate data for %s' % field)
             log_query(field, vqs)
             self._vqs_to_pfv(vqs, field)
@@ -1258,7 +1261,8 @@ class BaseDiabetesReport(Report):
         for event_type in event_type_list:
             field = '%s--total_count' % event_type
             self.FIELDS.append(field)
-            vqs = Event.objects.filter(patient__in=self.patient_qs, name=event_type).values('patient').annotate(value=Count('id'))
+            vqs = Event.objects.filter(patient__in=self.patient_qs, 
+                name=event_type).values('patient').annotate(value=Count('id'))
             log.info('Collecting aggregate data for %s' % field)
             log_query(field, vqs)
             self._vqs_to_pfv(vqs, field)
@@ -1555,7 +1559,7 @@ class PrediabetesReport(BaseDiabetesReport):
 #
 #-------------------------------------------------------------------------------
 
-diabetes_definition = DiabetesDefinition()
+diabetes_definition = Diabetes()
 frank_report = FrankDiabetesReport()
 pre_report = PrediabetesReport()
 
