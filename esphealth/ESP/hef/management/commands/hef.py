@@ -68,7 +68,7 @@ class Command(BaseCommand):
                 print h.short_name
             return
         elif args:
-            return BaseHeuristic.generate_by_name(name_list=args, thread_count=options['thread_count'])
+            BaseHeuristic.generate_by_name(name_list=args, thread_count=options['thread_count'])
         else: # Generate all
-            return BaseHeuristic.generate_all(thread_count=options['thread_count'])
+            BaseHeuristic.generate_all(thread_count=options['thread_count'])
     
