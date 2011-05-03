@@ -466,6 +466,21 @@ def queryset_iterator(queryset, chunksize=QUERYSET_ITERATOR_CHUNKSIZE):
         gc.collect()
 
 
+class EquivalencyMixin(object):
+    '''
+    Provides methods to implement simple equivalency 
+    '''
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    
 
 def wait_for_threads(fs, max_workers=settings.HEF_THREAD_COUNT):
     '''
@@ -485,16 +500,25 @@ def wait_for_threads(fs, max_workers=settings.HEF_THREAD_COUNT):
             wrapped_func = _ThreadedFuncWrapper(func)
             submitted.append( executor.submit(wrapped_func) )
         log.debug('Waiting for thread completion')
-        for future in futures.as_completed(submitted):
-            log.debug('Completed: %s' % future)
-            error = future.exception(timeout=0.1)
-            if error is not None:
-                log.critical('Unhandled exception in %s:\n%s' % (future, error))
-                exc_info = _ThreadedFuncWrapper.EXC_INFO.get(block=False)
-                raise exc_info[0], exc_info[1], exc_info[2]
-            result = future.result(timeout=0.1)
-            if type(result) in [int, float, Decimal]:
-                counter += result
+        try:
+            for future in futures.as_completed(submitted):
+                log.debug('Completed: %s' % future)
+                error = future.exception(timeout=0.1)
+                if error is not None:
+                    log.critical('Unhandled exception in %s:\n%s' % (future, error))
+                    exc_info = _ThreadedFuncWrapper.EXCEPTIONS.get(block=False)
+                    executor.shutdown(wait=False)
+                    raise exc_info[0], exc_info[1], exc_info[2]
+                result = future.result(timeout=0.1)
+                if type(result) in [int, float, Decimal]:
+                    counter += result
+        except:
+            for future in submitted:
+                future.cancel()
+            executor.shutdown(wait=False)
+            _ThreadedFuncWrapper.EXCEPTIONS.put(True)
+            raise
+            
     return counter
 
 class _ThreadedFuncWrapper(object):
@@ -502,15 +526,16 @@ class _ThreadedFuncWrapper(object):
     Wrapper for handling exceptions & killing 
     '''
     
-    EXC_INFO = Queue.Queue()
+    EXCEPTIONS = Queue.Queue() # Put exc_info() here for any exceptions
     
     def __init__(self, func):
         self.func = func
     
     def __call__(self):
         try:
+            while self.EXCEPTIONS.empty():
                 return self.func()
         except:
             log.error( sys.exc_info() )
             self.EXC_INFO.put( sys.exc_info() )
-            raise
+            raise thiswillbreak
