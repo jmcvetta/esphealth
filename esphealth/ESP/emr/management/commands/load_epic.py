@@ -381,7 +381,7 @@ class ProviderLoader(BaseLoader):
         pin = row['provider_id_num']
         if not pin:
             raise LoadException('Record has blank provider_id_num, which is required')
-        p = Provider.objects.get_or_create(
+        p, created = Provider.objects.get_or_create(
             provider_id_num = pin,
             defaults = {
                 'provenance': self.provenance,
