@@ -127,6 +127,11 @@ class Diabetes(DiseaseDefinition):
             ('a1c', 5.7, 6.4),
             ('glucose-fasting', 100, 125),
             ('ogtt50-random', 140, 200),
+            ('ogtt75-fasting', 100, 125),
+            ('ogtt75-30m', 140, 199)
+            ('ogtt75-1hr', 140, 199)
+            ('ogtt75-90m', 140, 199)
+            ('ogtt75-2hr', 140, 199)
             ]:
             h = LabResultRangeHeuristic(
                 test_name = triple[0],
@@ -768,49 +773,50 @@ class Diabetes(DiseaseDefinition):
         return counter
         
 
-class GestationalDiabetes(object):
+class GestationalDiabetesReport(Report):
     
+    short_name = 'diabetes:gestational'
     
-    def report(self, riskscape=False):
+    def run(self, riskscape=False):
         log.info('Generating GDM report')
         if riskscape:
             fields = self.RISKSCAPE_FIELDS
         else:
             fields = self.LINELIST_FIELDS
         writer = csv.DictWriter(sys.stdout, fieldnames=fields, quoting=csv.QUOTE_ALL)
-        pos_q = Q(name__endswith='--positive')
-        a1c_q = Q(name__startswith='lx--a1c')
-        ogtt50_q = Q(name__startswith='lx--ogtt50')
+        pos_q = Q(name__endswith=':positive')
+        a1c_q = Q(name__startswith='lx:a1c')
+        ogtt50_q = Q(name__startswith='lx:ogtt50')
         ogtt50_threshold_q = Q(name__in = [
-            'lx--ogtt50_1hr--threshold--190',
-            'lx--ogtt50_random--threshold--190',
+            'lx:ogtt50-1hr:threshold:190',
+            'lx:ogtt50-random:threshold:190',
             ])
-        ogtt75_q = Q(name__startswith='lx--ogtt75')
+        ogtt75_q = Q(name__startswith='lx:ogtt75')
         ogtt75_threshold_q = Q(name__in = [
-            'lx--ogtt75_1hr--threshold--180',
-            'lx--ogtt75_1hr--threshold--200',
-            'lx--ogtt75_2hr--threshold--155',
-            'lx--ogtt75_2hr--threshold--200',
-            'lx--ogtt75_30min--threshold--200',
-            'lx--ogtt75_90min--threshold--180',
-            'lx--ogtt75_90min--threshold--200',
-            'lx--ogtt75_fasting--threshold--126',
-            'lx--ogtt75_fasting--threshold--95',
+            'lx:ogtt75-1hr:threshold:180',
+            'lx:ogtt75-1hr:threshold:200',
+            'lx:ogtt75-2hr:threshold:155',
+            'lx:ogtt75-2hr:threshold:200',
+            'lx:ogtt75-30min:threshold:200',
+            'lx:ogtt75-90min:threshold:180',
+            'lx:ogtt75-90min:threshold:200',
+            'lx:ogtt75-fasting:threshold:126',
+            'lx:ogtt75-fasting:threshold:95',
             ])
         ogtt75_igt_q = Q(name__in = [
-            'lx--ogtt75_1hr--range--140.0-200.0',
-            'lx--ogtt75_2hr--range--140.0-200.0',
-            'lx--ogtt75_30min--range--140.0-200.0',
-            'lx--ogtt75_90min--range--140.0-200.0',
+            'lx:ogtt75-1hr:range:gte:140:lte:200',
+            'lx:ogtt75-2hr:range:gte:140:lte:200',
+            'lx:ogtt75-30min:range:gte:140:lte:200',
+            'lx:ogtt75-90min:range:gte:141:lte:200',
             ])
-        ogtt75_ifg_q = Q(event_type__name = 'lx--ogtt75_fasting--range--100.0-125.0')
-        ogtt100_q = Q(name__startswith='lx--ogtt100')
+        ogtt75_ifg_q = Q(event_type__name = 'lx:ogtt75-fasting:range:gte:100:lte:125')
+        ogtt100_q = Q(name__startswith='lx:ogtt100')
         ogtt100_threshold_q = Q(name__in = [
             ])
-        order_q = Q(name__endswith='--order')
-        any_q = Q(name__endswith='--any_result')
+        order_q = Q(name__endswith=':order')
+        any_q = Q(name__endswith=':any-result')
         dxgdm_q = Q(name='dx:gestational-diabetes')
-        lancets_q = Q(name__in=['rx--test_strips', 'rx--lancets'])
+        lancets_q = Q(name__in=['rx:test-strips', 'rx:lancets'])
         #
         # Header
         #
