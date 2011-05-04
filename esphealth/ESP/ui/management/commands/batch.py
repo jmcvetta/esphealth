@@ -12,6 +12,7 @@
 
 import datetime
 import sys
+import traceback
 
 from django.core.management.base import BaseCommand
 from django.core.mail import mail_admins
@@ -153,8 +154,11 @@ class Command(BaseCommand):
         except [KeyboardInterrupt, "-255"]:
             sys.stderr.write('Keyboard interrupt - exiting now.')
             sys.exit(-255)
-        except BaseException, e:
+        except:
             sub = 'WARNING! An error occurred in the ESP batch job at %s' % SITE_NAME
-            msg = 'Caught the following exception: \n%s' % e
+            msg = 'Caught the following exception:'
+            msg += '\n'
+            msg += '%s' % traceback.format_exc()
             mail_admins(sub, msg, fail_silently=False)
             print >> sys.stderr, msg
+            raise
