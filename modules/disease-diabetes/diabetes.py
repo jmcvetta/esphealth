@@ -58,9 +58,9 @@ class Diabetes(DiseaseDefinition):
     
     def generate(self):
         counter = 0
+        counter += self.generate_gestational_diabetes()
         counter += self.generate_frank_diabetes()
         counter += self.generate_prediabetes()
-        counter += self.generate_gestational_diabetes()
         return counter
     
     @property
@@ -279,7 +279,7 @@ class Diabetes(DiseaseDefinition):
     # If a patient has one of these events twice, he has frank diabetes
     FRANK_DM_TWICE = [
         'dx:diabetes:all-types',
-        # FIXME: Not yet implemented:  "Random glucoses (RG) >=200 on two or more occasions"
+        'lx:glucose-random:threshold:200'
         ]
     FRANK_DM_ALL = FRANK_DM_ONCE + FRANK_DM_TWICE
     AUTO_ANTIBODIES_LABS = [
@@ -522,10 +522,6 @@ class Diabetes(DiseaseDefinition):
         log.debug('Generated new case: %s' % new_case)
         return 1  # 1 new case generated
             
-    def generate_gestational_diabetes(self):
-        log.warning('GDM not yet ported!')
-        return 0
-    
     def generate_prediabetes(self):
         ONCE_CRITERIA = [
             'lx:a1c:range:gte:5.7:lte:6.4',
@@ -574,11 +570,7 @@ class Diabetes(DiseaseDefinition):
             log.info('Saved new case: %s (%8s / %s)' % (new_case, counter, total))
         return counter
     
-
-class GestationalDiabetes(object):
-    
-    
-    CRITERIA_ONCE = [
+    GDM_ONCE = [
         'lx:ogtt100-fasting:threshold:126',
         'lx:ogtt50-fasting:threshold:126',
         'lx:ogtt75-fasting:threshold:126',
@@ -591,7 +583,7 @@ class GestationalDiabetes(object):
         'lx:ogtt75-2hr:threshold:153',
         ]
     # Two or more occurrences of these events, during pregnancy, is sufficient for a case of GDM
-    CRITERIA_TWICE = [
+    GDM_TWICE = [
         'lx:ogtt75-fasting:threshold:95',
         'lx:ogtt75-30min:threshold:200',
         'lx:ogtt75-1hr:threshold:180',
@@ -606,7 +598,7 @@ class GestationalDiabetes(object):
         'lx:ogtt100-3hr:threshold:140',
         ]
     
-    LINELIST_FIELDS = [
+    GDM_LINELIST_FIELDS = [
         #
         # Per-patient fields
         #
@@ -655,7 +647,7 @@ class GestationalDiabetes(object):
         'referral_to_nutrition',
         ]
     
-    RISKSCAPE_FIELDS = [
+    GDM_RISKSCAPE_FIELDS = [
         'A',
         'B',
         'C',
@@ -684,7 +676,7 @@ class GestationalDiabetes(object):
         'Z',
         ]
   
-    def generate(self):
+    def generate_gestational_diabetes(self):
         log.info('Generating cases of gestational diabetes')
         #===============================================================================
         #
@@ -692,15 +684,15 @@ class GestationalDiabetes(object):
         #
         #===============================================================================
         gdm_timespan_pks = set()
-        ts_qs = Timespan.objects.filter(name='pregnancy')
-        ts_qs = ts_qs.exclude(case__condition='diabetes_gestational')
+        ts_qs = Timespan.objects.filter(name__startswith='pregnancy')
+        ts_qs = ts_qs.exclude(case__condition='diabetes:gestational')
         #
         # Single event
         #
         once_qs = ts_qs.filter(
-            patient__event__name=self.CRITERIA_ONCE,
-            patient__event__date__gte=F('start_date'),
-            patient__event__date__lte=F('end_date'),
+            patient__event__name__in = self.GDM_ONCE,
+            patient__event__date__gte = F('start_date'),
+            patient__event__date__lte = F('end_date'),
             ).distinct().order_by('end_date')
         log_query('Single event timespans', once_qs)
         gdm_timespan_pks.update(once_qs.values_list('pk', flat=True))
@@ -708,9 +700,9 @@ class GestationalDiabetes(object):
         # 2 or more events
         #
         twice_qs = ts_qs.filter(
-            patient__event__name=self.CRITERIA_TWICE,
-            patient__event__date__gte=F('start_date'),
-            patient__event__date__lte=F('end_date'),
+            patient__event__name__in = self.GDM_TWICE,
+            patient__event__date__gte = F('start_date'),
+            patient__event__date__lte = F('end_date'),
             ).annotate(count=Count('patient__event__id')).filter(count__gte=2).distinct()
         log_query('Two event timespans', twice_qs)
         gdm_timespan_pks.update(twice_qs.values_list('pk', flat=True))
@@ -718,7 +710,7 @@ class GestationalDiabetes(object):
         # Dx or Rx
         #
         dx_ets=['dx:gestational-diabetes']
-        rx_ets=['rx--lancets', 'rx--test_strips']
+        rx_ets=['rx:lancets', 'rx:test-strips']
         # FIXME: This date math works on PostgreSQL, but I think that's just 
         # fortunate coincidence, as I don't think this is the righ way to 
         # express the date query in ORM syntax.
@@ -740,7 +732,7 @@ class GestationalDiabetes(object):
         # Generate one case per timespan
         #
         #===============================================================================
-        all_criteria = self.CRITERIA_ONCE + self.CRITERIA_TWICE + dx_ets + rx_ets
+        all_criteria = self.GDM_ONCE + self.GDM_TWICE + dx_ets + rx_ets
         counter = 0
         total = len(gdm_timespan_pks)
         for ts_pk in gdm_timespan_pks:
@@ -754,11 +746,11 @@ class GestationalDiabetes(object):
             first_event = case_events[0]
             case_obj, created = Case.objects.get_or_create(
                 patient = ts.patient,
-                condition = 'diabetes_gestational',
+                condition = 'diabetes:gestational',
                 date = first_event.date,
+                source = self.uri, 
                 defaults = {
                     'provider': first_event.provider,
-                    'pattern': self.GDM_PATTERN,
                     },
                 )
             if created:
@@ -770,12 +762,15 @@ class GestationalDiabetes(object):
                 log.debug('Found exisiting GDM case #%s for %s' % (case_obj.pk, ts))
                 log.debug('Timespan & events will be added to existing case')
                 case_obj.events = case_obj.events.all() | case_events
-            log_query('case events', case_events)
             case_obj.timespans.add(ts)
             case_obj.save()
         log.info('Generated %s new cases of diabetes_gestational' % counter)
         return counter
         
+
+class GestationalDiabetes(object):
+    
+    
     def report(self, riskscape=False):
         log.info('Generating GDM report')
         if riskscape:
@@ -1300,7 +1295,11 @@ class BaseDiabetesReport(Report):
                 field_values[field] = end_date
         
     def _diabetes_case(self):
-        vqs = Case.objects.filter(condition__in=Diabetes.DIABETES_CONDITIONS).values('patient', 'id', 'condition', 'date')
+        self.FIELDS.append('case_id')
+        self.FIELDS.append('diabetes_type')
+        self.FIELDS.append('case_date')
+        vqs = Case.objects.filter(patient__in=self.patient_qs,
+            condition__in=Diabetes.DIABETES_CONDITIONS).values('patient', 'id', 'condition', 'date')
         log_query('Diabetes cases', vqs)
         log.info('Collecting diabetes case data')
         for item in vqs:
@@ -1344,6 +1343,7 @@ class FrankDiabetesReport(BaseDiabetesReport):
             ] + Diabetes.ORAL_HYPOGLYCAEMICS
         # FIXME: Only item in this list should be 'random glucose >= 200', which is not yet implemented
         linelist_patient_criteria_twice = [
+            'lx:glucose-random:threshold:200',
             ]
         #-------------------------------------------------------------------------------
         #
@@ -1371,14 +1371,14 @@ class FrankDiabetesReport(BaseDiabetesReport):
         #
         self._yearly_max(test_list = [
             'a1c',
-            'glucose_fasting',
+            'glucose-fasting',
             'cholesterol-total',
             'cholesterol-hdl',
             'cholesterol-ldl',
             'triglycerides',
             ])
         self._yearly_minimum(test_list = [
-            'cholesterol_hdl',
+            'cholesterol-hdl',
             ])
         self._blood_pressure()
         #
@@ -1489,6 +1489,7 @@ class PrediabetesReport(BaseDiabetesReport):
         #
         # Collect data
         #
+        self._diabetes_case()
         self._yearly_max(test_list=[
             'a1c',
             ])
@@ -1496,7 +1497,6 @@ class PrediabetesReport(BaseDiabetesReport):
         self._blood_pressure()
         #
         self._recent_pregnancies()
-        self._diabetes_case()
         self._recent_rx([
             'rx:insulin',
             'rx:glyburide',
@@ -1534,7 +1534,6 @@ class PrediabetesReport(BaseDiabetesReport):
             values = {
                 'patient_id': patient.pk,
                 'date_of_birth': patient.date_of_birth, 
-                'date_of_death': patient.date_of_death, 
                 'gender': patient.gender, 
                 'race': patient.race, 
                 'zip': patient.zip, 
