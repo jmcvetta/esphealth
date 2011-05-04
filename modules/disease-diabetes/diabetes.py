@@ -190,7 +190,6 @@ class Diabetes(DiseaseDefinition):
         # Prescriptions
         #
         for drug in [
-            'insulin', 
             'metformin', 
             'glyburide', 
             'test strips', 
@@ -214,6 +213,12 @@ class Diabetes(DiseaseDefinition):
                 drugs = [drug],
                 )
             heuristics.append(h)
+        h = PrescriptionHeuristic(
+            name = 'insulin',
+            drugs = ['insulin'],
+            exclude = ['syringe'],
+            )
+        heuristics.append(h)
         #
         #
         #
@@ -1440,14 +1445,16 @@ class PrediabetesReport(BaseDiabetesReport):
         #
         # TODO: Implement me!
         #
-        log.warning('Two highest random glucose fields not yet implemented')
-        return
+        lab_qs = LabResult.objects.filter(patient__in=self.patient_qs)
+        lab_qs = lab_qs.filter(tags__event_name='lx:glucose-random:any-result')
     
     def __two_recent_gdm_cases(self):
         #
         # TODO: Implement me!
         #
         log.warning('Two recent GDM case fields not yet implemented')
+        case_qs = Case.objects.filter(patient__in=self.patient_qs)
+        case_qs = case_qs.filter(condition__startswith='diabetes:gestational')
         return
     
     def __recent_frank_dm_date(self):
