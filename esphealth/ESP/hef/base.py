@@ -1055,7 +1055,7 @@ class PrescriptionHeuristic(BaseEventHeuristic):
     A heuristic for detecting prescription events
     '''
     
-    def __init__(self, name, drugs, doses=[], min_quantity=None, require=None, exclude=None):
+    def __init__(self, name, drugs, doses=[], min_quantity=None, require=[], exclude=[]):
         '''
         @param name: Name of event to be generated
         @type name:  String
@@ -1101,14 +1101,6 @@ class PrescriptionHeuristic(BaseEventHeuristic):
     
     
     def generate(self):
-        if self.require:
-            require = [s.strip() for s in self.require.split(',')]
-        else:
-            require = []
-        if self.exclude:
-            exclude = [s.strip() for s in self.exclude.split(',')]
-        else:
-            exclude = []
         prescriptions = Prescription.objects.none()
         for drug_name in self.drugs:
             prescriptions |= Prescription.objects.filter(name__icontains=drug_name)
@@ -1121,9 +1113,9 @@ class PrescriptionHeuristic(BaseEventHeuristic):
             prescriptions &= rxs_by_dose
         if self.min_quantity:
             prescriptions = prescriptions.filter(quantity__gte=self.min_quantity)
-        for required_string in require:
+        for required_string in self.require:
             prescriptions = prescriptions.filter(name__icontains=required_string)
-        for excluded_string in exclude:
+        for excluded_string in self.exclude:
             prescriptions = prescriptions.exclude(name__icontains=excluded_string)
         # Exclude prescriptions already bound to this heuristic
         prescriptions = prescriptions.exclude(tags__event_name__in=self.event_names)
