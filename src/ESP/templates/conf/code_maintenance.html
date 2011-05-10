@@ -1,0 +1,101 @@
+{% extends 'esp/espbase.html' %}
+{% load esplib %}
+
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
+    <style type="text/css">
+    	.flexigrid div.fbutton .add
+		{
+			background: url(/js/flexigrid/css/images/add.png) no-repeat center left;
+		}	
+	.flexigrid div.fbutton .delete
+		{
+			background: url(/js/flexigrid/css/images/close.png) no-repeat center left;
+		}	
+	.flexigrid div.fbutton .edit
+		{
+			background: url(/js/flexigrid/css/images/edit.gif) no-repeat center left;
+		}	
+    </style>
+{% endblock %}
+
+
+{% block extrascript %}
+    <script type="text/javascript">
+
+        function edit_map(com, grid) {
+            var id = $('.trSelected', grid)[0].cells[0].textContent;
+            var url = '{% url edit_ext_loinc_map %}' + id;
+            location.href = url;
+        };
+
+        $(document).ready(function() {
+            $('#code_maintenance_table').flexigrid({
+                striped: true,
+                height: 'auto',
+                url: '{% url json_code_grid %}/',
+                dataType: 'json',
+                singleSelect: true,
+                colModel: [
+                    {display: 'Native Code', name: 'native_code', width: 75, sortable: true, align: 'left'},
+                    {display: 'Native Name', name: 'native_name', width: 400, sortable: true, align: 'left'},
+                    {display: 'LOINC Code', name: 'loinc_num', width: 75, sortable: true, align: 'left'},
+                    {display: 'LOINC Name', name: 'loinc_name', width: 400, sortable: true, align: 'left'},
+                    {display: 'Ignore?', name: 'ignore', width: 75, sortable: false, align: 'left'},
+                    ],
+{% comment %}
+                searchitems: [
+                    {display: 'Condition', name: 'condition'},
+                    {# Begin PHI #}
+                    {display: 'Patient Last Name', name: 'name'},
+                    {display: 'Medical Record #', name: 'mrn'},
+                    {# End PHI #}
+                    ],
+{% endcomment %}
+                sortname: 'native_code',
+                sortorder: 'asc',
+                usepager: 'true',
+                width: '100%',
+                rpOptions: [10, 25, 50, 100],
+                rp: 25,
+                showToggleBtn: false,
+                buttons: [
+                    {name: 'Edit Mapping', bclass: 'edit', onpress : edit_map},
+                    {separator: true},
+                    ],
+            });
+        });
+    </script>
+{% endblock %}
+
+
+
+{% block content %}
+
+<h1 align='center'>
+Code Maintenance
+</h1>
+
+<p>
+Show: 
+<a id="show_interesting" href="#">
+interesting
+</a>
+|
+<a id="show_unmapped" href="#">
+unmapped
+</a>
+|
+<a id="show_mapped" href="#">
+mapped
+</a>
+|
+<b>all</b>
+</p>
+
+<table id="code_maintenance_table">
+</table>
+
+
+{% endblock %}
