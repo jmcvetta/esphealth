@@ -58,9 +58,9 @@ class Diabetes(DiseaseDefinition):
     
     def generate(self):
         counter = 0
-        counter += self.generate_gestational_diabetes()
         counter += self.generate_frank_diabetes()
         counter += self.generate_prediabetes()
+        counter += self.generate_gestational_diabetes()
         return counter
     
     @property
@@ -128,10 +128,10 @@ class Diabetes(DiseaseDefinition):
             ('glucose-fasting', 100, 125),
             ('ogtt50-random', 140, 200),
             ('ogtt75-fasting', 100, 125),
-            ('ogtt75-30m', 140, 199)
-            ('ogtt75-1hr', 140, 199)
-            ('ogtt75-90m', 140, 199)
-            ('ogtt75-2hr', 140, 199)
+            ('ogtt75-30m', 140, 199),
+            ('ogtt75-1hr', 140, 199),
+            ('ogtt75-90m', 140, 199),
+            ('ogtt75-2hr', 140, 199),
             ]:
             h = LabResultRangeHeuristic(
                 test_name = triple[0],
