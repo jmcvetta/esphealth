@@ -58,7 +58,7 @@ class Command(BaseCommand):
             # only once.
             #
             dependencies = set()
-            for disease in disease_list():
+            for disease in disease_list:
                 dependencies |= set(disease.dependencies)
             for dep in dependencies:
                 log.debug('Dependency: %s' % dep)
