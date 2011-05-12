@@ -768,20 +768,22 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
     '''
     A heuristic for detecting fixed-threshold-based positive lab result events
     '''
-    def __init__(self, test_name, threshold, date_field='order'):
+    def __init__(self, test_name, threshold, match_type='gte', date_field='order'):
         '''
         @param threshold: Events are generated for lab results greater than or equal to this value
         @type threshold:  Decimal
         '''
         assert test_name and date_field
         assert isinstance(threshold, Decimal)
+        assert match_type in ['gt', 'gte', 'lt', 'lte']
         self.test_name = test_name
         self.threshold = threshold
+        self.match_type = match_type
         self.date_field = date_field
     
     @property
     def short_name(self):
-        name = 'labresult:%s:threshold:%s' % (self.test_name, self.threshold)
+        name = 'labresult:%s:threshold:%s:%s' % (self.test_name, self.match_type, self.threshold)
         if not self.date_field == 'order':
             name += ':%s-date' % self.date_field
         return name
@@ -790,7 +792,7 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
     
     @property
     def threshold_event_name(self):
-        name = u'lx:%s:threshold:%s' % (self.test_name, self.threshold)
+        name = u'lx:%s:threshold:%s:%s' % (self.test_name, self.match_type, self.threshold)
         if not self.date_field == 'order':
             name += ':%s-date' % self.date_field
         return name
@@ -800,10 +802,18 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
         return [self.threshold_event_name]
     
     def generate(self):
-        positive_labs = self.unbound_labs.filter(result_float__isnull=False, result_float__gte=self.threshold)
-        log_query(self.uri, positive_labs)
+        lab_qs = self.unbound_labs.filter(result_float__isnull=False)
+        if self.match_type == 'lt':
+            lab_qs = lab_qs.filter(result_float__lt=self.threshold)
+        elif self.match_type == 'lte':
+            lab_qs = lab_qs.filter(result_float__lte=self.threshold)
+        elif self.match_type == 'gt':
+            lab_qs = lab_qs.filter(result_float__gt=self.threshold)
+        else: # 'gte'
+            lab_qs = lab_qs.filter(result_float__gte=self.threshold)
+        log_query(self.uri, lab_qs)
         log.info('Generating events for "%s"' % self)
-        for lab in queryset_iterator(positive_labs):
+        for lab in queryset_iterator(lab_qs):
             if self.date_field == 'order':
                 lab_date = lab.date
             elif self.date_field == 'result':
@@ -818,8 +828,8 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
             new_event.save()
             new_event.tag(lab)
             log.debug('Saved new event: %s' % new_event)
-        log.info('Generated %s new events for %s' % (positive_labs.count(), self.uri))
-        return positive_labs.count() 
+        log.info('Generated %s new events for %s' % (lab_qs.count(), self.uri))
+        return lab_qs.count() 
 
 
 class LabResultRangeHeuristic(BaseLabResultHeuristic):
