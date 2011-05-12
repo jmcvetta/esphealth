@@ -78,52 +78,52 @@ class Diabetes(DiseaseDefinition):
         #
         for test_name in [
             'ogtt100-fasting-urine',
-            'gad65',
-            'ica512',
-            'insulin-antibody',
-            'c-peptide',
             ]:
             heuristics.append(LabResultPositiveHeuristic(test_name=test_name))
         #
         # Threshold Tests
         #
-        for pair in [
+        for test_name, match_type, threshold in [
             # Fasting OGTT
-            ('ogtt50-fasting', 126),
-            ('ogtt75-fasting', 126),
-            ('ogtt100-fasting', 126),
+            ('ogtt50-fasting', 'gte', 126),
+            ('ogtt75-fasting', 'gte', 126),
+            ('ogtt100-fasting', 'gte', 126),
             # OGTT50
-            ('ogtt50-fasting', 190),
-            ('ogtt50-1hr', 190),
+            ('ogtt50-fasting', 'gte', 190),
+            ('ogtt50-1hr', 'gte', 190),
             # OGTT75
-            ('ogtt75-fasting', 92),
-            ('ogtt75-fasting', 126),
-            ('ogtt75-30m', 200),
-            ('ogtt75-1hr', 180),
-            ('ogtt75-1hr', 200),
-            ('ogtt75-90m', 180),
-            ('ogtt75-90m', 200),
-            ('ogtt75-2hr', 153),
-            ('ogtt75-2hr', 200),
+            ('ogtt75-fasting', 'gte', 92),
+            ('ogtt75-fasting', 'gte', 126),
+            ('ogtt75-30m', 'gte', 200),
+            ('ogtt75-1hr', 'gte', 180),
+            ('ogtt75-1hr', 'gte', 200),
+            ('ogtt75-90m', 'gte', 180),
+            ('ogtt75-90m', 'gte', 200),
+            ('ogtt75-2hr', 'gte', 153),
+            ('ogtt75-2hr', 'gte', 200),
             # OGTT100
-            ('ogtt100-fasting', 95),
-            ('ogtt100-30m', 200),
-            ('ogtt100-1hr', 180),
-            ('ogtt100-90m', 180),
-            ('ogtt100-2hr', 155),
-            ('ogtt100-3hr', 140),
-            ('ogtt100-4hr', 140),
-            ('ogtt100-5hr', 140),
+            ('ogtt100-fasting', 'gte', 95),
+            ('ogtt100-30m', 'gte', 200),
+            ('ogtt100-1hr', 'gte', 180),
+            ('ogtt100-90m', 'gte', 180),
+            ('ogtt100-2hr', 'gte', 155),
+            ('ogtt100-3hr', 'gte', 140),
+            ('ogtt100-4hr', 'gte', 140),
+            ('ogtt100-5hr', 'gte', 140),
+            # Auto-antibodies
+            ('gad65', 'gt', 1),
+            ('ica512', 'gt', 0.8),
             ]:
             h = LabResultFixedThresholdHeuristic(
-                test_name = pair[0],
-                threshold = Decimal(str(pair[1])),
+                test_name = test_name,
+                match_type = match_type,
+                threshold = Decimal(str(threshold)),
                 )
             heuristics.append(h)
         #
         # Range Tests
         #
-        for triple in [
+        for test_name, low, high in [
             ('a1c', 5.7, 6.4),
             ('glucose-fasting', 100, 125),
             ('ogtt50-random', 140, 200),
@@ -134,9 +134,9 @@ class Diabetes(DiseaseDefinition):
             ('ogtt75-2hr', 140, 199),
             ]:
             h = LabResultRangeHeuristic(
-                test_name = triple[0],
-                min = Decimal(str(triple[1])),
-                max = Decimal(str(triple[2])),
+                test_name = test_name,
+                min = Decimal(str(low)),
+                max = Decimal(str(high)),
                 )
             heuristics.append(h)
         #
@@ -252,6 +252,7 @@ class Diabetes(DiseaseDefinition):
             test_name = 'c-peptide',
             date_field = 'result',
             threshold = Decimal(str(1)),
+            match_type = 'gt',
             ) )
         return heuristics
     
@@ -296,6 +297,7 @@ class Diabetes(DiseaseDefinition):
         'lx:ica512',
         'lx:gad65',
         'lx:islet-cell-antibody',
+        'lx:insulin-antibody'
         ]
     
     def generate_frank_diabetes(self):
