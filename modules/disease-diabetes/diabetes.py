@@ -58,9 +58,10 @@ class Diabetes(DiseaseDefinition):
     
     def generate(self):
         counter = 0
+        counter += self.generate_gestational_diabetes()
+        return
         counter += self.generate_frank_diabetes()
         counter += self.generate_prediabetes()
-        counter += self.generate_gestational_diabetes()
         return counter
     
     @property
@@ -583,111 +584,33 @@ class Diabetes(DiseaseDefinition):
         return counter
     
     GDM_ONCE = [
-        'lx:ogtt100-fasting:threshold:126',
-        'lx:ogtt50-fasting:threshold:126',
-        'lx:ogtt75-fasting:threshold:126',
-        'lx:ogtt50-1hr:threshold:190',
-        'lx:ogtt50-random:threshold:190',
-        'lx:ogtt75-fasting:threshold:92',
-        'lx:ogtt75-30min:threshold:200',
-        'lx:ogtt75-1hr:threshold:180',
-        'lx:ogtt75-90min:threshold:180',
-        'lx:ogtt75-2hr:threshold:153',
+        'lx:ogtt100-fasting:threshold:gte:126',
+        'lx:ogtt50-fasting:threshold:gte:126',
+        'lx:ogtt75-fasting:threshold:gte:126',
+        'lx:ogtt50-1hr:threshold:gte:190',
+        'lx:ogtt50-random:threshold:gte:190',
+        'lx:ogtt75-fasting:threshold:gte:92',
+        'lx:ogtt75-30min:threshold:gte:200',
+        'lx:ogtt75-1hr:threshold:gte:180',
+        'lx:ogtt75-90min:threshold:gte:180',
+        'lx:ogtt75-2hr:threshold:gte:153',
         ]
     # Two or more occurrences of these events, during pregnancy, is sufficient for a case of GDM
     GDM_TWICE = [
-        'lx:ogtt75-fasting:threshold:95',
-        'lx:ogtt75-30min:threshold:200',
-        'lx:ogtt75-1hr:threshold:180',
-        'lx:ogtt75-90min:threshold:180',
-        'lx:ogtt75-2hr:threshold:155',
+        'lx:ogtt75-fasting:threshold:gte:95',
+        'lx:ogtt75-30min:threshold:gte:200',
+        'lx:ogtt75-1hr:threshold:gte:180',
+        'lx:ogtt75-90min:threshold:gte:180',
+        'lx:ogtt75-2hr:threshold:gte:155',
         'lx:ogtt100-fasting-urine:positive',
-        'lx:ogtt100-fasting:threshold:95',
-        'lx:ogtt100-30min:threshold:200',
-        'lx:ogtt100-1hr:threshold:180',
-        'lx:ogtt100-90min:threshold:180',
-        'lx:ogtt100-2hr:threshold:155',
-        'lx:ogtt100-3hr:threshold:140',
+        'lx:ogtt100-fasting:threshold:gte:95',
+        'lx:ogtt100-30min:threshold:gte:200',
+        'lx:ogtt100-1hr:threshold:gte:180',
+        'lx:ogtt100-90min:threshold:gte:180',
+        'lx:ogtt100-2hr:threshold:gte:155',
+        'lx:ogtt100-3hr:threshold:gte:140',
         ]
     
-    GDM_LINELIST_FIELDS = [
-        #
-        # Per-patient fields
-        #
-        'patient_id',
-        'mrn',
-        'last_name',
-        'first_name',
-        'date_of_birth',
-        'ethnicity',
-        'zip_code',
-        'bmi',
-        'gdm_icd9--any_time',
-        'frank_diabetes--ever',
-        'frank_diabetes--date',
-        'frank_diabetes--case_id',
-        'lancets_test_strips--any_time',
-        #
-        # Per-pregnancy fields
-        #
-        'pregnancy_id',
-        'pregnancy', # Boolean
-        'preg_start',
-        'preg_end',
-        'edd',
-        'gdm_case', # Boolean
-        'gdm_case--date',
-        'gdm_icd9--this_preg',
-        'intrapartum--ogtt50--positive',
-        'intrapartum--ogtt50--threshold',
-        'intrapartum--ogtt75--positive',
-        'intrapartum--ogtt100--positive',
-        'postpartum--ogtt75--order',
-        'postpartum--ogtt75--any_result',
-        'postpartum--ogtt75--positive',
-        'postpartum--ogtt75--dm_threshold',
-        'postpartum--ogtt75--igt_range',
-        'postpartum--ogtt75--ifg_range',
-        'early_postpartum--a1c--order',
-        'early_postpartum--a1c--max',
-        'late_postpartum--a1c--max',
-        'lancets_test_strips--this_preg',
-        'lancets_test_strips--14_days_gdm_icd9',
-        'insulin_rx',
-        'metformin_rx',
-        'glyburide_rx',
-        'referral_to_nutrition',
-        ]
-    
-    GDM_RISKSCAPE_FIELDS = [
-        'A',
-        'B',
-        'C',
-        'D',
-        'E',
-        'F',
-        'G',
-        'H',
-        'I',
-        'J',
-        'K',
-        'L',
-        'M',
-        'N',
-        'O',
-        'P',
-        'Q',
-        'R',
-        'S',
-        'T',
-        'U',
-        'V',
-        'W',
-        'X',
-        'Y',
-        'Z',
-        ]
-  
     def generate_gestational_diabetes(self):
         log.info('Generating cases of gestational diabetes')
         #===============================================================================
@@ -784,6 +707,85 @@ class GestationalDiabetesReport(Report):
     
     short_name = 'diabetes:gestational'
     
+    LINELIST_FIELDS = [
+        #
+        # Per-patient fields
+        #
+        'patient_id',
+        'mrn',
+        'last_name',
+        'first_name',
+        'date_of_birth',
+        'ethnicity',
+        'zip_code',
+        'bmi',
+        'gdm_icd9--any_time',
+        'frank_diabetes--ever',
+        'frank_diabetes--date',
+        'frank_diabetes--case_id',
+        'lancets_test_strips--any_time',
+        #
+        # Per-pregnancy fields
+        #
+        'pregnancy_id',
+        'pregnancy', # Boolean
+        'preg_start',
+        'preg_end',
+        'edd',
+        'gdm_case', # Boolean
+        'gdm_case--date',
+        'gdm_icd9--this_preg',
+        'intrapartum--ogtt50--positive',
+        'intrapartum--ogtt50--threshold',
+        'intrapartum--ogtt75--positive',
+        'intrapartum--ogtt100--positive',
+        'postpartum--ogtt75--order',
+        'postpartum--ogtt75--any_result',
+        'postpartum--ogtt75--positive',
+        'postpartum--ogtt75--dm_threshold',
+        'postpartum--ogtt75--igt_range',
+        'postpartum--ogtt75--ifg_range',
+        'early_postpartum--a1c--order',
+        'early_postpartum--a1c--max',
+        'late_postpartum--a1c--max',
+        'lancets_test_strips--this_preg',
+        'lancets_test_strips--14_days_gdm_icd9',
+        'insulin_rx',
+        'metformin_rx',
+        'glyburide_rx',
+        'referral_to_nutrition',
+        ]
+    
+    RISKSCAPE_FIELDS = [
+        'A',
+        'B',
+        'C',
+        'D',
+        'E',
+        'F',
+        'G',
+        'H',
+        'I',
+        'J',
+        'K',
+        'L',
+        'M',
+        'N',
+        'O',
+        'P',
+        'Q',
+        'R',
+        'S',
+        'T',
+        'U',
+        'V',
+        'W',
+        'X',
+        'Y',
+        'Z',
+        ]
+  
+    
     def run(self, riskscape=False):
         log.info('Generating GDM report')
         if riskscape:
@@ -795,20 +797,20 @@ class GestationalDiabetesReport(Report):
         a1c_q = Q(name__startswith='lx:a1c')
         ogtt50_q = Q(name__startswith='lx:ogtt50')
         ogtt50_threshold_q = Q(name__in = [
-            'lx:ogtt50-1hr:threshold:190',
-            'lx:ogtt50-random:threshold:190',
+            'lx:ogtt50-1hr:threshold:gte:190',
+            'lx:ogtt50-random:threshold:gte:190',
             ])
         ogtt75_q = Q(name__startswith='lx:ogtt75')
         ogtt75_threshold_q = Q(name__in = [
-            'lx:ogtt75-1hr:threshold:180',
-            'lx:ogtt75-1hr:threshold:200',
-            'lx:ogtt75-2hr:threshold:155',
-            'lx:ogtt75-2hr:threshold:200',
-            'lx:ogtt75-30min:threshold:200',
-            'lx:ogtt75-90min:threshold:180',
-            'lx:ogtt75-90min:threshold:200',
-            'lx:ogtt75-fasting:threshold:126',
-            'lx:ogtt75-fasting:threshold:95',
+            'lx:ogtt75-1hr:threshold:gte:180',
+            'lx:ogtt75-1hr:threshold:gte:200',
+            'lx:ogtt75-2hr:threshold:gte:155',
+            'lx:ogtt75-2hr:threshold:gte:200',
+            'lx:ogtt75-30min:threshold:gte:200',
+            'lx:ogtt75-90min:threshold:gte:180',
+            'lx:ogtt75-90min:threshold:gte:200',
+            'lx:ogtt75-fasting:threshold:gte:126',
+            'lx:ogtt75-fasting:threshold:gte:95',
             ])
         ogtt75_igt_q = Q(name__in = [
             'lx:ogtt75-1hr:range:gte:140:lte:200',
@@ -816,10 +818,8 @@ class GestationalDiabetesReport(Report):
             'lx:ogtt75-30min:range:gte:140:lte:200',
             'lx:ogtt75-90min:range:gte:141:lte:200',
             ])
-        ogtt75_ifg_q = Q(event_type__name = 'lx:ogtt75-fasting:range:gte:100:lte:125')
+        ogtt75_ifg_q = Q(name='lx:ogtt75-fasting:range:gte:100:lte:125')
         ogtt100_q = Q(name__startswith='lx:ogtt100')
-        ogtt100_threshold_q = Q(name__in = [
-            ])
         order_q = Q(name__endswith=':order')
         any_q = Q(name__endswith=':any-result')
         dxgdm_q = Q(name='dx:gestational-diabetes')
@@ -838,7 +838,7 @@ class GestationalDiabetesReport(Report):
         #log_query('patient_qs', patient_qs)
         patient_pks = set()
         patient_pks.update( Event.objects.filter(name='dx:gestational-diabetes').values_list('patient', flat=True) )
-        patient_pks.update( Timespan.objects.filter(name='pregnancy').values_list('patient', flat=True))
+        patient_pks.update( Timespan.objects.filter(name__startswith='pregnancy').values_list('patient', flat=True))
         counter = 0
         #total = patient_qs.count()
         total = len(patient_pks)
@@ -847,10 +847,10 @@ class GestationalDiabetesReport(Report):
             log.info('Reporting on patient %8s / %s' % (counter, total))
             patient = Patient.objects.get(pk=ppk)
             event_qs = Event.objects.filter(patient=patient)
-            preg_ts_qs = Timespan.objects.filter(name='pregnancy', patient=patient)
-            gdm_case_qs = Case.objects.filter(condition='diabetes_gestational', patient=patient)
-            frank_dm_case_qs = Case.objects.filter(condition__startswith='diabetes_type_', patient=patient).order_by('date')
-            a1c_lab_qs = AbstractLabTest.objects.get(name='a1c').lab_results.filter(patient=patient).filter(patient=patient)
+            preg_ts_qs = Timespan.objects.filter(name__startswith='pregnancy:', patient=patient)
+            gdm_case_qs = Case.objects.filter(condition='diabetes:gestational', patient=patient)
+            frank_dm_case_qs = Case.objects.filter(condition__startswith='diabetes:type-', patient=patient).order_by('date')
+            a1c_lab_qs = AbstractLabTest('a1c').lab_results.filter(patient=patient)
             #
             # Populate values that will be used all of this patient's pregnancies
             #
@@ -1075,6 +1075,7 @@ class GestationalDiabetesReport(Report):
                         }
                 values.update(patient_values)
                 writer.writerow(values)
+        log.info('Completed GDM report')
 
 
 class BaseDiabetesReport(Report):
@@ -1326,7 +1327,7 @@ class BaseDiabetesReport(Report):
 
 class FrankDiabetesReport(BaseDiabetesReport):
     
-    short_name = 'diabetes:frank-diabetes'
+    short_name = 'diabetes:frank'
 
     def run(self):
         #-------------------------------------------------------------------------------
@@ -1576,6 +1577,7 @@ class PrediabetesReport(BaseDiabetesReport):
 diabetes_definition = Diabetes()
 frank_report = FrankDiabetesReport()
 pre_report = PrediabetesReport()
+gestational_report = GestationalDiabetesReport()
 
 def event_heuristics():
     return diabetes_definition.event_heuristics
@@ -1590,4 +1592,5 @@ def reports():
     return [
         frank_report,
         pre_report,
+        gestational_report,
         ]
