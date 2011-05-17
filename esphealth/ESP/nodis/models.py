@@ -1725,24 +1725,24 @@ class Case(models.Model):
         return labs
     reportable_labs = property(__get_reportable_labs)
     
-    def __get_reportable_icd9s(self):
-        icd9_objs = Condition.get_condition(self.condition).icd9s
-        icd9_objs |= Icd9.objects.filter(reportableicd9__condition=self.condition_config).distinct()
-        return icd9_objs
-    reportable_icd9s = property(__get_reportable_icd9s)
+    @property
+    def reportable_icd9s(self):
+        return Icd9.objects.filter(encounter__in=self.reportable_encounters)
     
-    def __get_reportable_encounters(self):
+    @property
+    def reportable_encounters(self):
+        icd9_qs = Condition.get_condition(self.condition).icd9s
+        icd9_qs |= Icd9.objects.filter(reportableicd9__condition=self.condition_config).distinct()
         q_obj = Q(patient=self.patient)
-        q_obj &= Q(icd9_codes__in=self.reportable_icd9s)
+        q_obj &= Q(icd9_codes__in=icd9_qs)
         conf = self.condition_config
-        start = self.date - datetime.timedelta(days=conf.icd9_days_before)
-        end = self.date + datetime.timedelta(days=conf.icd9_days_after)
+        start = self.date - relativedelta(days=conf.icd9_days_before)
+        end = self.date + relativedelta(days=conf.icd9_days_after)
         q_obj &= Q(date__gte=start)
         q_obj &= Q(date__lte=end)
         encs = Encounter.objects.filter(q_obj)
         log_query('Encounters for %s' % self, encs)
         return encs
-    reportable_encounters = property(__get_reportable_encounters)
     
     def __get_reportable_prescriptions(self):
         conf = self.condition_config
