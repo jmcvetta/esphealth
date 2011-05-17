@@ -375,36 +375,49 @@ class ProviderLoader(BaseLoader):
         ]
     
     def load_row(self, row):
+        #
+        # Sanity checks
+        #
         if not ''.join([i[1] for i in row.items()]): # Concatenate all fields
             log.debug('Empty row encountered -- skipping')
             return
         pin = row['provider_id_num']
         if not pin:
             raise LoadException('Record has blank provider_id_num, which is required')
-        p, created = Provider.objects.get_or_create(
-            provider_id_num = pin,
-            defaults = {
-                'provenance': self.provenance,
-                },
-            )
-        p.provenance = self.provenance
-        p.updated_by = UPDATED_BY
-        p.last_name = unicode(row['last_name'])
-        p.first_name = unicode(row['first_name'])
-        p.middle_name = unicode(row['middle_name'])
-        p.title = row['title']
-        p.dept_id_num = row['dept_id_num']
-        p.dept = row['dept']
-        p.dept_address_1 = row['dept_address_1']
-        p.dept_address_2 = row['dept_address_2']
-        p.dept_city = row['dept_city']
-        p.dept_state = row['dept_state']
-        p.dept_zip = row['dept_zip']
-        p.area_code = row['area_code']
-        p.telephone = row['telephone']
-        p.save()
+        #
+        # Utility methods
+        #
+        cap = self.capitalize
+        son = self.string_or_none
+        daton = self.date_or_none
+        decon = self.decimal_or_none
+        #
+        # Populate field values
+        #
+        values = {
+            'provider_id_num': pin,
+            'provenance': self.provenance,
+            'last_name': son(row['last_name']),
+            'first_name': son(row['first_name']),
+            'middle_name': son(row['middle_name']),
+            'title': son(row['title']),
+            'dept_id_num': son(row['dept_id_num']),
+            'dept': son(row['dept']),
+            'dept_address_1': son(row['dept_address_1']),
+            'dept_address_2': son(row['dept_address_2']),
+            'dept_city': son(row['dept_city']),
+            'dept_state': son(row['dept_state']),
+            'dept_zip': son(row['dept_zip']),
+            'area_code': son(row['area_code']),
+            'telephone': son(row['telephone']),
+            }
+        #
+        # Create Provider object
+        #
+        p, created = self.insert_or_update(Provider, values, ['provider_id_num'])
         self._provider_cache[pin] = p
         log.debug('Saved provider object: %s' % p)
+        return p
 
 
 
@@ -450,46 +463,54 @@ class PatientLoader(BaseLoader):
                 field = None
         
     def load_row(self, row):
-        p = self.get_patient(row['patient_id_num'])
-        p, created = Patient.objects.get_or_create(
-            patient_id_num = row['patient_id_num'],
-            defaults = {
-                'provenance': self.provenance,
-                }
-            )
-        field_map = {
-            p.mrn: 'mrn',
-            p.last_name: 'last_name',
-            p.first_name: 'first_name',
-            p.middle_name: 'middle_name',
-            p.address1: 'address1',
-            p.address2: 'address2',
-            p.city: 'city',
-            p.state: 'state',
-            p.zip: 'zip',
-            p.country: 'country',
-            p.areacode: 'areacode',
-            p.tel: 'tel',
-            p.tel_ext: 'tel_ext',
-            p.gender: 'gender',
-            p.race: 'race',
-            p.home_language: 'home_language',
-            p.ssn: 'ssn',
-            p.marital_stat: 'marital_stat',
-            p.religion: 'religion',
-            p.aliases: 'aliases',
-            p.mother_mrn: 'mother_mrn',
+        id_num = row['patient_id_num']
+        if not id_num:
+            raise LoadException('Record has blank patient_id_num, which is required')
+        #
+        # Utility methods
+        #
+        cap = self.capitalize
+        son = self.string_or_none
+        daton = self.date_or_none
+        decon = self.decimal_or_none
+        #
+        # Field values
+        #
+        values = {
+            'patient_id_num': id_num,
+            'pcp': self.get_provider(row['provider_id_num']),
+            'provenance': self.provenance,
+            'updated_by': UPDATED_BY,
+            'date_of_birth': daton(row['date_of_birth']),
+            'date_of_death': daton(row['date_of_death']),
+            'mrn': son(row['mrn']),
+            'last_name': son(row['last_name']),
+            'first_name': son(row['first_name']),
+            'middle_name': son(row['middle_name']),
+            'address1': son(row['address1']),
+            'address2': son(row['address2']),
+            'city': son(row['city']),
+            'state': son(row['state']),
+            'zip': son(row['zip']),
+            'country': son(row['country']),
+            'areacode': son(row['areacode']),
+            'tel': son(row['tel']),
+            'tel_ext': son(row['tel_ext']),
+            'gender': son(row['gender']),
+            'race': son(row['race']),
+            'home_language': son(row['home_language']),
+            'ssn': son(row['ssn']),
+            'marital_stat': son(row['marital_stat']),
+            'religion': son(row['religion']),
+            'aliases': son(row['aliases']),
+            'mother_mrn': son(row['mother_mrn']),
             }
-        self.populate_from_row(field_map, row)
-        p.provenance = self.provenance
-        p.updated_by = UPDATED_BY
-        p.pcp = self.get_provider(row['provider_id_num'])
+        p, created = self.insert_or_update(Provider, values, ['provider_id_num'])
         p.zip5 = p._calculate_zip5()
-        p.date_of_birth = self.date_or_none(row['date_of_birth'])
-        p.date_of_death = self.date_or_none(row['date_of_death'])
         p.save()
-        self._patient_cache[p.patient_id_num] = p
+        self._patient_cache[id_num] = p
         log.debug('Saved patient object: %s' % p)
+        return p
         
 
 class LabResultLoader(BaseLoader):
