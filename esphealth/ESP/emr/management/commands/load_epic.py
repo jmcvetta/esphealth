@@ -480,7 +480,6 @@ class PatientLoader(BaseLoader):
             'patient_id_num': id_num,
             'pcp': self.get_provider(row['provider_id_num']),
             'provenance': self.provenance,
-            'updated_by': UPDATED_BY,
             'date_of_birth': daton(row['date_of_birth']),
             'date_of_death': daton(row['date_of_death']),
             'mrn': son(row['mrn']),
@@ -505,7 +504,7 @@ class PatientLoader(BaseLoader):
             'aliases': son(row['aliases']),
             'mother_mrn': son(row['mother_mrn']),
             }
-        p, created = self.insert_or_update(Provider, values, ['provider_id_num'])
+        p, created = self.insert_or_update(Patient, values, ['patient_id_num'])
         p.zip5 = p._calculate_zip5()
         p.save()
         self._patient_cache[id_num] = p
