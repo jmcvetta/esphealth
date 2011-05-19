@@ -1084,6 +1084,22 @@ class BaseDiabetesReport(Report):
     Base class for diabetes reports, containing various convenience methods.
     '''
     
+    @property
+    def YEARS(self):
+        #return range(Diabetes.FIRST_YEAR, datetime.datetime.now().year + 1)
+        return range(Diabetes.FIRST_YEAR, 2011) # Until data update
+    
+    def _sanitize_string_values(self, dictionary):
+        '''
+        Sanitizes string-like values in a dictionary using smart_str()
+        '''
+        for key in dictionary:
+            value = dictionary[key]
+            if type(value) in [str, unicode]:
+                sanitized_value = smart_str(value)
+                dictionary[key] = sanitized_value
+        return dictionary
+    
     def _vqs_to_pfv(self, vqs, field):
         '''
         Adds a ValuesQuerySet, which must include both 'patient' and 'value' 
@@ -1254,7 +1270,20 @@ class BaseDiabetesReport(Report):
             field = '%s--max--%s' % (name, year)
             self.FIELDS.append(field)
             vqs = LabResult.objects.filter(patient__in=self.patient_qs, 
-                tags__event_name__in=event_names).values('patient').annotate(value=Max('result_float'))
+                tags__event_name__in=event_names,
+                date__year=year).values('patient').annotate(value=Max('result_float'))
+            log.info('Collecting aggregate data for %s' % field)
+            log_query(field, vqs)
+            self._vqs_to_pfv(vqs, field)
+    
+    def _max_bmi(self):
+        log.info('Querying yearly BMI maximums')
+        for year in self.YEARS:
+            field = 'bmi--max--%s' % year
+            self.FIELDS.append(field)
+            vqs = Encounter.objects.filter(patient__in=self.patient_qs, 
+                bmi__isnull=False, 
+                date__year=year).values('patient').annotate(value=Max('bmi'))
             log.info('Collecting aggregate data for %s' % field)
             log_query(field, vqs)
             self._vqs_to_pfv(vqs, field)
@@ -1280,7 +1309,7 @@ class BaseDiabetesReport(Report):
         self.FIELDS.append('pregnancy_edd--1')
         self.FIELDS.append('pregnancy_edd--2')
         self.FIELDS.append('pregnancy_edd--3')
-        preg_timespan_qs = Timespan.objects.filter(name='pregnancy', pattern__in=('EDD', 'ICD9_EOP'))
+        preg_timespan_qs = Timespan.objects.filter(name__startswith='pregnancy')
         preg_timespan_qs = preg_timespan_qs.filter(patient__in=self.patient_qs)
         preg_timespan_qs = preg_timespan_qs.order_by('patient', '-end_date')
         vqs = preg_timespan_qs.values('patient', 'end_date').distinct()
@@ -1314,6 +1343,7 @@ class BaseDiabetesReport(Report):
         self.FIELDS.append('case_date')
         vqs = Case.objects.filter(patient__in=self.patient_qs,
             condition__in=Diabetes.DIABETES_CONDITIONS).values('patient', 'id', 'condition', 'date')
+        vqs = vqs.order_by('date')
         log_query('Diabetes cases', vqs)
         log.info('Collecting diabetes case data')
         for item in vqs:
@@ -1350,14 +1380,13 @@ class FrankDiabetesReport(BaseDiabetesReport):
         # Any patient with at least one of these events is included in report
         linelist_patient_criteria_once = [
             'dx:diabetes:all-types',
-            'dx:diabetes-all-types',
             'rx:insulin',
-            'lx:a1c:threshold:6.5',
-            'lx:glucose-fasting:threshold:126',
+            'lx:a1c:threshold:gte:6.5',
+            'lx:glucose-fasting:threshold:gte:126',
             ] + Diabetes.ORAL_HYPOGLYCAEMICS
         # FIXME: Only item in this list should be 'random glucose >= 200', which is not yet implemented
         linelist_patient_criteria_twice = [
-            'lx:glucose-random:threshold:200',
+            'lx:glucose-random:threshold:gte:200',
             ]
         #-------------------------------------------------------------------------------
         #
@@ -1365,15 +1394,15 @@ class FrankDiabetesReport(BaseDiabetesReport):
         #
         #-------------------------------------------------------------------------------
         log.info('Generating patient line list report for frank diabetes')
-        self.YEARS = range(Diabetes.FIRST_YEAR, datetime.datetime.now().year + 1)
         self.FIELDS = list(demographic_fields)
         #
         # Determine list of patients to be reported, and Populate self.patient_field_values 
         # with all patient PKs.
         #
-        self.patient_qs = Patient.objects.filter(event__name__in=linelist_patient_criteria_once)
-        self.patient_qs |= Patient.objects.filter(case__condition__in=Diabetes.DIABETES_CONDITIONS)
-        self.patient_qs = self.patient_qs.distinct()
+        self.patient_qs = Patient.objects.filter(
+            Q(event__name__in=linelist_patient_criteria_once) 
+            | Q(case__condition__in=Diabetes.DIABETES_CONDITIONS)
+            ).distinct()
         log.info('Collecting list of patients for report')
         log_query('Patients to report', self.patient_qs)
         log.info('Reporting on %s patients' % self.patient_qs.count())
@@ -1383,6 +1412,8 @@ class FrankDiabetesReport(BaseDiabetesReport):
         #
         # Collect data
         #
+        self._recent_pregnancies()
+        self._max_bmi()
         self._yearly_max(test_list = [
             'a1c',
             'glucose-fasting',
@@ -1396,7 +1427,6 @@ class FrankDiabetesReport(BaseDiabetesReport):
             ])
         self._blood_pressure()
         #
-        self._recent_pregnancies()
         self._diabetes_case()
         self._recent_rx(event_name_list = [
             'rx:metformin',
@@ -1430,11 +1460,7 @@ class FrankDiabetesReport(BaseDiabetesReport):
                 'mrn': patient.mrn,
                 }
             values.update(self.patient_field_values[patient.pk])
-            #
-            # Sanitize strings
-            #
-            for key in values:
-                values[key] = smart_str(values[key])
+            values = self._sanitize_string_values(values)
             #
             # Write CSV
             #
@@ -1479,7 +1505,6 @@ class PrediabetesReport(BaseDiabetesReport):
             'date_of_birth', 
             'gender', 
             'race', 
-            'bmi',
             'zip', 
             ]
         #-------------------------------------------------------------------------------
@@ -1488,7 +1513,6 @@ class PrediabetesReport(BaseDiabetesReport):
         #
         #-------------------------------------------------------------------------------
         log.info('Generating patient line list report for prediabetes')
-        self.YEARS = range(Diabetes.FIRST_YEAR, datetime.datetime.now().year + 1)
         self.FIELDS = list(demographic_fields)
         #
         # Determine list of patients to be reported, and Populate self.patient_field_values 
@@ -1505,6 +1529,7 @@ class PrediabetesReport(BaseDiabetesReport):
         #
         # Collect data
         #
+        self._max_bmi()
         self._diabetes_case()
         self._yearly_max(test_list=[
             'a1c',
@@ -1556,11 +1581,7 @@ class PrediabetesReport(BaseDiabetesReport):
                 'mrn': patient.mrn,
                 }
             values.update(self.patient_field_values[patient.pk])
-            #
-            # Sanitize strings
-            #
-            for key in values:
-                values[key] = smart_str(values[key])
+            values = self._sanitize_string_values(values)
             #
             # Write CSV
             #
