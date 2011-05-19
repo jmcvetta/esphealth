@@ -96,8 +96,8 @@ def log_query(purpose, qs):
     except: # Sometimes Django produces invalid SQL
         log.debug('Invalid SQL produced by qs.query -- unable to pretty print')
         formatted = sql
-    log.debug(purpose)
     log.debug(formatted)
+    log.debug(purpose)
 
 
 filenlist = ['epicmem.esp.','epicpro.esp.','epicvis.esp.','epicord.esp.','epicres.esp.','epicmed.esp.','epicimm.esp.']
