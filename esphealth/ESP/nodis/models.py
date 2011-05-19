@@ -118,12 +118,17 @@ class Case(models.Model):
     '''
     A case of (reportable) disease
     '''
-    patient = models.ForeignKey(Patient, blank=False)
-    condition = models.TextField('Common English name for this medical condition', blank=False, db_index=True)
-    provider = models.ForeignKey(Provider, blank=False)
+    condition = models.CharField('Common English name for this medical condition', 
+        max_length=255, blank=False, db_index=True)
     date = models.DateField(blank=False, db_index=True)
-    source = models.TextField('What created this case?', blank=False)
-    status = models.TextField('Case status', blank=False, choices=STATUS_CHOICES, default='AR') # Is it sensible to have default here?
+    patient = models.ForeignKey(Patient, blank=False)
+    provider = models.ForeignKey(Provider, blank=False)
+    criteria = models.CharField('Criteria on which case was diagnosed', 
+        max_length=255, blank=True, null=True, db_index=True)
+    source = models.CharField('What algorithm created this case?', 
+        max_length=255, blank=False)
+    status = models.CharField('Case status', max_length=32, 
+        blank=False, choices=STATUS_CHOICES, default='AR')
     notes = models.TextField(blank=True, null=True)
     # Timestamps:
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
