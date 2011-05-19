@@ -114,6 +114,10 @@ class Diabetes(DiseaseDefinition):
             # Auto-antibodies
             ('gad65', 'gt', 1),
             ('ica512', 'gt', 0.8),
+            # A1C
+            ('a1c', 'gte', 6.5),
+            # C-Peptide
+            ('c-peptide', 'lte', 1),
             ]:
             h = LabResultFixedThresholdHeuristic(
                 test_name = test_name,
@@ -208,6 +212,7 @@ class Diabetes(DiseaseDefinition):
             'pioglitazone',
             'acetone',
             'glucagon',
+            'miglitol',
             ]:
             h = PrescriptionHeuristic(
                 name = drug.replace(' ', '-'),
@@ -249,12 +254,6 @@ class Diabetes(DiseaseDefinition):
             test_name = 'islet-cell-antibody',
             titer_dilution = 4, # 1:4 titer
             ) )
-        heuristics.append( LabResultFixedThresholdHeuristic(
-            test_name = 'c-peptide',
-            date_field = 'result',
-            threshold = Decimal(str(1)),
-            match_type = 'gt',
-            ) )
         return heuristics
     
     @property
@@ -269,29 +268,42 @@ class Diabetes(DiseaseDefinition):
     FIRST_YEAR = 2006
     DIABETES_CONDITIONS = ['diabetes:type-1', 'diabetes:type-2']
     ORAL_HYPOGLYCAEMICS = [
-        'rx:pramlintide',
-        'rx:exenatide',
-        'rx:sitagliptin',
-        'rx:meglitinide',
-        'rx:nateglinide',
-        'rx:repaglinide',
-        'rx:glimepiride',
-        'rx:glipizide',
-        'rx:gliclazide',
-        'rx:glyburide',
         'rx:metformin',
-        'rx:rosiglitizone',
+        'rx:glyburide',
+        'rx:gliclazide',
+        'rx:glipizide',
+        'rx:glimepiride',
         'rx:pioglitazone',
+        'rx:rosiglitizone',
+        'rx:repaglinide',
+        'rx:nateglinide',
+        'rx:meglitinide',
+        'rx:sitagliptin',
+        'rx:exenatide',
+        'rx:pramlintide',
+        'rx:miglitol'
         ]
     # If a patient has one of these events, he has frank diabetes
     FRANK_DM_ONCE = [
         'lx:a1c:threshold:6.5',
         'lx:glucose-fasting:threshold:126',
-        ] + ORAL_HYPOGLYCAEMICS
+        'rx:glyburide',
+        'rx:gliclazide',
+        'rx:glipizide',
+        'rx:glimepiride',
+        'rx:pioglitazone',
+        'rx:rosiglitizone',
+        'rx:repaglinide',
+        'rx:nateglinide',
+        'rx:meglitinide',
+        'rx:sitagliptin',
+        'rx:exenatide',
+        'rx:pramlintide',
+        ]
     # If a patient has one of these events twice, he has frank diabetes
     FRANK_DM_TWICE = [
-        'dx:diabetes:all-types',
         'lx:glucose-random:threshold:200'
+        'dx:diabetes:all-types',
         ]
     FRANK_DM_ALL = FRANK_DM_ONCE + FRANK_DM_TWICE
     AUTO_ANTIBODIES_LABS = [
@@ -393,40 +405,25 @@ class Diabetes(DiseaseDefinition):
             )
         trigger_events = trigger_events.order_by('date')
         condition = None
+        criteria = None
         provider = None
         case_date = None
         case_events = None
         patient_events = Event.objects.filter(patient=patient)
-        #===============================================================================
-        #
-        # Patient ever prescribed insulin?
-        #
-        #-------------------------------------------------------------------------------
-        insulin_rx = patient_events.filter(name='rx:insulin')
-        if not insulin_rx:
-            provider = trigger_events[0].provider
-            log.debug('No insulin Rx ever: Type 2')
-            condition = 'diabetes:type-2'
         
         #===============================================================================
         #
         # C-peptide test done?
         #
         #-------------------------------------------------------------------------------
-        c_peptide_lx_thresh = patient_events.filter(name='lx:c-peptide:threshold:1:result-date').order_by('date')
-        c_peptide_lx_any = patient_events.filter(name='lx:c-peptide:any-result').order_by('date')
+        c_peptide_lx_thresh = patient_events.filter(name='lx:c-peptide:threshold:lte:1').order_by('date')
         if c_peptide_lx_thresh:
             provider = c_peptide_lx_thresh[0].provider
             case_date = c_peptide_lx_thresh[0].date
             case_events = trigger_events | c_peptide_lx_thresh
-            log.debug('C-Peptide result above threshold: Type 2')
+            criteria = 'C-Peptide result below threshold: Type 1'
             condition = 'diabetes:type-2'
-        if c_peptide_lx_any: # Test was done, but result is below threshold
-            provider = c_peptide_lx_any[0].provider
-            case_date = c_peptide_lx_any[0].date
-            case_events = trigger_events | c_peptide_lx_any
-            log.debug('C-Peptide result below threshold: Type 1')
-            condition = 'diabetes:type-1'
+            log.debug(criteria)
         
         #===============================================================================
         #
@@ -434,21 +431,14 @@ class Diabetes(DiseaseDefinition):
         #
         #-------------------------------------------------------------------------------
         pos_aa_event_types = ['%s:positive' % i for i in self.AUTO_ANTIBODIES_LABS]
-        neg_aa_event_types = ['%s:negative' % i for i in self.AUTO_ANTIBODIES_LABS]
         aa_pos = patient_events.filter(name__in=pos_aa_event_types).order_by('date')
-        aa_neg = patient_events.filter(name__in=neg_aa_event_types).order_by('date')
         if aa_pos:
             provider = aa_pos[0].provider
             case_date = aa_pos[0].date
             events = trigger_events | aa_pos
-            log.debug('Diabetes auto-antibodies positive: Type 1')
+            criteria = 'Diabetes auto-antibodies positive: Type 1'
             condition = 'diabetes:type-1'
-        if aa_neg:
-            provider = aa_neg[0].provider
-            case_date = aa_neg[0].date
-            events = trigger_events | aa_neg
-            log.debug('Diabetes auto-antibodies negative: Type 2')
-            condition = 'diabetes:type-2'
+            log.debug(criteria)
         
         #===============================================================================
         #
@@ -460,8 +450,9 @@ class Diabetes(DiseaseDefinition):
             provider = acetone_rx[0].provider
             case_date = acetone_rx[0].date
             case_events = trigger_events | acetone_rx
-            log.debug('Acetone Rx: Type 1')
+            criteria = 'Acetone Rx: Type 1'
             condition = 'diabetes:type-1'
+            log.debug(criteria)
             
         #===============================================================================
         #
@@ -473,60 +464,55 @@ class Diabetes(DiseaseDefinition):
             provider = glucagon_rx[0].provider
             case_date = glucagon_rx[0].date
             case_events = trigger_events | glucagon_rx
-            log.debug('Glucagon Rx: Type 1')
+            criteria = 'Glucagon Rx: Type 1'
             condition = 'diabetes:type-1'
+            log.debug(criteria)
         
         #===============================================================================
         #
-        # Patient ever prescribed any oral hypoglycaemics?
+        # Ratio of type 1 : type 2 ICD9s >50% and never prescribed oral hypoglycemic 
+        # medications
         #
         #-------------------------------------------------------------------------------
         oral_hypoglycaemic_rx = patient_events.filter(name__in=self.ORAL_HYPOGLYCAEMICS).order_by('date')
-        if oral_hypoglycaemic_rx:
-            provider = oral_hypoglycaemic_rx[0].provider
-            case_date = oral_hypoglycaemic_rx[0].date
-            case_events = trigger_events | oral_hypoglycaemic_rx
-            log.debug('Oral hypoglycaemic Rx: Type 2')
-            condition = 'diabetes:type-2'
-        
+        if not oral_hypoglycaemic_rx:
+            type_1_dx = patient_events.filter(name__startswith='dx:diabetes:type-1')
+            type_2_dx = patient_events.filter(name__startswith='dx:diabetes:type-2')
+            count_1 = type_1_dx.count()
+            count_2 = type_2_dx.count()
+            # Is there a less convoluted way to express this and still avoid divide-by-zero errors?
+            if (count_1 and not count_2) or ( count_2 and ( ( count_1 / count_2 ) > 0.5 ) ):
+                provider = trigger_events[0].provider
+                case_date = trigger_events[0].date
+                case_events = trigger_events | type_1_dx
+                criteria = 'More than 50% of ICD9s: Type 1'
+                condition = 'diabetes:type-1'
+                log.debug(criteria)
+                
         #===============================================================================
         #
-        # >50% OF ICD9s in record for type 1?
+        # No Type 1 criteria met, therefore Type 2
         #
         #-------------------------------------------------------------------------------
-        type_1_dx = patient_events.filter(name__startswith='dx:diabetes:type-1')
-        type_2_dx = patient_events.filter(name__startswith='dx:diabetes:type-2')
-        count_1 = type_1_dx.count()
-        count_2 = type_2_dx.count()
-        # Is there a less convoluted way to express this and still avoid divide-by-zero errors?
-        if (count_1 and not count_2):
-            provider = trigger_events[0].provider
-            case_date = trigger_events[0].date
-            case_events = trigger_events | type_1_dx
-            log.debug('More than 50% of ICD9s: Type 1')
-            condition = 'diabetes:type-1'
-        elif count_2 and ( ( count_1 / count_2 ) > 0.5 ):
-            provider = trigger_events[0].provider
-            case_date = trigger_events[0].date
-            case_events = trigger_events | type_1_dx
-            log.debug('More than 50% of ICD9s: Type 1')
-            condition = 'diabetes:type-1'
-        else:
-            provider = trigger_events[0].provider
-            case_date = trigger_events[0].date
-            case_events = trigger_events | type_2_dx
-            log.debug('Less than 50% of ICD9s: Type 2')
-            condition = 'diabetes:type-2'
+        provider = trigger_events[0].provider
+        case_date = trigger_events[0].date
+        case_events = trigger_events | type_2_dx
+        criteria = 'No Type 1 criteria met: Type 2'
+        condition = 'diabetes:type-2'
+        log.debug(criteria)
         #-------------------------------------------------------------------------------
         #
         # Generate new case
         #
         #-------------------------------------------------------------------------------
+        assert condition # Sanity check
+        assert criteria # Sanity check
         new_case = Case(
             patient = patient,
             provider = provider,
             date = case_date,
             condition =  condition,
+            criteria = criteria,
             source = self.uri,
             )
         new_case.save()
@@ -1009,7 +995,7 @@ class GestationalDiabetesReport(Report):
                     gdm_date = gdm_this_preg[0].date
                 else:
                     gdm_date = None
-                early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate(max=Max('result_float'))['max'],
+                early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate( max=Max('result_float') )['max'],
                 late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max'],
                 if riskscape:
                     bmi_value = None
@@ -1352,6 +1338,46 @@ class BaseDiabetesReport(Report):
             field_values['diabetes_type'] = item['condition']
             field_values['case_date'] = item['date']
             
+    def _first_cases(self, conditions=[], count=1, criteria=False):
+        log.info('Collecting case data')
+        assert conditions # Sanity check
+        for num in range(1, count+1):
+            self.FIELDS.append('case--%s--date' % num)
+            self.FIELDS.append('case--%s--condition' % num)
+            self.FIELDS.append('case--%s--id' % num)
+            if criteria:
+                self.FIELDS.append('case--%s--criteria' % num)
+        case_qs = Case.objects.all()
+        case_qs = case_qs.filter(patient__in=self.patient_qs)
+        case_qs = case_qs.filter(condition__in=conditions)
+        vqs = case_qs.values('patient', 'id', 'condition', 'criteria', 'date')
+        vqs = vqs.order_by('patient', 'date')
+        log_query('First cases for %s' % conditions, vqs)
+        last_patient = None
+        ordinal = 0
+        for item in vqs:
+            patient = item['patient']
+            if not patient == last_patient:
+                last_patient = patient
+                ordinal = 0
+            ordinal += 1
+            if ordinal > count:
+                continue
+            field_values = self.patient_field_values[patient]
+            date_field = 'case--%s--date' % ordinal
+            condition_field = 'case--%s--condition' % ordinal
+            id_field = 'case--%s--id' % ordinal
+            criteria_field = 'case--%s--criteria' % ordinal
+            field_values[date_field] = item['date']
+            field_values[condition_field] = item['condition']
+            field_values[id_field] = item['id']
+            if criteria:
+                field_values[criteria_field] = item['criteria']
+            log.debug('Added fields & values for: %s' % item)
+            
+            
+        
+            
 
 
 
@@ -1412,6 +1438,7 @@ class FrankDiabetesReport(BaseDiabetesReport):
         #
         # Collect data
         #
+        self._first_cases(conditions=['diabetes:type-1', 'diabetes:type-2'], count=1, criteria=True)
         self._recent_pregnancies()
         self._max_bmi()
         self._yearly_max(test_list = [
@@ -1427,7 +1454,6 @@ class FrankDiabetesReport(BaseDiabetesReport):
             ])
         self._blood_pressure()
         #
-        self._diabetes_case()
         self._recent_rx(event_name_list = [
             'rx:metformin',
             'rx:insulin',
@@ -1529,6 +1555,9 @@ class PrediabetesReport(BaseDiabetesReport):
         #
         # Collect data
         #
+        self._first_cases(conditions=['diabetes:prediabetes'], count=1)
+        self._first_cases(conditions=['diabetes:gestational'], count=2)
+        return
         self._max_bmi()
         self._diabetes_case()
         self._yearly_max(test_list=[
