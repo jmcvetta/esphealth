@@ -1570,7 +1570,6 @@ class PrediabetesReport(BaseDiabetesReport):
         #
         self._first_cases(conditions=['diabetes:prediabetes'], count=1)
         self._first_cases(conditions=['diabetes:gestational'], count=2)
-        return
         self._max_bmi()
         self._diabetes_case()
         self._yearly_max(test_list=[
