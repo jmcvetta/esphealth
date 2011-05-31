@@ -119,7 +119,8 @@ prescription_counter = RecordCounter(
 
 
 def main():
-    parser = optparse.OptionParser()
+    usage = 'usage: %prog [options] folder'
+    parser = optparse.OptionParser(usage=usage)
     parser.add_option("-d", "--detail", dest="detail", action='store_true', default=False,
                   help="Output detailed information")
     (options, args) = parser.parse_args()
