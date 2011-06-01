@@ -634,9 +634,7 @@ class hl7Batch:
             self.addSimple(sps,'L','CE.6') # loinc code --- why??
             obr15.appendChild(sps)
             obr.appendChild(obr15)
-            #
-            #
-            if lxRec.status:
+            if lxRec.status.lower() in ['final', 'corrected']:
                 status='F'
             else:
                 status='P'
