@@ -413,7 +413,7 @@ _levels = {
     'error': logging.ERROR,
     'critical': logging.CRITICAL,
     }
-LOG_FILE = '/var/log/esp' # Used only if LOG_LEVEL_FILE != None
+LOG_FILE = config['Logging']['log_file'] # Used only if LOG_LEVEL_FILE != None
 LOG_FORMAT_CONSOLE = config['Logging']['log_format_console']
 LOG_FORMAT_FILE = config['Logging']['log_format_file']
 LOG_FORMAT_SYSLOG = config['Logging']['log_format_syslog']
