@@ -64,12 +64,15 @@ from django.template.loader import get_template
 from django.core.management.base import BaseCommand
 
 from ESP.static.models import Icd9
+
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
+
+from ESP.hef.models import Event
 
 from ESP.nodis import defs # Not sure if this is necessary
 from ESP.nodis.models import Condition
@@ -248,7 +251,6 @@ class hl7Batch:
             nkindx=nkindx+1
             orus2.appendChild(p)
         ##Clinical information
-        lxobjs = case.reportable_labs.order_by('order_num')
         orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
         orus.appendChild(orcs)
         icd9_codes = case.reportable_icd9s
@@ -257,26 +259,30 @@ class hl7Batch:
             rx=rxobjs[0]
         else:
             rx = None
-        if len(lxobjs):
-            lx =lxobjs[0]
+        reportable_labs = case.reportable_labs.order_by('order_num')
+        if len(reportable_labs):
+            lx = reportable_labs[0]
         else:
             lx = None
         self.addCaseOBX(demog=patient, orcs=orcs, icd9=icd9_codes, lx=lx, rx=rx,
             encounters=case.reportable_encounters, condition=case.condition, casenote=case.notes,
             caseid=case.pk)
-        totallxs = list(lxobjs)
         ##need check if any Gonorrhea test for Chlamydia
         if case.condition == 'chlamydia':
-            genorlxs =self.getOtherLxs('gonorrhea', patient, lx)
-            totallxs = totallxs + list(genorlxs)
+            gon_events = Event.objects.filter(name='gonorrhea:positive', patient=patient)
+            gon_labs = LabResult.objects.filter(event__in=gon_events)
+            reportable_labs |= gon_labs
+            reportable_labs = reportable_labs.distinct()
         elif case.condition == 'gonorrhea':
-            genorlxs =self.getOtherLxs('chlamydia', patient, lx)
-            totallxs = totallxs + list(genorlxs)
-        cleanlxids = self.removeDuplicateLx(totallxs)
-        totallxs = LabResult.objects.filter(pk__in=cleanlxids).order_by('order_num')
-        self.addLXOBX(lxRecList=totallxs, orus=orus,condition=case.condition)
+            chlam_events = Event.objects.filter(name='chlamydia:positive', patient=patient)
+            chlam_labs = LabResult.objects.filter(event__in=chlam_events)
+            reportable_labs |= chlam_labs
+            reportable_labs = reportable_labs.distinct()
+        #cleanlxids = self.removeDuplicateLx(totallxs)
+        #totallxs = LabResult.objects.filter(pk__in=cleanlxids).order_by('order_num')
+        self.addLXOBX(lxRecList=reportable_labs, orus=orus,condition=case.condition)
         self.addRXOBX(rxRecList=rxobjs, orus=orus) # do same for dr
-        return [i.id for i in totallxs]
+        return [i.id for i in reportable_labs]
 
     def removeDuplicateLx(self, lxobjs):
         """we have a nasty problem with data reloaded as we built the system
@@ -640,53 +646,80 @@ class hl7Batch:
                 status='P'
             self.addSimple(obr,status,'OBR.25') # result status
             orcs.appendChild(obr)
-            # now add the obx records needed to describe dose, frequency and duration
+            #
+            # Attach OBX records for dose, frequency, and duration
+            #
             lxTS = lxRec.date
             lxRange = 'Low: %s - High: %s' % (lxRec.ref_low_string, lxRec.ref_high_string)
-            #snomed=ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc)[0].CondiSNMDPosi
             snomed=self.getSNOMED(lxRec,condition)
-            if lxRec.result_float:
-                res = lxRec.result_float
+            #
+            # Result type           | Message data type
+            # -----------------------------------------
+            # Numeric               | SN
+            # Titer string          | SN (formatted for titer)
+            # String (non-titer)    | SNOMED
+            #
+            obx5_list = False
+            if re.match('1:(\d{1,4})', lxRec.result_string):
+                #-------------------------------------------------------------------------------
+                # Titer
+                #
+                # We look for titer first, in case a lab with a titer result was incorrectly 
+                # loaded (as are many older records in the Atrius set) with a bogus '1' integer 
+                # value in result_float.
+                #-------------------------------------------------------------------------------
+                dillution = re.match('1:(\d{1,4})', lxRec.result_string).group(1)
+                obx2_type = 'SN'
+                obx5_list  = [
+                    ('SN.2', '1'),
+                    ('SN.3', ':'),
+                    ('SN.4', '%s' % dillution),
+                    ]
+                ref_unit = 'Titer'
+            elif lxRec.result_float:
+                #-------------------------------------------------------------------------------
+                # Numeric
+                #-------------------------------------------------------------------------------
+                output_result = lxRec.result_float
                 obx2_type = 'SN'
                 obx5_type = 'SN.2'
-                if lxRec.ref_unit:
-                    ref_unit = lxRec.ref_unit
+                ref_unit = lxRec.ref_unit or 'Unknown'
+            else:
+                #-------------------------------------------------------------------------------
+                # String
+                #
+                # We determine if positive or indeterminate by looking for 
+                # attached pos/ind events.
+                #
+                # NOTE: This WILL break when ported to v3.0, because of 
+                # different heuristic naming conventions.
+                #-------------------------------------------------------------------------------
+                if lxRec.events.filter(name__endswith='_pos'):
+                    output_result = lxRec.snomed_pos
+                elif lxRec.events.filter(name__endswith='_ind'):
+                    output_result = lxRec.snomed_ind
                 else:
-                    ref_unit = 'Unknown'
-            elif lxRec.result_string:
-                res = lxRec.result_string.split()[0]
-                obx2_type = 'ST'
-                obx5_type = ''
+                    output_result = lxRec.snomed_neg
+                obx2_type = 'CE'
+                obx5_type = 'CE.4'
                 ref_unit = '' # When ref_unit is blank string, makeOBX does not add an OBX.6 tag
-            else:
-                res = ''
-                obx2_type = 'ST'
-                obx5_type = ''
-            if not snomed: ##like ALT/AST
-                #ALT/AST much be number
-                obx1 = self.makeOBX(
-                    obx1  = [('','1')],
-                    obx2  = [('', obx2_type)],
-                    obx3  = [('CE.4',lxRec.output_or_native_code),('CE.6','L')],
-                    obx6  = [('CE.1', ref_unit)],
-                    obx5  = [(obx5_type, res)], 
-                    obx7  = [('',lxRange)],
-                    obx11 = [('', lxRec.status)],
-                    obx14 = [('TS.1',lxTS.strftime(DATE_FORMAT))], 
-                    obx15 = [('CE.1','22D0076229'), ('CE.3','CLIA')]
-                    )
-            else:
-                obx1 = self.makeOBX(
-                    obx1  = [('','1')],
-                    obx2  = [('', 'CE')],
-                    obx3  = [('CE.4',lxRec.output_or_native_code),('CE.6','L')],
-                    obx5  = [('CE.4',snomed)],  
-                    obx7  = [('',lxRange)],
-                    obx11 = [('', lxRec.status)],
-                    obx14 = [('TS.1',lxTS.strftime(DATE_FORMAT))], 
-                    obx15 = [('CE.1','22D0076229'), ('CE.3','CLIA')]
-                    )
-            orcs.appendChild(obx1)
+            if not obx5_list:
+                obx5_list  = [(obx5_type, output_result)]
+            #
+            # Create/attach OBX segment
+            #
+            new_obx = self.makeOBX(
+                obx1  = [('','1')],
+                obx2  = [('', obx2_type)],
+                obx3  = [('CE.4',lxRec.output_or_native_code),('CE.6','L')],
+                obx5  = obx5_list,
+                obx6  = [('CE.1', ref_unit)],
+                obx7  = [('',lxRange)],
+                obx11 = [('', lxRec.status)],
+                obx14 = [('TS.1',lxTS.strftime(DATE_FORMAT))], 
+                obx15 = [('CE.1','22D0076229'), ('CE.3','CLIA')]
+                )
+            orcs.appendChild(new_obx)
           
     def getSNOMED(self, lxRec,condition):
         #
@@ -774,9 +807,6 @@ class hl7Batch:
             if rxRec.start_date and not rxRec.end_date:
                 rxDur ='1'
             elif rxRec.start_date and rxRec.end_date:
-                #
-                # PORTING NOTE: This should blow up, because it's assuming dates are strings.
-                #
                 rxDur = rxRec.end_date - rxRec.start_date
                 rxDur = rxDur.days+1
             rxTS = rxRec.date
