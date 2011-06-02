@@ -691,15 +691,15 @@ class hl7Batch:
                 # We determine if positive or indeterminate by looking for 
                 # attached pos/ind events.
                 #
-                # NOTE: This WILL break when ported to v3.0, because of 
-                # different heuristic naming conventions.
+                # NOTE: This WILL break when ported to v3.0; heuristic naming conventions will
+                # need to be updated to the new style.
                 #-------------------------------------------------------------------------------
                 if lxRec.events.filter(name__endswith='_pos'):
-                    output_result = lxRec.snomed_pos
+                    output_result = '10828004' # SNOMED positive
                 elif lxRec.events.filter(name__endswith='_ind'):
-                    output_result = lxRec.snomed_ind
+                    output_result = '260385009' # SNOMED indeterminate
                 else:
-                    output_result = lxRec.snomed_neg
+                    output_result = '42425007' # SNOMED negative
                 obx2_type = 'CE'
                 obx5_type = 'CE.4'
                 ref_unit = '' # When ref_unit is blank string, makeOBX does not add an OBX.6 tag
