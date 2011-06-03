@@ -1006,8 +1006,8 @@ class GestationalDiabetesReport(Report):
                     gdm_date = gdm_this_preg[0].date
                 else:
                     gdm_date = None
-                early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate( max=Max('result_float') )['max'],
-                late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max'],
+                early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate( max=Max('result_float') )['max']
+                late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max']
                 if riskscape:
                     bmi_value = None
                     if bmi < 25:
@@ -1566,6 +1566,7 @@ class PrediabetesReport(BaseDiabetesReport):
         # Collect data
         #
         self._first_cases(conditions=['diabetes:prediabetes'], count=1)
+        self._first_cases(conditions=['diabetes:type-1', 'diabetes:type-2'], count=1)
         self._first_cases(conditions=['diabetes:gestational'], count=2)
         self._max_bmi()
         self._diabetes_case()
