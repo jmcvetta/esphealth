@@ -1403,9 +1403,6 @@ class FrankDiabetesReport(BaseDiabetesReport):
         #
         #-------------------------------------------------------------------------------
         demographic_fields = [
-            'case_id',
-            'diabetes_type', 
-            'case_date',
             'patient_id', 
             'mrn', 
             'date_of_birth', 
