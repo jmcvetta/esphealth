@@ -481,10 +481,7 @@ class Patient(BaseMedicalRecord):
                 })
             
     def __str__(self):
-        return self.name
-
-    def __unicode__(self):
-        return u'%s' % self.full_name
+        return u'%20s %s' % (self.pk, self.name)
 
     
 
