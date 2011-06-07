@@ -1,9 +1,12 @@
-/var/log/esp.log {
-	daily
-	missingok
-	rotate 7
-	sharedscripts
-	compress
-	notifempty
-        dateext
+/var/log/esp {
+    daily
+    missingok
+    rotate 7
+    sharedscripts
+    delaycompress
+    notifempty
+    dateext
+    shred
+    create
+    compress
 }
