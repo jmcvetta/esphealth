@@ -502,7 +502,6 @@ def wait_for_threads(fs, max_workers=settings.HEF_THREAD_COUNT):
         log.debug('Waiting for thread completion')
         try:
             for future in futures.as_completed(submitted):
-                log.debug('Completed: %s' % future)
                 error = future.exception(timeout=0.1)
                 if error is not None:
                     log.critical('Unhandled exception in %s:\n%s' % (future, error))
