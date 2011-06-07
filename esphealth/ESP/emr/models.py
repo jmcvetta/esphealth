@@ -985,6 +985,10 @@ class Encounter(BasePatientRecord):
     def __str__(self):
         return 'Encounter # %s' % self.pk
     
+    @property
+    def verbose_str(self):
+        return 'Encounter # %s | %s | %s | %15s | %s' % (self.pk, self.date, self.patient, self.edd, self.icd9_codes_str)
+    
     def str_line(self):
         '''
         Returns a single-line string representation of the Case instance
