@@ -1,0 +1,9 @@
+/var/log/esp.log {
+	daily
+	missingok
+	rotate 7
+	sharedscripts
+	compress
+	notifempty
+        dateext
+}

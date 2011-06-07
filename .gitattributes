@@ -380,6 +380,7 @@ esphealth/share/epic_etl/ESPFileLayout.doc -text svneol=unset#unset
 esphealth/share/epic_etl/README.txt -text
 esphealth/share/epic_etl/mhslespftp.sh -text
 esphealth/share/esp-postgres.logrotate -text
+esphealth/share/esp.logrotate -text
 esphealth/share/ndc_codes.txt.bz2 -text svneol=unset#unset
 modules/disease-diabetes/__init__.py -text
 modules/disease-diabetes/diabetes.py -text
