@@ -253,8 +253,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 #
                 # Period of pregnancy defined as onset at (EDD-280 days) and end at EDD
                 #
-                preg_start = edd_qs[0].edd
-                preg_end = preg_start - relativedelta(days=280)
+                preg_end = edd_qs[0].edd
+                preg_start = preg_end - relativedelta(days=280)
                 pattern = 'edd'
             else:
                 #
@@ -297,6 +297,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             # generate overlapping periods of pregnancy, use the minimum for each of 
             # preg_start and preg_end
             #
+            assert patient and preg_start and preg_end and pattern
+            assert preg_end > preg_start
             new_preg = Timespan(
                 patient = patient,
                 name = 'pregnancy',
@@ -332,7 +334,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 msg += '    new:       %s\n' % new_preg
                 for ts in overlap_qs:
                     msg += '    existing:  %s\n' % ts
-                    for e in ts.encounters.all().order_by('date'):
+                    for e in ts.encounters.all().order_by('date', 'pk'):
                         msg += '        %s\n' % e.verbose_str
                 log.warning(msg)
         return counter
