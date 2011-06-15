@@ -15,6 +15,7 @@ import sys
 import optparse
 import re
 import hashlib
+from dateutil.relativedelta import relativedelta
 from operator import itemgetter
 
 from django.db import connection
@@ -1731,6 +1732,8 @@ class Case(models.Model):
     
     @property
     def reportable_encounters(self):
+        icd9_qs = Condition.get_condition(self.condition).icd9s
+        icd9_qs |= Icd9.objects.filter(reportableicd9__condition=self.condition_config).distinct()
         icd9_qs = Condition.get_condition(self.condition).icd9s
         icd9_qs |= Icd9.objects.filter(reportableicd9__condition=self.condition_config).distinct()
         q_obj = Q(patient=self.patient)
