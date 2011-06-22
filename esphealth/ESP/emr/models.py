@@ -984,7 +984,7 @@ class Encounter(BasePatientRecord):
     
     @property
     def verbose_str(self):
-        return 'Encounter # %s | %s | %s | %15s | %s' % (self.pk, self.date, self.patient, self.edd, self.icd9_codes_str)
+        return 'Encounter # %s | %s | %s | %s | %s' % (self.pk, self.date, self.patient, self.edd, self.icd9_codes_str)
     
     def str_line(self):
         '''

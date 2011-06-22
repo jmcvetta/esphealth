@@ -164,4 +164,5 @@ class Timespan(models.Model):
     encounters = models.ManyToManyField(Encounter)
 
     def __unicode__(self):
-        return u'Timespan #%s | %s | patient %s | %s - %s' % (self.pk, self.name, self.patient.name, self.start_date, self.end_date)
+        return u'Timespan #%s | %s | %s | %s - %s | %s' % (self.pk, 
+            self.name, self.patient, self.start_date, self.end_date, self.pattern)
