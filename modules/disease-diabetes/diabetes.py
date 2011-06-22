@@ -835,7 +835,7 @@ class GestationalDiabetesReport(Report):
         #log_query('patient_qs', patient_qs)
         patient_pks = set()
         patient_pks.update( Event.objects.filter(name='dx:gestational-diabetes').values_list('patient', flat=True) )
-        patient_pks.update( Timespan.objects.filter(name__startswith='pregnancy').values_list('patient', flat=True))
+        patient_pks.update( Timespan.objects.filter(name='pregnancy').values_list('patient', flat=True))
         counter = 0
         #total = patient_qs.count()
         total = len(patient_pks)
@@ -844,7 +844,7 @@ class GestationalDiabetesReport(Report):
             log.info('Reporting on patient %8s / %s' % (counter, total))
             patient = Patient.objects.get(pk=ppk)
             event_qs = Event.objects.filter(patient=patient)
-            preg_ts_qs = Timespan.objects.filter(name__startswith='pregnancy:', patient=patient)
+            preg_ts_qs = Timespan.objects.filter(name='pregnancy', patient=patient)
             gdm_case_qs = Case.objects.filter(condition='diabetes:gestational', patient=patient)
             frank_dm_case_qs = Case.objects.filter(condition__startswith='diabetes:type-', patient=patient).order_by('date')
             a1c_lab_qs = AbstractLabTest('a1c').lab_results.filter(patient=patient)
@@ -1334,30 +1334,17 @@ class BaseDiabetesReport(Report):
                 log.debug('Added value %s for field %s' % (end_date, field))
                 field_values[field] = end_date
         
-    def _diabetes_case(self):
-        self.FIELDS.append('case_id')
-        self.FIELDS.append('diabetes_type')
-        self.FIELDS.append('case_date')
-        vqs = Case.objects.filter(patient__in=self.patient_qs,
-            condition__in=Diabetes.FRANK_DM_CONDITIONS).values('patient', 'id', 'condition', 'date')
-        vqs = vqs.order_by('date')
-        log_query('Diabetes cases', vqs)
-        log.info('Collecting diabetes case data')
-        for item in vqs:
-            field_values = self.patient_field_values[item['patient']]
-            field_values['case_id'] = item['id']
-            field_values['diabetes_type'] = item['condition']
-            field_values['case_date'] = item['date']
-            
-    def _first_cases(self, conditions=[], count=1, criteria=False):
+    def _first_cases(self, conditions=[], count=1, criteria=False, label=None):
         log.info('Collecting case data')
         assert conditions # Sanity check
+        if not label:
+            label = 'case'
         for num in range(1, count+1):
-            self.FIELDS.append('case--%s--date' % num)
-            self.FIELDS.append('case--%s--condition' % num)
-            self.FIELDS.append('case--%s--id' % num)
+            self.FIELDS.append('%s--%s--date' % (label, num))
+            self.FIELDS.append('%s--%s--condition' % (label, num))
+            self.FIELDS.append('%s--%s--id' % (label, num))
             if criteria:
-                self.FIELDS.append('case--%s--criteria' % num)
+                self.FIELDS.append('%s--%s--criteria' % (label, num))
         case_qs = Case.objects.all()
         case_qs = case_qs.filter(patient__in=self.patient_qs)
         case_qs = case_qs.filter(condition__in=conditions)
@@ -1375,10 +1362,10 @@ class BaseDiabetesReport(Report):
             if ordinal > count:
                 continue
             field_values = self.patient_field_values[patient]
-            date_field = 'case--%s--date' % ordinal
-            condition_field = 'case--%s--condition' % ordinal
-            id_field = 'case--%s--id' % ordinal
-            criteria_field = 'case--%s--criteria' % ordinal
+            date_field = '%s--%s--date' % (label, ordinal)
+            condition_field = '%s--%s--condition' % (label, ordinal)
+            id_field = '%s--%s--id' % (label, ordinal)
+            criteria_field = '%s--%s--criteria' % (label, ordinal)
             field_values[date_field] = item['date']
             field_values[condition_field] = item['condition']
             field_values[id_field] = item['id']
@@ -1565,11 +1552,10 @@ class PrediabetesReport(BaseDiabetesReport):
         #
         # Collect data
         #
-        self._first_cases(conditions=['diabetes:prediabetes'], count=1)
-        self._first_cases(conditions=['diabetes:type-1', 'diabetes:type-2'], count=1)
-        self._first_cases(conditions=['diabetes:gestational'], count=2)
+        self._first_cases(conditions=['diabetes:prediabetes'], count=1, label='pre_dm')
+        self._first_cases(conditions=['diabetes:type-1', 'diabetes:type-2'], count=1, label='frank_dm')
+        self._first_cases(conditions=['diabetes:gestational'], count=2, label='gdm')
         self._max_bmi()
-        self._diabetes_case()
         self._yearly_max(test_list=[
             'a1c',
             ])
