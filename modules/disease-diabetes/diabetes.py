@@ -998,10 +998,10 @@ class GestationalDiabetesReport(Report):
                     ).filter(
                         Q(provider__title__icontains='RD') | Q(site_name__icontains='Nutrition')
                         )
-                if preg_ts.pattern == 'EDD':
+                if preg_ts.pattern == 'edd':
                     edd = preg_ts.end_date
                 else:
-                    edd = 'No EDD'
+                    edd = None
                 if gdm_this_preg:
                     gdm_date = gdm_this_preg[0].date
                 else:
