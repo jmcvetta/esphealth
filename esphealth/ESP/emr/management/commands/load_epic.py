@@ -202,7 +202,25 @@ class BaseLoader(object):
         @type key_fields: List [field_name, field_name, ...]
         @return: (obj, created)  Where obj is an instance of model, and created is boolean
         '''
+        #
+        # Sanitize string values before sending to db.  We cannot sanitize all
+        # fields, because some are model instances.  Those are converted by
+        # smart_str() into a sanitized version of their string representation,
+        # which is useless for saving to the database.
+        #
+        for field in field_values:
+            value = field_values[field]
+            if type(value) in [str, unicode]:
+                sanitized_value = smart_unicode(value, errors='replace')
+                field_values[field] = sanitized_value
         sid = transaction.savepoint()
+        #
+        # First try to create a new instance.  Integrity error indicates a
+        # constraint has been violated - i.e. there is an existing object that
+        # should be updated.  We roll back to the savepoint to restore
+        # integrity in the transaction, then fetch the existing object for
+        # update.
+        #
         try:
             obj = model(**field_values)
             obj.save()
@@ -463,9 +481,6 @@ class PatientLoader(BaseLoader):
                 field = None
         
     def load_row(self, row):
-        id_num = row['patient_id_num']
-        if not id_num:
-            raise LoadException('Record has blank patient_id_num, which is required')
         #
         # Utility methods
         #
@@ -473,6 +488,12 @@ class PatientLoader(BaseLoader):
         son = self.string_or_none
         daton = self.date_or_none
         decon = self.decimal_or_none
+        #
+        # Natural key
+        #
+        id_num = son(row['patient_id_num'])
+        if not id_num:
+            raise LoadException('Record has blank patient_id_num, which is required')
         #
         # Field values
         #
