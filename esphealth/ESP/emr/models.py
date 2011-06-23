@@ -24,7 +24,7 @@ from django.db.models import Q, F
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
-from ESP.settings import DATABASE_ENGINE, DATA_DIR
+from ESP.settings import DATA_DIR
 from ESP.emr.choices import DATA_SOURCE
 from ESP.emr.choices import LOAD_STATUS
 from ESP.emr.choices import LAB_ORDER_TYPES
