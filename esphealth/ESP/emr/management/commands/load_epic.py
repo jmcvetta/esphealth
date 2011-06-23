@@ -232,7 +232,6 @@ class BaseLoader(object):
             for field_name in key_fields:
                 keys[field_name] = field_values[field_name]
                 del field_values[field_name]
-            log.debug('Could not insert new %s with keys %s' % (model, keys))
             # We use get_or_create() rather than get(), to increase the likelihood
             # of successful load in unforseen circumstances
             obj, created = model.objects.get_or_create(defaults=field_values, **keys)
