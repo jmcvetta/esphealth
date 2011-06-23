@@ -12,7 +12,6 @@ Pregnancy Timespan Detector
 import datetime
 from decimal import Decimal
 from functools import partial
-from concurrent import futures
 from dateutil.relativedelta import relativedelta
 
 from django.db import transaction
@@ -27,14 +26,6 @@ from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
 from ESP.hef.base import BaseTimespanHeuristic
 from ESP.hef.models import Timespan
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-# The VERSION_URI string uniquely describes this heuristic.
-# It MUST be incremented whenever any functionality is changed!
-#
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 #PREG_START_MARGIN = datetime.timedelta(days=20)
@@ -226,10 +217,12 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             # 
             # Does this encounter belong to another pregnancy?
             #
+            q_obj = Q(start_date__lte=enc.date, end_date__gte=(enc.date - PREG_MARGIN))
+            if enc.edd:
+                q_obj |= Q(start_date__lte=enc.edd, end_date__gte=(enc.edd - PREG_MARGIN))
             existing_preg_qs = Timespan.objects.filter(name='pregnancy')
             existing_preg_qs = existing_preg_qs.filter(patient=patient)
-            existing_preg_qs = existing_preg_qs.filter(start_date__lte=enc.date)
-            existing_preg_qs = existing_preg_qs.filter(end_date__gte=enc.date)
+            existing_preg_qs = existing_preg_qs.filter(q_obj)
             existing_preg_qs = existing_preg_qs.order_by('start_date') # First existing preg
             if existing_preg_qs:
                 preg_ts = existing_preg_qs[0]
@@ -244,10 +237,10 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             # Encounter date within the 280 days preceding EDD
             #
             edd_qs = self.edd_enc_qs.filter(patient=patient)
-            edd_qs = edd_qs.filter(date__gte=enc.date)
+            edd_qs = edd_qs.filter(edd__gte=enc.date)
             # Maybe this should be more than 280 days, in case of late pregnancy 
             # where final (most accurate) EDD comes after first enc + 280?
-            edd_qs = edd_qs.filter( date__lte = enc.date + relativedelta(days=280) )
+            edd_qs = edd_qs.filter( edd__lte = enc.date + relativedelta(days=280) + PREG_MARGIN )
             edd_qs = edd_qs.order_by('-date') # Most recent EDD is most valid (?)
             if edd_qs:
                 #
@@ -278,15 +271,18 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 #     Date of last ICD9 for pregnancy (V22.x or V23.x) plus 14 days
                 q_obj = Q(patient=patient)
                 q_obj &= Q(date__gte=preg_start)
-                q_obj &= Q( date__lte = enc.date + relativedelta(days=280) )
+                q_obj &= Q( date__lte = enc.date + relativedelta(days=280) + PREG_MARGIN )
                 eop_qs = self.eop_qs.filter(q_obj).order_by('date') # First EoP
                 icd9_qs = self.icd9_enc_qs.filter(q_obj).order_by('-date') # Last ICD9
                 if eop_qs:
                     preg_end = eop_qs[0].date
                     pattern = 'eop'
-                else:
-                    preg_end = icd9_qs[0].date
+                elif icd9_qs:
+                    preg_end = icd9_qs[0].date + relativedelta(days=14)
                     pattern = 'icd9'
+                else:
+                    preg_end = enc.date + relativedelta(days=14) # Not sure why we would ever get here
+                    pattern = 'single_enc'
             #-------------------------------------------------------------------------------
             #
             # New Pregnancy
@@ -297,8 +293,6 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             # generate overlapping periods of pregnancy, use the minimum for each of 
             # preg_start and preg_end
             #
-            assert patient and preg_start and preg_end and pattern
-            assert preg_end > preg_start
             new_preg = Timespan(
                 patient = patient,
                 name = 'pregnancy',
@@ -337,6 +331,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                     for e in ts.encounters.all().order_by('date', 'pk'):
                         msg += '        %s\n' % e.verbose_str
                 log.warning(msg)
+                new_preg.pattern = new_preg.pattern + ':overlap'
+                new_preg.save()
         return counter
         
     @transaction.commit_on_success
