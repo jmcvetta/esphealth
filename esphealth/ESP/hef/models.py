@@ -156,7 +156,7 @@ class Timespan(models.Model):
     start_date = models.DateField(blank=False, db_index=True)
     end_date = models.DateField(blank=False, db_index=True)
     timestamp = models.DateTimeField('Time this event was created in db', blank=False, auto_now_add=True)
-    pattern = models.SlugField(blank=False)
+    pattern = models.TextField(blank=True, null=True)
     # 
     # The 'encounters' field is a short-term hack for generating gdm pregnancy timespans, and should be 
     # replaced (soon) with a fully generic solution.
@@ -166,3 +166,32 @@ class Timespan(models.Model):
     def __unicode__(self):
         return u'Timespan #%s | %s | %s | %s - %s | %s' % (self.pk, 
             self.name, self.patient, self.start_date, self.end_date, self.pattern)
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# Generic data bag support
+#
+# This does not have anything to do with HEF per se, but rather is initially 
+# required to optimized Nodis reporting.  Yet as it is a more primitive 
+# construct that might be useful in other modules as well, I have located it 
+# here in the lower-level hef module.  This location may be subject to change
+# in the future
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+class DataBag(models.Model):
+    '''
+    A bag for holding unstructured key/value pairs
+    '''
+    uri = models.CharField('URI of module that created this Bag', max_length=256, blank=False, db_index=True)
+    description = models.TextField(blank=True, null=True)
+    created_timestamp = models.DateTimeField(blank=False, auto_now_add=True)
+    updated_timestamp = models.DateTimeField(blank=False, auto_now=True)
+
+
+class DataBagItem(models.Model):
+    '''
+    A key/value pair in a data bag
+    '''
+    bag = models.ForeignKey(DataBag)
