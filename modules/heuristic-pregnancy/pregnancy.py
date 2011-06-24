@@ -17,6 +17,7 @@ from dateutil.relativedelta import relativedelta
 from django.db import transaction
 from django.db.models import Q
 from django.db.models import Min
+from django.db.models import Max
 
 from ESP.settings import HEF_THREAD_COUNT
 from ESP.utils import log
@@ -55,13 +56,13 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         # EDD Encounters
         #
         #-------------------------------------------------------------------------------
-        self.edd_enc_qs = Encounter.objects.filter(edd__isnull=False)
+        self.edd_qs = Encounter.objects.filter(edd__isnull=False)
         #-------------------------------------------------------------------------------
         #
         # ICD9 Encounters
         #
         #-------------------------------------------------------------------------------
-        self.icd9_enc_qs = Encounter.objects.filter(
+        self.preg_icd9_qs = Encounter.objects.filter(
             Q(icd9_codes__code__startswith='V22.') | 
             Q(icd9_codes__code__startswith='V23.')
             )
@@ -147,8 +148,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         # Relevant encounters
         #
-        self.onset_qs = self.edd_enc_qs | self.icd9_enc_qs
-        self.relevant_enc_qs = self.onset_qs | self.eop_qs
+        self.onset_qs = self.edd_qs | self.preg_icd9_qs
+        self.relevant_enc_qs = self.edd_qs | self.preg_icd9_qs | self.eop_qs
         
     def generate(self):
         log.info('Generating pregnancy events')
@@ -207,8 +208,129 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         log.debug('Added %s to %s' % (enc, ts))
         return ts
     
-    @transaction.commit_on_success
+    @transaction.commit_manually
     def pregnancies_for_patient(self, patient):
+        counter = 0
+        #-------------------------------------------------------------------------------
+        #
+        # EDD
+        #
+        #-------------------------------------------------------------------------------
+        while True:
+            onset_date = None
+            eop_date = None
+            pattern = None
+            #
+            # Find the first encounter with an ICD9 for pregnancy, that is not already
+            # bound to a pregnancy timespan.
+            #
+            preg_qs = self.preg_icd9_qs.filter(patient=patient)
+            preg_qs = preg_qs.exclude(timespan__name='pregnancy')
+            preg_qs = preg_qs.order_by('date')
+            #
+            # If there are no unbound pregnancy encounters, we are done with this patient
+            #
+            if not preg_qs:
+                break
+            #
+            # Determine if there is a plausible EDD within 280 days after 
+            # first pregnancy ICD9 date
+            #
+            first_preg_icd9_date = preg_qs[0].date
+            edd_qs = self.edd_qs.filter(patient=patient)
+            edd_qs = edd_qs.exclude(timespan__name='pregnancy')
+            edd_qs = edd_qs.filter(edd__gte=first_preg_icd9_date)
+            edd_qs = edd_qs.filter( edd__lte = first_preg_icd9_date + relativedelta(days=280) )
+            min_edd = edd_qs.aggregate(Min('edd'))['edd__min']
+            #
+            # Pregnancy onset is earliest plausible EDD minus 280 days.  If 
+            # no EDD, then it is 30 days prior to first ICD9 for pregnancy.
+            #
+            if min_edd:
+                onset_date = min_edd - relativedelta(days=280)
+                pattern = 'onset:edd '
+            else:
+                onset_date = first_preg_icd9_date - relativedelta(days=30)
+                pattern = 'onset:icd9 '
+            #
+            # Find an End of Pregnancy event.  If no EoP event is found, 
+            # use EDD.  If no EDD, use last dated encounter with pregnancy 
+            # ICD9, not more than 280 days after onset.
+            #
+            max_eop_date = onset_date + relativedelta(days=280) + relativedelta(days=30)
+            eop_qs = self.eop_qs.filter(patient=patient)
+            eop_qs = eop_qs.filter(date__gte=onset_date)
+            eop_qs = eop_qs.filter(date__lte=max_eop_date)
+            min_eop_date = eop_qs.aggregate(Min('date'))['date__min']
+            if min_eop_date:
+                eop_date = min_eop_date
+                pattern += 'eop:eop_event '
+            elif min_edd:
+                eop_date = min_edd
+                pattern += 'eop:min_edd '
+            else:
+                max_icd9_date = first_preg_icd9_date + relativedelta(days=280)
+                this_preg_qs = preg_qs.filter(date__gte=onset_date)
+                this_preg_qs = this_preg_qs.filter(date__lte=max_icd9_date)
+                eop_date = this_preg_qs.aggregate(Max('date'))['date__max']
+                pattern += 'eop:max_icd9 '
+            #-------------------------------------------------------------------------------
+            #
+            # New Pregnancy
+            #
+            #-------------------------------------------------------------------------------
+            # 
+            # If patient has multiple qualifying events for preg_start and preg_end that 
+            # generate overlapping periods of pregnancy, use the minimum for each of 
+            # preg_start and preg_end
+            #
+            new_preg = Timespan(
+                patient = patient,
+                name = 'pregnancy',
+                start_date = onset_date,
+                end_date = eop_date,
+                pattern = pattern,
+                source = self.uri,
+                )
+            new_preg.save() # Must save before populating M2M
+            relevant_encounters = self.relevant_enc_qs.filter(patient=patient)
+            relevant_encounters = relevant_encounters.filter(date__gte=onset_date)
+            relevant_encounters = relevant_encounters.filter( date__lte=eop_date + relativedelta(months=6) )
+            new_preg.encounters = relevant_encounters
+            new_preg.save()
+            transaction.commit()
+            counter += 1
+            log.info('Created new pregnancy: %s (%s)' % (new_preg, pattern))
+            #
+            # Check overlap - currently this is set up to provide verbose 
+            # debugging info.  However it should be developed into a true
+            # overlap-prevention technique.
+            #
+            overlap_qs = Timespan.objects.filter(name='pregnancy')
+            overlap_qs = overlap_qs.filter(patient=patient)
+            overlap_qs = overlap_qs.filter( 
+                ( Q(start_date__lte=onset_date) & Q(end_date__gte=onset_date) ) 
+                |
+                ( Q(start_date__lte=eop_date) & Q(end_date__gte=eop_date) )
+                )
+            overlap_qs = overlap_qs.exclude(pk=new_preg.pk)
+            if overlap_qs:
+                msg = 'Overlapping pregnancies!\n'
+                msg += '    encounter: %s\n' % preg_qs[0].verbose_str
+                msg += '    new:       %s\n' % new_preg
+                for ts in overlap_qs:
+                    msg += '    existing:  %s\n' % ts
+                    for e in ts.encounters.all().order_by('date', 'pk'):
+                        msg += '        %s\n' % e.verbose_str
+                log.warning(msg)
+                new_preg.pattern = new_preg.pattern + ':overlap'
+                new_preg.save()
+                transaction.commit()
+        transaction.commit()
+        return counter
+                
+    @transaction.commit_on_success
+    def old_pregnancies_for_patient(self, patient):
         counter = 0
         unbound_qs = self.onset_qs.filter(patient=patient)
         unbound_qs = unbound_qs.exclude(timespan__name='pregnancy')
