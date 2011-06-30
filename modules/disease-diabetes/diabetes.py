@@ -20,7 +20,7 @@ from ESP.hef.base import AbstractLabTest, BaseHeuristic, DiagnosisHeuristic, \
 from ESP.hef.models import Event, Timespan
 from ESP.nodis.base import DiseaseDefinition, Report
 from ESP.nodis.models import Case
-from ESP.utils.utils import log, log_query
+from ESP.utils.utils import log
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from django.db.models import Avg, Count, F, Max, Min, Q, Sum
@@ -330,7 +330,6 @@ class Diabetes(DiseaseDefinition):
         once_qs |= insulin_events
         once_qs = once_qs.exclude(patient__case__condition__in=self.FRANK_DM_CONDITIONS)
         once_qs = once_qs.values('patient').distinct().annotate(trigger_date=Min('date'))
-        log_query('Frank DM once', once_qs)
         for i in once_qs:
             pat = i['patient']
             trigger_date = i['trigger_date']
@@ -347,7 +346,6 @@ class Diabetes(DiseaseDefinition):
             #patient_pks = qs.filter(count__gte=2).values_list('patient', flat=True).distinct().order_by('-patient')
             twice_qs = twice_qs.filter(count__gte=2)
             twice_qs = twice_qs.values('patient').distinct().annotate(trigger_date=Min('date'))
-            log_query('Patient dates for %s twice' % event_name, twice_qs)
             for i in twice_qs:
                 pat = i['patient']
                 trigger_date = i['trigger_date']
@@ -626,7 +624,6 @@ class Diabetes(DiseaseDefinition):
             patient__event__date__gte = F('start_date'),
             patient__event__date__lte = F('end_date'),
             ).distinct().order_by('end_date')
-        log_query('Single event timespans', once_qs)
         gdm_timespan_pks.update(once_qs.values_list('pk', flat=True))
         #
         # 2 or more events
@@ -636,7 +633,6 @@ class Diabetes(DiseaseDefinition):
             patient__event__date__gte = F('start_date'),
             patient__event__date__lte = F('end_date'),
             ).annotate(count=Count('patient__event__id')).filter(count__gte=2).distinct()
-        log_query('Two event timespans', twice_qs)
         gdm_timespan_pks.update(twice_qs.values_list('pk', flat=True))
         #
         # Dx or Rx
@@ -657,7 +653,6 @@ class Diabetes(DiseaseDefinition):
             patient__event__date__gte = F('start_date'),
             patient__event__date__lte = F('end_date'),
             )
-        log_query('Dx or Rx', dxrx_qs)
         gdm_timespan_pks.update(dxrx_qs.values_list('pk', flat=True))
         #===============================================================================
         #
@@ -832,7 +827,6 @@ class GestationalDiabetesReport(Report):
         #patient_qs = Patient.objects.filter(event__name='dx:gestational-diabetes')
         #patient_qs |= Patient.objects.filter(timespan__name='pregnancy')
         #patient_qs = patient_qs.distinct()
-        #log_query('patient_qs', patient_qs)
         patient_pks = set()
         patient_pks.update( Event.objects.filter(name='dx:gestational-diabetes').values_list('patient', flat=True) )
         patient_pks.update( Timespan.objects.filter(name='pregnancy').values_list('patient', flat=True))
@@ -998,10 +992,11 @@ class GestationalDiabetesReport(Report):
                     ).filter(
                         Q(provider__title__icontains='RD') | Q(site_name__icontains='Nutrition')
                         )
-                if preg_ts.pattern == 'edd':
-                    edd = preg_ts.end_date
-                else:
-                    edd = None
+                edd = Encounter.objects.filter(
+                    patient=patient,
+                    date__gte=preg_ts.start_date, 
+                    date__lte=preg_ts.end_date, 
+                    ).aggregate(Max('edd'))['edd__max']
                 if gdm_this_preg:
                     gdm_date = gdm_this_preg[0].date
                 else:
@@ -1117,7 +1112,6 @@ class BaseDiabetesReport(Report):
             qs = qs.filter(patient__in=self.patient_qs)
             qs = qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
             log.info('Collecting data for %s' % event_type)
-            log_query('Recent Rx %s' % event_type, qs)
             total_rows = qs.count()
             counter = 0
             last_patient = None
@@ -1141,13 +1135,11 @@ class BaseDiabetesReport(Report):
             self.FIELDS.append(field_code)
             self.FIELDS.append(field_date)
             self.FIELDS.append(field_text)
-            #log_query('Recent Dx', events)
             heuristic = BaseHeuristic.get_heuristic_by_name(heuristic_name)
             icd9_q = heuristic.icd9_q_obj
             qs = Encounter.objects.filter(tags__event_name=heuristic_name)
             qs = qs.filter(patient__in=self.patient_qs)
             qs = qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
-            log_query('Recent Dx %s' % heuristic_name, qs)
             log.info('Collecting data for %s' % heuristic_name)
             last_patient = None
             for enc in qs:
@@ -1173,7 +1165,6 @@ class BaseDiabetesReport(Report):
             qs = qs.filter(date__year=year)
             vqs = qs.values('patient').annotate(bp_diastolic=Avg('bp_diastolic'), bp_systolic=Avg('bp_systolic'))
             log.info('Collecting aggregate data for %s and %s' % (systolic_field, diastolic_field))
-            log_query('average blood pressure %s' % year, vqs)
             for item in vqs:
                 field_values = self.patient_field_values[item['patient']]
                 field_values[diastolic_field] = item['bp_diastolic']
@@ -1198,7 +1189,6 @@ class BaseDiabetesReport(Report):
             lab_qs = lab_qs.filter(patient__in=self.patient_qs)
             lab_qs = lab_qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
             vqs = lab_qs.values('patient', 'result_string')
-            log_query(field, vqs)
             last_patient = None
             for item in vqs:
                 patient_pk = item['patient']
@@ -1244,7 +1234,6 @@ class BaseDiabetesReport(Report):
                 vqs = abs_test.lab_results.filter(patient__in=self.patient_qs, 
                     date__year=year).values('patient').annotate(value=Min('result_float'))
                 log.info('Collecting aggregate data for %s' % field)
-                log_query(field, vqs)
                 self._vqs_to_pfv(vqs, field)
     
     
@@ -1258,7 +1247,6 @@ class BaseDiabetesReport(Report):
                 vqs = abs_test.lab_results.filter(patient__in=self.patient_qs, 
                     date__year=year).values('patient').annotate(value=Max('result_float'))
                 log.info('Collecting aggregate data for %s' % field)
-                log_query(field, vqs)
                 self._vqs_to_pfv(vqs, field)
                 
     def _yearly_max_events(self, name, event_names):
@@ -1270,7 +1258,6 @@ class BaseDiabetesReport(Report):
                 tags__event_name__in=event_names,
                 date__year=year).values('patient').annotate(value=Max('result_float'))
             log.info('Collecting aggregate data for %s' % field)
-            log_query(field, vqs)
             self._vqs_to_pfv(vqs, field)
     
     def _max_bmi(self):
@@ -1282,7 +1269,6 @@ class BaseDiabetesReport(Report):
                 bmi__isnull=False, 
                 date__year=year).values('patient').annotate(value=Max('bmi'))
             log.info('Collecting aggregate data for %s' % field)
-            log_query(field, vqs)
             self._vqs_to_pfv(vqs, field)
                 
     def _total_occurrences(self):
@@ -1299,7 +1285,6 @@ class BaseDiabetesReport(Report):
             vqs = Event.objects.filter(patient__in=self.patient_qs, 
                 name=event_type).values('patient').annotate(value=Count('id'))
             log.info('Collecting aggregate data for %s' % field)
-            log_query(field, vqs)
             self._vqs_to_pfv(vqs, field)
     
     def _recent_pregnancies(self):
@@ -1311,7 +1296,6 @@ class BaseDiabetesReport(Report):
         preg_timespan_qs = preg_timespan_qs.order_by('patient', '-end_date')
         vqs = preg_timespan_qs.values('patient', 'end_date').distinct()
         log.info('Collecting pregnancy data')
-        log_query('recent preg end dates', vqs)
         last_patient = None
         recent_preg_end_dates = []
         for item in vqs:
@@ -1350,7 +1334,6 @@ class BaseDiabetesReport(Report):
         case_qs = case_qs.filter(condition__in=conditions)
         vqs = case_qs.values('patient', 'id', 'condition', 'criteria', 'date')
         vqs = vqs.order_by('patient', 'date')
-        log_query('First cases for %s' % conditions, vqs)
         last_patient = None
         ordinal = 0
         for item in vqs:
@@ -1427,7 +1410,6 @@ class FrankDiabetesReport(BaseDiabetesReport):
         patient_pks |= set( Event.objects.filter(name__in=linelist_patient_criteria_once).values_list('patient', flat=True).distinct() )
         self.patient_qs = Patient.objects.filter(pk__in=patient_pks)
         log.info('Collecting list of patients for report')
-        log_query('Patients to report', self.patient_qs)
         log.info('Reporting on %s patients' % len(patient_pks))
         self.patient_field_values = {} # {patient_pk: {field_name: value}}
         for pat_pk in patient_pks:
@@ -1513,7 +1495,6 @@ class PrediabetesReport(BaseDiabetesReport):
         case_qs = Case.objects.filter(condition__startswith='diabetes:type', patient__in=self.patient_qs)
         vqs = case_qs.values('patient').annotate(value=Min('date'))
         field = 'recent-frank-dm'
-        log_query('Diabetes cases', vqs)
         self._vqs_to_pfv(vqs, field)
     
     def run(self):
@@ -1544,7 +1525,6 @@ class PrediabetesReport(BaseDiabetesReport):
         self.patient_qs = Patient.objects.filter(case__condition='diabetes:prediabetes')
         self.patient_qs = self.patient_qs.distinct()
         log.info('Collecting list of patients for report')
-        log_query('Patients to report', self.patient_qs)
         log.info('Reporting on %s patients' % self.patient_qs.count())
         self.patient_field_values = {} # {patient_pk: {field_name: value}}
         for pat_pk in self.patient_qs.values_list('id', flat=True):
