@@ -5,14 +5,18 @@
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-# This script must be run by a user with write permission on the 'esphealth'
-# folder.
+#
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-set -x
-virtualenv --no-site-packages . 
-. bin/activate
-export PIP_RESPECT_VIRTUALENV=true
-export PIP_REQUIRE_VIRTUALENV=true
-pip install -v -r requirements.frozen.txt
+# TODO: Check OS version too
+if [ `lsb_release -is` = "Ubuntu" ]; then
+    sudo apt-get install python-setuptools python-dev libpq-dev
+    sudo easy_install -U pip virtualenv
+else
+    echo ERROR:
+    echo
+    echo Automatic installation of system-wide dependencies is currently supported only for Ubuntu Linux.
+    echo
+    exit -1
+fi
