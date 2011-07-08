@@ -733,6 +733,9 @@ class GestationalDiabetesReport(Report):
         'gdm_case', # Boolean
         'gdm_case--date',
         'gdm_icd9--this_preg',
+        'prior_gdm_case', # Boolean
+        'prior_gdm_case--date',
+        'prior_gdm_icd9--this_preg',
         'intrapartum--ogtt50--threshold',
         'intrapartum--ogtt50--threshold',
         'intrapartum--ogtt75--threshold',
@@ -813,9 +816,6 @@ class GestationalDiabetesReport(Report):
         #
         # Report on all patients with GDM ICD9 or a pregnancy
         #
-        #patient_qs = Patient.objects.filter(event__name='dx:gestational-diabetes')
-        #patient_qs |= Patient.objects.filter(timespan__name='pregnancy')
-        #patient_qs = patient_qs.distinct()
         patient_pks = set()
         patient_pks.update( Event.objects.filter(name='dx:gestational-diabetes').values_list('patient', flat=True) )
         patient_pks.update( Timespan.objects.filter(name='pregnancy').values_list('patient', flat=True))
@@ -844,6 +844,7 @@ class GestationalDiabetesReport(Report):
             zip_code = '%05d' % int( patient.zip[0:5] )
         except:
             log.warning('Could not convert zip code: %s' % patient.zip)
+            zip_code = None
         patient_values = {
             'patient_id': patient.pk,
             'mrn': patient.mrn,
@@ -896,18 +897,19 @@ class GestationalDiabetesReport(Report):
                 date__gte = preg_ts.start_date,
                 date__lte = preg_ts.end_date,
                 ).order_by('date')
-            gdm_prior = gdm_case_qs.filter(date__lt=preg_ts.start_date)
-            frank_dm_early_preg = frank_dm_case_qs.filter(
-                date__gte = preg_ts.start_date,
-                date__lte = preg_ts.end_date - relativedelta(weeks=24),
-                )
-            frank_dm_late_preg = frank_dm_case_qs.filter(
-                date__gte = preg_ts.end_date - relativedelta(weeks=24),
-                date__lte = preg_ts.end_date,
-                )
+            # Note GDM prior does not currently look for the IDCD9 in 
+            # isolation, as spec requires
+            gdm_prior = gdm_case_qs.filter(date__lt=preg_ts.start_date).order_by('-date')
+            if gdm_prior:
+                gdm_prior_date = gdm_prior[0].date
+            else:
+                gdm_prior_date = None
             #
             # Events by time period
             #
+            prepartum = event_qs.filter(
+                date__lte = preg_ts.start_date,
+                )
             intrapartum = event_qs.filter(
                 date__gte = preg_ts.start_date,
                 date__lte = preg_ts.end_date,
@@ -944,151 +946,55 @@ class GestationalDiabetesReport(Report):
                 ).filter(
                     Q(provider__title__icontains='RD') | Q(site_name__icontains='Nutrition')
                     )
-                preg_bmi_qs = bmi_qs.filter(
-                    date__gte = preg_ts.start_date,
-                    date__lte = preg_ts.start_date + relativedelta(months=4),
-                    ).order_by('date')
-                pre_preg_bmi_qs = bmi_qs.filter(
-                    date__gte = preg_ts.start_date - relativedelta(years=1),
-                    date__lte = preg_ts.start_date,
-                    ).order_by('-date')
-                if preg_bmi_qs:
-                    bmi = preg_bmi_qs[0].bmi
-                elif pre_preg_bmi_qs:
-                    bmi = pre_preg_bmi_qs[0].bmi
-                else:
-                    bmi = None
-                #
-                # Patient's frank and gestational DM history
-                #
-                gdm_this_preg = gdm_case_qs.filter(
-                    date__gte = preg_ts.start_date,
-                    date__lte = preg_ts.end_date,
-                    ).order_by('date')
-                gdm_prior = gdm_case_qs.filter(date__lt=preg_ts.start_date)
-                frank_dm_early_preg = frank_dm_case_qs.filter(
-                    date__gte = preg_ts.start_date,
-                    date__lte = preg_ts.end_date - relativedelta(weeks=24),
-                    )
-                frank_dm_late_preg = frank_dm_case_qs.filter(
-                    date__gte = preg_ts.end_date - relativedelta(weeks=24),
-                    date__lte = preg_ts.end_date,
-                    )
-                #
-                # Events by time period
-                #
-                intrapartum = event_qs.filter(
-                    date__gte = preg_ts.start_date,
-                    date__lte = preg_ts.end_date,
-                    )
-                postpartum = event_qs.filter(
-                    date__gt = preg_ts.end_date,
-                    date__lte = preg_ts.end_date + relativedelta(days=120),
-                    )
-                early_pp = event_qs.filter(
-                    date__gt = preg_ts.end_date,
-                    date__lte = preg_ts.end_date + relativedelta(weeks=12),
-                    )
-                early_pp_q = Q(
-                    date__gt = preg_ts.end_date,
-                    date__lte = preg_ts.end_date + relativedelta(weeks=12),
-                    )
-                late_pp_q = Q(
-                    date__gt = preg_ts.end_date + relativedelta(weeks=12),
-                    date__lte = preg_ts.end_date + relativedelta(days=365),
-                    )
-                # FIXME: This date math works on PostgreSQL, but I think that's
-                # just fortunate coincidence, as I don't think this is the
-                # right way to express the date query in ORM syntax.
-                lancets_and_icd9 = intrapartum.filter(
-                    lancets_q,
-                    patient__event__name='dx:gestational-diabetes',
-                    patient__event__date__gte =  (F('date') - 14),
-                    patient__event__date__lte =  (F('date') + 14),
-                    )
-                nutrition_referral = Encounter.objects.filter(
-                    patient=patient,
-                    date__gte=preg_ts.start_date, 
-                    date__lte=preg_ts.end_date, 
-                    ).filter(
-                        Q(provider__title__icontains='RD') | Q(site_name__icontains='Nutrition')
-                        )
-                edd = Encounter.objects.filter(
-                    patient=patient,
-                    date__gte=preg_ts.start_date, 
-                    date__lte=preg_ts.end_date, 
-                    ).aggregate(Max('edd'))['edd__max']
-                if gdm_this_preg:
-                    gdm_date = gdm_this_preg[0].date
-                else:
-                    gdm_date = None
-                early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate( max=Max('result_float') )['max']
-                late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max']
-                if riskscape:
-                    bmi_value = None
-                    if bmi < 25:
-                        bmi_value = 1
-                    elif 25 <= bmi <= 30:
-                        bmi_value = 2
-                    elif bmi > 30:
-                        bmi_value = 3
-                    values = {
-                        'E': preg_ts.start_date.year,
-                        'F': bmi_value,
-                        'G': int( bool( gdm_this_preg ) ),
-                        'H': int( bool( gdm_prior ) ),
-                        'I': int( bool( frank_dm_early_preg ) ),
-                        'J': int( bool( frank_dm_late_preg ) ),
-                        'K': int( bool( intrapartum.filter(ogtt50_q, pos_q) ) ),
-                        'L': int( bool( intrapartum.filter(ogtt50_threshold_q) ) ),
-                        'M': int( bool( intrapartum.filter(ogtt75_q, pos_q) ) ),
-                        'N': int( bool( intrapartum.filter(ogtt100_q, pos_q) ) ),
-                        'O': int( bool( postpartum.filter(ogtt75_q, order_q) ) ),
-                        'P': int( bool( intrapartum.filter(name='rx--insulin') ) ),
-                        'Q': int( bool( intrapartum.filter(name='rx--metformin') ) ),
-                        'R': int( bool( intrapartum.filter(name='rx--glyburide_rx') ) ),
-                        'S': int( bool( nutrition_referral ) ),
-                        'T': int( bool( postpartum.filter(ogtt75_q, any_q) ) ),
-                        'U': int( bool( postpartum.filter(ogtt75_ifg_q) ) ),
-                        'V': int( bool( postpartum.filter(ogtt75_igt_q) ) ),
-                        'W': int( bool( postpartum.filter(ogtt75_ifg_q) | postpartum.filter(ogtt75_igt_q) ) ),
-                        'X': int( bool( postpartum.filter(ogtt75_threshold_q) ) ),
-                        'Y': int( early_a1c_max >= 6.5 ),
-                        'Z': int( late_a1c_max >= 6.5 ),
-                        }
-                else:
-                    values = {
-                        'pregnancy_id': preg_ts.pk,
-                        'pregnancy': True,
-                        'preg_start': preg_ts.start_date,
-                        'preg_end': preg_ts.end_date,
-                        'edd': edd,
-                        'bmi': bmi,
-                        'gdm_case': bool( gdm_this_preg ),
-                        'gdm_case--date': gdm_date,
-                        'gdm_icd9--this_preg': bool( intrapartum.filter(dxgdm_q) ),
-                        'intrapartum--ogtt50--positive': bool( intrapartum.filter(ogtt50_q, pos_q) ),
-                        'intrapartum--ogtt50--threshold': bool( intrapartum.filter(ogtt50_threshold_q) ),
-                        'postpartum--ogtt75--order': bool( postpartum.filter(ogtt75_q, order_q) ),
-                        'postpartum--ogtt75--any_result': bool( postpartum.filter(ogtt75_q, any_q) ),
-                        'postpartum--ogtt75--positive': bool( postpartum.filter(ogtt75_q, pos_q) ),
-                        'postpartum--ogtt75--dm_threshold': bool( postpartum.filter(ogtt75_threshold_q) ),
-                        'postpartum--ogtt75--igt_range': bool( postpartum.filter(ogtt75_igt_q) ),
-                        'postpartum--ogtt75--ifg_range': bool( postpartum.filter(ogtt75_ifg_q) ),
-                        'intrapartum--ogtt100--positive': bool( intrapartum.filter(ogtt100_q, pos_q) ),
-                        'early_postpartum--a1c--order': bool( early_pp.filter(a1c_q, order_q) ),
-                        'early_postpartum--a1c--max': early_a1c_max,
-                        'late_postpartum--a1c--max': late_a1c_max,
-                        'lancets_test_strips--this_preg': bool( intrapartum.filter(lancets_q) ),
-                        'lancets_test_strips--14_days_gdm_icd9': bool( lancets_and_icd9 ),
-                        'insulin_rx': bool( intrapartum.filter(name='rx--insulin') ),
-                        'metformin_rx': bool( intrapartum.filter(name='rx--metformin') ),
-                        'glyburide_rx': bool( intrapartum.filter(name='rx--glyburide') ),
-                        'referral_to_nutrition': bool(nutrition_referral),
-                        }
-                values.update(patient_values)
-                writer.writerow(values)
-        log.info('Completed GDM report')
+            edd_qs = Encounter.objects.filter(
+                patient = patient,
+                date__gte = preg_ts.start_date,
+                date__lte = preg_ts.end_date,
+                edd__isnull=False
+                ).order_by('-date')
+            if edd_qs:
+                edd = edd_qs[0].edd
+            else:
+                edd = None
+            if gdm_this_preg:
+                gdm_date = gdm_this_preg[0].date
+            else:
+                gdm_date = None
+            early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate( max=Max('result_float') )['max']
+            late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max']
+            values = {
+                'pregnancy_id': preg_ts.pk,
+                'pregnancy': True,
+                'preg_start': preg_ts.start_date,
+                'preg_end': preg_ts.end_date,
+                'edd': edd,
+                'bmi': bmi,
+                'gdm_case': bool( gdm_this_preg ),
+                'gdm_case--date': gdm_date,
+                'gdm_icd9--this_preg': bool( intrapartum.filter(self.dxgdm_q) ),
+                'prior_gdm_case': bool( gdm_prior ),
+                'prior_gdm_case--date': gdm_prior_date,
+                'prior_gdm_icd9--this_preg': bool( prepartum.filter(self.dxgdm_q) ),
+                'intrapartum--ogtt50--threshold': bool( intrapartum.filter(self.ogtt50_threshold_q) ),
+                'intrapartum--ogtt75--threshold': bool( intrapartum.filter(self.ogtt75_intra_thresh_q) ),
+                'intrapartum--ogtt100--threshold': bool( intrapartum.filter(self.ogtt100_threshold_q) ),
+                'postpartum--ogtt75--order': bool( postpartum.filter(self.ogtt75_q, self.order_q) ),
+                'postpartum--ogtt75--any_result': bool( postpartum.filter(self.ogtt75_q, self.any_q) ),
+                'postpartum--ogtt75--dm_threshold': bool( postpartum.filter(self.ogtt75_dm_q) ),
+                'postpartum--ogtt75--igt_range': bool( postpartum.filter(self.ogtt75_igt_q) ),
+                'postpartum--ogtt75--ifg_range': bool( postpartum.filter(self.ogtt75_ifg_q) ),
+                'early_postpartum--a1c--order': bool( early_pp.filter(self.a1c_q, self.order_q) ),
+                'early_postpartum--a1c--max': early_a1c_max,
+                'late_postpartum--a1c--max': late_a1c_max,
+                'lancets_test_strips--this_preg': bool( intrapartum.filter(self.lancets_q) ),
+                'lancets_test_strips--14_days_gdm_icd9': bool( lancets_and_icd9 ),
+                'insulin_rx': bool( intrapartum.filter(name='rx--insulin') ),
+                'metformin_rx': bool( intrapartum.filter(name='rx--metformin') ),
+                'glyburide_rx': bool( intrapartum.filter(name='rx--glyburide') ),
+                'referral_to_nutrition': bool(nutrition_referral),
+                }
+            values.update(patient_values)
+            writer.writerow(values)
 
 
 class BaseDiabetesReport(Report):
