@@ -71,6 +71,12 @@ class Diabetes(DiseaseDefinition):
         #
         for test_name in [
             'c-peptide',
+            # Complete OGTT75 series
+            'ogtt75-fasting',
+            'ogtt75-30min',
+            'ogtt75-1hr',
+            'ogtt75-90min',
+            'ogtt75-2hr',
             ]:
             heuristics.append(LabResultAnyHeuristic(test_name=test_name))
         #
@@ -727,13 +733,12 @@ class GestationalDiabetesReport(Report):
         'gdm_case', # Boolean
         'gdm_case--date',
         'gdm_icd9--this_preg',
-        'intrapartum--ogtt50--positive',
         'intrapartum--ogtt50--threshold',
-        'intrapartum--ogtt75--positive',
-        'intrapartum--ogtt100--positive',
+        'intrapartum--ogtt50--threshold',
+        'intrapartum--ogtt75--threshold',
+        'intrapartum--ogtt100--threshold',
         'postpartum--ogtt75--order',
         'postpartum--ogtt75--any_result',
-        'postpartum--ogtt75--positive',
         'postpartum--ogtt75--dm_threshold',
         'postpartum--ogtt75--igt_range',
         'postpartum--ogtt75--ifg_range',
@@ -748,74 +753,58 @@ class GestationalDiabetesReport(Report):
         'referral_to_nutrition',
         ]
     
-    RISKSCAPE_FIELDS = [
-        'A',
-        'B',
-        'C',
-        'D',
-        'E',
-        'F',
-        'G',
-        'H',
-        'I',
-        'J',
-        'K',
-        'L',
-        'M',
-        'N',
-        'O',
-        'P',
-        'Q',
-        'R',
-        'S',
-        'T',
-        'U',
-        'V',
-        'W',
-        'X',
-        'Y',
-        'Z',
-        ]
-  
-    
-    def run(self, riskscape=False):
-        log.info('Generating GDM report')
-        if riskscape:
-            fields = self.RISKSCAPE_FIELDS
-        else:
-            fields = self.LINELIST_FIELDS
-        writer = csv.DictWriter(sys.stdout, fieldnames=fields, quoting=csv.QUOTE_ALL)
-        pos_q = Q(name__endswith=':positive')
-        a1c_q = Q(name__startswith='lx:a1c')
-        ogtt50_q = Q(name__startswith='lx:ogtt50')
-        ogtt50_threshold_q = Q(name__in = [
+    def __init__(self):
+        self.pos_q = Q(name__endswith=':positive')
+        self.a1c_q = Q(name__startswith='lx:a1c')
+        self.ogtt50_q = Q(name__startswith='lx:ogtt50')
+        self.ogtt50_threshold_q = Q(name__in = [
             'lx:ogtt50-1hr:threshold:gte:190',
             'lx:ogtt50-random:threshold:gte:190',
             ])
-        ogtt75_q = Q(name__startswith='lx:ogtt75')
-        ogtt75_threshold_q = Q(name__in = [
-            'lx:ogtt75-1hr:threshold:gte:180',
-            'lx:ogtt75-1hr:threshold:gte:200',
-            'lx:ogtt75-2hr:threshold:gte:155',
-            'lx:ogtt75-2hr:threshold:gte:200',
+        self.ogtt75_q = Q(name__startswith='lx:ogtt75')
+        # OGTT75 intrapartum thresholds
+        self.ogtt75_intra_thresh_q = Q(name__in = [
+            'lx:ogtt75-fasting:threshold:gte:92',
             'lx:ogtt75-30min:threshold:gte:200',
+            'lx:ogtt75-1hr:threshold:gte:180',
             'lx:ogtt75-90min:threshold:gte:180',
-            'lx:ogtt75-90min:threshold:gte:200',
-            'lx:ogtt75-fasting:threshold:gte:126',
-            'lx:ogtt75-fasting:threshold:gte:95',
+            'lx:ogtt75-2hr:threshold:gte:153',
             ])
-        ogtt75_igt_q = Q(name__in = [
+        self.ogtt75_dm_q = Q(name__in = [
+            'lx:ogtt75-fasting:threshold:gte:126',
+            'lx:ogtt75-30min:threshold:gte:200',
+            'lx:ogtt75-1hr:threshold:gte:200',
+            'lx:ogtt75-90min:threshold:gte:200',
+            'lx:ogtt75-2hr:threshold:gte:200',
+            ])
+        self.ogtt75_igt_q = Q(name__in = [
             'lx:ogtt75-1hr:range:gte:140:lte:200',
             'lx:ogtt75-2hr:range:gte:140:lte:200',
             'lx:ogtt75-30min:range:gte:140:lte:200',
             'lx:ogtt75-90min:range:gte:141:lte:200',
             ])
-        ogtt75_ifg_q = Q(name='lx:ogtt75-fasting:range:gte:100:lte:125')
-        ogtt100_q = Q(name__startswith='lx:ogtt100')
-        order_q = Q(name__endswith=':order')
-        any_q = Q(name__endswith=':any-result')
-        dxgdm_q = Q(name='dx:gestational-diabetes')
-        lancets_q = Q(name__in=['rx:test-strips', 'rx:lancets'])
+        self.ogtt75_ifg_q = Q(name='lx:ogtt75-fasting:range:gte:100:lte:125')
+        self.ogtt100_q = Q(name__startswith='lx:ogtt100')
+        self.ogtt100_threshold_q = Q(name__in=[
+            'lx:ogtt100-fasting-urine:positive',
+            'lx:ogtt100-fasting:threshold:gte:95',
+            'lx:ogtt100-30m:threshold:gte:200',
+            'lx:ogtt100-1hr:threshold:gte:180',
+            'lx:ogtt100-90m:threshold:gte:180',
+            'lx:ogtt100-2hr:threshold:gte:155',
+            'lx:ogtt100-3hr:threshold:gte:140',
+            'lx:ogtt100-4hr:threshold:gte:140',
+            'lx:ogtt100-5hr:threshold:gte:140',
+            ])
+        self.order_q = Q(name__endswith=':order')
+        self.any_q = Q(name__endswith=':any-result')
+        self.dxgdm_q = Q(name='dx:gestational-diabetes')
+        self.lancets_q = Q(name__in=['rx:test-strips', 'rx:lancets'])
+        
+    def run(self, riskscape=False):
+        log.info('Generating GDM report')
+        fields = self.LINELIST_FIELDS
+        writer = csv.DictWriter(sys.stdout, fieldnames=fields, quoting=csv.QUOTE_ALL)
         #
         # Header
         #
@@ -831,97 +820,129 @@ class GestationalDiabetesReport(Report):
         patient_pks.update( Event.objects.filter(name='dx:gestational-diabetes').values_list('patient', flat=True) )
         patient_pks.update( Timespan.objects.filter(name='pregnancy').values_list('patient', flat=True))
         counter = 0
-        #total = patient_qs.count()
         total = len(patient_pks)
-        for ppk in patient_pks:
+        funcs = []
+        for pat_pk in patient_pks:
             counter += 1
-            log.info('Reporting on patient %8s / %s' % (counter, total))
-            patient = Patient.objects.get(pk=ppk)
-            event_qs = Event.objects.filter(patient=patient)
-            preg_ts_qs = Timespan.objects.filter(name='pregnancy', patient=patient)
-            gdm_case_qs = Case.objects.filter(condition='diabetes:gestational', patient=patient)
-            frank_dm_case_qs = Case.objects.filter(condition__startswith='diabetes:type-', patient=patient).order_by('date')
-            a1c_lab_qs = AbstractLabTest('a1c').lab_results.filter(patient=patient)
+            f = partial(self.report_on_patient, pat_pk, writer, counter, total)
+            funcs.append( f )
+        wait_for_threads( funcs )
+        log.info('Completed GDM report')
+    
+    def report_on_patient(self, patient_pk, writer, counter, total):
+        log.info('Reporting on patient %8s / %s' % (counter, total))
+        patient = Patient.objects.get(pk=patient_pk)
+        event_qs = Event.objects.filter(patient=patient)
+        preg_ts_qs = Timespan.objects.filter(name='pregnancy', patient=patient)
+        gdm_case_qs = Case.objects.filter(condition='diabetes:gestational', patient=patient)
+        frank_dm_case_qs = Case.objects.filter(condition__startswith='diabetes:type-', patient=patient).order_by('date')
+        a1c_lab_qs = AbstractLabTest('a1c').lab_results.filter(patient=patient)
+        #
+        # Populate values that will be used all of this patient's pregnancies
+        #
+        try:
+            zip_code = '%05d' % int( patient.zip[0:5] )
+        except:
+            log.warning('Could not convert zip code: %s' % patient.zip)
+        patient_values = {
+            'patient_id': patient.pk,
+            'mrn': patient.mrn,
+            'last_name': patient.last_name,
+            'first_name': patient.first_name,
+            'date_of_birth': patient.date_of_birth,
+            'ethnicity': patient.race,
+            'zip_code': zip_code,
+            'gdm_icd9--any_time': bool(event_qs.filter(self.dxgdm_q)),
+            'frank_diabetes--ever': bool(frank_dm_case_qs),
+            'lancets_test_strips--any_time': bool(event_qs.filter(self.lancets_q)),
+            }
+        if frank_dm_case_qs:
+            first_dm_case = frank_dm_case_qs[0]
+            patient_values['frank_diabetes--date'] = first_dm_case.date
+            patient_values['frank_diabetes--case_id'] = first_dm_case.pk
+        #
+        # Generate a row for each pregnancy (or 1 row if no pregs found)
+        #
+        if not preg_ts_qs:
+            patient_values['pregnancy'] = False
+            writer.writerow(patient_values)
+            return # Nothing more to do for this patient
+        for preg_ts in preg_ts_qs:
             #
-            # Populate values that will be used all of this patient's pregnancies
+            # Find BMI closes to onset of pregnancy
             #
-            try:
-                zip_code = '%05d' % int( patient.zip[0:5] )
-            except:
-                log.warning('Could not convert zip code: %s' % patient.zip)
-            if riskscape:
-                # Age
-                if patient.age:
-                    years = patient.age.years
-                    if years < 20:
-                        age = 1
-                    elif 20 <= years < 25:
-                        age = 2
-                    elif 25 <= years < 30:
-                        age = 3
-                    elif 30 <= years < 35:
-                        age = 4
-                    elif 35 <= years < 40:
-                        age = 5
-                    else:
-                        age = 6
-                else:
-                    age = None
-                # Race
-                if patient.race:
-                    race_string = patient.race.lower()
-                else:
-                    race_string = None
-                if race_string == 'caucasian':
-                    race = 1
-                elif race_string == 'asian':
-                    race = 2
-                elif race_string == 'black':
-                    race = 3
-                elif race_string == 'hispanic':
-                    race = 4
-                elif race_string == 'other':
-                    race = 5
-                else:
-                    race = 6
-                patient_values = {
-                    'A': patient.pk,
-                    'B': age,
-                    'C': race,
-                    'D': zip_code,
-                    }
+            bmi_qs = Encounter.objects.filter(
+                patient = patient,
+                bmi__isnull=False,
+                )
+            preg_bmi_qs = bmi_qs.filter(
+                date__gte = preg_ts.start_date,
+                date__lte = preg_ts.start_date + relativedelta(months=4),
+                ).order_by('date')
+            pre_preg_bmi_qs = bmi_qs.filter(
+                date__gte = preg_ts.start_date - relativedelta(years=1),
+                date__lte = preg_ts.start_date,
+                ).order_by('-date')
+            if preg_bmi_qs:
+                bmi = preg_bmi_qs[0].bmi
+            elif pre_preg_bmi_qs:
+                bmi = pre_preg_bmi_qs[0].bmi
             else:
-                patient_values = {
-                    'patient_id': patient.pk,
-                    'mrn': patient.mrn,
-                    'last_name': patient.last_name,
-                    'first_name': patient.first_name,
-                    'date_of_birth': patient.date_of_birth,
-                    'ethnicity': patient.race,
-                    'zip_code': zip_code,
-                    'gdm_icd9--any_time': bool(event_qs.filter(dxgdm_q)),
-                    'frank_diabetes--ever': bool(frank_dm_case_qs),
-                    'lancets_test_strips--any_time': bool(event_qs.filter(lancets_q)),
-                    }
-            if frank_dm_case_qs and not riskscape:
-                first_dm_case = frank_dm_case_qs[0]
-                patient_values['frank_diabetes--date'] = first_dm_case.date
-                patient_values['frank_diabetes--case_id'] = first_dm_case.pk
+                bmi = None
             #
-            # Generate a row for each pregnancy (or 1 row if no pregs found)
+            # Patient's frank and gestational DM history
             #
-            if not preg_ts_qs:
-                if not riskscape:
-                    patient_values['pregnancy'] = False
-                writer.writerow(patient_values)
-                continue
-            for preg_ts in preg_ts_qs:
-                #
-                # Find BMI closes to onset of pregnancy
-                #
-                bmi_qs = Encounter.objects.filter(
-                    patient = patient,
-                    bmi__isnull=False,
+            gdm_this_preg = gdm_case_qs.filter(
+                date__gte = preg_ts.start_date,
+                date__lte = preg_ts.end_date,
+                ).order_by('date')
+            gdm_prior = gdm_case_qs.filter(date__lt=preg_ts.start_date)
+            frank_dm_early_preg = frank_dm_case_qs.filter(
+                date__gte = preg_ts.start_date,
+                date__lte = preg_ts.end_date - relativedelta(weeks=24),
+                )
+            frank_dm_late_preg = frank_dm_case_qs.filter(
+                date__gte = preg_ts.end_date - relativedelta(weeks=24),
+                date__lte = preg_ts.end_date,
+                )
+            #
+            # Events by time period
+            #
+            intrapartum = event_qs.filter(
+                date__gte = preg_ts.start_date,
+                date__lte = preg_ts.end_date,
+                )
+            postpartum = event_qs.filter(
+                date__gt = preg_ts.end_date,
+                date__lte = preg_ts.end_date + relativedelta(days=120),
+                )
+            early_pp = event_qs.filter(
+                date__gt = preg_ts.end_date,
+                date__lte = preg_ts.end_date + relativedelta(weeks=12),
+                )
+            early_pp_q = Q(
+                date__gt = preg_ts.end_date,
+                date__lte = preg_ts.end_date + relativedelta(weeks=12),
+                )
+            late_pp_q = Q(
+                date__gt = preg_ts.end_date + relativedelta(weeks=12),
+                date__lte = preg_ts.end_date + relativedelta(days=365),
+                )
+            # FIXME: This date math works on PostgreSQL, but I think that's
+            # just fortunate coincidence, as I don't think this is the
+            # right way to express the date query in ORM syntax.
+            lancets_and_icd9 = intrapartum.filter(
+                self.lancets_q,
+                patient__event__name='dx:gestational-diabetes',
+                patient__event__date__gte =  (F('date') - 14),
+                patient__event__date__lte =  (F('date') + 14),
+                )
+            nutrition_referral = Encounter.objects.filter(
+                patient=patient,
+                date__gte=preg_ts.start_date, 
+                date__lte=preg_ts.end_date, 
+                ).filter(
+                    Q(provider__title__icontains='RD') | Q(site_name__icontains='Nutrition')
                     )
                 preg_bmi_qs = bmi_qs.filter(
                     date__gte = preg_ts.start_date,
