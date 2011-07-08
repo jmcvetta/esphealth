@@ -176,6 +176,7 @@ esphealth/ESP/nodis/management/commands/gdm.py -text
 esphealth/ESP/nodis/management/commands/nodis.py -text
 esphealth/ESP/nodis/management/commands/patient_report.py -text
 esphealth/ESP/nodis/management/commands/prediabetes.py -text
+esphealth/ESP/nodis/management/commands/report.py -text
 esphealth/ESP/nodis/models.py -text
 esphealth/ESP/nodis/tests.py -text
 esphealth/ESP/phit/__init__.py -text
