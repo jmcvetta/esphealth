@@ -376,7 +376,7 @@ class AbstractLabTest(object):
     @property
     def lab_orders(self):
         testmaps = LabTestMap.objects.filter(test_name = self.name).filter( Q(record_type='order') | Q(record_type='both') )
-        qs = LabOrder.objects.filter(native_code__in=testmaps.values('native_code'))
+        qs = LabOrder.objects.filter(procedure_master_num__in=testmaps.values('native_code'))
         log_query('Lab Orders for %s' % self.name, qs)
         return qs
     
@@ -406,6 +406,11 @@ class LabOrderHeuristic(BaseEventHeuristic):
         return 'laborder:%s' % self.test_name
     
     uri = 'urn:x-esphealth:heuristic:channing:laborder:v1'
+    
+    @property
+    def core_uris(self):
+        # Only this version of HEF is supported
+        return [HEF_CORE_URI]
     
     @property
     def order_event_name(self):
