@@ -373,6 +373,7 @@ esphealth/etc/templates/case_report/odh_hl7.txt -text
 esphealth/install-systemwide-deps.sh -text
 esphealth/install.sh -text
 esphealth/requirements.txt -text
+esphealth/share/Riskscape[!!-~]Report[!!-~]Converter.ktr -text
 esphealth/share/apache.conf.sample -text
 esphealth/share/cpt_codes.csv.bz2 -text svneol=unset#unset
 esphealth/share/data-quality-check.py -text
