@@ -142,6 +142,10 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             Q(icd9_codes__code__startswith='669.') 
             )
         #
+        # Outcome of Delivery
+        #
+        self.delivery_outcome_q = Q(icd9_codes__code__startswith='V27.')  
+        #
         # End of Pregnancy (EoP)
         #
         #self.eop_qs = Encounter.objects.filter(preg_end_q)
@@ -156,6 +160,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             | self.abortion_q
             | self.delivery_complications_q
             | self.delivery_normal_q
+            | self.delivery_outcome_q
             | self.complications_q
             )
         self.relevant_enc_qs = self.edd_qs | self.preg_icd9_qs | self.all_eop_qs
@@ -215,59 +220,39 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             #
             # Find an End of Pregnancy event.  
             #
-            # Some EoP events are more reliable than others.  First we look
-            # for a reliable event.  If none is found, we look for an unreliable 
-            # event, but ensure that it is not followed by another ICD9 for pregnancy
-            # within 30 days.
-            #
+            eop_event_date = None
             eop_date_limit = onset_date + relativedelta(days=280) + relativedelta(days=30)
-            reliable_eop_qs = Encounter.objects.filter(
+            eop_qs = self.all_eop_qs.filter(
                 patient = patient,
                 date__gte = onset_date,
                 date__lte = eop_date_limit,
-                ).filter(
-                    self.abortion_q |
-                    self.delivery_normal_q |
-                    self.complications_q
-                )
-            unreliable_eop_qs = Encounter.objects.filter(
-                patient = patient,
-                date__gte = onset_date,
-                date__lte = eop_date_limit,
-                ).filter(
-                    self.ectopic_molar_q |
-                    self.delivery_complications_q |
-                    self.spontaneous_abortion_q |
-                    self.postpartum_q
                 ).order_by('-date')
-            # 
-            # Get max date for reliable EoP events.  IF there are no events, max
-            # date will be null.  If max date is non-null, then it is the EoP 
-            # date for this pregnancy.  
             #
-            eop_event_date = reliable_eop_qs.aggregate(Max('date'))['date__max']
-            if eop_event_date:
-                eop_pattern = 'eop:eop_event '
-            else:
-                # If we have some unreliable EoP events, let's examinet them more
-                # closely now.
-                for enc in unreliable_eop_qs:
-                    # Does the patient have a pregnancy ICD9 within a month after
-                    # this unreliable EoP event?
-                    subsequent_preg_icd9 = self.preg_icd9_qs.filter(
-                        patient = patient,
-                        date__gte = enc.date,
-                        date__lte = enc.date + relativedelta(days=30)
-                        )
-                    if subsequent_preg_icd9:
-                        # If so, this EoP event is bogus, so we continue to the 
-                        # next one
-                        continue 
-                    else:
-                        # This EoP event seems plausible.  Let's use its date.
-                        eop_event_date = enc.date
-                        eop_pattern = 'eop:eop_event_unreliable '
-                        break
+            # Sometimes EoP evenets are unreliabe; and some event types are 
+            # known to be less reliable than others.  We will roll thru each
+            # potential EoP event and see if there is a pregnancy ICD9 immediately
+            # following it, which would suggest it's bogus.
+            #
+            for enc in eop_qs:
+                #
+                # It may be necessary to examine reliable and unreliable 
+                # events differently.  However we will first try examining
+                # them the same way, and change the code if need be.
+                #
+                subsequent_preg_icd9 = self.preg_icd9_qs.filter(
+                    patient = patient,
+                    date__gte = enc.date,
+                    date__lte = enc.date + relativedelta(days=30)
+                    )
+                if subsequent_preg_icd9:
+                    # If so, this EoP event is bogus, so we continue to the 
+                    # next one
+                    continue 
+                else:
+                    # This EoP event seems plausible.  Let's use its date.
+                    eop_event_date = enc.date
+                    eop_pattern = 'eop:eop_event'
+                    break
             #
             # If plausible EoP event was found, use that for EoP date.  If not, 
             # use EDD.  If no EDD, use last dated encounter with pregnancy 
