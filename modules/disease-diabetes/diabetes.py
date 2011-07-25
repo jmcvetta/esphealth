@@ -962,6 +962,9 @@ class GestationalDiabetesReport(Report):
                 gdm_date = None
             early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate( max=Max('result_float') )['max']
             late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max']
+            ogtt100_twice_qs = intrapartum.filter(self.ogtt100_threshold_q).\
+                values('patient').annotate(count=Count('pk')).\
+                filter(count__gte=2).values_list('patient', flat=True).distinct()
             values = {
                 'pregnancy_id': preg_ts.pk,
                 'pregnancy': True,
@@ -977,7 +980,7 @@ class GestationalDiabetesReport(Report):
                 'prior_gdm_icd9--this_preg': bool( prepartum.filter(self.dxgdm_q) ),
                 'intrapartum--ogtt50--threshold': bool( intrapartum.filter(self.ogtt50_threshold_q) ),
                 'intrapartum--ogtt75--threshold': bool( intrapartum.filter(self.ogtt75_intra_thresh_q) ),
-                'intrapartum--ogtt100--threshold': bool( intrapartum.filter(self.ogtt100_threshold_q) ),
+                'intrapartum--ogtt100--threshold': bool( ogtt100_twice_qs ),
                 'postpartum--ogtt75--order': bool( postpartum.filter(self.ogtt75_q, self.order_q) ),
                 'postpartum--ogtt75--any_result': bool( postpartum.filter(self.ogtt75_q, self.any_q) ),
                 'postpartum--ogtt75--dm_threshold': bool( postpartum.filter(self.ogtt75_dm_q) ),
