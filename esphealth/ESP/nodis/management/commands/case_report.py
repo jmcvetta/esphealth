@@ -270,12 +270,12 @@ class hl7Batch:
         ##need check if any Gonorrhea test for Chlamydia
         if case.condition == 'chlamydia':
             gon_events = Event.objects.filter(name='gonorrhea:positive', patient=patient)
-            gon_labs = LabResult.objects.filter(event__in=gon_events)
+            gon_labs = LabResult.objects.filter(events__in=gon_events).distinct()
             reportable_labs |= gon_labs
             reportable_labs = reportable_labs.distinct()
         elif case.condition == 'gonorrhea':
             chlam_events = Event.objects.filter(name='chlamydia:positive', patient=patient)
-            chlam_labs = LabResult.objects.filter(event__in=chlam_events)
+            chlam_labs = LabResult.objects.filter(events__in=chlam_events).distinct()
             reportable_labs |= chlam_labs
             reportable_labs = reportable_labs.distinct()
         #cleanlxids = self.removeDuplicateLx(totallxs)
