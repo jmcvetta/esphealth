@@ -1046,7 +1046,7 @@ class Command(BaseCommand):
         make_option('--status', action='store', dest='status', default='Q',
             help='Export only cases with this status ("Q" by default)'),
         make_option('--batch-size', action='store', type='int', dest='batch_size', metavar='NUM',
-            default=None, help='Generate batches of NUM cases per file'),
+            default=CASE_REPORT_BATCH_SIZE, help='Generate batches of NUM cases per file'),
         make_option('--mdph', action='store_true', dest='mdph', default=False,
             help='Export cases in HL7v3 dialect required by Massachusetts Department of Public Health'),
         make_option('--transmit', action='store_true', dest='transmit', default=False, 
@@ -1149,7 +1149,6 @@ class Command(BaseCommand):
         #
         # Split cases into batches
         #
-        options.batch_size = CASE_REPORT_BATCH_SIZE
         if options.one_file or not options.batch_size:
             options.batch_size = case_count
         batch_serial = 0
