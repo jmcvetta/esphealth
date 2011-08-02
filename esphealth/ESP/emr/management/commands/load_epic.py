@@ -320,7 +320,7 @@ class BaseLoader(object):
             if DEBUG:
                 ex_to_catch = []
             else:
-                ex_to_catch = [BaseException]
+                ex_to_catch = BaseException
             try:
                 self.load_row(row)
                 transaction.savepoint_commit(sid)
@@ -966,7 +966,7 @@ class Command(LoaderCommand):
                 if DEBUG:
                     ex_to_catch = []
                 else:
-                    ex_to_catch = [BaseException]
+                    ex_to_catch = BaseException
                 try:
                     valid, error = l.load()
                     valid_count[ft] += valid
