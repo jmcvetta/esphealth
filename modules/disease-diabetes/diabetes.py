@@ -122,7 +122,7 @@ class Diabetes(DiseaseDefinition):
             # A1C
             ('a1c', 'gte', 6.5),
             # C-Peptide
-            ('c-peptide', 'lte', 1),
+            ('c-peptide', 'lt', 0.8),
             ]:
             h = LabResultFixedThresholdHeuristic(
                 test_name = test_name,
@@ -422,10 +422,10 @@ class Diabetes(DiseaseDefinition):
         
         #===============================================================================
         #
-        # 1. C-peptide test <= 1.0
+        # 1. C-peptide test < 0.8
         #
         #-------------------------------------------------------------------------------
-        c_peptide_lx_thresh = patient_events.filter(name='lx:c-peptide:threshold:lte:1').order_by('date')
+        c_peptide_lx_thresh = patient_events.filter(name='lx:c-peptide:threshold:lt:0.8').order_by('date')
         if c_peptide_lx_thresh:
             provider = c_peptide_lx_thresh[0].provider
             case_date = c_peptide_lx_thresh[0].date
@@ -462,29 +462,16 @@ class Diabetes(DiseaseDefinition):
             criteria = 'Acetone Rx: Type 1'
             condition = 'diabetes:type-1'
             log.debug(criteria)
-            
-        #===============================================================================
-        #
-        # 4. Prescription for GLUCAGON
-        #
-        #-------------------------------------------------------------------------------
-        glucagon_rx = patient_events.filter(name='rx:glucagon').order_by('date')
-        if glucagon_rx:
-            provider = glucagon_rx[0].provider
-            case_date = glucagon_rx[0].date
-            case_events = trigger_events | glucagon_rx
-            criteria = 'Glucagon Rx: Type 1'
-            condition = 'diabetes:type-1'
-            log.debug(criteria)
         
         #===============================================================================
         #
-        # 5. Ratio of type 1 : type 2 ICD9s >50% and never prescribed oral hypoglycemic 
-        #    medications
+        # 4/5. Ratio of type 1 : type 2 ICD9s >50% and (never prescribed oral hypoglycemic 
+        #    medications OR prescription for GLUCAGON)
         #
         #-------------------------------------------------------------------------------
         oral_hypoglycaemic_rx = patient_events.filter(name__in=self.ORAL_HYPOGLYCAEMICS).order_by('date')
-        if not oral_hypoglycaemic_rx:
+        glucagon_rx = patient_events.filter(name='rx:glucagon').order_by('date')
+        if glucagon_rx or (not oral_hypoglycaemic_rx):
             type_1_dx = patient_events.filter(name__startswith='dx:diabetes:type-1')
             type_2_dx = patient_events.filter(name__startswith='dx:diabetes:type-2')
             count_1 = type_1_dx.count()
@@ -494,7 +481,10 @@ class Diabetes(DiseaseDefinition):
                 provider = trigger_events[0].provider
                 case_date = trigger_events[0].date
                 case_events = trigger_events | type_1_dx | type_2_dx
-                criteria = 'Never prescribed oral hypoglycemics, and more than 50% of ICD9s are type 1: Type 1'
+                if glucagon_rx:
+                    criteria = 'More than 50% of ICD9s are type 1, and glucagon rx: Type 1'
+                else:
+                    criteria = 'More than 50% of ICD9s are type 1, and never prescribed oral hypoglycaemics: Type 1'
                 condition = 'diabetes:type-1'
                 log.debug(criteria)
                 
