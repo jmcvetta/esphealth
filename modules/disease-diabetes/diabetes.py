@@ -633,7 +633,7 @@ class Diabetes(DiseaseDefinition):
         #
         # Dx or Rx
         #
-        dx_ets=['dx:gestational-diabetes']
+        dx_ets=['dx:diabetes:all-types']
         rx_ets=['rx:lancets', 'rx:test-strips']
         # FIXME: This date math works on PostgreSQL, but I think that's just 
         # fortunate coincidence, as I don't think this is the righ way to 
