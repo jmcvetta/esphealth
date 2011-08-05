@@ -63,7 +63,7 @@
   <created_user>-</created_user>
   <created_date>2011&#47;07&#47;14 12:16:16.310</created_date>
   <modified_user>-</modified_user>
-  <modified_date>2011&#47;07&#47;25 17:05:20.259</modified_date>
+  <modified_date>2011&#47;08&#47;05 13:19:02.444</modified_date>
   </info>
   <notepads>
     <notepad>
@@ -317,7 +317,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>age_range</name>
         <rename>B</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -329,7 +329,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>race_code</name>
         <rename>C</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -353,7 +353,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>pregnancy_year</name>
         <rename>E</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -365,7 +365,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>bmi_range</name>
         <rename>F</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -377,7 +377,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>gdm_case</name>
         <rename>G</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -389,7 +389,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>prior_gdm_case</name>
         <rename>H</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -401,7 +401,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>frank_dm_early</name>
         <rename>I</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -413,7 +413,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>frank_dm_late</name>
         <rename>J</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -425,7 +425,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>intrapartum__ogtt50__reference</name>
         <rename>K</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -437,7 +437,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>intrapartum__ogtt50__threshold</name>
         <rename>L</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -449,7 +449,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>intrapartum__ogtt75__threshold</name>
         <rename>M</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -461,7 +461,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>intrapartum__ogtt100__threshold</name>
         <rename>N</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -473,7 +473,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>postpartum__ogtt75__order</name>
         <rename>O</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -485,7 +485,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>insulin_rx</name>
         <rename>P</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -497,7 +497,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>metformin_rx</name>
         <rename>Q</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -509,7 +509,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>glyburide_rx</name>
         <rename>R</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -521,7 +521,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>referral_to_nutrition</name>
         <rename>S</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -533,7 +533,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>postpartum__ogtt75__any_result</name>
         <rename>T</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -545,7 +545,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>postpartum__ogtt75__ifg_range</name>
         <rename>U</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -557,7 +557,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>postpartum__ogtt75__igt_range</name>
         <rename>V</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -569,7 +569,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>ifg_or_igt</name>
         <rename>W</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -581,7 +581,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>postpartum__ogtt75__dm_threshold</name>
         <rename>X</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -593,7 +593,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>early_a1c_range</name>
         <rename>Y</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -605,7 +605,7 @@ number range step</note>
         <storage_type/>
       </meta>      <meta>        <name>late_a1c_range</name>
         <rename>Z</rename>
-        <type>Number</type>
+        <type>Integer</type>
         <length>-2</length>
         <precision>-2</precision>
         <conversion_mask/>
@@ -746,6 +746,37 @@ number range step</note>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>444</xloc>
       <yloc>343</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>Output filename</name>
+    <type>ScriptValueMod</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <compatible>N</compatible>
+    <jsScripts>      <jsScript>        <jsScript_type>0</jsScript_type>
+        <jsScript_name>Script 1</jsScript_name>
+        <jsScript_script>var input_date_str = input_filename.split(&apos;.&apos;)[1];
+
+var output_filename = getVariable(&apos;ESP_REPORT_FOLDER&apos;, &apos;&#47;dev&#47;null&apos;) + &apos;&#47;gestational-diabetes.riskscape.&apos; + input_date_str + &apos;.csv&apos;
+</jsScript_script>
+      </jsScript>    </jsScripts>    <fields>      <field>        <name>output_filename</name>
+        <rename>output_filename</rename>
+        <type>String</type>
+        <length>-1</length>
+        <precision>-1</precision>
+        <replace>N</replace>
+      </field>    </fields>     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>84</xloc>
+      <yloc>143</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -2203,37 +2234,6 @@ number range step</note>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>264</xloc>
       <yloc>443</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>Output filename</name>
-    <type>ScriptValueMod</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <compatible>N</compatible>
-    <jsScripts>      <jsScript>        <jsScript_type>0</jsScript_type>
-        <jsScript_name>Script 1</jsScript_name>
-        <jsScript_script>var input_date_str = input_filename.split(&apos;.&apos;)[1];
-
-var output_filename = getVariable(&apos;ESP_REPORT_FOLDER&apos;, &apos;&#47;dev&#47;null&apos;) + &apos;&#47;gestational-diabetes.riskscape.&apos; + input_date_str + &apos;.csv&apos;
-</jsScript_script>
-      </jsScript>    </jsScripts>    <fields>      <field>        <name>output_filename</name>
-        <rename>output_filename</rename>
-        <type>String</type>
-        <length>-1</length>
-        <precision>-1</precision>
-        <replace>N</replace>
-      </field>    </fields>     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>84</xloc>
-      <yloc>143</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
