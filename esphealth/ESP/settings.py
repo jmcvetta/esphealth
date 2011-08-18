@@ -169,7 +169,8 @@ CASE_REPORT_MDPH = config['Reporting']['use_mdph_format']
 CASE_REPORT_TEMPLATE = config['Reporting']['template']
 CASE_REPORT_FILENAME_FORMAT = config['Reporting']['filename_format']
 CASE_REPORT_BATCH_SIZE = config['Reporting']['cases_per_message']
-CASE_REPORT_TRANSMIT = config['Reporting']['transport']
+CASE_REPORT_TRANSPORT = config['Reporting']['transport']
+CASE_REPORT_TRANSPORT_SCRIPT = config['Reporting']['transport_script']
 #
 # Mapping table to express lab specimen source in SNOMED codes, derived
 # from MDPH ELR Portal specimen source vocabulary page.
@@ -402,6 +403,7 @@ JAVA_JARS = [
     app_full_path('axis-1_4/activation.jar'),
     app_full_path('axis-1_4/mail.jar'),
     app_full_path('sendMsgs/bcdc.jar'),
+    app_full_path('sendMsgs/ini4j-0.5.2.jar'),
     app_full_path('sendMsgs')
     ]
 JAVA_CLASSPATH = " %s " % ':'.join([str(jar) for jar in JAVA_JARS])

@@ -25,7 +25,8 @@ from ESP.settings import CASE_REPORT_OUTPUT_FOLDER
 from ESP.settings import CASE_REPORT_TEMPLATE
 from ESP.settings import CASE_REPORT_FILENAME_FORMAT
 from ESP.settings import CASE_REPORT_BATCH_SIZE
-from ESP.settings import CASE_REPORT_TRANSMIT
+from ESP.settings import CASE_REPORT_TRANSPORT
+from ESP.settings import CASE_REPORT_TRANSPORT_SCRIPT
 from ESP.settings import CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP
 from ESP.settings import FAKE_PATIENT_MRN
 from ESP.settings import FAKE_PATIENT_SURNAME
@@ -130,6 +131,12 @@ class IncompleteCaseData(BaseException):
     '''
     Exception raised when a case does not have all the data elements required 
     to generate a valid HL7 message.
+    '''
+    pass
+
+class TransmitError(BaseException):
+    '''
+    Exception raised on failure of attempt to transmit case.
     '''
     pass
 
@@ -1260,14 +1267,29 @@ class Command(BaseCommand):
         @param report_file_path: Full path to file that is to be uploaded
         @type report_file_path:  String
         '''
-        if CASE_REPORT_TRANSMIT.lower() == 'atrius':
-            return self.transmit_atrius(options, report_file)
-        elif CASE_REPORT_TRANSMIT.lower() == 'ftp':
-            return self.transmit_ftp(options, report_file)
+        if CASE_REPORT_TRANSPORT.lower() == 'script':
+            return self.transmit_via_script(options, report_file)
+        elif CASE_REPORT_TRANSPORT.lower() == 'ftp':
+            return self.transmit_via_ftp(options, report_file)
         else:
-            raise NotImplementedError('Support for "%s" transmit is not implemented' % CASE_REPORT_TRANSMIT)
+            raise NotImplementedError('Support for "%s" transmit is not implemented' % CASE_REPORT_TRANSPORT)
+
+
+    def transmit_via_script(self, options, report_file_path):
+        '''
+        Call a script that will upload the case report file.
+        '''
+        log.info('Calling script "%s" to upload case report file "%s".' 
+            % (CASE_REPORT_TRANSPORT_SCRIPT, report_file_path))
+        # It would be nice to use subprocess.check_output() instead here; 
+        # however that function requires Python >= 2.7, which we don't
+        # want to make a requirement just yet.  - JM 2011 Aug 17
+        args = shlex.split(CASE_REPORT_TRANSPORT_SCRIPT) + [report_file_path]
+        subprocess.check_call(args)
+        log.info('Case report upload script exited with success!')
+            
         
-    def transmit_ftp(self, options, report_file_path):
+    def transmit_via_ftp(self, options, report_file_path):
         '''
         Upload a file using cleartext FTP.  Why must people insist on doing this??
         '''
@@ -1300,42 +1322,10 @@ class Command(BaseCommand):
                 conn.storlines(command, fd)
             log.info('Successfully uploaded %s' % report_file_path)
         except BaseException, e:
-            log.error('FTP ERROR: %s' % e)
+            msg = 'FTP ERROR: %s' % e
+            log.error(msg)
+            raise TransmitError(msg)
         fd.close()
         return True
             
         
-    def transmit_atrius(self, options, report_file_path):
-        '''
-        Transmits file to Atrius using custom Java component.
-        '''
-        #
-        # Compile Java sender application
-        #
-        send_msg_command = os.path.join(CODEDIR, 'sendMsgs', 'sendMsg')
-        javac = os.path.join(JAVA_DIR, 'javac')
-        compile_cmd = "%s -classpath %s %s.java" % (javac, JAVA_CLASSPATH, send_msg_command)
-        log.debug(compile_cmd)
-        compile_args = shlex.split(compile_cmd)
-        p = subprocess.Popen(compile_args)
-        retcode = p.wait()
-        if retcode: # Error
-            msg = 'Compile java Exception: %s' % compile_cmd
-            log.error(msg)
-            print >> sys.stderr, msg
-            sys.exit()
-        java_runtime = os.path.join(JAVA_DIR, 'java')
-        # Do we really want to tee off to a log file here?
-        transmit_cmd = "%s -classpath %s %s %s | tee %s" % (java_runtime, JAVA_CLASSPATH, 'sendMsg', report_file_path, LOG_FILE)
-        log.debug(transmit_cmd)
-        transmit_args = shlex.split(transmit_cmd)
-        p = subprocess.Popen(transmit_args)
-        retcode = p.wait()
-        if retcode == 0: # Error
-            return True
-        else:
-            msg = 'Error sending message with command:\n    %s' % transmit_cmd
-            log.error(msg)
-            print >> sys.stderr, msg
-            return False
-    
