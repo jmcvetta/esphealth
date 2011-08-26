@@ -1287,6 +1287,7 @@ class Command(BaseCommand):
         args = shlex.split(CASE_REPORT_TRANSPORT_SCRIPT) + [report_file_path]
         subprocess.check_call(args)
         log.info('Case report upload script exited with success!')
+        return True # Indicats success to calling function
             
         
     def transmit_via_ftp(self, options, report_file_path):
