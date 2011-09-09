@@ -206,7 +206,7 @@ class Command(BaseCommand):
             filepath = os.path.join(test_folder, filename)
             for counter in record_counters:
                 counter.read(filepath, 'test')
-        summarize(self, options, record_counters, missing_rec_dict)
+        self.summarize(options, record_counters, missing_rec_dict)
         if options['detail']:
             self.details(options, record_counters, missing_rec_dict)
     
@@ -229,7 +229,7 @@ class Command(BaseCommand):
             print '    Missing: %s' % len(counter.missing_set)
             print '    New:     %s' % len(counter.new_set)
             if options['missing']:
-                known_missing_set = missing_rec_dict[counter.record_type.lower()]
+                known_missing_set = missing_rec_dict.get(counter.record_type.lower(), set())
                 still_missing_count = len(known_missing_set - counter.test_set)
                 print 'Specific records missing from referecnce: %s' % len(known_missing_set)
                 print 'Specific records still missing from test: %s' % still_missing_count
