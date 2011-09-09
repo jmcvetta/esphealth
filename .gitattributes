@@ -378,7 +378,6 @@ esphealth/setup.sh -text
 esphealth/share/Riskscape[!!-~]Report[!!-~]Converter.ktr -text
 esphealth/share/apache.conf.sample -text
 esphealth/share/cpt_codes.csv.bz2 -text svneol=unset#unset
-esphealth/share/data-quality-check.py -text
 esphealth/share/django.wsgi.sample -text
 esphealth/share/epic_etl/AdditionalStepsAfterCompile.doc -text svneol=unset#unset
 esphealth/share/epic_etl/ESPFileLayout.doc -text svneol=unset#unset
