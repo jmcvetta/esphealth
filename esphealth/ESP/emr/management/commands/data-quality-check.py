@@ -30,10 +30,10 @@ Usage:
 
 import sys
 import os
-import optparse
 import re
 import csv
 import datetime
+from optparse import make_option
 from django.core.management.base import BaseCommand
 from ESP.utils import log
 
@@ -52,8 +52,9 @@ TEST_FILE_REGEX = re.compile(r'^epic\w{3}.test.*')
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 class RecordCounter:
-    def __init__(self, name, filename_regex, field_index):
+    def __init__(self, name, record_type, filename_regex, field_index):
         self.name = name
+        self.record_type = record_type
         self.filename_regex = filename_regex
         self.field_index = field_index
         self.ref_set = set()
@@ -105,48 +106,73 @@ class RecordCounter:
 class Command(BaseCommand):
     args = 'reference_folder test_folder'
     help = 'Compare data quality of test files againt reference files'
+    option_list = BaseCommand.option_list + (
+        make_option("-d", "--detail", dest="detail", action='store_true', default=False,
+                      help="Output detailed information"),
+        make_option("--missing", dest="missing", action='store', type='string', 
+                      metavar='FILE', help="File containing known-missing records"),
+        )
     
     def handle(self, *args, **options):
-        #usage = 'usage: %prog [options] folder'
-        #parser = optparse.OptionParser(usage=usage)
-        parser = optparse.OptionParser()
-        parser.add_option("-d", "--detail", dest="detail", action='store_true', default=False,
-                      help="Output detailed information")
-        parser.add_option("--missing", dest="missing", action='store', 
-                      help="File containing known-missing records")
-        (options, args) = parser.parse_args()
         #
         # Sanity checks
         #
         try:
-            assert len(args) == 3
-            ref_folder = args[1]
-            test_folder = args[2]
+            assert len(args) == 2
+            ref_folder = args[0]
+            test_folder = args[1]
             assert os.path.isdir(ref_folder)
             assert os.path.isdir(test_folder)
         except:
             sys.stderr.write('Must specify valid reference and test folders to analyze.\n')
             sys.exit(-1)
+        missing_rec_dict = {}
+        if options['missing']:
+            assert os.path.exists(options['missing'])
+            reader = csv.DictReader(
+                open(options['missing'], 'rb'), 
+                fieldnames = ['record_type', 'identifider']
+                )
+            for line in reader:
+                rec_type = line['record_type'].lower().strip()
+                rec_set = missing_rec_dict.get(rec_type, set())
+                rec_set.add(line['identifider'].strip())
+                missing_rec_dict[rec_type] = rec_set
+            print missing_rec_dict
+            counter = 0
+            for s in missing_rec_dict:
+                counter += len(s)
+            log.info('Loaded %s missing records' % counter)
         #
         # Set up counters
         #
         patient_counter = RecordCounter(
             name = 'Patient ID Numbers',
+            record_type = 'Patient',
             filename_regex = re.compile('^epic.*'),
             field_index = 0, # patient_id is first field in every filetype
             )
         encounter_counter = RecordCounter(
             name = 'Encounters ID Numbers',
+            record_type = 'Encounter',
             filename_regex = re.compile('^epicvis.*'),
             field_index = 2,
             )
         lab_result_order_counter = RecordCounter(
             name = 'Lab Result Order Numbers',
+            record_type = 'LabResult',
             filename_regex = re.compile('^epicres.*'),
+            field_index = 2,
+            )
+        lab_order_counter = RecordCounter(
+            name = 'Lab Order Numbers',
+            record_type = 'LabOrder',
+            filename_regex = re.compile('^epicord.*'),
             field_index = 2,
             )
         prescription_counter = RecordCounter(
             name = 'Prescription Order Numbers',
+            record_type = 'Prescription',
             filename_regex = re.compile('^epicmed.*'),
             field_index = 2,
             )
@@ -180,9 +206,14 @@ class Command(BaseCommand):
             filepath = os.path.join(test_folder, filename)
             for counter in record_counters:
                 counter.read(filepath, 'test')
-        #
-        # Summarize data
-        #
+        summarize(self, options, record_counters, missing_rec_dict)
+        if options['detail']:
+            self.details(options, record_counters, missing_rec_dict)
+    
+    def summarize(self, options, record_counters, missing_rec_dict):
+        '''
+        Summarize data
+        '''
         print
         print datetime.datetime.now()
         print
@@ -197,11 +228,16 @@ class Command(BaseCommand):
             print '    All:     %s' % len(counter.all_set)
             print '    Missing: %s' % len(counter.missing_set)
             print '    New:     %s' % len(counter.new_set)
+            if options['missing']:
+                known_missing_set = missing_rec_dict[counter.record_type.lower()]
+                still_missing_count = len(known_missing_set - counter.test_set)
+                print 'Specific records missing from referecnce: %s' % len(known_missing_set)
+                print 'Specific records still missing from test: %s' % still_missing_count
+    
+    def details(self, options, record_counters, missing_rec_dict):
         #
         # Print detailed info if specified
         #
-        if not options.detail:
-            return # We are done
         print
         print
         print
