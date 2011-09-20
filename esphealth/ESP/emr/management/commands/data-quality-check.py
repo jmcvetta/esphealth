@@ -52,6 +52,9 @@ TEST_FILE_REGEX = re.compile(r'^epic\w{3}.test.*')
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 class RecordCounter:
+    
+    instances = [] # Class variable
+    
     def __init__(self, name, record_type, filename_regex, field_index):
         self.name = name
         self.record_type = record_type
@@ -59,6 +62,7 @@ class RecordCounter:
         self.field_index = field_index
         self.ref_set = set()
         self.test_set = set()
+        self.instances.append(self)
     
     def read(self, filepath, mode):
         '''
@@ -176,12 +180,6 @@ class Command(BaseCommand):
             filename_regex = re.compile('^epicmed.*'),
             field_index = 2,
             )
-        record_counters = [
-            patient_counter,
-            encounter_counter,
-            lab_result_order_counter,
-            prescription_counter,
-            ]
         #
         # Read reference files
         #
@@ -192,7 +190,7 @@ class Command(BaseCommand):
             ref_counter += 1
             log.info('Reading reference file %20s / %s:  %s' % (ref_counter, ref_file_count, filename))
             filepath = os.path.join(ref_folder, filename)
-            for counter in record_counters:
+            for counter in RecordCounter.instances:
                 counter.read(filepath, 'reference')
         #
         # Read test files
@@ -204,13 +202,13 @@ class Command(BaseCommand):
             test_counter += 1
             log.info('Reading reference file %20s / %s:  %s' % (test_counter, test_file_count, filename))
             filepath = os.path.join(test_folder, filename)
-            for counter in record_counters:
+            for counter in RecordCounter.instances:
                 counter.read(filepath, 'test')
-        self.summarize(options, record_counters, missing_rec_dict)
+        self.summarize(options, missing_rec_dict)
         if options['detail']:
-            self.details(options, record_counters, missing_rec_dict)
+            self.details(options, missing_rec_dict)
     
-    def summarize(self, options, record_counters, missing_rec_dict):
+    def summarize(self, options, missing_rec_dict):
         '''
         Summarize data
         '''
@@ -222,7 +220,7 @@ class Command(BaseCommand):
         print 'Data Quality Summary Analysis'
         print
         print '~' * 80
-        for counter in record_counters:
+        for counter in RecordCounter.instances:
             print
             print '%s:' % counter.name
             print '    All:     %s' % len(counter.all_set)
@@ -234,7 +232,7 @@ class Command(BaseCommand):
                 print 'Specific records missing from referecnce: %s' % len(known_missing_set)
                 print 'Specific records still missing from test: %s' % still_missing_count
     
-    def details(self, options, record_counters, missing_rec_dict):
+    def details(self, options, missing_rec_dict):
         #
         # Print detailed info if specified
         #
@@ -246,7 +244,7 @@ class Command(BaseCommand):
         print 'Missing Record Detail'
         print
         print '~' * 80
-        for counter in record_counters:
+        for counter in RecordCounter.instances:
             print
             print '=' * 80
             print 

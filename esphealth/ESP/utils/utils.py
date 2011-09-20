@@ -21,6 +21,7 @@ import threading
 import Queue
 from concurrent import futures
 from decimal import Decimal
+from traceback import format_exc
 
 from django.db import connection
 from django.db.models import Q
@@ -505,6 +506,7 @@ def wait_for_threads(fs, max_workers=settings.HEF_THREAD_COUNT):
                 error = future.exception(timeout=0.1)
                 if error is not None:
                     log.critical('Unhandled exception in %s:\n%s' % (future, error))
+                    log.critical( format_exc() )
                     exc_info = _ThreadedFuncWrapper.EXCEPTIONS.get(block=False)
                     executor.shutdown(wait=False)
                     raise exc_info[0], exc_info[1], exc_info[2]
