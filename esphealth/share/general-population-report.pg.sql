@@ -22,7 +22,7 @@
 SELECT 
   p.id AS patient_id
 , p.mrn
-, u7.last_enc_date
+, u10.last_enc_date
 , date_part('year', age(p.date_of_birth))
 , p.gender
 , p.race
@@ -30,13 +30,16 @@ SELECT
 , u6.currently_pregnant
 , u6.current_gdm
 , u5.recent_pregnancy
-, enc0.max_bp_systolic
-, enc0.max_bp_diastolic
+, u10.max_bp_systolic
+, u10.max_bp_diastolic
 , u0.recent_a1c
 , u1.recent_ldl
 , u2.prediabetes
 , u3.type_1_diabetes
 , u4.type_2_diabetes
+, u7.insulin
+, u8.metformin
+, u9.influenza_vaccine
 FROM emr_patient AS p
 
 --
@@ -51,8 +54,8 @@ LEFT JOIN (
 	FROM emr_encounter
 	WHERE date >= now() - interval '2 years'
 	GROUP BY patient_id
-) AS u7
-	ON enc0.patient_id = p.id
+) AS u10
+	ON u10.patient_id = p.id
 
 --
 -- Recent A1C lab result
@@ -231,7 +234,7 @@ LEFT JOIN (
 LEFT JOIN (
 	SELECT 
 	  DISTINCT patient_id
-	, TRUE AS metformin
+	, TRUE AS influenza_vaccine
 	FROM emr_immunization
 	WHERE name ILIKE '%influenza%'
 	AND date >= now() - interval '1 year'
