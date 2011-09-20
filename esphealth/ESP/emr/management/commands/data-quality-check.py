@@ -82,16 +82,28 @@ class RecordCounter:
         # This file is interesting.  Let's decide if it is a reference file or 
         # a test file, and set up the counter accordingly.
         if mode == 'reference':
-            counter_set= self.ref_set
+            self.counter_set= self.ref_set
         elif mode == 'test':
-            counter_set = self.test_set
+            self.counter_set = self.test_set
         else:
             raise RuntimeError('WTF?!  Something is badly awry here...')
         # Read the file
         reader = csv.reader(open(filepath, 'rb'), delimiter='^')
         for line in reader:
-            field = line[self.field_index].strip()
-            counter_set.update([field])
+            self.process_line(line)
+            
+    def process_line(self, line):
+        '''
+        Processes a single record.  This implementation simply counts unique 
+        identifiers; but it could be subclassed to perform more complex 
+        analysis.
+        
+        @param line: A single line of data (as interated by csv.DictReader)
+        @type  line: Dictionary
+        '''
+        field = line[self.field_index].strip()
+        self.counter_set.update([field])
+        return counter_set
     
     @property
     def missing_set(self):
@@ -253,3 +265,17 @@ class Command(BaseCommand):
             for record in counter.missing_set:
                 print record
             print
+
+
+class EncounterCounter:
+    '''
+    Adds support for checking for the presence of specific patient/date/ICD9 combinations 
+    when counting Encounter records.
+    '''
+    
+    def __init__(self, name, record_type, filename_regex, field_index, mis_enc_filepath):
+        '''
+        @param mis_enc_filepath: Path to file containing missing encounter info
+        @type mis_enc_filepath:  String
+        '''
+        assert os.path.exists(mis_enc_filepath) # Sanity check

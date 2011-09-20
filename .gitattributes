@@ -153,8 +153,6 @@ esphealth/ESP/phit/__init__.py -text
 esphealth/ESP/phit/management/__init__.py -text
 esphealth/ESP/phit/management/commands/__init__.py -text
 esphealth/ESP/phit/management/commands/phit.py -text
-esphealth/ESP/phit/migrations/0001_initial.py -text
-esphealth/ESP/phit/migrations/__init__.py -text
 esphealth/ESP/phit/models.py -text
 esphealth/ESP/phit/phit.diabetes.1.sql -text
 esphealth/ESP/phit/phit.diabetes.2.sql -text
@@ -170,8 +168,6 @@ esphealth/ESP/ss/hsph.py -text
 esphealth/ESP/ss/legacy.py -text
 esphealth/ESP/ss/main.py -text
 esphealth/ESP/ss/mapping.py -text
-esphealth/ESP/ss/migrations/0001_initial.py -text
-esphealth/ESP/ss/migrations/__init__.py -text
 esphealth/ESP/ss/models.py -text
 esphealth/ESP/ss/reports.py -text
 esphealth/ESP/ss/run.py -text
@@ -185,8 +181,6 @@ esphealth/ESP/ss/views.py -text
 esphealth/ESP/static/__init__.py -text
 esphealth/ESP/static/admin.py -text
 esphealth/ESP/static/fixtures/initial_data.json.bz2 -text svneol=unset#unset
-esphealth/ESP/static/migrations/0001_initial.py -text
-esphealth/ESP/static/migrations/__init__.py -text
 esphealth/ESP/static/models.py -text
 esphealth/ESP/static/sql/indices.postgresql.sql -text
 esphealth/ESP/static/tests.py -text
@@ -307,8 +301,6 @@ esphealth/ESP/vaers/main.py -text
 esphealth/ESP/vaers/management/__init__.py -text
 esphealth/ESP/vaers/management/commands/__init__.py -text
 esphealth/ESP/vaers/management/commands/set_rules.py -text
-esphealth/ESP/vaers/migrations/0001_initial.py -text
-esphealth/ESP/vaers/migrations/__init__.py -text
 esphealth/ESP/vaers/models.py -text
 esphealth/ESP/vaers/reports.py -text
 esphealth/ESP/vaers/rules.py -text
