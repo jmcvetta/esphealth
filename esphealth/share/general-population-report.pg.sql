@@ -20,9 +20,10 @@
 
 
 SELECT 
-  p.mrn
-, enc0.last_enc_date
-, age(p.date_of_birth)
+  p.id AS patient_id
+, p.mrn
+, u7.last_enc_date
+, date_part('year', age(p.date_of_birth))
 , p.gender
 , p.race
 , p.zip
@@ -50,7 +51,7 @@ LEFT JOIN (
 	FROM emr_encounter
 	WHERE date >= now() - interval '2 years'
 	GROUP BY patient_id
-) AS enc0
+) AS u7
 	ON enc0.patient_id = p.id
 
 --
@@ -83,6 +84,7 @@ LEFT JOIN (
 	  l0.patient_id
 ) u0
 	ON u0.patient_id = p.id
+
 --
 -- Recent cholesterol LDL lab result
 --
@@ -235,3 +237,8 @@ LEFT JOIN (
 	AND date >= now() - interval '1 year'
 ) u9
 	ON u9.patient_id = p.id
+
+--
+-- Ordering
+--
+ORDER BY p.id
