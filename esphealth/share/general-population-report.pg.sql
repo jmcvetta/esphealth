@@ -27,6 +27,7 @@ SELECT
 , p.gender
 , p.race
 , p.zip
+, u11.bmi
 , u6.currently_pregnant
 , u6.current_gdm
 , u5.recent_pregnancy
@@ -58,6 +59,22 @@ LEFT JOIN (
 	ON u10.patient_id = p.id
 
 --
+-- BMI 
+--     Cannot be included in encounter aggregates subquery, because
+--     this has a shorter time constraint.
+--
+LEFT JOIN (
+	SELECT 
+	  patient_id
+	, MAX(bmi) AS bmi
+	FROM emr_encounter
+	WHERE date >= now() - interval '1 years'
+	GROUP BY patient_id
+) AS u11
+	ON u11.patient_id = p.id
+	AND age(p.date_of_birth) >= '12 years'
+
+--
 -- Recent A1C lab result
 --
 LEFT JOIN (
@@ -85,7 +102,7 @@ LEFT JOIN (
 	AND l0.date >= now() - interval '2 years'
 	GROUP BY 
 	  l0.patient_id
-) u0
+) AS u0
 	ON u0.patient_id = p.id
 
 --
@@ -116,7 +133,7 @@ LEFT JOIN (
 	AND l0.date >= now() - interval '2 years'
 	GROUP BY 
 	  l0.patient_id
-) u1
+) AS u1
 	ON u1.patient_id = p.id
 
 --
@@ -125,13 +142,13 @@ LEFT JOIN (
 LEFT JOIN (
 	SELECT 
 	  DISTINCT c0.patient_id
-	, TRUE AS prediabetes
+	, 1 AS prediabetes
 	FROM nodis_case c0
 	INNER JOIN nodis_case c1
 		ON c1.patient_id = c0.patient_id
 		AND c1.condition NOT LIKE 'diabetes:type-%'
 	WHERE c0.condition = 'diabetes:prediabetes'
-) u2
+) AS u2
 	ON u2.patient_id = p.id
 
 --
@@ -140,10 +157,10 @@ LEFT JOIN (
 LEFT JOIN (
 	SELECT 
 	DISTINCT patient_id
-	, TRUE AS type_1_diabetes
+	, 1 AS type_1_diabetes
 	FROM nodis_case
 	WHERE condition = 'diabetes:type-1'
-) u3
+) AS u3
 	ON u3.patient_id = p.id
 
 --
@@ -152,10 +169,10 @@ LEFT JOIN (
 LEFT JOIN (
 	SELECT 
 	patient_id
-	, TRUE AS type_2_diabetes
+	, 1 AS type_2_diabetes
 	FROM nodis_case
 	WHERE condition = 'diabetes:type-2'
-) u4
+) AS u4
 	ON u4.patient_id = p.id
 
 --
@@ -177,10 +194,9 @@ LEFT JOIN (
 LEFT JOIN (
 	SELECT
 	  DISTINCT ts.patient_id
-	, true AS currently_pregnant
+	, 1 AS currently_pregnant
 	, CASE 
-		WHEN c.id IS NOT NULL THEN TRUE
-		ELSE FALSE 
+		WHEN c.id IS NOT NULL THEN 1
 		END AS current_gdm
 	FROM hef_timespan ts
 	LEFT JOIN nodis_case c
@@ -202,11 +218,11 @@ LEFT JOIN (
 LEFT JOIN (
 	SELECT 
 	  DISTINCT patient_id
-	, TRUE AS insulin
+	, 1 AS insulin
 	FROM emr_prescription
 	WHERE name ILIKE '%insulin%'
 	AND date >= now() - interval '1 year'
-) u7
+) AS u7
 	ON u7.patient_id = p.id
 
 
@@ -217,28 +233,28 @@ LEFT JOIN (
 LEFT JOIN (
 	SELECT 
 	  DISTINCT patient_id
-	, TRUE AS metformin
+	, 1 AS metformin
 	FROM emr_prescription
 	WHERE name ILIKE '%metformin%'
 	AND date >= now() - interval '1 year'
-) u8
+) AS u8
 	ON u8.patient_id = p.id
 
 
 --
 -- Influenza vaccine
 --     Prescription for influenza vaccine current flu season
---     FIXME: Current SQL looks at previous year, not current flu season.
---            What are the official dates for flu season?
 --
 LEFT JOIN (
 	SELECT 
 	  DISTINCT patient_id
-	, TRUE AS influenza_vaccine
+	, 1 AS influenza_vaccine
 	FROM emr_immunization
 	WHERE name ILIKE '%influenza%'
-	AND date >= now() - interval '1 year'
-) u9
+	AND date >= now() - interval '10 months'
+	AND date_part('month', date) >= 7
+	AND date_part('month', date) <= 8
+) AS u9
 	ON u9.patient_id = p.id
 
 --
