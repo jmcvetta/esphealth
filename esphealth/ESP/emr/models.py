@@ -4,9 +4,10 @@
                                   Data Models
 
 @authors: Jason McVetta <jason.mcvetta@gmail.com>, Raphael Lullis <raphael.lullis@gmail.com>
-@organization: Channing Laboratory http://www.channing.harvard.edu
-@copyright: (c) 2009 Channing Laboratory
-@license: LGPL
+@organization: Channing Laboratory - http://www.channing.harvard.edu
+@contact: http://esphealth.org
+@copyright: (c) 2009-2011 Channing Laboratory
+@license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
 
@@ -127,13 +128,13 @@ class Provider(BaseMedicalRecord):
     '''
     A medical care provider
     '''
-    provider_id_num = models.CharField('Physician identifier in source EMR system', unique=True, max_length=128, 
+    natural_key = models.CharField('Physician identifier in source EMR system', unique=True, max_length=20, 
         blank=False, db_index=True)
     last_name = models.CharField('Last Name',max_length=200, blank=True,null=True)
     first_name = models.CharField('First Name',max_length=200, blank=True,null=True)
     middle_name = models.CharField('Middle_Name',max_length=200, blank=True,null=True)
     title = models.CharField('Title', max_length=20, blank=True, null=True)
-    dept_id_num = models.CharField('Primary Department identifier in source EMR system', max_length=128, blank=True, null=True)
+    dept_natural_key = models.CharField('Primary Department identifier in source EMR system', max_length=20, blank=True, null=True)
     dept = models.CharField('Primary Department',max_length=200,blank=True,null=True)
     dept_address_1 = models.CharField('Primary Department Address 1',max_length=100,blank=True,null=True)
     dept_address_2 = models.CharField('Primary Department Address 2',max_length=20,blank=True,null=True)
@@ -201,7 +202,7 @@ class Patient(BaseMedicalRecord):
     '''
     A patient, with demographic information
     '''
-    patient_id_num = models.CharField('Patient identifier in source EMR system', unique=True, max_length=128, 
+    natural_key = models.CharField('Patient identifier in source EMR system', unique=True, max_length=20, 
         blank=False, db_index=True)
     mrn = models.CharField('Medical Record ', max_length=20, blank=True, null=True, db_index=True)
     last_name = models.CharField('Last Name', max_length=200, blank=True, null=True)
@@ -526,14 +527,13 @@ class LabResult(BasePatientRecord):
     '''
     # Date (from base class) is order date
     #
-    # Coding
+    natural_key = models.CharField('Lab result identifier in source EMR system', max_length=128, db_index=True)
+    order_natural_key = models.CharField('Order identifier in source EMR system', max_length=128, db_index=True)
     native_code = models.CharField('Native Test Code', max_length=30, blank=True, null=True, db_index=True)
     native_name = models.CharField('Native Test Name', max_length=255, blank=True, null=True, db_index=True)
-    order_id_num = models.CharField(max_length=128, blank=False, db_index=True)
     result_date = models.DateField(blank=True, null=True, db_index=True)
     collection_date = models.DateField(blank=True, null=True, db_index=True)
     status = models.CharField('Result Status', max_length=50, blank=True, null=True)
-    result_id_num = models.CharField('Result identifier in source EMR system', max_length=128, blank=True, null=True)
     # 
     # In some EMR data sets, reference pos & high, and neg & low, may come from
     # the same field depending whether the value is a string or a number.
@@ -543,19 +543,27 @@ class LabResult(BasePatientRecord):
     ref_high_float = models.FloatField('Reference High Value', blank=True, null=True, db_index=True)
     ref_low_float = models.FloatField('Reference Low Value', blank=True, null=True, db_index=True)
     ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
+    #
     # Result
+    #
     abnormal_flag = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     result_float = models.FloatField('Numeric Test Result', blank=True, null=True, db_index=True)
     result_string = models.TextField('Test Result', max_length=2000, blank=True, null=True, db_index=True)
+    #
     # Wide fields
+    #
     specimen_num = models.CharField('Speciment ID Number', max_length=100, blank=True, null=True)
     specimen_source = models.CharField('Speciment Source', max_length=255, blank=True, null=True)
     impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
     comment = models.TextField('Comments', blank=True, null=True)
     procedure_name = models.CharField('Procedure Name', max_length=255, blank=True, null=True)
+    #
     # Manager
+    #
     objects = LabResultManager()
+    #
     # HEF
+    #
     tags = generic.GenericRelation('hef.EventTag')
     
     class Meta:
@@ -758,9 +766,10 @@ class LabOrder(BasePatientRecord):
     '''
     An order for a laboratory test
     '''
-    order_id_num = models.CharField('Order identifier in source EMR system', max_length=128, db_index=True)
-    procedure_master_num = models.CharField(max_length=20, blank=True, null=True, db_index=True)
-    modifier = models.CharField(max_length=20, blank=True, null=True)
+    # FIXME: natural key should be charfield
+    natural_key = models.IntegerField('Order identifier in source EMR system', db_index=True) 
+    procedure_code = models.CharField(max_length=20, blank=True, null=True, db_index=True)
+    procedure_modifier = models.CharField(max_length=20, blank=True, null=True)
     procedure_name = models.CharField(max_length=300, blank=True, null=True)
     specimen_id = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     order_type = models.CharField(max_length=64, blank=True, db_index=True)
@@ -777,7 +786,7 @@ class Prescription(BasePatientRecord):
     '''
     # Date is order date
     #
-    order_id_num = models.CharField('Order identifier in source EMR system', max_length=128, blank=False)
+    natural_key = models.CharField('Order identifier in source EMR system', max_length=20, blank=False)
     name = models.TextField(max_length=3000, blank=False, db_index=True)
     code = models.CharField('Drug Code (system varies by site)', max_length=255, blank=True, null=True)
     directions = models.TextField(max_length=3000, blank=True, null=True)
@@ -873,11 +882,11 @@ class Encounter(BasePatientRecord):
     # Fields taken directly from ETL file.  Some minimal processing, such as 
     # standardizing capitalization, may be advisable in loader code.  
     #
-    native_encounter_num = models.TextField('Native EMR system encounter ID', blank=False, db_index=True, unique=True)
-    encounter_type = models.TextField('Type of encounter', blank=True, null=True, db_index=True)
-    status = models.TextField('Record status', blank=True, null=True, db_index=True)
-    native_site_num = models.TextField('Native EMR system site ID', blank=True, null=True, db_index=True)
-    site_name = models.TextField('Encounter site name', blank=True, null=True, db_index=True)
+    natural_key = models.CharField('Encounter identifier from source EMR system', max_length=20, blank=False, db_index=True, unique=True)
+    encounter_type = models.CharField('Type of encounter', max_length=20, blank=True, null=True, db_index=True)
+    status = models.CharField('Record status', max_length=20, blank=True, null=True, db_index=True)
+    site_natural_key = models.CharField('Native EMR system site ID', max_length=30, blank=True, null=True, db_index=True)
+    site_name = models.CharField('Encounter site name', max_length=100, blank=True, null=True, db_index=True)
     #
     # Extracted & calculated fields
     #
@@ -890,9 +899,9 @@ class Encounter(BasePatientRecord):
     height = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
     bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True, db_index=True)
     bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True, db_index=True)
-    o2_stat = models.FloatField(blank=True, null=True, db_index=True)
-    peak_flow = models.FloatField(blank=True, null=True, db_index=True)
-    bmi = models.FloatField(null=True, blank=True, db_index=True)
+    o2_stat = models.FloatField(blank=True, max_length=50, null=True, db_index=True)
+    peak_flow = models.FloatField(blank=True, max_length=50, null=True, db_index=True)
+    bmi = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, db_index=True)
     #
     # Raw string fields 
     #
@@ -1077,7 +1086,7 @@ class Immunization(BasePatientRecord):
     '''
     # Date is immunization date
     #
-    imm_id_num = models.CharField('Immunization identifier in source EMR system', max_length=200, blank=True, null=True)
+    natural_key = models.CharField('Immunization identifier in source EMR system', max_length=200, blank=True, null=True)
     imm_type = models.CharField('Immunization Type', max_length=20, blank=True, null=True)
     name = models.CharField('Immunization Name', max_length=200, blank=True, null=True)
     dose = models.CharField('Immunization Dose', max_length=100, blank=True, null=True)
