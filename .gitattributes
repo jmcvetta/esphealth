@@ -69,6 +69,8 @@ esphealth/ESP/hef/management/commands/__init__.py -text
 esphealth/ESP/hef/management/commands/hef.py -text
 esphealth/ESP/hef/management/commands/hef_load_defaults.py -text
 esphealth/ESP/hef/migrations/0001_initial.py -text
+esphealth/ESP/hef/migrations/0002_new_event_fields_and_abstractlabtest_model.py -text
+esphealth/ESP/hef/migrations/0003_populate_provider_field.py -text
 esphealth/ESP/hef/migrations/__init__.py -text
 esphealth/ESP/hef/models.py -text
 esphealth/ESP/hef/sql/multicolumn-indices.postgresql.sql -text

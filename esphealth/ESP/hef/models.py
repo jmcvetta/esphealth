@@ -34,63 +34,6 @@ from ESP.emr.models import LabOrder
 from ESP.emr.models import Prescription
 
 
-class AbstractLabTest(models.Model):
-    '''
-    Represents an abstract type of lab test
-    '''
-    name = models.SlugField(primary_key=True)
-    verbose_name = models.CharField(max_length=128, blank=False, unique=True, db_index=True)
-    #
-    # Reporting
-    # 
-    reportable = models.BooleanField('Is test reportable?', default=True, db_index=True)
-    output_code = models.CharField('Test code for template output', max_length=100, blank=True, null=True, db_index=True)
-    output_name = models.CharField('Test name for template output', max_length=255, blank=True, null=True)
-    snomed_pos = models.CharField('SNOMED positive code', max_length=255, blank=True, null=True)
-    snomed_neg = models.CharField('SNOMED neg code', max_length=255, blank=True, null=True)
-    snomed_ind = models.CharField('SNOMED indeterminate code', max_length=255, blank=True, null=True)
-    #
-    notes = models.TextField(blank=True, null=True)
-    class Meta:
-        verbose_name = 'Abstract Lab Test'
-        ordering = ['name']
-    
-    def __unicode__(self):
-        return u'Abstract Lab Test - %s - %s' % (self.name, self.verbose_name)
-    
-    def __get_lab_results(self):
-        result = LabResult.objects.none()
-        for cm in self.labtestmap_set.filter( Q(record_type='result') | Q(record_type='both') ):
-            result |= LabResult.objects.filter(cm.lab_results_q_obj)
-        return result
-    lab_results = property(__get_lab_results)
-    
-    def __get_lab_orders(self):
-        result = LabOrder.objects.none()
-        for cm in self.labtestmap_set.filter( Q(record_type='order') | Q(record_type='both') ):
-            result |= LabOrder.objects.filter(cm.lab_orders_q_obj)
-        log_query('Lab Orders for %s' % self.name, result)
-        return result
-    lab_orders = property(__get_lab_orders)
-    
-    def __get_heuristic_set(self):
-        heuristic_set = set(self.laborderheuristic_set.all())
-        heuristic_set |= set(self.labresultanyheuristic_set.all())
-        heuristic_set |= set(self.labresultpositiveheuristic_set.all())
-        heuristic_set |= set(self.labresultratioheuristic_set.all())
-        heuristic_set |= set(self.labresultrangeheuristic_set.all())
-        heuristic_set |= set(self.labresultfixedthresholdheuristic_set.all())
-        return heuristic_set
-    heuristic_set = property(__get_heuristic_set)
-
-    def generate_events(self):
-        count = 0
-        log.info('Generating events for %s' % self)
-        for heuristic in self.heuristic_set:
-            count += heuristic.generate_events()
-        return count
-
-
 class Event(models.Model):
     '''
     A medical event
@@ -101,50 +44,59 @@ class Event(models.Model):
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
     provider = models.ForeignKey(Provider, blank=False, db_index=True)
     timestamp = models.DateTimeField('Time event was created in db', blank=False, auto_now_add=True)
-    
-    def __unicode__(self):
-        return u'Event # %s (%s %s)' % (self.pk, self.name, self.date)
-    
-    def tag(self, obj):
-        '''
-        Tags a medical record with this event. 
-        '''
-        tag = EventTag(
-            event = self,
-            event_name = self.name,
-            content_object = obj,
-            )
-        tag.save()
-        return tag
-    
-    def tag_qs(self, qs):
-        '''
-        Tags every record in qs with this event
-        '''
-        for obj in qs:
-            self.tag(obj)
-
-
-class EventTag(models.Model):
-    '''
-    A tag associating an Event instance with a medical record
-    '''
-    event = models.ForeignKey(Event, blank=False)
-    # We store event_name here even tho the same info is stored in the 
-    # foreign-keyed Event object, in order to improve query performance.
-    event_name = models.CharField(max_length=128, blank=False, db_index=True)
+    note = models.TextField(blank=True, null=True)
     # Generic foreign key - any kind of EMR record can be tagged
     #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
     content_type = models.ForeignKey(ContentType, db_index=True)
     object_id = models.PositiveIntegerField(db_index=True)
     content_object = generic.GenericForeignKey('content_type', 'object_id')
     
-    def __unicode__(self):
-        return u'%s --> %s' % (self.event, self.content_object)
-    
     class Meta:
-        unique_together = [('event', 'content_type', 'object_id')]
-        
+        unique_together = [('source', 'name', 'content_type', 'object_id')]
+    
+    def __unicode__(self):
+        return u'Event # %s (%s %s)' % (self.pk, self.name, self.date)
+    
+    @classmethod
+    def create(cls, 
+	    name,
+	    source,
+	    date,
+	    patient,
+	    provider,
+        emr_record,
+        qs=None,
+        ):
+        '''
+        Creates an event linked to emr_record.  If a QuerySet is given as qs
+        and emr_record is None, an event of the specified type is created for
+        each record in the QS.
+        '''
+        assert emr_record or qs
+        if qs:
+            pk_list = qs.values_list('pk').order_by('pk').distinct()
+            note = 'Event created from a queryset including the following PKs:\n    '
+            note += '\n    '.join(pk_list)
+            records = qs
+        else:
+            records = [emr_record]
+            note = None
+        for obj in records:
+            content_type = ContentType.objects.get_for_model(obj)
+            new_event = Event(
+                name = name,
+                source =source,
+				date = date,
+				patient = patient,
+				provider = provider,
+                note = note,
+                content_type = content_type,
+                object_id = obj.pk,
+                )
+            new_event.save()
+            log.debug('Created new event: %s' % new_event)
+        return len(records)
+    
 
 class Timespan(models.Model):
     '''
@@ -167,31 +119,3 @@ class Timespan(models.Model):
         return u'Timespan #%s | %s | %s | %s - %s | %s' % (self.pk, 
             self.name, self.patient, self.start_date, self.end_date, self.pattern)
 
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-# Generic data bag support
-#
-# This does not have anything to do with HEF per se, but rather is initially 
-# required to optimized Nodis reporting.  Yet as it is a more primitive 
-# construct that might be useful in other modules as well, I have located it 
-# here in the lower-level hef module.  This location may be subject to change
-# in the future
-#
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-class DataBag(models.Model):
-    '''
-    A bag for holding unstructured key/value pairs
-    '''
-    uri = models.CharField('URI of module that created this Bag', max_length=256, blank=False, db_index=True)
-    description = models.TextField(blank=True, null=True)
-    created_timestamp = models.DateTimeField(blank=False, auto_now_add=True)
-    updated_timestamp = models.DateTimeField(blank=False, auto_now=True)
-
-
-class DataBagItem(models.Model):
-    '''
-    A key/value pair in a data bag
-    '''
-    bag = models.ForeignKey(DataBag)

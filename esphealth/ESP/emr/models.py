@@ -561,10 +561,6 @@ class LabResult(BasePatientRecord):
     # Manager
     #
     objects = LabResultManager()
-    #
-    # HEF
-    #
-    tags = generic.GenericRelation('hef.EventTag')
     
     class Meta:
         verbose_name = 'Lab Test Result'
@@ -774,8 +770,6 @@ class LabOrder(BasePatientRecord):
     specimen_id = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     order_type = models.CharField(max_length=64, blank=True, db_index=True)
     specimen_source = models.CharField(max_length=300, blank=True, null=True)
-    # HEF
-    tags = generic.GenericRelation('hef.EventTag')
     
     
     
@@ -801,8 +795,6 @@ class Prescription(BasePatientRecord):
     status = models.CharField('Order Status', max_length=20, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
-    # HEF
-    tags = generic.GenericRelation('hef.EventTag')
     
     class Meta:
         ordering = ['date']
@@ -877,7 +869,6 @@ class Encounter(BasePatientRecord):
     '''
     objects = EncounterManager()
     icd9_codes = models.ManyToManyField(Icd9,  blank=True,  null=True, db_index=True)
-    tags = generic.GenericRelation('hef.EventTag')
     #
     # Fields taken directly from ETL file.  Some minimal processing, such as 
     # standardizing capitalization, may be advisable in loader code.  
@@ -1093,8 +1084,6 @@ class Immunization(BasePatientRecord):
     manufacturer = models.CharField('Manufacturer', max_length=100, blank=True, null=True)
     lot = models.TextField('Lot Number', max_length=500, blank=True, null=True)
     visit_date = models.DateField('Date of Visit', blank=True, null=True)
-    # HEF
-    tags = generic.GenericRelation('hef.EventTag')
     
     class Meta:
         ordering = ['date']
