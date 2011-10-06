@@ -1,0 +1,57 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#               Sample Apache configuration file for ESP Health 
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+# In the first three lines, change "yourdomain.com" to reflect your actual domain.
+<VirtualHost yourdomain.com:80>
+	ServerName yourdomain.com
+	ServerAdmin youremail@yourdomain.com
+	#DocumentRoot /var/www/html/
+
+	Alias /admin-media /opt/esp/src/django/contrib/admin/media
+	Alias /media /opt/esp/src/ESP/media
+	
+	#
+	# WSGI 
+	# 
+	WSGIScriptAlias / /opt/esp/etc/django.wsgi
+
+
+	<Location "/media/">
+		SetHandler None
+		Allow from all
+	</Location>
+
+	<LocationMatch "\.(jpg|gif|png)$">
+		SetHandler None
+		Allow from all
+	</LocationMatch>
+
+	### Block all trace requests  (all vHosts need this!!)
+	### The following code should be included every VirtualHost.
+	### It returns a Forbidden on any TRACE or TRACK request.
+	### TRACE requests are used for debugging, they tell the server
+	### to return a text version of the REQUEST.  This is not
+	### needed and can be used for abuse/cross-site-scripting
+	###
+	### See: http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html
+	### for more about TRACE
+	###
+	RewriteEngine On
+	RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK|CONNECT)
+	RewriteRule .* - [F]
+
+	<Directory proxy:*>
+	    Order Deny,Allow
+	    Deny from all
+	</Directory>
+
+	<IfModule mod_proxy.c>
+	    ProxyRequests Off
+	</IfModule>
+
+</VirtualHost>
+

@@ -1,0 +1,18 @@
+<p>Syndrome Map for {{ selected_syndrome }} on {{ report_date|date:"M d, Y"  }}. Heatmap legend below. Click a site to see details</p>
+
+
+<div id="inp_display_filter">
+  <select onChange="window.location = this.value;">
+  {% for syndrome_code, data in syndromes.items %}
+  <option value="{{data.url}}" {% ifequal syndrome_key syndrome_code %}selected{% endifequal%}>{{ data.name }}</option>
+  {% endfor %}
+  </select>
+</div>
+<ul>
+  <li><a href="{{ previous_week_url}}">Previous Week</a></li>
+  <li><a href="{{ previous_day_url}}">Previous Day</a></li>
+  <li><a href="{{ next_day_url}}">Next Day</a></li>
+  <li><a href="{{ next_week_url}}">Next Week</a></li>
+</ul>
+
+<div id="map_canvas" style="width: 800px; height: 450px">&nbsp;</div>

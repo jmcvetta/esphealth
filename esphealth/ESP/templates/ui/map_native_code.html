@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block extrastyle %}
+    <style type="text/css">
+    table {
+        border-width: thin;
+        border-spacing: 0;
+        border-style: solid;
+        border-color: gray;
+        border-collapse: separate;
+        background-color: white;
+    }
+    table th {
+        border-width: thin;
+        padding: 0.5em;
+        border-style: solid;
+        border-color: gray;
+        background-color: white;
+        -moz-border-radius: ;
+    }
+    table td {
+        border-width: thin;
+        padding: 0.5em;
+        border-style: solid;
+        border-color: gray;
+        background-color: white;
+        -moz-border-radius: ;
+    }
+    </style>
+{% endblock %}
+
+
+{% block content %}
+
+<div style="float:right;">
+
+    <h2>Result Strings</h2>
+    <blockquote>
+        <p>10 most popular:
+        <table>
+            <tr>
+                <th>Result
+                <th>Lab Record Count
+            </tr>
+            {% for item in result_strings %}
+            <tr>
+                <td>{{ item.result_string }}
+                <td>{{ item.count }}
+            </tr>
+            {% endfor %}
+        </table>
+    </blockquote>
+
+    <h2>Reference High Values</h2>
+    <p>
+        Number of results <em>with</em> numeric result, but <em>without</em> 
+        reference high: 
+        <br>
+        {{ without_ref_high }} ({{ without_ref_high_percent|floatformat:3 }}%).
+    </p>
+    <blockquote>
+        <p>10 most popular:
+        <table>
+            <tr>
+                <th>Reference High Value
+                <th>Lab Record Count
+            </tr>
+            {% for item in ref_high_values %}
+            <tr>
+                <td>{{ item.ref_high_string }}
+                <td>{{ item.count }}
+            </tr>
+            {% endfor %}
+        </table>
+    </blockquote>
+
+</div>
+
+<h2>Native Code</h2> 
+<p>{{ native_code }}</p>
+
+<h2>Native Names</h2> 
+<p>{{ native_names|join:"<br>" }}</p>
+
+<h2>Record Count</h2>
+<p>
+    {{ count }}
+    <br>(Number of records in database with this native code)
+</p>
+
+<h2>Select a Heuristic</h2>
+<form method="POST" action="{% url map_native_code native_code %}">
+    {{ form.as_p }}
+    <p>
+        <input type="submit" value="Map It!">
+        &nbsp;
+        <a href="{% url unmapped_labs_report %}">cancel</a>
+        &nbsp;
+        <a href="{% url ignore_code native_code %}">ignore</a>
+    </p>
+    {% csrf_token %}
+</form>
+
+<hr>
+
+<h2>Comment Values</h2>
+
+<p>10 most popular:
+<table>
+    <tr>
+        <th>Comment Value
+        <th>Lab Record Count
+    </tr>
+    {% for item in comments %}
+    <tr>
+        <td>{{ item.comment }}
+        <td>{{ item.count }}
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
