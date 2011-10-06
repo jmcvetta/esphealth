@@ -327,9 +327,9 @@ esphealth/ESP/vaers/vaccine/forms.py -text
 esphealth/ESP/vaers/vaccine/urls.py -text
 esphealth/ESP/vaers/vaccine/views.py -text
 esphealth/ESP/vaers/views.py -text
-esphealth/ESP/version.txt -text
 esphealth/LICENSE -text
 esphealth/README -text
+esphealth/VERSION -text
 esphealth/bin/esp -text
 esphealth/doc/ESP-architecture.xmind -text svneol=unset#unset
 esphealth/doc/ESP-data-flow.png -text svneol=unset#unset

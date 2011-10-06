@@ -674,20 +674,12 @@ class FeverHeuristic(BaseHeuristic):
             @type queryset:   QuerySet
         '''
         log.debug('Get encounters matching "%s".' % self.name)
-        enc_q = None
-        for code in self.icd9s:
-            if enc_q:
-                enc_q |= Q(icd9_codes__code = code)
-            else:
-                enc_q = Q(icd9_codes__code = code)
-        qs = Encounter.objects.all()
+        enc_q = Q(temperature__gt = self.temperature)
+        if self.icd9s:
+            enc_q |= Q(icd9_codes__code__in = self.icd9s)
+        qs = Encounter.objects.filter(enc_q)
         if exclude_bound:
-            q_obj = ~Q(events__name=self.name)
-            qs = qs.filter(q_obj)
-        # Either encounter has the 'fever' ICD9, or it records a high temp
-        q_obj = enc_q | Q(temperature__gt = self.temperature)
-        log.debug('q_obj: %s' % q_obj)
-        qs = qs.filter(q_obj)
+            qs = qs.exclude(events__name=self.name)
         if begin_timestamp:
             qs = qs.filter(updated_timestamp__gte=begin_timestamp)
         log_query('Query for heuristic %s' % self.name, qs)
