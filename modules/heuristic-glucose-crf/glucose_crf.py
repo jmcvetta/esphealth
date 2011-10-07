@@ -72,7 +72,7 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
         #
         flag_results = self.flag_test.lab_results
         fasting_qs = flag_results.filter(result_string__istartswith='fast').exclude(result_string__iendswith='rand')
-        fasting_qs = fasting_qs.exclude(tags__event_name__in=self.event_names)
+        fasting_qs = fasting_qs.exclude(events__name__in=self.event_names)
         self.fasting_qs = fasting_qs
         log_query('fasting flag patients & dates', fasting_qs)
         fasting_pat_dates = {}
@@ -89,7 +89,7 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
         # Find unbound test results
         #
         lab_qs = self.result_test.lab_results
-        lab_qs = lab_qs.exclude(tags__event_name__in=self.event_names)
+        lab_qs = lab_qs.exclude(events__name__in=self.event_names)
         lab_qs = lab_qs.order_by('date')
         log_query('random/fasting glucose labs', lab_qs)
         #

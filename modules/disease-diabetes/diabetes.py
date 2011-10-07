@@ -1028,7 +1028,7 @@ class BaseDiabetesReport(Report):
             field_date = '%s--date' % event_type
             self.FIELDS.append(field_drug)
             self.FIELDS.append(field_date)
-            qs = Prescription.objects.filter(tags__event_name=event_type)
+            qs = Prescription.objects.filter(events__name=event_type)
             qs = qs.filter(patient__in=self.patient_qs)
             qs = qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
             log.info('Collecting data for %s' % event_type)
@@ -1057,7 +1057,7 @@ class BaseDiabetesReport(Report):
             self.FIELDS.append(field_text)
             heuristic = BaseHeuristic.get_heuristic_by_name(heuristic_name)
             icd9_q = heuristic.icd9_q_obj
-            qs = Encounter.objects.filter(tags__event_name=heuristic_name)
+            qs = Encounter.objects.filter(events__name=heuristic_name)
             qs = qs.filter(patient__in=self.patient_qs)
             qs = qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
             log.info('Collecting data for %s' % heuristic_name)
@@ -1175,7 +1175,7 @@ class BaseDiabetesReport(Report):
             field = '%s--max--%s' % (name, year)
             self.FIELDS.append(field)
             vqs = LabResult.objects.filter(patient__in=self.patient_qs, 
-                tags__event_name__in=event_names,
+                events__name__in=event_names,
                 date__year=year).values('patient').annotate(value=Max('result_float'))
             log.info('Collecting aggregate data for %s' % field)
             self._vqs_to_pfv(vqs, field)
@@ -1400,7 +1400,7 @@ class PrediabetesReport(BaseDiabetesReport):
         # TODO: Implement me!
         #
         lab_qs = LabResult.objects.filter(patient__in=self.patient_qs)
-        lab_qs = lab_qs.filter(tags__event_name='lx:glucose-random:any-result')
+        lab_qs = lab_qs.filter(events__name='lx:glucose-random:any-result')
     
     def __two_recent_gdm_cases(self):
         #
