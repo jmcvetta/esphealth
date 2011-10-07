@@ -1,3 +1,4 @@
+General Population
 {
 	"mappings":[
 		{
@@ -85,283 +86,199 @@
 		"graphable":"true",
 	},
 	{
-		"field": "",
-		"name": "",
+		"field": "F",
+		"name": "Zip Code",
+		"filter":"true",
+		"graphable":"true",
+	},
+	{
+		"field": "G",
+		"name": "BMI",
 		"vals": [
 			{
-				"1": ""
+				"1": "0-25"
 			},
 			{
-				"2": ""
+				"2": "25-29"
+			},
+			{
+				"2": "30+"
 			},
 		],
 		"filter":"true",
 		"graphable":"true",
 	},
 	{
-		"field": "",
-		"name": "",
+		"field": "H",
+		"name": "Pregnant",
 		"vals": [
 			{
-				"1": ""
+				"1": "Yes"
 			},
 			{
-				"2": ""
+				"2": "No"
 			},
 		],
 		"filter":"true",
 		"graphable":"true",
 	},
 	{
-		"field": "",
-		"name": "",
+		"field": "I",
+		"name": "GDM",
 		"vals": [
 			{
-				"1": ""
+				"1": "Yes"
 			},
 			{
-				"2": ""
+				"2": "No"
 			},
 		],
 		"filter":"true",
 		"graphable":"true",
 	},
 	{
-		"field": "",
-		"name": "",
+		"field": "J",
+		"name": "Blood Pressure",
 		"vals": [
 			{
-				"1": ""
+				"1": "Normal"
 			},
 			{
-				"2": ""
+				"2": "Borderline"
+			},
+			{
+				"3": "High"
+			},
+			{
+				"4": "Unchecked"
 			},
 		],
 		"filter":"true",
 		"graphable":"true",
 	},
 	{
-		"field": "",
-		"name": "",
+		"field": "K",
+		"name": "LDL Cholesterol",
 		"vals": [
 			{
-				"1": ""
+				"1": "0-99"
 			},
 			{
-				"2": ""
+				"2": "100-129"
+			},
+			{
+				"3": "130-159"
+			},
+			{
+				"4": "160+"
 			},
 		],
 		"filter":"true",
 		"graphable":"true",
 	},
 	{
-		"field": "",
-		"name": "",
+		"field": "L",
+		"name": "Hemoglobin A1C",
 		"vals": [
 			{
-				"1": ""
+				"1": "0-5.6"
 			},
 			{
-				"2": ""
+				"2": "5.7-6.4"
+			},
+			{
+				"3": "6.5+"
+			},
+			{
+				"4": "Not checked"
 			},
 		],
 		"filter":"true",
 		"graphable":"true",
 	},
 	{
-		"field": "",
-		"name": "",
+		"field": "M",
+		"name": "Prediabetes",
 		"vals": [
 			{
-				"1": ""
+				"1": "Yes"
 			},
 			{
-				"2": ""
+				"2": "No"
 			},
 		],
 		"filter":"true",
 		"graphable":"true",
 	},
 	{
-		"field": "",
-		"name": "",
+		"field": "N",
+		"name": "Type 1 Diabetes",
 		"vals": [
 			{
-				"1": ""
+				"1": "Yes"
 			},
 			{
-				"2": ""
+				"2": "No"
 			},
 		],
 		"filter":"true",
 		"graphable":"true",
 	},
 	{
-		"field": "",
-		"name": "",
+		"field": "O",
+		"name": "Type 2 Diabetes",
 		"vals": [
 			{
-				"1": ""
+				"1": "Yes"
 			},
 			{
-				"2": ""
+				"2": "No"
 			},
 		],
 		"filter":"true",
 		"graphable":"true",
 	},
 	{
-		"field": "",
-		"name": "",
+		"field": "P",
+		"name": "Insulin",
 		"vals": [
 			{
-				"1": ""
+				"1": "Yes"
 			},
 			{
-				"2": ""
+				"2": "No"
 			},
 		],
 		"filter":"true",
 		"graphable":"true",
 	},
 	{
-		"field": "",
-		"name": "",
+		"field": "Q",
+		"name": "Metformin",
 		"vals": [
 			{
-				"1": ""
+				"1": "Yes"
 			},
 			{
-				"2": ""
+				"2": "No"
 			},
 		],
 		"filter":"true",
 		"graphable":"true",
 	},
 	{
-		"field": "",
-		"name": "",
+		"field": "R",
+		"name": "Influenza Vaccine",
 		"vals": [
 			{
-				"1": ""
+				"1": "Yes"
 			},
 			{
-				"2": ""
-			},
-		],
-		"filter":"true",
-		"graphable":"true",
-	},
-	{
-		"field": "",
-		"name": "",
-		"vals": [
-			{
-				"1": ""
-			},
-			{
-				"2": ""
-			},
-		],
-		"filter":"true",
-		"graphable":"true",
-	},
-	{
-		"field": "",
-		"name": "",
-		"vals": [
-			{
-				"1": ""
-			},
-			{
-				"2": ""
-			},
-		],
-		"filter":"true",
-		"graphable":"true",
-	},
-	{
-		"field": "",
-		"name": "",
-		"vals": [
-			{
-				"1": ""
-			},
-			{
-				"2": ""
-			},
-		],
-		"filter":"true",
-		"graphable":"true",
-	},
-	{
-		"field": "",
-		"name": "",
-		"vals": [
-			{
-				"1": ""
-			},
-			{
-				"2": ""
-			},
-		],
-		"filter":"true",
-		"graphable":"true",
-	},
-	{
-		"field": "",
-		"name": "",
-		"vals": [
-			{
-				"1": ""
-			},
-			{
-				"2": ""
-			},
-		],
-		"filter":"true",
-		"graphable":"true",
-	},
-	{
-		"field": "",
-		"name": "",
-		"vals": [
-			{
-				"1": ""
-			},
-			{
-				"2": ""
-			},
-		],
-		"filter":"true",
-		"graphable":"true",
-	},
-	{
-		"field": "",
-		"name": "",
-		"vals": [
-			{
-				"1": ""
-			},
-			{
-				"2": ""
-			},
-		],
-		"filter":"true",
-		"graphable":"true",
-	},
-	{
-		"field": "",
-		"name": "",
-		"vals": [
-			{
-				"1": ""
-			},
-			{
-				"2": ""
+				"2": "No"
 			},
 		],
 		"filter":"true",
 		"graphable":"true",
 	},
 },
+{"filter-size":"5"}
