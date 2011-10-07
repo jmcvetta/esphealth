@@ -22,6 +22,11 @@ esphealth/ESP/conf/fixtures/native_vaccines.sql.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/fixtures/vaccines.json.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/fixtures/vaccines.sql.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/forms.py -text
+esphealth/ESP/conf/migrations/0001_initial.py -text
+esphealth/ESP/conf/migrations/0002_add_new_tables.py -text
+esphealth/ESP/conf/migrations/0003_convert_lab_test_maps.py -text
+esphealth/ESP/conf/migrations/0004_remove_codemap_table.py -text
+esphealth/ESP/conf/migrations/__init__.py -text
 esphealth/ESP/conf/models.py -text
 esphealth/ESP/conf/tests.py -text
 esphealth/ESP/conf/urls.py -text

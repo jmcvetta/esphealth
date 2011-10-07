@@ -561,6 +561,11 @@ class LabResult(BasePatientRecord):
     # Manager
     #
     objects = LabResultManager()
+    #
+    # HEF
+    #
+    events = generic.GenericRelation('hef.Event')
+    
     
     class Meta:
         verbose_name = 'Lab Test Result'
@@ -770,8 +775,10 @@ class LabOrder(BasePatientRecord):
     specimen_id = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     order_type = models.CharField(max_length=64, blank=True, db_index=True)
     specimen_source = models.CharField(max_length=300, blank=True, null=True)
-    
-    
+    #
+    # HEF
+    #
+    events = generic.GenericRelation('hef.Event')
     
     
 class Prescription(BasePatientRecord):
@@ -795,6 +802,10 @@ class Prescription(BasePatientRecord):
     status = models.CharField('Order Status', max_length=20, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
+    #
+    # HEF
+    #
+    events = generic.GenericRelation('hef.Event')
     
     class Meta:
         ordering = ['date']
@@ -913,6 +924,10 @@ class Encounter(BasePatientRecord):
     # Making diagnosis field available in a meaningful way requires full-text
     # indexing.  Support for this is planned, but not currently implemented.
     raw_diagnosis = models.TextField(null=True, blank=True)
+    #
+    # HEF
+    #
+    events = generic.GenericRelation('hef.Event')
     
     class Meta:
         ordering = ['date']
@@ -1084,6 +1099,10 @@ class Immunization(BasePatientRecord):
     manufacturer = models.CharField('Manufacturer', max_length=100, blank=True, null=True)
     lot = models.TextField('Lot Number', max_length=500, blank=True, null=True)
     visit_date = models.DateField('Date of Visit', blank=True, null=True)
+    #
+    # HEF
+    #
+    events = generic.GenericRelation('hef.Event')
     
     class Meta:
         ordering = ['date']
@@ -1172,6 +1191,10 @@ class Allergy(BasePatientRecord):
     name = models.CharField(max_length=200, null=True, db_index=True)
     status = models.CharField(max_length=20, null=True, db_index=True)
     description = models.CharField(max_length=200)
+    #
+    # HEF
+    #
+    events = generic.GenericRelation('hef.Event')
 
 
 class Problem(BasePatientRecord):
@@ -1182,6 +1205,11 @@ class Problem(BasePatientRecord):
     icd9 = models.ForeignKey(Icd9)
     status = models.CharField(max_length=20, null=True, db_index=True)
     comment = models.TextField(null=True, blank=True)
+    #
+    # HEF
+    #
+    events = generic.GenericRelation('hef.Event')
+    
 
     
     
