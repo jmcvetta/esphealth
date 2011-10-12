@@ -119,7 +119,7 @@ class Case(models.Model):
     A case of (reportable) disease
     '''
     condition = models.CharField('Common English name for this medical condition', 
-        max_length=255, blank=False, db_index=True)
+        max_length=100, blank=False, db_index=True)
     date = models.DateField(blank=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False)
     provider = models.ForeignKey(Provider, blank=False)
