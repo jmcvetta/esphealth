@@ -295,7 +295,7 @@ class BaseLoader(object):
                 continue # Skip None objects
             cur_row += 1 # Increment the counter
             # The last line is a footer, so we skip it
-            if cur_row >= self.line_count:
+            if cur_row > self.line_count: # cch changed from >= because it was skipping last row
                 break
             # check this, too -- in case there are extra blank lines at end of file
             if row[self.fields[0]].upper() == 'CONTROL TOTALS':
@@ -697,6 +697,7 @@ class EncounterLoader(BaseLoader):
             'o2_stat': decon(row['o2_stat']),
             'peak_flow': decon(row['peak_flow']),
             'edc': daton(row['edc']),
+            'mrn': row['medical_record_num'],
             'weight': weight_str_to_kg(row['weight']),
             'height': height_str_to_cm(row['height']),
             }

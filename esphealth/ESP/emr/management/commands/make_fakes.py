@@ -51,8 +51,8 @@ from ESP.emr.models import Immunization
 from ESP.emr.models import SocialHistory, Problem, Allergy
 from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
 
-
-POPULATION_SIZE = 10**6
+#change patient generations here
+POPULATION_SIZE = 10**1
 ENCOUNTERS_PER_PATIENT = 10
 LAB_TESTS_PER_PATIENT = 5
 CHLAMYDIA_LX_PCT = 20
@@ -127,10 +127,9 @@ class ProviderWriter(EpicWriter):
             return
         pin = row['provider_id_num']
         if not pin:
-            raise LoadException('Record has blank provider_id_num, which is required')
+            raise DataFakerException('Record has blank provider_id_num, which is required')
         p = self.get_provider(pin)
         p.provenance = self.provenance
-        p.updated_by = UPDATED_BY
         p.last_name = unicode(row['last_name'])
         p.first_name = unicode(row['first_name'])
         p.middle_name = unicode(row['middle_name'])
@@ -249,19 +248,22 @@ class LabResultWriter(EpicWriter):
     def write_row(self, lx):
         self.writer.writerow({
                 'patient_id_num':lx.patient.patient_id_num,
-                'medical_record_num': lx.mrn,
+                'medical_record_num': lx.patient.mrn,# 2.1 lx.mrn,
                 'order_id_num': lx.order_num,
                 'order_date': str_from_date(lx.date),
                 'result_date': str_from_date(lx.result_date),
-                'provider_id_num': 'FAKE_PROVIDER_%s' % random.randint(1, 100),
+                'provider_id_num':lx.provider.provider_id_num,
+                                 #'FAKE_PROVIDER_%s' % random.randint(1, 100),
                 'order_type':' ',
-                'cpt': lx.native_code.split('--')[1].strip(),
-                'component': lx.native_code.split('--')[-1].strip(),
+                'cpt': lx.native_code.strip(),
+                #lx.native_code.split('--')[1].strip(),
+                'component': lx.native_code.strip(),
+                #lx.native_code.split('--')[-1].strip(),
                 'component_name': lx.native_name,
-                'result_string': lx.result_string,
+                'result_string': lx.result_float,#2.1 result_string?
                 'normal_flag' : lx.abnormal_flag,
-                'ref_low': lx.ref_low_string,
-                'ref_high': lx.ref_high_string,
+                'ref_low': lx.ref_low_float, #2.1 low_string?
+                'ref_high': lx.ref_high_float,#2.1 high string?
                 'unit': lx.ref_unit,
                 'status' : lx.status,
                 'note' : lx.comment,
@@ -353,8 +355,8 @@ class EncounterWriter(EpicWriter):
 
         self.writer.writerow({
                 'patient_id_num':encounter.patient.patient_id_num,
-                'medical_record_num':'',
-                'encounter_id_num':encounter.id,
+                'medical_record_num':encounter.patient.mrn,
+                'encounter_id_num':encounter.native_encounter_num,#2.1 encounter.id
                 'encounter_date':str_from_date(encounter.date),
                 'is_closed': '',
                 'closed_date':str_from_date(encounter.closed_date) or '',
@@ -531,9 +533,9 @@ class Command(LoaderCommand):
 
         prof = Profiler()
 
-        chlamydia_codes = list(Loinc.objects.filter(shortname__contains='mydia').distinct())
-        other_codes = list(Loinc.objects.exclude(shortname__contains='mydia').distinct()[:2000])
-
+        #2.1 chlamydia_codes = list(Loinc.objects.filter(shortname__contains='mydia').distinct())
+        #2.1 other_codes = list(Loinc.objects.exclude(shortname__contains='mydia').distinct()[:2000])
+       
         patient_writer = PatientWriter()
         lx_writer = LabResultWriter()
         encounter_writer = EncounterWriter()
@@ -555,35 +557,19 @@ class Command(LoaderCommand):
 
             
             # Write random encounters and lab tests.
-            for i in xrange(ENCOUNTERS_PER_PATIENT):  
+            for i in xrange(random.randrange(1,ENCOUNTERS_PER_PATIENT)):  
                 encounter_writer.write_row(Encounter.make_mock(p))
-
-                
-
-            for i in xrange(LAB_TESTS_PER_PATIENT):  
-                codes = chlamydia_codes if random.random() <= CHLAMYDIA_LX_PCT else other_codes
-                positive = random.random() <= CHLAMYDIA_INFECTION_PCT
-                result_string = 'POSITIVE' if positive else 'NORMAL'
-                loinc = random.choice(codes)
-
-                lx = LabResult.make_mock(p, with_loinc=loinc)
-                lx.result_string = result_string
-                lx.native_code = str(loinc)
-                lx.native_name = loinc.shortname
+            
+            for i in xrange(random.randrange(1,LAB_TESTS_PER_PATIENT)):  
+                lx = LabResult.make_mock(p)
                 lx_writer.write_row(lx)
+                # codes = chlamydia_codes if random.random() <= CHLAMYDIA_LX_PCT else other_codes
+                # positive = random.random() <= CHLAMYDIA_INFECTION_PCT
+                # result_string = 'POSITIVE' if positive else 'NORMAL'
+                # loinc = random.choice(codes)
 
-                
-
-                
-            
-
-                
-
-
-
-
-
-            
-
-                
-
+                # lx = LabResult.make_mock(p, with_loinc=loinc)
+                # lx.result_string = result_string
+                # lx.native_code = str(loinc)
+                # lx.native_name = loinc.shortname
+                # lx_writer.write_row(lx)
