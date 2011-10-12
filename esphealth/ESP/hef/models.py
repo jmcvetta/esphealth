@@ -71,19 +71,27 @@ class Event(models.Model):
         Creates an event linked to emr_record.  If a QuerySet is given as qs
         and emr_record is None, an event of the specified type is created for
         each record in the QS.
+        
+        @return: (new_event_count, list_of_new_events)
+        @rtype: (int, list)
         '''
         assert emr_record or qs
+        if emr_record:
+            records = [emr_record]
+        else:
+            records = []
         if qs:
-            pk_list = qs.values_list('pk').order_by('pk').distinct()
+            records.extend(qs)
+            records.sort()
+            pk_list = [str(rec.pk) for rec in records]
             note = 'Event created from a queryset including the following PKs:\n    '
             note += '\n    '.join(pk_list)
-            records = qs
         else:
-            records = [emr_record]
             note = None
+        new_events = []
         for obj in records:
             content_type = ContentType.objects.get_for_model(obj)
-            new_event = Event(
+            e = Event(
                 name = name,
                 source =source,
 				date = date,
@@ -93,9 +101,10 @@ class Event(models.Model):
                 content_type = content_type,
                 object_id = obj.pk,
                 )
-            new_event.save()
-            log.debug('Created new event: %s' % new_event)
-        return len(records)
+            e.save()
+            log.debug('Created new event: %s' % e)
+            new_events.append(e)
+        return ( len(records), new_events )
     
 
 class Timespan(models.Model):
