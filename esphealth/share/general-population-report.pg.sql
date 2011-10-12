@@ -22,7 +22,7 @@
 SELECT 
   p.id AS patient_id
 , p.mrn
-, date_part('yar', age(u10.last_enc_date) AS years_since_last_enc
+, date_part('year', age(u10.last_enc_date)) AS years_since_last_enc
 , date_part('year', age(p.date_of_birth)) AS age
 , p.gender
 , p.race
