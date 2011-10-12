@@ -10,6 +10,7 @@
 '''
 
 import string
+import time
 import random
 import datetime
 import sys
@@ -30,7 +31,7 @@ from ESP.emr.choices import LOAD_STATUS
 from ESP.emr.choices import LAB_ORDER_TYPES
 from ESP.conf.common import EPOCH
 from ESP.conf.models import CodeMap
-from ESP.static.models import Loinc
+from ESP.static.models import Loinc, FakeLabs, FakeVitals
 from ESP.static.models import Ndc
 from ESP.static.models import Icd9, Allergen
 from ESP.static.models import Vaccine
@@ -135,7 +136,7 @@ class Provider(BaseMedicalRecord):
     '''
     A medical care provider
     '''
-    provider_id_num = models.CharField('Physician code', unique=True, max_length=20, 
+    provider_id_num = models.CharField('Physician code', unique=True, max_length=30, 
         blank=True, null=True, db_index=True)
     last_name = models.CharField('Last Name',max_length=200, blank=True,null=True)
     first_name = models.CharField('First Name',max_length=200, blank=True,null=True)
@@ -209,9 +210,9 @@ class Patient(BaseMedicalRecord):
     '''
     A patient, with demographic information
     '''
-    patient_id_num = models.CharField('Patient ID #', unique=True, max_length=20, 
+    patient_id_num = models.CharField('Patient ID #', unique=True, max_length=25, 
         blank=True, null=True, db_index=True)
-    mrn = models.CharField('Medical Record ', max_length=20, blank=True, null=True, db_index=True)
+    mrn = models.CharField('Medical Record ', max_length=25, blank=True, null=True, db_index=True)
     last_name = models.CharField('Last Name', max_length=200, blank=True, null=True)
     first_name = models.CharField('First Name', max_length=200, blank=True, null=True)
     middle_name = models.CharField('Middle Name', max_length=200, blank=True, null=True)
@@ -281,7 +282,8 @@ class Patient(BaseMedicalRecord):
             provenance=provenance,
             pcp = provider,
             patient_id_num = 'FAKE-%s' % identifier,
-            mrn = 'FAKE-MRN-%s' % identifier,
+            mrn = randomizer.autoIncrement(), 
+            # 2.1= 'FAKE-MRN-%s' % identifier,
             last_name = randomizer.last_name(),
             first_name = randomizer.first_name(),
             suffix = '',
@@ -308,7 +310,7 @@ class Patient(BaseMedicalRecord):
             )
         if save_on_db: p.save()
         return p
-
+ 
     @staticmethod
     def random(fake=True):
         '''Returns a random fake user. If fake is False, returns a
@@ -584,7 +586,8 @@ class LabResult(BasePatientRecord):
         LabResult.fakes().delete()
 
     @staticmethod
-    def make_mock(loinc, patient, when=None, **kw):
+    def oldmake_mock(patient, when=None, **kw):
+        # 2.1 (loinc, patient, when=None, **kw):
         save_on_db = kw.pop('save_on_db', False)
         loinc = kw.get('with_loinc', None) or Loinc.objects.order_by('?')[0]
 
@@ -597,6 +600,70 @@ class LabResult(BasePatientRecord):
                        result_date=result_date)
 
 
+
+        if save_on_db: lx.save()
+        return lx
+    
+    @staticmethod
+    def randomWeight(first=.7,second=.9):
+        r = random.random()
+        if r <= first:
+            return 'H'
+        elif r <= second:
+            return 'L'
+        else: 
+            return 'N'
+       
+        
+    @staticmethod
+    def make_mock(patient, when=None, **kw):
+        #TODO change patient to Loinc?
+        save_on_db = kw.pop('save_on_db', False)
+        msLabs =  FakeLabs.objects.order_by('?')[0]
+        now = int(time.time()*1000) #time in milliseconds
+        provider = Provider.get_mock()
+       
+        lx = LabResult(patient=patient,mrn=patient.mrn, provider=provider, provenance=Provenance.fake(),order_num = now)
+        
+        when = when or randomizer.date_range(as_string=False) #datetime.date.today()
+        lx.result_date = when + datetime.timedelta(days=random.randrange(1, 5)) # date to b 5 days after
+        # Make sure the patient was alive for the order...
+       
+        order_date = when if patient.date_of_birth is None else max(when, patient.date_of_birth)
+        lx.date = order_date
+        lx.native_code = str(msLabs.fakelabs_id)
+ 
+        #not going to do cpt or order type =1 
+        
+        lx.native_name = msLabs.short_name
+        lx.collection_date = order_date
+        lx.status = 'Final'
+        #lx.result_num = this is result id not in epic ignore
+        #lx.ref_high_string = ignore  not included in etl epic care
+        #lx.ref_low_string = ignore
+        lx.ref_high_float = msLabs.normal_high
+        lx.ref_low_float = msLabs.normal_low
+        lx.ref_unit = msLabs.units
+        # Result
+        
+        lx.abnormal_flag = LabResult.randomWeight()
+        
+        #random btw low and high (sometimes between very low or very high)
+        if lx.abnormal_flag == 'L':
+            lx.result_float = round(random.uniform(msLabs.very_low, lx.ref_low_float),2)
+        elif lx.abnormal_flag == 'H':
+            lx.result_float = round(random.uniform(lx.ref_high_float, msLabs.very_high) ,2)
+        else:
+            lx.result_float = round(random.uniform(lx.ref_low_float, lx.ref_high_float),2)
+        
+        #lx.result_string = random.choice('POSITIVE, NEGATIVE, NORMAL')
+        # Wide fields
+        #lx.specimen_num = ignore
+        #lx.specimen_source = ignore
+        #lx.impression = ignore
+        lx.comment = 'final report'
+        #lx.procedure_name = ignore
+        
 
         if save_on_db: lx.save()
         return lx
@@ -931,7 +998,7 @@ class Encounter(BasePatientRecord):
                     Encounter.make_mock(patient, save_on_db=True, when=when)
             
     @staticmethod
-    def make_mock(patient, **kw):
+    def oldmake_mock(patient, **kw):
         save_on_db=kw.pop('save_on_db', False)
         when = kw.get('when', datetime.datetime.now())
         provider = Provider.get_mock()
@@ -941,7 +1008,53 @@ class Encounter(BasePatientRecord):
         
         if save_on_db: e.save()
         return e
+    
+    
+    @staticmethod
+    def randomVitalValue(low, high, vlow, vhigh):
+        r = random.random()
+        if r <= .7:
+            return round(random.uniform(vlow, high),2)
+        elif r <= .9:
+            return round(random.uniform(low, vhigh),2) 
+        else: 
+            return  round(random.uniform(low, high),2)
+        
 
+    @staticmethod
+    def make_mock(patient, **kw):
+        save_on_db=kw.pop('save_on_db', False)
+        when = kw.get('when', randomizer.date_range(as_string=False)) #datetime.datetime.now())
+        provider = Provider.get_mock()
+        msVitals =  FakeVitals.objects.order_by('short_name')
+       
+        now = int(time.time()*1000) #time in milliseconds
+        
+        e = Encounter(patient=patient, provider=provider, provenance=Provenance.fake(),
+                      mrn=patient.mrn, status='FAKE', date=when, closed_date=when)
+        
+        e.native_encounter_num = now
+        #the order in msVitals depends on the fakevitals load order rows 
+        e.bmi = Encounter.randomVitalValue(msVitals[0].normal_low, msVitals[0].normal_high, 
+                                           msVitals[0].very_low, msVitals[0].very_high) 
+        e.temperature = Encounter.randomVitalValue(msVitals[1].normal_low, msVitals[1].normal_high, 
+                                           msVitals[1].very_low, msVitals[1].very_high) 
+        e.weight = Encounter.randomVitalValue(msVitals[2].normal_low, msVitals[2].normal_high, 
+                                           msVitals[2].very_low, msVitals[2].very_high) 
+        e.height = Encounter.randomVitalValue(msVitals[3].normal_low, msVitals[3].normal_high, 
+                                           msVitals[3].very_low, msVitals[3].very_high) 
+        e.bp_systolic = Encounter.randomVitalValue(msVitals[4].normal_low, msVitals[4].normal_high, 
+                                           msVitals[4].very_low, msVitals[4].very_high)  
+        e.bp_diastolic =Encounter.randomVitalValue(msVitals[5].normal_low, msVitals[5].normal_high, 
+                                           msVitals[5].very_low, msVitals[5].very_high) 
+        e.o2_stat = Encounter.randomVitalValue(msVitals[6].normal_low, msVitals[6].normal_high, 
+                                           msVitals[6].very_low, msVitals[6].very_high) 
+        e.peak_flow = Encounter.randomVitalValue(msVitals[7].normal_low, msVitals[7].normal_high, 
+                                           msVitals[7].very_low, msVitals[7].very_high) 
+        
+        
+        if save_on_db: e.save()
+        return e
 
     @staticmethod
     def volume(date, *args, **kw):
@@ -1053,6 +1166,7 @@ class Encounter(BasePatientRecord):
             'event_type':self.event_type,
             'edc':(self.edc and self.edc.isoformat()) or None,
             'measurements':{
+                'bmi'    :self.bmi,       
                 'pregnancy':self.pregnancy_status,
                 'temperature':self.temperature,
                 'weight':self.weight,
@@ -1172,10 +1286,3 @@ class Problem(BasePatientRecord):
     icd9 = models.ForeignKey(Icd9)
     status = models.CharField(max_length=20, null=True, db_index=True)
     comment = models.TextField(null=True, blank=True)
-
-    
-    
-    
-
-    
-    
