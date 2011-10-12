@@ -21,7 +21,67 @@
 
 from django.db import models
 
+class FakeLabs (models.Model):
+    '''
+     this is for our new extra lab table 
+    '''
+    def _get_name(self):
+    
+        #Returns long common name if available, falling back to short name.
+        
+        if self.long_name:
+            return self.long_name
+        elif self.short_name:
+            return self.short_name
+        else:
+            return self.cpt_code
+    name = property(_get_name)
+   
+    fakelabs_id = models.AutoField(primary_key=True)
+    short_name = models.TextField(blank=True, null=True)
+    data_type = models.TextField(blank=True, null=True)
+    normal_low = models.FloatField(blank=True, null=True)
+    normal_high = models.FloatField(blank=True, null=True)
+    units = models.TextField(blank=True, null=True)
+    very_low = models.FloatField(blank=True, null=True)
+    very_high = models.FloatField(blank=True, null=True)
+    cpt_code = models.TextField(blank=True, null=True)  
 
+    class Meta:
+        verbose_name = 'FAKELABS'
+
+    def __str__(self):
+        return '%s -- %s' % (self.fakelabs_id, self.name)
+    
+    
+class FakeVitals (models.Model):
+    '''
+     this is for our new extra vitals table 
+    '''
+    def _get_name(self):
+    
+        #Returns  short name.
+        
+        return self.short_name
+        
+    name = property(_get_name)
+   
+    fakevitals_id = models.AutoField(primary_key=True)
+    short_name = models.TextField(blank=True, null=True)
+    long_name = models.TextField(blank=True, null=True)
+    normal_low = models.FloatField(blank=True, null=True)
+    normal_high = models.FloatField(blank=True, null=True)
+    units = models.TextField(blank=True, null=True)
+    very_low = models.FloatField(blank=True, null=True)
+    very_high = models.FloatField(blank=True, null=True)
+    
+
+    class Meta:
+        verbose_name = 'FAKEVITALS'
+
+    def __str__(self):
+        return '%s -- %s' % (self.fakevitals_id, self.name)
+        
 class Loinc(models.Model):
     '''
     Logical Observation Identifiers Names and Codes
