@@ -366,6 +366,16 @@ class AbstractLabTest(object):
     def __unicode__(self):
         return u'Abstract Lab Test - %s' % self.name
     
+    @classmethod
+    def get_all_names(cls):
+        '''
+        Returns the set of all known Abstract Lab Test names
+        '''
+        names = set()
+        for heuristic in BaseLabResultHeuristic.get_all():
+            names.add(heuristic.alt.name)
+        return names
+    
     @property
     def lab_results(self):
         testmaps = LabTestMap.objects.filter(test_name = self.name).filter( Q(record_type='result') | Q(record_type='both') )
@@ -443,6 +453,17 @@ class BaseLabResultHeuristic(BaseEventHeuristic):
     '''
     Parent for lab heuristics, supplying some convenience methods
     '''
+    
+    @classmethod
+    def get_all(cls):
+        '''
+        Returns the set of all lab result heuristics
+        '''
+        lab_heuristics = set()
+        for h in BaseEventHeuristic.get_all():
+            if isinstance(h, cls):
+                lab_heuristics.add(h)
+        return lab_heuristics
     
     @property
     def core_uris(self):
