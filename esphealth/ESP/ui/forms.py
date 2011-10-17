@@ -20,7 +20,7 @@ from django.contrib.auth.forms import UserCreationForm
 
 from ESP.nodis.models import STATUS_CHOICES
 #from ESP.nodis.base import Condition
-from ESP.hef.models import AbstractLabTest
+from ESP.hef.base import AbstractLabTest
 from ESP.static.models import Loinc
 
 
@@ -36,7 +36,7 @@ class CaseStatusForm(forms.Form):
 
 
 class CodeMapForm(forms.Form):
-    TEST_CHOICES = [('%s' % t.name, '%s - %s' % (t.name, t.verbose_name)) for t in AbstractLabTest.objects.all()]
+    TEST_CHOICES = [(name, name) for name in AbstractLabTest.get_all_names()]
     test = forms.ChoiceField(choices=TEST_CHOICES, required=True)
     threshold = forms.FloatField(required=False)
     notes = forms.CharField(widget=forms.Textarea, required=False)

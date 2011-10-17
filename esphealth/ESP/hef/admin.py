@@ -6,7 +6,7 @@
 
 from django.contrib import admin
 
-from ESP.hef.models import AbstractLabTest
+
 from ESP.hef.models import LabTestMap
 from ESP.hef.models import LabOrderHeuristic
 from ESP.hef.models import LabResultPositiveHeuristic
@@ -21,9 +21,6 @@ from ESP.hef.models import ResultString
 
 class EventAdmin(admin.ModelAdmin):
     list_display = ['name', 'date', 'patient', 'content_object']
-
-class AbstractLabTestAdmin(admin.ModelAdmin):
-    list_display = ['name', 'reportable']
 
 class LabTestMapAdmin(admin.ModelAdmin):
     list_display = ['test', 'native_code', 'record_type', 'code_match_type']
@@ -100,7 +97,6 @@ class ResultStringAdmin(admin.ModelAdmin):
     list_filter = ['indicates', 'match_type', 'applies_to_all']
 
 
-admin.site.register(AbstractLabTest, AbstractLabTestAdmin)
 admin.site.register(LabTestMap, LabTestMapAdmin)
 admin.site.register(LabOrderHeuristic, LabOrderHeuristicAdmin)
 admin.site.register(LabResultPositiveHeuristic, LabResultPositiveHeuristicAdmin)
