@@ -51,7 +51,11 @@ class DiseaseDefinition(object):
     @abc.abstractproperty
     def uri(self):
         '''
-        A URI which uniquely describes this disease definition
+        A URI which uniquely describes this disease definition.  URIs should
+        follow this general format:
+            'urn:x-esphealth:disease:your_organization_name:disease_name:version'
+        For example:
+            'urn:x-esphealth:disease:channing:chlamydia:v1'
         @rtype: String
         '''
     
