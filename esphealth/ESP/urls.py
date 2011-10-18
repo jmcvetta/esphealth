@@ -25,9 +25,6 @@ urlpatterns = patterns('',
     # Core Application
     url(r'^$', status_page, name='status'),
     
-    # Vaers
-    url(r'^vaers/', include('ESP.vaers.urls')),
-
     # Syndromic Surveillance
     url(r'^ss/', include('ESP.ss.urls')),
 
