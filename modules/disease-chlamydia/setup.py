@@ -17,7 +17,7 @@ setup(
     name = 'esphealth-disease-chlamydia',
     version = '1.0',
     author = 'Jason McVetta',
-    author_email = 'jason.mcvetta@gmail.com'
+    author_email = 'jason.mcvetta@gmail.com',
     description = 'Chalmydia disease definition module for ESP Health application',
     license = 'LGPLv3',
     keywords = 'chlamydia algorithm disease surveillance public health epidemiology',
