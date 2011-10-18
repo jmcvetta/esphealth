@@ -31,6 +31,7 @@ from decimal import Decimal
 
 from ESP.settings import HEF_THREAD_COUNT
 from ESP.conf.models import LabTestMap
+from ESP.conf.models import ResultString
 from ESP.emr.models import Encounter
 from ESP.emr.models import LabOrder
 from ESP.emr.models import LabResult
@@ -618,28 +619,70 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
         #else:
             #pos_q = None
         #--------------------------------------------------------------------------------
-        positive_q = Q(pk__isnull=True)
-        negative_q = Q(pk__isnull=True)
-        indeterminate_q = Q(pk__isnull=True)
+        map_qs = LabTestMap.objects.filter(test_name=self.test_name)
+        if not map_qs:
+            log.warning('No tests mapped for "%s", cannot generate events.' % self.test_name)
+            return 0
         #
-        # Build queries from LabTestMaps
+        # All labs can be classified pos/neg if they have reference high and 
+        # numeric result
         #
-        for map in LabTestMap.objects.filter(test_name=self.test_name):
+        ref_high_float_q = Q(ref_high_float__isnull=False)
+        result_float_q = Q(result_float__isnull=False)
+        numeric_q = ref_high_float_q & result_float_q
+        positive_q = ( numeric_q & Q(result_float__gte = F('ref_high_float')) )
+        negative_q = ( numeric_q & Q(result_float__lt = F('ref_high_float')) )
+        indeterminate_q = None
+        all_labs_q = None
+        #
+        # Build queries with custom result strings or fallback thresholds
+        #
+        simple_strings_lab_q = None
+        for map in map_qs:
             lab_q = map.lab_results_q_obj
-            ref_float_q = Q(ref_high_float__isnull=False)
-            num_res_q = lab_q & ref_float_q & Q(result_float__isnull=False)
-            positive_q |= num_res_q & Q(result_float__gte = F('ref_high_float'))
-            negative_q |= num_res_q & Q(result_float__lt = F('ref_high_float'))
+            if all_labs_q:
+                all_labs_q |= lab_q
+            else:
+                all_labs_q = lab_q
+            #
+            # Labs mapped with extra result strings need to be handled specially
+            #
+            if map.extra_positive_strings.all() \
+                or map.extra_negative_strings.all() \
+                or map.extra_indeterminate_strings.all() \
+                or map.excluded_positive_strings.all() \
+                or map.excluded_negative_strings.all() \
+                or map.excluded_indeterminate_strings.all():
+                positive_q |= (map.positive_string_q_obj & lab_q)
+                negative_q |= (map.negative_string_q_obj & lab_q)
+                if indeterminate_q:
+                    indeterminate_q |= (map.indeterminate_string_q_obj & lab_q)
+                else:
+                    indeterminate_q = (map.indeterminate_string_q_obj & lab_q)
+                continue
+            # Threshold criteria is *in addition* to reference high
             if map.threshold:
-                positive_q |= num_res_q & Q(result_float__gte=map.threshold)
-                negative_q |= num_res_q & Q(result_float__lt=map.threshold)
-            # Greater than ref high -- result string begins with '>' and ref_high_float is not null
-            positive_q |= lab_q & ref_float_q & Q(result_string__istartswith='>')
-            negative_q |= lab_q & ref_float_q & Q(result_string__istartswith='<')
-            # String queries
-            positive_q |= (map.positive_string_q_obj & map.lab_results_q_obj)
-            negative_q |= (map.negative_string_q_obj & map.lab_results_q_obj)
-            indeterminate_q |= (map.indeterminate_string_q_obj & map.lab_results_q_obj)
+                num_lab_q = (lab_q & result_float_q)
+                positive_q |= ( num_lab_q & Q(result_float__gte=map.threshold) )
+                negative_q |= ( num_lab_q & Q(result_float__lt=map.threshold) )
+            if simple_strings_lab_q:
+                simple_strings_lab_q |= lab_q
+            else:
+                simple_strings_lab_q = lab_q
+        #
+        # All labs in the simple_strings_lab_q can be queried using the standard
+        # set of result strings
+        #
+        if simple_strings_lab_q:
+            pos_rs_q = ResultString.get_q_by_indication('pos')
+            neg_rs_q = ResultString.get_q_by_indication('neg')
+            ind_rs_q = ResultString.get_q_by_indication('ind')
+            positive_q |= (simple_strings_lab_q & pos_rs_q)
+            negative_q |= (simple_strings_lab_q & neg_rs_q)
+            if indeterminate_q:
+                indeterminate_q |= (simple_strings_lab_q & ind_rs_q)
+            else:
+                indeterminate_q = (simple_strings_lab_q & ind_rs_q)
         #
         # Add titer string queries
         #
@@ -652,6 +695,9 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
                 positive_q |= Q(result_string__istartswith=s)
             for s in negative_titer_strings:
                 negative_q |= Q(result_string__istartswith=s)
+        positive_q = all_labs_q & positive_q
+        negative_q = all_labs_q & negative_q
+        indeterminate_q = all_labs_q & indeterminate_q
         #
         # Generate Events
         #

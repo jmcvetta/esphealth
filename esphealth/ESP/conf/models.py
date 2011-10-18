@@ -133,6 +133,23 @@ class ResultString(models.Model):
         elif self.match_type == 'icontains':
             return Q(result_string__icontains=self.value)
     q_obj = property(__get_q_obj)
+    
+    @classmethod
+    def get_q_by_indication(cls, indicates):
+        '''
+        Returns a Q object for result strings that apply to all labs and 
+        indicate the specified outcome.
+        @param indicates: Get result strings that indicate this outcome (must 
+            be one of (pos, neg, ind)
+        @type indicates: String
+        @rtype: Q
+        '''
+        assert indicates in ['pos', 'neg', 'ind'] # Sanity check
+        rs_qs = ResultString.objects.filter(indicates=indicates, applies_to_all=True)
+        q_obj = rs_qs[0].q_obj
+        for rs in rs_qs[1:]:
+            q_obj |= rs.q_obj
+        return q_obj
 
 
 class LabTestMap(models.Model):
@@ -221,39 +238,35 @@ class LabTestMap(models.Model):
             return Q(procedure_master_num__icontains=self.native_code)
     lab_orders_q_obj = property(__get_lab_orders_q_obj)
     
-    def __get_positive_string_q_obj(self):
-        # Build pos q for this lab test based on q_obj for each result string object
-        pos_rs = ResultString.objects.filter(indicates='pos', applies_to_all=True)
-        pos_rs |= self.extra_positive_strings.all()
+    @property
+    def positive_string_q_obj(self):
+        rs_qs = self.extra_positive_strings.all()
         if self.excluded_positive_strings.all():
-            pos_rs = pos_rs.exclude(self.excluded_positive_strings.all())
-        q_obj = pos_rs[0].q_obj
-        for rs in pos_rs[1:]:
+            rs_qs = rs_qs.exclude(self.excluded_positive_strings.all())
+        q_obj = ResultString.get_q_by_indication('pos')
+        for rs in rs_qs:
             q_obj |= rs.q_obj
         return q_obj
-    positive_string_q_obj = property(__get_positive_string_q_obj)
     
-    def __get_negative_string_q_obj(self):
-        neg_rs = ResultString.objects.filter(indicates='neg', applies_to_all=True)
-        neg_rs |= self.extra_negative_strings.all()
+    @property
+    def negative_string_q_obj(self):
+        rs_qs = self.extra_negative_strings.all()
         if self.excluded_negative_strings.all():
-            neg_rs = neg_rs.exclude(self.excluded_negative_strings.all())
-        q_obj = neg_rs[0].q_obj
-        for rs in neg_rs[1:]:
+            rs_qs = rs_qs.exclude(self.excluded_negative_strings.all())
+        q_obj = ResultString.get_q_by_indication('neg')
+        for rs in rs_qs:
             q_obj |= rs.q_obj
         return q_obj
-    negative_string_q_obj = property(__get_negative_string_q_obj)
     
-    def __get_indeterminate_string_q_obj(self):
-        rs_set = ResultString.objects.filter(indicates='ind', applies_to_all=True)
-        rs_set |= self.extra_indeterminate_strings.all()
+    @property
+    def indeterminate_string_q_obj(self):
+        rs_qs = self.extra_indeterminate_strings.all()
         if self.excluded_indeterminate_strings.all():
-            rs_set = rs_set.exclude(self.excluded_indeterminate_strings.all())
-        q_obj = rs_set[0].q_obj
-        for rs in rs_set[1:]:
+            rs_qs = rs_qs.exclude(self.excluded_indeterminate_strings.all())
+        q_obj = ResultString.get_q_by_indication('ind')
+        for rs in rs_qs:
             q_obj |= rs.q_obj
         return q_obj
-    indeterminate_string_q_obj = property(__get_indeterminate_string_q_obj)
 
 
 
