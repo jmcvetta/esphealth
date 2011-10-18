@@ -36,3 +36,7 @@ ipython          # Interactive Python shell
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-pregnancy#egg=heuristic-pregnancy
 # Combined random/fasting glucose lab test
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-glucose-crf#egg=heuristic-glucose-crf
+# Chlamydia
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-chlamydia#egg=disease-chlamydia
+# Gonorrhea
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-gonorrhea#egg=disease-gonorrhea
