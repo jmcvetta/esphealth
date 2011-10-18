@@ -12,16 +12,26 @@ Base Classes
 
 
 import abc
+import datetime
+
 from pkg_resources import iter_entry_points
 
 from ESP.settings import HEF_THREAD_COUNT
 from ESP.utils import log
+
 from ESP.hef.base import BaseHeuristic
+from ESP.hef.base import LabResultPositiveHeuristic
+from ESP.hef.models import Event
+from ESP.nodis.models import Case
 
 
 class DiseaseDefinition(object):
 
     __metaclass__ = abc.ABCMeta
+    
+    #
+    # Abstract class interface
+    #
     
     @abc.abstractproperty
     def conditions(self):
@@ -36,7 +46,6 @@ class DiseaseDefinition(object):
         Short name (SlugField-compatible) for this report.
         @rtype: String
         '''
-    
     
     @abc.abstractproperty
     def uri(self):
@@ -59,14 +68,6 @@ class DiseaseDefinition(object):
         @rtype: List of TimespanHeuristic instances
         '''
     
-    @abc.abstractmethod
-    def generate(self):
-        '''
-        Examine the database and generate new cases of this disease
-        @return: The count of new cases generated
-        @rtype:  Integer
-        '''
-        
     @abc.abstractproperty
     def test_name_search_strings(self):
         '''
@@ -74,6 +75,18 @@ class DiseaseDefinition(object):
             names for tests potentially relevant to this disease.
         @rtype: [String, String, ...]
         '''
+    
+    @abc.abstractmethod
+    def generate(self):
+        '''
+        Examine the database and generate new cases of this disease
+        @return: The count of new cases generated
+        @rtype:  Integer
+        '''
+    
+    #
+    # Concrete members
+    #
     
     @classmethod
     def get_all_test_name_search_strings(cls):
@@ -216,4 +229,125 @@ class Report(object):
         report_list = list(report_set)
         report_list.sort(key = lambda h: h.short_name)
         return report_list
+    
+
+
+class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
+    '''
+    Defines a single condition, for which a single positive test from a given
+    set is sufficient to detect a case.
+    '''
+
+    #__metaclass__ = abc.ABCMeta
+    
+    #
+    # Abstract class interface
+    #
+    
+    @abc.abstractproperty
+    def condition(self):
+        '''
+        Condition (singular) which this disease definition can detect.
+        @rtype: String
+        '''
+        
+    @abc.abstractproperty
+    def test_names(self):
+        '''
+        Names of tests for which a single positive equals a case
+        @rtype: [String, String, ...]
+        '''
+    
+    @abc.abstractproperty
+    def recurrence_interval(self):
+        '''
+        The minimum number of days which must elapse after a the date of a
+        case, before another case can be declared.  
+        @return: Number of days or None if disease cannot recur
+        @rtype: Integer or None.
+        '''
+    @property
+    def event_heuristics(self):
+        '''
+        Event heuristics on which this disease definition depends.
+        @rtype: List of EventHeuristic instances
+        '''
+        heuristics = set()
+        for test_name in self.test_names:
+            heuristics.add( LabResultPositiveHeuristic(test_name=test_name) )
+        return heuristics
+    
+    @property
+    def conditions(self):
+        '''
+        Conditions (plural) which this disease definition can detect
+        @rtype: List of strings
+        '''
+        assert str(self.condition) == self.condition # Sanity check, condition must be a string
+        return [self.condition]
+    
+    timespan_heuristics = [] # This type of definition never uses timespans.
+    
+    def generate(self):
+        '''
+        Examine the database and generate new cases of this disease
+        @return: The count of new cases generated
+        @rtype:  Integer
+        '''
+        pos_events = set()
+        for heuristic in self.event_heuristics:
+            pos_events.add(heuristic.positive_event_name)
+        qs = Event.objects.filter(name__in=pos_events)
+        qs = qs.exclude(case__condition=self.condition)
+        qs = qs.order_by('patient', 'date')
+        if not self.recurrence_interval is None:
+            delta = datetime.timedelta(days=self.recurrence_interval)
+            #recur_date = ref_date + delta
+        counter = 0
+        for ev in qs:
+            # 
+            # Check recurrence
+            #
+            if self.recurrence_interval is None:
+                # Non-recurring condition - once you have it, you've always 
+                # got it.
+                existing_cases = Case.objects.filter(
+                    patient = ev.patient,
+                    condition = self.condition,
+                    ).order_by('date')
+            else:
+                delta = datetime.timedelta(days=self.recurrence_interval)
+                max_date = ev.date + delta
+                min_date = ev.date - delta
+                existing_cases = Case.objects.filter(
+                    patient = ev.patient,
+                    condition = self.condition,
+                    date__gte = min_date,
+                    date__lte = max_date,
+                    ).order_by('date')
+            # If this patient has an existing case, we attach this event 
+            # to that case and continue.
+            if existing_cases:
+                first_case = existing_cases[0] 
+                first_case.events.add(ev)
+                first_case.save()
+                log.debug('Added %s to %s' % (ev, first_case))
+                continue
+            #
+            # Create new case
+            #
+            new_case = Case(
+                patient = ev.patient,
+                provider = ev.provider,
+                date = ev.date,
+                condition =  self.condition,
+                criteria = 'Positive lab test',
+                source = self.uri,
+                )
+            new_case.save()
+            new_case.events.add(ev)
+            new_case.save()
+            log.debug('Created new Chlamydia case: %s' % new_case)
+            counter += 1
+        return counter
     

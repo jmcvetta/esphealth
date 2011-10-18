@@ -10,47 +10,14 @@
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
-import datetime
-import pprint
-import types
-import sys
-import optparse
-import re
-import hashlib
-from operator import itemgetter
-
-from django.db import connection
-from django.db.models import Q
-from django.db.models import F
-from django.db.models import Sum
 from django.db.models import Max
-from django.db.models import Model
-from django.db.models import Count
-from django.db.models.query import QuerySet
-from django.contrib.contenttypes.models import ContentType
-
-
-from ESP import settings
-#from ESP.hef import events # Ensure events are loaded
-from ESP.utils import utils as util
-from ESP.utils.utils import log
-from ESP.utils.utils import log_query
 from ESP.static.models import Icd9
 #from ESP.conf.models import CodeMap
 from ESP.conf.models import STATUS_CHOICES
 from ESP.conf.models import ReportableLab
 from ESP.conf.models import ReportableMedication
-from ESP.conf.models import IgnoredCode
-from ESP.emr.models import LabResult
-from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.emr.models import Immunization
-from ESP.emr.models import Patient
-from ESP.emr.models import Provider
-from ESP.hef.base import BaseHeuristic
 #from ESP.hef.base import TimespanHeuristic
 from ESP.hef.models import Timespan
-from ESP.hef.models import Event
 from ESP.conf.models import ConditionConfig
 
 import datetime
@@ -59,7 +26,6 @@ from django.db import models
 from django.db.models import Q
 
 from ESP.emr.models import Encounter
-from ESP.emr.models import Immunization
 from ESP.emr.models import LabResult
 from ESP.emr.models import Patient
 from ESP.emr.models import Prescription
