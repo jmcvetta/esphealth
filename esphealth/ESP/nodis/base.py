@@ -300,9 +300,6 @@ class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
         qs = Event.objects.filter(name__in=pos_events)
         qs = qs.exclude(case__condition=self.condition)
         qs = qs.order_by('patient', 'date')
-        if not self.recurrence_interval is None:
-            delta = datetime.timedelta(days=self.recurrence_interval)
-            #recur_date = ref_date + delta
         counter = 0
         for ev in qs:
             # 
