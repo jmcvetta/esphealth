@@ -18,6 +18,7 @@ from pkg_resources import iter_entry_points
 
 from ESP.settings import HEF_THREAD_COUNT
 from ESP.utils import log
+from ESP.utils import log_query
 
 from ESP.hef.base import BaseHeuristic
 from ESP.hef.base import LabResultPositiveHeuristic
@@ -254,7 +255,7 @@ class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
     @abc.abstractproperty
     def test_names(self):
         '''
-        Names of tests for which a single positive equals a case
+        Names of abstract lab tests for which a single positive equals a case
         @rtype: [String, String, ...]
         '''
     
@@ -294,6 +295,7 @@ class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
         @return: The count of new cases generated
         @rtype:  Integer
         '''
+        log.info('Generating cases of %s' % self.short_name)
         pos_events = set()
         for heuristic in self.event_heuristics:
             pos_events.add(heuristic.positive_event_name)
@@ -301,6 +303,7 @@ class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
         qs = qs.exclude(case__condition=self.condition)
         qs = qs.order_by('patient', 'date')
         counter = 0
+        log_query('Events for %s' % self.short_name, qs)
         for ev in qs:
             # 
             # Check recurrence
@@ -346,5 +349,6 @@ class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
             new_case.save()
             log.debug('Created new Chlamydia case: %s' % new_case)
             counter += 1
+        log.info('Generated %s cases of %s' % (counter, self.short_name))
         return counter
     
