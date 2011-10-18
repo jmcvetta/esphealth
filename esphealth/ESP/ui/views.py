@@ -47,7 +47,7 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import LabTestConcordance
 #from ESP.hef import events # Required to register hef events
-#from ESP.nodis.base import Condition
+from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.models import Case
 from ESP.nodis.models import CaseStatusHistory
 from ESP.nodis.models import Report
@@ -243,7 +243,7 @@ def unmapped_labs_report(request):
     Display Unmapped Labs report generated from cache
     '''
     unmapped = _get_unmapped_labs()
-    strings = Condition.all_test_name_search_strings()
+    strings = DiseaseDefinition.get_all_test_name_search_strings()
     strings.sort()
     values = {
         'title': 'Unmapped Lab Tests Report',
@@ -377,7 +377,7 @@ class CaseTablePHI(tables.ModelTable):
 
 class CaseFilterFormPHI(forms.Form):
     __status_choices = [('', '---')] + STATUS_CHOICES
-    __condition_choices = [('', '---')] + Condition.condition_choices()
+    __condition_choices = [('', '---')] + DiseaseDefinition.get_all_condition_choices()
     case_id = forms.CharField(required=False, label="Case ID")
     condition = forms.ChoiceField(choices=__condition_choices, required=False)
     date_after = forms.DateField(required=False, label='Date After')
@@ -388,7 +388,7 @@ class CaseFilterFormPHI(forms.Form):
 
 class CaseFilterFormNoPHI(forms.Form):
     __status_choices = [('', '---')] + STATUS_CHOICES
-    __condition_choices = [('', '---')] + Condition.condition_choices()
+    __condition_choices = [('', '---')] + DiseaseDefinition.get_all_condition_choices()
     case_id = forms.CharField(required=False)
     condition = forms.ChoiceField(choices=__condition_choices, required=False)
     date_after = forms.DateField(required=False)
@@ -580,7 +580,7 @@ def _get_unmapped_labs():
     # FIXME:
     # This may need to be updated when LabTestMap is finalized
     mapped = LabTestMap.objects.values('native_code').distinct()
-    all_strings = Condition.all_test_name_search_strings()
+    all_strings = DiseaseDefinition.get_all_test_name_search_strings()
     q_obj = Q(native_name__icontains=all_strings[0])
     for string in all_strings[1:]:
         q_obj |= Q(native_name__icontains=string)

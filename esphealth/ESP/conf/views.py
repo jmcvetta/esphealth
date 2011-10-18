@@ -36,7 +36,6 @@ from django.template.defaultfilters import slugify
 from django.http import HttpResponse, HttpResponseRedirect
 
 from ESP.settings import ROWS_PER_PAGE
-from ESP.conf.models import CodeMap
 from ESP.conf.models import IgnoredCode
 from ESP.emr.models import LabResult
 from ESP.utils.utils import log
