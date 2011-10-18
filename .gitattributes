@@ -366,6 +366,9 @@ modules/disease-chlamydia/setup.py -text
 modules/disease-diabetes/__init__.py -text
 modules/disease-diabetes/diabetes.py -text
 modules/disease-diabetes/setup.py -text
+modules/disease-gonorrhea/__init__.py -text
+modules/disease-gonorrhea/gonorrhea.py -text
+modules/disease-gonorrhea/setup.py -text
 modules/heuristic-glucose-crf/__init__.py -text
 modules/heuristic-glucose-crf/glucose_crf.py -text
 modules/heuristic-glucose-crf/setup.py -text
