@@ -1,19 +1,74 @@
 from django.contrib import admin
 
-from ESP.conf.models import CodeMap
+from ESP.conf.models import LabTestMap
 from ESP.conf.models import IgnoredCode
 from ESP.conf.models import ConditionConfig
 from ESP.conf.models import ReportableLab
 from ESP.conf.models import ReportableIcd9
 from ESP.conf.models import ReportableMedication
+from ESP.conf.models import ResultString
 
 
-class CodeMapAdmin(admin.ModelAdmin):
-    list_display = ['id', 'native_code', 'native_name', 'heuristic', 'threshold', 'output_code', 'output_name', 'reportable', 'notes']
-    list_filter = ['heuristic', 'reportable']
-    search_fields = ['native_code', 'native_name', 'output_code', 'heuristic']
+class LabTestMapAdmin(admin.ModelAdmin):
+    list_display = [
+        'id',
+        'test_name',
+        'native_code',
+        'code_match_type',
+        'record_type',
+        'threshold',
+        'reportable',
+        'output_code',
+        'output_name',
+        ]
+    list_filter = [
+        'test_name',
+        'reportable',
+        'record_type'
+        ]
+    search_fields = [
+        'test_name'
+        'native_code',
+        'output_code',
+        'output_name'
+        ]
     save_on_top = True
-    ordering = ['output_code', 'native_code', 'heuristic']
+    ordering = ['test_name', 'native_code', 'output_code']
+    filter_horizontal = [
+        'extra_positive_strings', 
+        'excluded_positive_strings',
+        'extra_negative_strings',
+        'excluded_negative_strings',
+        'extra_indeterminate_strings',
+        'excluded_indeterminate_strings',
+        ]
+    fieldsets = (
+        (None, {
+            'fields': ('test_name',)
+            }),
+        ('Mapping', {
+            'fields': ('native_code', 'code_match_type', 'record_type'),
+            }),
+        ('Reporting', {
+            'fields': ('reportable', 'output_code', 'output_name', 'snomed_pos', 'snomed_neg',  'snomed_ind'),
+            'classes': ('collapse',),
+            }),
+        ('Result Strings', {
+            'fields': (
+		        'extra_positive_strings', 
+		        'excluded_positive_strings',
+		        'extra_negative_strings',
+		        'excluded_negative_strings',
+		        'extra_indeterminate_strings',
+		        'excluded_indeterminate_strings',
+                ),
+            'classes': ('collapse',),
+            }),
+        ('', {
+            'fields': ('notes',)
+            }),
+        )
+    
 
 class IgnoredCodeAdmin(admin.ModelAdmin):
     search_fields = ['native_code']
@@ -49,9 +104,14 @@ class ReportableIcd9Admin(admin.ModelAdmin):
     list_filter = ['condition']
     raw_id_fields = ['icd9']
 
-admin.site.register(CodeMap, CodeMapAdmin)
+class ResultStringAdmin(admin.ModelAdmin):
+    list_display = ['value', 'indicates', 'match_type', 'applies_to_all']
+    list_filter = ['indicates', 'match_type', 'applies_to_all']
+
 admin.site.register(IgnoredCode, IgnoredCodeAdmin)
 admin.site.register(ConditionConfig, ConditionConfigAdmin)
 admin.site.register(ReportableLab, ReportableLabAdmin)
 admin.site.register(ReportableMedication, ReportableMedicationAdmin)
 admin.site.register(ReportableIcd9, ReportableIcd9Admin)
+admin.site.register(LabTestMap, LabTestMapAdmin)
+admin.site.register(ResultString, ResultStringAdmin)
