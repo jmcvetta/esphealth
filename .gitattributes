@@ -360,6 +360,9 @@ esphealth/share/esp.logrotate -text
 esphealth/share/general-population-report.json -text
 esphealth/share/general-population-report.pg.sql -text
 esphealth/share/ndc_codes.txt.bz2 -text svneol=unset#unset
+modules/disease-chlamydia/__init__.py -text
+modules/disease-chlamydia/chlamydia.py -text
+modules/disease-chlamydia/setup.py -text
 modules/disease-diabetes/__init__.py -text
 modules/disease-diabetes/diabetes.py -text
 modules/disease-diabetes/setup.py -text
