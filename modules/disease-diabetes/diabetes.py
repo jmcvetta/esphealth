@@ -1,13 +1,13 @@
 '''
                                   ESP Health
                          Notifiable Diseases Framework
-                      Gestational Diabetes Case Generator
+                            Diabetes Case Generator
 
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
 @organization: Channing Laboratory http://www.channing.harvard.edu
 @contact: http://www.esphealth.org
-@copyright: (c) 2010 Channing Laboratory
+@copyright: (c) 2010-2011 Channing Laboratory
 @license: LGPL
 '''
 
@@ -265,14 +265,48 @@ class Diabetes(DiseaseDefinition):
     def timespan_heuristics(self):
         return []
     
+    test_name_search_strings = [
+            'cholesterol-hdl',
+            'cholesterol-ldl',
+            'cholesterol-total',
+            'triglycerides',
+            'peptide',
+            'ogtt',
+            'glucose',
+            'gad65',
+            'ica512',
+            'a1c',
+            'metformin', 
+            'glyburide', 
+            'test strips', 
+            'lancets',
+            'pramlintide',
+            'exenatide',
+            'sitagliptin',
+            'meglitinide',
+            'nateglinide',
+            'repaglinide',
+            'glimepiride',
+            'glipizide',
+            'gliclazide',
+            'rosiglitizone',
+            'pioglitazone',
+            'acetone',
+            'glucagon',
+            'miglitol',
+            'cholesterol',
+            'triglycerides',
+            'islet',
+        ]
+    
     #-------------------------------------------------------------------------------
     #
     # Frank Diabetes
     #
     #-------------------------------------------------------------------------------
-    FIRST_YEAR = 2006
-    FRANK_DM_CONDITIONS = ['diabetes:type-1', 'diabetes:type-2']
-    ORAL_HYPOGLYCAEMICS = [
+    __FIRST_YEAR = 2006
+    __FRANK_DM_CONDITIONS = ['diabetes:type-1', 'diabetes:type-2']
+    __ORAL_HYPOGLYCAEMICS = [
         'rx:metformin',
         'rx:glyburide',
         'rx:gliclazide',
@@ -289,7 +323,7 @@ class Diabetes(DiseaseDefinition):
         'rx:miglitol'
         ]
     # If a patient has one of these events, he has frank diabetes
-    FRANK_DM_ONCE = [
+    __FRANK_DM_ONCE = [
         'lx:a1c:threshold:gte:6.5',
         'lx:glucose-fasting:threshold:gte:126',
         'rx:glyburide',
@@ -306,12 +340,12 @@ class Diabetes(DiseaseDefinition):
         'rx:pramlintide',
         ]
     # If a patient has one of these events twice, he has frank diabetes
-    FRANK_DM_TWICE = [
+    __FRANK_DM_TWICE = [
         'lx:glucose-random:threshold:gte:200'
         'dx:diabetes:all-types',
         ]
-    FRANK_DM_ALL = FRANK_DM_ONCE + FRANK_DM_TWICE
-    AUTO_ANTIBODIES_LABS = [
+    __FRANK_DM_ALL = __FRANK_DM_ONCE + __FRANK_DM_TWICE
+    __AUTO_ANTIBODIES_LABS = [
         'lx:ica512',
         'lx:gad65',
         'lx:islet-cell-antibody',
@@ -332,9 +366,9 @@ class Diabetes(DiseaseDefinition):
             patient__timespan__end_date__gte = F('date'),
             patient__timespan__pk__isnull=True,
             )
-        once_qs = Event.objects.filter(name__in=self.FRANK_DM_ONCE)
+        once_qs = Event.objects.filter(name__in=self.__FRANK_DM_ONCE)
         once_qs |= insulin_events
-        once_qs = once_qs.exclude(patient__case__condition__in=self.FRANK_DM_CONDITIONS)
+        once_qs = once_qs.exclude(patient__case__condition__in=self.__FRANK_DM_CONDITIONS)
         once_qs = once_qs.values('patient').distinct().annotate(trigger_date=Min('date'))
         for i in once_qs:
             pat = i['patient']
@@ -345,9 +379,9 @@ class Diabetes(DiseaseDefinition):
             size = len(frank_dm_trigger_dates)
             if not (size % 1000):
                 log.debug('Frank DM trigger date count: %s' % size)
-        for event_name in self.FRANK_DM_TWICE:
+        for event_name in self.__FRANK_DM_TWICE:
             twice_qs = Event.objects.filter(name=event_name).values('patient')
-            twice_qs = twice_qs.exclude(patient__case__condition__in=self.FRANK_DM_CONDITIONS)
+            twice_qs = twice_qs.exclude(patient__case__condition__in=self.__FRANK_DM_CONDITIONS)
             twice_qs = twice_qs.annotate(count=Count('pk'))
             #patient_pks = qs.filter(count__gte=2).values_list('patient', flat=True).distinct().order_by('-patient')
             twice_qs = twice_qs.filter(count__gte=2)
@@ -401,7 +435,7 @@ class Diabetes(DiseaseDefinition):
             patient__timespan__end_date__gte = F('date'),
             patient__timespan__pk__isnull=True,
             )
-        trigger_events = insulin_events | Event.objects.filter(name__in = self.FRANK_DM_ALL)
+        trigger_events = insulin_events | Event.objects.filter(name__in = self.__FRANK_DM_ALL)
         trigger_events = trigger_events.filter(
             patient = patient, 
             date = trigger_date,
@@ -439,7 +473,7 @@ class Diabetes(DiseaseDefinition):
         # 2. Diabetes auto-antibodies positive
         #
         #-------------------------------------------------------------------------------
-        pos_aa_event_types = ['%s:positive' % i for i in self.AUTO_ANTIBODIES_LABS]
+        pos_aa_event_types = ['%s:positive' % i for i in self.__AUTO_ANTIBODIES_LABS]
         aa_pos = patient_events.filter(name__in=pos_aa_event_types).order_by('date')
         if aa_pos:
             provider = aa_pos[0].provider
@@ -469,7 +503,7 @@ class Diabetes(DiseaseDefinition):
         #    medications OR prescription for GLUCAGON)
         #
         #-------------------------------------------------------------------------------
-        oral_hypoglycaemic_rx = patient_events.filter(name__in=self.ORAL_HYPOGLYCAEMICS).order_by('date')
+        oral_hypoglycaemic_rx = patient_events.filter(name__in=self.__ORAL_HYPOGLYCAEMICS).order_by('date')
         glucagon_rx = patient_events.filter(name='rx:glucagon').order_by('date')
         if glucagon_rx or (not oral_hypoglycaemic_rx):
             type_1_dx = patient_events.filter(name__startswith='dx:diabetes:type-1')
@@ -998,8 +1032,8 @@ class BaseDiabetesReport(Report):
     
     @property
     def YEARS(self):
-        #return range(Diabetes.FIRST_YEAR, datetime.datetime.now().year + 1)
-        return range(Diabetes.FIRST_YEAR, 2011) # Until data update
+        #return range(Diabetes.__FIRST_YEAR, datetime.datetime.now().year + 1)
+        return range(Diabetes.__FIRST_YEAR, 2011) # Until data update
     
     def _sanitize_string_values(self, dictionary):
         '''
@@ -1124,7 +1158,7 @@ class BaseDiabetesReport(Report):
         self.FIELDS.append('rx_ever--oral_hypoglycemic_any')
         self.FIELDS.append('rx_ever--oral_hypoglycemic_non_metformin')
         rx_ever_events = Event.objects.filter(patient__in=self.patient_qs)
-        oral_hyp = rx_ever_events.filter(name__in=Diabetes.ORAL_HYPOGLYCAEMICS)
+        oral_hyp = rx_ever_events.filter(name__in=Diabetes.__ORAL_HYPOGLYCAEMICS)
         non_met = oral_hyp.exclude(name='rx--metformin')
         oral_hyp_patients = oral_hyp.distinct('patient').values_list('patient', flat=True)
         non_met_patients = non_met.distinct('patient').values_list('patient', flat=True)
@@ -1307,7 +1341,7 @@ class FrankDiabetesReport(BaseDiabetesReport):
             'rx:insulin',
             'lx:a1c:threshold:gte:6.5',
             'lx:glucose-fasting:threshold:gte:126',
-            ] + Diabetes.ORAL_HYPOGLYCAEMICS
+            ] + Diabetes.__ORAL_HYPOGLYCAEMICS
         # FIXME: Only item in this list should be 'random glucose >= 200', which is not yet implemented
         linelist_patient_criteria_twice = [
             'lx:glucose-random:threshold:gte:200',
