@@ -66,6 +66,51 @@ class DiseaseDefinition(object):
         @return: The count of new cases generated
         @rtype:  Integer
         '''
+        
+    @abc.abstractproperty
+    def test_name_search_strings(self):
+        '''
+        @return: A list of all strings to use when searching native lab test 
+            names for tests potentially relevant to this disease.
+        @rtype: [String, String, ...]
+        '''
+    
+    @classmethod
+    def get_all_test_name_search_strings(cls):
+        '''
+        @return: A list of all strings to use when searching native lab test 
+            names for tests potentially relevant to any defined disease.
+        @rtype: [String, String, ...]
+        '''
+        search_strings = set()
+        for disdef in cls.get_all():
+            [search_strings.add(s) for s in disdef.test_name_search_strings]
+        search_strings = list(search_strings)
+        search_strings.sort()
+        return search_strings
+    
+    @classmethod
+    def get_all_conditions(cls):
+        '''
+        @return: A list of all conditions which can be detected by 
+            defined DiseaseDefinitions
+        @rtype: [String, String, ...]
+        '''
+        conditions = set()
+        for disdef in cls.get_all():
+            [conditions.add(s) for s in disdef.conditions]
+        conditions = list(conditions)
+        conditions.sort()
+        return conditions
+    
+    @classmethod
+    def get_all_condition_choices(cls):
+        '''
+        @return: A list of tuples describing all detectable conditions, 
+            suitable for use with Django forms.
+        @rtype: [(String, String), (String, String), ...]
+        '''
+        return [(c, c) for c in cls.get_all_conditions()]
     
     @classmethod
     def get_all(cls):
