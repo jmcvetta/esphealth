@@ -19,6 +19,7 @@ from ESP.nodis.base import SinglePositiveTestDiseaseDefinition
 
 class Chlamydia(SinglePositiveTestDiseaseDefinition):
     '''
+    Chlamydia
     '''
     
     condition = 'chlamydia'
@@ -30,6 +31,8 @@ class Chlamydia(SinglePositiveTestDiseaseDefinition):
     test_name_search_strings = ['chlam',]
     
     test_names = ['chlamydia']
+    
+    recurrence_interval = 28
     
     
 #-------------------------------------------------------------------------------
