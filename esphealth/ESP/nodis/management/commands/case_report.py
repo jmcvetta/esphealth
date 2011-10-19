@@ -72,7 +72,7 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 
 #from ESP.nodis import defs # Not sure if this is necessary
-from ESP.nodis.base import Condition
+from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.models import Case
 from ESP.nodis.models import ReportRun
 from ESP.nodis.models import Report
@@ -1052,7 +1052,7 @@ class Command(BaseCommand):
         #
         # Parse and sanity check command line for options
         #
-        all_conditions = Condition.list_all_condition_names()
+        all_conditions = DiseaseDefinition.get_all_conditions()
         all_conditions.sort()
         options = Values(options)
         if options.sample: # '--sample' implies '--no-sent-status'
