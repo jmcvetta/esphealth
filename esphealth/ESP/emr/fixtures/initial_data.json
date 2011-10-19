@@ -35,7 +35,7 @@
       "last_name": "UNKNOWN", 
       "title": "UNKNOWN", 
       "area_code": "UNKNOWN", 
-      "dept_id_num": "UNKNOWN", 
+      "dept_natural_key": "UNKNOWN", 
       "provenance": 1, 
       "dept_city": "UNKNOWN", 
       "dept_zip": "UNKNOWN", 
@@ -44,7 +44,6 @@
       "dept_address_1": "UNKNOWN", 
       "telephone": "UNKNOWN", 
       "created_timestamp": "2009-07-30 16:14:54", 
-      "provider_id_num": "UNKNOWN", 
       "dept_address_2": "UNKNOWN"
     }
   }, 
@@ -56,7 +55,7 @@
       "tel": "UNKNOWN", 
       "suffix": "UNKNOWN", 
       "areacode": "UNKNOWN", 
-      "patient_id_num": "UNKNOWN", 
+      "natural_key": "UNKNOWN", 
       "created_timestamp": "2009-07-30 16:15:48", 
       "marital_stat": "UNKNOWN", 
       "zip5": null, 
@@ -78,7 +77,6 @@
       "date_of_death": null, 
       "ssn": "UNKNOWN", 
       "mother_mrn": "UNKNOWN", 
-      "pregnant": null, 
       "tel_ext": "UNKNOWN", 
       "country": "UNKNOWN", 
       "mrn": "UNKNOWN", 
