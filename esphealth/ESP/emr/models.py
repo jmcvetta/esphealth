@@ -538,10 +538,10 @@ class LabResult(BasePatientRecord):
     # In some EMR data sets, reference pos & high, and neg & low, may come from
     # the same field depending whether the value is a string or a number.
     #
-    ref_high_string = models.CharField('Reference Positive Value', max_length=100, blank=True, null=True)
-    ref_low_string = models.CharField('Reference Negative Value', max_length=100, blank=True, null=True)
-    ref_high_float = models.FloatField('Reference High Value', blank=True, null=True, db_index=True)
-    ref_low_float = models.FloatField('Reference Low Value', blank=True, null=True, db_index=True)
+    ref_high_string = models.CharField('Reference High Value (string)', max_length=100, blank=True, null=True)
+    ref_low_string = models.CharField('Reference Low Value (string)', max_length=100, blank=True, null=True)
+    ref_high_float = models.FloatField('Reference High Value (float)', blank=True, null=True, db_index=True)
+    ref_low_float = models.FloatField('Reference Low Value (float)', blank=True, null=True, db_index=True)
     ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
     #
     # Result
