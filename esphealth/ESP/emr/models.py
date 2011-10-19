@@ -540,8 +540,8 @@ class LabResult(BasePatientRecord):
     #
     ref_high_string = models.CharField('Reference High Value (string)', max_length=100, blank=True, null=True)
     ref_low_string = models.CharField('Reference Low Value (string)', max_length=100, blank=True, null=True)
-    ref_high_float = models.FloatField('Reference High Value (float)', blank=True, null=True, db_index=True)
-    ref_low_float = models.FloatField('Reference Low Value (float)', blank=True, null=True, db_index=True)
+    ref_high_float = models.FloatField('Reference High Value (decimal)', blank=True, null=True, db_index=True)
+    ref_low_float = models.FloatField('Reference Low Value (decimal)', blank=True, null=True, db_index=True)
     ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
     #
     # Result
