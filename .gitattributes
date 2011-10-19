@@ -157,6 +157,7 @@ esphealth/ESP/nodis/management/commands/nodis.py -text
 esphealth/ESP/nodis/management/commands/patient_report.py -text
 esphealth/ESP/nodis/management/commands/report.py -text
 esphealth/ESP/nodis/migrations/0001_initial.py -text
+esphealth/ESP/nodis/migrations/0002_small_schema_changes.py -text
 esphealth/ESP/nodis/migrations/__init__.py -text
 esphealth/ESP/nodis/models.py -text
 esphealth/ESP/nodis/tests.py -text
