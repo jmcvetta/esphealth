@@ -207,9 +207,8 @@ LEFT JOIN (
 	WHERE name = 'pregnancy'
 	AND start_date <= now()
 	AND end_date >= now()
-
 ) AS u6
-	ON u4.patient_id = p.id
+	ON u6.patient_id = p.id
 
 --
 -- Insulin
