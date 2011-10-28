@@ -217,7 +217,13 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         unbound_onset_qs = self.onset_qs.exclude(timespan__name='pregnancy')
         patient_pks = unbound_onset_qs.order_by('patient').values_list('patient', flat=True).distinct()
         log_query('Pregnant patient PKs', patient_pks)
-        funcs = [partial(self.pregnancies_for_patient, patient_pk) for patient_pk in patient_pks]
+        total = len(patient_pks)
+        counter = 0
+        funcs = []
+        for patient_pk in patient_pks:
+            counter += 1
+            f = partial(self.pregnancies_for_patient, patient_pk, counter, total) 
+            funcs.append(f)
         ts_count = wait_for_threads(funcs)
         return ts_count
     
@@ -309,15 +315,19 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         return max_icd9_date
     
     @transaction.commit_on_success
-    def pregnancies_for_patient(self, patient_pk):
+    def pregnancies_for_patient(self, patient_pk, serial, total):
         '''
         Generate new pregnancy timespans for a given patient
         @param patient_pk: Primary key of Patient to be examined
         @type patient_pk: Integer
+        @param serial: Serial counter for logging
+        @type serial: Integer
+        @param total: Total count of patients for logging
+        @type total: Integer
         @return: Count of new pregnancies generated
         @rtype: Integer
         '''
-        log.debug('Examining patient #%s for pregnancy' % patient_pk)
+        log.debug('Examining patient #%s for pregnancy (%20s / %s)' % (patient_pk, serial, total))
         patient = Patient.objects.get(pk=patient_pk)
         counter = 0
         today = datetime.date.today()
@@ -421,7 +431,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                     )
                 new_preg.save() # Must save before populating M2M
                 self._attach_relevant_encounters(new_preg)
-                log.info('Created new pregnancy: %s (%s)' % (new_preg, pattern))
+                log.info('Created new timespan: #%s' % new_preg.pk)
         return counter
     
     def _attach_relevant_encounters(self, preg_ts):
@@ -433,8 +443,6 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             relevant_encounters = relevant_encounters.filter( date__lte=self.today )
         preg_ts.encounters = relevant_encounters
         preg_ts.save()
-        log.debug('Attached relevant encounters to %s: \n%s' % 
-            (preg_ts, '\n    '.join([str(e) for e in relevant_encounters])))
         return preg_ts
                 
 
