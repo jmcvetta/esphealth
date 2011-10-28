@@ -89,8 +89,8 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
         # Find unbound test results
         #
         lab_qs = self.result_test.lab_results
+        lab_qs = lab_qs.order_by('date').distinct()
         lab_qs = lab_qs.exclude(events__name__in=self.event_names)
-        lab_qs = lab_qs.order_by('date')
         log_query('random/fasting glucose labs', lab_qs)
         #
         # Examine labs
@@ -137,19 +137,25 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
             if res >= 200:
                 events.append(self._rand_200)
         for event_name in events:
-            e = Event(
-                name = event_name,
-                source = self.uri,
-                patient = lab.patient,
-                provider = lab.provider,
-                date = lab.date,
-                )
-            e.save()
-            e.tag(lab)
             if fasting:
-                e.tag_qs( self.fasting_qs.filter(patient=lab.patient, date=lab.date) )
-            log.debug('Created event: %s' % e)
-            counter += 1
+                counter += Event.create(
+                    name = event_name,
+                    source = self.uri,
+                    patient = lab.patient,
+                    provider = lab.provider,
+                    date = lab.date,
+                    emr_record = lab,
+                    qs = self.fasting_qs.filter(patient=lab.patient, date=lab.date),
+                    )[0]
+            else:
+                counter += Event.create(
+                    name = event_name,
+                    source = self.uri,
+                    patient = lab.patient,
+                    provider = lab.provider,
+                    date = lab.date,
+                    emr_record = lab,
+                    )[0]
         return counter
         
     
