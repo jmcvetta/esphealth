@@ -43,6 +43,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
     
     timespan_names = ['pregnancy', 'postpartum',]
     
+    today = datetime.date.today()
+    
     
     def __init__(self):
         #-------------------------------------------------------------------------------
@@ -171,10 +173,46 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             )
         self.relevant_enc_qs = self.edd_qs | self.preg_icd9_qs | self.all_eop_qs
         
+    @transaction.commit_on_success
     def generate(self):
-        log.info('Generating pregnancy events')
+        self._update_currently_pregnant()
+        return self._generate_new_pregnanies()
+    
+    def _update_currently_pregnant(self):
+        '''
+        Update currently-pregnant timespans.
+        @return: Count of timespans updated
+        @retype: Integer
+        '''
+        counter = 0
+        log.info('Checking currently-pregnant patients for EoP')
+        for ts in Timespan.objects.filter(name='pregnancy', end_date=None):
+            eop_enc = self._get_eop_enc(ts.patient, ts.start_date)
+            edd = self._get_edd(ts.patient, ts.start_date)
+            if eop_enc:
+                ts.end_date = eop_enc.date
+                ts.encounters.add(eop_enc)
+                pattern = 'eop:eop_event'
+            elif edd:
+                ts.end_date = edd
+                pattern = 'eop:edd'
+            elif ts.start_date < ( self.today - relativedelta(days=280) ):
+                ts.end_date = self._get_icd9_preg_end(ts.patient, ts.start_date)
+                pattern = 'eop:max_icd9'
+            else:
+                continue # Nothing to do here, let's move on
+            ts.pattern = ts.pattern + ' ' + pattern
+            ts.save()
+            counter += 1
+            log.debug('Updated %s with end_date %s' % (ts, ts.end_date))
+            self._attach_relevant_encounters(ts)
+        log.info('Updated %s currently-pregnant timespans with end dates.' % counter)
+        return counter
+        
+    def _generate_new_pregnanies(self):
+        log.info('Generating new pregnancy timespans')
         #
-        # Get possible patients
+        # Get possible patients for new pregnancies
         #
         unbound_onset_qs = self.onset_qs.exclude(timespan__name='pregnancy')
         patient_pks = unbound_onset_qs.order_by('patient').values_list('patient', flat=True).distinct()
@@ -183,8 +221,102 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         ts_count = wait_for_threads(funcs)
         return ts_count
     
+    def _get_eop_enc(self, patient, onset_date):
+        '''
+        Finds a plausible End of Pregnancy encounter, given a patient and the 
+            date of pregnancy onset.
+        @param patient: The patient to be considered
+        @type patient: ESP.emr.models.Patient
+        @param onset_date: Onset date for this episode of pregnancy
+        @type onset_date: Date
+        @return: The first plausible EoP encounter for this pregnancy if 
+            found; or None if no plausible EoP found
+        @rtype: ESP.emr.models.Encounter or None
+        '''
+        #
+        # Find an End of Pregnancy event.  
+        #
+        eop_event_date = None
+        eop_date_limit = onset_date + relativedelta(days=280) + relativedelta(days=30)
+        eop_qs = self.all_eop_qs.filter(
+            patient = patient,
+            date__gte = onset_date,
+            date__lte = eop_date_limit,
+            ).order_by('-date')
+        #
+        # Sometimes EoP evenets are unreliabe; and some event types are 
+        # known to be less reliable than others.  We will roll thru each
+        # potential EoP event and see if there is a pregnancy ICD9 immediately
+        # following it, which would suggest it's bogus.
+        #
+        for enc in eop_qs:
+            #
+            # It may be necessary to examine reliable and unreliable 
+            # events differently.  However we will first try examining
+            # them the same way, and change the code if need be.
+            #
+            subsequent_preg_icd9 = self.preg_icd9_qs.filter(
+                patient = patient,
+                date__gte = enc.date,
+                date__lte = enc.date + relativedelta(days=30)
+                )
+            if subsequent_preg_icd9:
+                # If so, this EoP event is bogus, so we continue to the 
+                # next one
+                continue 
+            else:
+                # This EoP event seems plausible.  Let's use its date.
+                return enc
+        return None
+    
+    def _get_edd(self, patient, start_date):
+        '''
+        Finds a plausible Estimated Date of Delivery given a patient and a 
+            date to start looking.
+        @param patient: Patient to consider
+        @type patient: ESP.emr.models.Patient
+        @param start_date: Look for EDD encounters after this date
+        @type start_date: Date
+        @return: A plausible EDD 
+        @rtype: Date
+        '''
+        edd_qs = self.edd_qs.filter(patient=patient)
+        edd_qs = edd_qs.exclude(timespan__name='pregnancy')
+        edd_qs = edd_qs.filter(edd__gte=start_date)
+        edd_qs = edd_qs.filter( edd__lte = start_date + relativedelta(days=280) )
+        min_edd = edd_qs.aggregate(Min('edd'))['edd__min']
+        return min_edd
+    
+    def _get_icd9_preg_end(self, patient, start_date):
+        '''
+        Finds a (probably not very reliable) end of pregnancy date based on
+            the last pregnancy ICD9 code that could reasonablely be 
+            attributed to a pregnancy starting at the given date
+            date to start looking.
+        @param patient: Patient to consider
+        @type patient: ESP.emr.models.Patient
+        @param start_date: Start of pregnancy
+        @type start_date: Date
+        @return: End of pregnancy date
+        @rtype: Date
+        '''
+        max_icd9_date = start_date + relativedelta(days=280)
+        preg_qs = self.preg_icd9_qs.filter(patient=patient)
+        preg_qs = preg_qs.exclude(timespan__name='pregnancy')
+        preg_qs = preg_qs.filter(date__gte=start_date)
+        preg_qs = preg_qs.filter(date__lte=max_icd9_date)
+        max_icd9_date = preg_qs.aggregate(Max('date'))['date__max']
+        return max_icd9_date
+    
     @transaction.commit_on_success
     def pregnancies_for_patient(self, patient_pk):
+        '''
+        Generate new pregnancy timespans for a given patient
+        @param patient_pk: Primary key of Patient to be examined
+        @type patient_pk: Integer
+        @return: Count of new pregnancies generated
+        @rtype: Integer
+        '''
         log.debug('Examining patient #%s for pregnancy' % patient_pk)
         patient = Patient.objects.get(pk=patient_pk)
         counter = 0
@@ -210,12 +342,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             # Determine if there is a plausible EDD within 280 days after 
             # first pregnancy ICD9 date
             #
-            first_preg_icd9_date = first_preg_event.date
-            edd_qs = self.edd_qs.filter(patient=patient)
-            edd_qs = edd_qs.exclude(timespan__name='pregnancy')
-            edd_qs = edd_qs.filter(edd__gte=first_preg_icd9_date)
-            edd_qs = edd_qs.filter( edd__lte = first_preg_icd9_date + relativedelta(days=280) )
-            min_edd = edd_qs.aggregate(Min('edd'))['edd__min']
+            min_edd = self._get_edd(patient, first_preg_event.date)
             #
             # Pregnancy onset is earliest plausible EDD minus 280 days.  If 
             # no EDD, then it is 30 days prior to first ICD9 for pregnancy.
@@ -227,51 +354,12 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 onset_date = first_preg_icd9_date - relativedelta(days=30)
                 pattern = 'onset:icd9 '
             #
-            # Is patient currently pregnant?  If so, we should not expect to
-            # find an EoP event just yet.
-            #
-            
-            #
-            # Find an End of Pregnancy event.  
-            #
-            eop_event_date = None
-            eop_date_limit = onset_date + relativedelta(days=280) + relativedelta(days=30)
-            eop_qs = self.all_eop_qs.filter(
-                patient = patient,
-                date__gte = onset_date,
-                date__lte = eop_date_limit,
-                ).order_by('-date')
-            #
-            # Sometimes EoP evenets are unreliabe; and some event types are 
-            # known to be less reliable than others.  We will roll thru each
-            # potential EoP event and see if there is a pregnancy ICD9 immediately
-            # following it, which would suggest it's bogus.
-            #
-            for enc in eop_qs:
-                #
-                # It may be necessary to examine reliable and unreliable 
-                # events differently.  However we will first try examining
-                # them the same way, and change the code if need be.
-                #
-                subsequent_preg_icd9 = self.preg_icd9_qs.filter(
-                    patient = patient,
-                    date__gte = enc.date,
-                    date__lte = enc.date + relativedelta(days=30)
-                    )
-                if subsequent_preg_icd9:
-                    # If so, this EoP event is bogus, so we continue to the 
-                    # next one
-                    continue 
-                else:
-                    # This EoP event seems plausible.  Let's use its date.
-                    eop_event_date = enc.date
-                    eop_pattern = 'eop:eop_event'
-                    break
-            #
             # If plausible EoP event was found, use that for EoP date.
-            if eop_event_date:
-                eop_date = eop_event_date
-                pattern += eop_pattern
+            #
+            eop_enc = self._get_eop_enc(patient, onset_date)
+            if eop_enc:
+                eop_date = eop_enc.date
+                pattern += 'eop:eop_event'
             # Use EDD if available
             elif min_edd:
                 eop_date = min_edd
@@ -281,10 +369,10 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 eop_date = None
                 pattern += 'eop:currently_pregnant'
             else:
-                max_icd9_date = first_preg_icd9_date + relativedelta(days=280)
+                max_icd9_date = first_preg_event.date + relativedelta(days=280)
                 this_preg_qs = preg_qs.filter(date__gte=onset_date)
                 this_preg_qs = this_preg_qs.filter(date__lte=max_icd9_date)
-                eop_date = this_preg_qs.aggregate(Max('date'))['date__max']
+                eop_date = self._get_icd9_preg_end(patient, onset_date)
                 pattern += 'eop:max_icd9 '
             #-------------------------------------------------------------------------------
             #
@@ -332,17 +420,22 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                     source = self.uri,
                     )
                 new_preg.save() # Must save before populating M2M
-                relevant_encounters = self.relevant_enc_qs.filter(patient=patient)
-                relevant_encounters = relevant_encounters.filter(date__gte=onset_date)
-                if eop_date:
-                    relevant_encounters = relevant_encounters.filter( date__lte=(eop_date + relativedelta(months=6)) )
-                else:
-                    relevant_encounters = relevant_encounters.filter( date__lte=today )
-                new_preg.encounters = relevant_encounters
-                new_preg.save()
-                counter += 1
+                self._attach_relevant_encounters(new_preg)
                 log.info('Created new pregnancy: %s (%s)' % (new_preg, pattern))
         return counter
+    
+    def _attach_relevant_encounters(self, preg_ts):
+        relevant_encounters = self.relevant_enc_qs.filter(patient=preg_ts.patient)
+        relevant_encounters = relevant_encounters.filter(date__gte=preg_ts.start_date)
+        if preg_ts.end_date:
+            relevant_encounters = relevant_encounters.filter( date__lte=(preg_ts.end_date + relativedelta(months=6)) )
+        else:
+            relevant_encounters = relevant_encounters.filter( date__lte=self.today )
+        preg_ts.encounters = relevant_encounters
+        preg_ts.save()
+        log.debug('Attached relevant encounters to %s: \n%s' % 
+            (preg_ts, '\n'.join([str(e) for e in relevant_encounters.objects.all()])))
+        return preg_ts
                 
 
 def get_timespan_heuristics():
