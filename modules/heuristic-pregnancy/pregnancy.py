@@ -351,7 +351,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 onset_date = min_edd - relativedelta(days=280)
                 pattern = 'onset:edd '
             else:
-                onset_date = first_preg_icd9_date - relativedelta(days=30)
+                onset_date = first_preg_event.date - relativedelta(days=30)
                 pattern = 'onset:icd9 '
             #
             # If plausible EoP event was found, use that for EoP date.
@@ -434,7 +434,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         preg_ts.encounters = relevant_encounters
         preg_ts.save()
         log.debug('Attached relevant encounters to %s: \n%s' % 
-            (preg_ts, '\n'.join([str(e) for e in relevant_encounters.objects.all()])))
+            (preg_ts, '\n    '.join([str(e) for e in relevant_encounters])))
         return preg_ts
                 
 
