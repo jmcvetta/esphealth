@@ -349,7 +349,6 @@ esphealth/install-ubuntu-system-deps.sh -text
 esphealth/requirements.frozen.txt -text
 esphealth/requirements.txt -text
 esphealth/setup.sh -text
-esphealth/share/Riskscape[!!-~]Report[!!-~]Converter.ktr -text
 esphealth/share/apache.conf.sample -text
 esphealth/share/cpt_codes.csv.bz2 -text svneol=unset#unset
 esphealth/share/django.wsgi.sample -text
@@ -362,6 +361,7 @@ esphealth/share/esp.logrotate -text
 esphealth/share/general-population-report.json -text
 esphealth/share/general-population-report.pg.sql -text
 esphealth/share/ndc_codes.txt.bz2 -text svneol=unset#unset
+esphealth/share/riskscape--gdm.ktr -text
 modules/disease-chlamydia/__init__.py -text
 modules/disease-chlamydia/chlamydia.py -text
 modules/disease-chlamydia/setup.py -text
