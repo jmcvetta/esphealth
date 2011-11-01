@@ -917,9 +917,13 @@ class GestationalDiabetesReport(Report):
             #
             # Patient's frank and gestational DM history
             #
+            if preg_ts.end_date:
+                end_date = preg_ts.end_date
+            else:
+                end_date = datetime.datetime.today()
             gdm_this_preg = gdm_case_qs.filter(
                 date__gte = preg_ts.start_date,
-                date__lte = preg_ts.end_date,
+                date__lte = end_date,
                 ).order_by('date')
             # Note GDM prior does not currently look for the IDCD9 in 
             # isolation, as spec requires
@@ -936,23 +940,23 @@ class GestationalDiabetesReport(Report):
                 )
             intrapartum = event_qs.filter(
                 date__gte = preg_ts.start_date,
-                date__lte = preg_ts.end_date,
+                date__lte = end_date,
                 )
             postpartum = event_qs.filter(
-                date__gt = preg_ts.end_date,
-                date__lte = preg_ts.end_date + relativedelta(days=120),
+                date__gt = end_date,
+                date__lte = end_date + relativedelta(days=120),
                 )
             early_pp = event_qs.filter(
-                date__gt = preg_ts.end_date,
-                date__lte = preg_ts.end_date + relativedelta(weeks=12),
+                date__gt = end_date,
+                date__lte = end_date + relativedelta(weeks=12),
                 )
             early_pp_q = Q(
-                date__gt = preg_ts.end_date,
-                date__lte = preg_ts.end_date + relativedelta(weeks=12),
+                date__gt = end_date,
+                date__lte = end_date + relativedelta(weeks=12),
                 )
             late_pp_q = Q(
-                date__gt = preg_ts.end_date + relativedelta(weeks=12),
-                date__lte = preg_ts.end_date + relativedelta(days=365),
+                date__gt = end_date + relativedelta(weeks=12),
+                date__lte = end_date + relativedelta(days=365),
                 )
             # FIXME: This date math works on PostgreSQL, but I think that's
             # just fortunate coincidence, as I don't think this is the
@@ -966,14 +970,14 @@ class GestationalDiabetesReport(Report):
             nutrition_referral = Encounter.objects.filter(
                 patient=patient,
                 date__gte=preg_ts.start_date, 
-                date__lte=preg_ts.end_date, 
+                date__lte=end_date,
                 ).filter(
                     Q(provider__title__icontains='RD') | Q(site_name__icontains='Nutrition')
                     )
             edd_qs = Encounter.objects.filter(
                 patient = patient,
                 date__gte = preg_ts.start_date,
-                date__lte = preg_ts.end_date,
+                date__lte = end_date,
                 edd__isnull=False
                 ).order_by('-date')
             if edd_qs:
@@ -993,7 +997,7 @@ class GestationalDiabetesReport(Report):
                 'pregnancy_id': preg_ts.pk,
                 'pregnancy': True,
                 'preg_start': preg_ts.start_date,
-                'preg_end': preg_ts.end_date,
+                'preg_end': end_date,
                 'edd': edd,
                 'bmi': bmi,
                 'gdm_case': bool( gdm_this_preg ),
