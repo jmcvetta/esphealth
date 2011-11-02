@@ -266,9 +266,7 @@ class Diabetes(DiseaseDefinition):
         return []
     
     test_name_search_strings = [
-            'cholesterol-hdl',
-            'cholesterol-ldl',
-            'cholesterol-total',
+            'cholesterol',
             'triglycerides',
             'peptide',
             'ogtt',
@@ -276,27 +274,6 @@ class Diabetes(DiseaseDefinition):
             'gad65',
             'ica512',
             'a1c',
-            'metformin', 
-            'glyburide', 
-            'test strips', 
-            'lancets',
-            'pramlintide',
-            'exenatide',
-            'sitagliptin',
-            'meglitinide',
-            'nateglinide',
-            'repaglinide',
-            'glimepiride',
-            'glipizide',
-            'gliclazide',
-            'rosiglitizone',
-            'pioglitazone',
-            'acetone',
-            'glucagon',
-            'miglitol',
-            'cholesterol',
-            'triglycerides',
-            'islet',
         ]
     
     #-------------------------------------------------------------------------------
