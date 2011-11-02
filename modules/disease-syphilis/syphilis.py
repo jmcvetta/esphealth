@@ -13,6 +13,8 @@
 
 from ESP.nodis.base import DiseaseDefinition
 from ESP.hef.base import PrescriptionHeuristic
+from ESP.hef.base import Dose
+from ESP.hef.base import LabResultPositiveHeuristic
 
 
 
@@ -21,7 +23,7 @@ class Syphilis(DiseaseDefinition):
     Syphilis
     '''
     
-    condition = 'syphilis'
+    conditions = ['syphilis'],
     
     uri = 'urn:x-esphealth:disease:channing:syphilis:v1'
     
@@ -38,7 +40,43 @@ class Syphilis(DiseaseDefinition):
             name = 'penicillin_g',
             drugs = ['penicillin g', 'pen g'],
             ))
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'doxycycline_7_day',
+            drugs = ['doxycycline',],
+            min_quantity = 14, # Need 14 pills for 7 days
+            ))
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'ceftriaxone_1_or_2_gram',
+            drugs = ['ceftriaxone',],
+            doses = [ 
+                Dose(quantity = 1, units = 'g'),
+                Dose(quantity = 2, units = 'g'),
+                ],
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'rpr',
+            titer_dilution = 8,
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'vdrl',
+            titer_dilution = 8,
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'tppa',
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'ftp-abs',
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'tp-igg',
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'vrdl-csf',
+            ))
         return heuristic_list
+    
+    def generate(self):
+        raise NotImplementedError('nothing to see here')
     
 
 #-------------------------------------------------------------------------------
