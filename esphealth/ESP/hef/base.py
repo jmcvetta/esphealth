@@ -1097,7 +1097,7 @@ class Dose(object):
     
     def __init__(self, quantity, units):
         assert quantity and units
-        assert units in DOSE_UNIT_CHOICES
+        assert units in [i[0] for i in DOSE_UNIT_CHOICES]
         self.quantity = quantity
         self.units = units
     
@@ -1144,7 +1144,7 @@ class PrescriptionHeuristic(BaseEventHeuristic):
         self.name = name
         self.drugs = [d.strip() for d in drugs]
         for dose_obj in doses:
-            assert isinstance(Dose, dose_obj)
+            assert isinstance(dose_obj, Dose)
         self.doses = doses
         self.min_quantity = min_quantity
         self.require = require
