@@ -177,7 +177,7 @@ LEFT JOIN (
 --
 LEFT JOIN (
 	SELECT 
-	patient_id
+	DISTINCT patient_id
 	, 1 AS type_2_diabetes
 	FROM nodis_case
 	WHERE condition = 'diabetes:type-2'
@@ -198,7 +198,7 @@ LEFT JOIN (
             ON nct0.timespan_id = ts0.id
 	WHERE c0.condition = 'diabetes:gestational'
             AND ts0.start_date <= now()
-            AND ts0.end_date >= now()
+            AND ( ts0.end_date >= now() OR ts0.end_date IS NULL)
 ) AS gdm
 	ON gdm.patient_id = pat.id
 
@@ -225,7 +225,7 @@ LEFT JOIN (
 	FROM hef_timespan ts
 	WHERE name = 'pregnancy'
             AND start_date <= now()
-            AND end_date >= now()
+            AND ( end_date >= now() OR end_date IS NULL)
 ) AS curpreg
 	ON curpreg.patient_id = pat.id
 

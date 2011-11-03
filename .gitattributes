@@ -358,11 +358,12 @@ esphealth/share/epic_etl/README.txt -text
 esphealth/share/epic_etl/mhslespftp.sh -text
 esphealth/share/esp-postgres.logrotate -text
 esphealth/share/esp.logrotate -text
-esphealth/share/general-population-report.json -text
 esphealth/share/general-population-report.pg.sql -text
 esphealth/share/ndc_codes.txt.bz2 -text svneol=unset#unset
-esphealth/share/riskscape--gdm.ktr -text
-esphealth/share/riskscape--general_population.ktr -text
+esphealth/share/riskscape.gdm-mapping.json -text
+esphealth/share/riskscape.gdm-transformation.ktr -text
+esphealth/share/riskscape.genepop-transformation.ktr -text
+esphealth/share/riskscape.genpop-mapping.json -text
 modules/disease-chlamydia/__init__.py -text
 modules/disease-chlamydia/chlamydia.py -text
 modules/disease-chlamydia/setup.py -text
