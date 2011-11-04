@@ -39,7 +39,7 @@ from ESP.settings import DATA_DIR
 from ESP.settings import DATE_FORMAT
 from ESP.utils.utils import log
 from ESP.utils.utils import date_from_str, Profiler
-from ESP.static.models import Icd9, Allergen, Loinc
+from ESP.static.models import Icd9, Allergen, Loinc, FakeICD9s
 from ESP.emr.models import Provenance
 from ESP.emr.models import EtlError
 from ESP.emr.models import Provider
@@ -52,12 +52,19 @@ from ESP.emr.models import SocialHistory, Problem, Allergy
 from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
 
 #change patient generations here
-POPULATION_SIZE = 10**1
+POPULATION_SIZE = 2#10**1
 ENCOUNTERS_PER_PATIENT = 10
-LAB_TESTS_PER_PATIENT = 5
-CHLAMYDIA_LX_PCT = 20
+MIN_ENCOUNTERS_PER_PATIENT = 1
+MAXICD9 = 3
 
-ICD9_CODE_PCT = 20
+MEDS_PER_PATIENT = 5
+MIN_MEDS_PER_PATIENT = 1
+
+LAB_TESTS_PER_PATIENT = 5
+MIN_LAB_TESTS_PER_PATIENT = 1
+
+CHLAMYDIA_LX_PCT = 20
+ICD9_CODE_PCT = 100
 IMMUNIZATION_PCT = 20
 CHLAMYDIA_INFECTION_PCT = 15
 
@@ -121,32 +128,25 @@ class ProviderWriter(EpicWriter):
         'telephone',
         ]
     
-    def write_row(self, row):
-        if not ''.join([i[1] for i in row.items()]): # Concatenate all fields
-            log.debug('Empty row encountered -- skipping')
-            return
-        pin = row['provider_id_num']
-        if not pin:
-            raise DataFakerException('Record has blank provider_id_num, which is required')
-        p = self.get_provider(pin)
-        p.provenance = self.provenance
-        p.last_name = unicode(row['last_name'])
-        p.first_name = unicode(row['first_name'])
-        p.middle_name = unicode(row['middle_name'])
-        p.title = row['title']
-        p.dept_id_num = row['dept_id_num']
-        p.dept = row['dept']
-        p.dept_address_1 = row['dept_address_1']
-        p.dept_address_2 = row['dept_address_2']
-        p.dept_city = row['dept_city']
-        p.dept_state = row['dept_state']
-        p.dept_zip = row['dept_zip']
-        p.area_code = row['area_code']
-        p.telephone = row['telephone']
-        p.save()
-        log.debug('Saved provider object: %s' % p)
+    def write_row(self, provider):
+        row = {}
 
+        row['provider_id_num'] = provider.provider_id_num
+        row['last_name'] = provider.last_name
+        row['first_name'] = provider.first_name
+        row['middle_name'] = provider.middle_name
+        row['title'] = provider.title
+        row['dept_id_num'] = provider.dept_id_num
+        row['dept'] = provider.dept
+        row['dept_address_1'] = provider.dept_address_1
+        row['dept_address_2'] = provider.dept_address_2
+        row['dept_city'] = provider.dept_city
+        row['dept_state'] = provider.dept_state
+        row['dept_zip'] = provider.dept_zip
+        row['area_code'] = provider.area_code
+        row['telephone'] = provider.telephone
 
+        self.writer.writerow(row)
 
 class PatientWriter(EpicWriter):
 
@@ -188,7 +188,7 @@ class PatientWriter(EpicWriter):
         row['last_name'] = patient.last_name
         row['first_name'] = patient.first_name
         row['middle_name'] = patient.middle_name
-        row['provider_id_num'] = patient.pcp
+        row['provider_id_num'] = patient.pcp.provider_id_num
         row['address1'] = patient.address1
         row['address2'] = patient.address2
         row['city'] = patient.city
@@ -212,7 +212,6 @@ class PatientWriter(EpicWriter):
         row['mother_mrn'] = patient.mother_mrn
 
         self.writer.writerow(row)
-        
 
 
 class LabResultWriter(EpicWriter):
@@ -248,7 +247,7 @@ class LabResultWriter(EpicWriter):
     def write_row(self, lx):
         self.writer.writerow({
                 'patient_id_num':lx.patient.patient_id_num,
-                'medical_record_num': lx.patient.mrn,# 2.1 lx.mrn,
+                'medical_record_num': lx.mrn,
                 'order_id_num': lx.order_num,
                 'order_date': str_from_date(lx.date),
                 'result_date': str_from_date(lx.result_date),
@@ -260,7 +259,7 @@ class LabResultWriter(EpicWriter):
                 'component': lx.native_code.strip(),
                 #lx.native_code.split('--')[-1].strip(),
                 'component_name': lx.native_name,
-                'result_string': lx.result_float,#2.1 result_string?
+                'result_string': lx.result_string,
                 'normal_flag' : lx.abnormal_flag,
                 'ref_low': lx.ref_low_float, #2.1 low_string?
                 'ref_high': lx.ref_high_float,#2.1 high string?
@@ -344,14 +343,7 @@ class EncounterWriter(EpicWriter):
         ]
 
 
-    def write_row(self, encounter, **kw):
-
-
-        if random.random() <= float(ICD9_CODE_PCT/100.0):
-            how_many_codes = random.randint(1, 3)
-            icd9_codes = [str(icd9.code) for icd9 in Icd9.objects.order_by('?')[:how_many_codes]]
-        else:
-            icd9_codes = ''
+    def write_row(self, encounter,icd9_codes, **kw):
 
         self.writer.writerow({
                 'patient_id_num':encounter.patient.patient_id_num,
@@ -397,13 +389,14 @@ class PrescriptionWriter(EpicWriter):
         'refills',
         'start_date',
         'end_date',
-        'route',
+        'route', #if order not in 7400?
+        'dose',
     ]
 
     def write_row(self, prescription, **kw):
         self.writer.writerow({
                 'patient_id_num':prescription.patient.patient_id_num,
-                'medical_record_num': '',
+                'medical_record_num': prescription.patient.mrn,
                 'order_id_num':prescription.order_num,
                 'order_date': str_from_date(prescription.date),
                 'status': prescription.status,
@@ -412,8 +405,10 @@ class PrescriptionWriter(EpicWriter):
                 'quantity': str(prescription.quantity or ''),
                 'refills': prescription.refills,
                 'start_date': str_from_date(prescription.start_date) or '',
-                'end_date': str_from_date(prescription.end) or '',
+                'end_date': str_from_date(prescription.end_date) or '',
                 'route': prescription.route,
+                'dose': prescription.dose,
+                
                 })
 
 
@@ -532,15 +527,18 @@ class Command(LoaderCommand):
 
 
         prof = Profiler()
-
-        #2.1 chlamydia_codes = list(Loinc.objects.filter(shortname__contains='mydia').distinct())
-        #2.1 other_codes = list(Loinc.objects.exclude(shortname__contains='mydia').distinct()[:2000])
-       
+        
+        provider_writer = ProviderWriter()
         patient_writer = PatientWriter()
         lx_writer = LabResultWriter()
         encounter_writer = EncounterWriter()
-        immunization_writer = ImmunizationWriter()
-
+        prescription_writer = PrescriptionWriter()
+        #immunization_writer = ImmunizationWriter()
+        
+        print 'Generating fake Patients, Labs, Encounters and Prescriptions'
+                
+        Provider.make_mocks(provider_writer)
+        
         for count in xrange(POPULATION_SIZE):
             if (count % ROW_LOG_COUNT) == 0: 
                 prof.check('Processed entries for %d patients' % count)
@@ -557,19 +555,20 @@ class Command(LoaderCommand):
 
             
             # Write random encounters and lab tests.
-            for i in xrange(random.randrange(1,ENCOUNTERS_PER_PATIENT)):  
-                encounter_writer.write_row(Encounter.make_mock(p))
+            for i in xrange(random.randrange(MIN_ENCOUNTERS_PER_PATIENT,ENCOUNTERS_PER_PATIENT)): 
+                                          
+                encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))
             
-            for i in xrange(random.randrange(1,LAB_TESTS_PER_PATIENT)):  
+            for i in xrange(random.randrange(MIN_LAB_TESTS_PER_PATIENT,LAB_TESTS_PER_PATIENT)):  
                 lx = LabResult.make_mock(p)
                 lx_writer.write_row(lx)
-                # codes = chlamydia_codes if random.random() <= CHLAMYDIA_LX_PCT else other_codes
-                # positive = random.random() <= CHLAMYDIA_INFECTION_PCT
-                # result_string = 'POSITIVE' if positive else 'NORMAL'
-                # loinc = random.choice(codes)
-
-                # lx = LabResult.make_mock(p, with_loinc=loinc)
-                # lx.result_string = result_string
-                # lx.native_code = str(loinc)
-                # lx.native_name = loinc.shortname
-                # lx_writer.write_row(lx)
+                
+            # Write random encounters and lab tests.
+            for i in xrange(random.randrange(MIN_MEDS_PER_PATIENT,MEDS_PER_PATIENT)):  
+                prescription_writer.write_row(Prescription.make_mock(p))
+                
+        print 'Generated %s fake Patients' % POPULATION_SIZE
+        print 'with up to max %s Labs, ' % LAB_TESTS_PER_PATIENT
+        print 'up to max %s Encounters ' % ENCOUNTERS_PER_PATIENT 
+        print 'and up to %s Prescriptions per Patient' % MEDS_PER_PATIENT
+        
