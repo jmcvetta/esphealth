@@ -31,7 +31,7 @@ from ESP.emr.choices import LOAD_STATUS
 from ESP.emr.choices import LAB_ORDER_TYPES
 from ESP.conf.common import EPOCH
 from ESP.conf.models import CodeMap
-from ESP.static.models import Loinc, FakeLabs, FakeVitals
+from ESP.static.models import Loinc, FakeLabs, FakeVitals, FakeMeds, FakeICD9s
 from ESP.static.models import Ndc
 from ESP.static.models import Icd9, Allergen
 from ESP.static.models import Vaccine
@@ -136,7 +136,7 @@ class Provider(BaseMedicalRecord):
     '''
     A medical care provider
     '''
-    provider_id_num = models.CharField('Physician code', unique=True, max_length=30, 
+    provider_id_num = models.CharField('Physician code', unique=True, max_length=40, 
         blank=True, null=True, db_index=True)
     last_name = models.CharField('Last Name',max_length=200, blank=True,null=True)
     first_name = models.CharField('First Name',max_length=200, blank=True,null=True)
@@ -165,16 +165,35 @@ class Provider(BaseMedicalRecord):
         Provider.fakes().delete()
 
     @staticmethod
+    # this method pre-loads and writes to an etl epic file the fake providers
+    # if there aren't any in the emr.provider table
+    def make_mocks(provider_writer):
+
+        provenance = Provenance.fake()
+        if Provider.fakes().count() > 0: return
+        import fake
+        
+        #filename = os.path.join(DATA_DIR, 'fake', 'epicpro.%s.esp' % EPOCH.strftime('%m%d%Y'))
+       # epic_file = open(filename, 'a')
+        for p in fake.PROVIDERS:
+            p.provenance = provenance
+            p.provider_id_num = 'FAKE-%05d' % random.randrange(1, 100000)
+            p.save()
+            provider_writer.write_row(p)
+
+    @staticmethod
     def make_fakes(save_on_db=True, save_to_epic=False):
         provenance = Provenance.fake()
         if Provider.fakes().count() > 0: return
         import fake
+        
         if save_to_epic:
             filename = os.path.join(DATA_DIR, 'fake', 'epicpro.%s.esp' % EPOCH.strftime('%m%d%Y'))
             epic_file = open(filename, 'a')
         for p in fake.PROVIDERS:
             p.provenance = provenance
             p.provider_id_num = 'FAKE-%05d' % random.randrange(1, 100000)
+            
             if save_on_db: p.save()
             if save_to_epic: p.write
 
@@ -631,7 +650,7 @@ class LabResult(BasePatientRecord):
        
         order_date = when if patient.date_of_birth is None else max(when, patient.date_of_birth)
         lx.date = order_date
-        lx.native_code = str(msLabs.fakelabs_id)
+        lx.native_code = str(msLabs.native_code)
  
         #not going to do cpt or order type =1 
         
@@ -646,17 +665,20 @@ class LabResult(BasePatientRecord):
         lx.ref_unit = msLabs.units
         # Result
         
-        lx.abnormal_flag = LabResult.randomWeight()
+        if msLabs.data_type <> 'Qualitative':
+            lx.abnormal_flag = LabResult.randomWeight()
         
-        #random btw low and high (sometimes between very low or very high)
-        if lx.abnormal_flag == 'L':
-            lx.result_float = round(random.uniform(msLabs.very_low, lx.ref_low_float),2)
-        elif lx.abnormal_flag == 'H':
-            lx.result_float = round(random.uniform(lx.ref_high_float, msLabs.very_high) ,2)
+            #random btw low and high (sometimes between very low or very high)
+            if lx.abnormal_flag == 'L':
+                lx.result_float = round(random.uniform(msLabs.very_low, lx.ref_low_float),2)
+            elif lx.abnormal_flag == 'H':
+                lx.result_float = round(random.uniform(lx.ref_high_float, msLabs.very_high) ,2)
+            else:
+                lx.result_float = round(random.uniform(lx.ref_low_float, lx.ref_high_float),2)
+            lx.result_string = lx.result_float
         else:
-            lx.result_float = round(random.uniform(lx.ref_low_float, lx.ref_high_float),2)
+            lx.result_string = random.choice(msLabs.qualitative_values.split(';'))
         
-        #lx.result_string = random.choice('POSITIVE, NEGATIVE, NORMAL')
         # Wide fields
         #lx.specimen_num = ignore
         #lx.specimen_source = ignore
@@ -896,6 +918,64 @@ class Prescription(BasePatientRecord):
         return '%(date)-10s    %(id)-8s    %(name)-30s' % values
 
 
+    @staticmethod
+    def make_mock(patient, **kw):
+        MIN_REFILLS = 1
+        MAX_REFILLS = 12
+        
+        
+        save_on_db=kw.pop('save_on_db', False)
+        when = kw.get('when', randomizer.date_range(as_string=False)) #datetime.datetime.now())
+        provider = Provider.get_mock()
+        msMeds =  FakeMeds.objects.order_by('?')[0]
+        #CODE THE WEIGHT
+       
+        now = int(time.time()*1000) #time in milliseconds
+        
+        p = Prescription(patient=patient, provider=provider, 
+                      mrn=patient.mrn, date=when)
+        
+        Status = ['Completed','Ordered']
+        
+        days_range = random.randrange(0, 90) # Up to 90 days 
+        p.end_date = when + datetime.timedelta(days=days_range)
+        
+        p.status = random.choice(Status)
+        p.order_num = now
+        p.start_date = p.date
+        p.name =  msMeds.name
+        p.code = msMeds.ndc_code 
+        # leave empty, ignore 
+        # p.directions = msMeds.directions
+        p.route = msMeds.route  
+        p.refills = round(random.randint(MIN_REFILLS, MAX_REFILLS)) 
+       
+        # dose will be in each row in the name
+        dose = msMeds.name.split()
+        
+        # second item contains dose and 3rd contains unit, or could be a longer name
+        
+        if dose.__len__() >1 :
+            i = 1
+            if dose[i].isdigit():
+                p.dose =  dose[i]+dose[i+1] 
+            else:
+                while dose[i].isalpha():
+                    i = i + 1
+                p.dose =  dose[i]+dose[i+1] 
+        
+        #ignore 
+        #p.frequency  = round(random.randint(MIN_FREQ, MAX_FREQ)) 
+        
+        # 1 , 2 or 3 multiplied by days btw start and end
+        delta = p.end_date-p.start_date
+        p.quantity =  delta.days * round(random.randint(1,3)) 
+        p.quantity_float = p.quantity
+        
+        
+        if save_on_db: p.save()
+        return p
+    
     def document_summary(self):
         return {
             'order':{
@@ -1020,13 +1100,30 @@ class Encounter(BasePatientRecord):
         else: 
             return  round(random.uniform(low, high),2)
         
-
+    @staticmethod
+    def makeicd9_mock (maxicd9,ICD9_CODE_PCT):
+        ''' another way
+            #msICD9codes = FakeICD9s.objects.order_by('?')
+            #icd9 = Icd9(code= msICD9codes[i].code,name=msICD9codes[i].name )
+            #icd9_codes.add(icd9)
+            icd9_codes = [str(icd9.code) for icd9 in FakeICD9s.objects.order_by('?')[:how_manycodes]]
+        ''' 
+        
+        if random.random() <= float(ICD9_CODE_PCT/100.0):
+            how_many_codes = random.randint(1, maxicd9)              
+            icd9_codes = [str(random.choice(icd9.icd9_codes.split(';'))) for icd9 in FakeICD9s.objects.order_by('?')[:how_many_codes]]
+        else:
+            icd9_codes = ''
+            
+        return icd9_codes
+                    
     @staticmethod
     def make_mock(patient, **kw):
         save_on_db=kw.pop('save_on_db', False)
         when = kw.get('when', randomizer.date_range(as_string=False)) #datetime.datetime.now())
         provider = Provider.get_mock()
         msVitals =  FakeVitals.objects.order_by('short_name')
+       
        
         now = int(time.time()*1000) #time in milliseconds
         
@@ -1053,6 +1150,8 @@ class Encounter(BasePatientRecord):
                                            msVitals[7].very_low, msVitals[7].very_high) 
         
         
+        #e.diagnosis = ''
+                    
         if save_on_db: e.save()
         return e
 
