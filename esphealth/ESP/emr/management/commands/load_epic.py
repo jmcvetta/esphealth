@@ -576,7 +576,8 @@ class LabResultLoader(BaseLoader):
             if len(component) > 20:
                 log.warning('Component field is greater than 20 characters, and will be truncated:')
                 log.warning('    "%s"' % component)
-            native_code = native_code + '--' + component[0:20] 
+            #native_code = native_code + '--' + component[0:20] 
+            native_code = component[0:20] 
         l = LabResult()
         l.provenance = self.provenance
         l.patient = self.get_patient(row['patient_id_num'])
@@ -756,6 +757,7 @@ class PrescriptionLoader(BaseLoader):
         'start_date',
         'end_date',
         'route',
+        'dose',
     ]
 
     def load_row(self, row):
@@ -763,6 +765,7 @@ class PrescriptionLoader(BaseLoader):
         p.provenance = self.provenance
         p.updated_by = UPDATED_BY
         p.patient = self.get_patient(row['patient_id_num'])
+        p.mrn = row['medical_record_num']
         p.provider = self.get_provider(row['provider_id_num'])
         p.order_num = row['order_id_num']
         p.date = self.date_or_none(row['order_date'])
@@ -775,6 +778,7 @@ class PrescriptionLoader(BaseLoader):
         p.start_date = self.date_or_none(row['start_date'])
         p.end_date = self.date_or_none(row['end_date'])
         p.route = row['route']
+        p.dose  = row['dose']
         p.save()
         log.debug('Saved prescription object: %s' % p)
 
