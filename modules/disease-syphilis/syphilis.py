@@ -29,7 +29,15 @@ class Syphilis(DiseaseDefinition):
     
     short_name = 'syphilis'
     
-    test_name_search_strings = [],
+    test_name_search_strings = [
+	    'syph',
+	    'rpr', 
+	    'vdrl',
+	    'tp', 
+	    'fta',
+	    'trep',
+	    'pallidum',
+	    ]
     
     timespan_heuristics = []
     
