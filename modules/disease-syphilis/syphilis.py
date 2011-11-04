@@ -23,7 +23,7 @@ class Syphilis(DiseaseDefinition):
     Syphilis
     '''
     
-    conditions = ['syphilis'],
+    conditions = ['syphilis']
     
     uri = 'urn:x-esphealth:disease:channing:syphilis:v1'
     
