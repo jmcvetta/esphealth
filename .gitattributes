@@ -366,11 +366,6 @@ esphealth/share/riskscape.gdm-transformation.ktr -text
 esphealth/share/riskscape.genepop-transformation.ktr -text
 esphealth/share/riskscape.genpop-mapping.json -text
 modules/disease-chlamydia/__init__.py -text
-modules/disease-chlamydia/esphealth_disease_chlamydia.egg-info/PKG-INFO -text
-modules/disease-chlamydia/esphealth_disease_chlamydia.egg-info/SOURCES.txt -text
-modules/disease-chlamydia/esphealth_disease_chlamydia.egg-info/dependency_links.txt -text
-modules/disease-chlamydia/esphealth_disease_chlamydia.egg-info/entry_points.txt -text
-modules/disease-chlamydia/esphealth_disease_chlamydia.egg-info/top_level.txt -text
 modules/disease-chlamydia/setup.py -text
 modules/disease-chlamydia/syphilis.py -text
 modules/disease-diabetes/__init__.py -text
