@@ -59,6 +59,7 @@ esphealth/ESP/emr/management/commands/make_fakes.py -text
 esphealth/ESP/emr/management/commands/rename_files.py -text
 esphealth/ESP/emr/migrations/0001_initial.py -text
 esphealth/ESP/emr/migrations/0002_rename_various_fields.py -text
+esphealth/ESP/emr/migrations/0003_add_diagnosis.py -text
 esphealth/ESP/emr/migrations/__init__.py -text
 esphealth/ESP/emr/models.py -text
 esphealth/ESP/emr/report.py -text
