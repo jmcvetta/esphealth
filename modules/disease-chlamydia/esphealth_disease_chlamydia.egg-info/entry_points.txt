@@ -1,0 +1,5 @@
+
+        [esphealth]
+        disease_definitions = chlamydia:disease_definitions
+        event_heuristics = chlamydia:event_heuristics
+    

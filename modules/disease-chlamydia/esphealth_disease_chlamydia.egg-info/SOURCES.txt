@@ -1,0 +1,8 @@
+__init__.py
+chlamydia.py
+setup.py
+esphealth_disease_chlamydia.egg-info/PKG-INFO
+esphealth_disease_chlamydia.egg-info/SOURCES.txt
+esphealth_disease_chlamydia.egg-info/dependency_links.txt
+esphealth_disease_chlamydia.egg-info/entry_points.txt
+esphealth_disease_chlamydia.egg-info/top_level.txt
