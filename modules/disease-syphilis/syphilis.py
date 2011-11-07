@@ -7,11 +7,20 @@
 @author: Jason McVetta <jason.mcvetta@gmail.com>
 @organization: Channing Laboratory http://www.channing.harvard.edu
 @contact: http://www.esphealth.org
-@copyright: (c) 2010 Channing Laboratory
+@copyright: (c) 2011 Channing Laboratory
 @license: LGPL
 '''
 
+# In most instances it is preferable to use relativedelta for date math.  
+# However when date math must be included inside an ORM query, and thus will
+# be converted into SQL, only timedelta is supported.
+from datetime import timedelta
+from dateutil.relativedelta import relativedelta
+
+from django.db.models import F
+
 from ESP.nodis.base import DiseaseDefinition
+from ESP.hef.base import Event
 from ESP.hef.base import PrescriptionHeuristic
 from ESP.hef.base import Dose
 from ESP.hef.base import LabResultPositiveHeuristic
@@ -85,6 +94,42 @@ class Syphilis(DiseaseDefinition):
     
     def generate(self):
         raise NotImplementedError('nothing to see here')
+        #
+        # Criteria Set #1
+        #
+        dx_ev_name = 'dx:syphilis'
+        rx_ev_names = [
+            'rx:penicillin_g',
+            'rx:doxycycline_7_day',
+            'rx:ceftriaxone_1_or_2_gram',
+            ]
+        #
+        # FIXME: This date math works on PostgreSQL; but it's not clear that 
+        # the ORM will generate reasonable queries for it on other databases.
+        #
+        dxrx_event_qs = Event.objects.filter(
+            name = dx_ev_name,
+            patient__event__name__in = rx_ev_names,
+            patient__event__date__gte = (F('date') - 14 ),
+            patient__event__date__lte = (F('date') + 14 ),
+            )
+        #
+        # Criteria Set #2
+        #
+        rpr_ev_names = [
+            'lx:rpr:positive',
+            'lx:vrdl:positive',
+            ]
+        ttpa_ev_names = [
+            'lx:ttpa:positive',
+            'lx:fta-abs:positive',
+            'lx:tp-igg:positive',
+            ]
+        test_event_qs = Event.objects.filter(
+            name__in = rpr_ev_names,
+            patient__event__name__in = ttpa_ev_names,
+            )
+        
     
 
 #-------------------------------------------------------------------------------
