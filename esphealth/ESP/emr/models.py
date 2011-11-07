@@ -901,9 +901,9 @@ class Encounter(BasePatientRecord):
     height = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
     bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True, db_index=True)
     bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True, db_index=True)
-    o2_stat = models.FloatField(blank=True, max_length=50, null=True, db_index=True)
-    peak_flow = models.FloatField(blank=True, max_length=50, null=True, db_index=True)
-    bmi = models.DecimalField(decimal_places=2, max_digits=10, null=True, blank=True, db_index=True)
+    o2_stat = models.FloatField(blank=True, null=True, db_index=True)
+    peak_flow = models.FloatField(blank=True, null=True, db_index=True)
+    bmi = models.FloatField('Body Mass Index', null=True, blank=True, db_index=True)
     #
     # Raw string fields 
     #
@@ -1085,6 +1085,17 @@ class Encounter(BasePatientRecord):
                 }
             }
             
+class Diagnosis(BasePatientRecord):
+    '''
+    A diagnosis, typically indicated by an ICD9/ICD10 code, and bound to a 
+    particular physician encounter.
+    '''
+    code = models.CharField('Diagnosis Code', max_length=255, blank=False, db_index=True)
+    codeset = models.CharField('Code Set', max_length=255, blank=False, db_index=True, 
+        help_text='Code set of which the Diagnosis Code is a member (e.g. ICD9)')
+    encounter = models.ForeignKey(Encounter, verbose_name='Encounter at which this diagnosis was made', 
+        blank=False, db_index=True)
+
 
 class Immunization(BasePatientRecord):
     '''
