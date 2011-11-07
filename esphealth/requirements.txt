@@ -40,3 +40,5 @@ ipython          # Interactive Python shell
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-chlamydia#egg=disease-chlamydia
 # Gonorrhea
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-gonorrhea#egg=disease-gonorrhea
+# Syphilis
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-syphilis#egg=disease-syphilis
