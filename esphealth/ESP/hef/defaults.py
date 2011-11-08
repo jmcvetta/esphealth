@@ -773,7 +773,25 @@ LabOrderHeuristic.objects.get_or_create(
     test = tb_lab,
     )
 
+#-------------------------------------------------------------------------------
+#
+# Pelvic inflammatory disease (PID)
+#
+#-------------------------------------------------------------------------------
 
+pid_diagnosis = DiagnosisHeuristic.objects.get_or_create(
+    name = 'pid',
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = pid_diagnosis,
+    icd9_starts_with = '614.',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = pid_diagnosis,
+    icd9_starts_with = '099.56',
+    )
 
 #-------------------------------------------------------------------------------
 #
