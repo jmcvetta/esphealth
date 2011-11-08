@@ -33,14 +33,14 @@ class LabResultAdmin(admin.ModelAdmin):
     list_display = ['natural_key', 'native_name', 'patient', 'provider', 'result_string']
     list_display_links = ['natural_key']
     raw_id_fields = ['patient', 'provider']
-    search_fields = ['order_id_num', 'native_code', 'native_name', 'patient__mrn']
+    search_fields = ['natural_key', 'native_code', 'native_name', 'patient__mrn']
     ordering = ['-date']
 
 class EncounterAdmin(admin.ModelAdmin):
     list_display = ['natural_key', 'patient', 'provider', 'date']
     list_display_links = ['natural_key']
-    raw_id_fields = ['patient', 'provider']
-    search_fields = ['pk', 'native_encounter_num', 'patient__last_name', 'provider__last_name']
+    raw_id_fields = ['patient', 'provider', 'icd9_codes']
+    search_fields = ['pk', 'natural_key', 'patient__last_name', 'provider__last_name']
     ordering = ['-date']
 
 class PrescriptionAdmin(admin.ModelAdmin):
