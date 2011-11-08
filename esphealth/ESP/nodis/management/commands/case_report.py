@@ -959,7 +959,7 @@ class hl7Batch:
             worklist = [(firstName,'XCN.3'),(middleInit,'XCN.4'),(suffix,'XCN.5')]
         for (evar,ename) in worklist:
             if evar:
-                 self.addSimple(outer,evar,ename)
+                self.addSimple(outer,evar,ename)
         return outer
                  
     def makeAddress(self, address, addressOther, city, state, zip, country ,outerElement, addressType):
@@ -971,7 +971,7 @@ class hl7Batch:
                     (zip,'XAD.5'),(country,'XAD.6')]
         for (evar,ename) in worklist:
             if evar:
-                 self.addSimple(outer,evar,ename)
+                self.addSimple(outer,evar,ename)
         if addressType <> None:
             self.addSimple(outer,addressType,'XAD.7')
         return outer
