@@ -173,6 +173,7 @@ class Syphilis(DiseaseDefinition):
             existing_cases = Case.objects.filter(
                 condition='syphilis', 
                 patient=this_event.patient,
+                #date__gte=(this_event.date - relativedelta(days=28) # Adds recurrence interval
                 )
             existing_cases = existing_cases.order_by('date')
             if existing_cases:

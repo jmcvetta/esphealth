@@ -375,8 +375,8 @@ modules/disease-gonorrhea/__init__.py -text
 modules/disease-gonorrhea/gonorrhea.py -text
 modules/disease-gonorrhea/setup.py -text
 modules/disease-pelvic_inflammatory_disease/__init__.py -text
+modules/disease-pelvic_inflammatory_disease/pid.py -text
 modules/disease-pelvic_inflammatory_disease/setup.py -text
-modules/disease-pelvic_inflammatory_disease/syphilis.py -text
 modules/disease-syphilis/__init__.py -text
 modules/disease-syphilis/setup.py -text
 modules/disease-syphilis/syphilis.py -text

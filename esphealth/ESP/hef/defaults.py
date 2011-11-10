@@ -605,7 +605,7 @@ Icd9Query.objects.get_or_create(
 
 Icd9Query.objects.get_or_create(
     heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '614.0',
+    icd9_exact = '614.1',
     )
 
 Icd9Query.objects.get_or_create(
@@ -775,22 +775,47 @@ LabOrderHeuristic.objects.get_or_create(
 
 #-------------------------------------------------------------------------------
 #
-# Pelvic inflammatory disease (PID)
+# Pelvic Inflamatory Disease (PID)
 #
 #-------------------------------------------------------------------------------
 
-pid_diagnosis = DiagnosisHeuristic.objects.get_or_create(
-    name = 'pid',
+pelvic_inflamatory_disease = DiagnosisHeuristic.objects.get_or_create(
+    name = 'pelvic_inflamatory_disease',
     )[0]
 
 Icd9Query.objects.get_or_create(
-    heuristic = pid_diagnosis,
-    icd9_starts_with = '614.',
+    heuristic = pelvic_inflamatory_disease,
+    icd9_exact = '614.0',
     )
 
 Icd9Query.objects.get_or_create(
-    heuristic = pid_diagnosis,
-    icd9_starts_with = '099.56',
+    heuristic = pelvic_inflamatory_disease,
+    icd9_exact = '614.1',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = pelvic_inflamatory_disease,
+    icd9_exact = '614.2',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = pelvic_inflamatory_disease,
+    icd9_exact = '614.3',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = pelvic_inflamatory_disease,
+    icd9_exact = '614.5',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = pelvic_inflamatory_disease,
+    icd9_exact = '614.9',
+    )
+
+Icd9Query.objects.get_or_create(
+    heuristic = pelvic_inflamatory_disease,
+    icd9_exact = '099.56',
     )
 
 #-------------------------------------------------------------------------------
