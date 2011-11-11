@@ -259,6 +259,7 @@ EncounterHeuristic(
     long_name = 'PID diagnosis',
     icd9s = [
         '614.0',
+        '614.1',
         '614.2',
         '614.3',
         '614.5',
