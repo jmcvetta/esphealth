@@ -34,7 +34,7 @@ if __name__ == '__main__':
     while patient:
         try:
             PATIENT_FOLDER = os.path.join(DOC_FOLDER, '%06d' % int((patient.pk/1000)*1000) )
-            f = open(os.path.join(PATIENT_FOLDER, 'patient.%06d.%s.json' % (patient.pk, patient.patient_id_num)), 'w')
+            f = open(os.path.join(PATIENT_FOLDER, 'patient.%06d.%s.json' % (patient.pk, patient.natural_key)), 'w')
             f.write(patient.document_summary())
             f.close()
             total_processed += 1
