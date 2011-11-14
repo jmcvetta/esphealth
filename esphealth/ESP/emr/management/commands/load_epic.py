@@ -64,7 +64,7 @@ from ESP.emr.management.commands.common import LoaderCommand
 global UPDATED_BY, TIMESTAMP, UNKNOWN_PROVIDER
 UPDATED_BY = 'load_epic'
 TIMESTAMP = datetime.datetime.now()
-UNKNOWN_PROVIDER = Provider.objects.get(provider_id_num='UNKNOWN')
+UNKNOWN_PROVIDER = Provider.objects.get(natural_key='UNKNOWN')
 ETL_FILE_REGEX = re.compile(r'^epic\D\D\D\.esp\.(\d\d)(\d\d)(\d\d\d\d)$')
 
 def get_icd9(self, code):
@@ -136,8 +136,8 @@ class BaseLoader(object):
     # a preference toggle -- or file a ticket w/ the project requesting
     # the same.
     #
-    __patient_cache = {} # {patient_id_num: Patient instance}
-    __provider_cache = {} # {provider_id_num: Provider instance}
+    __patient_cache = {} # {patient_id: Patient instance}
+    __provider_cache = {} # {provider_id: Provider instance}
     
     def __init__(self, filepath):
         assert os.path.isfile(filepath)
@@ -160,33 +160,33 @@ class BaseLoader(object):
         self.reader = csv.DictReader(file_handle, fieldnames=self.fields, dialect='epic')
         self.created_on = datetime.datetime.now()
     
-    def get_patient(self, patient_id_num):
-        if not patient_id_num:
-            raise LoadException('Called get_patient() with empty patient_id_num')
-        if not patient_id_num in self.__patient_cache:
+    def get_patient(self, natural_key):
+        if not natural_key:
+            raise LoadException('Called get_patient() with empty patient_id')
+        if not natural_key in self.__patient_cache:
             try:
-                p = Patient.objects.get(patient_id_num=patient_id_num)
+                p = Patient.objects.get(natural_key=natural_key)
             except Patient.DoesNotExist:
                 p = Patient(
-                    patient_id_num=patient_id_num,
+                    natural_key=natural_key,
                     provenance = self.provenance,
                     )
                 p.save()
-            self.__patient_cache[patient_id_num] = p
-        return self.__patient_cache[patient_id_num]
+            self.__patient_cache[natural_key] = p
+        return self.__patient_cache[natural_key]
     
-    def get_provider(self, provider_id_num):
-        if not provider_id_num:
+    def get_provider(self, natural_key):
+        if not natural_key:
             return UNKNOWN_PROVIDER
-        if not provider_id_num in self.__provider_cache:
+        if not natural_key in self.__provider_cache:
             try:
-                p = Provider.objects.get(provider_id_num=provider_id_num)
+                p = Provider.objects.get(natural_key=natural_key)
             except Provider.DoesNotExist:
-                p = Provider(provider_id_num=provider_id_num)
+                p = Provider(natural_key=natural_key)
                 p.provenance = self.provenance
                 p.save()
-            self.__provider_cache[provider_id_num] = p
-        return self.__provider_cache[provider_id_num]
+            self.__provider_cache[natural_key] = p
+        return self.__provider_cache[natural_key]
     
     def insert_or_update(self, model, field_values, key_fields):
         '''
@@ -280,8 +280,8 @@ class BaseLoader(object):
             if not row:
                 continue # Skip None objects
             cur_row += 1 # Increment the counter
-            # The last line is a footer, so we skip it
-            if cur_row >= self.line_count:
+            # changed to > because last line is not a footer,dont skip
+            if cur_row > self.line_count:
                 break
             # check this, too -- in case there are extra blank lines at end of file
             if row[self.fields[0]].upper() == 'CONTROL TOTALS':
@@ -361,12 +361,12 @@ class NotImplementedLoader(BaseLoader):
 class ProviderLoader(BaseLoader):
     
     fields = [
-        'provider_id_num',
+        'natural_key',
         'last_name',
         'first_name',
         'middle_name',
         'title',
-        'dept_id_num',
+        'dept_natural_key',
         'dept',
         'dept_address_1',
         'dept_address_2',
@@ -381,9 +381,9 @@ class ProviderLoader(BaseLoader):
         if not ''.join([i[1] for i in row.items()]): # Concatenate all fields
             log.debug('Empty row encountered -- skipping')
             return
-        pin = row['provider_id_num']
+        pin = row['natural_key']
         if not pin:
-            raise LoadException('Record has blank provider_id_num, which is required')
+            raise LoadException('Record has blank natural_key, which is required')
         p = self.get_provider(pin)
         p.provenance = self.provenance
         p.updated_by = UPDATED_BY
@@ -391,7 +391,7 @@ class ProviderLoader(BaseLoader):
         p.first_name = unicode(row['first_name'])
         p.middle_name = unicode(row['middle_name'])
         p.title = row['title']
-        p.dept_id_num = row['dept_id_num']
+        p.dept_id_num = row['dept_natural_key']
         p.dept = row['dept']
         p.dept_address_1 = row['dept_address_1']
         p.dept_address_2 = row['dept_address_2']
@@ -408,7 +408,7 @@ class ProviderLoader(BaseLoader):
 class PatientLoader(BaseLoader):
     
     fields = [
-        'patient_id_num',
+        'natural_key',
         'mrn',
         'last_name',
         'first_name',
@@ -427,7 +427,7 @@ class PatientLoader(BaseLoader):
         'race',
         'home_language',
         'ssn',
-        'provider_id_num',
+        'pcp_id',
         'marital_stat',
         'religion',
         'aliases',
@@ -436,14 +436,14 @@ class PatientLoader(BaseLoader):
         ]
     
     def load_row(self, row):
-        p = self.get_patient(row['patient_id_num'])
+        p = self.get_patient(row['natural_key'])
         p.provenance = self.provenance
         p.updated_by = UPDATED_BY
         p.mrn = row['mrn']
         p.last_name = row['last_name']
         p.first_name = row['first_name']
         p.middle_name = row['middle_name']
-        p.pcp = self.get_provider(row['provider_id_num'])
+        p.pcp = self.get_provider(row['pcp_id'])
         p.address1 = row['address1']
         p.address2 = row['address2']
         p.city = row['city']
@@ -473,12 +473,12 @@ class PatientLoader(BaseLoader):
 class LabResultLoader(BaseLoader):
     
     fields = [
-        'patient_id_num',       # 1
-        'medical_record_num',   # 2
-        'order_id_num',         # 3
+        'patient_id',          # 1
+        'mrn',   # 2
+        'order_natural_key',    # 3
         'order_date',           # 4
         'result_date',          # 5
-        'provider_id_num',      # 6
+        'provider_id',          # 6
         'order_type',           # 7
         'cpt',                  # 8
         'component',            # 9
@@ -490,17 +490,12 @@ class LabResultLoader(BaseLoader):
         'unit',                 # 15
         'status',               # 16
         'note',                 # 17
-        'specimen_id_num',      # 18
+        'specimen_num',         # 18
         'impression',           # 19
         'specimen_source',      # 20
         'collection_date',      # 21
         'procedure_name'        #22
         ]
-
-
-
-
-
 
     
     def load_row(self, row):
@@ -517,10 +512,10 @@ class LabResultLoader(BaseLoader):
             native_code = native_code + '--' + component[0:20] 
         l = LabResult()
         l.provenance = self.provenance
-        l.patient = self.get_patient(row['patient_id_num'])
-        l.provider = self.get_provider(row['provider_id_num'])
-        l.mrn = row['medical_record_num']
-        l.order_num = row['order_id_num']
+        l.patient = self.get_patient(row['patient_id'])
+        l.provider = self.get_provider(row['provider_id'])
+        l.mrn = row['mrn']
+        l.order_num = row['order_natural_key']
         l.date = self.date_or_none(row['order_date'])
         l.result_date = self.date_or_none(row['result_date'])
         l.native_code = native_code
@@ -536,7 +531,7 @@ class LabResultLoader(BaseLoader):
         l.abnormal_flag = row['normal_flag']
         l.status = row['status']
         l.comment = row['note']
-        l.specimen_num = row['specimen_id_num']
+        l.specimen_num = row['specimen_num']
         l.impression = row['impression']
         l.specimen_source = row['specimen_source']
         l.collection_date = self.date_or_none(row['collection_date'])
@@ -547,15 +542,15 @@ class LabResultLoader(BaseLoader):
 
 class LabOrderLoader(BaseLoader):    
     fields = [
-        'patient_id_num',
+        'patient_id',
         'mrn',
-        'order_id',
-        'procedure_master_num',
-        'modifier',
+        'natural_key',
+        'procedure_code',
+        'procedure_modifier',
         'specimen_id',
         'ordering_date',
         'order_type',
-        'ordering_provider',
+        'provider_id',
         'procedure_name',
         'specimen_source'
         ]
@@ -563,12 +558,12 @@ class LabOrderLoader(BaseLoader):
     def load_row(self, row):
         LabOrder.objects.create(
             provenance = self.provenance,
-            patient = self.get_patient(row['patient_id_num']),
-            provider = self.get_provider(row['ordering_provider']),
+            patient = self.get_patient(row['patient_id']),
+            provider = self.get_provider(row['provider_id']),
             mrn = row['mrn'],
-            order_id = row['order_id'],
-            procedure_master_num = row['procedure_master_num'],
-            modifier = row['modifier'],
+            order_id = row['natural_key'],
+            procedure_master_num = row['procedure_code'],
+            modifier = row['procedure_modifier'],
             specimen_id = row['specimen_id'],
             date = self.date_or_none(row['ordering_date']),
             order_type = row['order_type'],
@@ -585,13 +580,13 @@ class EncounterLoader(BaseLoader):
     __icd9_cache = {} # {code: icd9_obj}
     
     fields = [
-        'patient_id_num',
-        'medical_record_num',
-        'encounter_id_num',
+        'patient_id',
+        'mrn',
+        'natural_key',
         'encounter_date',
         'is_closed',
         'closed_date',
-        'provider_id_num',
+        'provider_id',
         'dept_id_num',
         'dept_name',
         'event_type',
@@ -620,13 +615,14 @@ class EncounterLoader(BaseLoader):
         dton = self.date_or_none
         flon = self.float_or_none
         values = {
-            'native_encounter_num': row['encounter_id_num'].strip(),
+            'natural_key': row['natural_key'].strip(),
             'provenance': self.provenance,
-            'patient': self.get_patient(row['patient_id_num']),
-            'provider': self.get_provider(row['provider_id_num']),
+            'patient': self.get_patient(row['patient_id']),
+            'mrn' : row['mrn'],
+            'provider': self.get_provider(row['provider_id']),
             'date': dton(row['encounter_date']),
             'raw_date': son(row['encounter_date']),
-            'native_site_num': son( row['dept_id_num'] ),
+            'site_natural_key': son( row['dept_id_num'] ),
             'encounter_type': cap(row['event_type']),
             'date_closed': dton(row['closed_date']),
             'raw_date_closed': son(row['closed_date']),
@@ -652,7 +648,7 @@ class EncounterLoader(BaseLoader):
             }
         if values['edd']:  
             values['pregnant'] = True
-        e, created = self.insert_or_update(Encounter, values, ['native_encounter_num'])
+        e, created = self.insert_or_update(Encounter, values, ['natural_key'])
         e.bmi = e._calculate_bmi() # No need to save until we finish ICD9s
         #
         # ICD9 Codes
@@ -691,10 +687,10 @@ class EncounterLoader(BaseLoader):
 class PrescriptionLoader(BaseLoader):
 
     fields = [
-        'patient_id_num',
-        'medical_record_num',
-        'order_id_num',
-        'provider_id_num',
+        'patient_id',
+        'mrn',
+        'natural_key',
+        'provider_id',
         'order_date',
         'status',
         'drug_name',
@@ -705,15 +701,17 @@ class PrescriptionLoader(BaseLoader):
         'start_date',
         'end_date',
         'route',
+        'dose',
+        
     ]
 
     def load_row(self, row):
         p = Prescription()
         p.provenance = self.provenance
         p.updated_by = UPDATED_BY
-        p.patient = self.get_patient(row['patient_id_num'])
-        p.provider = self.get_provider(row['provider_id_num'])
-        p.order_num = row['order_id_num']
+        p.patient = self.get_patient(row['patient_id'])
+        p.provider = self.get_provider(row['provider_id'])
+        p.order_num = row['natural_key']
         p.date = self.date_or_none(row['order_date'])
         p.status = row['status']
         p.name = row['drug_name']
@@ -724,6 +722,7 @@ class PrescriptionLoader(BaseLoader):
         p.start_date = self.date_or_none(row['start_date'])
         p.end_date = self.date_or_none(row['end_date'])
         p.route = row['route']
+        p.dose = row['dose']
         p.save()
         log.debug('Saved prescription object: %s' % p)
 
@@ -732,28 +731,28 @@ class PrescriptionLoader(BaseLoader):
 class ImmunizationLoader(BaseLoader):
     
     fields = [
-        'patient_id_num', 
+        'patient_id', 
         'type', 
         'name',
         'date',
         'dose',
         'manufacturer',
         'lot',
-        'imm_id_num',
+        'natural_key',
         ]
     
     def load_row(self, row):
         i = Immunization()
         i.provenance = self.provenance
         i.updated_by = UPDATED_BY
-        i.patient = self.get_patient(row['patient_id_num'])
+        i.patient = self.get_patient(row['patient_id'])
         i.type = row['type']
         i.name = row['name']
         i.date = self.date_or_none(row['date'])
         i.dose = row['dose']
         i.manufacturer = row['manufacturer']
         i.lot = row['lot']
-        i.imm_id_num = row['imm_id_num']
+        i.imm_id_num = row['natural_key']
         i.save()
         log.debug('Saved immunization object: %s' % i)
 
@@ -761,7 +760,7 @@ class ImmunizationLoader(BaseLoader):
 
 class SocialHistoryLoader(BaseLoader):
     fields = [
-        'patient_id_num',
+        'patient_id',
         'mrn',
         'tobacco_use',
         'alcohol_use'
@@ -771,7 +770,7 @@ class SocialHistoryLoader(BaseLoader):
         SocialHistory.objects.create(
             provenance = self.provenance,
             date = self.created_on, # date does not make sense for SocialHistory.
-            patient=self.get_patient(row['patient_id_num']),
+            patient=self.get_patient(row['patient_id']),
             mrn = row['mrn'],
             tobacco_use = row['tobacco_use'],
             alcohol_use = row['alcohol_use']
@@ -780,22 +779,22 @@ class SocialHistoryLoader(BaseLoader):
 
 class AllergyLoader(BaseLoader):
     fields = [
-        'patient_id_num',
+        'patient_id',
         'mrn',
         'problem_id',
         'date_noted',
-        'allergy_id',
-        'allergy_name',
+        'allergen_id',
+        'name',
         'allergy_status',
-        'allergy_description',
-        'allergy_entered_date'
+        'description',
+        'date_noted'
         ]
     
     def load_row(self, row):
         allergen, created = Allergen.objects.get_or_create(code=row['allergy_id'])
         Allergy.objects.create(
             provenance = self.provenance,
-            patient = self.get_patient(row['patient_id_num']),
+            patient = self.get_patient(row['patient_id']),
             mrn = row['mrn'],
             problem_id = int(row['problem_id']),
             date = self.date_or_none(row['allergy_entered_date']),
@@ -809,7 +808,7 @@ class AllergyLoader(BaseLoader):
         
 class ProblemLoader(BaseLoader):
     fields = [
-        'patient_id_num',
+        'patient_id',
         'mrn',
         'problem_id',
         'date_noted',
@@ -827,7 +826,7 @@ class ProblemLoader(BaseLoader):
         
         Problem.objects.create(
             provenance = self.provenance,
-            patient = self.get_patient(row['patient_id_num']),
+            patient = self.get_patient(row['patient_id']),
             mrn = row['mrn'],
             date = self.date_or_none(row['date_noted']),
             icd9 = icd9_code,
