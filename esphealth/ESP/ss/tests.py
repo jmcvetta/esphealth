@@ -59,7 +59,7 @@ class TestReports(unittest.TestCase):
                     encounters = d.get('encounters', None)
                     if encounters:
                         new_query = Encounter.objects.values_list('id', flat=True).filter(
-                            date=day, patient__zip5=zip_code, native_site_num__in=sites)
+                            date=day, patient__zip5=zip_code, site_natural_key__in=sites)
                         if not new_query.count() == int(encounters['new']):
                             print 'Different values in total count on %s for zip %s' % (day, zip_code)
                             print new_query.count()
@@ -101,7 +101,7 @@ class TestReports(unittest.TestCase):
                     encounters = d.get('encounters', None)
                     if encounters:
                         new_query = Encounter.objects.values_list('id', flat=True).filter(
-                            date=day, native_site_num__in=Site.site_ids(zip_code))
+                            date=day, site_natural_key__in=Site.site_ids(zip_code))
 
                         if not new_query.count() == int(encounters['new']):
                             print 'Different values in total count on %s for zip %s' % (day, zip_code)

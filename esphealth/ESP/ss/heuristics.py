@@ -56,7 +56,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
         for encounter in self.matches().filter(date__gte=begin_date, date__lte=end_date):
             detected +=1 
             try:
-                site = Site.objects.get(code=encounter.native_site_num)
+                site = Site.objects.get(code=encounter.site_natural_key)
             except:
                 site = None
                                 
@@ -185,7 +185,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
         days = days_in_interval(date, end_date)
 
         encounters = Encounter.objects.syndrome_care_visits(sites=Site.site_ids()).values(
-            'date', 'native_site_num')
+            'date', 'site_natural_key')
 
         events = NonSpecialistVisitEvent.objects.filter(name=self.long_name).values(
             'date', 'reporting_site__zip_code')
@@ -194,7 +194,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
             encounters = encounters.distinct('patient')
             events = events.distinct('patient')
             
-        encounters = encounters.annotate(count=Count('native_site_num')).filter(
+        encounters = encounters.annotate(count=Count('site_natural_key')).filter(
             date__gte=date, date__lte=end_date).order_by('date').iterator()
         events = events.annotate(count=Count('reporting_site__zip_code')).exclude(
             reporting_site__isnull=True).filter(
@@ -220,7 +220,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
             
             try:
                 while e['date'] == cur_date:
-                    site_zip = sites.get(e['native_site_num'])
+                    site_zip = sites.get(e['site_natural_key'])
                     if site_zip: encounters_by_zip[site_zip] += 1
                     try:
                         e = encounters.next()

@@ -141,7 +141,7 @@ class Report(object):
             try:
                 while e.date == cur_date:
                     patient_group = e.patient.age_group(when=e.date)
-                    site_zip_code = e.native_site_num and site_codes.get(e.native_site_num)
+                    site_zip_code = e.site_natural_key and site_codes.get(e.site_natural_key)
                     if site_zip_code and (patient_group is not None): 
                         mapping[(site_zip_code, patient_group)] += 1
                     e = encounters.next()

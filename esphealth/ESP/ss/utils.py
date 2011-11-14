@@ -58,7 +58,7 @@ def rebuild_site_relation():
     null = 0
     for ev in NonSpecialistVisitEvent.objects.filter(reporting_site__isnull=True):
         try:
-            ev.reporting_site = Site.objects.get(code=ev.encounter.native_site_num)
+            ev.reporting_site = Site.objects.get(code=ev.encounter.site_natural_key)
             ev.save()
             missed += 1
         except Exception, why:
