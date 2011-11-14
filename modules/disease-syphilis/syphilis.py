@@ -1,7 +1,7 @@
 '''
                                   ESP Health
                          Notifiable Diseases Framework
-                           Chlamydia Case Generator
+                           Syphilis Case Generator
 
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
