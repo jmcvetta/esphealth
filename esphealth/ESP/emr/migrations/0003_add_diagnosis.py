@@ -26,9 +26,7 @@ class Migration(SchemaMigration):
 
 
     def backwards(self, orm):
-        
-        # Deleting model 'Diagnosis'
-        db.delete_table('emr_diagnosis')
+        raise RuntimeError("Reverse migration is not supported")
 
 
     models = {
