@@ -115,7 +115,7 @@ class Timespan(models.Model):
     source = models.TextField('What created this timespan?', blank=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False)
     start_date = models.DateField(blank=False, db_index=True)
-    end_date = models.DateField(blank=False, db_index=True)
+    end_date = models.DateField(blank=True, null=True, db_index=True)
     timestamp = models.DateTimeField('Time this event was created in db', blank=False, auto_now_add=True)
     pattern = models.TextField(blank=True, null=True)
     # 
