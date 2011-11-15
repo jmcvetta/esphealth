@@ -44,3 +44,5 @@ ipython          # Interactive Python shell
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-syphilis#egg=disease-syphilis
 # Pelvic Inflammatory Disease
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pelvic_inflammatory_disease#egg=disease-pelvic_inflammatory_disease
+# Lyme Disease
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-lyme#egg=disease-lyme
