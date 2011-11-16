@@ -14,20 +14,20 @@ from setuptools import setup
 from setuptools import find_packages
 
 setup(
-    name = 'esphealth-disease-syphilis',
+    name = 'esphealth-disease-chlamydia',
     version = '1.0',
     author = 'Jason McVetta',
     author_email = 'jason.mcvetta@gmail.com',
-    description = 'Syphilis disease definition module for ESP Health application',
+    description = 'Chalmydia disease definition module for ESP Health application',
     license = 'LGPLv3',
-    keywords = 'syphilis algorithm disease surveillance public health epidemiology',
+    keywords = 'chlamydia algorithm disease surveillance public health epidemiology',
     url = 'http://esphealth.org',
     packages = find_packages(exclude=['ez_setup']),
     install_requires = [
         ],
     entry_points = '''
         [esphealth]
-        disease_definitions = syphilis:disease_definitions
-        event_heuristics = syphilis:event_heuristics
+        disease_definitions = chlamydia:disease_definitions
+        event_heuristics = chlamydia:event_heuristics
     '''
     )
