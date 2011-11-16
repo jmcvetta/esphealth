@@ -365,9 +365,6 @@ esphealth/share/riskscape.gdm-mapping.json -text
 esphealth/share/riskscape.gdm-transformation.ktr -text
 esphealth/share/riskscape.genepop-transformation.ktr -text
 esphealth/share/riskscape.genpop-mapping.json -text
-esphealth/src/disease-lyme/__init__.py -text
-esphealth/src/disease-lyme/lyme.py -text
-esphealth/src/disease-lyme/setup.py -text
 modules/disease-chlamydia/__init__.py -text
 modules/disease-chlamydia/setup.py -text
 modules/disease-chlamydia/syphilis.py -text
