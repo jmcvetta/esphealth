@@ -209,8 +209,8 @@ class Hl7MessageLoader(object):
             raise NoPID('No PID segment found')
         if not len(pid_seg) >= 30:
             raise CannotParseHl7('PID segment has %s fields, should have at least 30.' % len(pid_seg))
-        patient_id_num = pid_seg[3][0]
-        patient, is_new_patient = Patient.objects.get_or_create(patient_id_num=patient_id_num, 
+        patient_id = pid_seg[3][0]
+        patient, is_new_patient = Patient.objects.get_or_create(natural_key=patient_id, 
             defaults={'provenance': self.provenance})
         if len(pid_seg[5]) >= 3:
             patient.first_name  = pid_seg[5][1]
@@ -226,13 +226,13 @@ class Hl7MessageLoader(object):
             patient.date_of_death = date_from_str(date_of_death)
         patient.date_of_birth = date_from_str(pid_seg[7][0]) 
         patient.gender = pid_seg[8][0]
-        patient.mrn = patient_id_num # Patient ID # is same as their Medical Record Number
+        patient.mrn = patient_id # Patient ID # is same as their Medical Record Number
         patient.provenance = self.provenance
         patient.save()
         self.patient = patient
         if is_new_patient:
             log.debug('NEW PATIENT')
-            log.debug('\t Patient ID #: %s' % patient_id_num)
+            log.debug('\t Patient ID #: %s' % patient_id)
             log.debug('\t Name (l, f m): "%s, %s %s"' % (patient.last_name, patient.first_name, patient.middle_name))
             log.debug('\t DoB: %s' % patient.date_of_birth)
             log.debug('\t Gender: %s' % patient.gender)

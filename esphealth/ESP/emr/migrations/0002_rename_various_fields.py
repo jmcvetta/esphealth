@@ -19,7 +19,8 @@ class Migration(SchemaMigration):
         # Patient
         #
         #db.rename_column('emr_encounter', 'pregnancy_status', 'pregnant')
-        db.rename_column('emr_patient', 'patient_id_num', 'natural_key')
+        #db.rename_column('emr_patient', 'patient_id_num', 'natural_key') 
+        # no need to rename, 
         #
         # Lab Order
         #
@@ -36,7 +37,7 @@ class Migration(SchemaMigration):
         #
         db.rename_column('emr_encounter', 'edc', 'edd')
         db.rename_column('emr_encounter', 'event_type', 'encounter_type')
-        db.rename_column('emr_encounter', 'native_encounter_num', 'natural_key')
+        #db.rename_column('emr_encounter', 'native_encounter_num', 'natural_key')
         db.rename_column('emr_encounter', 'closed_date', 'date_closed')
         db.rename_column('emr_encounter', 'native_site_num', 'site_natural_key')
         db.rename_column('emr_encounter', 'pregnancy_status', 'pregnant')
@@ -57,7 +58,7 @@ class Migration(SchemaMigration):
         # Provider
         #
         db.rename_column('emr_provider', 'dept_id_num', 'dept_natural_key')
-        db.rename_column('emr_provider', 'provider_id_num', 'natural_key')
+        #db.rename_column('emr_provider', 'provider_id_num', 'natural_key')
         #
         # Indices
         #

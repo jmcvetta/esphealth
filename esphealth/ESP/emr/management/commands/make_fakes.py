@@ -104,7 +104,7 @@ class ProviderWriter(EpicWriter):
     FILE_TEMPLATE_NAME = 'epicpro.esp.%s'
     
     fields = [
-        'provider_id_num',
+        'natural_key',
         'last_name',
         'first_name',
         'middle_name',
@@ -124,9 +124,9 @@ class ProviderWriter(EpicWriter):
         if not ''.join([i[1] for i in row.items()]): # Concatenate all fields
             log.debug('Empty row encountered -- skipping')
             return
-        pin = row['provider_id_num']
+        pin = row['natural_key']
         if not pin:
-            raise LoadException('Record has blank provider_id_num, which is required')
+            raise LoadException('Record has blank provider_id, which is required')
         p = self.get_provider(pin)
         p.provenance = self.provenance
         p.updated_by = UPDATED_BY
@@ -153,7 +153,7 @@ class PatientWriter(EpicWriter):
     FILE_TEMPLATE_NAME = 'epicmem.esp.%s'
     
     fields = [
-        'patient_id_num',
+        'natural_key',
         'mrn',
         'last_name',
         'first_name',
@@ -172,7 +172,7 @@ class PatientWriter(EpicWriter):
         'race',
         'home_language',
         'ssn',
-        'provider_id_num',
+        'provider_id',
         'marital_stat',
         'religion',
         'aliases',
@@ -183,12 +183,12 @@ class PatientWriter(EpicWriter):
     def write_row(self, patient):
         row = {}
 
-        row['patient_id_num'] = patient.patient_id_num
+        row['natural_key'] = patient.natural_key
         row['mrn'] = patient.mrn
         row['last_name'] = patient.last_name
         row['first_name'] = patient.first_name
         row['middle_name'] = patient.middle_name
-        row['provider_id_num'] = patient.pcp
+        row['provider_id'] = patient.pcp
         row['address1'] = patient.address1
         row['address2'] = patient.address2
         row['city'] = patient.city
@@ -220,12 +220,12 @@ class LabResultWriter(EpicWriter):
     FILE_TEMPLATE_NAME = 'epicres.esp.%s'
     
     fields = [
-        'patient_id_num',       # 1
+        'patient_id',       # 1
         'medical_record_num',   # 2
         'order_id_num',         # 3
         'order_date',           # 4
         'result_date',          # 5
-        'provider_id_num',      # 6
+        'provider_id',          # 6
         'order_type',           # 7
         'cpt',                  # 8
         'component',            # 9
@@ -247,12 +247,12 @@ class LabResultWriter(EpicWriter):
 
     def write_row(self, lx):
         self.writer.writerow({
-                'patient_id_num':lx.patient.patient_id_num,
+                'patient_id':lx.patient.natural_key,
                 'medical_record_num': lx.mrn,
                 'order_id_num': lx.order_num,
                 'order_date': str_from_date(lx.date),
                 'result_date': str_from_date(lx.result_date),
-                'provider_id_num': 'FAKE_PROVIDER_%s' % random.randint(1, 100),
+                'provider_id': 'FAKE_PROVIDER_%s' % random.randint(1, 100),
                 'order_type':'',
                 'cpt': lx.native_code,
                 'component': '',
@@ -277,7 +277,7 @@ class LabOrderWriter(EpicWriter):
     FILE_TEMPLATE_NAME = 'epicord.esp.%s'
 
     fields = [
-        'patient_id_num',
+        'patient_id',
         'mrn',
         'order_id',
         'procedure_master_num',
@@ -292,7 +292,7 @@ class LabOrderWriter(EpicWriter):
     
     def write_row(self, lab_order):
         self.writer.writerow({
-            'patient_id_num': lab_order.patient.patient_id_num,
+            'patient_id': lab_order.patient.natural_key,
             'mrn':lab_order.mrn,
             'order_id': lab_order.order_id,
             'procedure_master_num': lab_order.procedure_master_num,
@@ -300,7 +300,7 @@ class LabOrderWriter(EpicWriter):
             'specimen_id': lab_order.specimen_id,
             'ordering_date': str_from_date(lab_order.date),
             'order_type': str(lab_order.order_type),
-            'ordering_provider': lab_order.patient.pcp.provider_id_num,
+            'ordering_provider': lab_order.patient.pcp.natural_key,
             'procedure_name': lab_order.procedure_name,
             'specimen_source': lab_order.specimen_source
             })
@@ -316,13 +316,13 @@ class EncounterWriter(EpicWriter):
     __icd9_cache = set() # {code: icd9_obj}
     
     fields = [
-        'patient_id_num',
+        'patient_id',
         'medical_record_num',
         'encounter_id_num',
         'encounter_date',
         'is_closed',
         'closed_date',
-        'provider_id_num',
+        'provider_id',
         'dept_id_num',
         'dept_name',
         'event_type',
@@ -351,14 +351,14 @@ class EncounterWriter(EpicWriter):
             icd9_codes = ''
 
         self.writer.writerow({
-                'patient_id_num':encounter.patient.patient_id_num,
+                'patient_id':encounter.patient.natural_key,
                 'medical_record_num':'',
-                'encounter_id_num': encounter.native_encounter_num,
+                'encounter_id_num': encounter.natural_key,
                 'encounter_date':str_from_date(encounter.date),
                 'is_closed': '',
                 'closed_date':str_from_date(encounter.closed_date) or '',
-                'provider_id_num':encounter.patient.pcp.provider_id_num,
-                'dept_id_num':encounter.native_site_num,
+                'provider_id':encounter.patient.pcp.natural_key,
+                'dept_id_num':encounter.site_natural_key,
                 'dept_name':encounter.site_name,
                 'event_type':encounter.event_type,
                 'edc':str_from_date(encounter.edc) or '',
@@ -381,10 +381,10 @@ class PrescriptionWriter(EpicWriter):
     FILE_TEMPLATE_NAME = 'epicmed.esp.%s'
 
     fields = [
-        'patient_id_num',
+        'patient_id',
         'medical_record_num',
         'order_id_num',
-        'provider_id_num',
+        'provider_id',
         'order_date',
         'status',
         'drug_name',
@@ -399,7 +399,7 @@ class PrescriptionWriter(EpicWriter):
 
     def write_row(self, prescription, **kw):
         self.writer.writerow({
-                'patient_id_num':prescription.patient.patient_id_num,
+                'patient_id':prescription.patient.natural_key,
                 'medical_record_num': '',
                 'order_id_num':prescription.order_num,
                 'order_date': str_from_date(prescription.date),
@@ -420,7 +420,7 @@ class ImmunizationWriter(EpicWriter):
     FILE_TEMPLATE_NAME = 'epicimm.esp.%s'
     
     fields = [
-        'patient_id_num', 
+        'patient_id', 
         'type', 
         'name',
         'date',
@@ -432,7 +432,7 @@ class ImmunizationWriter(EpicWriter):
     
     def write_row(self, immunization, **kw):
         self.writer.writerow({
-                'patient_id_num':immunization.patient.patient_id_num, 
+                'patient_id':immunization.patient.natural_key, 
                 'type':immunization.imm_type, 
                 'name':immunization.name,
                 'date':str_from_date(immunization.date) or '',
@@ -448,7 +448,7 @@ class SocialHistoryWriter(EpicWriter):
     FILE_TEMPLATE_NAME = 'epicsoc.esp.%s'
 
     fields = [
-        'patient_id_num',
+        'patient_id',
         'mrn',
         'tobacco_use',
         'alcohol_use'
@@ -456,7 +456,7 @@ class SocialHistoryWriter(EpicWriter):
     
     def write_row(self, history, **kw):
         self.writer.writerow({
-                'patient_id_num':history.patient.patient_id_num,
+                'patient_id':history.patient.natural_key,
                 'mrn':history.mrn,
                 'tobacco_use':history.tobacco_use,
                 'alcohol_use':history.alcohol_use
@@ -467,7 +467,7 @@ class AllergyWriter(EpicWriter):
     FILE_TEMPLATE_NAME = 'epicall.esp.%s'
 
     fields = [
-        'patient_id_num',
+        'patient_id',
         'mrn',
         'problem_id',
         'date_noted',
@@ -480,7 +480,7 @@ class AllergyWriter(EpicWriter):
     
     def write_row(self, allergy, **kw):
         self.writer.writerow({
-                'patient_id_num':allergy.patient.patient_id_num,
+                'patient_id':allergy.patient.natural_key,
                 'mrn':allergy.mrn,
                 'problem_id':str(allergy.problem_id),
                 'date_noted': str_from_date(allergy.date_noted),
@@ -497,7 +497,7 @@ class ProblemWriter(EpicWriter):
     FILE_TEMPLATE_NAME = 'epicprb.esp.%s'
 
     fields = [
-        'patient_id_num',
+        'patient_id',
         'mrn',
         'problem_id',
         'date_noted',
@@ -508,7 +508,7 @@ class ProblemWriter(EpicWriter):
 
     def write_row(self, problem, **kw):
         self.writer.writerow({
-                'patient_id_num': problem.patient.patient_id_num,
+                'patient_id': problem.patient.natural_key,
                 'mrn': problem.mrn,
                 'problem_id': problem.id,
                 'date_noted': str_from_date(problem.date),

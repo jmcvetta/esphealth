@@ -145,7 +145,7 @@ class Provider(BaseMedicalRecord):
     area_code = models.CharField('Primary Department Phone Areacode',max_length=50,blank=True,null=True)
     telephone = models.CharField('Primary Department Phone Number',max_length=50,blank=True,null=True)
     
-    q_fake = Q(provider_id_num__startswith='FAKE')
+    q_fake = Q(natural_key__startswith='FAKE')
 
     # Some methods to deal with mock/fake data
     @staticmethod
@@ -166,7 +166,7 @@ class Provider(BaseMedicalRecord):
             epic_file = open(filename, 'a')
         for p in fake.PROVIDERS:
             p.provenance = provenance
-            p.provider_id_num = 'FAKE-%05d' % random.randrange(1, 100000)
+            p.natural_key = 'FAKE-%05d' % random.randrange(1, 100000)
             if save_on_db: p.save()
             if save_to_epic: p.write
 
@@ -177,7 +177,7 @@ class Provider(BaseMedicalRecord):
         return Provider.fakes().order_by('?')[0]
     
     def is_fake(self):
-        return self.provider_id_num.startswith('FAKE')
+        return self.natural_key.startswith('FAKE')
 
     def _get_name(self):
         return u'%s, %s %s %s' % (self.last_name, self.title, self.first_name, self.middle_name)
@@ -234,7 +234,7 @@ class Patient(BaseMedicalRecord):
     #death_indicator = models.CharField('Death_Indicator', max_length=30, blank=True, null=True)
     occupation = models.CharField('Occupation', max_length=200, blank=True, null=True)
     
-    q_fake = Q(patient_id_num__startswith='FAKE')
+    q_fake = Q(natural_key__startswith='FAKE')
 
     @staticmethod
     def fakes(**kw):
@@ -272,7 +272,7 @@ class Patient(BaseMedicalRecord):
         p = Patient(
             provenance=provenance,
             pcp = provider,
-            patient_id_num = 'FAKE-%s' % identifier,
+            natural_key = 'FAKE-%s' % identifier,
             mrn = 'FAKE-MRN-%s' % identifier,
             last_name = randomizer.last_name(),
             first_name = randomizer.first_name(),
@@ -329,7 +329,7 @@ class Patient(BaseMedicalRecord):
 
 
     def is_fake(self):
-        return self.patient_id_num.startswith('FAKE')
+        return self.natural_key.startswith('FAKE')
         
 
     def has_history_of(self, icd9s, begin_date=None, end_date=None):
@@ -448,7 +448,7 @@ class Patient(BaseMedicalRecord):
         
         provider = {
             'name': self.pcp.full_name,
-            'code': self.pcp.provider_id_num,
+            'code': self.pcp.natural_key,
             'id': self.pcp.id
             }
 
@@ -571,7 +571,7 @@ class LabResult(BasePatientRecord):
         verbose_name = 'Lab Test Result'
         ordering = ['date']
 
-    q_fake = Q(patient__patient_id_num__startswith='FAKE')
+    q_fake = Q(patient__natural_key__startswith='FAKE')
 
     @staticmethod
     def fakes():
@@ -868,7 +868,7 @@ class EncounterManager(models.Manager):
 
     def syndrome_care_visits(self, sites=None):
         qs = self.filter(event_type__in=['URGENT CARE', 'VISIT'])
-        if sites: qs = qs.filter(native_site_num__in=sites)
+        if sites: qs = qs.filter(site_natural_key__in=sites)
         return qs
 
 
@@ -932,7 +932,7 @@ class Encounter(BasePatientRecord):
     class Meta:
         ordering = ['date']
     
-    q_fake = Q(patient__patient_id_num__startswith='FAKE')
+    q_fake = Q(patient__natural_key__startswith='FAKE')
 
     @staticmethod
     def fakes():
@@ -963,7 +963,7 @@ class Encounter(BasePatientRecord):
         provider = Provider.get_mock()
 
         e = Encounter(patient=patient, provider=provider, provenance=Provenance.fake(),
-                      native_encounter_num='FAKE-%s' % randomizer.string(length=15),
+                      natural_key='FAKE-%s' % randomizer.string(length=15),
                       mrn=patient.mrn, status='FAKE', date=when, closed_date=when)
         
         if save_on_db: e.save()
