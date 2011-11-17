@@ -1,6 +1,6 @@
 #-*- coding:utf-8 -*-
 
-from ESP.conf.models import CodeMap
+from ESP.conf.models import LabTestMap
 from ESP.static.models import Icd9, Vaccine, ImmunizationManufacturer
 from ESP.utils.utils import log
 
@@ -515,7 +515,7 @@ VAERS_DIAGNOSTICS = {
 def map_lab_tests():
     for lab_type, lab in VAERS_LAB_RESULTS.items():
         for code in set(lab['codes']):
-            c, created = CodeMap.objects.get_or_create(native_code=code, heuristic=lab_type)
+            c, created = LabTestMap.objects.get_or_create(native_code=code, heuristic=lab_type)
             msg = ('New mapping %s' % c) if created else 'Mapping %s already on database' % c
             log.info(msg)
                 
