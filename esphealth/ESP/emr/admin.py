@@ -39,7 +39,7 @@ class LabResultAdmin(admin.ModelAdmin):
 class EncounterAdmin(admin.ModelAdmin):
     list_display = ['native_encounter_num', 'patient', 'provider', 'date']
     list_display_links = ['native_encounter_num']
-    raw_id_fields = ['patient', 'provider']
+    raw_id_fields = ['patient', 'provider', 'icd9_codes']
     search_fields = ['pk', 'native_encounter_num', 'patient__last_name', 'provider__last_name']
     ordering = ['-date']
 
