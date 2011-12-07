@@ -12,7 +12,9 @@ Base Classes
 
 
 import abc
+import sys
 import datetime
+import settings
 
 from pkg_resources import iter_entry_points
 
@@ -102,7 +104,12 @@ class DiseaseDefinition(object):
         '''
         search_strings = set()
         for disdef in cls.get_all():
-            [search_strings.add(s) for s in disdef.test_name_search_strings]
+            try:
+                [search_strings.add(s) for s in disdef.test_name_search_strings]
+            except:
+                err_msg = 'Invalid search strings in %s' % disdef
+                log.error(err_msg)
+                raise sys.exc_info()
         search_strings = list(search_strings)
         search_strings.sort()
         return search_strings
@@ -116,7 +123,12 @@ class DiseaseDefinition(object):
         '''
         conditions = set()
         for disdef in cls.get_all():
-            [conditions.add(s) for s in disdef.conditions]
+            try:
+                [conditions.add(s) for s in disdef.conditions]
+            except:
+                err_msg = 'Problem with condition string in %s' % disdef
+                log.error(err_msg)
+                raise sys.exc_info()
         conditions = list(conditions)
         conditions.sort()
         return conditions
@@ -199,6 +211,66 @@ class DiseaseDefinition(object):
         '''
         log.info('Generating dependencies for %s' % self)
         return BaseHeuristic.generate_all(self.dependencies, thread_count)
+    
+    def _create_cases_from_events(self, 
+        condition,
+        criteria,
+        recurrence_interval,
+        event_qs, 
+        relevent_event_names,
+        ):
+        '''
+        For each event in an Event QuerySet, either attach the event to an
+            exiting case, or create a new case
+        @param condition: Create a case of this condition
+        @type condition:  String
+        @param criteria: Criteria for creating these cases
+        @type criteria:  String
+        @param recurrence_interval: How many days after a case until this condition can recur?
+        @type recurrence_interval: Integer or None (if condition cannot recur)
+        @param event_qs: Events on which to base n
+        @type event_qs:  QuerySet instance
+        @param relevent_event_q_obj: Attach events matching this filter to a new case
+        @type relevent_event_q_obj:  Q instance
+        '''
+        counter = 0
+        for this_event in event_qs:
+            existing_cases = Case.objects.filter(
+                condition = condition,
+                patient = this_event.patient,
+                )
+            if recurrence_interval:
+                existing_cases = existing_cases.filter(
+                    date__gte=(this_event.date - relativedelta(days=recurrence_interval) )
+                    )
+            existing_cases = existing_cases.order_by('date')
+            if existing_cases:
+                old_case = existing_cases[0]
+                old_case.events.add(this_event)
+                old_case.save()
+                log.debug('Added %s to %s' % (this_event, old_case))
+                continue # Done with this event, continue loop
+            # No existing case, so we create a new case
+            new_case = Case(
+                condition = condition,
+                patient = this_event.patient,
+                provider = this_event.provider,
+                date = this_event.date,
+                criteria = criteria,
+                source = self.uri,
+                )
+            new_case.save()
+            new_case.events.add(this_event)
+            all_relevant_events = Event.objects.filter(
+                patient=this_event.patient,
+                name__in=relevent_event_names,
+                )
+            for related_event in all_relevant_events:
+                new_case.events.add(related_event)
+            new_case.save()
+            log.info('Created new case: %s' % new_case)
+            counter += 1
+        return counter
     
         
 
