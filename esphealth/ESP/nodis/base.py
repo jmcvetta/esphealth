@@ -234,30 +234,46 @@ class DiseaseDefinition(object):
         @type relevent_event_q_obj:  Q instance
         '''
         counter = 0
-        # Skip events that are already bound to a case of this condition
         event_qs = event_qs.exclude(case__condition=condition)
+        event_qs = event_qs.order_by('patient', 'date')
+        log_query('Events for %s' % self.short_name, event_qs)
         for this_event in event_qs:
-            existing_cases = Case.objects.filter(
-                condition = condition,
-                patient = this_event.patient,
-                )
-            if recurrence_interval:
-                existing_cases = existing_cases.filter(
-                    date__gte=(this_event.date - relativedelta(days=recurrence_interval) )
-                    )
-            existing_cases = existing_cases.order_by('date')
+            # 
+            # Check recurrence
+            #
+            if recurrence_interval is None:
+                # Non-recurring condition - once you have it, you've always 
+                # got it.
+                existing_cases = Case.objects.filter(
+                    patient = this_event.patient,
+                    condition = condition,
+                    ).order_by('date')
+            else:
+                delta = datetime.timedelta(days=recurrence_interval)
+                max_date = this_event.date + delta
+                min_date = this_event.date - delta
+                existing_cases = Case.objects.filter(
+                    patient = this_event.patient,
+                    condition = condition,
+                    date__gte = min_date,
+                    date__lte = max_date,
+                    ).order_by('date')
+            # If this patient has an existing case, we attach this event 
+            # to that case and continue.
             if existing_cases:
-                old_case = existing_cases[0]
-                old_case.events.add(this_event)
-                old_case.save()
-                log.debug('Added %s to %s' % (this_event, old_case))
-                continue # Done with this event, continue loop
-            # No existing case, so we create a new case
+                first_case = existing_cases[0] 
+                first_case.events.add(this_event)
+                first_case.save()
+                log.debug('Added %s to %s' % (this_event, first_case))
+                continue
+            #
+            # Create new case
+            #
             new_case = Case(
-                condition = condition,
                 patient = this_event.patient,
                 provider = this_event.provider,
                 date = this_event.date,
+                condition =  condition,
                 criteria = criteria,
                 source = self.uri,
                 )
@@ -276,7 +292,7 @@ class DiseaseDefinition(object):
             for related_event in all_relevant_events:
                 new_case.events.add(related_event)
             new_case.save()
-            log.info('Created new case: %s' % new_case)
+            log.debug('Created new case: %s' % new_case)
             counter += 1
         return counter
     
@@ -380,59 +396,16 @@ class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
         @rtype:  Integer
         '''
         log.info('Generating cases of %s' % self.short_name)
-        pos_events = set()
+        pos_event_names = set()
         for heuristic in self.event_heuristics:
-            pos_events.add(heuristic.positive_event_name)
-        qs = Event.objects.filter(name__in=pos_events)
-        qs = qs.exclude(case__condition=self.condition)
-        qs = qs.order_by('patient', 'date')
-        counter = 0
-        log_query('Events for %s' % self.short_name, qs)
-        for ev in qs:
-            # 
-            # Check recurrence
-            #
-            if self.recurrence_interval is None:
-                # Non-recurring condition - once you have it, you've always 
-                # got it.
-                existing_cases = Case.objects.filter(
-                    patient = ev.patient,
-                    condition = self.condition,
-                    ).order_by('date')
-            else:
-                delta = datetime.timedelta(days=self.recurrence_interval)
-                max_date = ev.date + delta
-                min_date = ev.date - delta
-                existing_cases = Case.objects.filter(
-                    patient = ev.patient,
-                    condition = self.condition,
-                    date__gte = min_date,
-                    date__lte = max_date,
-                    ).order_by('date')
-            # If this patient has an existing case, we attach this event 
-            # to that case and continue.
-            if existing_cases:
-                first_case = existing_cases[0] 
-                first_case.events.add(ev)
-                first_case.save()
-                log.debug('Added %s to %s' % (ev, first_case))
-                continue
-            #
-            # Create new case
-            #
-            new_case = Case(
-                patient = ev.patient,
-                provider = ev.provider,
-                date = ev.date,
-                condition =  self.condition,
-                criteria = 'Positive lab test',
-                source = self.uri,
-                )
-            new_case.save()
-            new_case.events.add(ev)
-            new_case.save()
-            log.debug('Created new Chlamydia case: %s' % new_case)
-            counter += 1
-        log.info('Generated %s cases of %s' % (counter, self.short_name))
-        return counter
+            pos_event_names.add(heuristic.positive_event_name)
+        event_qs = Event.objects.filter(name__in=pos_event_names)
+        new_case_count = self._create_cases_from_events(
+            condition = self.condition, 
+            criteria = 'positive lab test', 
+            recurrence_interval = self.recurrence_interval, 
+            event_qs = event_qs, 
+            relevent_event_names = pos_event_names,
+            )
+        return new_case_count
     
