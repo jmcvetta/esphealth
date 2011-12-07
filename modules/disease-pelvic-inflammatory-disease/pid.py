@@ -31,7 +31,7 @@ class PelvicInflammatoryDisease(DiseaseDefinition):
     
     short_name = 'pelvic_inflammatory_disease'
     
-    test_name_search_strings = [],
+    test_name_search_strings = []
     
     timespan_heuristics = []
     
