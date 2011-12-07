@@ -62,7 +62,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             Q(icd9_codes__code__startswith='V22.') | 
             Q(icd9_codes__code__startswith='V23.')
             )
-        self.preg_icd9_qs = Encounter.objects.filter(onset_q_obj)
+        self.preg_icd9_qs = Encounter.objects.filter(icd9_q_obj)
         #-------------------------------------------------------------------------------
         #
         # Onset
@@ -217,13 +217,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         unbound_onset_qs = self.onset_qs.exclude(timespan__name='pregnancy')
         patient_pks = unbound_onset_qs.order_by('patient').values_list('patient', flat=True).distinct()
         log_query('Pregnant patient PKs', patient_pks)
-        total = len(patient_pks)
-        counter = 0
-        funcs = []
-        for patient_pk in patient_pks:
-            counter += 1
-            f = partial(self.pregnancies_for_patient, patient_pk, counter, total) 
-            funcs.append(f)
+        funcs = [partial(self.pregnancies_for_patient, patient_pk) for patient_pk in patient_pks]
         ts_count = wait_for_threads(funcs)
         return ts_count
     
@@ -315,19 +309,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         return max_icd9_date
     
     @transaction.commit_on_success
-    def pregnancies_for_patient(self, patient_pk, serial, total):
-        '''
-        Generate new pregnancy timespans for a given patient
-        @param patient_pk: Primary key of Patient to be examined
-        @type patient_pk: Integer
-        @param serial: Serial counter for logging
-        @type serial: Integer
-        @param total: Total count of patients for logging
-        @type total: Integer
-        @return: Count of new pregnancies generated
-        @rtype: Integer
-        '''
-        log.debug('Examining patient #%s for pregnancy (%20s / %s)' % (patient_pk, serial, total))
+    def pregnancies_for_patient(self, patient_pk):
+        log.debug('Examining patient #%s for pregnancy' % patient_pk)
         patient = Patient.objects.get(pk=patient_pk)
         counter = 0
         today = datetime.date.today()
@@ -364,7 +347,12 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 onset_date = first_preg_event.date - relativedelta(days=30)
                 pattern = 'onset:icd9 '
             #
-            # If plausible EoP event was found, use that for EoP date.
+            # Is patient currently pregnant?  If so, we should not expect to
+            # find an EoP event just yet.
+            #
+            
+            #
+            # Find an End of Pregnancy event.  
             #
             eop_enc = self._get_eop_enc(patient, onset_date)
             if eop_enc:
