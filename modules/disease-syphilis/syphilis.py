@@ -169,37 +169,14 @@ class Syphilis(DiseaseDefinition):
         combined_criteria_qs = combined_criteria_qs.order_by('date')
         all_event_names = dx_ev_names + rx_ev_names + rpr_ev_names + ttpa_ev_names + vrdl_csf_ev_names
         counter = 0
-        for this_event in combined_criteria_qs:
-            existing_cases = Case.objects.filter(
-                condition='syphilis', 
-                patient=this_event.patient,
-                #date__gte=(this_event.date - relativedelta(days=28) # Adds recurrence interval
-                )
-            existing_cases = existing_cases.order_by('date')
-            if existing_cases:
-                old_case = existing_cases[0]
-                old_case.events.add(this_event)
-                old_case.save()
-                log.debug('Added %s to %s' % (this_event, old_case))
-                continue # Done with this event, continue loop
-            # No existing case, so we create a new case
-            new_case = Case(
-                condition = 'syphilis',
-                patient = this_event.patient,
-                provider = this_event.provider,
-                date = this_event.date,
-                criteria = 'combined syphilis criteria',
-                source = self.uri,
-                )
-            new_case.save()
-            new_case.events.add(this_event)
-            all_relevant_events = Event.objects.filter(patient=this_event.patient, name__in=all_event_names)
-            for related_event in all_relevant_events:
-                new_case.events.add(related_event)
-            new_case.save()
-            log.info('Created new syphilis case: %s' % new_case)
-            counter += 1
-        return counter # Count of new cases
+        new_case_count = self._create_cases_from_events(
+            condition = 'syphilis',
+            criteria = 'combined syphilis criteria', 
+            recurrence_interval = None, 
+            event_qs = combined_criteria_qs, 
+            relevent_event_names = all_event_names,
+            )
+        return new_case_count
             
     
 
