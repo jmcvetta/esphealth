@@ -234,6 +234,8 @@ class DiseaseDefinition(object):
         @type relevent_event_q_obj:  Q instance
         '''
         counter = 0
+        # Skip events that are already bound to a case of this condition
+        event_qs = event_qs.exclude(case__condition=condition)
         for this_event in event_qs:
             existing_cases = Case.objects.filter(
                 condition = condition,
@@ -261,10 +263,16 @@ class DiseaseDefinition(object):
                 )
             new_case.save()
             new_case.events.add(this_event)
+            #
+            # Attach all relevant events, that are not already attached to a
+            # case of this condition.
+            #
             all_relevant_events = Event.objects.filter(
                 patient=this_event.patient,
                 name__in=relevent_event_names,
-                )
+                ).exclude(
+                    case__condition=condition,
+                    )
             for related_event in all_relevant_events:
                 new_case.events.add(related_event)
             new_case.save()
