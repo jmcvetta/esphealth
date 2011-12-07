@@ -110,7 +110,7 @@ class Hepatitis_A(DiseaseDefinition):
             patient__event__date__lte = (F('date') + 14 ),
             )
         relevent_event_names = [primary_event_name] + secondary_event_names
-        new_case_count = self.create_cases_from_events(
+        new_case_count = self._create_cases_from_events(
             condition = 'hepatitis_a:acute', 
             criteria = '(dx:jaundice or lx:alt:ratio:2 or lx:ast:ratio:2) AND lx:hep_a_igm:positive within 14 days', 
             recurrence_interval = None,
