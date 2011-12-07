@@ -800,7 +800,7 @@ class LabResultRatioHeuristic(BaseLabResultHeuristic):
     
     def generate(self):
         positive_labs = LabResult.objects.none()
-        code_maps = LabTestMap.objects.filter(test=self.test)
+        code_maps = LabTestMap.objects.filter(test_name=self.test_name)
         for map in code_maps:
             labs = self.unbound_labs.filter(map.lab_results_q_obj)
             #
