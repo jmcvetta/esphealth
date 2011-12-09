@@ -22,7 +22,7 @@ esphealth/ESP/ss/assets
 esphealth/ESP/ss/assets/*
 esphealth/ESP/static/*.pyc
 esphealth/ESP/utils/*.pyc
-esphealth/ESP/utils/hl7/*.pyc
+esphealth/ESP/utils/hl7_builder/*.pyc
 esphealth/ESP/vaers/*.pyc
 esphealth/ESP/vaers/assets
 esphealth/ESP/vaers/fixtures/events/*.json
