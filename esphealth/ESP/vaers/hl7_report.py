@@ -6,13 +6,14 @@ from ESP.vaers.models import AdverseEvent
 from ESP.utils import utils
 from ESP.settings import SITE_NAME
 
-from hl7.core import Field, SegmentTree
-from hl7.segments import MSH, PID, ORC, OBR, OBX
-from hl7.nodes import VaccineDetail, PriorVaccinationDetail
-from hl7.nodes import VaersProjectIdentification
+from ESP.utils.hl7_builder.core import Field, SegmentTree
+from ESP.utils.hl7_builder.segments import MSH, PID, ORC, OBR, OBX
+from ESP.utils.hl7_builder.nodes import VaccineDetail, PriorVaccinationDetail
+from ESP.utils.hl7_builder.nodes import VaersProjectIdentification
 
 UNKNOWN_VACCINE = Vaccine.objects.get(short_name='unknown')
 UNKNOWN_MANUFACTURER = ImmunizationManufacturer.objects.get(code='UNK')
+
 
 class AdverseReactionReport(object):
     def __init__(self, event):
