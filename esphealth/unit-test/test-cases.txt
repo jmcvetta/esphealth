@@ -87,6 +87,10 @@ acute hep a
 both patients patient with lab igm positive
 second patient with a lab test ('hep', 'alt', 'ast', 'tbil', 'bili') within 30 days of diagnosis
 
-
+Gonorrhea
+hep b
+hep c
+Giardiasis
+diabetes
 
 
