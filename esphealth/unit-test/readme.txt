@@ -16,6 +16,7 @@ to trigger vaers events, a patient must have an encounter associated (siteid, si
 which is not a specialty clinic (ones without the asterisks in the code), event type has to be URGENT CARE and
 have one or more icd9 codes referred to in definitions.py and have occurred within the dates passed in.
 
+
 SS
 to run SS run the main.py with the parameters defined in main.py:
 -b[start_date as 20090101] -e[end_date] { [-d --detect],[-r --reports], [-s --syndrome def all], 
@@ -36,15 +37,18 @@ and then run concordance, map the lab if necessary, run hef and nodis: (assuming
 
 to extract more cases from data loaded: run the extract_epic command it outputs to /srv/esp-data/fake
 
-the folders below have the files with patients, labs, meds, providers and encounters and vaccinations
-they only test some basic events/cases, not all the heuristics are included. 
+the folders listed below have the files with patients, labs, meds, providers and encounters and vaccinations
+they only contain a limited set of test cases, not all the heuristics are included. 
 Definitions for the heuristics can be found in nodis/events.py and hef/defs.py in 2.2 
 in esp 3 they are under src/disease-<d name>/<d name>.py and 
 heuristics and disease notification base definitions are under hef and nodis folders in the base.py
-ili/vaers
+ili
+vaers
 chlamydia
 pertussis
 tb
 acute hep a
 syphillis
+lyme
+
 
