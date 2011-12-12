@@ -1,0 +1,71 @@
+unit test case documentation for esp
+author: carolina chacin
+updated: dec 12 2011
+
+
+VAERS
+5 patients (should generate 4 cases)
+(all encounters have to be in the non specialty site for urgent care)
+1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS that has an ignore period 12
+same patient with 1 encounter  with a diagnostic in the list of VAERS_DIAGNOSTICS 
+  that has an ignore period 12 and that happened within the ignore period of above encounter
+1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS  that does not have an ignore code
+1 patient with 1 lab test in the list of VAERS_LAB_RESULTS that meets the criteria of one defined in rules.py
+1 patient with an immunization 
+same patient with 1 encounter with fever (temp over 100.4), and set to URGENT CARE 
+  within TIME_WINDOW_POST_EVENT (60) immunization above. NEG
+1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS 
+  that has an ignore period 12 but not in the specialty clinic. NEG
+
+
+SS
+5 patients (should generate 4 cases)
+1 patient with 1 encounter with icd9 fever code defined in influenza_like_illness from definitions.py
+ with temperature > 100.0 set with sites on a non specialty clinic and URGENT CARE
+1 patient with 1 encounter with icd9 fever code and influenza_like_illness defined in ICD9_FEVER_CODES with 
+  temperature not recorded set with sites on a non specialty clinic and URGENT CARE
+1 patient with encounter with an icd9 code that requires fever (see rash icd9 codes in definistions.py) 
+defined in OptionalFeverSyndromeHeuristic and an icd9 code of fever or a temperature >100
+1 patient with an encounter with icd9 code defined in SyndromeHeuristic (see lesions in definitins.py)
+1 patient with 1 encounter with icd9 code defined in influenza_like_illness from definitions.py
+ with temperature < 100.0 set with sites on a non specialty clinic and URGENT CARE. NEG
+
+LYME
+5 patients (should generate 4 cases)
+4 patients with an encounter with icd9 code in the lyme_diagnosis. 
+1/4  patient with meds doxycycline within 14 days of diagnosis
+2/4 patient with meds lyme_other_antibiotics in lyme.py within 14 days of diagnosis
+3/4 patient with a lab in test_name_search_strings in lyme.py positive within 30 days of diagnosis
+4/4 patient only encounter. NEG
+1 patient with an encounter with icd9 code for rash
+same patient with laborder lyme_elisa within 14 days of diagnosis
+same patient with med doxycycline within 14 days of diagnosis
+
+pid
+2 patients (should generate 3 cases)
+2 patient with 2 encounters each with icd9 code for pid
+1/2 encounter for one patient with icd9 code for pid after recurring days (28)
+2/2 encounter for separate patient with encounter with icd9 code for pid within recurring days. NEG
+
+chlamydia
+3 patients (should generate 3 cases)
+1 patient with chla test positive
+same patient with chlal test positive after recurrence days 
+1 patient with chla test negative
+1 patient with chla test positive within recurrence days (28). NEG
+
+syphillis
+4 patients (should generate 3 cases)
+1 patient with an encounter with icd9 code for syphilis
+same patient with a prescription in syphilis.py within 14 days of encounter
+2 patient with a lab positive for rpr 
+1/2 patient a lab positive for ttpa, fta-abs  or tp-igg
+2/2 patient a lab negative for ttpa, fta-abs  or tp-igg . NEG
+1 patient with a lab positive for vrdl 
+
+pertussis
+tb
+acute hep a
+
+
+

@@ -434,6 +434,7 @@ esphealth/unit-test/tb/epicmem.esp.11112011 -text
 esphealth/unit-test/tb/epicpro.esp.11032011 -text
 esphealth/unit-test/tb/epicres.esp.11112011 -text
 esphealth/unit-test/tb/epicvis.esp.11112011 -text
+esphealth/unit-test/test-cases.txt -text
 esphealth/unit-test/vaers/epicmed.esp.12092011 -text
 esphealth/unit-test/vaers/epicmem.esp.12092011 -text
 esphealth/unit-test/vaers/epicpro.esp.11032011 -text
