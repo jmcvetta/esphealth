@@ -122,7 +122,8 @@ class Timespan(models.Model):
     # The 'encounters' field is a short-term hack for generating gdm pregnancy timespans, and should be 
     # replaced (soon) with a fully generic solution.
     #
-    encounters = models.ManyToManyField(Encounter)
+    #encounters = models.ManyToManyField(Encounter)
+    events = models.ManyToManyField(Event)
 
     def __unicode__(self):
         return u'Timespan #%s | %s | %s | %s - %s | %s' % (self.pk, 
