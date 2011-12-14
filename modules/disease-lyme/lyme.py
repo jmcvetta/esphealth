@@ -61,7 +61,7 @@ class Lyme(DiseaseDefinition):
         # Diagnosis Codes
         #
         heuristic_list.append( DiagnosisHeuristic(
-            name = 'lyme_diagnosis',
+            name = 'lyme',
             icd9_queries = [
                 Icd9Query(starts_with='088.81'),
                 ]
@@ -113,7 +113,7 @@ class Lyme(DiseaseDefinition):
         # Criteria Set #1 (lyme def 2 from esp 2.1)
         # diagnosis and meds 
         #
-        dx_ev_names = ['dx:lyme_diagnosis']
+        dx_ev_names = ['dx:lyme']
         rx_ev_names = [
             'rx:doxycycline',
             'rx:lyme_other_antibiotics',
