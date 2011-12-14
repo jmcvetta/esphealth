@@ -43,12 +43,13 @@ same patient with med doxycycline within 14 days of diagnosis
 
 pid
 2 patients (should generate 3 cases)
+? need patients with chlamydia and gonorrhea
 2 patient with 2 encounters each with icd9 code for pid
 1/2 encounter for one patient with icd9 code for pid after recurring days (28)
 2/2 encounter for separate patient with encounter with icd9 code for pid within recurring days. NEG
 
 chlamydia
-3 patients (should generate 3 cases)
+3 patients (should generate 2 cases)
 1 patient with chla test positive
 same patient with chlal test positive after recurrence days 
 1 patient with chla test negative
@@ -72,20 +73,22 @@ pertussis
 1 patient with positive lab for pertussis_pcr or pertussis_culture
       
 tb
-4 patients (should generate 4 cases)
+5 patients (should generate 4 cases)
 1 patient with med pyrazinamide 
-3 patients with encounter with tb diagnosis
-1/3 patient with tb laborder ('myco', 'afb', 'tb', 'tuber',) before 14 days of diagnosis
-2/3 patient with lab order after 60 days
-3/3 patient with SECONDARY_MED_EVENTS in TuberculosisDefC class in models.py
+4 patients with encounter with tb diagnosis
+1/4 patient with tb laborder ('myco', 'afb', 'tb', 'tuber',) within 14 days after diagnosis
+2/4 patient with lab order  within 60 days prior or after diagnosis
+3/4 patient with SECONDARY_MED_EVENTS in TuberculosisDefC class in models.py
 1 patient with SECONDARY_MED_EVENTS in TuberculosisDefC class in models.py with no diagnosis. NEG
+4/4 patient with tb lab order after 14 days. NEG
 
 acute hep a
-2 patients ( should generate 2 cases)
+3 patients ( should generate 3 cases)
 1 patients with encounter with icd9 for jaundice
 1 patient with lab alt_2x 
 both patients patient with lab igm positive
-second patient with a lab test ('hep', 'alt', 'ast', 'tbil', 'bili') within 30 days of diagnosis
+second patient with a lab test ('hep', 'alt', 'ast', 'tbil', 'bili') within 14 days of diagnosis
+1 patient with alt_2x and lab igm positive within more than 14 days
 
 Gonorrhea
 hep b
