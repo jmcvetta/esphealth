@@ -62,7 +62,7 @@ class Syphilis(DiseaseDefinition):
         # Diagnosis Codes
         #
         heuristic_list.append( DiagnosisHeuristic(
-            name = 'syphilis_diagnosis',
+            name = 'syphilis',
             icd9_queries = [
                 Icd9Query(starts_with='090'),
                 Icd9Query(starts_with='091'),
@@ -124,7 +124,7 @@ class Syphilis(DiseaseDefinition):
         #
         # Criteria Set #1
         #
-        dx_ev_names = ['dx:syphilis_diagnosis']
+        dx_ev_names = ['dx:syphilis']
         rx_ev_names = [
             'rx:penicillin_g',
             'rx:doxycycline_7_day',
