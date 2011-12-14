@@ -41,7 +41,7 @@ class PelvicInflammatoryDisease(DiseaseDefinition):
         # Diagnosis Codes
         #
         heuristic_list.append( DiagnosisHeuristic(
-            name = 'pelvic_inflammatory_disease_diagnosis',
+            name = 'pelvic_inflammatory_disease',
             icd9_queries = [
                 Icd9Query(starts_with='614.'),
                 Icd9Query(exact='099.56'),
@@ -55,7 +55,7 @@ class PelvicInflammatoryDisease(DiseaseDefinition):
         # Criteria Set #1
         #
         ev_qs = Event.objects.filter(
-            name = 'dx:pelvic_inflammatory_disease_diagnosis'
+            name = 'dx:pelvic_inflammatory_disease'
             ).order_by('date')
         counter = 0
         for ev in ev_qs:
