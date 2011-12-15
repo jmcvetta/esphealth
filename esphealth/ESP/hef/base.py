@@ -310,6 +310,13 @@ class BaseTimespanHeuristic(BaseHeuristic):
         kinds of timespan this heuristic can generate
         '''
     
+    @abc.abstractproperty
+    def event_heuristics(self):
+        '''
+        Event heuristics on which this timespan heuristic depends.
+        @rtype: List of EventHeuristic instances
+        '''
+    
     @classmethod
     def generate_all(cls, heuristic_list=None, thread_count=HEF_THREAD_COUNT):
         '''
@@ -436,7 +443,7 @@ class LabOrderHeuristic(BaseEventHeuristic):
         alt = AbstractLabTest(self.test_name)
         unbound_orders = alt.lab_orders.exclude(events__name=self.order_event_name)
         log_query('Unbound lab orders for %s' % self.uri, unbound_orders)
-        unbound_count = unbound_orders.count()
+        counter = 0
         for order in queryset_iterator(unbound_orders):
             Event.create(
                 name = self.order_event_name,
@@ -446,8 +453,9 @@ class LabOrderHeuristic(BaseEventHeuristic):
                 provider = order.provider,
                 emr_record = order,
                 )
-        log.info('Generated %s new %s events' % (unbound_count, self.uri))
-        return unbound_count
+            counter += 1
+        log.info('Generated %s new %s events' % (counter, self.uri))
+        return counter
     
     
 class BaseLabResultHeuristic(BaseEventHeuristic):
@@ -524,7 +532,7 @@ class LabResultAnyHeuristic(BaseLabResultHeuristic):
     
     def generate(self):
         log.debug('Generating events for "%s"' % self)
-        unbound_count = self.unbound_labs.count()
+        counter = 0
         for lab in queryset_iterator(self.unbound_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -538,8 +546,9 @@ class LabResultAnyHeuristic(BaseLabResultHeuristic):
                 provider = lab.provider,
                 emr_record = lab,
                 )
-        log.info('Generated %s new %s events' % (unbound_count, self))
-        return unbound_count
+            counter += 1
+        log.info('Generated %s new %s events' % (counter, self))
+        return counter
 
 
 class LabResultPositiveHeuristic(BaseLabResultHeuristic): 
