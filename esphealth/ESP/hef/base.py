@@ -112,6 +112,13 @@ ORDER_RESULT_RECORD_TYPES = [
     ]
 
 
+class UnknownHeuristicException(Exception):
+    '''
+    Exception raised no heuristic can be found matching the requested name
+    '''
+    pass
+
+
 class BaseHeuristic(EquivalencyMixin):
     '''
     A heuristic for generating Events from raw medical records
@@ -178,13 +185,11 @@ class BaseHeuristic(EquivalencyMixin):
     @classmethod
     def get_heuristic_by_name(cls, short_name):
         '''
-        Returns the named heuristic
+        Returns a heuristic based on it's short name.  For use in human UI only.  
+        Other software components should use get_heuristic_by_uri() instead.
+        @param short_name: A heurisitc's short_name property
+        @type short_name:  String
         '''
-        class UnknownHeuristicException(Exception):
-            '''
-            Exception raised no heuristic can be found matching the requested name
-            '''
-            pass
         heuristics = {}
         for h in cls.get_all():
             heuristics[h.short_name] = h
@@ -193,18 +198,43 @@ class BaseHeuristic(EquivalencyMixin):
         return heuristics[short_name]
     
     @classmethod
+    def get_heuristic_by_uri(cls, uri):
+        '''
+        Returns a heuristic based on it's URI.
+        @param uri: A heurisitc's uri property
+        @type uri:  String
+        '''
+        heuristics = {}
+        for h in cls.get_all():
+            heuristics[h.uri] = h
+        if not uri in heuristics:
+            raise UnknownHeuristicException('Could not get heuristic for URI: "%s"' % uri)
+        return heuristics[uri]
+    
+    @classmethod
     def generate_by_name(cls, name_list, thread_count=HEF_THREAD_COUNT):
         '''
-        Run heuristic(s) specified by name as arguments
+        Run heuristic(s) specified by name as arguments.  For use in human UI 
+            only.  Other software components should use generate_by_uri() 
+            instead.
+        @param uri_list: Short names of heuristics to be generated
+        @type uri_list:  [String, String, ...]
         '''
-        class UnknownHeuristicException(Exception):
-            '''
-            Exception raised no heuristic can be found matching the requested name
-            '''
-            pass
         selected_heuristics = set()
         for short_name in name_list:
             selected_heuristics.add( cls.get_heuristic_by_name(short_name) )
+        return cls.generate_all(heuristic_list=selected_heuristics, thread_count=thread_count)
+    
+    @classmethod
+    def generate_by_uri(cls, uri_list, thread_count=HEF_THREAD_COUNT):
+        '''
+        Run heuristic(s) specified by name as arguments
+        @param uri_list: URIs of heuristics to be generated
+        @type uri_list:  [String, String, ...]
+        '''
+        selected_heuristics = set()
+        for uri in uri_list:
+            selected_heuristics.add( cls.get_heuristic_by_uri(uri) )
         return cls.generate_all(heuristic_list=selected_heuristics, thread_count=thread_count)
     
 
@@ -318,10 +348,12 @@ class BaseTimespanHeuristic(BaseHeuristic):
         '''
     
     @classmethod
-    def generate_all(cls, heuristic_list=None, thread_count=HEF_THREAD_COUNT):
+    def generate_all(cls, heuristic_list=None, thread_count=HEF_THREAD_COUNT, dependencies=False):
         '''
         Generate events all specified heuristics.  If heuristic_list is None, then
         use all known TimespanHeuristic instances.
+        @param dependencies: Should we generate dependency Events before generating this Timespan?
+        @type dependencies: Boolean
         '''
         if heuristic_list:
             relevant_heuristics = set()
@@ -334,10 +366,18 @@ class BaseTimespanHeuristic(BaseHeuristic):
         else:
             heuristic_list = cls.get_all()
         log.debug('heuristic list: %s' % heuristic_list)
+        dependency_set = set()
+        if dependencies:
+            for this_heuristic in heuristic_list:
+                for this_dep in this_heuristic.dependencies:
+                    dependency_set.add(this_dep)
         if thread_count == 0:
             #
             # No threads
             # 
+            for this_dep in dependency_set:
+                log.info('Running %s' % this_dep)
+                this_dep.generate()
             for heuristic in heuristic_list:
                 log.info('Running %s' % heuristic)
                 counter = heuristic.generate() 
@@ -349,6 +389,19 @@ class BaseTimespanHeuristic(BaseHeuristic):
             counter = wait_for_threads(funcs, max_workers=thread_count)
         log.info('Generated %20s timespans' % counter)
         return counter
+    
+    def generate_dependencies(self):
+        log.info('Generating all dependencies for %s' % self.uri)
+        #
+        # Build a set of all distinct dependencies, so each one is run
+        # only once.
+        #
+        dependencies = set()
+        for disease in disease_list:
+            dependencies |= set(disease.dependencies)
+        for dep in dependencies:
+            log.debug('Dependency: %s' % dep)
+        BaseHeuristic.generate_all(heuristic_list=dependencies)
 
 
 class AbstractLabTest(object):
