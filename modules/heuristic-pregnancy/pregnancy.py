@@ -25,13 +25,47 @@ from ESP.utils import log_query
 from ESP.utils.utils import wait_for_threads
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
+from ESP.hef.base import Event
+from ESP.hef.base import BaseEventHeuristic
 from ESP.hef.base import BaseTimespanHeuristic
+from ESP.hef.base import DiagnosisHeuristic
+from ESP.hef.base import Icd9Query
 from ESP.hef.models import Timespan
 
 
 #PREG_START_MARGIN = datetime.timedelta(days=20)
 PREG_MARGIN = relativedelta(days=30)
 
+
+class EDDHeuristic(BaseEventHeuristic):
+    
+    event_names = ['enc:edd']
+    
+    uri = 'urn:x-esphealth:heuristic:channing:encounter:edd:v1'
+    
+    core_uris = ['urn:x-esphealth:hef:core:v1']
+    
+    short_name = 'encounter:edd'
+    
+    def generate(self):
+        counter = 0
+        enc_qs = Encounter.objects.filter(edd__isnull=False)
+        enc_qs = enc_qs.exclude(events__name__in=self.event_names)
+        log_query('EDD Encounters for %s' % self.uri, enc_qs)
+        for this_enc in enc_qs:
+            Event.create(
+                name = 'enc:edd',
+                source = self.uri, 
+                date = this_enc.edd, 
+                patient = this_enc.patient, 
+                provider = this_enc.provider,
+                emr_record = this_enc
+                )
+            counter += 1
+        log.info('Generated %s new %s events' % (counter, self.uri))
+        return counter
+
+    
 
 class PregnancyHeuristic(BaseTimespanHeuristic):
     
@@ -45,6 +79,29 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
     
     today = datetime.date.today()
     
+    @property
+    def event_heuristics(self):
+        heuristics = []
+        #-------------------------------------------------------------------------------
+        #
+        # Onset
+        #
+        #-------------------------------------------------------------------------------
+        #
+        # EDD
+        #
+        heuristics.append( EDDHeuristic() )
+        #
+        # ICD9
+        #
+        heuristics.append( DiagnosisHeuristic(
+            name = 'pregnancy-onset',
+            icd9_queries = [
+                Icd9Query(starts_with = 'V22.'),
+                Icd9Query(starts_with = 'V22.'),
+                ]
+            ) )
+        return heuristics
     
     def __init__(self):
         #-------------------------------------------------------------------------------
@@ -58,6 +115,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         # ICD9 Encounters
         #
         #-------------------------------------------------------------------------------
+        icd9_q_obj = Q() # BROKEN BROKEN BROKEN!
         onset_q_obj = (
             Q(icd9_codes__code__startswith='V22.') | 
             Q(icd9_codes__code__startswith='V23.')
@@ -186,7 +244,15 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         '''
         counter = 0
         log.info('Checking currently-pregnant patients for EoP')
-        for ts in Timespan.objects.filter(name='pregnancy', end_date=None):
+        cur_preg_qs = Timespan.objects.filter(name='pregnancy', end_date=None)
+        unbound_eop_patients = self.all_eop_qs.exclude(timespan__name='pregnancy').values('patient').distinct()
+        cur_preg_qs = cur_preg_qs.filter(patient__in=unbound_eop_patients)
+        log_query('Currently pregnant patients with an unbound EoP event', cur_preg_qs)
+        total = cur_preg_qs.count()
+        counter = 0
+        for ts in cur_preg_qs:
+            counter += 1
+            log.debug('Checking currently pregnant patient %20s / %s' % (counter, total))
             eop_enc = self._get_eop_enc(ts.patient, ts.start_date)
             edd = self._get_edd(ts.patient, ts.start_date)
             if eop_enc:
@@ -359,6 +425,9 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 eop_date = eop_enc.date
                 pattern += 'eop:eop_event'
             # Use EDD if available
+            elif (datetime.date.today() - relativedelta(days=280)) < onset_date:
+                eop_date = None
+                pattern += 'eop:cur_preg '
             elif min_edd:
                 eop_date = min_edd
                 pattern += 'eop:min_edd '
@@ -433,8 +502,13 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         preg_ts.save()
         return preg_ts
                 
+                
+preg_heuristic = PregnancyHeuristic()
 
 def get_timespan_heuristics():
-    return [
-        PregnancyHeuristic(),
-        ]
+    return [ preg_heuristic, ]
+
+
+def get_event_heuristics():
+    return preg_heuristic.event_heuristics
+
