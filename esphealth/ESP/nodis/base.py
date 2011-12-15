@@ -26,6 +26,14 @@ from ESP.hef.base import BaseHeuristic
 from ESP.hef.base import LabResultPositiveHeuristic
 from ESP.hef.models import Event
 from ESP.nodis.models import Case
+from ESP.utils.utils import wait_for_threads
+
+
+class UnknownDiseaseException(BaseException):
+    '''
+    Raised when a named disease cannot be found
+    '''
+    pass
 
 
 class DiseaseDefinition(object):
@@ -84,16 +92,60 @@ class DiseaseDefinition(object):
         '''
     
     @abc.abstractmethod
-    def generate(self):
+    def generate(self, dependencies=False):
         '''
         Examine the database and generate new cases of this disease
+        @param dependencies: Generate dependency Events for this disease?
+        @type dependencies:  Boolean
         @return: The count of new cases generated
         @rtype:  Integer
         '''
     
+    #-------------------------------------------------------------------------------
     #
-    # Concrete members
+    # Class Methods
     #
+    #-------------------------------------------------------------------------------
+    
+    @classmethod
+    def generate_all(cls, disease_list=None, dependecies=False, thread_count=HEF_THREAD_COUNT):
+        '''
+        Generate cases for all DiseaseDefinition instances.
+        @param disease_list: If specified, generete cases only for these diseases
+        @type disease_list:  [DiseaseDefinition, DiseaseDefinition, ...]
+        @param dependecies: Generate dependency Events for all diseases?
+        @type dependecies:  Boolean
+        '''
+        disease_list = set()
+        if disease_list:
+            for this_disease in disease_list:
+                assert isinstance(this_disease, cls)
+        else:
+            disease_list = cls.get_all()
+        log.debug('Diseases to be generated: %s' % disease_list)
+        if dependecies:
+            log.debug('Generating dependencies')
+            uri_set = set()
+            for this_disease in disease_list:
+                [uri_set.add(uri) for uri in this_disease.dependency_uris]
+            BaseHeuristic.generate_by_uri(uri_list=uri_set, thread_count=thread_count)
+        counter = 0
+        if thread_count == 0:
+            #
+            # No threads
+            # 
+            for this_disease in disease_list:
+                log.info('Running %s' % this_disease)
+                counter += this_disease.generate()
+        else:
+            #
+            # Threaded
+            #
+            funcs = [this_disease.generate for this_disease in disease_list]
+            counter = wait_for_threads(funcs, max_workers=thread_count)
+        log.info('Generated %20s events' % counter)
+        return counter
+
     
     @classmethod
     def get_all_test_name_search_strings(cls):
@@ -179,14 +231,10 @@ class DiseaseDefinition(object):
         return diseases
     
     @classmethod
-    def get_by_name(cls, short_name):
+    def get_by_short_name(cls, short_name):
         '''
-        Returns the named heuristic
+        Returns the disease specified by short name
         '''
-        class UnknownDiseaseException(BaseException):
-            '''
-            Raised when a named disease cannot be found
-            '''
         diseases = {}
         for d in cls.get_all():
             diseases[d.short_name] = d
@@ -194,14 +242,33 @@ class DiseaseDefinition(object):
             raise UnknownDiseaseException('Could not get disease definition for name: "%s"' % short_name)
         return diseases[short_name]
     
-    @property
-    def dependencies(self):
+    @classmethod
+    def get_by_uri(cls, uri):
         '''
-        Returns the set of all heuristics on which this disease definition depends
+        Returns the disease indicated by URI
+        '''
+        diseases = {}
+        for d in cls.get_all():
+            diseases[d.uri] = d
+        if not uri in diseases:
+            raise UnknownDiseaseException('Could not get disease definition for name: "%s"' % short_name)
+        return diseases[uri]
+    
+    #-------------------------------------------------------------------------------
+    #
+    # Instance methods
+    #
+    #-------------------------------------------------------------------------------
+    
+    @property
+    def dependency_uris(self):
+        '''
+        Returns a set of URIs describing all of the heuristics on which this 
+        disease definition depends
         '''
         heuristics = set()
-        heuristics |= set(self.event_heuristics)
-        heuristics |= set(self.timespan_heuristics)
+        [heuristics.add(h.uri) for h in self.event_heuristics]
+        [heuristics.add(h.uri) for h in self.timespan_heuristics]
         return heuristics
     
     def generate_dependencies(self, thread_count=HEF_THREAD_COUNT):
@@ -210,7 +277,7 @@ class DiseaseDefinition(object):
         definition depends.  
         '''
         log.info('Generating dependencies for %s' % self)
-        return BaseHeuristic.generate_all(self.dependencies, thread_count)
+        return BaseHeuristic.generate_by_uri(self.dependency_uris)
     
     def _create_cases_from_events(self, 
         condition,

@@ -16,9 +16,11 @@ import sys
 import optparse
 import pprint
 
+from functools import partial
+from optparse import make_option
+
 from django.db import connection
 from django.core.management.base import BaseCommand
-from optparse import make_option
 
 from ESP import settings
 from ESP.utils import utils as util
@@ -37,7 +39,7 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('--list', action='store_true', dest='list', 
             help='List available diseases'),
-        make_option('--dependencies', action='store_true', dest='dependencies', 
+        make_option('--dependencies', action='store_true', dest='dependencies', default=False,
             help='Generate dependencies before generating diseases')
         )
 
@@ -48,20 +50,10 @@ class Command(BaseCommand):
             return 
         disease_list = set()
         for short_name in args:
-            disease_list.add(DiseaseDefinition.get_by_name(short_name))
+            disease_list.add(DiseaseDefinition.get_by_short_name(short_name))
         if not args:
             disease_list = DiseaseDefinition.get_all()
-        if options['dependencies']:
-            log.info('Generating all dependencies before generating cases of disease')
-            #
-            # Build a set of all distinct dependencies, so each one is run
-            # only once.
-            #
-            dependencies = set()
-            for disease in disease_list:
-                dependencies |= set(disease.dependencies)
-            for dep in dependencies:
-                log.debug('Dependency: %s' % dep)
-            BaseHeuristic.generate_all(heuristic_list=dependencies)
-        funcs = [disease.generate for disease in disease_list]
-        wait_for_threads(funcs)
+        DiseaseDefinition.generate_all(
+            disease_list = disease_list, 
+            dependecies = options['dependencies'], 
+            )
