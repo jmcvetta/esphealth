@@ -447,7 +447,7 @@ class AbstractLabTest(object):
     @property
     def lab_orders(self):
         testmaps = LabTestMap.objects.filter(test_name = self.name).filter( Q(record_type='order') | Q(record_type='both') )
-        qs = LabOrder.objects.filter(procedure_master_num__in=testmaps.values('native_code'))
+        qs = LabOrder.objects.filter(procedure_code__in=testmaps.values('native_code'))
         log_query('Lab Orders for %s' % self.name, qs)
         return qs
     
