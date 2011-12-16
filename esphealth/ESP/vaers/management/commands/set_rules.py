@@ -4,7 +4,7 @@ from optparse import OptionParser, make_option, Values
 
 from django.core.management.base import BaseCommand
 
-from vaers.rules import define_active_rules, map_lab_tests
+from ESP.vaers.rules import define_active_rules, map_lab_tests
 
 
 
