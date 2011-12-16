@@ -220,22 +220,23 @@ class LabTestMap(models.Model):
     def __get_lab_orders_q_obj(self):
         #
         # 'procedure_master_num' is a crappy field name, and needs to be changed
+        # jason renamed to procedure_code
         if self.code_match_type == 'exact':
-            return Q(procedure_master_num__exact=self.native_code)
+            return Q(procedure_code__exact=self.native_code)
         elif self.code_match_type == 'iexact':
-            return Q(procedure_master_num__iexact=self.native_code)
+            return Q(procedure_code__iexact=self.native_code)
         elif self.code_match_type == 'startswith':
-            return Q(procedure_master_num__startswith=self.native_code)
+            return Q(procedure_code__startswith=self.native_code)
         elif self.code_match_type == 'istartswith':
-            return Q(procedure_master_num__istartswith=self.native_code)
+            return Q(procedure_code__istartswith=self.native_code)
         elif self.code_match_type == 'endswith':
-            return Q(procedure_master_num__endswith=self.native_code)
+            return Q(procedure_code__endswith=self.native_code)
         elif self.code_match_type == 'iendswith':
-            return Q(procedure_master_num__iendswith=self.native_code)
+            return Q(procedure_code__iendswith=self.native_code)
         elif self.code_match_type == 'contains':
-            return Q(procedure_master_num__contains=self.native_code)
+            return Q(procedure_code__contains=self.native_code)
         elif self.code_match_type == 'icontains':
-            return Q(procedure_master_num__icontains=self.native_code)
+            return Q(procedure_code__icontains=self.native_code)
     lab_orders_q_obj = property(__get_lab_orders_q_obj)
     
     @property
