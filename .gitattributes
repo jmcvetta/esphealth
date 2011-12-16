@@ -299,6 +299,13 @@ esphealth/ESP/utils/bogus_events_cleanup.py -text
 esphealth/ESP/utils/common.py -text
 esphealth/ESP/utils/couch.py -text
 esphealth/ESP/utils/fake_world.py -text
+esphealth/ESP/utils/hl7_builder/__init__.py -text
+esphealth/ESP/utils/hl7_builder/core.py -text
+esphealth/ESP/utils/hl7_builder/hl7.py -text
+esphealth/ESP/utils/hl7_builder/messages.py -text
+esphealth/ESP/utils/hl7_builder/nodes.py -text
+esphealth/ESP/utils/hl7_builder/segments.py -text
+esphealth/ESP/utils/hl7_builder/test.py -text
 esphealth/ESP/utils/randomizer.py -text
 esphealth/ESP/utils/status_report.py -text
 esphealth/ESP/utils/utils.py -text
