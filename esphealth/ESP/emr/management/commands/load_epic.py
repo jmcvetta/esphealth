@@ -562,7 +562,7 @@ class LabOrderLoader(BaseLoader):
             provider = self.get_provider(row['provider_id']),
             mrn = row['mrn'],
             order_id = row['natural_key'],
-            procedure_master_num = row['procedure_code'],
+            procedure_code = row['procedure_code'],
             modifier = row['procedure_modifier'],
             specimen_id = row['specimen_id'],
             date = self.date_or_none(row['ordering_date']),
