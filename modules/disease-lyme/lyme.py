@@ -25,6 +25,7 @@ from ESP.hef.base import Event
 from ESP.hef.base import PrescriptionHeuristic
 from ESP.hef.base import Dose
 from ESP.hef.base import LabResultPositiveHeuristic
+from ESP.hef.base import LabOrderHeuristic
 from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import Icd9Query
 from ESP.nodis.base import DiseaseDefinition
@@ -105,6 +106,12 @@ class Lyme(DiseaseDefinition):
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'lyme_pcr',
             ))
+        #
+        # Lab Orders
+        #
+        heuristic_list.append( LabOrderHeuristic(
+            test_name = 'lyme_elisa',
+            ))
         return heuristic_list
     
     @transaction.commit_on_success
@@ -132,7 +139,7 @@ class Lyme(DiseaseDefinition):
         # Criteria Set #2 (lyme condition 1 from esp 2.1)
         # (dx_ev_names or rx_ev_names) and a pos tests below
         #
-        rpr_ev_names = [dx_ev_names, rx_ev_names]
+        rpr_ev_names = dx_ev_names + rx_ev_names
             
         ig_ev_names = [   
             'lx:lyme_elisa:positive',
@@ -155,13 +162,18 @@ class Lyme(DiseaseDefinition):
         #
         
         rash_ev_names = ['dx:rash']
-        rash_rxtest_ev_names = ['rx:doxycycline','lx:lyme_elisa:order']
+        rash_rx_ev_names = ['rx:doxycycline']
+        rash_lx_ev_names = ['lx:lyme_elisa:order']
         
         rash_qs = Event.objects.filter(
             name__in = rash_ev_names,
-            patient__event__name__in = rash_rxtest_ev_names,
+            patient__event__name__in = rash_rx_ev_names,
             patient__event__date__gte = (F('date') - 14 ),
             patient__event__date__lte = (F('date') + 14 ),
+            ).filter(
+	            patient__event__name__in = rash_lx_ev_names,
+	            patient__event__date__gte = (F('date') - 14 ),
+	            patient__event__date__lte = (F('date') + 14 ),
             )
         #
         # Combined Criteria
@@ -169,7 +181,7 @@ class Lyme(DiseaseDefinition):
         combined_criteria_qs = dxrx_event_qs | test_event_qs | rash_qs
         combined_criteria_qs = combined_criteria_qs.exclude(case__condition='lyme')
         combined_criteria_qs = combined_criteria_qs.order_by('date')
-        all_event_names = dx_ev_names + rx_ev_names + rpr_ev_names + ig_ev_names + rash_ev_names + rash_rxtest_ev_names
+        all_event_names = dx_ev_names + rx_ev_names + rpr_ev_names + ig_ev_names + rash_ev_names + rash_rx_ev_names + rash_lx_ev_names
         counter = 0
         for this_event in combined_criteria_qs:
             existing_cases = Case.objects.filter(
