@@ -383,6 +383,7 @@ esphealth/doc/unit-test/tb/epicres.esp.11112011 -text
 esphealth/doc/unit-test/tb/epicvis.esp.11112011 -text
 esphealth/etc/templates/case_report/odh_hl7.txt -text
 esphealth/install-system-dependencies.sh -text
+esphealth/pyrequirements.txt -text
 esphealth/requirements.frozen.txt -text
 esphealth/requirements.txt -text
 esphealth/setup.sh -text
@@ -443,6 +444,7 @@ esphealth/unit-test/vaers/epicmem.esp.12092011 -text
 esphealth/unit-test/vaers/epicpro.esp.11032011 -text
 esphealth/unit-test/vaers/epicres.esp.12092011 -text
 esphealth/unit-test/vaers/epicvis.esp.12092011 -text
+esphealth/update.sh -text
 modules/disease-chlamydia/__init__.py -text
 modules/disease-chlamydia/chlamydia.py -text
 modules/disease-chlamydia/setup.py -text
