@@ -169,6 +169,7 @@ class SyndromeHeuristic(EncounterHeuristic):
         folder = report_folder(date, end_date, subfolder='reports')
 
         log.info('Aggregate site report for %s on %s-%s' % (self.name, date, end_date))
+        log.info('encounter date,zip,syndrome,syndrome events,total encounters,pct syndrome')
         header = ['encounter date', 'zip', 'syndrome', 'syndrome events', 'total encounters', 
                   'pct syndrome']
         
@@ -257,7 +258,7 @@ class SyndromeHeuristic(EncounterHeuristic):
         folder = report_folder(date, end_date, subfolder='reports')
         
         log.info('Detailed site report for %s on %s-%s' % (self.name, date, end_date))
-
+        log.info('syndrome,encounter date,zip residence,zip site,age 5yrs,icd9,temperature,encounters at age and residential zip,encounters at age and site zip')
         header = ['syndrome', 'encounter date', 'zip residence', 'zip site', 'age 5yrs', 'icd9', 
                   'temperature',  'encounters at age and residential zip', 
                   'encounters at age and site zip']
