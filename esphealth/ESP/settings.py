@@ -149,7 +149,8 @@ TEMPLATE_DIRS = (
     #os.path.join(TOPDIR, 'templates/pages/vaers'),
     #os.path.join(TOPDIR, 'templates/pages/ss')
 )
-INSTALLED_APPS = ( 'django.contrib.auth',
+INSTALLED_APPS = (
+    'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
@@ -159,9 +160,9 @@ INSTALLED_APPS = ( 'django.contrib.auth',
     'ESP.emr',
     'ESP.hef',
     'ESP.nodis',
-    #'ESP.vaers',
-    #'ESP.ss',
-    #'ESP.phit',
+    'ESP.vaers',
+    'ESP.ss',
+    'ESP.phit',
     'ESP.ui',
     'south',
 )
