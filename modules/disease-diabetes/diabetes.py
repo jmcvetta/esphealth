@@ -159,12 +159,6 @@ class Diabetes(DiseaseDefinition):
                 ]
             ) )
         heuristics.append (DiagnosisHeuristic(
-            name = 'gestational-diabetes',
-            icd9_queries = [
-                Icd9Query(starts_with = '648.8'),
-                ]
-            ) )
-        heuristics.append (DiagnosisHeuristic(
             name = 'diabetes:all-types',
             icd9_queries = [
                 Icd9Query(starts_with = '250.'),
