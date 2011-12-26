@@ -178,8 +178,8 @@ esphealth/ESP/settings.py -text
 esphealth/ESP/setup.py -text
 esphealth/ESP/ss/__init__.py -text
 esphealth/ESP/ss/definitions.py -text
+esphealth/ESP/ss/fixtures/initial_data.json -text
 esphealth/ESP/ss/fixtures/readme.txt -text
-esphealth/ESP/ss/fixtures/site.json -text
 esphealth/ESP/ss/heuristics.py -text
 esphealth/ESP/ss/hsph.py -text
 esphealth/ESP/ss/legacy.py -text
