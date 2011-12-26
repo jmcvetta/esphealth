@@ -10,6 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from ESP.conf.common import EPOCH
 from ESP.emr.models import Encounter, Patient
 from ESP.hef.base import DiagnosisHeuristic
+from ESP.hef.base import Icd9Query
 from ESP.hef.models import Event
 from ESP.utils.utils import log, date_from_str, str_from_date, days_in_interval, timeit
 from ESP.ss.utils import report_folder
@@ -42,8 +43,15 @@ from definitions import lymphatic, lower_gi, upper_gi, neurological, respiratory
 
 
 class SyndromeHeuristic(DiagnosisHeuristic):
+    
     def encounters(self, **kw):
-        return Encounter.objects.syndrome_care_visits().filter(icd9_codes__in=self.icd9s)
+        '''
+        Overrides DiagnosisHeuristic.encounter property to return only 
+        encounters matching both diagnosis codes and syndrome.  
+        '''
+        qs = Encounter.objects.syndrome_care_visits() # FIXME: Bad location for syndrome_care_visits()
+        qs = qs & super(SyndromeHeuristic, self).encounters
+        return qs
 
     def generate_events(self, **kw):
         created = 0
@@ -64,16 +72,14 @@ class SyndromeHeuristic(DiagnosisHeuristic):
             if patient_zip: patient_zip = patient_zip[:5].strip()
             
             ev, new = NonSpecialistVisitEvent.objects.get_or_create(
-                name=self.long_name, date=encounter.date, patient=encounter.patient, 
+                name=self.name, provider=encounter.provider, date=encounter.date, patient=encounter.patient, 
                 content_type=encounter_type, object_id=encounter.id, 
-                defaults = {'run':run, 'reporting_site':site, 
+                defaults = {'reporting_site':site, 
                             'patient_zip_code':patient_zip, 'encounter':encounter
                             }
                 )
             if new: created+= 1
                 
-        run.status = 's'
-        run.save()
         log.info('%s events detected' % detected)
         log.info('%s events created' % created)
 
@@ -118,7 +124,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
         encounters = Encounter.objects.syndrome_care_visits(sites=Site.site_ids()).values(
             'date', 'patient__zip5').exclude(patient__zip5__isnull=True)
 
-        events = NonSpecialistVisitEvent.objects.filter(name=self.long_name).values(
+        events = NonSpecialistVisitEvent.objects.filter(name=self.name).values(
             'date', 'patient_zip_code').exclude(patient_zip_code__isnull=True)
         
         if exclude_duplicates: 
@@ -187,7 +193,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
         encounters = Encounter.objects.syndrome_care_visits(sites=Site.site_ids()).values(
             'date', 'site_natural_key')
 
-        events = NonSpecialistVisitEvent.objects.filter(name=self.long_name).values(
+        events = NonSpecialistVisitEvent.objects.filter(name=self.name).values(
             'date', 'reporting_site__zip_code')
         
         if exclude_duplicates: 
@@ -269,7 +275,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
         outfile.write('\t'.join(header) + '\n')
 
         events = NonSpecialistVisitEvent.objects.filter(
-            name=self.long_name, date__gte=date, date__lte=end_date, reporting_site__isnull=False
+            name=self.name, date__gte=date, date__lte=end_date, reporting_site__isnull=False
             ).order_by('date', 'patient_zip_code')
         
         for ev in events:                
@@ -278,7 +284,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
             patient_age_group = ev.patient.age_group(when=ev.date)
             
             encounter_codes = [x.code for x in ev.encounter.icd9_codes.all()]
-            icd9_codes = ' '.join([code for code in encounter_codes if code in self.icd9s])
+            icd9_codes = ' '.join([code for code in encounter_codes if code in self.icd9_queries])
             
             count_by_locality_and_age = ev.similar_age_group().filter(
                 patient_zip_code=ev.patient_zip_code, date=ev.date).count()
@@ -298,21 +304,18 @@ class SyndromeHeuristic(DiagnosisHeuristic):
         outfile.close()
 
 class InfluenzaHeuristic(SyndromeHeuristic):
+    
     FEVER_TEMPERATURE = 100.0 # Temperature in Fahrenheit
+    
     def matches(self, **kw):        
-
         begin = kw.get('begin_date', EPOCH)
         end = kw.get('end_date', datetime.date.today())
-
         q_measured_fever = Q(temperature__gte=InfluenzaHeuristic.FEVER_TEMPERATURE)
         q_unmeasured_fever = Q(temperature__isnull=True, icd9_codes__in=ICD9_FEVER_CODES)
-        q_codes = Q(icd9_codes__in=self.icd9s)
-        
         # Make it really readable. 
         # (icd9 code + measured fever) or (icd9 code + icd9code for fever)
         # Logically: (a&b)+(a&c) = a&(b+c)
-        influenza = (q_codes & (q_measured_fever | q_unmeasured_fever))
-                
+        influenza = (q_measured_fever | q_unmeasured_fever)
         return self.encounters().filter(influenza).filter(date__gte=begin, date__lte=end)
 
                 
@@ -322,7 +325,8 @@ class OptionalFeverSyndromeHeuristic(SyndromeHeuristic):
         # The only reason why we are overriding __init__ is because
         # each the heuristic depends on the icd9 as well as if a fever
         # is required for that icd9.
-        super(OptionalFeverSyndromeHeuristic, self).__init__(name, long_name, icd9_fever_map.keys())
+        icd9_queries = [Icd9Query(exact=icd9_str) for icd9_str in icd9_fever_map.keys()]
+        super(OptionalFeverSyndromeHeuristic, self).__init__(name, long_name, icd9_queries)
         self.required_fevers = icd9_fever_map
 
     def matches(self, **kw):
@@ -351,7 +355,7 @@ class OptionalFeverSyndromeHeuristic(SyndromeHeuristic):
 def make_long_name(name):
     return 'SS:' + name
 
-ili = InfluenzaHeuristic('ILI', make_long_name('ILI'), dict(influenza_like_illness).keys())
+'''
 haematological = OptionalFeverSyndromeHeuristic('Haematological', make_long_name('Haematological'), dict(haematological))
 lymphatic = OptionalFeverSyndromeHeuristic('Lymphatic', make_long_name('Lymphatic'), dict(lymphatic))
 rash = OptionalFeverSyndromeHeuristic('Rash', make_long_name('Rash'), dict(rash))
@@ -360,17 +364,19 @@ respiratory = SyndromeHeuristic('Respiratory', make_long_name('Respiratory'), di
 lower_gi = SyndromeHeuristic('Lower GI', make_long_name('Lower GI'), dict(lower_gi).keys())
 upper_gi = SyndromeHeuristic('Upper GI', make_long_name('Upper GI'), dict(upper_gi).keys())
 neuro = SyndromeHeuristic('Neurological', make_long_name('Neurological'), dict(neurological).keys())
-
+'''
 
 def syndrome_heuristics():
+    icd9_queries = [Icd9Query(exact=icd9_str) for icd9_str in dict(influenza_like_illness).keys()]
+    ili = InfluenzaHeuristic('ili',  icd9_queries)
     return {
-        'ili':ili,
-        'haematological':haematological,
-        'lymphatic':lymphatic,
-        'rash':rash,
-        'lesions':lesions,
-        'respiratory':respiratory,
-        'lower_gi':lower_gi,
-        'upper_gi':upper_gi,
-        'neuro':neuro
+        'ili':ili 
+        #'haematological':haematological,
+        #'lymphatic':lymphatic,
+        #'rash':rash,
+        #'lesions':lesions,
+        #'respiratory':respiratory,
+        #'lower_gi':lower_gi,
+        #'upper_gi':upper_gi,
+        #'neuro':neuro      
     }
