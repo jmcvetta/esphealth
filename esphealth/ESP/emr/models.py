@@ -401,7 +401,7 @@ class Patient(BaseMedicalRecord):
         ceiling = kw.pop('ceiling', 80)
         above_ceiling = ceiling + interval
 
-        age = self._get_age(when=when)        
+        age = self.get_age(when=when)        
         return (interval * int(min(age.days/365.25, above_ceiling)/interval)) if age else None
         
     def __get_tel_numeric(self):
@@ -867,7 +867,7 @@ class EncounterManager(models.Manager):
             date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
 
     def syndrome_care_visits(self, sites=None):
-        qs = self.filter(event_type__in=['URGENT CARE', 'VISIT'])
+        qs = self.filter(encounter_type__in=['URGENT CARE', 'VISIT'])
         if sites: qs = qs.filter(site_natural_key__in=sites)
         return qs
 
