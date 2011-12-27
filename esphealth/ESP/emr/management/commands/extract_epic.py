@@ -34,7 +34,6 @@ class Command(BaseCommand):
         log.info('Extracting ESP data')
         print 'Extracting ESP data'
         
-        
         #file_path = os.path.join(DATA_DIR, 'fake', self.__class__.filename(d))
                  
         count = 0
@@ -56,9 +55,9 @@ class Command(BaseCommand):
         
         count = 0    
         encounter_writer = EncounterWriter()
-        for e in Encounter.objects.order_by('native_encounter_num'):
+        for imm in Encounter.objects.order_by('native_encounter_num'):
             count =count +1 
-            encounter_writer.write_row(e, e.icd9_codes_str.split(','))
+            encounter_writer.write_row(imm, imm.icd9_codes_str.split(','))
         log.info('Extracted %s Encounters from ESP to Epic ETL files' % count)  
         print 'Extracted %s Encounters from ESP to Epic ETL files' % count
         
@@ -69,6 +68,32 @@ class Command(BaseCommand):
             prescription_writer.write_row(meds)
         log.info('Extracted %s Prescriptions from ESP to Epic ETL files' % count)  
         print 'Extracted %s Prescriptions from ESP to Epic ETL files' % count
+        
+        count = 0    
+        immunization_writer = ImmunizationWriter()
+        for imm in Immunization.objects.order_by('imm_id_num'):
+            count =count +1 
+            immunization_writer.write_row(imm)
+        log.info('Extracted %s Immunizations from ESP to Epic ETL files' % count)  
+        print 'Extracted %s Immunizations from ESP to Epic ETL files' % count
+        
+        count = 0    
+        laborder_writer = LabOrderWriter()
+        for lx_order in LabOrder.objects.order_by('order_id'):
+            count =count +1 
+            laborder_writer.write_row(lx_order)
+        log.info('Extracted %s Lab Orders from ESP to Epic ETL files' % count)  
+        print 'Extracted %s Lab Orders from ESP to Epic ETL files' % count
+       
+       
+        count = 0    
+        allergy_writer = AllergyWriter()
+        for allergy in Allergy.objects.order_by('problem_id'):
+            count =count +1 
+            allergy_writer.write_row(allergy)
+        log.info('Extracted %s Allergies from ESP to Epic ETL files' % count)  
+        print 'Extracted %s Allergies from ESP to Epic ETL files' % count
+       
         
 '''       
         self.folder_check()
