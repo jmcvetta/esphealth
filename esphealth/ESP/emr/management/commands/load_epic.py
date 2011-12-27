@@ -272,13 +272,24 @@ class BaseLoader(object):
     
     def capitalize(self, s):
         '''
-        Returns a capitalized, Django-safe version of string s.  
+        Returns a capitalized, Django-safe version of string s. first letter capitalized 
         Returns None if s evaluates to None, including blank string.
         '''
         if s:
             return string.capwords( smart_str(s) )
         else:
             return None
+    
+    def up(self, s):
+        '''
+        Returns a all upper case string, .  
+        Returns None if s evaluates to None, including blank string.
+        '''
+        if s:
+            return string.upper( smart_str(s) )
+        else:
+            return None
+
     
     @transaction.commit_on_success
     def load(self):
@@ -679,6 +690,7 @@ class EncounterLoader(BaseLoader):
     def load_row(self, row):
         # Util methods
         cap = self.capitalize
+        up = self.up
         son = self.string_or_none
         daton = self.date_or_none
         decon = self.decimal_or_none
@@ -690,7 +702,7 @@ class EncounterLoader(BaseLoader):
             'provider': self.get_provider(row['provider_id_num']),
             'date': daton(row['encounter_date']),
             'native_site_num': son( row['dept_id_num'] ),
-            'event_type': cap(row['event_type']),
+            'event_type': up(row['event_type']),
             'closed_date': daton(row['closed_date']),
             'site_name': cap(row['dept_name']),
             'temperature': decon(row['temp']),
