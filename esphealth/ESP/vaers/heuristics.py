@@ -10,7 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from ESP.hef.base import BaseHeuristic
 from ESP.conf.common import EPOCH
-from ESP.conf.models import CodeMap
+from ESP.conf.models import LabTestMap # renamed from 2.2 codemap
 from ESP.static.models import Icd9
 from ESP.emr.models import Immunization, Encounter, LabResult
 from ESP.vaers.models import AdverseEvent
@@ -20,7 +20,7 @@ from ESP.utils.utils import log
 
 import rules
 
-
+VAERS_CORE_URI = 'urn:x-esphealth:vaers:core:v1'
 LAB_TESTS_NAMES = rules.VAERS_LAB_RESULTS.keys()
 
 USAGE_MSG = '''\
@@ -34,8 +34,22 @@ USAGE_MSG = '''\
 class AdverseEventHeuristic(BaseHeuristic):
     def __init__(self, event_name, verbose_name=None):
         self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
-        super(AdverseEventHeuristic, self).__init__(event_name, verbose_name)
-
+        assert event_name
+        assert verbose_name
+        self.name = event_name
+        self.long_name = verbose_name
+    
+        #super(AdverseEventHeuristic, self).__init__(event_name, verbose_name)
+        
+     
+    @property
+    def core_uris(self):
+        # Only this version of HEF is supported
+        return [VAERS_CORE_URI]
+    
+    @property
+    def short_name(self):
+        return 'adverse event:%s' % self.name
         
             
 class VaersFeverHeuristic(AdverseEventHeuristic):
@@ -43,14 +57,20 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
         self.category = 'auto'
         super(VaersFeverHeuristic, self).__init__(
             'VAERS Fever', verbose_name='Fever reaction to immunization')
+    
+ 
+    
+    uri = 'urn:x-esphealth:heuristic:channing:vaersfever:v1'
+      
 
     def matches(self, **kw):
-        raise NotImplementedError('Last run support no longer available.  This method must be refactored')
+        #raise NotImplementedError('Last run support no longer available.  This method must be refactored')
         incremental = kw.get('incremental', False)
-        
+        # TODO review with Jason about last run
         #last_run = Run.objects.filter(status='s').aggregate(ts=Max('timestamp'))['ts']
         
-        begin = (incremental and last_run) or kw.get('begin_date') or EPOCH
+        #begin = (incremental and last_run) or kw.get('begin_date') or EPOCH
+        begin = (incremental ) or kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
 
         log.info('Finding fever events from %s to %s' % (begin, end))
@@ -60,7 +80,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
 
                     
 
-    def generate_events(self, **kw):
+    def generate(self, **kw):
         log.info('Generating events for %s' % self.name)
         matches = self.matches(**kw)
         
@@ -126,6 +146,8 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         
         super(DiagnosisHeuristic, self).__init__(event_name, verbose_name=self.verbose_name)
             
+    uri = 'urn:x-esphealth:heuristic:channing:vaersdx:v1'
+            
     def matches(self, **kw):
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
@@ -133,11 +155,8 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         return Encounter.objects.following_vaccination(rules.TIME_WINDOW_POST_EVENT).filter(
             date__gte=begin, date__lte=end, icd9_codes__in=self.icd9s).distinct()
 
-        
-
-
-
-    def generate_events(self, **kw):
+  
+    def generate(self, **kw):
         log.info('Generating events for %s' % self.name)
         counter = 0
 
@@ -203,6 +222,8 @@ class VaersLxHeuristic(AdverseEventHeuristic):
 
         super(VaersLxHeuristic, self).__init__(self.name, self.name)
 
+    uri = 'urn:x-esphealth:heuristic:channing:vaerslx:v1'
+    
     def vaers_heuristic_name(self):
         return 'VAERS: ' + self.name
 
@@ -251,12 +272,12 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 excluded_due_to_history(c, comparator, baseline)]
 
     
-    def generate_events(self, **kw):
+    def generate(self, **kw):
         log.info('Generating events for %s' % self.name)
         counter = 0
         
-        begin_date = kw.get('begin_date', None) or EPOCH
-        end_date = kw.get('end_date', None) or datetime.date.today()
+        #begin_date = kw.get('begin_date', None) or EPOCH
+        #end_date = kw.get('end_date', None) or datetime.date.today()
 
         matches = self.matches(**kw)
 
@@ -280,7 +301,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                             'content_type':lab_type}
                         )
                 except Exception, why:
-                    import pdb; pdb.set_trace()
+                    pdb.set_trace()
 
                     
                 if created: counter += 1
@@ -343,7 +364,7 @@ def make_lab_heuristics(lab_type):
 def do_lab_codemapping(heuristics):
     for h in heuristics:
         for code in h.lab_codes:
-            c, created = CodeMap.objects.get_or_create(native_code=code, heuristic=h.name, 
+            c, created = LabTestMap.objects.get_or_create(native_code=code, heuristic=h.name, 
                                                        native_name=h.vaers_heuristic_name())
             msg = ('New mapping %s' % c) if created else ('Mapping %s already on database' % c)
             log.info(msg)
@@ -370,7 +391,7 @@ def lab_heuristics():
 
 def main():
     # 
-    # TODO: We need a lockfile or some othermeans to prevent multiple 
+    # TODO: We need a lockfile or some other means to prevent multiple 
     # instances running at once.
     #
     parser = optparse.OptionParser(usage=USAGE_MSG)
@@ -383,10 +404,6 @@ def main():
                       help='Run all heuristics')
     parser.add_option('-m', '--mapping', action='store_true', dest='map', help='Build CodeMap for Lab Tests')
     parser.add_option('-e', '--events', action='store_true', dest='events', help='Generate Events')
-
-
-
-
 
     parser.add_option('--begin', action='store', dest='begin', type='string', 
                       metavar='DATE', help='Only events occurring after date')
@@ -430,10 +447,7 @@ def main():
 
     if options.events: 
         log.info('Generating events from %s to %s' % (begin_date, end_date))
-        [h.generate_events(begin_date=begin_date, end_date=end_date) for h in heuristics]
-
-        
-        
+        [h.generate(begin_date=begin_date, end_date=end_date) for h in heuristics]
 
 
 if __name__ == '__main__':

@@ -77,7 +77,7 @@ def main():
 
     if options.create: 
         log.info('Creating and generating events from %s to %s' % (begin_date, end_date))
-        for h in heuristics: h.generate_events(begin_date=begin_date, end_date=end_date) 
+        for h in heuristics: h.generate(begin_date=begin_date, end_date=end_date) 
 
         
     if options.reports:
