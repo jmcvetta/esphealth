@@ -909,7 +909,7 @@ def main():
 if __name__ == "__main__":
     rash = heuristics.rash_syndrome
     print 'generating events for %s' % rash.heuristic_name
-    rash.generate_events()
+    rash.generate()
 
     print 'generating counts_by_zip for %s' % rash.heuristic_name
     print rash.counts_by_site_zip()

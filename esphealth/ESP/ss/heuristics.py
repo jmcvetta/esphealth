@@ -53,7 +53,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
         qs = qs & super(SyndromeHeuristic, self).encounters
         return qs
 
-    def generate_events(self, **kw):
+    def generate(self, **kw):
         created = 0
         detected = 0
         encounter_type = ContentType.objects.get_for_model(Encounter)

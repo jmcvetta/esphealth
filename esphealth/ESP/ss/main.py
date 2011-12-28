@@ -70,7 +70,7 @@ def main():
         if not Site.objects.count(): make_non_specialty_clinics()
         for heuristic in heuristics:
             log.info('Generating events for %s' % heuristic.name)
-            heuristic.generate_events(begin_date=begin_date, end_date=end_date)
+            heuristic.generate(begin_date=begin_date, end_date=end_date)
             
         
     if options.reports:
