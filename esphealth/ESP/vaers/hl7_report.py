@@ -62,7 +62,7 @@ class AdverseReactionReport(object):
                 
 
         
-        age = self.event.patient.age_str
+        age = self.event.patient._get_age_str()
         if age:
             obx_patient_age = OBX()
             obx_patient_age.value_type = 'NM'
