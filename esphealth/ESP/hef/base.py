@@ -1089,7 +1089,7 @@ class LabResultWesternBlotHeuristic(BaseLabResultHeuristic):
     def event_names(self):
         return [self.positive_event_name, self.negative_event_name]
     
-    def generate_events(self):
+    def generate(self):
         log.debug('Generating events for "%s"' % self)
         counter = 0
         # Find potential positives -- tests whose results contain at least one 
