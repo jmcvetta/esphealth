@@ -3,20 +3,23 @@ author: carolina chacin
 updated: dec 12 2011
 
 
-VAERS
-5 patients (should generate 4 cases)	
+VAERS (call set rules first one time. save in backup and move after sync db.)
+5 patients (should generate 5 cases)	
 (all encounters have to be in the non specialty site for urgent care)
-1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS in rules.py that has an ignore period 12
-same patient with 1 encounter  with same diagnostic in the list of VAERS_DIAGNOSTICS 
-  that has an ignore period 12 and that happened within the ignore period of above encounter
-1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS  that does not have an ignore period
-1 patient with 1 lab test in the list of VAERS_LAB_RESULTS that meets the criteria of one defined in rules.py
-1 patient with an immunization ? tb?
-same patient with 1 encounter with fever (temp over 100.4), and set to URGENT CARE 
-  within TIME_WINDOW_POST_EVENT (60) immunization above. NEG
-1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS 
-  that has an ignore period 12 but not in the specialty clinic. NEG
-
+1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS (bells) in rules.py that has an ignore period 12
+  same patient with 1 encounter with same diagnostic in the list of VAERS_DIAGNOSTICS 
+  that has an ignore period 12 and that happened within the ignore period of above encounter (plat)
+  same patient with immunization 60 days prior to first dx 
+1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS (has seizures febrile and rotq) that does not have an ignore period (patri)
+   same patient with immunization 60 days prior to dx 
+1 patient with 1 lab test in the list of VAERS_LAB_RESULTS that meets the criteria of one defined in rules.py (who r)
+ same patient with immunization 60 days prior to lab. 
+1 patient with an immunization from table static.vaccine 
+  same patient with 1 encounter with fever (temp > 100.4), and set to URGENT CARE 
+  within TIME_WINDOW_POST_EVENT (60 days) immunization. (klompas) 
+1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTIc (guilian barre) 
+  that has an ignore period 12 but not in the specialty clinic.  (klruska)
+  same patient with immunization within 60 days prior to dx
 
 SS
 3 patients (should generate 2 cases)
