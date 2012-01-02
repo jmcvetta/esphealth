@@ -265,6 +265,16 @@ class BaseLoader(object):
             return string.capwords( smart_str(s) )
         else:
             return None
+        
+    def up(self, s):
+        '''
+        Returns a string with upper caseliz, Django-safe version of string s.  
+        Returns None if s evaluates to None, including blank string.
+        '''
+        if s:
+            return string.upper( smart_str(s) )
+        else:
+            return None
     
     @transaction.commit_on_success
     def load(self):
@@ -611,6 +621,7 @@ class EncounterLoader(BaseLoader):
     def load_row(self, row):
         # Util methods
         cap = self.capitalize
+        up = self.up
         son = self.string_or_none
         dton = self.date_or_none
         flon = self.float_or_none
@@ -623,7 +634,7 @@ class EncounterLoader(BaseLoader):
             'date': dton(row['encounter_date']),
             'raw_date': son(row['encounter_date']),
             'site_natural_key': son( row['dept_id_num'] ),
-            'encounter_type': cap(row['event_type']),
+            'encounter_type': up(row['event_type']),
             'date_closed': dton(row['closed_date']),
             'raw_date_closed': son(row['closed_date']),
             'site_name': cap(row['dept_name']),
