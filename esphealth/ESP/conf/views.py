@@ -37,6 +37,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 
 from ESP.settings import ROWS_PER_PAGE
 from ESP.conf.models import IgnoredCode
+from ESP.conf.models import LabTestMap
 from ESP.emr.models import LabResult
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
@@ -56,7 +57,7 @@ def heuristic_mapping_report(request):
     mapped = []
     unmapped = []
     for heuristic in BaseHeuristic.lab_heuristics():
-        maps = CodeMap.objects.filter(heuristic=heuristic.name)
+        maps = LabTestMap.objects.filter(heuristic=heuristic.name)
         if not maps:
             unmapped.append(heuristic)
             continue

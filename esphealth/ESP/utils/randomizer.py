@@ -8,6 +8,9 @@ def string(length=10):
     chars = pstring.digits + pstring.letters
     return ''.join([random.choice(chars) for x in xrange(length)])
 
+def numeric_id():
+    return random.randrange(1, 100500)
+
 def first_name():
     return random.choice(common.FIRST_NAMES)
 
@@ -19,6 +22,23 @@ def date_of_birth(as_string=False, format='%Y%m%d'):
     dob = datetime.date.today() - datetime.timedelta(days=days_old)
     
     return dob.strftime(format) if as_string else dob         
+
+rec =0
+def autoIncrement():
+        global rec
+        pStart = 1 #adjust start value, if req'd 
+        pInterval = 1 #adjust interval value, if req'd
+        if (rec == 0): 
+            rec = pStart 
+        else: 
+            rec = rec + pInterval 
+        return rec
+ 
+def date_range(as_string=False, format='%Y%m%d'):
+    days_range = random.randrange(0, 365*3) # Up to 3 years 
+    date = datetime.date.today() - datetime.timedelta(days=days_range)
+    
+    return date.strftime(format) if as_string else date         
 
 def gender():
     return ('M' if random.random() <= 0.49 else 'F')

@@ -268,7 +268,7 @@ class BaseLoader(object):
         
     def up(self, s):
         '''
-        Returns a string with upper caseliz, Django-safe version of string s.  
+        Returns a all upper case string, . 
         Returns None if s evaluates to None, including blank string.
         '''
         if s:
@@ -519,7 +519,7 @@ class LabResultLoader(BaseLoader):
             if len(component) > 20:
                 log.warning('Component field is greater than 20 characters, and will be truncated:')
                 log.warning('    "%s"' % component)
-            native_code = native_code + '--' + component[0:20] 
+            native_code = component[0:20] 
         l = LabResult()
         l.provenance = self.provenance
         l.patient = self.get_patient(row['patient_id'])
@@ -844,10 +844,6 @@ class ProblemLoader(BaseLoader):
             status = row['problem_status'],
             comment = row['comment']
             )
-
-
-
-
 
 class Command(LoaderCommand):
     #
