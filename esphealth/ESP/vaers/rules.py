@@ -515,11 +515,9 @@ VAERS_DIAGNOSTICS = {
 def map_lab_tests():
     for lab_type, lab in VAERS_LAB_RESULTS.items():
         for code in set(lab['codes']):
-            c, created = LabTestMap.objects.get_or_create(native_code=code, heuristic=lab_type)
+            c, created = LabTestMap.objects.get_or_create(native_code=code, code_match_type=lab_type)
             msg = ('New mapping %s' % c) if created else 'Mapping %s already on database' % c
-            log.info(msg)
-                
-                
+            log.info(msg)                            
 
 
 def define_active_rules():
