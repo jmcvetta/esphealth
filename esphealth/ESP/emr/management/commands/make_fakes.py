@@ -431,6 +431,8 @@ class ImmunizationWriter(EpicWriter):
     
     fields = [
         'patient_id', 
+        #'mrn',
+        'provider_id',
         'type', 
         'name',
         'date',
@@ -443,6 +445,7 @@ class ImmunizationWriter(EpicWriter):
     def write_row(self, immunization, **kw):
         self.writer.writerow({
                 'patient_id':immunization.patient.natural_key, 
+                #'medical_record_num': immunization.patient.mrn,
                 'type':immunization.imm_type, 
                 'name':immunization.name,
                 'date':str_from_date(immunization.date) or '',

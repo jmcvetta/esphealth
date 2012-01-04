@@ -484,7 +484,7 @@ class LabResultLoader(BaseLoader):
     
     fields = [
         'patient_id',          # 1
-        'mrn',   # 2
+        'mrn',                  # 2
         'order_natural_key',    # 3
         'order_date',           # 4
         'result_date',          # 5
@@ -525,7 +525,7 @@ class LabResultLoader(BaseLoader):
         l.patient = self.get_patient(row['patient_id'])
         l.provider = self.get_provider(row['provider_id'])
         l.mrn = row['mrn']
-        l.order_num = row['order_natural_key']
+        l.natural_key = row['order_natural_key']
         l.date = self.date_or_none(row['order_date'])
         l.result_date = self.date_or_none(row['result_date'])
         l.native_code = native_code
@@ -757,13 +757,13 @@ class ImmunizationLoader(BaseLoader):
         i.provenance = self.provenance
         i.updated_by = UPDATED_BY
         i.patient = self.get_patient(row['patient_id'])
-        i.type = row['type']
+        i.imm_type = row['type']
         i.name = row['name']
         i.date = self.date_or_none(row['date'])
         i.dose = row['dose']
         i.manufacturer = row['manufacturer']
         i.lot = row['lot']
-        i.imm_id_num = row['natural_key']
+        i.natural_key = row['natural_key']
         i.save()
         log.debug('Saved immunization object: %s' % i)
 
