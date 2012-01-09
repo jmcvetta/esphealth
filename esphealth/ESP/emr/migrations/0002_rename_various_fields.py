@@ -27,7 +27,8 @@ class Migration(SchemaMigration):
         # models was changed to have procedure code, it needs it for other commands to work but 
         # if we change models the first line of this migration will give errors, after clean synchdb, 
         # comment it out to fix but it is needed for migration.
-        db.rename_column('emr_laborder', 'procedure_master_num', 'procedure_code')
+        #tODO check this
+        #db.rename_column('emr_laborder', 'procedure_master_num', 'procedure_code')
         db.rename_column('emr_laborder', 'order_id', 'natural_key')
         db.rename_column('emr_laborder', 'modifier', 'procedure_modifier')
         #
