@@ -146,8 +146,8 @@ TEMPLATE_DIRS = (
     os.path.join(CONFIG_FOLDER, 'templates'),
     os.path.join(TOPDIR, 'templates'),
     os.path.join(TOPDIR, 'templates/esp'),
-    #os.path.join(TOPDIR, 'templates/pages/vaers'),
-    #os.path.join(TOPDIR, 'templates/pages/ss')
+    os.path.join(TOPDIR, 'templates/pages/vaers'),
+    os.path.join(TOPDIR, 'templates/pages/ss')
 )
 INSTALLED_APPS = (
     'django.contrib.auth',

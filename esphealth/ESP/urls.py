@@ -25,10 +25,12 @@ urlpatterns = patterns('',
     # Core Application
     url(r'^$', status_page, name='status'),
     
+    # Vaers
+    url(r'^vaers/', include('ESP.vaers.urls')),
+
     # Syndromic Surveillance
     url(r'^ss/', include('ESP.ss.urls')),
 
-    
     # Login and Logout
     url(r'^login/?$', login, {'template_name': 'login.html'}, name='login'),
     url(r'^logout/?$', logout, {'next_page': '/'}, name='logout'),
