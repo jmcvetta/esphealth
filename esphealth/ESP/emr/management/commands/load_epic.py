@@ -612,8 +612,8 @@ class EncounterLoader(BaseLoader):
         'o2_stat',
         'peak_flow',
         'icd9s',
-        'bmi',
-        'raw_diagnosis'
+        'raw_diagnosis',
+        'bmi'
         ]
 
 
@@ -707,7 +707,7 @@ class PrescriptionLoader(BaseLoader):
         'provider_id',
         'order_date',
         'status',
-        'drug_name',
+        'directions',#added in 3
         'ndc',
         'drug_desc',
         'quantity',
@@ -729,7 +729,8 @@ class PrescriptionLoader(BaseLoader):
         p.natural_key = row['natural_key']
         p.date = self.date_or_none(row['order_date'])
         p.status = row['status']
-        p.name = row['drug_name']
+        p.name = row['drug_desc']
+        p.directions=row['directions']
         p.code = row['ndc']
         p.quantity = row['quantity']
         p.quantity_float = self.float_or_none(row['quantity'])
@@ -784,13 +785,14 @@ class SocialHistoryLoader(BaseLoader):
         'patient_id',
         'mrn',
         'tobacco_use',
-        'alcohol_use'
+        'alcohol_use',
+        'date_noted' #added in 3
         ]
     
     def load_row(self, row):
         SocialHistory.objects.create(
             provenance = self.provenance,
-            date = self.created_on, # date does not make sense for SocialHistory.
+            date = row['date_noted'], # matching version 3 ETL
             patient=self.get_patient(row['patient_id']),
             mrn = row['mrn'],
             tobacco_use = row['tobacco_use'],

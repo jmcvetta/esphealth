@@ -168,7 +168,7 @@ class PatientWriter(EpicWriter):
         'race',
         'home_language',
         'ssn',
-        'provider_id',
+        'pcp_id',
         'marital_stat',
         'religion',
         'aliases',
@@ -184,7 +184,7 @@ class PatientWriter(EpicWriter):
         row['last_name'] = patient.last_name
         row['first_name'] = patient.first_name
         row['middle_name'] = patient.middle_name
-        row['provider_id'] = patient.pcp.natural_key
+        row['pcp_id'] = patient.pcp.natural_key
         row['address1'] = patient.address1
         row['address2'] = patient.address2
         row['city'] = patient.city
@@ -276,13 +276,13 @@ class LabOrderWriter(EpicWriter):
     fields = [
         'patient_id',
         'mrn',
-        'order_id',
+        'natural_key',
         'procedure_code',
-        'modifier',
+        'procedure_modifier',
         'specimen_id',
         'ordering_date',
         'order_type',
-        'ordering_provider',
+        'provider_id',
         'procedure_name',
         'specimen_source'
         ]
@@ -291,13 +291,13 @@ class LabOrderWriter(EpicWriter):
         self.writer.writerow({
             'patient_id': lab_order.patient.natural_key,
             'mrn':lab_order.mrn,
-            'order_id': lab_order.order_id,
+            'natural_key': lab_order.natural_key,
             'procedure_code': lab_order.procedure_code,
-            'modifier': lab_order.modifier,
+            'procedure_modifier': lab_order.procedure_modifier,
             'specimen_id': lab_order.specimen_id,
             'ordering_date': str_from_date(lab_order.date),
             'order_type': str(lab_order.order_type),
-            'ordering_provider': lab_order.provider.natural_key,
+            'provider_id': lab_order.provider.natural_key,
             'procedure_name': lab_order.procedure_name,
             'specimen_source': lab_order.specimen_source
             })
@@ -333,8 +333,8 @@ class EncounterWriter(EpicWriter):
         'o2_stat',
         'peak_flow',
         'icd9s',
-        'bmi',
-        'raw_diagnosis'
+        'raw_diagnosis',
+        'bmi'
         ]
 
 
@@ -373,12 +373,12 @@ class PrescriptionWriter(EpicWriter):
 
     fields = [
         'patient_id',
-        'medical_record_num',
+        'mrn',
         'natural_key',
         'provider_id',
         'order_date',
         'status',
-        'drug_name',
+        'directions',
         'ndc',
         'drug_desc',
         'quantity',
@@ -392,11 +392,12 @@ class PrescriptionWriter(EpicWriter):
     def write_row(self, prescription, **kw):
         self.writer.writerow({
                 'patient_id':prescription.patient.natural_key,
-                'medical_record_num': prescription.patient.mrn,
+                'mrn': prescription.patient.mrn,
                 'natural_key':prescription.natural_key,
                 'order_date': str_from_date(prescription.date),
                 'status': prescription.status,
-                'drug_name': prescription.name,
+                'directions' : prescription.directions,
+                'drug_desc': prescription.name,
                 'ndc': prescription.code,
                 'quantity': str(prescription.quantity or ''),
                 'refills': prescription.refills,
@@ -451,7 +452,8 @@ class SocialHistoryWriter(EpicWriter):
         'patient_id',
         'mrn',
         'tobacco_use',
-        'alcohol_use'
+        'alcohol_use',
+        'date_noted'
         ]
     
     def write_row(self, history, **kw):
@@ -459,7 +461,8 @@ class SocialHistoryWriter(EpicWriter):
                 'patient_id':history.patient.natural_key,
                 'mrn':history.mrn,
                 'tobacco_use':history.tobacco_use,
-                'alcohol_use':history.alcohol_use
+                'alcohol_use':history.alcohol_use,
+                'date_noted' : history.date
                 })      
 
 class AllergyWriter(EpicWriter):
