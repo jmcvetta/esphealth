@@ -547,7 +547,7 @@ class Command(LoaderCommand):
         Provider.make_mocks(provider_writer)
         
         for count in xrange(POPULATION_SIZE):
-            if (count % ROW_LOG_COUNT) == 0: 
+            if (count % ROW_LOG_COUNT) == 0 and count >0 : 
                 prof.check('Processed entries for %d patients' % count)
 
             p = Patient.make_mock()
