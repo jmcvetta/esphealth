@@ -41,6 +41,7 @@ from ESP.conf.models import LabTestMap
 from ESP.emr.models import LabResult
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
+from ESP.hef.base import BaseHeuristic
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
