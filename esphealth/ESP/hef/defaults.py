@@ -9,20 +9,20 @@
 @license: LGPL
 '''
 
-from ESP.hef.models import AbstractLabTest
-from ESP.hef.models import Heuristic
-from ESP.hef.models import LabOrderHeuristic
-from ESP.hef.models import LabResultAnyHeuristic
-from ESP.hef.models import LabResultPositiveHeuristic
-from ESP.hef.models import LabResultRatioHeuristic
-from ESP.hef.models import LabResultFixedThresholdHeuristic
-from ESP.hef.models import LabResultRangeHeuristic
-from ESP.hef.models import Icd9Query
-from ESP.hef.models import DiagnosisHeuristic
-from ESP.hef.models import PrescriptionHeuristic
-from ESP.hef.models import Dose
-from ESP.hef.models import ResultString
-from ESP.hef.models import CalculatedBilirubinHeuristic
+from ESP.hef.base import AbstractLabTest
+from ESP.hef.base import BaseHeuristic
+from ESP.hef.base import LabOrderHeuristic
+from ESP.hef.base import LabResultAnyHeuristic
+from ESP.hef.base import LabResultPositiveHeuristic
+from ESP.hef.base import LabResultRatioHeuristic
+from ESP.hef.base import LabResultFixedThresholdHeuristic
+from ESP.hef.base import LabResultRangeHeuristic
+from ESP.hef.base import Icd9Query
+from ESP.hef.base import DiagnosisHeuristic
+from ESP.hef.base import PrescriptionHeuristic
+from ESP.hef.base import Dose
+from ESP.hef.base import ResultString
+from ESP.hef.base import CalculatedBilirubinHeuristic
 
 #-------------------------------------------------------------------------------
 #
