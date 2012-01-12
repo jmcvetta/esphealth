@@ -157,8 +157,10 @@ class Satscan(object):
         os.chdir(self.folder)
         contents = open(filename, 'r').read()
         regexp = re.compile('Recurrence interval...: \w+ day')
-        return [float(match.split()[2].strip()) for match in regexp.findall(contents)]
-
+        intervals = [float(match.split()[2].strip()) for match in regexp.findall(contents)]
+        log.debug('file path: %s' % filepath)
+        log.debug('recurrence intervals: %s' % intervals)
+        return intervals
 
     def _package_reports(self, results_filename, package_basename, age_group):
         os.chdir(self.folder)
