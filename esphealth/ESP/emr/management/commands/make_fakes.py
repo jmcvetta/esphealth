@@ -42,34 +42,30 @@ from ESP.utils.utils import date_from_str, Profiler
 from ESP.static.models import Icd9, Allergen, Loinc, FakeICD9s
 from ESP.emr.models import Provenance
 from ESP.emr.models import EtlError
-from ESP.emr.models import Provider
-from ESP.emr.models import Patient
-from ESP.emr.models import LabResult, LabOrder
-from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.emr.models import Immunization
-from ESP.emr.models import SocialHistory, Problem, Allergy
+from ESP.emr.models import Provider,Patient,LabResult, LabOrder
+from ESP.emr.models import Encounter,Prescription
+from ESP.emr.models import SocialHistory, Problem, Allergy,Immunization
 from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
+from ESP.emr.management.commands.load_epic import LoadException, UPDATED_BY
 
 #change patient generations here
-POPULATION_SIZE = 10**3
-ENCOUNTERS_PER_PATIENT = 10
+POPULATION_SIZE = 2
+
 MIN_ENCOUNTERS_PER_PATIENT = 1
-LAB_TESTS_PER_PATIENT = 5
+ENCOUNTERS_PER_PATIENT = 2
+MAXICD9 = 2
+
 MIN_LAB_TESTS_PER_PATIENT = 1
+LAB_TESTS_PER_PATIENT = 2
 
-MAXICD9 = 3
-
-MEDS_PER_PATIENT = 5
 MIN_MEDS_PER_PATIENT = 1
+MEDS_PER_PATIENT = 2
 
 CHLAMYDIA_LX_PCT = 20
 ICD9_CODE_PCT = 20
 IMMUNIZATION_PCT = 0.5
 CHLAMYDIA_INFECTION_PCT = 15
-
-
-  
+ 
 class EpicDialect(csv.Dialect):
     """Describe the usual properties of EpicCare extract files."""
     delimiter = '^'
@@ -117,7 +113,7 @@ class ProviderWriter(EpicWriter):
         'first_name',
         'middle_name',
         'title',
-        'dept_id_num',
+        'dept_natural_key',
         'dept',
         'dept_address_1',
         'dept_address_2',
@@ -128,33 +124,25 @@ class ProviderWriter(EpicWriter):
         'telephone',
         ]
     
-    def write_row(self, row):
-        if not ''.join([i[1] for i in row.items()]): # Concatenate all fields
-            log.debug('Empty row encountered -- skipping')
-            return
-        pin = row['natural_key']
-        if not pin:
-            raise LoadException('Record has blank provider_id, which is required')
-        p = self.get_provider(pin)
-        p.provenance = self.provenance
-        p.updated_by = UPDATED_BY
-        p.last_name = unicode(row['last_name'])
-        p.first_name = unicode(row['first_name'])
-        p.middle_name = unicode(row['middle_name'])
-        p.title = row['title']
-        p.dept_id_num = row['dept_id_num']
-        p.dept = row['dept']
-        p.dept_address_1 = row['dept_address_1']
-        p.dept_address_2 = row['dept_address_2']
-        p.dept_city = row['dept_city']
-        p.dept_state = row['dept_state']
-        p.dept_zip = row['dept_zip']
-        p.area_code = row['area_code']
-        p.telephone = row['telephone']
-        p.save()
-        log.debug('Saved provider object: %s' % p)
+    def write_row(self, provider):
+        row = {}
 
+        row['natural_key'] = provider.natural_key
+        row['last_name'] = provider.last_name
+        row['first_name'] = provider.first_name
+        row['middle_name'] = provider.middle_name
+        row['title'] = provider.title
+        row['dept_natural_key'] = provider.dept_natural_key
+        row['dept'] = provider.dept
+        row['dept_address_1'] = provider.dept_address_1
+        row['dept_address_2'] = provider.dept_address_2
+        row['dept_city'] = provider.dept_city
+        row['dept_state'] = provider.dept_state
+        row['dept_zip'] = provider.dept_zip
+        row['area_code'] = provider.area_code
+        row['telephone'] = provider.telephone
 
+        self.writer.writerow(row)
 
 class PatientWriter(EpicWriter):
 
@@ -196,7 +184,7 @@ class PatientWriter(EpicWriter):
         row['last_name'] = patient.last_name
         row['first_name'] = patient.first_name
         row['middle_name'] = patient.middle_name
-        row['provider_id'] = patient.pcp
+        row['provider_id'] = patient.pcp.natural_key
         row['address1'] = patient.address1
         row['address2'] = patient.address2
         row['city'] = patient.city
@@ -219,8 +207,7 @@ class PatientWriter(EpicWriter):
         row['aliases'] = patient.aliases
         row['mother_mrn'] = patient.mother_mrn
 
-        self.writer.writerow(row)
-        
+        self.writer.writerow(row)   
 
 
 class LabResultWriter(EpicWriter):
@@ -228,9 +215,9 @@ class LabResultWriter(EpicWriter):
     FILE_TEMPLATE_NAME = 'epicres.esp.%s'
     
     fields = [
-        'patient_id',       # 1
-        'medical_record_num',   # 2
-        'order_id_num',         # 3
+        'patient_id',           # 1
+        'mrn',   # 2
+        'order_natural_key',    # 3
         'order_date',           # 4
         'result_date',          # 5
         'provider_id',          # 6
@@ -245,22 +232,23 @@ class LabResultWriter(EpicWriter):
         'unit',                 # 15
         'status',               # 16
         'note',                 # 17
-        'specimen_id_num',      # 18
+        'specimen_num',         # 18
         'impression',           # 19
         'specimen_source',      # 20
         'collection_date',      # 21
-        'procedure_name'        #22
+        'procedure_name',        #22
+        'natural_key'           #23
         ]
 
 
     def write_row(self, lx):
         self.writer.writerow({
                 'patient_id':lx.patient.natural_key,
-                'medical_record_num': lx.mrn,
-                'order_id_num': lx.order_num,
+                'mrn': lx.mrn,
+                'order_natural_key': lx.order_natural_key,
                 'order_date': str_from_date(lx.date),
                 'result_date': str_from_date(lx.result_date),
-                'provider_id': lx.provider.provider_id_num,
+                'provider_id': lx.provider.natural_key,
                 'order_type':' ',
                 'cpt': lx.native_code,
                 'component': lx.native_code.strip(),
@@ -272,11 +260,12 @@ class LabResultWriter(EpicWriter):
                 'unit': lx.ref_unit,
                 'status' : lx.status,
                 'note' : lx.comment,
-                'specimen_id_num' : lx.specimen_num,
+                'specimen_num' : lx.specimen_num,
                 'impression' : lx.impression,
                 'specimen_source' : lx.specimen_source,
                 'collection_date' : str_from_date(lx.collection_date),
-                'procedure_name' : lx.procedure_name
+                'procedure_name' : lx.procedure_name,
+                'natural_key'   : lx.natural_key
                 })
         
 
@@ -308,7 +297,7 @@ class LabOrderWriter(EpicWriter):
             'specimen_id': lab_order.specimen_id,
             'ordering_date': str_from_date(lab_order.date),
             'order_type': str(lab_order.order_type),
-            'ordering_provider': lab_order.patient.pcp.natural_key,
+            'ordering_provider': lab_order.provider.natural_key,
             'procedure_name': lab_order.procedure_name,
             'specimen_source': lab_order.specimen_source
             })
@@ -329,12 +318,12 @@ class EncounterWriter(EpicWriter):
         'encounter_id_num',
         'encounter_date',
         'is_closed',
-        'closed_date',
+        'date_closed',
         'provider_id',
         'dept_id_num',
         'dept_name',
         'event_type',
-        'edc',
+        'edd',
         'temp',
         'cpt',
         'weight',
@@ -345,18 +334,12 @@ class EncounterWriter(EpicWriter):
         'peak_flow',
         'icd9s',
         'bmi',
-        'diagnosis'
+        'raw_diagnosis'
         ]
 
 
     def write_row(self, encounter,icd9_codes, **kw):
 
-
-        #if random.random() <= float(ICD9_CODE_PCT/100.0):
-            #how_many_codes = random.randint(1, 3)
-            #icd9_codes = [str(icd9.code) for icd9 in Icd9.objects.order_by('?')[:how_many_codes]]
-        #else:
-            #icd9_codes = ''
 
         self.writer.writerow({
                 'patient_id':encounter.patient.natural_key,
@@ -364,12 +347,12 @@ class EncounterWriter(EpicWriter):
                 'encounter_id_num': encounter.natural_key,
                 'encounter_date':str_from_date(encounter.date),
                 'is_closed': '',
-                'closed_date':str_from_date(encounter.closed_date) or '',
-                'provider_id':encounter.patient.pcp.natural_key,
+                'date_closed':str_from_date(encounter.date_closed) or '',
+                'provider_id':encounter.provider.natural_key,
                 'dept_id_num':encounter.site_natural_key,
                 'dept_name':encounter.site_name,
-                'event_type':encounter.event_type,
-                'edc':str_from_date(encounter.edc) or '',
+                'event_type':encounter.events.content_type,
+                'edd':str_from_date(encounter.edd) or '',
                 'temp':str(encounter.temperature or '') ,
                 'cpt': '',
                 'weight': str(encounter.weight or ''),
@@ -380,7 +363,7 @@ class EncounterWriter(EpicWriter):
                 'peak_flow':str(encounter.peak_flow or ''),
                 'icd9s': '; '.join(icd9_codes),
                 'bmi':str(encounter.bmi or ''),
-                'diagnosis':encounter.diagnosis or ''
+                'raw_diagnosis':encounter.raw_diagnosis or ''
                 })
   
 
@@ -391,7 +374,7 @@ class PrescriptionWriter(EpicWriter):
     fields = [
         'patient_id',
         'medical_record_num',
-        'order_id_num',
+        'natural_key',
         'provider_id',
         'order_date',
         'status',
@@ -410,7 +393,7 @@ class PrescriptionWriter(EpicWriter):
         self.writer.writerow({
                 'patient_id':prescription.patient.natural_key,
                 'medical_record_num': prescription.patient.mrn,
-                'order_id_num':prescription.order_num,
+                'natural_key':prescription.natural_key,
                 'order_date': str_from_date(prescription.date),
                 'status': prescription.status,
                 'drug_name': prescription.name,
@@ -418,9 +401,10 @@ class PrescriptionWriter(EpicWriter):
                 'quantity': str(prescription.quantity or ''),
                 'refills': prescription.refills,
                 'start_date': str_from_date(prescription.start_date) or '',
-                'end_date': str_from_date(prescription.end) or '',
+                'end_date': str_from_date(prescription.end_date) or '',
                 'route': prescription.route,
                 'dose': prescription.dose,
+                'provider_id':prescription.provider.natural_key
                 })
 
 
@@ -431,28 +415,31 @@ class ImmunizationWriter(EpicWriter):
     
     fields = [
         'patient_id', 
-        #'mrn',
-        'provider_id',
         'type', 
         'name',
         'date',
         'dose',
         'manufacturer',
         'lot',
-        'imm_id_num',
+        'natural_key',
+        'mrn',
+        'provider_id',
+        'visit_date',
         ]
     
     def write_row(self, immunization, **kw):
         self.writer.writerow({
                 'patient_id':immunization.patient.natural_key, 
-                #'medical_record_num': immunization.patient.mrn,
                 'type':immunization.imm_type, 
                 'name':immunization.name,
                 'date':str_from_date(immunization.date) or '',
                 'dose':immunization.dose,
                 'manufacturer': immunization.manufacturer,
                 'lot':immunization.lot,
-                'imm_id_num':immunization.imm_id_num
+                'natural_key' :immunization.natural_key,
+                'mrn': immunization.patient.mrn,
+                'provider_id':immunization.provider.natural_key,
+                'visit_date' : immunization.visit_date
                 })
                 
 
@@ -481,27 +468,29 @@ class AllergyWriter(EpicWriter):
 
     fields = [
         'patient_id',
-        'mrn',
         'problem_id',
         'date_noted',
         'allergy_id',
         'allergy_name',
         'allergy_status',
         'allergy_description',
-        'allergy_entered_date'
+        'allergy_entered_date',
+        'mrn',
+        'provider_id'
         ]
     
     def write_row(self, allergy, **kw):
         self.writer.writerow({
                 'patient_id':allergy.patient.natural_key,
-                'mrn':allergy.mrn,
                 'problem_id':str(allergy.problem_id),
                 'date_noted': str_from_date(allergy.date_noted),
                 'allergy_id': allergy.allergen.code,
                 'allergy_name': allergy.name,
                 'allergy_status' : allergy.status,
                 'allergy_description' : allergy.description,
-                'allergy_entered_date': str_from_date(allergy.date)
+                'allergy_entered_date': str_from_date(allergy.date),
+                'mrn':allergy.patient.mrn,
+                'provider_id': allergy.provider.natural_key
                 })
             
         
@@ -543,9 +532,6 @@ class Command(LoaderCommand):
 
         prof = Profiler()
 
-        #chlamydia_codes = list(Loinc.objects.filter(shortname__contains='mydia').distinct())
-        #other_codes = list(Loinc.objects.exclude(shortname__contains='mydia').distinct()[:2000])
-
         provider_writer = ProviderWriter()
         patient_writer = PatientWriter()
         lx_writer = LabResultWriter()
@@ -574,14 +560,10 @@ class Command(LoaderCommand):
             
             # Write random encounters and lab tests.
             for i in xrange(random.randrange(MIN_ENCOUNTERS_PER_PATIENT,ENCOUNTERS_PER_PATIENT)): 
-               encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))
+                encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))
 
             for i in xrange(random.randrange(MIN_LAB_TESTS_PER_PATIENT,LAB_TESTS_PER_PATIENT)):  
-                #codes = chlamydia_codes if random.random() <= CHLAMYDIA_LX_PCT else other_codes
-                #positive = random.random() <= CHLAMYDIA_INFECTION_PCT
-                #result_string = 'POSITIVE' if positive else 'NORMAL'
-                #loinc = random.choice(codes)
-
+               
                 lx = LabResult.make_mock(p)
                 lx_writer.write_row(lx)
 
@@ -589,6 +571,7 @@ class Command(LoaderCommand):
             for i in xrange(random.randrange(MIN_MEDS_PER_PATIENT,MEDS_PER_PATIENT)):  
                 prescription_writer.write_row(Prescription.make_mock(p))
                 
+        #print 'Generated %s fake Immunizations per Patient' % ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT        
         print 'Generated %s fake Patients' % POPULATION_SIZE
         print 'with up to max %s Labs, ' % LAB_TESTS_PER_PATIENT
         print 'up to max %s Encounters ' % ENCOUNTERS_PER_PATIENT 

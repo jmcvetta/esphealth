@@ -206,7 +206,7 @@ class BaseLoader(object):
         try:
             obj = model(**field_values)
             obj.save()
-            transaction.savepoint_commit(sid)
+            transaction.savepoint_commit(sid) # not terribly useful, since we already saved it above.
             created = True
         except IntegrityError:
             transaction.savepoint_rollback(sid)
@@ -483,7 +483,7 @@ class PatientLoader(BaseLoader):
 class LabResultLoader(BaseLoader):
     
     fields = [
-        'patient_id',          # 1
+        'patient_id',           # 1
         'mrn',                  # 2
         'order_natural_key',    # 3
         'order_date',           # 4
@@ -504,7 +504,8 @@ class LabResultLoader(BaseLoader):
         'impression',           # 19
         'specimen_source',      # 20
         'collection_date',      # 21
-        'procedure_name'        #22
+        'procedure_name' ,      #22
+        'natural_key'           #23 added in 3
         ]
 
     
@@ -525,7 +526,7 @@ class LabResultLoader(BaseLoader):
         l.patient = self.get_patient(row['patient_id'])
         l.provider = self.get_provider(row['provider_id'])
         l.mrn = row['mrn']
-        l.natural_key = row['order_natural_key']
+        l.order_natural_key = row['order_natural_key']  
         l.date = self.date_or_none(row['order_date'])
         l.result_date = self.date_or_none(row['result_date'])
         l.native_code = native_code
@@ -546,6 +547,7 @@ class LabResultLoader(BaseLoader):
         l.specimen_source = row['specimen_source']
         l.collection_date = self.date_or_none(row['collection_date'])
         l.procedure_name = row['procedure_name']
+        l.natural_key = row['natural_key']  
         l.save()
         log.debug('Saved lab result object: %s' % l)
         
@@ -595,12 +597,12 @@ class EncounterLoader(BaseLoader):
         'natural_key',
         'encounter_date',
         'is_closed',
-        'closed_date',
+        'date_closed',
         'provider_id',
         'dept_id_num',
         'dept_name',
         'event_type',
-        'edc',
+        'edd',
         'temp',
         'cpt',#
         'weight',
@@ -611,7 +613,7 @@ class EncounterLoader(BaseLoader):
         'peak_flow',
         'icd9s',
         'bmi',
-        'diagnosis'
+        'raw_diagnosis'
         ]
 
 
@@ -635,8 +637,8 @@ class EncounterLoader(BaseLoader):
             'raw_date': son(row['encounter_date']),
             'site_natural_key': son( row['dept_id_num'] ),
             'encounter_type': up(row['event_type']),
-            'date_closed': dton(row['closed_date']),
-            'raw_date_closed': son(row['closed_date']),
+            'date_closed': dton(row['date_closed']),
+            'raw_date_closed': son(row['date_closed']),
             'site_name': cap(row['dept_name']),
             'raw_temperature': son(row['temp']),
             'temperature': flon(row['temp']),
@@ -648,14 +650,15 @@ class EncounterLoader(BaseLoader):
             'o2_stat': flon(row['o2_stat']),
             'raw_peak_flow': son(row['peak_flow']),
             'peak_flow': flon(row['peak_flow']),
-            'raw_edd': son(row['edc']),
-            'edd': dton(row['edc']),
-            'raw_diagnosis': son(row['diagnosis']),
+            'raw_edd': son(row['edd']),
+            'edd': dton(row['edd']),
             'raw_weight': son(row['weight']),
             'weight': weight_str_to_kg(row['weight']),
             'raw_height': son(row['height']),
             'height': height_str_to_cm(row['height']),
             'raw_bmi': son(row['bmi']),
+            'raw_diagnosis': son(row['raw_diagnosis']),
+            
             }
         if values['edd']:  
             values['pregnant'] = True
@@ -711,8 +714,8 @@ class PrescriptionLoader(BaseLoader):
         'refills',
         'start_date',
         'end_date',
-        'route',
-        'dose',
+        'route',# added in 3
+        'dose', # added in 3
         
     ]
 
@@ -722,7 +725,7 @@ class PrescriptionLoader(BaseLoader):
         p.updated_by = UPDATED_BY
         p.patient = self.get_patient(row['patient_id'])
         p.provider = self.get_provider(row['provider_id'])
-        p.order_num = row['natural_key']
+        p.natural_key = row['natural_key']
         p.date = self.date_or_none(row['order_date'])
         p.status = row['status']
         p.name = row['drug_name']
@@ -742,7 +745,7 @@ class PrescriptionLoader(BaseLoader):
 class ImmunizationLoader(BaseLoader):
     
     fields = [
-        'patient_id', 
+        'patient_id', # TODO missing provider, mrn and visit date
         'type', 
         'name',
         'date',
@@ -750,6 +753,9 @@ class ImmunizationLoader(BaseLoader):
         'manufacturer',
         'lot',
         'natural_key',
+        'mrn', #added in 3
+        'provider_id',# added in 3
+        'visit_date' #added in 3
         ]
     
     def load_row(self, row):
@@ -764,6 +770,9 @@ class ImmunizationLoader(BaseLoader):
         i.manufacturer = row['manufacturer']
         i.lot = row['lot']
         i.natural_key = row['natural_key']
+        i.mrn = row['mrn']
+        i.provider = self.get_provider(row['provider_id'])
+        i.visit_date = row['visit_date']
         i.save()
         log.debug('Saved immunization object: %s' % i)
 
@@ -791,14 +800,15 @@ class SocialHistoryLoader(BaseLoader):
 class AllergyLoader(BaseLoader):
     fields = [
         'patient_id',
-        'mrn',
+        'mrn', 
         'problem_id',
         'date_noted',
         'allergen_id',
-        'name',
+        'allergy_name',
         'allergy_status',
-        'description',
-        'date_noted'
+        'allergy_description',
+        'allergy_entered_date',
+        'provider_id' #added in 3
         ]
     
     def load_row(self, row):
@@ -806,14 +816,15 @@ class AllergyLoader(BaseLoader):
         Allergy.objects.create(
             provenance = self.provenance,
             patient = self.get_patient(row['patient_id']),
-            mrn = row['mrn'],
             problem_id = int(row['problem_id']),
-            date = self.date_or_none(row['allergy_entered_date']),
+            date = self.date_or_none(row['allergy_entered_date']), 
             date_noted = self.date_or_none(row['date_noted']),
             allergen = allergen,
-            name = row['allergy_name'],
+            name = row['allergy_name'], 
             status = row['allergy_status'],
-            description = row['allergy_description']
+            description = row['allergy_description'],
+            mrn = row['mrn'],
+            provider = self.get_provider(row['provider_id'])
             )
             
         

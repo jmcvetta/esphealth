@@ -243,17 +243,17 @@ class Hl7MessageLoader(object):
         if not pv1_seg:
             raise NoPV1('No PV1 segment found')
         self.visit_date = self.datetime_from_string(pv1_seg[-1][0]) # Will date always be last??
-        provider_id_num = pv1_seg[7][0] # National Provider ID #
-        if not provider_id_num:
-            provider_id_num = '[Unknown]'
-        log.debug('Provider ID (NPI) #: %s' % provider_id_num)
+        natural_key = pv1_seg[7][0] # National Provider ID #
+        if not natural_key:
+            natural_key = '[Unknown]'
+        log.debug('Provider ID (NPI) #: %s' % natural_key)
         prov_last = pv1_seg[7][1]
         if not prov_last: # Better to have NULL than a blank string
             prov_last = None
         prov_first = pv1_seg[7][2]
         if not prov_first:
             prov_first = None
-        provider, is_new_provider = Provider.objects.get_or_create(provider_id_num=provider_id_num,
+        provider, is_new_provider = Provider.objects.get_or_create(natural_key=natural_key,
             defaults={'provenance': self.provenance})
         provider.first_name = prov_first
         provider.last_name = prov_last
@@ -262,7 +262,7 @@ class Hl7MessageLoader(object):
         self.provider = provider
         if is_new_provider:
             log.debug('NEW PROVIDER')
-            log.debug('Provider ID #: %s' % provider_id_num)
+            log.debug('Provider ID #: %s' % natural_key)
             log.debug('Name: %s, %s' % (prov_last, prov_first))
         #
         # Call methods for other segment types
@@ -290,7 +290,7 @@ class Hl7MessageLoader(object):
         seg = hl7.segment('PD1', self.message)
         npi, last, first = seg[4][:3]
 
-        provider, is_new_provider = Provider.objects.get_or_create(provider_id_num=npi,
+        provider, is_new_provider = Provider.objects.get_or_create(natural_key=npi,
             defaults={'provenance': self.provenance})
         provider.first_name = first
         provider.last_name = last
@@ -371,8 +371,8 @@ class Hl7MessageLoader(object):
     
     def make_lab(self):
         float_regex = re.compile(r'^(\d+\.?\d*)') # Copied from incomingParser -- maybe should be in util?
-        # order_num defaults to None if no OBR segment is found
-        order_num = None  
+        # order_natural_key defaults to None if no OBR segment is found
+        order_natural_key = None  
         # If order_date is not overwritten by an OBR segment, date from OBX 
         # segment will be used as both 'date' and 'order_date'.
         order_date = None 
@@ -380,10 +380,10 @@ class Hl7MessageLoader(object):
             if seg[0][0] == 'OBR':
                 # Set the order variables, which are then consumed by all OBX 
                 # segments, up until the next OBR segment is encountered
-                order_num = seg[2][0]
+                order_natural_key = seg[2][0]
                 order_date = date_from_str(seg[7][0])
                 log.debug('OBR segment')
-                log.debug('\t Order number: %s' % order_num)
+                log.debug('\t Order number: %s' % order_natural_key)
                 log.debug('\t Order date: %s' % order_date)
                 continue
             # Below this point, we will only have OBX segments
@@ -409,7 +409,7 @@ class Hl7MessageLoader(object):
             # not have separate order date info.
             result.date = order_date if order_date else None
             result.result_date = resdate if resdate else None
-            result.order_num = order_num if order_num else None
+            result.order_natural_key = order_natural_key if order_natural_key else None
             result.native_code = native_code if native_code else None
             result.native_name = native_name if native_name else None
             result.result_string = result_string if result_string else None
