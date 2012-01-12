@@ -36,10 +36,7 @@ from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 
 
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
 DISPOSITIONS = [
     ('exact', 'Exact'),
     ('similar', 'Similar'),
@@ -290,7 +287,6 @@ class Report(models.Model):
     filename = models.CharField(max_length=512, blank=False)
     sent = models.BooleanField('Case status was set to sent?', default=False)
     message = models.TextField('Case report message', blank=False)
-
 
 
 #===============================================================================
