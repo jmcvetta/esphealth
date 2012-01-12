@@ -1149,13 +1149,12 @@ class Encounter(BasePatientRecord):
         provider = Provider.get_mock()
         msVitals =  FakeVitals.objects.order_by('short_name')
        
-       
         now = int(time.time()*1000) #time in milliseconds
         
         e = Encounter(patient=patient, provider=provider, provenance=Provenance.fake(),
                       mrn=patient.mrn, status='FAKE', date=when, date_closed=when)
         
-        e.native_encounter_num = now
+        e.natural_key = now
         #the order in msVitals depends on the fakevitals load order rows 
         e.bmi = Encounter.randomVitalValue(msVitals[0].normal_low, msVitals[0].normal_high, 
                                            msVitals[0].very_low, msVitals[0].very_high) 
