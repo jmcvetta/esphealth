@@ -10,7 +10,6 @@
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
-
 import string
 import time
 import random
@@ -18,9 +17,10 @@ import datetime
 import sys
 import re
 import os
-from dateutil.relativedelta import relativedelta
 
 from decimal import Decimal
+from dateutil.relativedelta import relativedelta
+
 from django.db import models
 from django.db.models import Q, F
 from django.contrib.contenttypes.models import ContentType
@@ -32,7 +32,6 @@ from ESP.emr.choices import LOAD_STATUS
 from ESP.emr.choices import LAB_ORDER_TYPES
 from ESP.conf.common import EPOCH
 from ESP.conf.models import LabTestMap
-#from ESP.conf.models import CodeMap
 from ESP.static.models import Loinc, FakeLabs, FakeVitals, FakeMeds, FakeICD9s
 from ESP.static.models import Ndc
 from ESP.static.models import Icd9, Allergen
@@ -130,7 +129,7 @@ class Provider(BaseMedicalRecord):
     '''
     A medical care provider
     '''
-    natural_key = models.CharField('Physician identifier in source EMR system', unique=True, max_length=20, 
+    natural_key = models.CharField('Physician identifier in source EMR system', unique=True, max_length=40, 
         blank=False, db_index=True)
     last_name = models.CharField('Last Name',max_length=200, blank=True,null=True)
     first_name = models.CharField('First Name',max_length=200, blank=True,null=True)
@@ -167,30 +166,27 @@ class Provider(BaseMedicalRecord):
         if Provider.fakes().count() > 0: return
         import fake
         
-        #filename = os.path.join(DATA_DIR, 'fake', 'epicpro.%s.esp' % EPOCH.strftime('%m%d%Y'))
-       # epic_file = open(filename, 'a')
         for p in fake.PROVIDERS:
             p.provenance = provenance
-            p.provider_id_num = 'FAKE-%05d' % random.randrange(1, 100000)
+            p.natural_key = 'FAKE-%05d' % random.randrange(1, 100000)
             p.save()
             provider_writer.write_row(p)
 
     @staticmethod
-    #save_on_db=True, save_to_epic=False, old parameters
-    def make_fakes(provider_writer):
+    def make_fakes(save_on_db=True, save_to_epic=False):
         provenance = Provenance.fake()
         if Provider.fakes().count() > 0: return
         import fake
-        #if save_to_epic:
-            #filename = os.path.join(DATA_DIR, 'fake', 'epicpro.%s.esp' % EPOCH.strftime('%m%d%Y'))
-            #epic_file = open(filename, 'a')
+        
+        if save_to_epic:
+            filename = os.path.join(DATA_DIR, 'fake', 'epicpro.%s.esp' % EPOCH.strftime('%m%d%Y'))
+            epic_file = open(filename, 'a')
         for p in fake.PROVIDERS:
             p.provenance = provenance
             p.natural_key = 'FAKE-%05d' % random.randrange(1, 100000)
-            #if save_on_db: 
-            p.save()
-            #if save_to_epic: p.write
-            provider_writer.write_row(p)
+            
+            if save_on_db: p.save()
+            if save_to_epic: p.write
 
     @staticmethod
     def get_mock():
@@ -638,7 +634,7 @@ class LabResult(BasePatientRecord):
         now = int(time.time()*1000) #time in milliseconds
         provider = Provider.get_mock()
        
-        lx = LabResult(patient=patient,mrn=patient.mrn, provider=provider, provenance=Provenance.fake(),order_num = now)
+        lx = LabResult(patient=patient,mrn=patient.mrn, provider=provider, provenance=Provenance.fake(),natural_key = now)
         
         when = when or randomizer.date_range(as_string=False) #datetime.date.today()
         lx.result_date = when + datetime.timedelta(days=random.randrange(1, 5)) # date to b 5 days after
@@ -647,7 +643,8 @@ class LabResult(BasePatientRecord):
         order_date = when if patient.date_of_birth is None else max(when, patient.date_of_birth)
         lx.date = order_date
         lx.native_code = str(msLabs.native_code)
- 
+        lx.order_natural_key = lx.natural_key # same order and key
+        
         #not going to do cpt or order type =1 
         
         lx.native_name = msLabs.short_name
@@ -798,7 +795,7 @@ class LabResult(BasePatientRecord):
     def document_summary(self):
         return {
             'order': { 
-                'code': self.order_num,
+                'code': self.order_natural_key,
                 'date': (self.date and self.date.isoformat()) or None
                 },
             'code': self.output_code,
@@ -856,8 +853,11 @@ class LabOrder(BasePatientRecord):
     '''
     An order for a laboratory test
     '''
-    # FIXME: natural key should be charfield
-    natural_key = models.IntegerField('Order identifier in source EMR system', db_index=True) 
+    
+    class Meta:
+        verbose_name = 'Lab Order'
+        
+    natural_key = models.CharField('Order identifier in source EMR system', max_length=128, db_index=True)
     procedure_code = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     procedure_modifier = models.CharField(max_length=20, blank=True, null=True)
     procedure_name = models.CharField(max_length=300, blank=True, null=True)
@@ -944,7 +944,7 @@ class Prescription(BasePatientRecord):
         p.end_date = when + datetime.timedelta(days=days_range)
         
         p.status = random.choice(Status)
-        p.order_num = now
+        p.natural_key = now
         p.start_date = p.date
         p.name =  msMeds.name
         p.code = msMeds.ndc_code 
@@ -982,7 +982,7 @@ class Prescription(BasePatientRecord):
     def document_summary(self):
         return {
             'order':{
-                'id':self.order_num,
+                'id':self.natural_key,
                 'date':(self.date and self.date.isoformat()) or None,
                 'status':self.status
                 },
@@ -1153,7 +1153,7 @@ class Encounter(BasePatientRecord):
         now = int(time.time()*1000) #time in milliseconds
         
         e = Encounter(patient=patient, provider=provider, provenance=Provenance.fake(),
-                      mrn=patient.mrn, status='FAKE', date=when, closed_date=when)
+                      mrn=patient.mrn, status='FAKE', date=when, date_closed=when)
         
         e.native_encounter_num = now
         #the order in msVitals depends on the fakevitals load order rows 
@@ -1179,7 +1179,6 @@ class Encounter(BasePatientRecord):
                     
         if save_on_db: e.save()
         return e
-
 
     @staticmethod
     def volume(date, *args, **kw):
@@ -1285,6 +1284,7 @@ class Encounter(BasePatientRecord):
             'event_type':self.event_type,
             'edc':(self.edc and self.edc.isoformat()) or None,
             'measurements':{
+                'bmi'    :self.bmi,       
                 'pregnancy':self.pregnancy_status,
                 'temperature':self.temperature,
                 'weight':self.weight,
@@ -1401,7 +1401,6 @@ class Immunization(BasePatientRecord):
 class SocialHistory(BasePatientRecord):
     tobacco_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
     alcohol_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
-
 
 class Allergy(BasePatientRecord):
     '''
