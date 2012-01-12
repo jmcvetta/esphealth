@@ -14,7 +14,6 @@ from ESP.utils.hl7_builder.nodes import VaersProjectIdentification
 UNKNOWN_VACCINE = Vaccine.objects.get(short_name='unknown')
 UNKNOWN_MANUFACTURER = ImmunizationManufacturer.objects.get(code='UNK')
 
-
 class AdverseReactionReport(object):
     def __init__(self, event):
         self.event = event

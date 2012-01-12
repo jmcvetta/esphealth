@@ -5,6 +5,9 @@
 import os, sys
 import datetime
 
+#this needs to be ported to use the new class names as per Raphael..
+#perhaps remove the whole file. 
+
 from esp.models import Immunization, Enc, Lx, icd9
 from vaers.models import AdverseEvent
 from vaers.models import FeverEvent, DiagnosticsEvent, LabResultEvent

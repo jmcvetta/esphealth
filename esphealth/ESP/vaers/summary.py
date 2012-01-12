@@ -1,5 +1,7 @@
 from django.db.models import Count
 
+# this is a summary report one time for a paper publication for Ross.
+
 from ESP.emr.models import Immunization
 from ESP.vaers.models import AdverseEvent, EncounterEvent, LabResultEvent
 

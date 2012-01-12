@@ -57,9 +57,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
         self.category = 'auto'
         super(VaersFeverHeuristic, self).__init__(
             'VAERS Fever', verbose_name='Fever reaction to immunization')
-    
- 
-    
+        
     uri = 'urn:x-esphealth:heuristic:channing:vaersfever:v1'
       
 
@@ -155,7 +153,6 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         return Encounter.objects.following_vaccination(rules.TIME_WINDOW_POST_EVENT).filter(
             date__gte=begin, date__lte=end, icd9_codes__in=self.icd9s).distinct()
 
-  
     def generate(self, **kw):
         log.info('Generating events for %s' % self.name)
         counter = 0

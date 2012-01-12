@@ -8,7 +8,6 @@ from ESP.static.models import Icd9, Loinc
 from ESP.emr.models import Provider, Patient, Encounter, Immunization, LabResult
 from ESP.conf.models import Vaccine
 from ESP.vaers.models import DiagnosticsEventRule, AdverseEvent
-
 from ESP.utils.utils import log
 from ESP.utils import randomizer
 from ESP.utils import utils
@@ -81,7 +80,6 @@ def check_for_reactions(imm):
         except Exception, why:
             rules.define_active_rules()
             rules.map_lab_tests()
-
 
         ev.cause_icd9(code)
         
