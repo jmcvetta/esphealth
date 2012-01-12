@@ -262,7 +262,8 @@ class SyndromeHeuristic(DiagnosisHeuristic):
         folder = report_folder(date, end_date, subfolder='reports')
         
         log.info('Detailed site report for %s on %s-%s' % (self.name, date, end_date))
-
+        log.info('syndrome,encounter date,zip residence,zip site,age 5yrs,icd9,temperature,encounters at age and residential zip,encounters at age and site zip')
+       
         header = ['syndrome', 'encounter date', 'zip residence', 'zip site', 'age 5yrs', 'icd9', 
                   'temperature',  'encounters at age and residential zip', 
                   'encounters at age and site zip']
@@ -304,18 +305,19 @@ class SyndromeHeuristic(DiagnosisHeuristic):
         outfile.close()
 
 class InfluenzaHeuristic(SyndromeHeuristic):
-    
     FEVER_TEMPERATURE = 100.0 # Temperature in Fahrenheit
-    
     def matches(self, **kw):        
+        
         begin = kw.get('begin_date', EPOCH)
         end = kw.get('end_date', datetime.date.today())
         q_measured_fever = Q(temperature__gte=InfluenzaHeuristic.FEVER_TEMPERATURE)
         q_unmeasured_fever = Q(temperature__isnull=True, icd9_codes__in=ICD9_FEVER_CODES)
+        
         # Make it really readable. 
         # (icd9 code + measured fever) or (icd9 code + icd9code for fever)
         # Logically: (a&b)+(a&c) = a&(b+c)
         influenza = (q_measured_fever | q_unmeasured_fever)
+        
         return self.encounters().filter(influenza).filter(date__gte=begin, date__lte=end)
 
                 
