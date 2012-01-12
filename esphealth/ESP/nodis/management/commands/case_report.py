@@ -71,7 +71,6 @@ from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 
-#from ESP.nodis import defs # Not sure if this is necessary
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.models import Case
 from ESP.nodis.models import ReportRun
@@ -239,7 +238,7 @@ class hl7Batch:
         p = self.makeFacility()
         orus2.appendChild(p)
         ##Treating Clinician
-        rxobjs = case.reportable_prescriptions.order_by('order_num')
+        rxobjs = case.reportable_prescriptions.order_by('natural_key')
         treatclis = set( case.reportable_prescriptions.values_list('provider', flat=True) )
         for cli in treatclis:
             nkindx=3
@@ -248,7 +247,7 @@ class hl7Batch:
             nkindx=nkindx+1
             orus2.appendChild(p)
         ##Clinical information
-        lxobjs = case.reportable_labs.order_by('order_num')
+        lxobjs = case.reportable_labs.order_by('order_natural_key')
         orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
         orus.appendChild(orcs)
         icd9_codes = case.reportable_icd9s
@@ -273,7 +272,7 @@ class hl7Batch:
             genorlxs =self.getOtherLxs('chlamydia', patient, lx)
             totallxs = totallxs + list(genorlxs)
         cleanlxids = self.removeDuplicateLx(totallxs)
-        totallxs = LabResult.objects.filter(pk__in=cleanlxids).order_by('order_num')
+        totallxs = LabResult.objects.filter(pk__in=cleanlxids).order_by('order_natural_key')
         self.addLXOBX(lxRecList=totallxs, orus=orus,condition=case.condition)
         self.addRXOBX(rxRecList=rxobjs, orus=orus) # do same for dr
         return [i.id for i in totallxs]
@@ -284,7 +283,7 @@ class hl7Batch:
         """
         lxdict={}
         for lxobj in lxobjs:
-            lxkey = (lxobj.order_num, lxobj.native_code, lxobj.date, lxobj.result_string, lxobj.result_date)
+            lxkey = (lxobj.order_natural_key, lxobj.native_code, lxobj.date, lxobj.result_string, lxobj.result_date)
             if not lxdict.has_key(lxkey):
                 lxdict[lxkey]=lxobj.id
         return lxdict.values() # list of unique lx ids
@@ -606,7 +605,7 @@ class hl7Batch:
             self.addSimple(obr,n,'OBR.1')
             n+=1
             obr3 = self.casesDoc.createElement('OBR.3')
-            self.addSimple(obr3,lxRec.order_num,'EI.1')
+            self.addSimple(obr3,lxRec.order_natural_key,'EI.1')
             obr.appendChild(obr3)
             obr4 = self.casesDoc.createElement('OBR.4')
             self.addSimple(obr4,lxRec.output_or_native_code,'CE.4') 
@@ -745,7 +744,7 @@ class hl7Batch:
             self.addSimple(obr,'%d' % n,'OBR.1')
             n+=1
             obr3 = self.casesDoc.createElement('OBR.3')
-            self.addSimple(obr3,rxRec.order_num,'EI.1') 
+            self.addSimple(obr3,rxRec.order_natural_key,'EI.1') 
             obr.appendChild(obr3)
             obr4 = self.casesDoc.createElement('OBR.4')
             ########Added Jan,2009 to fix EMR Mappign question in order to
