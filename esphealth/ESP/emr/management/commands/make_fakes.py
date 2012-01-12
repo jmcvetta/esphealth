@@ -314,14 +314,14 @@ class EncounterWriter(EpicWriter):
     
     fields = [
         'patient_id',
-        'medical_record_num',
-        'encounter_id_num',
+        'mrn',
+        'natural_key',
         'encounter_date',
         'is_closed',
         'date_closed',
         'provider_id',
-        'dept_id_num',
-        'dept_name',
+        'site_natural_key',
+        'site_name',
         'event_type',
         'edd',
         'temp',
@@ -343,14 +343,14 @@ class EncounterWriter(EpicWriter):
 
         self.writer.writerow({
                 'patient_id':encounter.patient.natural_key,
-                'medical_record_num':encounter.patient.mrn,
-                'encounter_id_num': encounter.natural_key,
+                'mrn':encounter.mrn,
+                'natural_key': encounter.natural_key,
                 'encounter_date':str_from_date(encounter.date),
                 'is_closed': '',
                 'date_closed':str_from_date(encounter.date_closed) or '',
                 'provider_id':encounter.provider.natural_key,
-                'dept_id_num':encounter.site_natural_key,
-                'dept_name':encounter.site_name,
+                'site_natural_key':encounter.site_natural_key,
+                'site_name':encounter.site_name,
                 'event_type':encounter.events.content_type,
                 'edd':str_from_date(encounter.edd) or '',
                 'temp':str(encounter.temperature or '') ,
@@ -468,6 +468,7 @@ class AllergyWriter(EpicWriter):
 
     fields = [
         'patient_id',
+        'mrn',
         'problem_id',
         'date_noted',
         'allergy_id',
@@ -475,13 +476,13 @@ class AllergyWriter(EpicWriter):
         'allergy_status',
         'allergy_description',
         'allergy_entered_date',
-        'mrn',
         'provider_id'
         ]
     
     def write_row(self, allergy, **kw):
         self.writer.writerow({
                 'patient_id':allergy.patient.natural_key,
+                'mrn':allergy.patient.mrn,
                 'problem_id':str(allergy.problem_id),
                 'date_noted': str_from_date(allergy.date_noted),
                 'allergy_id': allergy.allergen.code,
@@ -489,7 +490,6 @@ class AllergyWriter(EpicWriter):
                 'allergy_status' : allergy.status,
                 'allergy_description' : allergy.description,
                 'allergy_entered_date': str_from_date(allergy.date),
-                'mrn':allergy.patient.mrn,
                 'provider_id': allergy.provider.natural_key
                 })
             
