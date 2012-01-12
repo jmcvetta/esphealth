@@ -599,8 +599,8 @@ class EncounterLoader(BaseLoader):
         'is_closed',
         'date_closed',
         'provider_id',
-        'dept_id_num',
-        'dept_name',
+        'site_natural_key',
+        'site_name',
         'event_type',
         'edd',
         'temp',
@@ -635,11 +635,11 @@ class EncounterLoader(BaseLoader):
             'provider': self.get_provider(row['provider_id']),
             'date': dton(row['encounter_date']),
             'raw_date': son(row['encounter_date']),
-            'site_natural_key': son( row['dept_id_num'] ),
+            'site_natural_key': son( row['site_natural_key'] ),
             'encounter_type': up(row['event_type']),
             'date_closed': dton(row['date_closed']),
             'raw_date_closed': son(row['date_closed']),
-            'site_name': cap(row['dept_name']),
+            'site_name': cap(row['site_name']),
             'raw_temperature': son(row['temp']),
             'temperature': flon(row['temp']),
             'raw_bp_systolic': son(row['bp_systolic']),
@@ -724,6 +724,7 @@ class PrescriptionLoader(BaseLoader):
         p.provenance = self.provenance
         p.updated_by = UPDATED_BY
         p.patient = self.get_patient(row['patient_id'])
+        p.mrn = row['mrn']
         p.provider = self.get_provider(row['provider_id'])
         p.natural_key = row['natural_key']
         p.date = self.date_or_none(row['order_date'])
