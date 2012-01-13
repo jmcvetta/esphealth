@@ -95,10 +95,158 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         # ICD9
         #
         heuristics.append( DiagnosisHeuristic(
-            name = 'pregnancy-onset',
+            name = 'pregnancy:onset',
             icd9_queries = [
                 Icd9Query(starts_with = 'V22.'),
                 Icd9Query(starts_with = 'V22.'),
+                ]
+            ) )
+        #-------------------------------------------------------------------------------
+        #
+        # End of Pregnancy
+        #
+        #-------------------------------------------------------------------------------
+        #
+        # Postpartum care
+        #
+        heuristics.append( DiagnosisHeuristic(
+            name = 'pregnancy:postpartum-care',
+            icd9_queries = [
+                Icd9Query(starts_with = 'V24.'),
+                ]
+            ) )
+        #
+        # Ectopic & molar pregnancy
+        #
+        heuristics.append( DiagnosisHeuristic(
+            name = 'pregnancy:ectopic-molar',
+            icd9_queries = [
+                Icd9Query(starts_with = '630.'),
+                Icd9Query(starts_with = '631.'),
+                Icd9Query(starts_with = '632.'),
+                Icd9Query(starts_with = '633.'),
+                ]
+            ) )
+        #
+        # Abortion
+        #
+        heuristics.append( DiagnosisHeuristic(
+            name = 'pregnancy:abortion-spontaneous',
+            icd9_queries = [
+                Icd9Query(starts_with = '634.'),
+                ]
+            ) )
+        heuristics.append( DiagnosisHeuristic(
+            name = 'pregnancy:abortion',
+            icd9_queries = [
+                Icd9Query(starts_with = '635.'),
+                Icd9Query(starts_with = '636.'),
+                Icd9Query(starts_with = '637.'),
+                # No 638.?
+                Icd9Query(starts_with = '639.'),
+                ]
+            ) )
+        #
+        # Complications of pregnancy with delivery
+        #
+        heuristics.append( DiagnosisHeuristic(
+            name = 'pregnancy:delivery-complications',
+            icd9_queries = [
+                Icd9Query(starts_with = '640.', ends_with = '1'),
+                Icd9Query(starts_with = '641.', ends_with = '1'),
+                Icd9Query(starts_with = '642.', ends_with = '1'),
+                Icd9Query(starts_with = '643.', ends_with = '1'),
+                Icd9Query(starts_with = '644.', ends_with = '1'),
+                Icd9Query(starts_with = '645.', ends_with = '1'),
+                Icd9Query(starts_with = '646.', ends_with = '1'),
+                Icd9Query(starts_with = '647.', ends_with = '1'),
+                Icd9Query(starts_with = '648.', ends_with = '1'),
+                Icd9Query(starts_with = '649.', ends_with = '1'),
+                Icd9Query(starts_with = '640.', ends_with = '2'),
+                Icd9Query(starts_with = '641.', ends_with = '2'),
+                Icd9Query(starts_with = '642.', ends_with = '2'),
+                Icd9Query(starts_with = '643.', ends_with = '2'),
+                Icd9Query(starts_with = '644.', ends_with = '2'),
+                Icd9Query(starts_with = '645.', ends_with = '2'),
+                Icd9Query(starts_with = '646.', ends_with = '2'),
+                Icd9Query(starts_with = '647.', ends_with = '2'),
+                Icd9Query(starts_with = '648.', ends_with = '2'),
+                Icd9Query(starts_with = '649.', ends_with = '2'),
+                Icd9Query(starts_with = '640.', ends_with = '4'),
+                Icd9Query(starts_with = '641.', ends_with = '4'),
+                Icd9Query(starts_with = '642.', ends_with = '4'),
+                Icd9Query(starts_with = '643.', ends_with = '4'),
+                Icd9Query(starts_with = '644.', ends_with = '4'),
+                Icd9Query(starts_with = '645.', ends_with = '4'),
+                Icd9Query(starts_with = '646.', ends_with = '4'),
+                Icd9Query(starts_with = '647.', ends_with = '4'),
+                Icd9Query(starts_with = '648.', ends_with = '4'),
+                Icd9Query(starts_with = '649.', ends_with = '4'),
+                ]
+            ) )
+        #
+        # Normal delivery
+        #
+        heuristics.append( DiagnosisHeuristic(
+            name = 'pregnancy:delivery-normal',
+            icd9_queries = [
+                Icd9Query(starts_with = '650.', ends_with = '1'),
+                Icd9Query(starts_with = '651.', ends_with = '1'),
+                Icd9Query(starts_with = '652.', ends_with = '1'),
+                Icd9Query(starts_with = '653.', ends_with = '1'),
+                Icd9Query(starts_with = '654.', ends_with = '1'),
+                Icd9Query(starts_with = '655.', ends_with = '1'),
+                Icd9Query(starts_with = '656.', ends_with = '1'),
+                Icd9Query(starts_with = '657.', ends_with = '1'),
+                Icd9Query(starts_with = '658.', ends_with = '1'),
+                Icd9Query(starts_with = '659.', ends_with = '1'),
+                Icd9Query(starts_with = '650.', ends_with = '2'),
+                Icd9Query(starts_with = '651.', ends_with = '2'),
+                Icd9Query(starts_with = '652.', ends_with = '2'),
+                Icd9Query(starts_with = '653.', ends_with = '2'),
+                Icd9Query(starts_with = '654.', ends_with = '2'),
+                Icd9Query(starts_with = '655.', ends_with = '2'),
+                Icd9Query(starts_with = '656.', ends_with = '2'),
+                Icd9Query(starts_with = '657.', ends_with = '2'),
+                Icd9Query(starts_with = '658.', ends_with = '2'),
+                Icd9Query(starts_with = '659.', ends_with = '2'),
+                Icd9Query(starts_with = '650.', ends_with = '4'),
+                Icd9Query(starts_with = '651.', ends_with = '4'),
+                Icd9Query(starts_with = '652.', ends_with = '4'),
+                Icd9Query(starts_with = '653.', ends_with = '4'),
+                Icd9Query(starts_with = '654.', ends_with = '4'),
+                Icd9Query(starts_with = '655.', ends_with = '4'),
+                Icd9Query(starts_with = '656.', ends_with = '4'),
+                Icd9Query(starts_with = '657.', ends_with = '4'),
+                Icd9Query(starts_with = '658.', ends_with = '4'),
+                Icd9Query(starts_with = '659.', ends_with = '4'),
+                ]
+            ) )
+        #
+        # Complications of labor
+        #
+        heuristics.append( DiagnosisHeuristic(
+            name = 'pregnancy:labor-complications',
+            icd9_queries = [
+                Icd9Query(starts_with = '660.'),
+                Icd9Query(starts_with = '661.'),
+                Icd9Query(starts_with = '662.'),
+                Icd9Query(starts_with = '663.'),
+                Icd9Query(starts_with = '664.'),
+                Icd9Query(starts_with = '665.'),
+                Icd9Query(starts_with = '666.'),
+                Icd9Query(starts_with = '667.'),
+                Icd9Query(starts_with = '668.'),
+                Icd9Query(starts_with = '669.'),
+                ]
+            ) )
+        #
+        # Outcome of Delivery
+        #
+        heuristics.append( DiagnosisHeuristic(
+            name = 'pregnancy:delivery-outcome',
+            icd9_queries = [
+                Icd9Query(starts_with = 'V27.'),
                 ]
             ) )
         return heuristics
