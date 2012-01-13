@@ -227,7 +227,7 @@ class AdverseEvent(models.Model):
         for imm in self.immunizations.all():
             patient = imm.patient
             results.append({
-                    'id':imm.imm_id_num,
+                    'id':imm.natural_key,
                     'vaccine_date': imm.date, 
                     'event_date':self.date,
                     'days_to_event':(self.date - imm.date).days,
