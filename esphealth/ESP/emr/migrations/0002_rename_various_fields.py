@@ -10,11 +10,11 @@ class Migration(SchemaMigration):
         #
         # Prescription
         #
-        db.rename_column('emr_prescription', 'order_num', 'natural_key')
+        #db.rename_column('emr_prescription', 'order_num', 'natural_key')
         #
         # Immunization
         #
-        db.rename_column('emr_immunization', 'imm_id_num', 'natural_key')
+        #db.rename_column('emr_immunization', 'imm_id_num', 'natural_key')
         #
         # Patient
         #
@@ -34,7 +34,7 @@ class Migration(SchemaMigration):
         #
         # Lab Result
         #
-        db.rename_column('emr_labresult', 'order_num', 'order_natural_key')
+        #db.rename_column('emr_labresult', 'order_num', 'order_natural_key')
         db.rename_column('emr_labresult', 'result_num', 'natural_key')
         #
         # Encounter
@@ -252,7 +252,7 @@ class Migration(SchemaMigration):
             'middle_name': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'mother_mrn': ('django.db.models.fields.CharField', [], {'max_length': '20', 'null': 'True', 'blank': 'True'}),
             'mrn': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '20', 'null': 'True', 'blank': 'True'}),
-            'natural_key': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '20', 'db_index': 'True'}),
+            'natural_key': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '25', 'db_index': 'True'}),
             'occupation': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'pcp': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['emr.Provider']", 'null': 'True', 'blank': 'True'}),
             'provenance': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['emr.Provenance']"}),
