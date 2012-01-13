@@ -118,6 +118,8 @@ class BaseMedicalRecord(models.Model):
     Abstract base class for a medical record
     '''
     provenance = models.ForeignKey(Provenance, blank=False)
+    # this is the unique identifier for this record in the source EMR system 
+    natural_key = models.CharField('Unique Record identifier in source EMR system',blank=True, null=True, max_length=128)
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False, db_index=True)
 
@@ -129,8 +131,6 @@ class Provider(BaseMedicalRecord):
     '''
     A medical care provider
     '''
-    natural_key = models.CharField('Physician identifier in source EMR system', unique=True, max_length=40, 
-        blank=False, db_index=True)
     last_name = models.CharField('Last Name',max_length=200, blank=True,null=True)
     first_name = models.CharField('First Name',max_length=200, blank=True,null=True)
     middle_name = models.CharField('Middle_Name',max_length=200, blank=True,null=True)
@@ -220,8 +220,6 @@ class Patient(BaseMedicalRecord):
     '''
     A patient, with demographic information
     '''
-    natural_key = models.CharField('Patient identifier in source EMR system', unique=True, max_length=25, 
-        blank=False, db_index=True)
     mrn = models.CharField('Medical Record ', max_length=25, blank=True, null=True, db_index=True)
     last_name = models.CharField('Last Name', max_length=200, blank=True, null=True)
     first_name = models.CharField('First Name', max_length=200, blank=True, null=True)
@@ -546,7 +544,6 @@ class LabResult(BasePatientRecord):
     '''
     # Date (from base class) is order date
     #
-    natural_key = models.CharField('Lab result identifier in source EMR system', max_length=128, db_index=True)
     order_natural_key = models.CharField('Order identifier in source EMR system', max_length=128, db_index=True)
     native_code = models.CharField('Native Test Code', max_length=30, blank=True, null=True, db_index=True)
     native_name = models.CharField('Native Test Name', max_length=255, blank=True, null=True, db_index=True)
@@ -857,7 +854,6 @@ class LabOrder(BasePatientRecord):
     class Meta:
         verbose_name = 'Lab Order'
         
-    natural_key = models.CharField('Order identifier in source EMR system', max_length=128, db_index=True)
     procedure_code = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     procedure_modifier = models.CharField(max_length=20, blank=True, null=True)
     procedure_name = models.CharField(max_length=300, blank=True, null=True)
@@ -876,7 +872,6 @@ class Prescription(BasePatientRecord):
     '''
     # Date is order date
     #
-    natural_key = models.CharField('Order identifier in source EMR system', max_length=20, blank=False)
     name = models.TextField(max_length=3000, blank=False, db_index=True)
     code = models.CharField('Drug Code (system varies by site)', max_length=255, blank=True, null=True)
     directions = models.TextField(max_length=3000, blank=True, null=True)
@@ -1030,7 +1025,6 @@ class Encounter(BasePatientRecord):
     # Fields taken directly from ETL file.  Some minimal processing, such as 
     # standardizing capitalization, may be advisable in loader code.  
     #
-    natural_key = models.CharField('Encounter identifier from source EMR system', max_length=20, blank=False, db_index=True, unique=True)
     encounter_type = models.CharField('Type of encounter', max_length=20, blank=True, null=True, db_index=True)
     status = models.CharField('Record status', max_length=20, blank=True, null=True, db_index=True)
     site_natural_key = models.CharField('Native EMR system site ID', max_length=30, blank=True, null=True, db_index=True)
@@ -1313,7 +1307,6 @@ class Immunization(BasePatientRecord):
     '''
     # Date is immunization date
     #
-    natural_key = models.CharField('Immunization identifier in source EMR system', max_length=200, blank=True, null=True)
     imm_type = models.CharField('Immunization Type', max_length=20, blank=True, null=True)
     name = models.CharField('Immunization Name', max_length=200, blank=True, null=True)
     dose = models.CharField('Immunization Dose', max_length=100, blank=True, null=True)
@@ -1433,11 +1426,4 @@ class Problem(BasePatientRecord):
     # HEF
     #
     events = generic.GenericRelation('hef.Event')
-    
-
-    
-    
-    
-
-    
     
