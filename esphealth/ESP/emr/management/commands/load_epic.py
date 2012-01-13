@@ -401,7 +401,7 @@ class ProviderLoader(BaseLoader):
         p.first_name = unicode(row['first_name'])
         p.middle_name = unicode(row['middle_name'])
         p.title = row['title']
-        p.dept_id_num = row['dept_natural_key']
+        p.dept_natural_key = row['dept_natural_key']
         p.dept = row['dept']
         p.dept_address_1 = row['dept_address_1']
         p.dept_address_2 = row['dept_address_2']
@@ -573,9 +573,9 @@ class LabOrderLoader(BaseLoader):
             patient = self.get_patient(row['patient_id']),
             provider = self.get_provider(row['provider_id']),
             mrn = row['mrn'],
-            order_id = row['natural_key'],
+            natural_key = row['natural_key'],
             procedure_code = row['procedure_code'],
-            modifier = row['procedure_modifier'],
+            procedure_modifier = row['procedure_modifier'],
             specimen_id = row['specimen_id'],
             date = self.date_or_none(row['ordering_date']),
             order_type = row['order_type'],
@@ -815,7 +815,7 @@ class AllergyLoader(BaseLoader):
         ]
     
     def load_row(self, row):
-        allergen, created = Allergen.objects.get_or_create(code=row['allergy_id'])
+        allergen, created = Allergen.objects.get_or_create(code=row['problem_id'])
         Allergy.objects.create(
             provenance = self.provenance,
             patient = self.get_patient(row['patient_id']),

@@ -19,9 +19,8 @@ from optparse import make_option
 
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
-from ESP.emr.models import LabResult
-from ESP.emr.models import LabTestConcordance
-from ESP.emr.management.commands.make_fakes import * #ImmunizationWriter, EncounterWriter, AllergyWriter, 
+from ESP.emr.models import LabResult, LabTestConcordance
+from ESP.emr.management.commands.make_fakes import *  
 
 
 
@@ -35,6 +34,15 @@ class Command(BaseCommand):
         print 'Extracting ESP data'
         
         #file_path = os.path.join(DATA_DIR, 'fake', self.__class__.filename(d))
+        
+        count = 0
+        provider_writer = ProviderWriter()
+         
+        for p in Provider.objects.order_by('natural_key').exclude(natural_key__icontains="UNKNOWN"): 
+            count =count +1 
+            provider_writer.write_row(p)
+        log.info('Extracted %s Provider from ESP to Epic ETL files' % count)   
+        print 'Extracted %s Provider from ESP to Epic ETL files' % count
                  
         count = 0
         patient_writer = PatientWriter()
@@ -85,7 +93,6 @@ class Command(BaseCommand):
         log.info('Extracted %s Lab Orders from ESP to Epic ETL files' % count)  
         print 'Extracted %s Lab Orders from ESP to Epic ETL files' % count
        
-       
         count = 0    
         allergy_writer = AllergyWriter()
         for allergy in Allergy.objects.order_by('problem_id'):
@@ -94,6 +101,21 @@ class Command(BaseCommand):
         log.info('Extracted %s Allergies from ESP to Epic ETL files' % count)  
         print 'Extracted %s Allergies from ESP to Epic ETL files' % count
        
+        count = 0    
+        problem_writer = ProblemWriter()
+        for p in Problem.objects.order_by('problem_id'):
+            count =count +1 
+            problem_writer.write_row(p)
+        log.info('Extracted %s Problem from ESP to Epic ETL files' % count)  
+        print 'Extracted %s Problem from ESP to Epic ETL files' % count
+        
+        count = 0    
+        socialhistory_writer = SocialHistoryWriter()
+        for p in SocialHistory.objects.order_by('id'):
+            count =count +1 
+            socialhistory_writer.write_row(p)
+        log.info('Extracted %s social history from ESP to Epic ETL files' % count)  
+        print 'Extracted %s social history from ESP to Epic ETL files' % count
         
 '''       
         self.folder_check()

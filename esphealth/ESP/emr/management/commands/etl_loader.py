@@ -401,7 +401,7 @@ class ProviderLoader(BaseLoader):
         p.first_name = unicode(row['first_name'])
         p.middle_name = unicode(row['middle_name'])
         p.title = row['title']
-        p.dept_id_num = row['dept_natural_key']
+        p.dept_natural_key = row['dept_natural_key']
         p.dept = row['dept']
         p.dept_address_1 = row['dept_address_1']
         p.dept_address_2 = row['dept_address_2']
@@ -597,7 +597,7 @@ class EncounterLoader(BaseLoader):
         'is_closed',
         'closed_date',
         'provider_id',
-        'dept_id_num',
+        'dept_natural_key',
         'dept_name',
         'event_type',
         'edc',
@@ -633,7 +633,7 @@ class EncounterLoader(BaseLoader):
             'provider': self.get_provider(row['provider_id']),
             'date': dton(row['encounter_date']),
             'raw_date': son(row['encounter_date']),
-            'site_natural_key': son( row['dept_id_num'] ),
+            'site_natural_key': son( row['dept_natural_key'] ),
             'encounter_type': up(row['event_type']),
             'date_closed': dton(row['closed_date']),
             'raw_date_closed': son(row['closed_date']),
