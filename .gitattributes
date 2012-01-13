@@ -58,8 +58,8 @@ esphealth/ESP/emr/migrations/0001_initial.py -text
 esphealth/ESP/emr/migrations/0002_rename_various_fields.py -text
 esphealth/ESP/emr/models.py -text
 esphealth/ESP/emr/report.py -text
-esphealth/ESP/emr/sql/labresult.postgresql.sql -text
-esphealth/ESP/emr/sql/patient.postgresql.sql -text
+esphealth/ESP/emr/sql/labresult.postgresql_psycopg2.sql -text
+esphealth/ESP/emr/sql/patient.postgresql_psycopg2.sql -text
 esphealth/ESP/env-setup.sh -text
 esphealth/ESP/hef/__init__.py -text
 esphealth/ESP/hef/admin.py -text
