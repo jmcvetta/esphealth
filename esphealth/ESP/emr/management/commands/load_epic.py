@@ -667,6 +667,7 @@ class EncounterLoader(BaseLoader):
         #
         # ICD9 Codes
         #
+        # TODO this will change once we use the new diagnosis object
         if not created: # If updating the record, purge old ICD9 list
             e.icd9_codes = []
         for code_string in row['icd9s'].split(';'):
@@ -774,7 +775,7 @@ class ImmunizationLoader(BaseLoader):
         i.natural_key = row['natural_key']
         i.mrn = row['mrn']
         i.provider = self.get_provider(row['provider_id'])
-        i.visit_date = row['visit_date']
+        i.visit_date = self.date_or_none(row['visit_date'])
         i.save()
         log.debug('Saved immunization object: %s' % i)
 
@@ -792,7 +793,7 @@ class SocialHistoryLoader(BaseLoader):
     def load_row(self, row):
         SocialHistory.objects.create(
             provenance = self.provenance,
-            date = row['date_noted'], # matching version 3 ETL
+            date = self.date_or_none(row['date_noted']), # matching version 3 ETL
             patient=self.get_patient(row['patient_id']),
             mrn = row['mrn'],
             tobacco_use = row['tobacco_use'],
@@ -851,6 +852,7 @@ class ProblemLoader(BaseLoader):
         
         Problem.objects.create(
             provenance = self.provenance,
+            problem_id = row['problem_id'],
             patient = self.get_patient(row['patient_id']),
             mrn = row['mrn'],
             date = self.date_or_none(row['date_noted']),
