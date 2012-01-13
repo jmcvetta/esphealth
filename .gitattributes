@@ -70,7 +70,7 @@ esphealth/ESP/hef/management/commands/__init__.py -text
 esphealth/ESP/hef/management/commands/hef.py -text
 esphealth/ESP/hef/management/commands/hef_load_defaults.py -text
 esphealth/ESP/hef/models.py -text
-esphealth/ESP/hef/sql/event.postgresql.sql -text
+esphealth/ESP/hef/sql/event.postgresql_psycopg2.sql -text
 esphealth/ESP/hef/tests.py -text
 esphealth/ESP/media/css/base.css -text
 esphealth/ESP/media/css/changelists.css -text
