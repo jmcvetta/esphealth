@@ -20,7 +20,9 @@ from ESP.emr.models import LabOrder
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
-
+from ESP.emr.models import Allergy
+from ESP.emr.models import Problem
+from ESP.emr.models import SocialHistory
 
 STANDARD_SEARCH_FIELDS = ['natural_key', 'patient__mrn', 'patient__last_name', 'provider__last_name']
 STANDARD_RAW_ID_FIELDS = ['provenance', 'patient', 'provider']
@@ -63,6 +65,24 @@ class ImmunizationAdmin(admin.ModelAdmin):
     raw_id_fields = STANDARD_RAW_ID_FIELDS
     search_fields = STANDARD_SEARCH_FIELDS + ['name']
     ordering = ['-date']
+    
+class AllergyAdmin(admin.ModelAdmin):
+    list_display = ['date', 'patient', 'name','status','description']
+    raw_id_fields = STANDARD_RAW_ID_FIELDS
+    search_fields = STANDARD_SEARCH_FIELDS + ['name']
+    ordering = ['-date']
+    
+class ProblemAdmin(admin.ModelAdmin):
+    list_display = ['problem_id', 'date', 'patient', 'status','comment']
+    raw_id_fields = STANDARD_RAW_ID_FIELDS
+    search_fields = STANDARD_SEARCH_FIELDS + ['comment']
+    ordering = ['-date']
+    
+class SocialHistoryAdmin(admin.ModelAdmin):
+    list_display = ['date', 'patient','tobacco_use','alcohol_use']
+    raw_id_fields = STANDARD_RAW_ID_FIELDS
+    search_fields = STANDARD_SEARCH_FIELDS + ['tobacco_use','alcohol_use']
+    ordering = ['-date']
 
 class ProvenanceAdmin(admin.ModelAdmin):
     list_display = ['provenance_id', 'timestamp', 'source', 'status']
@@ -79,4 +99,7 @@ admin.site.register(LabOrder, LabOrderAdmin)
 admin.site.register(Encounter, EncounterAdmin)
 admin.site.register(Prescription, PrescriptionAdmin)
 admin.site.register(Immunization, ImmunizationAdmin)
+admin.site.register(Allergy, AllergyAdmin)
+admin.site.register(Problem, ProblemAdmin)
+admin.site.register(SocialHistory, SocialHistoryAdmin)
 admin.site.register(Provenance, ProvenanceAdmin)
