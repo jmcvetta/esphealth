@@ -65,7 +65,7 @@ esphealth/ESP/emr/migrations/0003_add_diagnosis.py -text
 esphealth/ESP/emr/migrations/__init__.py -text
 esphealth/ESP/emr/models.py -text
 esphealth/ESP/emr/report.py -text
-esphealth/ESP/emr/sql/multicolumn-indices.postgresql.sql -text
+esphealth/ESP/emr/sql/labresult.postgresql.sql -text
 esphealth/ESP/emr/sql/patient.postgresql.sql -text
 esphealth/ESP/env-setup.sh -text
 esphealth/ESP/hef/__init__.py -text
@@ -83,7 +83,7 @@ esphealth/ESP/hef/migrations/0004_chg_field_timespan_end_date.py -text
 esphealth/ESP/hef/migrations/0005_timespan_events.py -text
 esphealth/ESP/hef/migrations/__init__.py -text
 esphealth/ESP/hef/models.py -text
-esphealth/ESP/hef/sql/multicolumn-indices.postgresql.sql -text
+esphealth/ESP/hef/sql/event.postgresql.sql -text
 esphealth/ESP/hef/tests.py -text
 esphealth/ESP/media/css/base.css -text
 esphealth/ESP/media/css/changelists.css -text
@@ -201,7 +201,7 @@ esphealth/ESP/static/__init__.py -text
 esphealth/ESP/static/admin.py -text
 esphealth/ESP/static/fixtures/initial_data.json.bz2 -text svneol=unset#unset
 esphealth/ESP/static/models.py -text
-esphealth/ESP/static/sql/indices.postgresql.sql -text
+esphealth/ESP/static/sql/icd9.postgresql.sql -text
 esphealth/ESP/static/tests.py -text
 esphealth/ESP/static/views.py -text
 esphealth/ESP/templates/404.html -text
