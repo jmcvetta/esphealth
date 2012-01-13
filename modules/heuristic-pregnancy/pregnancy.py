@@ -654,9 +654,13 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
 preg_heuristic = PregnancyHeuristic()
 
 def get_timespan_heuristics():
-    return [ preg_heuristic, ]
+    # DEBUG/FIXME: Disable until new programming is finished.
+    #return [ preg_heuristic, ]
+    return []
 
 
 def get_event_heuristics():
-    return preg_heuristic.event_heuristics
+    # DEBUG/FIXME: Disable until new programming is finished.
+    #return preg_heuristic.event_heuristics
+    return []
 
