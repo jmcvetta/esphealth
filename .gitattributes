@@ -47,7 +47,6 @@ esphealth/ESP/emr/management/commands/common.py -text
 esphealth/ESP/emr/management/commands/concordance.py -text
 esphealth/ESP/emr/management/commands/data-quality-check.py -text
 esphealth/ESP/emr/management/commands/download_ftp.py -text
-esphealth/ESP/emr/management/commands/etl_loader.py -text
 esphealth/ESP/emr/management/commands/extract_epic.py -text
 esphealth/ESP/emr/management/commands/float_checker.py -text
 esphealth/ESP/emr/management/commands/load_epic.py -text
