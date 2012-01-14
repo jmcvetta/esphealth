@@ -1152,20 +1152,20 @@ class Encounter(BasePatientRecord):
         #the order in msVitals depends on the fakevitals load order rows 
         e.bmi = Encounter.randomVitalValue(msVitals[0].normal_low, msVitals[0].normal_high, 
                                            msVitals[0].very_low, msVitals[0].very_high) 
-        e.temperature = Encounter.randomVitalValue(msVitals[1].normal_low, msVitals[1].normal_high, 
-                                           msVitals[1].very_low, msVitals[1].very_high) 
-        e.weight = Encounter.randomVitalValue(msVitals[2].normal_low, msVitals[2].normal_high, 
-                                           msVitals[2].very_low, msVitals[2].very_high) 
+        e.temperature = Encounter.randomVitalValue(msVitals[6].normal_low, msVitals[6].normal_high, 
+                                           msVitals[6].very_low, msVitals[6].very_high) 
+        e.weight = Encounter.randomVitalValue(msVitals[7].normal_low, msVitals[7].normal_high, 
+                                           msVitals[7].very_low, msVitals[7].very_high) 
         e.height = Encounter.randomVitalValue(msVitals[3].normal_low, msVitals[3].normal_high, 
                                            msVitals[3].very_low, msVitals[3].very_high) 
-        e.bp_systolic = Encounter.randomVitalValue(msVitals[4].normal_low, msVitals[4].normal_high, 
-                                           msVitals[4].very_low, msVitals[4].very_high)  
-        e.bp_diastolic =Encounter.randomVitalValue(msVitals[5].normal_low, msVitals[5].normal_high, 
+        e.bp_systolic = Encounter.randomVitalValue(msVitals[2].normal_low, msVitals[2].normal_high, 
+                                           msVitals[2].very_low, msVitals[2].very_high)  
+        e.bp_diastolic =Encounter.randomVitalValue(msVitals[1].normal_low, msVitals[1].normal_high, 
+                                           msVitals[1].very_low, msVitals[1].very_high) 
+        e.o2_stat = Encounter.randomVitalValue(msVitals[4].normal_low, msVitals[4].normal_high, 
+                                           msVitals[4].very_low, msVitals[4].very_high) 
+        e.peak_flow = Encounter.randomVitalValue(msVitals[5].normal_low, msVitals[5].normal_high, 
                                            msVitals[5].very_low, msVitals[5].very_high) 
-        e.o2_stat = Encounter.randomVitalValue(msVitals[6].normal_low, msVitals[6].normal_high, 
-                                           msVitals[6].very_low, msVitals[6].very_high) 
-        e.peak_flow = Encounter.randomVitalValue(msVitals[7].normal_low, msVitals[7].normal_high, 
-                                           msVitals[7].very_low, msVitals[7].very_high) 
         
         
         #e.diagnosis = ''
