@@ -49,10 +49,10 @@ from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
 from ESP.emr.management.commands.load_epic import LoadException, UPDATED_BY
 
 #change patient generations here
-POPULATION_SIZE = 2
+POPULATION_SIZE = 17
 
-MIN_ENCOUNTERS_PER_PATIENT = 1
-ENCOUNTERS_PER_PATIENT = 2
+MIN_ENCOUNTERS_PER_PATIENT = 2
+ENCOUNTERS_PER_PATIENT = 3
 MAXICD9 = 2
 
 MIN_LAB_TESTS_PER_PATIENT = 1
@@ -346,7 +346,7 @@ class EncounterWriter(EpicWriter):
                 'mrn':encounter.mrn,
                 'natural_key': encounter.natural_key,
                 'encounter_date':str_from_date(encounter.date),
-                'is_closed': '',
+                'is_closed': 'YES',
                 'date_closed':str_from_date(encounter.date_closed) or '',
                 'provider_id':encounter.provider.natural_key,
                 'site_natural_key':encounter.site_natural_key,
@@ -361,7 +361,7 @@ class EncounterWriter(EpicWriter):
                 'bp_diastolic':str(encounter.bp_diastolic or ''),
                 'o2_stat':str(encounter.o2_stat or ''),
                 'peak_flow':str(encounter.peak_flow or ''),
-                'icd9s': '; '.join(icd9_codes),
+                'icd9s': ' '.join(icd9_codes),
                 'bmi':str(encounter.bmi or ''),
                 'raw_diagnosis':encounter.raw_diagnosis or ''
                 })
@@ -545,7 +545,11 @@ class Command(LoaderCommand):
         print 'Generating fake Patients, Labs, Encounters and Prescriptions'
                 
         Provider.make_mocks(provider_writer)
+        #TODO add the header rows her for each writer
+        # do a join of fields object by ^
+        # use icd9code 
         
+        #from 0 to POPULATION_SIZE-1
         for count in xrange(POPULATION_SIZE):
             if (count % ROW_LOG_COUNT) == 0 and count >0 : 
                 prof.check('Processed entries for %d patients' % count)
