@@ -967,7 +967,7 @@ class Prescription(BasePatientRecord):
         
         # 1 , 2 or 3 multiplied by days btw start and end
         delta = p.end_date-p.start_date
-        p.quantity =  delta.days * round(random.randint(1,3)) 
+        p.quantity =  int((delta.days + 1) * round(random.randint(1,3)) )
         p.quantity_float = p.quantity
         
         
