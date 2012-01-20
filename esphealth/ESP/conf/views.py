@@ -57,8 +57,8 @@ def heuristic_mapping_report(request):
     values = {'title': 'Code Mapping Report'}
     mapped = []
     unmapped = []
-    for heuristic in BaseHeuristic.lab_heuristics():
-        maps = LabTestMap.objects.filter(heuristic=heuristic.name)
+    for heuristic in BaseHeuristic.get_all(): 
+        maps = LabTestMap.objects.filter(test_name=heuristic.short_name)
         if not maps:
             unmapped.append(heuristic)
             continue
