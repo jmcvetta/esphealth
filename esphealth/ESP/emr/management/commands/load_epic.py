@@ -670,7 +670,7 @@ class EncounterLoader(BaseLoader):
         # TODO this will change once we use the new diagnosis object
         if not created: # If updating the record, purge old ICD9 list
             e.icd9_codes = []
-        for code_string in row['icd9s'].split(' '):
+        for code_string in row['icd9s'].split(';'):
             if len(code_string.split()) >= 1: 
                 code = code_string.split()[0].strip()
                 # We'll only accept a code if it has at least one digit in the string.

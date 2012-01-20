@@ -361,7 +361,7 @@ class EncounterWriter(EpicWriter):
                 'bp_diastolic':str(encounter.bp_diastolic or ''),
                 'o2_stat':str(encounter.o2_stat or ''),
                 'peak_flow':str(encounter.peak_flow or ''),
-                'icd9s': ' '.join(icd9_codes),
+                'icd9s': ';'.join(icd9_codes),
                 'bmi':str(encounter.bmi or ''),
                 'raw_diagnosis':encounter.raw_diagnosis or ''
                 })
