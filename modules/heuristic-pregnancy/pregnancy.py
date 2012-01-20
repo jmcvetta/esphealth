@@ -393,8 +393,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         counter = 0
         log.info('Checking currently-pregnant patients for EoP')
         cur_preg_qs = Timespan.objects.filter(name='pregnancy', end_date=None)
-        unbound_eop_patients = self.all_eop_qs.exclude(timespan__name='pregnancy').values('patient').distinct()
-        cur_preg_qs = cur_preg_qs.filter(patient__in=unbound_eop_patients)
+        und_eop_patients = self.all_eop_qs.exclude(events__timespan__name='pregnancy').values('patient').distinct()
+        cur_preg_qs = cur_preg_qs.filter(patient__in=und_eop_patients)
         log_query('Currently pregnant patients with an unbound EoP event', cur_preg_qs)
         total = cur_preg_qs.count()
         counter = 0
@@ -428,7 +428,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         # Get possible patients for new pregnancies
         #
-        unbound_onset_qs = self.onset_qs.exclude(timespan__name='pregnancy')
+        
+        unbound_onset_qs = self.onset_qs.exclude(events__timespan__name='pregnancy')
         patient_pks = unbound_onset_qs.order_by('patient').values_list('patient', flat=True).distinct()
         log_query('Pregnant patient PKs', patient_pks)
         funcs = [partial(self.pregnancies_for_patient, patient_pk) for patient_pk in patient_pks]
@@ -495,7 +496,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         @rtype: Date
         '''
         edd_qs = self.edd_qs.filter(patient=patient)
-        edd_qs = edd_qs.exclude(timespan__name='pregnancy')
+        edd_qs = edd_qs.exclude(events__timespan__name='pregnancy')
         edd_qs = edd_qs.filter(edd__gte=start_date)
         edd_qs = edd_qs.filter( edd__lte = start_date + relativedelta(days=280) )
         min_edd = edd_qs.aggregate(Min('edd'))['edd__min']
@@ -516,7 +517,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         '''
         max_icd9_date = start_date + relativedelta(days=280)
         preg_qs = self.preg_icd9_qs.filter(patient=patient)
-        preg_qs = preg_qs.exclude(timespan__name='pregnancy')
+        preg_qs = preg_qs.exclude(events__timespan__name='pregnancy')
         preg_qs = preg_qs.filter(date__gte=start_date)
         preg_qs = preg_qs.filter(date__lte=max_icd9_date)
         max_icd9_date = preg_qs.aggregate(Max('date'))['date__max']
@@ -528,7 +529,10 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         patient = Patient.objects.get(pk=patient_pk)
         counter = 0
         today = datetime.date.today()
-        while True:
+        # TODO fix me figure out why the while loop
+        # go through all patients and break.
+        # while True:
+        for x in range(0,1):
             onset_date = None
             eop_date = None
             pattern = None
@@ -537,7 +541,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             # bound to a pregnancy timespan.
             #
             preg_qs = self.preg_icd9_qs.filter(patient=patient)
-            preg_qs = preg_qs.exclude(timespan__name='pregnancy')
+            preg_qs = preg_qs.exclude(events__timespan__name='pregnancy')
             preg_qs = preg_qs.order_by('date')
             #
             # If there are no unbound pregnancy encounters, we are done with this patient
@@ -618,11 +622,20 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 msg += '    proposed pattern: %s\n' % pattern
                 for ts in overlap_qs:
                     msg += '    existing:  %s\n' % ts
-                    for e in ts.encounters.all().order_by('date', 'pk'):
-                        msg += '        %s\n' % e.verbose_str
+                    #  for e in ts.encounters.all().order_by('date', 'pk'):
+                    # TODO correct to print encounters not events
+                    for ev in ts.events.all().order_by('date', 'pk'):
+                        #  ev.objectid where ev.contenttype = encounter_type
+                        # for enc in encountertables.filter(id= ev.objectid)
+                        msg += '        %s\n' % ev.verbose_str
                 log.warning(msg)
-                existing_preg = overlap_qs[0]
-                existing_preg.encounters.add(first_preg_event)
+                existing_preg = overlap_qs[0] 
+                templist = []
+                for ev in first_preg_event.events.all():
+                    templist.append(ev)
+                existing_preg.events = templist   
+                        
+                #existing_preg.encounters.add(first_preg_event)
                 existing_preg.save()
                 log.debug('Added overlap event %s to existing pregnancy %s' % (first_preg_event, existing_preg))
             else:
@@ -646,7 +659,13 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             relevant_encounters = relevant_encounters.filter( date__lte=(preg_ts.end_date + relativedelta(months=6)) )
         else:
             relevant_encounters = relevant_encounters.filter( date__lte=self.today )
-        preg_ts.encounters = relevant_encounters
+        templist = []
+        for enc in relevant_encounters:
+            for ev in enc.events.all():
+                templist.append(ev)
+            #preg_ts.events.append(enc.events)
+                    
+        preg_ts.events = templist
         preg_ts.save()
         return preg_ts
                 
