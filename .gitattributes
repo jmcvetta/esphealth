@@ -414,10 +414,15 @@ esphealth/unit-test/syphilis/epicmem.esp.11122011 -text
 esphealth/unit-test/syphilis/epicpro.esp.11122011 -text
 esphealth/unit-test/syphilis/epicres.esp.11122011 -text
 esphealth/unit-test/syphilis/epicvis.esp.11122011 -text
+esphealth/unit-test/tb/epicmed.esp.01202012 -text
 esphealth/unit-test/tb/epicmed.esp.11112011 -text
+esphealth/unit-test/tb/epicmem.esp.01202012 -text
 esphealth/unit-test/tb/epicmem.esp.11112011 -text
+esphealth/unit-test/tb/epicpro.esp.01202012 -text
 esphealth/unit-test/tb/epicpro.esp.11032011 -text
+esphealth/unit-test/tb/epicres.esp.01202012 -text
 esphealth/unit-test/tb/epicres.esp.11112011 -text
+esphealth/unit-test/tb/epicvis.esp.01202012 -text
 esphealth/unit-test/tb/epicvis.esp.11112011 -text
 esphealth/unit-test/test-cases.txt -text
 esphealth/unit-test/vaers/epicimm.esp.01022012 -text
