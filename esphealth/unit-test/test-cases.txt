@@ -85,8 +85,8 @@ tb
 1/4 patient with tb laborder ('myco', 'afb', 'tb', 'tuber',) within 14 days after diagnosis
 2/4 patient with lab order  within 60 days prior or after diagnosis
 3/4 patient with SECONDARY_MED_EVENTS in TuberculosisDefC class in models.py
-1 patient with SECONDARY_MED_EVENTS in TuberculosisDefC class in models.py with no diagnosis. NEG
 4/4 patient with tb lab order after 14 days. NEG
+1 patient with SECONDARY_MED_EVENTS in TuberculosisDefC class in models.py with no diagnosis. NEG
 
 acute hep a
 3 patients ( should generate 3 cases)
@@ -97,75 +97,42 @@ second patient with a lab test ('hep', 'alt', 'ast', 'tbil', 'bili') within 14 d
 1 patient with alt_2x and lab igm positive within more than 14 days
 
 diabetes
-10  patients 
+17  patients 
  conditions: 
-    - Pre-diabetes -
-    4 patients with enconter with icd9 following:
-    type 1 (250.1, 250.3 (stated - uncontrolled
-    type 2 250.0, 250.2
-    - Frank Diabetes (has to have type 1 and 2)
-    - Gestational Diabetes: 1 patient with encounter with icd9 '648.8'
-    all types 1 patient with encounter with icd9 starts with 250.
-    1 patient with meds 'insulin'
-    1 patient with tert pos 'islet-cell-antibody'
-    1 patient with test pos cholesterol:  'cholesterol-hdl',
-            'cholesterol-ldl',
-            'cholesterol-total',
-            'triglycerides',
-    1 patient with         
-   1 patient with any result test in 'c-peptide',
-            # Complete OGTT75 series
-            'ogtt75-fasting',
-            'ogtt75-30min',
-            'ogtt75-1hr',
-            'ogtt75-90min',
-            'ogtt75-2hr',
-            
-   1 patient with pos test  'ogtt100-fasting-urine',
-   1 patient with test with any of these threshold tests:
-    # Fasting OGTT
-            ('ogtt50-fasting', 'gte', 126),
-            ('ogtt75-fasting', 'gte', 126),
-            ('ogtt100-fasting', 'gte', 126),
-            # OGTT50
-            ('ogtt50-fasting', 'gte', 190),
-            ('ogtt50-1hr', 'gte', 190),
-            # OGTT75
-            ('ogtt75-fasting', 'gte', 92),
-            ('ogtt75-fasting', 'gte', 126),
-            ('ogtt75-30m', 'gte', 200),
-            ('ogtt75-1hr', 'gte', 180),
-            ('ogtt75-1hr', 'gte', 200),
-            ('ogtt75-90m', 'gte', 180),
-            ('ogtt75-90m', 'gte', 200),
-            ('ogtt75-2hr', 'gte', 153),
-            ('ogtt75-2hr', 'gte', 200),
-            # OGTT100
-            ('ogtt100-fasting', 'gte', 95),
-            ('ogtt100-30m', 'gte', 200),
-            ('ogtt100-1hr', 'gte', 180),
-            ('ogtt100-90m', 'gte', 180),
-            ('ogtt100-2hr', 'gte', 155),
-            ('ogtt100-3hr', 'gte', 140),
-            ('ogtt100-4hr', 'gte', 140),
-            ('ogtt100-5hr', 'gte', 140),
-            # Auto-antibodies
-            ('gad65', 'gt', 1),
-            ('ica512', 'gt', 0.8),
-            # A1C
-            ('a1c', 'gte', 6.5),
-            # C-Peptide
-            ('c-peptide', 'lt', 0.8),
-     1 patient with test in range 
-     ('a1c', 5.7, 6.4),
-            ('glucose-fasting', 100, 125),
-            ('ogtt50-random', 140, 200),
-            ('ogtt75-fasting', 100, 125),
-            ('ogtt75-30m', 140, 199),
-            ('ogtt75-1hr', 140, 199),
-            ('ogtt75-90m', 140, 199),
-            ('ogtt75-2hr', 140, 199),                
-
+    - Pre-diabetes - (3 posive cases)
+    4 patient with no encounters:
+    1 patient with lab A1C between 5.7 and 6.4 --MaryA
+	1 patient with lab Fasting glucose (FG) between 100 and 125 - johnI
+	1 patient with 2 random labs glucose (RG) ≥140 and <200 - donnaG
+	1 patient with  2 encounters with icd9 of 250.x1 (frank diabetes) (on the day or before) PlattT 
+		same patient with lab A1C between 5.7 and 6.4 (NEG)
+    - Frank Diabetes (type 1 and 2)
+    8 patients
+    1 patient with test A1C with result >= 6.5  - MaryG
+    1 patient not pregnant  prescription for INSULIN  -KruskalY
+    1 patient with 2 encounters with icd9 of 250.x1 OR .x3 (type 1) -doolittleO
+      same patient with 1 encounter with icd9 of 250.x0 or .x2 (type 2) 
+      same patient with prescription of GLUCAGON
+    1 patient with 2 encounters with icd9 of 250.x0 or .x2  (type 2)  -whoJ
+      same patient with 1 encounter with icd9 of 250.x1 OR .x3 (type 1) 
+    1 patient with 1 encounters with icd9 of 250.x0 or .x2   (type 2)  -whoP
+      same patient with 1 encounter with icd9 of 250.x1 OR .x3 (type 1) 
+    1 patient with prescription for SITAGLIPTIN  -LazarusN
+    1 patient with lab peptide test <0.8 (type 1)  -bazzaV
+    	same patient with lab test A1C with result >= 6.5
+    1 patient with A1C with result < 5.7 NEG -mihaelW
+      same patient with 1 encounter of icd9 of 250.x1 OR .x3 (type 1) 
+    - Gestational Diabetes: 
+    5 patient with encounter with icd9 'V22.x' or V23.x and no edd 
+    	1st/5 patient with encounter with icd9 648.8x -susanQ
+    	 same patient with prescription containing the term “LANCETS” or
+    	 “TEST STRIPS” 14 days after encounter icd9 648.8x 
+    	2nd/5 patient with lab OB Fasting glucose ≥126  -donnaP
+    	3rd/5 patient with lab test OGTT 50 random (82950—161) >= 190 -PatriciaI
+    	4th/5 patient with test OGTT 75 1h (82951—2862) >= 180 -doolittleJ
+    	5th/5 patient with test component Positive OGTT 100 fasting urine (cpt 82951-64)
+    	  same patient with lab test OGTT 100 2h (82951--159) >=155 - lazarusY
+    	
 Gonorrhea
 hep b
 hep c
