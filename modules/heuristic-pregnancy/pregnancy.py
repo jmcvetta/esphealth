@@ -529,10 +529,10 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         patient = Patient.objects.get(pk=patient_pk)
         counter = 0
         today = datetime.date.today()
-        # TODO fix me figure out why the while loop
+        
         # go through all patients and break.
-        # while True:
-        for x in range(0,1):
+        while True:
+        
             onset_date = None
             eop_date = None
             pattern = None
