@@ -80,6 +80,12 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
     today = datetime.date.today()
     
     @property
+    def timespan_heuristics(self):
+        heuristics = []
+        heuristics.append(PregnancyHeuristic() )
+        return heuristics
+    
+    @property
     def event_heuristics(self):
         heuristics = []
         #-------------------------------------------------------------------------------
@@ -98,7 +104,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             name = 'pregnancy:onset',
             icd9_queries = [
                 Icd9Query(starts_with = 'V22.'),
-                Icd9Query(starts_with = 'V22.'),
+                # TODO review to see if v23 is the correct one?
+                Icd9Query(starts_with = 'V23.'),
                 ]
             ) )
         #-------------------------------------------------------------------------------
@@ -263,7 +270,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         # ICD9 Encounters
         #
         #-------------------------------------------------------------------------------
-        icd9_q_obj = Q() # BROKEN BROKEN BROKEN!
+        icd9_q_obj = Q() # TODO BROKEN BROKEN BROKEN! why?
+        
         onset_q_obj = (
             Q(icd9_codes__code__startswith='V22.') | 
             Q(icd9_codes__code__startswith='V23.')
@@ -382,7 +390,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
     @transaction.commit_on_success
     def generate(self):
         self._update_currently_pregnant()
-        return self._generate_new_pregnanies()
+        return self._generate_new_pregnancies()
     
     def _update_currently_pregnant(self):
         '''
@@ -423,7 +431,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         log.info('Updated %s currently-pregnant timespans with end dates.' % counter)
         return counter
         
-    def _generate_new_pregnanies(self):
+    def _generate_new_pregnancies(self):
         log.info('Generating new pregnancy timespans')
         #
         # Get possible patients for new pregnancies
@@ -436,11 +444,11 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         ts_count = wait_for_threads(funcs)
         return ts_count
     
-    def _get_eop_enc(self, patient, onset_date):
+    def _get_eop_enc(self, currPt, onset_date):
         '''
         Finds a plausible End of Pregnancy encounter, given a patient and the 
             date of pregnancy onset.
-        @param patient: The patient to be considered
+        @param currPt: The patient to be considered
         @type patient: ESP.emr.models.Patient
         @param onset_date: Onset date for this episode of pregnancy
         @type onset_date: Date
@@ -454,7 +462,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         eop_event_date = None
         eop_date_limit = onset_date + relativedelta(days=280) + relativedelta(days=30)
         eop_qs = self.all_eop_qs.filter(
-            patient = patient,
+            patient = currPt,
             date__gte = onset_date,
             date__lte = eop_date_limit,
             ).order_by('-date')
@@ -471,7 +479,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             # them the same way, and change the code if need be.
             #
             subsequent_preg_icd9 = self.preg_icd9_qs.filter(
-                patient = patient,
+                patient = currPt,
                 date__gte = enc.date,
                 date__lte = enc.date + relativedelta(days=30)
                 )
@@ -484,31 +492,31 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 return enc
         return None
     
-    def _get_edd(self, patient, start_date):
+    def _get_edd(self, currPt, start_date):
         '''
         Finds a plausible Estimated Date of Delivery given a patient and a 
             date to start looking.
-        @param patient: Patient to consider
+        @param currPt: Patient to consider
         @type patient: ESP.emr.models.Patient
         @param start_date: Look for EDD encounters after this date
         @type start_date: Date
         @return: A plausible EDD 
         @rtype: Date
         '''
-        edd_qs = self.edd_qs.filter(patient=patient)
+        edd_qs = self.edd_qs.filter(patient=currPt)
         edd_qs = edd_qs.exclude(events__timespan__name='pregnancy')
         edd_qs = edd_qs.filter(edd__gte=start_date)
         edd_qs = edd_qs.filter( edd__lte = start_date + relativedelta(days=280) )
         min_edd = edd_qs.aggregate(Min('edd'))['edd__min']
         return min_edd
     
-    def _get_icd9_preg_end(self, patient, start_date):
+    def _get_icd9_preg_end(self, currPt, start_date):
         '''
         Finds a (probably not very reliable) end of pregnancy date based on
             the last pregnancy ICD9 code that could reasonablely be 
             attributed to a pregnancy starting at the given date
             date to start looking.
-        @param patient: Patient to consider
+        @param currPt: Patient to consider
         @type patient: ESP.emr.models.Patient
         @param start_date: Start of pregnancy
         @type start_date: Date
@@ -516,7 +524,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         @rtype: Date
         '''
         max_icd9_date = start_date + relativedelta(days=280)
-        preg_qs = self.preg_icd9_qs.filter(patient=patient)
+        preg_qs = self.preg_icd9_qs.filter(patient=currPt)
         preg_qs = preg_qs.exclude(events__timespan__name='pregnancy')
         preg_qs = preg_qs.filter(date__gte=start_date)
         preg_qs = preg_qs.filter(date__lte=max_icd9_date)
@@ -526,7 +534,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
     @transaction.commit_on_success
     def pregnancies_for_patient(self, patient_pk):
         log.debug('Examining patient #%s for pregnancy' % patient_pk)
-        patient = Patient.objects.get(pk=patient_pk)
+        currPt = Patient.objects.get(pk=patient_pk)
         counter = 0
         today = datetime.date.today()
         
@@ -540,11 +548,11 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             # Find the first encounter with an ICD9 for pregnancy, that is not already
             # bound to a pregnancy timespan.
             #
-            preg_qs = self.preg_icd9_qs.filter(patient=patient)
+            preg_qs = self.preg_icd9_qs.filter(patient=currPt)
             preg_qs = preg_qs.exclude(events__timespan__name='pregnancy')
             preg_qs = preg_qs.order_by('date')
             #
-            # If there are no unbound pregnancy encounters, we are done with this patient
+            # If there are no unbound pregnancy encounters, we are done with this currPt
             #
             if not preg_qs:
                 break
@@ -553,7 +561,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             # Determine if there is a plausible EDD within 280 days after 
             # first pregnancy ICD9 date
             #
-            min_edd = self._get_edd(patient, first_preg_event.date)
+            min_edd = self._get_edd(currPt, first_preg_event.date)
             #
             # Pregnancy onset is earliest plausible EDD minus 280 days.  If 
             # no EDD, then it is 30 days prior to first ICD9 for pregnancy.
@@ -565,14 +573,14 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 onset_date = first_preg_event.date - relativedelta(days=30)
                 pattern = 'onset:icd9 '
             #
-            # Is patient currently pregnant?  If so, we should not expect to
+            # Is currPt currently pregnant?  If so, we should not expect to
             # find an EoP event just yet.
             #
             
             #
             # Find an End of Pregnancy event.  
             #
-            eop_enc = self._get_eop_enc(patient, onset_date)
+            eop_enc = self._get_eop_enc(currPt, onset_date)
             if eop_enc:
                 eop_date = eop_enc.date
                 pattern += 'eop:eop_event'
@@ -583,7 +591,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             elif min_edd:
                 eop_date = min_edd
                 pattern += 'eop:min_edd '
-            # Is this patient currently pregnant?  If so, null eop_date
+            # Is this currPt currently pregnant?  If so, null eop_date
             elif onset_date > (today - relativedelta(days=280)):
                 eop_date = None
                 pattern += 'eop:currently_pregnant'
@@ -591,7 +599,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 max_icd9_date = first_preg_event.date + relativedelta(days=280)
                 this_preg_qs = preg_qs.filter(date__gte=onset_date)
                 this_preg_qs = this_preg_qs.filter(date__lte=max_icd9_date)
-                eop_date = self._get_icd9_preg_end(patient, onset_date)
+                eop_date = self._get_icd9_preg_end(currPt, onset_date)
                 pattern += 'eop:max_icd9 '
             #-------------------------------------------------------------------------------
             #
@@ -600,7 +608,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             #-------------------------------------------------------------------------------
             #
             overlap_qs = Timespan.objects.filter(name='pregnancy')
-            overlap_qs = overlap_qs.filter(patient=patient)
+            overlap_qs = overlap_qs.filter(patient=currPt)
             if eop_date:
                 overlap_qs = overlap_qs.filter( 
                     ( Q(start_date__lte=onset_date) & Q(end_date__gte=onset_date) ) 
@@ -640,7 +648,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 log.debug('Added overlap event %s to existing pregnancy %s' % (first_preg_event, existing_preg))
             else:
                 new_preg = Timespan(
-                    patient = patient,
+                    patient = currPt,
                     name = 'pregnancy',
                     start_date = onset_date,
                     end_date = eop_date,
@@ -672,14 +680,11 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 
 preg_heuristic = PregnancyHeuristic()
 
-def get_timespan_heuristics():
-    # DEBUG/FIXME: Disable until new programming is finished.
-    #return [ preg_heuristic, ]
-    return []
+def timespan_heuristics():
+    return preg_heuristic.timespan_heuristics
 
-
-def get_event_heuristics():
-    # DEBUG/FIXME: Disable until new programming is finished.
-    #return preg_heuristic.event_heuristics
-    return []
+def event_heuristics():
+    
+    return preg_heuristic.event_heuristics
+    
 
