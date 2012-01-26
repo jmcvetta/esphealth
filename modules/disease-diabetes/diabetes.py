@@ -90,13 +90,14 @@ class Diabetes(DiseaseDefinition):
         # Threshold Tests
         #
         for test_name, match_type, threshold in [
+                       
             # Fasting OGTT
             ('ogtt50-fasting', 'gte', 126),
             ('ogtt75-fasting', 'gte', 126),
             ('ogtt100-fasting', 'gte', 126),
             # OGTT50
-            ('ogtt50-fasting', 'gte', 190),
             ('ogtt50-1hr', 'gte', 190),
+            ('ogtt50-random', 'gte', 190),
             # OGTT75
             ('ogtt75-fasting', 'gte', 92),
             ('ogtt75-fasting', 'gte', 126),
@@ -135,9 +136,10 @@ class Diabetes(DiseaseDefinition):
         #
         for test_name, low, high in [
             ('a1c', 5.7, 6.4),
-            ('glucose-fasting', 100, 125),
-            ('ogtt50-random', 140, 200),
             ('ogtt75-fasting', 100, 125),
+            # added the two below in threshold too
+            #('ogtt50-random', 140, 199),
+            ('glucose-fasting', 100, 125),
             ('ogtt75-30m', 140, 199),
             ('ogtt75-1hr', 140, 199),
             ('ogtt75-90m', 140, 199),
@@ -225,10 +227,7 @@ class Diabetes(DiseaseDefinition):
             )
         heuristics.append(h)
         #
-        #
-        #
-        #
-        #
+        #  
         #
         # Cholesterol
         #
@@ -580,6 +579,7 @@ class Diabetes(DiseaseDefinition):
         return counter
     
     GDM_ONCE = [
+        
         'lx:ogtt100-fasting:threshold:gte:126',
         'lx:ogtt50-fasting:threshold:gte:126',
         'lx:ogtt75-fasting:threshold:gte:126',
@@ -638,17 +638,20 @@ class Diabetes(DiseaseDefinition):
         #
         # Dx or Rx
         #
-        dx_ets=['dx:diabetes:all-types']
+        dx_ets=['dx:diabetes:all-types','dx:gestational-diabetes']
         rx_ets=['rx:lancets', 'rx:test-strips']
-        # FIXME: This date math works on PostgreSQL, but I think that's just 
+        # TODO FIXME: This date math works on PostgreSQL, but I think that's just 
         # fortunate coincidence, as I don't think this is the righ way to 
         # express the date query in ORM syntax.
         _event_qs = Event.objects.filter(
             name__in=rx_ets,
-            patient__event__name=dx_ets, 
+            patient__event__name__in = dx_ets, 
+            # date of diagnosis
             patient__event__date__gte = (F('date') - 14 ),
             patient__event__date__lte = (F('date') + 14 ),
             )
+        # TODO fix me, debugging it did not generate the ts for the lancets 
+        # gestational diabetes so this filter below returns empty
         dxrx_qs = ts_qs.filter(
             patient__event__in = _event_qs,
             patient__event__date__gte = F('start_date'),
