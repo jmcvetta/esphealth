@@ -125,13 +125,14 @@ diabetes
     - Gestational Diabetes: 
     5 patient with encounter with icd9 'V22.x' or V23.x and no edd 
     	1st/5 patient with encounter with icd9 648.8x -susanQ
-    	 same patient with prescription containing the term “LANCETS” or
-    	 “TEST STRIPS” 14 days after encounter icd9 648.8x 
-    	2nd/5 patient with lab OB Fasting glucose ≥126  -donnaP
-    	3rd/5 patient with lab test OGTT 50 random (82950—161) >= 190 -PatriciaI
-    	4th/5 patient with test OGTT 75 1h (82951—2862) >= 180 -doolittleJ
+    	 same patient with prescription containing the term “lancets” or
+    	 “test strips” 14 days after encounter icd9 648.8x 
+    	2nd/5 patient with lab ogtt 50 fasting  ≥126  -donnaP
+    	3rd/5 patient with lab test OGTT 50 random (82950—161) >= 190 -PatriciaI 
+    	4th/5 patient with test OGTT 75 1h (82951—2862) >= 180 -doolittleJ  
     	5th/5 patient with test component Positive OGTT 100 fasting urine (cpt 82951-64)
-    	  same patient with lab test OGTT 100 2h (82951--159) >=155 - lazarusY
+    	  #same patient with lab test OGTT 100 2h (82951--159) >=155 - lazarusY  
+    	  change the above to the positive case has to be two of them 
     	
 Gonorrhea
 hep b
