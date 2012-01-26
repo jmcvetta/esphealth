@@ -17,6 +17,7 @@ esphealth/ESP/conf/dev_maps.py -text
 esphealth/ESP/conf/fixtures/conf-test-native-codes.json.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/fixtures/icd9.json.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/fixtures/immunization_manufacturers.json.bz2 -text svneol=unset#unset
+esphealth/ESP/conf/fixtures/initial_data.json -text
 esphealth/ESP/conf/fixtures/native_manufacturers.sql.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/fixtures/native_vaccines.sql.bz2 -text svneol=unset#unset
 esphealth/ESP/conf/fixtures/vaccines.json.bz2 -text svneol=unset#unset
