@@ -400,6 +400,11 @@ esphealth/unit-test/diabetes/epicmem.esp.01202012 -text
 esphealth/unit-test/diabetes/epicpro.esp.01202012 -text
 esphealth/unit-test/diabetes/epicres.esp.01202012 -text
 esphealth/unit-test/diabetes/epicvis.esp.01202012 -text
+esphealth/unit-test/diabetes/gestational/epicmed.esp.01262012 -text
+esphealth/unit-test/diabetes/gestational/epicmem.esp.01262012 -text
+esphealth/unit-test/diabetes/gestational/epicpro.esp.01262012 -text
+esphealth/unit-test/diabetes/gestational/epicres.esp.01262012 -text
+esphealth/unit-test/diabetes/gestational/epicvis.esp.01262012 -text
 esphealth/unit-test/ili/epicmem.esp.12192011 -text
 esphealth/unit-test/ili/epicpro.esp.11032011 -text
 esphealth/unit-test/ili/epicvis.esp.12192011 -text
