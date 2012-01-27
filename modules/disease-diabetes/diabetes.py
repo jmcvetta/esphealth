@@ -21,6 +21,7 @@ from ESP.hef.models import Event, Timespan
 from ESP.nodis.base import DiseaseDefinition, Report
 from ESP.nodis.models import Case
 from ESP.utils.utils import log
+from ESP.utils.utils import TODAY
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from django.db.models import Avg, Count, F, Max, Min, Q, Sum
@@ -657,6 +658,12 @@ class Diabetes(DiseaseDefinition):
             patient__event__date__gte = F('start_date'),
             patient__event__date__lte = F('end_date'),
             )
+        # Currently preganant patients have a null end date
+        dxrx_qs |= ts_qs.filter(
+            end_date__isnull=True,
+            patient__event__in = _event_qs,
+            patient__event__date__gte = F('start_date'),
+            )
         gdm_timespan_pks.update(dxrx_qs.values_list('pk', flat=True))
         #===============================================================================
         #
@@ -672,8 +679,12 @@ class Diabetes(DiseaseDefinition):
                 patient = ts.patient,
                 name__in=all_criteria,
                 date__gte=ts.start_date, 
-                date__lte=ts.end_date
-                ).order_by('date')
+                )
+            if ts.end_date:
+                case_events = case_events.filter(date__lte=ts.end_date)
+            else:
+                case_events = case_events.filter(date__lte=TODAY)
+            case_events = case_events.order_by('date')
             first_event = case_events[0]
             case_obj, created = Case.objects.get_or_create(
                 patient = ts.patient,
