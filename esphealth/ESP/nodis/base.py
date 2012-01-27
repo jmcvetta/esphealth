@@ -143,7 +143,7 @@ class DiseaseDefinition(object):
             #
             funcs = [this_disease.generate for this_disease in disease_list]
             counter = wait_for_threads(funcs, max_workers=thread_count)
-        log.info('Generated %20s events' % counter)
+        log.info('Generated %20s cases' % counter)
         return counter
 
     
