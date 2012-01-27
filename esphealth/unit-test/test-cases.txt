@@ -79,14 +79,15 @@ pertussis
 1 patient with positive lab for pertussis_pcr or pertussis_culture
       
 tb
-5 patients (should generate 4 cases)
-1 patient with med pyrazinamide 
+6 patients (should generate 4 cases)
+1 patient with med pyrazinamide spok 
 4 patients with encounter with tb diagnosis
-1/4 patient with tb laborder ('myco', 'afb', 'tb', 'tuber',) within 14 days after diagnosis
-2/4 patient with lab order  within 60 days prior or after diagnosis
-3/4 patient with SECONDARY_MED_EVENTS in TuberculosisDefC class in models.py
-4/4 patient with tb lab order after 14 days. NEG
-1 patient with SECONDARY_MED_EVENTS in TuberculosisDefC class in models.py with no diagnosis. NEG
+1/4 patient with tb laborder ('myco', 'afb', 'tb', 'tuber',) within 14 days after diagnosis -platt
+2/4 patient with lab order of above  within 60 days prior or after diagnosis  -anne
+3/4 patient with SECONDARY_MED_EVENTS  (' 'capreomycin', ', ) in TuberculosisDefC class in models.py -kruskalu
+4/4 patient with tb lab order after 14 days. NEG 
+1 patient with SECONDARY_MED_EVENTS ('rifabutin', ) in TuberculosisDefC class in models.py with no diagnosis. NEG
+- donna
 
 acute hep a
 3 patients ( should generate 3 cases)
@@ -123,7 +124,7 @@ diabetes
     1 patient with A1C with result < 5.7 NEG -mihaelW
       same patient with 1 encounter of icd9 of 250.x1 OR .x3 (type 1) 
     - Gestational Diabetes: 
-    5 patient with encounter with icd9 'V22.x' or V23.x and no edd 
+    5 patient with encounter with icd9 V22.x or V23.x and no edd 
     	1st/5 patient with encounter with icd9 648.8x -susanQ
     	 same patient with prescription containing the term “lancets” or
     	 “test strips” 14 days after encounter icd9 648.8x 
@@ -131,9 +132,12 @@ diabetes
     	3rd/5 patient with lab test OGTT 50 random (82950—161) >= 190 -PatriciaI 
     	4th/5 patient with test OGTT 75 1h (82951—2862) >= 180 -doolittleJ  
     	5th/5 patient with test component Positive OGTT 100 fasting urine (cpt 82951-64)
-    	  #same patient with lab test OGTT 100 2h (82951--159) >=155 - lazarusY  
-    	  change the above to the positive case has to be two of them 
+    	  #same patient with lab test component Positive OGTT 100 fasting urine (cpt 82951-64) - lazarusY  
+    	   
     	
+    	# TODO make fixture with additional result strings take them from old esp in hef hard coded or settings>
+pregnancy    
+ ( make sure that examples have beginning and an end)	
 Gonorrhea
 hep b
 hep c
