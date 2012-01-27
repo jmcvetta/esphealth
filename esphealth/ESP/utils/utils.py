@@ -540,3 +540,5 @@ class _ThreadedFuncWrapper(object):
             log.error( sys.exc_info() )
             self.EXCEPTIONS.put( sys.exc_info() )
             raise 
+
+TODAY = datetime.date.today()
