@@ -108,7 +108,7 @@ class DiseaseDefinition(object):
     #-------------------------------------------------------------------------------
     
     @classmethod
-    def generate_all(cls, disease_list=None, dependecies=False, thread_count=HEF_THREAD_COUNT):
+    def generate_all(cls, disease_list=None, dependencies=False, thread_count=HEF_THREAD_COUNT):
         '''
         Generate cases for all DiseaseDefinition instances.
         @param disease_list: If specified, generete cases only for these diseases
@@ -123,7 +123,7 @@ class DiseaseDefinition(object):
         else:
             disease_list = cls.get_all()
         log.debug('Diseases to be generated: %s' % disease_list)
-        if dependecies:
+        if dependencies:
             log.debug('Generating dependencies')
             uri_set = set()
             for this_disease in disease_list:
