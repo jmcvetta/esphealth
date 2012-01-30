@@ -126,7 +126,7 @@ diabetes
     1 patient with A1C with result < 5.7 NEG -mihaelW
       same patient with 1 encounter of icd9 of 250.x1 OR .x3 (type 1) 
      TODO add case where patient had diabetes before 
-       confirm  type 1 : type 2 ICD9s >50% = majority
+      TODO  confirm with mike type 1 : type 2 ICD9s >50% = majority
     - Gestational Diabetes: 
     TODO can someone have frank and gestational? the code in gestational does not filter ones with frank
     5 patient with encounter with icd9 V22.x or V23.x and no edd 
