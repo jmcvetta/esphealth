@@ -108,22 +108,27 @@ diabetes
 	1 patient with  2 encounters with icd9 of 250.x1 (frank diabetes) (on the day or before) PlattT 
 		same patient with lab A1C between 5.7 and 6.4 (NEG)
     - Frank Diabetes (type 1 and 2)
-    8 patients
-    1 patient with test A1C with result >= 6.5  - MaryG
-    1 patient not pregnant  prescription for INSULIN  -KruskalY
+    8 patients (7 cases)
+    1 patient with test A1C with result >= 6.5  - MaryG yes
+    1 patient not pregnant  prescription for INSULIN  -KruskalY yes
     1 patient with 2 encounters with icd9 of 250.x1 OR .x3 (type 1) -doolittleO
       same patient with 1 encounter with icd9 of 250.x0 or .x2 (type 2) 
       same patient with prescription of GLUCAGON
+      # below should generate type2
     1 patient with 2 encounters with icd9 of 250.x0 or .x2  (type 2)  -whoJ
       same patient with 1 encounter with icd9 of 250.x1 OR .x3 (type 1) 
+      # case below is a 50-50 and should generate type 1
     1 patient with 1 encounters with icd9 of 250.x0 or .x2   (type 2)  -whoP
       same patient with 1 encounter with icd9 of 250.x1 OR .x3 (type 1) 
-    1 patient with prescription for SITAGLIPTIN  -LazarusN
-    1 patient with lab peptide test <0.8 (type 1)  -bazzaV
+    1 patient with prescription for SITAGLIPTIN  -LazarusN  
+    1 patient with lab peptide test <0.8 (type 1)  -bazzaV  
     	same patient with lab test A1C with result >= 6.5
     1 patient with A1C with result < 5.7 NEG -mihaelW
       same patient with 1 encounter of icd9 of 250.x1 OR .x3 (type 1) 
+     TODO add case where patient had diabetes before 
+       confirm  type 1 : type 2 ICD9s >50% = majority
     - Gestational Diabetes: 
+    TODO can someone have frank and gestational? the code in gestational does not filter ones with frank
     5 patient with encounter with icd9 V22.x or V23.x and no edd 
     	1st/5 patient with encounter with icd9 648.8x -susanQ
     	 same patient with prescription containing the term “lancets” or
@@ -133,12 +138,16 @@ diabetes
     	4th/5 patient with test OGTT 75 1h (82951—2862) >= 180 -doolittleJ  
     	5th/5 patient with test component Positive OGTT 100 fasting urine (cpt 82951-64)
     	  #same patient with lab test component Positive OGTT 100 fasting urine (cpt 82951-64) - lazarusY  
-    	   
-    	
-    	# TODO make fixture with additional result strings take them from old esp in hef hard coded or settings>
-pregnancy    
+    	  
  ( make sure that examples have beginning and an end)	
+ 
 Gonorrhea
+4 patients (3 cases)
+1 patient with test that has a positive lab with gon
+1 patient with test that has a positive lab with gc
+1 patient with 2 lab tests with gon or gc with more than 28 days apart
+1 patient with 2 lab tests with gon or gc with less than 28 days apart (NEG)
+
 hep b
 hep c
 Giardiasis
