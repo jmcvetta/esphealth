@@ -55,5 +55,5 @@ class Command(BaseCommand):
             disease_list = DiseaseDefinition.get_all()
         DiseaseDefinition.generate_all(
             disease_list = disease_list, 
-            dependecies = options['dependencies'], 
+            dependencies = options['dependencies'], 
             )
