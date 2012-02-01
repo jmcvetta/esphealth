@@ -411,6 +411,10 @@ esphealth/unit-test/diabetes/pre/epicmem.esp.01202012 -text
 esphealth/unit-test/diabetes/pre/epicpro.esp.01202012 -text
 esphealth/unit-test/diabetes/pre/epicres.esp.01202012 -text
 esphealth/unit-test/diabetes/pre/epicvis.esp.01202012 -text
+esphealth/unit-test/hep_c/epicmem.esp.02012012 -text
+esphealth/unit-test/hep_c/epicpro.esp.02012012 -text
+esphealth/unit-test/hep_c/epicres.esp.02012012 -text
+esphealth/unit-test/hep_c/epicvis.esp.02012012 -text
 esphealth/unit-test/ili/epicmem.esp.12192011 -text
 esphealth/unit-test/ili/epicpro.esp.11032011 -text
 esphealth/unit-test/ili/epicvis.esp.12192011 -text
