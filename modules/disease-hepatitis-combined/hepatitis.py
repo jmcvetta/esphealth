@@ -161,13 +161,13 @@ class Hepatitis_A(HepatitisCombined):
             patient__event__date__gte = (F('date') - 14 ),
             patient__event__date__lte = (F('date') + 14 ),
             )
-        relevant_event_names = [primary_event_name] + secondary_event_names
+        relevent_event_names = [primary_event_name] + secondary_event_names
         new_case_count = self._create_cases_from_event_qs(
             condition = 'hepatitis_a:acute', 
             criteria = '(dx:jaundice or lx:alt:ratio:2 or lx:ast:ratio:2) AND lx:hep_a_igm:positive within 14 days', 
             recurrence_interval = None,
             event_qs = event_qs, 
-            relevant_event_names = relevant_event_names,
+            relevent_event_names = relevent_event_names,
             )
         return new_case_count
 
@@ -190,40 +190,45 @@ class Hepatitis_C(HepatitisCombined):
 
     def generate(self):
         counter = 0
-        counter += self._acute_definition_one()
+        counter += self._acute_hep_c_simple_algo()
+        counter += self._acute_hep_c_complex_algo()
         return counter
 
-    def _acute_definition_one(self):
+    def _acute_hep_c_complex_algo(self):
         '''
-        Generate cases based on Definition One in the spec
+        Detects cases based on definition (a) and (b) in Mike Klompas's spec
+            for Hep C.
         @return: Count of new cases created
         @retype: Integer
         '''
         #--------------------
         #
-        # Positive ELISA
+        # Positive ELISA or RNA
         #
         #--------------------
-        # To be considered for this definition, a patient must have a 
-        # positive Hep C ELISA test.
-        elisa_qs = Event.objects.filter(name='lx:hep_c_elisa:positive')
-        elisa_qs = elisa_qs.exclude(case__condition__in=self.conditions)
-        elisa_qs = elisa_qs.order_by('date')
-        # Examine ELISA events
+        # To be considered for this definition, a patient must have either a 
+        # positive Hep C ELISA or Hep C RNA test result.  We will call this 
+        # "trigger event" because it is absolutely required; however this type
+        # of event is NOT by itself adequate to trigger a case of Hep C.
+        trigger_conditions = ['lx:hep_c_elisa:positive', 'lx:hep_c_rna:positive']
+        trigger_qs = Event.objects.filter(name=trigger_conditions)
+        trigger_qs = trigger_qs.exclude(case__condition__in=self.conditions)
+        trigger_qs = trigger_qs.order_by('date')
+        # Examine trigger events
         counter = 0
-        for elisa_event in elisa_qs:
+        for trigger_event in trigger_qs:
             # Acute Hep C does not recur, so if this patient already has a 
             # case, we attach this ELISA event to the existing case and
             # continue.  
             # NOTE: This will attach to acute hep C case, and also any future
             # chronic hep c condition.
-            existing_cases = Case.objects.filter(patient=elisa_event.patient,
+            existing_cases = Case.objects.filter(patient=trigger_event.patient,
                 condition__in=self.conditions)
             if existing_cases:
                 first_case = existing_cases[0]
-                first_case.events.add(elisa_event)
+                first_case.events.add(trigger_event)
                 first_case.save()
-                log.debug('Added %s to existing case %s' % (elisa_event, first_case))
+                log.debug('Added %s to existing case %s' % (trigger_event, first_case))
                 continue
             #
             # NOTE: The various Exclude/Require sections below may be 
@@ -236,11 +241,11 @@ class Hepatitis_C(HepatitisCombined):
             # establish a case of acute hep c.
             criteria_list = []
             # Establish boundaries of +/-28 day relevancy window.
-            relevancy_start = elisa_event.date - relativedelta(days=28)
-            relevancy_end = elisa_event.date + relativedelta(days=28)
+            relevancy_start = trigger_event.date - relativedelta(days=28)
+            relevancy_end = trigger_event.date + relativedelta(days=28)
             # We are only interested in this patient's events occurring within
             # the relevancy window.
-            pat_events_qs = Event.objects.filter(patient=elisa_event.patient)
+            pat_events_qs = Event.objects.filter(patient=trigger_event.patient)
             event_qs = event_qs.filter(date__gte=relevancy_start)
             event_qs = event_qs.filter(date__lte=relevancy_end)
             #--------------------
@@ -303,6 +308,10 @@ class Hepatitis_C(HepatitisCombined):
                 'lx:hepatitis_c_riba:negative',
                 'lx:hepatitis_c_rna:negative',
                 'lx:hepatitis_c_signal_cutoff:negative',
+                # NOTE: Spec does not mention exclusion of negative ELISA results
+                # in definition (b), but it seems like an obvious counterpart to 
+                # the exclusion of negative RIBA results in definition (a).
+                'lx:hepatitis_c_elisa:negative', 
                 ]
             hep_c_nonneg_test_names = [
                 'lx:hepatitis_c_riba:positive',
@@ -311,6 +320,9 @@ class Hepatitis_C(HepatitisCombined):
                 'lx:hepatitis_c_riba:indeterminate',
                 'lx:hepatitis_c_rna:indeterminate',
                 'lx:hepatitis_c_signal_cutoff:indeterminate',
+                # See note above
+                'lx:hepatitis_c_elisa:positive', 
+                'lx:hepatitis_c_elisa:indeterminate', 
                 ]
             hep_c_neg_qs = event_qs.filter(name__in=hep_c_neg_test_names)
             hep_c_nonneg_qs = event_qs.filter(name__in=hep_c_nonneg_test_names)
@@ -349,7 +361,7 @@ class Hepatitis_C(HepatitisCombined):
             #--------------------
             # Combine all the criteria into a single query.  
             # NOTE: This may overtax the ORM and create a bad query.  Check carefully!
-            this_elisa_qs = Event.objects.filter(pk=elisa_event.pk)
+            this_elisa_qs = Event.objects.filter(pk=trigger_event.pk)
             criteria_list.append(this_elisa_qs)
             combined_criteria_qs = criteria_list[0]
             for criterion_qs in criterion_list[1:]:
@@ -359,16 +371,71 @@ class Hepatitis_C(HepatitisCombined):
             first_event = combined_criteria_qs.order_by('date')[0]
             created, this_case = self._create_case_from_event_obj(
                 condition = 'hepatitis_c:acute', 
-                criteria = 'Definition One', 
+                criteria = 'complex algorithm', 
                 recurrence_interval = None,  # Does not recur
                 event_obj = first_event, 
-                relevant_event_qs = combined_criteria_qs,
+                relevent_event_qs = combined_criteria_qs,
                 )
             if created:
                 counter += 1
         return counter
 
-
+    def _acute_hep_c_simple_algo(self):
+        '''
+        Detects cases based on definitions (c) and (d) in Mike Klompas's spec
+            for Hep C.
+        @return: Count of new cases created
+        @retype: Integer
+        '''
+        #--------------------
+        #
+        # Positive ELISA or RNA
+        #
+        #--------------------
+        # To be considered for this definition, a patient must have either a 
+        # positive Hep C ELISA or Hep C RNA test result.
+        trigger_conditions = ['lx:hep_c_elisa:positive', 'lx:hep_c_rna:positive']
+        trigger_qs = Event.objects.filter(name=trigger_conditions)
+        trigger_qs = trigger_qs.exclude(case__condition__in=self.conditions)
+        trigger_qs = trigger_qs.order_by('date')
+        # Examine trigger events
+        counter = 0
+        for trigger_event in trigger_qs:
+            # Acute Hep C does not recur, so if this patient already has a 
+            # case, we attach this ELISA event to the existing case and
+            # continue.  
+            # NOTE: This will attach to acute hep C case, and also any future
+            # chronic hep c condition.
+            existing_cases = Case.objects.filter(patient=trigger_event.patient,
+                condition__in=self.conditions)
+            if existing_cases:
+                first_case = existing_cases[0]
+                first_case.events.add(trigger_event)
+                first_case.save()
+                log.debug('Added %s to existing case %s' % (trigger_event, first_case))
+                continue
+            neg_event_name = trigger_event.name.replace('positive', 'negative')
+            relevancy_start_date = trigger_event.date - relativedelta(months=12)
+            prior_neg_qs = Event.objects.filter(
+                patient = trigger_event.patient,
+                name = neg_event_name,
+                date__gte = relevancy_start_date,
+                date__lt = trigger_event.date,
+                )
+            if not prior_neg_qs:
+                # No prior negative test result, so patient does not meet 
+                # this definition of Hep C.
+                continue
+            created, this_case = self._create_case_from_event_obj(
+                condition = 'hepatitis_c:acute', 
+                criteria = 'simple algorithm', 
+                recurrence_interval = None,  # Does not recur
+                event_obj = trigger_event, 
+                relevent_event_qs = prior_neg_qs,
+                )
+            if created:
+                counter += 1
+        return counter
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
