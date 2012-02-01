@@ -169,7 +169,7 @@ class Syphilis(DiseaseDefinition):
         combined_criteria_qs = combined_criteria_qs.order_by('date')
         all_event_names = dx_ev_names + rx_ev_names + rpr_ev_names + ttpa_ev_names + vrdl_csf_ev_names
         counter = 0
-        new_case_count = self._create_cases_from_events(
+        new_case_count = self._create_cases_from_event_qs(
             condition = 'syphilis',
             criteria = 'combined syphilis criteria', 
             recurrence_interval = None, 
