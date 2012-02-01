@@ -491,35 +491,37 @@ def wait_for_threads(fs, max_workers=settings.HEF_THREAD_COUNT):
     @return: Sum of all count values returned by functions
     @rtype:  Integer
     '''
-    log.debug('Starting thread pool executor with max %s workers' % max_workers)
-    if not max_workers > 0:
-        raise RuntimeError('Cannot call wait_for_threads with max_workers less than 1, but you called it with %s workers' % max_workers)
     counter = 0
-    with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        submitted = []
+    if max_workers > 0:
+        log.debug('Starting thread pool executor with max %s workers' % max_workers)
+        with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            submitted = []
+            for func in fs:
+                wrapped_func = _ThreadedFuncWrapper(func)
+                submitted.append( executor.submit(wrapped_func) )
+            log.debug('Waiting for thread completion')
+            try:
+                for future in futures.as_completed(submitted):
+                    error = future.exception(timeout=0.1)
+                    if error is not None:
+                        log.critical('Unhandled exception in %s:\n%s' % (future, error))
+                        log.critical( format_exc() )
+                        exc_info = _ThreadedFuncWrapper.EXCEPTIONS.get(block=False)
+                        executor.shutdown(wait=False)
+                        raise exc_info[0], exc_info[1], exc_info[2]
+                    result = future.result(timeout=0.1)
+                    if type(result) in [int, float, Decimal]:
+                        counter += result
+            except:
+                for future in submitted:
+                    future.cancel()
+                executor.shutdown(wait=False)
+                _ThreadedFuncWrapper.EXCEPTIONS.put(sys.exc_info())
+                raise
+    else:
+        log.debug('Max workers set to %s; running functions single-threaded' % max_workers)
         for func in fs:
-            wrapped_func = _ThreadedFuncWrapper(func)
-            submitted.append( executor.submit(wrapped_func) )
-        log.debug('Waiting for thread completion')
-        try:
-            for future in futures.as_completed(submitted):
-                error = future.exception(timeout=0.1)
-                if error is not None:
-                    log.critical('Unhandled exception in %s:\n%s' % (future, error))
-                    log.critical( format_exc() )
-                    exc_info = _ThreadedFuncWrapper.EXCEPTIONS.get(block=False)
-                    executor.shutdown(wait=False)
-                    raise exc_info[0], exc_info[1], exc_info[2]
-                result = future.result(timeout=0.1)
-                if type(result) in [int, float, Decimal]:
-                    counter += result
-        except:
-            for future in submitted:
-                future.cancel()
-            executor.shutdown(wait=False)
-            _ThreadedFuncWrapper.EXCEPTIONS.put(sys.exc_info())
-            raise
-            
+            counter += func()
     return counter
 
 class _ThreadedFuncWrapper(object):
