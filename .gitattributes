@@ -459,9 +459,6 @@ modules/disease-diabetes/setup.py -text
 modules/disease-gonorrhea/__init__.py -text
 modules/disease-gonorrhea/gonorrhea.py -text
 modules/disease-gonorrhea/setup.py -text
-modules/disease-hepatitis-a/__init__.py -text
-modules/disease-hepatitis-a/hepatitis_a.py -text
-modules/disease-hepatitis-a/setup.py -text
 modules/disease-hepatitis-combined/__init__.py -text
 modules/disease-hepatitis-combined/hepatitis.py -text
 modules/disease-hepatitis-combined/setup.py -text
