@@ -279,12 +279,99 @@ class DiseaseDefinition(object):
         log.info('Generating dependencies for %s' % self)
         return BaseHeuristic.generate_by_uri(self.dependency_uris)
     
-    def _create_cases_from_events(self, 
+    def _create_case_from_event_obj(self,
+        condition,
+        criteria,
+        recurrence_interval,
+        event_obj, 
+        relevent_event_names = [],
+        relevent_event_qs = None,
+        ):
+        '''
+        Create a new case for specified event object.
+        @param condition: Create a case of this condition
+        @type condition:  String
+        @param criteria: Criteria for creating these cases
+        @type criteria:  String
+        @param recurrence_interval: How many days after a case until this condition can recur?
+        @type recurrence_interval: Integer or None (if condition cannot recur)
+        @param event_obj: Event on which to base new case
+        @type event_obj:  models.Model chil instance
+        @param relevent_event_qs: Attach these events to a new case
+        @type relevent_event_qs:  QuerySet instance
+        @param relevent_event_names: Attach events matching with these names to new case
+        @type relevent_event_names:  [String, String, ...]
+        @return: Was new case created, and case object (new or existing) to which event was attached
+        @rtype: (Bool, Case)
+        '''
+        # 
+        # Check recurrence
+        #
+        if recurrence_interval is None:
+            # Non-recurring condition - once you have it, you've always 
+            # got it.
+            existing_cases = Case.objects.filter(
+                patient = event_obj.patient,
+                condition = condition,
+                ).order_by('date')
+        else:
+            delta = datetime.timedelta(days=recurrence_interval)
+            max_date = event_obj.date + delta
+            min_date = event_obj.date - delta
+            existing_cases = Case.objects.filter(
+                patient = event_obj.patient,
+                condition = condition,
+                date__gte = min_date,
+                date__lte = max_date,
+                ).order_by('date')
+        # If this patient has an existing case, we attach this event 
+        # to that case and continue.
+        if existing_cases:
+            first_case = existing_cases[0] 
+            first_case.events.add(event_obj)
+            first_case.save()
+            log.debug('Added %s to %s' % (event_obj, first_case))
+            return (False, first_case)
+        #
+        # Create new case
+        #
+        new_case = Case(
+            patient = event_obj.patient,
+            provider = event_obj.provider,
+            date = event_obj.date,
+            condition =  condition,
+            criteria = criteria,
+            source = self.uri,
+            )
+        new_case.save()
+        new_case.events.add(event_obj)
+        #
+        # Attach all relevant events, that are not already attached to a
+        # case of this condition.
+        #
+        if relevent_event_names:
+            all_relevant_events = Event.objects.filter(
+                patient=event_obj.patient,
+                name__in=relevent_event_names,
+                ).exclude(
+                    case__condition=condition,
+                    )
+            for related_event in all_relevant_events:
+                new_case.events.add(related_event)
+            new_case.save()
+        if relevent_event_qs:
+            new_case.events |= relevent_event_qs
+            new_case.save()
+        log.debug('Created new case: %s' % new_case)
+        return (True, new_case)
+    
+    
+    def _create_cases_from_event_qs(self, 
         condition,
         criteria,
         recurrence_interval,
         event_qs, 
-        relevent_event_names,
+        relevent_event_names = [],
         ):
         '''
         For each event in an Event QuerySet, either attach the event to an
@@ -297,70 +384,23 @@ class DiseaseDefinition(object):
         @type recurrence_interval: Integer or None (if condition cannot recur)
         @param event_qs: Events on which to base n
         @type event_qs:  QuerySet instance
-        @param relevent_event_q_obj: Attach events matching this filter to a new case
-        @type relevent_event_q_obj:  Q instance
+        @param relevent_event_names: Attach events matching with these names to new case
+        @type relevent_event_names:  [String, String, ...]
         '''
         counter = 0
         event_qs = event_qs.exclude(case__condition=condition)
         event_qs = event_qs.order_by('patient', 'date')
         log_query('Events for %s' % self.short_name, event_qs)
         for this_event in event_qs:
-            # 
-            # Check recurrence
-            #
-            if recurrence_interval is None:
-                # Non-recurring condition - once you have it, you've always 
-                # got it.
-                existing_cases = Case.objects.filter(
-                    patient = this_event.patient,
-                    condition = condition,
-                    ).order_by('date')
-            else:
-                delta = datetime.timedelta(days=recurrence_interval)
-                max_date = this_event.date + delta
-                min_date = this_event.date - delta
-                existing_cases = Case.objects.filter(
-                    patient = this_event.patient,
-                    condition = condition,
-                    date__gte = min_date,
-                    date__lte = max_date,
-                    ).order_by('date')
-            # If this patient has an existing case, we attach this event 
-            # to that case and continue.
-            if existing_cases:
-                first_case = existing_cases[0] 
-                first_case.events.add(this_event)
-                first_case.save()
-                log.debug('Added %s to %s' % (this_event, first_case))
-                continue
-            #
-            # Create new case
-            #
-            new_case = Case(
-                patient = this_event.patient,
-                provider = this_event.provider,
-                date = this_event.date,
-                condition =  condition,
-                criteria = criteria,
-                source = self.uri,
+            created, this_case = self._create_case_from_event_obj(
+                condition = condition, 
+                criteria = criteria, 
+                recurrence_interval = recurrence_interval, 
+                event_obj = this_event, 
+                relevent_event_names = relevent_event_names,
                 )
-            new_case.save()
-            new_case.events.add(this_event)
-            #
-            # Attach all relevant events, that are not already attached to a
-            # case of this condition.
-            #
-            all_relevant_events = Event.objects.filter(
-                patient=this_event.patient,
-                name__in=relevent_event_names,
-                ).exclude(
-                    case__condition=condition,
-                    )
-            for related_event in all_relevant_events:
-                new_case.events.add(related_event)
-            new_case.save()
-            log.debug('Created new case: %s' % new_case)
-            counter += 1
+            if created:
+                counter += 1
         return counter
     
         
@@ -467,7 +507,7 @@ class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
         for heuristic in self.event_heuristics:
             pos_event_names.add(heuristic.positive_event_name)
         event_qs = Event.objects.filter(name__in=pos_event_names)
-        new_case_count = self._create_cases_from_events(
+        new_case_count = self._create_cases_from_event_qs(
             condition = self.condition, 
             criteria = 'positive lab test', 
             recurrence_interval = self.recurrence_interval, 
