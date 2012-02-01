@@ -150,27 +150,27 @@ Gonorrhea
 
 acute hep c
 4 patients (4 cases) - using collected date for dates
-(c) 1 patient with positive lab for (6 hepatitis c rna) HEP C RNA PCR (QL) 87521 detected 
-  same patient with labs negative of hep_c_elisa_neg lab within the prior 12 months
-(d) 1 patient with positive lab for (3 hepatitis c elisa) HEPAT C AB 86803  reactive 
+(c) 1 patient with positive lab for (6 hepatitis c rna) HEP C RNA PCR (QL) 87521 detected - michaelZ
+  same patient with labs negative of hep_c_elisa lab within the prior 12 months
+(d) 1 patient with positive lab for (3 hepatitis c elisa) HEPAT C AB 86803  reactive -WhoP
   same patient with labs negative of same lab within the prior 12 months)
 (b) 
-  1 patient with encounter with jaundice icd9 782.4
+  1 patient with encounter with jaundice icd9 782.4 - DeenaW
    same patient with lab hep_c_rna_ detected (6 tests) within 28 days of encounter
-   same patient with lab c signal cut off ratio >=3.8 (4 test)  within 28 days
+   same patient with lab c heb c signal cut off ratio >=3.8 (4 test)  within 28 days
    same patient with lab hep_a_igm_ non reactive (7 test no hep a) within 28 days of encounter
    same patient wit lab hep_b_core igm_ non reactive ' (8 test no hep b) within 28 days of encounter
    TODO other negative and positive with other labs to exclude
-(a) 1 patient with  encounter with  lab alt 400
+(a) 1 patient with lab alt >400 - SpockG
    same patient with lab hep_c_elisa_ reactive (3 test) within 28 days of alt lab
-   same patient with lab (4 test) signal cut off >=3.8
-   same patient with (5 test) c riba positive 
-   same patient with (6 test) HCV PCR QUANT 87522 >1.7
+   same patient with lab (4 test) heb c ab signal cut off 86803 >=3.8
+   same patient with (5 test)hep c riba positive 
+   same patient with (6 test) hep c rna HCV PCR QUANT 87522 >1.7
    same patient with hav_tot_neg  (11 test)
    same patient with hep_b_surface_neg (test 10)
    TODO other negatives and positive with other labs to exclude
  
- acute hep b -- only partially done based on code comment, need to corroborate with spec.
+acute hep b -- only partially done based on code comment, need to corroborate with spec.
 4 patients (4 cases)
 TODO add more negative and positive for the ors
 (1) 1 patient with jaundice encounter
