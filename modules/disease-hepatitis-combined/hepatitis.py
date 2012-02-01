@@ -139,6 +139,7 @@ class Hepatitis_A(HepatitisCombined):
 
     @transaction.commit_on_success
     def generate(self):
+        log.info('Generating cases for %s (%s)' % (self.short_name, self.uri))
         #
         # Acute Hepatitis A
         #
@@ -189,6 +190,7 @@ class Hepatitis_C(HepatitisCombined):
     timespan_heuristics = []
 
     def generate(self):
+        log.info('Generating cases for %s (%s)' % (self.short_name, self.uri))
         counter = 0
         counter += self._acute_hep_c_simple_algo()
         counter += self._acute_hep_c_complex_algo()
@@ -201,6 +203,7 @@ class Hepatitis_C(HepatitisCombined):
         @return: Count of new cases created
         @retype: Integer
         '''
+        log.debug('Generating cases for Hep C complex algorithm')
         #--------------------
         #
         # Positive ELISA or RNA
@@ -378,6 +381,7 @@ class Hepatitis_C(HepatitisCombined):
                 )
             if created:
                 counter += 1
+        log.debug('Created %s new Hep C cases with complex algo' % counter)
         return counter
 
     def _acute_hep_c_simple_algo(self):
@@ -387,6 +391,7 @@ class Hepatitis_C(HepatitisCombined):
         @return: Count of new cases created
         @retype: Integer
         '''
+        log.debug('Generating cases for Hep C simple algorithm')
         #--------------------
         #
         # Positive ELISA or RNA
@@ -435,6 +440,7 @@ class Hepatitis_C(HepatitisCombined):
                 )
             if created:
                 counter += 1
+        log.debug('Created %s new Hep C cases with simple algo' % counter)
         return counter
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
