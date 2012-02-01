@@ -14,9 +14,10 @@ Base Classes
 import abc
 import sys
 import datetime
-import settings
 
 from pkg_resources import iter_entry_points
+
+from django.db.models.query import QuerySet
 
 from ESP.settings import HEF_THREAD_COUNT
 from ESP.utils import log
@@ -87,7 +88,7 @@ class DiseaseDefinition(object):
     def test_name_search_strings(self):
         '''
         @return: A list of all strings to use when searching native lab test 
-            names for tests potentially relevant to this disease.
+            names for tests potentially relevent to this disease.
         @rtype: [String, String, ...]
         '''
     
@@ -116,7 +117,6 @@ class DiseaseDefinition(object):
         @param dependecies: Generate dependency Events for all diseases?
         @type dependecies:  Boolean
         '''
-        disease_list = set()
         if disease_list:
             for this_disease in disease_list:
                 assert isinstance(this_disease, cls)
@@ -129,20 +129,8 @@ class DiseaseDefinition(object):
             for this_disease in disease_list:
                 [uri_set.add(uri) for uri in this_disease.dependency_uris]
             BaseHeuristic.generate_by_uri(uri_list=uri_set, thread_count=thread_count)
-        counter = 0
-        if thread_count == 0:
-            #
-            # No threads
-            # 
-            for this_disease in disease_list:
-                log.info('Running %s' % this_disease)
-                counter += this_disease.generate()
-        else:
-            #
-            # Threaded
-            #
-            funcs = [this_disease.generate for this_disease in disease_list]
-            counter = wait_for_threads(funcs, max_workers=thread_count)
+        funcs = [this_disease.generate for this_disease in disease_list]
+        counter = wait_for_threads(funcs, max_workers=thread_count)
         log.info('Generated %20s cases' % counter)
         return counter
 
@@ -151,7 +139,7 @@ class DiseaseDefinition(object):
     def get_all_test_name_search_strings(cls):
         '''
         @return: A list of all strings to use when searching native lab test 
-            names for tests potentially relevant to any defined disease.
+            names for tests potentially relevent to any defined disease.
         @rtype: [String, String, ...]
         '''
         search_strings = set()
@@ -346,17 +334,17 @@ class DiseaseDefinition(object):
         new_case.save()
         new_case.events.add(event_obj)
         #
-        # Attach all relevant events, that are not already attached to a
+        # Attach all relevent events, that are not already attached to a
         # case of this condition.
         #
         if relevent_event_names:
-            all_relevant_events = Event.objects.filter(
+            all_relevent_events = Event.objects.filter(
                 patient=event_obj.patient,
                 name__in=relevent_event_names,
                 ).exclude(
                     case__condition=condition,
                     )
-            for related_event in all_relevant_events:
+            for related_event in all_relevent_events:
                 new_case.events.add(related_event)
             new_case.save()
         if relevent_event_qs:
@@ -402,7 +390,6 @@ class DiseaseDefinition(object):
             if created:
                 counter += 1
         return counter
-    
         
 
 
