@@ -85,6 +85,19 @@ function freeze_requirements () {
 
 #set -x
 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# Main Logic
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+if [ "$#" -eq 0 ]; then
+    usage
+    exit 1;
+fi
+#
+# TODO: Add sanity checks for write permission on relevant folders
+#
 while getopts "idp" options; do
   case $options in
     i  ) install;;
@@ -93,7 +106,6 @@ while getopts "idp" options; do
     \? ) usage;;
     *  ) usage
          exit 1;;
-
   esac
 done
 
