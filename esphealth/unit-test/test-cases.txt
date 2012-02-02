@@ -173,25 +173,16 @@ acute hep c
 acute hep b -- only partially done based on code comment, need to corroborate with spec.
 4 patients (4 cases)
 TODO add more negative and positive for the ors
-(1) 1 patient with jaundice encounter
- same patient with  hep_b_igm_ab within 14 days 
-Acute Hepatitis B definitions:
-(2) 1 patient with lab alt_5x 
-  same patient with tot bilirubin high within 21 days of alt
-  same patient with hep b surface positive within 21 days of alt
- 1 patieint with lab ast 5x 
+(a) 1 patient with jaundice encounter - deenaw
+ same patient with positive hep_b_igm_ab within 14 days 
+(2) 1 patient with lab alt_5x - spockG
+  same patient with tot bilirubin high >4 within 21 days of alt
+  same patient with hep b surface positive(confirm) within 21 days of alt
+ 1 patient with lab ast 5x -whop
    same patient with high calc bilirubin within 21 days
    same patient with hep b viral dna within 21 days 
-(3) 1 patient with heb b surface positive 
+(3) 1 patient with heb b surface positive -michaelz
    same patient with hep b surface neg
    same patient with hep b viral dna neg 
 
-    
-    
-
-
 Giardiasis
-
-
-
-
