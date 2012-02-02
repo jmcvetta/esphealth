@@ -79,7 +79,7 @@ class HepatitisCombined(DiseaseDefinition):
         # Lab Results
         #
         heuristic_list.append( LabResultPositiveHeuristic(
-            test_name = 'hepatitis_a_igm',
+            test_name = 'hepatitis_c_elisa',
             ))
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'hepatitis_c_signal_cutoff',
@@ -144,9 +144,9 @@ class Hepatitis_A(HepatitisCombined):
         # Acute Hepatitis A
         #
         # (dx:jaundice or lx:alt:ratio:2 or lx:ast:ratio:2) 
-        # AND lx:hep_a_igm:positive within 14 days
+        # AND lx:hepatitis_a_igm_antibody:positive within 14 days
         #
-        primary_event_name = 'lx:hep_a_igm:positive'
+        primary_event_name = 'lx:hepatitis_a_igm_antibody:positive'
         secondary_event_names = [
             'dx:jaundice',
             'lx:alt:ratio:2',
@@ -213,8 +213,8 @@ class Hepatitis_C(HepatitisCombined):
         # positive Hep C ELISA or Hep C RNA test result.  We will call this 
         # "trigger event" because it is absolutely required; however this type
         # of event is NOT by itself adequate to trigger a case of Hep C.
-        trigger_conditions = ['lx:hep_c_elisa:positive', 'lx:hep_c_rna:positive']
-        trigger_qs = Event.objects.filter(name=trigger_conditions)
+        trigger_conditions = ['lx:hepatitis_c_elisa:positive', 'lx:hepatitis_c_rna:positive']
+        trigger_qs = Event.objects.filter(name__in=trigger_conditions)
         trigger_qs = trigger_qs.exclude(case__condition__in=self.conditions)
         trigger_qs = trigger_qs.order_by('date')
         # Examine trigger events
@@ -239,18 +239,16 @@ class Hepatitis_C(HepatitisCombined):
             # for performance reasons if certain exclusions/requirements
             # are more commonly hit than others.
             #
-            #
-            # A list of QuerySet objects containing the criteria used to 
-            # establish a case of acute hep c.
-            criteria_list = []
+            pat_events_qs = Event.objects.filter(patient=trigger_event.patient)
             # Establish boundaries of +/-28 day relevancy window.
             relevancy_start = trigger_event.date - relativedelta(days=28)
             relevancy_end = trigger_event.date + relativedelta(days=28)
-            # We are only interested in this patient's events occurring within
-            # the relevancy window.
-            pat_events_qs = Event.objects.filter(patient=trigger_event.patient)
-            event_qs = event_qs.filter(date__gte=relevancy_start)
-            event_qs = event_qs.filter(date__lte=relevancy_end)
+            event_qs = pat_events_qs.filter(date__gte=relevancy_start, date__lte=relevancy_end)
+            # All events prior to start of relevancy window
+            prior_event_qs = pat_events_qs.filter(date__lt=relevancy_start)
+            # A list of QuerySet objects containing the criteria used to 
+            # establish a case of acute hep c.
+            criteria_list = []
             #--------------------
             #
             # Exclude chronic Hep C
@@ -258,7 +256,6 @@ class Hepatitis_C(HepatitisCombined):
             #--------------------
             # Patient cannot have a chronic Hep C diagnosis or any positive 
             # Hep C test results prior to this relevancy window.
-            prior_event_qs = pat_events_qs(date_lt=relevancy_start)
             chronic_hep_c_event_names = [
                 'dx:hepatitis_c:chronic',
                 'dx:hepatitis_c:unspecified',
@@ -270,7 +267,7 @@ class Hepatitis_C(HepatitisCombined):
                 #'lx:hepatitis_c_signal_cutoff:positive',
                 ]
             chronic_hep_c_qs = prior_event_qs.filter(name__in=chronic_hep_c_event_names)
-            if not chronic_hep_c_qs:
+            if chronic_hep_c_qs:
                 continue # Patient has chronic Hep C, and thus does not have Acute Hep C
             #--------------------
             # 
@@ -367,7 +364,7 @@ class Hepatitis_C(HepatitisCombined):
             this_elisa_qs = Event.objects.filter(pk=trigger_event.pk)
             criteria_list.append(this_elisa_qs)
             combined_criteria_qs = criteria_list[0]
-            for criterion_qs in criterion_list[1:]:
+            for criterion_qs in criteria_list[1:]:
                 combined_criteria_qs |= criterion_qs
             # Date the case based on the earliest criterion.
             # NOTE: Is this the desired behavior?
@@ -399,7 +396,7 @@ class Hepatitis_C(HepatitisCombined):
         #--------------------
         # To be considered for this definition, a patient must have either a 
         # positive Hep C ELISA or Hep C RNA test result.
-        trigger_conditions = ['lx:hep_c_elisa:positive', 'lx:hep_c_rna:positive']
+        trigger_conditions = ['lx:hepatitis_c_elisa:positive', 'lx:hepatitis_c_rna:positive']
         trigger_qs = Event.objects.filter(name=trigger_conditions)
         trigger_qs = trigger_qs.exclude(case__condition__in=self.conditions)
         trigger_qs = trigger_qs.order_by('date')
