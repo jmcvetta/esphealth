@@ -513,6 +513,10 @@ VAERS_DIAGNOSTICS = {
     }
 
 def map_lab_tests():
+    # TODO: VAERS_DIAGNOSTICS data structure does not contain enough info 
+    # (i.e. abstract test name) to be useful for anything.  What is it 
+    # _supposed_ to be doing?
+    raise NotImplementedError('I am broken, please fix me.')
     for lab_type, lab in VAERS_LAB_RESULTS.items():
         for code in set(lab['codes']):
             c, created = LabTestMap.objects.get_or_create(native_code=code, code_match_type=lab_type)
