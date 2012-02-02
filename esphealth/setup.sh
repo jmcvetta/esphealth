@@ -15,6 +15,7 @@ USAGE_MSG="usage: setup.sh options
 -i  Install ESP (first time)
 -d  Update PyPI dependencies modules
 -p  Update ESP plugin modules
+-f  Freeze PIP requirements to requirements.frozen.txt
 -?  Show this usage message"
 
 function usage () {
@@ -71,8 +72,7 @@ function update_plugins () {
 
 function freeze_requirements () {
     #
-    # Developer option, intentionally not shown in $USAGE.  Freeze currently
-    # installed modules to requirements.frozen.txt.
+    # Freeze currently installed modules to requirements.frozen.txt.
     #
     echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     echo +
@@ -98,11 +98,12 @@ fi
 #
 # TODO: Add sanity checks for write permission on relevant folders
 #
-while getopts "idp" options; do
+while getopts "idpf" options; do
   case $options in
     i  ) install;;
     d  ) update_pypi;;
     p  ) update_plugins;;
+    f  ) freeze_requirements;;
     \? ) usage;;
     *  ) usage
          exit 1;;
