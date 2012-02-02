@@ -37,7 +37,8 @@ class PatientAdmin(admin.ModelAdmin):
     search_fields = ['natural_key', 'last_name']
 
 class LabResultAdmin(admin.ModelAdmin):
-    list_display = ['natural_key', 'native_name', 'patient', 'provider', 'result_string']
+    list_display = ['pk', 'natural_key', 'native_name', 'native_code', 'patient', 'provider', 'result_string']
+    list_display_links = ['pk', 'natural_key']
     raw_id_fields = STANDARD_RAW_ID_FIELDS
     search_fields = STANDARD_SEARCH_FIELDS + ['native_code', 'native_name']
     ordering = ['-date']
