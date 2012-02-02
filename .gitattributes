@@ -161,6 +161,7 @@ esphealth/ESP/sendMsgs/bcdc.jar -text
 esphealth/ESP/settings.py -text
 esphealth/ESP/setup.py -text
 esphealth/ESP/ss/__init__.py -text
+esphealth/ESP/ss/broken-tests.py -text
 esphealth/ESP/ss/definitions.py -text
 esphealth/ESP/ss/fixtures/initial_data.json -text
 esphealth/ESP/ss/fixtures/readme.txt -text
@@ -175,7 +176,6 @@ esphealth/ESP/ss/run.py -text
 esphealth/ESP/ss/satscan.py -text
 esphealth/ESP/ss/templates/xml/gipse-metadata.xml -text
 esphealth/ESP/ss/templates/xml/gipse-response.xml -text
-esphealth/ESP/ss/tests.py -text
 esphealth/ESP/ss/urls.py -text
 esphealth/ESP/ss/utils.py -text
 esphealth/ESP/ss/views.py -text
@@ -297,6 +297,7 @@ esphealth/ESP/utils/vaers_hl7.py -text
 esphealth/ESP/vaers/VAERSevents.py -text
 esphealth/ESP/vaers/__init__.py -text
 esphealth/ESP/vaers/admin.py -text
+esphealth/ESP/vaers/broken-tests.py -text
 esphealth/ESP/vaers/fake.py -text
 esphealth/ESP/vaers/fixtures/encounters.sql.bz2 -text svneol=unset#unset
 esphealth/ESP/vaers/fixtures/immunizations.sql.bz2 -text svneol=unset#unset
@@ -314,7 +315,6 @@ esphealth/ESP/vaers/reports.py -text
 esphealth/ESP/vaers/rules.py -text
 esphealth/ESP/vaers/settings.py -text
 esphealth/ESP/vaers/summary.py -text
-esphealth/ESP/vaers/tests.py -text
 esphealth/ESP/vaers/urls.py -text
 esphealth/ESP/vaers/utils.py -text
 esphealth/ESP/vaers/vaccine/__init__.py -text
