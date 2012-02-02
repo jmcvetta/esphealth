@@ -21,11 +21,6 @@ HEF_CORE_URI = 'urn:x-esphealth:hef:core:v1'
 import abc
 import math
 import re
-import threading
-import Queue
-import time
-import sys
-from concurrent import futures
 
 from decimal import Decimal
 
