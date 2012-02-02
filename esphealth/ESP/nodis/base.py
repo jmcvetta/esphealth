@@ -348,7 +348,7 @@ class DiseaseDefinition(object):
                 new_case.events.add(related_event)
             new_case.save()
         if relevent_event_qs:
-            new_case.events |= relevent_event_qs
+            new_case.events = new_case.events.all() | relevent_event_qs
             new_case.save()
         log.debug('Created new case: %s' % new_case)
         return (True, new_case)
