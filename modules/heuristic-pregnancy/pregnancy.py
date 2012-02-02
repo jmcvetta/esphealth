@@ -328,8 +328,11 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         # Get possible patients for new pregnancies
         #
-        unbound_onset_qs = self.onset_qs.exclude(timespan__name='pregnancy')
-        patient_pks = unbound_onset_qs.order_by('patient').values_list('patient', flat=True).distinct()
+        # Potential pregnancies require either an onset event, or an EDD encounter (from 
+        # which an implied onset date can be calculated).
+        preg_indicator_qs = self.onset_qs | self.edd_qs
+        preg_indicator_qs = preg_indicator_qs.exclude(timespan__name='pregnancy')
+        patient_pks = preg_indicator_qs.order_by('patient').values_list('patient', flat=True).distinct()
         log_query('Pregnant patient PKs', patient_pks)
         total = len(patient_pks)
         counter = 0
@@ -402,7 +405,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         '''
         # TODO: Check with Mike Klompas about whether min EDD (as returned by 
         # existing code) or EDD of chronologically latest EDD-encounter is desired.
-        edd_event_qs = Event.objects.filter(name='pregnancy:edd')
+        edd_event_qs = Event.objects.filter(name='enc:pregnancy:edd')
         edd_event_qs = edd_event_qs.filter(patient=patient)
         edd_event_qs = edd_event_qs.exclude(timespan__name='pregnancy')
         edd_enc_qs = Encounter.objects.filter(events__in=edd_event_qs)
@@ -572,7 +575,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             relevant_events = relevant_events.filter( date__lte=(preg_ts.end_date + relativedelta(months=6)) )
         else:
             relevant_events = relevant_events.filter( date__lte=self.today )
-        preg_ts.events = preg_ts.events | relevant_events
+        preg_ts.events = preg_ts.events.all() | relevant_events
         preg_ts.save()
         return preg_ts
                 
