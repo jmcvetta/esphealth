@@ -11,9 +11,9 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-USAGE_MSG="usage: setup.sh options
--i  Install ESP (first time)
--d  Update PyPI dependencies modules
+USAGE_MSG="usage: setup.sh option
+-i  Install ESP (first time installation)
+-d  Update PyPI dependency modules
 -p  Update ESP plugin modules
 -f  Freeze PIP requirements to requirements.frozen.txt
 -?  Show this usage message"
@@ -44,13 +44,13 @@ function install () {
     pip install -v -r requirements.frozen.txt
 }
 
-function update_pypi () {
+function update_dependencies () {
     #
     # Update dependency modules with the latest version from PyPI.
     #
     echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     echo +
-    echo + Updating PyPI modules...
+    echo + Updating PyPI dependency modules...
     echo +
     echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     activate_virtualenv
@@ -101,7 +101,7 @@ fi
 while getopts "idpf" options; do
   case $options in
     i  ) install;;
-    d  ) update_pypi;;
+    d  ) update_dependencies;;
     p  ) update_plugins;;
     f  ) freeze_requirements;;
     \? ) usage;;
