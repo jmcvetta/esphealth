@@ -119,7 +119,7 @@ class BaseMedicalRecord(models.Model):
     '''
     provenance = models.ForeignKey(Provenance, blank=False)
     # this is the unique identifier for this record in the source EMR system 
-    natural_key = models.CharField('Unique Record identifier in source EMR system',blank=True, null=True, max_length=128)
+    natural_key = models.CharField(blank=True, null=True, max_length=128, help_text='Unique Record identifier in source EMR system')
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False, db_index=True)
 
