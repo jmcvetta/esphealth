@@ -91,11 +91,13 @@ tb
 
 acute hep a
 3 patients ( should generate 3 cases)
-1 patients with encounter with icd9 for jaundice
-1 patient with lab alt_2x 
-both patients patient with lab igm positive
-second patient with a lab test ('hep', 'alt', 'ast', 'tbil', 'bili') within 14 days of diagnosis
-1 patient with alt_2x and lab igm positive within more than 14 days
+1 patients with encounter with icd9 for jaundice - deena
+ same patient with lab hep a igm positive within 14 days
+1 patient with lab alt_2x -spock
+same  patients patient with lab hep a igm positive within 14 days
+same patient with a lab test totbil within 14 days of diagnosis? in code not in spec
+1 patient with alt_2x 
+ same patient with lab igm positive within more than 14 days
 
 diabetes
 17  patients 
@@ -150,24 +152,24 @@ Gonorrhea
 
 acute hep c
 4 patients (4 cases) - using collected date for dates
-(c) 1 patient with positive lab for (6 hepatitis c rna) HEP C RNA PCR (QL) 87521 detected - michaelZ
-  same patient with labs negative of hep_c_elisa lab within the prior 12 months
-(d) 1 patient with positive lab for (3 hepatitis c elisa) HEPAT C AB 86803  reactive -WhoP
+(c) 1 patient with positive lab for (6 hepatitis c rna) HEP C RNA PCR (QL) 87521--1627 detected - michaelZ
+  same patient with labs negative of hep_c_elisa (heb c ab) 86803--217 lab within the prior 12 months
+(d) 1 patient with positive lab for (3 hepatitis c elisa) HEPAT C AB 86803--217  reactive -WhoP
   same patient with labs negative of same lab within the prior 12 months)
 (b) 
   1 patient with encounter with jaundice icd9 782.4 - DeenaW
    same patient with lab hep_c_rna_ detected (6 tests) within 28 days of encounter
-   same patient with lab c heb c signal cut off ratio >=3.8 (4 test)  within 28 days
-   same patient with lab hep_a_igm_ non reactive (7 test no hep a) within 28 days of encounter
-   same patient wit lab hep_b_core igm_ non reactive ' (8 test no hep b) within 28 days of encounter
+   same patient with lab c heb c signal cut off 80074--251 ratio >=3.8 (4 test)  within 28 days
+   same patient with lab hep_a_igm_ab non reactive 86705--4329 (7 test no hep a) within 28 days of encounter
+   same patient wit lab hep_b_core igm_ab 86705--4870 non reactive ' (8 test no hep b) within 28 days of encounter
    TODO other negative and positive with other labs to exclude
-(a) 1 patient with lab alt >400 - SpockG
+(a) 1 patient with lab alt 84460--1728 >400 - SpockG
    same patient with lab hep_c_elisa_ reactive (3 test) within 28 days of alt lab
-   same patient with lab (4 test) heb c ab signal cut off 86803 >=3.8
-   same patient with (5 test)hep c riba positive 
-   same patient with (6 test) hep c rna HCV PCR QUANT 87522 >1.7
-   same patient with hav_tot_neg  (11 test)
-   same patient with hep_b_surface_neg (test 10)
+   same patient with lab (4 test) heb c ab signal cut off  >=3.8
+   same patient with (5 test)hep c riba 86804--1867 positive 
+   same patient with (6 test) hep c rna HCV PCR QUANT 87522--2352 >1.7
+   same patient with hav_tot_neg  80074--213 (11 test)
+   same patient with hep_b_surface neg 80055--223 (test 10)
    TODO other negatives and positive with other labs to exclude
  
 acute hep b -- only partially done based on code comment, need to corroborate with spec.
@@ -175,14 +177,14 @@ acute hep b -- only partially done based on code comment, need to corroborate wi
 TODO add more negative and positive for the ors
 (a) 1 patient with jaundice encounter - deenaw
  same patient with positive hep_b_igm_ab within 14 days 
-(2) 1 patient with lab alt_5x - spockG
-  same patient with tot bilirubin high >4 within 21 days of alt
+(b) 1 patient with lab alt_5x - spockG
+  same patient with tot bilirubin high >1.5 within 21 days of alt
   same patient with hep b surface positive(confirm) within 21 days of alt
- 1 patient with lab ast 5x -whop
-   same patient with high calc bilirubin within 21 days
-   same patient with hep b viral dna within 21 days 
-(3) 1 patient with heb b surface positive -michaelz
-   same patient with hep b surface neg
-   same patient with hep b viral dna neg 
+ (c) 1 patient with lab ast 5x -whop
+   same patient with 2 lab of direct bili and indirect bili, calc bilirubin (d+I) >1.5 within 21 days
+   same patient with hep b viral dna positive(confirm) within 21 days of ast
+(d) 1 patient with heb b surface positive -michaelz
+   same patient with hep b surface neg prior 12 months
+   same patient with hep b viral dna neg prior 12 months
 
 Giardiasis
