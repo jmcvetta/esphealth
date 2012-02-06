@@ -6,7 +6,8 @@ from ESP.utils.utils import log
 
 # Constants defined in the VAERS documents.
 TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
-TIME_WINDOW_POST_EVENT = 60 # Period of time between immunization and event
+#ver 3 of vaers doc says 42, prior versions were 30 but code was 60
+TIME_WINDOW_POST_EVENT = 42 # Period of time between immunization and event
 
 VAERS_LAB_RESULTS = {
     'Hemoglobin':{
