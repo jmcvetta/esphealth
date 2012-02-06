@@ -290,7 +290,7 @@ class Hepatitis_C(HepatitisCombined):
             #--------------------
             # Patient must have a negative result on a Hep A test.
             hep_a_neg_names = [
-                'lx:hepatitis_a_igm:negative',
+                'lx:hepatitis_a_total_antibodies:negative',
                 'lx:hepatitis_a_igm_antibody:negative',
                 ]
             hep_a_neg_qs = event_qs.filter(name__in=hep_a_neg_names)
@@ -347,10 +347,10 @@ class Hepatitis_C(HepatitisCombined):
                 ]
             hep_b_ab_neg_qs = event_qs.filter(name__in=hep_b_ab_neg_names)
             hep_b_ab_pos_qs = event_qs.filter(name__in=hep_b_ab_pos_names)
-            hep_b_surface_neg_qs = event_qs.filter(name='lx:hepatitis_b_surface_antigen:positive')
+            hep_b_surface_neg_qs = event_qs.filter(name='lx:hepatitis_b_surface_antigen:negative')
             if hep_b_ab_pos_qs:
                 continue # Patient does not have Acute Hep C
-            if not (hep_b_ab_neg_qs or hep_b_surface_neg_qs):
+            if not (hep_b_ab_neg_qs | hep_b_surface_neg_qs):
                 continue # Patient does not have Acute Hep C
             criteria_list.append(hep_b_ab_neg_qs) # QuerySet may be empty
             criteria_list.append(hep_b_surface_neg_qs) # QuerySet may be empty
@@ -397,7 +397,7 @@ class Hepatitis_C(HepatitisCombined):
         # To be considered for this definition, a patient must have either a 
         # positive Hep C ELISA or Hep C RNA test result.
         trigger_conditions = ['lx:hepatitis_c_elisa:positive', 'lx:hepatitis_c_rna:positive']
-        trigger_qs = Event.objects.filter(name=trigger_conditions)
+        trigger_qs = Event.objects.filter(name__in=trigger_conditions)
         trigger_qs = trigger_qs.exclude(case__condition__in=self.conditions)
         trigger_qs = trigger_qs.order_by('date')
         # Examine trigger events
