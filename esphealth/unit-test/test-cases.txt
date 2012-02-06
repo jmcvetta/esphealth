@@ -20,6 +20,14 @@ VAERS (call set rules first one time. save in backup and move after sync db.)
 1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTIc (guilian barre) 
   that has an ignore period 12 but not in the specialty clinic.  (klruska)
   same patient with immunization within 60 days prior to dx
+  #TODO add these cases 2 more patients with 2 more immunizations for them
+  #change above cases to be within 42 days
+1 patient with platelet count <100 category two (add lab)
+1 patient with two labs for hemoglobin where second lab is <10 but > 80% of last known value before immunization, within 42days
+  (category 3)
+ 1 patient with dx bronchospasm category 3, icd9 786.07 within past 3 months, 
+ # change code for dx  and brachial neuritis for vaers 3.0 
+ # todo another same patient with same diag, but do a neg case where it has bronchospam prior 3 months.
 
 SS
 3 patients (should generate 2 cases)
@@ -139,7 +147,7 @@ diabetes
     	3rd/5 patient with lab test OGTT 50 random (82950—161) >= 190 -PatriciaI 
     	4th/5 patient with test OGTT 75 1h (82951—2862) >= 180 -doolittleJ  
     	5th/5 patient with test component Positive OGTT 100 fasting urine (cpt 82951-64)
-    	  #same patient with lab test component Positive OGTT 100 fasting urine (cpt 82951-64) - lazarusY  
+    	  same patient with lab test component Positive OGTT 100 fasting urine (cpt 82951-64) - lazarusY  
     	  
  ( make sure that examples have beginning and an end)	
  
@@ -162,7 +170,7 @@ acute hep c
    same patient with lab c heb c signal cut off 80074--251 ratio >=3.8 (4 test)  within 28 days
    same patient with lab hep_a_igm_ab non reactive 86705--4329 (7 test no hep a) within 28 days of encounter
    same patient wit lab hep_b_core igm_ab 86705--4870 non reactive ' (8 test no hep b) within 28 days of encounter
-   TODO other negative and positive with other labs to exclude
+  #TODO other negative and positive with other labs to exclude
 (a) 1 patient with lab alt 84460--1728 >400 - SpockG
    same patient with lab hep_c_elisa_ reactive (3 test) within 28 days of alt lab
    same patient with lab (4 test) heb c ab signal cut off  >=3.8
@@ -170,11 +178,11 @@ acute hep c
    same patient with (6 test) hep c rna HCV PCR QUANT 87522--2352 >1.7
    same patient with hav_tot_neg  80074--213 (11 test)
    same patient with hep_b_surface neg 80055--223 (test 10)
-   TODO other negatives and positive with other labs to exclude
+  # TODO other negatives and positive with other labs to exclude
  
 acute hep b -- only partially done based on code comment, need to corroborate with spec.
 4 patients (4 cases)
-TODO add more negative and positive for the ors
+#TODO add more negative and positive for the ors
 (a) 1 patient with jaundice encounter - deenaw
  same patient with positive hep_b_igm_ab within 14 days 
 (b) 1 patient with lab alt_5x - spockG
