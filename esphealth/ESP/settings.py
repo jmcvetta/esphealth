@@ -165,6 +165,7 @@ INSTALLED_APPS = (
     'ESP.phit',
     'ESP.ui',
     'south',
+    'django_nose',
 )
 CASE_REPORT_OUTPUT_FOLDER = os.path.join(DATA_DIR, 'case_reports')
 CASE_REPORT_MDPH = config['Reporting']['use_mdph_format']
@@ -433,6 +434,9 @@ SPHINX_API_VERSION = 0x116
 
 # queryset_iterator() support
 QUERYSET_ITERATOR_CHUNKSIZE = config['General']['queryset_iterator_chunksize']
+
+# Use Nose for testing
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 #
 #--- HEF
