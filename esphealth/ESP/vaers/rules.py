@@ -10,6 +10,7 @@ TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
 TIME_WINDOW_POST_EVENT = 42 # Period of time between immunization and event
 
 VAERS_LAB_RESULTS = {
+    #TODO fix me we need to define these sets of codes as sets for an abstract labs 
     'Hemoglobin':{
         'codes':[
             '83036--258', '83051--258', '83036--1638', '80055--1100', '82955--1100', '83020--1100',
@@ -517,7 +518,7 @@ def map_lab_tests():
     # TODO: VAERS_DIAGNOSTICS data structure does not contain enough info 
     # (i.e. abstract test name) to be useful for anything.  What is it 
     # _supposed_ to be doing?
-    raise NotImplementedError('I am broken, please fix me.')
+    #raise NotImplementedError('I am broken, please fix me.')
     for lab_type, lab in VAERS_LAB_RESULTS.items():
         for code in set(lab['codes']):
             c, created = LabTestMap.objects.get_or_create(native_code=code, code_match_type=lab_type)
