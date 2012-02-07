@@ -374,7 +374,7 @@ class DiseaseDefinition(object):
         counter = 0
         event_qs = event_qs.exclude(case__condition=condition)
         event_qs = event_qs.order_by('patient', 'date')
-        log_query('Events for %s' % self.short_name, event_qs)
+        #log_query('Events for %s' % self.short_name, event_qs)
         for this_event in event_qs:
             created, this_case = self._create_case_from_event_obj(
                 condition = condition, 

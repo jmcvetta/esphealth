@@ -166,7 +166,7 @@ class Case(models.Model):
         q_obj &= Q(date__gte=start)
         q_obj &= Q(date__lte=end)
         labs = LabResult.objects.filter(q_obj).distinct()
-        log_query('Reportable labs for %s' % self, labs)
+        #log_query('Reportable labs for %s' % self, labs)
         return labs
     reportable_labs = property(__get_reportable_labs)
 
@@ -185,7 +185,7 @@ class Case(models.Model):
         q_obj &= Q(date__gte=start)
         q_obj &= Q(date__lte=end)
         encs = Encounter.objects.filter(q_obj)
-        log_query('Encounters for %s' % self, encs)
+        #log_query('Encounters for %s' % self, encs)
         return encs
     reportable_encounters = property(__get_reportable_encounters)
 
@@ -205,7 +205,7 @@ class Case(models.Model):
         q_obj &= Q(date__gte=start)
         q_obj &= Q(date__lte=end)
         prescriptions = Prescription.objects.filter(q_obj).distinct()
-        log_query('Reportable prescriptions for %s' % self, prescriptions)
+        #log_query('Reportable prescriptions for %s' % self, prescriptions)
         return prescriptions
     reportable_prescriptions = property(__get_reportable_prescriptions)
 
@@ -355,7 +355,7 @@ class ValidatorRun(models.Model):
     def __get_results(self):
         q_obj = Q(run=self) & ~Q(ref_case__ignore=True)
         qs = ValidatorResult.objects.filter(q_obj)
-        log_query('Validator results', qs)
+        #log_query('Validator results', qs)
         return qs
     results = property(__get_results)
 
