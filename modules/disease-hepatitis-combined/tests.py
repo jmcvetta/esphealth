@@ -41,24 +41,24 @@ Run me with:
 class EspTestCase(TestCase):
     
     def setUp(self):
-        log.info('Creating system provenance')
+        log.info('Creating TEST provenance')
         self.provenance = Provenance(source='TEST', hostname='TEST')
         self.provenance.save()
         
     def tearDown(self):
-        log.info('Deleting system provenance')
+        log.info('Deleting TEST provenance')
         self.provenance.delete()
         del self.provenance
     
     
     def create_lab_result(self, provider, patient, date, alt, **kwargs):
         '''
-        Create a lab result record for the specified abstract lab test.
+        Create a LabResult and a LabTestMap for the specified abstract lab test.
         @param alt: Abstract lab test name
         @type alt:  String
         '''
         native_code = 'natcode--' + alt 
-        native_code = native_code[:128]
+        native_code = native_code[:255]
         ltm, created = LabTestMap.objects.get_or_create(
             test_name = alt,
             native_code = native_code,
@@ -113,38 +113,6 @@ class Hepatitis_C_Test(EspTestCase):
     '''
     Unit tests for Hepatitis C algorithm
     '''
-    
-    def test_definition_d(self):
-        '''
-        c) 3 positive and record of (3 negative within the prior 12 months)
-        '''
-        log.info('Testing Hep C Definition D (simple algo)')
-        dr_spock = self.create_provider(last='Spock', first='Benjamin')
-        john_doe = self.create_patient(last='Doe', first='John', pcp=dr_spock)
-        neg_test_date = datetime.date(day=2, month=6, year=2009)
-        pos_test_date = datetime.date(day=15, month=1, year=2010)
-        self.create_lab_result(
-            provider = dr_spock, 
-            patient = john_doe, 
-            date = neg_test_date, 
-            alt = 'hepatitis_c_elisa',
-            result_string = 'NEGATIVE',
-            )
-        self.create_lab_result(
-            provider = dr_spock, 
-            patient = john_doe, 
-            date = pos_test_date, 
-            alt = 'hepatitis_c_elisa',
-            result_string = 'POSITIVE',
-            )
-        hep_c_disdef = DiseaseDefinition.get_by_short_name('hepatitis_c')
-        DiseaseDefinition.generate_all(disease_list=[hep_c_disdef], dependencies=True)
-        jdoe_case_qs = Case.objects.filter(patient=john_doe, condition='hepatitis_c:acute')
-        self.assertEqual(jdoe_case_qs.count(), 1, 'One and only one case should be generated')
-        jdoe_case = jdoe_case_qs[0]
-        self.assertEqual(jdoe_case.provider, dr_spock)
-        self.assertEqual(jdoe_case.date, pos_test_date)
-        self.assertEqual(jdoe_case.events.count(), 2)
     
     def test_definition_a(self):
         '''
@@ -308,7 +276,79 @@ class Hepatitis_C_Test(EspTestCase):
         self.assertEqual(kirk_case.provider, mccoy)
         self.assertEqual(kirk_case.date, trigger_date)
         self.assertEqual(kirk_case.events.count(), 5)
+
+    def test_definition_c(self):
+        '''
+        c) 6 positive and record of (3 negative within the prior 12 months)
         
+        3. Hepatitis C ELISA
+        6. Hepatitis C RNA
+        
+        TODO: This test, and the disease algo, currently expect JM's interpretation
+        of the Hep C definition.  Make sure Mike Klompas confirms this is correct.
+        '''
+        log.info('Testing Hep C Definition C (simple algo)')
+        mccoy = self.create_provider(last='Nimoy', first='Leonard')
+        kirk = self.create_patient(last='Kirk', first='James', pcp=mccoy)
+        neg_test_date = datetime.date(day=2, month=6, year=2009)
+        pos_test_date = datetime.date(day=15, month=1, year=2010)
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = kirk, 
+            date = neg_test_date, 
+            alt = 'hepatitis_c_rna',
+            result_string = 'NEGATIVE',
+            )
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = kirk, 
+            date = pos_test_date, 
+            alt = 'hepatitis_c_rna',
+            result_string = 'POSITIVE',
+            )
+        hep_c_disdef = DiseaseDefinition.get_by_short_name('hepatitis_c')
+        DiseaseDefinition.generate_all(disease_list=[hep_c_disdef], dependencies=True)
+        case_qs = Case.objects.filter(patient=kirk, condition='hepatitis_c:acute')
+        self.assertEqual(case_qs.count(), 1, 'One and only one case should be generated')
+        kirk_case = case_qs[0]
+        self.assertEqual(kirk_case.provider, mccoy)
+        self.assertEqual(kirk_case.date, pos_test_date)
+        self.assertEqual(kirk_case.events.count(), 2)
+
+    def test_definition_d(self):
+        '''
+        c) 3 positive and record of (3 negative within the prior 12 months)
+        
+        3. Hepatitis C ELISA
+        '''
+        log.info('Testing Hep C Definition D (simple algo)')
+        mccoy = self.create_provider(last='Nimoy', first='Leonard')
+        kirk = self.create_patient(last='Kirk', first='James', pcp=mccoy)
+        neg_test_date = datetime.date(day=2, month=6, year=2009)
+        pos_test_date = datetime.date(day=15, month=1, year=2010)
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = kirk, 
+            date = neg_test_date, 
+            alt = 'hepatitis_c_elisa',
+            result_string = 'NEGATIVE',
+            )
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = kirk, 
+            date = pos_test_date, 
+            alt = 'hepatitis_c_elisa',
+            result_string = 'POSITIVE',
+            )
+        hep_c_disdef = DiseaseDefinition.get_by_short_name('hepatitis_c')
+        DiseaseDefinition.generate_all(disease_list=[hep_c_disdef], dependencies=True)
+        case_qs = Case.objects.filter(patient=kirk, condition='hepatitis_c:acute')
+        self.assertEqual(case_qs.count(), 1, 'One and only one case should be generated')
+        kirk_case = case_qs[0]
+        self.assertEqual(kirk_case.provider, mccoy)
+        self.assertEqual(kirk_case.date, pos_test_date)
+        self.assertEqual(kirk_case.events.count(), 2)
+    
         
         
         
