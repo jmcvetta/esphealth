@@ -545,7 +545,7 @@ class LabResult(BasePatientRecord):
     # Date (from base class) is order date
     #
     order_natural_key = models.CharField('Order identifier in source EMR system', max_length=128, db_index=True)
-    native_code = models.CharField('Native Test Code', max_length=30, blank=True, null=True, db_index=True)
+    native_code = models.CharField('Native Test Code', max_length=255, blank=True, null=True, db_index=True)
     native_name = models.CharField('Native Test Name', max_length=255, blank=True, null=True, db_index=True)
     result_date = models.DateField(blank=True, null=True, db_index=True)
     collection_date = models.DateField(blank=True, null=True, db_index=True)
@@ -1288,6 +1288,23 @@ class Encounter(BasePatientRecord):
                 'peak_flow':self.peak_flow
                 }
             }
+    
+    def add_diagnosis(self, codeset, diagnosis_code):
+        '''
+        Add a diagnosis code to this Encounter
+        @param codeset: The diagnostic codeset (e.g. ICD9, ICD10)
+        @type codeset:  String
+        @param diagnosis_code: A diagnosis code
+        @type diagnosis_code:  String
+        @rtype: None
+        '''
+        if not 'icd9' == codeset:
+            raise NotImplementedError('Only icd9 codeset supported at this time.')
+        icd9_obj, created = Icd9.objects.get_or_create(code=diagnosis_code)
+        self.icd9_codes.add(icd9_obj)
+        self.save()
+        log.debug('Added diagnosis %s to %s' % (icd9_obj, self))
+        
             
 class Diagnosis(BasePatientRecord):
     '''
