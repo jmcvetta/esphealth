@@ -474,6 +474,7 @@ modules/disease-gonorrhea/setup.py -text
 modules/disease-hepatitis-combined/__init__.py -text
 modules/disease-hepatitis-combined/hepatitis.py -text
 modules/disease-hepatitis-combined/setup.py -text
+modules/disease-hepatitis-combined/tests.py -text
 modules/disease-lyme/__init__.py -text
 modules/disease-lyme/lyme.py -text
 modules/disease-lyme/setup.py -text
