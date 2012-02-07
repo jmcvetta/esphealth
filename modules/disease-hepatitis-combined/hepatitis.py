@@ -47,7 +47,7 @@ TEST_NAME_SEARCH_STRINGS = [
     ]
 
 class HepatitisCombined(DiseaseDefinition):
-
+    
     @property
     def event_heuristics(self):
         '''
@@ -368,12 +368,11 @@ class Hepatitis_C(HepatitisCombined):
                 combined_criteria_qs |= criterion_qs
             # Date the case based on the earliest criterion.
             # NOTE: Is this the desired behavior?
-            first_event = combined_criteria_qs.order_by('date')[0]
             created, this_case = self._create_case_from_event_obj(
                 condition = 'hepatitis_c:acute', 
                 criteria = 'complex algorithm', 
                 recurrence_interval = None,  # Does not recur
-                event_obj = first_event, 
+                event_obj = trigger_event, 
                 relevent_event_qs = combined_criteria_qs,
                 )
             if created:
