@@ -32,7 +32,7 @@ from ESP.nodis.models import Case
 
 '''
 Run me with:
-    time ./bin/esp test -v 2 --noinput --where=/home/jason/work/esphealth-trunk/src/disease-hepatitis-combined
+    time ./bin/esp test -v 2 --processes=0 --noinput --where=/home/jason/work/esphealth-trunk/src/disease-hepatitis-combined
 '''
 
 
