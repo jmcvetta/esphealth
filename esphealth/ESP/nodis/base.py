@@ -93,10 +93,10 @@ class DiseaseDefinition(object):
         '''
     
     @abc.abstractmethod
-    def generate(self, dependencies=False):
+    def generate(self):
         '''
         Examine the database and generate new cases of this disease
-        @param dependencies: Generate dependency Events for this disease?
+        @param dependencies: Should we generate dependency Events for this disease?
         @type dependencies:  Boolean
         @return: The count of new cases generated
         @rtype:  Integer
@@ -109,12 +109,32 @@ class DiseaseDefinition(object):
     #-------------------------------------------------------------------------------
     
     @classmethod
+    def generate_dependencies(cls, disease_list, thread_count=HEF_THREAD_COUNT):
+        '''
+        Generate dependency Events and Timespans for a list of diseases
+        @param disease_list: Generete dependencies for these diseases
+        @type disease_list:  [DiseaseDefinition, DiseaseDefinition, ...]
+        '''
+        log.debug('Generating dependencies for %s' % cls)
+        event_heuristics = set()
+        timespan_heuristics = set()
+        for disdef in disease_list:
+            [event_heuristics.add(h) for h in disdef.event_heuristics]
+            [timespan_heuristics.add(h) for h in disdef.timespan_heuristics]
+        event_funcs = [h.generate for h in event_heuristics]
+        timespan_funcs = [h.generate for h in timespan_heuristics]
+        counter = 0
+        counter += wait_for_threads(event_funcs, max_workers=thread_count)
+        counter += wait_for_threads(timespan_funcs, max_workers=thread_count)
+        return counter
+    
+    @classmethod
     def generate_all(cls, disease_list=None, dependencies=False, thread_count=HEF_THREAD_COUNT):
         '''
         Generate cases for all DiseaseDefinition instances.
         @param disease_list: If specified, generete cases only for these diseases
         @type disease_list:  [DiseaseDefinition, DiseaseDefinition, ...]
-        @param dependecies: Generate dependency Events for all diseases?
+        @param dependecies: Should we generate dependency Events and Timespans?
         @type dependecies:  Boolean
         '''
         if disease_list:
@@ -124,16 +144,11 @@ class DiseaseDefinition(object):
             disease_list = cls.get_all()
         log.debug('Diseases to be generated: %s' % disease_list)
         if dependencies:
-            log.debug('Generating dependencies')
-            uri_set = set()
-            for this_disease in disease_list:
-                [uri_set.add(uri) for uri in this_disease.dependency_uris]
-            BaseHeuristic.generate_by_uri(uri_list=uri_set, thread_count=thread_count)
+            cls.generate_dependencies(disease_list, thread_count)
         funcs = [this_disease.generate for this_disease in disease_list]
         counter = wait_for_threads(funcs, max_workers=thread_count)
         log.info('Generated %20s cases' % counter)
         return counter
-
     
     @classmethod
     def get_all_test_name_search_strings(cls):
@@ -247,25 +262,6 @@ class DiseaseDefinition(object):
     # Instance methods
     #
     #-------------------------------------------------------------------------------
-    
-    @property
-    def dependency_uris(self):
-        '''
-        Returns a set of URIs describing all of the heuristics on which this 
-        disease definition depends
-        '''
-        heuristics = set()
-        [heuristics.add(h.uri) for h in self.event_heuristics]
-        [heuristics.add(h.uri) for h in self.timespan_heuristics]
-        return heuristics
-    
-    def generate_dependencies(self, thread_count=HEF_THREAD_COUNT):
-        '''
-        Generates events & timespans for all heuristics on which this disease 
-        definition depends.  
-        '''
-        log.info('Generating dependencies for %s' % self)
-        return BaseHeuristic.generate_by_uri(self.dependency_uris)
     
     def _create_case_from_event_obj(self,
         condition,
