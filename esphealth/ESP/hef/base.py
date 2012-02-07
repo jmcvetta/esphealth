@@ -210,26 +210,13 @@ class BaseHeuristic(EquivalencyMixin):
     def generate_by_name(cls, name_list, thread_count=HEF_THREAD_COUNT):
         '''
         Run heuristic(s) specified by name as arguments.  For use in human UI 
-            only.  Other software components should use generate_by_uri() 
-            instead.
+            only.  
         @param uri_list: Short names of heuristics to be generated
         @type uri_list:  [String, String, ...]
         '''
         selected_heuristics = set()
         for short_name in name_list:
             selected_heuristics.add( cls.get_heuristic_by_name(short_name) )
-        return cls.generate_all(heuristic_list=selected_heuristics, thread_count=thread_count)
-    
-    @classmethod
-    def generate_by_uri(cls, uri_list, thread_count=HEF_THREAD_COUNT):
-        '''
-        Run heuristic(s) specified by name as arguments
-        @param uri_list: URIs of heuristics to be generated
-        @type uri_list:  [String, String, ...]
-        '''
-        selected_heuristics = set()
-        for uri in uri_list:
-            selected_heuristics.add( cls.get_heuristic_by_uri(uri) )
         return cls.generate_all(heuristic_list=selected_heuristics, thread_count=thread_count)
     
 
@@ -425,11 +412,13 @@ class AbstractLabTest(object):
     @classmethod
     def get_all_names(cls):
         '''
-        Returns the set of all known Abstract Lab Test names
+        Returns the set of all known Abstract Lab Test names, sorted alphabetically.
         '''
         names = set()
         for heuristic in BaseLabResultHeuristic.get_all():
             names.add(heuristic.alt.name)
+        names = list(names)
+        names.sort()
         return names
     
     @property
