@@ -223,7 +223,91 @@ class Hepatitis_C_Test(EspTestCase):
         self.assertEqual(kirk_case.provider, mccoy)
         self.assertEqual(kirk_case.date, trigger_date)
         self.assertEqual(kirk_case.events.count(), 4)
-        
+
+    def test_definition_b(self):
+        '''
+        b) (1 or 2) and 6 positive and 4 positive (if done) and 5 positive (if
+        done) and (7 negative or 11 negative) and [8 negative or 9 non-reactive
+        or (8 not done and 10 non-reactive)] within a 28 day period; AND no
+        prior positive 3 or  5 or 6 ever;  AND no ICD9 (070.54 or 070.70) ever
+        prior to this encounter
+        '''
+        log.info('Testing Hep C Definition B (complex algo)')
+        #
+        # (1 or 2)
+        # 
+        # (jaundice or ALT>400)
+        mccoy = self.create_provider(last='McCoy', first='Leonard')
+        kirk = self.create_patient(last='Kirk', first='James', pcp=mccoy)
+        trigger_date = datetime.date(year=2010, month=2, day=15)
+        self.create_diagnosis(
+            provider = mccoy, 
+            patient = kirk, 
+            date = trigger_date - relativedelta(days=5), 
+            codeset = 'icd9', 
+            diagnosis_code = '782.4'
+            )
+        #
+        # and 6 positive
+        # 
+        # 6. Hepatitis C RNA
+        #
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = kirk, 
+            date = trigger_date,
+            alt = 'hepatitis_c_rna',
+            result_string = 'POSITIVE',
+            )
+        #
+        # and 4 positive (if done) and 5 positive (if done)
+        #
+        # 4. Hepatitis C Signal Cutoff Ratio
+        # 5. Hepatitis C RIBA
+        #
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = kirk, 
+            date = trigger_date + relativedelta(days=15),
+            alt = 'hepatitis_c_signal_cutoff',
+            result_string = 'POSITIVE',
+            )
+        #-----
+        #
+        # and (7 negative or 11 negative)
+        #
+        # 7. IgM antibody to Hepatitis A
+        # 11. Hepatitis A total antibodies
+        #
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = kirk, 
+            date = trigger_date + relativedelta(days=3),
+            alt = 'hepatitis_a_total_antibodies',
+            result_string = 'NEGATIVE',
+            )
+        #
+        # and [8 negative or 9 non-reactive or (8 not done and 10 non-reactive)]
+        #
+        # 8. IgM antibody to Hepatitis B Core Antigen
+        # 9. General antibody to Hepatitis B Core Antigen
+        # 10. Hepatitis B Surface Antigen
+        #
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = kirk, 
+            date = trigger_date + relativedelta(days=5),
+            alt = 'hepatitis_b_surface_antigen',
+            result_string = 'NEGATIVE',
+            )
+        hep_c_disdef = DiseaseDefinition.get_by_short_name('hepatitis_c')
+        DiseaseDefinition.generate_all(disease_list=[hep_c_disdef], dependencies=True)
+        case_qs = Case.objects.filter(patient=kirk, condition='hepatitis_c:acute')
+        self.assertEqual(case_qs.count(), 1, 'One and only one case should be generated')
+        kirk_case = case_qs[0]
+        self.assertEqual(kirk_case.provider, mccoy)
+        self.assertEqual(kirk_case.date, trigger_date)
+        self.assertEqual(kirk_case.events.count(), 5)
         
         
         
