@@ -376,7 +376,6 @@ esphealth/plugins/disease-gonorrhea/gonorrhea.py -text
 esphealth/plugins/disease-gonorrhea/setup.py -text
 esphealth/plugins/disease-hepatitis-combined/__init__.py -text
 esphealth/plugins/disease-hepatitis-combined/hepatitis.py -text
-esphealth/plugins/disease-hepatitis-combined/setup.py -text
 esphealth/plugins/disease-hepatitis-combined/tests.py -text
 esphealth/plugins/disease-lyme/__init__.py -text
 esphealth/plugins/disease-lyme/lyme.py -text

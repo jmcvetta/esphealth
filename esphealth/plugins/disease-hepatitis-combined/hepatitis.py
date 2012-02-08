@@ -11,15 +11,16 @@
 @license: LGPL
 '''
 
-
 # In most instances it is preferable to use relativedelta for date math.  
 # However when date math must be included inside an ORM query, and thus will
 # be converted into SQL, only timedelta is supported.
 #
 # This may not still be true in newer versions of Django - JM 6 Dec 2011
 from datetime import timedelta
-from dateutil.relativedelta import relativedelta
 from decimal import Decimal
+
+from dateutil.relativedelta import relativedelta
+from sprinkles import implements
 
 from django.db import transaction
 from django.db.models import F
@@ -33,6 +34,7 @@ from ESP.hef.base import LabResultRatioHeuristic
 from ESP.hef.base import LabResultFixedThresholdHeuristic
 from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import Icd9Query
+from ESP.utils.plugins import IPlugin
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.base import Case
 
@@ -439,14 +441,17 @@ class Hepatitis_C(HepatitisCombined):
         log.debug('Created %s new Hep C cases with simple algo' % counter)
         return counter
 
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 # Packaging
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-def event_heuristics():
-    return Hepatitis_A().event_heuristics # Heuristics for any Hep definition are identical
-
-def disease_definitions():
-    return [Hepatitis_A(), Hepatitis_C()]
+class HepatatisPlugin(object):
+    implements(IPlugin)
+    # All descendants of HepatitisCombined share a common event_heuristics member.
+    event_heuristics = Hepatitis_A().event_heuristics
+    timespan_heuristics = []
+    disease_definitions = [Hepatitis_A(), Hepatitis_C()]
+    reports = []
