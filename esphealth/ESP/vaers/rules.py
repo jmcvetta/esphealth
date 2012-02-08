@@ -1,13 +1,37 @@
 #-*- coding:utf-8 -*-
 
-from ESP.conf.models import LabTestMap
 from ESP.static.models import Icd9, Vaccine, ImmunizationManufacturer
 from ESP.utils.utils import log
 
 # Constants defined in the VAERS documents.
 TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
+
 #ver 3 of vaers doc says 42, prior versions were 30 but code was 60
+
 TIME_WINDOW_POST_EVENT = 42 # Period of time between immunization and event
+
+#types of action types 
+# 1_common:  Common, well described, non-serious, adverse event
+#2_rare
+#3_possible
+#4_unlikely
+NEW_VAERS_LAB_RESULTS = {
+    'hemoglobin': {
+        'trigger': 'X<10',
+        'unit': 'g/L',
+        'exclude_if': ('>','LKV*0.8'),
+        'category': '3_possible',
+        'risk_period': 30,
+        },
+    'white_blood_cell_count': {
+        'trigger':     'X<3.5',
+        'unit':        'x109/L',
+        'exclude_if':  ('>','LKV*0.7'),
+        'category':    'confirm',
+        'risk_period': 30,
+        },
+
+    }
 
 VAERS_LAB_RESULTS = {
     #TODO fix me we need to define these sets of codes as sets for an abstract labs 
@@ -25,7 +49,8 @@ VAERS_LAB_RESULTS = {
                 'trigger':'X<10',
                 'unit':'g/L',
                 'exclude_if':('>','LKV*0.8'),
-                'category':'confirm'
+                'category':'confirm',
+                'risk_period':30
                 }]
         },
     
@@ -349,12 +374,16 @@ VAERS_LAB_RESULTS = {
 
     }  
 
+#
+# TODO: Add 'risk_period_days' field to every entry
+#
 VAERS_DIAGNOSTICS = {
     '357.0': {
         'name':'Guillain-Barre',
         'ignore_period':12,
         'category':'default',
-        'source':'Menactra'
+        'source':'Menactra',
+        'risk_period_days': 30,
         },
     
     '351.0': {
@@ -514,17 +543,6 @@ VAERS_DIAGNOSTICS = {
         }
     }
 
-def map_lab_tests():
-    # TODO: VAERS_DIAGNOSTICS data structure does not contain enough info 
-    # (i.e. abstract test name) to be useful for anything.  What is it 
-    # _supposed_ to be doing?
-    #raise NotImplementedError('I am broken, please fix me.')
-    for lab_type, lab in VAERS_LAB_RESULTS.items():
-        for code in set(lab['codes']):
-            c, created = LabTestMap.objects.get_or_create(native_code=code, code_match_type=lab_type)
-            msg = ('New mapping %s' % c) if created else 'Mapping %s already on database' % c
-            log.info(msg)                            
-
 
 def define_active_rules():
     '''Read each of the rules defined in VAERS_DIAGNOSTICS
@@ -565,9 +583,10 @@ def define_active_rules():
     for k, v in VAERS_DIAGNOSTICS.items():
         obj, created = DiagnosticsEventRule.objects.get_or_create(
             name=v['name'],
-            ignored_if_past_occurrence = v['ignore_period'],
+            ignore_period = v['ignore_period'],
             category=v['category'],
-            source=v.get('source', None)
+            source=v.get('source', None),
+            risk_period = v['risk_period_days'],
             )
         
         obj.activate()

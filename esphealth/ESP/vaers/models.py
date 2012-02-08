@@ -527,6 +527,9 @@ class Rule(models.Model):
     category = models.CharField(max_length=60, choices=ADVERSE_EVENT_CATEGORIES)
     in_use = models.BooleanField(default=False)
     
+    class Meta:
+        abstract = True
+    
     def activate(self):
         if not self.in_use:
             self.in_use = True
@@ -543,6 +546,13 @@ class Rule(models.Model):
         
 class DiagnosticsEventRule(Rule):
 
+    source = models.CharField(max_length=30, null=True)
+    ignore_period = models.PositiveIntegerField(null=True)
+    heuristic_defining_codes = models.ManyToManyField(Icd9, related_name='defining_icd9_code_set')
+    heuristic_discarding_codes = models.ManyToManyField(Icd9, related_name='discarding_icd9_code_set')
+    risk_period = models.IntegerField(blank=False, null=False, 
+        help_text='Risk period in days following vaccination')
+    
     @staticmethod
     def all_active():
         return DiagnosticsEventRule.objects.filter(in_use=True)
@@ -557,10 +567,5 @@ class DiagnosticsEventRule(Rule):
     def random():
         return DiagnosticsEventRule.objects.order_by('?')[0]
  
-    source = models.CharField(max_length=30, null=True)
-    ignored_if_past_occurrence = models.PositiveIntegerField(null=True)
-    heuristic_defining_codes = models.ManyToManyField(Icd9, related_name='defining_icd9_code_set')
-    heuristic_discarding_codes = models.ManyToManyField(Icd9, related_name='discarding_icd9_code_set')
-    
     def __unicode__(self):
         return unicode(self.name)
