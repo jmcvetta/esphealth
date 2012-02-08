@@ -214,6 +214,9 @@ class Icd9(models.Model):
     def __unicode__(self):
         return u'%s %s' % (self.code, self.name)
     
+    #
+    # TODO: Move this code to VAERS
+    #
     @staticmethod
     def expansion(expression):
         '''
