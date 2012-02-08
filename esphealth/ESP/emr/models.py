@@ -527,6 +527,7 @@ class BasePatientRecord(BaseMedicalRecord):
 
 
 class LabResultManager(models.Manager):
+    # TODO: This code belongs in VAERS module, not here.
     def following_vaccination(self, days_after, include_same_day=False, **kw):
 
         if include_same_day:
@@ -997,8 +998,8 @@ class Prescription(BasePatientRecord):
     
 
 class EncounterManager(models.Manager):
+    
     def following_vaccination(self, days_after, include_same_day=False, **kw):
-
         if include_same_day:
             q_earliest_date = Q(date__gte=F('patient__immunization__date'))
         else:
@@ -1184,6 +1185,9 @@ class Encounter(BasePatientRecord):
     def is_fake(self):
         return self.status == 'FAKE'
 
+    #
+    # TODO: Move this code to VAERS
+    #
     def is_reoccurrence(self, icd9s, month_period=12):
         '''
         returns a boolean indicating if this encounters shows any icd9
@@ -1340,6 +1344,9 @@ class Immunization(BasePatientRecord):
 
     q_fake = Q(name='FAKE')
 
+    #
+    # TODO: Move this code to VAERS module
+    #
     @staticmethod
     def vaers_candidates(patient, event, days_prior):
         '''Given an adverse event, returns a queryset that represents
