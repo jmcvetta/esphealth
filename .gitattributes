@@ -40,6 +40,7 @@ esphealth/ESP/emr/choices.py -text
 esphealth/ESP/emr/data_flow_summary.py -text
 esphealth/ESP/emr/fake.py -text
 esphealth/ESP/emr/fixtures/demo.json -text
+esphealth/ESP/emr/fixtures/fake_data.json -text
 esphealth/ESP/emr/fixtures/initial_data.json -text
 esphealth/ESP/emr/management/__init__.py -text
 esphealth/ESP/emr/management/commands/__init__.py -text
