@@ -46,7 +46,7 @@ def generateHL7(hl7dir,cases):
 #
 # NOTE: This method is probably cruft - certainly it hasn't been used in quite a 
 # while since the Case member names are from ESP 1.0.
-# TODO fix me is using old  models prior to 3
+# TODO issue 337 fix me is using old  models prior to 3
 #
 def generateOneBatch(hl7dir,cases):
     testDoc = hl7XML.hl7Batch(institutionName=localconfig.LOCALSITE, nmessages=len(cases))

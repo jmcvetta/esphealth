@@ -76,7 +76,7 @@ Create these for testing from spreadsheet cut'n'pastery (TM)
 each is a list of [icd9code,feverRequired] - uniform structures
 from the zoo of spreadsheetery
 
-TODO: store these in tables 
+TODO: issue 338 store these in tables 
 
 Use 'in' queries to allow the database to do the work of finding
 encounters for a given date using icd9fact table
@@ -92,8 +92,8 @@ b) ICD9 code of 780.6 (fever)
 Note febrile convulsion added sometimes? 
 ICD9 code 780.31 (Febrile Convulsions)  
 
-TODO: clarify whether febrile convulsions diag counts as fever
-TODO: create a function to figure if an encounter with an 
+TODO: issue 338 clarify whether febrile convulsions diag counts as fever
+TODO: issue 338 create a function to figure if an encounter with an 
 ICD9 requiring a fever had a fever..
 
 b) Make the detection algorithm a generator so the consumer can be decoupled - it can
@@ -102,7 +102,7 @@ event iterator as eg getEvents(icdList,needFever,startDT,endDT)
 returning a tuple (encId,demogId,pcpId,icd9,obsDT,obsZip) for each event, 
 and do whatever it wants including store individual records or just pump out totals by zip
 
-TODO: icdList and needFever come from a table eg of:
+TODO: issue 338 icdList and needFever come from a table eg of:
 esp_syndefs
 id
 syndName
@@ -119,7 +119,7 @@ filled from one of the excel spreadsheets we have from Katherine
 DONE: see espSSconf.py - this code now has an ILI test that appears
 to work - returns 1680 ILI cases for feb1-2 2008
 
-TODO: squirt into database tables and adjust the test
+TODO: issue 338 squirt into database tables and adjust the test
 here; create django application to manage these
 
 c) first iteration consumer can just write text files of count by zip by syndrome
@@ -193,7 +193,7 @@ syndDefs = dict(zip(nameList,defList))
 # needed to identify and report cases and aggregates
 # these can be easily adjusted - check the espSSconfATRIUS.py file
 # to see how this is done.
-# TODO: use svn to version these and allow updating - propogate version metadata
+# TODO: issue 339 use svn to version these and allow updating - propogate version metadata
 #       to derived data
 #
 
@@ -392,7 +392,9 @@ def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
         demogIds = [x.icd9Patient.id for x in factids]
         icd9codes = [x.icd9Code for x in factids]
         # need to remove redundancy on demog Id and date
-        dateId = {} # this will be hard if we got to periods other than days? TODO: fixme...one day
+        dateId = {} 
+        # this will be hard if we got to periods other than days? 
+        #TODO: issue 340 fix me...one day
         sitedateId = {} # for stampede
         for i,edate in enumerate(encdates): # reporting outermost is date
             id = demogIds[i] # this subject
@@ -414,7 +416,7 @@ def caseIdsToDateIds(caseids=[],ziplen=5,localIgnore=True,syndrome='?'):
                         dob = dobs[i] # for debugging
                         dateId[edate][z][id] = (z,age,icd9FactId,encId,icd9code,demogId,edate,temperature,dob,siteZip)
                         # preserve entire record for line list
-                        # TODO may need to expand this for more line list column versions
+                        # TODO issue 340 may need to expand this for more line list column versions
                         sitedateId.setdefault(edate,{})
                         sitedateId[edate].setdefault(siteZip,0)
                         sitedateId[edate][siteZip] += 1 # for aggregate reports by site zip
@@ -729,7 +731,7 @@ def makeTab(sdate='20080101',edate='20080102',syndrome='ILI',ziplen=5,
         sm = ['edate\tzip_site\tsyndrome\tnsyndrome\tnallEnc\tpctsyndrome',] # site zip amalg
         lm = ['syndrome\tedate\tzip_res\tzip_seen\tage_5yrs\ticd9\ttemperature\tnencs_age_zip_res\tnencs_age_zip_site',] 
         # lm is list of strings for the line list
-        # todo - add N all encs age zip_seen as well as zipres
+        # TODO issue 338 - add N all encs age zip_seen as well as zipres
         edk = dateId.keys()
         edk.sort()
         for thisdate in edk:

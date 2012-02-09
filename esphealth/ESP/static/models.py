@@ -215,7 +215,7 @@ class Icd9(models.Model):
         return u'%s %s' % (self.code, self.name)
     
     #
-    # TODO: Move this code to VAERS
+    # TODO: issue 333 Move this code to VAERS
     #
     @staticmethod
     def expansion(expression):
