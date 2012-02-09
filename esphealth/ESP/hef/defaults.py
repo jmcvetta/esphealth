@@ -31,7 +31,7 @@ from ESP.hef.base import CalculatedBilirubinHeuristic
 #-------------------------------------------------------------------------------
 
 # All events created by previous version of HEF will be bound to this heuristic.
-legacy_heuristic = Heuristic.objects.get_or_create(
+legacy_heuristic = BaseHeuristic.objects.get_or_create(
     id = 0,
     #name = 'Legacy Heuristic',
     )[0]
@@ -516,7 +516,7 @@ LabOrderHeuristic.objects.get_or_create(
 #    )
 
 #
-# TODO: This test needs a western blog heuristic!
+# TODO: issue 336 This test needs a western blot heuristic see above !
 #
 lyme_igg_wb = AbstractLabTest.objects.get_or_create(
     name = 'lyme_igg_wb',

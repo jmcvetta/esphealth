@@ -379,6 +379,7 @@ class BaseTimespanHeuristic(BaseHeuristic):
         # only once.
         #
         dependencies = set()
+        # TODO issue 335 fix me disease_list is not defined
         for disease in disease_list:
             dependencies |= set(disease.dependencies)
         for dep in dependencies:
@@ -648,7 +649,7 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
     
     def generate(self):
         #
-        # TODO:  The negative and indeterminate querysets should be generated 
+        # TODO: issue 334 The negative and indeterminate query sets should be generated 
         # *after* creating of preceding queries' events, so that labs bound to 
         # those events are ignored.  This will allow negative lab query to much
         # simpler.
