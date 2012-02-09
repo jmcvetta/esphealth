@@ -185,6 +185,7 @@ esphealth/ESP/static/admin.py -text
 esphealth/ESP/static/fixtures/initial_data.json.bz2 -text svneol=unset#unset
 esphealth/ESP/static/fixtures/static_fakedata_drivers.json -text
 esphealth/ESP/static/models.py -text
+esphealth/ESP/static/sql/fakelabs.postgresql.sql -text
 esphealth/ESP/static/sql/icd9.postgresql.sql -text
 esphealth/ESP/static/tests.py -text
 esphealth/ESP/static/views.py -text
