@@ -20,7 +20,6 @@ from datetime import timedelta
 from decimal import Decimal
 
 from dateutil.relativedelta import relativedelta
-from sprinkles import implements
 
 from django.db import transaction
 from django.db.models import F
@@ -34,9 +33,9 @@ from ESP.hef.base import LabResultRatioHeuristic
 from ESP.hef.base import LabResultFixedThresholdHeuristic
 from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import Icd9Query
-from ESP.utils.plugins import IPlugin
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.base import Case
+from ESP.hef.base import BaseEventHeuristic
 
 
 
@@ -66,6 +65,12 @@ class HepatitisCombined(DiseaseDefinition):
             ]
             ))
         heuristic_list.append( DiagnosisHeuristic(
+            name = 'hepatitis_b:chronic',
+            icd9_queries = [
+            Icd9Query(starts_with='070.32'),
+            ]
+            ))
+        heuristic_list.append( DiagnosisHeuristic(
             name = 'hepatitis_c:chronic',
             icd9_queries = [
             Icd9Query(starts_with='070.54'),
@@ -81,6 +86,8 @@ class HepatitisCombined(DiseaseDefinition):
         # Lab Results
         #
         heuristic_list.append( LabResultPositiveHeuristic(
+            # Hep B definition calls this "Hepatitis C antibody" but has same
+            # test codes as Hep C "Hepatitis C ELISA" test.
             test_name = 'hepatitis_c_elisa',
             ))
         heuristic_list.append( LabResultPositiveHeuristic(
@@ -107,21 +114,114 @@ class HepatitisCombined(DiseaseDefinition):
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'hepatitis_b_surface_antigen',
             ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'hepatitis_b_e_antigen',
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'hepatitis_b_viral_dna',
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'hepatitis_e_antibody',
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'bilirubin:direct',
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'bilirubin:indirect',
+            ))
         heuristic_list.append( LabResultRatioHeuristic(
             test_name = 'alt',
             ratio = Decimal('2.0'),
             ))
         heuristic_list.append( LabResultRatioHeuristic(
+            test_name = 'alt',
+            ratio = Decimal('5.0'),
+            ))
+        heuristic_list.append( LabResultRatioHeuristic(
             test_name = 'ast',
             ratio = Decimal('2.0'),
+            ))
+        heuristic_list.append( LabResultRatioHeuristic(
+            test_name = 'ast',
+            ratio = Decimal('5.0'),
             ))
         heuristic_list.append( LabResultFixedThresholdHeuristic(
             test_name = 'alt',
             threshold = Decimal('400'),
             match_type = 'gt',
             ))
+        heuristic_list.append( LabResultFixedThresholdHeuristic(
+            test_name = 'bilirubin:total',
+            threshold = Decimal('1.5'),
+            match_type = 'gt',
+            ))
         return heuristic_list
     
+
+class Hepatitis_B(HepatitisCombined):
+    '''
+    Hepatitis B
+    '''
+
+    # A future version of this disease definition may also detect chronic hep a
+    conditions = ['hepatitis_b:acute']
+
+    uri = URI_ROOT + 'hepatitis_b' + URI_VERSION
+
+    short_name = 'hepatitis_b'
+
+    test_name_search_strings = TEST_NAME_SEARCH_STRINGS
+
+    timespan_heuristics = []
+
+    @transaction.commit_on_success
+    def generate(self):
+        log.info('Generating cases for %s (%s)' % (self.short_name, self.uri))
+        counter = 0
+        counter += self.generate_definition_a()
+        return counter
+    
+    def generate_definition_a(self):
+        '''
+        a) (#1 or #2 or #3) AND #4 within 14 day period
+        1. ICD9 = 782.4 (jaundice, not of newborn)
+        2. Alanine aminotransferase (ALT) >5x upper limit of normal
+        3. Aspartate aminotransferase (AST) >5x upper limit of normal
+        4. IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)
+        '''
+        log.info('Generating cases for Hepatitis B definition A')
+        trigger_qs = BaseEventHeuristic.get_events_by_name(name='lx:hepatitis_b_core_antigen_igm_antibody:positive')
+        trigger_qs = trigger_qs.exclude(case__condition=self.conditions[0])
+        trigger_qs = trigger_qs.order_by('date')
+        confirmation_qs = BaseEventHeuristic.get_events_by_name(name='dx:jaundice')
+        confirmation_qs |= BaseEventHeuristic.get_events_by_name(name='lx:alt:ratio:5.0')
+        confirmation_qs |= BaseEventHeuristic.get_events_by_name(name='lx:ast:ratio:5.0')
+        confirmation_qs = confirmation_qs.order_by('date')
+        counter = 0
+        for trigger_event in trigger_qs:
+            pat = trigger_event.patient
+            begin_relevancy = trigger_event.date - relativedelta(days=14)
+            end_relevancy = trigger_event.date + relativedelta(days=14)
+            pat_conf_qs = confirmation_qs.filter(
+                patient = pat,
+                date__gte = begin_relevancy,
+                date__lte = end_relevancy,
+                )
+            if not pat_conf_qs:
+                # This patient does not have Hep B
+                continue
+            created, this_case = self._create_case_from_event_obj(
+                condition = self.conditions[0],
+                criteria = 'Definition A: Hep B core antigen igm antibody + confirmation', 
+                recurrence_interval = None,  # Does not recur
+                event_obj = trigger_event, 
+                relevent_event_qs = pat_conf_qs,
+                )
+            if created:
+                counter += 1
+        return counter
+        
+        
 
 class Hepatitis_A(HepatitisCombined):
     '''
@@ -448,10 +548,13 @@ class Hepatitis_C(HepatitisCombined):
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+from ESP.utils.plugins import IPlugin
+from sprinkles import implements
+
 class HepatatisPlugin(object):
     implements(IPlugin)
     # All descendants of HepatitisCombined share a common event_heuristics member.
     event_heuristics = Hepatitis_A().event_heuristics
     timespan_heuristics = []
-    disease_definitions = [Hepatitis_A(), Hepatitis_C()]
+    disease_definitions = [Hepatitis_A(), Hepatitis_B(), Hepatitis_C()]
     reports = []

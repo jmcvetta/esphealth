@@ -18,6 +18,7 @@ from dateutil.relativedelta import relativedelta
 from django.test import TestCase
 
 from ESP.utils import log
+from ESP.utils.testing import EspTestCase
 from ESP.conf.models import LabTestMap
 from ESP.emr.models import Provenance
 from ESP.emr.models import Provider
@@ -30,84 +31,53 @@ from ESP.hef.models import Event
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.models import Case
 
-'''
-Run me with:
-    time ./bin/esp test -v 2 --processes=0 --noinput --where=/home/jason/work/esphealth-trunk/src/disease-hepatitis-combined
-'''
 
-
-
-
-class EspTestCase(TestCase):
+class Hepatitis_B_Test(EspTestCase):
+    '''
+    Unit tests for Hepatitis B algorithm
+    '''
     
-    def setUp(self):
-        log.info('Creating TEST provenance')
-        self.provenance = Provenance(source='TEST', hostname='TEST')
-        self.provenance.save()
+    def test_definition_a(self):
+        '''
+        a) (#1 or #2 or #3) AND #4 within 14 day period
+        1. ICD9 = 782.4 (jaundice, not of newborn)
+        2. Alanine aminotransferase (ALT) >5x upper limit of normal
+        3. Aspartate aminotransferase (AST) >5x upper limit of normal
+        4. IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)
+        '''
+        log.info('Testing Hep B Definition A')
+        mccoy = self.create_provider(last='McCoy', first='Leonard')
+        kirk = self.create_patient(last='Kirk', first='James', pcp=mccoy)
+        trigger_date = datetime.date(year=2010, month=2, day=15)
+        #
+        # 4. IgM antibody to Hepatitis B Core Antigen
+        #
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = kirk, 
+            date = trigger_date,
+            alt = 'hepatitis_b_core_antigen_igm_antibody',
+            result_string = 'POSITIVE',
+            )
+        #
+        # 1. ICD9 = 782.4 (jaundice, not of newborn)
+        #
+        self.create_diagnosis(
+            provider = mccoy, 
+            patient = kirk, 
+            date = trigger_date - relativedelta(days=5), 
+            codeset = 'icd9', 
+            diagnosis_code = '782.4'
+            )
+        hep_b_disdef = DiseaseDefinition.get_by_short_name('hepatitis_b')
+        DiseaseDefinition.generate_all(disease_list=[hep_b_disdef], dependencies=True)
+        case_qs = Case.objects.filter(patient=kirk, condition='hepatitis_b:acute')
+        self.assertEqual(case_qs.count(), 1, 'One and only one case should be generated')
+        kirk_case = case_qs[0]
+        self.assertEqual(kirk_case.provider, mccoy)
+        self.assertEqual(kirk_case.date, trigger_date)
+        self.assertEqual(kirk_case.events.count(), 2)
         
-    def tearDown(self):
-        log.info('Deleting TEST provenance')
-        self.provenance.delete()
-        del self.provenance
-    
-    
-    def create_lab_result(self, provider, patient, date, alt, **kwargs):
-        '''
-        Create a LabResult and a LabTestMap for the specified abstract lab test.
-        @param alt: Abstract lab test name
-        @type alt:  String
-        '''
-        native_code = 'natcode--' + alt 
-        native_code = native_code[:255]
-        ltm, created = LabTestMap.objects.get_or_create(
-            test_name = alt,
-            native_code = native_code,
-            code_match_type = 'exact',
-            record_type = 'result',
-            )
-        if created:
-            log.debug('Created %s' % ltm)
-        new_lab = LabResult(
-            provenance = self.provenance,
-            provider = provider, 
-            patient = patient,
-            date = date,
-            native_code = native_code,
-            )
-        for key in kwargs:
-            if hasattr(new_lab, key):
-                value = kwargs[key]
-                setattr(new_lab, key, value)
-        new_lab.save()
-        log.debug('Created fake lab result: %s' % new_lab)
-        return new_lab
-    
-    def create_diagnosis(self, provider, patient, date, codeset, diagnosis_code):
-        '''
-        Create a encounter record with the provided ICD9 diagnosis'
-        @param icd_str: ICD9 string to use in the record
-        @type icd_str:  String
-        '''
-        new_enc = Encounter(
-            provenance = self.provenance,
-            provider = provider,
-            patient = patient,
-            date = date,
-            )
-        new_enc.save()
-        new_enc.add_diagnosis(codeset=codeset, diagnosis_code=diagnosis_code)
-        return new_enc
-    
-    def create_provider(self, last, first):
-        new_prov = Provider(provenance=self.provenance, last_name=last, first_name=first)
-        new_prov.save()
-        return new_prov
-    
-    def create_patient(self, last, first, pcp):
-        new_pat = Patient(provenance=self.provenance, last_name=last, first_name=first, pcp=pcp)
-        new_pat.save()
-        return new_pat
-            
 
 class Hepatitis_C_Test(EspTestCase):
     '''
@@ -123,13 +93,13 @@ class Hepatitis_C_Test(EspTestCase):
         ICD9 (070.54 or 070.70) ever prior to this encounter
         '''
         log.info('Testing Hep C Definition A (complex algo)')
+        mccoy = self.create_provider(last='McCoy', first='Leonard')
+        kirk = self.create_patient(last='Kirk', first='James', pcp=mccoy)
+        trigger_date = datetime.date(year=2010, month=2, day=15)
         #
         # (1 or 2)
         # 
         # (jaundice or ALT>400)
-        mccoy = self.create_provider(last='McCoy', first='Leonard')
-        kirk = self.create_patient(last='Kirk', first='James', pcp=mccoy)
-        trigger_date = datetime.date(year=2010, month=2, day=15)
         self.create_diagnosis(
             provider = mccoy, 
             patient = kirk, 
