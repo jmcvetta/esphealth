@@ -218,6 +218,7 @@ class BaseHeuristic(EquivalencyMixin):
         for short_name in name_list:
             selected_heuristics.add( cls.get_heuristic_by_name(short_name) )
         return cls.generate_all(heuristic_list=selected_heuristics, thread_count=thread_count)
+    
 
 class BaseEventHeuristic(BaseHeuristic):
     '''
@@ -285,6 +286,36 @@ class BaseEventHeuristic(BaseHeuristic):
             counter = wait_for_threads(funcs, max_workers=thread_count)
         log.info('Generated %20s events' % counter)
         return counter
+
+    @classmethod
+    def all_possible_event_names(cls):
+        '''
+        Returns a list of all possible Event names
+        '''
+        name_set = set()
+        for heuristic in cls.get_all():
+            [name_set.add(name) for name in heuristic.event_names]
+        name_list = list(name_set)
+        name_list.sort()
+        return name_list
+        
+    @classmethod
+    def get_events_by_name(cls, name):
+        '''
+        Checks name for sanity, and returns all 
+        @param name: An event name
+        @type name:  String
+        @return:     All matching events
+        @rtype:      Event QuerySet
+        '''
+        if not name in cls.all_possible_event_names():
+            msg = 'Requested invalid event name: "%s".' % name
+            msg += '\n'
+            msg += 'Valid event names:'
+            msg += '\n\t'.join(cls.all_possible_event_names())
+            raise AssertionError(msg)
+        event_qs = Event.objects.filter(name=name)
+        return event_qs
 
 
 class BaseTimespanHeuristic(BaseHeuristic):
