@@ -403,7 +403,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         @return: A plausible EDD, if one exists
         @rtype: Date or None
         '''
-        # TODO: Check with Mike Klompas about whether min EDD (as returned by 
+        # TODO: kissue 348 Check with Mike Klompas about whether min EDD (as returned by 
         # existing code) or EDD of chronologically latest EDD-encounter is desired.
         edd_event_qs = Event.objects.filter(name='enc:pregnancy:edd')
         edd_event_qs = edd_event_qs.filter(patient=patient)
