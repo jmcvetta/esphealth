@@ -160,7 +160,7 @@ esphealth/ESP/secrets.spec.ini -text
 esphealth/ESP/sendMsgs/bcdc.jar -text
 esphealth/ESP/settings.py -text
 esphealth/ESP/ss/__init__.py -text
-esphealth/ESP/ss/broken-tests.py -text
+esphealth/ESP/ss/broken.py -text
 esphealth/ESP/ss/definitions.py -text
 esphealth/ESP/ss/fixtures/initial_data.json -text
 esphealth/ESP/ss/fixtures/readme.txt -text
@@ -297,7 +297,7 @@ esphealth/ESP/utils/vaers_hl7.py -text
 esphealth/ESP/vaers/VAERSevents.py -text
 esphealth/ESP/vaers/__init__.py -text
 esphealth/ESP/vaers/admin.py -text
-esphealth/ESP/vaers/broken-tests.py -text
+esphealth/ESP/vaers/broken.py -text
 esphealth/ESP/vaers/fake.py -text
 esphealth/ESP/vaers/fixtures/encounters.sql.bz2 -text svneol=unset#unset
 esphealth/ESP/vaers/fixtures/immunizations.sql.bz2 -text svneol=unset#unset
