@@ -37,9 +37,9 @@ from ESP.utils import log, log_query
 from ESP.utils.utils import queryset_iterator
 from ESP.utils.utils import wait_for_threads
 from ESP.utils.utils import EquivalencyMixin
+from ESP.utils.plugins import get_plugins
 from django.db.models import F, Q
 from django.utils.encoding import force_unicode, smart_str
-from pkg_resources import iter_entry_points
 
 
 
@@ -218,7 +218,6 @@ class BaseHeuristic(EquivalencyMixin):
         for short_name in name_list:
             selected_heuristics.add( cls.get_heuristic_by_name(short_name) )
         return cls.generate_all(heuristic_list=selected_heuristics, thread_count=thread_count)
-    
 
 class BaseEventHeuristic(BaseHeuristic):
     '''
@@ -240,9 +239,10 @@ class BaseEventHeuristic(BaseHeuristic):
         @rtype:  List
         '''
         available_heuristics = set()
-        for entry_point in iter_entry_points(group='esphealth', name='event_heuristics'):
-            factory = entry_point.load()
-            available_heuristics.update(factory())
+        for plugin in get_plugins():
+            # plugin_object is child class (not instance!) of BaseEventHeuristic
+            for heuristic in plugin.event_heuristics:
+                available_heuristics.add(heuristic)
         valid_heuristics = []
         for heuristic in available_heuristics:
             if HEF_CORE_URI in heuristic.core_uris:
@@ -301,9 +301,10 @@ class BaseTimespanHeuristic(BaseHeuristic):
         @rtype:  List
         '''
         available_heuristics = set()
-        for entry_point in iter_entry_points(group='esphealth', name='timespan_heuristics'):
-            factory = entry_point.load()
-            available_heuristics.update(factory())
+        for plugin in get_plugins():
+            # plugin_object is child class (not instance!) of BaseEventHeuristic
+            for heuristic in plugin.timespan_heuristics:
+                available_heuristics.add(heuristic)
         valid_heuristics = []
         for heuristic in available_heuristics:
             if HEF_CORE_URI in heuristic.core_uris:
@@ -353,6 +354,7 @@ class BaseTimespanHeuristic(BaseHeuristic):
             for this_heuristic in heuristic_list:
                 for this_dep in this_heuristic.dependencies:
                     dependency_set.add(this_dep)
+        counter = 0
         if thread_count == 0:
             #
             # No threads
@@ -362,13 +364,13 @@ class BaseTimespanHeuristic(BaseHeuristic):
                 this_dep.generate()
             for heuristic in heuristic_list:
                 log.info('Running %s' % heuristic)
-                counter = heuristic.generate() 
+                counter += heuristic.generate() 
         else:
             #
             # Threaded
             #
             funcs = [heuristic.generate for heuristic in heuristic_list]
-            counter = wait_for_threads(funcs, max_workers=thread_count)
+            counter += wait_for_threads(funcs, max_workers=thread_count)
         log.info('Generated %20s timespans' % counter)
         return counter
     

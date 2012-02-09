@@ -19,8 +19,6 @@ import thread
 import signal
 import time
 
-from pkg_resources import iter_entry_points
-
 from django.db import connection
 from django.db import transaction
 from django.core.management.base import BaseCommand

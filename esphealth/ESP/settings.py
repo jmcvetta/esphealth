@@ -436,9 +436,10 @@ SPHINX_API_VERSION = 0x116
 QUERYSET_ITERATOR_CHUNKSIZE = config['General']['queryset_iterator_chunksize']
 
 # Use Nose for testing
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+TEST_RUNNER = 'ESP.utils.plugins.PluginNoseTestSuiteRunner'
 
 #
 #--- HEF
 #
 HEF_THREAD_COUNT = config['HEF']['thread_count']
+

@@ -15,13 +15,12 @@ import abc
 import sys
 import datetime
 
-from pkg_resources import iter_entry_points
-
 from django.db.models.query import QuerySet
 
 from ESP.settings import HEF_THREAD_COUNT
 from ESP.utils import log
 from ESP.utils import log_query
+from ESP.utils.plugins import get_plugins
 
 from ESP.hef.base import BaseHeuristic
 from ESP.hef.base import LabResultPositiveHeuristic
@@ -207,9 +206,8 @@ class DiseaseDefinition(object):
         # Retrieve from modules
         #
         diseases = []
-        for entry_point in iter_entry_points(group='esphealth', name='disease_definitions'):
-            factory = entry_point.load()
-            diseases += factory()
+        for plugin in get_plugins():
+            diseases.extend(plugin.disease_definitions)
         diseases.sort(key = lambda h: h.short_name)
         # 
         # Sanity check
@@ -414,9 +412,8 @@ class Report(object):
         @rtype:  List of Report child instances
         '''
         report_set = set()
-        for entry_point in iter_entry_points(group='esphealth', name='reports'):
-            factory = entry_point.load()
-            report_set.update(factory())
+        for plugin in get_plugins():
+            report_set.update(plugin.reports)
         report_list = list(report_set)
         report_list.sort(key = lambda h: h.short_name)
         return report_list
