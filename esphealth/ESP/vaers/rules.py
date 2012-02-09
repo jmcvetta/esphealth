@@ -12,9 +12,9 @@ TIME_WINDOW_POST_EVENT = 42 # Period of time between immunization and event
 
 #types of action types 
 # 1_common:  Common, well described, non-serious, adverse event
-#2_rare
-#3_possible
-#4_unlikely
+# 2_rare: Rare, severe adverse event on VSD list
+# 3_possible: Possible novel adverse event not previously associated with vaccine
+# 4_unlikely: Routine health visit highly unlikely to be adverse event
 NEW_VAERS_LAB_RESULTS = {
     'hemoglobin': {
         'trigger': 'X<10',
@@ -34,7 +34,7 @@ NEW_VAERS_LAB_RESULTS = {
     }
 
 VAERS_LAB_RESULTS = {
-    #TODO fix me we need to define these sets of codes as sets for an abstract labs 
+    #TODO issue 345 fix me we need to define these sets of codes as sets for an abstract labs 
     'Hemoglobin':{
         'codes':[
             '83036--258', '83051--258', '83036--1638', '80055--1100', '82955--1100', '83020--1100',
@@ -374,9 +374,8 @@ VAERS_LAB_RESULTS = {
 
     }  
 
-#
-# TODO: Add 'risk_period_days' field to every entry
-#
+# TODO issue 345 add more from spec
+
 VAERS_DIAGNOSTICS = {
     '357.0': {
         'name':'Guillain-Barre',
@@ -390,77 +389,88 @@ VAERS_DIAGNOSTICS = {
         'name':'Bell''s palsy',
         'ignore_period':12,
         'category':'default',
-        'source':'Menactra'
+        'source':'Menactra',
+        'risk_period_days': 30,        
         },
     
     '345.*; 780.3': {
         'name':'Seizures',
         'ignore_period':None,
         'category':'default',
-        'source':'Menactra'
+        'source':'Menactra',
+        'risk_period_days': 30,
         },
     
     '779.0; 333.2':{
         'name':'Seizures (RotaTeq)',
         'ignore_period':None,
         'category':'default',
-        'source':'RotaTeq'
+        'source':'RotaTeq',
+        'risk_period_days': 30,
         },
     
     '780.31': {
         'name':'Febrile seizure',
         'ignore_period':None,
         'category':'default',
-        'source':'MMR-V'
+        'source':'MMR-V',
+        'risk_period_days': 14,
         },
     
     '052.7; 334.4; 781.2; 781.3': {
         'name':'Ataxia',
         'ignore_period':12,
         'category':'default',
-        'source':'MMR-V'
+        'source':'MMR-V',
+        'risk_period_days': 30,
         },
     
     '323.9; 323.5; 055.0; 052.0': {
         'name':'Encephalitis',
         'ignore_period':12,
         'category':'default',
-        'source':'MMR-V'
+        'source':'MMR-V',
+        'risk_period_days': 30,
         },
     
     '714.9; 716.9; 056.71': {
         'name':'Arthritis',
         'ignore_period':12,
         'category':'default',
-        'source':'MMR-V'
+        'source':'MMR-V',
+        'risk_period_days': 30,
         },
     
     '708.0': {
         'name':'Allergic urticaria',
         'ignore_period':12,
         'category':'default',
-        'source':'MMR-V'
+        'source':'MMR-V',
+        'risk_period_days': 14,
         },
     
     '995.1': {
         'name':'Angioneurotic edema',
         'ignore_period':12,
         'category':'default',
-        'source':'MMR-V'
+        'source':'MMR-V',
+        'risk_period_days': 7,
         },
     
     '999.4': {
         'name':'Anaphylactic shock due to serum',
         'ignore_period':12,
         'category':'default',
-        'source':'MMR-V'
+        'source':'MMR-V',
+        'risk_period_days': 14,
         },
     
     '543.9; 560.0': {
         'name':'Intussusception',
         'ignore_period':12,
         'category':'default',
-        'source':'RotaTeq'
+        'source':'RotaTeq',
+        'risk_period_days': 30,
         
         },
     
@@ -469,7 +479,8 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':12,
         'ignore_codes':['004*', '008*', '204-208*', '286*', '287*', '558.3', '800-998*'],
         'category':'default',
-        'source':'RotaTeq'
+        'source':'RotaTeq',
+        'risk_period_days': 30,
         },
     
     '047.8; 047.9; 049.9;321.2; 322*;323.5;323.9': {
@@ -477,69 +488,80 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':12,
         'ignore_codes':['047.0-047.1', '048*', '049.0-049.8', '053-056*', '320*'],
         'category':'default',
-        'source':'RotaTeq'
+        'source':'RotaTeq',
+        'risk_period_days': 30,
         },
     
     '429.0; 422*': {
         'name':'Myocarditis',
         'ignore_period':12,
         'category':'default',
-        'source':'RotaTeq'
+        'source':'RotaTeq',
+        'risk_period_days': 30,
         },
     
     '995.20': {
         'name':'Hypersensitivity - drug, unspec',
         'ignore_period':None,
-        'category':'confirm'
+        'category':'confirm',
+        'risk_period_days': 7,
         },
     
     '495.9': {
         'name':'Pneumonitis - hypersensitivity',
         'ignore_period':None,
-        'category':'confirm'
+        'category':'confirm',
+        'risk_period_days': 30,
           
         },
     
     '478.8': {
         'name':'Upper respiratory tract hypersensitivity reaction',
         'ignore_period':None,
-        'category':'confirm'
+        'category':'confirm',
+        'risk_period_days': 14,
         },
     
     '978.8': {
         'name':'Poisoning - bacterial vaccine',
         'ignore_period':None,
-        'category':'confirm'
+        'category':'confirm',
+        'risk_period_days': 30,
         },
     
     '978.9': {
         'name':'Poisoning - mixed bacterial (non-pertussis) vaccine',
         'ignore_period':None,
-        'category':'confirm'
+        'category':'confirm',
+        'risk_period_days': 30,
         },
     
     '999.39': {
         'name':'Infection due to vaccine',
         'ignore_period':None,
-        'category':'confirm'
+        'category':'confirm',
+        'risk_period_days': 30,
         },
     
     '999.5': {
         'name':'Post-immunization reaction',
         'ignore_period':None,
-        'category':'confirm'
+        'category':'confirm',
+        'risk_period_days': 30,
         },
     
     '323.52': {
         'name':'Myelitis - post immunization',
         'ignore_period':None,
-        'category':'confirm'
+        'category':'confirm',
+        'risk_period_days': 30,
         },
     
     '323.51':{ 
         'name':'Encephalitis / encephalomyelitis - post immunization',  
         'ignore_period':None,
-        'category':'confirm'          
+        'category':'confirm',
+        'risk_period_days': 30,          
         }
     }
 
