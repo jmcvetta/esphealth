@@ -65,7 +65,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
     def matches(self, **kw):
         #raise NotImplementedError('Last run support no longer available.  This method must be refactored')
         incremental = kw.get('incremental', False)
-        # TODO review with Jason about last run
+        # TODO issue 342 review with Jason about last run
         #last_run = Run.objects.filter(status='s').aggregate(ts=Max('timestamp'))['ts']
         
         #begin = (incremental and last_run) or kw.get('begin_date') or EPOCH
@@ -382,7 +382,7 @@ def lab_heuristics():
 
 def main():
     # 
-    # TODO: We need a lockfile or some other means to prevent multiple 
+    # TODO: issue 343 We need a lockfile or some other means to prevent multiple 
     # instances running at once.
     #
     parser = optparse.OptionParser(usage=USAGE_MSG)

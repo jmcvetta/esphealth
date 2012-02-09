@@ -260,7 +260,7 @@ class Command(BaseCommand):
                 log.warning('Cannot understand condition name: %s' % rec['condition'])
                 continue
             #
-            # TODO: This really needs to be replaced with a configurable regex
+            # TODO: issue 341 This really needs to be replaced with a configurable regex
             #
             mon, day, year = rec['date'].split('/') # Metrohealth
             #mon, day, year = date[4:6], date[6:8], date[0:4] # Atrius

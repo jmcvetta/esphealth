@@ -72,7 +72,7 @@ def main():
     if options.fever: heuristics.append(fever_heuristic())
     if options.diagnostics: heuristics += diagnostic_heuristics()
     if options.lx: heuristics += lab_heuristics()
-    # TODO add more for rx heuristics and allergy heuristics
+    # TODO issue 344 add more for rx heuristics and allergy heuristics
 
 
     if options.create: 
