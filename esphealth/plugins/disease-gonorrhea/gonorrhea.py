@@ -11,7 +11,10 @@
 @license: LGPL
 '''
 
+from sprinkles import implements
+
 from ESP.nodis.base import SinglePositiveTestDiseaseDefinition
+from ESP.utils.plugins import IPlugin
 
 
 
@@ -43,8 +46,9 @@ class Gonorrhea(SinglePositiveTestDiseaseDefinition):
 
 gonorrhea_definition = Gonorrhea()
 
-def event_heuristics():
-    return gonorrhea_definition.event_heuristics
-
-def disease_definitions():
-    return [gonorrhea_definition]
+class GonorrheaPlugin(object):
+    implements(IPlugin)
+    event_heuristics = gonorrhea_definition.event_heuristics
+    timespan_heuristics = []
+    disease_definitions = [gonorrhea_definition]
+    reports = []

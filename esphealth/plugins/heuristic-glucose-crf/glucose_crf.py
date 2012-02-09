@@ -12,6 +12,7 @@
 '''
 
 from functools import partial
+from sprinkles import implements
 
 from django.db import transaction
 from django.db.models import Q
@@ -24,6 +25,7 @@ from ESP.emr.models import Patient
 from ESP.hef.base import AbstractLabTest
 from ESP.hef.base import BaseEventHeuristic
 from ESP.hef.models import Event
+from ESP.utils.plugins import IPlugin
 
 
 class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
@@ -159,9 +161,15 @@ class CompoundRandomFastingGlucoseHeuristic(BaseEventHeuristic):
         return counter
         
     
-    
+#-------------------------------------------------------------------------------
+#
+# Packaging
+#
+#-------------------------------------------------------------------------------
 
-def get_heuristics():
-    return [
-        CompoundRandomFastingGlucoseHeuristic(),
-        ]
+class GlucoseCombinedRandomFastingPlugin(object):
+    implements(IPlugin)
+    event_heuristics = [CompoundRandomFastingGlucoseHeuristic()]
+    timespan_heuristics = []
+    disease_definitions = []
+    reports = []

@@ -11,7 +11,10 @@
 @license: LGPL
 '''
 
+from sprinkles import implements
+
 from ESP.nodis.base import SinglePositiveTestDiseaseDefinition
+from ESP.utils.plugins import IPlugin
 
 
 
@@ -43,8 +46,9 @@ class Chlamydia(SinglePositiveTestDiseaseDefinition):
 
 chlamydia_definition = Chlamydia()
 
-def event_heuristics():
-    return chlamydia_definition.event_heuristics
-
-def disease_definitions():
-    return [chlamydia_definition]
+class ChlamydiaPlugin(object):
+    implements(IPlugin)
+    event_heuristics = chlamydia_definition.event_heuristics
+    timespan_heuristics = []
+    disease_definitions = [chlamydia_definition]
+    reports = []

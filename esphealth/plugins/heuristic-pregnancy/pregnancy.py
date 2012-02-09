@@ -13,6 +13,7 @@ import datetime
 from decimal import Decimal
 from functools import partial
 from dateutil.relativedelta import relativedelta
+from sprinkles import implements
 
 from django.db import transaction
 from django.db.models import Q
@@ -31,9 +32,8 @@ from ESP.hef.base import BaseTimespanHeuristic
 from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import Icd9Query
 from ESP.hef.models import Timespan
-
-
 from ESP.utils.utils import TODAY
+from ESP.utils.plugins import IPlugin
 
 #PREG_START_MARGIN = datetime.timedelta(days=20)
 PREG_MARGIN = relativedelta(days=30)
@@ -580,12 +580,17 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         return preg_ts
                 
                 
+#-------------------------------------------------------------------------------
+#
+# Packaging
+#
+#-------------------------------------------------------------------------------
+
 preg_heuristic = PregnancyHeuristic()
 
-def timespan_heuristics():
-    return [ preg_heuristic, ]
-
-
-def event_heuristics():
-    return preg_heuristic.event_heuristics
-
+class PregnancyPlugin(object):
+    implements(IPlugin)
+    event_heuristics = [preg_heuristic.event_heuristics]
+    timespan_heuristics = [preg_heuristic]
+    disease_definitions = []
+    reports = []

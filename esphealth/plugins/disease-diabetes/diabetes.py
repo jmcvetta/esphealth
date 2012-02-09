@@ -23,6 +23,7 @@ from ESP.nodis.models import Case
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 from ESP.utils.utils import TODAY
+from ESP.utils.plugins import IPlugin
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from django.db.models import Avg, Count, F, Max, Min, Q, Sum
@@ -34,6 +35,7 @@ import sys
 from functools import partial
 from multiprocessing import Queue
 from ESP.utils.utils import wait_for_threads
+from sprinkles import implements
 
 
 
@@ -1527,17 +1529,12 @@ frank_report = FrankDiabetesReport()
 pre_report = PrediabetesReport()
 gestational_report = GestationalDiabetesReport()
 
-def event_heuristics():
-    return diabetes_definition.event_heuristics
-
-def timespan_heuristics():
-    return []
-
-def disease_definitions():
-    return [diabetes_definition]
-
-def reports():
-    return [
+class DiabetesPlugin(object):
+    implements(IPlugin)
+    event_heuristics = diabetes_definition.event_heuristics
+    timespan_heuristics = []
+    disease_definitions = [diabetes_definition]
+    reports = [
         frank_report,
         pre_report,
         gestational_report,

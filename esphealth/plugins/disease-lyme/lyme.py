@@ -16,6 +16,7 @@
 # be converted into SQL, only timedelta is supported.
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
+from sprinkles import implements
 
 from django.db import transaction
 from django.db.models import F
@@ -30,7 +31,7 @@ from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import Icd9Query
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.base import Case
-
+from ESP.utils.plugins import IPlugin
 
 
 class Lyme(DiseaseDefinition):
@@ -225,8 +226,9 @@ class Lyme(DiseaseDefinition):
 
 lyme_definition = Lyme()
 
-def event_heuristics():
-    return lyme_definition.event_heuristics
-
-def disease_definitions():
-    return [lyme_definition]
+class LymePlugin(object):
+    implements(IPlugin)
+    event_heuristics = lyme_definition.event_heuristics
+    timespan_heuristics = []
+    disease_definitions = [lyme_definition]
+    reports = []

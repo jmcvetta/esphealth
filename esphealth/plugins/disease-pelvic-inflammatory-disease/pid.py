@@ -12,12 +12,14 @@
 '''
 
 from dateutil.relativedelta import relativedelta
+from sprinkles import implements
 from ESP.utils import log
 from ESP.nodis.base import DiseaseDefinition
 from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import Icd9Query
 from ESP.hef.base import Event
 from ESP.nodis.base import Case
+from ESP.utils.plugins import IPlugin
 
 
 class PelvicInflammatoryDisease(DiseaseDefinition):
@@ -98,8 +100,9 @@ class PelvicInflammatoryDisease(DiseaseDefinition):
 
 pelvic_inflammatory_disease_definition = PelvicInflammatoryDisease()
 
-def event_heuristics():
-    return pelvic_inflammatory_disease_definition.event_heuristics
-
-def disease_definitions():
-    return [pelvic_inflammatory_disease_definition]
+class PelvicInflamatoryDiseasePlugin(object):
+    implements(IPlugin)
+    event_heuristics = pelvic_inflammatory_disease_definition.event_heuristics
+    timespan_heuristics = []
+    disease_definitions = [pelvic_inflammatory_disease_definition]
+    reports = []
