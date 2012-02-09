@@ -590,7 +590,7 @@ preg_heuristic = PregnancyHeuristic()
 
 class PregnancyPlugin(object):
     implements(IPlugin)
-    event_heuristics = [preg_heuristic.event_heuristics]
+    event_heuristics = preg_heuristic.event_heuristics
     timespan_heuristics = [preg_heuristic]
     disease_definitions = []
     reports = []
