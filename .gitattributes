@@ -290,6 +290,7 @@ esphealth/ESP/utils/hl7_builder/messages.py -text
 esphealth/ESP/utils/hl7_builder/nodes.py -text
 esphealth/ESP/utils/hl7_builder/segments.py -text
 esphealth/ESP/utils/hl7_builder/test.py -text
+esphealth/ESP/utils/plugins.py -text
 esphealth/ESP/utils/randomizer.py -text
 esphealth/ESP/utils/status_report.py -text
 esphealth/ESP/utils/utils.py -text
