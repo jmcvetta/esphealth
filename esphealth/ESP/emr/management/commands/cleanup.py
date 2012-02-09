@@ -165,7 +165,7 @@ class Command(BaseCommand):
             log_query('To be deleted', to_be_deleted)
             del_count = to_be_deleted.count()
             log.debug('Deleting %s %s records' % (del_count, rec_type))
-            # TODO: Django does this in a super-inefficient way.  Need to write a 
+            # TODO issue 328: Django does this in a super-inefficient way.  Need to write a 
             # PostgreSQL-specific optimization here using DELETE .. CASCADE.
             if del_count:
                 to_be_deleted.delete()

@@ -667,7 +667,7 @@ class EncounterLoader(BaseLoader):
         #
         # ICD9 Codes
         #
-        # TODO this will change once we use the new diagnosis object
+        # TODO issue 329 this will change once we use the new diagnosis object
         if not created: # If updating the record, purge old ICD9 list
             e.icd9_codes = []
         for code_string in row['icd9s'].split(';'):
@@ -748,7 +748,7 @@ class PrescriptionLoader(BaseLoader):
 class ImmunizationLoader(BaseLoader):
     
     fields = [
-        'patient_id', # TODO missing provider, mrn and visit date
+        'patient_id', 
         'type', 
         'name',
         'date',

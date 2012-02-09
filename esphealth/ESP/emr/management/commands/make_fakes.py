@@ -49,14 +49,14 @@ from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
 from ESP.emr.management.commands.load_epic import LoadException, UPDATED_BY
 
 #change patient generations here
-POPULATION_SIZE = 17
+POPULATION_SIZE = 4
 
-MIN_ENCOUNTERS_PER_PATIENT = 2
-ENCOUNTERS_PER_PATIENT = 3
+MIN_ENCOUNTERS_PER_PATIENT = 1
+ENCOUNTERS_PER_PATIENT = 2
 MAXICD9 = 2
 
-MIN_LAB_TESTS_PER_PATIENT = 1
-LAB_TESTS_PER_PATIENT = 2
+MIN_LAB_TESTS_PER_PATIENT = 5
+LAB_TESTS_PER_PATIENT = 6
 
 MIN_MEDS_PER_PATIENT = 1
 MEDS_PER_PATIENT = 2
@@ -545,7 +545,7 @@ class Command(LoaderCommand):
         print 'Generating fake Patients, Labs, Encounters and Prescriptions'
                 
         Provider.make_mocks(provider_writer)
-        #TODO add the header rows her for each writer
+        #TODO issue 331 add the header rows her for each writer
         # do a join of fields object by ^
         # use icd9code 
         
