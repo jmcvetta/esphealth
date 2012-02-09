@@ -267,7 +267,7 @@ class DiseaseDefinition(object):
         recurrence_interval,
         event_obj, 
         relevent_event_names = [],
-        relevent_event_qs = None,
+        relevent_event_qs = [],
         ):
         '''
         Create a new case for specified event object.
@@ -340,10 +340,9 @@ class DiseaseDefinition(object):
                     )
             for related_event in all_relevent_events:
                 new_case.events.add(related_event)
-            new_case.save()
-        if relevent_event_qs:
-            new_case.events = new_case.events.all() | relevent_event_qs
-            new_case.save()
+        for this_event in relevent_event_qs:
+            new_case.events.add(this_event)
+        new_case.save()
         log.debug('Created new case: %s' % new_case)
         return (True, new_case)
     
