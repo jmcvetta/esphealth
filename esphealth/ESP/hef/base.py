@@ -240,7 +240,6 @@ class BaseEventHeuristic(BaseHeuristic):
         '''
         available_heuristics = set()
         for plugin in get_plugins():
-            # plugin_object is child class (not instance!) of BaseEventHeuristic
             for heuristic in plugin.event_heuristics:
                 available_heuristics.add(heuristic)
         valid_heuristics = []

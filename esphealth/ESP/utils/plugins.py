@@ -15,10 +15,12 @@ import sys
 from sprinkles import ISprinkle
 from sprinkles import Attribute
 from sprinkles import fromPath
+from sprinkles import fromModule
 from django_nose import NoseTestSuiteRunner
 
 from ESP.settings import PACKAGE_ROOT
 from ESP.settings import TOPDIR
+from ESP.settings import INSTALLED_APPS
 from ESP.utils import log
 
 PLUGIN_PATHS = []
@@ -54,6 +56,12 @@ class PluginNoseTestSuiteRunner(NoseTestSuiteRunner):
     def run_tests(self, test_labels, extra_tests=None):
         for path in PLUGIN_PATHS:
             where_arg = '--where=%s' % path
+            sys.argv.append(where_arg)
+        for app_name in INSTALLED_APPS:
+            if not 'ESP.' == app_name[:4]:
+                continue
+            app_dir = os.path.join(TOPDIR, app_name[4:])
+            where_arg = '--where=%s' % app_dir
             sys.argv.append(where_arg)
         super(PluginNoseTestSuiteRunner, self).run_tests(test_labels, extra_tests)
 
