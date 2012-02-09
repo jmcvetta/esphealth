@@ -621,7 +621,7 @@ class Diabetes(DiseaseDefinition):
         #
         dx_ets=['dx:diabetes:all-types','dx:gestational-diabetes']
         rx_ets=['rx:lancets', 'rx:test-strips']
-        # TODO FIXME - add to redmine dont assign to release: This date math works on PostgreSQL, but I think that's just 
+        # TODO FIXME issue 346 This date math works on PostgreSQL, but I think that's just 
         # fortunate coincidence, as I don't think this is the righ way to 
         # express the date query in ORM syntax.
         _event_qs = Event.objects.filter(
@@ -1399,14 +1399,14 @@ class PrediabetesReport(BaseDiabetesReport):
     
     def __two_highest_random_glucose(self):
         #
-        # TODO: Implement me!
+        # TODO: issue 347 Implement me!
         #
         lab_qs = LabResult.objects.filter(patient__in=self.patient_qs)
         lab_qs = lab_qs.filter(events__name='lx:glucose-random:any-result')
     
     def __two_recent_gdm_cases(self):
         #
-        # TODO: Implement me!
+        # TODO: issue 347 Implement me!
         #
         log.warning('Two recent GDM case fields not yet implemented')
         case_qs = Case.objects.filter(patient__in=self.patient_qs)
