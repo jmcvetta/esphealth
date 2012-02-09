@@ -159,6 +159,7 @@ esphealth/ESP/phit/phit.diabetes.3.sql -text
 esphealth/ESP/secrets.spec.ini -text
 esphealth/ESP/sendMsgs/bcdc.jar -text
 esphealth/ESP/settings.py -text
+esphealth/ESP/setup.py -text
 esphealth/ESP/ss/__init__.py -text
 esphealth/ESP/ss/broken.py -text
 esphealth/ESP/ss/definitions.py -text
