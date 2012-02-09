@@ -45,7 +45,7 @@ def data_flow_summary_generator(provenances=None):
 
 
 def main():
-    # TODO: Add begin/end date options to parser
+    # TODO: issue 332 Add begin/end date options to parser
     parser = optparse.OptionParser()
     (options, args) = parser.parse_args()
     #
@@ -62,7 +62,7 @@ def main():
         ]
     outfile = sys.stdout
     writer = csv.DictWriter(outfile, fields, dialect='excel-tab')
-    provenances = None # TODO: constrain by date, per opt parser
+    provenances = None # TODO: issue 332 constrain by date, per opt parser
     writer.writerow( dict(zip(fields, fields)) )
     for row in data_flow_summary_generator(provenances=provenances):
         writer.writerow(row)

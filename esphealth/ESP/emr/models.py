@@ -527,7 +527,7 @@ class BasePatientRecord(BaseMedicalRecord):
 
 
 class LabResultManager(models.Manager):
-    # TODO: This code belongs in VAERS module, not here.
+    # TODO: issue 333 This code belongs in VAERS module, not here.
     def following_vaccination(self, days_after, include_same_day=False, **kw):
 
         if include_same_day:
@@ -626,7 +626,7 @@ class LabResult(BasePatientRecord):
         
     @staticmethod
     def make_mock(patient, when=None, **kw):
-        #TODO change patient to Loinc?
+        
         save_on_db = kw.pop('save_on_db', False)
         msLabs =  FakeLabs.objects.order_by('?')[0]
         now = int(time.time()*1000) #time in milliseconds
@@ -1186,7 +1186,7 @@ class Encounter(BasePatientRecord):
         return self.status == 'FAKE'
 
     #
-    # TODO: Move this code to VAERS
+    # TODO: issue 333 Move this code to VAERS
     #
     def is_reoccurrence(self, icd9s, month_period=12):
         '''
@@ -1345,7 +1345,7 @@ class Immunization(BasePatientRecord):
     q_fake = Q(name='FAKE')
 
     #
-    # TODO: Move this code to VAERS module
+    # TODO: issue 333 Move this code to VAERS module
     #
     @staticmethod
     def vaers_candidates(patient, event, days_prior):
@@ -1416,7 +1416,7 @@ class Immunization(BasePatientRecord):
 
 class SocialHistory(BasePatientRecord):
     
-    # TODO natural key is missing
+    # TODO issue 321 natural key is missing
     tobacco_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
     alcohol_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
 
@@ -1424,7 +1424,7 @@ class Allergy(BasePatientRecord):
     '''
     An allergy report
     '''
-    # TODO add natural key?
+    # TODO issue 321 add natural key?
     problem_id = models.IntegerField(null=True, db_index=True)
     date_noted = models.DateField(null=True, db_index=True)
     allergen = models.ForeignKey(Allergen)
@@ -1441,7 +1441,7 @@ class Problem(BasePatientRecord):
     '''
     Problem list -- cumulative over time, no current 
     '''
-    # TODO should have natural key
+    # TODO issue 321 should have natural key
     problem_id = models.IntegerField(null=True)
     icd9 = models.ForeignKey(Icd9)
     status = models.CharField(max_length=20, null=True, db_index=True)
