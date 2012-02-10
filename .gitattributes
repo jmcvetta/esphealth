@@ -305,6 +305,7 @@ esphealth/ESP/vaers/broken-tests.py -text
 esphealth/ESP/vaers/fake.py -text
 esphealth/ESP/vaers/fixtures/broken_initial_data.json.bz2 -text svneol=unset#unset
 esphealth/ESP/vaers/fixtures/encounters.sql.bz2 -text svneol=unset#unset
+esphealth/ESP/vaers/fixtures/excludedicd9code.json -text
 esphealth/ESP/vaers/fixtures/immunizations.sql.bz2 -text svneol=unset#unset
 esphealth/ESP/vaers/fixtures/lab_results.sql.bz2 -text svneol=unset#unset
 esphealth/ESP/vaers/forms.py -text
