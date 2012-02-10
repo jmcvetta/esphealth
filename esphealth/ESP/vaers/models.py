@@ -525,6 +525,18 @@ class ProviderComment(models.Model):
 signals.post_save.connect(adverse_event_digest, sender=EncounterEvent)
 signals.post_save.connect(adverse_event_digest, sender=LabResultEvent)
 
+class ExcludedICD9Codes(models.Model):
+    '''
+    Codes to be excluded by vaers diagnosis heuristics
+    '''
+    code = models.CharField(max_length=20, blank=False, unique=True, db_index=True)
+    description = models.CharField(max_length=255, blank=False, unique=True)
+    
+    def __str__(self):  
+        return self.code
+    
+    class Meta:
+        verbose_name = 'Excluded icd9 code'
 
 
 class Rule(models.Model):

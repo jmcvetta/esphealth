@@ -573,10 +573,13 @@ def define_active_rules():
     '''Read each of the rules defined in VAERS_DIAGNOSTICS
     dict to create the Rule objects. The keys in the dict define a
     whole set of icd9 codes that are indication of a VAERS Event'''
-
+    log.info('running define_active_rules for diagnosis')
+    
     from ESP.vaers.models import DiagnosticsEventRule
     
+    
     def find_and_add_codes(code_expression_list, code_set):
+        
         for code_expression in code_expression_list:
             try:
                 # If it's a single code, we should be able to find it
@@ -602,7 +605,12 @@ def define_active_rules():
 
 
     # Deactivating ALL Rules and replacing them with the current set
-    DiagnosticsEventRule.deactivate_all()
+    #DiagnosticsEventRule.deactivate_all()
+    
+    #
+    # Flush out the old table entries
+    #
+    DiagnosticsEventRule.objects.all().delete()
 
 
     for k, v in VAERS_DIAGNOSTICS.items():

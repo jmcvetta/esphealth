@@ -10,7 +10,7 @@ from ESP.conf.common import EPOCH
 from ESP.vaers.models import EncounterEvent, LabResultEvent, HL7_MESSAGES_DIR
 
 from heuristics import fever_heuristic, diagnostic_heuristics, lab_heuristics
-
+from ESP.vaers.rules import define_active_rules
 
             
 usage_msg = """
@@ -46,6 +46,8 @@ def main():
 
     
     options, args = parser.parse_args()
+    # clean rules and load them again
+    define_active_rules()
 
     try:
         begin_date = date_from_str(options.begin_date)
