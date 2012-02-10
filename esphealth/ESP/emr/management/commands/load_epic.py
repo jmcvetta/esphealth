@@ -662,6 +662,7 @@ class EncounterLoader(BaseLoader):
             }
         if values['edd']:  
             values['pregnant'] = True
+        # TODO make sure we do insert or update for all models using natural key    
         e, created = self.insert_or_update(Encounter, values, ['natural_key'])
         e.bmi = e._calculate_bmi() # No need to save until we finish ICD9s
         #
