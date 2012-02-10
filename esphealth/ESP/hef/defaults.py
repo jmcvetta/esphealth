@@ -24,6 +24,7 @@ from ESP.hef.base import Dose
 from ESP.hef.base import ResultString
 from ESP.hef.base import CalculatedBilirubinHeuristic
 
+# TODO ask jason find out why is objects not defined but working 
 #-------------------------------------------------------------------------------
 #
 # Legacy Event Support
