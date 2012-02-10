@@ -9,6 +9,7 @@ TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
 #ver 3 of vaers doc says 42, prior versions were 30 but code was 60
 
 TIME_WINDOW_POST_EVENT = 42 # Period of time between immunization and event
+# TODO should we change the time window post to 30?
 
 #types of action types 
 # 1_common: (auto) Common, well described, non-serious, adverse event
