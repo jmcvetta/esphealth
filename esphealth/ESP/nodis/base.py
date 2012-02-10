@@ -88,7 +88,7 @@ class DiseaseDefinition(object):
     def test_name_search_strings(self):
         '''
         @return: A list of all strings to use when searching native lab test 
-            names for tests potentially relevent to this disease.
+            names for tests potentially relevant to this disease.
         @rtype: [String, String, ...]
         '''
     
@@ -154,7 +154,7 @@ class DiseaseDefinition(object):
     def get_all_test_name_search_strings(cls):
         '''
         @return: A list of all strings to use when searching native lab test 
-            names for tests potentially relevent to any defined disease.
+            names for tests potentially relevant to any defined disease.
         @rtype: [String, String, ...]
         '''
         search_strings = set()
@@ -268,8 +268,8 @@ class DiseaseDefinition(object):
         criteria,
         recurrence_interval,
         event_obj, 
-        relevent_event_names = [],
-        relevent_event_qs = None,
+        relevant_event_names = [],
+        relevant_event_qs = None,
         ):
         '''
         Create a new case for specified event object.
@@ -281,10 +281,10 @@ class DiseaseDefinition(object):
         @type recurrence_interval: Integer or None (if condition cannot recur)
         @param event_obj: Event on which to base new case
         @type event_obj:  models.Model chil instance
-        @param relevent_event_qs: Attach these events to a new case
-        @type relevent_event_qs:  QuerySet instance
-        @param relevent_event_names: Attach events matching with these names to new case
-        @type relevent_event_names:  [String, String, ...]
+        @param relevant_event_qs: Attach these events to a new case
+        @type relevant_event_qs:  QuerySet instance
+        @param relevant_event_names: Attach events matching with these names to new case
+        @type relevant_event_names:  [String, String, ...]
         @return: Was new case created, and case object (new or existing) to which event was attached
         @rtype: (Bool, Case)
         '''
@@ -330,22 +330,24 @@ class DiseaseDefinition(object):
         new_case.save()
         new_case.events.add(event_obj)
         #
-        # Attach all relevent events, that are not already attached to a
+        # Attach all relevant events, that are not already attached to a
         # case of this condition.
         #
-        if relevent_event_names:
-            all_relevent_events = Event.objects.filter(
+        if relevant_event_names:
+            all_relevant_events = Event.objects.filter(
                 patient=event_obj.patient,
-                name__in=relevent_event_names,
+                name__in=relevant_event_names,
                 ).exclude(
                     case__condition=condition,
                     )
-            for related_event in all_relevent_events:
+            for related_event in all_relevant_events:
                 new_case.events.add(related_event)
             new_case.save()
-        if relevent_event_qs:
-            new_case.events = new_case.events.all() | relevent_event_qs
-            new_case.save()
+        if relevant_event_qs:
+            relevant_event_qs = relevant_event_qs.filter(patient=event_obj.patient)
+            for this_event in relevant_event_qs:
+                new_case.events.add(this_event)
+        new_case.save()
         log.debug('Created new case: %s' % new_case)
         return (True, new_case)
     
@@ -355,7 +357,7 @@ class DiseaseDefinition(object):
         criteria,
         recurrence_interval,
         event_qs, 
-        relevent_event_names = [],
+        relevant_event_names = [],
         ):
         '''
         For each event in an Event QuerySet, either attach the event to an
@@ -368,8 +370,8 @@ class DiseaseDefinition(object):
         @type recurrence_interval: Integer or None (if condition cannot recur)
         @param event_qs: Events on which to base n
         @type event_qs:  QuerySet instance
-        @param relevent_event_names: Attach events matching with these names to new case
-        @type relevent_event_names:  [String, String, ...]
+        @param relevant_event_names: Attach events matching with these names to new case
+        @type relevant_event_names:  [String, String, ...]
         '''
         counter = 0
         event_qs = event_qs.exclude(case__condition=condition)
@@ -381,7 +383,7 @@ class DiseaseDefinition(object):
                 criteria = criteria, 
                 recurrence_interval = recurrence_interval, 
                 event_obj = this_event, 
-                relevent_event_names = relevent_event_names,
+                relevant_event_names = relevant_event_names,
                 )
             if created:
                 counter += 1
@@ -495,7 +497,7 @@ class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
             criteria = 'positive lab test', 
             recurrence_interval = self.recurrence_interval, 
             event_qs = event_qs, 
-            relevent_event_names = pos_event_names,
+            relevant_event_names = pos_event_names,
             )
         return new_case_count
     
