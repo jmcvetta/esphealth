@@ -32,6 +32,7 @@ from ESP.emr.models import LabOrder
 from ESP.emr.models import LabResult
 from ESP.emr.models import Prescription
 from ESP.hef.models import Event
+from ESP.hef.models import Timespan
 from ESP.static.models import Icd9
 from ESP.utils import log, log_query
 from ESP.utils.utils import queryset_iterator
@@ -287,6 +288,36 @@ class BaseEventHeuristic(BaseHeuristic):
         log.info('Generated %20s events' % counter)
         return counter
 
+    @classmethod
+    def all_possible_event_names(cls):
+        '''
+        Returns a list of all possible Event names
+        '''
+        name_set = set()
+        for heuristic in cls.get_all():
+            [name_set.add(name) for name in heuristic.event_names]
+        name_list = list(name_set)
+        name_list.sort()
+        return name_list
+        
+    @classmethod
+    def get_events_by_name(cls, name):
+        '''
+        Checks name for sanity, and returns all 
+        @param name: An event name
+        @type name:  String
+        @return:     All matching events
+        @rtype:      Event QuerySet
+        '''
+        if not name in cls.all_possible_event_names():
+            msg = 'Requested invalid event name: "%s".' % name
+            msg += '\n'
+            msg += 'Valid event names:\n\t'
+            msg += '\n\t'.join(cls.all_possible_event_names())
+            raise AssertionError(msg)
+        event_qs = Event.objects.filter(name=name)
+        return event_qs
+
 
 class BaseTimespanHeuristic(BaseHeuristic):
     '''
@@ -330,7 +361,7 @@ class BaseTimespanHeuristic(BaseHeuristic):
         '''
     
     @classmethod
-    def generate_all(cls, heuristic_list=None, thread_count=HEF_THREAD_COUNT, dependencies=False):
+    def generate_all(cls, heuristic_list=None, dependencies=False, thread_count=HEF_THREAD_COUNT):
         '''
         Generate events all specified heuristics.  If heuristic_list is None, then
         use all known TimespanHeuristic instances.
@@ -351,7 +382,7 @@ class BaseTimespanHeuristic(BaseHeuristic):
         dependency_set = set()
         if dependencies:
             for this_heuristic in heuristic_list:
-                for this_dep in this_heuristic.dependencies:
+                for this_dep in this_heuristic.event_heuristics:
                     dependency_set.add(this_dep)
         if thread_count == 0:
             #
@@ -373,18 +404,41 @@ class BaseTimespanHeuristic(BaseHeuristic):
         return counter
     
     def generate_dependencies(self):
+        '''
+        Generate dependency events required for this Timespan
+        '''
         log.info('Generating all dependencies for %s' % self.uri)
-        #
-        # Build a set of all distinct dependencies, so each one is run
-        # only once.
-        #
-        dependencies = set()
-        # TODO issue 335 fix me disease_list is not defined
-        for disease in disease_list:
-            dependencies |= set(disease.dependencies)
-        for dep in dependencies:
-            log.debug('Dependency: %s' % dep)
-        BaseHeuristic.generate_all(heuristic_list=dependencies)
+        BaseHeuristic.generate_all(heuristic_list=self.event_heuristics)
+
+    @classmethod
+    def all_possible_timespan_names(cls):
+        '''
+        Returns a list of all possible Timespan names
+        '''
+        name_set = set()
+        for heuristic in cls.get_all():
+            [name_set.add(name) for name in heuristic.timespan_names]
+        name_list = list(name_set)
+        name_list.sort()
+        return name_list
+        
+    @classmethod
+    def get_timespans_by_name(cls, name):
+        '''
+        Checks name for sanity, and returns all timespans of given name
+        @param name: A timespan name
+        @type name:  String
+        @return:     All matching timespans
+        @rtype:      Timespan QuerySet
+        '''
+        if not name in cls.all_possible_timespan_names():
+            msg = 'Requested invalid timespan name: "%s".' % name
+            msg += '\n'
+            msg += 'Valid timespan names:\n\t'
+            msg += '\n\t'.join(cls.all_possible_timespan_names())
+            raise AssertionError(msg)
+        timespan_qs = Timespan.objects.filter(name=name)
+        return timespan_qs
 
 
 class AbstractLabTest(object):
