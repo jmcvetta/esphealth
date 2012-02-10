@@ -1416,7 +1416,7 @@ class Immunization(BasePatientRecord):
 
 class SocialHistory(BasePatientRecord):
     
-    # TODO issue 321 natural key is missing
+    # date is date entered
     tobacco_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
     alcohol_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
 
@@ -1424,7 +1424,7 @@ class Allergy(BasePatientRecord):
     '''
     An allergy report
     '''
-    # TODO issue 321 add natural key?
+    # date is allergy entered date 
     problem_id = models.IntegerField(null=True, db_index=True)
     date_noted = models.DateField(null=True, db_index=True)
     allergen = models.ForeignKey(Allergen)
@@ -1441,7 +1441,7 @@ class Problem(BasePatientRecord):
     '''
     Problem list -- cumulative over time, no current 
     '''
-    # TODO issue 321 should have natural key
+    # date is date noted
     problem_id = models.IntegerField(null=True)
     icd9 = models.ForeignKey(Icd9)
     status = models.CharField(max_length=20, null=True, db_index=True)
