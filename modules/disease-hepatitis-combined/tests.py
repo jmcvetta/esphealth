@@ -1,7 +1,7 @@
 '''
                                   ESP Health
                            Combined Hepatitis A/B/C
-Unit Tests
+                                  Unit Tests
 
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
@@ -33,7 +33,7 @@ from ESP.nodis.models import Case
 
 '''
 Run me with:
-    time ./bin/esp test -v 2 --processes=0 --noinput --where=/home/jason/work/esphealth-trunk/src/disease-hepatitis-combined
+    time ./bin/esp test --nologcapture -d -x -v 2 --noinput --where=/home/jason/work/esphealth-trunk/src/disease-hepatitis-combined
 '''
 
 
