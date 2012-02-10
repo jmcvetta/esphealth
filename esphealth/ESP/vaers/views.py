@@ -80,7 +80,7 @@ def verify(request, key):
     case = AdverseEvent.by_digest(key)
     if not case: raise Http404
 
-    if case.category == 'auto': 
+    if case.category == '1_common': 
         return HttpResponseForbidden('This case will be automatically reported')
     provider = case.provider()
     if not provider: return HttpResponseForbidden('Not for your eyes')
@@ -115,7 +115,7 @@ def case_details(request, id):
 
 
 
-    if case.category == 'auto': 
+    if case.category == '1_common': 
         return HttpResponseForbidden('This case will be automatically reported')
     
     provider = case.provider()

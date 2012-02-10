@@ -29,12 +29,17 @@ import settings
 CLUSTERING_REPORTS_DIR = os.path.join(DATA_DIR, 'vaers', 'clustering_reports')
 HL7_MESSAGES_DIR = os.path.join(DATA_DIR, 'vaers', 'hl7_messages')
 
+#types of action types 
+# 1_common: (auto) Common, well described, non-serious, adverse event
+# 2_rare: (default) Rare, severe adverse event on VSD list
+# 3_possible: (confirm) Possible novel adverse event not previously associated with vaccine
+# 4_unlikely: (discard) Routine health visit highly unlikely to be adverse event
 
 ADVERSE_EVENT_CATEGORIES = [
-    ('auto', 'report automatically to CDC'),
-    ('default', 'report case to CDC if no comment from clinician within 72 hours'),
-    ('confirm', 'report to CDC only if confirmed by clinician'),
-    ('discard', 'discard')
+    ('1_common', '1_common'),
+    ('2_rare', '2_rare'),
+    ('3_possible', '3_possible'),
+    ('4_unlikely', '4_unlikely')
 ]
 
 def adverse_event_digest(**kw):
@@ -52,9 +57,9 @@ class AdverseEventManager(models.Manager):
         now = datetime.datetime.now()
         week_ago = now - datetime.timedelta(days=7)
         
-        auto = Q(category='auto')
-        confirmed = Q(category='confirm', state='Q')
-        to_report_by_default = Q(category='default', state='AR', created_on__lte=week_ago)
+        auto = Q(category='1_common')
+        confirmed = Q(category='3_possible', state='Q')
+        to_report_by_default = Q(category='2_rare', state='AR', created_on__lte=week_ago)
 
         return self.filter(auto | confirmed | to_report_by_default)
 
@@ -202,11 +207,11 @@ class AdverseEvent(models.Model):
         three_days_ago = now - datetime.timedelta(days=3)
 
         # Category 3 (cases that need clinicians confirmation for report)
-        must_confirm = Q(category='confirm') 
+        must_confirm = Q(category='3_possible') 
 
         # Category 2 (cases that are reported by default, i.e, no comment
         # from the clinician after 72 hours since the detection.
-        may_receive_comments = Q(category='default', created_on__gte=three_days_ago)
+        may_receive_comments = Q(category='2_rare', created_on__gte=three_days_ago)
         cases_to_notify = AdverseEvent.objects.filter(must_confirm|may_receive_comments)
 
         for case in cases_to_notify:
@@ -285,8 +290,8 @@ class AdverseEvent(models.Model):
             }
 
         templates = {
-            'default':'email_messages/notify_category_two',
-            'confirm':'email_messages/notify_category_three'
+            '2_rare':'email_messages/notify_category_two',
+            '3_possible':'email_messages/notify_category_three'
             }
         
         html_template = templates[self.category] + '.html'

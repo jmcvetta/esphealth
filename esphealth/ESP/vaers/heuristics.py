@@ -55,7 +55,7 @@ class AdverseEventHeuristic(BaseHeuristic):
             
 class VaersFeverHeuristic(AdverseEventHeuristic):
     def __init__(self):
-        self.category = 'auto'
+        self.category = '1_common'
         super(VaersFeverHeuristic, self).__init__(
             'VAERS Fever', verbose_name='Fever reaction to immunization')
         
@@ -165,7 +165,8 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         #for icd9_str, ignore_period, risk_period, category in OUR_DATA_STRUCT:
         for rule in rule_qs:
             enc_qs = Encounter.objects.following_vaccination(rule.risk_period)
-            enc_qs = enc_qs.filter(icd9_codes__in=rule.heuristic_defining_codes)
+               
+            enc_qs = enc_qs.filter(icd9_codes__in=rule.heuristic_defining_codes.all())
             enc_qs = enc_qs.distinct()
             for this_enc in enc_qs:
                 if rule.ignore_period:
@@ -174,7 +175,7 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
                         date__lt = this_enc.date, 
                         date__gte = earliest, 
                         patient = this_enc.patient, 
-                        icd9_codes__in = rule.heuristic_defining_codes,
+                        icd9_codes__in = rule.heuristic_defining_codes.all(),
                     )
                     if prior_enc_qs:
                         continue # Prior diagnosis so ignore 
@@ -299,7 +300,8 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                             'matching_rule_explain': rule_explain,
                             'content_type':lab_type}
                         )
-                except Exception, why:
+                # TODO find out why ..why is not used: except Exception, why:
+                except Exception:
                     pdb.set_trace()
 
                     
@@ -393,7 +395,8 @@ def main():
                       help='Run Diagnostics Heuristics')
     parser.add_option('-a', '--all', action='store_true', dest='all', 
                       help='Run all heuristics')
-    parser.add_option('-m', '--mapping', action='store_true', dest='map', help='Build CodeMap for Lab Tests')
+    # we dont want to map from here
+    #parser.add_option('-m', '--mapping', action='store_true', dest='map', help='Build CodeMap for Lab Tests')
     parser.add_option('-e', '--events', action='store_true', dest='events', help='Generate Events')
 
     parser.add_option('--begin', action='store', dest='begin', type='string', 
@@ -432,8 +435,8 @@ def main():
     if options.lx: 
         lx_heuristics = lab_heuristics()
         heuristics += lx_heuristics
-        if options.map:
-            do_lab_codemapping(lx_heuristics)
+        #if options.map:
+            # do_lab_codemapping(lx_heuristics)
 
 
     if options.events: 

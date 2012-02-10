@@ -11,10 +11,11 @@ TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
 TIME_WINDOW_POST_EVENT = 42 # Period of time between immunization and event
 
 #types of action types 
-# 1_common:  Common, well described, non-serious, adverse event
-# 2_rare: Rare, severe adverse event on VSD list
-# 3_possible: Possible novel adverse event not previously associated with vaccine
-# 4_unlikely: Routine health visit highly unlikely to be adverse event
+# 1_common: (auto) Common, well described, non-serious, adverse event
+# 2_rare: (default) Rare, severe adverse event on VSD list
+# 3_possible: (confirm) Possible novel adverse event not previously associated with vaccine
+# 4_unlikely: (discard) Routine health visit highly unlikely to be adverse event
+
 NEW_VAERS_LAB_RESULTS = {
     'hemoglobin': {
         'trigger': 'X<10',
@@ -27,7 +28,7 @@ NEW_VAERS_LAB_RESULTS = {
         'trigger':     'X<3.5',
         'unit':        'x109/L',
         'exclude_if':  ('>','LKV*0.7'),
-        'category':    'confirm',
+        'category':    '3_possible',
         'risk_period': 30,
         },
 
@@ -49,7 +50,7 @@ VAERS_LAB_RESULTS = {
                 'trigger':'X<10',
                 'unit':'g/L',
                 'exclude_if':('>','LKV*0.8'),
-                'category':'confirm',
+                'category':'3_possible',
                 'risk_period':30
                 }]
         },
@@ -66,7 +67,7 @@ VAERS_LAB_RESULTS = {
             'trigger':'X<3.5',
             'unit':'x109/L',
             'exclude_if':('>','LKV*0.7'),
-            'category':'confirm'
+            'category':'3_possible'
             }]
         },
 
@@ -86,7 +87,7 @@ VAERS_LAB_RESULTS = {
             'trigger':'X<2000',
             'unit':'x109/L',
             'exclude_if':('>','LKV*0.7'),
-            'category':'confirm'
+            'category':'3_possible'
             }]
         },
 
@@ -103,7 +104,7 @@ VAERS_LAB_RESULTS = {
             'trigger':'X>600',
             'unit':'x109/L',
             'exclude_if':('<','LKV*1.2'),
-            'category':'confirm'
+            'category':'3_possible'
             }]
         },
 
@@ -124,7 +125,7 @@ VAERS_LAB_RESULTS = {
             'trigger':'X<1000',
             'unit':'x109/L',
             'exclude_if':('>','LKV*0.7'),
-            'category':'confirm'
+            'category':'3_possible'
             }]
         },
 
@@ -140,7 +141,7 @@ VAERS_LAB_RESULTS = {
                 'trigger':'X<150',
                 'unit':'x109/L',
                 'exclude_if':('>','LKV*0.7'),
-                'category':'confirm'
+                'category':'3_possible'
                 }]
         },
     
@@ -174,7 +175,7 @@ VAERS_LAB_RESULTS = {
                 'trigger':'X>1.5',
                 'unit':'mg/dL',
                 'exclude_if':('<','LKV*1.3'),
-                'category':'confirm'
+                'category':'3_possible'
                 }]
         },
 
@@ -191,7 +192,7 @@ VAERS_LAB_RESULTS = {
                 'trigger':'X>120',
                 'unit':'IU/L',
                 'exclude_if':('<','LKV*1.3'),
-                'category':'confirm'
+                'category':'3_possible'
                 }]
         },
     
@@ -221,7 +222,7 @@ VAERS_LAB_RESULTS = {
                 'trigger':'X>100',
                 'unit':'IU/L',
                 'exclude_if':('<','LKV*1.3'),
-                'category':'confirm'
+                'category':'3_possible'
                 }]
         },
     
@@ -244,7 +245,7 @@ VAERS_LAB_RESULTS = {
                 'trigger':'X>2.0',
                 'unit':'mg/dL',
                 'exclude_if':('<','LKV*1.2'),
-                'category':'confirm'
+                'category':'3_possible'
                 }]
         },
 
@@ -260,7 +261,7 @@ VAERS_LAB_RESULTS = {
                 'trigger':'X>200',
                 'unit':'IU/L',
                 'exclude_if':('<','LKV*1.3'),
-                'category':'confirm'
+                'category':'3_possible'
                 }]
         },
     
@@ -273,7 +274,7 @@ VAERS_LAB_RESULTS = {
                 'trigger':'X>60',
                 'unit':'s',
                 'exclude_if':('<','LKV*1.3'),
-                'category':'confirm'
+                'category':'3_possible'
                 }]
         },
     
@@ -284,7 +285,7 @@ VAERS_LAB_RESULTS = {
                 'trigger':'X>500',
                 'unit':'U/L',
                 'exclude_if':('<','LKV*1.3'),
-                'category':'confirm'
+                'category':'3_possible'
                 }]
         },
     
@@ -319,7 +320,7 @@ VAERS_LAB_RESULTS = {
                 'trigger':'X>200',
                 'unit':'mg/dL',
                 'exclude_if':('<','LKV*2.0'),
-                'category':'confirm'
+                'category':'3_possible'
                 }]
         },
     
@@ -334,7 +335,7 @@ VAERS_LAB_RESULTS = {
                 'trigger':'X>5.5',
                 'unit':'mmol/L',
                 'exclude_if':('<','LKV+0.5'),
-                'category':'confirm'
+                'category':'3_possible'
                 }]
         },
     
@@ -349,13 +350,13 @@ VAERS_LAB_RESULTS = {
                 'trigger':'X>150',
                 'unit':'mmol/L',
                 'exclude_if':('<','LKV+5'),
-                'category':'confirm'
+                'category':'3_possible'
                 },
              {
                 'trigger':'X<130',
                 'unit':'mmol/L',
                 'exclude_if':('>','LKV-5'),
-                'category':'confirm'
+                'category':'3_possible'
                 }
              ]
         }
@@ -374,13 +375,14 @@ VAERS_LAB_RESULTS = {
 
     }  
 
-# TODO issue 345 add more from spec
+# TODO issue 345 add more from spec, perhaps change to load this into a table (fixture) and 
+# read in from it in the code that uses it.
 
 VAERS_DIAGNOSTICS = {
     '357.0': {
         'name':'Guillain-Barre',
         'ignore_period':12,
-        'category':'default',
+        'category':'2_rare',
         'source':'Menactra',
         'risk_period_days': 30,
         },
@@ -388,7 +390,7 @@ VAERS_DIAGNOSTICS = {
     '351.0': {
         'name':'Bell''s palsy',
         'ignore_period':12,
-        'category':'default',
+        'category':'2_rare',
         'source':'Menactra',
         'risk_period_days': 30,        
         },
@@ -396,7 +398,7 @@ VAERS_DIAGNOSTICS = {
     '345.*; 780.3': {
         'name':'Seizures',
         'ignore_period':None,
-        'category':'default',
+        'category':'2_rare',
         'source':'Menactra',
         'risk_period_days': 30,
         },
@@ -404,7 +406,7 @@ VAERS_DIAGNOSTICS = {
     '779.0; 333.2':{
         'name':'Seizures (RotaTeq)',
         'ignore_period':None,
-        'category':'default',
+        'category':'2_rare',
         'source':'RotaTeq',
         'risk_period_days': 30,
         },
@@ -412,7 +414,7 @@ VAERS_DIAGNOSTICS = {
     '780.31': {
         'name':'Febrile seizure',
         'ignore_period':None,
-        'category':'default',
+        'category':'2_rare',
         'source':'MMR-V',
         'risk_period_days': 14,
         },
@@ -420,7 +422,7 @@ VAERS_DIAGNOSTICS = {
     '052.7; 334.4; 781.2; 781.3': {
         'name':'Ataxia',
         'ignore_period':12,
-        'category':'default',
+        'category':'2_rare',
         'source':'MMR-V',
         'risk_period_days': 30,
         },
@@ -428,7 +430,7 @@ VAERS_DIAGNOSTICS = {
     '323.9; 323.5; 055.0; 052.0': {
         'name':'Encephalitis',
         'ignore_period':12,
-        'category':'default',
+        'category':'2_rare',
         'source':'MMR-V',
         'risk_period_days': 30,
         },
@@ -436,7 +438,7 @@ VAERS_DIAGNOSTICS = {
     '714.9; 716.9; 056.71': {
         'name':'Arthritis',
         'ignore_period':12,
-        'category':'default',
+        'category':'2_rare',
         'source':'MMR-V',
         'risk_period_days': 30,
         },
@@ -444,7 +446,7 @@ VAERS_DIAGNOSTICS = {
     '708.0': {
         'name':'Allergic urticaria',
         'ignore_period':12,
-        'category':'default',
+        'category':'2_rare',
         'source':'MMR-V',
         'risk_period_days': 14,
         },
@@ -452,7 +454,7 @@ VAERS_DIAGNOSTICS = {
     '995.1': {
         'name':'Angioneurotic edema',
         'ignore_period':12,
-        'category':'default',
+        'category':'2_rare',
         'source':'MMR-V',
         'risk_period_days': 7,
         },
@@ -460,7 +462,7 @@ VAERS_DIAGNOSTICS = {
     '999.4': {
         'name':'Anaphylactic shock due to serum',
         'ignore_period':12,
-        'category':'default',
+        'category':'2_rare',
         'source':'MMR-V',
         'risk_period_days': 14,
         },
@@ -468,7 +470,7 @@ VAERS_DIAGNOSTICS = {
     '543.9; 560.0': {
         'name':'Intussusception',
         'ignore_period':12,
-        'category':'default',
+        'category':'2_rare',
         'source':'RotaTeq',
         'risk_period_days': 30,
         
@@ -478,7 +480,7 @@ VAERS_DIAGNOSTICS = {
         'name':'GI bleeding',
         'ignore_period':12,
         'ignore_codes':['004*', '008*', '204-208*', '286*', '287*', '558.3', '800-998*'],
-        'category':'default',
+        'category':'2_rare',
         'source':'RotaTeq',
         'risk_period_days': 30,
         },
@@ -487,7 +489,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Meningitis / encephalitis',
         'ignore_period':12,
         'ignore_codes':['047.0-047.1', '048*', '049.0-049.8', '053-056*', '320*'],
-        'category':'default',
+        'category':'2_rare',
         'source':'RotaTeq',
         'risk_period_days': 30,
         },
@@ -495,7 +497,7 @@ VAERS_DIAGNOSTICS = {
     '429.0; 422*': {
         'name':'Myocarditis',
         'ignore_period':12,
-        'category':'default',
+        'category':'2_rare',
         'source':'RotaTeq',
         'risk_period_days': 30,
         },
@@ -503,14 +505,14 @@ VAERS_DIAGNOSTICS = {
     '995.20': {
         'name':'Hypersensitivity - drug, unspec',
         'ignore_period':None,
-        'category':'confirm',
+        'category':'3_possible',
         'risk_period_days': 7,
         },
     
     '495.9': {
         'name':'Pneumonitis - hypersensitivity',
         'ignore_period':None,
-        'category':'confirm',
+        'category':'3_possible',
         'risk_period_days': 30,
           
         },
@@ -518,49 +520,49 @@ VAERS_DIAGNOSTICS = {
     '478.8': {
         'name':'Upper respiratory tract hypersensitivity reaction',
         'ignore_period':None,
-        'category':'confirm',
+        'category':'3_possible',
         'risk_period_days': 14,
         },
     
     '978.8': {
         'name':'Poisoning - bacterial vaccine',
         'ignore_period':None,
-        'category':'confirm',
+        'category':'3_possible',
         'risk_period_days': 30,
         },
     
     '978.9': {
         'name':'Poisoning - mixed bacterial (non-pertussis) vaccine',
         'ignore_period':None,
-        'category':'confirm',
+        'category':'3_possible',
         'risk_period_days': 30,
         },
     
     '999.39': {
         'name':'Infection due to vaccine',
         'ignore_period':None,
-        'category':'confirm',
+        'category':'3_possible',
         'risk_period_days': 30,
         },
     
     '999.5': {
         'name':'Post-immunization reaction',
         'ignore_period':None,
-        'category':'confirm',
+        'category':'3_possible',
         'risk_period_days': 30,
         },
     
     '323.52': {
         'name':'Myelitis - post immunization',
         'ignore_period':None,
-        'category':'confirm',
+        'category':'3_possible',
         'risk_period_days': 30,
         },
     
     '323.51':{ 
         'name':'Encephalitis / encephalomyelitis - post immunization',  
         'ignore_period':None,
-        'category':'confirm',
+        'category':'3_possible',
         'risk_period_days': 30,          
         }
     }

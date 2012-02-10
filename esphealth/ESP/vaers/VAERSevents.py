@@ -55,7 +55,7 @@ def detect_fevers(immunization, time_window):
             patient=patient,
             temperature=e.temperature,
             immunization=immunization,
-            category='auto',
+            category='1_common',
             defaults = {'matching_rule_explain': rule,
                         'encounter':e}
             )
