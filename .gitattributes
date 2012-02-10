@@ -488,3 +488,4 @@ modules/heuristic-glucose-crf/setup.py -text
 modules/heuristic-pregnancy/__init__.py -text
 modules/heuristic-pregnancy/pregnancy.py -text
 modules/heuristic-pregnancy/setup.py -text
+modules/heuristic-pregnancy/tests.py -text
