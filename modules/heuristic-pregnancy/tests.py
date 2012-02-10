@@ -1,7 +1,7 @@
 '''
                                   ESP Health
-Pregnancy Heuristic
-Unit Tests
+                              Pregnancy Heuristic
+                                  Unit Tests
 
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
@@ -11,33 +11,20 @@ Unit Tests
 @license: LGPL
 '''
 
-import os
 import datetime
-from dateutil.relativedelta import relativedelta
 
-from django.test import TestCase
+from dateutil.relativedelta import relativedelta
 
 from ESP.utils import log
 from ESP.utils.testing import EspTestCase
-from ESP.conf.models import LabTestMap
-from ESP.emr.models import Provenance
-from ESP.emr.models import Provider
-from ESP.emr.models import Patient
-from ESP.emr.models import LabResult
-from ESP.emr.models import Encounter
-from ESP.emr.models import Prescription
-from ESP.hef.models import Timespan
 from ESP.hef.base import BaseTimespanHeuristic
 from ESP.hef.base import BaseEventHeuristic
-from ESP.hef.models import Event
 
 
 '''
 Run me with:
     time ./bin/esp test -v 2 --noinput --where=/home/jason/work/esphealth-trunk/src/heuristic-pregnancy
 '''
-
-
 
 
 class PregnancyTest(EspTestCase):

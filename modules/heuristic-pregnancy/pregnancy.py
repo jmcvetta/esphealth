@@ -1,16 +1,17 @@
 '''
                                   ESP Health
                           Heuristic Events Framework
-Pregnancy Timespan Detector
+                          Pregnancy Timespan Detector
 
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
 @organization: Channing Laboratory http://www.channing.harvard.edu
-@copyright: (c) 2010 Channing Laboratory
+@copyright: (c) 2011-2012 Channing Laboratory
 @license: LGPL
 '''
+
 import datetime
-from decimal import Decimal
+
 from functools import partial
 from dateutil.relativedelta import relativedelta
 
@@ -19,10 +20,10 @@ from django.db.models import Q
 from django.db.models import Min
 from django.db.models import Max
 
-from ESP.settings import HEF_THREAD_COUNT
 from ESP.utils import log
 from ESP.utils import log_query
 from ESP.utils.utils import wait_for_threads
+from ESP.utils.utils import TODAY
 from ESP.emr.models import Patient
 from ESP.emr.models import Encounter
 from ESP.hef.base import Event
@@ -32,8 +33,6 @@ from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import Icd9Query
 from ESP.hef.models import Timespan
 
-
-from ESP.utils.utils import TODAY
 
 #PREG_START_MARGIN = datetime.timedelta(days=20)
 PREG_MARGIN = relativedelta(days=30)
@@ -66,7 +65,6 @@ class EDDHeuristic(BaseEventHeuristic):
             counter += 1
         log.info('Generated %s new %s events' % (counter, self.uri))
         return counter
-
     
 
 class PregnancyHeuristic(BaseTimespanHeuristic):
