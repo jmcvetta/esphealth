@@ -23,9 +23,13 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import F
+from django.db.models import Min
+from django.db.models import Max
 
 from ESP.utils import log
-from ESP.hef.base import Event
+from ESP.hef.models import Event
+from ESP.hef.base import BaseEventHeuristic
+from ESP.hef.base import AbstractLabTest
 from ESP.hef.base import PrescriptionHeuristic
 from ESP.hef.base import Dose
 from ESP.hef.base import LabResultPositiveHeuristic
@@ -46,6 +50,7 @@ TEST_NAME_SEARCH_STRINGS = [
     'ast',
     ]
 
+
 class HepatitisCombined(DiseaseDefinition):
     
     @property
@@ -64,6 +69,12 @@ class HepatitisCombined(DiseaseDefinition):
             ]
             ))
         heuristic_list.append( DiagnosisHeuristic(
+            name = 'hepatitis_b:chronic',
+            icd9_queries = [
+            Icd9Query(starts_with='070.32'),
+            ]
+            ))
+        heuristic_list.append( DiagnosisHeuristic(
             name = 'hepatitis_c:chronic',
             icd9_queries = [
             Icd9Query(starts_with='070.54'),
@@ -79,6 +90,8 @@ class HepatitisCombined(DiseaseDefinition):
         # Lab Results
         #
         heuristic_list.append( LabResultPositiveHeuristic(
+            # Hep B definition calls this "Hepatitis C antibody" but has same
+            # test codes as Hep C "Hepatitis C ELISA" test.
             test_name = 'hepatitis_c_elisa',
             ))
         heuristic_list.append( LabResultPositiveHeuristic(
@@ -105,17 +118,52 @@ class HepatitisCombined(DiseaseDefinition):
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'hepatitis_b_surface_antigen',
             ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'hepatitis_b_e_antigen',
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'hepatitis_b_viral_dna',
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'hepatitis_e_antibody',
+            ))
+        #
+        # The main purpose of having heuristics for direct and indirect
+        # bilirubin is to allow Abstract Lab Test mapping of these test
+        # types.  We are not actually interested in "positive" events
+        # for these tests, but rather in examining these tests to get
+        # the calculated bilirubin value.
+        #
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'bilirubin:direct',
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'bilirubin:indirect',
+            ))
         heuristic_list.append( LabResultRatioHeuristic(
             test_name = 'alt',
             ratio = Decimal('2.0'),
+            ))
+        heuristic_list.append( LabResultRatioHeuristic(
+            test_name = 'alt',
+            ratio = Decimal('5.0'),
             ))
         heuristic_list.append( LabResultRatioHeuristic(
             test_name = 'ast',
             ratio = Decimal('2.0'),
             ))
+        heuristic_list.append( LabResultRatioHeuristic(
+            test_name = 'ast',
+            ratio = Decimal('5.0'),
+            ))
         heuristic_list.append( LabResultFixedThresholdHeuristic(
             test_name = 'alt',
             threshold = Decimal('400'),
+            match_type = 'gt',
+            ))
+        heuristic_list.append( LabResultFixedThresholdHeuristic(
+            test_name = 'bilirubin:total',
+            threshold = Decimal('1.5'),
             match_type = 'gt',
             ))
         return heuristic_list
@@ -162,16 +210,214 @@ class Hepatitis_A(HepatitisCombined):
             patient__event__date__gte = (F('date') - 14 ),
             patient__event__date__lte = (F('date') + 14 ),
             )
-        relevent_event_names = [primary_event_name] + secondary_event_names
+        relevant_event_names = [primary_event_name] + secondary_event_names
         new_case_count = self._create_cases_from_event_qs(
             condition = 'hepatitis_a:acute', 
             criteria = '(dx:jaundice or lx:alt:ratio:2 or lx:ast:ratio:2) AND lx:hep_a_igm:positive within 14 days', 
             recurrence_interval = None,
             event_qs = event_qs, 
-            relevent_event_names = relevent_event_names,
+            relevant_event_names = relevant_event_names,
             )
         return new_case_count
 
+
+class Hepatitis_B(HepatitisCombined):
+    '''
+    Hepatitis B
+    '''
+
+    # A future version of this disease definition may also detect chronic hep a
+    conditions = ['hepatitis_b:acute']
+
+    uri = URI_ROOT + 'hepatitis_b' + URI_VERSION
+
+    short_name = 'hepatitis_b'
+
+    test_name_search_strings = TEST_NAME_SEARCH_STRINGS
+
+    timespan_heuristics = []
+
+    @transaction.commit_on_success
+    def generate(self):
+        log.info('Generating cases for %s (%s)' % (self.short_name, self.uri))
+        counter = 0
+        counter += self.generate_definition_a()
+        counter += self.generate_definition_b_c()
+        return counter
+    
+    def generate_definition_a(self):
+        '''
+        a) (#1 or #2 or #3) AND #4 within 14 day period
+        1. ICD9 = 782.4 (jaundice, not of newborn)
+        2. Alanine aminotransferase (ALT) >5x upper limit of normal
+        3. Aspartate aminotransferase (AST) >5x upper limit of normal
+        4. IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)
+        '''
+        log.info('Generating cases for Hepatitis B definition A')
+        trigger_qs = BaseEventHeuristic.get_events_by_name(name='lx:hepatitis_b_core_antigen_igm_antibody:positive')
+        trigger_qs = trigger_qs.exclude(case__condition=self.conditions[0])
+        trigger_qs = trigger_qs.order_by('date')
+        confirmation_qs = BaseEventHeuristic.get_events_by_name(name='dx:jaundice')
+        confirmation_qs |= BaseEventHeuristic.get_events_by_name(name='lx:alt:ratio:5.0')
+        confirmation_qs |= BaseEventHeuristic.get_events_by_name(name='lx:ast:ratio:5.0')
+        confirmation_qs = confirmation_qs.order_by('date')
+        counter = 0
+        for trigger_event in trigger_qs:
+            pat = trigger_event.patient
+            begin_relevancy = trigger_event.date - relativedelta(days=14)
+            end_relevancy = trigger_event.date + relativedelta(days=14)
+            pat_conf_qs = confirmation_qs.filter(
+                patient = pat,
+                date__gte = begin_relevancy,
+                date__lte = end_relevancy,
+                )
+            if not pat_conf_qs:
+                # This patient does not have Hep B
+                continue
+            created, this_case = self._create_case_from_event_obj(
+                condition = self.conditions[0],
+                criteria = 'Definition A: Hep B core antigen igm antibody + confirmation', 
+                recurrence_interval = None,  # Does not recur
+                event_obj = trigger_event, 
+                relevant_event_qs = pat_conf_qs,
+                )
+            if created:
+                counter += 1
+        return counter
+        
+    def generate_definition_b_c(self):
+        '''
+        b) (#1 or #2 or #3) AND (#12 or #15) AND #5 "reactive" within 21 day period 
+            AND no prior positive result for #5 or #7 ever 
+            AND no code for ICD9=070.32 at this encounter or in patient's past
+        c) (1 or 2 or 3) AND (#12 or #15) AND #7 positive within 21 day period 
+            AND no prior positive result for #5 or #7 ever 
+            AND no code for ICD9=070.32 at this encounter or in the patient's past
+        1. ICD9 = 782.4 (jaundice, not of newborn)
+        2. Alanine aminotransferase (ALT) >5x upper limit of normal
+        3. Aspartate aminotransferase (AST) >5x upper limit of normal
+        5. Hepatitis B Surface Antigen
+        7. Hepatitis B Viral DNA
+        12. Total bilirubin > 1.5
+        15. Calculated bilirubin = (direct bilirubin + indirect bilirubin) = value > 1.5
+        ICD9 070.32 = Chronic Hep B
+        '''
+        log.info('Generating cases for Hepatitis B definition B')
+        counter = 0
+        #
+        # Surfance antigen test and viral DNA test are the trigger events
+        #
+        hep_b_pos_qs = BaseEventHeuristic.get_events_by_name(name='lx:hepatitis_b_surface_antigen:positive')
+        hep_b_pos_qs |= BaseEventHeuristic.get_events_by_name(name='lx:hepatitis_b_viral_dna:positive')
+        #
+        # Unbound positives are trigger events
+        #
+        trigger_qs = hep_b_pos_qs.exclude(case__condition=self.conditions[0])
+        trigger_qs = trigger_qs.order_by('date')
+        #
+        # Chronic Hep B diagnosis
+        #
+        chronic_hep_b_qs = BaseEventHeuristic.get_events_by_name(name='dx:hepatitis_b:chronic')
+        #
+        # Jaundice and associated high ALT/AST results
+        #
+        jaundice_qs = BaseEventHeuristic.get_events_by_name(name='dx:jaundice')
+        jaundice_qs |= BaseEventHeuristic.get_events_by_name(name='lx:alt:ratio:5.0')
+        jaundice_qs |= BaseEventHeuristic.get_events_by_name(name='lx:ast:ratio:5.0')
+        #
+        # Bilirubin - total bilirubin events can be queries directly; but 
+        # calculated bilirubin must be, ahem, calculated programmatically.
+        #
+        total_bili_qs = BaseEventHeuristic.get_events_by_name(name='lx:bilirubin:total:threshold:gt:1.5')
+        direct_bili_labs_qs = AbstractLabTest('bilirubin:direct').lab_results
+        indirect_bili_labs_qs = AbstractLabTest('bilirubin:indirect').lab_results
+        for trigger_event in trigger_qs:
+            patient = trigger_event.patient
+            date = trigger_event.date
+            relevancy_start = date - relativedelta(days=21)
+            relevancy_end = date + relativedelta(days=21)
+            #
+            # No chronic hep B diagnosis
+            #
+            if chronic_hep_b_qs.filter(patient=patient):
+                continue # Patient has Chronic Hep B
+            #
+            # No prior Hep B test positive
+            #
+            if hep_b_pos_qs.filter(patient=patient, date__lt=date):
+                continue # Patient has Chronic Hep B
+            #
+            # Patient must have jaundice or high ALT/AST results
+            #
+            pat_jaundice_qs = jaundice_qs.filter(
+                patient= patient, 
+                date__gte = relevancy_start, 
+                date__lte = relevancy_end,
+                )
+            if not pat_jaundice_qs:
+                continue # Patient does not have Hep B
+            #
+            # Patient must have elevated bilirubin values.  We check the total
+            # bilirubin event first since it's a simple query.  If it is not 
+            # found, we check calculated bilirubin.
+            #
+            pat_total_bili_qs = total_bili_qs.filter(
+                patient= patient, 
+                date__gte = relevancy_start, 
+                date__lte = relevancy_end,
+                )
+            pat_direct_bili_qs = direct_bili_labs_qs.filter(
+                patient= patient, 
+                date__gte = relevancy_start, 
+                date__lte = relevancy_end,
+                )
+            pat_indirect_bili_qs = indirect_bili_labs_qs.filter(
+                patient= patient, 
+                date__gte = relevancy_start, 
+                date__lte = relevancy_end,
+                )
+            either_bili_qs = direct_bili_labs_qs | indirect_bili_labs_qs
+            either_bili_qs = either_bili_qs.filter(
+                patient= patient, 
+                date__gte = relevancy_start, 
+                date__lte = relevancy_end,
+                ).order_by('date')
+            if pat_total_bili_qs:
+                criteria = 'total bilirubin'
+            else:
+                criteria = 'calculated bilirubin'
+                calculated_bilirubin = 0
+                bili_date_list = either_bili_qs.values_list('date', flat=True)
+                for bili_date in bili_date_list:
+                    max_direct_dict = pat_direct_bili_qs.filter(date=bili_date).aggregate(Max('result_float'))
+                    if max_direct_dict['result_float__max']:
+                        max_direct = max_direct_dict['result_float__max']
+                    else:
+                        max_direct = 0
+                    max_indirect_dict = pat_indirect_bili_qs.filter(date=bili_date).aggregate(Max('result_float'))
+                    if max_indirect_dict['result_float__max']:
+                        max_indirect = max_indirect_dict['result_float__max']
+                    else:
+                        max_indirect = 0
+                    total_this_date = max_direct + max_indirect
+                    if total_this_date > calculated_bilirubin:
+                        calculated_bilirubin = total_this_date
+                if not calculated_bilirubin > 1.5:
+                    continue # Patient does not have Hep B
+            created, this_case = self._create_case_from_event_obj(
+                condition = self.conditions[0],
+                criteria = 'Hep B definition B/C with %s' % criteria,
+                recurrence_interval = None,  # Does not recur
+                event_obj = trigger_event, 
+                relevant_event_qs = jaundice_qs | total_bili_qs
+                )
+            if created:
+                counter += 1
+        return counter
+            
+            
+            
+        
 
 class Hepatitis_C(HepatitisCombined):
     '''
@@ -373,7 +619,7 @@ class Hepatitis_C(HepatitisCombined):
                 criteria = 'complex algorithm', 
                 recurrence_interval = None,  # Does not recur
                 event_obj = trigger_event, 
-                relevent_event_qs = combined_criteria_qs,
+                relevant_event_qs = combined_criteria_qs,
                 )
             if created:
                 counter += 1
@@ -432,7 +678,7 @@ class Hepatitis_C(HepatitisCombined):
                 criteria = 'simple algorithm', 
                 recurrence_interval = None,  # Does not recur
                 event_obj = trigger_event, 
-                relevent_event_qs = prior_neg_qs,
+                relevant_event_qs = prior_neg_qs,
                 )
             if created:
                 counter += 1
@@ -449,4 +695,4 @@ def event_heuristics():
     return Hepatitis_A().event_heuristics # Heuristics for any Hep definition are identical
 
 def disease_definitions():
-    return [Hepatitis_A(), Hepatitis_C()]
+    return [Hepatitis_A(), Hepatitis_B(), Hepatitis_C()]

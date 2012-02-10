@@ -18,6 +18,7 @@ from dateutil.relativedelta import relativedelta
 from django.test import TestCase
 
 from ESP.utils import log
+from ESP.utils.testing import EspTestCase
 from ESP.conf.models import LabTestMap
 from ESP.emr.models import Provenance
 from ESP.emr.models import Provider
@@ -36,78 +37,160 @@ Run me with:
 '''
 
 
-
-
-class EspTestCase(TestCase):
+class Hepatitis_B_Test(EspTestCase):
+    '''
+    Unit tests for Hepatitis B algorithm
+    '''
     
-    def setUp(self):
-        log.info('Creating TEST provenance')
-        self.provenance = Provenance(source='TEST', hostname='TEST')
-        self.provenance.save()
-        
-    def tearDown(self):
-        log.info('Deleting TEST provenance')
-        self.provenance.delete()
-        del self.provenance
-    
-    
-    def create_lab_result(self, provider, patient, date, alt, **kwargs):
+    def test_definition_a(self):
         '''
-        Create a LabResult and a LabTestMap for the specified abstract lab test.
-        @param alt: Abstract lab test name
-        @type alt:  String
+        a) (#1 or #2 or #3) AND #4 within 14 day period
+        1. ICD9 = 782.4 (jaundice, not of newborn)
+        2. Alanine aminotransferase (ALT) >5x upper limit of normal
+        3. Aspartate aminotransferase (AST) >5x upper limit of normal
+        4. IgM antibody to Hepatitis B Core Antigen = "REACTIVE" (may be truncated)
         '''
-        native_code = 'natcode--' + alt 
-        native_code = native_code[:255]
-        ltm, created = LabTestMap.objects.get_or_create(
-            test_name = alt,
-            native_code = native_code,
-            code_match_type = 'exact',
-            record_type = 'result',
+        log.info('Testing Hep B Definition A')
+        mccoy = self.create_provider(last='McCoy', first='Leonard')
+        kirk = self.create_patient(last='Kirk', first='James', pcp=mccoy)
+        trigger_date = datetime.date(year=2010, month=2, day=15)
+        #
+        # 4. IgM antibody to Hepatitis B Core Antigen
+        #
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = kirk, 
+            date = trigger_date,
+            alt = 'hepatitis_b_core_antigen_igm_antibody',
+            result_string = 'POSITIVE',
             )
-        if created:
-            log.debug('Created %s' % ltm)
-        new_lab = LabResult(
-            provenance = self.provenance,
-            provider = provider, 
-            patient = patient,
-            date = date,
-            native_code = native_code,
+        #
+        # 1. ICD9 = 782.4 (jaundice, not of newborn)
+        #
+        self.create_diagnosis(
+            provider = mccoy, 
+            patient = kirk, 
+            date = trigger_date - relativedelta(days=5), 
+            codeset = 'icd9', 
+            diagnosis_code = '782.4'
             )
-        for key in kwargs:
-            if hasattr(new_lab, key):
-                value = kwargs[key]
-                setattr(new_lab, key, value)
-        new_lab.save()
-        log.debug('Created fake lab result: %s' % new_lab)
-        return new_lab
+        hep_b_disdef = DiseaseDefinition.get_by_short_name('hepatitis_b')
+        DiseaseDefinition.generate_all(disease_list=[hep_b_disdef], dependencies=True)
+        case_qs = Case.objects.filter(patient=kirk, condition='hepatitis_b:acute')
+        self.assertEqual(case_qs.count(), 1, 'One and only one case should be generated')
+        kirk_case = case_qs[0]
+        self.assertEqual(kirk_case.provider, mccoy)
+        self.assertEqual(kirk_case.date, trigger_date)
+        self.assertEqual(kirk_case.events.count(), 2)
     
-    def create_diagnosis(self, provider, patient, date, codeset, diagnosis_code):
+    def test_definition_b_c(self):
         '''
-        Create a encounter record with the provided ICD9 diagnosis'
-        @param icd_str: ICD9 string to use in the record
-        @type icd_str:  String
+        Hepatitis Definitions B & C
+        b) (#1 or #2 or #3) AND (#12 or #15) AND #5 "reactive" within 21 day period 
+            AND no prior positive result for #5 or #7 ever 
+            AND no code for ICD9=070.32 at this encounter or in patient's past
+        c) (1 or 2 or 3) AND (#12 or #15) AND #7 positive within 21 day period 
+            AND no prior positive result for #5 or #7 ever 
+            AND no code for ICD9=070.32 at this encounter or in the patient's past
+        1. ICD9 = 782.4 (jaundice, not of newborn)
+        2. Alanine aminotransferase (ALT) >5x upper limit of normal
+        3. Aspartate aminotransferase (AST) >5x upper limit of normal
+        5. Hepatitis B Surface Antigen
+        7. Hepatitis B Viral DNA
+        12. Total bilirubin > 1.5
+        15. Calculated bilirubin = (direct bilirubin + indirect bilirubin) = value > 1.5
+        ICD9 070.32 = Chronic Hep B
         '''
-        new_enc = Encounter(
-            provenance = self.provenance,
-            provider = provider,
-            patient = patient,
-            date = date,
+        log.info('Testing Hep B Definition A')
+        mccoy = self.create_provider(last='McCoy', first='Leonard')
+        kirk = self.create_patient(last='Kirk', first='James', pcp=mccoy)
+        spock = self.create_patient(last='Spock', first='Commander', pcp=mccoy)
+        kirk_trigger_date = datetime.date(year=2010, month=2, day=15)
+        spock_trigger_date = datetime.date(year=2009, month=6, day=21)
+        #
+        # Kirk has Hep B.  He has a positive surface antigen test; elevated AST
+        # levels; and elevated total bilirubin.
+        #
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = kirk, 
+            date = kirk_trigger_date,
+            alt = 'hepatitis_b_surface_antigen',
+            result_string = 'POSITIVE',
             )
-        new_enc.save()
-        new_enc.add_diagnosis(codeset=codeset, diagnosis_code=diagnosis_code)
-        return new_enc
-    
-    def create_provider(self, last, first):
-        new_prov = Provider(provenance=self.provenance, last_name=last, first_name=first)
-        new_prov.save()
-        return new_prov
-    
-    def create_patient(self, last, first, pcp):
-        new_pat = Patient(provenance=self.provenance, last_name=last, first_name=first, pcp=pcp)
-        new_pat.save()
-        return new_pat
-            
+        # Result & ref high values are not intended to be realistic, but only
+        # to test the ratio heuristic.
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = kirk, 
+            date = kirk_trigger_date - relativedelta(days=10),
+            alt = 'ast',
+            ref_high_float = '100',
+            result_float = '700',
+            )
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = kirk, 
+            date = kirk_trigger_date + relativedelta(days=7),
+            alt = 'bilirubin:total',
+            result_float = '1.8',
+            )
+        #
+        # Spock has Hep B.  He has a positive surface antigen test; jaundice; 
+        # and elevated calculated bilirubin.
+        #
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = spock, 
+            date = spock_trigger_date,
+            alt = 'hepatitis_b_surface_antigen',
+            result_string = 'POSITIVE',
+            )
+        # jaundice
+        self.create_diagnosis(
+            provider = mccoy, 
+            patient = spock, 
+            date = spock_trigger_date - relativedelta(days=5), 
+            codeset = 'icd9', 
+            diagnosis_code = '782.4'
+            )
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = spock, 
+            date = spock_trigger_date + relativedelta(days=9),
+            alt = 'bilirubin:direct',
+            result_float = '1.1',
+            )
+        self.create_lab_result(
+            provider = mccoy, 
+            patient = spock, 
+            date = spock_trigger_date + relativedelta(days=9),
+            alt = 'bilirubin:indirect',
+            result_float = '0.9',
+            )
+        #
+        # Generate Cases
+        #
+        hep_b_disdef = DiseaseDefinition.get_by_short_name('hepatitis_b')
+        DiseaseDefinition.generate_all(disease_list=[hep_b_disdef], dependencies=True)
+        #
+        # Check Kirk
+        #
+        kirk_case_qs = Case.objects.filter(patient=kirk, condition='hepatitis_b:acute')
+        self.assertEqual(kirk_case_qs.count(), 1, 'One and only one case should be generated')
+        kirk_case = kirk_case_qs[0]
+        self.assertEqual(kirk_case.provider, mccoy)
+        self.assertEqual(kirk_case.date, kirk_trigger_date)
+        self.assertEqual(kirk_case.events.count(), 3)
+        #
+        # Check Spock
+        #
+        spock_case_qs = Case.objects.filter(patient=spock, condition='hepatitis_b:acute')
+        self.assertEqual(spock_case_qs.count(), 1, 'One and only one case should be generated')
+        spock_case = spock_case_qs[0]
+        self.assertEqual(spock_case.provider, mccoy)
+        self.assertEqual(spock_case.date, spock_trigger_date)
+        self.assertEqual(spock_case.events.count(), 2) # The direct/indirect bili labs do not generate events
 
 class Hepatitis_C_Test(EspTestCase):
     '''

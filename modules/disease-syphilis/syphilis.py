@@ -174,7 +174,7 @@ class Syphilis(DiseaseDefinition):
             criteria = 'combined syphilis criteria', 
             recurrence_interval = None, 
             event_qs = combined_criteria_qs, 
-            relevent_event_names = all_event_names,
+            relevant_event_names = all_event_names,
             )
         return new_case_count
             
