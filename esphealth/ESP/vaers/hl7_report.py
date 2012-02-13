@@ -1,13 +1,13 @@
 #-*- coding:utf-8 -*-
 
 from ESP.static.models import Vaccine, ImmunizationManufacturer
-
+from ESP.emr.models import Patient, Provider, Immunization
 from ESP.vaers.models import AdverseEvent
 from ESP.utils import utils
 from ESP.settings import SITE_NAME
 
-from ESP.utils.hl7_builder.core import  SegmentTree
-from ESP.utils.hl7_builder.segments import MSH, PID, OBR, OBX
+from ESP.utils.hl7_builder.core import Field, SegmentTree
+from ESP.utils.hl7_builder.segments import MSH, PID,ORC,  OBR, OBX
 from ESP.utils.hl7_builder.nodes import VaccineDetail, PriorVaccinationDetail
 from ESP.utils.hl7_builder.nodes import VaersProjectIdentification
 
