@@ -525,12 +525,12 @@ class ProviderComment(models.Model):
 signals.post_save.connect(adverse_event_digest, sender=EncounterEvent)
 signals.post_save.connect(adverse_event_digest, sender=LabResultEvent)
 
-class ExcludedICD9Codes(models.Model):
+class ExcludedICD9Code(models.Model):
     '''
     Codes to be excluded by vaers diagnosis heuristics
     '''
     code = models.CharField(max_length=20, blank=False, unique=True, db_index=True)
-    description = models.CharField(max_length=255, blank=False, unique=True)
+    description = models.CharField(max_length=255, blank=False )
     
     def __str__(self):  
         return self.code
