@@ -4,8 +4,8 @@ from ESP.vaers.models import DiagnosticsEventRule
 
 class EncounterEventAdmin(admin.ModelAdmin):
     date_hierarchy = 'date'
-    fields = ['matching_rule_explain', 'date', 'category', 'state']
-    list_display = ['matching_rule_explain', 'encounter', 'date', 'category',
+    raw_id_fields = ['encounter']
+    list_display = ['pk', 'matching_rule_explain', 'encounter', 'date', 'category',
                     'state', 'digest']
     list_filter = ['date', 'category', 'state']
 
