@@ -41,7 +41,7 @@ function install () {
     echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     virtualenv --no-site-packages . 
     activate_virtualenv
-    pip install -v -r requirements.frozen.txt
+    pip install -r requirements.frozen.txt
 }
 
 function update_dependencies () {
