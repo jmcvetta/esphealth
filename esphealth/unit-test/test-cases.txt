@@ -46,7 +46,7 @@ VAERS (call set rules first one time. save in backup and move after sync db.)
 1 patient with 1 encounter with meningitis within 30 days of immunization 
       same patient with immunization within 30 days prior to  dx
       same patient with 1 encounter with icd9 within 049.0-049.8 within 12 months than first dx
-1 patiet with 1 encounter with icd9 not in the list for vaers enc (NEG)
+1 patient with 1 encounter with icd9 not in the list for vaers enc (NEG)
  same patient with immunization within 42 days prior to  dx
  same patient with 1 encounter with same icd9 more than 36 months than dx 
  1 patient with 1 prescription for medrol-pak  
