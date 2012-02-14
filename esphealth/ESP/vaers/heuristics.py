@@ -11,12 +11,15 @@ from django.db.models import Q, F, Max, Min
 from django.contrib.contenttypes.models import ContentType
 
 from ESP.hef.base import BaseHeuristic
+from ESP.hef.base import BaseEventHeuristic
 from ESP.conf.common import EPOCH
 from ESP.static.models import Icd9
 from ESP.emr.models import Immunization, Encounter, LabResult
 from ESP.vaers.models import AdverseEvent
 from ESP.vaers.models import EncounterEvent, LabResultEvent
 from ESP.vaers.models import DiagnosticsEventRule
+from ESP.vaers.models import ExcludedICD9Code
+from ESP.vaers.rules import TIME_WINDOW_POST_EVENT
 from ESP.utils.utils import log
 
 import rules
@@ -125,7 +128,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
         return counter
         
 
-class DiagnosisHeuristic(AdverseEventHeuristic):
+class VaersDiagnosisHeuristic(AdverseEventHeuristic):
     def __init__(self, event_name, icd9s, category, ignore_period):
         '''
         @type icd9s: [<Icd9>, <Icd9>, <Icd9>, ...]
@@ -140,74 +143,106 @@ class DiagnosisHeuristic(AdverseEventHeuristic):
         self.category = category
         self.ignore_period = ignore_period
         
-        super(DiagnosisHeuristic, self).__init__(event_name, verbose_name=self.verbose_name)
+        super(VaersDiagnosisHeuristic, self).__init__(event_name, verbose_name=self.verbose_name)
             
     uri = 'urn:x-esphealth:heuristic:channing:vaersdx:v1'
             
     def matches(self, **kw):
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
-
-        return Encounter.objects.following_vaccination(rules.TIME_WINDOW_POST_EVENT).filter(
-            date__gte=begin, date__lte=end, icd9_codes__in=self.icd9s).distinct()
+        enc_qs = Encounter.objects.following_vaccination(self.time_post_immunization)
+        enc_qs = enc_qs.filter(icd9_codes__in=self.icd9s.all())
+        enc_qs = enc_qs.filter(date__gte=begin, date__lte=end)
+        enc_qs = enc_qs.distinct()
+        return enc_qs
 
     def generate(self, **kw):
         log.info('Generating events for %s' % self.name)
         counter = 0
-
         encounterevent_type = ContentType.objects.get_for_model(EncounterEvent)
-        
-        rule_qs = DiagnosticsEventRule.objects.all()
-        
-        #for icd9_str, ignore_period, risk_period, category in OUR_DATA_STRUCT:
-        for rule in rule_qs:
-            enc_qs = Encounter.objects.following_vaccination(rule.risk_period)
-               
-            enc_qs = enc_qs.filter(icd9_codes__in=rule.heuristic_defining_codes.all())
-            enc_qs = enc_qs.distinct()
-            for this_enc in enc_qs:
-                if rule.ignore_period:
-                    earliest = this_enc.date - relativedelta(months=rule.ignore_period)
-                    prior_enc_qs = Encounter.objects.filter(
-                        date__lt = this_enc.date, 
-                        date__gte = earliest, 
-                        patient = this_enc.patient, 
-                        icd9_codes__in = rule.heuristic_defining_codes.all(),
-                    )
-                    if prior_enc_qs:
-                        continue # Prior diagnosis so ignore 
-                immunization_qs = Immunization.vaers_candidates(this_enc.patient, this_enc, rule.risk_period)
-                assert immunization_qs
-                # Create event instance
-                new_ee, created = EncounterEvent.objects.get_or_create(
-                    encounter = this_enc, 
-                    date = this_enc.date, 
-                    category = rule.category, 
-                    patient = this_enc.patient,
-                    defaults={
-                        'matching_rule_explain': rule.name,
-                        'content_type': encounterevent_type,
-                        }
-                    )
-                if created: counter +=1
-                new_ee.save() # Must save before adding to ManyToManyField
-                # Get time interval between immunization and event
-                earliest_imm_date = immunization_qs.aggregate(min=Min('date'))['min']
-                new_ee.gap = (this_enc.date - earliest_imm_date).days
-                new_ee.immunizations = immunization_qs
-                new_ee.save()
+        for this_enc in self.matches(**kw):
+            if self.ignore_period:
+                earliest = this_enc.date - relativedelta(months=self.ignore_period)
+                prior_enc_qs = Encounter.objects.filter(
+                    date__lt = this_enc.date, 
+                    date__gte = earliest, 
+                    patient = this_enc.patient, 
+                    icd9_codes__in = self.icd9s.all(),
+                )
+                if prior_enc_qs:
+                    continue # Prior diagnosis so ignore 
+            immunization_qs = Immunization.vaers_candidates(this_enc.patient, this_enc, self.time_post_immunization)
+            assert immunization_qs
+            # Create event instance
+            new_ee, created = EncounterEvent.objects.get_or_create(
+                encounter = this_enc, 
+                date = this_enc.date, 
+                category = self.category, 
+                patient = this_enc.patient,
+                defaults={
+                    'matching_rule_explain': self.name,
+                    'content_type': encounterevent_type,
+                    }
+                )
+            if created: counter +=1
+            new_ee.save() # Must save before adding to ManyToManyField
+            # Get time interval between immunization and event
+            earliest_imm_date = immunization_qs.aggregate(min=Min('date'))['min']
+            new_ee.gap = (this_enc.date - earliest_imm_date).days
+            new_ee.immunizations = immunization_qs
+            new_ee.save()
         return counter
 
-class Icd9CorrelatedHeuristic(DiagnosisHeuristic):
+class Icd9CorrelatedHeuristic(VaersDiagnosisHeuristic):
     def __init__(self, event_name, icd9s, category, ignore_period, discarding_icd9s):
         self.discarding_icd9s = discarding_icd9s
         super(Icd9CorrelatedHeuristic, self).__init__(event_name, icd9s, category, ignore_period)
         
     def matches(self, **kw):
         matches = super(Icd9CorrelatedHeuristic, self).matches(**kw)
-        return [match for match in matches if not match.patient.has_history_of(self.discarding_icd9s, end_date=match.date)]
+        valid_matches = []
+        for this_match in matches:
+            relevancy_begin = this_match.date - relativedelta(months=12)
+            history = this_match.patient.has_history_of(
+                self.discarding_icd9s, 
+                begin_date=relevancy_begin, 
+                end_date=this_match.date)
+            if history:
+                continue # Patient has a history of this problem, so we will skip it.
+            valid_matches.append(this_match)
+        return valid_matches 
 
-
+class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
+    '''
+    Any diagnosis not covered by another heuristic, or included in 
+    the ExcludedICD9Code table. Exclude if:
+    1.Same code on patient's current problem list prior to this encounter 
+    2.Encounter with same code in past 36 months
+    3.Past medical history list with same code 
+    '''
+    
+    uri = 'urn:x-esphealth:heuristic:channing:vaers:any_other_dx:v1'
+    
+    def __init__(self):
+        self.name = 'vaers:any_other_dx' # This is the EVENT name
+        self.verbose_name = '%s as an adverse reaction to immunization' % self.name
+        self.category = '3_possible'
+        self.ignore_period = 36 # 36 months
+        super(VaersDiagnosisHeuristic, self).__init__(self.name, verbose_name=self.verbose_name)
+            
+    @property
+    def icd9s(self):
+        '''
+        All ICD9s that are not covered by another heuristic and are not 
+        included in the ExcludedICD9Code table.
+        @rtype: Icd9 QuerySet
+        '''
+        covered_icd9_codes = DiagnosticsEventRule.objects.values('heuristic_defining_codes')
+        excluded_icd9_codes = ExcludedICD9Code.objects.values('code')
+        # TODO: Ask Mike K about whether correlated ICD9 codes should be included in this ignore list
+        icd9_qs = Icd9.objects.exclude(code__in=covered_icd9_codes)
+        icd9_qs = icd9_qs.exclude(code__in=excluded_icd9_codes)
+        return icd9_qs
 
 
 class VaersLxHeuristic(AdverseEventHeuristic):
@@ -347,7 +382,7 @@ def make_diagnosis_heuristic(name):
     if discarding_icd9s:
         return Icd9CorrelatedHeuristic(name, icd9s, category, ignore_period, discarding_icd9s)
     else:
-        return DiagnosisHeuristic(name, icd9s, category, ignore_period)
+        return VaersDiagnosisHeuristic(name, icd9s, category, ignore_period)
     
 def make_lab_heuristics(lab_type):
     rule = rules.VAERS_LAB_RESULTS[lab_type]
@@ -366,8 +401,12 @@ def fever_heuristic():
     return VaersFeverHeuristic()
 
 def diagnostic_heuristics():
-    return [make_diagnosis_heuristic(v['name'])
-            for v in rules.VAERS_DIAGNOSTICS.values()]
+    heuristic_list = []
+    for v in rules.VAERS_DIAGNOSTICS.values():
+        heuristic_list.append( make_diagnosis_heuristic(v['name']) )
+    any_other = AnyOtherDiagnosisHeuristic()
+    heuristic_list.append(any_other)
+    return heuristic_list
 
 def lab_heuristics():
     hs = []
@@ -378,70 +417,3 @@ def lab_heuristics():
 
     return hs
 
-
-def main():
-    # 
-    # TODO: issue 343 We need a lockfile or some other means to prevent multiple 
-    # instances running at once.
-    #
-    parser = optparse.OptionParser(usage=USAGE_MSG)
-    
-    parser.add_option('-f', '--fever', action='store_true', dest='fever', help='Run Fever Heuristics')
-    parser.add_option('-l', '--lx', action='store_true', dest='lx', help='Run Lab Results Heuristics')
-    parser.add_option('-d', '--diagnostics', action='store_true', dest='diagnostics', 
-                      help='Run Diagnostics Heuristics')
-    parser.add_option('-a', '--all', action='store_true', dest='all', 
-                      help='Run all heuristics')
-    # we dont want to map from here
-    #parser.add_option('-m', '--mapping', action='store_true', dest='map', help='Build CodeMap for Lab Tests')
-    parser.add_option('-e', '--events', action='store_true', dest='events', help='Generate Events')
-
-    parser.add_option('--begin', action='store', dest='begin', type='string', 
-                      metavar='DATE', help='Only events occurring after date')
-    parser.add_option('--end', action='store', dest='end', type='string', 
-                      metavar='DATE', help='Only events occurring before date')
-    (options, args) = parser.parse_args()
-    
-
-    #
-    # Date Parser
-    #
-    def parse_date(date_string):
-        date_format = '%Y%m%d'
-        return datetime.datetime.strptime(date_string, date_format).date()
-
-
-
-    begin_date = parse_date(options.begin) if options.begin else EPOCH
-    end_date = parse_date(options.end) if options.end else datetime.datetime.today()
-
-
-    if options.all:
-        options.fever = True
-        options.diagnostics = True
-        options.lx = True
-
-    if not (options.fever or options.diagnostics or options.lx):
-        parser.print_help()
-        sys.exit()
-
-
-    heuristics = []
-    if options.fever: heuristics.append(fever_heuristic())
-    if options.diagnostics: heuristics += diagnostic_heuristics()
-    if options.lx: 
-        lx_heuristics = lab_heuristics()
-        heuristics += lx_heuristics
-        #if options.map:
-            # do_lab_codemapping(lx_heuristics)
-
-
-    if options.events: 
-        log.info('Generating events from %s to %s' % (begin_date, end_date))
-        [h.generate(begin_date=begin_date, end_date=end_date) for h in heuristics]
-
-
-if __name__ == '__main__':
-    main()
-    
-        
