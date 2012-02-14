@@ -50,10 +50,11 @@ class LabOrderAdmin(admin.ModelAdmin):
     ordering = ['-date']
 
 class EncounterAdmin(admin.ModelAdmin):
-    list_display = ['natural_key', 'patient', 'provider', 'date']
+    list_display = ['pk', 'natural_key', 'patient', 'provider', 'date']
     raw_id_fields = STANDARD_RAW_ID_FIELDS + ['icd9_codes']
     search_fields = STANDARD_SEARCH_FIELDS
-    ordering = ['-date']
+#    ordering = ['-date']
+    ordering = ['pk']
 
 class PrescriptionAdmin(admin.ModelAdmin):
     list_display = ['natural_key', 'date', 'patient', 'name', 'dose']
