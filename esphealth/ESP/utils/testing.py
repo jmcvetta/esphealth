@@ -72,6 +72,8 @@ class EspTestCase(TestCase):
         Create a encounter record with the provided ICD9 diagnosis'
         @param icd_str: ICD9 string to use in the record
         @type icd_str:  String
+        @return: An encounter with the indicated properties
+        @rtype:  Encounter
         '''
         new_enc = Encounter(
             provenance = self.provenance,
