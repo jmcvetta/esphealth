@@ -311,10 +311,10 @@ esphealth/ESP/vaers/fixtures/lab_results.sql.bz2 -text svneol=unset#unset
 esphealth/ESP/vaers/forms.py -text
 esphealth/ESP/vaers/heuristics.py -text
 esphealth/ESP/vaers/hl7_report.py -text
-esphealth/ESP/vaers/main.py -text
 esphealth/ESP/vaers/management/__init__.py -text
 esphealth/ESP/vaers/management/commands/__init__.py -text
 esphealth/ESP/vaers/management/commands/set_rules.py -text
+esphealth/ESP/vaers/management/commands/vaers.py -text
 esphealth/ESP/vaers/models.py -text
 esphealth/ESP/vaers/reports.py -text
 esphealth/ESP/vaers/rules.py -text
