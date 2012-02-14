@@ -65,9 +65,6 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
     def matches(self, **kw):
         #raise NotImplementedError('Last run support no longer available.  This method must be refactored')
         incremental = kw.get('incremental', False)
-        # TODO issue 342 review with Jason about last run
-        #last_run = Run.objects.filter(status='s').aggregate(ts=Max('timestamp'))['ts']
-        
         #begin = (incremental and last_run) or kw.get('begin_date') or EPOCH
         begin = (incremental ) or kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
