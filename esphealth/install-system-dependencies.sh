@@ -36,7 +36,7 @@ echo
 case $_os in
     "Ubuntu 11.10" )
         _pkg_manager='apt'
-        _pkg_list="python-virtualenv python-pip python-setuptools python-dev libpq-dev"
+        _pkg_list="python-virtualenv python-pip python-setuptools python-dev libpq-dev postgresql-client postgresql-9.1 postgresql-server-dev-9.1"
         ;;
     "Ubuntu 11.04" )
         _pkg_manager='apt'
@@ -64,8 +64,12 @@ fi
 
 case $_pkg_manager in
     "apt" )
+        # Update package list
+        echo 'Refreshing apt package list...'
+        sudo apt-get update -qq
+        echo 'Installing apt packages...'
         # Install Ubuntu packages
-        sudo apt-get install -y $package_list
+        sudo apt-get install -q -y $_pkg_list
         ;;
     * )
         echo "Internal error - unknown package manager"
