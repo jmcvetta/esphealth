@@ -11,6 +11,7 @@
 import os
 import sys
 import logging
+import datetime
 from configobj import ConfigObj
 from configobj import flatten_errors
 from validate import Validator
@@ -65,6 +66,8 @@ if bad_config:
     print
     sys.exit(-1)
 
+
+TODAY = datetime.date.today()
 
 #===============================================================================
 #
