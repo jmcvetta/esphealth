@@ -9,7 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from ESP.conf.common import EPOCH
 from ESP.emr.models import Encounter, Patient
-from ESP.hef.base import DiagnosisHeuristic
+from ESP.hef.base import VaersDiagnosisHeuristic
 from ESP.hef.base import Icd9Query
 from ESP.hef.models import Event
 from ESP.utils.utils import log, date_from_str, str_from_date, days_in_interval, timeit
@@ -42,11 +42,11 @@ from definitions import lymphatic, lower_gi, upper_gi, neurological, respiratory
 
 
 
-class SyndromeHeuristic(DiagnosisHeuristic):
+class SyndromeHeuristic(VaersDiagnosisHeuristic):
     
     def encounters(self, **kw):
         '''
-        Overrides DiagnosisHeuristic.encounter property to return only 
+        Overrides VaersDiagnosisHeuristic.encounter property to return only 
         encounters matching both diagnosis codes and syndrome.  
         '''
         qs = Encounter.objects.syndrome_care_visits() # FIXME: Bad location for syndrome_care_visits()
