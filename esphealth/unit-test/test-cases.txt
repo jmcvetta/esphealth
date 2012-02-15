@@ -62,17 +62,14 @@ VAERS (call set rules first one time. save in backup and move after sync db.)
          
 SS
 3 patients (should generate 2 cases)
-1 patient with 1 encounter with icd9 fever code defined in influenza_like_illness from definitions.py
- with temperature > 100.0 set with sites on a non specialty clinic and URGENT CARE
-1 patient with 1 encounter with icd9 fever code and influenza_like_illness defined in ICD9_FEVER_CODES with 
-  temperature not recorded set with sites on a non specialty clinic and URGENT CARE
-1 patient with 1 encounter with icd9 code defined in influenza_like_illness from definitions.py
- with temperature < 100.0 set with sites on a non specialty clinic and URGENT CARE. NEG
-   ??? not ili
-1 patient with encounter with an icd9 code that requires fever (see rash icd9 codes in definistions.py) 
-defined in OptionalFeverSyndromeHeuristic and an icd9 code of fever or a temperature >100
-1 patient with an encounter with icd9 code defined in SyndromeHeuristic (see 'lesions' in definitins.py)
-
+1 patient with 1 encounter with icd9 respiratory code defined in influenza_like_illness from definitions.py
+ with temperature >  100.0 set with sites on a non specialty clinic and URGENT CARE  kruskal
+1 patient with 1 encounter with icd9 respiratory code and influenza_like_illness defined in ICD9_FEVER_CODES with 
+  temperature not recorded set with sites on a non specialty clinic and URGENT CARE alvaroD
+1 patient with 1 encounter with icd9 respiratory code defined in influenza_like_illness from definitions.py
+ with temperature < 100.0 set with sites on a non specialty clinic and URGENT CARE. NEG platt
+1 patient with 1 encounter with icd9 respiratory code and influenza_like_illness defined in ICD9_FEVER_CODES with 
+  temperature < 100 set with sites on a non specialty clinic and URGENT CARE  NEG  patricA
 
 LYME
 5 patients (should generate 4 cases)
