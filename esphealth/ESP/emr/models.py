@@ -1371,8 +1371,9 @@ class Immunization(BasePatientRecord):
     def make_mock(vaccine, patient, date, save_on_db=False):
         i = Immunization(patient=patient, provenance=Provenance.fake(),
                          date=date, visit_date=date,
-                         imm_type=vaccine.code, name='FAKE'
-                         )
+                         #changed name from FAKE to real name 
+                         imm_type=vaccine.code, name=vaccine.short_name,
+                         provider= patient.pcp)
         if save_on_db: i.save()
         return i
             

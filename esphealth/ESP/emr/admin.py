@@ -58,7 +58,7 @@ class EncounterAdmin(admin.ModelAdmin):
 
 class PrescriptionAdmin(admin.ModelAdmin):
     list_display = ['natural_key', 'date', 'patient', 'name', 'dose']
-    raw_id_fields = STANDARD_RAW_ID_FIELDS
+    raw_id_fields = STANDARD_RAW_ID_FIELDS 
     search_fields = STANDARD_SEARCH_FIELDS + ['name']
     ordering = ['-date']
 
@@ -70,7 +70,7 @@ class ImmunizationAdmin(admin.ModelAdmin):
     
 class AllergyAdmin(admin.ModelAdmin):
     list_display = ['date', 'patient', 'name','status','description']
-    raw_id_fields = STANDARD_RAW_ID_FIELDS
+    raw_id_fields = STANDARD_RAW_ID_FIELDS 
     search_fields = STANDARD_SEARCH_FIELDS + ['name']
     ordering = ['-date']
     
