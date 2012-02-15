@@ -30,7 +30,7 @@ USAGE_MSG = '''\
 '''
 
 class ImmunizationHistory(object):
-    IMMUNIZATIONS_PER_PATIENT = 10
+    IMMUNIZATIONS_PER_PATIENT = 1
 
     def __init__(self, patient):
         self.patient = patient
@@ -79,7 +79,7 @@ def check_for_reactions(imm):
             code = random.choice(rule.heuristic_defining_codes.all())
         except Exception, why:
             rules.define_active_rules()
-            rules.map_lab_tests()
+            #rules.map_lab_tests()
 
         ev.cause_icd9(code)
         
