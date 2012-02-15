@@ -49,21 +49,25 @@ from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
 from ESP.emr.management.commands.load_epic import LoadException, UPDATED_BY
 
 #change patient generations here
-POPULATION_SIZE = 4
+POPULATION_SIZE = 19
 
+# if min and <item>per_patient are >0 and same it will generate that amount
+# if min < than <item>per_patient it will generate a random number of object in that range
 MIN_ENCOUNTERS_PER_PATIENT = 1
 ENCOUNTERS_PER_PATIENT = 2
+#it will generate a % of encounters with random number of icd9s between 0 and maxicd9
 MAXICD9 = 2
-
-MIN_LAB_TESTS_PER_PATIENT = 5
-LAB_TESTS_PER_PATIENT = 6
-
-MIN_MEDS_PER_PATIENT = 1
-MEDS_PER_PATIENT = 2
-
-CHLAMYDIA_LX_PCT = 20
 ICD9_CODE_PCT = 20
-IMMUNIZATION_PCT = 0.5
+
+MIN_LAB_TESTS_PER_PATIENT = 1
+LAB_TESTS_PER_PATIENT = 2
+
+MIN_MEDS_PER_PATIENT = 0
+MEDS_PER_PATIENT = 1
+
+IMMUNIZATION_PCT = 1
+# below are not used
+CHLAMYDIA_LX_PCT = 20
 CHLAMYDIA_INFECTION_PCT = 15
  
 class EpicDialect(csv.Dialect):
@@ -540,50 +544,62 @@ class Command(LoaderCommand):
         lx_writer = LabResultWriter()
         encounter_writer = EncounterWriter()
         prescription_writer = PrescriptionWriter()
-        #immunization_writer = ImmunizationWriter()
+        immunization_writer = ImmunizationWriter()
 
-        print 'Generating fake Patients, Labs, Encounters and Prescriptions'
+        print 'Generating fake Patients, Labs, Encounters and Prescriptions, immunizations'
                 
         Provider.make_mocks(provider_writer)
         #TODO issue 331 add the header rows her for each writer
         # do a join of fields object by ^
         # use icd9code 
         
-        #from 0 to POPULATION_SIZE-1
+        #from 0 to POPULATION_SIZE 
         for count in xrange(POPULATION_SIZE):
             if (count % ROW_LOG_COUNT) == 0 and count >0 : 
                 prof.check('Processed entries for %d patients' % count)
 
             p = Patient.make_mock()
             patient_writer.write_row(p)
-                
-            #if random.random() <= float(IMMUNIZATION_PCT/100.0):
-                #history = ImmunizationHistory(p)
-                #for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
-                    #imm = history.add_immunization()
-                    #check_for_reactions(imm)
-                    #immunization_writer.write_row(imm)
-
             
-            # Write random encounters and lab tests.
-            for i in xrange(random.randrange(MIN_ENCOUNTERS_PER_PATIENT,ENCOUNTERS_PER_PATIENT)): 
-                encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))
-
-            for i in xrange(random.randrange(MIN_LAB_TESTS_PER_PATIENT,LAB_TESTS_PER_PATIENT)):  
-               
-                lx = LabResult.make_mock(p)
-                lx_writer.write_row(lx)
-
-            # Write random encounters and lab tests.
-            for i in xrange(random.randrange(MIN_MEDS_PER_PATIENT,MEDS_PER_PATIENT)):  
-                prescription_writer.write_row(Prescription.make_mock(p))
-                
-        #print 'Generated %s fake Immunizations per Patient' % ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT        
-        print 'Generated %s fake Patients' % POPULATION_SIZE
-        print 'with up to max %s Labs, ' % LAB_TESTS_PER_PATIENT
-        print 'up to max %s Encounters ' % ENCOUNTERS_PER_PATIENT 
-        print 'and up to %s Prescriptions per Patient' % MEDS_PER_PATIENT
+            # Write random or up to n objects per patient.
+            if ENCOUNTERS_PER_PATIENT>0 :
+                if (MIN_ENCOUNTERS_PER_PATIENT== ENCOUNTERS_PER_PATIENT):
+                    for i in xrange(0,ENCOUNTERS_PER_PATIENT): 
+                        encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))
+                else:
+                    for i in xrange(random.randrange(MIN_ENCOUNTERS_PER_PATIENT,ENCOUNTERS_PER_PATIENT)): 
+                        encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))             
         
+            if LAB_TESTS_PER_PATIENT>0:
+                if (MIN_LAB_TESTS_PER_PATIENT==LAB_TESTS_PER_PATIENT):
+                    for i in xrange(0,LAB_TESTS_PER_PATIENT):  
+                        lx_writer.write_row(LabResult.make_mock(p))
+                else:
+                    for i in xrange(random.randrange(MIN_LAB_TESTS_PER_PATIENT,LAB_TESTS_PER_PATIENT)):  
+                        lx_writer.write_row(LabResult.make_mock(p))                
+       
+            if MEDS_PER_PATIENT>0:
+                if (MIN_MEDS_PER_PATIENT==MEDS_PER_PATIENT):
+                    for i in xrange(0,MEDS_PER_PATIENT):  
+                        prescription_writer.write_row(Prescription.make_mock(p))
+                else:
+                    for i in xrange(random.randrange(MIN_MEDS_PER_PATIENT,MEDS_PER_PATIENT)):  
+                        prescription_writer.write_row(Prescription.make_mock(p))
+                              
+            #if random.random() <= float(IMMUNIZATION_PCT/100.0):
+            if ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT>0:
+                history = ImmunizationHistory(p)
+                for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
+                    imm = history.add_immunization()
+                    #check_for_reactions(imm) 
+                    immunization_writer.write_row(imm)
+            
+        print 'Generated %s fake Patients' % POPULATION_SIZE
+        print 'up to max %s Encounters ' % ENCOUNTERS_PER_PATIENT 
+        print 'up to max %s Labs, ' % LAB_TESTS_PER_PATIENT
+        print 'up to %s Prescriptions per Patient' % MEDS_PER_PATIENT
+        print 'up to %s Immunizations per Patient' % ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT 
+             
                 
 
                 
