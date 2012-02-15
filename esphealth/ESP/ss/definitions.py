@@ -845,8 +845,8 @@ localSiteZips = dict(zip(localSiteUseCodes,localSiteZ))
 
 ## Fever codes
 # List of icd9 codes that indicate a fever event, regardless of measured temperature
+# TODO spec only includes 780.6 checking with Mike
 ICD9_FEVER_CODES = ['780.6','780.31']
-
 
 # atrius sites list code,name,ignore
 

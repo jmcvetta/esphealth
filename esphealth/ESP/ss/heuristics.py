@@ -46,10 +46,10 @@ class SyndromeHeuristic(DiagnosisHeuristic):
     
     def encounters(self, **kw):
         '''
-        Overrides VaersDiagnosisHeuristic.encounter property to return only 
+        Overrides DiagnosisHeuristic.encounter property to return only 
         encounters matching both diagnosis codes and syndrome.  
         '''
-        qs = Encounter.objects.syndrome_care_visits() # FIXME: Bad location for syndrome_care_visits()
+        qs = Encounter.objects.syndrome_care_visits() # TODO FIXME: Bad location for syndrome_care_visits()
         qs = qs & super(SyndromeHeuristic, self).encounters
         return qs
 
