@@ -30,4 +30,6 @@
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-lyme#egg=disease-lyme
 # Hepatitis A/B/C
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-combined#egg=disease-hepatitis-combined
+# Pertussis 
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pertussis#egg=disease-pertussis
 
