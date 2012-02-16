@@ -435,11 +435,12 @@ esphealth/unit-test/lyme/epicmem.esp.12092011 -text
 esphealth/unit-test/lyme/epicpro.esp.11032011 -text
 esphealth/unit-test/lyme/epicres.esp.12092011 -text
 esphealth/unit-test/lyme/epicvis.esp.12092011 -text
-esphealth/unit-test/pertussis/epicmed.esp.11102011 -text
-esphealth/unit-test/pertussis/epicmem.esp.11102011 -text
-esphealth/unit-test/pertussis/epicpro.esp.11032011 -text
-esphealth/unit-test/pertussis/epicres.esp.11102011 -text
-esphealth/unit-test/pertussis/epicvis.esp.11102011 -text
+esphealth/unit-test/pertussis/epicmed.esp.02162012 -text
+esphealth/unit-test/pertussis/epicmem.esp.02162012 -text
+esphealth/unit-test/pertussis/epicord.esp.02162012 -text
+esphealth/unit-test/pertussis/epicpro.esp.02162012 -text
+esphealth/unit-test/pertussis/epicres.esp.02162012 -text
+esphealth/unit-test/pertussis/epicvis.esp.02162012 -text
 esphealth/unit-test/readme.txt -text
 esphealth/unit-test/syphilis/epicmed.esp.11122011 -text
 esphealth/unit-test/syphilis/epicmem.esp.11122011 -text
