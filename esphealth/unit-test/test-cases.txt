@@ -107,13 +107,16 @@ same patient with a prescription in syphilis.py within 14 days of encounter
 1 patient with a lab positive for vrdl 
 
 pertussis
-3 patients (should generate 3 cases)
-2 patient with an encounter with icd9 code for pertussis. one is NEG.
-1 patient with a lab order for one of the labs in defs.py
- ( 'pertussis_pcr_order','pertussis_culture_order',  'pertussis_serology_order',)
-2 (1 same as encounter, one same as lab) patient with med antibiotic prescription within 7 days of diagnosis
-1 patient with positive lab for pertussis_pcr or pertussis_culture
-      
+5 patients (should generate 4 cases)
+1 patient with an encounter with icd9 code for pertussis 033.9 -deenaF
+  same patient with med antibiotic prescription within 7 days of diagnosis
+1 patient with an encounter with icd9 code for pertussis 033.0 -deenaH NEG
+  same patient with med antibiotic prescription after 7 days of diagnosis
+1 patient with lab order of 'pertussis_pcr_order','pertussis_culture_order',  'pertussis_serology_order' - billx
+  same patient with med antibiotic prescription after 7 days of diagnosis
+1 patient with positive lab for pertussis_pcr -samuel
+1 patient with positive pertussis_culture -whor
+       
 tb
 6 patients (should generate 4 cases)
 1 patient with med pyrazinamide spok 
