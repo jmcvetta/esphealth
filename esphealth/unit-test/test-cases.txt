@@ -211,16 +211,19 @@ acute hep c
 acute hep b -- only partially done based on code comment, need to corroborate with spec.
 4 patients (4 cases)
 #TODO add more negative and positive for the ors
-(a) 1 patient with jaundice encounter - deenaw
+(a) 1 patient with jaundice encounter - deenaw yes
  same patient with positive hep_b_igm_ab within 14 days 
-(b) 1 patient with lab alt_5x - spockG
+(b) 1 patient with lab alt_5x - spockG yes
   same patient with tot bilirubin high >1.5 within 21 days of alt
   same patient with hep b surface positive(confirm) within 21 days of alt
- (c) 1 patient with lab ast 5x -whop
-   same patient with 2 lab of direct bili and indirect bili, calc bilirubin (d+I) >1.5 within 21 days
+ (c) 1 patient with lab ast 5x -whop yes
+   same patient with 2 lab of direct bili and indirect bili, calc bilirubin (d+I) >1.5 within 21 days 
+     both tests have to be on the same day.? could they be on same day?
    same patient with hep b viral dna positive(confirm) within 21 days of ast
-(d) 1 patient with heb b surface positive -michaelz
+(d) 1 patient with heb b surface positive -michaelz 
    same patient with hep b surface neg prior 12 months
    same patient with hep b viral dna neg prior 12 months
+ # add this  add the exclusion for enconter with icd9 070.32. NEG
+ # add d with a prior positve of hep b surface ever NEG
 
 Giardiasis
