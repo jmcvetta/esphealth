@@ -190,16 +190,16 @@ acute hep c
 4 patients (4 cases) - using collected date for dates
 (c) 1 patient with positive lab for (6 hepatitis c rna) HEP C RNA PCR (QL) 87521--1627 detected - michaelZ
   same patient with labs negative of hep_c_elisa (heb c ab) 86803--217 lab within the prior 12 months
-(d) 1 patient with positive lab for (3 hepatitis c elisa) HEPAT C AB 86803--217  reactive -WhoP  good
+(d) 1 patient with positive lab for (3 hepatitis c elisa) HEPAT C AB 86803--217  reactive -WhoP  
   same patient with labs negative of same lab within the prior 12 months)
 (b) 
-  1 patient with encounter with jaundice icd9 782.4 - DeenaW  good
+  1 patient with encounter with jaundice icd9 782.4 - DeenaW  
    same patient with lab hep_c_rna_ detected (6 tests) within 28 days of encounter
    same patient with lab c heb c signal cut off 80074--251 ratio >=3.8 (4 test)  within 28 days
    same patient with lab hep_a_igm_ab non reactive 86705--4329 (7 test no hep a) within 28 days of encounter
    same patient wit lab hep_b_core igm_ab 86705--4870 non reactive ' (8 test no hep b) within 28 days of encounter
   #TODO other negative and positive with other labs to exclude
-(a) 1 patient with lab alt 84460--1728 >400 - SpockG  good
+(a) 1 patient with lab alt 84460--1728 >400 - SpockG  
    same patient with lab hep_c_elisa_ reactive (3 test) within 28 days of alt lab
    same patient with lab (4 test) heb c ab signal cut off  >=3.8
    same patient with (5 test)hep c riba 86804--1867 positive 
@@ -208,9 +208,8 @@ acute hep c
    same patient with hep_b_surface neg 80055--223 (test 10)
   # TODO other negatives and positive with other labs to exclude
  
-acute hep b -- only partially done based on code comment, need to corroborate with spec.
+acute hep b 
 4 patients (4 cases)
-#TODO add more negative and positive for the ors
 (a) 1 patient with jaundice encounter - deenaw yes
  same patient with positive hep_b_igm_ab within 14 days 
 (b) 1 patient with lab alt_5x - spockG yes
@@ -223,7 +222,10 @@ acute hep b -- only partially done based on code comment, need to corroborate wi
 (d) 1 patient with heb b surface positive -michaelz 
    same patient with hep b surface neg prior 12 months
    same patient with hep b viral dna neg prior 12 months
- # add this  add the exclusion for enconter with icd9 070.32. NEG
- # add d with a prior positve of hep b surface ever NEG
+ 1 patient with encounter  with icd9 070.32. NEG -Peter
+   same patient with hep b surface positive 
+   same patient with hep b surace negative within 12 months
+ 1 patient with lab with  hep b surface  positive NEG -Marian
+   same patient with same hep b surface positive ever 
 
 Giardiasis
