@@ -48,6 +48,12 @@ TEST_NAME_SEARCH_STRINGS = [
     'hep',
     'alt',
     'ast',
+    'bili',
+    'TBIL',
+    'HBV',
+    'SGPT',
+    'SGOT',
+    'AMINOTRANS'
     ]
 
 
@@ -243,6 +249,7 @@ class Hepatitis_B(HepatitisCombined):
         counter = 0
         counter += self.generate_definition_a()
         counter += self.generate_definition_b_c()
+        counter += self.generate_definition_d()
         return counter
     
     def generate_definition_a(self):
@@ -415,6 +422,64 @@ class Hepatitis_B(HepatitisCombined):
                 counter += 1
         return counter
             
+    def generate_definition_d(self):
+        '''
+        d) #5 "reactive" with record of #5 "non-reactive" within the prior 12 months 
+	        AND no prior positive test for #5 or #7 ever 
+	        AND no code for ICD9=070.32 at this encounter or in patient's past.  
+        Please use "date collected" (or if unavailable then "date ordered") for 
+        comparison of dates.
+        5. Hepatitis B Surface Antigen = "REACTIVE" (may be truncated)
+        7. Hepatitis B Viral DNA
+        '''
+        log.info('Generating cases for Hep B definition D')
+        counter = 0
+        surface_pos_qs = BaseEventHeuristic.get_events_by_name(name='lx:hepatitis_b_surface_antigen:positive')
+        surface_neg_qs = BaseEventHeuristic.get_events_by_name(name='lx:hepatitis_b_surface_antigen:negative')
+        viral_pos_qs = BaseEventHeuristic.get_events_by_name(name='lx:hepatitis_b_viral_dna:positive')
+        chronic_dx_qs = BaseEventHeuristic.get_events_by_name(name='dx:hepatitis_b:chronic')
+        unbound_surface_pos_qs = surface_pos_qs.exclude(case__condition__in=self.conditions)
+        #
+        # Patient must have a positive Hep B surface antigen test
+        #
+        for surface_pos_event in unbound_surface_pos_qs.order_by('date'):
+            #
+            # Patient must have a negative surface antigen result in the past 12 months
+            #
+            relevancy_begin = surface_pos_event.date - relativedelta(months=12)
+            prior_neg_qs = surface_neg_qs.filter(patient=surface_pos_event.patient)
+            prior_neg_qs = prior_neg_qs.filter(date__lt=surface_pos_event.date)
+            prior_neg_qs = prior_neg_qs.filter(date__gte=relevancy_begin)
+            if not prior_neg_qs:
+                # Patient could possibly have Hep B, but existing EMR data is 
+                # not sufficient to confirm a case.
+                continue 
+            # 
+            # Exclude patient if they have a prior surface antigen or viral dna test
+            #
+            prior_pos_qs = surface_pos_qs | viral_pos_qs
+            prior_pos_qs = prior_pos_qs.filter(patient=surface_pos_event.patient)
+            prior_pos_qs = prior_pos_qs.filter(date__lt=surface_pos_event.date)
+            if prior_pos_qs:
+                continue # Patient does not have acute Hep B - probably has chronic
+            #
+            # Exclude patient if they have a chronic hep b diagnosis at this time or earlier.
+            #
+            if chronic_dx_qs.filter(patient=surface_pos_event.patient, date__lte=surface_pos_event.date):
+                continue # Patient has chronic hep b
+            #
+            # Patient has acute hep b!
+            #
+            created, this_case = self._create_case_from_event_obj(
+                condition = self.conditions[0],
+                criteria = 'Hep B definition D',
+                recurrence_interval = None,  # Does not recur
+                event_obj = surface_pos_event,
+                relevant_event_qs = prior_neg_qs,
+                )
+            if created:
+                counter += 1
+        return counter
             
             
         
