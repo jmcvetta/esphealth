@@ -1369,11 +1369,13 @@ class Immunization(BasePatientRecord):
 
     @staticmethod
     def make_mock(vaccine, patient, date, save_on_db=False):
+        now = int(time.time()*1000) #time in milliseconds
+        
         i = Immunization(patient=patient, provenance=Provenance.fake(),
                          date=date, visit_date=date,
                          #changed name from FAKE to real name 
                          imm_type=vaccine.code, name=vaccine.short_name,
-                         provider= patient.pcp)
+                         provider= patient.pcp,natural_key=now)
         if save_on_db: i.save()
         return i
             
