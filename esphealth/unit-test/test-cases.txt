@@ -1,62 +1,57 @@
 unit test case documentation for esp
 author: carolina chacin
-updated: dec 12 2011
+updated: feb 17 2012
 
-VAERS (call set rules first one time. save in backup and move after sync db.)
-19 patients (6 NEG and 14 pos)	
-(all encounters have to be in the non specialty site for urgent care)
-1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS (bells) in rules.py (1 neg 1 pos)
-       that has an ignore period 12 and category 2
+VAERS 
+18 patients (6 NEG and 13 pos)	
+(all encounters have to be in the non specialty site for urgent care--not urgent?)
+1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS (bells) in rules.py -plat 
+       that has an ignore period 12 and category 2 
   same patient with 1 encounter with same diagnostic in the list of VAERS_DIAGNOSTICS 
-     that has an ignore period 12 and that happened within the ignore period of above encounter (plat)
+     that has an ignore period 12 and that happened within the ignore period of above encounter (1 neg 1 pos)
   same patient with immunization 42 days prior to first dx 
 1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS (seizures febrile and rotq) 
-       that does not have an ignore period (patri) and category 2
+       that does not have an ignore period  and category 2 -patri
    same patient with immunization risk period days prior to dx 
-1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS  ?
-       that does not have an ignore period  and category 1
-   same patient with immunization risk period days prior to dx   
-1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS  ?
-       that does not have an ignore period  and category 3
-   same patient with immunization risk period days prior to dx   
- 1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS  ?
-       that does not have an ignore period  and category 4
-   same patient with immunization risk period days prior to dx  
-1 patient with 1 lab test in the list of VAERS_LAB_RESULTS that meets the criteria of one defined in rules.py (who r)
+1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS 682.3 category 3 -maryV
+   same patient with immunization risk period days 30days prior to dx   
+ 1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS 003.23 category 4 -johnW
+   same patient with immunization risk period days  30 days prior to dx  
+1 patient with 1 lab test in the list of VAERS_LAB_RESULTS that meets the criteria of one defined in rules.py -whor
    that happened within risk period of vaccine, for category 2
   same patient with immunization 42 days prior to lab. 
-1 patient with an immunization from table static.vaccine (klompas) 
+1 patient with an immunization from table static.vaccine -klompasO
   same patient with 1 encounter with fever (temp > 100.4), and set to URGENT CARE this is category 1
   within TIME_WINDOW_POST_EVENT (within 7 days) immunization. 
 1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTIc (guilian barre) (NEG)
-  that has an ignore period 12 but not in the specialty clinic.  (klruska)
+  that has an ignore period 12 but not in the specialty clinic.  -kruskalT
   same patient with immunization within 42 days prior to dx
-1 patient with two labs for hemoglobin where second lab is <10 but > 80% of last known value before immunization
-  (category 3)
-   same patient with immunization within 42 days prior to dx
- 1 patient with dx bronchospasm category 3, icd9 786.07 within past 3 months, 
+1 patient with two labs for hemoglobin within 30 of immunization value <10 & > 80% of last known value -lazarusN
+  same patient second lab of same before immunization (category 3) 
+   same patient with immunization 
+ 1 patient with encounter with icd9 bronchospasm category 3, icd9 786.07 within past 3 months, -klompasD
     same patient with immunization within 42 days prior to dx
- 1 patient with dx bronchospasm category 3, icd9 786.07 more than 3 months prior to imm, 
+ 1 patient with encounter with icd9 bronchospasm category 3, icd9 786.07 more than 3 months prior to imm, -susanY
     same patient with immunization within 42 days prior to dx 
- 1 patient with 2 encounters with icd9 stroke 433.* within 12 months (NEG)
+ 1 patient with 2 encounters with icd9 stroke 435.0 within 12 months (NEG) -robertA
     same patient with immunization within 30 days prior to second dx (has exclusion)
- 1 patient with 1 encounter with meningitis within 30 days of immunization (NEG)
+ 1 patient with 1 encounter with meningitis icd9 047.8 within 30 days of immunization (NEG) -maryM
       same patient with immunization within 30 days prior to  dx
-      same patient with 1 encounter with icd9 within 049.0-049.8  more tha 12 months prior than first dx
-1 patient with 1 encounter with meningitis within 30 days of immunization 
+      same patient with 1 encounter with icd9 within 049.0  more than 12 months prior than first dx
+1 patient with 1 encounter with meningitis  321.2 within 30 days of immunization -klompasV
       same patient with immunization within 30 days prior to  dx
-      same patient with 1 encounter with icd9 within 049.0-049.8 within 12 months than first dx
-1 patient with 1 encounter with icd9 not in the list for vaers enc (NEG)
- same patient with immunization within 42 days prior to  dx
+      same patient with 1 encounter with icd9 within 049.6 within 12 months than first dx
+1 patient with 1 encounter with icd9 not in the list for vaers enc V9.50 (NEG) -spockO
+ same patient with immunization within 42 days prior to dx
  same patient with 1 encounter with same icd9 more than 36 months than dx 
- 1 patient with 1 prescription for medrol-pak  
+1 patient with 1 prescription for medrol-pak  -nickx
    same patient with immunization within 14 days of rx
- 1 patient with 1 prescription for benadryl  (NEG)
+1 patient with 1 prescription for benadryl  (NEG) -kruskalS
      same patient with immunization within 7 days of rx
-     same patient with 1 prescription for benadryl within past 12 months of dx
- 1 patient with 1 allergy call category 3 
+     same patient with 1 prescription for benadryl within past 12 months of rx
+1 patient with 1 allergy rabies call category 3 -michaelK
      same patient with immunization within 42 days of allergy
- 1 patient with 1 allergy in keyword list in doc call category 3 
+1 patient with 1 allergy in keyword list in doc lyme call category 3 -bazzaJ
      same patient with immunization within 42 days of allergy
      same patient with same allergy prior to first allergy 
          
@@ -179,7 +174,6 @@ diabetes
     	4th/5 patient with test OGTT 75 1h (82951—2862) >= 180 -doolittleJ  
     	5th/5 patient with test component Positive OGTT 100 fasting urine (cpt 82951-64)
     	  same patient with lab test component Positive OGTT 100 fasting urine (cpt 82951-64) - lazarusY  
-    	  
  ( make sure that examples have beginning and an end)	
  
 Gonorrhea
@@ -231,4 +225,5 @@ acute hep b
  1 patient with lab with  hep b surface  positive NEG -Marian
    same patient with same hep b surface positive ever 
 
-Giardiasis
+Giardiasis take from version 22 
+
