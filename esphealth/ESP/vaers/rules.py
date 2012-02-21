@@ -645,7 +645,7 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 30,
         },
     
-    '342; 344; 781.4; 341*': {# 341.2*
+    '342; 344; 781.4; 341.2; 341.20; 341.21; 341.22': {# 
         'name':'Paralytic syndromes',
         'ignore_period':12,
         'category':'2_rare',
@@ -730,7 +730,7 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 30,
         },
         
-    '415*; 453*': {# 415.1* TODO 
+    '415.1; 415.11; 415.12; 415.19; 453*': {#   
         'name':'Venous thromboembolism',
         'ignore_period':12,
         'category':'2_rare',
