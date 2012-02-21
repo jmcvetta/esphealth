@@ -1,30 +1,32 @@
 unit test case documentation for esp
 author: carolina chacin
-updated: feb 17 2012
+updated: feb 20 2012
 
 VAERS 
 18 patients (6 NEG and 13 pos)	
 (all encounters have to be in the non specialty site for urgent care--not urgent?)
-1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS (bells) in rules.py -plat 
+1 patient with encounter with icd9 728.88 any other code 
+  same patient with imm... TODO
+1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS (bells) in rules.py -platU yes
        that has an ignore period 12 and category 2 
   same patient with 1 encounter with same diagnostic in the list of VAERS_DIAGNOSTICS 
      that has an ignore period 12 and that happened within the ignore period of above encounter (1 neg 1 pos)
   same patient with immunization 42 days prior to first dx 
-1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS (seizures febrile and rotq) 
-       that does not have an ignore period  and category 2 -patri
+1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS (seizures febrile ) -patri yes
+       that does not have an ignore period  and category 2 
    same patient with immunization risk period days prior to dx 
-1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS 682.3 category 3 -maryV
+1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS 682.3 category 3 -maryV (dateY)
    same patient with immunization risk period days 30days prior to dx   
- 1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS 003.23 category 4 -johnW
+ 1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS 003.23 category 4 -johnW  ?
    same patient with immunization risk period days  30 days prior to dx  
-1 patient with 1 lab test in the list of VAERS_LAB_RESULTS that meets the criteria of one defined in rules.py -whor
+1 patient with 1 lab test in the list of VAERS_LAB_RESULTS alt >120 that meets the criteria of one defined in rules.py -whor yes
    that happened within risk period of vaccine, for category 2
-  same patient with immunization 42 days prior to lab. 
-1 patient with an immunization from table static.vaccine -klompasO
+  same patient with immunization 30 days prior to lab. 
+1 patient with an immunization from table static.vaccine -klompasO yes
   same patient with 1 encounter with fever (temp > 100.4), and set to URGENT CARE this is category 1
   within TIME_WINDOW_POST_EVENT (within 7 days) immunization. 
-1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTIc (guilian barre) (NEG)
-  that has an ignore period 12 but not in the specialty clinic.  -kruskalT
+1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTIc (guilian barre) (NEG)-kruskalT yes
+  that has an ignore period 12 but not in the specialty clinic.  
   same patient with immunization within 42 days prior to dx
 1 patient with two labs for hemoglobin within 30 of immunization value <10 & > 80% of last known value -lazarusN
   same patient second lab of same before immunization (category 3) 
@@ -35,7 +37,7 @@ VAERS
     same patient with immunization within 42 days prior to dx 
  1 patient with 2 encounters with icd9 stroke 435.0 within 12 months (NEG) -robertA
     same patient with immunization within 30 days prior to second dx (has exclusion)
- 1 patient with 1 encounter with meningitis icd9 047.8 within 30 days of immunization (NEG) -maryM
+ 1 patient with 1 encounter with meningitis icd9 047.8 within 30 days of immunization (NEG) -maryM yes
       same patient with immunization within 30 days prior to  dx
       same patient with 1 encounter with icd9 within 049.0  more than 12 months prior than first dx
 1 patient with 1 encounter with meningitis  321.2 within 30 days of immunization -klompasV
@@ -86,20 +88,22 @@ pid
 2/2 encounter for separate patient with encounter with icd9 code for pid within recurring days. NEG
 
 chlamydia
-3 patients (should generate 2 cases)
-1 patient with chla test positive
-same patient with chlal test positive after recurrence days 
-1 patient with chla test negative
-1 patient with chla test positive within recurrence days (28). NEG
+2 patients (should generate 1 cases)
+1 patient with chla test positive -deenaF
+ same patient with chla test positive after 28 recurrence days 
+ same patient with chla test positive within recurrence days (28). NEG
+1 patient with chla test negative NEG  -deenaH
 
 syphillis from version 3
-4 patients (should generate 3 cases)
-1 patient with an encounter with icd9 code for syphilis
-same patient with a prescription in syphilis.py within 14 days of encounter
+5 patients (should generate 3 cases)
+1 patient with an encounter with icd9 code for syphilis -kruskal
+  same patient with a prescription in syphilis.py within 14 days of encounter
+1 patient with encounter with icd9 code for syphilis -spockB
+  same patient with prescription for CEFTRIAXONE 2G dose >2g within 14 days  
 2 patient with a lab positive for rpr 
-1/2 patient a lab positive for ttpa, fta-abs  or tp-igg
-2/2 patient a lab negative for ttpa, fta-abs  or tp-igg . NEG
-1 patient with a lab positive for vrdl 
+1/2 patient a lab positive for ttpa, fta-abs  or tp-igg NEG -donnaP
+2/2 patient a lab negative for ttpa, fta-abs  or tp-igg -plattV
+1 patient with a lab positive for vrdl -anneI
 
 pertussis
 5 patients (should generate 4 cases)
@@ -113,15 +117,14 @@ pertussis
 1 patient with positive pertussis_culture -whor
        
 tb
-6 patients (should generate 4 cases)
-1 patient with med pyrazinamide spok 
-4 patients with encounter with tb diagnosis
-1/4 patient with tb laborder ('myco', 'afb', 'tb', 'tuber',) within 14 days after diagnosis -platt
-2/4 patient with lab order of above  within 60 days prior or after diagnosis  -anne
-3/4 patient with SECONDARY_MED_EVENTS  (' 'capreomycin', ', ) in TuberculosisDefC class in models.py -kruskalu
-4/4 patient with tb lab order after 14 days. NEG 
-1 patient with SECONDARY_MED_EVENTS ('rifabutin', ) in TuberculosisDefC class in models.py with no diagnosis. NEG
-- donna
+5 patients (should generate 4 cases)
+1 patient with med pyrazinamide spokb
+4 patients with encounter with tb diagnosis 010.00 -018.96
+1/4 patient with tb laborder ('myco' 84460--3836, ) within 14 days after diagnosis -platt
+2/4 patient with lab order 'tb' 87556--4598  within 60 before diagnosis  -anne
+3/4 patient with SECONDARY_MED_EVENTS capreomycin'  in TuberculosisDefC class in models.py within 60 days -kruskalu
+  same patient with SECONDARY_MED_EVENTS rifabutin' in TuberculosisDefC class in models.py with no diagnosis within 60 days.
+4/4 patient with tb lab order afb 87206--3761 after 14 days of dx. NEG - donna
 
 acute hep a
 3 patients ( should generate 3 cases)
