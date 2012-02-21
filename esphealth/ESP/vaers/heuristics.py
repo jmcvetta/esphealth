@@ -237,10 +237,13 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
         included in the ExcludedICD9Code table.
         @rtype: Icd9 QuerySet
         '''
-        covered_icd9_codes = DiagnosticsEventRule.objects.values('heuristic_defining_codes')
-        excluded_icd9_codes = ExcludedICD9Code.objects.values('code')
+        covered_icd9_codes = DiagnosticsEventRule.objects.values_list('heuristic_defining_codes',flat=True)
+        excluded_icd9_codes = ExcludedICD9Code.objects.values_list('code',flat=True)
+        newlist = list(covered_icd9_codes);
+        newlist.remove(None);
+        
         # TODO: Ask Mike K about whether correlated ICD9 codes should be included in this ignore list
-        icd9_qs = Icd9.objects.exclude(code__in=covered_icd9_codes)
+        icd9_qs = Icd9.objects.exclude(code__in=newlist)
         icd9_qs = icd9_qs.exclude(code__in=excluded_icd9_codes)
         return icd9_qs
 
