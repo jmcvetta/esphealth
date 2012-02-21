@@ -392,10 +392,6 @@ esphealth/share/riskscape.gdm-mapping.json -text
 esphealth/share/riskscape.gdm-transformation.ktr -text
 esphealth/share/riskscape.genepop-transformation.ktr -text
 esphealth/share/riskscape.genpop-mapping.json -text
-esphealth/unit-test/acute_heb_b/epicmem.esp.02162012 -text
-esphealth/unit-test/acute_heb_b/epicpro.esp.02162012 -text
-esphealth/unit-test/acute_heb_b/epicres.esp.02162012 -text
-esphealth/unit-test/acute_heb_b/epicvis.esp.02162012 -text
 esphealth/unit-test/acute_hep_a/epicmem.esp.02032012 -text
 esphealth/unit-test/acute_hep_a/epicpro.esp.02032012 -text
 esphealth/unit-test/acute_hep_a/epicres.esp.02032012 -text
