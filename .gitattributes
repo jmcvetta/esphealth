@@ -182,8 +182,11 @@ esphealth/ESP/ss/utils.py -text
 esphealth/ESP/ss/views.py -text
 esphealth/ESP/static/__init__.py -text
 esphealth/ESP/static/admin.py -text
-esphealth/ESP/static/fixtures/initial_data.json.bz2 -text svneol=unset#unset
-esphealth/ESP/static/fixtures/static_fakedata_drivers.json -text
+esphealth/ESP/static/fixtures/icd9.json -text
+esphealth/ESP/static/fixtures/initial_data.json -text
+esphealth/ESP/static/fixtures/loinc.json -text
+esphealth/ESP/static/fixtures/ndc.json -text
+esphealth/ESP/static/fixtures/toobig_initial_data.json.bz2 -text
 esphealth/ESP/static/models.py -text
 esphealth/ESP/static/sql/fakelabs.postgresql.sql -text
 esphealth/ESP/static/sql/icd9.postgresql.sql -text
