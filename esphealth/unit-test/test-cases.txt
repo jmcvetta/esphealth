@@ -1,12 +1,10 @@
 unit test case documentation for esp
 author: carolina chacin
-updated: feb 20 2012
+updated: feb 22 2012
 
 VAERS 
-18 patients (6 NEG and 13 pos)	
+17 patients (7 NEG and 11 pos)	
 (all encounters have to be in the non specialty site for urgent care--not urgent?)
-1 patient with encounter with icd9 728.88 any other code 
-  same patient with imm... TODO
 1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS (bells) in rules.py -platU yes
        that has an ignore period 12 and category 2 
   same patient with 1 encounter with same diagnostic in the list of VAERS_DIAGNOSTICS 
@@ -15,9 +13,9 @@ VAERS
 1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS (seizures febrile ) -patri yes
        that does not have an ignore period  and category 2 
    same patient with immunization risk period days prior to dx 
-1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS 682.3 category 3 -maryV (dateY)
+1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS 682.3 category 3 -maryV yes
    same patient with immunization risk period days 30days prior to dx   
- 1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS 003.23 category 4 -johnW  ?
+ 1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS 003.23 category 4 -johnW  not triggering? code not in icd
    same patient with immunization risk period days  30 days prior to dx  
 1 patient with 1 lab test in the list of VAERS_LAB_RESULTS alt >120 that meets the criteria of one defined in rules.py -whor yes
    that happened within risk period of vaccine, for category 2
@@ -28,32 +26,31 @@ VAERS
 1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTIc (guilian barre) (NEG)-kruskalT yes
   that has an ignore period 12 but not in the specialty clinic.  
   same patient with immunization within 42 days prior to dx
-1 patient with two labs for hemoglobin within 30 of immunization value <10 & > 80% of last known value -lazarusN
+1 patient with two labs for hemoglobin within 30 of immunization value <10 & < 80% of last known value -lazarusN NOt triggering?
   same patient second lab of same before immunization (category 3) 
    same patient with immunization 
- 1 patient with encounter with icd9 bronchospasm category 3, icd9 786.07 within past 3 months, -klompasD
-    same patient with immunization within 42 days prior to dx
- 1 patient with encounter with icd9 bronchospasm category 3, icd9 786.07 more than 3 months prior to imm, -susanY
-    same patient with immunization within 42 days prior to dx 
- 1 patient with 2 encounters with icd9 stroke 435.0 within 12 months (NEG) -robertA
+ 1 patient with encounter with icd9 bronchospasm category 3, icd9 786.07 within 7 days of imm, -klompasD yes
+   same patient with encounter with icd9 bronchospasm category 3, icd9 786.07 more than 3 months prior to imm, 
+    same patient with immunization  
+ 1 patient with 2 encounters with icd9 stroke 435.0 within 12 months (NEG) -robertA yes
     same patient with immunization within 30 days prior to second dx (has exclusion)
  1 patient with 1 encounter with meningitis icd9 047.8 within 30 days of immunization (NEG) -maryM yes
       same patient with immunization within 30 days prior to  dx
       same patient with 1 encounter with icd9 within 049.0  more than 12 months prior than first dx
-1 patient with 1 encounter with meningitis  321.2 within 30 days of immunization -klompasV
+1 patient with 1 encounter with meningitis  321.2 within 30 days of immunization -klompasV NEG yes
       same patient with immunization within 30 days prior to  dx
-      same patient with 1 encounter with icd9 within 049.6 within 12 months than first dx
-1 patient with 1 encounter with icd9 not in the list for vaers enc V9.50 (NEG) -spockO
+      same patient with 1 encounter with icd9  049.6 within 12 months than first dx
+1 patient with 1 encounter with icd9 not in the list for vaers enc V9.50 (NEG) -spockO  yes or use 728.88
  same patient with immunization within 42 days prior to dx
  same patient with 1 encounter with same icd9 more than 36 months than dx 
-1 patient with 1 prescription for medrol-pak  -nickx
+1 patient with 1 prescription for medrol-pak  -nickx   NIY
    same patient with immunization within 14 days of rx
-1 patient with 1 prescription for benadryl  (NEG) -kruskalS
+1 patient with 1 prescription for benadryl  (NEG) -kruskalS NIY
      same patient with immunization within 7 days of rx
      same patient with 1 prescription for benadryl within past 12 months of rx
-1 patient with 1 allergy rabies call category 3 -michaelK
+1 patient with 1 allergy rabies call category 3 -michaelK  NIY
      same patient with immunization within 42 days of allergy
-1 patient with 1 allergy in keyword list in doc lyme call category 3 -bazzaJ
+1 patient with 1 allergy in keyword list in doc lyme call category 3 -bazzaJ  NIY
      same patient with immunization within 42 days of allergy
      same patient with same allergy prior to first allergy 
          
@@ -70,22 +67,22 @@ SS
 
 LYME
 5 patients (should generate 4 cases)
-4 patients with an encounter with icd9 code in the lyme_diagnosis. 
-1st/4  patient with meds doxycycline within 14 days of diagnosis (lyme2)
-2nd/4 patient with meds lyme_other_antibiotics in lyme.py within 14 days of diagnosis (lyme2)
-3rd/4 patient with one test positive lab in 'lyme_elisa', 'lyme_igg', 'lyme_igm', 'lyme_pcr'
-   positive within 30 days of diagnosis (lyme1)
-4th/4 patient only encounter. NEG
-1 patient with an encounter with icd9 code for rash (lyme 3)
-same patient with laborder lyme_elisa within 14 days of diagnosis 
-same patient with med doxycycline within 14 days of diagnosis
+3 patients with an encounter with icd9 code in the lyme_diagnosis 088.81
+  1st/3  patient with meds doxycycline within 14 days of diagnosis (lyme2) -platU yes
+  2nd/3 patient with meds lyme_other_antibiotics in lyme.py within 14 days of diagnosis (lyme2) -patriciaA yes
+  3rd/3 patient only encounter. NEG -alvaroD
+1 patient with one test positive lab in 'lyme_igg' or pos  86618-4396 -kruskalu
+1 patient with an encounter with icd9 code for rash 782.1 (lyme 3) -danielS yes
+ same patient with laborder lyme_elisa within 30 days of diagnosis 
+ same patient with med doxycycline within 14 days of diagnosis
 
 pid
-2 patients (should generate 3 cases)
-1  patients with chlamydia or gonorrhea positive test  
-2 patient with 2 encounters each with icd9 code for pid within 28 days of test
-1/2 encounter for one patient with icd9 code for pid after recurring days ??? 28 or 365
-2/2 encounter for separate patient with encounter with icd9 code for pid within recurring days. NEG
+2 patients (should generate 2 cases)
+1  patient with chlamydia  positive test -deenaF
+  same patient with 2 encounters with pid icd9 code 614.2 within 28 days after test
+1  patient with  gonorrhea positive test -deenaH
+  same patient with 2 encounters with pid icd9 code 099.56 within 28 days before test 
+  same patient with encounter for separate patient with encounter with icd9 099.56 after 28 days. NEG
 
 chlamydia
 2 patients (should generate 1 cases)
@@ -228,5 +225,9 @@ acute hep b
  1 patient with lab with  hep b surface  positive NEG -Marian
    same patient with same hep b surface positive ever 
 
-Giardiasis take from version 22 
+Giardiasis 
+1 patients (1 case)
+1 patient with test positve for giard 
+1 patient with encounter with icd9 of 787.91
+1 patient with meds metronidazole which value?
 
