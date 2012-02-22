@@ -96,7 +96,7 @@ def verify(request, key):
                     'case':case })
 
 
-    else:
+    else: # request.method == 'POST
         confirmed_id = request.POST.get('provider_confirmation', 0) and provider.id
         response = HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
         response.set_cookie('confirmed_id', confirmed_id)
