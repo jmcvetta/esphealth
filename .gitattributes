@@ -395,10 +395,10 @@ esphealth/share/riskscape.gdm-mapping.json -text
 esphealth/share/riskscape.gdm-transformation.ktr -text
 esphealth/share/riskscape.genepop-transformation.ktr -text
 esphealth/share/riskscape.genpop-mapping.json -text
-esphealth/unit-test/acute_hep_a/epicmem.esp.02032012 -text
-esphealth/unit-test/acute_hep_a/epicpro.esp.02032012 -text
-esphealth/unit-test/acute_hep_a/epicres.esp.02032012 -text
-esphealth/unit-test/acute_hep_a/epicvis.esp.02032012 -text
+esphealth/unit-test/acute_hep_a/epicmem.esp.02232012 -text
+esphealth/unit-test/acute_hep_a/epicpro.esp.02232012 -text
+esphealth/unit-test/acute_hep_a/epicres.esp.02232012 -text
+esphealth/unit-test/acute_hep_a/epicvis.esp.02232012 -text
 esphealth/unit-test/acute_hep_b/epicmem.esp.02162012 -text
 esphealth/unit-test/acute_hep_b/epicpro.esp.02162012 -text
 esphealth/unit-test/acute_hep_b/epicres.esp.02162012 -text
@@ -428,6 +428,9 @@ esphealth/unit-test/diabetes/pre/epicvis.esp.01202012 -text
 esphealth/unit-test/giardiasis/epicmem.esp.02222012 -text
 esphealth/unit-test/giardiasis/epicpro.esp.02222012 -text
 esphealth/unit-test/giardiasis/epicres.esp.02222012 -text
+esphealth/unit-test/gonorrhea/epicmem.esp.02232012 -text
+esphealth/unit-test/gonorrhea/epicpro.esp.02232012 -text
+esphealth/unit-test/gonorrhea/epicres.esp.02232012 -text
 esphealth/unit-test/hep_c/epicmem.esp.02012012 -text
 esphealth/unit-test/hep_c/epicpro.esp.02012012 -text
 esphealth/unit-test/hep_c/epicres.esp.02012012 -text
