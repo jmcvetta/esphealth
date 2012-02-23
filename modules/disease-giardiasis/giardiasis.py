@@ -30,6 +30,7 @@ class Giardiasis(SinglePositiveTestDiseaseDefinition):
     
     test_names = ['giardiasis']
     
+    recurrence_interval=None
           
 #-------------------------------------------------------------------------------
 #

@@ -36,8 +36,8 @@ class Pertussis(DiseaseDefinition):
     '''
     Pertussis
     '''
-    
-    condition = ['pertussis']
+     
+    conditions = ['pertussis']
     
     uri = 'urn:x-esphealth:disease:commoninf:pertussis:v1'
     
@@ -101,9 +101,9 @@ class Pertussis(DiseaseDefinition):
         #
         # Criteria Set #1 (dx or lab order + rx within 7 days) 
         #
-        dx_ev_names = ['dx:bordetella','dx:cough']
-        lx_ev_names = ['lx:bordetella pertussis:order'] #TODO need to check for all the test orders
-        rx_ev_names = ['rx:pertussis_antibiotics']
+        dx_ev_names = ['dx:pertusis','dx:cough']
+        lx_ev_names = ['lx:pertussis_culture:order'] #TODO need to check for all the test orders
+        rx_ev_names = ['rx:pertussis_med']
         
         #
         dxrx_event_qs = Event.objects.filter(

@@ -37,7 +37,7 @@ class Tuberculosis(DiseaseDefinition):
     Tuberculosis
     '''
     
-    condition = ['tuberculosis']
+    conditions = ['tuberculosis']
     
     uri = 'urn:x-esphealth:disease:commoninf:tuberculosis:v1'
     
@@ -89,9 +89,9 @@ class Tuberculosis(DiseaseDefinition):
         #
         # Criteria Set #1 (dx or lab order + rx within 7 days) 
         #
-        dx_ev_names = ['dx:bordetella','dx:cough']
-        lx_ev_names = ['lx:bordetella tuberculosis:order'] #TODO need to check for all the test orders
-        rx_ev_names = ['rx:tuberculosis_antibiotics']
+        dx_ev_names = ['dx:tuberculosis']
+        lx_ev_names = ['lx:tuberculosis_lab:order'] #TODO need to check for all the test orders
+        rx_ev_names = ['rx:moxifloxacin']
         
         #
         dxrx_event_qs = Event.objects.filter(
