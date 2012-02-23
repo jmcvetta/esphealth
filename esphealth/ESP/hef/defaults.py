@@ -120,7 +120,6 @@ ResultString.objects.get_or_create(
     applies_to_all = True,
     )
 
-
 #-------------------------------------------------------------------------------
 #
 # Gonorrhea
@@ -138,6 +137,62 @@ LabResultPositiveHeuristic.objects.get_or_create(
     test = gonorrhea_test,
     )
 
+
+#-------------------------------------------------------------------------------
+#
+# Giardiasis
+#
+#-------------------------------------------------------------------------------
+
+giardiasis_test = AbstractLabTest.objects.get_or_create(
+    name = 'giardiasis',
+    defaults = {
+        'verbose_name': 'giardiasis culture',
+        }
+    )[0]
+    
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = giardiasis_test,
+    )
+
+#-------------------------------------------------------------------------------
+#
+# Tuberculosis
+#
+#-------------------------------------------------------------------------------
+#TODO fix me .. add the other dx, rx ,lab order and labs like in lyme 
+
+tuberculosis_test = AbstractLabTest.objects.get_or_create(
+    name = 'tuberculosis',
+    defaults = {
+        'verbose_name': 'tuberculosis culture',
+        }
+    )[0]
+    
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = tuberculosis_test,
+    )
+
+#-------------------------------------------------------------------------------
+#
+# Pertussis
+#
+#-------------------------------------------------------------------------------
+#TODO fix me .. add the other dx, rx ,lab order and labs like in lyme 
+
+pertussis_test = AbstractLabTest.objects.get_or_create(
+    name = 'pertussis',
+    defaults = {
+        'verbose_name': 'pertussis culture',
+        }
+    )[0]
+    
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = pertussis_test,
+    )
 
 #-------------------------------------------------------------------------------
 #
