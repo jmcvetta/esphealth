@@ -37,15 +37,15 @@ class Pertussis(DiseaseDefinition):
     Pertussis
     '''
     
-    condition = 'pertussis'
+    condition = ['pertussis']
     
     uri = 'urn:x-esphealth:disease:commoninf:pertussis:v1'
     
     short_name = 'pertussis'
     
-    test_name_search_strings = ['pertcult','PCR','pert']
+    test_name_search_strings = ['pertcult','PCR','pert',]
     
-    test_names = ['pertussis']
+    timespan_heuristics = []
     
     @property
     def event_heuristics(self):

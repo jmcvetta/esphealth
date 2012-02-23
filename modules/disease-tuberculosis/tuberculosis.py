@@ -37,15 +37,15 @@ class Tuberculosis(DiseaseDefinition):
     Tuberculosis
     '''
     
-    condition = 'tuberculosis'
+    condition = ['tuberculosis']
     
     uri = 'urn:x-esphealth:disease:commoninf:tuberculosis:v1'
     
     short_name = 'tuberculosis'
     
-    test_name_search_strings = ['pertcult','PCR','pert']
+    test_name_search_strings = ['tb',]
     
-    test_names = ['tuberculosis']
+    timespan_heuristics = []
     
     @property
     def event_heuristics(self):
