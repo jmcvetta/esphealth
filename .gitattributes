@@ -502,6 +502,9 @@ modules/disease-pertussis/setup.py -text
 modules/disease-syphilis/__init__.py -text
 modules/disease-syphilis/setup.py -text
 modules/disease-syphilis/syphilis.py -text
+modules/disease-tuberculosis/__init__.py -text
+modules/disease-tuberculosis/setup.py -text
+modules/disease-tuberculosis/tuberculosis.py -text
 modules/heuristic-glucose-crf/__init__.py -text
 modules/heuristic-glucose-crf/glucose_crf.py -text
 modules/heuristic-glucose-crf/setup.py -text
