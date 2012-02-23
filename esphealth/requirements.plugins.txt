@@ -32,4 +32,8 @@
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-combined#egg=disease-hepatitis-combined
 # Pertussis 
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pertussis#egg=disease-pertussis
+# Giardiasis 
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-giardiasis#egg=disease-giardiasis
+# Tuberculosis 
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-tuberculosis#egg=disease-tuberculosis
 
