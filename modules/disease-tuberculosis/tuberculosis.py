@@ -59,12 +59,7 @@ class Tuberculosis(DiseaseDefinition):
                 Icd9Query(starts_with='033.0'),
                 ]
             ))
-        heuristic_list.append( DiagnosisHeuristic(
-            name = 'cough',
-            icd9_queries = [
-                Icd9Query(starts_with='033.9'),
-                ]
-            ))
+       
         #
         # Prescriptions
         #
@@ -79,12 +74,7 @@ class Tuberculosis(DiseaseDefinition):
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'culture tuberculosis',
              ))
-        heuristic_list.append( LabResultPositiveHeuristic(
-            test_name = 'tuberculosis by pcr',
-            ))
-        heuristic_list.append( LabResultPositiveHeuristic(
-            test_name = 'bordetella tuberculosis',
-            ))
+        
         #
         # Lab Orders
         #
@@ -116,7 +106,7 @@ class Tuberculosis(DiseaseDefinition):
         #
         #TODO add more labs names ??
         labo_ev_names =  [   
-            'lx:pertusis:positive',
+            'lx:tuberculosis:positive',
             
             ]
         test_event_qs = Event.objects.filter(

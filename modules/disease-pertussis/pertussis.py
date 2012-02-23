@@ -53,6 +53,7 @@ class Pertussis(DiseaseDefinition):
         #
         # Diagnosis Codes
         #
+        
         heuristic_list.append( DiagnosisHeuristic(
             name = 'bordetella',
             icd9_queries = [
