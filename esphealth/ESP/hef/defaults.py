@@ -1682,8 +1682,12 @@ Icd9Query.objects.get_or_create(
     icd9_exact = '033.0',
     )
 
+cough_dx = DiagnosisHeuristic.objects.get_or_create(
+    name = 'cough',
+    )[0]
+
 Icd9Query.objects.get_or_create(
-    heuristic = pertussis_dx,
+    heuristic = cough_dx,
     icd9_exact = '033.9',
     )
 
@@ -1739,7 +1743,7 @@ LabResultPositiveHeuristic.objects.get_or_create(
     )
 
 pertussis_rx = PrescriptionHeuristic.objects.get_or_create(
-    name = 'pertussis',
+    name = 'pertussis_med',
     drugs =  'Erythromycin, Clarithromycin, Azithromycin, Trimethoprim-sulfamethoxazole',
     )[0]
 
