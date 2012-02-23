@@ -480,6 +480,9 @@ modules/disease-chlamydia/setup.py -text
 modules/disease-diabetes/__init__.py -text
 modules/disease-diabetes/diabetes.py -text
 modules/disease-diabetes/setup.py -text
+modules/disease-giardiasis/__init__.py -text
+modules/disease-giardiasis/diardiasis.py -text
+modules/disease-giardiasis/setup.py -text
 modules/disease-gonorrhea/__init__.py -text
 modules/disease-gonorrhea/gonorrhea.py -text
 modules/disease-gonorrhea/setup.py -text
