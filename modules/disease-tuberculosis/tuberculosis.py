@@ -54,7 +54,7 @@ class Tuberculosis(DiseaseDefinition):
         # Diagnosis Codes
         #
         heuristic_list.append( DiagnosisHeuristic(
-            name = 'bordetella',
+            name = 'tuberculosis',
             icd9_queries = [
                 Icd9Query(starts_with='033.0'),
                 ]
@@ -64,15 +64,14 @@ class Tuberculosis(DiseaseDefinition):
         # Prescriptions
         #
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'tuberculosis_antibiotics',
-            drugs = ['erythromyciin','clarithromycin',
-                'azithromycin','trimethoprim-sulfamethoxazole', ],
+            name = 'moxifloxacin',
+            drugs = ['moxifloxacin', ],
             ))
         #
         # Lab Results
         #
         heuristic_list.append( LabResultPositiveHeuristic(
-            test_name = 'culture tuberculosis',
+            test_name = 'tuberculosis_lab',
              ))
         
         #
@@ -80,7 +79,7 @@ class Tuberculosis(DiseaseDefinition):
         #
         # TODO add more orders based on spec.
         heuristic_list.append( LabOrderHeuristic(
-            test_name = 'bordetella tuberculosis',
+            test_name = 'tuberculosis_lab',
             ))
         
         return heuristic_list
