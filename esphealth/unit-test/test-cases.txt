@@ -124,14 +124,13 @@ tb
 4/4 patient with tb lab order afb 87206--3761 after 14 days of dx. NEG - donna
 
 acute hep a
-3 patients ( should generate 3 cases)
-1 patients with encounter with icd9 for jaundice - deena
+3 patients ( should generate 2 cases)
+1 patients with encounter with icd9 for jaundice - deenaw 
  same patient with lab hep a igm positive within 14 days
-1 patient with lab alt_2x -spock
-same  patients patient with lab hep a igm positive within 14 days
-same patient with a lab test totbil within 14 days of diagnosis? in code not in spec
-1 patient with alt_2x 
- same patient with lab igm positive within more than 14 days
+1 patient with lab alt_2x -spock 
+  same  patients patient with lab hep a igm positive within 14 days
+1 patient with alt_2x -whop NEG
+ same patient with lab igm positive within more than 14 days 
 
 diabetes
 17  patients 
@@ -177,11 +176,11 @@ diabetes
  ( make sure that examples have beginning and an end)	
  
 Gonorrhea
-4 patients (3 cases)
-1 patient with test that has a positive lab with gon
-1 patient with test that has a positive lab with gc
-1 patient with 2 lab tests with gon or gc with more than 28 days apart
-1 patient with 2 lab tests with gon or gc with less than 28 days apart (NEG)
+4 patients (5 cases)
+1 patient with test that has a positive lab with gon -kruskal
+1 patient with test that has a positive lab with gc -spock
+1 patient with 2 lab tests with gon or gc with more than 28 days apart (2pos) -donnaP
+1 patient with 2 lab tests with gon or gc with less than 28 days apart (NEG, pos) -anneI
 
 acute hep c
 4 patients (4 cases) - using collected date for dates
@@ -228,6 +227,6 @@ acute hep b
 Giardiasis 
 1 patients (1 case)
 1 patient with test positve for giard 
-1 patient with encounter with icd9 of 787.91
+1 patient with encounter with icd9 of 787.91?
 1 patient with meds metronidazole which value?
 
