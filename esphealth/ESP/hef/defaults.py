@@ -140,24 +140,6 @@ LabResultPositiveHeuristic.objects.get_or_create(
 
 #-------------------------------------------------------------------------------
 #
-# Giardiasis
-#
-#-------------------------------------------------------------------------------
-
-giardiasis_test = AbstractLabTest.objects.get_or_create(
-    name = 'giardiasis',
-    defaults = {
-        'verbose_name': 'giardiasis culture',
-        }
-    )[0]
-    
-    
-LabResultPositiveHeuristic.objects.get_or_create(
-    test = giardiasis_test,
-    )
-
-#-------------------------------------------------------------------------------
-#
 # Tuberculosis
 #
 #-------------------------------------------------------------------------------
@@ -811,13 +793,6 @@ Icd9Query.objects.get_or_create(
     icd9_starts_with = '018.',
     )[0]
 
-
-#-------------------------------------------------------------------------------
-#
-# Tuberculosis
-#
-#-------------------------------------------------------------------------------
-
 tb_lab = AbstractLabTest.objects.get_or_create(
     name = 'tuberculosis',
     defaults = {
@@ -827,51 +802,6 @@ tb_lab = AbstractLabTest.objects.get_or_create(
     
 LabOrderHeuristic.objects.get_or_create(
     test = tb_lab,
-    )
-
-#-------------------------------------------------------------------------------
-#
-# Pelvic Inflamatory Disease (PID)
-#
-#-------------------------------------------------------------------------------
-
-pelvic_inflamatory_disease = DiagnosisHeuristic.objects.get_or_create(
-    name = 'pelvic_inflamatory_disease',
-    )[0]
-
-Icd9Query.objects.get_or_create(
-    heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '614.0',
-    )
-
-Icd9Query.objects.get_or_create(
-    heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '614.1',
-    )
-
-Icd9Query.objects.get_or_create(
-    heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '614.2',
-    )
-
-Icd9Query.objects.get_or_create(
-    heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '614.3',
-    )
-
-Icd9Query.objects.get_or_create(
-    heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '614.5',
-    )
-
-Icd9Query.objects.get_or_create(
-    heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '614.9',
-    )
-
-Icd9Query.objects.get_or_create(
-    heuristic = pelvic_inflamatory_disease,
-    icd9_exact = '099.56',
     )
 
 #-------------------------------------------------------------------------------
@@ -1710,7 +1640,7 @@ insulin_rx = PrescriptionHeuristic.objects.get_or_create(
 #
 #-------------------------------------------------------------------------------
 
-giardiasis_antigen = AbstractLabTest.objects.get_or_create(
+giardiasis_test = AbstractLabTest.objects.get_or_create(
     name = 'giardiasis_antigen',
     defaults = {
         'verbose_name': 'Giardiasis Antigen',
