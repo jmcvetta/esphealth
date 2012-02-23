@@ -197,14 +197,14 @@ class Hepatitis_A(HepatitisCombined):
         #
         # Acute Hepatitis A
         #
-        # (dx:jaundice or lx:alt:ratio:2 or lx:ast:ratio:2) 
+        # (dx:jaundice or lx:alt:ratio:2.0 or lx:ast:ratio:2.0) 
         # AND lx:hepatitis_a_igm_antibody:positive within 14 days
         #
         primary_event_name = 'lx:hepatitis_a_igm_antibody:positive'
         secondary_event_names = [
             'dx:jaundice',
-            'lx:alt:ratio:2',
-            'lx:ast:ratio:2',
+            'lx:alt:ratio:2.0',
+            'lx:ast:ratio:2.0',
             ]
         #
         # FIXME: This date math works on PostgreSQL; but it's not clear that 
