@@ -55,7 +55,7 @@ class Pertussis(DiseaseDefinition):
         #
         
         heuristic_list.append( DiagnosisHeuristic(
-            name = 'bordetella',
+            name = 'pertussis',
             icd9_queries = [
                 Icd9Query(starts_with='033.0'),
                 ]
@@ -70,7 +70,7 @@ class Pertussis(DiseaseDefinition):
         # Prescriptions
         #
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'pertussis_antibiotics',
+            name = 'pertussis_med',
             drugs = ['erythromyciin','clarithromycin',
                 'azithromycin','trimethoprim-sulfamethoxazole', ],
             ))
@@ -78,20 +78,20 @@ class Pertussis(DiseaseDefinition):
         # Lab Results
         #
         heuristic_list.append( LabResultPositiveHeuristic(
-            test_name = 'culture pertussis',
+            test_name = 'pertussis_culture',
              ))
         heuristic_list.append( LabResultPositiveHeuristic(
-            test_name = 'pertussis by pcr',
+            test_name = 'pertussis_pcr',
             ))
         heuristic_list.append( LabResultPositiveHeuristic(
-            test_name = 'bordetella pertussis',
+            test_name = 'pertussis_serology',
             ))
         #
         # Lab Orders
         #
         # TODO add more orders based on spec.
         heuristic_list.append( LabOrderHeuristic(
-            test_name = 'bordetella pertussis',
+            test_name = 'pertussis_serology',
             ))
         
         return heuristic_list
