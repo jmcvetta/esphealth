@@ -183,6 +183,7 @@ esphealth/ESP/ss/views.py -text
 esphealth/ESP/static/__init__.py -text
 esphealth/ESP/static/admin.py -text
 esphealth/ESP/static/fixtures/icd9.json -text
+esphealth/ESP/static/fixtures/immmanuf.json -text
 esphealth/ESP/static/fixtures/initial_data.json -text
 esphealth/ESP/static/fixtures/loinc.json -text
 esphealth/ESP/static/fixtures/ndc.json -text
