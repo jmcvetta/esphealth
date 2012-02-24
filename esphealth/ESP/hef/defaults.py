@@ -138,24 +138,7 @@ LabResultPositiveHeuristic.objects.get_or_create(
     )
 
 
-#-------------------------------------------------------------------------------
-#
-# Tuberculosis
-#
-#-------------------------------------------------------------------------------
-#TODO fix me .. add the other dx, rx ,lab order and labs like in lyme 
 
-tuberculosis_test = AbstractLabTest.objects.get_or_create(
-    name = 'tuberculosis',
-    defaults = {
-        'verbose_name': 'tuberculosis culture',
-        }
-    )[0]
-    
-    
-LabResultPositiveHeuristic.objects.get_or_create(
-    test = tuberculosis_test,
-    )
 
 #-------------------------------------------------------------------------------
 #
@@ -744,6 +727,7 @@ moxifloxacin_rx = PrescriptionHeuristic.objects.get_or_create(
     drugs = 'moxifloxacin',
     )[0]
 
+# 010.00-018.99
 tb_diagnosis = DiagnosisHeuristic.objects.get_or_create(
     name = 'tuberculosis',
     )[0]
@@ -793,15 +777,38 @@ Icd9Query.objects.get_or_create(
     icd9_starts_with = '018.',
     )[0]
 
-tb_lab = AbstractLabTest.objects.get_or_create(
-    name = 'tuberculosis',
+# lab orders for tb  
+tb_pcr = AbstractLabTest.objects.get_or_create(
+    name = 'tuberculosis_prc',
     defaults = {
-        'verbose_name': 'Tuberculosis lab test (several varieties)',
+        'verbose_name': 'Tuberculosis PCR',
+        }
+    )[0]
+      
+LabOrderHeuristic.objects.get_or_create(
+    test = tb_pcr,
+    )
+
+tb_afb = AbstractLabTest.objects.get_or_create(
+    name = 'tuberculosis_afb',
+    defaults = {
+        'verbose_name': 'Tuberculosis afb',
         }
     )[0]
     
 LabOrderHeuristic.objects.get_or_create(
-    test = tb_lab,
+    test = tb_afb,
+    )
+
+tb_mycob = AbstractLabTest.objects.get_or_create(
+    name = 'tuberculosis_mycob',
+    defaults = {
+        'verbose_name': 'Tuberculosis mycob',
+        }
+    )[0]
+    
+LabOrderHeuristic.objects.get_or_create(
+    test = tb_mycob,
     )
 
 #-------------------------------------------------------------------------------
