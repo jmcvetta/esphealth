@@ -18,8 +18,7 @@ from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 
 from django.db import transaction
-from django.db.models import F
-
+from django.db.models import Avg, Count, F, Max, Min, Q, Sum
 from ESP.utils import log
 from ESP.hef.base import Event
 from ESP.hef.base import PrescriptionHeuristic
@@ -43,7 +42,7 @@ class Tuberculosis(DiseaseDefinition):
     
     short_name = 'tuberculosis'
     
-    test_name_search_strings = ['tb',]
+    test_name_search_strings = ['tuber','afb','mycob',]
     
     timespan_heuristics = []
     
@@ -52,72 +51,111 @@ class Tuberculosis(DiseaseDefinition):
         heuristic_list = []
         #
         # Diagnosis Codes
-        #
+        # 010.00-018.99
         heuristic_list.append( DiagnosisHeuristic(
             name = 'tuberculosis',
             icd9_queries = [
-                Icd9Query(starts_with='033.0'),
+                Icd9Query(starts_with='010.'),
+                Icd9Query(starts_with='011.'),
+                Icd9Query(starts_with='012.'),
+                Icd9Query(starts_with='013.'),
+                Icd9Query(starts_with='014.'),
+                Icd9Query(starts_with='015.'),
+                Icd9Query(starts_with='016.'),
+                Icd9Query(starts_with='017.'),
+                Icd9Query(starts_with='018.'),
                 ]
             ))
-       
+        #
+        # Lab Orders
+        #
+        heuristic_list.append( LabOrderHeuristic(
+            test_name = 'tuberculosis_pcr',
+            ))
+        heuristic_list.append( LabOrderHeuristic(
+            test_name = 'tuberculosis_afb',
+            ))
+        heuristic_list.append( LabOrderHeuristic(
+            test_name = 'tuberculosis_mycob',
+            ))
         #
         # Prescriptions
         #
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'moxifloxacin',
-            drugs = ['moxifloxacin', ],
+            name = 'pyrazinamide',
+            drugs = [ 'pyrazinamide', 'PZA',],
+            exclude = 'CAPZA', 
             ))
-        #
-        # Lab Results
-        #
-        heuristic_list.append( LabResultPositiveHeuristic(
-            test_name = 'tuberculosis_lab',
-             ))
         
-        #
-        # Lab Orders
-        #
-        # TODO add more orders based on spec.
-        heuristic_list.append( LabOrderHeuristic(
-            test_name = 'tuberculosis_lab',
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'tuberculosis_meds',
+            drugs = ['moxifloxacin', 'ethambutol','rifampin','rifabutin','rifapentine','streptomycin',
+                'para_aminosalicyclic_acid','kanamycin','capreomycin','cycloserine','ethionamide',],
+            ))
+        
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'isoniazid',
+            drugs = [ 'Isoniazid',],
+            exclude = 'INHAL, INHIB', 
             ))
         
         return heuristic_list
     
     @transaction.commit_on_success
     def generate(self):
-        #
-        # Criteria Set #1 (dx or lab order + rx within 7 days) 
-        #
-        dx_ev_names = ['dx:tuberculosis']
-        lx_ev_names = ['lx:tuberculosis_lab:order'] #TODO need to check for all the test orders
-        rx_ev_names = ['rx:moxifloxacin']
         
         #
+        # Criteria Set #1 (single rx) 
+        #
+        rx_ev_names = ['rx:pyrazinamide']
+        
+        rx_event_qs = Event.objects.filter(
+            name__in = rx_ev_names,
+            )
+        #
+        # Criteria Set #2 (dx or lab order  prior 14 days or 60 after icd9 code) 
+        #
+        dx_ev_names = ['dx:tuberculosis']
+        lx_ev_names = ['lx:tuberculosis_prc:order','lx:tuberculosis_mycob:order','lx:tuberculosis_afb:order'] 
+                
+        dxlx_event_qs = Event.objects.filter(
+            name__in = dx_ev_names,
+            patient__event__name__in =  lx_ev_names,
+            patient__event__date__gte = (F('date') - 60 ),
+            patient__event__date__lte = (F('date') + 14 ),
+            )
+        #
+        # Criteria Set #3 dx and 2 prescription orders
+        #
+        rxall_ev_names =  ['rx:tuberculosis_meds','rx:isoniazid','rx:pyrazinamide' ]
+        #  count of 2 or more of each rx
+        
+        #once_qs = Event.objects.filter(name__in=dx_ev_names)
+        #once_qs = once_qs.exclude(patient__case__condition__in=self.conditions)
+        #tb_criteria_list = [once_qs]
+        twice_qs = Event.objects.filter(name=rxall_ev_names).values('patient')
+        #twice_qs = twice_qs.exclude(patient__case__condition__in=self.conditions)
+        twice_vqs = twice_qs.annotate(count=Count('pk'))
+        twice_vqs = twice_vqs.filter(count__gte=2)
+        twice_patients = twice_vqs.values_list('patient')
+        #twice_criteria_qs = Event.objects.filter(name=rxall_ev_names, patient__in=twice_patients)
+        #tb_criteria_list.append(twice_criteria_qs)
+            
         dxrx_event_qs = Event.objects.filter(
             name__in = dx_ev_names,
-            patient__event__name__in = rx_ev_names + lx_ev_names,
-            patient__event__date__gte = (F('date') - 7 ),
-            patient__event__date__lte = (F('date') + 7 ),
+            patient__in=twice_patients,
+            patient__event__name__in =  rxall_ev_names,
+            patient__event__date__gte = (F('date') - 60 ),
+            patient__event__date__lte = (F('date') + 60 ),
             )
-        #
-        # Criteria Set #2 positive of culture for tuberculosis
-        #
-        #TODO add more labs names ??
-        labo_ev_names =  [   
-            'lx:tuberculosis:positive',
             
-            ]
-        test_event_qs = Event.objects.filter(
-            name__in = labo_ev_names,  
-            )
         #
         # Combined Criteria
         #
-        combined_criteria_qs = dxrx_event_qs | test_event_qs 
+        combined_criteria_qs = rx_event_qs | dxlx_event_qs | dxrx_event_qs  
         combined_criteria_qs = combined_criteria_qs.exclude(case__condition='tuberculosis')
         combined_criteria_qs = combined_criteria_qs.order_by('date')
-        all_event_names = dx_ev_names + rx_ev_names + labo_ev_names + lx_ev_names 
+        all_event_names = rx_ev_names + dx_ev_names + lx_ev_names + rxall_ev_names
         counter = 0
         for this_event in combined_criteria_qs:
             existing_cases = Case.objects.filter(
