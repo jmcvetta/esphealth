@@ -47,8 +47,9 @@ vaers
 chlamydia
 pertussis
 tb
-acute hep a
+acute hep a, b and c
 syphillis
 lyme
+giardiasis
 
 
