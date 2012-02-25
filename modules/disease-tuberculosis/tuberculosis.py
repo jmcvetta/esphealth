@@ -21,6 +21,7 @@ from django.db import transaction
 from django.db.models import Avg, Count, F, Max, Min, Q, Sum
 from ESP.utils import log
 from ESP.hef.base import Event
+from ESP.hef.base import BaseEventHeuristic
 from ESP.hef.base import PrescriptionHeuristic
 from ESP.hef.base import Dose
 from ESP.hef.base import LabResultPositiveHeuristic
@@ -88,19 +89,88 @@ class Tuberculosis(DiseaseDefinition):
             ))
         
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'tuberculosis_meds',
-            drugs = ['moxifloxacin', 'ethambutol','rifampin','rifabutin','rifapentine','streptomycin',
-                'para_aminosalicyclic_acid','kanamycin','capreomycin','cycloserine','ethionamide',],
+            name = 'moxifloxacin',
+            drugs = ['moxifloxacin',],
+            ))
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'ethambutol',
+            drugs = ['ethambutol',],
+            ))
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'rifampin',
+            drugs = ['rifampin',],
+            ))
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'rifabutin',
+            drugs = ['rifabutin',],
+            ))
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'rifapentine',
+            drugs = ['rifapentine',],
+            ))
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'streptomycin',
+            drugs = ['streptomycin',],
+            ))
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'para_aminosalicyclic_acid',
+            drugs = ['para_aminosalicyclic_acid',],
+            ))
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'kanamycin',
+            drugs = ['kanamycin',],
+            ))
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'capreomycin',
+            drugs = ['capreomycin',],
+            ))
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'cycloserine',
+            drugs = ['cycloserine',],
+            ))
+        # TODO define each
+        heuristic_list.append( PrescriptionHeuristic(
+            name = 'ethionamide',
+            drugs = ['ethionamide',],
             ))
         
         heuristic_list.append( PrescriptionHeuristic(
             name = 'isoniazid',
-            drugs = [ 'Isoniazid',],
+            drugs = [ 'Isoniazid','INH',],
             exclude = 'INHAL, INHIB', 
             ))
         
         return heuristic_list
     
+    def generate_def_c(self):
+        log.info('Generating cases for Tuberculosis Definition (C)')
+        counter = 0
+        rx_event_names =  ['rx:rifabutin','rx:capreomycin','rx:ethionamide','rx:isoniazid','rx:pyrazinamide']
+        dx_qs = BaseEventHeuristic.get_events_by_name('dx:tuberculosis')
+        dx_qs = dx_qs.exclude(case__condition=self.conditions[0])
+        dx_qs = dx_qs.order_by('patient', 'date') 
+        for dx_event in dx_qs:
+            relevancy_begin = dx_event.date - relativedelta(days=60)
+            relevancy_end = dx_event.date + relativedelta(days=60)
+            rx_qs = BaseEventHeuristic.get_events_by_name(name=rx_event_names)
+            rx_qs = rx_qs.filter(patient=dx_event.patient)
+            rx_qs = rx_qs.filter(date__gte=relevancy_begin, date__lte=relevancy_end)
+            if rx_qs.values('name').distinct().count() >= 2:
+                #
+                # Patient has Tuberculosis
+                #
+                self._create_case_from_event_obj(
+                    condition = self.conditions[0],
+                    criteria = 'Diagnosis with >=2 prescriptions',
+                    recurrence_interval = None, # Does not recur
+                    event_obj = dx_event,
+                    relevant_event_qs = rx_qs,
+                    )
+                counter += 1
+        return counter
+
+        
+        
     @transaction.commit_on_success
     def generate(self):
         
@@ -125,22 +195,24 @@ class Tuberculosis(DiseaseDefinition):
             patient__event__date__lte = (F('date') + 14 ),
             )
         #
-        # Criteria Set #3 dx and 2 prescription orders
-        #
-        rxall_ev_names =  ['rx:tuberculosis_meds','rx:isoniazid','rx:pyrazinamide' ]
+        # Criteria Set #3 dx and 2 distinct prescription orders
+        #  
+        rxall_ev_names =  ['rx:rifabutin','rx:capreomycin','rx:ethionamide','rx:isoniazid','rx:pyrazinamide' ]
         #  count of 2 or more of each rx
+        #  get list of pt for each list of meds and 
+        # get the count of events for each distinct patients.
+        dx_qs = BaseEv
+        potential_patient_qs = Patient.objects.filter(event__name='dx:tuberculosis')
+        rx_event_qs = Event.objects.filter(name=rxall_ev_names)
+        rx_event_qs = rx_event_qs.filter(patient__in=potential_patient_qs)
+        rx_event_qs = rx_event_qs.exclude(case__condition='tuberculosis')
+        rx_event_qs = rx_event_qs.order_by('patient', 'date')
+        for rx_event in rx_event_qs:
+            pass
+        #twice_vqs = twice_qs.annotate(count=Count('patient'))
+        #twice_vqs = twice_vqs.filter(count__gte=2)
+        #twice_patients = twice_vqs.values_list('patient')
         
-        #once_qs = Event.objects.filter(name__in=dx_ev_names)
-        #once_qs = once_qs.exclude(patient__case__condition__in=self.conditions)
-        #tb_criteria_list = [once_qs]
-        twice_qs = Event.objects.filter(name=rxall_ev_names).values('patient')
-        #twice_qs = twice_qs.exclude(patient__case__condition__in=self.conditions)
-        twice_vqs = twice_qs.annotate(count=Count('pk'))
-        twice_vqs = twice_vqs.filter(count__gte=2)
-        twice_patients = twice_vqs.values_list('patient')
-        #twice_criteria_qs = Event.objects.filter(name=rxall_ev_names, patient__in=twice_patients)
-        #tb_criteria_list.append(twice_criteria_qs)
-            
         dxrx_event_qs = Event.objects.filter(
             name__in = dx_ev_names,
             patient__in=twice_patients,
