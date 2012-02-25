@@ -9,6 +9,7 @@
 @copyright: (c) 2009-2011 Channing Laboratory
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
+from types import StringType
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -304,18 +305,27 @@ class BaseEventHeuristic(BaseHeuristic):
     def get_events_by_name(cls, name):
         '''
         Checks name for sanity, and returns all 
-        @param name: An event name
-        @type name:  String
+        @param name: An event name or list of event names
+        @type name:  String or List of Strings
         @return:     All matching events
         @rtype:      Event QuerySet
         '''
-        if not name in cls.all_possible_event_names():
-            msg = 'Requested invalid event name: "%s".' % name
-            msg += '\n'
-            msg += 'Valid event names:\n\t'
-            msg += '\n\t'.join(cls.all_possible_event_names())
-            raise AssertionError(msg)
-        event_qs = Event.objects.filter(name=name)
+        if type(name) == StringType:
+            name_list = [name]
+        elif type(name) == type([]):
+            name_list = name
+        else:
+            raise RuntimeError('name must be string or list')
+        assert len(name_list) > 0 # Sanity check
+        for this_name in name_list:
+            if not this_name in cls.all_possible_event_names():
+                msg = 'Requested invalid event name: "%s".' % this_name
+                raise AssertionError(msg)
+        # If only one event name, make a tighter query
+        if len(name_list) == 1:
+            event_qs = Event.objects.filter(name=name_list[0])
+        else:
+            event_qs = Event.objects.filter(name__in=name_list)
         return event_qs
 
 

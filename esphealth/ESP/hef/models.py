@@ -38,7 +38,7 @@ class Event(models.Model):
     '''
     A medical event
     '''
-    name = models.SlugField('Name for this event type', max_length=128, blank=False, db_index=True)
+    name = models.CharField('Name for this event type', max_length=128, blank=False, db_index=True)
     source = models.TextField('What created this event?', blank=False, db_index=True)
     date = models.DateField('Date event occured', blank=False, db_index=True)
     patient = models.ForeignKey(Patient, blank=False, db_index=True)
