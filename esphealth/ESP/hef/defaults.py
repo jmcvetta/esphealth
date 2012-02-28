@@ -663,13 +663,13 @@ Icd9Query.objects.get_or_create(
 pyrazinamide_rx = PrescriptionHeuristic.objects.get_or_create(
     name = 'pyrazinamide',
     drugs = 'Pyrazinamide, PZA',
-    exclude = 'CAPZA'
+    exclude = ['CAPZA',],
     )[0]
 
 isoniazid_rx = PrescriptionHeuristic.objects.get_or_create(
     name = 'isoniazid',
     drugs = 'Isoniazid',
-    exclude = 'INHAL, INHIB',
+    exclude = ['INHAL', 'INHIB',],
     )[0]
 
 ethambutol_rx = PrescriptionHeuristic.objects.get_or_create(
@@ -699,7 +699,7 @@ streptomycin_rx = PrescriptionHeuristic.objects.get_or_create(
 
 para_aminosalicyclic_acid_rx = PrescriptionHeuristic.objects.get_or_create(
     name = 'para_aminosalicyclic_acid',
-    drugs = 'para-aminosalicyclic acid',
+    drugs = 'para-aminosalicyclic-acid',
     )[0]
 
 kanamycin_rx = PrescriptionHeuristic.objects.get_or_create(

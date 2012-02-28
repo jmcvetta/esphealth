@@ -543,6 +543,10 @@ class LabOrderHeuristic(BaseEventHeuristic):
     def generate(self):
         log.info('Generating events for %s' % self)
         alt = AbstractLabTest(self.test_name)
+        map_qs = LabTestMap.objects.filter(test_name=self.test_name)
+        if not map_qs:
+            log.warning('No tests orders mapped for "%s", cannot generate events.' % self.test_name)
+            return 0
         unbound_orders = alt.lab_orders.exclude(events__name=self.order_event_name)
         #log_query('Unbound lab orders for %s' % self.uri, unbound_orders)
         counter = 0
