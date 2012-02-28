@@ -145,20 +145,76 @@ LabResultPositiveHeuristic.objects.get_or_create(
 # Pertussis
 #
 #-------------------------------------------------------------------------------
-#TODO fix me .. add the other dx, rx ,lab order and labs like in lyme 
 
-pertussis_test = AbstractLabTest.objects.get_or_create(
-    name = 'pertussis',
+pertusis_dx = DiagnosisHeuristic.objects.get_or_create(
+    name = 'pertussis'
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = pertussis_dx,
+    icd9_exact = '033.0'
+    )
+
+cough_dx = DiagnosisHeuristic.objects.get_or_create(
+    name = 'cough'
+    )[0]
+
+Icd9Query.objects.get_or_create(
+    heuristic = cough_dx,
+    icd9_exact = '033.9'
+    )
+#
+# Prescriptions
+#
+pertussis_antibiotics = PrescriptionHeuristic.objects.get_or_create(
+    name = 'pertussis_antibiotics',
+    drugs = 'erythromyciin','clarithromycin','azithromycin','trimethoprim-sulfamethoxazole', 
+    )[0]
+
+pertussis_culture = AbstractLabTest.objects.get_or_create(
+    name = 'pertussis_culture',
     defaults = {
         'verbose_name': 'pertussis culture',
         }
     )[0]
     
-    
 LabResultPositiveHeuristic.objects.get_or_create(
-    test = pertussis_test,
+    test = pertussis_culture,
     )
 
+LabOrderHeuristic.objects.get_or_create(
+    test = pertussis_culture,
+    )
+
+pertussis_pcr = AbstractLabTest.objects.get_or_create(
+    name = 'pertussis_pcr',
+    defaults = {
+        'verbose_name': 'pertussis pcr',
+        }
+    )[0]
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = pertussis_pcr,
+    )
+
+LabOrderHeuristic.objects.get_or_create(
+    test = pertussis_pcr,
+    )
+
+pertussis_serology = AbstractLabTest.objects.get_or_create(
+    name = 'pertussis_serology',
+    defaults = {
+        'verbose_name': 'pertussis serology',
+        }
+    )[0]
+    
+LabResultPositiveHeuristic.objects.get_or_create(
+    test = pertussis_serology,
+    )
+
+LabOrderHeuristic.objects.get_or_create(
+    test = pertussis_serology,
+    )
 #-------------------------------------------------------------------------------
 #
 # Chlamydia
