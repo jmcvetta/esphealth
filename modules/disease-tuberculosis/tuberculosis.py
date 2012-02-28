@@ -174,17 +174,22 @@ class Tuberculosis(DiseaseDefinition):
         dx_ev_names = ['dx:tuberculosis']
         lx_ev_names = ['lx:tuberculosis_prc:order','lx:tuberculosis_mycob:order','lx:tuberculosis_afb:order'] 
                 
-        dxlx_event_qs = Event.objects.filter(
+        dxlx14_event_qs = Event.objects.filter(
+            name__in = dx_ev_names,
+            patient__event__name__in =  lx_ev_names,
+            patient__event__date__lte = (F('date') + 14 ),
+            )
+        
+        dxlx60_event_qs = Event.objects.filter(
             name__in = dx_ev_names,
             patient__event__name__in =  lx_ev_names,
             patient__event__date__gte = (F('date') - 60 ),
-            patient__event__date__lte = (F('date') + 14 ),
             )
         
         #
         # Combined Criteria
         #
-        combined_criteria_qs = rx_event_qs | dxlx_event_qs   
+        combined_criteria_qs = rx_event_qs | dxlx14_event_qs   | dxlx60_event_qs 
         combined_criteria_qs = combined_criteria_qs.exclude(case__condition='tuberculosis')
         combined_criteria_qs = combined_criteria_qs.order_by('date')
         all_event_names = rx_ev_names + dx_ev_names + lx_ev_names 
