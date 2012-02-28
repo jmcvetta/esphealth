@@ -115,10 +115,10 @@ pertussis
        
 tb
 5 patients (should generate 4 cases)
-1 patient with med pyrazinamide spokb
+1 patient with med pyrazinamide -spokb
 4 patients with encounter with tb diagnosis 010.00 -018.96
-1/4 patient with tb laborder ('myco' 84460--3836, ) within 14 days after diagnosis -platt
-2/4 patient with lab order 'tb' 87556--4598  within 60 before diagnosis  -anne
+1/4 patient with lab order ('myco' 84460--3836, ) within 14 days after diagnosis -platt
+2/4 patient with lab order 'tb' 87556--4598  within 60 before diagnosis  -anneI
 3/4 patient with SECONDARY_MED_EVENTS capreomycin'  in TuberculosisDefC class in models.py within 60 days -kruskalu
   same patient with SECONDARY_MED_EVENTS rifabutin' in TuberculosisDefC class in models.py with no diagnosis within 60 days.
 4/4 patient with tb lab order afb 87206--3761 after 14 days of dx. NEG - donna
