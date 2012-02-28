@@ -108,7 +108,7 @@ pertussis
   same patient with med antibiotic prescription within 7 days of diagnosis
 1 patient with an encounter with icd9 code for pertussis 033.0 -deenaH NEG
   same patient with med antibiotic prescription after 7 days of diagnosis
-1 patient with lab order of 'pertussis_pcr_order','pertussis_culture_order',  'pertussis_serology_order' - billx
+1 patient with lab order of 'pertussis_pcr_order','pertussis_culture_order','pertussis_serology_order' -billx
   same patient with med antibiotic prescription after 7 days of diagnosis
 1 patient with positive lab for pertussis_pcr -samuel
 1 patient with positive pertussis_culture -whor
