@@ -76,13 +76,11 @@ def main():
     if options.lx: heuristics += lab_heuristics()
     # TODO issue 344 add more for rx heuristics and allergy heuristics
 
-
     if options.create: 
         log.info('Creating and generating events from %s to %s' % (begin_date, end_date))
         for h in heuristics: 
             h.generate(begin_date=begin_date, end_date=end_date) 
 
-        
     if options.reports:
         folder = make_date_folders(begin_date, end_date, root=HL7_MESSAGES_DIR)
 
@@ -91,13 +89,10 @@ def main():
             log.info('Producing HL7 reports for %s events' % (events.count()))
             for event in events: event.save_hl7_message_file(folder=folder)
             
-
+# TODO if options.phmessaging then go send message to physician.
         if options.fever: produce_reports(EncounterEvent.objects.fevers())
         if options.diagnostics: produce_reports(EncounterEvent.objects.icd9_events())
         if options.lx: produce_reports(LabResultEvent.objects.all())
-
-        
-
 
 if __name__ == '__main__':
     main()
