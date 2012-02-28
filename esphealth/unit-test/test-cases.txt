@@ -34,6 +34,8 @@ VAERS
     same patient with immunization  
  1 patient with 2 encounters with icd9 stroke 435.0 within 12 months (NEG) -robertA yes
     same patient with immunization within 30 days prior to second dx (has exclusion)
+    #TODO do similar as above but where icd9 is different in same group. NEG
+    # TODO  another case for age dependent lab test 
  1 patient with 1 encounter with meningitis icd9 047.8 within 30 days of immunization (NEG) -maryM yes
       same patient with immunization within 30 days prior to  dx
       same patient with 1 encounter with icd9 within 049.0  more than 12 months prior than first dx
@@ -71,10 +73,10 @@ LYME
   1st/3  patient with meds doxycycline within 14 days of diagnosis (lyme2) -platU yes
   2nd/3 patient with meds lyme_other_antibiotics in lyme.py within 14 days of diagnosis (lyme2) -patriciaA yes
   3rd/3 patient only encounter. NEG -alvaroD
-1 patient with one test positive lab in 'lyme_igg' or pos  86618-4396 -kruskalu
+1 patient with one test positive lab in 'lyme_igg_wb' 86618-4396 -kruskalu
 1 patient with an encounter with icd9 code for rash 782.1 (lyme 3) -danielS yes
- same patient with laborder lyme_elisa within 30 days of diagnosis 
- same patient with med doxycycline within 14 days of diagnosis
+ same patient with laborder lyme_elisa 86318--4048 within 30 days of diagnosis 
+ same patient with med doxycycline within 30 days of diagnosis
 
 pid
 2 patients (should generate 2 cases)
