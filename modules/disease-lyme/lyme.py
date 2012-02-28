@@ -116,9 +116,20 @@ class Lyme(DiseaseDefinition):
     
     @transaction.commit_on_success
     def generate(self):
+        
+        # condition 2 in spec wb test positive or pcr 
+        lx_ev_names = [ 
+            'lx:lyme_pcr:positive',
+            'lx:lyme_igg_wb:positive',
+            'lx:lyme_igm_wb:positive',  ]
+        
+        lx_event_qs = Event.objects.filter(
+            name__in =  lx_ev_names,
+            )
         #
         # Criteria Set #1 (lyme def 2 from esp 2.1)
         # diagnosis and meds 
+        # condition 3 in spec
         #
         dx_ev_names = ['dx:lyme']
         rx_ev_names = [
@@ -138,18 +149,16 @@ class Lyme(DiseaseDefinition):
         #
         # Criteria Set #2 (lyme condition 1 from esp 2.1)
         # (dx_ev_names or rx_ev_names) and a pos tests below
+        # condition 1 from spec
+        # (Lyme ELISA or IGM EIA or IGG EIA) and (Lyme ICD9 or Lyme Antibiotics) w/in 30 day period
         #
         rpr_ev_names = dx_ev_names + rx_ev_names
             
         ig_ev_names = [   
             'lx:lyme_elisa:positive',
-            'lx:lyme_pcr:positive',
             'lx:lyme_igg_eia:positive',
-            'lx:lyme_igm_eia:positive',
-            'lx:lyme_igg_wb:positive',
-            'lx:lyme_igm_wb:positive',
-            
-            ]
+            'lx:lyme_igm_eia:positive',]
+        
         test_event_qs = Event.objects.filter(
             name__in = rpr_ev_names,  
             patient__event__name__in = ig_ev_names,
@@ -159,29 +168,29 @@ class Lyme(DiseaseDefinition):
         #
         # Criteria Set #3 (lyme condition 3 from eps 2.1)
         #   'dx:rash', 'lx:lyme_elisa' (order),'rx:doxycycline'
-        #
+        # condition 4 in spec Rash and doxycycline and (order for Lyme ELISA or IGM EIA or IGG EIA) 
         
         rash_ev_names = ['dx:rash']
         rash_rx_ev_names = ['rx:doxycycline']
-        rash_lx_ev_names = ['lx:lyme_elisa:order']
+        rash_lx_ev_names = ['lx:lyme_elisa:order','lx:lyme_igg_eia:order', 'lx:lyme_igm_eia:order',]
         
         rash_qs = Event.objects.filter(
             name__in = rash_ev_names,
             patient__event__name__in = rash_rx_ev_names,
-            patient__event__date__gte = (F('date') - 14 ),
-            patient__event__date__lte = (F('date') + 14 ),
+            patient__event__date__gte = (F('date') - 30 ),
+            patient__event__date__lte = (F('date') + 30 ),
             ).filter(
 	            patient__event__name__in = rash_lx_ev_names,
-	            patient__event__date__gte = (F('date') - 14 ),
-	            patient__event__date__lte = (F('date') + 14 ),
+	            patient__event__date__gte = (F('date') - 30 ),
+	            patient__event__date__lte = (F('date') + 30 ),
             )
         #
         # Combined Criteria
         #
-        combined_criteria_qs = dxrx_event_qs | test_event_qs | rash_qs
+        combined_criteria_qs = dxrx_event_qs | lx_event_qs | test_event_qs | rash_qs 
         combined_criteria_qs = combined_criteria_qs.exclude(case__condition='lyme')
         combined_criteria_qs = combined_criteria_qs.order_by('date')
-        all_event_names = dx_ev_names + rx_ev_names + rpr_ev_names + ig_ev_names + rash_ev_names + rash_rx_ev_names + rash_lx_ev_names
+        all_event_names = dx_ev_names + lx_ev_names + rx_ev_names + rpr_ev_names + ig_ev_names + rash_ev_names + rash_rx_ev_names + rash_lx_ev_names
         counter = 0
         for this_event in combined_criteria_qs:
             existing_cases = Case.objects.filter(
@@ -214,7 +223,6 @@ class Lyme(DiseaseDefinition):
             log.info('Created new lyme case: %s' % new_case)
             counter += 1
         return counter # Count of new cases
-            
     
 
 #-------------------------------------------------------------------------------
