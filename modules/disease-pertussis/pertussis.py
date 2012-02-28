@@ -43,7 +43,7 @@ class Pertussis(DiseaseDefinition):
     
     short_name = 'pertussis'
     
-    test_name_search_strings = ['pertcult','PCR','pert',]
+    test_name_search_strings = ['serol','PCR','pert',]
     
     timespan_heuristics = []
     
@@ -71,7 +71,7 @@ class Pertussis(DiseaseDefinition):
         #
         heuristic_list.append( PrescriptionHeuristic(
             name = 'pertussis_med',
-            drugs = ['erythromyciin','clarithromycin',
+            drugs = ['erythromycin','clarithromycin',
                 'azithromycin','trimethoprim-sulfamethoxazole', ],
             ))
         #
@@ -89,9 +89,15 @@ class Pertussis(DiseaseDefinition):
         #
         # Lab Orders
         #
-        # TODO add more orders based on spec.
+        # 
         heuristic_list.append( LabOrderHeuristic(
             test_name = 'pertussis_serology',
+            ))
+        heuristic_list.append( LabOrderHeuristic(
+            test_name = 'pertussis_prc',
+            ))
+        heuristic_list.append( LabOrderHeuristic(
+            test_name = 'pertussis_culture',
             ))
         
         return heuristic_list
@@ -99,37 +105,41 @@ class Pertussis(DiseaseDefinition):
     @transaction.commit_on_success
     def generate(self):
         #
-        # Criteria Set #1 (dx or lab order + rx within 7 days) 
+        # Criteria Set #1 :dx or lab order ) + rx within 7 days
         #
         dx_ev_names = ['dx:pertusis','dx:cough']
-        lx_ev_names = ['lx:pertussis_culture:order'] #TODO need to check for all the test orders
+        lxo_ev_name = ['lx:pertussis_culture:order','lx:pertussis_pcr:order','lx:pertussis_serology:order',] 
         rx_ev_names = ['rx:pertussis_med']
         
         #
         dxrx_event_qs = Event.objects.filter(
             name__in = dx_ev_names,
-            patient__event__name__in = rx_ev_names + lx_ev_names,
+            patient__event__name__in = rx_ev_names ,
             patient__event__date__gte = (F('date') - 7 ),
             patient__event__date__lte = (F('date') + 7 ),
             )
+        lxrx_event_qs = Event.objects.filter(
+            name__in = lxo_ev_name,
+            patient__event__name__in = rx_ev_names ,
+            patient__event__date__gte = (F('date') - 7 ),
+            patient__event__date__lte = (F('date') + 7 ),
+            )
+      
         #
-        # Criteria Set #2 positive of culture for pertussis
+        # Criteria Set #2 positive of pertussis culture or pcr
         #
-        #TODO add more labs names ??
-        labo_ev_names =  [   
-            'lx:pertusis:positive',
-            
-            ]
-        test_event_qs = Event.objects.filter(
-            name__in = labo_ev_names,  
+        lx_ev_names = ['lx:pertussis_culture:positive','lx:pertussis_pcr:positive',] 
+       
+        lx_event_qs = Event.objects.filter(
+            name__in = lx_ev_names,  
             )
         #
         # Combined Criteria
         #
-        combined_criteria_qs = dxrx_event_qs | test_event_qs 
+        combined_criteria_qs = dxrx_event_qs | lxrx_event_qs | lx_event_qs 
         combined_criteria_qs = combined_criteria_qs.exclude(case__condition='pertussis')
         combined_criteria_qs = combined_criteria_qs.order_by('date')
-        all_event_names = dx_ev_names + rx_ev_names + labo_ev_names + lx_ev_names 
+        all_event_names = dx_ev_names + rx_ev_names + lxo_ev_name + lx_ev_names 
         counter = 0
         for this_event in combined_criteria_qs:
             existing_cases = Case.objects.filter(
