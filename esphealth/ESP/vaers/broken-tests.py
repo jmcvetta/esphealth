@@ -122,8 +122,8 @@ class TestFake(unittest.TestCase):
             imm = history.add_immunization()
             ev = Vaers(imm)
             loinc = random.choice(VAERS_LAB_RESULTS.keys())
-            criterium = VAERS_LAB_RESULTS[loinc]['criteria'][0]
-            ev.cause_positive_lab_result(loinc, criterium)
+            criterion = VAERS_LAB_RESULTS[loinc]['criteria_adult'][0]
+            ev.cause_positive_lab_result(loinc, criterion)
 
         expected_lab_results = LabResult.objects.following_vaccination(
             TIME_WINDOW_POST_EVENT)
@@ -336,9 +336,9 @@ class TestRuleEngine(unittest.TestCase):
             ev = Vaers(imm)
 
             # Get criteria, create one adverse event for each.
-            for criterium in VAERS_LAB_RESULTS[loinc]['criteria']:
-                if criterium == heuristic.criterium:
-                    ev.cause_positive_lab_result(loinc, criterium)
+            for criterion in VAERS_LAB_RESULTS[loinc]['criteria_adult']:
+                if criterion == heuristic.criterion:
+                    ev.cause_positive_lab_result(loinc, criterion)
 
             matches = heuristic.matches()
 
@@ -359,7 +359,7 @@ class TestRuleEngine(unittest.TestCase):
             imm = ImmunizationHistory(victim).add_immunization()
 
             # To check if the negative detection is ok, we will add
-            # lab results for every possible criterium EXCEPT the one
+            # lab results for every possible criterion EXCEPT the one
             # that we are looking for. There should be no match for
             # that.
 
@@ -368,9 +368,9 @@ class TestRuleEngine(unittest.TestCase):
 
             # Get criteria, trigger event if not considered interesting.
             for loinc in VAERS_LAB_RESULTS.keys():
-                for criterium in VAERS_LAB_RESULTS[loinc]['criteria']:
-                    if criterium != heuristic.criterium:
-                        ev.cause_positive_lab_result(loinc, criterium)
+                for criterion in VAERS_LAB_RESULTS[loinc]['criteria_adult']:
+                    if criterion != heuristic.criterion:
+                        ev.cause_positive_lab_result(loinc, criterion)
 
             matches = heuristic.matches()
 
@@ -399,9 +399,9 @@ class TestRuleEngine(unittest.TestCase):
             ev = Vaers(imm)
 
             # Get criteria, create one adverse event for each.
-            for criterium in VAERS_LAB_RESULTS[loinc]['criteria']:
-                if criterium == heuristic.criterium:
-                    ev.cause_positive_lab_result(loinc, criterium)
+            for criterion in VAERS_LAB_RESULTS[loinc]['criteria_adult']:
+                if criterion == heuristic.criterion:
+                    ev.cause_positive_lab_result(loinc, criterion)
 
             matches = heuristic.matches()
 
@@ -410,9 +410,9 @@ class TestRuleEngine(unittest.TestCase):
             self.assert_(ev.matching_lab_result in matches, 'Lab Result not in matches')
 
             # Get criteria, create one adverse event for each.
-            for criterium in VAERS_LAB_RESULTS[loinc]['criteria']:
-                if criterium == heuristic.criterium:
-                    ev.cause_negative_lx_for_lkv(loinc, criterium)
+            for criterion in VAERS_LAB_RESULTS[loinc]['criteria_adult']:
+                if criterion == heuristic.criterion:
+                    ev.cause_negative_lx_for_lkv(loinc, criterion)
 
             matches = heuristic.matches()
 

@@ -98,11 +98,11 @@ def check_for_reactions(imm):
         syndrome = random.choice(VAERS_LAB_RESULTS.keys())
         lx = VAERS_LAB_RESULTS[syndrome]
         loinc = random.choice(lx['codes'])
-        criterium = random.choice(lx['criteria'])
-        ev.cause_positive_lab_result(loinc, criterium)
+        criterion = random.choice(lx['criteria_adult'])
+        ev.cause_positive_lab_result(loinc, criterion)
         # Maybe it's one that should be ignored?
         if random.randrange(100) <= IGNORE_FOR_HISTORY_PCT:
-            ev.cause_negative_lx_for_lkv(loinc, criterium)
+            ev.cause_negative_lx_for_lkv(loinc, criterion)
 
 
                     
@@ -184,12 +184,12 @@ class Vaers(object):
         past_encounter.icd9_codes.add(code)
         past_encounter.save()
 
-    def cause_positive_lab_result(self, loinc, criterium):
+    def cause_positive_lab_result(self, loinc, criterion):
         lx = self._lab_result()
-        # criterium['trigger'] is always a string that represents an
+        # criterion['trigger'] is always a string that represents an
         # inequation in the "X(>|<)Value" format.
         
-        trigger = criterium['trigger']
+        trigger = criterion['trigger']
         gt_pos = trigger.find('>')
         lt_pos = trigger.find('<')
         
@@ -203,7 +203,7 @@ class Vaers(object):
             baseline = trigger.split('<')[-1]
             value = float(baseline) - 1
 
-        # If value has not been updated, this means our criterium is ill-formed.
+        # If value has not been updated, this means our criterion is ill-formed.
         if value == -1: 
             raise ValueError, 'Couldn\'t figure out the trigger value'
 
@@ -213,7 +213,7 @@ class Vaers(object):
         lx.save()
         self.matching_lab_result = lx
 
-    def cause_negative_lx_for_lkv(self, loinc, criterium):
+    def cause_negative_lx_for_lkv(self, loinc, criterion):
         ''' 
         exclude_if is a entry that may exist on criteria rules. It is
         a tuple that contains a comparator and a thresold string. The
@@ -238,13 +238,13 @@ class Vaers(object):
         # The regular expression that breaks the string into its components.
         import re
         regex = re.compile('(LKV)([\+|\-|\*|\/])(.*)')  #LKV+0.5, LKV-0.5, LKV*1.3...
-        comparator, baseline = criterium['exclude_if']
+        comparator, baseline = criterion['exclude_if']
 
         try:
             lkv_equation = regex.match(baseline)
             op, coefficient = lkv_equation.group(2), float(lkv_equation.group(3))
         except:
-            raise ValueError, 'Could not create a negative %s lx based on rules from %s' % (loinc, criterium)
+            raise ValueError, 'Could not create a negative %s lx based on rules from %s' % (loinc, criterion)
 
         # Now that we have all the terms of the inequation, we solve it
         # (in a very rudimentary way)
