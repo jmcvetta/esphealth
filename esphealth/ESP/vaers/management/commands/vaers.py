@@ -45,6 +45,7 @@ class Command(BaseCommand):
         make_option('-a', '--all', action='store_true', dest='all'),
         make_option('-c', '--create', action='store_true', dest='create'),
         make_option('-r', '--reports', action='store_true', dest='reports'),
+        # TODO issue 344 add option for allergies and rx 
         )
     
     help = 'VAERS'
@@ -62,6 +63,7 @@ class Command(BaseCommand):
             options['fever'] = True
             options['diagnostics'] = True
             options['lx'] = True
+            # TODO issue 344 add more for rx heuristics and allergy heuristics
     
         if not (options['fever'] or options['diagnostics'] or options['lx']):
             raise CommandError('Must specify --fever, --diagnosics, --lx, or --all')
@@ -93,4 +95,5 @@ class Command(BaseCommand):
             if options['fever']: produce_reports(EncounterEvent.objects.fevers())
             if options['diagnostics']: produce_reports(EncounterEvent.objects.icd9_events())
             if options['lx']: produce_reports(LabResultEvent.objects.all())
+            # TODO issue 344 add more for rx heuristics and allergy heuristics
     
