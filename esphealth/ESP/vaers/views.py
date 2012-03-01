@@ -96,7 +96,7 @@ def verify(request, key):
                     'case':case })
 
 
-    else: # request.method == 'POST
+    else: # request.method == 'POST'
         confirmed_id = request.POST.get('provider_confirmation', 0) and provider.id
         response = HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
         response.set_cookie('confirmed_id', confirmed_id)
@@ -129,7 +129,10 @@ def case_details(request, id):
                                          'back to the confirmation step.')
 
 
-    form = CaseConfirmForm(request.POST) if request.method == 'POST' else CaseConfirmForm()
+    if request.method == 'POST':
+        form = CaseConfirmForm(request.POST) 
+    else:
+        form = CaseConfirmForm()
 
     
     if request.method == 'POST' and form.is_valid():
