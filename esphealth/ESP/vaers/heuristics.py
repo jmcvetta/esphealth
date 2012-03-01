@@ -9,7 +9,7 @@ from dateutil.relativedelta import relativedelta
 
 from django.db.models import Q, F, Max, Min
 from django.contrib.contenttypes.models import ContentType
-
+from ESP.settings import DATE_FORMAT
 from ESP.hef.base import BaseHeuristic
 from ESP.hef.base import BaseEventHeuristic
 from ESP.conf.common import EPOCH
@@ -146,6 +146,9 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         super(VaersDiagnosisHeuristic, self).__init__(event_name, verbose_name=self.verbose_name)
             
     uri = 'urn:x-esphealth:heuristic:channing:vaersdx:v1'
+    
+    def vaers_heuristic_name(self):
+        return 'VAERS: ' + self.name
             
     def matches(self, **kw):
         begin = kw.get('begin_date') or EPOCH
@@ -180,6 +183,7 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                 category = self.category, 
                 patient = this_enc.patient,
                 defaults={
+                    'name': self.vaers_heuristic_name(),
                     'matching_rule_explain': self.name,
                     'content_type': encounterevent_type,
                     }
@@ -247,12 +251,16 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
 
 
 class VaersLxHeuristic(AdverseEventHeuristic):
-    def __init__(self, event_name, lab_codes, criterium):
+    def __init__(self, event_name, lab_codes, criterion, pediatric):
+        '''
+        @param pediatric: Apply this heuristic to prediatric patients rather than adults?
+        @type pediatric:  Bool (if false, apply to adults only)
+        '''
         self.name = event_name
         self.lab_codes = lab_codes
-        self.criterium = criterium
+        self.criterion = criterion
         self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
-
+        self.pediatric = pediatric
         super(VaersLxHeuristic, self).__init__(self.name, self.name)
 
     uri = 'urn:x-esphealth:heuristic:channing:vaerslx:v1'
@@ -295,12 +303,22 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         
         days = rules.TIME_WINDOW_POST_EVENT
                 
-        trigger = self.criterium['trigger']
-        comparator, baseline = self.criterium['exclude_if']
+        trigger = self.criterion['trigger']
+        comparator, baseline = self.criterion['exclude_if']
 
         candidates = LabResult.objects.following_vaccination(days).filter(
             native_code__in=self.lab_codes, date__gte=begin, date__lte=end).distinct()
+        #
+        # Pediatric: 3mo - 18yrs
+        # Adult 18yrs +
+        #
+        now = datetime.datetime.now()
         
+        if self.pediatric:
+            candidates = candidates.filter(patient__date_of_birth__gt = now - relativedelta(years=18))
+            candidates = candidates.filter(patient__date_of_birth__gte = now - relativedelta(months=3))
+        else: # adult
+            candidates = candidates.filter(patient__date_of_birth__lte = now - relativedelta(years=18))
         return [c for c in candidates if is_trigger_value(c, trigger) and not 
                 excluded_due_to_history(c, comparator, baseline)]
 
@@ -321,11 +339,9 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 result = lab_result.result_float or lab_result.result_string
                 rule_explain = 'Lab Result for %s resulting in %s'% (self.name, result)
 
-
-                try:
-                    ev, created = LabResultEvent.objects.get_or_create(
+                ev, created = LabResultEvent.objects.get_or_create(
                         lab_result=lab_result,
-                        category=self.criterium['category'],
+                        category=self.criterion['category'],
                         date=lab_result.date,
                         patient=lab_result.patient,
                         defaults = {
@@ -333,11 +349,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                             'matching_rule_explain': rule_explain,
                             'content_type':lab_type}
                         )
-                # TODO find out why ..why is not used: except Exception, why:
-                except Exception:
-                    pdb.set_trace()
-
-                    
+                                    
                 if created: counter += 1
 
                 ev.save()
@@ -353,9 +365,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
 
                 for imm in immunizations:
                     ev.immunizations.add(imm)
-                    
-
-                
+                                   
                 ev.save()
 
             except AssertionError:
@@ -388,14 +398,16 @@ def make_diagnosis_heuristic(name):
 def make_lab_heuristics(lab_type):
     rule = rules.VAERS_LAB_RESULTS[lab_type]
 
-    def heuristic_name(criterium, lab_name):
-        return '%s %s %s' % (lab_name, criterium['trigger'], criterium['unit'])
-
-    return [VaersLxHeuristic(heuristic_name(criterium, lab_type), rule['codes'], criterium)
-            for criterium in rule['criteria']]
-
-
-
+    def heuristic_name(criterion, lab_name):
+        return '%s %s %s' % (lab_name, criterion['trigger'], criterion['unit'])
+    heuristic_list = []
+    for criterion in rule['criteria_adult']:
+        h = VaersLxHeuristic(heuristic_name(criterion, lab_type), rule['codes'], criterion, pediatric=False)
+        heuristic_list.append(h)
+    for criterion in rule['criteria_pediatric']:
+        h = VaersLxHeuristic(heuristic_name(criterion, lab_type), rule['codes'], criterion, pediatric=True)
+        heuristic_list.append(h)
+    return heuristic_list
 
         
 def fever_heuristic():
