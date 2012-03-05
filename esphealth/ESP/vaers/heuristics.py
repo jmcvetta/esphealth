@@ -231,7 +231,7 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
         self.name = 'vaers:any_other_dx' # This is the EVENT name
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
         self.category = '3_possible'
-        self.ignore_period = 36 # 36 months
+        self.ignore_period = 36 # months
         super(VaersDiagnosisHeuristic, self).__init__(self.name, verbose_name=self.verbose_name)
             
     @property
@@ -316,7 +316,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         
         if self.pediatric:
             candidates = candidates.filter(patient__date_of_birth__gt = now - relativedelta(years=18))
-            candidates = candidates.filter(patient__date_of_birth__gte = now - relativedelta(months=3))
+            candidates = candidates.filter(patient__date_of_birth__lte = now - relativedelta(months=3))
         else: # adult
             candidates = candidates.filter(patient__date_of_birth__lte = now - relativedelta(years=18))
         return [c for c in candidates if is_trigger_value(c, trigger) and not 
