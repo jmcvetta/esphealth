@@ -85,14 +85,17 @@ def main():
         folder = make_date_folders(begin_date, end_date, root=HL7_MESSAGES_DIR)
 
         def produce_reports(queryset):
+            # events = queryset.cases_to_report.filter?? move cases to report out of models 
             events = queryset.filter(date__gte=begin_date, date__lte=end_date)
             log.info('Producing HL7 reports for %s events' % (events.count()))
+            # ? should we generate reports if they havent been confirmed?
             for event in events: event.save_hl7_message_file(folder=folder)
             
-# TODO if options.phmessaging then go send message to physician.
+        # TODO if options.ph messaging then go send message to physician.
         if options.fever: produce_reports(EncounterEvent.objects.fevers())
         if options.diagnostics: produce_reports(EncounterEvent.objects.icd9_events())
         if options.lx: produce_reports(LabResultEvent.objects.all())
+        #  TODO issue 344 add  rx heuristics and allergy heuristics for hl7 reports 
 
 if __name__ == '__main__':
     main()
