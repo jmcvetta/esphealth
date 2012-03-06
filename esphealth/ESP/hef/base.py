@@ -820,6 +820,7 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
         positive_labs = self.unbound_labs.filter(positive_q)
         #log_query('Positive labs for %s' % self.uri, positive_labs)
         log.info('Generating positive events for %s' % self)
+        #for lab in positive_labs.iterator():
         for lab in queryset_iterator(positive_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
