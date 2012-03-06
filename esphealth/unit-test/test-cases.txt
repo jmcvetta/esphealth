@@ -42,7 +42,7 @@ VAERS
 1 patient with 1 encounter with icd9 not in the list for vaers enc V09.50 INFEC-UNRESIST...(NEG) -spockO
  same patient with immunization within 42 days prior to dx
  same patient with 1 encounter with same icd9 within than 36 months than dx 
-1 patient with two labs for hemoglobin(a1c) within 30 of immunization value <9 & x<LKV*.8  -lazarusN
+1 patient with two labs for hemoglobin(a1c) within 30 of immunization value <9 & x<LKV*.8 -lazarusN
   same patient second lab of same before immunization (category 3) 
    same patient with immunization 
 -------heuristic NIY 
