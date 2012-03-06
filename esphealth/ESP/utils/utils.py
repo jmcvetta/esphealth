@@ -25,6 +25,7 @@ from traceback import format_exc
 
 from django.db import connection
 from django.db.models import Q
+from django.db.models import Max
 from django.core.paginator import Paginator
 from django.db.models.query import QuerySet
 from django.forms.widgets import CheckboxInput, SelectMultiple
@@ -433,7 +434,6 @@ def height_str_to_cm(raw_string):
     log.debug('Could not extract valid numeric height from raw string: "%s"' % raw_string)
     return None
 
-
 def queryset_iterator(queryset, chunksize=QUERYSET_ITERATOR_CHUNKSIZE):
     '''''
     Iterate over a Django Queryset ordered by the primary key
@@ -457,14 +457,15 @@ def queryset_iterator(queryset, chunksize=QUERYSET_ITERATOR_CHUNKSIZE):
     if chunksize < 0:
         for row in queryset.iterator():
             yield row
-    pk = 0
-    last_pk = queryset.order_by('-pk')[0].pk
-    queryset = queryset.order_by('pk')
-    while pk < last_pk:
-        for row in queryset.filter(pk__gt=pk)[:chunksize]:
-            pk = row.pk
-            yield row
-        gc.collect()
+    else:
+        pk = 0
+        last_pk = queryset.aggregate(max=Max('pk'))['max']
+        queryset = queryset.order_by('pk')
+        while pk < last_pk:
+            for row in queryset.filter(pk__gt=pk)[:chunksize]:
+                pk = row.pk
+                yield row
+            gc.collect()
 
 
 class EquivalencyMixin(object):
