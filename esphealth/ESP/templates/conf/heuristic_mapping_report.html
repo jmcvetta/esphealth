@@ -23,7 +23,7 @@
 
 <ul>
 {% for heuristic in unmapped %}
-    <li>{{ heuristic.name }}
+    <li>{{ heuristic }}
 {% endfor %}
 </ul>
 
@@ -36,7 +36,7 @@
         <th>Native Codes
     {% for item in mapped %}
     <tr>
-        <td valign="top">{{ item.0.name }}
+        <td valign="top">{{ item.0 }}
         <td valign="top">{{ item.1|join:"<br>" }}
     {% endfor %}
 </table>
