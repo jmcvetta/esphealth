@@ -38,10 +38,11 @@ from django.http import HttpResponse, HttpResponseRedirect
 from ESP.settings import ROWS_PER_PAGE
 from ESP.conf.models import IgnoredCode
 from ESP.conf.models import LabTestMap
+from ESP.nodis.base import DiseaseDefinition
 from ESP.emr.models import LabResult
 from ESP.utils.utils import log
 from ESP.utils.utils import Flexigrid
-from ESP.hef.base import BaseHeuristic
+from ESP.hef.base import BaseLabResultHeuristic
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -57,14 +58,17 @@ def heuristic_mapping_report(request):
     values = {'title': 'Code Mapping Report'}
     mapped = []
     unmapped = []
-    for heuristic in BaseHeuristic.get_all(): 
-        maps = LabTestMap.objects.filter(test_name=heuristic.short_name)
+    
+    for heuristic in BaseLabResultHeuristic.get_all(): 
+        maps = LabTestMap.objects.filter(test_name=heuristic.test_name)
         if not maps:
-            unmapped.append(heuristic)
+            unmapped.append( (heuristic.short_name) )
             continue
         codes = maps.values_list('native_code', flat=True)
-        mapped.append( (heuristic, codes) )
-    mapped.sort(key=operator.itemgetter(1))
+        # TODO if mapped doesnt contain (heuristic.test_name, codes) then add it
+        #if not mapped.__contains__(heuristic.test_name):
+        mapped.append( (heuristic.test_name, codes) )
+    mapped.sort(key=operator.itemgetter(0))
     unmapped.sort()
     values['mapped'] = mapped
     values['unmapped'] = unmapped
