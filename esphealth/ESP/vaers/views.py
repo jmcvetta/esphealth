@@ -52,6 +52,9 @@ def list_cases(request):
 
 
 def detect(request):
+    log.info("running detect vaers from the UI is Not implemented Yet");
+    #TODO issue 373 add here the call to a general vaers detect all with all dates 
+    # or redirect to a page with choices for which things to detect and dates
     return direct_to_template(request, PAGE_TEMPLATE_DIR + 'detect.html')
 
 def notify(request, id):
