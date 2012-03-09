@@ -112,6 +112,9 @@ class ResultString(models.Model):
         ordering = ['value']
         verbose_name = 'Result String'
     
+    def __unicode__(self):
+        return u'%s ' % (self.value)
+    
     def __get_q_obj(self):
         '''
         Returns a Q object to search for this result string
@@ -270,8 +273,6 @@ class LabTestMap(models.Model):
         return q_obj
 
 
-
-
 class IgnoredCode(models.Model):
     '''
     Codes to be ignored by nodis.model.Condition.find_unmapped_tests()
@@ -283,7 +284,6 @@ class IgnoredCode(models.Model):
     
     class Meta:
         verbose_name = 'Ignored Test Code'
-
 
 
 class VaccineCodeMap(models.Model):
