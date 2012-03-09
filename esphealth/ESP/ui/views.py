@@ -78,7 +78,7 @@ from ESP.utils import TableSelectMultiple
 #--- Status Report
 #
 ################################################################################
-
+RELATED_MARGIN = 400
 
 def _populate_status_values():
     '''
@@ -610,7 +610,19 @@ def validator_summary(request, validator_run_id=None):
     if validator_run_id:
         validator_run = get_object_or_404(ValidatorRun, pk=validator_run_id)
     else:
-        validator_run = ValidatorRun.objects.all().order_by('-pk')[0]
+        validator_run = ValidatorRun.objects.all().aggregate(max=Max('pk'))['max']
+        #ValidatorRun.objects.all().order_by('-pk')[0]
+    if not validator_run:     
+        values = {
+        'title': 'Case Validator: Summary',
+        'run': validator_run,
+        'ref_cases': None,
+        'results': None,
+        'total': 0,
+        'related_margin': RELATED_MARGIN,
+        }
+    return render_to_response('nodis/validator_summary.html', values, context_instance=RequestContext(request))
+
     results = validator_run.results
     ref_cases = ReferenceCase.objects.filter(list=validator_run.list, ignore=False)
     values = {
