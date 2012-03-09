@@ -1037,7 +1037,7 @@ class Encounter(BasePatientRecord):
     date_closed = models.DateField(blank=True, null=True, db_index=True)
     pregnant = models.BooleanField('Patient is pregnant?', blank=False, default=False, db_index=True)
     edd = models.DateField('Expected Date of Delivery (pregnant women only)', blank=True, null=True, db_index=True) 
-    temperature = models.FloatField('Temperature (Celsius)', blank=True, null=True, db_index=True)
+    temperature = models.FloatField('Temperature (F)', blank=True, null=True, db_index=True)
     weight = models.FloatField('Weight (kg)', blank=True, null=True, db_index=True)
     height = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
     bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True, db_index=True)
