@@ -11,7 +11,7 @@ django-tables==0.2
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-gonorrhea@2898#egg=esphealth_disease_gonorrhea-dev_r2898
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-combined@3295#egg=esphealth_disease_hepatitis_combined-dev_r3295
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-lyme@3329#egg=esphealth_disease_lyme-dev_r3329
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pelvic-inflammatory-disease@3008#egg=esphealth_disease_pelvic_inflammatory_disease-dev_r3008
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pelvic-inflammatory-disease@3355#egg=esphealth_disease_pelvic_inflammatory_disease-dev_r3355
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pertussis@3325#egg=esphealth_disease_pertussis-dev_r3325
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-syphilis@3229#egg=esphealth_disease_syphilis-dev_r3229
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-tuberculosis@3331#egg=esphealth_disease_tuberculosis-dev_r3331
