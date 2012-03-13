@@ -18,7 +18,7 @@ from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import Icd9Query
 from ESP.hef.base import Event
 from ESP.nodis.base import Case
-
+from django.db.models import F
 
 class PelvicInflammatoryDisease(DiseaseDefinition):
     '''
@@ -54,15 +54,22 @@ class PelvicInflammatoryDisease(DiseaseDefinition):
         #
         # Criteria Set #1
         #
+        dx_ev_names =  ['dx:pelvic_inflammatory_disease']
+        lx_ev_names = ['lx:chlamydia:positive','lx:gonorrhea:positive']
+        all_event_names = dx_ev_names + lx_ev_names 
+        
         ev_qs = Event.objects.filter(
-            name = 'dx:pelvic_inflammatory_disease'
+            name__in = dx_ev_names,
+            patient__event__name__in = lx_ev_names ,
+            patient__event__date__gte = (F('date') - 28 ),
+            patient__event__date__lte = (F('date') + 28 )
             ).order_by('date')
         counter = 0
         for ev in ev_qs:
             existing_cases = Case.objects.filter(
                 condition='pelvic_inflammatory_disease', 
-                patient=ev.patient,
-                date__gte=(ev.date - relativedelta(days=28)) # Adds recurrence interval
+                patient=ev.patient
+
                 )
             existing_cases = existing_cases.order_by('date')
             if existing_cases:
@@ -82,8 +89,9 @@ class PelvicInflammatoryDisease(DiseaseDefinition):
                 )
             new_case.save()
             new_case.events.add(ev)
-            all_relevant_events = Event.objects.filter(patient=ev.patient, name__in=ev_qs)
-            for related_event in all_relevant_events:
+            
+            all_relevant_events = Event.objects.filter(patient=ev.patient,name__in=all_event_names)
+            for related_event in all_relevant_events :
                 new_case.events.add(related_event)
             new_case.save()
             log.info('Created new pelvic inflammatory disease case: %s' % new_case)
