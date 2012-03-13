@@ -82,10 +82,11 @@ LYME
 pid
 2 patients (should generate 2 cases)
 1  patient with chlamydia  positive test -deenaF
-  same patient with 2 encounters with pid icd9 code 614.2 within 28 days after test
+  same patient with 1 encounters with pid icd9 code 614.2 within 28 days before test
+  same patient with 1 encounters with pid icd9 code 614.2  28 days after test (NEG)
 1  patient with  gonorrhea positive test -deenaH
-  same patient with 2 encounters with pid icd9 code 099.56 within 28 days before test 
-  same patient with encounter for separate patient with encounter with icd9 099.56 after 28 days. NEG
+  same patient with 2 encounters with pid icd9 code 099.56 within 28 days after test 
+  
 
 chlamydia
 2 patients (should generate 1 cases)
