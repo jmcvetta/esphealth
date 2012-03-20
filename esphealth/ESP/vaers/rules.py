@@ -17,6 +17,15 @@ TIME_WINDOW_POST_EVENT = 42 # Period of time between immunization and event
 # 3_possible: (confirm) Possible novel adverse event not previously associated with vaccine
 # 4_unlikely: (discard) Routine health visit highly unlikely to be adverse event
 
+#TODO fill allergies or get from table of allergen
+# all categories are 3 and risk period is 42 for all
+VAERS_ALLERGIES = {
+    'measles' : {
+        'name':'measles',
+        'keywords':['rubeol','mumps',]
+        }
+    }
+
 VAERS_PRESCRIPTION = {
     'Methylprednisolone': {
         'category':'3_possible',

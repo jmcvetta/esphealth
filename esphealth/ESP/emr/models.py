@@ -525,6 +525,30 @@ class BasePatientRecord(BaseMedicalRecord):
     class Meta:
         abstract = True
 
+class PrescriptionManager(models.Manager):
+    # TODO: issue 333 This code belongs in VAERS module, not here.
+    def following_vaccination(self, days_after, include_same_day=False, **kw):
+
+        if include_same_day:
+            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
+        else:
+            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
+
+        return self.filter(patient__immunization=F('patient__immunization')).filter(
+            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
+
+class AllergyManager(models.Manager):
+    # TODO: issue 333 This code belongs in VAERS module, not here.
+    def following_vaccination(self, days_after, include_same_day=False, **kw):
+
+        if include_same_day:
+            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
+        else:
+            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
+
+        return self.filter(patient__immunization=F('patient__immunization')).filter(
+            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
+
 
 class LabResultManager(models.Manager):
     # TODO: issue 333 This code belongs in VAERS module, not here.
@@ -1439,6 +1463,7 @@ class Allergy(BasePatientRecord):
     #
     events = generic.GenericRelation('hef.Event')
 
+    
 
 class Problem(BasePatientRecord):
     '''

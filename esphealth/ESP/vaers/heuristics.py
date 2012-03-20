@@ -10,14 +10,13 @@ from dateutil.relativedelta import relativedelta
 from django.db.models import Q, F, Max, Min
 from django.contrib.contenttypes.models import ContentType
 from ESP.settings import DATE_FORMAT
-from ESP.hef.base import BaseHeuristic
-from ESP.hef.base import BaseEventHeuristic
+from ESP.hef.base import BaseHeuristic, BaseEventHeuristic
 from ESP.conf.common import EPOCH
-from ESP.static.models import Icd9
-from ESP.emr.models import Immunization, Encounter, LabResult
-from ESP.vaers.models import AdverseEvent
-from ESP.vaers.models import EncounterEvent, LabResultEvent
-from ESP.vaers.models import DiagnosticsEventRule
+from ESP.static.models import Icd9, Allergen
+from ESP.emr.models import Immunization, Encounter, LabResult,  Allergy
+from ESP.emr.models import Prescription
+from ESP.vaers.models import AdverseEvent, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent
+from ESP.vaers.models import DiagnosticsEventRule, AllergyEventRule
 from ESP.vaers.models import ExcludedICD9Code
 from ESP.vaers.rules import TIME_WINDOW_POST_EVENT
 from ESP.utils.utils import log
@@ -30,7 +29,7 @@ LAB_TESTS_NAMES = rules.VAERS_LAB_RESULTS.keys()
 USAGE_MSG = '''\
 %prog [options]
 
-    One or more of '-lx', '-f', '-d' or '-a' must be specified.
+    One or more of '-lx', '-f', '-d', '-rx', '-g' or '-a' must be specified.
     
     DATE variables are specified in this format: 'YYYYMMDD'
 '''
@@ -127,6 +126,73 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
 
         return counter
         
+class VaersAllergyHeuristic(AdverseEventHeuristic):
+    def __init__(self, event_name, allergens, category, risk_period):
+        '''
+        @type allergens: [keywords,   ...]
+        @type risk_period: int
+        @type verbose_name: String
+        '''
+                 
+        self.name = event_name
+        self.verbose_name = '%s as an adverse reaction to immunization' % self.name
+        self.allergens = allergens
+        self.category = category
+        self.time_post_immunization = risk_period
+        
+        super(VaersAllergyHeuristic, self).__init__(event_name, verbose_name=self.verbose_name)
+            
+    uri = 'urn:x-esphealth:heuristic:channing:vaersallergies:v1'
+    
+    def vaers_heuristic_name(self):
+        return 'VAERS: ' + self.name
+            
+    def matches(self, **kw):
+        begin = kw.get('begin_date') or EPOCH
+        end = kw.get('end_date') or datetime.date.today()
+        allergy_qs = Allergy.objects.following_vaccination(self.time_post_immunization)
+        allergy_qs = allergy_qs.filter(allergen_code__in=self.allergens.all())
+        allergy_qs = allergy_qs.filter(date__gte=begin, date__lte=end)
+        allergy_qs = allergy_qs.distinct()
+        return allergy_qs
+
+    def generate(self, **kw):
+        log.info('Generating events for %s' % self.name)
+        counter = 0
+        allergyevent_type = ContentType.objects.get_for_model(AllergyEvent)
+        for this_allergy in self.matches(**kw):
+            earliest = this_allergy.date - relativedelta(months=self.risk_period)
+                
+            prior_allergy_qs = Allergy.objects.filter(
+                    date__lt = this_allergy.date, 
+                    date__gte = earliest, 
+                    patient = this_allergy.patient, 
+                    allergen_codes__in = self.icd9s.all(),
+                )
+            if prior_allergy_qs:
+                continue # Prior allergy so ignore 
+            immunization_qs = Immunization.vaers_candidates(this_allergy.patient, this_allergy, self.time_post_immunization)
+            assert immunization_qs
+            # Create event instance
+            new_ae, created = AllergyEvent.objects.get_or_create(
+                allergy = this_allergy, 
+                date = this_allergy.date, 
+                category = self.category, 
+                patient = this_allergy.patient,
+                defaults={
+                    'name': self.vaers_heuristic_name(),
+                    'matching_rule_explain': self.name,
+                    'content_type': allergyevent_type,
+                    }
+                )
+            if created: counter +=1
+            new_ae.save() # Must save before adding to ManyToManyField
+            # Get time interval between immunization and event
+            earliest_imm_date = immunization_qs.aggregate(min=Min('date'))['min']
+            new_ae.gap = (this_allergy.date - earliest_imm_date).days
+            new_ae.immunizations = immunization_qs
+            new_ae.save()
+        return counter
 
 class VaersDiagnosisHeuristic(AdverseEventHeuristic):
     def __init__(self, event_name, icd9s, category, ignore_period):
@@ -378,6 +444,94 @@ class VaersLxHeuristic(AdverseEventHeuristic):
 
         return counter
 
+class VaersRxHeuristic(AdverseEventHeuristic):
+    
+    
+    def __init__(self, event_name, criterion):
+        
+        self.name = event_name
+        self.criterion = criterion
+        self.time_post_immunization = criterion['risk_period_days']
+        super(VaersRxHeuristic, self).__init__(self.name, self.name)
+
+    uri = 'urn:x-esphealth:heuristic:channing:vaersrx:v1'
+    
+    def vaers_heuristic_name(self):
+        return 'VAERS: ' + self.name
+
+    def matches(self, **kw):
+               
+        def excluded_due_to_history(rx):
+            #TODO exclude same dose within 12 months
+            return False
+        
+        begin = kw.get('begin_date') or EPOCH
+        end = kw.get('end_date') or datetime.date.today()
+        
+        days = self.time_post_immunization
+                
+        candidates = Prescription.objects.following_vaccination(days).filter(
+            name__in=self.name, date__gte=begin, date__lte=end).distinct()
+         
+        return [c for c in candidates ]
+
+    
+    def generate(self, **kw):
+        log.info('Generating events for %s' % self.name)
+        counter = 0
+        
+        #begin_date = kw.get('begin_date', None) or EPOCH
+        #end_date = kw.get('end_date', None) or datetime.date.today()
+
+        matches = self.matches(**kw)
+
+        rx_type = ContentType.objects.get_for_model(PrescriptionEvent)
+
+        for rx in matches:
+            try:
+                rule_explain = 'Prescription for %s'% (self.name)
+
+                ev, created = PrescriptionEvent.objects.get_or_create(
+                        prescription=rx,
+                        category=self.criterion['category'],
+                        date=rx.date,
+                        patient=rx.patient,
+                        defaults = {
+                            'name': self.vaers_heuristic_name(),
+                            'matching_rule_explain': rule_explain,
+                            'content_type':rx_type}
+                        )
+                                    
+                if created: counter += 1
+
+                ev.save()
+                ev.immunizations.clear()
+
+                # Register which immunizations may be responsible for the event
+                immunizations = Immunization.vaers_candidates(rx.patient, ev, self.time_post_immunization)
+
+                assert len(immunizations) > 0
+                # Get time interval between immunization and event
+                ev.gap = (rx.date - min([i.date for i in immunizations])).days
+
+
+                for imm in immunizations:
+                    ev.immunizations.add(imm)
+                                   
+                ev.save()
+
+            except AssertionError:
+                log.error('No candidate immunization for Prescription %s' % rx)
+                log.warn('Deleting event %s' % ev)
+                ev.delete()
+                counter -= 1
+
+        log.info('Created %d events' % counter)
+
+        return counter
+
+
+
 def make_diagnosis_heuristic(name):
     '''
     @type name: string
@@ -409,6 +563,30 @@ def make_lab_heuristics(lab_type):
         heuristic_list.append(h)
     return heuristic_list
 
+def make_rx_heuristics(rx_type):
+    rule = rules.VAERS_PRESCRIPTION[rx_type]
+    
+    def heuristic_name(criterion, rx_name):
+        # possibly expand this if we add more attributes to the criterion for rx vaers
+        return '%s' % (rx_name)
+   
+    heuristic_list = []
+    h = VaersRxHeuristic(heuristic_name(rule, rx_type),  rule)
+    heuristic_list.append(h)
+    return heuristic_list
+
+def make_allergy_heuristics(name):
+    '''
+    @type name: string
+    '''
+    
+    rule = AllergyEventRule.objects.get(name=name)
+    risk_period = 42
+    allergens = rule.heuristic_defining_codes.all() 
+    category =  '3_possible'
+    
+    return VaersAllergyHeuristic(name, allergens, category, risk_period) 
+
         
 def fever_heuristic():
     return VaersFeverHeuristic()
@@ -427,6 +605,24 @@ def lab_heuristics():
     for lab_type in rules.VAERS_LAB_RESULTS.keys():
         for heuristic in make_lab_heuristics(lab_type):
             hs.append(heuristic)
+
+    return hs
+
+def prescription_heuristics():
+    hs = []
+
+    for rx_type in rules.VAERS_PRESCRIPTION.keys():
+        for heuristic in make_rx_heuristics(rx_type):
+            hs.append(heuristic)
+
+    return hs
+
+def allergy_heuristics():
+    hs = []
+
+    #for allergy_type in rules.VAERS_ALLERGIES.keys():
+        #for heuristic in make_allergy_heuristics(allergy_type):
+            #hs.append(heuristic)
 
     return hs
 

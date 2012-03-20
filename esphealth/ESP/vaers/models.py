@@ -15,7 +15,7 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
 from ESP.emr.choices import WORKFLOW_STATES # FIXME: 'esp' module is deprecated
-from ESP.emr.models import Patient, Immunization, Encounter, LabResult, Provider
+from ESP.emr.models import Patient, Immunization,Prescription,Allergy, Allergen, Encounter, LabResult, Provider
 from ESP.static.models import Icd9, Loinc
 from ESP.conf.common import DEIDENTIFICATION_TIMEDELTA, EPOCH
 from ESP.utils.utils import log, make_date_folders
@@ -56,7 +56,7 @@ class AdverseEventManager(models.Manager):
     def cases_to_report(self):
         now = datetime.datetime.now()
         week_ago = now - datetime.timedelta(days=7)
-        
+        # TODO use the state instead of this
         auto = Q(category='1_common')
         confirmed = Q(category='3_possible', state='Q')
         to_report_by_default = Q(category='2_rare', state='AR', created_on__lte=week_ago)
@@ -388,13 +388,12 @@ class AdverseEvent(models.Model):
         return AdverseReactionReport(self).render()
 
     def save_hl7_message_file(self, folder=None):
+        #TODO maybe gen the notification message here.
         folder = folder or HL7_MESSAGES_DIR
         outfile = open(os.path.join(folder, 'report.%07d.hl7' % self.id), 'w')
         outfile.write(self.render_hl7_message())
         outfile.close()
-
-
-            
+           
             
 class EncounterEvent(AdverseEvent):
     objects = EncounterEventManager()
@@ -464,7 +463,90 @@ class EncounterEvent(AdverseEvent):
             self.id, self.encounter.patient.full_name, 
             self.matching_rule_explain, self.date)
 
+class PrescriptionEvent(AdverseEvent):
+    prescription  = models.ForeignKey(Prescription)
+    
+    @staticmethod
+    def write_clustering_report(**kw):
+        begin_date = kw.pop('begin_date', None) or EPOCH
+        end_date = kw.pop('end_date', None) or datetime.datetime.today()
+        
+        root_folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
+        folder = make_date_folders(begin_date, end_date, root=root_folder)
+        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
 
+        rx_events = PrescriptionEvent.objects.filter(date__gte=begin_date, date__lte=end_date)
+        within_interval = [e for e in rx_events 
+                           if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
+
+        log.info('Writing report for %d Prescription events between %s and %s' % (
+                len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+
+        make_clustering_event_report_file(os.path.join(folder, 'rx_events.txt'), within_interval)
+
+    def _deidentified_rx(self, days_to_shift):
+        date = self.lab_result.date - datetime.timedelta(days=days_to_shift)
+        return {
+            'med':self.prescription.name,
+            'date':str(date),
+            'dose':self.prescription.dose,
+            'quantity':self.lab_result.result_string
+            }
+
+    def complete_deidentification(self, data, **kw):
+        days_to_shift = kw.pop('days_to_shift', None)
+        if not days_to_shift: 
+            raise ValueError, 'Must indicate days_to_shift'
+        
+        data['prescription'] = self._deidentified_rx(days_to_shift)
+        return data
+    
+    def __unicode__(self):
+        return u'Prescription Event %s: Patient %s, %s on %s' % (
+            self.id, self.prescription.patient.full_name, 
+            self.matching_rule_explain, self.date)
+
+class AllergyEvent(AdverseEvent):
+    allergy  = models.ForeignKey(Allergy)
+    
+    @staticmethod
+    def write_clustering_report(**kw):
+        begin_date = kw.pop('begin_date', None) or EPOCH
+        end_date = kw.pop('end_date', None) or datetime.datetime.today()
+        
+        root_folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
+        folder = make_date_folders(begin_date, end_date, root=root_folder)
+        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
+
+        allergy_events = AllergyEvent.objects.filter(date__gte=begin_date, date__lte=end_date)
+        within_interval = [e for e in allergy_events 
+                           if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
+
+        log.info('Writing report for %d Allergy events between %s and %s' % (
+                len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+
+        make_clustering_event_report_file(os.path.join(folder, 'allergy_events.txt'), within_interval)
+
+    def _deidentified_allergy(self, days_to_shift):
+        date = self.allergy.date - datetime.timedelta(days=days_to_shift)
+        return {
+            'med':self.allergy.name,
+            'date':str(date)
+            }
+
+    def complete_deidentification(self, data, **kw):
+        days_to_shift = kw.pop('days_to_shift', None)
+        if not days_to_shift: 
+            raise ValueError, 'Must indicate days_to_shift'
+        
+        data['allergy'] = self._deidentified_allergy(days_to_shift)
+        return data
+    
+    def __unicode__(self):
+        return u'Allergy Event %s: Patient %s, %s on %s' % (
+            self.id, self.allergy.patient.full_name, 
+            self.matching_rule_explain, self.date)
+               
 class LabResultEvent(AdverseEvent):
     lab_result = models.ForeignKey(LabResult)
     
@@ -561,6 +643,15 @@ class Rule(models.Model):
     def deactivate_all(cls):
         cls.objects.all().update(in_use=False)
         
+
+class AllergyEventRule(Rule):
+    
+    heuriristic_defining_codes = models.ManyToManyField(Allergen, related_name='defining_allergen_code_set')
+   
+    def __unicode__(self):
+        return unicode(self.name)
+
+                    
 class DiagnosticsEventRule(Rule):
 
     source = models.CharField(max_length=30, null=True)
