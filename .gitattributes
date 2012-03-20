@@ -474,7 +474,6 @@ esphealth/unit-test/vaers/epicmem.esp.03062012 -text
 esphealth/unit-test/vaers/epicpro.esp.03062012 -text
 esphealth/unit-test/vaers/epicres.esp.03062012 -text
 esphealth/unit-test/vaers/epicvis.esp.03062012 -text
-esphealth/update.sh -text
 modules/disease-chlamydia/__init__.py -text
 modules/disease-chlamydia/chlamydia.py -text
 modules/disease-chlamydia/setup.py -text
