@@ -119,7 +119,7 @@ class BaseMedicalRecord(models.Model):
     '''
     provenance = models.ForeignKey(Provenance, blank=False)
     # this is the unique identifier for this record in the source EMR system 
-    natural_key = models.CharField(blank=True, null=True, max_length=128, help_text='Unique Record identifier in source EMR system')
+    natural_key = models.CharField(unique=True, blank=True, null=True, max_length=128, help_text='Unique Record identifier in source EMR system')
     created_timestamp = models.DateTimeField(auto_now_add=True, blank=False)
     updated_timestamp = models.DateTimeField(auto_now=True, blank=False, db_index=True)
 
@@ -131,20 +131,20 @@ class Provider(BaseMedicalRecord):
     '''
     A medical care provider
     '''
-    last_name = models.CharField('Last Name',max_length=200, blank=True,null=True)
-    first_name = models.CharField('First Name',max_length=200, blank=True,null=True)
-    middle_name = models.CharField('Middle_Name',max_length=200, blank=True,null=True)
+    last_name = models.CharField('Last Name', max_length=200, blank=True, null=True)
+    first_name = models.CharField('First Name', max_length=200, blank=True, null=True)
+    middle_name = models.CharField('Middle_Name', max_length=200, blank=True, null=True)
     title = models.CharField('Title', max_length=20, blank=True, null=True)
     dept_natural_key = models.CharField('Primary Department identifier in source EMR system', max_length=20, blank=True, null=True)
-    dept = models.CharField('Primary Department',max_length=200,blank=True,null=True)
-    dept_address_1 = models.CharField('Primary Department Address 1',max_length=100,blank=True,null=True)
-    dept_address_2 = models.CharField('Primary Department Address 2',max_length=20,blank=True,null=True)
-    dept_city = models.CharField('Primary Department City',max_length=20,blank=True,null=True)
-    dept_state = models.CharField('Primary Department State',max_length=20,blank=True,null=True)
-    dept_zip = models.CharField('Primary Department Zip',max_length=20,blank=True,null=True)
+    dept = models.CharField('Primary Department', max_length=200, blank=True, null=True)
+    dept_address_1 = models.CharField('Primary Department Address 1', max_length=100, blank=True, null=True)
+    dept_address_2 = models.CharField('Primary Department Address 2', max_length=20, blank=True, null=True)
+    dept_city = models.CharField('Primary Department City', max_length=20, blank=True, null=True)
+    dept_state = models.CharField('Primary Department State', max_length=20, blank=True, null=True)
+    dept_zip = models.CharField('Primary Department Zip', max_length=20, blank=True, null=True)
     # Large max_length value for area code because Atrius likes to put descriptive text into that field
-    area_code = models.CharField('Primary Department Phone Areacode',max_length=50,blank=True,null=True)
-    telephone = models.CharField('Primary Department Phone Number',max_length=50,blank=True,null=True)
+    area_code = models.CharField('Primary Department Phone Areacode', max_length=50, blank=True, null=True)
+    telephone = models.CharField('Primary Department Phone Number', max_length=50, blank=True, null=True)
     
     q_fake = Q(natural_key__startswith='FAKE')
 
@@ -287,32 +287,32 @@ class Patient(BaseMedicalRecord):
         provider = Provider.fakes().order_by('?')[0]
         p = Patient(
             provenance=provenance,
-            pcp = provider,
-            natural_key = 'FAKE-%s' % identifier,
-            mrn = randomizer.autoIncrement(),
-            last_name = randomizer.last_name(),
-            first_name = randomizer.first_name(),
-            suffix = '',
-            country = 'Fakeland',
-            city = city[0],
-            state = city[1],
-            zip = randomizer.zip_code(),
-            address1 = address,
-            address2 = '',
-            middle_name = random.choice(string.uppercase),
-            date_of_birth = randomizer.date_of_birth(as_string=False),
-            gender = randomizer.gender(),
-            race = randomizer.race(),
-            areacode = phone_number.split('-')[0],
-            tel = phone_number[4:],
-            tel_ext = '',
-            ssn = randomizer.ssn(),
-            marital_stat = randomizer.marital_status(),
-            religion = '',
-            aliases = '',
-            home_language = '',
-            mother_mrn = '',
-            occupation = ''
+            pcp=provider,
+            natural_key='FAKE-%s' % identifier,
+            mrn=randomizer.autoIncrement(),
+            last_name=randomizer.last_name(),
+            first_name=randomizer.first_name(),
+            suffix='',
+            country='Fakeland',
+            city=city[0],
+            state=city[1],
+            zip=randomizer.zip_code(),
+            address1=address,
+            address2='',
+            middle_name=random.choice(string.uppercase),
+            date_of_birth=randomizer.date_of_birth(as_string=False),
+            gender=randomizer.gender(),
+            race=randomizer.race(),
+            areacode=phone_number.split('-')[0],
+            tel=phone_number[4:],
+            tel_ext='',
+            ssn=randomizer.ssn(),
+            marital_stat=randomizer.marital_status(),
+            religion='',
+            aliases='',
+            home_language='',
+            mother_mrn='',
+            occupation=''
             )
         if save_on_db: p.save()
         return p
@@ -384,10 +384,10 @@ class Patient(BaseMedicalRecord):
             months += 12
         d = {
             'years': years,
-            'months': (12*years) + months,
+            'months': (12 * years) + months,
             'days':(today - self.date_of_birth).days
             }
-        return ' '.join([str(d[precision]), 
+        return ' '.join([str(d[precision]),
                          str(precision) if with_units else ''])
 
 
@@ -418,7 +418,7 @@ class Patient(BaseMedicalRecord):
         above_ceiling = ceiling + interval
 
         age = self.get_age(when=when)        
-        return (interval * int(min(age.days/365.25, above_ceiling)/interval)) if age else None
+        return (interval * int(min(age.days / 365.25, above_ceiling) / interval)) if age else None
         
     def __get_tel_numeric(self):
         '''
@@ -476,7 +476,7 @@ class Patient(BaseMedicalRecord):
             'date_of_birth': (self.date_of_birth and self.date_of_birth.isoformat()) or None,
             'date_of_death': (self.date_of_death and self.date_of_death.isoformat()) or None,
             'sex':self.gender,
-            'race':self.race,        
+            'race':self.race,
             'home_language':self.home_language,
             'marital_status':self.marital_stat,
             'religion':self.religion,
@@ -525,29 +525,7 @@ class BasePatientRecord(BaseMedicalRecord):
     class Meta:
         abstract = True
 
-class PrescriptionManager(models.Manager):
-    # TODO: issue 333 This code belongs in VAERS module, not here.
-    def following_vaccination(self, days_after, include_same_day=False, **kw):
 
-        if include_same_day:
-            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
-        else:
-            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
-
-        return self.filter(patient__immunization=F('patient__immunization')).filter(
-            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
-
-class AllergyManager(models.Manager):
-    # TODO: issue 333 This code belongs in VAERS module, not here.
-    def following_vaccination(self, days_after, include_same_day=False, **kw):
-
-        if include_same_day:
-            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
-        else:
-            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
-
-        return self.filter(patient__immunization=F('patient__immunization')).filter(
-            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
 
 
 class LabResultManager(models.Manager):
@@ -631,7 +609,7 @@ class LabResult(BasePatientRecord):
         result_date = when + datetime.timedelta(days=random.randrange(1, 30))
         # Make sure the patient was alive for the order...
         order_date = when if patient.date_of_birth is None else max(when, patient.date_of_birth)
-        lx = LabResult(patient=patient, provider=Provider.get_mock(), 
+        lx = LabResult(patient=patient, provider=Provider.get_mock(),
                        provenance=Provenance.fake(), date=order_date, result_date=result_date,
                        native_code=loinc.loinc_num, native_name=loinc.name)
 
@@ -639,7 +617,7 @@ class LabResult(BasePatientRecord):
         return lx
 
     @staticmethod
-    def randomWeight(first=.7,second=.9):
+    def randomWeight(first=.7, second=.9):
         r = random.random()
         if r <= first:
             return 'H'
@@ -652,11 +630,11 @@ class LabResult(BasePatientRecord):
     def make_mock(patient, when=None, **kw):
         
         save_on_db = kw.pop('save_on_db', False)
-        msLabs =  FakeLabs.objects.order_by('?')[0]
+        msLabs = FakeLabs.objects.order_by('?')[0]
         now = int(time.time()*1000) #time in milliseconds
         provider = Provider.get_mock()
        
-        lx = LabResult(patient=patient,mrn=patient.mrn, provider=provider, provenance=Provenance.fake(),natural_key = now)
+        lx = LabResult(patient=patient, mrn=patient.mrn, provider=provider, provenance=Provenance.fake(), natural_key=now)
         
         when = when or randomizer.date_range(as_string=False) #datetime.date.today()
         lx.result_date = when + datetime.timedelta(days=random.randrange(1, 5)) # date to b 5 days after
@@ -685,11 +663,11 @@ class LabResult(BasePatientRecord):
         
             #random btw low and high (sometimes between very low or very high)
             if lx.abnormal_flag == 'L':
-                lx.result_float = round(random.uniform(msLabs.very_low, lx.ref_low_float),2)
+                lx.result_float = round(random.uniform(msLabs.very_low, lx.ref_low_float), 2)
             elif lx.abnormal_flag == 'H':
-                lx.result_float = round(random.uniform(lx.ref_high_float, msLabs.very_high) ,2)
+                lx.result_float = round(random.uniform(lx.ref_high_float, msLabs.very_high) , 2)
             else:
-                lx.result_float = round(random.uniform(lx.ref_low_float, lx.ref_high_float),2)
+                lx.result_float = round(random.uniform(lx.ref_low_float, lx.ref_high_float), 2)
             lx.result_string = lx.result_float
         else:
             lx.result_string = random.choice(msLabs.qualitative_values.split(';'))
@@ -718,7 +696,7 @@ class LabResult(BasePatientRecord):
         self.  if 'check_same_unit' is True, only returns the value if
         both labs results have a matching (Case insensitive) ref_unit value
         '''
-        previous_labs = LabResult.objects.filter(native_code=self.native_code, patient=self.patient, 
+        previous_labs = LabResult.objects.filter(native_code=self.native_code, patient=self.patient,
                                                  date__lt=self.date).order_by('-date')
         if with_same_unit:
             previous_labs = previous_labs.filter(ref_unit__iexact=self.ref_unit)
@@ -766,9 +744,9 @@ class LabResult(BasePatientRecord):
         Returns a header describing the fields returned by str_line()
         '''
         values = {
-            'date': 'DATE', 
-            'id': 'LAB #', 
-            'short_name': 'TEST NAME', 
+            'date': 'DATE',
+            'id': 'LAB #',
+            'short_name': 'TEST NAME',
             'native_code': 'CODE',
             'res': 'RESULT',
             }
@@ -890,6 +868,18 @@ class LabOrder(BasePatientRecord):
     #
     events = generic.GenericRelation('hef.Event')
     
+class PrescriptionManager(models.Manager):
+    
+    def following_vaccination(self, days_after, include_same_day=False, **kw):
+
+        if include_same_day:
+            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
+        else:
+            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
+
+        return self.filter(patient__immunization=F('patient__immunization')).filter(
+            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
+
     
 class Prescription(BasePatientRecord):
     '''
@@ -897,6 +887,10 @@ class Prescription(BasePatientRecord):
     '''
     # Date is order date
     #
+    
+    # Manager
+    #
+    objects = PrescriptionManager()
     name = models.TextField(max_length=3000, blank=False, db_index=True)
     code = models.CharField('Drug Code (system varies by site)', max_length=255, blank=True, null=True)
     directions = models.TextField(max_length=3000, blank=True, null=True)
@@ -935,8 +929,8 @@ class Prescription(BasePatientRecord):
         Returns a header describing the fields returned by str_line()
         '''
         values = {
-            'date': 'DATE', 
-            'id': 'RX #', 
+            'date': 'DATE',
+            'id': 'RX #',
             'name': 'DRUG NAME'
             }
         return '%(date)-10s    %(id)-8s    %(name)-30s' % values
@@ -947,18 +941,18 @@ class Prescription(BasePatientRecord):
         MAX_REFILLS = 12
         
         
-        save_on_db=kw.pop('save_on_db', False)
+        save_on_db = kw.pop('save_on_db', False)
         when = kw.get('when', randomizer.date_range(as_string=False)) #datetime.datetime.now())
         provider = Provider.get_mock()
-        msMeds =  FakeMeds.objects.order_by('?')[0]
+        msMeds = FakeMeds.objects.order_by('?')[0]
         #CODE THE WEIGHT
        
         now = int(time.time()*1000) #time in milliseconds
         
-        p = Prescription(patient=patient, provider=provider, 
+        p = Prescription(patient=patient, provider=provider,
                       mrn=patient.mrn, date=when)
         
-        Status = ['Completed','Ordered']
+        Status = ['Completed', 'Ordered']
         
         days_range = random.randrange(0, 90) # Up to 90 days 
         p.end_date = when + datetime.timedelta(days=days_range)
@@ -966,7 +960,7 @@ class Prescription(BasePatientRecord):
         p.status = random.choice(Status)
         p.natural_key = now
         p.start_date = p.date
-        p.name =  msMeds.name
+        p.name = msMeds.name
         p.code = msMeds.ndc_code 
         # leave empty, ignore 
         # p.directions = msMeds.directions
@@ -978,21 +972,21 @@ class Prescription(BasePatientRecord):
         
         # second item contains dose and 3rd contains unit, or could be a longer name
         
-        if dose.__len__() >1 :
+        if dose.__len__() > 1 :
             i = 1
             if dose[i].isdigit():
-                p.dose =  dose[i]+dose[i+1] 
+                p.dose = dose[i] + dose[i + 1] 
             else:
                 while dose[i].isalpha():
                     i = i + 1
-                p.dose =  dose[i]+dose[i+1] 
+                p.dose = dose[i] + dose[i + 1] 
         
         #ignore 
         #p.frequency  = round(random.randint(MIN_FREQ, MAX_FREQ)) 
         
         # 1 , 2 or 3 multiplied by days btw start and end
-        delta = p.end_date-p.start_date
-        p.quantity =  int((delta.days + 1) * round(random.randint(1,3)) )
+        delta = p.end_date - p.start_date
+        p.quantity = int((delta.days + 1) * round(random.randint(1, 3)))
         p.quantity_float = p.quantity
         
         
@@ -1045,7 +1039,7 @@ class Encounter(BasePatientRecord):
     A encounter between provider and patient
     '''
     objects = EncounterManager()
-    icd9_codes = models.ManyToManyField(Icd9,  blank=True,  null=True, db_index=True)
+    icd9_codes = models.ManyToManyField(Icd9, blank=True, null=True, db_index=True)
     #
     # Fields taken directly from ETL file.  Some minimal processing, such as 
     # standardizing capitalization, may be advisable in loader code.  
@@ -1123,7 +1117,7 @@ class Encounter(BasePatientRecord):
             
     @staticmethod
     def oldmake_mock(patient, **kw):
-        save_on_db=kw.pop('save_on_db', False)
+        save_on_db = kw.pop('save_on_db', False)
         when = kw.get('when', datetime.datetime.now())
         provider = Provider.get_mock()
 
@@ -1135,17 +1129,17 @@ class Encounter(BasePatientRecord):
         return e
 
     @staticmethod
-    def randomVitalValue(low, high, vlow, vhigh,decimal):
+    def randomVitalValue(low, high, vlow, vhigh, decimal):
         r = random.random()
         if r <= .7:
-            return round(random.uniform(vlow, high),decimal)
+            return round(random.uniform(vlow, high), decimal)
         elif r <= .9:
-            return round(random.uniform(low, vhigh),decimal) 
+            return round(random.uniform(low, vhigh), decimal) 
         else: 
-            return  round(random.uniform(low, high),decimal)
+            return  round(random.uniform(low, high), decimal)
         
     @staticmethod
-    def makeicd9_mock (maxicd9,ICD9_CODE_PCT):
+    def makeicd9_mock (maxicd9, ICD9_CODE_PCT):
         ''' another way
             #msICD9codes = FakeICD9s.objects.order_by('?')
             #icd9 = Icd9(code= msICD9codes[i].code,name=msICD9codes[i].name )
@@ -1153,7 +1147,7 @@ class Encounter(BasePatientRecord):
             icd9_codes = [str(icd9.code) for icd9 in FakeICD9s.objects.order_by('?')[:how_manycodes]]
         ''' 
         
-        if random.random() <= float(ICD9_CODE_PCT/100.0):
+        if random.random() <= float(ICD9_CODE_PCT / 100.0):
             how_many_codes = random.randint(1, maxicd9)              
             icd9_codes = [str(random.choice(icd9.icd9_codes.split(';'))) for icd9 in FakeICD9s.objects.order_by('?')[:how_many_codes]]
         else:
@@ -1163,10 +1157,10 @@ class Encounter(BasePatientRecord):
                     
     @staticmethod
     def make_mock(patient, **kw):
-        save_on_db=kw.pop('save_on_db', False)
+        save_on_db = kw.pop('save_on_db', False)
         when = kw.get('when', randomizer.date_range(as_string=False)) #datetime.datetime.now())
         provider = Provider.get_mock()
-        msVitals =  FakeVitals.objects.order_by('short_name')
+        msVitals = FakeVitals.objects.order_by('short_name')
        
         now = int(time.time()*1000) #time in milliseconds
         
@@ -1175,22 +1169,22 @@ class Encounter(BasePatientRecord):
         
         e.natural_key = now
         #the order in msVitals depends on the fakevitals load order rows 
-        e.bmi = Encounter.randomVitalValue(msVitals[0].normal_low, msVitals[0].normal_high, 
-                                           msVitals[0].very_low, msVitals[0].very_high,2) 
-        e.temperature = Encounter.randomVitalValue(msVitals[6].normal_low, msVitals[6].normal_high, 
-                                           msVitals[6].very_low, msVitals[6].very_high,0) 
-        e.weight = Encounter.randomVitalValue(msVitals[7].normal_low, msVitals[7].normal_high, 
-                                           msVitals[7].very_low, msVitals[7].very_high,0) 
-        e.height = Encounter.randomVitalValue(msVitals[3].normal_low, msVitals[3].normal_high, 
-                                           msVitals[3].very_low, msVitals[3].very_high,0) 
-        e.bp_systolic = Encounter.randomVitalValue(msVitals[2].normal_low, msVitals[2].normal_high, 
-                                           msVitals[2].very_low, msVitals[2].very_high,0)  
-        e.bp_diastolic =Encounter.randomVitalValue(msVitals[1].normal_low, msVitals[1].normal_high, 
-                                           msVitals[1].very_low, msVitals[1].very_high,0) 
-        e.o2_stat = Encounter.randomVitalValue(msVitals[4].normal_low, msVitals[4].normal_high, 
-                                           msVitals[4].very_low, msVitals[4].very_high,2) 
-        e.peak_flow = Encounter.randomVitalValue(msVitals[5].normal_low, msVitals[5].normal_high, 
-                                           msVitals[5].very_low, msVitals[5].very_high,2) 
+        e.bmi = Encounter.randomVitalValue(msVitals[0].normal_low, msVitals[0].normal_high,
+                                           msVitals[0].very_low, msVitals[0].very_high, 2) 
+        e.temperature = Encounter.randomVitalValue(msVitals[6].normal_low, msVitals[6].normal_high,
+                                           msVitals[6].very_low, msVitals[6].very_high, 0) 
+        e.weight = Encounter.randomVitalValue(msVitals[7].normal_low, msVitals[7].normal_high,
+                                           msVitals[7].very_low, msVitals[7].very_high, 0) 
+        e.height = Encounter.randomVitalValue(msVitals[3].normal_low, msVitals[3].normal_high,
+                                           msVitals[3].very_low, msVitals[3].very_high, 0) 
+        e.bp_systolic = Encounter.randomVitalValue(msVitals[2].normal_low, msVitals[2].normal_high,
+                                           msVitals[2].very_low, msVitals[2].very_high, 0)  
+        e.bp_diastolic = Encounter.randomVitalValue(msVitals[1].normal_low, msVitals[1].normal_high,
+                                           msVitals[1].very_low, msVitals[1].very_high, 0) 
+        e.o2_stat = Encounter.randomVitalValue(msVitals[4].normal_low, msVitals[4].normal_high,
+                                           msVitals[4].very_low, msVitals[4].very_high, 2) 
+        e.peak_flow = Encounter.randomVitalValue(msVitals[5].normal_low, msVitals[5].normal_high,
+                                           msVitals[5].very_low, msVitals[5].very_high, 2) 
         
         
         #e.diagnosis = ''
@@ -1219,7 +1213,7 @@ class Encounter(BasePatientRecord):
         month_period time.
         '''
         
-        earliest = self.date - datetime.timedelta(days=30*month_period)
+        earliest = self.date - datetime.timedelta(days=30 * month_period)
         
         return Encounter.objects.filter(
             date__lt=self.date, date__gte=earliest, patient=self.patient, icd9_codes__in=icd9s
@@ -1269,17 +1263,21 @@ class Encounter(BasePatientRecord):
         else:
             # If there was a valid BMI in the past year, go with that
             pat_encs = Encounter.objects.filter(
-                patient = self.patient,
+                patient=self.patient,
                 ).order_by('-date')
             encs_last_year = pat_encs.filter(
-                date__gte = (self.date - relativedelta(days=365)),
-                date__lte = self.date,
+                date__gte=(self.date - relativedelta(days=365)),
+                date__lte=self.date,
                 )
             recent_bmi_encs = encs_last_year.filter(bmi__isnull=False)
             if recent_bmi_encs:
                 return recent_bmi_encs[0].bmi
             # Find the most recent height for this patient, looking back as far 
             # as their 16th birthday if necessary
+            
+            if not self.patient.date_of_birth: 
+                log.warning('Cannot calculate BMI for encounter # %s due to null DOB' % self.pk)
+                return None
             sixteenth_bday = self.patient.date_of_birth + relativedelta(years=16)
             ht_encs = pat_encs.filter(date__gte=sixteenth_bday, height__isnull=False).exclude(height=0)
             # Find the most recent weight this patient within the past year
@@ -1288,11 +1286,11 @@ class Encounter(BasePatientRecord):
                 height = ht_encs[0].height
                 weight = wt_encs[0].weight
             else: # We don't know a recent height and weight for this patient
-                log.warning('Cannot calculate BMI for encounter # %s' % self.pk)
+                log.warning('Cannot calculate BMI for encounter # %s due to null height or weight' % self.pk)
                 return None 
         height_m = height / 100  # Height is stored in centimeters
         weight_kg = weight # Already in kilograms
-        bmi = weight_kg / (height_m ** 2 )
+        bmi = weight_kg / (height_m ** 2)
         return bmi
 
     def document_summary(self):
@@ -1305,7 +1303,7 @@ class Encounter(BasePatientRecord):
             'event_type':self.event_type,
             'edc':(self.edc and self.edc.isoformat()) or None,
             'measurements':{
-                'bmi'    :self.bmi,       
+                'bmi'    :self.bmi,
                 'pregnancy':self.pregnancy_status,
                 'temperature':self.temperature,
                 'weight':self.weight,
@@ -1340,9 +1338,9 @@ class Diagnosis(BasePatientRecord):
     particular physician encounter.
     '''
     code = models.CharField('Diagnosis Code', max_length=255, blank=False, db_index=True)
-    codeset = models.CharField('Code Set', max_length=255, blank=False, db_index=True, 
+    codeset = models.CharField('Code Set', max_length=255, blank=False, db_index=True,
         help_text='Code set of which the Diagnosis Code is a member (e.g. ICD9)')
-    encounter = models.ForeignKey(Encounter, verbose_name='Encounter at which this diagnosis was made', 
+    encounter = models.ForeignKey(Encounter, verbose_name='Encounter at which this diagnosis was made',
         blank=False, db_index=True)
 
 
@@ -1399,7 +1397,7 @@ class Immunization(BasePatientRecord):
                          date=date, visit_date=date,
                          #changed name from FAKE to real name 
                          imm_type=vaccine.code, name=vaccine.short_name,
-                         provider= patient.pcp,natural_key=now)
+                         provider=patient.pcp, natural_key=now)
         if save_on_db: i.save()
         return i
             
@@ -1447,11 +1445,27 @@ class SocialHistory(BasePatientRecord):
     tobacco_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
     alcohol_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
 
+class AllergyManager(models.Manager):
+    
+    def following_vaccination(self, days_after, include_same_day=False, **kw):
+
+        if include_same_day:
+            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
+        else:
+            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
+
+        return self.filter(patient__immunization=F('patient__immunization')).filter(
+            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
+
 class Allergy(BasePatientRecord):
     '''
     An allergy report
     '''
     # date is allergy entered date 
+    #
+    # Manager
+    #
+    objects = AllergyManager()
     problem_id = models.IntegerField(null=True, db_index=True)
     date_noted = models.DateField(null=True, db_index=True)
     allergen = models.ForeignKey(Allergen)
