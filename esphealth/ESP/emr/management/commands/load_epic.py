@@ -23,6 +23,7 @@ import sys
 import os
 import socket
 import datetime
+import time
 import re
 import pprint
 import shutil
@@ -32,9 +33,8 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db import IntegrityError
-from django.utils.encoding import smart_str
-from django.utils.encoding import smart_unicode
 from django.utils.encoding import DjangoUnicodeDecodeError
+
 
 from ESP.settings import DATA_DIR
 from ESP.settings import DATE_FORMAT
@@ -210,13 +210,14 @@ class BaseLoader(object):
             created = True
         except IntegrityError:
             transaction.savepoint_rollback(sid)
+            
             keys = {}
             for field_name in key_fields:
                 keys[field_name] = field_values[field_name]
                 del field_values[field_name]
             log.debug('Could not insert new %s with keys %s' % (model, keys))
             # We use get_or_create() rather than get(), to increase the likelihood
-            # of successful load in unforseen circumstances
+            # of successful load in unforeseen circumstances
             obj, created = model.objects.get_or_create(defaults=field_values, **keys)
             for field_name in field_values:
                 setattr(obj, field_name, field_values[field_name])
@@ -246,13 +247,24 @@ class BaseLoader(object):
     def decimal_or_none(self, str):
         return Decimal(str) if str else None
         
+    __string_sanitizer = re.compile(r'[\x80-\xFF]')
+    
+    def sanatize_str(self,s):
+        '''
+        Sanitizes strings be replacing non-ASCII characters with a "?"
+        @param s: String to be sanitized
+        @type  s: String
+        @rtype:   String
+        '''
+        return self.__string_sanitizer.sub("?", s)
+        
     def string_or_none(self, s):
         '''
         Returns a Django-safe version of string s.  If s evaluates to false, 
         e.g. empty string, return None object.
         '''
         if s:
-            return smart_str(s)
+           return self.sanatize_str(s)
         else:
             return None
     
@@ -262,7 +274,7 @@ class BaseLoader(object):
         Returns None if s evaluates to None, including blank string.
         '''
         if s:
-            return string.capwords( smart_str(s) )
+            return string.capwords( self.sanatize_str(s) )
         else:
             return None
         
@@ -272,10 +284,18 @@ class BaseLoader(object):
         Returns None if s evaluates to None, including blank string.
         '''
         if s:
-            return string.upper( smart_str(s) )
+            return string.upper( self.sanatize_str(s) )
         else:
             return None
     
+    
+    def generateNaturalkey (self,natural_key):
+        if not natural_key:
+            log.info('Record has blank natural_key, which is required, creating new one')
+            return int(time.time()*1000)
+        else:
+            return natural_key
+        
     @transaction.commit_on_success
     def load(self):
         # 
@@ -300,7 +320,7 @@ class BaseLoader(object):
             for key in row:
                 if row[key]:
                     try:
-                        row[key] = smart_unicode(row[key].strip())
+                        row[key] = self.sanatize_str( row[key].strip() )
                     except DjangoUnicodeDecodeError, e:
                         #
                         # Log character set errors to db
@@ -391,28 +411,30 @@ class ProviderLoader(BaseLoader):
         if not ''.join([i[1] for i in row.items()]): # Concatenate all fields
             log.debug('Empty row encountered -- skipping')
             return
-        pin = row['natural_key']
-        if not pin:
-            raise LoadException('Record has blank natural_key, which is required')
-        p = self.get_provider(pin)
-        p.provenance = self.provenance
-        p.updated_by = UPDATED_BY
-        p.last_name = unicode(row['last_name'])
-        p.first_name = unicode(row['first_name'])
-        p.middle_name = unicode(row['middle_name'])
-        p.title = row['title']
-        p.dept_natural_key = row['dept_natural_key']
-        p.dept = row['dept']
-        p.dept_address_1 = row['dept_address_1']
-        p.dept_address_2 = row['dept_address_2']
-        p.dept_city = row['dept_city']
-        p.dept_state = row['dept_state']
-        p.dept_zip = row['dept_zip']
-        p.area_code = row['area_code']
-        p.telephone = row['telephone']
-        p.save()
+        natural_key = self.generateNaturalkey(row['natural_key'])
+        # load provider in cache if not there, but natural key will never be null here
+        p = self.get_provider(natural_key)
+        values = {
+        'natural_key': natural_key,
+        'provenance' : self.provenance,
+        #'updated_by' : UPDATED_BY,
+        'last_name' : unicode(row['last_name']),
+        'first_name' : unicode(row['first_name']),
+        'middle_name' : unicode(row['middle_name']),
+        'title' : row['title'],
+        'dept_natural_key' : row['dept_natural_key'],
+        'dept' : row['dept'],
+        'dept_address_1' : row['dept_address_1'], 
+        'dept_address_2' : row['dept_address_2'],
+        'dept_city' : row['dept_city'],
+        'dept_state' : row['dept_state'],
+        'dept_zip' : row['dept_zip'],
+        'area_code' : row['area_code'],
+        'telephone' : row['telephone'],
+        }
+        p, created = self.insert_or_update(Provider, values, ['natural_key'])
+        
         log.debug('Saved provider object: %s' % p)
-
 
 
 class PatientLoader(BaseLoader):
@@ -446,37 +468,41 @@ class PatientLoader(BaseLoader):
         ]
     
     def load_row(self, row):
-        p = self.get_patient(row['natural_key'])
-        p.provenance = self.provenance
-        p.updated_by = UPDATED_BY
-        p.mrn = row['mrn']
-        p.last_name = row['last_name']
-        p.first_name = row['first_name']
-        p.middle_name = row['middle_name']
-        p.pcp = self.get_provider(row['pcp_id'])
-        p.address1 = row['address1']
-        p.address2 = row['address2']
-        p.city = row['city']
-        p.state = row['state']
-        p.zip = row['zip']
-        p.zip5 = p._calculate_zip5()
-        p.country = row['country']
-        p.areacode = row['areacode']
-        p.tel = row['tel']
-        p.tel_ext = row['tel_ext']
-        if row['date_of_birth']:
-            p.date_of_birth = self.date_or_none(row['date_of_birth'])
-        if row['date_of_death']:
-            p.date_of_death = self.date_or_none(row['date_of_death'])
-        p.gender = row['gender']
-        p.race = row['race']
-        p.home_language = row['home_language']
-        p.ssn = row['ssn']
-        p.marital_stat = row['marital_stat']
-        p.religion = row['religion']
-        p.aliases = row['aliases']
-        p.mother_mrn = row['mother_mrn']
-        p.save()
+        natural_key = self.generateNaturalkey(row['natural_key'])
+        p = self.get_patient(natural_key)
+        
+        values = {
+        'natural_key': natural_key,
+        'provenance' : self.provenance,
+        #'updated_by' : UPDATED_BY,
+        'mrn' : row['mrn'],
+        'last_name' : row['last_name'],
+        'first_name' : row['first_name'],
+        'middle_name' : row['middle_name'],
+        'pcp' : self.get_provider(row['pcp_id']),
+        'address1' : row['address1'],
+        'address2' : row['address2'],
+        'city' : row['city'],
+        'state' : row['state'],
+        'zip' : row['zip'],
+        'zip5' : p._calculate_zip5(),
+        'country' : row['country'],
+        'areacode' : row['areacode'],
+        'tel' : row['tel'],
+        'tel_ext' : row['tel_ext'],
+        'date_of_birth' : self.date_or_none(row['date_of_birth']),
+        'date_of_death' : self.date_or_none(row['date_of_death']),
+        'gender' : row['gender'],
+        'race' : row['race'],
+        'home_language' : row['home_language'],
+        'ssn' : row['ssn'],
+        'marital_stat' : row['marital_stat'],
+        'religion' : row['religion'],
+        'aliases' : row['aliases'],
+        'mother_mrn' : row['mother_mrn'],
+        }
+        p, created = self.insert_or_update(Patient, values, ['natural_key'])
+        
         log.debug('Saved patient object: %s' % p)
 
 
@@ -521,35 +547,41 @@ class LabResultLoader(BaseLoader):
                 log.warning('Component field is greater than 20 characters, and will be truncated:')
                 log.warning('    "%s"' % component)
             native_code = component[0:20] 
-        l = LabResult()
-        l.provenance = self.provenance
-        l.patient = self.get_patient(row['patient_id'])
-        l.provider = self.get_provider(row['provider_id'])
-        l.mrn = row['mrn']
-        l.order_natural_key = row['order_natural_key']  
-        l.date = self.date_or_none(row['order_date'])
-        l.result_date = self.date_or_none(row['result_date'])
-        l.native_code = native_code
-        l.native_name = row['component_name']
-        res = row['result_string']
-        l.result_string = res
-        l.result_float = self.float_or_none(l.result_string)
-        l.ref_low_string = row['ref_low']
-        l.ref_high_string = row['ref_high']
-        l.ref_low_float = self.float_or_none(row['ref_low'])
-        l.ref_high_float = self.float_or_none(row['ref_high'])
-        l.ref_unit = row['unit']
-        l.abnormal_flag = row['normal_flag']
-        l.status = row['status']
-        l.comment = row['note']
-        l.specimen_num = row['specimen_num']
-        l.impression = row['impression']
-        l.specimen_source = row['specimen_source']
-        l.collection_date = self.date_or_none(row['collection_date'])
-        l.procedure_name = row['procedure_name']
-        l.natural_key = row['natural_key']  
-        l.save()
-        log.debug('Saved lab result object: %s' % l)
+        if not row['natural_key']:
+            natural_key = self.generateNaturalkey(row['natural_key']).__str__() + native_code
+        else:
+            natural_key = row['natural_key']
+        
+        values = {
+        'provenance' : self.provenance,
+        'patient' : self.get_patient(row['patient_id']),
+        'provider' : self.get_provider(row['provider_id']),
+        'mrn' : row['mrn'],
+        'order_natural_key' : row['order_natural_key']  ,
+        'date' : self.date_or_none(row['order_date']),
+        'result_date' : self.date_or_none(row['result_date']),
+        'native_code' : native_code,
+        'native_name' : row['component_name'],
+        'result_string' : row['result_string'],
+        'result_float' : self.float_or_none(row['result_string']),
+        'ref_low_string' : row['ref_low'],
+        'ref_high_string' : row['ref_high'],
+        'ref_low_float' : self.float_or_none(row['ref_low']),
+        'ref_high_float' : self.float_or_none(row['ref_high']),
+        'ref_unit' : row['unit'],
+        'abnormal_flag' : row['normal_flag'],
+        'status' :row['status'],
+        'comment' : row['note'],
+        'specimen_num' : row['specimen_num'],
+        'impression' : row['impression'],
+        'specimen_source' : row['specimen_source'],
+        'collection_date' : self.date_or_none(row['collection_date']),
+        'procedure_name' : row['procedure_name'],
+        'natural_key' : natural_key,
+         }
+        lx, created = self.insert_or_update(LabResult, values, ['natural_key'])
+        
+        log.debug('Saved Lab Result object: %s' % lx)
         
 
 class LabOrderLoader(BaseLoader):    
@@ -568,20 +600,25 @@ class LabOrderLoader(BaseLoader):
         ]
     
     def load_row(self, row):
-        LabOrder.objects.create(
-            provenance = self.provenance,
-            patient = self.get_patient(row['patient_id']),
-            provider = self.get_provider(row['provider_id']),
-            mrn = row['mrn'],
-            natural_key = row['natural_key'],
-            procedure_code = row['procedure_code'],
-            procedure_modifier = row['procedure_modifier'],
-            specimen_id = row['specimen_id'],
-            date = self.date_or_none(row['ordering_date']),
-            order_type = row['order_type'],
-            procedure_name = row['procedure_name'],
-            specimen_source = row['specimen_source']
-            )
+        natural_key = self.generateNaturalkey(row['natural_key'])
+        values = {
+            'provenance' : self.provenance,
+            'patient' : self.get_patient(row['patient_id']),
+            'provider' : self.get_provider(row['provider_id']),
+            'mrn' : row['mrn'],
+            'natural_key' : natural_key,
+            'procedure_code' : row['procedure_code'],
+            'procedure_modifier' : row['procedure_modifier'],
+            'specimen_id' : row['specimen_id'],
+            'date' : self.date_or_none(row['ordering_date']),
+            'order_type' : row['order_type'],
+            'procedure_name' : row['procedure_name'],
+            'specimen_source' : row['specimen_source']
+            
+            }
+        lxo, created = self.insert_or_update(LabOrder, values, ['natural_key'])
+        
+        log.debug('Saved LabOrder object: %s' % lxo)
 
 
 class EncounterLoader(BaseLoader):
@@ -615,10 +652,6 @@ class EncounterLoader(BaseLoader):
         'raw_diagnosis',
         'bmi'
         ]
-
-
-
-
     
     def load_row(self, row):
         # Util methods
@@ -627,8 +660,9 @@ class EncounterLoader(BaseLoader):
         son = self.string_or_none
         dton = self.date_or_none
         flon = self.float_or_none
+        natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
-            'natural_key': row['natural_key'].strip(),
+            'natural_key': natural_key,
             'provenance': self.provenance,
             'patient': self.get_patient(row['patient_id']),
             'mrn' : row['mrn'],
@@ -658,11 +692,10 @@ class EncounterLoader(BaseLoader):
             'height': height_str_to_cm(row['height']),
             'raw_bmi': son(row['bmi']),
             'raw_diagnosis': son(row['raw_diagnosis']),
-            
             }
         if values['edd']:  
             values['pregnant'] = True
-        # TODO make sure we do insert or update for all models using natural key    
+            
         e, created = self.insert_or_update(Encounter, values, ['natural_key'])
         e.bmi = e._calculate_bmi() # No need to save until we finish ICD9s
         #
@@ -722,26 +755,29 @@ class PrescriptionLoader(BaseLoader):
     ]
 
     def load_row(self, row):
-        p = Prescription()
-        p.provenance = self.provenance
-        p.updated_by = UPDATED_BY
-        p.patient = self.get_patient(row['patient_id'])
-        p.mrn = row['mrn']
-        p.provider = self.get_provider(row['provider_id'])
-        p.natural_key = row['natural_key']
-        p.date = self.date_or_none(row['order_date'])
-        p.status = row['status']
-        p.name = row['drug_desc']
-        p.directions=row['directions']
-        p.code = row['ndc']
-        p.quantity = row['quantity']
-        p.quantity_float = self.float_or_none(row['quantity'])
-        p.refills = row['refills']
-        p.start_date = self.date_or_none(row['start_date'])
-        p.end_date = self.date_or_none(row['end_date'])
-        p.route = row['route']
-        p.dose = row['dose']
-        p.save()
+        natural_key = self.generateNaturalkey(row['natural_key'])
+        values = {
+        'provenance' : self.provenance,
+       #'updated_by' : UPDATED_BY,
+        'patient' : self.get_patient(row['patient_id']),
+        'mrn' : row['mrn'],
+        'provider' : self.get_provider(row['provider_id']),
+        'natural_key' : natural_key,
+        'date' : self.date_or_none(row['order_date']),
+        'status' : row['status'],
+        'name' : row['drug_desc'],
+        'directions' : row['directions'],
+        'code' : row['ndc'],
+        'quantity' : row['quantity'],
+        'quantity_float' : self.float_or_none(row['quantity']),
+        'refills' : row['refills'],
+        'start_date' : self.date_or_none(row['start_date']),
+        'end_date' : self.date_or_none(row['end_date']),
+        'route' : row['route'],
+        'dose' : row['dose'],
+        }
+        p, created = self.insert_or_update(Prescription, values, ['natural_key'])
+        
         log.debug('Saved prescription object: %s' % p)
 
 
@@ -763,23 +799,25 @@ class ImmunizationLoader(BaseLoader):
         ]
     
     def load_row(self, row):
-        i = Immunization()
-        i.provenance = self.provenance
-        i.updated_by = UPDATED_BY
-        i.patient = self.get_patient(row['patient_id'])
-        i.imm_type = row['type']
-        i.name = row['name']
-        i.date = self.date_or_none(row['date'])
-        i.dose = row['dose']
-        i.manufacturer = row['manufacturer']
-        i.lot = row['lot']
-        i.natural_key = row['natural_key']
-        i.mrn = row['mrn']
-        i.provider = self.get_provider(row['provider_id'])
-        i.visit_date = self.date_or_none(row['visit_date'])
-        i.save()
+        natural_key = self.generateNaturalkey(row['natural_key'])
+        values = {
+        'provenance' : self.provenance,
+        #'updated_by' : UPDATED_BY,
+        'patient' : self.get_patient(row['patient_id']),
+        'imm_type' : row['type'],
+        'name' : row['name'],
+        'date' : self.date_or_none(row['date']),
+        'dose' : row['dose'],
+        'manufacturer' : row['manufacturer'],
+        'lot' : row['lot'],
+        'natural_key' : natural_key,
+        'mrn' : row['mrn'],
+        'provider' : self.get_provider(row['provider_id']),
+        'visit_date' : self.date_or_none(row['visit_date']),
+        }
+        i, created = self.insert_or_update(Immunization, values, ['natural_key'])
+        
         log.debug('Saved immunization object: %s' % i)
-
 
 
 class SocialHistoryLoader(BaseLoader):
@@ -788,60 +826,81 @@ class SocialHistoryLoader(BaseLoader):
         'mrn',
         'tobacco_use',
         'alcohol_use',
-        'date_noted' #added in 3
+        'date_noted', #added in 3
+        'natural_key', #added in 3
+        'provider_id', # added in 3 cch added
         ]
     
     def load_row(self, row):
-        SocialHistory.objects.create(
-            provenance = self.provenance,
-            date = self.date_or_none(row['date_noted']), # matching version 3 ETL
-            patient=self.get_patient(row['patient_id']),
-            mrn = row['mrn'],
-            tobacco_use = row['tobacco_use'],
-            alcohol_use = row['alcohol_use']
-            )
+        # version 2 did not load this object, 
+        natural_key = self.generateNaturalkey(row['natural_key'])
+        values = {
+            'natural_key': natural_key,
+            'provenance' : self.provenance,
+            # this date field will only work with version 3 etl
+            'date' : self.date_or_none(row['date_noted']), # matching version 3 ETL
+            'patient' : self.get_patient(row['patient_id']),
+            'mrn' : row['mrn'],
+            'tobacco_use' : row['tobacco_use'],
+            'alcohol_use' : row['alcohol_use'],
+            'provider' : self.get_provider(row['provider_id']),
+            }
+       
+        s, created = self.insert_or_update(SocialHistory, values, ['natural_key'])
+       
+        log.debug('Saved provider object: %s' % s)
         
 
 class AllergyLoader(BaseLoader):
     fields = [
         'patient_id',
         'mrn', 
-        'problem_id',
+        'problem_id',# maybe natural key
         'date_noted',
         'allergen_id',
         'allergy_name',
         'allergy_status',
         'allergy_description',
         'allergy_entered_date',
-        'provider_id' #added in 3
+        'provider_id', #added in 3
+        'natural_key' #added in 3 
         ]
     
     def load_row(self, row):
-        allergen, created = Allergen.objects.get_or_create(code=row['problem_id'])
-        Allergy.objects.create(
-            provenance = self.provenance,
-            patient = self.get_patient(row['patient_id']),
-            problem_id = int(row['problem_id']),
-            date = self.date_or_none(row['allergy_entered_date']), 
-            date_noted = self.date_or_none(row['date_noted']),
-            allergen = allergen,
-            name = row['allergy_name'], 
-            status = row['allergy_status'],
-            description = row['allergy_description'],
-            mrn = row['mrn'],
-            provider = self.get_provider(row['provider_id'])
-            )
+        
+        allergen, flag = Allergen.objects.get_or_create(code=row['allergen_id'])
+        natural_key = self.generateNaturalkey(row['natural_key'])
+        values = {
+            'natural_key': natural_key,
+            'provenance' : self.provenance,
+            'patient' : self.get_patient(row['patient_id']),
+            'problem_id' : int(row['problem_id']),
+            'date' : self.date_or_none(row['allergy_entered_date']), 
+            'date_noted' : self.date_or_none(row['date_noted']),
+            'allergen' : allergen,
+            'name' : row['allergy_name'], 
+            'status' : row['allergy_status'],
+            'description' : row['allergy_description'],
+            'mrn' : row['mrn'],
+            'provider' : self.get_provider(row['provider_id']),
+        }
+        
+        a, created = self.insert_or_update(Allergy, values, ['natural_key'])
+        
+        log.debug('Saved Allergy object: %s' % a)
             
         
 class ProblemLoader(BaseLoader):
     fields = [
         'patient_id',
         'mrn',
-        'problem_id',
+        'problem_id',# could be same as natural key
         'date_noted',
         'icd9_code',
         'problem_status',
-        'comment'
+        'comment',
+        'natural_key',# added in 3
+        'provider_id', #added in 3 added cch
         ]
 
     def load_row(self, row):
@@ -849,18 +908,23 @@ class ProblemLoader(BaseLoader):
         icd9_code, created = Icd9.objects.get_or_create(code=code, defaults={
                 'name':'Added by load_epic.py'})
         if created: log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
+        natural_key = self.generateNaturalkey(row['natural_key'])
+        values = {
+            'natural_key': natural_key, #TODO Fix me this might be the same of problemid
+            'provenance' : self.provenance,
+            'problem_id' : row['problem_id'],
+            'patient' : self.get_patient(row['patient_id']),
+            'mrn' : row['mrn'],
+            'date' : self.date_or_none(row['date_noted']),
+            'icd9' : icd9_code,
+            'status' : row['problem_status'],
+            'comment' : row['comment'],
+            'provider' : self.get_provider(row['provider_id'])
+            }
         
+        p, created = self.insert_or_update(Problem, values, ['natural_key'])
         
-        Problem.objects.create(
-            provenance = self.provenance,
-            problem_id = row['problem_id'],
-            patient = self.get_patient(row['patient_id']),
-            mrn = row['mrn'],
-            date = self.date_or_none(row['date_noted']),
-            icd9 = icd9_code,
-            status = row['problem_status'],
-            comment = row['comment']
-            )
+        log.debug('Saved Problem object: %s' % p)
 
 class Command(LoaderCommand):
     #
