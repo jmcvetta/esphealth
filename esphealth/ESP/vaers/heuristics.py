@@ -148,6 +148,7 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
         return 'VAERS: ' + self.name
             
     def matches(self, **kw):
+        # allergies has a general time post imm
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
         allergy_qs = Allergy.objects.following_vaccination(self.time_post_immunization)
@@ -462,18 +463,26 @@ class VaersRxHeuristic(AdverseEventHeuristic):
     def matches(self, **kw):
                
         def excluded_due_to_history(rx):
-            #TODO exclude same dose within 12 months
+            
+            earliest = rx.date - relativedelta(months=12)
+            prior_rx_qs = Prescription.objects.filter(
+                    date__lt = rx.date, 
+                    date__gte = earliest, 
+                    patient = rx.patient,
+                    name__in=self.name,
+                )
+            
             return False
         
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
         
-        days = self.time_post_immunization
+        days = self.criterion['risk_period_days']
                 
         candidates = Prescription.objects.following_vaccination(days).filter(
             name__in=self.name, date__gte=begin, date__lte=end).distinct()
          
-        return [c for c in candidates ]
+        return  [c for c in candidates and not excluded_due_to_history(c)]
 
     
     def generate(self, **kw):
@@ -489,6 +498,7 @@ class VaersRxHeuristic(AdverseEventHeuristic):
 
         for rx in matches:
             try:
+                
                 rule_explain = 'Prescription for %s'% (self.name)
 
                 ev, created = PrescriptionEvent.objects.get_or_create(
