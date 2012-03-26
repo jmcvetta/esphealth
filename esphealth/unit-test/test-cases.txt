@@ -2,6 +2,8 @@ unit test case documentation for esp
 author: carolina chacin
 updated: feb 23 2012
 
+# TODO create some test data with no natural key, with some non ascii char, etc. 
+
 VAERS 
 16 patients (6 NEG and 11 pos)	
 (all encounters have to be in the non specialty site for urgent care--not urgent?)
@@ -45,12 +47,12 @@ VAERS
 1 patient with two labs for hemoglobin(a1c) within 30 of immunization value <9 & x<LKV*.8 -lazarusN
   same patient second lab of same before immunization (category 3) 
    same patient with immunization 
--------heuristic NIY 
-1 patient with 1 prescription for medrol-pak  -nickx   NIY
+1 patient with 1 prescription for Methylprednisolone  -nickx   
    same patient with immunization within 14 days of rx
-1 patient with 1 prescription for benadryl  (NEG) -kruskalS NIY
+1 patient with 1 prescription for Epinephrine  (NEG) -kruskalS 
      same patient with immunization within 7 days of rx
-     same patient with 1 prescription for benadryl within past 12 months of rx
+     same patient with 1 prescription for Epinephrine within past 12 months of rx
+-------heuristic NIY 
 1 patient with 1 allergy rabies call category 3 -michaelK  NIY
      same patient with immunization within 42 days of allergy
 1 patient with 1 allergy in keyword list in doc lyme call category 3 -bazzaJ  NIY
