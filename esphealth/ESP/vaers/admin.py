@@ -1,7 +1,7 @@
 from django.contrib import admin
 from ESP.vaers.models import EncounterEvent, LabResultEvent
 from ESP.vaers.models import PrescriptionEvent, AllergyEvent
-from ESP.vaers.models import DiagnosticsEventRule, AllergyEventRule
+from ESP.vaers.models import DiagnosticsEventRule, AllergyEventRule, Sender
 
 class EncounterEventAdmin(admin.ModelAdmin):
     date_hierarchy = 'date'
@@ -31,8 +31,13 @@ class AllergyEventAdmin(admin.ModelAdmin):
                     'state', 'digest']
     list_filter = ['date', 'category', 'state']
     
+class SenderAdmin(admin.ModelAdmin):
+    raw_id_fields = ['provider_id']
+    list_display = ['pk','name']
+    
 admin.site.register(EncounterEvent, EncounterEventAdmin)
 admin.site.register(LabResultEvent, LabResultAdmin)
 admin.site.register(PrescriptionEvent, PrescriptionAdmin)
 admin.site.register(AllergyEvent, AllergyEventAdmin)
 admin.site.register(DiagnosticsEventRule)
+admin.site.register(Sender,SenderAdmin)
