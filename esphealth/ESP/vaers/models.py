@@ -592,8 +592,15 @@ class LabResultEvent(AdverseEvent):
             self.id, self.lab_result.patient.full_name, 
             self.matching_rule_explain, self.date)
 
+class Sender(models.Model):
+    provider= models.ForeignKey(Provider, verbose_name='Physician', blank=True, null=True) 
 
-
+    def _get_name(self):
+        return u'%s, %s ' % (self.provider.last_name,  self.provider.first_name)
+    name = property(_get_name)
+    
+    def __unicode__(self):
+        return u'%s %s' % (self.provider_id, self.name)
 
 class ProviderComment(models.Model):
     text = models.TextField()
@@ -601,8 +608,6 @@ class ProviderComment(models.Model):
     event = models.ForeignKey(AdverseEvent)
     created_on = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
-
-
 
 signals.post_save.connect(adverse_event_digest, sender=EncounterEvent)
 signals.post_save.connect(adverse_event_digest, sender=LabResultEvent)
@@ -650,6 +655,7 @@ class AllergyEventRule(Rule):
    
     def __unicode__(self):
         return unicode(self.name)
+
 
                     
 class DiagnosticsEventRule(Rule):
