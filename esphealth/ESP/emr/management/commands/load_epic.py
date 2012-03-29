@@ -421,9 +421,9 @@ class ProviderLoader(BaseLoader):
         'last_name' : unicode(row['last_name']),
         'first_name' : unicode(row['first_name']),
         'middle_name' : unicode(row['middle_name']),
-        'title' : row['title'],
+        'title' : self.string_or_none(row['title']),
         'dept_natural_key' : row['dept_natural_key'],
-        'dept' : row['dept'],
+        'dept' : self.string_or_none(row['dept']),
         'dept_address_1' : row['dept_address_1'], 
         'dept_address_2' : row['dept_address_2'],
         'dept_city' : row['dept_city'],
@@ -476,12 +476,12 @@ class PatientLoader(BaseLoader):
         'provenance' : self.provenance,
         #'updated_by' : UPDATED_BY,
         'mrn' : row['mrn'],
-        'last_name' : row['last_name'],
-        'first_name' : row['first_name'],
-        'middle_name' : row['middle_name'],
+        'last_name' : self.string_or_none(row['last_name']),
+        'first_name' : self.string_or_none(row['first_name']),
+        'middle_name' : self.string_or_none(row['middle_name']),
         'pcp' : self.get_provider(row['pcp_id']),
-        'address1' : row['address1'],
-        'address2' : row['address2'],
+        'address1' : self.string_or_none(row['address1']),
+        'address2' : self.string_or_none(row['address2']),
         'city' : row['city'],
         'state' : row['state'],
         'zip' : row['zip'],
@@ -493,12 +493,12 @@ class PatientLoader(BaseLoader):
         'date_of_birth' : self.date_or_none(row['date_of_birth']),
         'date_of_death' : self.date_or_none(row['date_of_death']),
         'gender' : row['gender'],
-        'race' : row['race'],
-        'home_language' : row['home_language'],
-        'ssn' : row['ssn'],
-        'marital_stat' : row['marital_stat'],
-        'religion' : row['religion'],
-        'aliases' : row['aliases'],
+        'race' : self.string_or_none(row['race']),
+        'home_language' : self.string_or_none(row['home_language']),
+        'ssn' : self.string_or_none(row['ssn']),
+        'marital_stat' : self.string_or_none(row['marital_stat']),
+        'religion' : self.string_or_none(row['religion']),
+        'aliases' : self.string_or_none(row['aliases']),
         'mother_mrn' : row['mother_mrn'],
         }
         p, created = self.insert_or_update(Patient, values, ['natural_key'])
@@ -536,8 +536,8 @@ class LabResultLoader(BaseLoader):
 
     
     def load_row(self, row):
-        native_code = row['cpt']
-        component = row['component']
+        native_code = self.string_or_none(row['cpt'])
+        component = self.string_or_none(row['component'])
         if component:
             # We only use first 20 characters of component, since some lab 
             # results (always types unimportant to ESP) have quite long 
@@ -561,22 +561,22 @@ class LabResultLoader(BaseLoader):
         'date' : self.date_or_none(row['order_date']),
         'result_date' : self.date_or_none(row['result_date']),
         'native_code' : native_code,
-        'native_name' : row['component_name'],
+        'native_name' : self.string_or_none(row['component_name']),
         'result_string' : row['result_string'],
         'result_float' : self.float_or_none(row['result_string']),
         'ref_low_string' : row['ref_low'],
         'ref_high_string' : row['ref_high'],
         'ref_low_float' : self.float_or_none(row['ref_low']),
         'ref_high_float' : self.float_or_none(row['ref_high']),
-        'ref_unit' : row['unit'],
+        'ref_unit' : self.string_or_none(row['unit']),
         'abnormal_flag' : row['normal_flag'],
-        'status' :row['status'],
-        'comment' : row['note'],
-        'specimen_num' : row['specimen_num'],
-        'impression' : row['impression'],
-        'specimen_source' : row['specimen_source'],
+        'status' : self.string_or_none(row['status']),
+        'comment' : self.string_or_none(row['note']),
+        'specimen_num' : self.string_or_none(row['specimen_num']),
+        'impression' : self.string_or_none(row['impression']),
+        'specimen_source' : self.string_or_none(row['specimen_source']),
         'collection_date' : self.date_or_none(row['collection_date']),
-        'procedure_name' : row['procedure_name'],
+        'procedure_name' : self.string_or_none(row['procedure_name']),
         'natural_key' : natural_key,
          }
         lx, created = self.insert_or_update(LabResult, values, ['natural_key'])
@@ -607,13 +607,13 @@ class LabOrderLoader(BaseLoader):
             'provider' : self.get_provider(row['provider_id']),
             'mrn' : row['mrn'],
             'natural_key' : natural_key,
-            'procedure_code' : row['procedure_code'],
-            'procedure_modifier' : row['procedure_modifier'],
-            'specimen_id' : row['specimen_id'],
+            'procedure_code' : self.string_or_none(row['procedure_code']),
+            'procedure_modifier' : self.string_or_none(row['procedure_modifier']),
+            'specimen_id' : self.string_or_none(row['specimen_id']),
             'date' : self.date_or_none(row['ordering_date']),
-            'order_type' : row['order_type'],
-            'procedure_name' : row['procedure_name'],
-            'specimen_source' : row['specimen_source']
+            'order_type' : self.string_or_none(row['order_type']),
+            'procedure_name' : self.string_or_none(row['procedure_name']),
+            'specimen_source' : self.string_or_none(row['specimen_source'])
             
             }
         lxo, created = self.insert_or_update(LabOrder, values, ['natural_key'])
@@ -650,7 +650,7 @@ class EncounterLoader(BaseLoader):
         'peak_flow',
         'icd9s',
         'raw_diagnosis',
-        'bmi'
+        'bmi' # added in 3
         ]
     
     def load_row(self, row):
@@ -742,7 +742,7 @@ class PrescriptionLoader(BaseLoader):
         'provider_id',
         'order_date',
         'status',
-        'directions',#added in 3
+        'directions',
         'ndc',
         'drug_desc',
         'quantity',
@@ -764,17 +764,17 @@ class PrescriptionLoader(BaseLoader):
         'provider' : self.get_provider(row['provider_id']),
         'natural_key' : natural_key,
         'date' : self.date_or_none(row['order_date']),
-        'status' : row['status'],
-        'name' : row['drug_desc'],
-        'directions' : row['directions'],
+        'status' : self.string_or_none(row['status']),
+        'name' : self.string_or_none(row['drug_desc']),
+        'directions' : self.string_or_none(row['directions']),
         'code' : row['ndc'],
         'quantity' : row['quantity'],
         'quantity_float' : self.float_or_none(row['quantity']),
-        'refills' : row['refills'],
+        'refills' : self.string_or_none(row['refills']),
         'start_date' : self.date_or_none(row['start_date']),
         'end_date' : self.date_or_none(row['end_date']),
-        'route' : row['route'],
-        'dose' : row['dose'],
+        'route' : self.string_or_none(row['route']),
+        'dose' : self.string_or_none(row['dose']),
         }
         p, created = self.insert_or_update(Prescription, values, ['natural_key'])
         
@@ -804,12 +804,12 @@ class ImmunizationLoader(BaseLoader):
         'provenance' : self.provenance,
         #'updated_by' : UPDATED_BY,
         'patient' : self.get_patient(row['patient_id']),
-        'imm_type' : row['type'],
-        'name' : row['name'],
+        'imm_type' : self.string_or_none(row['type']),
+        'name' : self.string_or_none(row['name']),
         'date' : self.date_or_none(row['date']),
-        'dose' : row['dose'],
-        'manufacturer' : row['manufacturer'],
-        'lot' : row['lot'],
+        'dose' : self.string_or_none(row['dose']),
+        'manufacturer' : self.string_or_none(row['manufacturer']),
+        'lot' : self.string_or_none(row['lot']),
         'natural_key' : natural_key,
         'mrn' : row['mrn'],
         'provider' : self.get_provider(row['provider_id']),
@@ -868,7 +868,15 @@ class AllergyLoader(BaseLoader):
     
     def load_row(self, row):
         
-        allergen, flag = Allergen.objects.get_or_create(code=row['allergen_id'])
+        allergy_name = self.string_or_none(row['allergy_name'])
+        #adding new rows to allergen table if they are  not there 
+        allergen, created = Allergen.objects.get_or_create(code=row['allergen_id'])
+        
+        if created:
+            allergen.name = allergy_name
+            allergen.save()
+            log.info('created new allergen from load epic')
+            
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
             'natural_key': natural_key,
@@ -878,9 +886,9 @@ class AllergyLoader(BaseLoader):
             'date' : self.date_or_none(row['allergy_entered_date']), 
             'date_noted' : self.date_or_none(row['date_noted']),
             'allergen' : allergen,
-            'name' : row['allergy_name'], 
-            'status' : row['allergy_status'],
-            'description' : row['allergy_description'],
+            'name' : allergy_name, 
+            'status' : self.string_or_none(row['allergy_status']),
+            'description' : self.string_or_none(row['allergy_description']),
             'mrn' : row['mrn'],
             'provider' : self.get_provider(row['provider_id']),
         }
@@ -917,8 +925,8 @@ class ProblemLoader(BaseLoader):
             'mrn' : row['mrn'],
             'date' : self.date_or_none(row['date_noted']),
             'icd9' : icd9_code,
-            'status' : row['problem_status'],
-            'comment' : row['comment'],
+            'status' : self.string_or_none(row['problem_status']),
+            'comment' : self.string_or_none(row['comment']),
             'provider' : self.get_provider(row['provider_id'])
             }
         
