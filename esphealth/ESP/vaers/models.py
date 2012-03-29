@@ -648,16 +648,7 @@ class Rule(models.Model):
     def deactivate_all(cls):
         cls.objects.all().update(in_use=False)
         
-
-class AllergyEventRule(Rule):
-    
-    heuriristic_defining_codes = models.ManyToManyField(Allergen, related_name='defining_allergen_code_set')
-   
-    def __unicode__(self):
-        return unicode(self.name)
-
-
-                    
+                
 class DiagnosticsEventRule(Rule):
 
     source = models.CharField(max_length=30, null=True)
