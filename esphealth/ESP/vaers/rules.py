@@ -9,7 +9,6 @@ TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
 #ver 3 of vaers doc says 42, prior versions were 30 but code was 60
 
 TIME_WINDOW_POST_EVENT = 42 # Period of time between immunization and event
-# TODO should we change the time window post to 30?
 
 #types of action types 
 # 1_common: (auto) Common, well described, non-serious, adverse event
@@ -17,14 +16,221 @@ TIME_WINDOW_POST_EVENT = 42 # Period of time between immunization and event
 # 3_possible: (confirm) Possible novel adverse event not previously associated with vaccine
 # 4_unlikely: (discard) Routine health visit highly unlikely to be adverse event
 
-#TODO fill allergies or get from table of allergen
 # all categories are 3 and risk period is 42 for all
 VAERS_ALLERGIES = {
-    'measles' : {
-        'name':'measles',
-        'keywords':['rubeol','mumps',]
-        }
+    
+    'BCG (Bacille Calmette-Guerin)' : {
+        'keywords': ['BCG','Bacil',]
+        },
+    'CHOLERA VACCINE' :{
+        'keywords': ['choler',]
+        },
+    'DT VACCINE (CHILD)' : {
+        'keywords': ['DT','dipth','tetan',]
+        },
+    'DTAP VACCINE' : {
+        'keywords': ['DTAP','dipth','tetan','pertuss']
+        },
+    'DTAP-HEP B-IPV' : {
+        'keywords': ['DTAP-HEP','dipth','tetan','pertuss','polio']
+        },
+    'DTAP-IPV' : {
+        'keywords': ['DTAP-IPV','dipth','tetan','pertuss','polio']
+        },
+    'DTAP-Hib-IPV' : {
+        'keywords': ['DTAP-HFLU','dipth','tetan','pertuss','polio','hflu']
+        },
+    'DTAP-HFLU B CONJ VACCINE' : {
+        'keywords': ['DTAP-HFLU','dipth','tetan','pertuss','hemoph','hflu']
+        },
+    'DTP VACCINE' : {
+        'keywords': ['DTP','dipth','tetan','pertuss',]
+        } ,
+    'DTP-HFLU B CONJ VACCINE' : {
+        'keywords': ['DTP-HFLU','dipth','tetan','pertuss','hemoph','hflu']
+        },
+    'HEP A & B VACCINE ADULT' : {
+        'keywords': ['HEP A','hep* AND vaccine']
+        },
+    'HEP A VACCINE' : {
+        'keywords': ['HEP A','hep* AND vaccine']
+        },
+    'HEP A VACCINE ADULT' : {
+        'keywords': ['HEP A','hep* AND vaccine']
+        },
+    'HEP A VACCINE PEDI/ADOL-2 DOSE SCHED' : {
+        'keywords': ['HEP A','hep* AND vaccine']
+        },
+    'HEP A VACCINE PEDI/ADOL-3 DOSE SCHED' : {
+        'keywords': ['HEP A','hep* AND vaccine']
+        },
+    'HEP B - HFLU B CONJ (PRP-OMP)' : {
+        'keywords': ['HEP B','hep* AND vaccine']
+        },
+    'HEP B VACCINE (<11 YEARS)' : {
+        'keywords': ['HEP B','hep* AND vaccine']
+        },
+    'HEP B VACCINE (11-19 YEARS)' : {
+        'keywords': ['HEP B','hep* AND vaccine']
+        },
+    'HEP B VACCINE (20+ YEARS)' : {
+        'keywords': ['HEP B','hep* AND vaccine']
+        },
+    'HEP B VACCINE (ILL PT, ANY AGE)' : {
+        'keywords': ['HEP B','hep* AND vaccine']
+        },
+    'HEP B VACCINE (PLASMA-DERIVED)' : {
+        'keywords': ['HEP B','hep* AND vaccine']
+        },
+    'HEP B VACCINE (RECOMBINANT)' : {
+        'keywords': ['HEP B','hep* AND vaccine']
+        },
+    'HEP B VACCINE ADOL-2 DOSE SCHED' : {
+        'keywords': ['HEP B','hep* AND vaccine']
+        },
+    'HFLU B (NON-CONJ)' : {
+        'keywords': ['HFLU','hemoph']
+        },
+    'HFLU B (UNSPECIFIED)' : {
+        'keywords': ['HFLU','hemoph']
+        },
+    'HFLU B CONJ (HBOC)' : {
+        'keywords': ['HFLU','hemoph']
+        },
+    'HFLU B CONJ (PRP-D)' : {
+        'keywords': ['HFLU','hemoph']
+        },
+    'HFLU B CONJ (PRP-OMP)' : {
+        'keywords': ['HFLU','hemoph']
+        },
+    'HFLU B CONJ (PRP-T)' : {
+        'keywords': ['HFLU','hemoph']
+        },
+    'HPV VACCINE(6, 11, 16, 18)' : {
+        'keywords': ['HPV','human pap','papilloma']
+        } ,
+    'INFLUENZA VACCINE' : {
+        'keywords': ['INFLU','flu vac']
+        } ,
+    'JAPANESE ENCEPHALITIS VACCINE' : {
+        'keywords': ['japanese']
+        } ,
+    'LYME VACCINE' : {
+        'keywords': ['LYME']
+        },
+    'MEASLES (RUBEOLA) - MUMPS VACCINE' : {
+        'keywords': ['MEASLES','mumps','rubeol','MMV']
+        },
+    'MEASLES (RUBEOLA) - RUBELLA VACCINE' : {
+        'keywords': ['MEASLES','rubel','rubeol','MRV']
+        },
+    'MEASLES VACCINE (RUBEOLA)' : {
+        'keywords': ['MEASLES','rubeol','MV']
+        },
+    'MENINGOC IM (MENACTRA) VACCINE' : {
+        'keywords': ['MENING','menactra']
+        },
+    'MENINGOC SQ (MENOMUNE) VACCINE' : {
+        'keywords': ['MENING','menomune']
+        },
+    'MENINGOCOCCAL C VACCINE (BRITISH)' : {
+        'keywords': ['MENING',]
+        } ,
+    'MMR VACCINE' : {
+        'keywords': ['MMR','meas','mump','rubel']
+        } ,
+    'MMR-VARICELLA VACCINE' : {
+        'keywords': ['MMR-VAR','meas','mump','rubel','varicel','chicken']
+        },
+    'MUMPS VACCINE' : {
+        'keywords': ['MUMP']
+        } ,
+    'PERTUSSIS VACCINE (MONOVALENT)' : {
+        'keywords': ['PERTUS']
+        } ,
+    'PLAGUE VACCINE' : {
+        'keywords': ['PLAGU','yersin']
+        },
+    'PNEUMOCOC/ADULT-POLYSAC' : {
+        'keywords': ['PNEUMO','pnumo']
+        } ,
+    'PNEUMOCOC/PEDI-CONJUGATE' : {
+        'keywords': ['PNEUMO','pnumo']
+        },
+    'POLIO VACCINE (INACTIVATED)' : {
+        'keywords': ['POLIO']
+        },
+    'POLIO VACCINE(ORAL,TRIVALENT)' : {
+        'keywords': ['POLIO']
+        } ,
+    'RABIES VACCINE' : {
+        'keywords': ['RABI']
+        },
+    'RABIES VACCINE (HUMAN DIPLOID CELL)' : {
+        'keywords': ['RABI']
+        } ,
+    'RABIES VACCINE (RHESUS DIPLOID CELL)' : {
+        'keywords': ['RABI']
+        },
+    'RABIES VACCINE, ID' : {
+        'keywords': ['RABI']
+        },
+    'RABIES VACCINE, IM' : {
+        'keywords': ['RABI']
+        } ,
+    'ROCKY MTN SPOTTED FEVER VACCINE' : {
+        'keywords': ['ROCKY','RMSF']
+        },
+    'ROTAVIRUS VACCINE (PENTAVALENT)' : {
+        'keywords': ['ROTA']
+        } ,
+    'ROTAVIRUS VACCINE (MONOVALENT)' : {
+        'keywords': ['ROTA']
+        } ,
+    'RUBELLA VACCINE' : {
+        'keywords': ['RUBEL']
+        },
+    'SMALLPOX VACCINE' : {
+        'keywords': ['SMALL']
+        } ,
+    'TD VACCINE (ADULT)' : {
+        'keywords': ['TD','tetan','dipth']
+        },
+    'TDAP' : {
+        'keywords': ['TDAP','tetan','dipth','pertuss']
+        },
+    'TETANUS BOOSTER' : {
+        'keywords': ['TETAN']
+        } ,
+    'TETANUS TOXOID' : {
+        'keywords': ['TETAN']
+        } ,
+    'TYPHOID VACCINE (ORAL) TY21A' : {
+        'keywords': ['TYPH','tyfoi']
+        } ,
+    'TYPHOID VACCINE (PAREN,HEAT-PHENOL)' : {
+        'keywords': ['TYPH','tyfoi']
+        } ,
+    'TYPHOID VACCINE (VICPS,PAREN,CPS)' : {
+        'keywords': ['TYPH','tyfoi']
+        } ,
+    'TYPHUS VACCINE' : {
+        'keywords': ['TYPH','tyfus']
+        } ,
+    'VACCINIA VIRUS' : {
+        'keywords': ['VACCIN']
+        } ,
+    'VARICELLA VACCINE' : {
+        'keywords': ['VARICEL','chicken']
+        } ,
+    'YELLOW FEVER VACCINE' : {
+        'keywords': ['YELLOW']
+        } ,
+    'ZOSTER SHINGLES VACCINE' : {
+        'keywords': ['ZOST','herpe','shingle']
+        }                                   
     }
+
 
 VAERS_PRESCRIPTION = {
     'Methylprednisolone': {
