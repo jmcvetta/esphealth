@@ -64,8 +64,8 @@ def main():
         options.fever = True
         options.diagnostics = True
         options.lx = True
-        options.rx = False
-        options.allergy = False
+        options.rx = True
+        options.allergy = True
 
     if not (options.fever or options.diagnostics or options.lx or options.rx or options.allergy):
         parser.print_help()
