@@ -788,7 +788,7 @@ VAERS_DIAGNOSTICS = {
         },
         
     '682.3': {#
-        'name':'Cellulitis – upper arm',
+        'name':'Cellulitis - upper arm',
         'ignore_period':3,
         'category':'3_possible',
         'source':'',
@@ -796,7 +796,7 @@ VAERS_DIAGNOSTICS = {
         },
         
     '682.5': {#
-        'name':'Cellulitis – buttock',
+        'name':'Cellulitis - buttock',
         'ignore_period':3,
         'category':'3_possible',
         'source':'',
@@ -804,7 +804,7 @@ VAERS_DIAGNOSTICS = {
         },        
     
     '682.6': {#
-        'name':'Cellulitis – thigh',
+        'name':'Cellulitis - thigh',
         'ignore_period':3,
         'category':'3_possible',
         'source':'',
@@ -1198,11 +1198,9 @@ def define_active_rules():
                            obj.heuristic_discarding_codes)
 
 
-
-
 def main():
     define_active_rules()
-    map_lab_tests()
+    #map_lab_tests()
 
 
 if __name__ == '__main__':
