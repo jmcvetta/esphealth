@@ -548,7 +548,9 @@ class LabResultLoader(BaseLoader):
                 log.warning('    "%s"' % component)
             native_code = component[0:20] 
         if not row['natural_key']:
-            natural_key = self.generateNaturalkey(row['natural_key']).__str__() + native_code
+            natural_key = self.generateNaturalkey(row['natural_key']).__str__()
+            if native_code:
+                natural_key = natural_key + native_code
         else:
             natural_key = row['natural_key']
         
