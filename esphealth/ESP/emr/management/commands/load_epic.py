@@ -39,6 +39,7 @@ from django.utils.encoding import DjangoUnicodeDecodeError
 from ESP.settings import DATA_DIR
 from ESP.settings import DATE_FORMAT
 from ESP.settings import DEBUG
+from ESP.settings import ETL_MEDNAMEREVERSE
 from ESP.utils import log
 from ESP.utils import str_from_date
 from ESP.utils import date_from_str
@@ -744,9 +745,9 @@ class PrescriptionLoader(BaseLoader):
         'provider_id',
         'order_date',
         'status',
-        'directions',
+        'directions',#field 7
         'ndc',
-        'drug_desc',
+        'drug_desc',# name, field 9
         'quantity',
         'refills',
         'start_date',
@@ -756,7 +757,16 @@ class PrescriptionLoader(BaseLoader):
         
     ]
 
-    def load_row(self, row):
+    def load_row(self, row, ):
+        
+        # setting to load 2.x data
+        if ETL_MEDNAMEREVERSE:
+            name = self.string_or_none(row['directions'])
+            directions = self.string_or_none(row['drug_desc'])
+        else:
+            name = self.string_or_none(row['drug_desc'])
+            directions = self.string_or_none(row['directions'])
+            
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
         'provenance' : self.provenance,
@@ -767,8 +777,8 @@ class PrescriptionLoader(BaseLoader):
         'natural_key' : natural_key,
         'date' : self.date_or_none(row['order_date']),
         'status' : self.string_or_none(row['status']),
-        'name' : self.string_or_none(row['drug_desc']),
-        'directions' : self.string_or_none(row['directions']),
+        'name' : name,
+        'directions' : directions,
         'code' : row['ndc'],
         'quantity' : row['quantity'],
         'quantity_float' : self.float_or_none(row['quantity']),
