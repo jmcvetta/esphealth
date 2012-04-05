@@ -47,7 +47,7 @@ class Command(BaseCommand):
         make_option('-a', '--all', action='store_true', dest='all'),
         make_option('-c', '--create', action='store_true', dest='create'),
         make_option('-r', '--reports', action='store_true', dest='reports'),
-        # TODO issue 344 add option for allergies and rx 
+        
         )
     
     help = 'VAERS'
