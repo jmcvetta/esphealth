@@ -126,17 +126,9 @@ class Case(models.Model):
     # Events by class
     #
     def __get_all_events(self):
-        #return self.events.all() | self.events_before.all() | self.events_after.all() | self.events_ever.all()
-        #
-        # Generate a list of event IDs to fetch.  We could just OR all the
-        # event fields together and get the same result; but the query Django
-        # generates for is quite a dog.
-        #
-        all_ids = set()
-        for field in [self.events, self.events_before, self.events_after, self.events_ever]:
-            ids = field.all().values_list('pk', flat=True)
-            all_ids.update(ids)
-        return Event.objects.filter(pk__in=all_ids)
+        # This method was formerly necessary because there were events before, 
+        # after etc.  It is no longer required but retained for compatibility.
+        return self.events.all()
     all_events = property(__get_all_events)
 
     def __get_lab_results(self):
