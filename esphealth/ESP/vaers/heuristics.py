@@ -16,7 +16,7 @@ from ESP.static.models import Icd9, Allergen
 from ESP.emr.models import Immunization, Encounter, LabResult,  Allergy
 from ESP.emr.models import Prescription
 from ESP.vaers.models import AdverseEvent, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent
-from ESP.vaers.models import DiagnosticsEventRule, AllergyEventRule
+from ESP.vaers.models import DiagnosticsEventRule
 from ESP.vaers.models import ExcludedICD9Code
 from ESP.vaers.rules import TIME_WINDOW_POST_EVENT
 from ESP.utils.utils import log
@@ -127,16 +127,18 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
         return counter
         
 class VaersAllergyHeuristic(AdverseEventHeuristic):
-    def __init__(self, event_name, allergens, category, risk_period):
+    
+    def __init__(self, event_name, rule, category, risk_period):
         '''
-        @type allergens: [keywords,   ...]
+        @type rule: [keywords,   ...]
         @type risk_period: int
-        @type verbose_name: String
+        @type category: String
+        @type event_name: string
         '''
                  
         self.name = event_name
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
-        self.allergens = allergens
+        self.keywords = rule['keywords']
         self.category = category
         self.time_post_immunization = risk_period
         
@@ -148,12 +150,13 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
         return 'VAERS: ' + self.name
             
     def matches(self, **kw):
-        # allergies has a general time post imm
+        
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
+        # patient's immunization is same as self.name (rule's name)
         allergy_qs = Allergy.objects.following_vaccination(self.time_post_immunization)
-        allergy_qs = allergy_qs.filter(allergen_code__in=self.allergens.all())
         allergy_qs = allergy_qs.filter(date__gte=begin, date__lte=end)
+        allergy_qs = allergy_qs.filter(patient__immunization__name__in = self.name)
         allergy_qs = allergy_qs.distinct()
         return allergy_qs
 
@@ -161,14 +164,18 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
         log.info('Generating events for %s' % self.name)
         counter = 0
         allergyevent_type = ContentType.objects.get_for_model(AllergyEvent)
+        #TODO exclusion allergies with keyword in self.keyworkds, prior to vaccination
         for this_allergy in self.matches(**kw):
-            earliest = this_allergy.date - relativedelta(months=self.risk_period)
+            #earliest = this_allergy.date - relativedelta(months=12)
+            #  earliest could be patient's dob?
                 
             prior_allergy_qs = Allergy.objects.filter(
                     date__lt = this_allergy.date, 
-                    date__gte = earliest, 
+                    #date__gte = earliest, 
+                    name__in = self.keywords, 
+                    
                     patient = this_allergy.patient, 
-                    allergen_codes__in = self.icd9s.all(),
+                    
                 )
             if prior_allergy_qs:
                 continue # Prior allergy so ignore 
@@ -209,6 +216,7 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         self.icd9s = icd9s
         self.category = category
         self.ignore_period = ignore_period
+        #TODO possibly add the encounter type to this object to use it for filtering
         
         super(VaersDiagnosisHeuristic, self).__init__(event_name, verbose_name=self.verbose_name)
             
@@ -233,10 +241,11 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         for this_enc in self.matches(**kw):
             if self.ignore_period:
                 earliest = this_enc.date - relativedelta(months=self.ignore_period)
+                # TODO filter by encounter type ?? it is only valid if the current enctype and past enctype is the same
                 prior_enc_qs = Encounter.objects.filter(
                     date__lt = this_enc.date, 
                     date__gte = earliest, 
-                    patient = this_enc.patient, 
+                    patient = this_enc.patient,                     
                     icd9_codes__in = self.icd9s.all(),
                 )
                 if prior_enc_qs:
@@ -578,6 +587,7 @@ def make_rx_heuristics(rx_type):
     
     def heuristic_name(criterion, rx_name):
         # possibly expand this if we add more attributes to the criterion for rx vaers
+        # use criterion later?
         return '%s' % (rx_name)
    
     heuristic_list = []
@@ -585,18 +595,21 @@ def make_rx_heuristics(rx_type):
     heuristic_list.append(h)
     return heuristic_list
 
-def make_allergy_heuristics(name):
-    '''
-    @type name: string
-    '''
+def make_allergy_heuristics(allergy_type):
     
-    rule = AllergyEventRule.objects.get(name=name)
-    risk_period = 42
-    allergens = rule.heuristic_defining_codes.all() 
+    def heuristic_name( allergy_name):
+        
+        return '%s' % (allergy_name)
+        
+    risk_period = rules.TIME_WINDOW_POST_EVENT
+    #rule = AllergyEventRule.objects.get(name=allergy_type)
+    rule = rules.VAERS_ALLERGIES[allergy_type]
+   
     category =  '3_possible'
-    
-    return VaersAllergyHeuristic(name, allergens, category, risk_period) 
-
+    heuristic_list = []
+    h = VaersAllergyHeuristic(heuristic_name(allergy_type),rule, category, risk_period)
+    heuristic_list.append(h)
+    return  heuristic_list
         
 def fever_heuristic():
     return VaersFeverHeuristic()
@@ -630,9 +643,9 @@ def prescription_heuristics():
 def allergy_heuristics():
     hs = []
 
-    #for allergy_type in rules.VAERS_ALLERGIES.keys():
-        #for heuristic in make_allergy_heuristics(allergy_type):
-            #hs.append(heuristic)
+    for allergy_type in rules.VAERS_ALLERGIES.keys():
+        for heuristic in make_allergy_heuristics(allergy_type):
+            hs.append(heuristic)
 
     return hs
 
