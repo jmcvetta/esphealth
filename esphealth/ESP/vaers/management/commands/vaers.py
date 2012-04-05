@@ -14,9 +14,9 @@ from django.core.management.base import CommandError
 from ESP.settings import TODAY
 from ESP.utils.utils import date_from_str, str_from_date, log, days_in_interval, make_date_folders
 from ESP.conf.common import EPOCH
-from ESP.vaers.models import EncounterEvent, LabResultEvent, HL7_MESSAGES_DIR
+from ESP.vaers.models import EncounterEvent, LabResultEvent, HL7_MESSAGES_DIR, PrescriptionEvent, AllergyEvent
 
-from ESP.vaers.heuristics import fever_heuristic, diagnostic_heuristics, lab_heuristics
+from ESP.vaers.heuristics import fever_heuristic, diagnostic_heuristics, lab_heuristics,prescription_heuristics,allergy_heuristics
 
 
             
@@ -24,7 +24,7 @@ usage_msg = """
 Usage: python %prog -b[egin_date] -e[nd_date] 
 { [-d --detect],[-r --reports] } | [-f --full]
 
- One or more of '-lx', '-f', '-d' or '-a' must be specified.
+ One or more of '-l', '-p', '-g', '-f', '-d' or '-a' must be specified.
     
     DATE variables are specified in this format: 'YYYYMMDD'
 
@@ -42,6 +42,8 @@ class Command(BaseCommand):
         make_option('-l', '--lx', action='store_true', dest='lx', help='Run Lab Results Heuristics'),
         make_option('-d', '--diagnostics', action='store_true', dest='diagnostics', 
                           help='Run Diagnostics Heuristics'),
+        make_option('-p', '--rx', action='store_true', dest='rx',help='Run Prescription Heuristics'),
+        make_option('-g', '--allergy', action='store_true', dest='allergy',help='Run Allergy Heuristics'),
         make_option('-a', '--all', action='store_true', dest='all'),
         make_option('-c', '--create', action='store_true', dest='create'),
         make_option('-r', '--reports', action='store_true', dest='reports'),
@@ -63,9 +65,11 @@ class Command(BaseCommand):
             options['fever'] = True
             options['diagnostics'] = True
             options['lx'] = True
-            # TODO issue 344 add more for rx heuristics and allergy heuristics
+            options['rx'] = True
+            options['allergy'] = True
+            
     
-        if not (options['fever'] or options['diagnostics'] or options['lx']):
+        if not (options['fever'] or options['diagnostics'] or options['lx'] or options['rx'] or options['allergy']):
             raise CommandError('Must specify --fever, --diagnosics, --lx, or --all')
     
         if not (options['create'] or options['reports']):
@@ -75,7 +79,8 @@ class Command(BaseCommand):
         if options['fever']: heuristics.append(fever_heuristic())
         if options['diagnostics']: heuristics += diagnostic_heuristics()
         if options['lx']: heuristics += lab_heuristics()
-        # TODO issue 344 add more for rx heuristics and allergy heuristics
+        if options['rx']: heuristics += prescription_heuristics()
+        if options['allergy']: heuristics += allergy_heuristics()
     
     
         if options['create']: 
@@ -95,5 +100,6 @@ class Command(BaseCommand):
             if options['fever']: produce_reports(EncounterEvent.objects.fevers())
             if options['diagnostics']: produce_reports(EncounterEvent.objects.icd9_events())
             if options['lx']: produce_reports(LabResultEvent.objects.all())
-            # TODO issue 344 add more for rx heuristics and allergy heuristics
+            if options['rx']: produce_reports(PrescriptionEvent.objects.all())
+            if options['allergy']: produce_reports(AllergyEvent.objects.all())
     
