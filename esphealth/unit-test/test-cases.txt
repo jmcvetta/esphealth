@@ -52,10 +52,9 @@ VAERS
 1 patient with 1 prescription for Epinephrine  (NEG) -kruskalS 
      same patient with immunization within 7 days of rx
      same patient with 1 prescription for Epinephrine within past 12 months of rx
--------heuristic NIY 
-1 patient with 1 allergy rabies call category 3 -michaelK  NIY
+1 patient with 1 allergy rabies call category 3 -michaelK  
      same patient with immunization within 42 days of allergy
-1 patient with 1 allergy in keyword list in doc lyme call category 3 -bazzaJ  NIY
+1 patient with 1 allergy in keyword list in doc lyme call category 3 NEG -bazzaJ  
      same patient with immunization within 42 days of allergy
      same patient with same allergy prior to first allergy 
          
