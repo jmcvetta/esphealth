@@ -12,7 +12,7 @@ from django.shortcuts import render_to_response
 from django.views.generic.simple import direct_to_template
 from django.contrib.sites.models import Site
 
-from ESP.vaers.models import AdverseEvent, ProviderComment
+from ESP.vaers.models import AdverseEvent, ProviderResponse
 from ESP.vaers.forms import CaseConfirmForm
 from ESP.utils.utils import log, Flexigrid
 
@@ -49,13 +49,6 @@ def list_cases(request):
                               mimetype='application/json'
                               )
 
-
-
-def detect(request):
-    log.info("running detect vaers from the UI is Not implemented Yet");
-    #TODO issue 373 add here the call to a general vaers detect all with all dates 
-    # or redirect to a page with choices for which things to detect and dates
-    return direct_to_template(request, PAGE_TEMPLATE_DIR + 'detect.html')
 
 def notify(request, id):
 
@@ -107,16 +100,11 @@ def verify(request, key):
                     'User confirmed to be provider %s' % (provider.full_name))
         return response
         
-            
-        
-
 
 def case_details(request, id):
     
     case = AdverseEvent.by_id(id)
     if not case: raise Http404
-
-
 
     if case.category == '1_common': 
         return HttpResponseForbidden('This case will be automatically reported')
@@ -131,13 +119,11 @@ def case_details(request, id):
                                          'provider for this patient. Please go '\
                                          'back to the confirmation step.')
 
-
     if request.method == 'POST':
         form = CaseConfirmForm(request.POST) 
     else:
         form = CaseConfirmForm()
 
-    
     if request.method == 'POST' and form.is_valid():
         next_status = {
             'confirm':'Q',
@@ -145,14 +131,22 @@ def case_details(request, id):
             'wait':'UR'
             }
         
+        # where we get stuff from the form
+        ishelpful = interrupts = False
         action = form.cleaned_data['action']
         comment_text = form.cleaned_data['comment']
+        if  form.cleaned_data['ishelpful'] =='True':
+            ishelpful = True
+        if form.cleaned_data['interrupts'] == 'True':
+            interrupts = True
+        messagetype = form.cleaned_data['messagetype']
         
-            
         case.status = next_status[action]
         case.save()
-        comment = ProviderComment(author=provider, event=case,
-                                  text=comment_text)
+        
+        comment = ProviderResponse(author=provider, event=case,text=comment_text, 
+                                  ishelpful = ishelpful, interrupts = interrupts,
+                                  messagetype = messagetype)
         comment.save()
         mail_admins('ESP:VAERS - Provider changed case status',
                     'Case %s.\nProvider %s\n.' % (case, provider))
@@ -160,7 +154,7 @@ def case_details(request, id):
         return HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
             
     else:
-        comments = ProviderComment.objects.filter(
+        comments = ProviderResponse.objects.filter(
             author=provider, event=case).order_by('-created_on')
         mail_admins('ESP:VAERS - User viewed case report',
                     'Case %s.\nProvider %s \n.' % (case, provider))
@@ -170,9 +164,3 @@ def case_details(request, id):
                 'comments':comments,
                 'form':form
                 })
-
-
-
-
-
-

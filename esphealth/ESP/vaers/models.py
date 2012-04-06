@@ -35,6 +35,13 @@ HL7_MESSAGES_DIR = os.path.join(DATA_DIR, 'vaers', 'hl7_messages')
 # 3_possible: (confirm) Possible novel adverse event not previously associated with vaccine
 # 4_unlikely: (discard) Routine health visit highly unlikely to be adverse event
 
+#TODO use this later for header in repor for suggested action
+ADVERSE_EVENT_CATEGORY_ACTION = [
+     ('1', 'Automatically confirm, common AE well described, non-serious, adverse event'),
+     ('3', 'Confirm, Possible novel adverse event not previously associated with vaccine'),
+     ('4','Discard, Routine health visit highly unlikely to be adverse event')
+    ]
+
 ADVERSE_EVENT_CATEGORIES = [
     ('1_common', '1_common'),
     ('2_rare', '2_rare'),
@@ -601,6 +608,16 @@ class Sender(models.Model):
     
     def __unicode__(self):
         return u'%s %s' % (self.provider_id, self.name)
+
+class ProviderResponse(models.Model):
+    text = models.TextField()
+    author = models.ForeignKey(Provider)
+    event = models.ForeignKey(AdverseEvent)
+    created_on = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    ishelpful = models.BooleanField(default=False)
+    interrupts = models.BooleanField(default=False)
+    messagetype = models.CharField(max_length=10, blank=False, unique=True, db_index=True)
 
 class ProviderComment(models.Model):
     text = models.TextField()
