@@ -17,7 +17,7 @@ usage_msg = """
 Usage: python %prog -b[egin_date] -e[nd_date] 
 { [-d --detect],[-r --reports] } | [-f --full]
 
- One or more of '-lx', '-f', '-d' or '-a' must be specified.
+ One or more of '-l', '-p', '-g', '-f', '-d' or '-a' must be specified.
     
     DATE variables are specified in this format: 'YYYYMMDD'
 
