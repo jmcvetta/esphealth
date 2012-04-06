@@ -9,7 +9,6 @@ urlpatterns = patterns(
     '',
     (r'^$', views.index),
     (r'^casetable$', views.list_cases),
-    (r'^detect$', views.detect),
     (r'^notify/(?P<id>\d+)/$', views.notify),
     (r'^report$', views.report),
 
