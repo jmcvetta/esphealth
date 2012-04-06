@@ -247,7 +247,6 @@ esphealth/ESP/templates/nodis/validator_similar.html -text
 esphealth/ESP/templates/nodis/validator_summary.html -text
 esphealth/ESP/templates/pages/ss/home.html -text
 esphealth/ESP/templates/pages/vaers/collect_feedback.html -text
-esphealth/ESP/templates/pages/vaers/detect.html -text
 esphealth/ESP/templates/pages/vaers/home.html -text
 esphealth/ESP/templates/pages/vaers/identify.html -text
 esphealth/ESP/templates/pages/vaers/manufacturers.html -text

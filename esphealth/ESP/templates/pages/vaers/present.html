@@ -12,8 +12,7 @@
 
 <h2>Adverse Event to Vaccination Report</h2>
 
-<p>Please confirm if <span class="patient_name">
-{{ case.patient.full_name }}</span>'s case should be reported as an adverse event.<br />
+<p>Please confirm if this case should be reported as an adverse event.<br />
 ESP VAERS has
 identified this case and the recommended action is
 to <span class="msg_case_category">{{ case.get_category_display}}.</span></p>
@@ -22,29 +21,90 @@ to <span class="msg_case_category">{{ case.get_category_display}}.</span></p>
 on this event that you think might be helpful to CDC and FDA vaccine
 safety investigators:</p>
 
-<table id="tbl_case_details">
+<b>Demographics</b>
+<table id="tbl_patient_details">
   <tr>
-  <th>Reason for being considered an adverse event</th>
+  <th>Patient Name</th>
+    <td>{{ case.patient.full_name  }}</td>
+  </tr> 
+  <tr>
+    <th>Gender</th>
+    <td>{{ case.patient.gender }}</td>
+  </tr>
+  <tr>
+    <th>DOB</th>
+    <td>{{ case.patient.date_of_birth }}</td>
+  </tr> 
+  <tr>
+    <th>Race</th>
+    <td>{{ case.patient.race }}</td>
+  </tr> 
+  <tr>
+    <th>Home Address</th>
+    <td>{{ case.patient.address1 }} {{ case.patient.city }} {{ case.patient.state }} {{ case.patient.zip5 }} {{ case.patient.country }}</td>
+  </tr>
+  <tr>
+    <th>Telephone number</th>
+    <td>{{ case.patient.areacode }}-{{ case.patient.tel }}</td>
+  </tr> 
+</table>
+<br>
+<b>Reporting clinician</b>
+<table id="tbl_provider_details">
+  <tr>
+  <th>Provider Name</th>
+    <td>{{ case.provider.full_name  }}</td>
+  </tr> 
+  <tr>
+  <th>Practice address</th>
+    <td>{{ case.provider.dept_address_1 }} {{ case.provider.dept_city }} {{ case.provider.dept_state }} {{ case.provider.dept_zip }}</td>
+  </tr> 
+  <tr>
+  <th>Practice Phone Number</th>
+    <td>{{ case.provider.areacode  }}-{{ case.provider.telephone }} </td>
+  </tr> 
+</table>
+<br>
+<b>Vaccine data</b>
+<table id="tbl_vaccine_details">
+{% for imm in case.immunizations.all %}
+  <tr><th>Vaccine Name</th>
+    <td>
+ 	{{ imm.name }} - {{ imm.vaccine_type }} 
+    </td>
+  </tr>
+  <tr><th>Date of administration</th>
+    <td>
+ 	 {{ imm.date|date:"M d, Y"}}
+    </td>
+    </tr>
+  <tr><th>Vaccine Lot number</th>
+    <td>
+ 	 {{ imm.lot}}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+<BR>
+<b>Clinical event</b>
+<table id="tbl_case_details">
+ <tr>
+  <th>Event category</th>
+    <td>{{ case.get_category_display}}</td>
+  </tr>
+  <tr>
+  <th>Event Trigger</th>
     <td>{{ case.matching_rule_explain }}</td>
   </tr>
-  
-  <tr><th>Relevant Immunizations</th>
-    <td>
-      <dl>
-	{% for imm in case.immunizations.all %}
-	<dd>{{ imm.vaccine_type }} on {{ imm.date|date:"M d, Y"}}</dd>
-	{% endfor %}
-      </dl>
-    </td>
+  <tr>
+  <th>Time to onset</th>
+    <td>detected {{ case.created_on|date:"M d, Y"}} gap {{ case.gap }} days </td>
   </tr>
   {% if case.encounter %}
   <tr>
-    <th>Date of encounter that indicated Adverse Event</th>
-    <td>{{ case.encounter.date|date:"M d, Y"}}</td>
-  </tr>
-  <tr>
-    <th>Icd9 Codes</th>
-    <td>
+    <th>Event Data: Date of encounter that indicated Adverse Event</th>
+    <td> Encounter date: {{ case.encounter.date|date:"M d, Y"}}
+    <BR> Icd9 Codes: 
       <ul>
 	{% for icd9 in case.encounter.icd9_codes.all %}
 	<li>{{ icd9.code }} ({{ icd9.name }})</li>
@@ -53,19 +113,43 @@ safety investigators:</p>
     </td>
   </tr>
   {% endif %}
+  
+   {% if case.lab_result %}
   <tr>
-    <th>Detected on</th>
-    <td>{{ case.created_on|date:"M d, Y"}}</td>
-  </tr>
-    {% if case.lab_result %}
-  <tr>
-    <th>Lab Result that indicated Adverse Event</th>
+    <th>Event Data: Lab Result that indicated Adverse Event</th>
     <td>
       <ul class="lx_summary">
 	<li>Lab Test: {{ case.lab_result.native_name }}</li>
 	<li>Order: #{{ case.lab_result.order_num|default:"N/A" }}</li>
 	<li>Results Obtained on {{ case.lab_result.result_date|date:"M d, Y"}}</li>
 	<li>Results: {{ case.lab_result.result_float|default:"N/A"}}</li>
+      </ul>
+    </td>
+  </tr>
+  {% endif %}
+  
+   {% if case.prescription %}
+  <tr>
+    <th>Event Data: Prescription that indicated Adverse Event</th>
+    <td>
+      <ul class="lx_summary">
+	<li>Prescription name: {{ case.prescription.name }}</li>
+	<li>Prescribed on: {{ case.prescription.date }}</li>
+	<li>Dose: #{{ case.prescription.dose }}</li>
+	
+      </ul>
+    </td>
+  </tr>
+  {% endif %}
+  
+   {% if case.allergy %}
+  <tr>
+    <th>Event Data: Allergy that indicated Adverse Event</th>
+    <td>
+      <ul class="lx_summary">
+	<li>Allergy name: {{ case.allergy.name }}</li>
+	<li>Date Noted: #{{ case.allergy.date_noted }}</li>
+	
       </ul>
     </td>
   </tr>
@@ -87,10 +171,9 @@ safety investigators:</p>
 </div>
 
 <form id="frm_case_confirmation" method="POST" action="{% url present_case case.id %}">
-  {{ form.as_ul }}
-  <div>
-    Please add any commentary or information that you would like to attach to the case report here. Comments for confirmed cases will be added to the final report, while comments on false positives will be used as feedback for our detection system.
-  </div>
+  <B>
+   {{ form.as_ul }}
+ </B>
   <input type="submit" value="submit" />
   {% csrf_token %}
 </form>
