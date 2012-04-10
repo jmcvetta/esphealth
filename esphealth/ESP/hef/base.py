@@ -889,7 +889,6 @@ class LabResultRatioHeuristic(BaseLabResultHeuristic):
         @type  ratio: Decimal
         '''
         assert test_name and date_field
-        assert isinstance(ratio, Decimal)
         self.test_name = test_name
         self.ratio = ratio
         self.date_field = date_field
