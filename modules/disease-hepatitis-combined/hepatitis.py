@@ -148,19 +148,19 @@ class HepatitisCombined(DiseaseDefinition):
             ))
         heuristic_list.append( LabResultRatioHeuristic(
             test_name = 'alt',
-            ratio = Decimal('2.0'),
+            ratio = 2,
             ))
         heuristic_list.append( LabResultRatioHeuristic(
             test_name = 'alt',
-            ratio = Decimal('5.0'),
+            ratio = 5,
             ))
         heuristic_list.append( LabResultRatioHeuristic(
             test_name = 'ast',
-            ratio = Decimal('2.0'),
+            ratio = 2,
             ))
         heuristic_list.append( LabResultRatioHeuristic(
             test_name = 'ast',
-            ratio = Decimal('5.0'),
+            ratio = 5,
             ))
         heuristic_list.append( LabResultFixedThresholdHeuristic(
             test_name = 'alt',
