@@ -14,7 +14,7 @@ from ESP.hef.base import BaseHeuristic, BaseEventHeuristic
 from ESP.conf.common import EPOCH
 from ESP.static.models import Icd9, Allergen
 from ESP.emr.models import Immunization, Encounter, LabResult,  Allergy
-from ESP.emr.models import Prescription
+from ESP.emr.models import Prescription, Problem
 from ESP.vaers.models import AdverseEvent, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent
 from ESP.vaers.models import DiagnosticsEventRule
 from ESP.vaers.models import ExcludedICD9Code
@@ -84,7 +84,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
         
         log.info('Found %d matches' % matches.count())
         
-        encounter_type = ContentType.objects.get_for_model(EncounterEvent)
+        raw_encounter_type = ContentType.objects.get_for_model(EncounterEvent)
 
         counter = 0
         rule_explain = 'Patient had %3.1f fever after immunization(s)'
@@ -98,7 +98,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
                 ev, created = EncounterEvent.objects.get_or_create(
                     category = self.category, date=date, encounter=e, patient=e.patient,
                     defaults={'matching_rule_explain':fever_message,
-                              'content_type': encounter_type}
+                              'content_type': raw_encounter_type}
                     )
             
                 if created: counter += 1
@@ -216,7 +216,7 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         self.icd9s = icd9s
         self.category = category
         self.ignore_period = ignore_period
-        #TODO possibly add the encounter type to this object to use it for filtering
+        
         
         super(VaersDiagnosisHeuristic, self).__init__(event_name, verbose_name=self.verbose_name)
             
@@ -226,6 +226,9 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         return 'VAERS: ' + self.name
             
     def matches(self, **kw):
+        # the reports of AE are per immunization 
+        # TODO check what does it do.
+        
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
         enc_qs = Encounter.objects.following_vaccination(self.time_post_immunization)
@@ -241,15 +244,25 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         for this_enc in self.matches(**kw):
             if self.ignore_period:
                 earliest = this_enc.date - relativedelta(months=self.ignore_period)
-                # TODO filter by encounter type ?? it is only valid if the current enctype and past enctype is the same
+                
                 prior_enc_qs = Encounter.objects.filter(
                     date__lt = this_enc.date, 
                     date__gte = earliest, 
+                    priority__lt = this_enc.priority,
+                    encounter_type = this_enc.encounter_type,
                     patient = this_enc.patient,                     
                     icd9_codes__in = self.icd9s.all(),
                 )
                 if prior_enc_qs:
                     continue # Prior diagnosis so ignore 
+                
+                prior_problem_qs = Problem.objects.filter(
+                    date__lt = this_enc.date, 
+                    icd9__code__in = this_enc.icd9_codes.all(),
+                    patient = this_enc.patient, 
+                )
+                if prior_problem_qs:
+                    continue # prior problem so ignore 
             immunization_qs = Immunization.vaers_candidates(this_enc.patient, this_enc, self.time_post_immunization)
             assert immunization_qs
             # Create event instance

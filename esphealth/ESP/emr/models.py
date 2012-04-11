@@ -1038,7 +1038,7 @@ PRIORITY_TYPES  = [('3','3'),('2','2'),('1','1')]
 class EncounterTypeMap (models.Model):
     raw_encounter_type = models.CharField(max_length=20,  blank=False, db_index=True)
     mapping = models.CharField(max_length=20, choices=ENCOUNTER_TYPES, blank=False, db_index=True)
-    priority = models.CharField(max_length=10, choices=PRIORITY_TYPES, blank=False, db_index=True)
+    priority = models.IntegerField(  blank=False,choices=PRIORITY_TYPES, db_index=True)
     
     def __unicode__(self):
         return u'%s %s' % (self.raw_encounter_type, self.mapping) 

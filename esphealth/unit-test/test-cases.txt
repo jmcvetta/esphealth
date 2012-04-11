@@ -5,7 +5,7 @@ updated: feb 23 2012
 # TODO create some test data with no natural key, with some non ascii char, etc. 
 
 VAERS 
-16 patients (6 NEG and 11 pos)	
+16 patients (6 NEG and 12 pos)	
 (all encounters have to be in the non specialty site for urgent care--not urgent?)
 1 patient with 1 encounter with a diagnostic in the list of VAERS_DIAGNOSTICS (bells) in rules.py -platU yes
        that has an ignore period 12 and category 3 
@@ -30,6 +30,7 @@ VAERS
   within TIME_WINDOW_POST_EVENT (within 7 days) immunization. 
 1 patient with encounter with icd9 bronchospasm category 3, icd9 786.07  within 4 days of imm, -klompasD yes
    same patient with encounter with icd9 bronchospasm category 3, icd9 786.07 more than 3 months prior to imm, 
+   and 999.4 Anaphylactic shock due to serum in same encounter that has category2_rare
     same patient with immunization  
 1 patient with 2 encounters with icd9 stroke 435.0 within 12 months (NEG) -robertA yes
     same patient with immunization within 30 days prior to second dx (has exclusion)
@@ -57,6 +58,15 @@ VAERS
 1 patient with 1 allergy in keyword list in doc lyme call category 3 NEG -bazzaJ  
      same patient with immunization within 42 days of allergy
      same patient with same allergy prior to first allergy 
+1 patient with visit/encounter icd9 360.11 uveitis 20 days after immunization  - bazzaJ (NEG)
+  same patient with immunization cholera vaccine 
+  same patient with problem prior to encounter with the same code but after immunization.         
+multiple encounter type test:
+1 patient with encounter/visit with idc9 780.2 syncope within 30 days immunization  
+   same patient with immunization tetaNus toxin,   
+ same patient with encounter after 1st type ER with same code Z, within 30 days immunization  
+ same patient with encounter after 2nd with type hospitalized with same icd9 within 30 days immunization  
+ same patient with encounter after 2nd  type (VISIT) with Code Z, NEG within 30 days immunization  
          
 SS
 3 patients (should generate 2 cases)
