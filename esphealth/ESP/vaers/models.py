@@ -77,14 +77,19 @@ class EncounterEventManager(models.Manager):
     
     def icd9_events(self):
         return self.exclude(matching_rule_explain__startswith='Patient had')
-
+    
+# TODO create an AE report, when we generate a new AE we find if there is an AE report for 
+# this vaccination. and if there is we add to it 
+# the form will be from AE report not just the AE 
+# test sample of multiple icd9 with dif category in same encounter.
+# 
 
 class AdverseEvent(models.Model):
 
     # Model Fields
     patient = models.ForeignKey(Patient)
     immunizations = models.ManyToManyField(Immunization)
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=100)
     date = models.DateField()
     gap = models.IntegerField(null=True)
     matching_rule_explain = models.CharField(max_length=200)
@@ -171,8 +176,8 @@ class AdverseEvent(models.Model):
             patient.save()
 
             if encounter: 
-                encounter_type = ContentType.objects.get_for_model(EncounterEvent)
-                event = EncounterEvent(content_type=encounter_type)
+                raw_encounter_type = ContentType.objects.get_for_model(EncounterEvent)
+                event = EncounterEvent(content_type=raw_encounter_type)
                 event_encounter = Encounter(
                     patient=patient, date = encounter['date'],
                     temperature = encounter['temperature'])
@@ -405,7 +410,7 @@ class AdverseEvent(models.Model):
 class EncounterEvent(AdverseEvent):
     objects = EncounterEventManager()
     encounter = models.ForeignKey(Encounter)
-
+    
     @staticmethod
     def write_fever_clustering_report(**kw):
         begin_date = kw.pop('begin_date', None) or EPOCH

@@ -17,7 +17,7 @@ from ESP.emr.models import Provider
 from ESP.emr.models import Patient
 from ESP.emr.models import LabResult
 from ESP.emr.models import LabOrder
-from ESP.emr.models import Encounter
+from ESP.emr.models import Encounter,EncounterTypeMap
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import Allergy
@@ -51,9 +51,14 @@ class LabOrderAdmin(admin.ModelAdmin):
 
 class EncounterAdmin(admin.ModelAdmin):
     list_display = ['pk', 'natural_key', 'patient', 'provider', 'date']
-    raw_id_fields = STANDARD_RAW_ID_FIELDS + ['icd9_codes']
+    raw_id_fields = STANDARD_RAW_ID_FIELDS + ['icd9_codes','encounter_type']
     search_fields = STANDARD_SEARCH_FIELDS
 #    ordering = ['-date']
+    ordering = ['pk']
+    
+class EncounterTypeMapAdmin(admin.ModelAdmin):
+    list_display = ['pk',  'raw_encounter_type', 'mapping', 'priority']
+    search_fields = [ 'raw_encounter_type', 'mapping']
     ordering = ['pk']
 
 class PrescriptionAdmin(admin.ModelAdmin):
@@ -99,6 +104,7 @@ admin.site.register(Patient, PatientAdmin)
 admin.site.register(LabResult, LabResultAdmin)
 admin.site.register(LabOrder, LabOrderAdmin)
 admin.site.register(Encounter, EncounterAdmin)
+admin.site.register(EncounterTypeMap,EncounterTypeMapAdmin)
 admin.site.register(Prescription, PrescriptionAdmin)
 admin.site.register(Immunization, ImmunizationAdmin)
 admin.site.register(Allergy, AllergyAdmin)

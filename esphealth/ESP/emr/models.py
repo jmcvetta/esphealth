@@ -1014,7 +1014,6 @@ class Prescription(BasePatientRecord):
                 }
             }
     
-
 class EncounterManager(models.Manager):
     
     def following_vaccination(self, days_after, include_same_day=False, **kw):
@@ -1027,11 +1026,22 @@ class EncounterManager(models.Manager):
             date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
 
     def syndrome_care_visits(self, sites=None):
-        qs = self.filter(encounter_type__in=['URGENT CARE', 'VISIT'])
+        #TODO change these types? visit is app?
+        qs = self.filter(raw_encounter_type__in=['URGENT CARE', 'VISIT'])
         if sites: qs = qs.filter(site_natural_key__in=sites)
         return qs
 
+ENCOUNTER_TYPES = [('VISIT','VISIT'), ('ER','ER'), ('HOSPITALIZATION','HOSPITALIZATION')]
+# smaller number is higher priority
+PRIORITY_TYPES  = [('3','3'),('2','2'),('1','1')]
 
+class EncounterTypeMap (models.Model):
+    raw_encounter_type = models.CharField(max_length=20,  blank=False, db_index=True)
+    mapping = models.CharField(max_length=20, choices=ENCOUNTER_TYPES, blank=False, db_index=True)
+    priority = models.CharField(max_length=10, choices=PRIORITY_TYPES, blank=False, db_index=True)
+    
+    def __unicode__(self):
+        return u'%s %s' % (self.raw_encounter_type, self.mapping) 
     
 
 class Encounter(BasePatientRecord):
@@ -1043,8 +1053,10 @@ class Encounter(BasePatientRecord):
     #
     # Fields taken directly from ETL file.  Some minimal processing, such as 
     # standardizing capitalization, may be advisable in loader code.  
-    #
-    encounter_type = models.CharField('Type of encounter', max_length=20, blank=True, null=True, db_index=True)
+    
+    raw_encounter_type =  models.CharField('Raw Type of encounter', max_length=20, blank=True, null=True, db_index=True)
+    encounter_type = models.CharField('Type of encounter', choices=ENCOUNTER_TYPES, max_length=20, blank=True, null=True, db_index=True)
+    priority =  models.CharField(max_length=10,choices=PRIORITY_TYPES, blank=False, db_index=True)
     status = models.CharField('Record status', max_length=20, blank=True, null=True, db_index=True)
     site_natural_key = models.CharField('Native EMR system site ID', max_length=30, blank=True, null=True, db_index=True)
     site_name = models.CharField('Encounter site name', max_length=100, blank=True, null=True, db_index=True)

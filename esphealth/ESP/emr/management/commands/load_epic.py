@@ -51,7 +51,7 @@ from ESP.emr.models import EtlError
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
 from ESP.emr.models import LabResult, LabOrder
-from ESP.emr.models import Encounter
+from ESP.emr.models import Encounter,EncounterTypeMap
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import SocialHistory, Problem, Allergy
@@ -656,7 +656,11 @@ class EncounterLoader(BaseLoader):
         'bmi' # added in 3
         ]
     
-    def load_row(self, row):
+    def load_row(self, row): 
+        #TODO change to load the  encounter type to the raw from the file
+        # and load encounter type with the mapping table which is loaded manually
+        # 
+        
         # Util methods
         cap = self.capitalize
         up = self.up
@@ -673,7 +677,7 @@ class EncounterLoader(BaseLoader):
             'date': dton(row['encounter_date']),
             'raw_date': son(row['encounter_date']),
             'site_natural_key': son( row['site_natural_key'] ),
-            'encounter_type': up(row['event_type']),
+            'raw_encounter_type': up(row['event_type']),
             'date_closed': dton(row['date_closed']),
             'raw_date_closed': son(row['date_closed']),
             'site_name': cap(row['site_name']),
@@ -701,6 +705,10 @@ class EncounterLoader(BaseLoader):
             
         e, created = self.insert_or_update(Encounter, values, ['natural_key'])
         e.bmi = e._calculate_bmi() # No need to save until we finish ICD9s
+        #fill out encounter_type and priority from mapping table
+        encountertypemap = EncounterTypeMap.objects.get(raw_encounter_type = row['event_type'])
+        e.encounter_type = encountertypemap.mapping
+        e.priority = encountertypemap.priority
         #
         # ICD9 Codes
         #

@@ -56,7 +56,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
     def generate(self, **kw):
         created = 0
         detected = 0
-        encounter_type = ContentType.objects.get_for_model(Encounter)
+        raw_encounter_type = ContentType.objects.get_for_model(Encounter)
         begin_date = kw.get('begin_date', EPOCH)
         end_date = kw.get('end_date', datetime.date.today())
 
@@ -73,7 +73,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
             
             ev, new = NonSpecialistVisitEvent.objects.get_or_create(
                 name=self.name, provider=encounter.provider, date=encounter.date, patient=encounter.patient, 
-                content_type=encounter_type, object_id=encounter.id, 
+                content_type=raw_encounter_type, object_id=encounter.id, 
                 defaults = {'reporting_site':site, 
                             'patient_zip_code':patient_zip, 'encounter':encounter
                             }
