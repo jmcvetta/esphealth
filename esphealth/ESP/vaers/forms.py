@@ -8,8 +8,8 @@ CASE_CONFIRMATION_CHOICES = (
 )
 
 CASE_RESPONSE_CHOICES = (
-    ('confirm', 'Yes, submit an adverse event report (with optional comments)'),
-    ('false_positive', 'No, diagnosis not related to vaccination'),
+    ('confirm', 'Yes, it is possible that this event is due to an adverse effect of a vaccine, submit an adverse event report (with optional comments)'),
+    ('false_positive', 'No, it is unlikely that the new diagnosis is related to the vaccine'),
     
 )
 
@@ -20,7 +20,6 @@ CASE_YESNO_CHOICES = (
 )
 
 CASE_TYPE_CHOICES = (
-    ('rare', 'Too Rare'),
     ('approp', 'Appropriate'),
     ('frequent', 'Too Frequent'),
 )

@@ -10,17 +10,6 @@
 
 {% block content %}
 
-<h2>Adverse Event to Vaccination Report</h2>
-
-<p>Please confirm if this case should be reported as an adverse event.<br />
-ESP VAERS has
-identified this case and the recommended action is
-to <span class="msg_case_category">{{ case.get_category_display}}.</span></p>
-  
-<p>Please provide any additional clinical details
-on this event that you think might be helpful to CDC and FDA vaccine
-safety investigators:</p>
-
 <b>Demographics</b>
 <table id="tbl_patient_details">
   <tr>
@@ -32,7 +21,7 @@ safety investigators:</p>
     <td>{{ case.patient.gender }}</td>
   </tr>
   <tr>
-    <th>DOB</th>
+    <th>Date of birth</th>
     <td>{{ case.patient.date_of_birth }}</td>
   </tr> 
   <tr>
@@ -52,7 +41,7 @@ safety investigators:</p>
 <b>Reporting clinician</b>
 <table id="tbl_provider_details">
   <tr>
-  <th>Provider Name</th>
+  <th>Clinician Name</th>
     <td>{{ case.provider.full_name  }}</td>
   </tr> 
   <tr>
@@ -89,71 +78,81 @@ safety investigators:</p>
 <b>Clinical event</b>
 <table id="tbl_case_details">
  <tr>
-  <th>Event category</th>
+  <th>Clinical Event category</th>
     <td>{{ case.get_category_display}}</td>
   </tr>
   <tr>
-  <th>Event Trigger</th>
+  <th>Specific Event Triggered this message</th>
     <td>{{ case.matching_rule_explain }}</td>
   </tr>
-  <tr>
-  <th>Time to onset</th>
-    <td>detected {{ case.created_on|date:"M d, Y"}} gap {{ case.gap }} days </td>
-  </tr>
+  
   {% if case.encounter %}
   <tr>
-    <th>Event Data: Date of encounter that indicated Adverse Event</th>
-    <td> Encounter date: {{ case.encounter.date|date:"M d, Y"}}
-    <BR> Icd9 Codes: 
+    <th>Event value: </th>
+    <td>Icd9 codes:
       <ul>
 	{% for icd9 in case.encounter.icd9_codes.all %}
 	<li>{{ icd9.code }} ({{ icd9.name }})</li>
 	{% endfor %}
       </ul>
     </td>
+    <tr/>
+    <th>Encounter date: </th>
+    <td>  {{ case.encounter.date|date:"M d, Y"}} </td>
   </tr>
   {% endif %}
   
    {% if case.lab_result %}
   <tr>
-    <th>Event Data: Lab Result that indicated Adverse Event</th>
+    <th>Event value: </th>
     <td>
       <ul class="lx_summary">
 	<li>Lab Test: {{ case.lab_result.native_name }}</li>
 	<li>Order: #{{ case.lab_result.order_num|default:"N/A" }}</li>
-	<li>Results Obtained on {{ case.lab_result.result_date|date:"M d, Y"}}</li>
 	<li>Results: {{ case.lab_result.result_float|default:"N/A"}}</li>
       </ul>
     </td>
+    <th>Result date: </th>
+    <td> {{ case.lab_result.result_date|date:"M d, Y"}} </td>
   </tr>
   {% endif %}
   
    {% if case.prescription %}
   <tr>
-    <th>Event Data: Prescription that indicated Adverse Event</th>
+    <th>Event value: </th>
     <td>
       <ul class="lx_summary">
 	<li>Prescription name: {{ case.prescription.name }}</li>
-	<li>Prescribed on: {{ case.prescription.date }}</li>
 	<li>Dose: #{{ case.prescription.dose }}</li>
-	
-      </ul>
+	 </ul>
     </td>
+    <th>Date prescribed: </th>
+    <td> {{ case.prescription.date }} </td>
   </tr>
   {% endif %}
   
    {% if case.allergy %}
   <tr>
-    <th>Event Data: Allergy that indicated Adverse Event</th>
+    <th>Event value: </th>
     <td>
       <ul class="lx_summary">
 	<li>Allergy name: {{ case.allergy.name }}</li>
-	<li>Date Noted: #{{ case.allergy.date_noted }}</li>
 	
       </ul>
     </td>
+    <th>Date Noted: </th>
+    <td> {{ case.allergy.date_noted }} </td>
   </tr>
   {% endif %}
+  
+  <tr>
+  <th>Event Date</th>
+    <td>{{ case.created_on|date:"M d, Y"}}  </td>
+  </tr>
+  <tr>
+  <th>Time since vaccination</th>
+    <td>{{ case.gap }} days </td>
+  </tr>
 </table>
 
 <div id="case_comments_list">
