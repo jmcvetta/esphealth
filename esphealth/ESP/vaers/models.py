@@ -637,6 +637,8 @@ class ProviderComment(models.Model):
 
 signals.post_save.connect(adverse_event_digest, sender=EncounterEvent)
 signals.post_save.connect(adverse_event_digest, sender=LabResultEvent)
+signals.post_save.connect(adverse_event_digest, sender=PrescriptionEvent)
+signals.post_save.connect(adverse_event_digest, sender=AllergyEvent)
 
 class ExcludedICD9Code(models.Model):
     '''
