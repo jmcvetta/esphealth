@@ -622,7 +622,7 @@ class ProviderResponse(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
     ishelpful = models.BooleanField(default=False)
     interrupts = models.BooleanField(default=False)
-    messagetype = models.CharField(max_length=10, blank=False, unique=True, db_index=True)
+    messagetype = models.CharField(max_length=10, blank=False, db_index=True)
 
 class ProviderComment(models.Model):
     text = models.TextField()
