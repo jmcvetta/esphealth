@@ -405,7 +405,11 @@ class AdverseEvent(models.Model):
         outfile = open(os.path.join(folder, 'report.%07d.hl7' % self.id), 'w')
         outfile.write(self.render_hl7_message())
         outfile.close()
-           
+        
+    class Meta:
+        permissions = [ ('view_phi', 'Can view protected health information'), ]
+        ordering = ['id']
+                  
             
 class EncounterEvent(AdverseEvent):
     objects = EncounterEventManager()
