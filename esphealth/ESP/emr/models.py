@@ -498,6 +498,10 @@ class Patient(BaseMedicalRecord):
                 'immunizations':immunizations
                 })
             
+    def __getDOB(self):
+        return self.date_of_birth.strftime("%B %d, %Y")
+    DOB = property(__getDOB)
+        
     def __str__(self):
         return u'%20s %s' % (self.pk, self.name)
 
