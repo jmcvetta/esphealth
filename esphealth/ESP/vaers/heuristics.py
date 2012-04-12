@@ -425,7 +425,8 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         for lab_result in matches:
             try:
                 result = lab_result.result_float or lab_result.result_string
-                rule_explain = 'Lab Result for %s resulting in %s'% (self.name, result)
+                rule_explain = self.name
+                #'Lab Result for %s resulting in %s'% (self.name, result)
 
                 ev, created = LabResultEvent.objects.get_or_create(
                         lab_result=lab_result,
