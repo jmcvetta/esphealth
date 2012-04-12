@@ -26,6 +26,7 @@ from ESP.nodis.management.commands.nodis       import Command as NodisCommand
 from ESP.nodis.management.commands.case_report import Command as CaseReportCommand
 from ESP.emr.management.commands.concordance   import Command as ConcordanceCommand
 from ESP.ui.management.commands.status_report  import Command as StatusReportCommand
+from ESP.vaers.management.commands.vae_listing import Command as VaelistingCommand
 
 from ESP.settings import ETL_SOURCE
 from ESP.settings import ETL_USE_FTP
@@ -132,6 +133,12 @@ class Command(BaseCommand):
                     )
                 del cmnd
                 progress('Successfully generated Nodis case reports')
+                progress('Generating VAERS listing')
+                cmnd = VaelistingCommand()
+                cmnd.run_from_argv([None, None])
+                del cmnd
+                progress('Successfully generated VAERS listing')
+
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             #--- Concordance
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
