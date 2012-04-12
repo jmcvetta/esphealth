@@ -33,8 +33,10 @@ class CaseConfirmForm(forms.Form):
     
     action = forms.ChoiceField(label = 'Possible Adverse Event?',choices=CASE_RESPONSE_CHOICES, 
                                widget=forms.RadioSelect)
+    
     comment = forms.CharField(label = 'Please provide details so that we can refine our adverse event detection algorithms (optional)',
                                 widget=forms.Textarea)
+    
     ishelpful = forms.ChoiceField(label = 'Please help us assess this automated adverse event reporting facility. Was this message helpful?', choices=CASE_YESNO_CHOICES, 
                                widget=forms.RadioSelect)
     interrupts = forms.ChoiceField(label = 'Did it interrupt your work flow?', choices=CASE_YESNO_CHOICES, 
