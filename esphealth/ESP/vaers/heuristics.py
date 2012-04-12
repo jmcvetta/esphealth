@@ -173,7 +173,6 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
                     date__lt = this_allergy.date, 
                     #date__gte = earliest, 
                     name__in = self.keywords, 
-                    
                     patient = this_allergy.patient, 
                     
                 )
@@ -493,18 +492,20 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                     patient = rx.patient,
                     name__in=self.name,
                 )
-            
-            return False
+            if prior_rx_qs:
+                return True
+            else:
+                return False
         
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
         
         days = self.criterion['risk_period_days']
-                
+                        
         candidates = Prescription.objects.following_vaccination(days).filter(
-            name__in=self.name, date__gte=begin, date__lte=end).distinct()
-         
-        return  [c for c in candidates and not excluded_due_to_history(c)]
+            name=self.name, date__gte=begin, date__lte=end).distinct()
+        
+        return  [c for c in candidates if not excluded_due_to_history(c)]
 
     
     def generate(self, **kw):
