@@ -5,6 +5,7 @@ from django.conf.urls.defaults import include
 
 from ESP.vaers import views
 
+
 urlpatterns = patterns(
     '',
     (r'^$', views.index),
@@ -18,6 +19,9 @@ urlpatterns = patterns(
     
     url(r'^verify/(?P<key>\w*)/$', views.verify, name='verify_case'),
     url(r'^case/(?P<id>\d+)/$', views.case_details, name='present_case'),
-    
+
+    #line listing report
+    url(r'^download/', views.download_vae_listing, name='download_listing'),    
+
 )
 
