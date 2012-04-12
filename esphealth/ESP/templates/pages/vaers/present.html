@@ -22,7 +22,7 @@
   </tr>
   <tr>
     <th>Date of birth</th>
-    <td>{{ case.patient.date_of_birth }}</td>
+    <td>{{ case.patient.date_of_birth|date:"M d, Y" }}</td>
   </tr> 
   <tr>
     <th>Race</th>
@@ -97,6 +97,9 @@
       </ul>
     </td>
     <tr/>
+    <th>Encounter type: </th>
+    <td>  {{ case.encounter.encounter_type}} </td>
+    <tr/>
     <th>Encounter date: </th>
     <td>  {{ case.encounter.date|date:"M d, Y"}} </td>
   </tr>
@@ -111,7 +114,8 @@
 	<li>Order: #{{ case.lab_result.order_num|default:"N/A" }}</li>
 	<li>Results: {{ case.lab_result.result_float|default:"N/A"}}</li>
       </ul>
-    </td>
+    </td><tr/>
+    
     <th>Result date: </th>
     <td> {{ case.lab_result.result_date|date:"M d, Y"}} </td>
   </tr>
@@ -125,9 +129,9 @@
 	<li>Prescription name: {{ case.prescription.name }}</li>
 	<li>Dose: #{{ case.prescription.dose }}</li>
 	 </ul>
-    </td>
+    </td><tr/>
     <th>Date prescribed: </th>
-    <td> {{ case.prescription.date }} </td>
+    <td> {{ case.prescription.date|date:"M d, Y" }} </td>
   </tr>
   {% endif %}
   
@@ -139,9 +143,9 @@
 	<li>Allergy name: {{ case.allergy.name }}</li>
 	
       </ul>
-    </td>
+    </td><tr/>
     <th>Date Noted: </th>
-    <td> {{ case.allergy.date_noted }} </td>
+    <td> {{ case.allergy.date_noted|date:"M d, Y" }} </td>
   </tr>
   {% endif %}
   
