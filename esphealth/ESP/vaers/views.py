@@ -11,6 +11,8 @@ from django.shortcuts import render_to_response
 
 from django.views.generic.simple import direct_to_template
 from django.contrib.sites.models import Site
+from django.core.servers.basehttp import FileWrapper
+
 
 from ESP.vaers.models import AdverseEvent, ProviderResponse
 from ESP.vaers.forms import CaseConfirmForm
@@ -164,3 +166,12 @@ def case_details(request, id):
                 'comments':comments,
                 'form':form
                 })
+        
+def download_vae_listing(request):
+    if request.user.has_perm('vaers.view_phi'):
+        file=open("/srv/download/vaers_linelist_phi.csv",'r')
+    else:
+        file=open("/srv/download/vaers_linelist_nophi.csv",'r')        
+    response = HttpResponse(FileWrapper(file), content_type='application/csv')
+    response['Content-Disposition'] = 'attachment; filename=vae_linelist.csv'
+    return response
