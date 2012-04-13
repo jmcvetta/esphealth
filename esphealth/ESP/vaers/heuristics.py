@@ -63,6 +63,8 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
         
     uri = 'urn:x-esphealth:heuristic:channing:vaersfever:v1'
       
+    def vaers_heuristic_name(self):
+        return 'VAERS: ' + self.name
 
     def matches(self, **kw):
         #raise NotImplementedError('Last run support no longer available.  This method must be refactored')
@@ -87,7 +89,7 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
         raw_encounter_type = ContentType.objects.get_for_model(EncounterEvent)
 
         counter = 0
-        rule_explain = 'Patient had %3.1f fever after immunization(s)'
+        rule_explain = '%3.1f fever after immunization(s)'
 
         for e in matches:
             date = e.date
@@ -97,8 +99,10 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
                 # Create event instance
                 ev, created = EncounterEvent.objects.get_or_create(
                     category = self.category, date=date, encounter=e, patient=e.patient,
-                    defaults={'matching_rule_explain':fever_message,
-                              'content_type': raw_encounter_type}
+                    defaults={
+                            'name': self.vaers_heuristic_name(),
+                            'matching_rule_explain':fever_message,
+                            'content_type': raw_encounter_type}
                     )
             
                 if created: counter += 1
@@ -153,10 +157,11 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
         
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
-        # patient's immunization is same as self.name (rule's name)
+        
         allergy_qs = Allergy.objects.following_vaccination(self.time_post_immunization)
         allergy_qs = allergy_qs.filter(date__gte=begin, date__lte=end)
-        allergy_qs = allergy_qs.filter(patient__immunization__name__in = self.name)
+        # patient's immunization is same as self.name (rule's name)
+        allergy_qs = allergy_qs.filter(patient__immunization__name = self.name)
         allergy_qs = allergy_qs.distinct()
         return allergy_qs
 
@@ -173,6 +178,7 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
                     date__lt = this_allergy.date, 
                     #date__gte = earliest, 
                     name__in = self.keywords, 
+                    # or description field 
                     patient = this_allergy.patient, 
                     
                 )
