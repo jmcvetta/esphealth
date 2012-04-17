@@ -124,6 +124,7 @@ class LoadException(BaseException):
 class BaseLoader(object):
     
     float_catcher = re.compile(r'(\d+\.?\d*)') 
+    
     #
     # Caching Note
     #
@@ -159,6 +160,7 @@ class BaseLoader(object):
         self.line_count = len(file_handle.readlines())
         file_handle.seek(0) # Reset file position after counting lines
         self.reader = csv.DictReader(file_handle, fieldnames=self.fields, dialect='epic')
+        
         self.created_on = datetime.datetime.now()
     
     def get_patient(self, natural_key):
@@ -265,7 +267,7 @@ class BaseLoader(object):
         e.g. empty string, return None object.
         '''
         if s:
-           return self.sanatize_str(s)
+            return self.sanatize_str(s)
         else:
             return None
     
@@ -308,6 +310,11 @@ class BaseLoader(object):
         errors = 0 # Number of non-fatal errors encountered
         start_time = datetime.datetime.now()
         for row in self.reader:
+            if self.fields.__len__() < row.__len__():
+                #log.error('Skipping row %s. More items in row than fields' % cur_row)
+                raise LoadException('Bad row with %s fields than expected %s, row %s' 
+                    % (self.fields.__len__() , row.__len__() , cur_row) )
+                
             if not row:
                 continue # Skip None objects
             cur_row += 1 # Increment the counter
@@ -318,6 +325,7 @@ class BaseLoader(object):
             if row[self.fields[0]].upper() == 'CONTROL TOTALS':
                 break
             # Coerce to unicode
+            
             for key in row:
                 if row[key]:
                     try:
@@ -469,6 +477,7 @@ class PatientLoader(BaseLoader):
         ]
     
     def load_row(self, row):
+        
         natural_key = self.generateNaturalkey(row['natural_key'])
         p = self.get_patient(natural_key)
         
