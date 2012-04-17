@@ -311,10 +311,17 @@ class BaseLoader(object):
         start_time = datetime.datetime.now()
         for row in self.reader:
             if self.fields.__len__() < row.__len__():
-                #log.error('Skipping row %s. More items in row than fields' % cur_row)
-                raise LoadException('Bad row with %s fields than expected %s, row %s' 
-                    % (self.fields.__len__() , row.__len__() , cur_row) )
-                
+                errors += 1
+                e = 'Skipping row. More items in row than fields'  
+                err = EtlError()
+                err.provenance = self.provenance
+                err.line = cur_row
+                err.err_msg = e
+                err.data = pprint.pformat(row)
+                err.save()
+                log.error('Skipping row %s. More than %s items in row with %s ' 
+                    % (cur_row, self.fields.__len__() , row.__len__() ))
+                break
             if not row:
                 continue # Skip None objects
             cur_row += 1 # Increment the counter
