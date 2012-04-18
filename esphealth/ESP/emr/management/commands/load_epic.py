@@ -765,7 +765,7 @@ class PrescriptionLoader(BaseLoader):
     fields = [
         'patient_id',
         'mrn',
-        'natural_key',
+        'order_natural_key',
         'provider_id',
         'order_date',
         'status',
@@ -791,10 +791,12 @@ class PrescriptionLoader(BaseLoader):
             name = self.string_or_none(row['drug_desc'])
             directions = self.string_or_none(row['directions'])
             
-        natural_key = self.generateNaturalkey(row['natural_key'])
+        natural_key = self.generateNaturalkey(row['order_natural_key'])+ row['order_date']
+        
         values = {
         'provenance' : self.provenance,
-       #'updated_by' : UPDATED_BY,
+        #'updated_by' : UPDATED_BY,
+        'order_natural_key' :row['order_natural_key'],
         'patient' : self.get_patient(row['patient_id']),
         'mrn' : row['mrn'],
         'provider' : self.get_provider(row['provider_id']),

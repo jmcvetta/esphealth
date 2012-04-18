@@ -860,7 +860,7 @@ class LabOrder(BasePatientRecord):
     
     class Meta:
         verbose_name = 'Lab Order'
-        
+    # natural key is order number    
     procedure_code = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     procedure_modifier = models.CharField(max_length=20, blank=True, null=True)
     procedure_name = models.CharField(max_length=300, blank=True, null=True)
@@ -895,6 +895,7 @@ class Prescription(BasePatientRecord):
     # Manager
     #
     objects = PrescriptionManager()
+    order_natural_key = models.CharField('Order identifier in source EMR system', max_length=128, db_index=True)
     name = models.TextField(max_length=3000, blank=False, db_index=True)
     code = models.CharField('Drug Code (system varies by site)', max_length=255, blank=True, null=True)
     directions = models.TextField(max_length=3000, blank=True, null=True)
