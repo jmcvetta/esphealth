@@ -378,7 +378,7 @@ class PrescriptionWriter(EpicWriter):
     fields = [
         'patient_id',
         'mrn',
-        'natural_key',
+        'order_natural_key',
         'provider_id',
         'order_date',
         'status',
@@ -397,7 +397,7 @@ class PrescriptionWriter(EpicWriter):
         self.writer.writerow({
                 'patient_id':prescription.patient.natural_key,
                 'mrn': prescription.patient.mrn,
-                'natural_key':prescription.natural_key,
+                'order_natural_key':prescription.order_natural_key,
                 'order_date': str_from_date(prescription.date),
                 'status': prescription.status,
                 'directions' : prescription.directions,

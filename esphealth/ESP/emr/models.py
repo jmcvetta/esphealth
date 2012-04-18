@@ -963,6 +963,7 @@ class Prescription(BasePatientRecord):
         p.end_date = when + datetime.timedelta(days=days_range)
         
         p.status = random.choice(Status)
+        p.order_natural_key = now
         p.natural_key = now
         p.start_date = p.date
         p.name = msMeds.name
