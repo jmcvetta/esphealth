@@ -17,9 +17,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from datetime import date
 from dateutil.relativedelta import relativedelta
-
-
-
 from ESP.vaers.models import AdverseEvent
 
 def vaers_csv(no_phi):
@@ -123,7 +120,8 @@ def vaers_csv(no_phi):
         rxarray = []
         lbarray = []
         alarray = []
-        if types == 'encounterevent':
+        if types == 'encounterevent': 
+            
             icd9codes = AE.encounterevent.encounter.icd9_codes.all()
             if no_phi:
                 dxdate = AE.encounterevent.encounter.date.year
@@ -217,7 +215,8 @@ def vaers_csv(no_phi):
                rxarray[5],
                AE.date,
                AE.state,  
-               'providercomment',
+               'questionaire',
+               #TODO should be getting the text from provider response
             ]
         writer.writerow(row) 
     file.close()      
