@@ -42,128 +42,116 @@
 <table id="tbl_provider_details">
   <tr>
   <th>Clinician name</th>
-    <td>{{ case.provider.full_name  }}</td>
+    <td>{{ questionaire.provider.full_name  }}</td>
   </tr> 
   <tr>
   <th>Practice address</th>
-    <td>{{ case.provider.dept_address_1 }} {{ case.provider.dept_city }} {{ case.provider.dept_state }} {{ case.provider.dept_zip }}</td>
+    <td>{{ questionaire.provider.dept_address_1 }} {{ questionaire.provider.dept_city }} {{ questionaire.provider.dept_state }} {{ questionaire.provider.dept_zip }}</td>
   </tr> 
   <tr>
   <th>Practice phone number</th>
-    <td>({{ case.provider.areacode  }}) {{ case.provider.telephone }} </td>
+    <td>({{ questionaire.provider.areacode  }}) {{ questionaire.provider.telephone }} </td>
   </tr> 
 </table>
 <br>
 <b>Vaccine data</b>
 <table id="tbl_vaccine_details">
-{% for imm in case.immunizations.all %}
+
   <tr><th>Vaccine name</th>
     <td>
- 	{{ imm.name }} - {{ imm.vaccine_type }} 
+ 	{{ case.immunization.name }} - {{ case.immunization.vaccine_type }} 
     </td>
   </tr>
   <tr><th>Date of administration</th>
     <td>
- 	 {{ imm.date|date:"M d, Y"}}
+ 	 {{ case.immunization.date|date:"M d, Y"}}
     </td>
     </tr>
   <tr><th>Vaccine lot number</th>
     <td>
- 	 {{ imm.lot}}
+ 	 {{ case.immunization.lot}}
     </td>
   </tr>
-  {% endfor %}
+  
 </table>
 <BR>
 <b>Clinical event</b>
+
 <table id="tbl_case_details">
+{% for event in case.adverse_event.all %}
   <tr>
   <th>Event name:</th>
-    <td>{{ case.matching_rule_explain }}</td>
+    <td>{{ event.matching_rule_explain }}</td>
   </tr>
   
-  {% if case.encounter %}
+  {% ifequal content_type_enc event.content_type %}
   <tr>
     <th>Event value:</th>
     <td>Icd9 codes:
       <ul>
-	{% for icd9 in case.encounter.icd9_codes.all %}
+	{% for icd9 in event.content_object.icd9_codes.all %}
 	<li>{{ icd9.code }} ({{ icd9.name }})</li>
 	{% endfor %}
       </ul>
     </td>
     <tr/>
     <th>Encounter type: </th>
-    <td>  {{ case.encounter.encounter_type}}/ {{ case.encounter.raw_encounter_type}}</td>
+    <td>  {{ event.content_object.encounter_type}} </td>
     <tr/>
     <th>Encounter date: </th>
-    <td>  {{ case.encounter.date|date:"d-M-Y"}} </td>
+    <td>  {{ event.content_object.date|date:"d-M-Y"}} </td>
   </tr>
-  {% endif %}
+  {% endifequal %}
   
-   {% if case.lab_result %}
+   {% ifequal content_type_lx event.content_type %}
   <tr>
     <th>Event value: </th>
     <td>
       <ul class="lx_summary">
-     <li>Result date: {{case.lab_result.result_date|date:"d-M-Y"}}</li>
-	 <li>Value: {{ case.lab_result.result_float|default:"N/A"}}</li>
+     <li>Result date: {{event.content_object.result_date|date:"d-M-Y"}}</li>
+	 <li>Value: {{ event.content_object.result_float|default:"N/A"}}</li>
       </ul>
     </td>
   </tr>
-  {% endif %}
+  {% endifequal %}
   
-   {% if case.prescription %}
+   {% ifequal content_type_rx event.content_type %}
   <tr>
     <th>Event value: </th>
     <td>
       <ul class="lx_summary">
-	<li>Prescription name: {{ case.prescription.name }}</li>
-	<li>Dose: #{{ case.prescription.dose }}</li>
-	<li>Date:{{ case.prescription.date|date:"d-M-Y" }}</li>
+	<li>Prescription name: {{ event.content_object.name }}</li>
+	<li>Dose: #{{ event.content_object.dose }}</li>
+	<li>Date:{{ event.content_object.date|date:"d-M-Y" }}</li>
 	 </ul>
     </td>
   </tr>
-  {% endif %}
+  {% endifequal %}
   
-   {% if case.allergy %}
+   {% ifequal content_type_all event.content_type %}
   <tr>
     <th>Event value: </th>
     <td>
       <ul class="lx_summary">
-	<li>Allergy name: {{ case.allergy.name }}</li>
-	<li>Date noted: {{ case.allergy.date_noted|date:"d-M-Y" }}</li>
+	<li>Allergy name: {{ event.content_object.name }}</li>
+	<li>Date noted: {{ event.content_object.date_noted|date:"d-M-Y" }}</li>
       </ul>
 
   </tr>
-  {% endif %}
+  {% endifequal %}
   
   <tr>
   <th>Event date</th>
-    <td>{{ case.created_on|date:"d-M-Y"}}  </td>
+    <td>{{ event.created_on|date:"d-M-Y"}}  </td>
   </tr>
   <tr>
   <th>Time since vaccination</th>
-    <td>{{ case.gap }} days </td>
+    <td>{{ event.gap }} days </td>
   </tr>
-</table>
-
-{% if comments %}
-<div id="case_comments_list">
-  <h3>Comments</h3>
-  {% for comment in comments %}
-  <div class="comment_entry">
-     <div class="comment_time" >
-      {{ comment.created_on|date:"d-M-Y H:i" }}
-    </div>
-    <div class="comment">{{ comment.text }}</div>
-    <div style="clear:both"></div>
-  </div>
   {% endfor %}
-</div>
-  {% endif %}
+</table>
   
-<form id="frm_case_confirmation" method="POST" action="{% url present_case case.id %}">
+<form id="frm_case_confirmation" method="POST" action="{% url present_case questionaire.id  %}">
  <B>
    {{ form.as_ul }}
  </B>
