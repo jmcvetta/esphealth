@@ -15,9 +15,9 @@ from ESP.conf.common import EPOCH
 from ESP.static.models import Icd9, Allergen
 from ESP.emr.models import Immunization, Encounter, LabResult,  Allergy
 from ESP.emr.models import Prescription, Problem
-from ESP.vaers.models import AdverseEvent, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent
+from ESP.vaers.models import AdverseEvent, Case, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent
 from ESP.vaers.models import DiagnosticsEventRule
-from ESP.vaers.models import ExcludedICD9Code
+from ESP.vaers.models import ExcludedICD9Code, Questionaire
 from ESP.vaers.rules import TIME_WINDOW_POST_EVENT
 from ESP.utils.utils import log
 
@@ -29,7 +29,7 @@ LAB_TESTS_NAMES = rules.VAERS_LAB_RESULTS.keys()
 USAGE_MSG = '''\
 %prog [options]
 
-    One or more of '-lx', '-f', '-d', '-rx', '-g' or '-a' must be specified.
+    One or more of '-lx', '-f', '-d', '-p', '-g' or '-a' must be specified.
     
     DATE variables are specified in this format: 'YYYYMMDD'
 '''
@@ -44,7 +44,31 @@ class AdverseEventHeuristic(BaseHeuristic):
     
         #super(AdverseEventHeuristic, self).__init__(event_name, verbose_name)
         
-     
+    def update_or_create_case(self,immunization_qs, new_event):
+        # if there is an existing case for this event (immunization
+        # and attach to it if not created one
+        for this_imm in immunization_qs:
+                    
+            new_case, case_created = Case.objects.get_or_create(
+                    immunization = this_imm,patient = this_imm.patient
+                    )
+            new_case.date = datetime.datetime.now() 
+            new_case.adverse_event.add(new_event)
+            new_case.save()
+            #create questionaires for every physician in the events
+            #TODO questionaire logic may need tuning , just needs delay of 1 day?
+            
+            for ae in new_case.adverse_event.all():
+                prov  = ae.content_object.provider 
+                new_q, created = Questionaire.objects.get_or_create(provider = prov,
+                      case= new_case)
+                if not created:
+                    continue
+                
+                new_q.save()
+                new_q.create_digest()
+               
+            
     @property
     def core_uris(self):
         # Only this version of HEF is supported
@@ -86,10 +110,10 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
         
         log.info('Found %d matches' % matches.count())
         
-        raw_encounter_type = ContentType.objects.get_for_model(EncounterEvent)
+        content_type = ContentType.objects.get_for_model(Encounter)
 
         counter = 0
-        rule_explain = '%3.1f fever after immunization(s)'
+        rule_explain = 'Patient had %3.1f fever after immunization(s)'
 
         for e in matches:
             date = e.date
@@ -98,22 +122,27 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
             try:
                 # Create event instance
                 ev, created = EncounterEvent.objects.get_or_create(
-                    category = self.category, date=date, encounter=e, patient=e.patient,
+                    category = self.category, date=date, object_id =e.pk, 
+                    content_type = content_type,
+                    patient=e.patient,
                     defaults={
                             'name': self.vaers_heuristic_name(),
-                            'matching_rule_explain':fever_message,
-                            'content_type': raw_encounter_type}
+                            'matching_rule_explain':fever_message,}
                     )
             
-                if created: counter += 1
-                ev.save()
-                ev.immunizations.clear()
-
+                
                 # Register which immunizations may be responsible for the event
                 immunizations = Immunization.vaers_candidates(
                     e.patient, ev, self.time_post_immunization)
-                
                 assert len(immunizations) > 0 
+                
+                if created: 
+                    counter += 1
+                    self.update_or_create_case(immunizations, ev)
+                    
+                ev.save()
+                ev.immunizations.clear()
+                
                 # Get time interval between immunization and event
                 ev.gap = (e.date - min([i.date for i in immunizations])).days
 
@@ -168,7 +197,7 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
     def generate(self, **kw):
         log.info('Generating events for %s' % self.name)
         counter = 0
-        allergyevent_type = ContentType.objects.get_for_model(AllergyEvent)
+        content_type = ContentType.objects.get_for_model(Allergy)
         #TODO exclusion allergies with keyword in self.keyworkds, prior to vaccination
         for this_allergy in self.matches(**kw):
             #earliest = this_allergy.date - relativedelta(months=12)
@@ -188,17 +217,21 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
             assert immunization_qs
             # Create event instance
             new_ae, created = AllergyEvent.objects.get_or_create(
-                allergy = this_allergy, 
+                
+                object_id = this_allergy.pk, 
+                content_type = content_type,
                 date = this_allergy.date, 
                 category = self.category, 
                 patient = this_allergy.patient,
                 defaults={
                     'name': self.vaers_heuristic_name(),
                     'matching_rule_explain': self.name,
-                    'content_type': allergyevent_type,
                     }
                 )
-            if created: counter +=1
+            if created: 
+                counter +=1
+                self.update_or_create_case(immunization_qs, new_ae)
+                    
             new_ae.save() # Must save before adding to ManyToManyField
             # Get time interval between immunization and event
             earliest_imm_date = immunization_qs.aggregate(min=Min('date'))['min']
@@ -245,7 +278,7 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
     def generate(self, **kw):
         log.info('Generating events for %s' % self.name)
         counter = 0
-        encounterevent_type = ContentType.objects.get_for_model(EncounterEvent)
+        content_type = ContentType.objects.get_for_model(Encounter)
         for this_enc in self.matches(**kw):
             if self.ignore_period:
                 earliest = this_enc.date - relativedelta(months=self.ignore_period)
@@ -268,21 +301,28 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                 )
                 if prior_problem_qs:
                     continue # prior problem so ignore 
+                
             immunization_qs = Immunization.vaers_candidates(this_enc.patient, this_enc, self.time_post_immunization)
             assert immunization_qs
             # Create event instance
+            # TODO set breakpoint to 289 see if we ever hit it
+            # check why are we doing get or create and not just new ???
             new_ee, created = EncounterEvent.objects.get_or_create(
-                encounter = this_enc, 
+                
+                object_id = this_enc.pk,
+                content_type = content_type,
                 date = this_enc.date, 
                 category = self.category, 
                 patient = this_enc.patient,
                 defaults={
                     'name': self.vaers_heuristic_name(),
                     'matching_rule_explain': self.name,
-                    'content_type': encounterevent_type,
                     }
                 )
-            if created: counter +=1
+            if created: 
+                counter +=1
+                self.update_or_create_case(immunization_qs, new_ee)
+                
             new_ee.save() # Must save before adding to ManyToManyField
             # Get time interval between immunization and event
             earliest_imm_date = immunization_qs.aggregate(min=Min('date'))['min']
@@ -420,47 +460,42 @@ class VaersLxHeuristic(AdverseEventHeuristic):
     def generate(self, **kw):
         log.info('Generating events for %s' % self.name)
         counter = 0
-        
-        #begin_date = kw.get('begin_date', None) or EPOCH
-        #end_date = kw.get('end_date', None) or datetime.date.today()
-
-        matches = self.matches(**kw)
-
-        lab_type = ContentType.objects.get_for_model(LabResultEvent)
-
-        for lab_result in matches:
+        content_type = ContentType.objects.get_for_model(LabResult)
+                        
+        for lab_result in self.matches(**kw):
             try:
                 result = lab_result.result_float or lab_result.result_string
-                rule_explain = self.name
-                #'Lab Result for %s resulting in %s'% (self.name, result)
-
+                rule_explain =  'Lab %s resulting in %s'% (self.name, result)
+                #rule_explain = self.name
+                
                 ev, created = LabResultEvent.objects.get_or_create(
-                        lab_result=lab_result,
-                        category=self.criterion['category'],
-                        date=lab_result.date,
-                        patient=lab_result.patient,
-                        defaults = {
-                            'name': self.vaers_heuristic_name(),
-                            'matching_rule_explain': rule_explain,
-                            'content_type':lab_type}
-                        )
-                                    
-                if created: counter += 1
+                            object_id =lab_result.pk,
+                            content_type = content_type,
+                            category=self.criterion['category'],
+                            date=lab_result.date,
+                            patient=lab_result.patient,
+                            defaults = {
+                                'name': self.vaers_heuristic_name(),
+                                'matching_rule_explain': rule_explain},
+                            )
+                                        
+                # Register which immunizations may be responsible for the event
+                immunizations = Immunization.vaers_candidates(lab_result.patient, ev, self.time_post_immunization)
+                assert len(immunizations) > 0
+                
+                if created: 
+                    counter += 1
+                    self.update_or_create_case(immunizations, ev)
 
                 ev.save()
                 ev.immunizations.clear()
-
-                # Register which immunizations may be responsible for the event
-                immunizations = Immunization.vaers_candidates(lab_result.patient, ev, self.time_post_immunization)
-
-                assert len(immunizations) > 0
+    
                 # Get time interval between immunization and event
                 ev.gap = (lab_result.date - min([i.date for i in immunizations])).days
-
-
+    
                 for imm in immunizations:
                     ev.immunizations.add(imm)
-                                   
+                                       
                 ev.save()
 
             except AssertionError:
@@ -468,7 +503,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 log.warn('Deleting event %s' % ev)
                 ev.delete()
                 counter -= 1
-
+            
         log.info('Created %d events' % counter)
 
         return counter
@@ -524,7 +559,7 @@ class VaersRxHeuristic(AdverseEventHeuristic):
 
         matches = self.matches(**kw)
 
-        rx_type = ContentType.objects.get_for_model(PrescriptionEvent)
+        content_type = ContentType.objects.get_for_model(Prescription)
 
         for rx in matches:
             try:
@@ -532,28 +567,29 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                 rule_explain = 'Prescription for %s'% (self.name)
 
                 ev, created = PrescriptionEvent.objects.get_or_create(
-                        prescription=rx,
+                        object_id =rx.pk,
+                        content_type = content_type,
                         category=self.criterion['category'],
                         date=rx.date,
                         patient=rx.patient,
                         defaults = {
                             'name': self.vaers_heuristic_name(),
-                            'matching_rule_explain': rule_explain,
-                            'content_type':rx_type}
+                            'matching_rule_explain': rule_explain},
                         )
                                     
-                if created: counter += 1
+                # Register which immunizations may be responsible for the event
+                immunizations = Immunization.vaers_candidates(rx.patient, ev, self.time_post_immunization)
+                assert len(immunizations) > 0
+                
+                if created: 
+                    counter += 1
+                    self.update_or_create_case(immunizations, ev)
 
                 ev.save()
                 ev.immunizations.clear()
 
-                # Register which immunizations may be responsible for the event
-                immunizations = Immunization.vaers_candidates(rx.patient, ev, self.time_post_immunization)
-
-                assert len(immunizations) > 0
                 # Get time interval between immunization and event
                 ev.gap = (rx.date - min([i.date for i in immunizations])).days
-
 
                 for imm in immunizations:
                     ev.immunizations.add(imm)
@@ -569,7 +605,6 @@ class VaersRxHeuristic(AdverseEventHeuristic):
         log.info('Created %d events' % counter)
 
         return counter
-
 
 
 def make_diagnosis_heuristic(name):

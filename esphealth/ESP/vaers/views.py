@@ -4,6 +4,7 @@
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import HttpResponseNotFound, HttpResponseForbidden
 from django.http import HttpResponseNotAllowed, Http404
+from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator
 from django.core.mail import mail_admins
@@ -14,9 +15,10 @@ from django.contrib.sites.models import Site
 from django.core.servers.basehttp import FileWrapper
 
 
-from ESP.vaers.models import AdverseEvent, ProviderResponse
+from ESP.vaers.models import AdverseEvent, Case,Questionaire, ADVERSE_EVENT_CATEGORY_ACTION
 from ESP.vaers.forms import CaseConfirmForm
 from ESP.utils.utils import log, Flexigrid
+from ESP.emr.models import Immunization, Encounter, Prescription,LabResult,Allergy
 
 
 import datetime
@@ -74,15 +76,20 @@ def report(request):
                               {'cases':cases})                             
 
 def verify(request, key):
-
+    # TODO change to use two parameters: pkid of Q, key is digest from Q
+    # initial version dont verify digest , TODO verify later
+    # TODO digest should be associated with the questionaire
+    # and get the provider from the Q.
+    # sends to case details with the id of Q
+    
     case = AdverseEvent.by_digest(key)
     if not case: raise Http404
-
+    # TODO get the events from case in Q and get highest category?
     if case.category == '1_common': 
         return HttpResponseForbidden('This case will be automatically reported')
+    # TODO get it from the Q
     provider = case.provider()
     if not provider: return HttpResponseForbidden('Not for your eyes')
-
 
     if request.method == 'GET':
         authorized_id = int(request.COOKIES.get('confirmed_id', 0))
@@ -93,7 +100,6 @@ def verify(request, key):
             return direct_to_template(request, PAGE_TEMPLATE_DIR + 'identify.html', {
                     'case':case })
 
-
     else: # request.method == 'POST'
         confirmed_id = request.POST.get('provider_confirmation', 0) and provider.id
         response = HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
@@ -101,25 +107,37 @@ def verify(request, key):
         mail_admins('ESP:VAERS - User confirmed identity on verification page',
                     'User confirmed to be provider %s' % (provider.full_name))
         return response
-        
-
+    
+# @param id : is the primary key of the questionaire        
 def case_details(request, id):
+    category = None
     
-    case = AdverseEvent.by_id(id)
+    questionaire = Questionaire.objects.get(id =id)
+    
+    case = questionaire.case
+    
     if not case: raise Http404
-
-    if case.category == '1_common': 
-        return HttpResponseForbidden('This case will be automatically reported')
     
-    provider = case.provider()
-    if not provider: return HttpResponseForbidden('Not for your eyes')
+    #finding the highest category in the event, 
+    if  case.adverse_event.filter(category__startswith ='2'):#2_rare
+        category  = ADVERSE_EVENT_CATEGORY_ACTION[1][0]
+    elif  case.adverse_event.filter(category__startswith ='3'):#3_possible
+        category  =  ADVERSE_EVENT_CATEGORY_ACTION[2][0] 
+    elif  case.adverse_event.filter(category__startswith ='1'):#3_possible
+        category  =  ADVERSE_EVENT_CATEGORY_ACTION[0][0]  
     
-    authorized_id = request.COOKIES.get('confirmed_id', None)
+    if category == ADVERSE_EVENT_CATEGORY_ACTION[0][0] : 
+        return HttpResponseForbidden(ADVERSE_EVENT_CATEGORY_ACTION[0][1])
     
-    if not (authorized_id and int(authorized_id)==provider.id):
-        return HttpResponseForbidden('You have not confirmed you are the care '\
-                                         'provider for this patient. Please go '\
-                                         'back to the confirmation step.')
+    provider = questionaire.provider
+    if not provider: return HttpResponseForbidden('No provider in questionaire')
+    
+    #authorized_id = request.COOKIES.get('confirmed_id', None)
+    # TODO fix this as part of fixing verify 
+    #if not (authorized_id and int(authorized_id)==provider.id):
+        #return HttpResponseForbidden('You have not confirmed you are the care '\
+                                        # 'provider for this patient. Please go '\
+                                         #'back to the confirmation step.')
 
     if request.method == 'POST':
         form = CaseConfirmForm(request.POST) 
@@ -133,38 +151,34 @@ def case_details(request, id):
             'wait':'UR'
             }
         
-        # where we get stuff from the form
-        ishelpful = interrupts = False
-        action = form.cleaned_data['action']
-        comment_text = form.cleaned_data['comment']
-        if  form.cleaned_data['ishelpful'] =='True':
-            ishelpful = True
-        if form.cleaned_data['interrupts'] == 'True':
-            interrupts = True
-        messagetype = form.cleaned_data['messagetype']
+        # this is where we get stuff from the form
+        # initializing flags
+        questionaire.state = next_status[form.cleaned_data['state']]
+        questionaire.comment = form.cleaned_data['comment']
+        questionaire.message_ishelpful=  form.cleaned_data['message_ishelpful'] =='True'
+        questionaire.interrupts_work =  form.cleaned_data['interrupts_work'] == 'True'
+        questionaire.satisfaction_num_msg = form.cleaned_data['satisfaction_num_msg']
         
-        case.status = next_status[action]
-        case.save()
-        
-        comment = ProviderResponse(author=provider, event=case,text=comment_text, 
-                                  ishelpful = ishelpful, interrupts = interrupts,
-                                  messagetype = messagetype)
-        comment.save()
+        questionaire.save()
         mail_admins('ESP:VAERS - Provider changed case status',
                     'Case %s.\nProvider %s\n.' % (case, provider))
 
-        return HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
+        return HttpResponseRedirect(reverse('present_case', kwargs={'id':id}))
             
     else:
-        comments = ProviderResponse.objects.filter(
-            author=provider, event=case).order_by('-created_on')
+       
         mail_admins('ESP:VAERS - User viewed case report',
                     'Case %s.\nProvider %s \n.' % (case, provider))
-            
+        
+        
         return direct_to_template(request, PAGE_TEMPLATE_DIR + 'present.html', {
                 'case':case,
-                'comments':comments,
-                'form':form
+                'questionaire':questionaire,
+                'form':form,
+                'content_type_enc': ContentType.objects.get_for_model(Encounter),
+                'content_type_lx': ContentType.objects.get_for_model(LabResult),
+                'content_type_rx': ContentType.objects.get_for_model(Prescription),
+                'content_type_all': ContentType.objects.get_for_model(Allergy),
                 })
         
 def download_vae_listing(request):

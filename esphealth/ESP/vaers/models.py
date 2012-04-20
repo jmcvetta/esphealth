@@ -3,6 +3,8 @@ import datetime
 import random
 import os
 import pickle
+import time
+import hashlib
 
 from django.db import models
 from django.db.models import signals, Q
@@ -15,8 +17,8 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
 from ESP.emr.choices import WORKFLOW_STATES # FIXME: 'esp' module is deprecated
-from ESP.emr.models import Patient, Immunization,Prescription,Allergy, Allergen, Encounter, LabResult, Provider
-from ESP.static.models import Icd9, Loinc
+from ESP.emr.models import Patient, Immunization,Prescription,Allergy,  Encounter, LabResult, Provider
+from ESP.static.models import Icd9
 from ESP.conf.common import DEIDENTIFICATION_TIMEDELTA, EPOCH
 from ESP.utils.utils import log, make_date_folders
 from ESP.settings import DATA_DIR
@@ -35,11 +37,12 @@ HL7_MESSAGES_DIR = os.path.join(DATA_DIR, 'vaers', 'hl7_messages')
 # 3_possible: (confirm) Possible novel adverse event not previously associated with vaccine
 # 4_unlikely: (discard) Routine health visit highly unlikely to be adverse event
 
-#TODO use this later for header in repor for suggested action
+#TODO use this later for header in report for suggested action
 ADVERSE_EVENT_CATEGORY_ACTION = [
-     ('1', 'Automatically confirm, common AE well described, non-serious, adverse event'),
-     ('3', 'Confirm, Possible novel adverse event not previously associated with vaccine'),
-     ('4','Discard, Routine health visit highly unlikely to be adverse event')
+     ('1_common', 'Automatically confirmed, common AE well described, non-serious, adverse event'),
+     ('2_rare','Automatically confirmed, rare, severe adverse event associated with vaccine.'),
+     ('3_possible', 'Confirm, Possible novel adverse event not previously associated with vaccine'),
+     ('4_unlikely', 'Discard, Routine health visit highly unlikely to be adverse event')
     ]
 
 ADVERSE_EVENT_CATEGORIES = [
@@ -49,15 +52,6 @@ ADVERSE_EVENT_CATEGORIES = [
     ('4_unlikely', '4_unlikely')
 ]
 
-def adverse_event_digest(**kw):
-    import hashlib
-    event = kw.get('instance')
-
-    if not event.digest:
-        clear_msg = '%s%s%s%s' % (event.id, event.immunizations, 
-                                  event.matching_rule_explain, event.category)
-        event.digest = hashlib.sha224(clear_msg).hexdigest()
-        event.save()
 
 class AdverseEventManager(models.Manager):
     def cases_to_report(self):
@@ -72,20 +66,16 @@ class AdverseEventManager(models.Manager):
 
 
 class EncounterEventManager(models.Manager):
+    #TODO change this to check if it is fever some other way, use a boolean flag in encounter event
     def fevers(self):
         return self.filter(matching_rule_explain__startswith='Patient had')
     
     def icd9_events(self):
         return self.exclude(matching_rule_explain__startswith='Patient had')
     
-# TODO create an AE report, when we generate a new AE we find if there is an AE report for 
-# this vaccination. and if there is we add to it 
-# the form will be from AE report not just the AE 
-# test sample of multiple icd9 with dif category in same encounter.
-# 
-
 class AdverseEvent(models.Model):
 
+    objects = AdverseEventManager()
     # Model Fields
     patient = models.ForeignKey(Patient)
     immunizations = models.ManyToManyField(Immunization)
@@ -95,14 +85,15 @@ class AdverseEvent(models.Model):
     matching_rule_explain = models.CharField(max_length=200)
     category = models.CharField(max_length=20, choices=ADVERSE_EVENT_CATEGORIES)
     digest = models.CharField(max_length=200, null=True)
-    state = models.SlugField(max_length=2, choices=WORKFLOW_STATES, default='AR')
     created_on = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
     
-    # To provide polymorphic lookups. Take a look at:
-    # http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
-    content_type = models.ForeignKey(ContentType)
-
+    # Generic foreign key - any kind of EMR record can be tagged
+    #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/
+    content_type = models.ForeignKey(ContentType, db_index=True)
+    object_id = models.PositiveIntegerField(db_index=True)
+    content_object = generic.GenericForeignKey('content_type', 'object_id')
+    
     FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'fixtures', 'events')
     VAERS_FEVER_TEMPERATURE = TEMP_TO_REPORT
    
@@ -224,6 +215,7 @@ class AdverseEvent(models.Model):
         # Category 2 (cases that are reported by default, i.e, no comment
         # from the clinician after 72 hours since the detection.
         may_receive_comments = Q(category='2_rare', created_on__gte=three_days_ago)
+        # TODO work based on cases not events .. 
         cases_to_notify = AdverseEvent.objects.filter(must_confirm|may_receive_comments)
 
         for case in cases_to_notify:
@@ -307,12 +299,10 @@ class AdverseEvent(models.Model):
             }
         
         html_template = templates[self.category] + '.html'
-        text_template = templates[self.category] + '.txt'
+        #text_template = templates[self.category] + '.txt'
         
         html_msg = get_template(html_template).render(Context(params))
-        text_msg = get_template(text_template).render(Context(params))
-
-        
+        #text_msg = get_template(text_template).render(Context(params))       
         
         msg = EmailMessage(settings.EMAIL_SUBJECT, html_msg, settings.EMAIL_SENDER, who_to_send)
         msg.content_subtype = "html"  # Main content is now text/html
@@ -409,11 +399,13 @@ class AdverseEvent(models.Model):
     class Meta:
         permissions = [ ('view_phi', 'Can view protected health information'), ]
         ordering = ['id']
-                  
+        # from hef unique_together = [('content_type', 'object_id')]
+    
+# TODO clean up by moving all methods to adverse event and rename the ones that share the name
+# later consolidate them 
             
 class EncounterEvent(AdverseEvent):
     objects = EncounterEventManager()
-    encounter = models.ForeignKey(Encounter)
     
     @staticmethod
     def write_fever_clustering_report(**kw):
@@ -456,11 +448,11 @@ class EncounterEvent(AdverseEvent):
         make_clustering_event_report_file(os.path.join(folder, 'icd9_events.txt'), within_interval)
 
     def _deidentified_encounter(self, days_to_shift):
-        codes = [{'code':x.code} for x in self.encounter.icd9_codes.all()]
-        date = self.encounter.date - datetime.timedelta(days=days_to_shift)
+        codes = [{'code':x.code} for x in self.content_object.icd9_codes.all()]
+        date = self.content_object.date - datetime.timedelta(days=days_to_shift)
         return {
             'date':str(date),
-            'temperature':self.encounter.temperature,
+            'temperature':self.content_object.temperature,
             'icd9_codes':codes
             }
     
@@ -475,12 +467,12 @@ class EncounterEvent(AdverseEvent):
 
 
     def __unicode__(self):
+        
         return u"Encounter Event %s: Patient %s, %s on %s" % (
-            self.id, self.encounter.patient.full_name, 
+            self.id, self.content_object.patient.full_name, 
             self.matching_rule_explain, self.date)
 
 class PrescriptionEvent(AdverseEvent):
-    prescription  = models.ForeignKey(Prescription)
     
     @staticmethod
     def write_clustering_report(**kw):
@@ -501,12 +493,12 @@ class PrescriptionEvent(AdverseEvent):
         make_clustering_event_report_file(os.path.join(folder, 'rx_events.txt'), within_interval)
 
     def _deidentified_rx(self, days_to_shift):
-        date = self.lab_result.date - datetime.timedelta(days=days_to_shift)
+        date = self.content_object.date - datetime.timedelta(days=days_to_shift)
         return {
-            'med':self.prescription.name,
+            'med':self.content_object.name,
             'date':str(date),
-            'dose':self.prescription.dose,
-            'quantity':self.lab_result.result_string
+            'dose':self.content_object.dose,
+            'quantity':self.content_object.quantity
             }
 
     def complete_deidentification(self, data, **kw):
@@ -519,11 +511,10 @@ class PrescriptionEvent(AdverseEvent):
     
     def __unicode__(self):
         return u'Prescription Event %s: Patient %s, %s on %s' % (
-            self.id, self.prescription.patient.full_name, 
+            self.id, self.content_object.patient.full_name, 
             self.matching_rule_explain, self.date)
 
 class AllergyEvent(AdverseEvent):
-    allergy  = models.ForeignKey(Allergy)
     
     @staticmethod
     def write_clustering_report(**kw):
@@ -544,9 +535,9 @@ class AllergyEvent(AdverseEvent):
         make_clustering_event_report_file(os.path.join(folder, 'allergy_events.txt'), within_interval)
 
     def _deidentified_allergy(self, days_to_shift):
-        date = self.allergy.date - datetime.timedelta(days=days_to_shift)
+        date = self.content_object.date - datetime.timedelta(days=days_to_shift)
         return {
-            'med':self.allergy.name,
+            'med':self.content_object.name,
             'date':str(date)
             }
 
@@ -560,13 +551,11 @@ class AllergyEvent(AdverseEvent):
     
     def __unicode__(self):
         return u'Allergy Event %s: Patient %s, %s on %s' % (
-            self.id, self.allergy.patient.full_name, 
+            self.id, self.content_object.patient.full_name, 
             self.matching_rule_explain, self.date)
                
 class LabResultEvent(AdverseEvent):
-    lab_result = models.ForeignKey(LabResult)
     
-
     @staticmethod
     def write_clustering_report(**kw):
         begin_date = kw.pop('begin_date', None) or EPOCH
@@ -586,13 +575,13 @@ class LabResultEvent(AdverseEvent):
         make_clustering_event_report_file(os.path.join(folder, 'lx_events.txt'), within_interval)
 
     def _deidentified_lx(self, days_to_shift):
-        date = self.lab_result.date - datetime.timedelta(days=days_to_shift)
+        date = self.content_object.date - datetime.timedelta(days=days_to_shift)
         return {
-            'loinc':self.lab_result.loinc.loinc_num,
+            'loinc':self.content_object.loinc.loinc_num,
             'date':str(date),
-            'result_float':self.lab_result.result_float,
-            'result_string':self.lab_result.result_string,
-            'unit': self.lab_result.ref_unit
+            'result_float':self.content_object.result_float,
+            'result_string':self.content_object.result_string,
+            'unit': self.content_object.ref_unit
             }
 
     def complete_deidentification(self, data, **kw):
@@ -604,9 +593,13 @@ class LabResultEvent(AdverseEvent):
         return data
     
     def __unicode__(self):
-        return u'LabResult Event %s: Patient %s, %s on %s' % (
-            self.id, self.lab_result.patient.full_name, 
-            self.matching_rule_explain, self.date)
+        if self.content_object:
+            return u'LabResult Event %s: Patient %s, %s on %s' % (
+                self.id, self.content_object.patient.full_name, 
+                self.matching_rule_explain, self.date)
+        else:
+            return u'LabResult Event %s:  %s on %s' % (
+                self.id, self.matching_rule_explain, self.date)
 
 class Sender(models.Model):
     provider= models.ForeignKey(Provider, verbose_name='Physician', blank=True, null=True) 
@@ -618,27 +611,55 @@ class Sender(models.Model):
     def __unicode__(self):
         return u'%s %s' % (self.provider_id, self.name)
 
-class ProviderResponse(models.Model):
-    text = models.TextField()
-    author = models.ForeignKey(Provider)
-    event = models.ForeignKey(AdverseEvent)
+class Case (models.Model):  
+    
+    date = models.DateTimeField(auto_now=True)  
+    adverse_event = models.ManyToManyField(AdverseEvent, db_index=True)
+    immunization = models.ForeignKey(Immunization,unique=True, blank=True, null=True)
+    patient = models.ForeignKey(Patient,related_name='vaers_cases', blank=False, db_index=True)
+    
+    @staticmethod    
+    def immunization_by_id(id):
+        try:
+            klass = ContentType.objects.get_for_model(Immunization)
+            return klass.model_class().objects.get(id=id)
+        except:
+            return None
+        
+    def __unicode__(self):
+        return u'AE Case %s: Patient %s, for %s on %s' % (
+            self.id, self.immunization.patient.full_name, 
+            self.immunization.name, self.date)
+
+class Questionaire (models.Model):
+    comment = models.TextField()
+    provider = models.ForeignKey(Provider)
     created_on = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
-    ishelpful = models.BooleanField(default=False)
-    interrupts = models.BooleanField(default=False)
-    messagetype = models.CharField(max_length=10, blank=False, db_index=True)
+    #TODO change the code to rename these 3 fields 
+    message_ishelpful = models.NullBooleanField()
+    interrupts_work = models.NullBooleanField()
+    satisfaction_num_msg = models.CharField(max_length=10, db_index=True)
+    case = models.ForeignKey(Case)
+    # HL7 ‘transcription interface’ email for logging/debugging
+    inbox_message = models.TextField()
+    digest = models.CharField(max_length=200, null=True)
+    state = models.SlugField(max_length=2, choices=WORKFLOW_STATES, default='AR')
+    
+    def create_digest(self):
+        
+        if self.digest:
+            return
+        clear_msg = '%s%s%s' % (self.id, self.case.immunization.date, int(time.time()))
+        self.digest = hashlib.sha224(clear_msg).hexdigest()
+        self.save()
+ 
+class Report_Sent (models.Model):
+    date = models.DateTimeField(auto_now_add=True)
+    case = models.ForeignKey(Case)
+    #raw hl7 vaers report as sent
+    vaers_report = models.TextField()
 
-class ProviderComment(models.Model):
-    text = models.TextField()
-    author = models.ForeignKey(Provider)
-    event = models.ForeignKey(AdverseEvent)
-    created_on = models.DateTimeField(auto_now_add=True)
-    last_updated = models.DateTimeField(auto_now=True)
-
-signals.post_save.connect(adverse_event_digest, sender=EncounterEvent)
-signals.post_save.connect(adverse_event_digest, sender=LabResultEvent)
-signals.post_save.connect(adverse_event_digest, sender=PrescriptionEvent)
-signals.post_save.connect(adverse_event_digest, sender=AllergyEvent)
 
 class ExcludedICD9Code(models.Model):
     '''

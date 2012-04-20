@@ -22,25 +22,21 @@ CASE_YESNO_CHOICES = (
 CASE_TYPE_CHOICES = (
     ('approp', 'Appropriate'),
     ('frequent', 'Too Frequent'),
+    ('rare', 'Too Rare'),
 )
-
-class CaseConfirmFormold(forms.Form):
-    action = forms.ChoiceField(choices=CASE_CONFIRMATION_CHOICES, 
-                               widget=forms.RadioSelect)
-    comment = forms.CharField(widget=forms.Textarea)
-    
+   
 class CaseConfirmForm(forms.Form):   
     
-    action = forms.ChoiceField(label = 'Possible Adverse Event?',choices=CASE_RESPONSE_CHOICES, 
+    state = forms.ChoiceField(label = 'Possible Adverse Event?',choices=CASE_RESPONSE_CHOICES, 
                                widget=forms.RadioSelect)
     
     comment = forms.CharField(label = 'Please provide details so that we can refine our adverse event detection algorithms (optional)',
                                 widget=forms.Textarea)
     
-    ishelpful = forms.ChoiceField(label = 'Please help us assess this automated adverse event reporting facility. Was this message helpful?', choices=CASE_YESNO_CHOICES, 
+    message_ishelpful = forms.ChoiceField(label = 'Please help us assess this automated adverse event reporting facility. Was this message helpful?', choices=CASE_YESNO_CHOICES, 
                                widget=forms.RadioSelect)
-    interrupts = forms.ChoiceField(label = 'Did it interrupt your work flow?', choices=CASE_YESNO_CHOICES, 
+    interrupts_work = forms.ChoiceField(label = 'Did it interrupt your work flow?', choices=CASE_YESNO_CHOICES, 
                                widget=forms.RadioSelect)
-    messagetype =  forms.ChoiceField(label = 'Has the number of messages recently been', choices=CASE_TYPE_CHOICES, 
+    satisfaction_num_msg =  forms.ChoiceField(label = 'Has the number of messages recently been', choices=CASE_TYPE_CHOICES, 
                                widget=forms.RadioSelect)
      

@@ -14,6 +14,7 @@ def make_clustering_event_report_file(filename, events, newline_separator='\r\n'
 
 
 def send_event_alert(**kw):
+    #TODO work based on case not event
     '''Send newly found adverse events'''
     from ESP.vaers.models import AdverseEvent
     tests_only = kw.pop('test', False)
