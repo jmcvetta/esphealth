@@ -18,7 +18,6 @@ from ESP.static.models import ImmunizationManufacturer
 from ESP.conf.models import VaccineCodeMap
 from ESP.conf.models import VaccineManufacturerMap
 from ESP.vaers.models import AdverseEvent
-from ESP.vaers.models import ProviderComment
 
 from ESP.vaers.forms import CaseConfirmForm
 from ESP.utils.utils import log
