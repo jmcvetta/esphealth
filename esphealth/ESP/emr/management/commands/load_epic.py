@@ -553,8 +553,9 @@ class LabResultLoader(BaseLoader):
 
     
     def load_row(self, row):
-        native_code = self.string_or_none(row['cpt'])
         component = self.string_or_none(row['component'])
+        native_code = self.string_or_none(row['cpt'])+'--'+component
+        
         if component:
             # We only use first 20 characters of component, since some lab 
             # results (always types unimportant to ESP) have quite long 
@@ -563,7 +564,7 @@ class LabResultLoader(BaseLoader):
             if len(component) > 20:
                 log.warning('Component field is greater than 20 characters, and will be truncated:')
                 log.warning('    "%s"' % component)
-            native_code = component[0:20] 
+                native_code = self.string_or_none(row['cpt'])+'--'+ component[0:20] 
         if not row['natural_key']:
             natural_key = self.generateNaturalkey(row['natural_key']).__str__()
             if native_code:
