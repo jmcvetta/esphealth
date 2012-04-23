@@ -157,12 +157,12 @@ ul.vaers_menu_action li{
     width: 350px;
     background-color: #333;
     color: #CCC;
-    vertical-align: top;
+    vertical-align: left;
 }
 
 #tbl_case_details tr > td {
     border-left: 3px solid #CCC;
-    vertical-align: top;
+    vertical-align: left;
    
 }
 

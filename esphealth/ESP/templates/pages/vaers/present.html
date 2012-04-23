@@ -9,9 +9,10 @@
 {% endblock%}
 
 {% block content %}
-
-<b>Demographics</b>
-<table id="tbl_patient_details">
+<table border="0"> 
+<tr>
+<td style="border:0">
+<table id="tbl_patient_details" 
   <tr>
   <th>Patient name</th>
     <td>{{ case.patient.full_name  }}</td>
@@ -37,9 +38,10 @@
     <td>({{ case.patient.areacode }}) {{ case.patient.tel }}</td>
   </tr> 
 </table>
-<br>
-<b>Reporting clinician</b>
-<table id="tbl_provider_details">
+</td>
+<td style="border:0">
+<table id="tbl_provider_details" >
+
   <tr>
   <th>Clinician name</th>
     <td>{{ questionaire.provider.full_name  }}</td>
@@ -52,10 +54,6 @@
   <th>Practice phone number</th>
     <td>({{ questionaire.provider.areacode  }}) {{ questionaire.provider.telephone }} </td>
   </tr> 
-</table>
-<br>
-<b>Vaccine data</b>
-<table id="tbl_vaccine_details">
 
   <tr><th>Vaccine name</th>
     <td>
@@ -72,20 +70,28 @@
  	 {{ case.immunization.lot}}
     </td>
   </tr>
-  
 </table>
-<BR>
-<b>Clinical event</b>
 
-<table id="tbl_case_details">
+</td>
+</tr>
+</table>
+
+<table border="0">
+<tr><td style="border:0" >
+<b>Clinical events</b>
+<br>
+</td>
+</tr>
+<tr>
 {% for event in case.adverse_event.all %}
+<td style="border:0">
+<table id="" >
   <tr>
-  <th>Event name:</th>
+    <th>Event name:</th>
     <td>{{ event.matching_rule_explain }}</td>
   </tr>
-  
   {% ifequal content_type_enc event.content_type %}
-  <tr>
+   <tr>
     <th>Event value:</th>
     <td>Icd9 codes:
       <ul>
@@ -94,13 +100,15 @@
 	{% endfor %}
       </ul>
     </td>
-    <tr/>
+   </tr>
+   <tr>
     <th>Encounter type: </th>
     <td>  {{ event.content_object.encounter_type}} </td>
-    <tr/>
+   </tr>
+    <tr>
     <th>Encounter date: </th>
     <td>  {{ event.content_object.date|date:"d-M-Y"}} </td>
-  </tr>
+    </tr>
   {% endifequal %}
   
    {% ifequal content_type_lx event.content_type %}
@@ -133,10 +141,10 @@
     <th>Event value: </th>
     <td>
       <ul class="lx_summary">
-	<li>Allergy name: {{ event.content_object.name }}</li>
-	<li>Date noted: {{ event.content_object.date_noted|date:"d-M-Y" }}</li>
+	    <li>Allergy name: {{ event.content_object.name }}</li>
+	    <li>Date noted: {{ event.content_object.date_noted|date:"d-M-Y" }}</li>
       </ul>
-
+    </td>
   </tr>
   {% endifequal %}
   
@@ -148,7 +156,11 @@
   <th>Time since vaccination</th>
     <td>{{ event.gap }} days </td>
   </tr>
+</table> 
+</td>
   {% endfor %}
+
+</tr>
 </table>
   
 <form id="frm_case_confirmation" method="POST" action="{% url present_case questionaire.id  %}">
