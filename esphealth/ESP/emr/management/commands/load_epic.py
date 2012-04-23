@@ -732,12 +732,22 @@ class EncounterLoader(BaseLoader):
         # TODO issue 329 this will change once we use the new diagnosis object
         if not created: # If updating the record, purge old ICD9 list
             e.icd9_codes = []
-        for code_string in row['icd9s'].split(';'):
-            if len(code_string.split()) >= 1: 
-                code = code_string.split()[0].strip()
-                # We'll only accept a code if it has at least one digit in the string.
-                if any(c in string.digits for c in code):
-                    e.icd9_codes.add(self.get_icd9(code))
+        icd9= row['icd9s']
+        # split by semicolon or by space.
+        if   icd9.__contains__(';'):
+            for code_string in row['icd9s'].split(';'):
+                if len(code_string.split()) >= 1: 
+                    code = code_string.split()[0].strip()
+                    # We'll only accept a code if it has at least one digit in the string.
+                    if any(c in string.digits for c in code):
+                        e.icd9_codes.add(self.get_icd9(code))
+        else:
+            for code_string in row['icd9s'].split(' '):
+                if len(code_string.split()) >= 1: 
+                    code = code_string.split()[0].strip()
+                    # We'll only accept a code if it has at least one digit in the string.
+                    if any(c in string.digits for c in code):
+                        e.icd9_codes.add(self.get_icd9(code))
         e.save()
         log.debug('Saved encounter object: %s' % e)
     
