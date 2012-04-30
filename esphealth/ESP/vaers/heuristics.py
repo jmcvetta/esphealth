@@ -545,7 +545,8 @@ class VaersRxHeuristic(AdverseEventHeuristic):
         days = self.criterion['risk_period_days']
                         
         candidates = Prescription.objects.following_vaccination(days).filter(
-            name=self.name, date__gte=begin, date__lte=end).distinct()
+            date__gte=begin, date__lte=end).distinct()
+        candidates = candidates.filter(name__contains=self.name.upper())
         
         return  [c for c in candidates if not excluded_due_to_history(c)]
 
