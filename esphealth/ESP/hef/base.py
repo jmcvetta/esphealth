@@ -320,7 +320,8 @@ class BaseEventHeuristic(BaseHeuristic):
         for this_name in name_list:
             if not this_name in cls.all_possible_event_names():
                 msg = 'Requested invalid event name: "%s".' % this_name
-                raise AssertionError(msg)
+                log.debug(msg)
+                #raise AssertionError(msg)
         # If only one event name, make a tighter query
         if len(name_list) == 1:
             event_qs = Event.objects.filter(name=name_list[0])
