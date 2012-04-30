@@ -224,7 +224,13 @@ class BaseLoader(object):
             obj, created = model.objects.get_or_create(defaults=field_values, **keys)
             for field_name in field_values:
                 setattr(obj, field_name, field_values[field_name])
-            obj.save()
+            try:
+                # Last try
+                obj.save()
+            except IntegrityError:
+                transaction.savepoint_rollback(sid)
+                log.debug('Record dumped')
+                created = True
         return obj, created
         
     def float_or_none(self, str):
@@ -553,10 +559,10 @@ class LabResultLoader(BaseLoader):
 
     
     def load_row(self, row):
-        component = self.string_or_none(row['component'])
-        native_code = self.string_or_none(row['cpt'])+'--'+component
-        
-        if component:
+        component = self.string_or_none(row['component'])  
+        cpt = self.string_or_none(row['cpt'])  
+        if component and cpt:
+            native_code = cpt +'--'+ component
             # We only use first 20 characters of component, since some lab 
             # results (always types unimportant to ESP) have quite long 
             # component values, yet we need the native_code field to be a 
@@ -564,7 +570,17 @@ class LabResultLoader(BaseLoader):
             if len(component) > 20:
                 log.warning('Component field is greater than 20 characters, and will be truncated:')
                 log.warning('    "%s"' % component)
-                native_code = self.string_or_none(row['cpt'])+'--'+ component[0:20] 
+                native_code = cpt +'--'+ component[0:20] 
+        elif cpt:
+            native_code=cpt
+        elif component:
+            native_code = component
+            if len(component) > 20:
+                log.warning('Component field is greater than 20 characters, and will be truncated:')
+                log.warning('    "%s"' % component)
+                native_code = component[0:20] 
+        else:
+            native_code = None
         if not row['natural_key']:
             natural_key = self.generateNaturalkey(row['natural_key']).__str__()
             if native_code:
