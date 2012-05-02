@@ -180,7 +180,7 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
     uri = 'urn:x-esphealth:heuristic:channing:vaersallergies:v1'
     
     def vaers_heuristic_name(self):
-        return 'VAERS: ' + self.name
+        return 'VAERS: allergies to ' + self.name
             
     def matches(self, **kw):
         
@@ -225,7 +225,7 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
                 patient = this_allergy.patient,
                 defaults={
                     'name': self.vaers_heuristic_name(),
-                    'matching_rule_explain': self.name,
+                    'matching_rule_explain': 'allergy to '+self.name,
                     }
                 )
             if created: 
@@ -359,10 +359,10 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
     3.Past medical history list with same code 
     '''
     
-    uri = 'urn:x-esphealth:heuristic:channing:vaers:any_other_dx:v1'
+    uri = 'urn:x-esphealth:heuristic:channing:vaersany_other_dx:v1'
     
     def __init__(self):
-        self.name = 'vaers:any_other_dx' # This is the EVENT name
+        self.name = ' any_other_dx' # This is the EVENT name
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
         self.category = '3_possible'
         self.ignore_period = 36 # months
@@ -546,8 +546,10 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                         
         candidates = Prescription.objects.following_vaccination(days).filter(
             date__gte=begin, date__lte=end).distinct()
-        candidates = candidates.filter(name__contains=self.name.upper())
-        
+        #considering upper case and none
+        candidatesUpper = candidates.filter(name__contains=self.name.upper())
+        candidates = candidates.filter(name__contains=self.name)
+        candidates = candidatesUpper | candidates
         return  [c for c in candidates if not excluded_due_to_history(c)]
 
     
