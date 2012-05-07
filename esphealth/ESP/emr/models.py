@@ -699,6 +699,7 @@ class LabResult(BasePatientRecord):
         Returns the value of the Lx that is immediately prior to
         self.  if 'check_same_unit' is True, only returns the value if
         both labs results have a matching (Case insensitive) ref_unit value
+        returns the value and the date 
         '''
         previous_labs = LabResult.objects.filter(native_code=self.native_code, patient=self.patient,
                                                  date__lt=self.date).order_by('-date')
@@ -706,8 +707,8 @@ class LabResult(BasePatientRecord):
             previous_labs = previous_labs.filter(ref_unit__iexact=self.ref_unit)
         for lab in previous_labs:
             value = (lab.result_float or lab.result_string) or None
-            if value: return value
-        return None
+            if value: return value, lab.date
+        return None, None
 
     def __str__(self):
         return 'Lab Result # %s' % self.pk
@@ -1388,14 +1389,14 @@ class Immunization(BasePatientRecord):
     # TODO: issue 333 Move this code to VAERS module
     #
     @staticmethod
-    def vaers_candidates(patient, event, days_prior):
-        '''Given an adverse event, returns a queryset that represents
+    def vaers_candidates(patient, event_date, days_prior):
+        '''Given an adverse event date, returns a queryset that represents
         the possible immunizations that have caused it'''
         
-        earliest_date = event.date - datetime.timedelta(days=days_prior)
+        earliest_date = event_date - datetime.timedelta(days=days_prior)
                 
         return Immunization.objects.filter(
-            date__gte=earliest_date, date__lte=event.date,
+            date__gte=earliest_date, date__lte=event_date,
             patient=patient
             )
     
