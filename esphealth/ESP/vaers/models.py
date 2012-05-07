@@ -96,7 +96,9 @@ class AdverseEvent(models.Model):
     
     FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'fixtures', 'events')
     VAERS_FEVER_TEMPERATURE = TEMP_TO_REPORT
-   
+    last_known_value = models.FloatField('Last known Numeric Test Result', blank=True, null=True)
+    last_known_date  = models.DateField(blank=True, null=True)
+    
     @staticmethod
     def fakes():
         return AdverseEvent.objects.filter(AdverseEvent.fake_q)
@@ -555,7 +557,7 @@ class AllergyEvent(AdverseEvent):
             self.matching_rule_explain, self.date)
                
 class LabResultEvent(AdverseEvent):
-    
+
     @staticmethod
     def write_clustering_report(**kw):
         begin_date = kw.pop('begin_date', None) or EPOCH
@@ -613,10 +615,12 @@ class Sender(models.Model):
 
 class Case (models.Model):  
     
-    date = models.DateTimeField(auto_now=True)  
+    date = models.DateTimeField(auto_now=True, db_index=True)  
     adverse_event = models.ManyToManyField(AdverseEvent, db_index=True)
-    immunization = models.ForeignKey(Immunization,unique=True, blank=True, null=True)
+    immunizations = models.ManyToManyField(Immunization,related_name='all_immunizations', db_index=True)
     patient = models.ForeignKey(Patient,related_name='vaers_cases', blank=False, db_index=True)
+    prior_immunizations = models.ManyToManyField(Immunization,related_name='prior_immunizations', )
+    last_update = models.DateTimeField(auto_now=True, db_index=True)  
     
     @staticmethod    
     def immunization_by_id(id):
@@ -627,16 +631,15 @@ class Case (models.Model):
             return None
         
     def __unicode__(self):
-        return u'AE Case %s: Patient %s, for %s on %s' % (
-            self.id, self.immunization.patient.full_name, 
-            self.immunization.name, self.date)
+        return u'AE Case %s: Patient %s, on %s' % (
+            self.id, self.patient.full_name, self.date)
 
 class Questionaire (models.Model):
     comment = models.TextField()
     provider = models.ForeignKey(Provider)
     created_on = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
-    #TODO change the code to rename these 3 fields 
+    
     message_ishelpful = models.NullBooleanField()
     interrupts_work = models.NullBooleanField()
     satisfaction_num_msg = models.CharField(max_length=10, db_index=True)
@@ -650,7 +653,7 @@ class Questionaire (models.Model):
         
         if self.digest:
             return
-        clear_msg = '%s%s%s' % (self.id, self.case.immunization.date, int(time.time()))
+        clear_msg = '%s%s%s' % (self.id, self.case.date, int(time.time()))
         self.digest = hashlib.sha224(clear_msg).hexdigest()
         self.save()
  
