@@ -16,24 +16,21 @@
   <tr>
   <th>Patient name</th>
     <td>{{ case.patient.full_name  }}</td>
-  </tr> 
-  <tr>
+  
     <th>Gender</th>
     <td>{{ case.patient.gender }}</td>
   </tr>
   <tr>
     <th>Date of birth</th>
     <td>{{ case.patient.date_of_birth|date:"d-M-Y" }}</td>
-  </tr> 
-  <tr>
+  
     <th>Race</th>
     <td>{{ case.patient.race }}</td>
   </tr> 
   <tr>
     <th>Home address</th>
     <td>{{ case.patient.address1 }} {{ case.patient.city }} {{ case.patient.state }} {{ case.patient.zip5 }} {{ case.patient.country }}</td>
-  </tr>
-  <tr>
+  
     <th>Telephone number</th>
     <td>({{ case.patient.areacode }}) {{ case.patient.tel }}</td>
   </tr> 
@@ -55,112 +52,82 @@
     <td>({{ questionaire.provider.areacode  }}) {{ questionaire.provider.telephone }} </td>
   </tr> 
 
-  <tr><th>Vaccine name</th>
-    <td>
- 	{{ case.immunization.name }} - {{ case.immunization.vaccine_type }} 
-    </td>
-  </tr>
-  <tr><th>Date of administration</th>
-    <td>
- 	 {{ case.immunization.date|date:"M d, Y"}}
-    </td>
-    </tr>
-  <tr><th>Vaccine lot number</th>
-    <td>
- 	 {{ case.immunization.lot}}
-    </td>
-  </tr>
 </table>
 
 </td>
 </tr>
 </table>
-
-<table border="0">
-<tr><td style="border:0" >
-<b>Clinical events</b>
 <br>
-</td>
-</tr>
+<b>Events after immunization date {{ case.date|date:"M d, Y"}} 
+  {% for vacc in case.immunizations.all %}
+	  {{ vacc.name }} - type {{ vacc.vaccine_type }} - lot {{ vacc.lot}} </b>, 
+  {% endfor %}
+<br>
+<b>Prior immunizations
+  {% for vacc in case.prior_immunizations.all %}
+	  {{ vacc.name }} - type {{ vacc.vaccine_type }} - lot {{ vacc.lot}} on {{ vacc.date|date:"M d, Y"}}</b>, 
+  {% endfor %}
+  <br>
+  Date Case was modified {{ case.last_update|date:"M d, Y"}} 
+<table border="0">
 <tr>
+  <td>Date </td><td>Labs</td><td>Diagnosis</td><td>Prescription</td><td>Allergies</td>
+</tr>
+<!-- TODO do a loop to generate how many labs types and figure out the date ranges. 
+TODO create a lab types object to find the column # for the value
+TODO array of dates if dates match as i loop them again put them on teh same row in table
+-->
+
 {% for event in case.adverse_event.all %}
-<td style="border:0">
-<table id="" >
-  <tr>
-    <th>Event name:</th>
-    <td>{{ event.matching_rule_explain }}</td>
-  </tr>
+ <tr>
+  
   {% ifequal content_type_enc event.content_type %}
-   <tr>
-    <th>Event value:</th>
-    <td>Icd9 codes:
-      <ul>
-	{% for icd9 in event.content_object.icd9_codes.all %}
-	<li>{{ icd9.code }} ({{ icd9.name }})</li>
-	{% endfor %}
-      </ul>
-    </td>
-   </tr>
-   <tr>
-    <th>Encounter type: </th>
-    <td>  {{ event.content_object.encounter_type}} </td>
-   </tr>
-    <tr>
-    <th>Encounter date: </th>
+    
     <td>  {{ event.content_object.date|date:"d-M-Y"}} </td>
-    </tr>
+    <td></td>
+    <td>{{ event.matching_rule_explain }}    
+    </td>
+    <td></td>
+    <td></td>
   {% endifequal %}
   
    {% ifequal content_type_lx event.content_type %}
-  <tr>
-    <th>Event value: </th>
-    <td>
-      <ul class="lx_summary">
-     <li>Result date: {{event.content_object.result_date|date:"d-M-Y"}}</li>
-	 <li>Value: {{ event.content_object.result_float|default:"N/A"}}</li>
-      </ul>
-    </td>
-  </tr>
+   
+  <td> {{event.content_object.result_date|date:"d-M-Y"}}</td>
+  <td> {{ event.content_object.native_name }} - {{ event.content_object.result_float|default:"N/A"}}
+     {% if  event.last_known_value  %}
+     <BR> LKV {{ event.last_known_value }} on {{ event.last_known_date|date:"d-M-Y" }}  
+     {% endif %}
+     </td>
+  <td></td>
+  <td></td>
+  <td></td>
+  
   {% endifequal %}
   
    {% ifequal content_type_rx event.content_type %}
-  <tr>
-    <th>Event value: </th>
-    <td>
-      <ul class="lx_summary">
-	<li>Prescription name: {{ event.content_object.name }}</li>
-	<li>Dose: #{{ event.content_object.dose }}</li>
-	<li>Date:{{ event.content_object.date|date:"d-M-Y" }}</li>
-	 </ul>
-    </td>
-  </tr>
+  <td>{{ event.content_object.date|date:"d-M-Y" }} </td>
+  <td></td>
+  <td></td>
+  <td> {{ event.content_object.name }}  </td>
+  <td></td>
+  
   {% endifequal %}
   
    {% ifequal content_type_all event.content_type %}
-  <tr>
-    <th>Event value: </th>
-    <td>
-      <ul class="lx_summary">
-	    <li>Allergy name: {{ event.content_object.name }}</li>
-	    <li>Date noted: {{ event.content_object.date_noted|date:"d-M-Y" }}</li>
-      </ul>
-    </td>
-  </tr>
-  {% endifequal %}
+   <td> {{ event.content_object.date_noted|date:"d-M-Y" }}</td>
+   <td></td>
+   <td></td>
+   <td></td>
+     <td> {{ event.content_object.name }}  </td>
   
-  <tr>
-  <th>Event date</th>
-    <td>{{ event.created_on|date:"d-M-Y"}}  </td>
-  </tr>
-  <tr>
-  <th>Time since vaccination</th>
-    <td>{{ event.gap }} days </td>
-  </tr>
-</table> 
-</td>
+  {% endifequal %}
+    
+   </tr>
+  
   {% endfor %}
 
-</tr>
+
 </table>
   
 <form id="frm_case_confirmation" method="POST" action="{% url present_case questionaire.id  %}">
