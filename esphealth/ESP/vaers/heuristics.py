@@ -44,39 +44,38 @@ class AdverseEventHeuristic(BaseHeuristic):
     
         #super(AdverseEventHeuristic, self).__init__(event_name, verbose_name)
         
-    def update_or_create_case(self, immunization_qs, new_event):
+    def update_or_create_case(self, immunization_qs, this_imm, new_event):
         # if there is an existing case for this event (immunization
         # and attach to it if not created one
         #  add to the case the list of prior vaccines within 42 days 
         # and update the date of last event added 
-        for this_imm in new_event.immunizations.all():
+       
+        prior_immunizations =  immunization_qs.filter(date__lt = this_imm.date)
+        
+        this_case, case_created = Case.objects.get_or_create(
+                 date = this_imm.date,
+                 patient = this_imm.patient
+                )
+        this_case.save()
+        
+        this_case.immunizations.add(this_imm)
+        this_case.adverse_event.add(new_event)
+        
+        this_case.prior_immunizations = prior_immunizations
+        this_case.save()
+        
+        #create questionaires for every physician in the events
+        #TODO questionaire logic may need tuning , just needs delay of 1 day?
+        for ae in this_case.adverse_event.all():
+            prov  = ae.content_object.provider 
+            this_q, created = Questionaire.objects.get_or_create(provider = prov,
+                  case= this_case)
+            if not created:
+                continue
             
-            new_case, case_created = Case.objects.get_or_create(
-                     date = this_imm.date,
-                     patient = this_imm.patient
-                    )
-            new_case.immunizations.add(this_imm)
-            new_case.adverse_event.add(new_event)
-            #only add them the first time?
-            if case_created:
-                for prior_imm in immunization_qs:
-                    new_case.prior_immunizations.add(prior_imm)
-            else:
-                new_case.last_update = datetime.datetime.now()
-            new_case.save()
-            
-            #create questionaires for every physician in the events
-            #TODO questionaire logic may need tuning , just needs delay of 1 day?
-            for ae in new_case.adverse_event.all():
-                prov  = ae.content_object.provider 
-                new_q, created = Questionaire.objects.get_or_create(provider = prov,
-                      case= new_case)
-                if not created:
-                    continue
-                
-                new_q.save()
-                new_q.create_digest()
-               
+            this_q.save()
+            this_q.create_digest()
+           
             
     @property
     def core_uris(self):
@@ -136,12 +135,13 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
                
                 # Create event instance
                 ev, created = EncounterEvent.objects.get_or_create(
-                    category = self.category, date=e.date, object_id =e.pk, 
+                     date=e.date, object_id =e.pk, 
                     content_type = content_type,
                     patient=e.patient,
                     defaults={
                             'name': self.vaers_heuristic_name(),
-                            'matching_rule_explain':fever_message,}
+                            'matching_rule_explain':fever_message,
+                            'category': self.category, }
                     )
                 
                     
@@ -158,7 +158,8 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
                 
                 if created: 
                     counter += 1
-                    self.update_or_create_case(immunizations, ev)
+                    
+                self.update_or_create_case(immunizations, imm, ev)
                 
 
             except AssertionError:
@@ -235,12 +236,12 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
                     object_id = this_allergy.pk, 
                     content_type = content_type,
                     date = this_allergy.date, 
-                    category = self.category, 
                     patient = this_allergy.patient,
                     defaults={
                         'name': self.vaers_heuristic_name(),
                         'matching_rule_explain': 'allergy to '+self.name,
-                        }
+                        'category' : self.category,
+                        },
                     )
                         
                 new_ae.save() # Must save before adding to ManyToManyField
@@ -251,7 +252,7 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
                 
                 if created: 
                     counter +=1
-                    self.update_or_create_case(immunization_qs, new_ae)
+                self.update_or_create_case(immunization_qs, imm, new_ae)
                 
         return counter
 
@@ -339,11 +340,11 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                     object_id = this_enc.pk,
                     content_type = content_type,
                     date = this_enc.date, 
-                    category = self.category, 
                     patient = this_enc.patient,
                     defaults={
                         'name': self.vaers_heuristic_name(),
                         'matching_rule_explain': self.name ,
+                        'category' : self.category, 
                         }
                     )
                     
@@ -355,7 +356,8 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                 
                 if created: 
                     counter +=1
-                    self.update_or_create_case(immunization_qs, new_ee)
+                    
+                self.update_or_create_case(immunization_qs, imm, new_ee)
             
         return counter
 
@@ -447,11 +449,10 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         def excluded_due_to_history(lx, comparator, baseline):
             try:
                 
-                self.lkv,self.lkd = lx.last_known_value()
-                
+                self.lkv, self.lkd = lx.last_known_value()
                 
                 if not self.lkv: return False
-                #TODO store this lkv somewhere and the date of that value
+                
                 # could set it in another object 
                 current_value = lx.result_float or lx.result_string or None
                 
@@ -511,21 +512,20 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                     ev, created = LabResultEvent.objects.get_or_create(
                                 object_id =lab_result.pk,
                                 content_type = content_type,
-                                category=self.criterion['category'],
                                 date=lab_result.date,
                                 patient=lab_result.patient,
                                 defaults = {
                                     'name': self.vaers_heuristic_name(),
-                                    'matching_rule_explain': rule_explain},
+                                    'matching_rule_explain': rule_explain,
+                                    'category' : self.criterion['category'],
+                                    },
                                 )
                                     
                     ev.last_known_value = self.lkv
                     ev.last_known_date = self.lkd                        
                         
                     ev.save()
-                    # do we need to clear now???
-                    ev.immunizations.clear()
-        
+                   
                     # Get time interval between immunization and event
                     ev.gap = (lab_result.date - imm.date).days
                     ev.immunizations.add(imm)
@@ -533,7 +533,8 @@ class VaersLxHeuristic(AdverseEventHeuristic):
     
                     if created: 
                         counter += 1
-                        self.update_or_create_case(immunizations, ev)
+                   
+                    self.update_or_create_case(immunizations, imm, ev)
                 
             except AssertionError:
                 log.error('No candidate immunization for LabResult %s' % lab_result)
@@ -616,12 +617,13 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                     ev, created = PrescriptionEvent.objects.get_or_create(
                             object_id =rx.pk,
                             content_type = content_type,
-                            category=self.criterion['category'],
                             date=rx.date,
                             patient=rx.patient,
                             defaults = {
                                 'name': self.vaers_heuristic_name(),
-                                'matching_rule_explain': rule_explain},
+                                'matching_rule_explain': rule_explain,
+                                'category' :self.criterion['category'],
+                               },
                             )
                                         
                     ev.save()
@@ -634,7 +636,8 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                     
                     if created: 
                         counter += 1
-                        self.update_or_create_case(immunizations, ev)
+                        
+                    self.update_or_create_case(immunizations, imm, ev)
 
             except AssertionError:
                 log.error('No candidate immunization for Prescription %s' % rx)
