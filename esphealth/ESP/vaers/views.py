@@ -19,7 +19,7 @@ from ESP.vaers.models import AdverseEvent, Case,Questionaire, ADVERSE_EVENT_CATE
 from ESP.vaers.forms import CaseConfirmForm
 from ESP.utils.utils import log, Flexigrid
 from ESP.emr.models import Immunization, Encounter, Prescription,LabResult,Allergy
-
+from ESP.settings import VAERS_LINELIST_PATH
 
 import datetime
 
@@ -183,9 +183,11 @@ def case_details(request, id):
         
 def download_vae_listing(request):
     if request.user.has_perm('vaers.view_phi'):
-        file=open("/srv/download/vaers_linelist_phi.csv",'r')
+        filename=VAERS_LINELIST_PATH+"vaers_linelist_phi.csv"
+        vfile=open(filename,'r')
     else:
-        file=open("/srv/download/vaers_linelist_nophi.csv",'r')        
-    response = HttpResponse(FileWrapper(file), content_type='application/csv')
+        filename=VAERS_LINELIST_PATH+"vaers_linelist_nophi.csv"
+        vfile=open(filename,'r')        
+    response = HttpResponse(FileWrapper(vfile), content_type='application/csv')
     response['Content-Disposition'] = 'attachment; filename=vae_linelist.csv'
     return response
