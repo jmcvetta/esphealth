@@ -115,6 +115,7 @@ UPLOAD_SERVER = config['Reporting']['upload_server']
 UPLOAD_USER = config['Reporting']['upload_username']
 UPLOAD_PASSWORD = secrets['General']['upload_password']
 UPLOAD_PATH = config['Reporting']['upload_path']
+VAERS_LINELIST_PATH = config['Reporting']['vaers_linelist_path']
 HL7_DIR = os.path.join(DATA_DIR, 'hl7')
 SITE_ID = 1 # This probably does not need to be configurable
 TIME_ZONE = config['General']['time_zone']
