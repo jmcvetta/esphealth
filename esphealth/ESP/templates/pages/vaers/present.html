@@ -58,7 +58,8 @@
 </tr>
 </table>
 <BR>
-<b>Immunizations on {{ case.date|date:"M d, Y"}}: <br></b>
+<b>Immunizations on {{ case.date|date:"M d, Y"}} Case modified on {{ case.last_update|date:"M d, Y"}} 
+   <br></b>
   {% for vacc in case.immunizations.all %}
 	  {{ vacc.name }} - type {{ vacc.vaccine_type }} - lot {{ vacc.lot}}, 
   {% endfor %}
@@ -71,9 +72,6 @@
   {% endfor %}
   
   {% endif %}
-   
-  <b>Case was modified on {{ case.last_update|date:"M d, Y"}} <BR>
-  </b>
   
 <table border="0">
 <tr>
