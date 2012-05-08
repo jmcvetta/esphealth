@@ -52,6 +52,7 @@ def vaccine_detail(request, id):
     message = ''
     if is_post and form.is_valid():
         native = VaccineCodeMap.objects.get(native_code=id)
+        #TODO: figure out what is going on with native_code and 
         standard = Vaccine.objects.get(native_code=int(form.cleaned_data['vaccine']))
         native.canonical_code = standard
         native.save()
