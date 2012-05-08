@@ -615,9 +615,9 @@ class Sender(models.Model):
 
 class Case (models.Model):  
     
-    date = models.DateTimeField(auto_now=True, db_index=True)  
-    #TODO change this to plural.. check the code.
-    adverse_event = models.ManyToManyField(AdverseEvent, db_index=True)
+    date = models.DateTimeField( db_index=True)  
+    
+    adverse_events = models.ManyToManyField(AdverseEvent, db_index=True)
     immunizations = models.ManyToManyField(Immunization,related_name='all_immunizations', db_index=True)
     patient = models.ForeignKey(Patient,related_name='vaers_cases', blank=False, db_index=True)
     prior_immunizations = models.ManyToManyField(Immunization,related_name='prior_immunizations', )

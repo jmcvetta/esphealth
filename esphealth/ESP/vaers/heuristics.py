@@ -59,14 +59,14 @@ class AdverseEventHeuristic(BaseHeuristic):
         this_case.save()
         
         this_case.immunizations.add(this_imm)
-        this_case.adverse_event.add(new_event)
+        this_case.adverse_events.add(new_event)
         
         this_case.prior_immunizations = prior_immunizations
         this_case.save()
         
         #create questionaires for every physician in the events
         #TODO questionaire logic may need tuning , just needs delay of 1 day?
-        for ae in this_case.adverse_event.all():
+        for ae in this_case.adverse_events.all():
             prov  = ae.content_object.provider 
             this_q, created = Questionaire.objects.get_or_create(provider = prov,
                   case= this_case)
@@ -127,39 +127,39 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
             fever_message = rule_explain % float(e.temperature)
 
             try:
+                
                 # Register which immunizations may be responsible for the event
                 immunizations = Immunization.vaers_candidates(
                     e.patient, e.date, self.time_post_immunization)
                 assert len(immunizations) > 0 
                
-               
-                # Create event instance
-                ev, created = EncounterEvent.objects.get_or_create(
-                     date=e.date, object_id =e.pk, 
-                    content_type = content_type,
-                    patient=e.patient,
-                    defaults={
-                            'name': self.vaers_heuristic_name(),
-                            'matching_rule_explain':fever_message,
-                            'category': self.category, }
-                    )
-                
-                    
-                ev.save()
-                ev.immunizations.clear()
-                
-                # Get time interval between immunization and event
-                ev.gap = (e.date - min([i.date for i in immunizations])).days
-
+                # create a new event for each immunization date 
                 for imm in immunizations:
-                    ev.immunizations.add(imm)
-
-                ev.save()
-                
-                if created: 
-                    counter += 1
+            
+                    # Create event instance
+                    ev, created = EncounterEvent.objects.get_or_create(
+                         date=e.date, object_id =e.pk, 
+                        content_type = content_type,
+                        patient=e.patient,
+                        defaults={
+                                'name': self.vaers_heuristic_name(),
+                                'matching_rule_explain':fever_message,
+                                'category': self.category, }
+                        )
                     
-                self.update_or_create_case(immunizations, imm, ev)
+                        
+                    ev.save()
+                    
+                    # Get time interval between immunization and event
+                    ev.gap = (e.date - imm.date ).days
+                    ev.immunizations.add(imm)
+    
+                    ev.save()
+                    
+                    if created: 
+                        counter += 1
+                        
+                    self.update_or_create_case(immunizations, imm, ev)
                 
 
             except AssertionError:
