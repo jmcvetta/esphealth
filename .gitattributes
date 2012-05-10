@@ -51,6 +51,7 @@ esphealth/ESP/emr/management/commands/data-quality-check.py -text
 esphealth/ESP/emr/management/commands/download_ftp.py -text
 esphealth/ESP/emr/management/commands/extract_epic.py -text
 esphealth/ESP/emr/management/commands/float_checker.py -text
+esphealth/ESP/emr/management/commands/immunization_checker.py -text
 esphealth/ESP/emr/management/commands/load_epic.py -text
 esphealth/ESP/emr/management/commands/load_hl7.py -text
 esphealth/ESP/emr/management/commands/make_fakes.py -text
