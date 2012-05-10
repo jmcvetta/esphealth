@@ -2,7 +2,7 @@
 
 from ESP.static.models import Vaccine, ImmunizationManufacturer
 from ESP.emr.models import Patient, Provider, Immunization
-from ESP.vaers.models import AdverseEvent
+from ESP.vaers.models import AdverseEvent, Case
 from ESP.utils import utils
 from ESP.settings import SITE_NAME
 
@@ -96,7 +96,7 @@ class AdverseReactionReport(object):
         obx_vaccination.value_type = 'TS'
         obx_vaccination.identifier = ['30952-6', 'Date of vaccination', 'LN']
         obx_vaccination.value = utils.str_from_date(
-            max([x.date for x in self.event.immunizations.all()]))
+            max([x.date for x in Case.objects.get(adverse_events = self.event).immunizations.all()]))
         obx_vaccination.observation_result_status = 'F'
         observation_results.append(obx_vaccination)
 
@@ -107,12 +107,7 @@ class AdverseReactionReport(object):
         obx_date.observation_result_status = 'F'
         observation_results.append(obx_date)
 
-
-
-
         return SegmentTree(obr_fda_report, observation_results)
-        
-        
 
     def vaccine_list(self):
         obr_vaccine_list = OBR()
@@ -120,7 +115,7 @@ class AdverseReactionReport(object):
 
         vaccines = []
 
-        for idx, immunization in enumerate(self.event.immunizations.all()):
+        for idx, immunization in enumerate(Case.objects.get(adverse_events =self.event).immunizations.all()):
             vaccine_detail = VaccineDetail(immunization)
             for seg in vaccine_detail.segments:
                 vaccines.append(seg)
@@ -132,8 +127,7 @@ class AdverseReactionReport(object):
         obr_prior_vaccination_list.universal_service_id = ['30961-7', 'Any other vaccinations within 4 weeks prior to the date listed in #10', 'LN']
 
         vaccines = []
-
-        for idx, immunization in enumerate(self.event.immunizations.all()):
+        for idx, immunization in enumerate(Case.objects.get(adverse_events =self.event).immunizations.all()):
             vaccine_detail = PriorVaccinationDetail(immunization)
             for seg in vaccine_detail.segments:
                 vaccines.append(seg)

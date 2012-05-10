@@ -119,11 +119,11 @@ def case_details(request, id):
     if not case: raise Http404
     
     #finding the highest category in the event, 
-    if  case.adverse_event.filter(category__startswith ='2'):#2_rare
+    if  case.adverse_events.filter(category__startswith ='2'):#2_rare
         category  = ADVERSE_EVENT_CATEGORY_ACTION[1][0]
-    elif  case.adverse_event.filter(category__startswith ='3'):#3_possible
+    elif  case.adverse_events.filter(category__startswith ='3'):#3_possible
         category  =  ADVERSE_EVENT_CATEGORY_ACTION[2][0] 
-    elif  case.adverse_event.filter(category__startswith ='1'):#3_possible
+    elif  case.adverse_events.filter(category__startswith ='1'):#3_possible
         category  =  ADVERSE_EVENT_CATEGORY_ACTION[0][0]  
     
     if category == ADVERSE_EVENT_CATEGORY_ACTION[0][0] : 
@@ -169,7 +169,6 @@ def case_details(request, id):
        
         mail_admins('ESP:VAERS - User viewed case report',
                     'Case %s.\nProvider %s \n.' % (case, provider))
-        
         
         return direct_to_template(request, PAGE_TEMPLATE_DIR + 'present.html', {
                 'case':case,

@@ -152,8 +152,6 @@ class VaersFeverHeuristic(AdverseEventHeuristic):
                     
                     # Get time interval between immunization and event
                     ev.gap = (e.date - imm.date ).days
-                    ev.immunizations.add(imm)
-    
                     ev.save()
                     
                     if created: 
@@ -247,7 +245,6 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
                 new_ae.save() # Must save before adding to ManyToManyField
                 # Get time interval between immunization and event
                 new_ae.gap = (this_allergy.date - imm.date).days
-                new_ae.immunizations.add(imm)
                 new_ae.save()
                 
                 if created: 
@@ -351,7 +348,6 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                 new_ee.save() # Must save before adding to ManyToManyField
                 # Get time interval between immunization and event
                 new_ee.gap = (this_enc.date - imm.date).days
-                new_ee.immunizations.add(imm)
                 new_ee.save()
                 
                 if created: 
@@ -528,7 +524,6 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                    
                     # Get time interval between immunization and event
                     ev.gap = (lab_result.date - imm.date).days
-                    ev.immunizations.add(imm)
                     ev.save()
     
                     if created: 
@@ -627,11 +622,9 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                             )
                                         
                     ev.save()
-                    ev.immunizations.clear()
-    
+                    
                     # Get time interval between immunization and event
                     ev.gap = (rx.date - imm.date).days
-                    ev.immunizations.add(imm)
                     ev.save()
                     
                     if created: 

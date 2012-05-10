@@ -78,7 +78,6 @@ class AdverseEvent(models.Model):
     objects = AdverseEventManager()
     # Model Fields
     patient = models.ForeignKey(Patient)
-    immunizations = models.ManyToManyField(Immunization)
     name = models.CharField(max_length=100)
     date = models.DateField()
     gap = models.IntegerField(null=True)
@@ -235,7 +234,7 @@ class AdverseEvent(models.Model):
 
     def temporal_report(self):
         results = []
-        for imm in self.immunizations.all():
+        for imm in Case.objects.get(adverse_events =self).immunizations.all():
             patient = imm.patient
             results.append({
                     'id':imm.natural_key,
@@ -327,7 +326,7 @@ class AdverseEvent(models.Model):
         assert patient.is_fake()
 
         deidentified = []
-        for imm in self.immunizations.all():
+        for imm in Case.objects.get(adverse_events =self).immunizations.all():
             new_date = imm.date - datetime.timedelta(days=days_to_shift)
             fake_imm = Immunization.make_mock(imm.vaccine, patient, new_date)
             deidentified.append(fake_imm)
@@ -420,9 +419,9 @@ class EncounterEvent(AdverseEvent):
 
         fever_events = EncounterEvent.objects.fevers().filter(date__gte=begin_date, date__lte=end_date, 
                                                               gap__lte=7)
-
+        
         within_interval = [e for e in fever_events 
-                           if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
+                           if (e.date - max([i.date for i in Case.objects.get(adverse_events = e).immunizations.all()])).days <= gap]
 
         log.info('Writing report for %d fever events between %s and %s' % (
                 len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
@@ -441,7 +440,7 @@ class EncounterEvent(AdverseEvent):
                                                                   date__lte=end_date, gap__lte=30)
 
         within_interval = [e for e in icd9_events 
-                           if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
+                           if (e.date - max([i.date for i in Case.objects.get(adverse_events = e).immunizations.all()])).days <= gap]
 
         log.info('Writing report for %d icd9 events between %s and %s' % (
                 len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
@@ -487,7 +486,7 @@ class PrescriptionEvent(AdverseEvent):
 
         rx_events = PrescriptionEvent.objects.filter(date__gte=begin_date, date__lte=end_date)
         within_interval = [e for e in rx_events 
-                           if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
+                           if (e.date - max([i.date for i in Case.objects.get(adverse_events = e).immunizations.all()])).days <= gap]
 
         log.info('Writing report for %d Prescription events between %s and %s' % (
                 len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
@@ -529,7 +528,7 @@ class AllergyEvent(AdverseEvent):
 
         allergy_events = AllergyEvent.objects.filter(date__gte=begin_date, date__lte=end_date)
         within_interval = [e for e in allergy_events 
-                           if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
+                           if (e.date - max([i.date for i in Case.objects.get(adverse_events = e).immunizations.all()])).days <= gap]
 
         log.info('Writing report for %d Allergy events between %s and %s' % (
                 len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
@@ -569,7 +568,7 @@ class LabResultEvent(AdverseEvent):
 
         lx_events = LabResultEvent.objects.filter(date__gte=begin_date, date__lte=end_date)
         within_interval = [e for e in lx_events 
-                           if (e.date - max([i.date for i in e.immunizations.all()])).days <= gap]
+                           if (e.date - max([i.date for i in Case.objects.get(adverse_events = e).immunizations.all()])).days <= gap]
 
         log.info('Writing report for %d Lab Result events between %s and %s' % (
                 len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
