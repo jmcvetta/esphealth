@@ -118,7 +118,7 @@ def vaers_csv(no_phi):
                 if age > 90: 
                     age = 90
                 pname = obsc
-            immunization = AE.immunizations.all()
+            immunization = case.immunizations.all()
             immuarray = []
             x = 0
             for imm in immunization:
