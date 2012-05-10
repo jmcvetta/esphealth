@@ -252,21 +252,23 @@ class Icd9(models.Model):
             #Higher bound, however, must be appended to the highest
             #possible value of the range if X itself is a wildcard
             #expression. E.g: 998* -> 998.99
-            if high.rstrip('.*') != high:
-                high = high.rstrip('.*') + '.99'
-                
+            if high.isdigit():
+                if high.rstrip('.*') != high:
+                    high = high.rstrip('.*') + '.99'
+            else: # strip if it is alpha 
+                high = high.rstrip('.*')
 
         if '*' in expression and '-' not in expression:
             low = expression.rstrip('.*')
             high = expression.rstrip('.*') + '.99'
 
-
-        assert(float(low))
-        assert(float(high))
-            
-        return Icd9.objects.filter(code__gte=low, code__lte=high).order_by('code')
-
-    
+        if low.isdigit():
+            assert(float(low))
+            assert(float(high))
+                
+            return Icd9.objects.filter(code__gte=low, code__lte=high).order_by('code')
+        else:
+            return Icd9.objects.filter(code__startswith = low).order_by('code') | Icd9.objects.filter(code__startswith = high).order_by('code') 
         
         
    

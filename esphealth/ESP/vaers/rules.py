@@ -760,6 +760,8 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':12,
         'category':'3_possible',
         'source':'Menactra',
+        #TODO issue 384 add risk start period to all
+        'risk_period_start':0,
         'risk_period_days': 30,
         },
     
@@ -1047,7 +1049,7 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':12,
         'category':'2_rare',
         'source':'MMR',
-        'risk_period_days': 7,
+        'risk_period_days': 30,#TODO this is wrong is from 7-30 days 
         },
             
     '495.9': {#
@@ -1070,6 +1072,13 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':12,
         'category':'3_possible',
         'source':'Heb B',
+        'risk_period_days': 30, #TODO this is 1-30 the code is not distinguishing
+        },
+        
+    'E948*; E949*': {#
+        'name':'Vaccine causing adverse event',
+        'ignore_period':None,
+        'category':'3_possible',
         'risk_period_days': 30,
         },
         
@@ -1077,7 +1086,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Vaccinia (generalized)',
         'ignore_period':None,
         'category':'3_possible',
-        'risk_period_days': 30,
+        'risk_period_days': 30, # this is 0-30
         },
         
     '415.1; 415.11; 415.12; 415.19; 453*': {#   
