@@ -1375,6 +1375,7 @@ class Immunization(BasePatientRecord):
     manufacturer = models.CharField('Manufacturer', max_length=100, blank=True, null=True)
     lot = models.TextField('Lot Number', max_length=500, blank=True, null=True)
     visit_date = models.DateField('Date of Visit', blank=True, null=True)
+    isvaccine = models.NullBooleanField('Matches vaccine regex', null=True)
     #
     # HEF
     #
