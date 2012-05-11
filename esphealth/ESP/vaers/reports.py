@@ -21,7 +21,6 @@ def main():
     parser.add_option('-i', '--interval', action='store', dest='gap', type='int',
                       help='Maximum interval between event and immunization, in days')
 
-    parser.add_option('-f', '--fever', action='store_true', dest='fever', help='Fever Events Reports')
     parser.add_option('-l', '--lx', action='store_true', dest='lx', help='Lab Results Reports')
     parser.add_option('-d', '--diagnostics', action='store_true', dest='icd9', help='Icd9 Reports')
     parser.add_option('-p', '--rx', action='store_true', dest='rx',help='Prescription Reports')
@@ -42,19 +41,16 @@ def main():
 
 
     if options.all:
-        options.fever = True
         options.icd9 = True
         options.lx = True
         options.rx = True
         options.allergy = True
         
-    if not (options.fever or options.icd9 or options.lx or options.rx or options.allergy):
+    if not ( options.icd9 or options.lx or options.rx or options.allergy):
         parser.print_help()
         import sys
         sys.exit()
 
-    if options.fever: 
-        EncounterEvent.write_fever_clustering_report(begin_date=begin_date, end_date=end_date)
     if options.icd9: 
         EncounterEvent.write_diagnostics_clustering_report(begin_date=begin_date, end_date=end_date)
     if options.lx: 
