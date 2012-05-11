@@ -440,6 +440,8 @@ class Patient(BaseMedicalRecord):
     def prescriptions(self):
         return Prescription.objects.filter(patient=self)
 
+    def allergies (self):
+        return Allergy.objects.filter(patient=self)
 
     def document_summary(self):
         '''
@@ -486,6 +488,7 @@ class Patient(BaseMedicalRecord):
         encounters = [e.document_summary() for e in self.encounters()]
         prescriptions = [p.document_summary() for p in self.prescriptions()]
         lab_results = [lx.document_summary() for lx in self.lab_results()]
+        allergies = [allergy.document_summary() for allergy in self.allergies()]
         immunizations = [imm.document_summary() for imm in self.immunizations()]
 
         return simplejson.dumps({
@@ -495,6 +498,7 @@ class Patient(BaseMedicalRecord):
                 'encounters':encounters,
                 'prescriptions':prescriptions,
                 'lab_results': lab_results,
+                'allergy': allergies,
                 'immunizations':immunizations
                 })
             
@@ -513,6 +517,19 @@ class Patient(BaseMedicalRecord):
 #--- ~~~ Patient Records ~~~
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+class BasePatientRecordManager(models.Manager):
+    
+    # TODO: issue 333 This code belongs in VAERS module, not here.
+    def following_vaccination(self, days_after, risk_period_start, **kw):
+
+        if risk_period_start ==0 :
+            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
+        else:
+            q_earliest_date = Q(date__gt=F('patient__immunization__date')+ risk_period_start)
+
+        return self.filter(patient__immunization=F('patient__immunization')).filter(
+            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
+
 
 class BasePatientRecord(BaseMedicalRecord):
     '''
@@ -525,26 +542,16 @@ class BasePatientRecord(BaseMedicalRecord):
     # Does it make sense to have an MRN field on every patient record table?  
     # Will all patient records have their own individual MRN?
     mrn = models.CharField('Medical Record Number', max_length=50, blank=True, null=True)
+    #
+    # Manager
+    #
+    objects = BasePatientRecordManager()
     
     class Meta:
         abstract = True
 
 
-
-
-class LabResultManager(models.Manager):
-    # TODO: issue 333 This code belongs in VAERS module, not here.
-    def following_vaccination(self, days_after, include_same_day=False, **kw):
-
-        if include_same_day:
-            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
-        else:
-            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
-
-        return self.filter(patient__immunization=F('patient__immunization')).filter(
-            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
-
-    
+  
 class LabResult(BasePatientRecord):
     '''
     Result data for a lab test
@@ -580,10 +587,6 @@ class LabResult(BasePatientRecord):
     impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
     comment = models.TextField('Comments', blank=True, null=True)
     procedure_name = models.CharField('Procedure Name', max_length=255, blank=True, null=True)
-    #
-    # Manager
-    #
-    objects = LabResultManager()
     #
     # HEF
     #
@@ -873,18 +876,6 @@ class LabOrder(BasePatientRecord):
     #
     events = generic.GenericRelation('hef.Event')
     
-class PrescriptionManager(models.Manager):
-    
-    def following_vaccination(self, days_after, include_same_day=False, **kw):
-
-        if include_same_day:
-            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
-        else:
-            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
-
-        return self.filter(patient__immunization=F('patient__immunization')).filter(
-            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
-
     
 class Prescription(BasePatientRecord):
     '''
@@ -893,9 +884,6 @@ class Prescription(BasePatientRecord):
     # Date is order date
     #
     
-    # Manager
-    #
-    objects = PrescriptionManager()
     order_natural_key = models.CharField('Order identifier in source EMR system', max_length=128, db_index=True)
     name = models.TextField(max_length=3000, blank=False, db_index=True)
     code = models.CharField('Drug Code (system varies by site)', max_length=255, blank=True, null=True)
@@ -1021,22 +1009,6 @@ class Prescription(BasePatientRecord):
                 }
             }
     
-class EncounterManager(models.Manager):
-    
-    def following_vaccination(self, days_after, include_same_day=False, **kw):
-        if include_same_day:
-            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
-        else:
-            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
-
-        return self.filter(patient__immunization=F('patient__immunization')).filter(
-            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
-
-    def syndrome_care_visits(self, sites=None):
-        #TODO change these types? visit is app?
-        qs = self.filter(raw_encounter_type__in=['URGENT CARE', 'VISIT'])
-        if sites: qs = qs.filter(site_natural_key__in=sites)
-        return qs
 
 ENCOUNTER_TYPES = [('VISIT','VISIT'), ('ER','ER'), ('HOSPITALIZATION','HOSPITALIZATION')]
 # smaller number is higher priority
@@ -1055,7 +1027,6 @@ class Encounter(BasePatientRecord):
     '''
     A encounter between provider and patient
     '''
-    objects = EncounterManager()
     icd9_codes = models.ManyToManyField(Icd9, blank=True, null=True, db_index=True)
     #
     # Fields taken directly from ETL file.  Some minimal processing, such as 
@@ -1465,27 +1436,12 @@ class SocialHistory(BasePatientRecord):
     tobacco_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
     alcohol_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
 
-class AllergyManager(models.Manager):
-    
-    def following_vaccination(self, days_after, include_same_day=False, **kw):
-
-        if include_same_day:
-            q_earliest_date = Q(date__gte=F('patient__immunization__date'))
-        else:
-            q_earliest_date = Q(date__gt=F('patient__immunization__date'))
-
-        return self.filter(patient__immunization=F('patient__immunization')).filter(
-            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
 
 class Allergy(BasePatientRecord):
     '''
     An allergy report
     '''
     # date is allergy entered date 
-    #
-    # Manager
-    #
-    objects = AllergyManager()
     problem_id = models.IntegerField(null=True, db_index=True)
     date_noted = models.DateField(null=True, db_index=True)
     allergen = models.ForeignKey(Allergen)
