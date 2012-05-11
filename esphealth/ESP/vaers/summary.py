@@ -3,33 +3,40 @@ from django.db.models import Count
 # this is a summary report one time for a paper publication for Ross.
 
 from ESP.emr.models import Immunization
-from ESP.vaers.models import AdverseEvent, EncounterEvent, LabResultEvent
+from ESP.vaers.models import AdverseEvent, EncounterEvent, LabResultEvent,PrescriptionEvent,AllergyEvent
+from ESP.vaers.models import MAX_TIME_WINDOW_POST_EVENT,MAX_TIME_WINDOW_POST_LX,MAX_TIME_WINDOW_POST_RX
+
 
 imm_count = Immunization.objects.values('name').distinct().annotate(count=Count('name')).filter(count__gt=0)
 
-fever_events = EncounterEvent.objects.filter(matching_rule_explain__startswith='Patient had').filter(gap__lte=7)
-diagnostics_events = EncounterEvent.objects.exclude(matching_rule_explain__startswith='Patient had').filter(gap__lte=30)
-lx_events = LabResultEvent.objects.filter(gap__lte=30)
-
+# may not need to exclude as this was part of fever but it doesnt harm
+diagnostics_events = EncounterEvent.objects.exclude(matching_rule_explain__startswith='Patient had').filter(gap__lte=MAX_TIME_WINDOW_POST_EVENT)
+lx_events = LabResultEvent.objects.filter(gap__lte=MAX_TIME_WINDOW_POST_LX)
+rx_events = PrescriptionEvent.objects.filter(gap__lte=MAX_TIME_WINDOW_POST_RX)
+allergy_events = AllergyEvent.objects.filter(gap__lte=MAX_TIME_WINDOW_POST_EVENT)
 
 
 def report_by_imm():
     for imm in imm_count:
-        fever_count = fever_events.filter(immunizations__name=imm['name']).count()
+        #TODO get immunization from case 
         icd9_count = diagnostics_events.filter(immunizations__name=imm['name']).count()
         lx_count = lx_events.filter(immunizations__name=imm['name']).count()
-        total = sum([fever_count, icd9_count, lx_count])
+        rx_count = rx_events.filter(immunizations__name=imm['name']).count()
+        allergy_count = allergy_events.filter(immunizations__name=imm['name']).count()
+        total = sum([ icd9_count, lx_count,rx_count,allergy_count])
         total_events = total
         total = imm['count']
-        rate_fever = float(fever_count)/total
         rate_icd9 = float(icd9_count)/total
         rate_lx = float(lx_count)/total
+        rate_rx = float(rx_count)/total
+        rate_allergy = float(allergy_count)/total
         rate = float(total_events)/total
         if total_events: print '|'.join([imm['name'], 
                                          str(total), str(total_events), str(rate), 
-                                         str(fever_count), str(rate_fever), 
                                          str(icd9_count), str(rate_icd9), 
-                                         str(lx_count), str(rate_lx)])
+                                         str(lx_count), str(rate_lx),
+                                         str(rx_count), str(rate_rx),
+                                         str(allergy_count), str(rate_allergy)])
 
 
 
