@@ -13,14 +13,15 @@ from ESP.utils import randomizer
 from ESP.utils import utils
 
 import rules
-from rules import TIME_WINDOW_POST_EVENT, VAERS_LAB_RESULTS
-
+from rules import  VAERS_LAB_RESULTS, MAX_TIME_WINDOW_POST_EVENT
+from rules import MAX_TIME_WINDOW_POST_RX, MAX_TIME_WINDOW_POST_LX
 
 POPULATION_SIZE = 200
 
-FEVER_EVENT_PCT = 40
-ICD9_EVENT_PCT = 15
+ICD9_EVENT_PCT = 20
 LX_EVENT_PCT = 15
+RX_EVENT_PCT = 20
+ALL_EVENT_PCT = 15
 IGNORE_FOR_REOCCURRENCE_PCT = 20
 IGNORE_FOR_HISTORY_PCT = 60
 
@@ -67,12 +68,8 @@ class ImmunizationHistory(object):
         return Immunization.make_mock(vaccine, self.patient, when, save_on_db=save_on_db)
 
 def check_for_reactions(imm):
-    # Should we cause a fever event?
-    if random.randrange(100) <= FEVER_EVENT_PCT:
-        ev = Vaers(imm)
-        ev.cause_fever()
-    # Or a icd9 Event?
-    elif random.randrange(100) <= ICD9_EVENT_PCT:
+    #SHOULD WE CAUSE AN ICD9 EVENT
+    if random.randrange(100) <= ICD9_EVENT_PCT:
         ev = Vaers(imm)
         rule = DiagnosticsEventRule.random()
         try:
@@ -119,13 +116,13 @@ class Vaers(object):
 
     def _encounter(self):
         days_after =  datetime.timedelta(days=random.randrange(
-                1, TIME_WINDOW_POST_EVENT))
+                1, MAX_TIME_WINDOW_POST_EVENT))
         when = self.immunization_date+days_after
         return Encounter.make_mock(self.patient, when=when)
 
     def _lab_result(self):
         days_after =  datetime.timedelta(days=random.randrange(
-                1, TIME_WINDOW_POST_EVENT))
+                1, MAX_TIME_WINDOW_POST_LX))
         when = self.immunization_date+days_after
         return LabResult.make_mock(self.patient, when=when)
 
@@ -135,12 +132,7 @@ class Vaers(object):
         encounter.save()
         self.matching_encounter = encounter
 
-    def cause_fever(self):
-        encounter = self._encounter()
-        encounter.temperature = randomizer.fever_temperature() 
-        encounter.save()
-        self.matching_encounter = encounter
-
+    
     def cause_icd9(self, code):
         encounter = self._encounter()
         encounter.save()
