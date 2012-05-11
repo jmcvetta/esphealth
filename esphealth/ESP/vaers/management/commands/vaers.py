@@ -16,7 +16,7 @@ from ESP.utils.utils import date_from_str, str_from_date, log, days_in_interval,
 from ESP.conf.common import EPOCH
 from ESP.vaers.models import EncounterEvent, LabResultEvent, HL7_MESSAGES_DIR, PrescriptionEvent, AllergyEvent
 
-from ESP.vaers.heuristics import fever_heuristic, diagnostic_heuristics, lab_heuristics,prescription_heuristics,allergy_heuristics
+from ESP.vaers.heuristics import  diagnostic_heuristics, lab_heuristics,prescription_heuristics,allergy_heuristics
 
 
             
@@ -38,7 +38,6 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('-b', '--begin', dest='begin_date', default=str_from_date(TODAY)),
         make_option('-e', '--end', dest='end_date', default=str_from_date(TODAY-datetime.timedelta(1))), # Yesterday
-        make_option('-f', '--fever', action='store_true', dest='fever', help='Run Fever Heuristics'),
         make_option('-l', '--lx', action='store_true', dest='lx', help='Run Lab Results Heuristics'),
         make_option('-d', '--diagnostics', action='store_true', dest='diagnostics', 
                           help='Run Diagnostics Heuristics'),
@@ -62,21 +61,19 @@ class Command(BaseCommand):
             
     
         if options['all']:
-            options['fever'] = True
             options['diagnostics'] = True
             options['lx'] = True
             options['rx'] = True
             options['allergy'] = True
             
     
-        if not (options['fever'] or options['diagnostics'] or options['lx'] or options['rx'] or options['allergy']):
-            raise CommandError('Must specify --fever, --diagnosics, --lx, or --all')
+        if not ( options['diagnostics'] or options['lx'] or options['rx'] or options['allergy']):
+            raise CommandError('Must specify  --diagnosics, --lx, --rx or --all')
     
         if not (options['create'] or options['reports']):
             raise CommandError('Must specify --create or --reports')
     
         heuristics = []
-        if options['fever']: heuristics.append(fever_heuristic())
         if options['diagnostics']: heuristics += diagnostic_heuristics()
         if options['lx']: heuristics += lab_heuristics()
         if options['rx']: heuristics += prescription_heuristics()
@@ -96,9 +93,7 @@ class Command(BaseCommand):
                 log.info('Producing HL7 reports for %s events' % (events.count()))
                 for event in events: event.save_hl7_message_file(folder=folder)
                 
-    
-            if options['fever']: produce_reports(EncounterEvent.objects.fevers())
-            if options['diagnostics']: produce_reports(EncounterEvent.objects.icd9_events())
+            if options['diagnostics']: produce_reports(EncounterEvent.objects.all())
             if options['lx']: produce_reports(LabResultEvent.objects.all())
             if options['rx']: produce_reports(PrescriptionEvent.objects.all())
             if options['allergy']: produce_reports(AllergyEvent.objects.all())
