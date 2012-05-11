@@ -1,4 +1,4 @@
-# Adverse events are indicated though reports of fever, lab results
+# Adverse events are indicated though reports of  lab results, prescriptions, allergies
 # and icd9 codes that are present in patient encounters.
 import sys
 import pdb
@@ -18,7 +18,7 @@ from ESP.emr.models import Prescription, Problem
 from ESP.vaers.models import AdverseEvent, Case, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent
 from ESP.vaers.models import DiagnosticsEventRule
 from ESP.vaers.models import ExcludedICD9Code, Questionaire
-from ESP.vaers.rules import TIME_WINDOW_POST_EVENT
+from ESP.vaers.rules import  MAX_TIME_WINDOW_POST_EVENT, MAX_TIME_WINDOW_POST_RX, MAX_TIME_WINDOW_POST_LX
 from ESP.utils.utils import log
 
 import rules
@@ -29,28 +29,30 @@ LAB_TESTS_NAMES = rules.VAERS_LAB_RESULTS.keys()
 USAGE_MSG = '''\
 %prog [options]
 
-    One or more of '-lx', '-f', '-d', '-p', '-g' or '-a' must be specified.
+    One or more of '-lx',  '-d', '-p', '-g' or '-a' must be specified.
     
     DATE variables are specified in this format: 'YYYYMMDD'
 '''
 
 class AdverseEventHeuristic(BaseHeuristic):
+    
+    
     def __init__(self, event_name, verbose_name=None):
-        self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
+        self.time_post_immunization = rules.MAX_TIME_WINDOW_POST_EVENT
         assert event_name
         assert verbose_name
         self.name = event_name
         self.long_name = verbose_name
     
-        #super(AdverseEventHeuristic, self).__init__(event_name, verbose_name)
-        
-    def update_or_create_case(self, immunization_qs, this_imm, new_event):
+    
+    def update_or_create_case(self, clin_event, this_imm, this_event):
         # if there is an existing case for this event (immunization
         # and attach to it if not created one
-        #  add to the case the list of prior vaccines within 42 days 
+        #  add to the case the list of prior vaccines within 28 days 
         # and update the date of last event added 
-       
-        prior_immunizations =  immunization_qs.filter(date__lt = this_imm.date)
+        # Register any prior immunizations
+        prior_immunizations = Immunization.vaers_candidates(clin_event.patient,clin_event.date, 
+                 rules.MAX_TIME_WINDOW_PRIOR_EVENT).filter(date__lt = this_imm.date)
         
         this_case, case_created = Case.objects.get_or_create(
                  date = this_imm.date,
@@ -59,7 +61,7 @@ class AdverseEventHeuristic(BaseHeuristic):
         this_case.save()
         
         this_case.immunizations.add(this_imm)
-        this_case.adverse_events.add(new_event)
+        this_case.adverse_events.add(this_event)
         
         this_case.prior_immunizations = prior_immunizations
         this_case.save()
@@ -87,87 +89,6 @@ class AdverseEventHeuristic(BaseHeuristic):
         return 'adverse event:%s' % self.name
         
             
-class VaersFeverHeuristic(AdverseEventHeuristic):
-    def __init__(self):
-        self.category = '1_common'
-        super(VaersFeverHeuristic, self).__init__(
-            'VAERS Fever', verbose_name='Fever reaction to immunization')
-        
-    uri = 'urn:x-esphealth:heuristic:channing:vaersfever:v1'
-      
-    def vaers_heuristic_name(self):
-        return 'VAERS: ' + self.name
-
-    def matches(self, **kw):
-        #raise NotImplementedError('Last run support no longer available.  This method must be refactored')
-        incremental = kw.get('incremental', False)
-        #begin = (incremental and last_run) or kw.get('begin_date') or EPOCH
-        begin = (incremental ) or kw.get('begin_date') or EPOCH
-        end = kw.get('end_date') or datetime.date.today()
-
-        log.info('Finding fever events from %s to %s' % (begin, end))
-        
-        return Encounter.objects.following_vaccination(rules.TIME_WINDOW_POST_EVENT).filter(
-            temperature__gte=rules.TEMP_TO_REPORT, date__gte=begin, date__lte=end).distinct()
-
-                    
-
-    def generate(self, **kw):
-        log.info('Generating events for %s' % self.name)
-        matches = self.matches(**kw)
-        
-        log.info('Found %d matches' % matches.count())
-        
-        content_type = ContentType.objects.get_for_model(Encounter)
-
-        counter = 0
-        rule_explain = 'Patient had %3.1f fever after immunization(s)'
-
-        for e in matches:
-            fever_message = rule_explain % float(e.temperature)
-
-            try:
-                
-                # Register which immunizations may be responsible for the event
-                immunizations = Immunization.vaers_candidates(
-                    e.patient, e.date, self.time_post_immunization)
-                assert len(immunizations) > 0 
-               
-                # create a new event for each immunization date 
-                for imm in immunizations:
-            
-                    # Create event instance
-                    ev, created = EncounterEvent.objects.get_or_create(
-                         date=e.date, object_id =e.pk, 
-                        content_type = content_type,
-                        patient=e.patient,
-                        defaults={
-                                'name': self.vaers_heuristic_name(),
-                                'matching_rule_explain':fever_message,
-                                'category': self.category, }
-                        )
-                    
-                        
-                    ev.save()
-                    
-                    # Get time interval between immunization and event
-                    ev.gap = (e.date - imm.date ).days
-                    ev.save()
-                    
-                    if created: 
-                        counter += 1
-                        
-                    self.update_or_create_case(immunizations, imm, ev)
-                
-
-            except AssertionError:
-                log.error('No candidate immunization for Encounter %s' % e)
-                log.warn('Deleting event %s' % ev)
-                ev.delete()
-                counter -= 1
-
-        return counter
-        
 class VaersAllergyHeuristic(AdverseEventHeuristic):
     
     def __init__(self, event_name, rule, category, risk_period):
@@ -183,6 +104,7 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
         self.keywords = rule['keywords']
         self.category = category
         self.time_post_immunization = risk_period
+        self.risk_period_start =0 
         
         super(VaersAllergyHeuristic, self).__init__(event_name, verbose_name=self.verbose_name)
             
@@ -196,7 +118,7 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
         
-        allergy_qs = Allergy.objects.following_vaccination(self.time_post_immunization)
+        allergy_qs = Allergy.objects.following_vaccination(self.time_post_immunization,self.risk_period_start)
         allergy_qs = allergy_qs.filter(date__gte=begin, date__lte=end)
         # patient's immunization is same as self.name (rule's name)
         allergy_qs = allergy_qs.filter(patient__immunization__name = self.name)
@@ -249,25 +171,26 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
                 
                 if created: 
                     counter +=1
-                self.update_or_create_case(immunization_qs, imm, new_ae)
+                self.update_or_create_case(this_allergy, imm, new_ae)
                 
         return counter
 
 class VaersDiagnosisHeuristic(AdverseEventHeuristic):
-    def __init__(self, event_name, icd9s, category, ignore_period):
+    def __init__(self, event_name, icd9s, rule):
         '''
         @type icd9s: [<Icd9>, <Icd9>, <Icd9>, ...]
         @type discarding_icd9: [<Icd9>, <Icd9>, <Icd9>, ...]
-        @type ignore_period: int
         @type verbose_name: String
+        @type rule: object diagnosis event rule
         '''
                  
         self.name = event_name
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
         self.icd9s = icd9s
-        self.category = category
-        self.ignore_period = ignore_period
-        
+        self.category = rule.category
+        self.ignore_period = rule.ignore_period  
+        self.risk_period = rule.risk_period
+        self.risk_period_start = rule.risk_period_start      
         
         super(VaersDiagnosisHeuristic, self).__init__(event_name, verbose_name=self.verbose_name)
             
@@ -279,11 +202,11 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
             
     def matches(self, **kw):
         # the reports of AE are per immunization 
-        # TODO check what does it do.
         
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
-        enc_qs = Encounter.objects.following_vaccination(self.time_post_immunization)
+        enc_qs = Encounter.objects.following_vaccination(self.risk_period,self.risk_period_start)
+        
         enc_qs = enc_qs.filter(icd9_codes__in=self.icd9s.all())
         enc_qs = enc_qs.filter(date__gte=begin, date__lte=end)
         enc_qs = enc_qs.distinct()
@@ -316,19 +239,16 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                 if prior_problem_qs:
                     continue # prior problem so ignore 
                 
-            immunization_qs = Immunization.vaers_candidates(this_enc.patient, this_enc.date, self.time_post_immunization)
-            assert immunization_qs
-            # Create event instance
-            # TODO set breakpoint to 289 see if we ever hit it
-            # check why are we doing get or create and not just new ???
-           
             #find the adverse event icd9 codes
             for code in self.icd9s:
                 if code in this_enc.icd9_codes.all():
                     for enc_code in this_enc.icd9_codes.all():
                         if enc_code == code and not self.name.__contains__(' '+enc_code.code):
                             self.name += ' '+enc_code.code
-            
+           
+            immunization_qs = Immunization.vaers_candidates(this_enc.patient, this_enc.date, self.risk_period)
+            assert immunization_qs
+             
             # create a new event for each immunization date 
             for imm in immunization_qs:
                         
@@ -353,14 +273,14 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                 if created: 
                     counter +=1
                     
-                self.update_or_create_case(immunization_qs, imm, new_ee)
+                self.update_or_create_case(this_enc, imm, new_ee)
             
         return counter
 
 class Icd9CorrelatedHeuristic(VaersDiagnosisHeuristic):
-    def __init__(self, event_name, icd9s, category, ignore_period, discarding_icd9s):
+    def __init__(self, event_name, icd9s, rule, discarding_icd9s):
         self.discarding_icd9s = discarding_icd9s
-        super(Icd9CorrelatedHeuristic, self).__init__(event_name, icd9s, category, ignore_period)
+        super(Icd9CorrelatedHeuristic, self).__init__(event_name, icd9s, rule)
         
     def matches(self, **kw):
         matches = super(Icd9CorrelatedHeuristic, self).matches(**kw)
@@ -391,7 +311,9 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
         self.name = ' any_other_dx' # This is the EVENT name
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
         self.category = '3_possible'
-        self.ignore_period = 36 # months
+        self.ignore_period =  rules.MAX_TIME_WINDOW_POST_ANY_EVENT # months
+        self.risk_period = rules.MAX_TIME_WINDOW_POST_EVENT
+        self.risk_period_start = 1
         super(VaersDiagnosisHeuristic, self).__init__(self.name, verbose_name=self.verbose_name)
             
     @property
@@ -411,8 +333,6 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
 
 
 class VaersLxHeuristic(AdverseEventHeuristic):
-    lkv= None
-    lkd = None
     def __init__(self, event_name, lab_codes, criterion, pediatric):
         '''
         @param pediatric: Apply this heuristic to prediatric patients rather than adults?
@@ -421,8 +341,9 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         self.name = event_name
         self.lab_codes = lab_codes
         self.criterion = criterion
-        self.time_post_immunization = rules.TIME_WINDOW_POST_EVENT
+        self.time_post_immunization = criterion['risk_period']
         self.pediatric = pediatric
+        self.risk_period_start = 1
         super(VaersLxHeuristic, self).__init__(self.name, self.name)
 
     uri = 'urn:x-esphealth:heuristic:channing:vaerslx:v1'
@@ -465,12 +386,10 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
         
-        days = rules.TIME_WINDOW_POST_EVENT
-                
         trigger = self.criterion['trigger']
         comparator, baseline = self.criterion['exclude_if']
 
-        candidates = LabResult.objects.following_vaccination(days).filter(
+        candidates = LabResult.objects.following_vaccination(self.time_post_immunization,self.risk_period_start).filter(
             native_code__in=self.lab_codes, date__gte=begin, date__lte=end).distinct()
         #
         # Pediatric: 3mo - 18yrs
@@ -504,7 +423,6 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 # create a new event for each immunization date 
                 for imm in immunizations:
                     
-                    # TODO remove immunization from ae and have case object have the vacc etc 
                     ev, created = LabResultEvent.objects.get_or_create(
                                 object_id =lab_result.pk,
                                 content_type = content_type,
@@ -528,8 +446,8 @@ class VaersLxHeuristic(AdverseEventHeuristic):
     
                     if created: 
                         counter += 1
-                   
-                    self.update_or_create_case(immunizations, imm, ev)
+                    
+                    self.update_or_create_case(lab_result, imm, ev)
                 
             except AssertionError:
                 log.error('No candidate immunization for LabResult %s' % lab_result)
@@ -548,6 +466,7 @@ class VaersRxHeuristic(AdverseEventHeuristic):
         
         self.name = event_name
         self.criterion = criterion
+        self.risk_period_start = 0
         self.time_post_immunization = criterion['risk_period_days']
         super(VaersRxHeuristic, self).__init__(self.name, self.name)
 
@@ -575,9 +494,8 @@ class VaersRxHeuristic(AdverseEventHeuristic):
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
         
-        days = self.criterion['risk_period_days']
-                        
-        candidates = Prescription.objects.following_vaccination(days).filter(
+        # risk period start is 0 so include same day                
+        candidates = Prescription.objects.following_vaccination(self.time_post_immunization,self.risk_period_start).filter(
             date__gte=begin, date__lte=end).distinct()
         #considering upper case and none
         candidatesUpper = candidates.filter(name__contains=self.name.upper())
@@ -630,7 +548,7 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                     if created: 
                         counter += 1
                         
-                    self.update_or_create_case(immunizations, imm, ev)
+                    self.update_or_create_case(rx, imm, ev)
 
             except AssertionError:
                 log.error('No candidate immunization for Prescription %s' % rx)
@@ -650,16 +568,13 @@ def make_diagnosis_heuristic(name):
     
     rule = DiagnosticsEventRule.objects.get(name=name)
     icd9s = rule.heuristic_defining_codes.all()
-    category = rule.category
-    ignore_period = rule.ignore_period
-    
 
     discarding_icd9s = rule.heuristic_discarding_codes.all()
 
     if discarding_icd9s:
-        return Icd9CorrelatedHeuristic(name, icd9s, category, ignore_period, discarding_icd9s)
+        return Icd9CorrelatedHeuristic(name, icd9s, rule, discarding_icd9s)
     else:
-        return VaersDiagnosisHeuristic(name, icd9s, category, ignore_period)
+        return VaersDiagnosisHeuristic(name, icd9s, rule)
     
 def make_lab_heuristics(lab_type):
     rule = rules.VAERS_LAB_RESULTS[lab_type]
@@ -694,7 +609,7 @@ def make_allergy_heuristics(allergy_type):
         
         return '%s' % (allergy_name)
         
-    risk_period = rules.TIME_WINDOW_POST_EVENT
+    risk_period = rules.MAX_TIME_WINDOW_POST_EVENT
     #rule = AllergyEventRule.objects.get(name=allergy_type)
     rule = rules.VAERS_ALLERGIES[allergy_type]
    
@@ -704,9 +619,6 @@ def make_allergy_heuristics(allergy_type):
     heuristic_list.append(h)
     return  heuristic_list
         
-def fever_heuristic():
-    return VaersFeverHeuristic()
-
 def diagnostic_heuristics():
     heuristic_list = []
     for v in rules.VAERS_DIAGNOSTICS.values():
