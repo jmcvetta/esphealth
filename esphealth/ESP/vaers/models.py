@@ -23,7 +23,8 @@ from ESP.conf.common import DEIDENTIFICATION_TIMEDELTA, EPOCH
 from ESP.utils.utils import log, make_date_folders
 from ESP.settings import DATA_DIR
 
-from rules import TEMP_TO_REPORT, TIME_WINDOW_POST_EVENT
+from rules import  MAX_TIME_WINDOW_POST_EVENT
+from rules import MAX_TIME_WINDOW_POST_RX, MAX_TIME_WINDOW_POST_LX
 from utils import make_clustering_event_report_file
 import settings
 
@@ -64,15 +65,7 @@ class AdverseEventManager(models.Manager):
 
         return self.filter(auto | confirmed | to_report_by_default)
 
-
-class EncounterEventManager(models.Manager):
-    #TODO change this to check if it is fever some other way, use a boolean flag in encounter event
-    def fevers(self):
-        return self.filter(matching_rule_explain__startswith='Patient had')
-    
-    def icd9_events(self):
-        return self.exclude(matching_rule_explain__startswith='Patient had')
-    
+  
 class AdverseEvent(models.Model):
 
     objects = AdverseEventManager()
@@ -94,7 +87,6 @@ class AdverseEvent(models.Model):
     content_object = generic.GenericForeignKey('content_type', 'object_id')
     
     FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'fixtures', 'events')
-    VAERS_FEVER_TEMPERATURE = TEMP_TO_REPORT
     last_known_value = models.FloatField('Last known Numeric Test Result', blank=True, null=True)
     last_known_date  = models.DateField(blank=True, null=True)
     
@@ -406,27 +398,7 @@ class AdverseEvent(models.Model):
 # later consolidate them 
             
 class EncounterEvent(AdverseEvent):
-    objects = EncounterEventManager()
     
-    @staticmethod
-    def write_fever_clustering_report(**kw):
-        begin_date = kw.pop('begin_date', None) or EPOCH
-        end_date = kw.pop('end_date', None) or datetime.datetime.today()
-
-        root_folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
-        folder = make_date_folders(begin_date, end_date, root=root_folder)
-        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
-
-        fever_events = EncounterEvent.objects.fevers().filter(date__gte=begin_date, date__lte=end_date, 
-                                                              gap__lte=7)
-        
-        within_interval = [e for e in fever_events 
-                           if (e.date - max([i.date for i in Case.objects.get(adverse_events = e).immunizations.all()])).days <= gap]
-
-        log.info('Writing report for %d fever events between %s and %s' % (
-                len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
-        make_clustering_event_report_file(os.path.join(folder, 'fever_events.txt'), within_interval)
-
     @staticmethod
     def write_diagnostics_clustering_report(**kw):
         begin_date = kw.pop('begin_date', None) or EPOCH
@@ -434,10 +406,10 @@ class EncounterEvent(AdverseEvent):
 
         root_folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
         folder = make_date_folders(begin_date, end_date, root=root_folder)
-        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
+        gap = kw.pop('max_interval', MAX_TIME_WINDOW_POST_EVENT)
 
-        icd9_events = EncounterEvent.objects.icd9_events().filter(date__gte=begin_date, 
-                                                                  date__lte=end_date, gap__lte=30)
+        icd9_events = EncounterEvent.objects.filter(date__gte=begin_date, 
+                                                                  date__lte=end_date, gap__lte=MAX_TIME_WINDOW_POST_EVENT)
 
         within_interval = [e for e in icd9_events 
                            if (e.date - max([i.date for i in Case.objects.get(adverse_events = e).immunizations.all()])).days <= gap]
@@ -482,7 +454,7 @@ class PrescriptionEvent(AdverseEvent):
         
         root_folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
         folder = make_date_folders(begin_date, end_date, root=root_folder)
-        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
+        gap = kw.pop('max_interval', MAX_TIME_WINDOW_POST_RX)
 
         rx_events = PrescriptionEvent.objects.filter(date__gte=begin_date, date__lte=end_date)
         within_interval = [e for e in rx_events 
@@ -524,7 +496,7 @@ class AllergyEvent(AdverseEvent):
         
         root_folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
         folder = make_date_folders(begin_date, end_date, root=root_folder)
-        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
+        gap = kw.pop('max_interval', MAX_TIME_WINDOW_POST_EVENT)
 
         allergy_events = AllergyEvent.objects.filter(date__gte=begin_date, date__lte=end_date)
         within_interval = [e for e in allergy_events 
@@ -564,7 +536,7 @@ class LabResultEvent(AdverseEvent):
         
         root_folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
         folder = make_date_folders(begin_date, end_date, root=root_folder)
-        gap = kw.pop('max_interval', TIME_WINDOW_POST_EVENT)
+        gap = kw.pop('max_interval', MAX_TIME_WINDOW_POST_LX)
 
         lx_events = LabResultEvent.objects.filter(date__gte=begin_date, date__lte=end_date)
         within_interval = [e for e in lx_events 
@@ -708,7 +680,9 @@ class DiagnosticsEventRule(Rule):
     heuristic_defining_codes = models.ManyToManyField(Icd9, related_name='defining_icd9_code_set')
     heuristic_discarding_codes = models.ManyToManyField(Icd9, related_name='discarding_icd9_code_set')
     risk_period = models.IntegerField(blank=False, null=False, 
-        help_text='Risk period in days following vaccination')
+        help_text='MAX Risk period in days following vaccination')
+    risk_period_start = models.IntegerField( default=1,
+        help_text='Risk period start day following vaccination')
     
     @staticmethod
     def all_active():
