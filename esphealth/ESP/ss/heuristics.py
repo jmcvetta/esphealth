@@ -44,12 +44,14 @@ from definitions import lymphatic, lower_gi, upper_gi, neurological, respiratory
 
 class SyndromeHeuristic(DiagnosisHeuristic):
     
+    
+    
     def encounters(self, **kw):
         '''
         Overrides DiagnosisHeuristic.encounter property to return only 
         encounters matching both diagnosis codes and syndrome.  
         '''
-        qs = Encounter.objects.syndrome_care_visits() # TODO FIXME: Bad location for syndrome_care_visits()
+        qs = NonSpecialistVisitEvent.syndrome_care_visits() # TODO FIXME: Bad location for syndrome_care_visits()
         qs = qs & super(SyndromeHeuristic, self).encounters
         return qs
 
@@ -121,7 +123,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
         zip_codes = Patient.objects.values_list('zip5', flat=True).distinct().order_by('zip5')
         days = days_in_interval(date, end_date)
 
-        encounters = Encounter.objects.syndrome_care_visits(sites=Site.site_ids()).values(
+        encounters = NonSpecialistVisitEvent.syndrome_care_visits(sites=Site.site_ids()).values(
             'date', 'patient__zip5').exclude(patient__zip5__isnull=True)
 
         events = NonSpecialistVisitEvent.objects.filter(name=self.name).values(
@@ -190,7 +192,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
 
         days = days_in_interval(date, end_date)
 
-        encounters = Encounter.objects.syndrome_care_visits(sites=Site.site_ids()).values(
+        encounters = NonSpecialistVisitEvent.syndrome_care_visits(sites=Site.site_ids()).values(
             'date', 'site_natural_key')
 
         events = NonSpecialistVisitEvent.objects.filter(name=self.name).values(

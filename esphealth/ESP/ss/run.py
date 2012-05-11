@@ -102,7 +102,7 @@ event iterator as eg getEvents(icdList,needFever,startDT,endDT)
 returning a tuple (encId,demogId,pcpId,icd9,obsDT,obsZip) for each event, 
 and do whatever it wants including store individual records or just pump out totals by zip
 
-TODO: issue 338 icdList and needFever come from a table eg of:
+TODO: issue 338 icd List and need Fever come from a table eg of:
 esp_syndefs
 id
 syndName
@@ -909,11 +909,12 @@ def main():
 
 
 if __name__ == "__main__":
-    rash = heuristics.rash_syndrome
-    print 'generating events for %s' % rash.heuristic_name
-    rash.generate()
+    ss = heuristics.syndrome_heuristics()
+    #rash = heuristics.rash_syndrome
+    print 'generating events for %s' % ss.event_names
+    ss.generate()
 
-    print 'generating counts_by_zip for %s' % rash.heuristic_name
-    print rash.counts_by_site_zip()
+    print 'generating counts_by_zip for %s' % ss.heuristic_name
+    print ss.counts_by_site_zip()
     
     

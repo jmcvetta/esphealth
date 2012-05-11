@@ -46,6 +46,14 @@ class NonSpecialistVisitEvent(Event):
     encounter = models.ForeignKey(Encounter)
 
     @staticmethod
+    def syndrome_care_visits(self, sites=None):
+        #TODO issue 376 change these types? visit is app? move this to ss or ili
+        qs = Encounter.objects.filter(raw_encounter_type__in=['URGENT CARE', 'VISIT'])
+        if sites: 
+            qs = qs.filter(site_natural_key__in=sites)
+        return qs
+    
+    @staticmethod
     def counts_by_site(start_date, end_date):
         return NonSpecialistVisitEvent.objects.filter(date__gte=start_date, date__lte=end_date).values(
             'date', 'heuristic', 'reporting_site__zip_code').annotate(count=Count('heuristic'))

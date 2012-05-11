@@ -46,7 +46,7 @@ class Hsph(object):
         for day in self.days:
             events = NonSpecialistVisitEvent.objects.filter(
                 event_ptr__name=self.heuristic.long_name, date=day)
-            encounters = Encounter.objects.syndrome_care_visits(sites=Site.site_ids()).filter(date=day)
+            encounters = NonSpecialistVisitEvent.syndrome_care_visits(sites=Site.site_ids()).filter(date=day)
 
             zip_codes = events.values_list('patient_zip_code', flat=True).distinct().order_by(
                 'patient_zip_code')
