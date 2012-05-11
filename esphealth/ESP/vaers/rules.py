@@ -6,9 +6,11 @@ from ESP.utils.utils import log
 # Constants defined in the VAERS documents.
 TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
 
-#ver 3 of vaers doc says 42, prior versions were 30 but code was 60
-
-TIME_WINDOW_POST_EVENT = 42 # Period of time between immunization and event
+MAX_TIME_WINDOW_POST_ANY_EVENT = 36 # max months between immunization and any other dx 
+MAX_TIME_WINDOW_POST_EVENT = 42 # Period of time between immunization and dx and allergies
+MAX_TIME_WINDOW_POST_LX = 30 # Period of time between immunization and labs
+MAX_TIME_WINDOW_POST_RX = 14 # Period of time between immunization and meds
+MAX_TIME_WINDOW_PRIOR_EVENT = 28 # Period of time between event and prior immunization
 
 #types of action types 
 # 1_common: (auto) Common, well described, non-serious, adverse event
@@ -50,43 +52,43 @@ VAERS_ALLERGIES = {
         'keywords': ['DTP-HFLU','dipth','tetan','pertuss','hemoph','hflu']
         },
     'HEP A & B VACCINE ADULT' : {
-        'keywords': ['HEP A','hep* AND vaccine']
+        'keywords': ['HEP A','hep','vaccine']
         },
     'HEP A VACCINE' : {
-        'keywords': ['HEP A','hep* AND vaccine']
+        'keywords': ['HEP A','hep','vaccine']
         },
     'HEP A VACCINE ADULT' : {
-        'keywords': ['HEP A','hep* AND vaccine']
+        'keywords': ['HEP A','hep','vaccine']
         },
     'HEP A VACCINE PEDI/ADOL-2 DOSE SCHED' : {
-        'keywords': ['HEP A','hep* AND vaccine']
+        'keywords': ['HEP A','hep','vaccine']
         },
     'HEP A VACCINE PEDI/ADOL-3 DOSE SCHED' : {
-        'keywords': ['HEP A','hep* AND vaccine']
+        'keywords': ['HEP A','hep','vaccine']
         },
     'HEP B - HFLU B CONJ (PRP-OMP)' : {
-        'keywords': ['HEP B','hep* AND vaccine']
+        'keywords': ['HEP B','hep','vaccine']
         },
     'HEP B VACCINE (<11 YEARS)' : {
-        'keywords': ['HEP B','hep* AND vaccine']
+        'keywords': ['HEP B','hep','vaccine']
         },
     'HEP B VACCINE (11-19 YEARS)' : {
-        'keywords': ['HEP B','hep* AND vaccine']
+        'keywords': ['HEP B','hep','vaccine']
         },
     'HEP B VACCINE (20+ YEARS)' : {
-        'keywords': ['HEP B','hep* AND vaccine']
+        'keywords': ['HEP B','hep','vaccine']
         },
     'HEP B VACCINE (ILL PT, ANY AGE)' : {
-        'keywords': ['HEP B','hep* AND vaccine']
+        'keywords': ['HEP B','hep','vaccine']
         },
     'HEP B VACCINE (PLASMA-DERIVED)' : {
-        'keywords': ['HEP B','hep* AND vaccine']
+        'keywords': ['HEP B','hep','vaccine']
         },
     'HEP B VACCINE (RECOMBINANT)' : {
         'keywords': ['HEP B','hep* AND vaccine']
         },
     'HEP B VACCINE ADOL-2 DOSE SCHED' : {
-        'keywords': ['HEP B','hep* AND vaccine']
+        'keywords': ['HEP B','hep','vaccine']
         },
     'HFLU B (NON-CONJ)' : {
         'keywords': ['HFLU','hemoph']
@@ -753,6 +755,7 @@ VAERS_LAB_RESULTS = {
 
 # TODO issue 345 perhaps change to load this into a table (fixture) and 
 # read in from it in the code that uses it.
+# default risk start is = 1
 
 VAERS_DIAGNOSTICS = {
     '357.0': {#
@@ -760,8 +763,6 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':12,
         'category':'3_possible',
         'source':'Menactra',
-        #TODO issue 384 add risk start period to all
-        'risk_period_start':0,
         'risk_period_days': 30,
         },
     
@@ -786,6 +787,7 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':3,
         'category':'3_possible',
         'source':'',
+        'risk_period_start':0,
         'risk_period_days': 7,        
         },
         
@@ -826,6 +828,7 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':None,
         'category':'3_possible',
         'source':'',
+        'risk_period_start':0,
         'risk_period_days': 7,        
         },  
                  
@@ -834,6 +837,7 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':None,
         'category':'3_possible',
         'source':'Menactra',
+        'risk_period_start':0,
         'risk_period_days': 30,
         },
     
@@ -842,6 +846,7 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':None,
         'category':'3_possible',
         'source':'RotaTeq',
+        'risk_period_start':0,
         'risk_period_days': 30,
         },
     
@@ -857,6 +862,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Sudden infant death syndrome',
         'ignore_period':None,
         'category':'3_possible',
+        'risk_period_start':0,
         'risk_period_days': 30,
         },
     
@@ -873,6 +879,7 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':None,
         'category':'3_possible',
         'source':'MMR-V',
+        'risk_period_start':0,
         'risk_period_days': 14,
         },
     
@@ -913,6 +920,7 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':12,
         'category':'3_possible',
         'source':'MMR-V',
+        'risk_period_start':0,
         'risk_period_days': 14,
         },
     
@@ -921,6 +929,7 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':12,
         'category':'3_possible',
         'source':'MMR-V',
+        'risk_period_start':0,
         'risk_period_days': 7,
         },
     
@@ -929,6 +938,7 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':12,
         'category':'2_rare',
         'source':'MMR-V',
+        'risk_period_start':0,
         'risk_period_days': 14,
         },
         
@@ -937,6 +947,7 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':12,
         'category':'2_rare',
         'source':'MMR-V',
+        'risk_period_start':0,
         'risk_period_days': 7,
         },    
     
@@ -1002,6 +1013,7 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':12,
         'category':'2_rare',
         'source':'TdaP',
+        'risk_period_start':0,
         'risk_period_days': 42,
         },
     
@@ -1033,6 +1045,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Hypersensitivity - drug, unspec',
         'ignore_period':12,
         'category':'3_possible',
+        'risk_period_start':0,
         'risk_period_days': 7,
         },
     
@@ -1049,13 +1062,15 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':12,
         'category':'2_rare',
         'source':'MMR',
-        'risk_period_days': 30,#TODO this is wrong is from 7-30 days 
+        'risk_period_start':7,
+        'risk_period_days': 30, 
         },
             
     '495.9': {#
         'name':'Pneumonitis - hypersensitivity',
         'ignore_period':12,
         'category':'3_possible',
+        'risk_period_start':0,
         'risk_period_days': 30,
           
         },
@@ -1064,6 +1079,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Upper respiratory tract hypersensitivity reaction',
         'ignore_period':12,
         'category':'3_possible',
+        'risk_period_start':0,
         'risk_period_days': 14,
         },
     
@@ -1072,13 +1088,14 @@ VAERS_DIAGNOSTICS = {
         'ignore_period':12,
         'category':'3_possible',
         'source':'Heb B',
-        'risk_period_days': 30, #TODO this is 1-30 the code is not distinguishing
+        'risk_period_days': 30, 
         },
         
     'E948*; E949*': {#
         'name':'Vaccine causing adverse event',
         'ignore_period':None,
         'category':'3_possible',
+        'risk_period_start':0,
         'risk_period_days': 30,
         },
         
@@ -1086,7 +1103,8 @@ VAERS_DIAGNOSTICS = {
         'name':'Vaccinia (generalized)',
         'ignore_period':None,
         'category':'3_possible',
-        'risk_period_days': 30, # this is 0-30
+        'risk_period_start':0,
+        'risk_period_days': 30, 
         },
         
     '415.1; 415.11; 415.12; 415.19; 453*': {#   
@@ -1101,6 +1119,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Poisoning - bacterial vaccine',
         'ignore_period':None,
         'category':'2_rare',
+        'risk_period_start':0,
         'risk_period_days': 30,
         },
     
@@ -1108,6 +1127,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Poisoning - by other vaccines and biological substances',
         'ignore_period':None,
         'category':'2_rare',
+        'risk_period_start':0,
         'risk_period_days': 30,
         },
     '045*': {#
@@ -1128,6 +1148,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Post-immunization reaction',
         'ignore_period':None,
         'category':'3_possible',
+        'risk_period_start':0,
         'risk_period_days': 30,
         },
     
