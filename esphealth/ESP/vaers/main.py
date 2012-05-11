@@ -9,7 +9,7 @@ from ESP.utils.utils import date_from_str, str_from_date, log, days_in_interval,
 from ESP.conf.common import EPOCH
 from ESP.vaers.models import EncounterEvent, LabResultEvent, PrescriptionEvent, AllergyEvent, HL7_MESSAGES_DIR
 
-from heuristics import fever_heuristic, diagnostic_heuristics, lab_heuristics, prescription_heuristics, allergy_heuristics
+from heuristics import  diagnostic_heuristics, lab_heuristics, prescription_heuristics, allergy_heuristics
 from ESP.vaers.rules import define_active_rules
 
             
@@ -35,7 +35,6 @@ def main():
     parser.add_option('-b', '--begin', dest='begin_date', default=str_from_date(yesterday))
     parser.add_option('-e', '--end', dest='end_date', default=str_from_date(today))
 
-    parser.add_option('-f', '--fever', action='store_true', dest='fever', help='Run Fever Heuristics')
     parser.add_option('-l', '--lx', action='store_true', dest='lx', help='Run Lab Results Heuristics')
     parser.add_option('-d', '--diagnostics', action='store_true', dest='diagnostics', 
                       help='Run Diagnostics Heuristics')
@@ -61,13 +60,12 @@ def main():
         
 
     if options.all:
-        options.fever = True
         options.diagnostics = True
         options.lx = True
         options.rx = True
         options.allergy = True
 
-    if not (options.fever or options.diagnostics or options.lx or options.rx or options.allergy):
+    if not (options.diagnostics or options.lx or options.rx or options.allergy):
         parser.print_help()
         sys.exit(-2)
 
@@ -76,7 +74,6 @@ def main():
         sys.exit(-3)
 
     heuristics = []
-    if options.fever: heuristics.append(fever_heuristic())
     if options.diagnostics: heuristics += diagnostic_heuristics()
     if options.lx: heuristics += lab_heuristics()
     if options.rx: heuristics += prescription_heuristics()
@@ -98,8 +95,7 @@ def main():
             for event in events: event.save_hl7_message_file(folder=folder)
             
         # TODO if options.ph messaging then go send message to physician.
-        if options.fever: produce_reports(EncounterEvent.objects.fevers())
-        if options.diagnostics: produce_reports(EncounterEvent.objects.icd9_events())
+        if options.diagnostics: produce_reports(EncounterEvent.objects.all())
         if options.lx: produce_reports(LabResultEvent.objects.all())
         if options.rx: produce_reports(PrescriptionEvent.objects.all())
         if options.allergy: produce_reports(AllergyEvent.objects.all())
