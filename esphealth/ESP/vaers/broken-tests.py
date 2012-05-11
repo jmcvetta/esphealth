@@ -13,20 +13,20 @@ from ESP.vaers.models import AdverseEvent, EncounterEvent, LabResultEvent
 
 from ESP.vaers.models import DiagnosticsEventRule
 
-from heuristics import lab_heuristics, diagnostic_heuristics, fever_heuristic
-from rules import VAERS_DIAGNOSTICS, VAERS_LAB_RESULTS, TIME_WINDOW_POST_EVENT
+from heuristics import lab_heuristics, diagnostic_heuristics, prescription_heuristics, allergy_heuristics
+from rules import VAERS_DIAGNOSTICS, VAERS_LAB_RESULTS, MAX_TIME_WINDOW_POST_EVENT
+from rules import MAX_TIME_WINDOW_POST_RX, MAX_TIME_WINDOW_POST_LX
 from fake import ImmunizationHistory, Vaers, clear
 
 # Store messages in the messages folder, on parent level.
 MESSAGE_DIR = os.path.realpath(os.path.join(
         os.path.dirname(__file__), '..', 'messages'))
 
-FEVER_HEURISTIC = fever_heuristic()
 DIAGNOSTICS_HEURISTICS = dict([
         (h.name, h) for h in diagnostic_heuristics()])
 LAB_HEURISTICS = lab_heuristics()
-
-
+PRESCRIPTON_HEURISTICS = prescription_heuristics()
+ALLERGY_HEURISTICS = allergy_heuritics()
 
 class TestDeidentification(unittest.TestCase):
     
@@ -58,11 +58,6 @@ class TestDeidentification(unittest.TestCase):
         AdverseEvent.build_from_fixture()
         
 
-
-    
-            
-
-
 class TestFake(unittest.TestCase):
     def setUp(self):
         clear()
@@ -89,7 +84,7 @@ class TestFake(unittest.TestCase):
         code = random.choice(rule.heuristic_defining_codes.all())
         ev.cause_icd9(code)
         
-        earliest_date = ev.matching_encounter.date - datetime.timedelta(days=TIME_WINDOW_POST_EVENT)
+        earliest_date = ev.matching_encounter.date - datetime.timedelta(days=MAX_TIME_WINDOW_POST_EVENT)
         
         candidates = Immunization.objects.filter(
             patient=random_patient,
@@ -109,7 +104,7 @@ class TestFake(unittest.TestCase):
             ev.cause_icd9(code)
             
         
-        expected_encounters = Encounter.objects.following_vaccination(TIME_WINDOW_POST_EVENT)
+        expected_encounters = Encounter.objects.following_vaccination(rule.risk_period, rule.risk_period_start)
         self.assert_(expected_encounters.count() == Patient.fakes().count(),
                      'Not all created encounters were returned in the query')
 
@@ -125,13 +120,10 @@ class TestFake(unittest.TestCase):
             criterion = VAERS_LAB_RESULTS[loinc]['criteria_adult'][0]
             ev.cause_positive_lab_result(loinc, criterion)
 
-        expected_lab_results = LabResult.objects.following_vaccination(
-            TIME_WINDOW_POST_EVENT)
+        expected_lab_results = LabResult.objects.following_vaccination(criterion['risk_period'],1)
 
         self.assert_(expected_lab_results.count() == Patient.fakes().count(),
-                     'Not all created lab results were returned in the query')
-
-        
+                     'Not all created lab results were returned in the query')       
 
 
 class TestClearing(unittest.TestCase):
@@ -286,45 +278,7 @@ class TestRuleEngine(unittest.TestCase):
             self.assert_(ev.matching_encounter not in matches, 'heuristic match found encounter that should not be a match')
 
 
-    def testFeverDetection(self):
-        heuristic = FEVER_HEURISTIC
-        
-        # Find proper patient, immunization and code
-        victim = Patient.random()
-        imm = ImmunizationHistory(victim).add_immunization()
-                
-        # Create the adverse event
-        ev = Vaers(imm)
-        ev.cause_fever()
-
-        matches = heuristic.matches()
-  
-        # So far, the heuristic should detect as a positive
-        self.assert_(len(matches) == 1, 'Expected to find one match, got %d' % len(matches))
-        self.assert_(ev.matching_encounter in matches)
-
-        
-        
-    def testFeverNegativeDetection(self):
-        '''To test whether this heuristic is checking only for fever, we'll give a normal encounter to the victim, but with a normal temperature'''
-        
-        heuristic = FEVER_HEURISTIC
-        
-        # Find proper patient, immunization and code
-        victim = Patient.random()
-        imm = ImmunizationHistory(victim).add_immunization()
-                
-        # Create the adverse event
-        ev = Vaers(imm)
-        ev.make_post_immunization_encounter()
-
-        matches = heuristic.matches()
-
-
-        self.assert_(len(matches) == 0)
-        self.assert_(ev.matching_encounter not in matches)
-
-
+         
     def testLabResultPositiveDetection(self):
         for heuristic in LAB_HEURISTICS:
             loinc = heuristic.loinc
