@@ -22,9 +22,10 @@ from ESP.vaers.heuristics import  diagnostic_heuristics, lab_heuristics,prescrip
             
 usage_msg = """
 Usage: python %prog -b[egin_date] -e[nd_date] 
-{ [-d --detect],[-r --reports] } | [-f --full]
+{[-r --reports] | [-c --create]} | [-a --all]
 
- One or more of '-l', '-p', '-g', '-f', '-d' or '-a' must be specified.
+ One or more of '-l', '-p', '-g', '-d' or '-a' must be specified.
+ One or more of '-r' or '-c' must be specified
     
     DATE variables are specified in this format: 'YYYYMMDD'
 
