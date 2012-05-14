@@ -12,8 +12,8 @@ from ESP.conf.models import VaccineRegEx
     
 class Command(BaseCommand):
     
-    help = 'Ensure float fields in all LabResult and Encounter objects are correctly converted \n'
-    help += 'from their corresponding string fields.'
+    help = 'Flag immunization data to identify vaccines from larger set of immunotherapies. \n'
+    help += 'Requires site specific data in the conf_vaccineRegEx data model.'
     
     def handle(self, *fixture_labels, **options):
         self.updt_immu()
