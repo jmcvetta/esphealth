@@ -239,16 +239,17 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                 if prior_problem_qs:
                     continue # prior problem so ignore 
                 
-            #find the adverse event icd9 codes
+            #find the adverse event icd9 codes           
+            thisname = self.name
             for code in self.icd9s:
                 if code in this_enc.icd9_codes.all():
                     for enc_code in this_enc.icd9_codes.all():
-                        if enc_code == code and not self.name.__contains__(' '+enc_code.code):
-                            self.name += ' '+enc_code.code
-           
+                        if enc_code == code and not thisname.__contains__(' '+enc_code.code):
+                            thisname += ' '+enc_code.code
+
             immunization_qs = Immunization.vaers_candidates(this_enc.patient, this_enc.date, self.risk_period)
             assert immunization_qs
-             
+            
             # create a new event for each immunization date 
             for imm in immunization_qs:
                         
@@ -260,7 +261,7 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                     patient = this_enc.patient,
                     defaults={
                         'name': self.vaers_heuristic_name(),
-                        'matching_rule_explain': self.name ,
+                        'matching_rule_explain': thisname ,
                         'category' : self.category, 
                         }
                     )
