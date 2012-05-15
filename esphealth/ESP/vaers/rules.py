@@ -238,22 +238,28 @@ VAERS_PRESCRIPTION = {
     'Methylprednisolone': {
         'category':'3_possible',
         'risk_period_days':14,
+        'exclude_due_to_history':True,
         },
     'Prednisone': {
         'category':'3_possible',
         'risk_period_days':14,
+        'exclude_due_to_history':True,
         },
     'Diphenhydramine': {
         'category':'3_possible',
         'risk_period_days':14,
+        'exclude_due_to_history':True,
         },
     'Epinephrine': {
         'category':'3_possible',
         'risk_period_days':7,
+        'exclude_due_to_history':False,
+        
         },
     'Hydroxyzine': {
         'category':'3_possible',
         'risk_period_days':7,
+        'exclude_due_to_history':True,
         }
     }
 
