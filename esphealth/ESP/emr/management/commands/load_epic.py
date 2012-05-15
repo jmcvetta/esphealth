@@ -53,7 +53,7 @@ from ESP.emr.models import Patient
 from ESP.emr.models import LabResult, LabOrder
 from ESP.emr.models import Encounter,EncounterTypeMap
 from ESP.emr.models import Prescription
-from ESP.emr.models import Immunization
+from ESP.emr.models import Immunization, Pregnancy
 from ESP.emr.models import SocialHistory, Problem, Allergy
 from ESP.emr.management.commands.common import LoaderCommand
 
@@ -739,7 +739,7 @@ class EncounterLoader(BaseLoader):
         e, created = self.insert_or_update(Encounter, values, ['natural_key'])
         e.bmi = e._calculate_bmi() # No need to save until we finish ICD9s
         #fill out encounter_type and priority from mapping table
-        encountertypemap = EncounterTypeMap.objects.get(raw_encounter_type = row['event_type'])
+        encountertypemap, created = EncounterTypeMap.objects.get_or_create(raw_encounter_type = row['event_type'])
         e.encounter_type = encountertypemap.mapping
         e.priority = encountertypemap.priority
         #
@@ -845,7 +845,49 @@ class PrescriptionLoader(BaseLoader):
         
         log.debug('Saved prescription object: %s' % p)
 
-
+# this object was added for version 3 of esp
+class PregnancyLoader(BaseLoader):
+    fields = [
+        'patient_id', 
+        'mrn', 
+        'provider_id', 
+        'natural_key', 
+        'outcome', 
+        'edd', 
+        'date', 
+        'gravida', 
+        'parity', 
+        'term', 
+        'preterm', 
+        'gestational_age_at_delivery', 
+        'birth_weight', 
+        'delivery', 
+        'pre_eclamsia'
+        ]
+    
+    def load_row(self,row):
+        values = {
+            'provenance' : self.provenance,
+            'patient' : self.get_patient(row['patient_id']),
+            'provider' : self.get_provider(row['provider_id']),
+            'natural_key' : row['natural_key'],
+            'mrn' : row['mrn'],
+            'outcome' : row['outcome'],
+            'edd' : self.date_or_none(row['edd']),
+            'date' : self.date_or_none(row['date']),
+            'gravida' : row['gravida'],
+            'parity' : row['parity'],
+            'term' : row['term'],
+            'preterm' : row['preterm'],
+            'gestational_age_at_delivery' : row['gestational_age_at_delivery'],
+            'birth_weight' : weight_str_to_kg(row['birth_weight']),
+            'delivery' : row['delivery'],
+            'pre_eclamsia' : row['pre_eclamsia'],
+            
+            }
+        p, created = self.insert_or_update(Pregnancy, values, ['natural_key'])
+        
+        log.debug('Saved pregnancy object: %s' % p)
 
 class ImmunizationLoader(BaseLoader):
     
@@ -1037,7 +1079,9 @@ class Command(LoaderCommand):
             ('epicimm', ImmunizationLoader),
             ('epicall', AllergyLoader),
             ('epicprb', ProblemLoader),
-            ('epicsoc', SocialHistoryLoader)                      
+            ('epicsoc', SocialHistoryLoader),
+            ('epicprg', PregnancyLoader)    
+                               
             ]
 
         loader = {}
