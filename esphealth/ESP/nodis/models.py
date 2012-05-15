@@ -145,7 +145,7 @@ class Case(models.Model):
 
     def __get_reportable_labs(self):
         #
-        # Fixme
+        # TODO issue 386 Fixme use new laptest map
         #
         heuristics = Condition.get_condition(self.condition).heuristics
         reportable_codes = set(ReportableLab.objects.filter(condition=self.condition).values_list('native_code', flat=True))
