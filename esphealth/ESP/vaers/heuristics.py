@@ -480,7 +480,7 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                     date__lt = rx.date, 
                     date__gte = earliest, 
                     patient = rx.patient,
-                    name__in=self.name,
+                    name__icontains=self.name,
                 )
             
             if prior_rx_qs:
