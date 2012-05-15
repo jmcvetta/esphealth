@@ -22,7 +22,7 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import Allergy
 from ESP.emr.models import Problem
-from ESP.emr.models import SocialHistory
+from ESP.emr.models import SocialHistory, Pregnancy
 
 STANDARD_SEARCH_FIELDS = ['natural_key', 'patient__mrn', 'patient__last_name', 'provider__last_name']
 STANDARD_RAW_ID_FIELDS = ['provenance', 'patient', 'provider']
@@ -90,6 +90,12 @@ class SocialHistoryAdmin(admin.ModelAdmin):
     raw_id_fields = STANDARD_RAW_ID_FIELDS
     search_fields = STANDARD_SEARCH_FIELDS + ['tobacco_use','alcohol_use']
     ordering = ['-date']
+    
+class PregnancyAdmin(admin.ModelAdmin):
+    list_display = ['date', 'patient','edd', 'outcome','gestational_age_at_delivery', 'birth_weight']
+    raw_id_fields = STANDARD_RAW_ID_FIELDS
+    search_fields = STANDARD_SEARCH_FIELDS 
+    ordering = ['-date']    
 
 class ProvenanceAdmin(admin.ModelAdmin):
     list_display = ['provenance_id', 'timestamp', 'source', 'status']
@@ -110,4 +116,5 @@ admin.site.register(Immunization, ImmunizationAdmin)
 admin.site.register(Allergy, AllergyAdmin)
 admin.site.register(Problem, ProblemAdmin)
 admin.site.register(SocialHistory, SocialHistoryAdmin)
+admin.site.register(Pregnancy, PregnancyAdmin)
 admin.site.register(Provenance, ProvenanceAdmin)

@@ -145,6 +145,7 @@ class Provider(BaseMedicalRecord):
     # Large max_length value for area code because Atrius likes to put descriptive text into that field
     area_code = models.CharField('Primary Department Phone Areacode', max_length=50, blank=True, null=True)
     telephone = models.CharField('Primary Department Phone Number', max_length=50, blank=True, null=True)
+    centerid =  models.CharField('Center ID', max_length=100, blank=True, null=True, db_index=True)
     
     q_fake = Q(natural_key__startswith='FAKE')
 
@@ -249,6 +250,7 @@ class Patient(BaseMedicalRecord):
     mother_mrn = models.CharField('Mother Medical Record Number', max_length=20, blank=True, null=True)
     #death_indicator = models.CharField('Death_Indicator', max_length=30, blank=True, null=True)
     occupation = models.CharField('Occupation', max_length=200, blank=True, null=True)
+    centerid =  models.CharField('Center ID', max_length=100, blank=True, null=True, db_index=True)
     
     q_fake = Q(natural_key__startswith='FAKE')
 
@@ -1017,8 +1019,8 @@ PRIORITY_TYPES  = [('3','3'),('2','2'),('1','1')]
 
 class EncounterTypeMap (models.Model):
     raw_encounter_type = models.CharField(max_length=20,  blank=False, db_index=True)
-    mapping = models.CharField(max_length=20, choices=ENCOUNTER_TYPES, blank=False, db_index=True)
-    priority = models.IntegerField(  blank=False,choices=PRIORITY_TYPES, db_index=True)
+    mapping = models.CharField(max_length=20, default = 'VISIT', choices=ENCOUNTER_TYPES, blank=False, db_index=True)
+    priority = models.IntegerField(  blank=False,choices=PRIORITY_TYPES, default =3 ,db_index=True)
     
     def __unicode__(self):
         return u'%s %s' % (self.raw_encounter_type, self.mapping) 
@@ -1455,7 +1457,6 @@ class Allergy(BasePatientRecord):
     #
     events = generic.GenericRelation('hef.Event')
 
-    
 
 class Problem(BasePatientRecord):
     '''
@@ -1471,3 +1472,63 @@ class Problem(BasePatientRecord):
     #
     events = generic.GenericRelation('hef.Event')
     
+
+class Pregnancy(BasePatientRecord):
+    '''
+    A Pregnancy 
+    '''
+    # Date is actual date of delivery
+    #
+    outcome = models.TextField('Outcome', max_length=500, blank=True, null=True)
+    edd = models.DateField('Estimated date of delivery', blank=True, null=True, db_index=True)
+    gravida = models.IntegerField( blank=True, null=True )
+    parity = models.IntegerField(blank=True, null=True )
+    term = models.IntegerField( blank=True, null=True)
+    preterm = models.IntegerField(blank=True, null=True)
+    gestational_age_at_delivery =  models.CharField('Gestational Age at delivery', max_length=20, blank=True, null=True)
+    birth_weight  = models.FloatField('Birth Weight (Kg)', blank=True, null=True)
+    delivery = models.TextField('Delivery', max_length=500, blank=True, null=True)
+    pre_eclamsia = models.CharField('Pre_eclamsia', max_length=300, blank=True, null=True)
+    
+    class Meta:
+        ordering = ['date']
+
+    q_fake = Q(name='FAKE')
+       
+    @staticmethod
+    def fakes():
+        return Pregnancy.objects.filter(Pregnancy.q_fake)
+
+    @staticmethod
+    def delete_fakes():
+        Pregnancy.fakes().delete()
+
+    @staticmethod
+    def make_mock( patient, date, save_on_db=False):
+        now = int(time.time()*1000) #time in milliseconds
+        
+        p = Pregnancy(patient=patient, provenance=Provenance.fake(),
+                         date=date, edd=date,
+                         
+                         provider=patient.pcp, natural_key=now)
+        if save_on_db: p.save()
+        return p
+            
+    def is_fake(self):
+        return self.name == 'FAKE'
+
+
+    def document_summary(self):
+        return {
+            'Actual date of delivery':(self.date and self.date.isoformat()) or None,
+            'pregnancy':{
+                'estimated date of delivery':self.edd,
+                'gravida':self.gravida,
+                'term':self.term
+                },
+            'gestational age at delivery':self.gestational_age_at_delivery
+            }
+
+    def  __unicode__(self):
+        return u"Pregnancy for %s expected %s and delivered %s" % (
+            self.patient.full_name, self.edd, self.date)
