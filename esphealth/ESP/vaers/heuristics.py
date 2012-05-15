@@ -300,7 +300,7 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
     uri = 'urn:x-esphealth:heuristic:channing:vaersany_other_dx:v1'
     
     def __init__(self):
-        self.name = ' any_other_dx' # This is the EVENT name
+        self.name = ' any other diagnosis' # This is the EVENT name
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
         self.category = '3_possible'
         self.ignore_period =  rules.MAX_TIME_WINDOW_POST_ANY_EVENT # months
@@ -472,7 +472,9 @@ class VaersRxHeuristic(AdverseEventHeuristic):
     def matches(self, **kw):
                
         def excluded_due_to_history(rx):
-            
+            # some prescriptions do not require to exclude due to history
+            if not self.criterion['exclude_due_to_history']:
+                return False
             earliest = rx.date - relativedelta(months=12)
             prior_rx_qs = Prescription.objects.filter(
                     date__lt = rx.date, 
@@ -480,6 +482,7 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                     patient = rx.patient,
                     name__in=self.name,
                 )
+            
             if prior_rx_qs:
                 return True
             else:
