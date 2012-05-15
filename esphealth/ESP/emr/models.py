@@ -527,8 +527,8 @@ class BasePatientRecordManager(models.Manager):
         else:
             q_earliest_date = Q(date__gt=F('patient__immunization__date')+ risk_period_start)
 
-        return self.filter(patient__immunization=F('patient__immunization', 
-                           patient__immunization__isvaccine=True)).filter(
+        return self.filter(patient__immunization=F('patient__immunization'), 
+                           patient__immunization__isvaccine=True).filter(
             date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
 
 
