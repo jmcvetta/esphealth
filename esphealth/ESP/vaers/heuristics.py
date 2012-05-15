@@ -1,24 +1,18 @@
 # Adverse events are indicated though reports of  lab results, prescriptions, allergies
 # and icd9 codes that are present in patient encounters.
-import sys
-import pdb
-import optparse
 import datetime
 
 from dateutil.relativedelta import relativedelta
 
-from django.db.models import Q, F, Max, Min
 from django.contrib.contenttypes.models import ContentType
-from ESP.settings import DATE_FORMAT
-from ESP.hef.base import BaseHeuristic, BaseEventHeuristic
+from ESP.hef.base import BaseHeuristic
 from ESP.conf.common import EPOCH
-from ESP.static.models import Icd9, Allergen
+from ESP.static.models import Icd9
 from ESP.emr.models import Immunization, Encounter, LabResult,  Allergy
 from ESP.emr.models import Prescription, Problem
-from ESP.vaers.models import AdverseEvent, Case, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent
+from ESP.vaers.models import Case, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent
 from ESP.vaers.models import DiagnosticsEventRule
 from ESP.vaers.models import ExcludedICD9Code, Questionaire
-from ESP.vaers.rules import  MAX_TIME_WINDOW_POST_EVENT, MAX_TIME_WINDOW_POST_RX, MAX_TIME_WINDOW_POST_LX
 from ESP.utils.utils import log
 
 import rules
@@ -378,6 +372,8 @@ class VaersLxHeuristic(AdverseEventHeuristic):
 
                 return eval(equation)
             except:
+                self.lkv=None
+                self.lkd=None
                 return False
 
         
