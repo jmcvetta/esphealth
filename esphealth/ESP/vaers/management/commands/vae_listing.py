@@ -412,12 +412,13 @@ def vaers_csv(no_phi):
         lbarray = []
         alarray = []
         vaers_qs=case.adverse_events.distinct()
+        #todo: this needs to be ordered by category -- worst first.  Order by does not work, as category order is 2, 3, 1
         for AE in vaers_qs:
             aearray.append(AE.name)
             if no_phi:
                 aearray.append(obsc)
             else:
-                aearray.append(AE.provider())
+                aearray.append(AE.content_object.provider)
             aearray.append(AE.category)
             types = ContentType.objects.get_for_id(AE.content_type_id).model
             if types.startswith('encounter') and AE.name.find('Fever')==-1: 
