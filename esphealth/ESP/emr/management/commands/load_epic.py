@@ -427,6 +427,7 @@ class ProviderLoader(BaseLoader):
         'dept_zip',
         'area_code',
         'telephone',
+        'center_id',
         ]
     
     def load_row(self, row):
@@ -453,6 +454,7 @@ class ProviderLoader(BaseLoader):
         'dept_zip' : row['dept_zip'],
         'area_code' : row['area_code'],
         'telephone' : row['telephone'],
+        'center_id' : row['center_id'],
         }
         p, created = self.insert_or_update(Provider, values, ['natural_key'])
         
@@ -487,6 +489,7 @@ class PatientLoader(BaseLoader):
         'aliases',
         'mother_mrn',
         'date_of_death',
+        'center_id',
         ]
     
     def load_row(self, row):
@@ -523,6 +526,7 @@ class PatientLoader(BaseLoader):
         'religion' : self.string_or_none(row['religion']),
         'aliases' : self.string_or_none(row['aliases']),
         'mother_mrn' : row['mother_mrn'],
+        'center_id' : row['center_id'],
         }
         p, created = self.insert_or_update(Patient, values, ['natural_key'])
         

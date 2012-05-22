@@ -43,13 +43,13 @@ from ESP.static.models import Icd9, Allergen, Loinc, FakeICD9s
 from ESP.emr.models import Provenance
 from ESP.emr.models import EtlError
 from ESP.emr.models import Provider,Patient,LabResult, LabOrder
-from ESP.emr.models import Encounter,Prescription
+from ESP.emr.models import Encounter,Prescription, Pregnancy
 from ESP.emr.models import SocialHistory, Problem, Allergy,Immunization
 from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
 from ESP.emr.management.commands.load_epic import LoadException, UPDATED_BY
 
 #change patient generations here
-POPULATION_SIZE = 19
+POPULATION_SIZE = 5
 
 # if min and <item>per_patient are >0 and same it will generate that amount
 # if min < than <item>per_patient it will generate a random number of object in that range
@@ -66,6 +66,8 @@ MIN_MEDS_PER_PATIENT = 0
 MEDS_PER_PATIENT = 1
 
 IMMUNIZATION_PCT = 1
+
+MAX_PREGNANCIES = 5
 # below are not used
 CHLAMYDIA_LX_PCT = 20
 CHLAMYDIA_INFECTION_PCT = 15
@@ -126,6 +128,7 @@ class ProviderWriter(EpicWriter):
         'dept_zip',
         'area_code',
         'telephone',
+        'center_id',
         ]
     
     def write_row(self, provider):
@@ -145,8 +148,10 @@ class ProviderWriter(EpicWriter):
         row['dept_zip'] = provider.dept_zip
         row['area_code'] = provider.area_code
         row['telephone'] = provider.telephone
+        row['center_id'] = provider.center_id
 
         self.writer.writerow(row)
+
 
 class PatientWriter(EpicWriter):
 
@@ -177,7 +182,8 @@ class PatientWriter(EpicWriter):
         'religion',
         'aliases',
         'mother_mrn',
-        'date_of_death'
+        'date_of_death',
+        'center_id',
         ]
     
     def write_row(self, patient):
@@ -210,6 +216,7 @@ class PatientWriter(EpicWriter):
         row['religion'] = patient.religion
         row['aliases'] = patient.aliases
         row['mother_mrn'] = patient.mother_mrn
+        row['center_id'] = patient.center_id
 
         self.writer.writerow(row)   
 
@@ -526,6 +533,48 @@ class ProblemWriter(EpicWriter):
                 'comment': problem.comment
                 })
 
+class PregnancyWriter(EpicWriter):
+
+    FILE_TEMPLATE_NAME = 'epicprg.esp.%s'
+    
+    fields = [
+        'patient_id', 
+        'mrn', 
+        'provider_id', 
+        'natural_key', 
+        'outcome', 
+        'edd', 
+        'date', 
+        'gravida', 
+        'parity', 
+        'term', 
+        'preterm', 
+        'gestational_age_at_delivery', 
+        'birth_weight', 
+        'delivery', 
+        'pre_eclamsia'
+        ]
+    
+    def write_row(self, pregnancy):
+        row = {}
+        row['patient_id'] = pregnancy.patient.natural_key
+        row['provider_id']= pregnancy.provider.natural_key
+        row['natural_key']= pregnancy.natural_key
+        row['mrn']= pregnancy.patient.mrn
+        row['outcome']= pregnancy.outcome
+        row['edd']= str_from_date(pregnancy.edd)
+        row['date']= str_from_date(pregnancy.date)
+        row['gravida']= pregnancy.gravida
+        row['parity']= pregnancy.parity
+        row['term']= pregnancy.term
+        row['preterm']= pregnancy.preterm
+        row['gestational_age_at_delivery']= pregnancy.gestational_age_at_delivery
+        row['birth_weight']= pregnancy.birth_weight
+        row['delivery']= pregnancy.delivery
+        row['pre_eclamsia']= pregnancy.pre_eclamsia
+
+        self.writer.writerow(row)
+
 
 class Command(LoaderCommand):
     #
@@ -545,8 +594,10 @@ class Command(LoaderCommand):
         encounter_writer = EncounterWriter()
         prescription_writer = PrescriptionWriter()
         immunization_writer = ImmunizationWriter()
+        pregnancy_writer = PregnancyWriter()
+        countprg = 0
 
-        print 'Generating fake Patients, Labs, Encounters and Prescriptions, immunizations'
+        print 'Generating fake Patients, Labs, Encounters and Prescriptions, immunizations, prescription'
                 
         Provider.make_mocks(provider_writer)
         #TODO issue 331 add the header rows her for each writer
@@ -593,12 +644,23 @@ class Command(LoaderCommand):
                     imm = history.add_immunization()
                     #check_for_reactions(imm) 
                     immunization_writer.write_row(imm)
+                    
+            #if patient is female and has birth bearing age 12-55, generate pregnancy                 
+            if p.gender.startswith('F') and p.age.years > 12 and p.age.years < 55 :
+                gravida = random.randint(1, MAX_PREGNANCIES)
+                parity =  random.randint(0, gravida) # births that persisted beyond 20 weeks
+                term = random.randint(0, parity) 
+                preterm = random.randint(0,gravida - term) 
+                for i in xrange(gravida):
+                    pregnancy_writer.write_row(Pregnancy.make_mock(p,gravida, parity, term, preterm))
+                countprg +=1
             
         print 'Generated %s fake Patients' % POPULATION_SIZE
         print 'up to max %s Encounters ' % ENCOUNTERS_PER_PATIENT 
         print 'up to max %s Labs, ' % LAB_TESTS_PER_PATIENT
         print 'up to %s Prescriptions per Patient' % MEDS_PER_PATIENT
         print 'up to %s Immunizations per Patient' % ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT 
+        print 'up to %s Patients with up to 5 Pregnancies' % countprg
              
                 
 
