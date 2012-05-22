@@ -42,6 +42,10 @@ case $_os in
         _pkg_manager='apt'
         _pkg_list="python-virtualenv python-pip python-setuptools python-dev libpq-dev"
         ;;
+    "Ubuntu 10.04.4 LTS" )
+        _pkg_manager='apt'
+        _pkg_list="python-virtualenv python-pip python-setuptools python-dev libpq-dev"
+        ;;
 esac
 
 
