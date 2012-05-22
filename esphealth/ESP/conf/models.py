@@ -308,12 +308,11 @@ class VaccineManufacturerMap(models.Model):
     def __unicode__(self):
         return u'%s' % self.name
     
-class VaccineRegEx(models.Model):
+class ImmuExclusion(models.Model):
     '''
-    Provides a set of search criteria for identifying vaccine families in open text fields
+    Provides a set of names identified as non-immunizations.
     '''
-    vaccine_name = models.CharField(max_length=128, unique=True)
-    Vx_RegEx = models.CharField(max_length=200)
+    non_immu_name = models.CharField(max_length=200, unique=True)
 
     def __unicode__(self):
         return u'%s' % self.name
