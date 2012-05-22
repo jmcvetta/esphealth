@@ -1,14 +1,13 @@
 #!/usr/bin/python
 '''
-Rolls through immunization records, setting isvaccine boolean flag based on regex in conf_vaccineregex
-correctly converted to float fields. 
+Rolls through immunization records, setting isvaccine to false based on current contents for ImmuExclusion. 
 '''
 
 import re
 
 from django.core.management.base import BaseCommand
 from ESP.emr.models import Immunization
-from ESP.conf.models import VaccineRegEx
+from ESP.conf.models import ImmuExclusion
     
 class Command(BaseCommand):
     
@@ -18,18 +17,11 @@ class Command(BaseCommand):
     def handle(self, *fixture_labels, **options):
         self.updt_immu()
         
-    vx_regex_qs = VaccineRegEx.objects.distinct('Vx_RegEx')
-    #probably a slicker way to concat the regexs, but this works.  
-    for index, row in enumerate(vx_regex_qs):
-        if (index==0):
-            cat_vx_regex = row.Vx_RegEx
-        else:
-            cat_vx_regex += '|' + row.Vx_RegEx
+    ImmuEx_qs = ImmuExclusion.objects.distinct('non_immu_name')
+
 
     def updt_immu(self):
-        Immunization.objects.update(isvaccine=None)
-        Immunization.objects.filter(name__iregex=self.cat_vx_regex).update(isvaccine=True)
-        Immunization.objects.filter(isvaccine__isnull=True).update(isvaccine=False)
-        #NB: regex filter on queryset uses native db regex syntax, not python regex syntax.
+        Immunization.objects.update(isvaccine=True)
+        Immunization.objects.filter(name__in=self.ImmuEx_qs.values('non_immu_name')).update(isvaccine=False)
         
     
