@@ -145,7 +145,7 @@ class Provider(BaseMedicalRecord):
     # Large max_length value for area code because Atrius likes to put descriptive text into that field
     area_code = models.CharField('Primary Department Phone Areacode', max_length=50, blank=True, null=True)
     telephone = models.CharField('Primary Department Phone Number', max_length=50, blank=True, null=True)
-    centerid =  models.CharField('Center ID', max_length=100, blank=True, null=True, db_index=True)
+    center_id =  models.CharField('Center ID', max_length=100, blank=True, null=True, db_index=True)
     
     q_fake = Q(natural_key__startswith='FAKE')
 
@@ -199,7 +199,10 @@ class Provider(BaseMedicalRecord):
         return self.natural_key.startswith('FAKE')
 
     def _get_name(self):
-        return u'%s, %s %s %s' % (self.last_name, self.title, self.first_name, self.middle_name)
+        if not self.title:
+            return u'%s,  %s %s' % (self.last_name, self.first_name, self.middle_name)
+        else:
+            return u'%s, %s %s %s' % (self.last_name, self.title, self.first_name, self.middle_name)
     name = property(_get_name)
     full_name = property(_get_name)
     
@@ -250,7 +253,7 @@ class Patient(BaseMedicalRecord):
     mother_mrn = models.CharField('Mother Medical Record Number', max_length=20, blank=True, null=True)
     #death_indicator = models.CharField('Death_Indicator', max_length=30, blank=True, null=True)
     occupation = models.CharField('Occupation', max_length=200, blank=True, null=True)
-    centerid =  models.CharField('Center ID', max_length=100, blank=True, null=True, db_index=True)
+    center_id =  models.CharField('Center ID', max_length=100, blank=True, null=True, db_index=True)
     
     q_fake = Q(natural_key__startswith='FAKE')
 
@@ -700,7 +703,7 @@ class LabResult(BasePatientRecord):
         except:
             return None
 
-    def last_known_value(self, with_same_unit=True):
+    def last_known_value(self, with_same_unit=True, prior_vaccine_date=None):
         '''
         Returns the value of the Lx that is immediately prior to
         self.  if 'check_same_unit' is True, only returns the value if
@@ -711,9 +714,12 @@ class LabResult(BasePatientRecord):
                                                  date__lt=self.date).order_by('-date')
         if with_same_unit:
             previous_labs = previous_labs.filter(ref_unit__iexact=self.ref_unit)
+        if prior_vaccine_date:
+            previous_labs = previous_labs.filter(date__lt=prior_vaccine_date)
         for lab in previous_labs:
             value = (lab.result_float or lab.result_string) or None
-            if value: return value, lab.date
+            if value: 
+                return value, lab.date
         return None, None
 
     def __str__(self):
@@ -1504,19 +1510,35 @@ class Pregnancy(BasePatientRecord):
         Pregnancy.fakes().delete()
 
     @staticmethod
-    def make_mock( patient, date, save_on_db=False):
+    def make_mock( patient, gravida, parity, term, preterm, when=None, save_on_db=False,):
         now = int(time.time()*1000) #time in milliseconds
+        provider = Provider.get_mock()
+        # from now up to 3 years ago
+        when = when or randomizer.date_range(as_string=False) #datetime.date.today()
+        edd = when + datetime.timedelta(days=random.randrange(5, 275)) # 40 weeks - 5 days after
+        #actual date
+        date = when + datetime.timedelta(days=random.randrange(1, 289)) # 42 weeks - 1 day after
         
-        p = Pregnancy(patient=patient, provenance=Provenance.fake(),
-                         date=date, edd=date,
-                         
-                         provider=patient.pcp, natural_key=now)
+        gad = str(40 - relativedelta(edd, date).days/7 ) + 'w' 
+        if  (relativedelta(edd, date).days % 7 ) > 0:
+            gad +=  str( relativedelta(edd, date).days % 7 ) + 'd'
+        
+        birth_weight = round(random.uniform(0.9, 5),1)
+        
+        status = ['Term', 'Preterm', 'Still birth','']         
+        outcome = random.choice(status)        
+        p = Pregnancy(patient=patient, mrn = patient.mrn, provenance=Provenance.fake(),
+                             date=date, edd=edd, gravida=gravida, parity=parity,
+                             preterm=preterm, birth_weight=birth_weight,term=term,
+                             gestational_age_at_delivery = gad ,outcome=outcome,
+                             provider=provider, natural_key=now)
+            
         if save_on_db: p.save()
+            
         return p
             
     def is_fake(self):
         return self.name == 'FAKE'
-
 
     def document_summary(self):
         return {
