@@ -149,19 +149,19 @@ ul.vaers_menu_action li{
 
 
 #tbl_case_details {
-    width: 75%;
-    margin: 20px 50px;
+    width: 100%;
+    margin: 0px 0px;
 }
 
 #tbl_case_details tr > th {
-    width: 350px;
+    
     background-color: #333;
     color: #CCC;
     vertical-align: left;
 }
 
 #tbl_case_details tr > td {
-    border-left: 3px solid #CCC;
+    border-left: 0px solid #CCC;
     vertical-align: left;
    
 }

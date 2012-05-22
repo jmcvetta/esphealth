@@ -10,76 +10,77 @@
 
 {% block content %}
 <table border="0"> 
-<tr>
+<tr >
 <td style="border:0">
-<table id="tbl_patient_details" 
+<table id="tbl_case_details" 
   <tr>
-  <th>Patient name</th>
-    <td>{{ case.patient.full_name  }}</td>
+  <th align = left >Patient name [MRN] </th>
+    <td>{{ case.patient.full_name  }} [{{ case.patient.mrn  }}]</td>
   
-    <th>Gender</th>
-    <td>{{ case.patient.gender }}</td>
+    <th align = left>Gender</th>
+    <td> {% ifequal  case.patient.gender 'F' %} 
+          Female 
+          {% else %}
+          Male 
+          {% endifequal %}
+     </td>
   </tr>
   <tr>
-    <th>Date of birth</th>
-    <td>{{ case.patient.date_of_birth|date:"d-M-Y" }}</td>
-  
-    <th>Race</th>
-    <td>{{ case.patient.race }}</td>
-  </tr> 
-  <tr>
-    <th>Home address</th>
-    <td>{{ case.patient.address1 }} {{ case.patient.city }} {{ case.patient.state }} {{ case.patient.zip5 }} {{ case.patient.country }}</td>
-  
-    <th>Telephone number</th>
+    <th align = left>Date of birth [age]</th>
+    <td>{{ case.patient.date_of_birth|date:"d-M-Y" }} 
+    {% if  case.patient.age.years  > 2 %}
+      [{{ case.patient.age.years }} years]
+    {% else %}
+     [{{ case.patient.age.months }} months]
+    {% endif %}
+    
+    </td>
+      
+    <th align = left>Telephone number</th>
     <td>({{ case.patient.areacode }}) {{ case.patient.tel }}</td>
   </tr> 
 </table>
 </td>
 <td style="border:0">
-<table id="tbl_provider_details" >
+<table id="tbl_case_details" >
 
   <tr>
-  <th>Clinician name</th>
+  <th align = left>Reviewing Clinician</th>
     <td>{{ questionaire.provider.full_name  }}</td>
   </tr> 
   <tr>
-  <th>Practice address</th>
-    <td>{{ questionaire.provider.dept_address_1 }} {{ questionaire.provider.dept_city }} {{ questionaire.provider.dept_state }} {{ questionaire.provider.dept_zip }}</td>
+  <th align = left>Primary Care Provider</th>
+    <td> {{ case.patient.pcp }}</td>
   </tr> 
-  <tr>
-  <th>Practice phone number</th>
-    <td>({{ questionaire.provider.areacode  }}) {{ questionaire.provider.telephone }} </td>
-  </tr> 
-
+  
 </table>
 
 </td>
 </tr>
 </table>
 <BR>
-<b>Immunizations on {{ case.date|date:"M d, Y"}} Case modified on {{ case.last_update|date:"M d, Y"}} 
+
+<b>Your patient received the following vaccinations on {{ case.date|date:"M d, Y"}} 
    <br></b>
   {% for vacc in case.immunizations.all %}
-	  {{ vacc.name }} - type {{ vacc.vaccine_type }} - lot {{ vacc.lot}}, 
+	  {{ vacc.name }}  <BR>
   {% endfor %}
 <br>
-
-{% if  case.prior_immunizations.all %}
-  <b>Prior immunizations: <BR></b>
-  {% for vacc in case.prior_immunizations.all %}
-	 {{ vacc.date|date:"M d, Y"}} -  {{ vacc.name }} - type {{ vacc.vaccine_type }} - lot {{ vacc.lot}}, 
-  {% endfor %}
-  
-  {% endif %}
-  
-<table border="0">
+  <b>We noted the following potentially concerning events after vaccination: </b>
+  <BR><BR>
+ <table border="0"> 
+<tr >
+<td style="border:0">
+<table border="0" id="tbl_case_details">
 <tr>
-  <td>Event Date</td><td>Labs</td><td>Diagnosis</td><td>Prescription</td><td>Allergies</td>
+  <th align = left>Event Date</th>
+  <th align = left>Encounter Type</th>
+  <th align = left>Labs</th>
+  <th align = left>Diagnosis</th>
+  <th align = left>Prescription</th>
+  <th align = left>Allergies</th>
 </tr>
-<!-- TODO do a loop to generate how many labs types and figure out the date ranges. 
-TODO create a lab types object to find the column # for the value
-TODO array of dates if dates match as i loop them again put them on teh same row in table
+<!-- add comments here 
 -->
 
 {% for event in case.adverse_events.all %}
@@ -88,8 +89,18 @@ TODO array of dates if dates match as i loop them again put them on teh same row
   {% ifequal content_type_enc event.content_type %}
     
     <td>  {{ event.content_object.date|date:"d-M-Y"}} </td>
+    
+    <td> {% ifequal event.content_object.encounter_type 'visit' %}
+            Ambulatory
+          {% endifequal %}   
+          {% ifequal event.content_object.encounter_type 'hospitalization' %}
+            Hospitalized
+          {% endifequal %} 
+          {% ifequal event.content_object.encounter_type 'er' %}
+            ED
+          {% endifequal %}  
     <td></td>
-    <td>{{ event.matching_rule_explain }}    
+    <td> {{ event.matching_rule_explain }}    </td>
     </td>
     <td></td>
     <td></td>
@@ -97,11 +108,11 @@ TODO array of dates if dates match as i loop them again put them on teh same row
   
    {% ifequal content_type_lx event.content_type %}
    
-  <td> {{event.content_object.result_date|date:"d-M-Y"}}</td>
-  
-  <td> {{ event.content_object.native_name }} - {{ event.content_object.result_float|default:"N/A"}}
+  <td> {{event.content_object.collection_date|date:"d-M-Y"}}</td>
+  <td></td>
+  <td> {{ event.content_object.native_name }} {{ event.content_object.result_float|default:"N/A"}} {{ event.content_object.ref_unit}}
      {% if  event.last_known_value  %}
-     <BR> LKV {{ event.last_known_value }} on {{ event.last_known_date|date:"d-M-Y" }}  
+     <BR>(last value prior to vaccination was {{ event.last_known_value }} on {{ event.last_known_date|date:"d-M-Y" }}) 
      {% endif %}
      </td>
   <td></td>
@@ -112,7 +123,7 @@ TODO array of dates if dates match as i loop them again put them on teh same row
   
    {% ifequal content_type_rx event.content_type %}
   <td>{{ event.content_object.date|date:"d-M-Y" }} </td>
-  <td></td>
+  <td></td><td></td>
   <td></td>
   <td> {{ event.content_object.name }}  </td>
   <td></td>
@@ -121,7 +132,7 @@ TODO array of dates if dates match as i loop them again put them on teh same row
   
    {% ifequal content_type_all event.content_type %}
    <td> {{ event.content_object.date_noted|date:"d-M-Y" }}</td>
-   <td></td>
+   <td></td><td></td>
    <td></td>
    <td></td>
      <td> {{ event.content_object.name }}  </td>
@@ -132,13 +143,44 @@ TODO array of dates if dates match as i loop them again put them on teh same row
   
   {% endfor %}
 
-
-</table>
+</table></td></tr></table>
+<BR>
+{% if  case.prior_immunizations.all %}
+  <b>Note: the patient has also recently received the following vaccines:</b><BR>
+  {% for vacc in case.prior_immunizations.all %}
+	 {{ vacc.date|date:"M d, Y"}} {{ vacc.name }} <BR>
+  {% endfor %}
   
+  {% endif %}
+  <BR>
 <form id="frm_case_confirmation" method="POST" action="{% url present_case questionaire.id  %}">
  <B>
    {{ form.as_ul }}
  </B>
+  {% for f in form %}
+   
+    {% ifequal f.name 'state' %}
+       <div class="mystate">
+        {{ f }}
+        </div>
+        
+    {%endifequal%}
+    
+    {% ifequal f.name 'comment' %}
+       <div class="mytextarea">
+        {{ f }}
+        </div>
+        
+    {%endifequal%}
+    {% ifequal f.name 'message_ishelpful' %}
+       <div class="mymsghelpful">
+        {{ f }}
+        </div>
+        
+    {%endifequal%}
+    
+  {% endfor %}
+ 
   <input type="submit" value="submit" />
   {% csrf_token %}
 </form>
