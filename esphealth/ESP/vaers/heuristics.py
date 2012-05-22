@@ -30,6 +30,8 @@ USAGE_MSG = '''\
 
 class AdverseEventHeuristic(BaseHeuristic):
     
+    lkv = None
+    lkd = None
     
     def __init__(self, event_name, verbose_name=None):
         self.time_post_immunization = rules.MAX_TIME_WINDOW_POST_EVENT
@@ -300,7 +302,7 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
     uri = 'urn:x-esphealth:heuristic:channing:vaersany_other_dx:v1'
     
     def __init__(self):
-        self.name = ' any other diagnosis' # This is the EVENT name
+        self.name = 'Any other Diagnosis' # This is the EVENT name
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
         self.category = '3_possible'
         self.ignore_period =  rules.MAX_TIME_WINDOW_POST_ANY_EVENT # months
@@ -415,22 +417,26 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 assert len(immunizations) > 0
                 
                 # create a new event for each immunization date 
+                # update if repeating labs
                 for imm in immunizations:
                     
                     ev, created = LabResultEvent.objects.get_or_create(
                                 object_id =lab_result.pk,
                                 content_type = content_type,
-                                date=lab_result.date,
+                                name = self.vaers_heuristic_name(),
                                 patient=lab_result.patient,
                                 defaults = {
-                                    'name': self.vaers_heuristic_name(),
                                     'matching_rule_explain': rule_explain,
                                     'category' : self.criterion['category'],
+                                    'date' : lab_result.date,
                                     },
                                 )
-                                    
-                    ev.last_known_value = self.lkv
-                    ev.last_known_date = self.lkd                        
+                    
+                    if lab_result.date < ev.date:
+                        ev.date = lab_result.date
+                    #calculating the last known value with value prior to vaccine
+                    #self.lkv, self.lkd = has regular last known value  
+                    ev.last_known_value, ev.last_known_date = lab_result.last_known_value(True,imm.date)                        
                         
                     ev.save()
                    
