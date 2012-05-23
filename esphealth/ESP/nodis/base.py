@@ -254,7 +254,7 @@ class DiseaseDefinition(object):
         for d in cls.get_all():
             diseases[d.uri] = d
         if not uri in diseases:
-            raise UnknownDiseaseException('Could not get disease definition for name: "%s"' % short_name)
+            raise UnknownDiseaseException('Could not get disease definition for uri: "%s"' % uri)
         return diseases[uri]
     
     #-------------------------------------------------------------------------------
