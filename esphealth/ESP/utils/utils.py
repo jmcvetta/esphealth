@@ -522,7 +522,9 @@ def wait_for_threads(fs, max_workers=settings.HEF_THREAD_COUNT):
     else:
         log.debug('Max workers set to %s; running functions single-threaded' % max_workers)
         for func in fs:
-            counter += func()
+            result = func()
+            if type(result) in [int, float, Decimal]:
+                counter += result
     return counter
 
 class _ThreadedFuncWrapper(object):
