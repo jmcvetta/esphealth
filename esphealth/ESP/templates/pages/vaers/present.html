@@ -83,20 +83,20 @@
 <!-- add comments here 
 -->
 
-{% for event in case.adverse_events.all %}
+{% for event in case.highest_event_category %}
  <tr>
   
   {% ifequal content_type_enc event.content_type %}
     
     <td>  {{ event.content_object.date|date:"d-M-Y"}} </td>
     
-    <td> {% ifequal event.content_object.encounter_type 'visit' %}
+    <td> {% ifequal event.content_object.encounter_type 'VISIT' %}
             Ambulatory
           {% endifequal %}   
-          {% ifequal event.content_object.encounter_type 'hospitalization' %}
+          {% ifequal event.content_object.encounter_type 'HOSPITALIZATION' %}
             Hospitalized
           {% endifequal %} 
-          {% ifequal event.content_object.encounter_type 'er' %}
+          {% ifequal event.content_object.encounter_type 'ER' %}
             ED
           {% endifequal %}  
     <td></td>
@@ -157,29 +157,6 @@
  <B>
    {{ form.as_ul }}
  </B>
-  {% for f in form %}
-   
-    {% ifequal f.name 'state' %}
-       <div class="mystate">
-        {{ f }}
-        </div>
-        
-    {%endifequal%}
-    
-    {% ifequal f.name 'comment' %}
-       <div class="mytextarea">
-        {{ f }}
-        </div>
-        
-    {%endifequal%}
-    {% ifequal f.name 'message_ishelpful' %}
-       <div class="mymsghelpful">
-        {{ f }}
-        </div>
-        
-    {%endifequal%}
-    
-  {% endfor %}
  
   <input type="submit" value="submit" />
   {% csrf_token %}
