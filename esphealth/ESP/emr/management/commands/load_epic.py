@@ -431,9 +431,14 @@ class ProviderLoader(BaseLoader):
         ]
     
     def load_row(self, row):
-        if not ''.join([i[1] for i in row.items()]): # Concatenate all fields
+        empty=''
+        # implement another way to account for missing fields
+        for i in row.items():
+            if i[1]:
+                empty.join(i[1])# Concatenate all fields
+        if not ''.join(empty):
             log.debug('Empty row encountered -- skipping')
-            return
+            return        
         natural_key = self.generateNaturalkey(row['natural_key'])
         # load provider in cache if not there, but natural key will never be null here
         p = self.get_provider(natural_key)
@@ -743,8 +748,8 @@ class EncounterLoader(BaseLoader):
         e, created = self.insert_or_update(Encounter, values, ['natural_key'])
         e.bmi = e._calculate_bmi() # No need to save until we finish ICD9s
         #fill out encounter_type and priority from mapping table
-        encountertypemap, created = EncounterTypeMap.objects.get_or_create(raw_encounter_type = row['event_type'])
-        e.encounter_type = encountertypemap.mapping
+        encountertypemap, created = EncounterTypeMap.objects.get_or_create(raw_encounter_type = up(row['event_type']))
+        e.encounter_type = up(encountertypemap.mapping)
         e.priority = encountertypemap.priority
         #
         # ICD9 Codes
