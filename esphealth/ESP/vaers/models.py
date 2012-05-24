@@ -601,6 +601,22 @@ class Case (models.Model):
             return klass.model_class().objects.get(id=id)
         except:
             return None
+    
+    def highest_event_category(self):
+        
+        highest_adverse_event = []
+        prior_date = None
+        # the first encounter will already be added as priority 1
+        for event in self.adverse_events.order_by('date','content_type','category'):
+            if prior_date == event.date and event.content_type.name == ContentType.objects.get_for_model(Encounter) :
+                prior_date= event.date
+                continue
+            else:
+                prior_date= event.date
+                highest_adverse_event.append(event)  
+                 
+        return highest_adverse_event
+        
         
     def __unicode__(self):
         return u'AE Case %s: Patient %s, on %s' % (
