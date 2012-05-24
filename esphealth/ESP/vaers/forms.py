@@ -33,18 +33,13 @@ class CaseConfirmForm(forms.Form):
     #TODO For no: Please provide details so that we can refine our adverse event detection algorithms
 
     comment = forms.CharField(label = 'Please comment on the likelihood and severity of this possible event:',
-                               widget=forms.Textarea )
+                               widget=forms.Textarea(attrs={'cols': '40', 'rows': '5'}))
     
-    label = forms.CharField(label = 'Please help us assess this automated adverse event reporting tool.' )
-    
-    message_ishelpful = forms.ChoiceField(label = 'Was this message helpful?', choices=CASE_YESNO_CHOICES, 
+    message_ishelpful = forms.ChoiceField(help_text ='Please help us assess this automated adverse event reporting tool', label = 'Was this message helpful?', choices=CASE_YESNO_CHOICES, 
                                widget=forms.RadioSelect)
     interrupts_work = forms.ChoiceField(label = 'Did it interrupt your work flow?', choices=CASE_YESNO_CHOICES, 
                                widget=forms.RadioSelect)
     satisfaction_num_msg =  forms.ChoiceField(label = 'Has the number of messages recently been', choices=CASE_TYPE_CHOICES, 
                                widget=forms.RadioSelect)
      
-    def __init__(self, *args, **kwargs):
-        super(CaseConfirmForm, self).__init__(*args, **kwargs) # Call to constructor
-        self.fields['comment'].widget.attrs['cols'] = 10
-        self.fields['comment'].widget.attrs['rows'] = 10
+   
