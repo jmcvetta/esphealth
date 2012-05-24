@@ -59,7 +59,8 @@ class AdverseEventHeuristic(BaseHeuristic):
         this_case.immunizations.add(this_imm)
         this_case.adverse_events.add(this_event)
         
-        this_case.prior_immunizations = prior_immunizations
+        for prior in prior_immunizations:
+            this_case.prior_immunizations.add(prior)
         this_case.save()
         
         #create questionaires for every physician in the events
@@ -215,12 +216,10 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         for this_enc in self.matches(**kw):
             if self.ignore_period:
                 earliest = this_enc.date - relativedelta(months=self.ignore_period)
-                
                 prior_enc_qs = Encounter.objects.filter(
                     date__lt = this_enc.date, 
                     date__gte = earliest, 
-                    priority__lt = this_enc.priority,
-                    encounter_type = this_enc.encounter_type,
+                    priority__lte = this_enc.priority,
                     patient = this_enc.patient,                     
                     icd9_codes__in = self.icd9s.all(),
                 )
