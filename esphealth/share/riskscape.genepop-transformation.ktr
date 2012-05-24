@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <transformation>
   <info>
     <name>General Population Riskscape Report</name>
@@ -8,6 +9,16 @@
     <trans_status>0</trans_status>
     <directory>&#47;</directory>
     <parameters>
+        <parameter>
+            <name>INPUT_FILE</name>
+            <default_value/>
+            <description/>
+        </parameter>
+        <parameter>
+            <name>OUTPUT_FILE</name>
+            <default_value/>
+            <description/>
+        </parameter>
     </parameters>
     <log>
 <trans-log-table><connection/>
@@ -972,6 +983,9 @@ if ( (max_bp_systolic &gt; 140) || (max_bp_diastolic &gt; 90) ) {
     </fields>
     <limit>0</limit>
     <error_ignored>N</error_ignored>
+    <skip_bad_files>N</skip_bad_files>
+    <file_error_field/>
+    <file_error_message_field/>
     <error_line_skipped>N</error_line_skipped>
     <error_count_field/>
     <error_fields_field/>
@@ -1193,9 +1207,11 @@ if ( (max_bp_systolic &gt; 140) || (max_bp_diastolic &gt; 90) ) {
     <endedLine/>
     <fileNameInField>N</fileNameInField>
     <fileNameField>output_filename</fileNameField>
+    <create_parent_folder>N</create_parent_folder>
     <file>
       <name>${OUTPUT_FILE}</name>
       <is_command>N</is_command>
+      <servlet_output>N</servlet_output>
       <do_not_open_new_file_init>Y</do_not_open_new_file_init>
       <extention/>
       <append>N</append>
