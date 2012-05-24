@@ -194,7 +194,10 @@ class PatientWriter(EpicWriter):
         row['last_name'] = patient.last_name
         row['first_name'] = patient.first_name
         row['middle_name'] = patient.middle_name
-        row['pcp_id'] = patient.pcp.natural_key
+        if patient.pcp:
+            row['pcp_id'] = patient.pcp.natural_key
+        else:
+            row['pcp_id'] = None
         row['address1'] = patient.address1
         row['address2'] = patient.address2
         row['city'] = patient.city
@@ -362,7 +365,7 @@ class EncounterWriter(EpicWriter):
                 'provider_id':encounter.provider.natural_key,
                 'site_natural_key':encounter.site_natural_key,
                 'site_name':encounter.site_name,
-                'event_type':encounter.events.content_type,
+                'event_type':encounter.raw_encounter_type,
                 'edd':str_from_date(encounter.edd) or '',
                 'temp':str(encounter.temperature or '') ,
                 'cpt': '',
