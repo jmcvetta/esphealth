@@ -117,6 +117,14 @@ class Command(BaseCommand):
         log.info('Extracted %s social history from ESP to Epic ETL files' % count)  
         print 'Extracted %s social history from ESP to Epic ETL files' % count
         
+        count = 0    
+        pregnancy_writer = PregnancyWriter()
+        for p in Pregnancy.objects.order_by('id'):
+            count =count +1 
+            pregnancy_writer.write_row(p)
+        log.info('Extracted %s pregnancy from ESP to Epic ETL files' % count)  
+        print 'Extracted %s pregancy from ESP to Epic ETL files' % count
+        
 '''       
         self.folder_check()
         #
