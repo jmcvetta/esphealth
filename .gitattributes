@@ -304,6 +304,7 @@ esphealth/ESP/utils/utils.py -text
 esphealth/ESP/utils/vaers_hl7.py -text
 esphealth/ESP/vaers/__init__.py -text
 esphealth/ESP/vaers/admin.py -text
+esphealth/ESP/vaers/base.py -text
 esphealth/ESP/vaers/broken-tests.py -text
 esphealth/ESP/vaers/fake.py -text
 esphealth/ESP/vaers/fixtures/broken_initial_data.json.bz2 -text svneol=unset#unset
