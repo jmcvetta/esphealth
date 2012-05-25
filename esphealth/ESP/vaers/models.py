@@ -17,7 +17,8 @@ from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
 from ESP.emr.choices import WORKFLOW_STATES # FIXME: 'esp' module is deprecated
-from ESP.emr.models import Patient, Immunization,Prescription,Allergy,  Encounter, LabResult, Provider
+from ESP.emr.models import Patient, Immunization,Prescription,Allergy
+from ESP.emr.models import Encounter, LabResult, Provider,PRIORITY_TYPES
 from ESP.static.models import Icd9
 from ESP.conf.common import DEIDENTIFICATION_TIMEDELTA, EPOCH
 from ESP.utils.utils import log, make_date_folders
@@ -89,6 +90,7 @@ class AdverseEvent(models.Model):
     FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'fixtures', 'events')
     last_known_value = models.FloatField('Last known Numeric Test Result', blank=True, null=True)
     last_known_date  = models.DateField(blank=True, null=True)
+    priority = models.IntegerField( blank=False,choices=PRIORITY_TYPES, default =3 ,db_index=True)
     
     @staticmethod
     def fakes():
@@ -605,14 +607,17 @@ class Case (models.Model):
     def highest_event_category(self):
         
         highest_adverse_event = []
-        prior_date = None
+        prior_name = None
+        prior_priority= None
         # the first encounter will already be added as priority 1
-        for event in self.adverse_events.order_by('date','content_type','category'):
-            if prior_date == event.date and event.content_type.name == ContentType.objects.get_for_model(Encounter) :
-                prior_date= event.date
+        for event in self.adverse_events.order_by('name','priority','date'):
+            if prior_name == event.name and event.priority== prior_priority and event.content_type.name == ContentType.objects.get_for_model(Encounter) :
+                prior_name = event.name
+                prior_priority = event.priority
                 continue
             else:
-                prior_date= event.date
+                prior_name= event.name
+                prior_priority = event.priority
                 highest_adverse_event.append(event)  
                  
         return highest_adverse_event
