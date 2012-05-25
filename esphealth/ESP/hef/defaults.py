@@ -122,6 +122,175 @@ ResultString.objects.get_or_create(
 
 #-------------------------------------------------------------------------------
 #
+#  Vaers labs 
+#
+#-------------------------------------------------------------------------------
+hemoglobin_test = AbstractLabTest.objects.get_or_create(
+    name = 'hemoglobin_test',
+    defaults = {
+        'verbose_name': 'Hemoglobin test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = hemoglobin_test,
+    )
+
+wbc_test = AbstractLabTest.objects.get_or_create(
+    name = 'wbc_test',
+    defaults = {
+        'verbose_name': 'wbc test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = wbc_test,
+    )
+
+wbc_test = AbstractLabTest.objects.get_or_create(
+    name = 'wbc_test',
+    defaults = {
+        'verbose_name': 'wbc test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = wbc_test,
+    )
+
+neutrophils_test = AbstractLabTest.objects.get_or_create(
+    name = 'neutrophils_test',
+    defaults = {
+        'verbose_name': 'Neutrophils test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = neutrophils_test,
+    )
+
+eosinophils_test = AbstractLabTest.objects.get_or_create(
+    name = 'eosinophils_test',
+    defaults = {
+        'verbose_name': 'Eosinophils test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = eosinophils_test,
+    )
+
+lymphocytes_test = AbstractLabTest.objects.get_or_create(
+    name = 'lymphocytes_test',
+    defaults = {
+        'verbose_name': 'Lymphocytes test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = lymphocytes_test,
+    )
+
+platelet_count_test = AbstractLabTest.objects.get_or_create(
+    name = 'platelet_count_test',
+    defaults = {
+        'verbose_name': 'Platelet count test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = platelet_count_test,
+    )
+
+creatinine_test = AbstractLabTest.objects.get_or_create(
+    name = 'creatinine_test',
+    defaults = {
+        'verbose_name': 'Creatinine test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = creatinine_test,
+    )
+
+alk_test = AbstractLabTest.objects.get_or_create(
+    name = 'alk_test',
+    defaults = {
+        'verbose_name': 'ALK test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = alk_test,
+    )
+
+ptt_test = AbstractLabTest.objects.get_or_create(
+    name = 'ptt_test',
+    defaults = {
+        'verbose_name': 'PTT test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = ptt_test,
+    )
+
+creatinine_kinase_test = AbstractLabTest.objects.get_or_create(
+    name = 'creatinine_kinase_test',
+    defaults = {
+        'verbose_name': 'Creatinine kinase test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = creatinine_kinase_test,
+    )
+
+glucose_test = AbstractLabTest.objects.get_or_create(
+    name = 'glucose_test',
+    defaults = {
+        'verbose_name': 'Glucose test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = glucose_test,
+    )
+
+potassium_test = AbstractLabTest.objects.get_or_create(
+    name = 'potassium_test',
+    defaults = {
+        'verbose_name': 'Potassium test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = potassium_test,
+    )
+
+sodium_test = AbstractLabTest.objects.get_or_create(
+    name = 'sodium_test',
+    defaults = {
+        'verbose_name': 'Sodium test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = sodium_test,
+    )
+
+calcium_test = AbstractLabTest.objects.get_or_create(
+    name = 'calcium_test',
+    defaults = {
+        'verbose_name': 'Calcium test',
+        }
+    )[0]
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = calcium_test,
+    )
+#-------------------------------------------------------------------------------
+#
 # Gonorrhea
 #
 #-------------------------------------------------------------------------------
@@ -136,9 +305,6 @@ gonorrhea_test = AbstractLabTest.objects.get_or_create(
 LabResultPositiveHeuristic.objects.get_or_create(
     test = gonorrhea_test,
     )
-
-
-
 
 #-------------------------------------------------------------------------------
 #
@@ -265,7 +431,9 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
     threshold = 400,
     )
 
-
+LabResultAnyHeuristic.objects.get_or_create(
+    test = alt,
+    )
 #-------------------------------------------------------------------------------
 #
 # AST
@@ -293,7 +461,9 @@ LabResultRatioHeuristic.objects.get_or_create(
     ratio = 5,
     )
 
-
+LabResultAnyHeuristic.objects.get_or_create(
+    test = ast,
+    )
 #-------------------------------------------------------------------------------
 #
 # Hepatitis A
@@ -460,6 +630,11 @@ LabResultFixedThresholdHeuristic.objects.get_or_create(
     test = bilirubin_total,
     threshold = 1.5,
     )
+    
+LabResultAnyHeuristic.objects.get_or_create(
+    test = bilirubin_total,
+    )
+
     
 bilirubin_direct = AbstractLabTest.objects.get_or_create(
     name = 'bilirubin_direct',
