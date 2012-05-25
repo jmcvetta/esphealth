@@ -3,9 +3,11 @@
 <link rel="stylesheet" type="text/css" href="{{ site_css_folder }}vaers.css" />
 {% endblock %}
 {% block extrascript %}
+
 <script type="text/javascript" src="{{ site_javascript_folder }}vaers.js">
 
 </script>
+
 {% endblock%}
 
 {% block content %}
@@ -152,10 +154,33 @@
   {% endfor %}
   
   {% endif %}
-  <BR>
 <form id="frm_case_confirmation" method="POST" action="{% url present_case questionaire.id  %}">
  <B>
-   {{ form.as_ul }}
+    <div class="css_state">
+    <label for="id_state_0">Possible Adverse Event?</label>
+        {{ form.state }}   
+    
+    <div class="comment1 togcomment" style="display:none;>
+    <label for="id_comment">Please comment on the likelihood and severity of this possible event:</label>
+    </div>
+    <div class="comment2 togcomment" >
+    <label for="id_comment">Please provide details so that we can refine our adverse event detection algorithms:</label>
+    </div>
+      {{ form.comment }}
+     </div>
+    <div class="css_ishelpful">
+    Please help us assess this automated adverse event reporting tool.<BR>
+    <label for="id_message_ishelpful">Was this message helpful?</label>
+        {{ form.message_ishelpful }}
+        
+    </div>
+    <div class="css_inter_satis">
+    <label for="id_interrupts_work">Did it interrupt your work flow?</label>
+       {{ form.interrupts_work }}
+    <label for="id_satisfaction_num_msg">Has the number of messages recently been:</label> 
+     {{ form.satisfaction_num_msg }}    
+     </div>
+   
  </B>
  
   <input type="submit" value="submit" />
