@@ -81,6 +81,18 @@ function showCurrentEmail(){
 	$("#banner_info_email").fadeIn("slow");
     }
 }
+ 
+ $(document).ready(function() {
+
+    $('.css_state').click(function() {
+        var container = $(this);
+
+        $.get( container.attr('alt'), {'com': 1}, function() {
+            container.find('.togcomment').toggle();
+        });
+
+    });
+});
 
 function promptEmail(message){
     msg = message || 'Please set up the email address to send detailed reports.';
@@ -94,3 +106,4 @@ function promptEmail(message){
 	showCurrentEmail();
     }
 }
+
