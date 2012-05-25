@@ -99,9 +99,7 @@ ul.vaers_menu_action li{
 }
 
 #frm_case_confirmation textarea {
-    width: 100%;
     margin: 20px 50px;
-    height: 250px;
 }
 
 #frm_case_confirmation div {
