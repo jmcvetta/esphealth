@@ -39,6 +39,8 @@ class LoaderCommand(BaseCommand):
             metavar='FOLDER', help='Folder from which to read incoming HL7 messages'),
         make_option('--no-archive', action='store_false', dest='archive', default=ETL_ARCHIVE, 
             help='Do NOT archive files after they have been loaded'),
+        make_option('--site', action='store', dest='site_name', 
+            help='Provide site name for site-specific encounter type mapping'),
         make_option('--reload', action='store_true', dest='reload', default=False,
             help='Reload data even if same filename has already been loaded')
         )
