@@ -1275,10 +1275,12 @@ class Encounter(BasePatientRecord):
             # as their 16th birthday if necessary
             
             if not self.patient.date_of_birth: 
-                log.warning('Cannot calculate BMI for encounter # %s due to null DOB' % self.pk)
-                return None
-            sixteenth_bday = self.patient.date_of_birth + relativedelta(years=16)
-            ht_encs = pat_encs.filter(date__gte=sixteenth_bday, height__isnull=False).exclude(height=0)
+                log.warning('Cannot calculate sixteenth birthday because of NULL DOB for encounter %s ' % self.pk)
+                ht_encs = pat_encs.filter( height__isnull=False).exclude(height=0)
+            else:    
+                sixteenth_bday = self.patient.date_of_birth + relativedelta(years=16)
+                ht_encs = pat_encs.filter(date__gte=sixteenth_bday, height__isnull=False).exclude(height=0)
+                
             # Find the most recent weight this patient within the past year
             wt_encs = encs_last_year.filter(weight__isnull=False).exclude(weight=0)
             if ht_encs and wt_encs:
