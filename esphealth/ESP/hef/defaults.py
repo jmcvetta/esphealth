@@ -147,17 +147,6 @@ LabResultAnyHeuristic.objects.get_or_create(
     test = wbc_test,
     )
 
-wbc_test = AbstractLabTest.objects.get_or_create(
-    name = 'wbc_test',
-    defaults = {
-        'verbose_name': 'wbc test',
-        }
-    )[0]
-    
-LabResultAnyHeuristic.objects.get_or_create(
-    test = wbc_test,
-    )
-
 neutrophils_test = AbstractLabTest.objects.get_or_create(
     name = 'neutrophils_test',
     defaults = {
