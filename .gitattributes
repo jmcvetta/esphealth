@@ -36,6 +36,7 @@ esphealth/ESP/data/ndc_codes.txt.bz2 -text svneol=unset#unset
 esphealth/ESP/data/source_systems.txt.bz2 -text svneol=unset#unset
 esphealth/ESP/emr/__init__.py -text
 esphealth/ESP/emr/admin.py -text
+esphealth/ESP/emr/base.py -text
 esphealth/ESP/emr/choices.py -text
 esphealth/ESP/emr/data_flow_summary.py -text
 esphealth/ESP/emr/fake.py -text
