@@ -16,8 +16,8 @@
 <td style="border:0">
 <table id="tbl_case_details" 
   <tr>
-  <th align = left >Patient name [MRN] </th>
-    <td>{{ case.patient.full_name  }} [{{ case.patient.mrn  }}]</td>
+  <th align = left >Patient name <bR> [MRN] </th>
+    <td>{{ case.patient.full_name  }} <BR> [{{ case.patient.mrn  }}]</td>
   
     <th align = left>Gender</th>
     <td> {% ifequal  case.patient.gender 'F' %} 
@@ -62,13 +62,13 @@
 </table>
 <BR>
 
-<b>Your patient received the following vaccinations on {{ case.date|date:"M d, Y"}} 
+<b>Your patient received the following vaccination(s) on {{ case.date|date:"M d, Y"}} 
    <br></b>
   {% for vacc in case.immunizations.all %}
 	  {{ vacc.name }}  <BR>
   {% endfor %}
 <br>
-  <b>We noted the following potentially concerning events after vaccination: </b>
+  <b>We noted the following potentially concerning events after vaccination(s): </b>
   <BR><BR>
  <table border="0"> 
 <tr >
@@ -76,6 +76,7 @@
 <table border="0" id="tbl_case_details">
 <tr>
   <th align = left>Event Date</th>
+  <th align = left>Days Since Vaccine(s) given</th>
   <th align = left>Encounter Type</th>
   <th align = left>Labs</th>
   <th align = left>Diagnosis</th>
@@ -91,7 +92,7 @@
   {% ifequal content_type_enc event.content_type %}
     
     <td>  {{ event.content_object.date|date:"d-M-Y"}} </td>
-    
+    <td> {{ event.gap }} </td>
     <td> {% ifequal event.content_object.encounter_type 'VISIT' %}
             Ambulatory
           {% endifequal %}   
@@ -111,10 +112,11 @@
    {% ifequal content_type_lx event.content_type %}
    
   <td> {{event.content_object.collection_date|date:"d-M-Y"}}</td>
+  <td> {{ event.gap }} </td>
   <td></td>
   <td> {{ event.content_object.native_name }} {{ event.content_object.result_float|default:"N/A"}} {{ event.content_object.ref_unit}}
      {% if  event.last_known_value  %}
-     <BR>(last value prior to vaccination was {{ event.last_known_value }} on {{ event.last_known_date|date:"d-M-Y" }}) 
+     <BR>(last value prior to vaccination(s) {{ event.last_known_value }} on {{ event.last_known_date|date:"d-M-Y" }}) 
      {% endif %}
      </td>
   <td></td>
@@ -125,6 +127,7 @@
   
    {% ifequal content_type_rx event.content_type %}
   <td>{{ event.content_object.date|date:"d-M-Y" }} </td>
+  <td> {{ event.gap }} </td>
   <td></td><td></td>
   <td></td>
   <td> {{ event.content_object.name }}  </td>
@@ -134,6 +137,7 @@
   
    {% ifequal content_type_all event.content_type %}
    <td> {{ event.content_object.date_noted|date:"d-M-Y" }}</td>
+   <td> {{ event.gap }} </td>
    <td></td><td></td>
    <td></td>
    <td></td>
@@ -148,7 +152,7 @@
 </table></td></tr></table>
 <BR>
 {% if  case.prior_immunizations.all %}
-  <b>Note: the patient has also recently received the following vaccines:</b><BR>
+  <b>Note: the patient has also recently received the following vaccine(s):</b><BR>
   {% for vacc in case.prior_immunizations.all %}
 	 {{ vacc.date|date:"M d, Y"}} {{ vacc.name }} <BR>
   {% endfor %}
@@ -157,7 +161,11 @@
 <form id="frm_case_confirmation" method="POST" action="{% url present_case questionaire.id  %}">
  <B>
     <div class="css_state">
+    <header>
+    <h2>
     <label for="id_state_0">Possible Adverse Event?</label>
+    </h2>
+  </header>
         {{ form.state }}   
     
     <div class="comment1 togcomment" style="display:none;>
@@ -169,7 +177,9 @@
       {{ form.comment }}
      </div>
     <div class="css_ishelpful">
-    Please help us assess this automated adverse event reporting tool.<BR>
+    <header>
+    <h2>Please help us assess this automated adverse event reporting tool.</h2>
+  </header>
     <label for="id_message_ishelpful">Was this message helpful?</label>
         {{ form.message_ishelpful }}
         
