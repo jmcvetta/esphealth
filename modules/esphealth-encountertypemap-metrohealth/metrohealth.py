@@ -38,5 +38,5 @@ class metrohealth(SiteDefinition):
 metrohealth_encountertypemap = metrohealth()
 
 def encountertypemap():
-    return metrohealth_encountertypemap
+    return [metrohealth_encountertypemap]
 
