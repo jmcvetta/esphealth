@@ -1,0 +1,4 @@
+
+        [esphealth]
+        encountertypemap = metrohealth:encountertypemap
+    
