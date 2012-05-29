@@ -1,8 +1,0 @@
-__init__.py
-metrohealth.py
-setup.py
-esphealth_encountertypemap_metrohealth.egg-info/PKG-INFO
-esphealth_encountertypemap_metrohealth.egg-info/SOURCES.txt
-esphealth_encountertypemap_metrohealth.egg-info/dependency_links.txt
-esphealth_encountertypemap_metrohealth.egg-info/entry_points.txt
-esphealth_encountertypemap_metrohealth.egg-info/top_level.txt

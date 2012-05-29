@@ -509,11 +509,6 @@ modules/disease-tuberculosis/__init__.py -text
 modules/disease-tuberculosis/setup.py -text
 modules/disease-tuberculosis/tuberculosis.py -text
 modules/esphealth-encountertypemap-metrohealth/__init__.py -text
-modules/esphealth-encountertypemap-metrohealth/esphealth_encountertypemap_metrohealth.egg-info/PKG-INFO -text
-modules/esphealth-encountertypemap-metrohealth/esphealth_encountertypemap_metrohealth.egg-info/SOURCES.txt -text
-modules/esphealth-encountertypemap-metrohealth/esphealth_encountertypemap_metrohealth.egg-info/dependency_links.txt -text
-modules/esphealth-encountertypemap-metrohealth/esphealth_encountertypemap_metrohealth.egg-info/entry_points.txt -text
-modules/esphealth-encountertypemap-metrohealth/esphealth_encountertypemap_metrohealth.egg-info/top_level.txt -text
 modules/esphealth-encountertypemap-metrohealth/metrohealth.py -text
 modules/esphealth-encountertypemap-metrohealth/setup.py -text
 modules/heuristic-glucose-crf/__init__.py -text
