@@ -264,8 +264,7 @@ VAERS_PRESCRIPTION = {
     }
 
 VAERS_LAB_RESULTS = {
-    #TODO issue 345 fix me we need to define these sets of codes as sets for an abstract labs 
-    'Hemoglobin':{
+     'Hemoglobin':{
         'codes':[
             '83036--258', '83051--258', '83036--1638', '80055--1100', '82955--1100', '83020--1100',
             '83021--1100', '85014--1100', '85018--1100', '85018--9', '85021--1100', '85021--9',
