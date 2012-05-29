@@ -14,6 +14,7 @@ from ESP.vaers.models import Case, PrescriptionEvent, EncounterEvent, LabResultE
 from ESP.vaers.models import DiagnosticsEventRule
 from ESP.vaers.models import ExcludedICD9Code, Questionaire
 from ESP.utils.utils import log
+from ESP.conf.models import LabTestMap 
 
 import rules
 
@@ -202,6 +203,7 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
+        
         enc_qs = Encounter.objects.following_vaccination(self.risk_period,self.risk_period_start)
         
         enc_qs = enc_qs.filter(icd9_codes__in=self.icd9s.all())
@@ -213,6 +215,11 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         log.info('Generating events for %s' % self.name)
         counter = 0
         content_type = ContentType.objects.get_for_model(Encounter)
+        
+        #TODO find the encounter that has a date <= this enc date and close date => this enc date
+        # or close date is null is same as start one day hospitalization
+        # dont add the event if the priority is >
+        
         for this_enc in self.matches(**kw):
             if self.ignore_period:
                 earliest = this_enc.date - relativedelta(months=self.ignore_period)
@@ -326,13 +333,35 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
 
 
 class VaersLxHeuristic(AdverseEventHeuristic):
-    def __init__(self, event_name, lab_codes, criterion, pediatric):
+    
+    test_name_search_strings = [
+            'Hemoglobin',
+            'WBC',
+            'Neutrophils',
+            'Eosinophils',
+            'Lymphocytes',
+            'Platelet',
+            'Creatinine',
+            #'ALT',
+            #'AST',
+            'Bilirubin',
+            'ALK',
+            'PTT',
+            'Creatine',
+            'Glucose',
+            'Potassium',
+            'Sodium',
+            'Calcium',
+
+        ]
+    
+    def __init__(self, event_name, lab_type, criterion, pediatric):
         '''
         @param pediatric: Apply this heuristic to prediatric patients rather than adults?
         @type pediatric:  Bool (if false, apply to adults only)
         '''
         self.name = event_name
-        self.lab_codes = lab_codes
+        self.lab_type = lab_type
         self.criterion = criterion
         self.time_post_immunization = criterion['risk_period']
         self.pediatric = pediatric
@@ -383,9 +412,13 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         
         trigger = self.criterion['trigger']
         comparator, baseline = self.criterion['exclude_if']
-
+        
+        # overwrite the lab codes with the codes in the mapping table
+        self.lab_codes = LabTestMap.objects.filter(test_name__icontains=self.lab_type).values('native_code')
+        
         candidates = LabResult.objects.following_vaccination(self.time_post_immunization,self.risk_period_start).filter(
-            native_code__in=self.lab_codes, date__gte=begin, date__lte=end).distinct()
+            native_code__in=self.lab_codes,
+            date__gte=begin, date__lte=end).distinct()
         #
         # Pediatric: 3mo - 18yrs
         # Adult 18yrs +
@@ -583,12 +616,13 @@ def make_lab_heuristics(lab_type):
 
     def heuristic_name(criterion, lab_name):
         return '%s %s %s' % (lab_name, criterion['trigger'], criterion['unit'])
+    
     heuristic_list = []
     for criterion in rule['criteria_adult']:
-        h = VaersLxHeuristic(heuristic_name(criterion, lab_type), rule['codes'], criterion, pediatric=False)
+        h = VaersLxHeuristic(heuristic_name(criterion, lab_type), lab_type,  criterion, pediatric=False)
         heuristic_list.append(h)
     for criterion in rule['criteria_pediatric']:
-        h = VaersLxHeuristic(heuristic_name(criterion, lab_type), rule['codes'], criterion, pediatric=True)
+        h = VaersLxHeuristic(heuristic_name(criterion, lab_type), lab_type, criterion, pediatric=True)
         heuristic_list.append(h)
     return heuristic_list
 
