@@ -62,13 +62,13 @@
 </table>
 <BR>
 
-<b>Your patient received the following vaccination(s) on {{ case.date|date:"M d, Y"}} 
+<b>Your patient received the following vaccination on {{ case.date|date:"M d, Y"}} 
    <br></b>
   {% for vacc in case.immunizations.all %}
 	  {{ vacc.name }}  <BR>
   {% endfor %}
 <br>
-  <b>We noted the following potentially concerning events after vaccination(s): </b>
+  <b>We noted the following potentially concerning events after vaccination: </b>
   <BR><BR>
  <table border="0"> 
 <tr >
@@ -116,7 +116,7 @@
   <td></td>
   <td> {{ event.content_object.native_name }} {{ event.content_object.result_float|default:"N/A"}} {{ event.content_object.ref_unit}}
      {% if  event.last_known_value  %}
-     <BR>(last value prior to vaccination(s) {{ event.last_known_value }} on {{ event.last_known_date|date:"d-M-Y" }}) 
+     <BR>(last value prior to vaccination {{ event.last_known_value }} on {{ event.last_known_date|date:"d-M-Y" }}) 
      {% endif %}
      </td>
   <td></td>
