@@ -51,11 +51,12 @@ from ESP.emr.models import EtlError
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
 from ESP.emr.models import LabResult, LabOrder
-from ESP.emr.models import Encounter,EncounterTypeMap
+from ESP.emr.models import Encounter, EncounterTypeMap
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization, Pregnancy
 from ESP.emr.models import SocialHistory, Problem, Allergy
 from ESP.emr.management.commands.common import LoaderCommand
+from ESP.emr.base import SiteDefinition
 
 
     
@@ -1151,6 +1152,11 @@ class Command(LoaderCommand):
                     l.provenance.save()
                     disposition = 'failure'
                 self.archive(options, filepath, disposition)
+        if options['site_name']:
+            site = SiteDefinition.get_by_short_name(options['site_name'])
+            SiteDefinition.generate_updt(site)
+        
+                
         #
         # Print job summary
         #
