@@ -28,3 +28,15 @@ class metrohealth(SiteDefinition):
         Encounter.objects.filter(encounter_type=None, raw_encounter_type__contains='HOSP').update(encounter_type='hospitalization',priority=2)
         Encounter.objects.filter(encounter_type=None, raw_encounter_type__in=['APPT','HISTORY','VISIT','IMMUNIZATION']).update(encounter_type='visit',priority=3)
         Encounter.objects.filter(encounter_type=None).update(encounter_type='other',priority=4)
+        
+#-------------------------------------------------------------------------------
+#
+# Packaging
+#
+#-------------------------------------------------------------------------------
+
+metrohealth_encountertypemap = metrohealth()
+
+def encountertypemap():
+    return metrohalth_encountertypemap
+
