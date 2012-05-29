@@ -54,6 +54,7 @@ from ESP.nodis.models import Report
 from ESP.nodis.models import ReferenceCase
 from ESP.nodis.models import ValidatorRun
 from ESP.nodis.models import ValidatorResult
+from ESP.vaers.heuristics import VaersLxHeuristic
 from ESP.ui.forms import CaseStatusForm
 from ESP.ui.forms import CodeMapForm
 from ESP.ui.forms import ConditionForm
@@ -243,7 +244,8 @@ def unmapped_labs_report(request):
     Display Unmapped Labs report generated from cache
     '''
     unmapped = _get_unmapped_labs()
-    strings = DiseaseDefinition.get_all_test_name_search_strings()
+    strings = DiseaseDefinition.get_all_test_name_search_strings()+ VaersLxHeuristic.test_name_search_strings
+      
     strings.sort()
     values = {
         'title': 'Unmapped Lab Tests Report',
@@ -575,7 +577,13 @@ def _get_unmapped_labs():
     '''
     ignored = IgnoredCode.objects.values('native_code')
     mapped = LabTestMap.objects.values('native_code').distinct()
-    all_strings = DiseaseDefinition.get_all_test_name_search_strings()
+    all_strings = DiseaseDefinition.get_all_test_name_search_strings() + VaersLxHeuristic.test_name_search_strings
+    all_strings.sort()
+    
+    # this only happens when system has just been installed with no data.
+    if not all_strings:
+        all_strings = ['','']
+        
     q_obj = Q(native_name__icontains=all_strings[0])
     for string in all_strings[1:]:
         q_obj |= Q(native_name__icontains=string)
