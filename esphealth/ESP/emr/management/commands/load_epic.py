@@ -748,10 +748,11 @@ class EncounterLoader(BaseLoader):
             
         e, created = self.insert_or_update(Encounter, values, ['natural_key'])
         e.bmi = e._calculate_bmi() # No need to save until we finish ICD9s
-        #fill out encounter_type and priority from mapping table
-        encountertypemap, created = EncounterTypeMap.objects.get_or_create(raw_encounter_type = up(row['event_type']))
-        e.encounter_type = up(encountertypemap.mapping)
-        e.priority = encountertypemap.priority
+        #fill out encounter_type and priority from mapping table if it has a value
+        if  row['event_type']:
+            encountertypemap, created = EncounterTypeMap.objects.get_or_create(raw_encounter_type = up(row['event_type']))
+            e.encounter_type = up(encountertypemap.mapping)
+            e.priority = encountertypemap.priority
         #
         # ICD9 Codes
         #
