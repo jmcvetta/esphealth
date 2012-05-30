@@ -76,7 +76,7 @@ class SiteDefinition(object):
         # Retrieve from modules
         #
         sites = []
-        for entry_point in iter_entry_points(group='esphealth', name='encountertypemap'):
+        for entry_point in iter_entry_points(group='esphealth', name='sitedefs'):
             factory = entry_point.load()
             sites += factory()
         sites.sort(key = lambda h: h.short_name)
@@ -133,6 +133,5 @@ class SiteDefinition(object):
         @param site: The site object
         @type SiteDefinition
         '''
-        assert isinstance(site, cls)
         updtd = site.generate
         return updtd
