@@ -34,6 +34,10 @@ echo
 # Check Operating System
 #
 case $_os in
+    "Ubuntu 12.04 LTS" )
+        _pkg_manager='apt'
+        _pkg_list="python-virtualenv python-pip python-setuptools python-dev libpq-dev postgresql-client postgresql-9.1 postgresql-server-dev-9.1"
+        ;;
     "Ubuntu 11.10" )
         _pkg_manager='apt'
         _pkg_list="python-virtualenv python-pip python-setuptools python-dev libpq-dev postgresql-client postgresql-9.1 postgresql-server-dev-9.1"
@@ -70,7 +74,7 @@ case $_pkg_manager in
     "apt" )
         # Update package list
         echo 'Refreshing apt package list...'
-        sudo apt-get update -qq
+        sudo apt-get update -q
         echo 'Installing apt packages...'
         # Install Ubuntu packages
         sudo apt-get install -q -y $_pkg_list
