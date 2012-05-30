@@ -26,6 +26,6 @@ setup(
         ],
     entry_points = '''
         [esphealth]
-        encountertypemap = metrohealth:encountertypemap
+        sitedefs = metrohealth:sitedefs
     '''
     )

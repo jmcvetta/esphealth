@@ -13,7 +13,7 @@ from ESP.emr.models import Encounter
 from ESP.emr.base import SiteDefinition
 
 
-class metrohealth(SiteDefinition):
+class Metrohealth(SiteDefinition):
     '''
     metrohealth
     '''
@@ -24,19 +24,11 @@ class metrohealth(SiteDefinition):
     
 
     def generate(self):
-        Encounter.objects.filter(encounter_type__isnull=True, raw_encounter_type='HOSP ENC', site_name__contains='Emergency').update(encounter_type='ER',priority=1)
-        Encounter.objects.filter(encounter_type__isnull=True, raw_encounter_type__contains='HOSP').update(encounter_type='hospitalization',priority=2)
-        Encounter.objects.filter(encounter_type__isnull=True, raw_encounter_type__in=['APPT','HISTORY','VISIT','IMMUNIZATION']).update(encounter_type='visit',priority=3)
-        Encounter.objects.filter(encounter_type__isnull=True).update(encounter_type='other',priority=4)
-        
-#-------------------------------------------------------------------------------
-#
-# Packaging
-#
-#-------------------------------------------------------------------------------
+        Encounter.objects.filter(encounter_type=None, raw_encounter_type='HOSP ENC', site_name__contains='Emergency').update(encounter_type='ER',priority=1)
+        Encounter.objects.filter(encounter_type=None, raw_encounter_type__contains='HOSP').update(encounter_type='hospitalization',priority=2)
+        Encounter.objects.filter(encounter_type=None, raw_encounter_type__in=['APPT','HISTORY','VISIT','IMMUNIZATION']).update(encounter_type='visit',priority=3)
+        Encounter.objects.filter(encounter_type=None).update(encounter_type='other',priority=4)
 
-metrohealth_encountertypemap = metrohealth()
 
-def encountertypemap():
-    return [metrohealth_encountertypemap]
-
+def sitedefs():
+    return [Metrohealth]
