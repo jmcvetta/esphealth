@@ -17,7 +17,7 @@ django-tables==0.2
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-tuberculosis@3331#egg=esphealth_disease_tuberculosis-dev_r3331
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-glucose-crf@2915#egg=esphealth_heuristic_glucose_crf-dev_r2915
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-pregnancy@3226#egg=esphealth_heuristic_pregnancy-dev_r3226
--e svn+http://esphealth.org/svn/ESP/trunk/modules/esphealth-encountertypemap-metrohealth@3513#egg=esphealth_encountertypemap_metrohealth-dev_r3513
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/esphealth-encountertypemap-metrohealth@3513#egg=esphealth_encountertypemap_metrohealth-dev_r3519
 futures==2.1.2
 hl7==0.2.3
 ipython==0.12
