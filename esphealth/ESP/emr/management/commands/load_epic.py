@@ -1155,7 +1155,7 @@ class Command(LoaderCommand):
                 self.archive(options, filepath, disposition)
         if options['site_name']:
             site = SiteDefinition.get_by_short_name(options['site_name'])
-            SiteDefinition.generate_updt(site)
+            site.generate()
         
                 
         #

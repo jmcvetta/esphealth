@@ -126,6 +126,8 @@ class SiteDefinition(object):
             raise UnknownSiteException('Could not get disease definition for uri: "%s"' % uri)
         return site[uri]
     
+    # TODO: Does this method do anything that cannot be accomplished by 
+    # directly accessing the SiteDefinition instance's generate() method?
     @classmethod
     def generate_updt(cls, site):
         '''
