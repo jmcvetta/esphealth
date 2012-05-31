@@ -973,7 +973,7 @@ class AllergyLoader(BaseLoader):
     fields = [
         'patient_id',
         'mrn', 
-        'problem_id',# maybe natural key
+        'problem_id',#  natural key
         'date_noted',
         'allergen_id',
         'allergy_name',
@@ -981,7 +981,6 @@ class AllergyLoader(BaseLoader):
         'allergy_description',
         'allergy_entered_date',
         'provider_id', #added in 3
-        'natural_key' #added in 3 
         ]
     
     def load_row(self, row):
@@ -995,12 +994,11 @@ class AllergyLoader(BaseLoader):
             allergen.save()
             log.info('created new allergen from load epic')
             
-        natural_key = self.generateNaturalkey(row['natural_key'])
+        natural_key = self.generateNaturalkey(row['problem_id'])
         values = {
             'natural_key': natural_key,
             'provenance' : self.provenance,
             'patient' : self.get_patient(row['patient_id']),
-            'problem_id' : int(row['problem_id']),
             'date' : self.date_or_none(row['allergy_entered_date']), 
             'date_noted' : self.date_or_none(row['date_noted']),
             'allergen' : allergen,
