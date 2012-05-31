@@ -57,7 +57,7 @@ class FakeICD9s(models.Model):
     weight = models.FloatField(blank=True, null=True)
 
     def __str__(self):
-        return '%s -- %s' % (self.fakeicd9_id, self.name)
+        return '%s -- %s' % (self.group_name, self.icd9_codes)
     
     class Meta:
         verbose_name = 'FAKEICD9'
