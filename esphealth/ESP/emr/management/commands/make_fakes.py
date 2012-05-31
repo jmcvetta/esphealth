@@ -62,12 +62,18 @@ ICD9_CODE_PCT = 20
 MIN_LAB_TESTS_PER_PATIENT = 1
 LAB_TESTS_PER_PATIENT = 2
 
-MIN_MEDS_PER_PATIENT = 0
-MEDS_PER_PATIENT = 1
+MIN_LAB_ORDERS_PER_PATIENT = 1
+LAB_ORDERS_PER_PATIENT = 2
+
+MIN_MEDS_PER_PATIENT = 1
+MEDS_PER_PATIENT = 2
 
 IMMUNIZATION_PCT = 1
 
-MAX_PREGNANCIES = 5
+MAX_PREGNANCIES = 3
+MAX_ALLERGIES = 3
+MAX_PROBLEMS = 3
+MAX_SOCIALHISTORY = 3
 # below are not used
 CHLAMYDIA_LX_PCT = 20
 CHLAMYDIA_INFECTION_PCT = 15
@@ -467,7 +473,9 @@ class SocialHistoryWriter(EpicWriter):
         'mrn',
         'tobacco_use',
         'alcohol_use',
-        'date_noted'
+        'date_noted',
+        'natural_key', #added in 3
+        'provider_id', # added in 3 cch added
         ]
     
     def write_row(self, history, **kw):
@@ -476,7 +484,10 @@ class SocialHistoryWriter(EpicWriter):
                 'mrn':history.mrn,
                 'tobacco_use':history.tobacco_use,
                 'alcohol_use':history.alcohol_use,
-                'date_noted' : history.date
+                'date_noted' : str_from_date(history.date),
+                'natural_key' :history.natural_key,
+                'provider_id':history.provider.natural_key
+                
                 })      
 
 class AllergyWriter(EpicWriter):
@@ -486,7 +497,7 @@ class AllergyWriter(EpicWriter):
     fields = [
         'patient_id',
         'mrn',
-        'problem_id',
+        'natural_key',
         'date_noted',
         'allergy_id',
         'allergy_name',
@@ -500,13 +511,13 @@ class AllergyWriter(EpicWriter):
         self.writer.writerow({
                 'patient_id':allergy.patient.natural_key,
                 'mrn':allergy.patient.mrn,
-                'problem_id':str(allergy.problem_id),
+                'natural_key':str(allergy.natural_key),
                 'date_noted': str_from_date(allergy.date_noted),
                 'allergy_id': allergy.allergen.code,
                 'allergy_name': allergy.name,
                 'allergy_status' : allergy.status,
                 'allergy_description' : allergy.description,
-                'allergy_entered_date': str_from_date(allergy.date),
+                'allergy_entered_date': str_from_date(allergy.date) or '',
                 'provider_id': allergy.provider.natural_key
                 })
             
@@ -518,22 +529,25 @@ class ProblemWriter(EpicWriter):
     fields = [
         'patient_id',
         'mrn',
-        'problem_id',
+        'natural_key',
         'date_noted',
         'icd9_code',
         'problem_status',
-        'comment'
+        'comment',
+        'provider_id', #added in 3 added cch
         ]
 
     def write_row(self, problem, **kw):
         self.writer.writerow({
                 'patient_id': problem.patient.natural_key,
                 'mrn': problem.mrn,
-                'problem_id': problem.id,
+                'natural_key': problem.natural_key,
                 'date_noted': str_from_date(problem.date),
                 'icd9_code': str(problem.icd9.code),
                 'problem_status': problem.status,
-                'comment': problem.comment
+                'comment': problem.comment,
+                'provider_id': problem.provider.natural_key
+               
                 })
 
 class PregnancyWriter(EpicWriter):
@@ -594,10 +608,14 @@ class Command(LoaderCommand):
         provider_writer = ProviderWriter()
         patient_writer = PatientWriter()
         lx_writer = LabResultWriter()
+        lo_writer = LabOrderWriter()
         encounter_writer = EncounterWriter()
         prescription_writer = PrescriptionWriter()
         immunization_writer = ImmunizationWriter()
         pregnancy_writer = PregnancyWriter()
+        allergy_writer = AllergyWriter()
+        problem_writer = ProblemWriter()
+        social_history_writer = SocialHistoryWriter()
         countprg = 0
 
         print 'Generating fake Patients, Labs, Encounters and Prescriptions, immunizations, prescription'
@@ -632,6 +650,15 @@ class Command(LoaderCommand):
                     for i in xrange(random.randrange(MIN_LAB_TESTS_PER_PATIENT,LAB_TESTS_PER_PATIENT)):  
                         lx_writer.write_row(LabResult.make_mock(p))                
        
+            if LAB_ORDERS_PER_PATIENT>0:
+                if (MIN_LAB_ORDERS_PER_PATIENT==LAB_ORDERS_PER_PATIENT):
+                    for i in xrange(0,LAB_ORDERS_PER_PATIENT):  
+                        lo_writer.write_row(LabOrder.make_mock(p))
+                else:
+                    for i in xrange(random.randrange(MIN_LAB_ORDERS_PER_PATIENT,LAB_ORDERS_PER_PATIENT)):  
+                        lo_writer.write_row(LabOrder.make_mock(p))                
+       
+       
             if MEDS_PER_PATIENT>0:
                 if (MIN_MEDS_PER_PATIENT==MEDS_PER_PATIENT):
                     for i in xrange(0,MEDS_PER_PATIENT):  
@@ -657,26 +684,30 @@ class Command(LoaderCommand):
                 for i in xrange(gravida):
                     pregnancy_writer.write_row(Pregnancy.make_mock(p,gravida, parity, term, preterm))
                 countprg +=1
+                
+            if MAX_ALLERGIES>0:
+                for i in xrange(MAX_ALLERGIES):
+                    allergy = Allergy.make_mock(p)
+                    allergy_writer.write_row(allergy)
+            
+            if MAX_PROBLEMS>0:
+                for i in xrange(MAX_PROBLEMS):
+                    problem = Problem.make_mock(p)
+                    problem_writer.write_row(problem)
+                    
+            if MAX_SOCIALHISTORY>0:
+                for i in xrange(MAX_SOCIALHISTORY):
+                    sh = SocialHistory.make_mock(p)
+                    social_history_writer.write_row(sh)                
+                
             
         print 'Generated %s fake Patients' % POPULATION_SIZE
         print 'up to max %s Encounters ' % ENCOUNTERS_PER_PATIENT 
-        print 'up to max %s Labs, ' % LAB_TESTS_PER_PATIENT
+        print 'up to max %s Labs ' % LAB_TESTS_PER_PATIENT
+        print 'up to %s Lab orders ' % LAB_ORDERS_PER_PATIENT
         print 'up to %s Prescriptions per Patient' % MEDS_PER_PATIENT
         print 'up to %s Immunizations per Patient' % ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT 
         print 'up to %s Patients with up to 5 Pregnancies' % countprg
-             
-                
-
-                
-            
-
-                
-
-
-
-
-
-            
-
-                
-
+        print 'up to %s Allergies ' % MAX_ALLERGIES
+        print 'up to %s Problems ' % MAX_PROBLEMS
+        print 'up to %s Social History ' % MAX_SOCIALHISTORY         

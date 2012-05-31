@@ -973,7 +973,7 @@ class AllergyLoader(BaseLoader):
     fields = [
         'patient_id',
         'mrn', 
-        'problem_id',#  natural key
+        'natural_key',#  problemid
         'date_noted',
         'allergen_id',
         'allergy_name',
@@ -994,7 +994,7 @@ class AllergyLoader(BaseLoader):
             allergen.save()
             log.info('created new allergen from load epic')
             
-        natural_key = self.generateNaturalkey(row['problem_id'])
+        natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
             'natural_key': natural_key,
             'provenance' : self.provenance,
@@ -1018,12 +1018,11 @@ class ProblemLoader(BaseLoader):
     fields = [
         'patient_id',
         'mrn',
-        'problem_id',# could be same as natural key
+        'natural_key',# problemid 
         'date_noted',
         'icd9_code',
         'problem_status',
         'comment',
-        'natural_key',# added in 3
         'provider_id', #added in 3 added cch
         ]
 
@@ -1034,9 +1033,8 @@ class ProblemLoader(BaseLoader):
         if created: log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
-            'natural_key': natural_key, #TODO Fix me this might be the same of problemid
+            'natural_key': natural_key, 
             'provenance' : self.provenance,
-            'problem_id' : row['problem_id'],
             'patient' : self.get_patient(row['patient_id']),
             'mrn' : row['mrn'],
             'date' : self.date_or_none(row['date_noted']),

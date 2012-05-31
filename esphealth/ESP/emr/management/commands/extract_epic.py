@@ -95,7 +95,7 @@ class Command(BaseCommand):
        
         count = 0    
         allergy_writer = AllergyWriter()
-        for allergy in Allergy.objects.order_by('problem_id'):
+        for allergy in Allergy.objects.order_by('natural_key'):
             count =count +1 
             allergy_writer.write_row(allergy)
         log.info('Extracted %s Allergies from ESP to Epic ETL files' % count)  
@@ -103,7 +103,7 @@ class Command(BaseCommand):
        
         count = 0    
         problem_writer = ProblemWriter()
-        for p in Problem.objects.order_by('problem_id'):
+        for p in Problem.objects.order_by('natural_key'):
             count =count +1 
             problem_writer.write_row(p)
         log.info('Extracted %s Problem from ESP to Epic ETL files' % count)  
