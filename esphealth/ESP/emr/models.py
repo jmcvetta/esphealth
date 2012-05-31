@@ -158,6 +158,7 @@ class Provider(BaseMedicalRecord):
     def delete_fakes():
         Provider.fakes().delete()
         
+    
     @staticmethod
     # this method pre-loads and writes to an etl epic file the fake providers
     # if there aren't any in the emr.provider table
@@ -195,9 +196,7 @@ class Provider(BaseMedicalRecord):
             Provider.make_fakes()
         return Provider.fakes().order_by('?')[0]
     
-    def is_fake(self):
-        return self.natural_key.startswith('FAKE')
-
+    
     def _get_name(self):
         if not self.title:
             return u'%s,  %s %s' % (self.last_name, self.first_name, self.middle_name)
@@ -262,6 +261,10 @@ class Patient(BaseMedicalRecord):
         return Patient.objects.filter(Patient.q_fake)
 
     @staticmethod
+    def delete_fakes():
+        Patient.fakes().delete()
+        
+    @staticmethod
     def clear():
         Patient.fakes().delete()
             
@@ -270,10 +273,7 @@ class Patient(BaseMedicalRecord):
         for i in xrange(how_many):
             Patient.make_mock(save_on_db=save_on_db)
 
-    @staticmethod
-    def delete_fakes():
-        Patient.fakes().delete()
-
+   
     @staticmethod
     def make_mock(**kw):
         save_on_db = kw.get('save_on_db', False)
@@ -347,11 +347,7 @@ class Patient(BaseMedicalRecord):
                 return '00000'
         except:
             return '00000'
-
-
-    def is_fake(self):
-        return self.natural_key.startswith('FAKE')
-        
+     
 
     def has_history_of(self, icd9s, begin_date=None, end_date=None):
         '''
@@ -549,9 +545,19 @@ class BasePatientRecord(BaseMedicalRecord):
     # Will all patient records have their own individual MRN?
     mrn = models.CharField('Medical Record Number', max_length=50, blank=True, null=True)
     #
+    # HEF
+    #
+    events = generic.GenericRelation('hef.Event')
+    #
     # Manager
     #
     objects = BasePatientRecordManager()
+    
+    q_fake = Q(patient_natural_key__startswith='FAKE')
+    
+    def is_fake(self):
+        return self.patient.natural_key.startswith('FAKE')
+   
     
     class Meta:
         abstract = True
@@ -593,18 +599,13 @@ class LabResult(BasePatientRecord):
     impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
     comment = models.TextField('Comments', blank=True, null=True)
     procedure_name = models.CharField('Procedure Name', max_length=255, blank=True, null=True)
-    #
-    # HEF
-    #
-    events = generic.GenericRelation('hef.Event')
     
     
     class Meta:
         verbose_name = 'Lab Test Result'
         ordering = ['date']
 
-    q_fake = Q(patient__natural_key__startswith='FAKE')
-
+     
     @staticmethod
     def fakes():
         return LabResult.objects.filter(LabResult.q_fake)
@@ -880,10 +881,35 @@ class LabOrder(BasePatientRecord):
     specimen_id = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     order_type = models.CharField(max_length=64, blank=True, db_index=True)
     specimen_source = models.CharField(max_length=300, blank=True, null=True)
-    #
-    # HEF
-    #
-    events = generic.GenericRelation('hef.Event')
+    
+    
+    @staticmethod
+    def delete_fakes():
+        LabOrder.fakes().delete()
+
+    @staticmethod
+    def fakes():
+        return LabOrder.objects.filter(LabOrder.q_fake)
+
+    @staticmethod
+    def make_mock(patient, when=None, **kw):
+        
+        save_on_db = kw.pop('save_on_db', False)
+        msLabs = FakeLabs.objects.order_by('?')[0]
+        now = int(time.time()*1000) #time in milliseconds
+        provider = Provider.get_mock()
+       
+        lx = LabOrder(patient=patient, mrn=patient.mrn, provider=provider, provenance=Provenance.fake(), natural_key=now)
+        
+        when = when or randomizer.date_range(as_string=False) #datetime.date.today()
+        lx.date =  when if patient.date_of_birth is None else max(when, patient.date_of_birth)
+        lx.procedure_code = str(msLabs.native_code)
+        lx.procedure_name = msLabs.short_name
+        #1 for Lab, 2 for Imaging, or 9 for Procedures. 3 for EKG 
+        lx.order_type = '1' #lab
+       
+        if save_on_db: lx.save()
+        return lx 
     
     
 class Prescription(BasePatientRecord):
@@ -908,11 +934,15 @@ class Prescription(BasePatientRecord):
     status = models.CharField('Order Status', max_length=20, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
-    #
-    # HEF
-    #
-    events = generic.GenericRelation('hef.Event')
     
+    @staticmethod
+    def fakes(**kw):
+        return Prescription.objects.filter(Prescription.q_fake)
+
+    @staticmethod
+    def delete_fakes():
+        Prescription.fakes().delete()
+        
     class Meta:
         ordering = ['date']
     
@@ -967,7 +997,7 @@ class Prescription(BasePatientRecord):
         p.name = msMeds.name
         p.code = msMeds.ndc_code 
         # leave empty, ignore 
-        # p.directions = msMeds.directions
+        #p.directions = msMeds.directions
         p.route = msMeds.route  
         p.refills = round(random.randint(MIN_REFILLS, MAX_REFILLS)) 
        
@@ -1082,20 +1112,16 @@ class Encounter(BasePatientRecord):
     # Making diagnosis field available in a meaningful way requires full-text
     # indexing.  Support for this is planned, but not currently implemented.
     raw_diagnosis = models.TextField(null=True, blank=True)
-    #
-    # HEF
-    #
-    events = generic.GenericRelation('hef.Event')
+    
     
     class Meta:
         ordering = ['date']
     
-    q_fake = Q(patient__natural_key__startswith='FAKE')
-
     @staticmethod
     def fakes():
         return Encounter.objects.filter(Encounter.q_fake)
 
+   
     @staticmethod
     def delete_fakes():
         Encounter.fakes().delete()
@@ -1199,8 +1225,6 @@ class Encounter(BasePatientRecord):
         '''
         return Encounter.objects.filter(date=date).filter(*args).filter(**kw).count()
 
-    def is_fake(self):
-        return self.status == 'FAKE'
 
     #
     # TODO: issue 333 Move this code to VAERS
@@ -1358,15 +1382,9 @@ class Immunization(BasePatientRecord):
     lot = models.TextField('Lot Number', max_length=500, blank=True, null=True)
     visit_date = models.DateField('Date of Visit', blank=True, null=True)
     isvaccine = models.NullBooleanField('Is this a vaccine', default=True)
-    #
-    # HEF
-    #
-    events = generic.GenericRelation('hef.Event')
-    
+
     class Meta:
         ordering = ['date']
-
-    q_fake = Q(name='FAKE')
 
     #
     # TODO: issue 333 Move this code to VAERS module
@@ -1387,7 +1405,9 @@ class Immunization(BasePatientRecord):
     @staticmethod
     def fakes():
         return Immunization.objects.filter(Immunization.q_fake)
-
+    
+      
+    
     @staticmethod
     def delete_fakes():
         Immunization.fakes().delete()
@@ -1404,9 +1424,6 @@ class Immunization(BasePatientRecord):
         if save_on_db: i.save()
         return i
             
-    def is_fake(self):
-        return self.name == 'FAKE'
-
     def _get_vaccine(self):
         try:
             return Vaccine.objects.get(code=self.imm_type)
@@ -1441,46 +1458,147 @@ class Immunization(BasePatientRecord):
         return u"Immunization on %s received %s on %s" % (
             self.patient.full_name, self.vaccine_type(), self.date)
 
-
 class SocialHistory(BasePatientRecord):
     
     # date is date entered
     tobacco_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
     alcohol_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
 
+    @staticmethod
+    def delete_fakes():
+        SocialHistory.fakes().delete()
+
+    @staticmethod
+    def fakes():
+        return SocialHistory.objects.filter(SocialHistory.q_fake)
+
+    @staticmethod
+    def make_mock( patient, when=None, save_on_db=False):
+        now = int(time.time()*1000) #time in milliseconds
+        # some time in the past 3 years 
+        when = when or randomizer.date_range(as_string=False) #datetime.date.today()
+        date =  when if patient.date_of_birth is None else max(when, patient.date_of_birth)
+        
+        status = ['','yes','no']
+        sh = SocialHistory(patient=patient, provenance=Provenance.fake(), date=date, 
+                         tobacco_use=random.choice(status), alcohol_use=random.choice(status),
+                         provider=patient.pcp, natural_key=now)
+        if save_on_db: sh.save()
+        return sh
+            
+    
+    def document_summary(self):
+        return {
+            'date':(self.date and self.date.isoformat()) or None,
+            'social history':{
+                'tobacco use':self.tobacco_use,
+                'alcohol use':self.alcohol_use
+                }
+            }
+
+    def  __unicode__(self):
+        return u"Social History on %s used tobacco %s and used alcohol %s on %s" % (
+            self.patient.full_name, self.tobacco_use, self.alcohol_use, self.date)
 
 class Allergy(BasePatientRecord):
     '''
-    An allergy report
+    An allergy report natural key is problem id
     '''
     # date is allergy entered date 
-    problem_id = models.IntegerField(null=True, db_index=True)
     date_noted = models.DateField(null=True, db_index=True)
     allergen = models.ForeignKey(Allergen)
     name = models.CharField(max_length=200, null=True, db_index=True)
     status = models.CharField(max_length=20, null=True, db_index=True)
-    description = models.CharField(max_length=200)
-    #
-    # HEF
-    #
-    events = generic.GenericRelation('hef.Event')
+    description = models.CharField(max_length=200,null=True,blank=True)
+    
+    @staticmethod
+    def fakes():
+        return Allergy.objects.filter(Allergy.q_fake)
 
+    @staticmethod
+    def delete_fakes():
+        Allergy.fakes().delete()
+
+    @staticmethod
+    def make_mock( patient, when = None, save_on_db=False):
+        now = int(time.time()*1000) #time in milliseconds
+        when = when or randomizer.date_range(as_string=False) #datetime.date.today()
+        date =  when if patient.date_of_birth is None else max(when, patient.date_of_birth)
+        # not adding status or description
+        #get the first allergen randomly
+        allergen = Allergen.objects.order_by('?')[0]
+        allergy = Allergy(patient=patient, provenance=Provenance.fake(),
+                         date=date, date_noted=date, 
+                         allergen=allergen, name=allergen.name,
+                         provider=patient.pcp, natural_key=now)
+        
+        if save_on_db: allergy.save()
+        return allergy
+            
+
+    def document_summary(self):
+        return {
+            'date':(self.date and self.date.isoformat()) or None,
+            'allergy':{
+                'name':self.name,
+                'status':self.status,
+                'description':self.description
+                },
+            'allergen':(self.allergen.code) or None,
+            }
+
+    def  __unicode__(self):
+        return u"Allergy on %s had %s on %s" % (
+            self.patient.full_name, self.name, self.date)
 
 class Problem(BasePatientRecord):
     '''
     Problem list -- cumulative over time, no current 
     '''
-    # date is date noted
-    problem_id = models.IntegerField(null=True)
+    # date is date noted, id is natural key
     icd9 = models.ForeignKey(Icd9)
     status = models.CharField(max_length=20, null=True, db_index=True)
     comment = models.TextField(null=True, blank=True)
-    #
-    # HEF
-    #
-    events = generic.GenericRelation('hef.Event')
     
+    @staticmethod
+    def delete_fakes():
+        Problem.fakes().delete()
 
+    @staticmethod
+    def fakes():
+        return Problem.objects.filter(Problem.q_fake)
+
+    @staticmethod
+    def make_mock(  patient, when=None, save_on_db=False):
+        now = int(time.time()*1000) #time in milliseconds
+        when = when or randomizer.date_range(as_string=False) #datetime.date.today()
+        date =  when if patient.date_of_birth is None else max(when, patient.date_of_birth)
+        
+        icd9 = Icd9.objects.order_by('?')[0]
+        #Icd9.objects.get(code = [str(random.choice(icd9.icd9_codes.split(';'))) for icd9 in FakeICD9s.objects.order_by('?')[:0]])
+        
+        status = ['active',  'deleted','']         
+        problem = Problem(patient=patient, provenance=Provenance.fake(),
+                         date=date, status=random.choice(status), icd9=icd9,
+                         provider=patient.pcp, natural_key=now)
+        if save_on_db: problem.save()
+        return problem
+            
+    
+    def document_summary(self):
+        return {
+            'date':(self.date and self.date.isoformat()) or None,
+            'problem':{
+                'icd9':self.icd9.name,
+                'comment':self.comment
+                },
+            'status':self.status
+            }
+
+    def  __unicode__(self):
+        return u"Problem on %s had %s on %s" % (
+            self.patient.full_name, self.icd9, self.date)
+        
 class Pregnancy(BasePatientRecord):
     '''
     A Pregnancy 
@@ -1500,9 +1618,7 @@ class Pregnancy(BasePatientRecord):
     
     class Meta:
         ordering = ['date']
-
-    q_fake = Q(name='FAKE')
-       
+   
     @staticmethod
     def fakes():
         return Pregnancy.objects.filter(Pregnancy.q_fake)
@@ -1510,13 +1626,17 @@ class Pregnancy(BasePatientRecord):
     @staticmethod
     def delete_fakes():
         Pregnancy.fakes().delete()
-
+        
+    
     @staticmethod
     def make_mock( patient, gravida, parity, term, preterm, when=None, save_on_db=False,):
         now = int(time.time()*1000) #time in milliseconds
         provider = Provider.get_mock()
-        # from now up to 3 years ago
-        when = when or randomizer.date_range(as_string=False) #datetime.date.today()
+        # from now up to 3 years ago or dob + years btw 12 and 55
+        when = when or randomizer.date_range(as_string=False) 
+        fertile_age = when if patient.date_of_birth is None else patient.date_of_birth + datetime.timedelta(days=random.randrange(12, 55)*365) 
+        when =  fertile_age
+        
         edd = when + datetime.timedelta(days=random.randrange(5, 275)) # 40 weeks - 5 days after
         #actual date
         date = when + datetime.timedelta(days=random.randrange(1, 289)) # 42 weeks - 1 day after
@@ -1539,9 +1659,7 @@ class Pregnancy(BasePatientRecord):
             
         return p
             
-    def is_fake(self):
-        return self.name == 'FAKE'
-
+    
     def document_summary(self):
         return {
             'Actual date of delivery':(self.date and self.date.isoformat()) or None,
