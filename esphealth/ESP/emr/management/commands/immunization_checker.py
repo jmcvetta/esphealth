@@ -10,9 +10,15 @@ from ESP.emr.models import Immunization
 from ESP.conf.models import ImmuExclusion
     
 class Command(BaseCommand):
-    
+    '''
+    This command is used to flag immunizaiton data for non-vaccines.
+    If EMR_IMMUNIZATION includes non vaccine immunotherapies, these non-vaccines can be listed in conf_immuexclusion.
+    This command must be re-run each time you update conf_immuexclusion.
+    If the EMR_IMMUNIZATION table is large, this command will take some time to complete updates.
+    It requires site specific data in the conf_immuexclusion table
+    '''
     help = 'Flag immunization data to identify vaccines from larger set of immunotherapies. \n'
-    help += 'Requires site specific data in the conf_vaccineRegEx data model.'
+    help += 'Requires site specific data in the conf_immuexclusion data model.'
     
     def handle(self, *fixture_labels, **options):
         self.updt_immu()
