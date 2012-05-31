@@ -80,7 +80,7 @@ class AllergyAdmin(admin.ModelAdmin):
     ordering = ['-date']
     
 class ProblemAdmin(admin.ModelAdmin):
-    list_display = ['problem_id', 'date', 'patient', 'status','comment']
+    list_display = ['natural_key', 'date', 'patient', 'status','comment']
     raw_id_fields = STANDARD_RAW_ID_FIELDS
     search_fields = STANDARD_SEARCH_FIELDS + ['comment']
     ordering = ['-date']
