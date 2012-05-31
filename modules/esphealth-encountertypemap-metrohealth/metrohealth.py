@@ -9,6 +9,7 @@
 @license: LGPL
 '''
 
+from ESP.utils import log
 from ESP.emr.models import Encounter
 from ESP.emr.base import SiteDefinition
 
@@ -23,12 +24,19 @@ class Metrohealth(SiteDefinition):
     short_name = 'metrohealth'
     
 
+    # TODO: This method, and its analog in the base SiteDefinition class, do 
+    # not actually generate anything.  Therefore they should be renamed to 
+    # something more descriptive.  One possibility might be "transform()", but
+    # the right name really depends on the intended range of uses for 
+    # descendents of SiteDefinition.
     def generate(self):
+        log.debug("Running Metrohealth SiteDefinition")
         Encounter.objects.filter(encounter_type=None, raw_encounter_type='HOSP ENC', site_name__contains='Emergency').update(encounter_type='ER',priority=1)
         Encounter.objects.filter(encounter_type=None, raw_encounter_type__contains='HOSP').update(encounter_type='hospitalization',priority=2)
         Encounter.objects.filter(encounter_type=None, raw_encounter_type__in=['APPT','HISTORY','VISIT','IMMUNIZATION']).update(encounter_type='visit',priority=3)
         Encounter.objects.filter(encounter_type=None).update(encounter_type='other',priority=4)
+        log.debug("Metrohealth SiteDefinition run complete")
 
 
 def sitedefs():
-    return [Metrohealth]
+    return [Metrohealth()]
