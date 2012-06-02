@@ -322,6 +322,7 @@ esphealth/ESP/vaers/management/commands/__init__.py -text
 esphealth/ESP/vaers/management/commands/set_rules.py -text
 esphealth/ESP/vaers/management/commands/vae_listing.py -text
 esphealth/ESP/vaers/management/commands/vaers.py -text
+esphealth/ESP/vaers/management/commands/vaers_hl7.py -text
 esphealth/ESP/vaers/models.py -text
 esphealth/ESP/vaers/reports.py -text
 esphealth/ESP/vaers/rules.py -text
