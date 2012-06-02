@@ -5,6 +5,9 @@ from core import VERSION, ENCODING
 from core import Segment, Field
 
 class MSH(Segment):
+    '''
+    MSH is used as the message header section
+    '''
     Fields = [
         Field('encoding', default=ENCODING),
         Field('sending_application'),
@@ -28,6 +31,9 @@ class MSH(Segment):
 
 
 class PID(Segment):
+    '''
+    PID is used as a patient identification section
+    '''
     Fields = [
         Field('set_id', serial=True),
         Field('patient_external_id'),
@@ -105,6 +111,9 @@ class NK1(Segment):
 
 
 class ORC(Segment):
+    '''
+    The ORC segment is used for order information
+    '''
     Fields = [
         Field('control'),
         Field('placer_number'),
@@ -129,6 +138,9 @@ class ORC(Segment):
         
 
 class OBR(Segment):
+    '''
+    The OBR segment is used to specify observation requests
+    '''
     Fields = [
         Field('set_id', serial=True),
         Field('placer_order_number'),
@@ -190,3 +202,103 @@ class OBX(Segment):
         Field('method')
         ]
 
+class EVN(Segment):
+    '''
+    EVN is used to provide event type information
+    '''
+    Fields = [
+        Field('event_type_code'),
+        Field('recorded_datetime'),
+        Field('planned_datetime'),
+        Field('event_reason_code'),
+        Field('operator_id'),
+        Field('event_occurred'),
+        Field('event_facility')
+        ]
+    
+class PV1(Segment):
+    '''
+    PV1 is used to provide information about a patient visit
+    '''
+    Fields = [
+        Field('set_id'),
+        Field('patient_class'),
+        Field('assigned_patient_location'),
+        Field('admission_type'),
+        Field('preadmit_number'),
+        Field('prior_patient_locator'),
+        Field('attending_doctor'),
+        Field('referring_doctor'),
+        Field('consulting_doctor'),
+        Field('hospital_service'),
+        Field('temporary_location'),
+        Field('preadmit_test_indicator'),
+        Field('readmission_indicator'),
+        Field('admit_source'),
+        Field('ambulatory_status'),
+        Field('vip_indicator'),
+        Field('admitting_doctor'),
+        Field('patient_type'),
+        Field('visit_number'),
+        Field('financial_class'),
+        Field('charge_price_indicator'),
+        Field('courtesy_code'),
+        Field('credit_rating'),
+        Field('contract_code'),
+        Field('contract_effective_date'),
+        Field('contract_amount'),
+        Field('contract_period'),
+        Field('interest_code'),
+        Field('transfer_to_bad_debt_code'),
+        Field('transfer_to_bad_debt_date'),
+        Field('bad_debt_agency_code'),
+        Field('bad_debt_transfer_amount'),
+        Field('bad_debt_recover_amount'),
+        Field('delete_acount_indicator'),
+        Field('delete_account_date'),
+        Field('discharge_disposition'),
+        Field('discharged_to_location'),
+        Field('diet_type'),
+        Field('servicing_facility'),
+        Field('bed_status'),
+        Field('account_status'),
+        Field('pending_location'),
+        Field('prior_temporary_location'),
+        Field('admit_date'),
+        Field('discharge_date'),
+        Field('current_patient_balance'),
+        Field('total_charges'),
+        Field('total_adjustments'),
+        Field('total_payments'),
+        Field('alternate_visit_id')
+        ]
+    
+class TXA(Segment):
+    '''
+    TXA Transcription report header contains information specific to a transcribed report but not text of the report
+    '''
+    Fields = [
+        Field('set_id'),
+        Field('report_type'),
+        Field('document_content_presentation'),
+        Field('activity_date'),
+        Field('primary_activity_provider'),
+        Field('origination_datetime'),
+        Field('transcription_datetime'),
+        Field('edit_datetime'),
+        Field('originator_codename'),
+        Field('assigned_document_authenticator'),
+        Field('transcriptionist_codename'),
+        Field('unique_document_number'),
+        Field('parent_document_number'),
+        Field('placer_id'),
+        Field('order_filler_number'),
+        Field('unique_document_file_name'),
+        Field('document_completion_status'),
+        Field('document_confidentiality_status'),
+        Field('document_availability_status'),
+        Field('document_storage_status'),
+        Field('document_change_reason'),
+        Field('authentication_person_time_stamp'),
+        Field('distributed_copies')
+        ]
