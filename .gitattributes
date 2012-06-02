@@ -314,6 +314,7 @@ esphealth/ESP/vaers/fixtures/initial_data.json -text
 esphealth/ESP/vaers/fixtures/lab_results.sql.bz2 -text svneol=unset#unset
 esphealth/ESP/vaers/forms.py -text
 esphealth/ESP/vaers/heuristics.py -text
+esphealth/ESP/vaers/hl7_clinbasket.py -text
 esphealth/ESP/vaers/hl7_report.py -text
 esphealth/ESP/vaers/main.py -text
 esphealth/ESP/vaers/management/__init__.py -text
