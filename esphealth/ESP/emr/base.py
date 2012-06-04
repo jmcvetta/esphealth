@@ -52,7 +52,7 @@ class SiteDefinition(object):
         '''
     
     @abc.abstractmethod
-    def generate(self):
+    def set_enctype(self):
         '''
         Examine the database and generate encounter type values
         @return: Success or Fail (Boolean)
@@ -76,7 +76,7 @@ class SiteDefinition(object):
         # Retrieve from modules
         #
         sites = []
-        for entry_point in iter_entry_points(group='esphealth', name='sitedefs'):
+        for entry_point in iter_entry_points(group='esphealth', name='encountertypemap'):
             factory = entry_point.load()
             sites += factory()
         sites.sort(key = lambda h: h.short_name)
@@ -125,15 +125,3 @@ class SiteDefinition(object):
         if not uri in site:
             raise UnknownSiteException('Could not get disease definition for uri: "%s"' % uri)
         return site[uri]
-    
-    # TODO: Does this method do anything that cannot be accomplished by 
-    # directly accessing the SiteDefinition instance's generate() method?
-    @classmethod
-    def generate_updt(cls, site):
-        '''
-        Run the site generation.
-        @param site: The site object
-        @type SiteDefinition
-        '''
-        updtd = site.generate
-        return updtd
