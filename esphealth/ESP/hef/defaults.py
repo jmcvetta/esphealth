@@ -235,17 +235,6 @@ LabResultAnyHeuristic.objects.get_or_create(
     test = creatinine_kinase_test,
     )
 
-glucose_test = AbstractLabTest.objects.get_or_create(
-    name = 'glucose_test',
-    defaults = {
-        'verbose_name': 'Glucose test',
-        }
-    )[0]
-    
-LabResultAnyHeuristic.objects.get_or_create(
-    test = glucose_test,
-    )
-
 potassium_test = AbstractLabTest.objects.get_or_create(
     name = 'potassium_test',
     defaults = {
