@@ -870,10 +870,10 @@ class PregnancyLoader(BaseLoader):
         'parity', 
         'term', 
         'preterm', 
-        'gestational_age_at_delivery', 
+        'ga_delivery', 
         'birth_weight', 
         'delivery', 
-        'pre_eclamsia'
+        'pre_eclampsia'
         ]
     
     def load_row(self,row):
@@ -890,10 +890,11 @@ class PregnancyLoader(BaseLoader):
             'parity' : row['parity'],
             'term' : row['term'],
             'preterm' : row['preterm'],
-            'gestational_age_at_delivery' : row['gestational_age_at_delivery'],
+            #TODO maybe change to days
+            'ga_delivery' : row['ga_delivery'],
             'birth_weight' : weight_str_to_kg(row['birth_weight']),
             'delivery' : row['delivery'],
-            'pre_eclamsia' : row['pre_eclamsia'],
+            'pre_eclampsia' : row['pre_eclampsia'],
             
             }
         p, created = self.insert_or_update(Pregnancy, values, ['natural_key'])
@@ -979,7 +980,7 @@ class AllergyLoader(BaseLoader):
         'allergy_name',
         'allergy_status',
         'allergy_description',
-        'allergy_entered_date',
+        'allergy_entered_date',# added in 3
         'provider_id', #added in 3
         ]
     

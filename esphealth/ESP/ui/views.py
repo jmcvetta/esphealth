@@ -576,6 +576,7 @@ def _get_unmapped_labs():
     as well as unmapped_labs_report() below.
     '''
     ignored = IgnoredCode.objects.values('native_code')
+    
     mapped = LabTestMap.objects.values('native_code').distinct()
     all_strings = DiseaseDefinition.get_all_test_name_search_strings() + VaersLxHeuristic.test_name_search_strings
     all_strings.sort()

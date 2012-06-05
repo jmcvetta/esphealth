@@ -1611,10 +1611,10 @@ class Pregnancy(BasePatientRecord):
     parity = models.IntegerField(blank=True, null=True )
     term = models.IntegerField( blank=True, null=True)
     preterm = models.IntegerField(blank=True, null=True)
-    gestational_age_at_delivery =  models.CharField('Gestational Age at delivery', max_length=20, blank=True, null=True)
+    ga_delivery =  models.CharField('Gestational Age at delivery', max_length=20, blank=True, null=True)
     birth_weight  = models.FloatField('Birth Weight (Kg)', blank=True, null=True)
     delivery = models.TextField('Delivery', max_length=500, blank=True, null=True)
-    pre_eclamsia = models.CharField('Pre_eclamsia', max_length=300, blank=True, null=True)
+    pre_eclampsia = models.CharField('Pre_eclampsia', max_length=300, blank=True, null=True)
     
     class Meta:
         ordering = ['date']
@@ -1652,7 +1652,7 @@ class Pregnancy(BasePatientRecord):
         p = Pregnancy(patient=patient, mrn = patient.mrn, provenance=Provenance.fake(),
                              date=date, edd=edd, gravida=gravida, parity=parity,
                              preterm=preterm, birth_weight=birth_weight,term=term,
-                             gestational_age_at_delivery = gad ,outcome=outcome,
+                             ga_delivery = gad ,outcome=outcome,
                              provider=provider, natural_key=now)
             
         if save_on_db: p.save()
@@ -1668,7 +1668,7 @@ class Pregnancy(BasePatientRecord):
                 'gravida':self.gravida,
                 'term':self.term
                 },
-            'gestational age at delivery':self.gestational_age_at_delivery
+            'gestational age at delivery':self.ga_delivery
             }
 
     def  __unicode__(self):

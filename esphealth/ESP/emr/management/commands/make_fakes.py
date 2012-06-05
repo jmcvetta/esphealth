@@ -566,10 +566,10 @@ class PregnancyWriter(EpicWriter):
         'parity', 
         'term', 
         'preterm', 
-        'gestational_age_at_delivery', 
+        'ga_delivery', 
         'birth_weight', 
         'delivery', 
-        'pre_eclamsia'
+        'pre_eclampsia'
         ]
     
     def write_row(self, pregnancy):
@@ -585,10 +585,10 @@ class PregnancyWriter(EpicWriter):
         row['parity']= pregnancy.parity
         row['term']= pregnancy.term
         row['preterm']= pregnancy.preterm
-        row['gestational_age_at_delivery']= pregnancy.gestational_age_at_delivery
+        row['ga_delivery']= pregnancy.ga_delivery
         row['birth_weight']= pregnancy.birth_weight
         row['delivery']= pregnancy.delivery
-        row['pre_eclamsia']= pregnancy.pre_eclamsia
+        row['pre_eclampsia']= pregnancy.pre_eclampsia
 
         self.writer.writerow(row)
 
