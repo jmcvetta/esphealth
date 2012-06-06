@@ -223,6 +223,6 @@ def transmit_ftp(fileObj, filename):
             conn.storlines(command, fileObj)
             log.info('Successfully uploaded Clin Inbasket HL7 message')
         except BaseException, e:
-            log.error('FTP ERROR: %s for %s' % e)
+            log.error('FTP ERROR: %s' % e)
             return False
         return True
