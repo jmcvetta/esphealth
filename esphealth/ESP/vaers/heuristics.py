@@ -15,7 +15,7 @@ from ESP.vaers.models import DiagnosticsEventRule
 from ESP.vaers.models import ExcludedICD9Code, Questionaire
 from ESP.utils.utils import log
 from ESP.conf.models import LabTestMap 
-
+from ESP.hef.base import LabResultAnyHeuristic
 import rules
 
 VAERS_CORE_URI = 'urn:x-esphealth:vaers:core:v1'
@@ -371,6 +371,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
 
         ]
     
+        
     def __init__(self, event_name, lab_type, criterion, pediatric):
         '''
         @param pediatric: Apply this heuristic to prediatric patients rather than adults?
@@ -379,16 +380,63 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         self.name = event_name
         self.lab_type = lab_type
         self.criterion = criterion
-        self.time_post_immunization = criterion['risk_period']
+        if criterion:
+            self.time_post_immunization = criterion['risk_period']
+        else:
+            self.time_post_immunization = rules.MAX_TIME_WINDOW_POST_LX
         self.pediatric = pediatric
         self.risk_period_start = 1
         super(VaersLxHeuristic, self).__init__(self.name, self.name)
 
     uri = 'urn:x-esphealth:heuristic:channing:vaerslx:v1'
     
+    def event_heuristics(self):
+        heuristics = []
+        #
+        # Any Result Tests
+        #
+        for test_name in [
+            'hemoglobin',
+            'wbc',
+            'neutrophils',
+            'eosinophils',
+            'lymphocytes',
+            'platelet_count',
+            'creatinine',
+            'alk',
+            'ptt',
+            'creatinine_kinase',
+            'potassium',
+            'sodium',
+            'calcium',
+            'alt',
+            'ast',
+            'bilirubin_total',
+            
+            ]:
+            #AbstractLabTest
+            heuristics.append(LabResultAnyHeuristic(test_name=test_name))
+            
+        return heuristics
+      
+    def get_all_names(self):
+        '''
+        Returns the set of all known Abstract Lab Test names, sorted alphabetically.
+        '''
+        
+        names = set()
+        h = self.event_heuristics()
+        for heuristic in h :
+            names.add(heuristic.alt.name)
+        names = list(names)
+        names.sort()
+        return names
+    
+    
     def vaers_heuristic_name(self):
         return 'VAERS: ' + self.name
-
+    
+    
     def matches(self, **kw):
         
         def is_trigger_value(lx, trigger):
@@ -688,7 +736,7 @@ def diagnostic_heuristics():
 
 def lab_heuristics():
     hs = []
-
+    
     for lab_type in rules.VAERS_LAB_RESULTS.keys():
         for heuristic in make_lab_heuristics(lab_type):
             hs.append(heuristic)
