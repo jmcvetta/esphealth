@@ -410,6 +410,29 @@ def weight_str_to_kg(raw_string):
     else:
         log.debug('Could not extract numeric weight from raw string: "%s"' % raw_string)
         return None
+    
+WEEKS_REGEX = re.compile(r'''
+(?P<weeks>\d+(\.\d*)?) \s* w \s* ( (?P<days>\d+(\.\d*)?) \s* d?)?
+''', 
+re.VERBOSE)
+
+def ga_str_to_days(raw_string):
+    '''
+    Parses the content of raw_string and returns gestational age in days as a Float.  
+    '''
+    if not raw_string:
+        return None
+    days = 0
+    match = WEEKS_REGEX.match(raw_string)
+    if match:
+        weeks = float(match.group('weeks'))
+        if match.group('days'):
+            days = float(match.group('days'))
+        days += weeks * 7 
+        return days
+    else:
+        log.debug('Could not extract numeric age from raw string: "%s"' % raw_string)
+        return None    
         
 HEIGHT_REGEX = re.compile(r'''
 (?P<feet>\d+(\.\d*)?) \s* ' \s* (?P<inches>\d+\.?\d*)?

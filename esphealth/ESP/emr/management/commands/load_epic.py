@@ -45,6 +45,7 @@ from ESP.utils import str_from_date
 from ESP.utils import date_from_str
 from ESP.utils import height_str_to_cm
 from ESP.utils import weight_str_to_kg
+from ESP.utils import ga_str_to_days
 from ESP.static.models import Icd9, Allergen
 from ESP.emr.models import Provenance
 from ESP.emr.models import EtlError
@@ -890,9 +891,8 @@ class PregnancyLoader(BaseLoader):
             'parity' : row['parity'],
             'term' : row['term'],
             'preterm' : row['preterm'],
-            #TODO maybe change to days
-            'ga_delivery' : row['ga_delivery'],
-            'birth_weight' : weight_str_to_kg(row['birth_weight']),
+            'ga_delivery' : ga_str_to_days(row['ga_delivery']),
+            'birth_weight' : row['birth_weight'],
             'delivery' : row['delivery'],
             'pre_eclampsia' : row['pre_eclampsia'],
             
