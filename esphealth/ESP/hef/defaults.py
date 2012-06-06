@@ -126,7 +126,7 @@ ResultString.objects.get_or_create(
 #
 #-------------------------------------------------------------------------------
 hemoglobin_test = AbstractLabTest.objects.get_or_create(
-    name = 'hemoglobin_test',
+    name = 'hemoglobin',
     defaults = {
         'verbose_name': 'Hemoglobin test',
         }
@@ -137,7 +137,7 @@ LabResultAnyHeuristic.objects.get_or_create(
     )
 
 wbc_test = AbstractLabTest.objects.get_or_create(
-    name = 'wbc_test',
+    name = 'wbc',
     defaults = {
         'verbose_name': 'wbc test',
         }
@@ -148,7 +148,7 @@ LabResultAnyHeuristic.objects.get_or_create(
     )
 
 neutrophils_test = AbstractLabTest.objects.get_or_create(
-    name = 'neutrophils_test',
+    name = 'neutrophils',
     defaults = {
         'verbose_name': 'Neutrophils test',
         }
@@ -159,7 +159,7 @@ LabResultAnyHeuristic.objects.get_or_create(
     )
 
 eosinophils_test = AbstractLabTest.objects.get_or_create(
-    name = 'eosinophils_test',
+    name = 'eosinophils',
     defaults = {
         'verbose_name': 'Eosinophils test',
         }
@@ -170,7 +170,7 @@ LabResultAnyHeuristic.objects.get_or_create(
     )
 
 lymphocytes_test = AbstractLabTest.objects.get_or_create(
-    name = 'lymphocytes_test',
+    name = 'lymphocytes',
     defaults = {
         'verbose_name': 'Lymphocytes test',
         }
@@ -181,7 +181,7 @@ LabResultAnyHeuristic.objects.get_or_create(
     )
 
 platelet_count_test = AbstractLabTest.objects.get_or_create(
-    name = 'platelet_count_test',
+    name = 'platelet_count',
     defaults = {
         'verbose_name': 'Platelet count test',
         }
@@ -192,7 +192,7 @@ LabResultAnyHeuristic.objects.get_or_create(
     )
 
 creatinine_test = AbstractLabTest.objects.get_or_create(
-    name = 'creatinine_test',
+    name = 'creatinine',
     defaults = {
         'verbose_name': 'Creatinine test',
         }
@@ -203,7 +203,7 @@ LabResultAnyHeuristic.objects.get_or_create(
     )
 
 alk_test = AbstractLabTest.objects.get_or_create(
-    name = 'alk_test',
+    name = 'alk',
     defaults = {
         'verbose_name': 'ALK test',
         }
@@ -214,7 +214,7 @@ LabResultAnyHeuristic.objects.get_or_create(
     )
 
 ptt_test = AbstractLabTest.objects.get_or_create(
-    name = 'ptt_test',
+    name = 'ptt',
     defaults = {
         'verbose_name': 'PTT test',
         }
@@ -225,7 +225,7 @@ LabResultAnyHeuristic.objects.get_or_create(
     )
 
 creatinine_kinase_test = AbstractLabTest.objects.get_or_create(
-    name = 'creatinine_kinase_test',
+    name = 'creatinine_kinase',
     defaults = {
         'verbose_name': 'Creatinine kinase test',
         }
@@ -236,7 +236,7 @@ LabResultAnyHeuristic.objects.get_or_create(
     )
 
 potassium_test = AbstractLabTest.objects.get_or_create(
-    name = 'potassium_test',
+    name = 'potassium',
     defaults = {
         'verbose_name': 'Potassium test',
         }
@@ -247,7 +247,7 @@ LabResultAnyHeuristic.objects.get_or_create(
     )
 
 sodium_test = AbstractLabTest.objects.get_or_create(
-    name = 'sodium_test',
+    name = 'sodium',
     defaults = {
         'verbose_name': 'Sodium test',
         }
@@ -258,7 +258,7 @@ LabResultAnyHeuristic.objects.get_or_create(
     )
 
 calcium_test = AbstractLabTest.objects.get_or_create(
-    name = 'calcium_test',
+    name = 'calcium',
     defaults = {
         'verbose_name': 'Calcium test',
         }
