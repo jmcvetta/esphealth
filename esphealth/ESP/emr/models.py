@@ -1206,10 +1206,13 @@ class Encounter(BasePatientRecord):
                                            msVitals[0].very_low, msVitals[0].very_high, 2) 
         e.temperature = Encounter.randomVitalValue(msVitals[6].normal_low, msVitals[6].normal_high,
                                            msVitals[6].very_low, msVitals[6].very_high, 0) 
+        
         e.weight = Encounter.randomVitalValue(msVitals[7].normal_low, msVitals[7].normal_high,
                                            msVitals[7].very_low, msVitals[7].very_high, 0) 
+        e.weight = e.weight + 'lb'
         e.height = Encounter.randomVitalValue(msVitals[3].normal_low, msVitals[3].normal_high,
                                            msVitals[3].very_low, msVitals[3].very_high, 0) 
+        e.height = e.height + '"'
         e.bp_systolic = Encounter.randomVitalValue(msVitals[2].normal_low, msVitals[2].normal_high,
                                            msVitals[2].very_low, msVitals[2].very_high, 0)  
         e.bp_diastolic = Encounter.randomVitalValue(msVitals[1].normal_low, msVitals[1].normal_high,
@@ -1649,7 +1652,7 @@ class Pregnancy(BasePatientRecord):
         #actual date
         date = when + datetime.timedelta(days=random.randrange(1, 289)) # 42 weeks - 1 day after
         
-        gad = str(40 - relativedelta(edd, date).days/7 ) + 'w' 
+        gad = str(40 - relativedelta(edd, date).days/7 ) + 'w ' 
         if  (relativedelta(edd, date).days % 7 ) > 0:
             gad +=  str( relativedelta(edd, date).days % 7 ) + 'd'
         
