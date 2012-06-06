@@ -484,7 +484,14 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                         ev.date = lab_result.date
                     #calculating the last known value with value prior to vaccine
                     #self.lkv, self.lkd = has regular last known value  
-                    ev.last_known_value, ev.last_known_date = lab_result.last_known_value(True,imm.date)                        
+                    ev.last_known_value, ev.last_known_date = lab_result.last_known_value(True,imm.date) 
+                    #last_known_value will return a float or a string, depending  on the last known value.  
+                    #but events require a float result
+                    try:
+                        float(ev.last_known_value)
+                    except:
+                        ev.last_known_value = None
+                        ev.last_known_date = None                   
                         
                     ev.save()
                    
