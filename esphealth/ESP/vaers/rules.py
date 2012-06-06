@@ -328,14 +328,14 @@ VAERS_LAB_RESULTS = {
             ],
 
         'criteria_adult':[{
-            'trigger':'X<1500',
+            'trigger':'X<1.5',
             'unit':'x109/L',
             'exclude_if':('>','LKV*0.7'),
             'category':'3_possible',
             'risk_period':30
             }],
         'criteria_pediatric':[{
-            'trigger':'X<500',
+            'trigger':'X<0.5',
             'unit':'x109/L',
             'exclude_if':('>','LKV*0.7'),
             'category':'3_possible',
@@ -353,7 +353,7 @@ VAERS_LAB_RESULTS = {
             ],
         
         'criteria_adult':[{
-            'trigger':'X>600',
+            'trigger':'X>0.6',
             'unit':'x109/L',
             'exclude_if':('<','LKV*1.2'),
             'category':'3_possible',
@@ -361,7 +361,7 @@ VAERS_LAB_RESULTS = {
             }],
             
         'criteria_pediatric':[{
-            'trigger':'X>800',
+            'trigger':'X>0.8',
             'unit':'x109/L',
             'exclude_if':('<','LKV*1.2'),
             'category':'3_possible',
@@ -383,14 +383,14 @@ VAERS_LAB_RESULTS = {
             ],
         
         'criteria_adult':[{
-            'trigger':'X<1000',
+            'trigger':'X<1',
             'unit':'x109/L',
             'exclude_if':('>','LKV*0.7'),
             'category':'3_possible',
             'risk_period':30
             }],
         'criteria_pediatric':[{
-            'trigger':'X<1000',
+            'trigger':'X<1',
             'unit':'x109/L',
             'exclude_if':('>','LKV*0.7'),
             'category':'3_possible',
