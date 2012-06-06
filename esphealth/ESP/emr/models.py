@@ -714,9 +714,17 @@ class LabResult(BasePatientRecord):
         previous_labs = LabResult.objects.filter(native_code=self.native_code, patient=self.patient,
                                                  date__lt=self.date).order_by('-date')
         if with_same_unit:
-            previous_labs = previous_labs.filter(ref_unit__iexact=self.ref_unit)
+            try:
+                previous_labs = previous_labs.filter(ref_unit__iexact=self.ref_unit)
+            except BaseException, e:
+                log.error('Query error: %s __iexact cannot accept %s for patient %s for native_code %s for date %s' 
+                          % (e, self.ref_unit, self.patient, self.native_code, str(self.date)))
         if prior_vaccine_date:
-            previous_labs = previous_labs.filter(date__lt=prior_vaccine_date)
+            try:
+                previous_labs = previous_labs.filter(date__lt=prior_vaccine_date)
+            except BaseException, e:
+                log.error('Query error: %s __lt cannot accept %s for patient %s for native_code %s for date %s' 
+                          % (e, prior_vaccine_date, self.patient, self.native_code, str(self.date)))
         for lab in previous_labs:
             value = (lab.result_float or lab.result_string) or None
             if value: 
