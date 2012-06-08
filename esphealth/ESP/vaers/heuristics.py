@@ -150,7 +150,7 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
             for imm in immunization_qs:
                 # Create event instance
                 new_ae, created = AllergyEvent.objects.get_or_create(
-                    
+                    gap = (this_allergy.date - imm.date).days,
                     object_id = this_allergy.pk, 
                     content_type = content_type,
                     date = this_allergy.date, 
@@ -163,9 +163,6 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
                     )
                         
                 new_ae.save() # Must save before adding to ManyToManyField
-                # Get time interval between immunization and event
-                new_ae.gap = (this_allergy.date - imm.date).days
-                new_ae.save()
                 
                 if created: 
                     counter +=1
@@ -253,7 +250,7 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
             for imm in immunization_qs:
                         
                 new_ee, created = EncounterEvent.objects.get_or_create(
-                    
+                    gap = (this_enc.date - imm.date).days,
                     object_id = this_enc.pk,
                     content_type = content_type,
                     date = this_enc.date, 
@@ -266,9 +263,6 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                     )
                     
                 new_ee.save() # Must save before adding to ManyToManyField
-                # Get time interval between immunization and event
-                new_ee.gap = (this_enc.date - imm.date).days
-                new_ee.save()
                 
                 if created: 
                     counter +=1
@@ -515,8 +509,8 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 # create a new event for each immunization date 
                 # update if repeating labs
                 for imm in immunizations:
-                    
                     ev, created = LabResultEvent.objects.get_or_create(
+                                gap = (lab_result.date - imm.date).days,                                       
                                 object_id =lab_result.pk,
                                 content_type = content_type,
                                 name = self.vaers_heuristic_name(),
@@ -542,11 +536,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                         ev.last_known_date = None                   
                         
                     ev.save()
-                   
-                    # Get time interval between immunization and event
-                    ev.gap = (lab_result.date - imm.date).days
-                    ev.save()
-    
+                       
                     if created: 
                         counter += 1
                     
@@ -589,7 +579,8 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                     date__lt = rx.date, 
                     date__gte = earliest, 
                     patient = rx.patient,
-                    name__icontains=self.name,
+                    name__icontains=self.name.split()[0], #just get the first word of the name, which is the drug itself.  
+                    #This breaks if drug is two or more words, but current vaers prescriptions are all single compound single word drugs
                 )
             
             if prior_rx_qs:
@@ -634,6 +625,7 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                 for imm in immunizations:
                 
                     ev, created = PrescriptionEvent.objects.get_or_create(
+                            gap = (rx.date - imm.date).days,
                             object_id =rx.pk,
                             content_type = content_type,
                             date=rx.date,
@@ -645,10 +637,6 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                                },
                             )
                                         
-                    ev.save()
-                    
-                    # Get time interval between immunization and event
-                    ev.gap = (rx.date - imm.date).days
                     ev.save()
                     
                     if created: 
