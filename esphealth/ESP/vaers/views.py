@@ -4,6 +4,7 @@
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import HttpResponseNotFound, HttpResponseForbidden
 from django.http import HttpResponseNotAllowed, Http404
+from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.core.paginator import Paginator
@@ -26,6 +27,7 @@ import datetime
 PAGE_TEMPLATE_DIR = 'pages/vaers/'
 WIDGET_TEMPLATE_DIR = 'widgets/vaers/'
 
+@login_required
 def index(request):
      # Complete query and present results
     cases = AdverseEvent.paginated()
@@ -33,7 +35,7 @@ def index(request):
                               {'cases':cases,
                                'page':1
                                })
-
+@login_required
 def list_cases(request):
     # This is a ajax call. Our response contains only the result page.
 
@@ -54,6 +56,7 @@ def list_cases(request):
                               )
 
 
+@login_required
 def notify(request, id):
 
     case = AdverseEvent.by_id(id)
@@ -70,52 +73,34 @@ def notify(request, id):
     else:
         return direct_to_template(request, PAGE_TEMPLATE_DIR + 'notify.html')
 
+@login_required
 def report(request):
     cases = AdverseEvent.objects.all()
     return direct_to_template(request, PAGE_TEMPLATE_DIR + 'report.html',
                               {'cases':cases})                             
-
-def verify(request, key):
-    # TODO change to use two parameters: pkid of Q, key is digest from Q
-    # initial version dont verify digest , TODO verify later
-    # TODO digest should be associated with the questionaire
-    # and get the provider from the Q.
-    # sends to case details with the id of Q
-    
-    case = AdverseEvent.by_digest(key)
-    if not case: raise Http404
-    # TODO get the events from case in Q and get highest category?
-    if case.category == '1_common': 
-        return HttpResponseForbidden('This case will be automatically reported')
-    # TODO get it from the Q
-    provider = case.provider()
-    if not provider: return HttpResponseForbidden('Not for your eyes')
-
-    if request.method == 'GET':
-        authorized_id = int(request.COOKIES.get('confirmed_id', 0))
-        if authorized_id and authorized_id == provider.id:
-            # No need to see confirm again. Will redirect
-            return HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
-        else:
-            return direct_to_template(request, PAGE_TEMPLATE_DIR + 'identify.html', {
-                    'case':case })
-
-    else: # request.method == 'POST'
-        confirmed_id = request.POST.get('provider_confirmation', 0) and provider.id
-        response = HttpResponseRedirect(reverse('present_case', kwargs={'id':case.id}))
-        response.set_cookie('confirmed_id', confirmed_id)
-        mail_admins('ESP:VAERS - User confirmed identity on verification page',
-                    'User confirmed to be provider %s' % (provider.full_name))
-        return response
     
 # @param id : is the primary key of the questionaire        
-def case_details(request, id):
+def case_details(request, ptype, id):
+    '''
+    This view presents a user with case details and a form to update a specific questionaire 
+    It can accept either a digest value or a questionaire id, and uses ptype to determine which is being provided.
+    If the details are accessed via digest, user may be anonymous.  Otherwise, user must be logged in and have the 
+    vaers.view_phi permission
+    '''
     category = None
-    
-    questionaire = Questionaire.objects.get(id =id)
+    if ptype=='case':
+        if request.user.has_perm('vaers.view_phi'):
+            questionaire = Questionaire.objects.get(id=id)
+        else:
+            return HttpResponseForbidden('You cannot access this page unless you are logged in and have permission to view PHI.')
+    elif ptype=='digest':
+        questionaire = Questionaire.by_digest(id)
+    else: 
+        #should never get here due to regex in vaers/urls.py for this view, but just in case...
+        return HttpResponse('<h2>Vaers page type "' + ptype + '" not found.  Valid types are "case" and "digest".</h2>')
     
     case = questionaire.case
-    
+    #another just in case catch...
     if not case: raise Http404
     
     #finding the highest category in the event, 
@@ -130,14 +115,10 @@ def case_details(request, id):
         return HttpResponseForbidden(ADVERSE_EVENT_CATEGORY_ACTION[0][1])
     
     provider = questionaire.provider
-    if not provider: return HttpResponseForbidden('No provider in questionaire')
+    if not provider: 
+        #likewise, not likely to be a problem since provided has not-null foreign key attributes in db.
+        return HttpResponseForbidden('No provider in questionaire')
     
-    #authorized_id = request.COOKIES.get('confirmed_id', None)
-    # TODO fix this as part of fixing verify 
-    #if not (authorized_id and int(authorized_id)==provider.id):
-        #return HttpResponseForbidden('You have not confirmed you are the care '\
-                                        # 'provider for this patient. Please go '\
-                                         #'back to the confirmation step.')
 
     if request.method == 'POST':
         form = CaseConfirmForm(request.POST) 
@@ -160,13 +141,16 @@ def case_details(request, id):
         questionaire.satisfaction_num_msg = form.cleaned_data['satisfaction_num_msg']
         
         questionaire.save()
-        mail_admins('ESP:VAERS - Provider changed case status',
+        if ptype=='case':
+            mail_admins('ESP:VAERS - Authenticated user changed case status',
+                    'Case %s.\nUser %s\n.' % (case, request.user))
+            return HttpResponseRedirect(reverse('present_case', kwargs={'id':id, 'ptype':ptype}))
+        else:
+            mail_admins('ESP:VAERS - Provider changed case status',
                     'Case %s.\nProvider %s\n.' % (case, provider))
-
-        return HttpResponseRedirect(reverse('present_case', kwargs={'id':id}))
+            return HttpResponse('Thank you for providing instruction and feedback for this case.  You may close the browser window')
             
     else:
-       
         mail_admins('ESP:VAERS - User viewed case report',
                     'Case %s.\nProvider %s \n.' % (case, provider))
         
@@ -178,8 +162,11 @@ def case_details(request, id):
                 'content_type_lx': ContentType.objects.get_for_model(LabResult),
                 'content_type_rx': ContentType.objects.get_for_model(Prescription),
                 'content_type_all': ContentType.objects.get_for_model(Allergy),
+                'ptype': ptype,
+                'formid': id
                 })
         
+@login_required
 def download_vae_listing(request):
     if request.user.has_perm('vaers.view_phi'):
         filename=VAERS_LINELIST_PATH+"vaers_linelist_phi.csv"
