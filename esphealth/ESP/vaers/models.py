@@ -108,14 +108,6 @@ class AdverseEvent(models.Model):
         except:
             return None
 
-    @staticmethod    
-    def by_digest(key):
-        try:
-            klass = AdverseEvent.objects.get(digest=key).content_type
-            return klass.model_class().objects.get(digest=key)
-        except:
-            return None
-
     @staticmethod
     def paginated(page=1, results_per_page=100):
         # Set limits for query
@@ -649,6 +641,15 @@ class Questionaire (models.Model):
         clear_msg = '%s%s%s' % (self.id, self.case.date, int(time.time()))
         self.digest = hashlib.sha224(clear_msg).hexdigest()
         self.save()
+        
+    @staticmethod    
+    def by_digest(key):
+        try:
+            klass = Questionaire.objects.get(digest=key)
+            return klass
+        except:
+            return None
+
  
 class Report_Sent (models.Model):
     date = models.DateTimeField(auto_now_add=True)
