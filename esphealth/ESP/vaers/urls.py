@@ -16,10 +16,8 @@ urlpatterns = patterns(
     # Vaccine and Manufacturer Mapping
     url(r'^vaccines/', include('ESP.vaers.vaccine.urls')),
     
-    # verify takes a questionaire id
-    url(r'^verify/(?P<key>\w*)/$', views.verify, name='verify_case'),
-    # case details takes a case id
-    url(r'^case/(?P<id>\d+)/$', views.case_details, name='present_case'),
+    # ptype can be digest or case.  digest takes a digest value for id, case takes a questionaire id for id.
+    url(r'^(?P<ptype>case|digest)/(?P<id>\w*)/$', views.case_details, name='present_case'),
 
     #line listing report
     url(r'^download/', views.download_vae_listing, name='download_listing'),    
