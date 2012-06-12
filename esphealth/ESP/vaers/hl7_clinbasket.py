@@ -71,7 +71,7 @@ class HL7_clinbasket(object):
         patient = self.case.patient
         pid = PID()
         words =patient.natural_key.split()
-        #todo: this should be a metrohealth plugin, as it is specific to metrohealth natural key values
+        #TODO: this should be a metrohealth plugin, as it is specific to metrohealth natural key values
         if words[0].isdigit():
             pid.patient_internal_id = words[0] + '^^^^ID 1'
         else:
@@ -115,7 +115,7 @@ class HL7_clinbasket(object):
         if rowcode=='RP':
             obx.value_type=rowcode
             obx.identifier='Review and comment on this issue at:'
-            obx.value='http://' + SITE_NAME + '/vaers/case/' + self.ques.digest + '^EPIC^LINK^WEBURL^OTHER' 
+            obx.value='http://' + SITE_NAME + '/vaers/digest/' + self.ques.digest + '^EPIC^LINK^WEBURL^OTHER' 
             return obx
         elif rowcode=='001':
             obx.set_id=rowcode
