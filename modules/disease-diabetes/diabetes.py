@@ -699,49 +699,80 @@ class GestationalDiabetesReport(Report):
         #
         'patient_id',
         'mrn',
-        'last_name',
-        'first_name',
+        #last_name',#no
+        #first_name',#no
         'date_of_birth',
         'ethnicity',
         'zip_code',
         'bmi',
-        'gdm_icd9--any_time',
+        #gdm_icd9--any_time',#no
         'frank_diabetes--ever',
         'frank_diabetes--date',
-        'frank_diabetes--case_id',
-        'lancets_test_strips--any_time',
+        #frank_diabetes--case_id',#no
+        #lancets_test_strips--any_time',#no
+        'frank_diabetes--type',#added
         #
         # Per-pregnancy fields
         #
-        'pregnancy_id',
+        #'pregnancy_id',#no
         'pregnancy', # Boolean
         'preg_start',
         'preg_end',
         'edd',
+        #'grava',# added from here
+        #'para',
+        #'term',
+        #'preterm',
+        #'outcome',
+        #'actual_date',
+        #'ga_delivery',
+        #'birth_weight',
+        #'birth_route', #(delivery)
+        'pre-eclampsia',
+        'hypertension', # to here
         'gdm_case', # Boolean
         'gdm_case--date',
+        #'ga_gdm_met', #(days) #added
         'gdm_icd9--this_preg',
         'prior_gdm_case', # Boolean
         'prior_gdm_case--date',
         'prior_gdm_icd9--this_preg',
+        'prior_polycistic',#added 
+        'prior_pre_eclampsia',#added 
+        'prior_hypertension',#added 
+        #'intrapartum--ogtt50-one hour',#added 
         'intrapartum--ogtt50--threshold',
         'intrapartum--ogtt50--threshold',
+        'intrapartum--ogtt75--fasting',
+        'intrapartum--ogtt75--2hour',#added 
         'intrapartum--ogtt75--threshold',
+        #'intrapartum--ogtt100--fasting',#added 
+        #'intrapartum--ogtt100--1hour',#added 
+        #'intrapartum--ogtt100--2hour',#added 
+        #'intrapartum--ogtt100--3hour',#added 
         'intrapartum--ogtt100--threshold',
+        #'intrapartum_random_glucose',#added 
         'postpartum--ogtt75--order',
         'postpartum--ogtt75--any_result',
-        'postpartum--ogtt75--dm_threshold',
-        'postpartum--ogtt75--igt_range',
+        'postpartum--ogtt75--fasting',#added 
+        'postpartum--ogtt75--2hour',#added 
         'postpartum--ogtt75--ifg_range',
-        'early_postpartum--a1c--order',
+        'postpartum--ogtt75--igt_range',
+        'postpartum--ogtt75--dm_threshold',
+        #'early_postpartum--a1c--order',#no
         'early_postpartum--a1c--max',
         'late_postpartum--a1c--max',
+        'referral_to_nutrition',
         'lancets_test_strips--this_preg',
         'lancets_test_strips--14_days_gdm_icd9',
         'insulin_rx',
+        #'ga_first_insuline_rx',#added 
+        'insuline_basal',#added 
+        'insuline_bolus',#added 
+        'insuline_basal_bolus',#added 
         'metformin_rx',
         'glyburide_rx',
-        'referral_to_nutrition',
+        
         ]
     
     def __init__(self):
@@ -761,6 +792,9 @@ class GestationalDiabetesReport(Report):
             'lx:ogtt75-90min:threshold:gte:180',
             'lx:ogtt75-2hr:threshold:gte:153',
             ])
+        self.ogtt75_fasting =  Q(name__startswith='lx:ogtt75-fasting')
+        self.ogtt75_2hr =  Q(name__startswith='lx:ogtt75-2hr')
+        
         self.ogtt75_dm_q = Q(name__in = [
             'lx:ogtt75-fasting:threshold:gte:126',
             'lx:ogtt75-30min:threshold:gte:200',
@@ -769,10 +803,10 @@ class GestationalDiabetesReport(Report):
             'lx:ogtt75-2hr:threshold:gte:200',
             ])
         self.ogtt75_igt_q = Q(name__in = [
-            'lx:ogtt75-1hr:range:gte:140:lte:200',
-            'lx:ogtt75-2hr:range:gte:140:lte:200',
-            'lx:ogtt75-30min:range:gte:140:lte:200',
-            'lx:ogtt75-90min:range:gte:141:lte:200',
+            'lx:ogtt75-1hr:range:gte:140:lt:200',
+            'lx:ogtt75-2hr:range:gte:140:lt:200',
+            'lx:ogtt75-30min:range:gte:140:lt:200',
+            'lx:ogtt75-90min:range:gte:141:lt:200',
             ])
         self.ogtt75_ifg_q = Q(name='lx:ogtt75-fasting:range:gte:100:lte:125')
         self.ogtt100_q = Q(name__startswith='lx:ogtt100')
@@ -836,19 +870,20 @@ class GestationalDiabetesReport(Report):
         patient_values = {
             'patient_id': patient.pk,
             'mrn': patient.mrn,
-            'last_name': patient.last_name,
-            'first_name': patient.first_name,
+            #last_name': patient.last_name,#removed 
+            #first_name': patient.first_name,#removed
             'date_of_birth': patient.date_of_birth,
             'ethnicity': patient.race,
             'zip_code': zip_code,
-            'gdm_icd9--any_time': bool(event_qs.filter(self.dxgdm_q)),
+            #gdm_icd9--any_time': bool(event_qs.filter(self.dxgdm_q)),
             'frank_diabetes--ever': bool(frank_dm_case_qs),
-            'lancets_test_strips--any_time': bool(event_qs.filter(self.lancets_q)),
+            #lancets_test_strips--any_time': bool(event_qs.filter(self.lancets_q)),
             }
         if frank_dm_case_qs:
             first_dm_case = frank_dm_case_qs[0]
             patient_values['frank_diabetes--date'] = first_dm_case.date
-            patient_values['frank_diabetes--case_id'] = first_dm_case.pk
+            patient_values['frank_diabetes--type'] = first_dm_case.condition
+            #atient_values['frank_diabetes--case_id'] = first_dm_case.pk
         #
         # Generate a row for each pregnancy (or 1 row if no pregs found)
         #
@@ -952,41 +987,121 @@ class GestationalDiabetesReport(Report):
                 gdm_date = gdm_this_preg[0].date
             else:
                 gdm_date = None
+               
+            pre_eclampsia_icd9s = ['642.4','642.5','642.6', '642.7']
+            pre_eclampsia = Encounter.objects.filter(
+                patient = patient,
+                date__gte = preg_ts.start_date,
+                date__lte = preg_ts.start_date + relativedelta(days=30),
+                icd9_codes__code__in=pre_eclampsia_icd9s 
+                )
+           
+            hypertension_icd9s = ['642.3','642.9']
+            hypertension = Encounter.objects.filter(
+                patient = patient,
+                date__gte = preg_ts.start_date,
+                date__lte = preg_ts.start_date + relativedelta(days=30),
+                icd9_codes__code__in=hypertension_icd9s 
+                )
+            
+            polycistic_icd9 = ['256.4 ']
+            prior_polycistic_twice = Encounter.objects.filter(
+                patient = patient,
+                date__lte = preg_ts.start_date ,
+                icd9_codes__code__in=polycistic_icd9 
+                ).annotate(count=Count('pk')).filter(count__gte=2)
+             
+            prior_pre_eclampsia_twice = Encounter.objects.filter(
+                patient = patient,
+                date__lte = preg_ts.start_date ,
+                icd9_codes__code__in=pre_eclampsia_icd9s 
+                ).annotate(count=Count('pk')).filter(count__gte=2)
+             
+            prior_hypertension_twice = Encounter.objects.filter(
+                patient = patient,
+                date__lte = preg_ts.start_date ,
+                icd9_codes__code__startswith='401' 
+                ).annotate(count=Count('pk')).filter(count__gte=2)
+                
             early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate( max=Max('result_float') )['max']
             late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max']
             ogtt100_twice_qs = intrapartum.filter(self.ogtt100_threshold_q).\
                 values('patient').annotate(count=Count('pk')).\
                 filter(count__gte=2).values_list('patient', flat=True).distinct()
+            insulin_qs = intrapartum.filter(name='rx--insulin')
+            basal = ['NPH (Humulin N)','Lantus (Glargine)' ]
+            bolus = ['Novolog (Aspart)','Humalog (Lispro)','Regular insulin (Humulin R)']
+            insulin_basal =False
+            insulin_bolus = False
+            if insulin_qs:
+                for insulin in insulin_qs:
+                    if  insulin.filter(content_object__name__icontains = basal):
+                        insulin_basal= True
+                        return
+                    if insulin.filter(content_object__name__icontains = bolus):
+                        insulin_bolus = True
+                        return
+            # check that result is the max not the min TODO 
+            postpartum_ogtt75_fasting =  postpartum.filter(self.ogtt75_fasting).order_by('labresult__result_string')
+            pp_ogtt75_fasting_value =0
+            if postpartum_ogtt75_fasting:
+                pp_ogtt75_fasting_value = postpartum_ogtt75_fasting[0].labresult.result_string
+            
+            postpartum_ogtt75_2hr =  postpartum.filter(self.ogtt75_2hr).order_by('labresult__result_string')
+            pp_ogtt75_2hr_value =0
+            if postpartum_ogtt75_2hr:
+                pp_ogtt75_2hr_value = postpartum_ogtt75_2hr[0].labresult.result_string
+               
             values = {
-                'pregnancy_id': preg_ts.pk,
+                #'pregnancy_id': preg_ts.pk,#removed
                 'pregnancy': True,
                 'preg_start': preg_ts.start_date,
                 'preg_end': end_date,
                 'edd': edd,
                 'bmi': bmi,
+                #grava,
+                #para, #parity
+                #term,
+                #preterm,
+                #outcome,
+                #actual_date,
+                #ga_delivery,
+                #birth_weith,
+                #birth_route, # delivery
+                'pre-eclampsia' : bool(pre_eclampsia),
+                'hypertension' : bool(hypertension),
                 'gdm_case': bool( gdm_this_preg ),
                 'gdm_case--date': gdm_date,
                 'gdm_icd9--this_preg': bool( intrapartum.filter(self.dxgdm_q) ),
                 'prior_gdm_case': bool( gdm_prior ),
                 'prior_gdm_case--date': gdm_prior_date,
                 'prior_gdm_icd9--this_preg': bool( prepartum.filter(self.dxgdm_q) ),
+                'prior_polycistic' : bool( prior_polycistic_twice), #added 
+                'prior_pre_eclampsia' : bool(prior_pre_eclampsia_twice),#added 
+                'prior_hypertension' : bool(prior_hypertension_twice),#added 
                 'intrapartum--ogtt50--threshold': bool( intrapartum.filter(self.ogtt50_threshold_q) ),
                 'intrapartum--ogtt75--threshold': bool( intrapartum.filter(self.ogtt75_intra_thresh_q) ),
                 'intrapartum--ogtt100--threshold': bool( ogtt100_twice_qs ),
                 'postpartum--ogtt75--order': bool( postpartum.filter(self.ogtt75_q, self.order_q) ),
                 'postpartum--ogtt75--any_result': bool( postpartum.filter(self.ogtt75_q, self.any_q) ),
-                'postpartum--ogtt75--dm_threshold': bool( postpartum.filter(self.ogtt75_dm_q) ),
-                'postpartum--ogtt75--igt_range': bool( postpartum.filter(self.ogtt75_igt_q) ),
+                'postpartum--ogtt75--fasting': pp_ogtt75_fasting_value,#added
+                'postpartum--ogtt75--2hour':  pp_ogtt75_2hr_value,#added
                 'postpartum--ogtt75--ifg_range': bool( postpartum.filter(self.ogtt75_ifg_q) ),
-                'early_postpartum--a1c--order': bool( early_pp.filter(self.a1c_q, self.order_q) ),
+                'postpartum--ogtt75--igt_range': bool( postpartum.filter(self.ogtt75_igt_q) ),
+                'postpartum--ogtt75--dm_threshold': bool( postpartum.filter(self.ogtt75_dm_q) ),
+                 #'early_postpartum--a1c--order': bool( early_pp.filter(self.a1c_q, self.order_q) ),#removed
                 'early_postpartum--a1c--max': early_a1c_max,
                 'late_postpartum--a1c--max': late_a1c_max,
+                'referral_to_nutrition': bool(nutrition_referral),
                 'lancets_test_strips--this_preg': bool( intrapartum.filter(self.lancets_q) ),
                 'lancets_test_strips--14_days_gdm_icd9': bool( lancets_and_icd9 ),
-                'insulin_rx': bool( intrapartum.filter(name='rx--insulin') ),
+                'insulin_rx': bool( insulin_qs ),
+                #add ga_at first insulin rx # added
+                'insuline_basal': insulin_basal,
+                'insuline_bolus': insulin_bolus,
+                'insuline_basal_bolus': insulin_basal and insulin_bolus,
                 'metformin_rx': bool( intrapartum.filter(name='rx--metformin') ),
                 'glyburide_rx': bool( intrapartum.filter(name='rx--glyburide') ),
-                'referral_to_nutrition': bool(nutrition_referral),
                 }
             values.update(patient_values)
             writer.writerow(values)
