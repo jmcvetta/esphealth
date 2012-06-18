@@ -47,8 +47,10 @@ class NonSpecialistVisitEvent(Event):
 
     @staticmethod
     def syndrome_care_visits(self, sites=None):
-        #TODO issue 376 change these types? visit is app? move this to ss or ili
-        qs = Encounter.objects.filter(raw_encounter_type__in=['URGENT CARE', 'VISIT'])
+        
+        qs = Encounter.objects.all()
+        # removed this condition is not in the spec
+        #filter(raw_encounter_type__in=['URGENT CARE', 'VISIT'])
         if sites: 
             qs = qs.filter(site_natural_key__in=sites)
         return qs
