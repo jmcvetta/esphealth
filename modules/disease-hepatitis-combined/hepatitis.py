@@ -198,7 +198,7 @@ class Hepatitis_A(HepatitisCombined):
         # Acute Hepatitis A
         #
         # (dx:jaundice or lx:alt:ratio:2.0 or lx:ast:ratio:2.0) 
-        # AND lx:hepatitis_a_igm_antibody:positive within 14 days
+        # AND lx:hepatitis_a_igm_antibody:positive within 30 (changed from 30) days
         #
         primary_event_name = 'lx:hepatitis_a_igm_antibody:positive'
         secondary_event_names = [
@@ -213,13 +213,13 @@ class Hepatitis_A(HepatitisCombined):
         event_qs = Event.objects.filter(
             name = primary_event_name,
             patient__event__name__in = secondary_event_names,
-            patient__event__date__gte = (F('date') - 14 ),
-            patient__event__date__lte = (F('date') + 14 ),
+            patient__event__date__gte = (F('date') - 30 ),
+            patient__event__date__lte = (F('date') + 30 ),
             )
         relevant_event_names = [primary_event_name] + secondary_event_names
         new_case_count = self._create_cases_from_event_qs(
             condition = 'hepatitis_a:acute', 
-            criteria = '(dx:jaundice or lx:alt:ratio:2 or lx:ast:ratio:2) AND lx:hep_a_igm:positive within 14 days', 
+            criteria = '(dx:jaundice or lx:alt:ratio:2 or lx:ast:ratio:2) AND lx:hep_a_igm:positive within 30 days', 
             recurrence_interval = None,
             event_qs = event_qs, 
             relevant_event_names = relevant_event_names,
@@ -254,7 +254,7 @@ class Hepatitis_B(HepatitisCombined):
     
     def generate_definition_a(self):
         '''
-        a) (#1 or #2 or #3) AND #4 within 14 day period
+        a) (#1 or #2 or #3) AND #4 within 30 day period
         1. ICD9 = 782.4 (jaundice, not of newborn)
         2. Alanine aminotransferase (ALT) >5x upper limit of normal
         3. Aspartate aminotransferase (AST) >5x upper limit of normal
@@ -271,8 +271,8 @@ class Hepatitis_B(HepatitisCombined):
         counter = 0
         for trigger_event in trigger_qs:
             pat = trigger_event.patient
-            begin_relevancy = trigger_event.date - relativedelta(days=14)
-            end_relevancy = trigger_event.date + relativedelta(days=14)
+            begin_relevancy = trigger_event.date - relativedelta(days=30)
+            end_relevancy = trigger_event.date + relativedelta(days=30)
             pat_conf_qs = confirmation_qs.filter(
                 patient = pat,
                 date__gte = begin_relevancy,
@@ -294,10 +294,10 @@ class Hepatitis_B(HepatitisCombined):
         
     def generate_definition_b_c(self):
         '''
-        b) (#1 or #2 or #3) AND (#12 or #15) AND #5 "reactive" within 21 day period 
+        b) (#1 or #2 or #3) AND (#12 or #15) AND #5 "reactive" within 30 day period 
             AND no prior positive result for #5 or #7 ever 
             AND no code for ICD9=070.32 at this encounter or in patient's past
-        c) (1 or 2 or 3) AND (#12 or #15) AND #7 positive within 21 day period 
+        c) (1 or 2 or 3) AND (#12 or #15) AND #7 positive within 30 day period 
             AND no prior positive result for #5 or #7 ever 
             AND no code for ICD9=070.32 at this encounter or in the patient's past
         1. ICD9 = 782.4 (jaundice, not of newborn)
@@ -341,8 +341,8 @@ class Hepatitis_B(HepatitisCombined):
         for trigger_event in trigger_qs:
             patient = trigger_event.patient
             date = trigger_event.date
-            relevancy_start = date - relativedelta(days=21)
-            relevancy_end = date + relativedelta(days=21)
+            relevancy_start = date - relativedelta(days=30)
+            relevancy_end = date + relativedelta(days=30)
             #
             # No chronic hep B diagnosis
             #
@@ -551,9 +551,9 @@ class Hepatitis_C(HepatitisCombined):
             # are more commonly hit than others.
             #
             pat_events_qs = Event.objects.filter(patient=trigger_event.patient)
-            # Establish boundaries of +/-28 day relevancy window.
-            relevancy_start = trigger_event.date - relativedelta(days=28)
-            relevancy_end = trigger_event.date + relativedelta(days=28)
+            # Establish boundaries of +/-30 day relevancy window.
+            relevancy_start = trigger_event.date - relativedelta(days=30)
+            relevancy_end = trigger_event.date + relativedelta(days=30)
             event_qs = pat_events_qs.filter(date__gte=relevancy_start, date__lte=relevancy_end)
             # All events prior to start of relevancy window
             prior_event_qs = pat_events_qs.filter(date__lt=relevancy_start)
