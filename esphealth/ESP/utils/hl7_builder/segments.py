@@ -22,11 +22,12 @@ class MSH(Segment):
         Field('version', default=VERSION),
         Field('sequence_number'),
         Field('continuation_number'),
-        Field('application_ack_type'),
         Field('accept_ack_type'),
+        Field('application_ack_type'),
         Field('country_code'),
         Field('charset'),
-        Field('principal_language_of_message')
+        Field('principal_language_of_message'),
+        Field('Alternate_charset')
         ]
 
 
@@ -36,8 +37,8 @@ class PID(Segment):
     '''
     Fields = [
         Field('set_id', serial=True),
-        Field('patient_external_id'),
         Field('patient_internal_id'),
+        Field('patient_external_id'),
         Field('alternate_patient_id'),
         Field('patient_name'),
         Field('mother_maiden_name'),
@@ -61,7 +62,10 @@ class PID(Segment):
         Field('multiple_birth_indicator'),
         Field('birth_order'),
         Field('citizenship'),
-        Field('veteran_military_status')
+        Field('veteran_military_status'),
+        Field('nationality'),
+        Field('death_datetime'),
+        Field('death_indicator')
         ]
 
 
@@ -170,12 +174,20 @@ class OBR(Segment):
         Field('parent_result'),
         Field('quantity'),
         Field('result_copies_to'),
+        Field('parent'),
+        Field('transportation_mode'),
         Field('reason_for_study'),
         Field('principal_result_interpreter'),
         Field('assistant_result_interpreter'),
         Field('technician'),
         Field('transcriptionist'),
-        Field('schedule_datetime')
+        Field('schedule_datetime'),
+        Field('number_samp_containers'),
+        Field('transport_logistics'),
+        Field('collectors_comment'),
+        Field('transport_arrangement_responsibility'),
+        Field('transport_arranged'),
+        Field('escort_required')
         ]
 
 class OBX(Segment):
