@@ -87,15 +87,6 @@ class Command(BaseCommand):
     
             
         if options['reports']:
-            folder = make_date_folders(begin_date, end_date, root=HL7_MESSAGES_DIR)
-    
-            def produce_reports(queryset):
-                events = queryset.filter(date__gte=begin_date, date__lte=end_date)
-                log.info('Producing HL7 reports for %s events' % (events.count()))
-                for event in events: event.save_hl7_message_file(folder=folder)
-                
-            if options['diagnostics']: produce_reports(EncounterEvent.objects.all())
-            if options['lx']: produce_reports(LabResultEvent.objects.all())
-            if options['rx']: produce_reports(PrescriptionEvent.objects.all())
-            if options['allergy']: produce_reports(AllergyEvent.objects.all())
+            log.info('this command no longer supports HL7 report generation.  Use vaers_hl7 instead.')
+            
     
