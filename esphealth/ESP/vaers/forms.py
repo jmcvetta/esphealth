@@ -1,4 +1,6 @@
 from django import forms
+#TODO: I think this should be ModelForm so that the form values reflect the data model
+#See Creating forms from models
 
 CASE_CONFIRMATION_CHOICES = (
     ('confirm', 'Confirm'),
