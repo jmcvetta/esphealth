@@ -3,6 +3,7 @@
 from django.contrib.contenttypes.models import ContentType
 from ESP.static.models import Vaccine, ImmunizationManufacturer, Icd9
 from ESP.vaers.models import Case, Questionaire, Report_Sent
+from ESP.emr.models import Provider
 from ESP.utils import utils
 from ESP.settings import SITE_NAME, SYSTEM_STATUS, PHINMS_SERVER, PHINMS_USER, PHINMS_PASSWORD, PHINMS_PATH
 from ESP.utils.utils import log
@@ -64,17 +65,17 @@ class AdverseReactionReport(object):
     
     def make_NK1s(self):
         
-        vax_provider = self.case.immunization.content_object.provider
-        comp_provider = self.questionaire.provider
+        vax_provider = Provider.objects.filter(id=self.immunizations.values_list('provider_id').distinct())
+        comp_provider = self.ques.provider
         
         nk1_1 = NK1()
-        nk1_1.name=vax_provider.name.distinct()
+        nk1_1.name=vax_provider.get().full_name
         nk1_1.relationship = ['VAB', 'Vaccine administered by (Name)', 'HL70063']
-        nk1_1.address = [vax_provider.dept, vax_provider.dept_address_1, vax_provider.dept_address_2, 
-                         vax_provider.dept_city, vax_provider.dept_state, vax_provider.dept_zip]
-        nk1_1.phone_number = vax_provider.telephone
+        nk1_1.address = [vax_provider.get().dept, vax_provider.get().dept_address_1, vax_provider.get().dept_address_2, 
+                         vax_provider.get().dept_city, vax_provider.get().dept_state, vax_provider.get().dept_zip]
+        nk1_1.phone_number = vax_provider.get().telephone
         nk1_2 = NK1()
-        nk1_2.name=comp_provider.name
+        nk1_2.name=comp_provider.full_name
         if nk1_1.name==nk1_2.name:
             nk1_2.relationship = ['FVP', 'Form completed by (Name)-Vaccine provider','HL70063']
         else:
@@ -85,10 +86,11 @@ class AdverseReactionReport(object):
         return SegmentTree(nk1_1, nk1_2)
     
     def make_ORC(self):
-        vax_provider = self.case.immunization.content_object.provider
+        vax_provider = Provider.objects.filter(id=self.immunizations.values_list('provider_id').distinct())
         orc = ORC()
-        orc.address = [vax_provider.dept, vax_provider.dept_address_1, vax_provider.dept_address_2, 
-                         vax_provider.dept_city, vax_provider.dept_state, vax_provider.dept_zip]
+        orc.enterer_location = [vax_provider.get().dept, vax_provider.get().dept_address_1, vax_provider.get().dept_address_2, 
+                         vax_provider.get().dept_city, vax_provider.get().dept_state, vax_provider.get().dept_zip]
+        return orc
 
 
     def event_summary(self):
@@ -306,7 +308,7 @@ class AdverseReactionReport(object):
         for idx, report in enumerate(observation_reports):
             report.parent.sequence_id = idx + 1
 
-        patient_header = [self.make_MSH(), self.make_PID()]
+        patient_header = [self.make_MSH(), self.make_PID(), self.make_NK1s(), self.make_ORC()]
 
         all_segments = patient_header + observation_reports
         hl7file = cStringIO.StringIO()
