@@ -95,6 +95,9 @@ def case_details(request, ptype, id):
             return HttpResponseForbidden('You cannot access this page unless you are logged in and have permission to view PHI.')
     elif ptype=='digest':
         questionaire = Questionaire.by_digest(id)
+        if questionaire.state != 'AR':
+            #TODO: need to add additional logic here to allow re-access in cases where report was autosent.
+            return HttpResponse('This case has already been processed.  Thank you for your attention.')
     else: 
         #should never get here due to regex in vaers/urls.py for this view, but just in case...
         return HttpResponse('<h2>Vaers page type "' + ptype + '" not found.  Valid types are "case" and "digest".</h2>')
