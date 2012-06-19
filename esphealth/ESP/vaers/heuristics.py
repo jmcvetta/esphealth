@@ -12,7 +12,7 @@ from ESP.emr.models import Immunization, Encounter, LabResult,  Allergy
 from ESP.emr.models import Prescription, Problem
 from ESP.vaers.models import Case, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent
 from ESP.vaers.models import DiagnosticsEventRule
-from ESP.vaers.models import ExcludedICD9Code, Questionaire
+from ESP.vaers.models import ExcludedICD9Code, Questionaire, Sender
 from ESP.utils.utils import log
 from ESP.conf.models import LabTestMap 
 from ESP.hef.base import LabResultAnyHeuristic
@@ -40,6 +40,7 @@ class AdverseEventHeuristic(BaseHeuristic):
         assert verbose_name
         self.name = event_name
         self.long_name = verbose_name
+        self.sender_list = Sender.objects.values_list('provider_id', flat=True)
     
     
     def update_or_create_case(self, clin_event, this_imm, this_event):
@@ -117,6 +118,7 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
         end = kw.get('end_date') or datetime.date.today()
         
         allergy_qs = Allergy.objects.following_vaccination(self.time_post_immunization,self.risk_period_start)
+        allergy_qs = allergy_qs.filter(provider__in=self.sender_list)
         allergy_qs = allergy_qs.filter(date__gte=begin, date__lte=end)
         # patient's immunization is same as self.name (rule's name)
         allergy_qs = allergy_qs.filter(patient__immunization__name = self.name)
@@ -204,6 +206,7 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         enc_qs = Encounter.objects.following_vaccination(self.risk_period,self.risk_period_start)
         
         enc_qs = enc_qs.filter(icd9_codes__in=self.icd9s.all())
+        enc_qs = enc_qs.filter(provider__in=self.sender_list)
         enc_qs = enc_qs.filter(date__gte=begin, date__lte=end)
         enc_qs = enc_qs.distinct()
         return enc_qs
@@ -477,6 +480,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         candidates = LabResult.objects.following_vaccination(self.time_post_immunization,self.risk_period_start).filter(
             native_code__in=self.lab_codes,
             date__gte=begin, date__lte=end).distinct()
+        candidates = candidates.filter(provider__in=self.sender_list)
         #
         # Pediatric: 3mo - 18yrs
         # Adult 18yrs +
@@ -597,6 +601,7 @@ class VaersRxHeuristic(AdverseEventHeuristic):
         #considering upper case and none
         candidatesUpper = candidates.filter(name__contains=self.name.upper())
         candidates = candidates.filter(name__contains=self.name)
+        candidates = candidates.filter(provider__in=self.sender_list)
         candidates = candidatesUpper | candidates
         return  [c for c in candidates if not excluded_due_to_history(c)]
 
