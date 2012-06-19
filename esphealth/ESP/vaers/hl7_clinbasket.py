@@ -73,9 +73,9 @@ class HL7_clinbasket(object):
         words =patient.natural_key.split()
         #TODO: this should be a metrohealth plugin, as it is specific to metrohealth natural key values
         if words[0].isdigit():
-            pid.patient_internal_id = words[0] + '^^^^ID 1'
+            pid.patient_external_id = words[0] + '^^^^ID 1'
         else:
-            pid.patient_internal_id = patient.natural_key
+            pid.patient_external_id = patient.natural_key
         #We currently don't need the following but could provide at some point if desired.
         #pid.patient_name = patient._get_name
         #pid.date_of_birth = utils.str_from_date(patient.date_of_birth)
@@ -146,8 +146,8 @@ class HL7_clinbasket(object):
                     caseDescription = caseDescription + AE.prescriptionevent.content_object.name + ' on ' + str(AE.prescriptionevent.content_object.date) + ', '
                     evntlist.append(AE.prescriptionevent.content_object.name)
                 elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('labresult'):
-                    caseDescription = caseDescription + AE.labresultevent.content_object.name + ' on ' + str(AE.labresultevent.content_object.result_date) + ', '
-                    evntlist.append(AE.labresultevent.content_object.name)
+                    caseDescription = caseDescription + AE.labresultevent.content_object.native_name + ' on ' + str(AE.labresultevent.content_object.result_date) + ', '
+                    evntlist.append(AE.labresultevent.content_object.native_name)
                 elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('allergy'):
                     #adding the term 'allergy' to the name, as it is otherwise confusing with the test data.
                     #this may not be the case with real allergen names and if so the code will need to be revised.
