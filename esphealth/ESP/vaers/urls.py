@@ -16,7 +16,7 @@ urlpatterns = patterns(
     # Vaccine and Manufacturer Mapping
     url(r'^vaccines/', include('ESP.vaers.vaccine.urls')),
     
-    # ptype can be digest or case.  digest takes a digest value for id, case takes a questionaire id for id.
+    # ptype can be digest or case.  digest takes a digest value for id, case takes a questionnaire id for id.
     url(r'^(?P<ptype>case|digest)/(?P<id>\w*)/$', views.case_details, name='present_case'),
 
     #line listing report

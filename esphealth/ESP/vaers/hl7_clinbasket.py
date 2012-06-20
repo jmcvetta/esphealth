@@ -12,7 +12,7 @@
 
 from django.contrib.contenttypes.models import ContentType
 from ESP.static.models import Vaccine, ImmunizationManufacturer, Icd9
-from ESP.vaers.models import Case, Questionaire
+from ESP.vaers.models import Case, Questionnaire
 
 from ESP.utils.hl7_builder.segments import MSH, EVN, PID, OBX, PV1, TXA
 from ESP.utils.utils import log
@@ -38,9 +38,9 @@ class HL7_clinbasket(object):
     Format and generate the HL7 message for delivery to the Clinician Inbasket.
     Content is per ESP-VAERS algorithm specification.
     '''
-    #initialize with a questionaire record
-    def __init__(self, questionaire):
-        self.ques = questionaire
+    #initialize with a questionnaire record
+    def __init__(self, questionnaire):
+        self.ques = questionnaire
         self.case = Case.objects.get(id=self.ques.case_id)
         self.immunizations = self.case.immunizations.all()
         
@@ -94,14 +94,14 @@ class HL7_clinbasket(object):
         return pv1
 
     def makeTXA(self):
-        #again, the DI and UN values seem to be MetroHealth specific.  These shoujld be plugin specified
+        #again, the DI and UN values seem to be MetroHealth specific.  These should be plugin specified
         txa = TXA()
         enc = self.case
         ques = self.ques
         txa.report_type = 33
         txa.activity_date=enc.date.strftime("%Y%m%d%H%M%s")
-        txa.primary_activity_provider=enc.immunizations.all()[0].provider_id
-        txa.originator_codename=enc.immunizations.all()[0].provider_id
+        txa.primary_activity_provider=ques.provider.provider_id
+        txa.originator_codename=ques.provider.provider_id
         txa.unique_document_number='^^ESPMH_' + str(ques.id)
         txa.document_completion_status='DI'
         txa.document_availability_status='UN'
@@ -202,7 +202,7 @@ class HL7_clinbasket(object):
         hl7file.write(all_text)
         hl7file.seek(0)
         if transmit_ftp(hl7file, 'clinbox_msg_ID' + str(self.ques.id)):
-            Questionaire.objects.filter(id=self.ques.id).update(inbox_message=hl7file.getvalue())
+            Questionnaire.objects.filter(id=self.ques.id).update(inbox_message=hl7file.getvalue())
         hl7file.close()
 
 

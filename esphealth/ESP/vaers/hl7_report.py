@@ -2,7 +2,7 @@
 
 from django.contrib.contenttypes.models import ContentType
 from ESP.static.models import Vaccine, ImmunizationManufacturer, Icd9
-from ESP.vaers.models import Case, Questionaire, Report_Sent
+from ESP.vaers.models import Case, Questionnaire, Report_Sent
 from ESP.emr.models import Provider
 from ESP.utils import utils
 from ESP.settings import SITE_NAME, SYSTEM_STATUS, PHINMS_SERVER, PHINMS_USER, PHINMS_PASSWORD, PHINMS_PATH
@@ -11,6 +11,7 @@ from ESP.utils.utils import log
 from ESP.utils.hl7_builder.core import SegmentTree
 from ESP.utils.hl7_builder.segments import MSH, PID, ORC, OBR, OBX, NK1
 from ESP.utils.hl7_builder.nodes import VaccineDetail, PriorVaccinationDetail
+from ESP.conf.models import VaccineCodeMap
 
 import ftplib
 import csv, cStringIO
@@ -22,9 +23,9 @@ UNKNOWN_MANUFACTURER = ImmunizationManufacturer.objects.get(code='UNK')
 now = datetime.datetime.now()
 
 class AdverseReactionReport(object):
-    #initialize with a questionaire record
-    def __init__(self, questionaire):
-        self.ques = questionaire
+    #initialize with a questionnaire record
+    def __init__(self, questionnaire):
+        self.ques = questionnaire
         self.case = Case.objects.get(id=self.ques.case_id)
         self.immunizations = self.case.immunizations.all()
 
@@ -99,8 +100,6 @@ class AdverseReactionReport(object):
         obr_fda_report.observation_date = utils.str_from_date(self.case.date)
 
         observation_results = []
-                
-
         
         age = self.case.patient._get_age_str()
         if age:
@@ -128,7 +127,7 @@ class AdverseReactionReport(object):
         obx_treatment.identifier = ['30948-4', 'Vaccination adverse events and treatment, if any', 'LN']
         obx_treatment.sub_id = 1
         AEs = self.case.adverse_events.distinct().order_by('date')
-        quests = self.case.questionaire_set.filter(comment__isnull=False)
+        quests = self.case.questionnaire_set.filter(comment__isnull=False)
         caseDescription=''
         for AE in AEs:
             if ContentType.objects.get_for_id(AE.content_type_id).model.startswith('encounter'):
@@ -293,18 +292,18 @@ class AdverseReactionReport(object):
             p_aes.append(p_ae)
             p_aes.units = None
             p_ae.indentifier = ['30968-2&30971-6','Vaccine Type','LN']  
-            imm_list = []
             for imm in case.immunizations.all():
-                imm_list.append(imm.name)
-            p_ae.value = imm_list
-            p_aes.append(p_ae)
-            
+                CVXVax = Vaccine.objects.get(code=VaccineCodeMap.objects.get(native_code=imm.vaccine.code).cannonical_code_id)
+                p_ae.value = [CVXVax.code, CVXVax.short_name, 'CVX']
+                p_aes.append(p_ae)           
         return SegmentTree(obr, p_aes)
 
     def render(self):
         observation_reports = [self.event_summary(), self.vaccine_list(), 
                                self.prior_vax()]
-
+        pcases = Case.objects.filter(patient_id=self.case.patient_id, date__gt=self.case.date)
+        for pcase in pcases:
+            observation_reports.append(self.prior_ae(pcase))
         for idx, report in enumerate(observation_reports):
             report.parent.sequence_id = idx + 1
 
@@ -315,7 +314,7 @@ class AdverseReactionReport(object):
         hl7file.write('\n'.join([str(x) for x in all_segments]))
         hl7file.seek(0)
         if transmit_ftp(hl7file, 'vaers_msg_ID' + str(self.ques.id)):
-            Questionaire.objects.filter(id=self.ques.id).update(state='S')
+            Questionnaire.objects.filter(id=self.ques.id).update(state='S')
             Report_Sent.objects.create(case=self.case,
                                        date=now,
                                        vaers_report=hl7file.getvalue())

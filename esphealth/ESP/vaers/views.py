@@ -16,7 +16,7 @@ from django.contrib.sites.models import Site
 from django.core.servers.basehttp import FileWrapper
 
 
-from ESP.vaers.models import AdverseEvent, Case,Questionaire, ADVERSE_EVENT_CATEGORY_ACTION
+from ESP.vaers.models import AdverseEvent, Case, Questionnaire, ADVERSE_EVENT_CATEGORY_ACTION
 from ESP.vaers.forms import CaseConfirmForm
 from ESP.utils.utils import log, Flexigrid
 from ESP.emr.models import Immunization, Encounter, Prescription,LabResult,Allergy
@@ -79,30 +79,30 @@ def report(request):
     return direct_to_template(request, PAGE_TEMPLATE_DIR + 'report.html',
                               {'cases':cases})                             
     
-# @param id : is the primary key of the questionaire        
+# @param id : is the primary key of the questionnaire        
 def case_details(request, ptype, id):
     '''
-    This view presents a user with case details and a form to update a specific questionaire 
-    It can accept either a digest value or a questionaire id, and uses ptype to determine which is being provided.
+    This view presents a user with case details and a form to update a specific questionnaire 
+    It can accept either a digest value or a questionnaire id, and uses ptype to determine which is being provided.
     If the details are accessed via digest, user may be anonymous.  Otherwise, user must be logged in and have the 
     vaers.view_phi permission
     '''
     category = None
     if ptype=='case':
         if request.user.has_perm('vaers.view_phi'):
-            questionaire = Questionaire.objects.get(id=id)
+            questionnaire = Questionnaire.objects.get(id=id)
         else:
             return HttpResponseForbidden('You cannot access this page unless you are logged in and have permission to view PHI.')
     elif ptype=='digest':
-        questionaire = Questionaire.by_digest(id)
-        if questionaire.state != 'AR':
+        questionnaire = Questionnaire.by_digest(id)
+        if questionnaire.state != 'AR':
             #TODO: need to add additional logic here to allow re-access in cases where report was autosent.
             return HttpResponse('This case has already been processed.  Thank you for your attention.')
     else: 
         #should never get here due to regex in vaers/urls.py for this view, but just in case...
         return HttpResponse('<h2>Vaers page type "' + ptype + '" not found.  Valid types are "case" and "digest".</h2>')
     
-    case = questionaire.case
+    case = questionnaire.case
     #another just in case catch...
     if not case: raise Http404
     
@@ -117,10 +117,10 @@ def case_details(request, ptype, id):
     if category == ADVERSE_EVENT_CATEGORY_ACTION[0][0] : 
         return HttpResponseForbidden(ADVERSE_EVENT_CATEGORY_ACTION[0][1])
     
-    provider = questionaire.provider
+    provider = questionnaire.provider
     if not provider: 
         #likewise, not likely to be a problem since provided has not-null foreign key attributes in db.
-        return HttpResponseForbidden('No provider in questionaire')
+        return HttpResponseForbidden('No provider in questionnaire')
     
 
     if request.method == 'POST':
@@ -137,13 +137,13 @@ def case_details(request, ptype, id):
         
         # this is where we get stuff from the form
         # initializing flags
-        questionaire.state = next_status[form.cleaned_data['state']]
-        questionaire.comment = form.cleaned_data['comment']
-        questionaire.message_ishelpful=  form.cleaned_data['message_ishelpful'] =='True'
-        questionaire.interrupts_work =  form.cleaned_data['interrupts_work'] == 'True'
-        questionaire.satisfaction_num_msg = form.cleaned_data['satisfaction_num_msg']
+        questionnaire.state = next_status[form.cleaned_data['state']]
+        questionnaire.comment = form.cleaned_data['comment']
+        questionnaire.message_ishelpful=  form.cleaned_data['message_ishelpful'] =='True'
+        questionnaire.interrupts_work =  form.cleaned_data['interrupts_work'] == 'True'
+        questionnaire.satisfaction_num_msg = form.cleaned_data['satisfaction_num_msg']
         
-        questionaire.save()
+        questionnaire.save()
         if ptype=='case':
             mail_admins('ESP:VAERS - Authenticated user changed case status',
                     'Case %s.\nUser %s\n.' % (case, request.user))
@@ -159,7 +159,7 @@ def case_details(request, ptype, id):
         
         return direct_to_template(request, PAGE_TEMPLATE_DIR + 'present.html', {
                 'case':case,
-                'questionaire':questionaire,
+                'questionnaire':questionnaire,
                 'form':form,
                 'content_type_enc': ContentType.objects.get_for_model(Encounter),
                 'content_type_lx': ContentType.objects.get_for_model(LabResult),

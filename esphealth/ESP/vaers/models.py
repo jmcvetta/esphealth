@@ -619,7 +619,7 @@ class Case (models.Model):
         return u'AE Case %s: Patient %s, on %s' % (
             self.id, self.patient.full_name, self.date)
 
-class Questionaire (models.Model):
+class Questionnaire (models.Model):
     comment = models.TextField()
     provider = models.ForeignKey(Provider)
     created_on = models.DateTimeField(auto_now_add=True)
@@ -645,7 +645,7 @@ class Questionaire (models.Model):
     @staticmethod    
     def by_digest(key):
         try:
-            klass = Questionaire.objects.get(digest=key)
+            klass = Questionnaire.objects.get(digest=key)
             return klass
         except:
             return None
