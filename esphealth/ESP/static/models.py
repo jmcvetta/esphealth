@@ -304,7 +304,7 @@ class Vaccine(models.Model):
 
     @staticmethod
     def acceptable_mapping_values():
-        return Vaccine.objects.exclude(short_name__in=['unknown', 'RESERVED - do not use', 'no vaccine administered'])
+        return Vaccine.objects.exclude(short_name__in=['unknown', 'RESERVED - do not use', 'no vaccine administered']).order_by('short_name')
 
     def __unicode__(self):
         return u'%s (%s)'% (self.short_name, self.name)
