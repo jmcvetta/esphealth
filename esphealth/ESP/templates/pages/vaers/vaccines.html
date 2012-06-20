@@ -9,8 +9,8 @@
     <table>
       {% for vaccine in unmapped_vaccines %}
       <tr>
-	<td>{{vaccine.name}}</td>
-	<td><a href="{% url vaers.vaccine.views.vaccine_detail vaccine.code %}">Edit</a></td>
+	<td>{{vaccine.native_name}}</td>
+	<td><a href="{% url vaers.vaccine.views.vaccine_detail vaccine.native_code %}">Edit</a></td>
       </tr>
       {% endfor %}    
     </table>
@@ -20,8 +20,8 @@
     <table>
       {% for vaccine in mapped_vaccines %}
       <tr>
-	<td>{{vaccine.name}}</td>
-	<td>{{vaccine.canonical_code}}</td>
+	<td>{{vaccine.native_name}}</td>
+	<td>{{vaccine.canonical_code_id}}</td>
       </tr>
       {% endfor %}
     </table>
