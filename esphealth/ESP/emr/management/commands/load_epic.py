@@ -58,6 +58,7 @@ from ESP.emr.models import Immunization, Pregnancy
 from ESP.emr.models import SocialHistory, Problem, Allergy
 from ESP.emr.management.commands.common import LoaderCommand
 from ESP.emr.base import SiteDefinition
+from ESP.conf.models import VaccineCodeMap
 
 
     
@@ -937,6 +938,15 @@ class ImmunizationLoader(BaseLoader):
         i, created = self.insert_or_update(Immunization, values, ['natural_key'])
         
         log.debug('Saved immunization object: %s' % i)
+        
+        try:
+            nativevax, new = VaccineCodeMap.objects.get_or_create(
+                    native_code=self.string_or_none(row['type']), native_name=self.string_or_none(row['name']))
+            if new:
+                log.debug('Saved new VaccineCodeMap entry: %s' %nativevax)
+        except:
+            log.debug('Could not save VaccineCodeMap entry: %s' %self.string_or_none(row['name']))
+
 
 
 class SocialHistoryLoader(BaseLoader):
