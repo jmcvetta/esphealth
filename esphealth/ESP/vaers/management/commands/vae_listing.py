@@ -473,7 +473,7 @@ def vaers_csv(no_phi):
         while len(alarray) < 0:
             alarray.append(None)
         qarray=[]
-        ques_qs=case.questionaire_set.all()
+        ques_qs=case.questionnaire_set.all()
         for ques in ques_qs:
             if no_phi:
                 qarray.append(obsc)
