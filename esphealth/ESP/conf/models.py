@@ -295,7 +295,7 @@ class VaccineCodeMap(models.Model):
     canonical_code = models.ForeignKey(Vaccine, null=True)
 
     def __unicode__(self):
-        return u'%s' % self.name
+        return u'%s' % self.native_name
 
 
 class VaccineManufacturerMap(models.Model):
