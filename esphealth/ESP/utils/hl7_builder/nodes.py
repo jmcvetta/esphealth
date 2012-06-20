@@ -3,14 +3,17 @@
 
 from segments import OBX
 from ESP.utils import utils
+from ESP.conf.models import VaccineCodeMap
+from ESP.static.models import Vaccine
 
 class VaccineDetail(object):
     def __init__(self, immunization):
         vaccine_type = OBX()
         vaccine_type.value_type = 'CE'
+        CVXVax = Vaccine.objects.get(code=VaccineCodeMap.objects.get(native_code=immunization.vaccine.code).cannonical_code_id)
         vaccine_type.identifier = ['30955-9&30956-7', 'Vaccine type', 'LN']
-        vaccine_type.value = [immunization.vaccine.code, 
-                              immunization.vaccine.name, 'CVX']
+        vaccine_type.value = [CVXVax.code, 
+                              CVXVax.short_name, 'CVX']
         vaccine_type.observation_result_status = 'F'
 
         
@@ -36,9 +39,10 @@ class PriorVaccinationDetail(VaccineDetail):
         
         self.vaccine_type = OBX()
         self.vaccine_type.value_type = 'CE'
+        CVXVax = Vaccine.objects.get(code=VaccineCodeMap.objects.get(native_code=immunization.vaccine.code).cannonical_code_id)
         self.vaccine_type.identifier = ['30961-7&30956-7', 'Vaccine type', 'LN']
-        self.vaccine_type.value = [immunization.vaccine.code, 
-                                   immunization.vaccine.name, 'CVX']
+        self.vaccine_type.value = [CVXVax.code, 
+                                   CVXVax.short_name, 'CVX']
         self.vaccine_type.observation_result_status = 'F'
         
 
