@@ -29,7 +29,7 @@ WIDGET_TEMPLATE_DIR = 'widgets/vaers/'
 
 @login_required
 def index(request):
-     # Complete query and present results
+    # Complete query and present results
     cases = AdverseEvent.paginated()
     return direct_to_template(request, PAGE_TEMPLATE_DIR + 'home.html',
                               {'cases':cases,
@@ -79,7 +79,7 @@ def report(request):
     return direct_to_template(request, PAGE_TEMPLATE_DIR + 'report.html',
                               {'cases':cases})                             
     
-# @param id : is the primary key of the questionnaire        
+# @param id : is the primary key of the questionnaire or the digest value, depending on ptype
 def case_details(request, ptype, id):
     '''
     This view presents a user with case details and a form to update a specific questionnaire 
@@ -95,8 +95,7 @@ def case_details(request, ptype, id):
             return HttpResponseForbidden('You cannot access this page unless you are logged in and have permission to view PHI.')
     elif ptype=='digest':
         questionnaire = Questionnaire.by_digest(id)
-        if questionnaire.state != 'AR':
-            #TODO: need to add additional logic here to allow re-access in cases where report was autosent.
+        if not any(x for x in ['AR','AS'] if x==questionnaire.state):
             return HttpResponse('This case has already been processed.  Thank you for your attention.')
     else: 
         #should never get here due to regex in vaers/urls.py for this view, but just in case...
@@ -111,7 +110,7 @@ def case_details(request, ptype, id):
         category  = ADVERSE_EVENT_CATEGORY_ACTION[1][0]
     elif  case.adverse_events.filter(category__startswith ='3'):#3_possible
         category  =  ADVERSE_EVENT_CATEGORY_ACTION[2][0] 
-    elif  case.adverse_events.filter(category__startswith ='1'):#3_possible
+    elif  case.adverse_events.filter(category__startswith ='1'):#1_common
         category  =  ADVERSE_EVENT_CATEGORY_ACTION[0][0]  
     
     if category == ADVERSE_EVENT_CATEGORY_ACTION[0][0] : 
@@ -119,10 +118,9 @@ def case_details(request, ptype, id):
     
     provider = questionnaire.provider
     if not provider: 
-        #likewise, not likely to be a problem since provided has not-null foreign key attributes in db.
+        #likewise, not likely to be a problem since provider has not-null foreign key attributes in db.
         return HttpResponseForbidden('No provider in questionnaire')
     
-
     if request.method == 'POST':
         form = CaseConfirmForm(request.POST) 
     else:
@@ -131,8 +129,8 @@ def case_details(request, ptype, id):
     if request.method == 'POST' and form.is_valid():
         next_status = {
             'confirm':'Q',
-            'false_positive':'FP',
-            'wait':'UR'
+            'false_positive':'FP'
+            #,'wait':'UR'
             }
         
         # this is where we get stuff from the form
