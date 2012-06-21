@@ -5,7 +5,8 @@ from ESP.static.models import Vaccine, ImmunizationManufacturer, Icd9
 from ESP.vaers.models import Case, Questionnaire, Report_Sent
 from ESP.emr.models import Provider
 from ESP.utils import utils
-from ESP.settings import SITE_NAME, SYSTEM_STATUS, PHINMS_SERVER, PHINMS_USER, PHINMS_PASSWORD, PHINMS_PATH
+from ESP.settings import SITE_NAME, SYSTEM_STATUS, PHINMS_SERVER, PHINMS_USER, PHINMS_PASSWORD, PHINMS_PATH, VAERS_OVERRIDE_CLINICIAN_REVIEWER
+
 from ESP.utils.utils import log
 
 from ESP.utils.hl7_builder.core import SegmentTree
@@ -68,7 +69,10 @@ class AdverseReactionReport(object):
         
         vax_provider = Provider.objects.filter(id=self.immunizations.values_list('provider_id').distinct())
         comp_provider = self.ques.provider
-        
+        if self.ques.state=='AR':
+            comp_provider = Provider.objects.get(natural_key='VAERS AUTOSENDER')
+            #VAERS AUTOSENDER must be indentified for a site, and a Provider record entered for this individual
+            #This is the sender of record in cases where case category is 2_serious and should be autosent.
         nk1_1 = NK1()
         nk1_1.name=vax_provider.get().full_name
         nk1_1.relationship = ['VAB', 'Vaccine administered by (Name)', 'HL70063']
@@ -293,7 +297,7 @@ class AdverseReactionReport(object):
             p_aes.units = None
             p_ae.indentifier = ['30968-2&30971-6','Vaccine Type','LN']  
             for imm in case.immunizations.all():
-                CVXVax = Vaccine.objects.get(code=VaccineCodeMap.objects.get(native_code=imm.vaccine.code).cannonical_code_id)
+                CVXVax = Vaccine.objects.get(code=VaccineCodeMap.objects.get(native_code=imm.vaccine.code).canonical_code_id)
                 p_ae.value = [CVXVax.code, CVXVax.short_name, 'CVX']
                 p_aes.append(p_ae)           
         return SegmentTree(obr, p_aes)
@@ -301,7 +305,7 @@ class AdverseReactionReport(object):
     def render(self):
         observation_reports = [self.event_summary(), self.vaccine_list(), 
                                self.prior_vax()]
-        pcases = Case.objects.filter(patient_id=self.case.patient_id, date__gt=self.case.date)
+        pcases = Case.objects.filter(patient=self.case.patient, date__gt=self.case.date)
         for pcase in pcases:
             observation_reports.append(self.prior_ae(pcase))
         for idx, report in enumerate(observation_reports):
@@ -314,7 +318,10 @@ class AdverseReactionReport(object):
         hl7file.write('\n'.join([str(x) for x in all_segments]))
         hl7file.seek(0)
         if transmit_ftp(hl7file, 'vaers_msg_ID' + str(self.ques.id)):
-            Questionnaire.objects.filter(id=self.ques.id).update(state='S')
+            if Questionnaire.objects.filter(id=self.ques.id, state='Q'):
+                Questionnaire.objects.filter(id=self.ques.id).update(state='S')
+            elif Questionnaire.objects.filter(id=self.ques.id, state='AR'):
+                Questionnaire.objects.filter(id=self.ques.id).update(state='AS')
             Report_Sent.objects.create(case=self.case,
                                        date=now,
                                        vaers_report=hl7file.getvalue())
