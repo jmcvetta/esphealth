@@ -27,7 +27,7 @@ class Command(BaseCommand):
         #this queryset could have been created with a series of filter passes using standard queryset API, but it's messy either way.    
         vaers_qs=Questionnaire.objects.raw('select distinct a.* from vaers_questionnaire a, vaers_case_adverse_events b, vaers_adverseevent c ' +
                                           'where a.case_id=b.case_id and b.adverseevent_id=c.id and (a.state=\'Q\' or ' +
-                                          '(a.state in (\'AR\',\'UR\',\'RM\') and date(now())-date(a.created_on) > 7 and c.category=\'2_severe\'))')
+                                          '(a.state = \'AR\' and date(now())-date(a.created_on) > 7 and c.category=\'2_severe\'))')
         for vques in vaers_qs:
             vaersmsg=AdverseReactionReport(vques)
             vaersmsg.render()
