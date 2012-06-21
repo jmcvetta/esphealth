@@ -22,9 +22,10 @@ from ESP.settings import UPLOAD_USER
 from ESP.settings import UPLOAD_PASSWORD
 from ESP.settings import UPLOAD_PATH
 from ESP.settings import SITE_NAME
+from ESP.settings import VAERS_OVERRIDE_CLINICIAN_REVIEWER
 
 import ftplib
-import csv, cStringIO
+import cStringIO
 import datetime
 
 
@@ -100,8 +101,12 @@ class HL7_clinbasket(object):
         ques = self.ques
         txa.report_type = 33
         txa.activity_date=enc.date.strftime("%Y%m%d%H%M%s")
-        txa.primary_activity_provider=ques.provider.provider_id
-        txa.originator_codename=ques.provider.provider_id
+        if VAERS_OVERRIDE_CLINICIAN_REVIEWER=='':
+            txa.primary_activity_provider=ques.provider_id
+            txa.originator_codename=ques.provider_id
+        else:
+            txa.primary_activity_provider=VAERS_OVERRIDE_CLINICIAN_REVIEWER
+            txa.originator_codename=VAERS_OVERRIDE_CLINICIAN_REVIEWER
         txa.unique_document_number='^^ESPMH_' + str(ques.id)
         txa.document_completion_status='DI'
         txa.document_availability_status='UN'
