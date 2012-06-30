@@ -227,7 +227,14 @@ def make_date_folders(begin_date, end_date, **kw):
     if not os.path.isdir(folder): os.makedirs(folder)
     return folder
 
-
+def binary(bool):
+    '''
+    returns a 1 or a 0 depending on the boolan passed
+    '''
+    if bool:
+        return 1
+    else:
+        return 0
     
 
 def str_from_date(date):
