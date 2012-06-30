@@ -895,6 +895,20 @@ class GestationalDiabetesReport(Report):
         wait_for_threads( funcs )
         log.info('Completed GDM report')
     
+    def prior2ylab (self, prior_2y_lab, lab_q):
+        
+        prior_2y_lab = prior_2y_lab.filter(lab_q )
+        prior_2y_lab_max = prior_2y_lab.aggregate( max=Max('labresult__result_float') )['max']
+        prior_2y_lab_min = prior_2y_lab.aggregate( min=Min('labresult__result_float') )['min']
+        prior_2y_lab_date_max  =None
+        prior_2y_lab_date_min =None
+                
+        if prior_2y_lab:
+            prior_2y_lab_date_max = prior_2y_lab.order_by('labresult__result_float')[0].date
+            prior_2y_lab_date_min = prior_2y_lab.order_by('-labresult__result_float')[0].date
+            
+        return prior_2y_lab_max, prior_2y_lab_date_max, prior_2y_lab_date_min, prior_2y_lab_date_min
+    
     def report_on_patient(self, patient_pk, writer, counter, total):
         log.info('Reporting on patient %8s / %s' % (counter, total))
         patient = Patient.objects.get(pk=patient_pk)
@@ -1137,65 +1151,17 @@ class GestationalDiabetesReport(Report):
                 patient__event__name__startswith ='lx:',
                 )
             
-            prior_2y_ldl = prior_2y_lab.filter(self.ldl_q )
-            prior_2y_ldl_max = prior_2y_ldl.aggregate( max=Max('labresult__result_float') )['max']
-            prior_2y_ldl_min = prior_2y_ldl.aggregate( min=Min('labresult__result_float') )['min']
-            prior_2y_ldl_date_max  =None
-            prior_2y_ldl_date_min =None
-                
-            if prior_2y_ldl:
-                prior_2y_ldl_date_max = prior_2y_ldl.order_by('labresult__result_float')[0].date
-                prior_2y_ldl_date_min = prior_2y_ldl.order_by('-labresult__result_float')[0].date
-                
-            prior_2y_hdl = prior_2y_lab.filter(self.hdl_q )
-            prior_2y_hdl_max = prior_2y_hdl.aggregate( max=Max('labresult__result_float') )['max']
-            prior_2y_hdl_min = prior_2y_hdl.aggregate( min=Min('labresult__result_float') )['min']
-            prior_2y_hdl_date_max  =None
-            prior_2y_hdl_date_min =None
-                
-            if prior_2y_hdl:
-                prior_2y_hdl_date_max = prior_2y_hdl.order_by('labresult__result_float')[0].date
-                prior_2y_hdl_date_min = prior_2y_hdl.order_by('-labresult__result_float')[0].date    
+            prior_2y_ldl_max, prior_2y_ldl_date_max, prior_2y_ldl_min, prior_2y_ldl_date_min = self.prior2ylab(prior_2y_lab,self.ldl_q)
             
-            prior_2y_trig = prior_2y_lab.filter(self.trig_q )
-            prior_2y_trig_max = prior_2y_trig.aggregate( max=Max('labresult__result_float') )['max']
-            prior_2y_trig_min = prior_2y_trig.aggregate( min=Min('labresult__result_float') )['min']
-            prior_2y_trig_date_max  =None
-            prior_2y_trig_date_min =None
+            prior_2y_hdl_max, prior_2y_hdl_date_max, prior_2y_hdl_min, prior_2y_hdl_date_min =self.prior2ylab(prior_2y_lab,self.hdl_q)
                 
-            if prior_2y_trig:
-                prior_2y_trig_date_max = prior_2y_trig.order_by('labresult__result_float')[0].date
-                prior_2y_trig_date_min = prior_2y_trig.order_by('-labresult__result_float')[0].date
+            prior_2y_trig_max, prior_2y_trig_date_max, prior_2y_trig_min, prior_2y_trig_date_min =self.prior2ylab(prior_2y_lab,self.trig_q)
                 
-            prior_2y_totcol = prior_2y_lab.filter(self.totcol_q )
-            prior_2y_totcol_max = prior_2y_totcol.aggregate( max=Max('labresult__result_float') )['max']
-            prior_2y_totcol_min = prior_2y_totcol.aggregate( min=Min('labresult__result_float') )['min']
-            prior_2y_totcol_date_max  =None
-            prior_2y_totcol_date_min =None
+            prior_2y_totcol_max, prior_2y_totcol_date_max, prior_2y_totcol_min,prior_2y_totcol_date_min =self.prior2ylab(prior_2y_lab,self.totcol_q)
                 
-            if prior_2y_totcol:
-                prior_2y_totcol_date_max = prior_2y_totcol.order_by('labresult__result_float')[0].date
-                prior_2y_totcol_date_min = prior_2y_totcol.order_by('-labresult__result_float')[0].date
-                  
-            prior_2y_alt = prior_2y_lab.filter(self.alt_q )
-            prior_2y_alt_max = prior_2y_alt.aggregate( max=Max('labresult__result_float') )['max']
-            prior_2y_alt_min = prior_2y_alt.aggregate( min=Min('labresult__result_float') )['min']
-            prior_2y_alt_date_max  =None
-            prior_2y_alt_date_min =None
-                
-            if prior_2y_alt:
-                prior_2y_alt_date_max = prior_2y_alt.order_by('labresult__result_float')[0].date
-                prior_2y_alt_date_min = prior_2y_alt.order_by('-labresult__result_float')[0].date
+            prior_2y_alt_max, prior_2y_alt_date_max, prior_2y_alt_min,prior_2y_alt_date_min =self.prior2ylab(prior_2y_lab,self.alt_q)
             
-            prior_2y_ast = prior_2y_lab.filter(self.ast_q )
-            prior_2y_ast_max = prior_2y_ast.aggregate( max=Max('labresult__result_float') )['max']
-            prior_2y_ast_min = prior_2y_ast.aggregate( min=Min('labresult__result_float') )['min']
-            prior_2y_ast_date_max  =None
-            prior_2y_ast_date_min =None
-                
-            if prior_2y_ast:
-                prior_2y_ast_date_max = prior_2y_ast.order_by('labresult__result_float')[0].date
-                prior_2y_ast_date_min = prior_2y_ast.order_by('-labresult__result_float')[0].date
+            prior_2y_ast_max, prior_2y_ast_date_max, prior_2y_ast_min,prior_2y_ast_date_min=self.prior2ylab(prior_2y_lab,self.ast_q)
                 
             early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate( max=Max('result_float') )['max']
             late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max']
@@ -1221,59 +1187,26 @@ class GestationalDiabetesReport(Report):
             else:
                 ga_1st_insulin =0
                  
-            # TODO check that result is the max not the min 
-            #or change to :
             ip_ogtt50_1hr_value = intrapartum.filter(self.ogtt50_1hr_q).aggregate( max=Max('labresult__result_float') )['max']
-            '''intrapartum_ogtt50_1hr_q =  intrapartum.filter(self.ogtt50_1hr_q).order_by('labresult__result_float')
-            ip_ogtt50_1hr_value =None
-            if intrapartum_ogtt50_1hr_q:
-                ip_ogtt50_1hr_value = intrapartum_ogtt50_1hrval_q[0].content_object.result_string
-            '''
-            intrapartum_ogtt75_fasting_q =  intrapartum.filter(self.ogtt75_fasting_q).order_by('labresult__result_float')
-            ip_ogtt75_fasting_value =0
-            if intrapartum_ogtt75_fasting_q:
-                ip_ogtt75_fasting_value = intrapartum_ogtt75_fasting_q[0].content_object.result_string
             
-            intrapartum_ogtt75_2hr_q =  intrapartum.filter(self.ogtt75_2hr_q).order_by('labresult__result_float')
-            ip_ogtt75_2hr_value =0
-            if intrapartum_ogtt75_2hr_q:
-                ip_ogtt75_2hr_value = intrapartum_ogtt75_2hr_q[0].content_object.result_string
-               
-            intrapartum_ogtt100_fasting_q =  intrapartum.filter(self.ogtt100_fasting_q).order_by('labresult__result_float')
-            ip_ogtt100_fasting_value =0
-            if intrapartum_ogtt100_fasting_q:
-                ip_ogtt100_fasting_value = intrapartum_ogtt100_fasting_q[0].content_object.result_string
+            ip_ogtt75_fasting_value =  intrapartum.filter(self.ogtt75_fasting_q).aggregate( max=Max('labresult__result_float') )['max']
+           
+            ip_ogtt75_2hr_value =  intrapartum.filter(self.ogtt75_2hr_q).aggregate( max=Max('labresult__result_float') )['max']
+              
+            ip_ogtt100_fasting_value =  intrapartum.filter(self.ogtt100_fasting_q).aggregate( max=Max('labresult__result_float') )['max']
             
-            intrapartum_ogtt100_1hr_q =  intrapartum.filter(self.ogtt100_1hr_q).order_by('labresult__result_float')
-            ip_ogtt100_1hr_value =0
-            if intrapartum_ogtt100_1hr_q:
-                ip_ogtt100_1hr_value = intrapartum_ogtt100_1hr_q[0].content_object.result_string
+            ip_ogtt100_1hr_value =  intrapartum.filter(self.ogtt100_1hr_q).aggregate( max=Max('labresult__result_float') )['max']
             
-            intrapartum_ogtt100_2hr_q =  intrapartum.filter(self.ogtt100_2hr_q).order_by('labresult__result_float')
-            ip_ogtt100_2hr_value =0
-            if intrapartum_ogtt100_2hr_q:
-                ip_ogtt100_2hr_value = intrapartum_ogtt100_2hr_q[0].content_object.result_string
+            ip_ogtt100_2hr_value =  intrapartum.filter(self.ogtt100_2hr_q).aggregate( max=Max('labresult__result_float') )['max']
             
-            intrapartum_ogtt100_3hr_q =  intrapartum.filter(self.ogtt100_3hr_q).order_by('labresult__result_float')
-            ip_ogtt100_3hr_value =0
-            if intrapartum_ogtt100_3hr_q:
-                ip_ogtt100_3hr_value = intrapartum_ogtt100_3hr_q[0].content_object.result_string
+            ip_ogtt100_3hr_value =  intrapartum.filter(self.ogtt100_3hr_q).aggregate( max=Max('labresult__result_float') )['max']
             
-            intrapartum_ogtt50_random_q =  intrapartum.filter(self.ogtt50_random_q).order_by('labresult__result_float')
-            ip_ogtt50_random_value =0
-            if intrapartum_ogtt50_random_q:
-                ip_ogtt50_random_value = intrapartum_ogtt50_random_q[0].content_object.result_string
+            ip_ogtt50_random_value =  intrapartum.filter(self.ogtt50_random_q).aggregate( max=Max('labresult__result_float') )['max']
             
-            postpartum_ogtt75_fasting_q =  postpartum.filter(self.ogtt75_fasting_q).order_by('labresult__result_float')
-            pp_ogtt75_fasting_value =0
-            if postpartum_ogtt75_fasting_q:
-                pp_ogtt75_fasting_value = postpartum_ogtt75_fasting_q[0].content_object.result_string
+            pp_ogtt75_fasting_value =  postpartum.filter(self.ogtt75_fasting_q).aggregate( max=Max('labresult__result_float') )['max']
             
-            postpartum_ogtt75_2hr_q =  postpartum.filter(self.ogtt75_2hr_q).order_by('labresult__result_float')
-            pp_ogtt75_2hr_value =0
-            if postpartum_ogtt75_2hr_q:
-                pp_ogtt75_2hr_value = postpartum_ogtt75_2hr_q[0].content_object.result_string
-               
+            pp_ogtt75_2hr_value =  postpartum.filter(self.ogtt75_2hr_q).aggregate( max=Max('labresult__result_float') )['max']
+              
             values = {
                 #'pregnancy_id': preg_ts.pk,#removed
                 'pregnancy': binary(True),
