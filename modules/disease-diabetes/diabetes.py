@@ -11,7 +11,7 @@
 @license: LGPL
 '''
 
-from ESP.emr.models import Encounter, LabOrder, LabResult, Patient, Prescription
+from ESP.emr.models import Encounter, LabOrder, LabResult, Patient, Prescription, Pregnancy
 from ESP.hef.base import AbstractLabTest, BaseHeuristic, DiagnosisHeuristic, \
     Dose, Icd9Query, LabOrderHeuristic, LabResultAnyHeuristic, \
     LabResultFixedThresholdHeuristic, LabResultPositiveHeuristic, \
@@ -21,7 +21,7 @@ from ESP.hef.models import Event, Timespan
 from ESP.nodis.base import DiseaseDefinition, Report
 from ESP.nodis.models import Case
 from ESP.utils.utils import log
-from ESP.utils.utils import log_query
+from ESP.utils.utils import log_query, binary
 from ESP.utils.utils import TODAY
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
@@ -719,20 +719,20 @@ class GestationalDiabetesReport(Report):
         'preg_start',
         'preg_end',
         'edd',
-        #'grava',# added from here
-        #'para',
-        #'term',
-        #'preterm',
-        #'outcome',
-        #'actual_date',
-        #'ga_delivery',
-        #'birth_weight',
-        #'birth_route', #(delivery)
+        'grava',# added from here
+        'para',
+        'term',
+        'preterm',
+        'outcome',
+        'actual_date',
+        'ga_delivery',
+        'birth_weight',
+        'birth_route', #(delivery)
         'pre-eclampsia',
         'hypertension', # to here
         'gdm_case', # Boolean
         'gdm_case--date',
-        #'ga_gdm_met', #(days) #added
+        'ga_gdm_met', #(days) #added
         'gdm_icd9--this_preg',
         'prior_gdm_case', # Boolean
         'prior_gdm_case--date',
@@ -740,22 +740,47 @@ class GestationalDiabetesReport(Report):
         'prior_polycistic',#added 
         'prior_pre_eclampsia',#added 
         'prior_hypertension',#added 
-        #'intrapartum--ogtt50-one hour',#added 
-        'intrapartum--ogtt50--threshold',
-        'intrapartum--ogtt50--threshold',
-        'intrapartum--ogtt75--fasting',
-        'intrapartum--ogtt75--2hour',#added 
+        'prior_liver_fatty', # added
+        'prior2y_LDL_date_max_value', #added
+        'prior2y_LDL_max_value', #added
+        'prior2y_LDL_date_min_value', #added
+        'prior2y_LDL_min_value', #added
+        'prior2y_HDL_date_max_value', #added
+        'prior2y_HDL_max_value', #added
+        'prior2y_HDL_date_min_value', #added
+        'prior2y_HDL_min_value', #added
+        'prior2y_Trig_date_max_value', #added
+        'prior2y_Trig_max_value', #added
+        'prior2y_Trig_date_min_value', #added
+        'prior2y_Trig_min_value', #added
+        'prior2y_TOTCol_date_max_value', #added
+        'prior2y_TOTCol_max_value', #added
+        'prior2y_TOTCol_date_min_value', #added
+        'prior2y_TOTCol_min_value', #added
+        'prior2y_AST_date_max_value', #added
+        'prior2y_AST_max_value', #added
+        'prior2y_AST_date_min_value', #added
+        'prior2y_AST_min_value', #added
+        'prior2y_ALT_date_max_value', #added
+        'prior2y_ALT_max_value', #added
+        'prior2y_ALT_date_min_value', #added
+        'prior2y_ALT_min_value', #added
+        'intrapartum--ogtt50-1hrval',#added 
+        'intrapartum--ogtt50--high--threshold',#added
+        'intrapartum--ogtt50--gdm--threshold',
+        'intrapartum--ogtt75--fastingval',#added
+        'intrapartum--ogtt75--2hrval',#added 
         'intrapartum--ogtt75--threshold',
-        #'intrapartum--ogtt100--fasting',#added 
-        #'intrapartum--ogtt100--1hour',#added 
-        #'intrapartum--ogtt100--2hour',#added 
-        #'intrapartum--ogtt100--3hour',#added 
+        'intrapartum--ogtt100--fastingval',#added 
+        'intrapartum--ogtt100--1hrval',#added 
+        'intrapartum--ogtt100--2hrval',#added 
+        'intrapartum--ogtt100--3hrval',#added 
         'intrapartum--ogtt100--threshold',
-        #'intrapartum_random_glucose',#added 
+        'intrapartum--ogtt50--random--val',#added 
         'postpartum--ogtt75--order',
         'postpartum--ogtt75--any_result',
-        'postpartum--ogtt75--fasting',#added 
-        'postpartum--ogtt75--2hour',#added 
+        'postpartum--ogtt75--fastingval',#added 
+        'postpartum--ogtt75--2hrval',#added 
         'postpartum--ogtt75--ifg_range',
         'postpartum--ogtt75--igt_range',
         'postpartum--ogtt75--dm_threshold',
@@ -766,7 +791,7 @@ class GestationalDiabetesReport(Report):
         'lancets_test_strips--this_preg',
         'lancets_test_strips--14_days_gdm_icd9',
         'insulin_rx',
-        #'ga_first_insuline_rx',#added 
+        'ga_1st_insulin',#added 
         'insuline_basal',#added 
         'insuline_bolus',#added 
         'insuline_basal_bolus',#added 
@@ -778,11 +803,16 @@ class GestationalDiabetesReport(Report):
     def __init__(self):
         self.pos_q = Q(name__endswith=':positive')
         self.a1c_q = Q(name__startswith='lx:a1c')
+        
         self.ogtt50_q = Q(name__startswith='lx:ogtt50')
-        self.ogtt50_threshold_q = Q(name__in = [
+        self.ogtt50_gdm_threshold_q = Q(name__in = [
             'lx:ogtt50-1hr:threshold:gte:190',
             'lx:ogtt50-random:threshold:gte:190',
             ])
+        self.ogtt50_high_threshold_q = self.ogtt50_q | Q(labresult__ref_high_float__gte =
+            F('labresult__result_float') )
+        self.ogtt50_1hr_q = Q(name__startswith='lx:ogtt50-1hr')
+        
         self.ogtt75_q = Q(name__startswith='lx:ogtt75')
         # OGTT75 intrapartum thresholds
         self.ogtt75_intra_thresh_q = Q(name__in = [
@@ -792,8 +822,9 @@ class GestationalDiabetesReport(Report):
             'lx:ogtt75-90min:threshold:gte:180',
             'lx:ogtt75-2hr:threshold:gte:153',
             ])
-        self.ogtt75_fasting =  Q(name__startswith='lx:ogtt75-fasting')
-        self.ogtt75_2hr =  Q(name__startswith='lx:ogtt75-2hr')
+        
+        self.ogtt75_fasting_q =  Q(name__startswith='lx:ogtt75-fasting')
+        self.ogtt75_2hr_q =  Q(name__startswith='lx:ogtt75-2hr')
         
         self.ogtt75_dm_q = Q(name__in = [
             'lx:ogtt75-fasting:threshold:gte:126',
@@ -810,6 +841,10 @@ class GestationalDiabetesReport(Report):
             ])
         self.ogtt75_ifg_q = Q(name='lx:ogtt75-fasting:range:gte:100:lte:125')
         self.ogtt100_q = Q(name__startswith='lx:ogtt100')
+        self.ogtt100_fasting_q =  Q(name__startswith='lx:ogtt100-fasting')
+        self.ogtt100_1hr_q =  Q(name__startswith='lx:ogtt100-1hr')
+        self.ogtt100_2hr_q =  Q(name__startswith='lx:ogtt100-2hr')
+        self.ogtt100_3hr_q =  Q(name__startswith='lx:ogtt100-3hr')
         self.ogtt100_threshold_q = Q(name__in=[
             'lx:ogtt100-fasting-urine:positive',
             'lx:ogtt100-fasting:threshold:gte:95',
@@ -821,10 +856,19 @@ class GestationalDiabetesReport(Report):
             'lx:ogtt100-4hr:threshold:gte:140',
             'lx:ogtt100-5hr:threshold:gte:140',
             ])
+        self.ogtt50_random_q =  Q(name__startswith='lx:ogtt50-random')
+        
         self.order_q = Q(name__endswith=':order')
         self.any_q = Q(name__endswith=':any-result')
         self.dxgdm_q = Q(name='dx:gestational-diabetes')
         self.lancets_q = Q(name__in=['rx:test-strips', 'rx:lancets'])
+        self.ast_q = Q(name__startswith='lx:ast')
+        self.alt_q =  Q(name__startswith='lx:alt')
+        self.ldl_q =  Q(name__startswith='lx:cholesterol-ldl')
+        self.hdl_q =  Q(name__startswith='lx:cholesterol-hdl')
+        self.trig_q =  Q(name__startswith='lx:triglycerides')
+        self.totcol_q =  Q(name__startswith='lx:cholesterol-total')
+        
         
     def run(self, riskscape=False):
         log.info('Generating GDM report')
@@ -859,6 +903,7 @@ class GestationalDiabetesReport(Report):
         gdm_case_qs = Case.objects.filter(condition='diabetes:gestational', patient=patient)
         frank_dm_case_qs = Case.objects.filter(condition__startswith='diabetes:type-', patient=patient).order_by('date')
         a1c_lab_qs = AbstractLabTest('a1c').lab_results.filter(patient=patient)
+        
         #
         # Populate values that will be used all of this patient's pregnancies
         #
@@ -875,15 +920,15 @@ class GestationalDiabetesReport(Report):
             'date_of_birth': patient.date_of_birth,
             'ethnicity': patient.race,
             'zip_code': zip_code,
-            #gdm_icd9--any_time': bool(event_qs.filter(self.dxgdm_q)),
-            'frank_diabetes--ever': bool(frank_dm_case_qs),
-            #lancets_test_strips--any_time': bool(event_qs.filter(self.lancets_q)),
+            #gdm_icd9--any_time': bool(event_qs.filter(self.dxgdm_q)),#removed
+            'frank_diabetes--ever': binary(frank_dm_case_qs),
+            #lancets_test_strips--any_time': bool(event_qs.filter(self.lancets_q)),#rem
             }
         if frank_dm_case_qs:
             first_dm_case = frank_dm_case_qs[0]
             patient_values['frank_diabetes--date'] = first_dm_case.date
             patient_values['frank_diabetes--type'] = first_dm_case.condition
-            #atient_values['frank_diabetes--case_id'] = first_dm_case.pk
+            #patient_values['frank_diabetes--case_id'] = first_dm_case.pk #rem
         #
         # Generate a row for each pregnancy (or 1 row if no pregs found)
         #
@@ -892,7 +937,60 @@ class GestationalDiabetesReport(Report):
             writer.writerow(patient_values)
             return # Nothing more to do for this patient
         for preg_ts in preg_ts_qs:
-            #
+            # Find the pregnancy object for this timespan if there is any
+            # ts.enddate= actual date, otherwise use edd. 
+            
+            if preg_ts.end_date:
+                pregnancy = Pregnancy.objects.filter(
+                    patient = patient,
+                    date__gt = preg_ts.start_date,
+                    date__lte = preg_ts.end_date + relativedelta(days=30)
+                    )
+                if not pregnancy:
+                    pregnancy = Pregnancy.objects.filter(
+                        patient = patient,
+                        edd__gt = preg_ts.start_date,
+                        edd__lte = preg_ts.end_date + relativedelta(days=30)
+                    )
+            else: # no end date in time span, it prossibly current pregnancy and check for next 9 months
+                 pregnancy = Pregnancy.objects.filter(
+                    patient = patient,
+                    date__gt = preg_ts.start_date,
+                    date__lte = preg_ts.start_date + relativedelta(months=9)
+                    )
+                 if not pregnancy:
+                    pregnancy = Pregnancy.objects.filter(
+                        patient = patient,
+                        edd__gt = preg_ts.start_date,
+                        edd__lte = preg_ts.start_date + relativedelta(months=9)
+                    )       
+            
+            if pregnancy:
+                pregnancy_values = {
+                'grava' : pregnancy.gravida,
+                'para' : pregnancy.parity,
+                'term' : pregnancy.term,
+                'preterm' : pregnancy.preterm,
+                'outcome' : pregnancy.outcome,
+                'actual_date' : pregnancy.date,
+                'ga_delivery' : pregnancy.ga_delivery,
+                'birth_weight' : pregnancy.birth_weight,
+                'birth_route' : pregnancy.delivery,
+                
+                }
+            else:
+                pregnancy_values = {
+                'grava' : None,
+                'para' :None,
+                'term' : None,
+                'preterm' : None,
+                'outcome' : None,
+                'actual_date' : None,
+                'ga_delivery' : None,
+                'birth_weight' : None,
+                'birth_route' :None,
+                
+                }
             # Find BMI closes to onset of pregnancy
             #
             bmi_qs = Encounter.objects.filter(
@@ -924,6 +1022,7 @@ class GestationalDiabetesReport(Report):
                 date__gte = preg_ts.start_date,
                 date__lte = end_date,
                 ).order_by('date')
+                
             # Note GDM prior does not currently look for the IDCD9 in 
             # isolation, as spec requires
             gdm_prior = gdm_case_qs.filter(date__lt=preg_ts.start_date).order_by('-date')
@@ -983,10 +1082,15 @@ class GestationalDiabetesReport(Report):
                 edd = edd_qs[0].edd
             else:
                 edd = None
+             
             if gdm_this_preg:
                 gdm_date = gdm_this_preg[0].date
+                ga_gdm_met = gdm_this_preg[0].date - preg_ts.start_date
+                ga_gdm_met = ga_gdm_met.days
             else:
                 gdm_date = None
+                ga_gdm_met = 0
+            
                
             pre_eclampsia_icd9s = ['642.4','642.5','642.6', '642.7']
             pre_eclampsia = Encounter.objects.filter(
@@ -996,32 +1100,102 @@ class GestationalDiabetesReport(Report):
                 icd9_codes__code__in=pre_eclampsia_icd9s 
                 )
            
-            hypertension_icd9s = ['642.3','642.9']
+            hypertension_inpreg_icd9s = ['642.3','642.9']
             hypertension = Encounter.objects.filter(
                 patient = patient,
                 date__gte = preg_ts.start_date,
                 date__lte = preg_ts.start_date + relativedelta(days=30),
-                icd9_codes__code__in=hypertension_icd9s 
+                icd9_codes__code__startswith=hypertension_inpreg_icd9s 
                 )
             
-            polycistic_icd9 = ['256.4 ']
-            prior_polycistic_twice = Encounter.objects.filter(
+            prior_encounter = Encounter.objects.filter(
                 patient = patient,
-                date__lte = preg_ts.start_date ,
+                date__lte = preg_ts.start_date
+                )
+                
+            polycistic_icd9 = ['256.4 ']
+            prior_polycistic_twice = prior_encounter.filter(
                 icd9_codes__code__in=polycistic_icd9 
                 ).annotate(count=Count('pk')).filter(count__gte=2)
              
-            prior_pre_eclampsia_twice = Encounter.objects.filter(
-                patient = patient,
-                date__lte = preg_ts.start_date ,
+            prior_pre_eclampsia_twice = prior_encounter.filter(
                 icd9_codes__code__in=pre_eclampsia_icd9s 
                 ).annotate(count=Count('pk')).filter(count__gte=2)
              
-            prior_hypertension_twice = Encounter.objects.filter(
-                patient = patient,
-                date__lte = preg_ts.start_date ,
-                icd9_codes__code__startswith='401' 
+            prior_hypertension_twice = prior_encounter.filter(
+                icd9_codes__code__startswith= '401' #outside pregnancy
                 ).annotate(count=Count('pk')).filter(count__gte=2)
+                
+            liver_fatty_disease_icd9s = ['571.0', '571.8' ]
+            prior_liver_fatty_disease =  prior_encounter.filter(
+                 icd9_codes__code__startswith=liver_fatty_disease_icd9s 
+                )
+            
+            prior_2y_lab = prepartum.filter(
+                patient = patient,
+                date__lte = preg_ts.start_date + relativedelta(years=2),
+                patient__event__name__startswith ='lx:',
+                )
+            
+            prior_2y_ldl = prior_2y_lab.filter(self.ldl_q )
+            prior_2y_ldl_max = prior_2y_ldl.aggregate( max=Max('labresult__result_float') )['max']
+            prior_2y_ldl_min = prior_2y_ldl.aggregate( min=Min('labresult__result_float') )['min']
+            prior_2y_ldl_date_max  =None
+            prior_2y_ldl_date_min =None
+                
+            if prior_2y_ldl:
+                prior_2y_ldl_date_max = prior_2y_ldl.order_by('labresult__result_float')[0].date
+                prior_2y_ldl_date_min = prior_2y_ldl.order_by('-labresult__result_float')[0].date
+                
+            prior_2y_hdl = prior_2y_lab.filter(self.hdl_q )
+            prior_2y_hdl_max = prior_2y_hdl.aggregate( max=Max('labresult__result_float') )['max']
+            prior_2y_hdl_min = prior_2y_hdl.aggregate( min=Min('labresult__result_float') )['min']
+            prior_2y_hdl_date_max  =None
+            prior_2y_hdl_date_min =None
+                
+            if prior_2y_hdl:
+                prior_2y_hdl_date_max = prior_2y_hdl.order_by('labresult__result_float')[0].date
+                prior_2y_hdl_date_min = prior_2y_hdl.order_by('-labresult__result_float')[0].date    
+            
+            prior_2y_trig = prior_2y_lab.filter(self.trig_q )
+            prior_2y_trig_max = prior_2y_trig.aggregate( max=Max('labresult__result_float') )['max']
+            prior_2y_trig_min = prior_2y_trig.aggregate( min=Min('labresult__result_float') )['min']
+            prior_2y_trig_date_max  =None
+            prior_2y_trig_date_min =None
+                
+            if prior_2y_trig:
+                prior_2y_trig_date_max = prior_2y_trig.order_by('labresult__result_float')[0].date
+                prior_2y_trig_date_min = prior_2y_trig.order_by('-labresult__result_float')[0].date
+                
+            prior_2y_totcol = prior_2y_lab.filter(self.totcol_q )
+            prior_2y_totcol_max = prior_2y_totcol.aggregate( max=Max('labresult__result_float') )['max']
+            prior_2y_totcol_min = prior_2y_totcol.aggregate( min=Min('labresult__result_float') )['min']
+            prior_2y_totcol_date_max  =None
+            prior_2y_totcol_date_min =None
+                
+            if prior_2y_totcol:
+                prior_2y_totcol_date_max = prior_2y_totcol.order_by('labresult__result_float')[0].date
+                prior_2y_totcol_date_min = prior_2y_totcol.order_by('-labresult__result_float')[0].date
+                  
+            prior_2y_alt = prior_2y_lab.filter(self.alt_q )
+            prior_2y_alt_max = prior_2y_alt.aggregate( max=Max('labresult__result_float') )['max']
+            prior_2y_alt_min = prior_2y_alt.aggregate( min=Min('labresult__result_float') )['min']
+            prior_2y_alt_date_max  =None
+            prior_2y_alt_date_min =None
+                
+            if prior_2y_alt:
+                prior_2y_alt_date_max = prior_2y_alt.order_by('labresult__result_float')[0].date
+                prior_2y_alt_date_min = prior_2y_alt.order_by('-labresult__result_float')[0].date
+            
+            prior_2y_ast = prior_2y_lab.filter(self.ast_q )
+            prior_2y_ast_max = prior_2y_ast.aggregate( max=Max('labresult__result_float') )['max']
+            prior_2y_ast_min = prior_2y_ast.aggregate( min=Min('labresult__result_float') )['min']
+            prior_2y_ast_date_max  =None
+            prior_2y_ast_date_min =None
+                
+            if prior_2y_ast:
+                prior_2y_ast_date_max = prior_2y_ast.order_by('labresult__result_float')[0].date
+                prior_2y_ast_date_min = prior_2y_ast.order_by('-labresult__result_float')[0].date
                 
             early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate( max=Max('result_float') )['max']
             late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max']
@@ -1029,8 +1203,8 @@ class GestationalDiabetesReport(Report):
                 values('patient').annotate(count=Count('pk')).\
                 filter(count__gte=2).values_list('patient', flat=True).distinct()
             insulin_qs = intrapartum.filter(name='rx--insulin')
-            basal = ['NPH (Humulin N)','Lantus (Glargine)' ]
-            bolus = ['Novolog (Aspart)','Humalog (Lispro)','Regular insulin (Humulin R)']
+            basal = ['NPH','Humulin N','Lantus','Glargine' ]
+            bolus = ['Novolog','Aspart','Humalog','Lispro','Regular insulin','Humulin R']
             insulin_basal =False
             insulin_bolus = False
             if insulin_qs:
@@ -1041,69 +1215,144 @@ class GestationalDiabetesReport(Report):
                     if insulin.filter(content_object__name__icontains = bolus):
                         insulin_bolus = True
                         return
-            # check that result is the max not the min TODO 
-            postpartum_ogtt75_fasting =  postpartum.filter(self.ogtt75_fasting).order_by('labresult__result_string')
-            pp_ogtt75_fasting_value =0
-            if postpartum_ogtt75_fasting:
-                pp_ogtt75_fasting_value = postpartum_ogtt75_fasting[0].labresult.result_string
+                # days between preg start and insulin rx date
+                ga_1st_insulin=  insulin_qs[0].date - preg_ts.start_date
+                ga_1st_insulin = ga_1st_insulin.days
+            else:
+                ga_1st_insulin =0
+                 
+            # TODO check that result is the max not the min 
+            #or change to :
+            ip_ogtt50_1hr_value = intrapartum.filter(self.ogtt50_1hr_q).aggregate( max=Max('labresult__result_float') )['max']
+            '''intrapartum_ogtt50_1hr_q =  intrapartum.filter(self.ogtt50_1hr_q).order_by('labresult__result_float')
+            ip_ogtt50_1hr_value =None
+            if intrapartum_ogtt50_1hr_q:
+                ip_ogtt50_1hr_value = intrapartum_ogtt50_1hrval_q[0].content_object.result_string
+            '''
+            intrapartum_ogtt75_fasting_q =  intrapartum.filter(self.ogtt75_fasting_q).order_by('labresult__result_float')
+            ip_ogtt75_fasting_value =0
+            if intrapartum_ogtt75_fasting_q:
+                ip_ogtt75_fasting_value = intrapartum_ogtt75_fasting_q[0].content_object.result_string
             
-            postpartum_ogtt75_2hr =  postpartum.filter(self.ogtt75_2hr).order_by('labresult__result_string')
+            intrapartum_ogtt75_2hr_q =  intrapartum.filter(self.ogtt75_2hr_q).order_by('labresult__result_float')
+            ip_ogtt75_2hr_value =0
+            if intrapartum_ogtt75_2hr_q:
+                ip_ogtt75_2hr_value = intrapartum_ogtt75_2hr_q[0].content_object.result_string
+               
+            intrapartum_ogtt100_fasting_q =  intrapartum.filter(self.ogtt100_fasting_q).order_by('labresult__result_float')
+            ip_ogtt100_fasting_value =0
+            if intrapartum_ogtt100_fasting_q:
+                ip_ogtt100_fasting_value = intrapartum_ogtt100_fasting_q[0].content_object.result_string
+            
+            intrapartum_ogtt100_1hr_q =  intrapartum.filter(self.ogtt100_1hr_q).order_by('labresult__result_float')
+            ip_ogtt100_1hr_value =0
+            if intrapartum_ogtt100_1hr_q:
+                ip_ogtt100_1hr_value = intrapartum_ogtt100_1hr_q[0].content_object.result_string
+            
+            intrapartum_ogtt100_2hr_q =  intrapartum.filter(self.ogtt100_2hr_q).order_by('labresult__result_float')
+            ip_ogtt100_2hr_value =0
+            if intrapartum_ogtt100_2hr_q:
+                ip_ogtt100_2hr_value = intrapartum_ogtt100_2hr_q[0].content_object.result_string
+            
+            intrapartum_ogtt100_3hr_q =  intrapartum.filter(self.ogtt100_3hr_q).order_by('labresult__result_float')
+            ip_ogtt100_3hr_value =0
+            if intrapartum_ogtt100_3hr_q:
+                ip_ogtt100_3hr_value = intrapartum_ogtt100_3hr_q[0].content_object.result_string
+            
+            intrapartum_ogtt50_random_q =  intrapartum.filter(self.ogtt50_random_q).order_by('labresult__result_float')
+            ip_ogtt50_random_value =0
+            if intrapartum_ogtt50_random_q:
+                ip_ogtt50_random_value = intrapartum_ogtt50_random_q[0].content_object.result_string
+            
+            postpartum_ogtt75_fasting_q =  postpartum.filter(self.ogtt75_fasting_q).order_by('labresult__result_float')
+            pp_ogtt75_fasting_value =0
+            if postpartum_ogtt75_fasting_q:
+                pp_ogtt75_fasting_value = postpartum_ogtt75_fasting_q[0].content_object.result_string
+            
+            postpartum_ogtt75_2hr_q =  postpartum.filter(self.ogtt75_2hr_q).order_by('labresult__result_float')
             pp_ogtt75_2hr_value =0
-            if postpartum_ogtt75_2hr:
-                pp_ogtt75_2hr_value = postpartum_ogtt75_2hr[0].labresult.result_string
+            if postpartum_ogtt75_2hr_q:
+                pp_ogtt75_2hr_value = postpartum_ogtt75_2hr_q[0].content_object.result_string
                
             values = {
                 #'pregnancy_id': preg_ts.pk,#removed
-                'pregnancy': True,
+                'pregnancy': binary(True),
                 'preg_start': preg_ts.start_date,
                 'preg_end': end_date,
                 'edd': edd,
                 'bmi': bmi,
-                #grava,
-                #para, #parity
-                #term,
-                #preterm,
-                #outcome,
-                #actual_date,
-                #ga_delivery,
-                #birth_weith,
-                #birth_route, # delivery
-                'pre-eclampsia' : bool(pre_eclampsia),
-                'hypertension' : bool(hypertension),
-                'gdm_case': bool( gdm_this_preg ),
+                'pre-eclampsia' : binary(pre_eclampsia),
+                'hypertension' : binary(hypertension),
+                'gdm_case': binary( gdm_this_preg ),
                 'gdm_case--date': gdm_date,
-                'gdm_icd9--this_preg': bool( intrapartum.filter(self.dxgdm_q) ),
-                'prior_gdm_case': bool( gdm_prior ),
+                'ga_gdm_met' : ga_gdm_met ,  #added
+                'gdm_icd9--this_preg': binary( intrapartum.filter(self.dxgdm_q) ),
+                'prior_gdm_case': binary( gdm_prior ),
                 'prior_gdm_case--date': gdm_prior_date,
-                'prior_gdm_icd9--this_preg': bool( prepartum.filter(self.dxgdm_q) ),
-                'prior_polycistic' : bool( prior_polycistic_twice), #added 
-                'prior_pre_eclampsia' : bool(prior_pre_eclampsia_twice),#added 
-                'prior_hypertension' : bool(prior_hypertension_twice),#added 
-                'intrapartum--ogtt50--threshold': bool( intrapartum.filter(self.ogtt50_threshold_q) ),
-                'intrapartum--ogtt75--threshold': bool( intrapartum.filter(self.ogtt75_intra_thresh_q) ),
-                'intrapartum--ogtt100--threshold': bool( ogtt100_twice_qs ),
-                'postpartum--ogtt75--order': bool( postpartum.filter(self.ogtt75_q, self.order_q) ),
-                'postpartum--ogtt75--any_result': bool( postpartum.filter(self.ogtt75_q, self.any_q) ),
-                'postpartum--ogtt75--fasting': pp_ogtt75_fasting_value,#added
-                'postpartum--ogtt75--2hour':  pp_ogtt75_2hr_value,#added
-                'postpartum--ogtt75--ifg_range': bool( postpartum.filter(self.ogtt75_ifg_q) ),
-                'postpartum--ogtt75--igt_range': bool( postpartum.filter(self.ogtt75_igt_q) ),
-                'postpartum--ogtt75--dm_threshold': bool( postpartum.filter(self.ogtt75_dm_q) ),
+                'prior_gdm_icd9--this_preg': binary( prepartum.filter(self.dxgdm_q) ),
+                'prior_polycistic' : binary( prior_polycistic_twice), #added 
+                'prior_pre_eclampsia' : binary(prior_pre_eclampsia_twice),#added 
+                'prior_hypertension' : binary(prior_hypertension_twice),#added 
+                'prior_liver_fatty' :  binary(prior_liver_fatty_disease), #added
+                'prior2y_LDL_date_max_value' : prior_2y_ldl_date_max , #added
+                'prior2y_LDL_max_value' : prior_2y_ldl_max, #added
+                'prior2y_LDL_date_min_value' : prior_2y_ldl_date_min, #added
+                'prior2y_LDL_min_value' : prior_2y_ldl_min, #added
+                'prior2y_HDL_date_max_value' : prior_2y_hdl_date_max , #added
+                'prior2y_HDL_max_value' : prior_2y_hdl_max, #added
+                'prior2y_HDL_date_min_value' : prior_2y_hdl_date_min , #added
+                'prior2y_HDL_min_value' : prior_2y_hdl_min, #added
+                'prior2y_Trig_date_max_value' : prior_2y_trig_date_max , #added
+                'prior2y_Trig_max_value' : prior_2y_trig_max, #added
+                'prior2y_Trig_date_min_value' : prior_2y_trig_date_min , #added
+                'prior2y_Trig_min_value' : prior_2y_trig_min, #added
+                'prior2y_TOTCol_date_max_value' : prior_2y_totcol_date_max , #added
+                'prior2y_TOTCol_max_value' : prior_2y_totcol_max, #added
+                'prior2y_TOTCol_date_min_value' : prior_2y_totcol_date_min , #added
+                'prior2y_TOTCol_min_value' : prior_2y_totcol_min, #added
+                'prior2y_AST_date_max_value' : prior_2y_ast_date_max , #added
+                'prior2y_AST_max_value' : prior_2y_ast_max, #added
+                'prior2y_AST_date_min_value' : prior_2y_ast_date_min , #added
+                'prior2y_AST_min_value' : prior_2y_ast_min, #added
+                'prior2y_ALT_date_max_value' : prior_2y_alt_date_max , #added
+                'prior2y_ALT_max_value' : prior_2y_alt_max, #added
+                'prior2y_ALT_date_min_value' : prior_2y_alt_date_min , #added
+                'prior2y_ALT_min_value' : prior_2y_alt_min, #added
+                'intrapartum--ogtt50-1hrval' : ip_ogtt50_1hr_value,#added
+                'intrapartum--ogtt50--high--threshold': binary( intrapartum.filter(self.ogtt50_high_threshold_q) ),
+                'intrapartum--ogtt50--gdm--threshold': binary( intrapartum.filter(self.ogtt50_gdm_threshold_q) ),
+                'intrapartum--ogtt75--fastingval': ip_ogtt75_fasting_value ,#added
+                'intrapartum--ogtt75--2hrval' : ip_ogtt75_2hr_value,#added 
+                'intrapartum--ogtt75--threshold': binary( intrapartum.filter(self.ogtt75_intra_thresh_q) ),
+                'intrapartum--ogtt100--fastingval' : ip_ogtt100_fasting_value,#added 
+                'intrapartum--ogtt100--1hrval' : ip_ogtt100_1hr_value,#added 
+                'intrapartum--ogtt100--2hrval' : ip_ogtt100_2hr_value,#added 
+                'intrapartum--ogtt100--3hrval' : ip_ogtt100_3hr_value,#added 
+                'intrapartum--ogtt100--threshold': binary( ogtt100_twice_qs ),
+                'intrapartum--ogtt50--random--val' : ip_ogtt50_random_value,#added 
+                'postpartum--ogtt75--order': binary( postpartum.filter(self.ogtt75_q, self.order_q) ),
+                'postpartum--ogtt75--any_result': binary( postpartum.filter(self.ogtt75_q, self.any_q) ),
+                'postpartum--ogtt75--fastingval': pp_ogtt75_fasting_value,#added
+                'postpartum--ogtt75--2hrval':  pp_ogtt75_2hr_value,#added
+                'postpartum--ogtt75--ifg_range': binary( postpartum.filter(self.ogtt75_ifg_q) ),
+                'postpartum--ogtt75--igt_range': binary( postpartum.filter(self.ogtt75_igt_q) ),
+                'postpartum--ogtt75--dm_threshold': binary( postpartum.filter(self.ogtt75_dm_q) ),
                  #'early_postpartum--a1c--order': bool( early_pp.filter(self.a1c_q, self.order_q) ),#removed
                 'early_postpartum--a1c--max': early_a1c_max,
                 'late_postpartum--a1c--max': late_a1c_max,
-                'referral_to_nutrition': bool(nutrition_referral),
-                'lancets_test_strips--this_preg': bool( intrapartum.filter(self.lancets_q) ),
-                'lancets_test_strips--14_days_gdm_icd9': bool( lancets_and_icd9 ),
-                'insulin_rx': bool( insulin_qs ),
-                #add ga_at first insulin rx # added
-                'insuline_basal': insulin_basal,
-                'insuline_bolus': insulin_bolus,
-                'insuline_basal_bolus': insulin_basal and insulin_bolus,
-                'metformin_rx': bool( intrapartum.filter(name='rx--metformin') ),
-                'glyburide_rx': bool( intrapartum.filter(name='rx--glyburide') ),
+                'referral_to_nutrition': binary(nutrition_referral),
+                'lancets_test_strips--this_preg': binary( intrapartum.filter(self.lancets_q) ),
+                'lancets_test_strips--14_days_gdm_icd9': binary( lancets_and_icd9 ),
+                'insulin_rx': binary( insulin_qs ),
+                'ga_1st_insulin' : ga_1st_insulin, # added
+                'insuline_basal': binary(insulin_basal),
+                'insuline_bolus': binary(insulin_bolus),
+                'insuline_basal_bolus': binary(insulin_basal and insulin_bolus),
+                'metformin_rx': binary( intrapartum.filter(name='rx--metformin') ),
+                'glyburide_rx': binary( intrapartum.filter(name='rx--glyburide') ),
                 }
             values.update(patient_values)
+            values.update(pregnancy_values)
             writer.writerow(values)
 
 
