@@ -40,7 +40,7 @@ PREG_MARGIN = relativedelta(days=30)
 
 class EDDHeuristic(BaseEventHeuristic):
     
-    event_names = ['enc:pregnancy:edd',]
+    event_names = ['enc:pregnancy:edd'] 
     
     uri = 'urn:x-esphealth:heuristic:channing:encounter:edd:v1'
     
@@ -95,7 +95,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         # ICD9
         #
         heuristics.append( DiagnosisHeuristic(
-            name = 'pregnancy:onset',
+            name = 'pregnancy:onset', # date of icd9 - 30 days
             icd9_queries = [
                 Icd9Query(starts_with = 'V22.'),
                 Icd9Query(starts_with = 'V23.'),
@@ -107,6 +107,16 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         #-------------------------------------------------------------------------------
         #
+        # Outcome of Delivery
+        #
+        heuristics.append( DiagnosisHeuristic(
+            name = 'pregnancy:delivery-outcome',
+            icd9_queries = [
+                Icd9Query(starts_with = 'V27.'),
+                ]
+            ) )
+        return heuristics
+    #
         # Postpartum care
         #
         heuristics.append( DiagnosisHeuristic(
@@ -142,7 +152,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 Icd9Query(starts_with = '635.'),
                 Icd9Query(starts_with = '636.'),
                 Icd9Query(starts_with = '637.'),
-                # No 638.?
+                # No 638.
                 Icd9Query(starts_with = '639.'),
                 ]
             ) )
@@ -240,16 +250,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 Icd9Query(starts_with = '669.'),
                 ]
             ) )
-        #
-        # Outcome of Delivery
-        #
-        heuristics.append( DiagnosisHeuristic(
-            name = 'pregnancy:delivery-outcome',
-            icd9_queries = [
-                Icd9Query(starts_with = 'V27.'),
-                ]
-            ) )
-        return heuristics
+        
     
     def __init__(self):
         #
@@ -401,7 +402,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         @return: A plausible EDD, if one exists
         @rtype: Date or None
         '''
-        # TODO: kissue 348 Check with Mike Klompas about whether min EDD (as returned by 
+        # TODO: issue 348 Check with Mike Klompas about whether min EDD (as returned by 
         # existing code) or EDD of chronologically latest EDD-encounter is desired.
         edd_event_qs = Event.objects.filter(name='enc:pregnancy:edd')
         edd_event_qs = edd_event_qs.filter(patient=patient)
