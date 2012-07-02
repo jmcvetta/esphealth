@@ -137,7 +137,12 @@ class ORC(Segment):
         Field('control_reason_code'),
         Field('entering_organization'),
         Field('entering_device'),
-        Field('action_by')
+        Field('action_by'),
+        Field('Benefic_notice_code'),
+        Field('ordering_facility_name'),
+        Field('ordering_facility_address'),
+        Field('ordering_facility_phone'),
+        Field('ordering_provider_address')
         ]
         
 
