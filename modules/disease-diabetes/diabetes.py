@@ -68,6 +68,21 @@ class Diabetes(DiseaseDefinition):
     @property
     def event_heuristics(self):
         heuristics = []
+        
+        #
+        # Lab Orders
+        # 
+        for test_name in [
+            'ogtt75-fasting',
+            'ogtt75-fasting-urine',
+            'ogtt75-30min',
+            'ogtt75-1hr',
+            'ogtt75-90min',
+            'ogtt75-2hr',
+            ]:
+            heuristic_list.append( LabOrderHeuristic(
+                test_name = test_name,
+                ))
         #
         # Any Result Tests
         #
@@ -75,6 +90,7 @@ class Diabetes(DiseaseDefinition):
             'c-peptide',
             # Complete OGTT75 series
             'ogtt75-fasting',
+            'ogtt75-fasting-urine',
             'ogtt75-30min',
             'ogtt75-1hr',
             'ogtt75-90min',
@@ -86,6 +102,7 @@ class Diabetes(DiseaseDefinition):
         #
         for test_name in [
             'ogtt100-fasting-urine',
+            'ogtt75-fasting-urine',
             ]:
             heuristics.append(LabResultPositiveHeuristic(test_name=test_name))
         #
@@ -94,7 +111,7 @@ class Diabetes(DiseaseDefinition):
         for test_name, match_type, threshold in [
                        
             # Fasting OGTT
-            ('ogtt50-fasting', 'gte', 126),
+            ('ogtt50-fasting', 'gte', 126), 
             ('ogtt75-fasting', 'gte', 126),
             ('ogtt100-fasting', 'gte', 126),
             # OGTT50
@@ -706,11 +723,11 @@ class GestationalDiabetesReport(Report):
         'zip_code',
         'bmi',
         #gdm_icd9--any_time',#no
-        'frank_diabetes--ever',
-        'frank_diabetes--date',
+        'frank_diabetes_ever',
+        'frank_diabetes_date',
         #frank_diabetes--case_id',#no
         #lancets_test_strips--any_time',#no
-        'frank_diabetes--type',#added
+        'frank_diabetes_type',#added
         #
         # Per-pregnancy fields
         #
@@ -728,15 +745,15 @@ class GestationalDiabetesReport(Report):
         'ga_delivery',
         'birth_weight',
         'birth_route', #(delivery)
-        'pre-eclampsia',
+        'pre_eclampsia',
         'hypertension', # to here
         'gdm_case', # Boolean
-        'gdm_case--date',
+        'gdm_case_date',
         'ga_gdm_met', #(days) #added
-        'gdm_icd9--this_preg',
+        'gdm_icd9_this_preg', # extra?
         'prior_gdm_case', # Boolean
-        'prior_gdm_case--date',
-        'prior_gdm_icd9--this_preg',
+        'prior_gdm_case_date',
+        'prior_gdm_icd9_this_preg', #extra ?
         'prior_polycistic',#added 
         'prior_pre_eclampsia',#added 
         'prior_hypertension',#added 
@@ -765,36 +782,37 @@ class GestationalDiabetesReport(Report):
         'prior2y_ALT_max_value', #added
         'prior2y_ALT_date_min_value', #added
         'prior2y_ALT_min_value', #added
-        'intrapartum--ogtt50-1hrval',#added 
-        'intrapartum--ogtt50--high--threshold',#added
-        'intrapartum--ogtt50--gdm--threshold',
-        'intrapartum--ogtt75--fastingval',#added
-        'intrapartum--ogtt75--2hrval',#added 
-        'intrapartum--ogtt75--threshold',
-        'intrapartum--ogtt100--fastingval',#added 
-        'intrapartum--ogtt100--1hrval',#added 
-        'intrapartum--ogtt100--2hrval',#added 
-        'intrapartum--ogtt100--3hrval',#added 
-        'intrapartum--ogtt100--threshold',
-        'intrapartum--ogtt50--random--val',#added 
-        'postpartum--ogtt75--order',
-        'postpartum--ogtt75--any_result',
-        'postpartum--ogtt75--fastingval',#added 
-        'postpartum--ogtt75--2hrval',#added 
-        'postpartum--ogtt75--ifg_range',
-        'postpartum--ogtt75--igt_range',
-        'postpartum--ogtt75--dm_threshold',
+        'obfastingglucose_positive', #added  
+        'intrapartum_ogtt50_1hr_max_val',#added 
+        'intrapartum_ogtt50_ref_high',#added
+        'intrapartum_ogtt50_gdm_interp',
+        'intrapartum_ogtt75_fasting_max_val',#added
+        'intrapartum_ogtt75_2hr_max_val',#added 
+        'intrapartum_ogtt75_interp',
+        'intrapartum_ogtt100_fasting_max_val',#added 
+        'intrapartum_ogtt100_1hr_max_val',#added 
+        'intrapartum_ogtt100_2hr_max_val',#added 
+        'intrapartum_ogtt100_3hr_max_val',#added 
+        'intrapartum_ogtt100_interp',
+        'intrapartum_ogtt50_random_max_val',#added 
+        'postpartum_ogtt75_order',
+        'postpartum_ogtt75_any_result',
+        'postpartum_ogtt75_fasting_max_val',#added 
+        'postpartum_ogtt75_2hr_max_val',#added 
+        'postpartum_ogtt75_ifg_range_met',
+        'postpartum_ogtt75_igt_range_met',
+        'postpartum_ogtt75_dm_range_met',
         #'early_postpartum--a1c--order',#no
-        'early_postpartum--a1c--max',
-        'late_postpartum--a1c--max',
+        'early_postpartum_a1c_max_val',
+        'late_postpartum_a1c_max_val',
         'referral_to_nutrition',
-        'lancets_test_strips--this_preg',
-        'lancets_test_strips--14_days_gdm_icd9',
+        'lancets_test_strips_this_preg',
+        'lancets_test_strips_14_days_gdm_icd9',
         'insulin_rx',
         'ga_1st_insulin',#added 
-        'insuline_basal',#added 
-        'insuline_bolus',#added 
-        'insuline_basal_bolus',#added 
+        'insulin_basal',#added 
+        'insulin_bolus',#added 
+        'insulin_basal_bolus',#added 
         'metformin_rx',
         'glyburide_rx',
         
@@ -804,13 +822,21 @@ class GestationalDiabetesReport(Report):
         self.pos_q = Q(name__endswith=':positive')
         self.a1c_q = Q(name__startswith='lx:a1c')
         
+        self.ogttfasting_high_threshold_q = Q (name__in = [
+            'lx:ogtt50-fasting:threshold:gte:126', 
+            'lx:ogtt75-fasting:threshold:gte:126',
+            'lx:ogtt100-fasting:threshold:gte:126',
+            ])
+            
         self.ogtt50_q = Q(name__startswith='lx:ogtt50')
+        
         self.ogtt50_gdm_threshold_q = Q(name__in = [
             'lx:ogtt50-1hr:threshold:gte:190',
             'lx:ogtt50-random:threshold:gte:190',
             ])
-        self.ogtt50_high_threshold_q = self.ogtt50_q | Q(labresult__ref_high_float__gte =
+        self.ogtt50_ref_high_q = self.ogtt50_q | Q(labresult__ref_high_float__gte =
             F('labresult__result_float') )
+        
         self.ogtt50_1hr_q = Q(name__startswith='lx:ogtt50-1hr')
         
         self.ogtt75_q = Q(name__startswith='lx:ogtt75')
@@ -856,7 +882,7 @@ class GestationalDiabetesReport(Report):
             'lx:ogtt100-4hr:threshold:gte:140',
             'lx:ogtt100-5hr:threshold:gte:140',
             ])
-        self.ogtt50_random_q =  Q(name__startswith='lx:ogtt50-random')
+        self.ogtt50_random_q =  Q(name__startswith='lx:ogtt50-random:threshold:gte:190')
         
         self.order_q = Q(name__endswith=':order')
         self.any_q = Q(name__endswith=':any-result')
@@ -935,13 +961,13 @@ class GestationalDiabetesReport(Report):
             'ethnicity': patient.race,
             'zip_code': zip_code,
             #gdm_icd9--any_time': bool(event_qs.filter(self.dxgdm_q)),#removed
-            'frank_diabetes--ever': binary(frank_dm_case_qs),
+            'frank_diabetes_ever': binary(frank_dm_case_qs),
             #lancets_test_strips--any_time': bool(event_qs.filter(self.lancets_q)),#rem
             }
         if frank_dm_case_qs:
             first_dm_case = frank_dm_case_qs[0]
-            patient_values['frank_diabetes--date'] = first_dm_case.date
-            patient_values['frank_diabetes--type'] = first_dm_case.condition
+            patient_values['frank_diabetes_date'] = first_dm_case.date
+            patient_values['frank_diabetes_type'] = first_dm_case.condition
             #patient_values['frank_diabetes--case_id'] = first_dm_case.pk #rem
         #
         # Generate a row for each pregnancy (or 1 row if no pregs found)
@@ -1168,7 +1194,7 @@ class GestationalDiabetesReport(Report):
             ogtt100_twice_qs = intrapartum.filter(self.ogtt100_threshold_q).\
                 values('patient').annotate(count=Count('pk')).\
                 filter(count__gte=2).values_list('patient', flat=True).distinct()
-            insulin_qs = intrapartum.filter(name='rx--insulin')
+            insulin_qs = intrapartum.filter(name='rx:insulin')
             basal = ['NPH','Humulin N','Lantus','Glargine' ]
             bolus = ['Novolog','Aspart','Humalog','Lispro','Regular insulin','Humulin R']
             insulin_basal =False
@@ -1214,15 +1240,15 @@ class GestationalDiabetesReport(Report):
                 'preg_end': end_date,
                 'edd': edd,
                 'bmi': bmi,
-                'pre-eclampsia' : binary(pre_eclampsia),
+                'pre_eclampsia' : binary(pre_eclampsia),
                 'hypertension' : binary(hypertension),
                 'gdm_case': binary( gdm_this_preg ),
-                'gdm_case--date': gdm_date,
+                'gdm_case_date': gdm_date,
                 'ga_gdm_met' : ga_gdm_met ,  #added
-                'gdm_icd9--this_preg': binary( intrapartum.filter(self.dxgdm_q) ),
+                'gdm_icd9_this_preg': binary( intrapartum.filter(self.dxgdm_q) ),
                 'prior_gdm_case': binary( gdm_prior ),
-                'prior_gdm_case--date': gdm_prior_date,
-                'prior_gdm_icd9--this_preg': binary( prepartum.filter(self.dxgdm_q) ),
+                'prior_gdm_case_date': gdm_prior_date,
+                'prior_gdm_icd9_this_preg': binary( prepartum.filter(self.dxgdm_q) ),
                 'prior_polycistic' : binary( prior_polycistic_twice), #added 
                 'prior_pre_eclampsia' : binary(prior_pre_eclampsia_twice),#added 
                 'prior_hypertension' : binary(prior_hypertension_twice),#added 
@@ -1251,38 +1277,39 @@ class GestationalDiabetesReport(Report):
                 'prior2y_ALT_max_value' : prior_2y_alt_max, #added
                 'prior2y_ALT_date_min_value' : prior_2y_alt_date_min , #added
                 'prior2y_ALT_min_value' : prior_2y_alt_min, #added
-                'intrapartum--ogtt50-1hrval' : ip_ogtt50_1hr_value,#added
-                'intrapartum--ogtt50--high--threshold': binary( intrapartum.filter(self.ogtt50_high_threshold_q) ),
-                'intrapartum--ogtt50--gdm--threshold': binary( intrapartum.filter(self.ogtt50_gdm_threshold_q) ),
-                'intrapartum--ogtt75--fastingval': ip_ogtt75_fasting_value ,#added
-                'intrapartum--ogtt75--2hrval' : ip_ogtt75_2hr_value,#added 
-                'intrapartum--ogtt75--threshold': binary( intrapartum.filter(self.ogtt75_intra_thresh_q) ),
-                'intrapartum--ogtt100--fastingval' : ip_ogtt100_fasting_value,#added 
-                'intrapartum--ogtt100--1hrval' : ip_ogtt100_1hr_value,#added 
-                'intrapartum--ogtt100--2hrval' : ip_ogtt100_2hr_value,#added 
-                'intrapartum--ogtt100--3hrval' : ip_ogtt100_3hr_value,#added 
-                'intrapartum--ogtt100--threshold': binary( ogtt100_twice_qs ),
-                'intrapartum--ogtt50--random--val' : ip_ogtt50_random_value,#added 
-                'postpartum--ogtt75--order': binary( postpartum.filter(self.ogtt75_q, self.order_q) ),
-                'postpartum--ogtt75--any_result': binary( postpartum.filter(self.ogtt75_q, self.any_q) ),
-                'postpartum--ogtt75--fastingval': pp_ogtt75_fasting_value,#added
-                'postpartum--ogtt75--2hrval':  pp_ogtt75_2hr_value,#added
-                'postpartum--ogtt75--ifg_range': binary( postpartum.filter(self.ogtt75_ifg_q) ),
-                'postpartum--ogtt75--igt_range': binary( postpartum.filter(self.ogtt75_igt_q) ),
-                'postpartum--ogtt75--dm_threshold': binary( postpartum.filter(self.ogtt75_dm_q) ),
+                'obfastingglucose_positive': binary( intrapartum.filter(self.ogttfasting_high_threshold_q)), #added
+                'intrapartum_ogtt50_1hr_max_val' : ip_ogtt50_1hr_value, #added
+                'intrapartum_ogtt50_ref_high': binary( intrapartum.filter(self.ogtt50_ref_high_q) ),
+                'intrapartum_ogtt50_gdm_interp': binary( intrapartum.filter(self.ogtt50_gdm_threshold_q) ),
+                'intrapartum_ogtt75_fasting_max_val': ip_ogtt75_fasting_value ,#added
+                'intrapartum_ogtt75_2hr_max_val' : ip_ogtt75_2hr_value,#added 
+                'intrapartum_ogtt75_interp': binary( intrapartum.filter(self.ogtt75_intra_thresh_q) ),
+                'intrapartum_ogtt100_fasting_max_val' : ip_ogtt100_fasting_value,#added 
+                'intrapartum_ogtt100_1hr_max_val' : ip_ogtt100_1hr_value,#added 
+                'intrapartum_ogtt100_2hr_max_val' : ip_ogtt100_2hr_value,#added 
+                'intrapartum_ogtt100_3hr_max_val' : ip_ogtt100_3hr_value,#added 
+                'intrapartum_ogtt100_interp': binary( ogtt100_twice_qs ),
+                'intrapartum_ogtt50_random_max_val' : ip_ogtt50_random_value,#added 
+                'postpartum_ogtt75_order': binary( postpartum.filter(self.ogtt75_q, self.order_q) ),
+                'postpartum_ogtt75_any_result': binary( postpartum.filter(self.ogtt75_q, self.any_q) ),
+                'postpartum_ogtt75_fasting_max_val': pp_ogtt75_fasting_value,#added
+                'postpartum_ogtt75_2hr_max_val':  pp_ogtt75_2hr_value,#added
+                'postpartum_ogtt75_ifg_range_met': binary( postpartum.filter(self.ogtt75_ifg_q) ),
+                'postpartum_ogtt75_igt_range_met': binary( postpartum.filter(self.ogtt75_igt_q) ),
+                'postpartum_ogtt75_dm_range_met': binary( postpartum.filter(self.ogtt75_dm_q) ),
                  #'early_postpartum--a1c--order': bool( early_pp.filter(self.a1c_q, self.order_q) ),#removed
-                'early_postpartum--a1c--max': early_a1c_max,
-                'late_postpartum--a1c--max': late_a1c_max,
+                'early_postpartum_a1c_max_val': early_a1c_max,
+                'late_postpartum_a1c_max_val': late_a1c_max,
                 'referral_to_nutrition': binary(nutrition_referral),
-                'lancets_test_strips--this_preg': binary( intrapartum.filter(self.lancets_q) ),
-                'lancets_test_strips--14_days_gdm_icd9': binary( lancets_and_icd9 ),
+                'lancets_test_strips_this_preg': binary( intrapartum.filter(self.lancets_q) ),
+                'lancets_test_strips_14_days_gdm_icd9': binary( lancets_and_icd9 ),
                 'insulin_rx': binary( insulin_qs ),
                 'ga_1st_insulin' : ga_1st_insulin, # added
-                'insuline_basal': binary(insulin_basal),
-                'insuline_bolus': binary(insulin_bolus),
-                'insuline_basal_bolus': binary(insulin_basal and insulin_bolus),
-                'metformin_rx': binary( intrapartum.filter(name='rx--metformin') ),
-                'glyburide_rx': binary( intrapartum.filter(name='rx--glyburide') ),
+                'insulin_basal': binary(insulin_basal),
+                'insulin_bolus': binary(insulin_bolus),
+                'insulin_basal_bolus': binary(insulin_basal and insulin_bolus),
+                'metformin_rx': binary( intrapartum.filter(name='rx:metformin') ),
+                'glyburide_rx': binary( intrapartum.filter(name='rx:glyburide') ),
                 }
             values.update(patient_values)
             values.update(pregnancy_values)
@@ -1424,7 +1451,7 @@ class BaseDiabetesReport(Report):
         self.FIELDS.append('rx_ever--oral_hypoglycemic_non_metformin')
         rx_ever_events = Event.objects.filter(patient__in=self.patient_qs)
         oral_hyp = rx_ever_events.filter(name__in=Diabetes.__ORAL_HYPOGLYCAEMICS)
-        non_met = oral_hyp.exclude(name='rx--metformin')
+        non_met = oral_hyp.exclude(name='rx:metformin')
         oral_hyp_patients = oral_hyp.distinct('patient').values_list('patient', flat=True)
         non_met_patients = non_met.distinct('patient').values_list('patient', flat=True)
         total_count = self.patient_qs.count()
