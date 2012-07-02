@@ -862,12 +862,12 @@ class GestationalDiabetesReport(Report):
         self.any_q = Q(name__endswith=':any-result')
         self.dxgdm_q = Q(name='dx:gestational-diabetes')
         self.lancets_q = Q(name__in=['rx:test-strips', 'rx:lancets'])
-        self.ast_q = Q(name__startswith='lx:ast')
-        self.alt_q =  Q(name__startswith='lx:alt')
-        self.ldl_q =  Q(name__startswith='lx:cholesterol-ldl')
-        self.hdl_q =  Q(name__startswith='lx:cholesterol-hdl')
-        self.trig_q =  Q(name__startswith='lx:triglycerides')
-        self.totcol_q =  Q(name__startswith='lx:cholesterol-total')
+        self.ast_q = Q(native_name__icontains='ast')
+        self.alt_q =  Q(native_name__icontains='alt')
+        self.ldl_q =  Q(native_name__icontains='cholesterol-ldl')
+        self.hdl_q =  Q(native_name__icontains='cholesterol-hdl')
+        self.trig_q =  Q(native_name__icontains='triglycerides')
+        self.totcol_q =  Q(native_name__icontains='cholesterol-total')
         
         
     def run(self, riskscape=False):
@@ -898,14 +898,14 @@ class GestationalDiabetesReport(Report):
     def prior2ylab (self, prior_2y_lab, lab_q):
         
         prior_2y_lab = prior_2y_lab.filter(lab_q )
-        prior_2y_lab_max = prior_2y_lab.aggregate( max=Max('labresult__result_float') )['max']
-        prior_2y_lab_min = prior_2y_lab.aggregate( min=Min('labresult__result_float') )['min']
+        prior_2y_lab_max = prior_2y_lab.aggregate( max=Max('result_float') )['max']
+        prior_2y_lab_min = prior_2y_lab.aggregate( min=Min('result_float') )['min']
         prior_2y_lab_date_max  =None
         prior_2y_lab_date_min =None
                 
         if prior_2y_lab:
-            prior_2y_lab_date_max = prior_2y_lab.order_by('labresult__result_float')[0].date
-            prior_2y_lab_date_min = prior_2y_lab.order_by('-labresult__result_float')[0].date
+            prior_2y_lab_date_max = prior_2y_lab.order_by('result_float')[0].date
+            prior_2y_lab_date_min = prior_2y_lab.order_by('-result_float')[0].date
             
         return prior_2y_lab_max, prior_2y_lab_date_max, prior_2y_lab_date_min, prior_2y_lab_date_min
     
@@ -1144,11 +1144,11 @@ class GestationalDiabetesReport(Report):
             prior_liver_fatty_disease =  prior_encounter.filter(
                  icd9_codes__code__startswith=liver_fatty_disease_icd9s 
                 )
-            
-            prior_2y_lab = prepartum.filter(
+            # any lab result in the past two years. 
+            prior_2y_lab = LabResult.objects.filter(
                 patient = patient,
-                date__lte = preg_ts.start_date + relativedelta(years=2),
-                patient__event__name__startswith ='lx:',
+                date__gte = preg_ts.start_date - relativedelta(years=2),
+                date__lte = preg_ts.start_date,
                 )
             
             prior_2y_ldl_max, prior_2y_ldl_date_max, prior_2y_ldl_min, prior_2y_ldl_date_min = self.prior2ylab(prior_2y_lab,self.ldl_q)
