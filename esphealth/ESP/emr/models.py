@@ -37,7 +37,7 @@ from ESP.static.models import Ndc
 from ESP.static.models import Icd9, Allergen
 from ESP.static.models import Vaccine
 from ESP.static.models import ImmunizationManufacturer
-from ESP.conf.models import VaccineManufacturerMap
+from ESP.conf.models import VaccineManufacturerMap, VaccineCodeMap
 from ESP.utils import randomizer
 from ESP.utils.utils import log, log_query, date_from_str, str_from_date
 
@@ -1437,7 +1437,7 @@ class Immunization(BasePatientRecord):
             
     def _get_vaccine(self):
         try:
-            return Vaccine.objects.get(code=self.imm_type)
+            return Vaccine.objects.get(code=VaccineCodeMap.objects.get(native_code=self.imm_type).canonical_code_id)
         except:
             return Vaccine.objects.get(short_name='unknown')
     vaccine = property(_get_vaccine)
