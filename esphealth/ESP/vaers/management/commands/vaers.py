@@ -22,12 +22,10 @@ from ESP.vaers.heuristics import  diagnostic_heuristics, lab_heuristics,prescrip
             
 usage_msg = """
 Usage: python %prog -b[egin_date] -e[nd_date] 
-{[-r --reports] | [-c --create]} | [-a --all]
 
- One or more of '-l', '-p', '-g', '-d' or '-a' must be specified.
- One or more of '-r' or '-c' must be specified
+ One or more of '-l', '-p', '-g', '-d' or '-a' must be specified, and '-c' must be specified
     
-    DATE variables are specified in this format: 'YYYYMMDD'
+ DATE variables are specified in this format: 'YYYYMMDD'
 
 """
 
@@ -45,8 +43,7 @@ class Command(BaseCommand):
         make_option('-p', '--rx', action='store_true', dest='rx',help='Run Prescription Heuristics'),
         make_option('-g', '--allergy', action='store_true', dest='allergy',help='Run Allergy Heuristics'),
         make_option('-a', '--all', action='store_true', dest='all'),
-        make_option('-c', '--create', action='store_true', dest='create'),
-        make_option('-r', '--reports', action='store_true', dest='reports'),
+        make_option('-c', '--create', action='store_true', dest='create')
         
         )
     
@@ -71,8 +68,8 @@ class Command(BaseCommand):
         if not ( options['diagnostics'] or options['lx'] or options['rx'] or options['allergy']):
             raise CommandError('Must specify  --diagnosics, --lx, --rx or --all')
     
-        if not (options['create'] or options['reports']):
-            raise CommandError('Must specify --create or --reports')
+        if not (options['create']):
+            raise CommandError('Must specify --create')
     
         heuristics = []
         if options['diagnostics']: heuristics += diagnostic_heuristics()
@@ -85,8 +82,5 @@ class Command(BaseCommand):
             log.info('Creating and generating events from %s to %s' % (begin_date, end_date))
             for h in heuristics: h.generate(begin_date=begin_date, end_date=end_date) 
     
-            
-        if options['reports']:
-            log.info('this command no longer supports HL7 report generation.  Use vaers_hl7 instead.')
             
     
