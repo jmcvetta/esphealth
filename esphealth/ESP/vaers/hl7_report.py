@@ -93,6 +93,7 @@ class AdverseReactionReport(object):
     def make_ORC(self):
         vax_provider = Provider.objects.filter(id=self.immunizations.values_list('provider_id').distinct())
         orc = ORC()
+        orc.control='RE'
         orc.enterer_location = [vax_provider.get().dept, vax_provider.get().dept_address_1, vax_provider.get().dept_address_2, 
                          vax_provider.get().dept_city, vax_provider.get().dept_state, vax_provider.get().dept_zip]
         return orc
@@ -213,7 +214,7 @@ class AdverseReactionReport(object):
 
         vaccines = []
 
-        for idx, immunization in enumerate(self.immunizations):
+        for immunization in self.immunizations:
             vaccine_detail = VaccineDetail(immunization)
             for seg in vaccine_detail.segments:
                 vaccines.append(seg)
