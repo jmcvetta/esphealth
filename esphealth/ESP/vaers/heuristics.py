@@ -67,8 +67,8 @@ class AdverseEventHeuristic(BaseHeuristic):
         
         #create questionnaires for every physician in the events
         for ae in this_case.adverse_events.all():
-            #skip anyone not in sender_list
-            if not self.sender_list.filter(provider=ae.content_object.provider):
+            #skip anyone not in sender_list, unless sender list is empty
+            if not self.sender_list.filter(provider=ae.content_object.provider) and self.sender_list.all() :
                 continue
             #if the ae is from an encounter with a physician, wait a day in case labs show up, then generate the questionnaire record
             if ContentType.objects.get_for_id(ae.content_type_id).model.startswith('encounter') and ae.date+datetime.timedelta(days=1)>datetime.date.today():
