@@ -134,7 +134,7 @@ class HL7_clinbasket(object):
             obx.identifier='REP^Report Text'
             if self.case.adverse_events.filter(category='2_rare').exists():
                 #Rare, severe AE
-                caseDescription = '~ ~Your patient, ' + patient.name + ', may have experienced a serious adverse event following a recent vaccination. ' + patient._get_name + ', was recently noted to have '
+                caseDescription = '~ ~Your patient, ' + patient.name + ', may have experienced a serious adverse event following a recent vaccination. ' + patient.name + ', was recently noted to have '
             elif self.case.adverse_events.filter(category='3_possible').exists():
                 #Possible AE
                 caseDescription = '~ ~Your patient, ' + patient.name + ', was recently noted to have '
