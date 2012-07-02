@@ -232,8 +232,7 @@ class BaseLoader(object):
                 obj.save()
             except IntegrityError:
                 transaction.savepoint_rollback(sid)
-                log.debug('Record dumped')
-                created = True
+                log.debug('Record could not be saved')
         return obj, created
         
     def float_or_none(self, str):
@@ -777,8 +776,11 @@ class EncounterLoader(BaseLoader):
                     # We'll only accept a code if it has at least one digit in the string.
                     if any(c in string.digits for c in code):
                         e.icd9_codes.add(self.get_icd9(code))
-        e.save()
-        log.debug('Saved encounter object: %s' % e)
+        try:
+            e.save()
+            log.debug('Saved encounter object: %s' % e)
+        except:
+            log.debug('Could not save encounter object: %s' % e)
     
     def get_icd9(self, code):
         '''
