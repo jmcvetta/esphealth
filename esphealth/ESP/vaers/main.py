@@ -44,7 +44,6 @@ def main():
     parser.add_option('-a', '--all', action='store_true', dest='all')
 
     parser.add_option('-c', '--create', action='store_true', dest='create')
-    parser.add_option('-r', '--reports', action='store_true', dest='reports')
 
     
     options, args = parser.parse_args()
@@ -84,21 +83,6 @@ def main():
         for h in heuristics: 
             h.generate(begin_date=begin_date, end_date=end_date) 
 
-    if options.reports:
-        folder = make_date_folders(begin_date, end_date, root=HL7_MESSAGES_DIR)
-
-        def produce_reports(queryset):
-            # events = queryset.cases_to_report.filter?? move cases to report out of models 
-            events = queryset.filter(date__gte=begin_date, date__lte=end_date)
-            log.info('Producing HL7 reports for %s events' % (events.count()))
-            # ? should we generate reports if they havent been confirmed?
-            for event in events: event.save_hl7_message_file(folder=folder)
-            
-        # TODO if options.ph messaging then go send message to physician.
-        if options.diagnostics: produce_reports(EncounterEvent.objects.all())
-        if options.lx: produce_reports(LabResultEvent.objects.all())
-        if options.rx: produce_reports(PrescriptionEvent.objects.all())
-        if options.allergy: produce_reports(AllergyEvent.objects.all())
 
 if __name__ == '__main__':
     main()
