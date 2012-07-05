@@ -436,7 +436,7 @@ class EncounterEvent(AdverseEvent):
     def __unicode__(self):
         
         return u"Encounter Event %s: Patient %s, %s on %s" % (
-            self.id, self.content_object.patient.full_name, 
+            self.id, self.patient.full_name, 
             self.matching_rule_explain, self.date)
 
 class PrescriptionEvent(AdverseEvent):
@@ -518,7 +518,7 @@ class AllergyEvent(AdverseEvent):
     
     def __unicode__(self):
         return u'Allergy Event %s: Patient %s, %s on %s' % (
-            self.id, self.content_object.patient.full_name, 
+            self.id, self.patient.full_name, 
             self.matching_rule_explain, self.date)
                
 class LabResultEvent(AdverseEvent):
@@ -562,7 +562,7 @@ class LabResultEvent(AdverseEvent):
     def __unicode__(self):
         if self.content_object:
             return u'LabResult Event %s: Patient %s, %s on %s' % (
-                self.id, self.content_object.patient.full_name, 
+                self.id, self.patient.full_name, 
                 self.matching_rule_explain, self.date)
         else:
             return u'LabResult Event %s:  %s on %s' % (
