@@ -1103,7 +1103,7 @@ class Encounter(BasePatientRecord):
     #
     # Raw string fields 
     #
-    # Please do not index these, lest you overburden your poor database.  Be 
+    # Please do not index these, lest you over burden your poor database.  Be 
     # kind to it, it has done you no wrong that you did not bring on yourself.
     #
     raw_date = models.TextField(null=True, blank=True)
@@ -1624,6 +1624,9 @@ class Pregnancy(BasePatientRecord):
     preterm = models.IntegerField(blank=True, null=True)
     ga_delivery =  models.CharField('Gestational Age at delivery', max_length=20, blank=True, null=True)
     birth_weight  = models.FloatField('Birth Weight (Kg)', blank=True, null=True)
+    birth_weight2  = models.FloatField('Birth Weight 2 (Kg)', blank=True, null=True)
+    birth_weight3  = models.FloatField('Birth Weight 3 (Kg)', blank=True, null=True)
+    births = models.IntegerField(blank=True, null=True )
     delivery = models.TextField('Delivery', max_length=500, blank=True, null=True)
     pre_eclampsia = models.CharField('Pre_eclampsia', max_length=300, blank=True, null=True)
     
