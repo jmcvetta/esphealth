@@ -696,7 +696,6 @@ class EncounterLoader(BaseLoader):
         'o2_stat',
         'peak_flow',
         'icd9s',
-        'raw_diagnosis',
         'bmi' # added in 3
         ]
     
@@ -742,7 +741,6 @@ class EncounterLoader(BaseLoader):
             'raw_height': son(row['height']),
             'height': height_str_to_cm(row['height']),
             'raw_bmi': son(row['bmi']),
-            'raw_diagnosis': son(row['raw_diagnosis']),
             }
         if values['edd']:  
             values['pregnant'] = True
@@ -761,21 +759,22 @@ class EncounterLoader(BaseLoader):
         if not created: # If updating the record, purge old ICD9 list
             e.icd9_codes = []
         icd9= row['icd9s']
-        # split by semicolon or by space.
+        # split by semicolon or by space. 
+        e.raw_diagnosis =''
         if   icd9.__contains__(';'):
             for code_string in row['icd9s'].split(';'):
-                if len(code_string.split()) >= 1: 
+                # add raw diagnosis by splitting from code string by space
+                firstspace = code_string.strip().find(' ');
+                if firstspace>0:
+                    e.raw_diagnosis += code_string[firstspace:].strip() +';'
+                #get the code     
+                
+                if code_string[:firstspace].__len__() >= 1: 
                     code = code_string.split()[0].strip()
                     # We'll only accept a code if it has at least one digit in the string.
                     if any(c in string.digits for c in code):
                         e.icd9_codes.add(self.get_icd9(code))
-        else:
-            for code_string in row['icd9s'].split(' '):
-                if len(code_string.split()) >= 1: 
-                    code = code_string.split()[0].strip()
-                    # We'll only accept a code if it has at least one digit in the string.
-                    if any(c in string.digits for c in code):
-                        e.icd9_codes.add(self.get_icd9(code))
+        
         try:
             e.save()
             log.debug('Saved encounter object: %s' % e)
@@ -862,6 +861,7 @@ class PrescriptionLoader(BaseLoader):
 
 # this object was added for version 3 of esp
 class PregnancyLoader(BaseLoader):
+    #TODO fix for mulitples, fix make fakes and extract
     fields = [
         'patient_id', 
         'mrn', 
@@ -895,12 +895,28 @@ class PregnancyLoader(BaseLoader):
             'term' : row['term'],
             'preterm' : row['preterm'],
             'ga_delivery' : ga_str_to_days(row['ga_delivery']),
-            'birth_weight' : row['birth_weight'],
             'delivery' : row['delivery'],
             'pre_eclampsia' : row['pre_eclampsia'],
             
             }
+        
         p, created = self.insert_or_update(Pregnancy, values, ['natural_key'])
+        
+        birth_weights = row['birth_weight']
+        p.births = 0
+            
+        if   birth_weights.__contains__(';'):
+            for birth in row['birth_weight'].split(';'):
+                p.births +=1
+                #get the weight     
+                if birth.__len__() >= 1 and p.births == 1: 
+                    p.birth_weight = birth.split()[0].strip()
+                elif birth.__len__() >= 1 and p.births == 2:  
+                    p.birth_weight2 = birth.split()[0].strip()
+                elif birth.__len__() >= 1 and p.births ==3:  
+                    p.birth_weight3 = birth.split()[0].strip()  
+                    
+        p.save()                
         
         log.debug('Saved pregnancy object: %s' % p)
 
