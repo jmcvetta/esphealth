@@ -80,7 +80,7 @@ class Diabetes(DiseaseDefinition):
             'ogtt75-90min',
             'ogtt75-2hr',
             ]:
-            heuristic_list.append( LabOrderHeuristic(
+            heuristics.append( LabOrderHeuristic(
                 test_name = test_name,
                 ))
         #
@@ -239,6 +239,7 @@ class Diabetes(DiseaseDefinition):
                 drugs = [drug],
                 )
             heuristics.append(h)
+            
         h = PrescriptionHeuristic(
             name = 'insulin',
             drugs = ['insulin'],
@@ -743,6 +744,8 @@ class GestationalDiabetesReport(Report):
         'outcome',
         'actual_date',
         'ga_delivery',
+        #TODO add number of births and multiple birht weights.
+        ''
         'birth_weight',
         'birth_route', #(delivery)
         'pre_eclampsia',
@@ -754,7 +757,7 @@ class GestationalDiabetesReport(Report):
         'prior_gdm_case', # Boolean
         'prior_gdm_case_date',
         'prior_gdm_icd9_this_preg', #extra ?
-        'prior_polycistic',#added 
+        'prior_polycystic',#added 
         'prior_pre_eclampsia',#added 
         'prior_hypertension',#added 
         'prior_liver_fatty', # added
@@ -834,14 +837,15 @@ class GestationalDiabetesReport(Report):
             'lx:ogtt50-1hr:threshold:gte:190',
             'lx:ogtt50-random:threshold:gte:190',
             ])
-        self.ogtt50_ref_high_q = self.ogtt50_q | Q(labresult__ref_high_float__gte =
-            F('labresult__result_float') )
+        self.ogtt50_ref_high_q = self.ogtt50_q | Q(labresult__result_float__gte =
+            F('labresult__ref_high_float') )
         
         self.ogtt50_1hr_q = Q(name__startswith='lx:ogtt50-1hr')
         
         self.ogtt75_q = Q(name__startswith='lx:ogtt75')
         # OGTT75 intrapartum thresholds
         self.ogtt75_intra_thresh_q = Q(name__in = [
+            'lx:ogtt75-fasting-urine:positive',
             'lx:ogtt75-fasting:threshold:gte:92',
             'lx:ogtt75-30min:threshold:gte:200',
             'lx:ogtt75-1hr:threshold:gte:180',
@@ -863,7 +867,7 @@ class GestationalDiabetesReport(Report):
             'lx:ogtt75-1hr:range:gte:140:lt:200',
             'lx:ogtt75-2hr:range:gte:140:lt:200',
             'lx:ogtt75-30min:range:gte:140:lt:200',
-            'lx:ogtt75-90min:range:gte:141:lt:200',
+            'lx:ogtt75-90min:range:gte:140:lt:200',
             ])
         self.ogtt75_ifg_q = Q(name='lx:ogtt75-fasting:range:gte:100:lte:125')
         self.ogtt100_q = Q(name__startswith='lx:ogtt100')
@@ -924,22 +928,29 @@ class GestationalDiabetesReport(Report):
     def prior2ylab (self, prior_2y_lab, lab_q):
         
         prior_2y_lab = prior_2y_lab.filter(lab_q )
-        prior_2y_lab_max = prior_2y_lab.aggregate( max=Max('result_float') )['max']
-        prior_2y_lab_min = prior_2y_lab.aggregate( min=Min('result_float') )['min']
-        prior_2y_lab_date_max  =None
-        prior_2y_lab_date_min =None
+        prior_2y_lab_max_value = None
+        prior_2y_lab_min_value = None
+        prior_2y_lab_max_date  =None
+        prior_2y_lab_min_date =None
                 
         if prior_2y_lab:
-            prior_2y_lab_date_max = prior_2y_lab.order_by('result_float')[0].date
-            prior_2y_lab_date_min = prior_2y_lab.order_by('-result_float')[0].date
+            prior_2y_lab_max = prior_2y_lab.order_by('-result_float')[0]
             
-        return prior_2y_lab_max, prior_2y_lab_date_max, prior_2y_lab_date_min, prior_2y_lab_date_min
+            prior_2y_lab_max_date = prior_2y_lab_max.date
+            prior_2y_lab_max_value = prior_2y_lab_max.result_float
+            
+            prior_2y_lab_min = prior_2y_lab.order_by('result_float')[0]
+            
+            prior_2y_lab_min_date = prior_2y_lab_min.date
+            prior_2y_lab_min_value = prior_2y_lab_min.result_float
+            
+        return prior_2y_lab_max_value, prior_2y_lab_max_date, prior_2y_lab_min_value, prior_2y_lab_min_date
     
     def report_on_patient(self, patient_pk, writer, counter, total):
         log.info('Reporting on patient %8s / %s' % (counter, total))
         patient = Patient.objects.get(pk=patient_pk)
         event_qs = Event.objects.filter(patient=patient)
-        preg_ts_qs = Timespan.objects.filter(name='pregnancy', patient=patient)
+        preg_ts_qs = Timespan.objects.filter(name='pregnancy', patient=patient).order_by('start_date')# added order by date
         gdm_case_qs = Case.objects.filter(condition='diabetes:gestational', patient=patient)
         frank_dm_case_qs = Case.objects.filter(condition__startswith='diabetes:type-', patient=patient).order_by('date')
         a1c_lab_qs = AbstractLabTest('a1c').lab_results.filter(patient=patient)
@@ -981,45 +992,51 @@ class GestationalDiabetesReport(Report):
             # ts.enddate= actual date, otherwise use edd. 
             
             if preg_ts.end_date:
-                pregnancy = Pregnancy.objects.filter(
+                pregnancy_info = Pregnancy.objects.filter(
                     patient = patient,
                     date__gt = preg_ts.start_date,
                     date__lte = preg_ts.end_date + relativedelta(days=30)
                     )
-                if not pregnancy:
-                    pregnancy = Pregnancy.objects.filter(
+                if not pregnancy_info:
+                    pregnancy_info = Pregnancy.objects.filter(
                         patient = patient,
                         edd__gt = preg_ts.start_date,
                         edd__lte = preg_ts.end_date + relativedelta(days=30)
                     )
-            else: # no end date in time span, it prossibly current pregnancy and check for next 9 months
-                 pregnancy = Pregnancy.objects.filter(
+            else: 
+                 # no end_date in timespan, it prossibly current pregnancy and check for next 10 months
+                 pregnancy_info = Pregnancy.objects.filter(
                     patient = patient,
                     date__gt = preg_ts.start_date,
-                    date__lte = preg_ts.start_date + relativedelta(months=9)
+                    date__lte = preg_ts.start_date + relativedelta(months=10)
                     )
-                 if not pregnancy:
-                    pregnancy = Pregnancy.objects.filter(
+                 if not pregnancy_info:
+                    pregnancy_info = Pregnancy.objects.filter(
                         patient = patient,
                         edd__gt = preg_ts.start_date,
-                        edd__lte = preg_ts.start_date + relativedelta(months=9)
+                        edd__lte = preg_ts.start_date + relativedelta(months=10)
                     )       
             
-            if pregnancy:
-                pregnancy_values = {
-                'grava' : pregnancy.gravida,
-                'para' : pregnancy.parity,
-                'term' : pregnancy.term,
-                'preterm' : pregnancy.preterm,
-                'outcome' : pregnancy.outcome,
-                'actual_date' : pregnancy.date,
-                'ga_delivery' : pregnancy.ga_delivery,
-                'birth_weight' : pregnancy.birth_weight,
-                'birth_route' : pregnancy.delivery,
+            # it should only be one expected.
+            if pregnancy_info:
+                # ordering by descending expected of delivery in case we match with multiple pregnacy info
+                pregnancy_info = pregnancy_info.order_by('-edd')
+                pregnancy_info_values = {
+                'grava' : pregnancy_info[0].gravida,
+                'para' : pregnancy_info[0].parity,
+                'term' : pregnancy_info[0].term,
+                'preterm' : pregnancy_info[0].preterm,
+                'outcome' : pregnancy_info[0].outcome,
+                'actual_date' : pregnancy_info[0].date,
+                'ga_delivery' : pregnancy_info[0].ga_delivery,
+                #TODO show all birth weights up to 3 of them, show also number of births
+                'birth_weight' : pregnancy_info[0].birth_weight,
+                'birth_route' : pregnancy_info[0].delivery,
                 
                 }
+                
             else:
-                pregnancy_values = {
+                pregnancy_info_values = {
                 'grava' : None,
                 'para' :None,
                 'term' : None,
@@ -1028,6 +1045,7 @@ class GestationalDiabetesReport(Report):
                 'actual_date' : None,
                 'ga_delivery' : None,
                 'birth_weight' : None,
+                #TODO add initialize of number of births and multiple birth weights.
                 'birth_route' :None,
                 
                 }
@@ -1053,7 +1071,8 @@ class GestationalDiabetesReport(Report):
                 bmi = None
             #
             # Patient's frank and gestational DM history
-            #
+            # 
+            # timespan may not have en end_date if it is current pregnancy
             if preg_ts.end_date:
                 end_date = preg_ts.end_date
             else:
@@ -1063,8 +1082,7 @@ class GestationalDiabetesReport(Report):
                 date__lte = end_date,
                 ).order_by('date')
                 
-            # Note GDM prior does not currently look for the IDCD9 in 
-            # isolation, as spec requires
+            # Note GDM prior does not currently look for the IDCD9 in isolation
             gdm_prior = gdm_case_qs.filter(date__lt=preg_ts.start_date).order_by('-date')
             if gdm_prior:
                 gdm_prior_date = gdm_prior[0].date
@@ -1105,6 +1123,7 @@ class GestationalDiabetesReport(Report):
                 patient__event__date__gte =  (F('date') - 14),
                 patient__event__date__lte =  (F('date') + 14),
                 )
+            #TODO define nutrionist referral condition ?
             nutrition_referral = Encounter.objects.filter(
                 patient=patient,
                 date__gte=preg_ts.start_date, 
@@ -1112,6 +1131,7 @@ class GestationalDiabetesReport(Report):
                 ).filter(
                     Q(provider__title__icontains='RD') | Q(site_name__icontains='Nutrition')
                     )
+                
             edd_qs = Encounter.objects.filter(
                 patient = patient,
                 date__gte = preg_ts.start_date,
@@ -1132,19 +1152,19 @@ class GestationalDiabetesReport(Report):
                 ga_gdm_met = 0
             
                
-            pre_eclampsia_icd9s = ['642.4','642.5','642.6', '642.7']
+            pre_eclampsia_icd9s = ['642.4','642.5','642.6','642.7']
             pre_eclampsia = Encounter.objects.filter(
                 patient = patient,
                 date__gte = preg_ts.start_date,
-                date__lte = preg_ts.start_date + relativedelta(days=30),
-                icd9_codes__code__in=pre_eclampsia_icd9s 
+                date__lte = end_date + relativedelta(days=30),
+                icd9_codes__code__startswith=pre_eclampsia_icd9s 
                 )
            
             hypertension_inpreg_icd9s = ['642.3','642.9']
             hypertension = Encounter.objects.filter(
                 patient = patient,
                 date__gte = preg_ts.start_date,
-                date__lte = preg_ts.start_date + relativedelta(days=30),
+                date__lte = end_date + relativedelta(days=30),
                 icd9_codes__code__startswith=hypertension_inpreg_icd9s 
                 )
             
@@ -1153,13 +1173,13 @@ class GestationalDiabetesReport(Report):
                 date__lte = preg_ts.start_date
                 )
                 
-            polycistic_icd9 = ['256.4 ']
-            prior_polycistic_twice = prior_encounter.filter(
-                icd9_codes__code__in=polycistic_icd9 
+            polycystic_icd9 = ['256.4 ']
+            prior_polycystic_twice = prior_encounter.filter(
+                icd9_codes__code__startswith=polycystic_icd9 
                 ).annotate(count=Count('pk')).filter(count__gte=2)
              
             prior_pre_eclampsia_twice = prior_encounter.filter(
-                icd9_codes__code__in=pre_eclampsia_icd9s 
+                icd9_codes__code__startswith=pre_eclampsia_icd9s 
                 ).annotate(count=Count('pk')).filter(count__gte=2)
              
             prior_hypertension_twice = prior_encounter.filter(
@@ -1191,15 +1211,23 @@ class GestationalDiabetesReport(Report):
                 
             early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate( max=Max('result_float') )['max']
             late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max']
+            
+            # TODO ?? check if they were for a single lab order or on the same order date
+            # ogtt100 might be based on ref_high instead. ?
             ogtt100_twice_qs = intrapartum.filter(self.ogtt100_threshold_q).\
                 values('patient').annotate(count=Count('pk')).\
                 filter(count__gte=2).values_list('patient', flat=True).distinct()
-            insulin_qs = intrapartum.filter(name='rx:insulin')
+                
+            insulin_qs = intrapartum.filter(name='rx:insulin').order_by('date')
             basal = ['NPH','Humulin N','Lantus','Glargine' ]
             bolus = ['Novolog','Aspart','Humalog','Lispro','Regular insulin','Humulin R']
             insulin_basal =False
             insulin_bolus = False
             if insulin_qs:
+                # days between preg start and insulin rx date
+                ga_1st_insulin=  insulin_qs[0].date - preg_ts.start_date
+                ga_1st_insulin = ga_1st_insulin.days
+                
                 for insulin in insulin_qs:
                     if  insulin.filter(content_object__name__icontains = basal):
                         insulin_basal= True
@@ -1207,9 +1235,6 @@ class GestationalDiabetesReport(Report):
                     if insulin.filter(content_object__name__icontains = bolus):
                         insulin_bolus = True
                         return
-                # days between preg start and insulin rx date
-                ga_1st_insulin=  insulin_qs[0].date - preg_ts.start_date
-                ga_1st_insulin = ga_1st_insulin.days
             else:
                 ga_1st_insulin =0
                  
@@ -1249,7 +1274,7 @@ class GestationalDiabetesReport(Report):
                 'prior_gdm_case': binary( gdm_prior ),
                 'prior_gdm_case_date': gdm_prior_date,
                 'prior_gdm_icd9_this_preg': binary( prepartum.filter(self.dxgdm_q) ),
-                'prior_polycistic' : binary( prior_polycistic_twice), #added 
+                'prior_polycystic' : binary( prior_polycystic_twice), #added 
                 'prior_pre_eclampsia' : binary(prior_pre_eclampsia_twice),#added 
                 'prior_hypertension' : binary(prior_hypertension_twice),#added 
                 'prior_liver_fatty' :  binary(prior_liver_fatty_disease), #added
@@ -1312,7 +1337,7 @@ class GestationalDiabetesReport(Report):
                 'glyburide_rx': binary( intrapartum.filter(name='rx:glyburide') ),
                 }
             values.update(patient_values)
-            values.update(pregnancy_values)
+            values.update(pregnancy_info_values)
             writer.writerow(values)
 
 
