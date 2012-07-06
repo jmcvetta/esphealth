@@ -353,7 +353,6 @@ class EncounterWriter(EpicWriter):
         'o2_stat',
         'peak_flow',
         'icd9s',
-        'raw_diagnosis',
         'bmi'
         ]
 
@@ -381,9 +380,9 @@ class EncounterWriter(EpicWriter):
                 'bp_diastolic':str(encounter.bp_diastolic or ''),
                 'o2_stat':str(encounter.o2_stat or ''),
                 'peak_flow':str(encounter.peak_flow or ''),
-                'icd9s': ';'.join(icd9_codes),
-                'bmi':str(encounter.bmi or ''),
-                'raw_diagnosis':encounter.raw_diagnosis or ''
+                # no need to add the icd9 text
+                'icd9s': ';'.join(icd9_codes ),
+                'bmi':str(encounter.bmi or '')
                 })
   
 
@@ -586,7 +585,7 @@ class PregnancyWriter(EpicWriter):
         row['term']= pregnancy.term
         row['preterm']= pregnancy.preterm
         row['ga_delivery']= pregnancy.ga_delivery
-        row['birth_weight']= pregnancy.birth_weight
+        row['birth_weight']= ';'.join([str(pregnancy.birth_weight), str(pregnancy.birth_weight2),str(pregnancy.birth_weight3)])
         row['delivery']= pregnancy.delivery
         row['pre_eclampsia']= pregnancy.pre_eclampsia
 
