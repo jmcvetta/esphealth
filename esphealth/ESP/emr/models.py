@@ -1117,10 +1117,7 @@ class Encounter(BasePatientRecord):
     raw_o2_stat = models.TextField(null=True, blank=True)
     raw_peak_flow = models.TextField(null=True, blank=True)
     raw_bmi = models.TextField(null=True, blank=True)
-    # Making diagnosis field available in a meaningful way requires full-text
-    # indexing.  Support for this is planned, but not currently implemented.
-    raw_diagnosis = models.TextField(null=True, blank=True)
-    
+   
     
     class Meta:
         ordering = ['date']
