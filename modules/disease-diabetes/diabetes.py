@@ -640,7 +640,7 @@ class Diabetes(DiseaseDefinition):
         dx_ets=['dx:diabetes:all-types','dx:gestational-diabetes']
         rx_ets=['rx:lancets', 'rx:test-strips']
         # TODO FIXME issue 346 This date math works on PostgreSQL, but I think that's just 
-        # fortunate coincidence, as I don't think this is the righ way to 
+        # fortunate coincidence, as I don't think this is the right way to 
         # express the date query in ORM syntax.
         _event_qs = Event.objects.filter(
             name__in=rx_ets,
@@ -717,22 +717,16 @@ class GestationalDiabetesReport(Report):
         #
         'patient_id',
         'mrn',
-        #last_name',#no
-        #first_name',#no
         'date_of_birth',
         'ethnicity',
         'zip_code',
         'bmi',
-        #gdm_icd9--any_time',#no
         'frank_diabetes_ever',
         'frank_diabetes_date',
-        #frank_diabetes--case_id',#no
-        #lancets_test_strips--any_time',#no
         'frank_diabetes_type',#added
         #
         # Per-pregnancy fields
         #
-        #'pregnancy_id',#no
         'pregnancy', # Boolean
         'preg_start',
         'preg_end',
@@ -744,10 +738,11 @@ class GestationalDiabetesReport(Report):
         'outcome',
         'actual_date',
         'ga_delivery',
-        #TODO add number of births and multiple birht weights.
-        ''
+        'births',
         'birth_weight',
-        'birth_route', #(delivery)
+        'birth_weight2',
+        'birth_weight3',
+        'birth_route', 
         'pre_eclampsia',
         'hypertension', # to here
         'gdm_case', # Boolean
@@ -805,7 +800,6 @@ class GestationalDiabetesReport(Report):
         'postpartum_ogtt75_ifg_range_met',
         'postpartum_ogtt75_igt_range_met',
         'postpartum_ogtt75_dm_range_met',
-        #'early_postpartum--a1c--order',#no
         'early_postpartum_a1c_max_val',
         'late_postpartum_a1c_max_val',
         'referral_to_nutrition',
@@ -966,20 +960,16 @@ class GestationalDiabetesReport(Report):
         patient_values = {
             'patient_id': patient.pk,
             'mrn': patient.mrn,
-            #last_name': patient.last_name,#removed 
-            #first_name': patient.first_name,#removed
-            'date_of_birth': patient.date_of_birth,
+             'date_of_birth': patient.date_of_birth,
             'ethnicity': patient.race,
             'zip_code': zip_code,
-            #gdm_icd9--any_time': bool(event_qs.filter(self.dxgdm_q)),#removed
             'frank_diabetes_ever': binary(frank_dm_case_qs),
-            #lancets_test_strips--any_time': bool(event_qs.filter(self.lancets_q)),#rem
-            }
+             }
         if frank_dm_case_qs:
             first_dm_case = frank_dm_case_qs[0]
             patient_values['frank_diabetes_date'] = first_dm_case.date
             patient_values['frank_diabetes_type'] = first_dm_case.condition
-            #patient_values['frank_diabetes--case_id'] = first_dm_case.pk #rem
+            
         #
         # Generate a row for each pregnancy (or 1 row if no pregs found)
         #
@@ -1029,8 +1019,10 @@ class GestationalDiabetesReport(Report):
                 'outcome' : pregnancy_info[0].outcome,
                 'actual_date' : pregnancy_info[0].date,
                 'ga_delivery' : pregnancy_info[0].ga_delivery,
-                #TODO show all birth weights up to 3 of them, show also number of births
+                'births' : pregnancy_info[0].births,
                 'birth_weight' : pregnancy_info[0].birth_weight,
+                'birth_weight2' : pregnancy_info[0].birth_weight2,
+                'birth_weight3' : pregnancy_info[0].birth_weight3,
                 'birth_route' : pregnancy_info[0].delivery,
                 
                 }
@@ -1045,7 +1037,9 @@ class GestationalDiabetesReport(Report):
                 'actual_date' : None,
                 'ga_delivery' : None,
                 'birth_weight' : None,
-                #TODO add initialize of number of births and multiple birth weights.
+                'birth_weight2' : None,
+                'birth_weight3' : None,
+                'birhts' :None,
                 'birth_route' :None,
                 
                 }
@@ -1259,7 +1253,6 @@ class GestationalDiabetesReport(Report):
             pp_ogtt75_2hr_value =  postpartum.filter(self.ogtt75_2hr_q).aggregate( max=Max('labresult__result_float') )['max']
               
             values = {
-                #'pregnancy_id': preg_ts.pk,#removed
                 'pregnancy': binary(True),
                 'preg_start': preg_ts.start_date,
                 'preg_end': end_date,
@@ -1322,7 +1315,6 @@ class GestationalDiabetesReport(Report):
                 'postpartum_ogtt75_ifg_range_met': binary( postpartum.filter(self.ogtt75_ifg_q) ),
                 'postpartum_ogtt75_igt_range_met': binary( postpartum.filter(self.ogtt75_igt_q) ),
                 'postpartum_ogtt75_dm_range_met': binary( postpartum.filter(self.ogtt75_dm_q) ),
-                 #'early_postpartum--a1c--order': bool( early_pp.filter(self.a1c_q, self.order_q) ),#removed
                 'early_postpartum_a1c_max_val': early_a1c_max,
                 'late_postpartum_a1c_max_val': late_a1c_max,
                 'referral_to_nutrition': binary(nutrition_referral),
