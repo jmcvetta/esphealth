@@ -306,7 +306,21 @@ class BaseLoader(object):
             return int(time.time()*1000)
         else:
             return natural_key
-        
+    
+    def get_icd9(self, code, name, cache):
+        '''
+        Given an ICD9 code, as a string, return an Icd9 model instance
+        '''
+        code = code.upper()
+        if not code in cache:
+            i, created = Icd9.objects.get_or_create(code__exact=code, defaults={
+                 'code': code,'name':name + ' (Added by load_epic.py)'})
+                
+            if created: log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
+                
+            cache[code] = i
+        return cache[code]
+    
     @transaction.commit_on_success
     def load(self):
         # 
@@ -760,20 +774,18 @@ class EncounterLoader(BaseLoader):
             e.icd9_codes = []
         icd9= row['icd9s']
         # split by semicolon or by space. 
-        e.raw_diagnosis =''
         if   icd9.__contains__(';'):
             for code_string in row['icd9s'].split(';'):
                 # add raw diagnosis by splitting from code string by space
                 firstspace = code_string.strip().find(' ');
-                if firstspace>0:
-                    e.raw_diagnosis += code_string[firstspace:].strip() +';'
-                #get the code     
+                diagnosis_text = code_string[firstspace:].strip()
                 
+                #get the code     
                 if code_string[:firstspace].__len__() >= 1: 
                     code = code_string.split()[0].strip()
                     # We'll only accept a code if it has at least one digit in the string.
                     if any(c in string.digits for c in code):
-                        e.icd9_codes.add(self.get_icd9(code))
+                        e.icd9_codes.add(self.get_icd9(code, diagnosis_text, self.__icd9_cache))
         
         try:
             e.save()
@@ -781,25 +793,7 @@ class EncounterLoader(BaseLoader):
         except:
             log.debug('Could not save encounter object: %s' % e)
     
-    def get_icd9(self, code):
-        '''
-        Given an ICD9 code, as a string, return an Icd9 model instance
-        '''
-        code = code.upper()
-        if not code in self.__icd9_cache:
-            try:
-                i = Icd9.objects.get(code__exact=code)
-            except Icd9.DoesNotExist:
-                log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
-                i = Icd9()
-                i.code = code
-                i.name = 'Added by load_epic.py'
-                i.save()
-            self.__icd9_cache[code] = i
-        return self.__icd9_cache[code]
-            
-            
-
+    
 
 class PrescriptionLoader(BaseLoader):
 
@@ -1057,9 +1051,8 @@ class ProblemLoader(BaseLoader):
 
     def load_row(self, row):
         code = row['icd9_code'].upper()
-        icd9_code, created = Icd9.objects.get_or_create(code=code, defaults={
-                'name':'Added by load_epic.py'})
-        if created: log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
+        icd9_code = self.get_icd9(code, '', {})
+        
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
             'natural_key': natural_key, 
