@@ -886,7 +886,7 @@ class LabOrder(BasePatientRecord):
     procedure_code = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     procedure_modifier = models.CharField(max_length=20, blank=True, null=True)
     procedure_name = models.CharField(max_length=300, blank=True, null=True)
-    specimen_id = models.CharField(max_length=20, blank=True, null=True, db_index=True)
+    specimen_id = models.CharField(max_length=30, blank=True, null=True, db_index=True)
     order_type = models.CharField(max_length=64, blank=True, db_index=True)
     specimen_source = models.CharField(max_length=300, blank=True, null=True)
     
@@ -1515,7 +1515,7 @@ class Allergy(BasePatientRecord):
     # date is allergy entered date 
     date_noted = models.DateField(null=True, db_index=True)
     allergen = models.ForeignKey(Allergen)
-    name = models.CharField(max_length=200, null=True, db_index=True)
+    name = models.CharField(max_length=300, null=True, db_index=True)
     status = models.CharField(max_length=20, null=True, db_index=True)
     description = models.CharField(max_length=200,null=True,blank=True)
     
@@ -1567,6 +1567,7 @@ class Problem(BasePatientRecord):
     icd9 = models.ForeignKey(Icd9)
     status = models.CharField(max_length=20, null=True, db_index=True)
     comment = models.TextField(null=True, blank=True)
+    raw_icd9_code = models.CharField('Raw icd9 code',max_length=20, null=True, db_index=True)
     
     @staticmethod
     def delete_fakes():
@@ -1620,6 +1621,7 @@ class Pregnancy(BasePatientRecord):
     term = models.IntegerField( blank=True, null=True)
     preterm = models.IntegerField(blank=True, null=True)
     ga_delivery =  models.CharField('Gestational Age at delivery', max_length=20, blank=True, null=True)
+    raw_birth_weight = models.CharField('Raw birth weight', max_length=200, blank=True, null=True)
     birth_weight  = models.FloatField('Birth Weight (Kg)', blank=True, null=True)
     birth_weight2  = models.FloatField('Birth Weight 2 (Kg)', blank=True, null=True)
     birth_weight3  = models.FloatField('Birth Weight 3 (Kg)', blank=True, null=True)
