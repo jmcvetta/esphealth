@@ -245,21 +245,24 @@ VAERS_PRESCRIPTION = {
         'risk_period_days':14,
         'exclude_due_to_history':True,
         },
+        '''
     'Diphenhydramine': {
         'category':'3_possible',
         'risk_period_days':14,
         'exclude_due_to_history':True,
         },
+    'Hydroxyzine': {
+        'category':'3_possible',
+        'risk_period_days':7,
+        'exclude_due_to_history':True,
+        },
+        #above two meds removed per instructions from Meghan Baker
+        '''
     'Epinephrine': {
         'category':'3_possible',
         'risk_period_days':7,
         'exclude_due_to_history':False,
         
-        },
-    'Hydroxyzine': {
-        'category':'3_possible',
-        'risk_period_days':7,
-        'exclude_due_to_history':True,
         }
     }
 
