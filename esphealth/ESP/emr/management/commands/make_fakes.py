@@ -542,7 +542,7 @@ class ProblemWriter(EpicWriter):
                 'mrn': problem.mrn,
                 'natural_key': problem.natural_key,
                 'date_noted': str_from_date(problem.date),
-                'icd9_code': str(problem.icd9.code),
+                'icd9_code': problem.raw_icd9_code,
                 'problem_status': problem.status,
                 'comment': problem.comment,
                 'provider_id': problem.provider.natural_key
@@ -585,7 +585,7 @@ class PregnancyWriter(EpicWriter):
         row['term']= pregnancy.term
         row['preterm']= pregnancy.preterm
         row['ga_delivery']= pregnancy.ga_delivery
-        row['birth_weight']= ';'.join([str(pregnancy.birth_weight), str(pregnancy.birth_weight2),str(pregnancy.birth_weight3)])
+        row['birth_weight']= pregnancy.raw_birth_weight
         row['delivery']= pregnancy.delivery
         row['pre_eclampsia']= pregnancy.pre_eclampsia
 
