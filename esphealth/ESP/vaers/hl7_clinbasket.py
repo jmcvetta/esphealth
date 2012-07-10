@@ -74,9 +74,9 @@ class HL7_clinbasket(object):
         words =patient.natural_key.split()
         #TODO: this should be a metrohealth plugin, as it is specific to metrohealth natural key values
         if words[0].isdigit():
-            pid.patient_external_id = words[0] + '^^^^ID 1'
+            pid.patient_internal_id = words[0] + '^^^^ID 1'
         else:
-            pid.patient_external_id = patient.natural_key
+            pid.patient_internal_id = patient.natural_key
         #We currently don't need the following but could provide at some point if desired.
         #pid.patient_name = patient._get_name
         #pid.date_of_birth = utils.str_from_date(patient.date_of_birth)
@@ -101,15 +101,15 @@ class HL7_clinbasket(object):
         ques = self.ques
         txa.report_type = 33
         txa.activity_date=enc.date.strftime("%Y%m%d%H%M%s")
+        txa.primary_activity_provider='055947'
+        txa.originator_codename='055947'
         if VAERS_OVERRIDE_CLINICIAN_REVIEWER=='':
-            txa.primary_activity_provider=ques.provider_id
-            txa.originator_codename=ques.provider_id
+            txa.distributed_copies=ques.provider_id
         else:
-            txa.primary_activity_provider=VAERS_OVERRIDE_CLINICIAN_REVIEWER
-            txa.originator_codename=VAERS_OVERRIDE_CLINICIAN_REVIEWER
+            txa.distributed_copies=VAERS_OVERRIDE_CLINICIAN_REVIEWER
         txa.unique_document_number='^^ESPMH_' + str(ques.id)
-        txa.document_completion_status='DI'
-        txa.document_availability_status='UN'
+        txa.document_completion_status='AU'
+        txa.document_availability_status='AV'
         return txa
     
     def makeOBX(self, rowcode):
@@ -201,7 +201,13 @@ class HL7_clinbasket(object):
                     self.makeOBX('004'),
                     self.makeOBX('005'),
                     self.makeOBX('RP')]
-        all_text = '\n'.join([str(x) for x in all_segs])
+        all_text = '\r'.join([str(x) for x in all_segs])  + '\r' + '\n'
+        vfile=open('/home/esp/testmsg.txt','wb')        
+        #rebuild each time
+        vfile.truncate()
+        #this has to be parameterized.
+        vfile.write(all_text)
+        '''
         #the cStringIO.StringIO object is built in memory, not saved to disk.
         hl7file = cStringIO.StringIO()
         hl7file.write(all_text)
@@ -209,6 +215,7 @@ class HL7_clinbasket(object):
         if transmit_ftp(hl7file, 'clinbox_msg_ID' + str(self.ques.id)):
             Questionnaire.objects.filter(id=self.ques.id).update(inbox_message=hl7file.getvalue())
         hl7file.close()
+        '''
 
 
 def transmit_ftp(fileObj, filename):
@@ -225,7 +232,7 @@ def transmit_ftp(fileObj, filename):
         conn.cwd(UPLOAD_PATH)
         command = 'STOR ' + filename
         try:
-            conn.storlines(command, fileObj)
+            conn.storbinary(command, fileObj)
             log.info('Successfully uploaded Clin Inbasket HL7 message')
         except BaseException, e:
             log.error('FTP ERROR: %s' % e)
