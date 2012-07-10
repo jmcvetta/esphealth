@@ -24,10 +24,7 @@ class MSH(Segment):
         Field('continuation_number'),
         Field('accept_ack_type'),
         Field('application_ack_type'),
-        Field('country_code'),
-        Field('charset'),
-        Field('principal_language_of_message'),
-        Field('Alternate_charset')
+        Field('country_code')
         ]
 
 
@@ -38,7 +35,7 @@ class PID(Segment):
     Fields = [
         Field('set_id', serial=True),
         Field('patient_internal_id'),
-        Field('patient_external_id'),
+        Field('patient_id_list'),
         Field('alternate_patient_id'),
         Field('patient_name'),
         Field('mother_maiden_name'),
@@ -58,14 +55,7 @@ class PID(Segment):
         Field('driver_license'),
         Field('mother_identifier'),
         Field('ethnic_group'),
-        Field('birth_place'),
-        Field('multiple_birth_indicator'),
-        Field('birth_order'),
-        Field('citizenship'),
-        Field('veteran_military_status'),
-        Field('nationality'),
-        Field('death_datetime'),
-        Field('death_indicator')
+        Field('birth_place')
         ]
 
 
@@ -229,8 +219,7 @@ class EVN(Segment):
         Field('planned_datetime'),
         Field('event_reason_code'),
         Field('operator_id'),
-        Field('event_occurred'),
-        Field('event_facility')
+        Field('event_occurred')
         ]
     
 class PV1(Segment):
@@ -286,36 +275,37 @@ class PV1(Segment):
         Field('current_patient_balance'),
         Field('total_charges'),
         Field('total_adjustments'),
-        Field('total_payments'),
-        Field('alternate_visit_id')
+        Field('total_payments')
         ]
     
 class TXA(Segment):
     '''
     TXA Transcription report header contains information specific to a transcribed report but not text of the report
     '''
+    #numbers below represent the TXA segment definition field number, often used as reference rather than field names
     Fields = [
-        Field('set_id'),
-        Field('report_type'),
-        Field('document_content_presentation'),
-        Field('activity_date'),
-        Field('primary_activity_provider'),
-        Field('origination_datetime'),
-        Field('transcription_datetime'),
-        Field('edit_datetime'),
-        Field('originator_codename'),
-        Field('assigned_document_authenticator'),
-        Field('transcriptionist_codename'),
-        Field('unique_document_number'),
-        Field('parent_document_number'),
-        Field('placer_id'),
-        Field('order_filler_number'),
-        Field('unique_document_file_name'),
-        Field('document_completion_status'),
-        Field('document_confidentiality_status'),
-        Field('document_availability_status'),
-        Field('document_storage_status'),
-        Field('document_change_reason'),
-        Field('authentication_person_time_stamp'),
-        Field('distributed_copies')
+        Field('set_id'), #1
+        Field('report_type'), #2
+        Field('document_content_presentation'), #3
+        Field('activity_date'), #4
+        Field('primary_activity_provider'), #5
+        Field('origination_datetime'), #6
+        Field('transcription_datetime'), #7
+        Field('edit_datetime'), #8
+        Field('originator_codename'), #9
+        Field('assigned_document_authenticator'), #10
+        Field('transcriptionist_codename'), #11
+        Field('unique_document_number'), #12
+        Field('parent_document_number'), #13
+        Field('placer_id'), #14
+        Field('order_filler_number'), #15
+        Field('unique_document_file_name'), #16
+        Field('document_completion_status'), #17
+        Field('document_confidentiality_status'), #18
+        Field('document_availability_status'), #19
+        Field('document_storage_status'), #20
+        Field('document_change_reason'), #21
+        Field('authentication_person_time_stamp'), #22
+        Field('distributed_copies'), #23
+        Field('pipe') #added because MetroHealth sample message included an additional pipe character here.
         ]
