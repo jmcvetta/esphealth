@@ -96,7 +96,7 @@ def case_details(request, ptype, id):
     elif ptype=='digest':
         questionnaire = Questionnaire.by_digest(id)
         if not any(x for x in ['AR','AS'] if x==questionnaire.state):
-            return HttpResponse('This case has already been processed.  Thank you for your attention.')
+            return HttpResponse('You have already processed this case.  Thank you for your attention.')
     else: 
         #should never get here due to regex in vaers/urls.py for this view, but just in case...
         return HttpResponse('<h2>Vaers page type "' + ptype + '" not found.  Valid types are "case" and "digest".</h2>')
