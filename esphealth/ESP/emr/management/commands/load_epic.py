@@ -70,6 +70,10 @@ UPDATED_BY = 'load_epic'
 TIMESTAMP = datetime.datetime.now()
 UNKNOWN_PROVIDER = Provider.objects.get(natural_key='UNKNOWN')
 ETL_FILE_REGEX = re.compile(r'^epic\D\D\D\.esp\.(\d\d)(\d\d)(\d\d\d\d)$')
+ICD9PAT_REGEX = re.compile(r'''
+((E|V)? \d+ (\.\d+)?) | ([A-DF-UW-Z] \w*) | ([A-Z]{2} \w*) | (E|V)
+''',
+re.IGNORECASE | re.VERBOSE)
 
 def get_icd9(self, code):
     '''
@@ -306,19 +310,28 @@ class BaseLoader(object):
             return int(time.time()*1000)
         else:
             return natural_key
+        
     
+            
     def get_icd9(self, code, name, cache):
+    
         '''
         Given an ICD9 code, as a string, return an Icd9 model instance
         '''
         code = code.upper()
-        if not code in cache:
-            i, created = Icd9.objects.get_or_create(code__exact=code, defaults={
-                 'code': code,'name':name + ' (Added by load_epic.py)'})
-                
-            if created: log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
-                
-            cache[code] = i
+        
+        match = ICD9PAT_REGEX.match(code)
+        if match:
+            if not code in cache:
+                i, created = Icd9.objects.get_or_create(code__exact=code, defaults={
+                     'code': code,'name':name + ' (Added by load_epic.py)'})
+                    
+                if created: log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
+                    
+                cache[code] = i
+        else:
+            log.debug('Could not extract icd9 code: "%s"' % code)
+            return None
         return cache[code]
     
     @transaction.commit_on_success
@@ -456,16 +469,7 @@ class ProviderLoader(BaseLoader):
         if concat_values.strip() == '':
             log.debug('Empty row encountered -- skipping')
             return 
-
-        '''empty=''
-        # implement another way to account for missing fields
-        for i in row.items():
-            if i[1]:
-                empty.join(i[1])# Concatenate all fields
-        if not ''.join(empty):
-            log.debug('Empty row encountered -- skipping')
-            return  
-        '''      
+   
         
         natural_key = self.generateNaturalkey(row['natural_key'])
         # load provider in cache if not there, but natural key will never be null here
@@ -786,19 +790,18 @@ class EncounterLoader(BaseLoader):
             e.icd9_codes = []
         icd9= row['icd9s']
         # split by semicolon or by space. 
-        if   icd9.__contains__(';'):
-            for code_string in row['icd9s'].split(';'):
-                # add raw diagnosis by splitting from code string by space
-                firstspace = code_string.strip().find(' ');
-                diagnosis_text = code_string[firstspace:].strip()
-                
-                #get the code     
-                if code_string[:firstspace].__len__() >= 1: 
-                    code = code_string.split()[0].strip()
-                    # We'll only accept a code if it has at least one digit in the string.
-                    if any(c in string.digits for c in code):
-                        e.icd9_codes.add(self.get_icd9(code, diagnosis_text, self.__icd9_cache))
-        
+        for code_string in row['icd9s'].split(';'):
+            # add raw diagnosis by splitting from code string by space
+            firstspace = code_string.strip().find(' ');
+            diagnosis_text = code_string[firstspace:].strip()
+            
+            #get the code     
+            if code_string[:firstspace].__len__() >= 1: 
+                code = code_string.split()[0].strip()
+                # We'll only accept a code if it has at least one digit in the string.
+                if any(c in string.digits for c in code):
+                    e.icd9_codes.add(self.get_icd9(code, diagnosis_text, self.__icd9_cache))
+    
         try:
             e.save()
             log.debug('Saved encounter object: %s' % e)
@@ -867,7 +870,7 @@ class PrescriptionLoader(BaseLoader):
 
 # this object was added for version 3 of esp
 class PregnancyLoader(BaseLoader):
-    #TODO fix for mulitples, fix make fakes and extract
+    
     fields = [
         'patient_id', 
         'mrn', 
@@ -913,17 +916,16 @@ class PregnancyLoader(BaseLoader):
         
         p.births = 0
             
-        if   birth_weights.__contains__(';'):
-            for birth in row['birth_weight'].split(';'):
-                if not birth.strip() =='':
-                    p.births +=1
-                    #get the weight     
-                    if p.births == 1: 
-                        p.birth_weight = weight_str_to_kg(birth)
-                    elif  p.births == 2:  
-                        p.birth_weight2 = weight_str_to_kg(birth)
-                    elif  p.births ==3:  
-                        p.birth_weight3 = weight_str_to_kg(birth) 
+        for birth in birth_weights.split(';'):
+            if birth.strip() !='':
+                p.births +=1
+                #get the weight     
+                if p.births == 1: 
+                    p.birth_weight = weight_str_to_kg(birth)
+                elif  p.births == 2:  
+                    p.birth_weight2 = weight_str_to_kg(birth)
+                elif  p.births ==3:  
+                    p.birth_weight3 = weight_str_to_kg(birth) 
                     
         p.save()                
         
@@ -1026,7 +1028,7 @@ class AllergyLoader(BaseLoader):
         allergy_name = self.string_or_none(row['allergy_name'])
          
         #adding new rows to allergen table if they are  not there 
-        if not row['allergen_id'] =='':
+        if  row['allergen_id'] != '':
             allergen, created = Allergen.objects.get_or_create(code=row['allergen_id'])
         else:
             allergen, created = Allergen.objects.get_or_create(code=allergy_name)
@@ -1070,7 +1072,7 @@ class ProblemLoader(BaseLoader):
 
     def load_row(self, row):
         code = row['icd9_code']
-        icd9_code = self.get_icd9(code.upper(), '', {})
+        icd9_code = self.get_icd9(code, '', {})
         
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
