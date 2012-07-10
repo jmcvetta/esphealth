@@ -447,14 +447,26 @@ class ProviderLoader(BaseLoader):
         ]
     
     def load_row(self, row):
-        empty=''
+        
+        non_empty_values=[]
+        for v in row.values():
+            if v:
+                non_empty_values.append(v) # Gather all non-empty values
+        concat_values = ''.join(non_empty_values)
+        if concat_values.strip() == '':
+            log.debug('Empty row encountered -- skipping')
+            return 
+
+        '''empty=''
         # implement another way to account for missing fields
         for i in row.items():
             if i[1]:
                 empty.join(i[1])# Concatenate all fields
         if not ''.join(empty):
             log.debug('Empty row encountered -- skipping')
-            return        
+            return  
+        '''      
+        
         natural_key = self.generateNaturalkey(row['natural_key'])
         # load provider in cache if not there, but natural key will never be null here
         p = self.get_provider(natural_key)
@@ -875,6 +887,8 @@ class PregnancyLoader(BaseLoader):
         ]
     
     def load_row(self,row):
+        birth_weights = row['birth_weight']
+        
         values = {
             'provenance' : self.provenance,
             'patient' : self.get_patient(row['patient_id']),
@@ -888,6 +902,7 @@ class PregnancyLoader(BaseLoader):
             'parity' : row['parity'],
             'term' : row['term'],
             'preterm' : row['preterm'],
+            'raw_birth_weight' : birth_weights,
             'ga_delivery' : ga_str_to_days(row['ga_delivery']),
             'delivery' : row['delivery'],
             'pre_eclampsia' : row['pre_eclampsia'],
@@ -896,19 +911,19 @@ class PregnancyLoader(BaseLoader):
         
         p, created = self.insert_or_update(Pregnancy, values, ['natural_key'])
         
-        birth_weights = row['birth_weight']
         p.births = 0
             
         if   birth_weights.__contains__(';'):
             for birth in row['birth_weight'].split(';'):
-                p.births +=1
-                #get the weight     
-                if birth.__len__() >= 1 and p.births == 1: 
-                    p.birth_weight = birth.split()[0].strip()
-                elif birth.__len__() >= 1 and p.births == 2:  
-                    p.birth_weight2 = birth.split()[0].strip()
-                elif birth.__len__() >= 1 and p.births ==3:  
-                    p.birth_weight3 = birth.split()[0].strip()  
+                if not birth.strip() =='':
+                    p.births +=1
+                    #get the weight     
+                    if p.births == 1: 
+                        p.birth_weight = weight_str_to_kg(birth)
+                    elif  p.births == 2:  
+                        p.birth_weight2 = weight_str_to_kg(birth)
+                    elif  p.births ==3:  
+                        p.birth_weight3 = weight_str_to_kg(birth) 
                     
         p.save()                
         
@@ -1009,8 +1024,12 @@ class AllergyLoader(BaseLoader):
     def load_row(self, row):
         
         allergy_name = self.string_or_none(row['allergy_name'])
+         
         #adding new rows to allergen table if they are  not there 
-        allergen, created = Allergen.objects.get_or_create(code=row['allergen_id'])
+        if not row['allergen_id'] =='':
+            allergen, created = Allergen.objects.get_or_create(code=row['allergen_id'])
+        else:
+            allergen, created = Allergen.objects.get_or_create(code=allergy_name)
         
         if created:
             allergen.name = allergy_name
@@ -1050,8 +1069,8 @@ class ProblemLoader(BaseLoader):
         ]
 
     def load_row(self, row):
-        code = row['icd9_code'].upper()
-        icd9_code = self.get_icd9(code, '', {})
+        code = row['icd9_code']
+        icd9_code = self.get_icd9(code.upper(), '', {})
         
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
@@ -1061,12 +1080,14 @@ class ProblemLoader(BaseLoader):
             'mrn' : row['mrn'],
             'date' : self.date_or_none(row['date_noted']),
             'icd9' : icd9_code,
+            'raw_icd9_code' : code,
             'status' : self.string_or_none(row['problem_status']),
             'comment' : self.string_or_none(row['comment']),
             'provider' : self.get_provider(row['provider_id'])
             }
         
         p, created = self.insert_or_update(Problem, values, ['natural_key'])
+        
         
         log.debug('Saved Problem object: %s' % p)
 
