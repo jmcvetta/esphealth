@@ -323,7 +323,7 @@ class ImmunizationManufacturer(models.Model):
 
 
 class Allergen(models.Model):
-    code = models.CharField(max_length=40, primary_key=True)
+    code = models.CharField(max_length=100, primary_key=True)
     name = models.CharField(max_length=300, blank=True, null=True)
     
     def __unicode__(self):
