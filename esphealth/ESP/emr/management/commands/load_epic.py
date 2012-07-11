@@ -75,24 +75,6 @@ ICD9PAT_REGEX = re.compile(r'''
 ''',
 re.IGNORECASE | re.VERBOSE)
 
-def get_icd9(self, code):
-    '''
-    Given an ICD9 code, as a string, return an Icd9 model instance
-    '''
-    code = code.upper()
-    if not code in self.__icd9_cache:
-        try:
-            i = Icd9.objects.get(code__iexact=code)
-        except Icd9.DoesNotExist:
-            log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
-            i = Icd9()
-            i.code = code
-            i.name = 'Added by load_epic.py'
-            i.save()
-            self.__icd9_cache[code] = i
-    return self.__icd9_cache[code]
-
-
 def date_from_filepath(filepath):
     '''
     Extracts datestamp from ETL file path
@@ -261,7 +243,7 @@ class BaseLoader(object):
         
     def decimal_or_none(self, str):
         return Decimal(str) if str else None
-        
+         
     __string_sanitizer = re.compile(r'[\x80-\xFF]')
     
     def sanatize_str(self,s):
@@ -319,20 +301,23 @@ class BaseLoader(object):
         Given an ICD9 code, as a string, return an Icd9 model instance
         '''
         code = code.upper()
-        
+        if not code:
+            return None
         match = ICD9PAT_REGEX.match(code)
         if match:
-            if not code in cache:
-                i, created = Icd9.objects.get_or_create(code__exact=code, defaults={
-                     'code': code,'name':name + ' (Added by load_epic.py)'})
+            icd9code = match.group()
+            if not icd9code in cache:
+                i, created = Icd9.objects.get_or_create(code__exact=icd9code, defaults={
+                     'code': icd9code,'name':name + ' (Added by load_epic.py)'})
                     
-                if created: log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % code)
+                if created: log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % icd9code)
                     
-                cache[code] = i
+                cache[icd9code] = i
+                
+                return cache[icd9code]
         else:
             log.debug('Could not extract icd9 code: "%s"' % code)
             return None
-        return cache[code]
     
     @transaction.commit_on_success
     def load(self):
@@ -892,22 +877,25 @@ class PregnancyLoader(BaseLoader):
     def load_row(self,row):
         birth_weights = row['birth_weight']
         
+        if not row['date'] :
+            log.info('Empty date not allowed -- skipping')
+            return 
         values = {
             'provenance' : self.provenance,
             'patient' : self.get_patient(row['patient_id']),
             'provider' : self.get_provider(row['provider_id']),
             'natural_key' : row['natural_key'],
             'mrn' : row['mrn'],
-            'outcome' : row['outcome'],
-            'edd' : self.date_or_none(row['edd']),
-            'date' : self.date_or_none(row['date']),
-            'gravida' : row['gravida'],
-            'parity' : row['parity'],
-            'term' : row['term'],
-            'preterm' : row['preterm'],
-            'raw_birth_weight' : birth_weights,
+            'outcome' : self.string_or_none(row['outcome']),
+            'actual_date' : self.date_or_none(row['date']),
+            'date' : self.date_or_none(row['edd']),
+            'gravida' : self.decimal_or_none(row['gravida']),
+            'parity' : self.decimal_or_none(row['parity']),
+            'term' : self.decimal_or_none(row['term']),
+            'preterm' : self.decimal_or_none(row['preterm']),
+            'raw_birth_weight' : self.string_or_none(birth_weights),
             'ga_delivery' : ga_str_to_days(row['ga_delivery']),
-            'delivery' : row['delivery'],
+            'delivery' : self.string_or_none(row['delivery']),
             'pre_eclampsia' : row['pre_eclampsia'],
             
             }
@@ -991,6 +979,9 @@ class SocialHistoryLoader(BaseLoader):
     
     def load_row(self, row):
         # version 2 did not load this object, 
+        if not row['date_noted'] :
+            log.info('Empty date not allowed -- skipping')
+            return 
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
             'natural_key': natural_key,
@@ -1026,7 +1017,10 @@ class AllergyLoader(BaseLoader):
     def load_row(self, row):
         
         allergy_name = self.string_or_none(row['allergy_name'])
-         
+        
+        if not row['allergen_id'] and not allergy_name :
+            log.info('Empty allergy name and code encountered -- skipping')
+            return 
         #adding new rows to allergen table if they are  not there 
         if  row['allergen_id'] != '':
             allergen, created = Allergen.objects.get_or_create(code=row['allergen_id'])
