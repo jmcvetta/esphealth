@@ -92,10 +92,10 @@ class SocialHistoryAdmin(admin.ModelAdmin):
     ordering = ['-date']
     
 class PregnancyAdmin(admin.ModelAdmin):
-    list_display = ['actual_date', 'patient','date', 'outcome','ga_delivery', 'birth_weight']
+    list_display = ['actual_date', 'patient','edd', 'outcome','ga_delivery', 'birth_weight']
     raw_id_fields = STANDARD_RAW_ID_FIELDS
     search_fields = STANDARD_SEARCH_FIELDS 
-    ordering = ['-actual_date']    
+    ordering = ['-edd']    
 
 class ProvenanceAdmin(admin.ModelAdmin):
     list_display = ['provenance_id', 'timestamp', 'source', 'status']
