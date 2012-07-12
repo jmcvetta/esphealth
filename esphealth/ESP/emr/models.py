@@ -1612,10 +1612,11 @@ class Pregnancy(BasePatientRecord):
     '''
     A Pregnancy 
     '''
-    # Date is edd
+    # Date is not used, saved as today
     #
     outcome = models.TextField('Outcome', max_length=500, blank=True, null=True)
-    actual_date = models.DateField('Estimated date of delivery', blank=True, null=True, db_index=True)
+    edd = models.DateField('Estimated date of delivery', blank=True, null=True, db_index=True)
+    actual_date = models.DateField('Actual date of delivery', blank=True, null=True, db_index=True)
     gravida = models.IntegerField( blank=True, null=True )
     parity = models.IntegerField(blank=True, null=True )
     term = models.IntegerField( blank=True, null=True)
@@ -1630,7 +1631,7 @@ class Pregnancy(BasePatientRecord):
     pre_eclampsia = models.CharField('Pre_eclampsia', max_length=300, blank=True, null=True)
     
     class Meta:
-        ordering = ['date']
+        ordering = ['edd']
    
     @staticmethod
     def fakes():
@@ -1650,22 +1651,22 @@ class Pregnancy(BasePatientRecord):
         fertile_age = when if patient.date_of_birth is None else patient.date_of_birth + datetime.timedelta(days=random.randrange(12, 55)*365) 
         when =  fertile_age
         
-        date = when + datetime.timedelta(days=random.randrange(5, 275)) # 40 weeks - 5 days after
+        edd = when + datetime.timedelta(days=random.randrange(5, 275)) # 40 weeks - 5 days after
         #actual date
         actual_date = when + datetime.timedelta(days=random.randrange(1, 289)) # 42 weeks - 1 day after
         
-        gad = str(40 - relativedelta(date, actual_date).days/7 ) + 'w ' 
-        if  (relativedelta(date, actual_date).days % 7 ) > 0:
-            gad +=  str( relativedelta(date, actual_date).days % 7 ) + 'd'
+        gad = str(40 - relativedelta(edd, actual_date).days/7 ) + 'w ' 
+        if  (relativedelta(edd, actual_date).days % 7 ) > 0:
+            gad +=  str( relativedelta(edd, actual_date).days % 7 ) + 'd'
         
         birth_weight = round(random.uniform(0.9, 5),1)
         
         status = ['Term', 'Preterm', 'Still birth','']         
         outcome = random.choice(status)        
         p = Pregnancy(patient=patient, mrn = patient.mrn, provenance=Provenance.fake(),
-                             date=date, actual_date=actual_date, gravida=gravida, parity=parity,
+                             edd=edd, actual_date=actual_date, gravida=gravida, parity=parity,
                              preterm=preterm, birth_weight=birth_weight,term=term,
-                             ga_delivery = gad ,outcome=outcome,
+                             ga_delivery = gad ,outcome=outcome, date = datetime.date.today(),
                              provider=provider, natural_key=now)
             
         if save_on_db: p.save()
@@ -1677,7 +1678,7 @@ class Pregnancy(BasePatientRecord):
         return {
             'Actual date of delivery':(self.actual_date and self.actual_date.isoformat()) or None,
             'pregnancy':{
-                'estimated date of delivery':self.date,
+                'estimated date of delivery':self.edd,
                 'gravida':self.gravida,
                 'term':self.term
                 },
@@ -1686,4 +1687,4 @@ class Pregnancy(BasePatientRecord):
 
     def  __unicode__(self):
         return u"Pregnancy for %s expected %s and delivered %s" % (
-            self.patient.full_name, self.date, self.actual_date)
+            self.patient.full_name, self.edd, self.actual_date)
