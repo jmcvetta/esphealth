@@ -786,19 +786,21 @@ class EncounterLoader(BaseLoader):
         # TODO issue 329 this will change once we use the new diagnosis object
         if not created: # If updating the record, purge old ICD9 list
             e.icd9_codes = []
-        icd9= row['icd9s']
-        # split by semicolon or by space. 
+        icd9 = row['icd9s']
+        
+        # code_strings are separated by semi-colon
+        # within a code string, the code and optional text are separated by white space 
         for code_string in row['icd9s'].split(';'):
-            # add raw diagnosis by splitting from code string by space
-            firstspace = code_string.strip().find(' ');
-            diagnosis_text = code_string[firstspace:].strip()
-            
-            #get the code     
-            if code_string[:firstspace].__len__() >= 1: 
-                code = code_string.split()[0].strip()
-                # We'll only accept a code if it has at least one digit in the string.
-                if any(c in string.digits for c in code):
-                    e.icd9_codes.add(self.get_icd9(code, diagnosis_text, self.__icd9_cache))
+            firstspace = code_string.strip().find(' ')
+            if firstspace >= 0:
+                code = code_string[:firstspace].strip()
+                diagnosis_text = code_string[firstspace:].strip()
+            else:
+                code = code_string
+                diagnosis_text = ''
+                
+            if len(code) >= 1 and any(c in string.digits for c in code):
+                e.icd9_codes.add(self.get_icd9(code, diagnosis_text, self.__icd9_cache))
     
         try:
             e.save()
