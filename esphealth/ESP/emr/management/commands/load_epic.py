@@ -80,13 +80,25 @@ def date_from_filepath(filepath):
     Extracts datestamp from ETL file path
     '''
     filename = os.path.basename(filepath)
-    assert  ETL_FILE_REGEX.match(filename)
     match = ETL_FILE_REGEX.match(filename)
+    assert match
     month = int(match.groups()[0])
     day = int(match.groups()[1])
     year = int(match.groups()[2])
     return datetime.date(day=day, month=month, year=year)
 
+
+def datestring_from_filepath(filepath):
+    '''
+    Extracts datestring, in YYYYMMDD format, from ETL file path
+    '''
+    filename = os.path.basename(filepath)
+    match = ETL_FILE_REGEX.match(filename)
+    assert match
+    month = match.groups()[0]
+    day = match.groups()[1]
+    year = match.groups()[2]
+    return year + month + day
 
 
 class EpicDialect(csv.Dialect):
@@ -302,6 +314,7 @@ class BaseLoader(object):
         '''
         code = code.upper()
         if not code:
+            log.debug("ICD9 code is empty")
             return None
         match = ICD9PAT_REGEX.match(code)
         if match:
@@ -316,7 +329,7 @@ class BaseLoader(object):
                 
                 return cache[icd9code]
         else:
-            log.debug('Could not extract icd9 code: "%s"' % code)
+            log.debug('Could not extract ICD9 code: "%s"' % code)
             return None
     
     @transaction.commit_on_success
@@ -877,8 +890,8 @@ class PregnancyLoader(BaseLoader):
     def load_row(self,row):
         birth_weights = row['birth_weight']
         
-        year = self.provenance.source[16:]
-        date = year + self.provenance.source[12:16] 
+        # set date based on the date in the ETL file name
+        date = datestring_from_filepath(self.filename) 
         values = {
             'provenance' : self.provenance,
             'patient' : self.get_patient(row['patient_id']),
@@ -896,8 +909,7 @@ class PregnancyLoader(BaseLoader):
             'raw_birth_weight' : self.string_or_none(birth_weights),
             'ga_delivery' : ga_str_to_days(row['ga_delivery']),
             'delivery' : self.string_or_none(row['delivery']),
-            'pre_eclampsia' : row['pre_eclampsia'],
-            
+            'pre_eclampsia' : row['pre_eclampsia'],            
             }
         
         p, created = self.insert_or_update(Pregnancy, values, ['natural_key'])
@@ -980,11 +992,9 @@ class SocialHistoryLoader(BaseLoader):
     def load_row(self, row):
         # version 2 did not load this object, 
         
-        if not row['date_noted'] :
-            
-            log.info('Empty date not allowed using provenance date instead')
-            year = self.provenance.source[16:]
-            date = year + self.provenance.source[12:16]
+        if not row['date_noted'] :            
+            log.info('Empty date not allowed, using date from the ETL file name')
+            date = datestring_from_filepath(self.filename)
         else:
             date = row['date_noted']
         natural_key = self.generateNaturalkey(row['natural_key'])
@@ -1023,9 +1033,10 @@ class AllergyLoader(BaseLoader):
         
         allergy_name = self.string_or_none(row['allergy_name'])
         
-        if not row['allergen_id'] and not allergy_name :
-            log.info('Empty allergy name and code encountered -- skipping')
-            return 
+        if not row['allergen_id'] and not allergy_name:
+            log.info('Empty allergy name and code encountered, setting allergy name to UNSPECIFIED')
+            allergy_name = 'UNSPECIFIED'
+            
         #adding new rows to allergen table if they are  not there 
         if  row['allergen_id'] != '':
             allergen, created = Allergen.objects.get_or_create(code=row['allergen_id'])
