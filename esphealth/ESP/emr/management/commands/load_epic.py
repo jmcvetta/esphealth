@@ -863,7 +863,7 @@ class PregnancyLoader(BaseLoader):
         'natural_key', 
         'outcome', 
         'edd', 
-        'date', 
+        'actual_date', 
         'gravida', 
         'parity', 
         'term', 
@@ -877,10 +877,8 @@ class PregnancyLoader(BaseLoader):
     def load_row(self,row):
         birth_weights = row['birth_weight']
         
-        if not row['date'] :
-            #TODO add edd column and populate date with provenance
-            log.info('Empty date not allowed for date -- skipping')
-            return 
+        year = self.provenance.source[16:]
+        date = year + self.provenance.source[12:16] 
         values = {
             'provenance' : self.provenance,
             'patient' : self.get_patient(row['patient_id']),
@@ -888,8 +886,9 @@ class PregnancyLoader(BaseLoader):
             'natural_key' : row['natural_key'],
             'mrn' : row['mrn'],
             'outcome' : self.string_or_none(row['outcome']),
-            'actual_date' : self.date_or_none(row['date']),
-            'date' : self.date_or_none(row['edd']),
+            'actual_date' : self.date_or_none(row['actual_date']),
+            'edd' : self.date_or_none(row['edd']),
+            'date' : self.date_or_none(date),
             'gravida' : self.decimal_or_none(row['gravida']),
             'parity' : self.decimal_or_none(row['parity']),
             'term' : self.decimal_or_none(row['term']),
