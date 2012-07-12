@@ -878,7 +878,8 @@ class PregnancyLoader(BaseLoader):
         birth_weights = row['birth_weight']
         
         if not row['date'] :
-            log.info('Empty date not allowed -- skipping')
+            #TODO add edd column and populate date with provenance
+            log.info('Empty date not allowed for date -- skipping')
             return 
         values = {
             'provenance' : self.provenance,
@@ -979,15 +980,20 @@ class SocialHistoryLoader(BaseLoader):
     
     def load_row(self, row):
         # version 2 did not load this object, 
+        
         if not row['date_noted'] :
-            log.info('Empty date not allowed -- skipping')
-            return 
+            
+            log.info('Empty date not allowed using provenance date instead')
+            year = self.provenance.source[16:]
+            date = year + self.provenance.source[12:16]
+        else:
+            date = row['date_noted']
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
             'natural_key': natural_key,
             'provenance' : self.provenance,
             # this date field will only work with version 3 etl
-            'date' : self.date_or_none(row['date_noted']), # matching version 3 ETL
+            'date' : self.date_or_none(date), # matching version 3 ETL
             'patient' : self.get_patient(row['patient_id']),
             'mrn' : row['mrn'],
             'tobacco_use' : row['tobacco_use'],
