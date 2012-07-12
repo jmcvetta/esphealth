@@ -960,7 +960,7 @@ class GestationalDiabetesReport(Report):
         patient_values = {
             'patient_id': patient.pk,
             'mrn': patient.mrn,
-             'date_of_birth': patient.date_of_birth,
+            'date_of_birth': patient.date_of_birth,
             'ethnicity': patient.race,
             'zip_code': zip_code,
             'frank_diabetes_ever': binary(frank_dm_case_qs),
@@ -984,8 +984,8 @@ class GestationalDiabetesReport(Report):
             if preg_ts.end_date:
                 pregnancy_info = Pregnancy.objects.filter(
                     patient = patient,
-                    date__gt = preg_ts.start_date,
-                    date__lte = preg_ts.end_date + relativedelta(days=30)
+                    actual_date__gt = preg_ts.start_date,
+                    actual_date__lte = preg_ts.end_date + relativedelta(days=30)
                     )
                 if not pregnancy_info:
                     pregnancy_info = Pregnancy.objects.filter(
@@ -997,8 +997,8 @@ class GestationalDiabetesReport(Report):
                  # no end_date in timespan, it prossibly current pregnancy and check for next 10 months
                  pregnancy_info = Pregnancy.objects.filter(
                     patient = patient,
-                    date__gt = preg_ts.start_date,
-                    date__lte = preg_ts.start_date + relativedelta(months=10)
+                    actual_date__gt = preg_ts.start_date,
+                    actual_date__lte = preg_ts.start_date + relativedelta(months=10)
                     )
                  if not pregnancy_info:
                     pregnancy_info = Pregnancy.objects.filter(
@@ -1017,7 +1017,7 @@ class GestationalDiabetesReport(Report):
                 'term' : pregnancy_info[0].term,
                 'preterm' : pregnancy_info[0].preterm,
                 'outcome' : pregnancy_info[0].outcome,
-                'actual_date' : pregnancy_info[0].date,
+                'actual_date' : pregnancy_info[0].actual_date,
                 'ga_delivery' : pregnancy_info[0].ga_delivery,
                 'births' : pregnancy_info[0].births,
                 'birth_weight' : pregnancy_info[0].birth_weight,
