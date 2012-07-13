@@ -1093,8 +1093,8 @@ class Encounter(BasePatientRecord):
     pregnant = models.BooleanField('Patient is pregnant?', blank=False, default=False, db_index=True)
     edd = models.DateField('Expected Date of Delivery (pregnant women only)', blank=True, null=True, db_index=True) 
     temperature = models.FloatField('Temperature (F)', blank=True, null=True, db_index=True)
-    weight = models.FloatField('Weight (kg)', blank=True, null=True, db_index=True)
-    height = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
+    weight = models.CharField('Weight (kg)', max_length=100,blank=True, null=True, db_index=True)
+    height = models.CharField('Height (cm)', max_length=100,blank=True, null=True, db_index=True)
     bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True, db_index=True)
     bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True, db_index=True)
     o2_stat = models.FloatField(blank=True, null=True, db_index=True)
@@ -1204,12 +1204,10 @@ class Encounter(BasePatientRecord):
         e.temperature = Encounter.randomVitalValue(msVitals[6].normal_low, msVitals[6].normal_high,
                                            msVitals[6].very_low, msVitals[6].very_high, 0) 
         
-        e.weight = Encounter.randomVitalValue(msVitals[7].normal_low, msVitals[7].normal_high,
-                                           msVitals[7].very_low, msVitals[7].very_high, 0) 
-        e.weight = str(e.weight) + 'lb'
-        e.height = Encounter.randomVitalValue(msVitals[3].normal_low, msVitals[3].normal_high,
-                                           msVitals[3].very_low, msVitals[3].very_high, 0) 
-        e.height = str(e.height) + '"'
+        e.weight = str(Encounter.randomVitalValue(msVitals[7].normal_low, msVitals[7].normal_high,
+                                           msVitals[7].very_low, msVitals[7].very_high, 0) ) + 'lb'
+        e.height = str(Encounter.randomVitalValue(msVitals[3].normal_low, msVitals[3].normal_high,
+                                           msVitals[3].very_low, msVitals[3].very_high, 0))  + '"'
         e.bp_systolic = Encounter.randomVitalValue(msVitals[2].normal_low, msVitals[2].normal_high,
                                            msVitals[2].very_low, msVitals[2].very_high, 0)  
         e.bp_diastolic = Encounter.randomVitalValue(msVitals[1].normal_low, msVitals[1].normal_high,
@@ -1220,7 +1218,7 @@ class Encounter(BasePatientRecord):
                                            msVitals[5].very_low, msVitals[5].very_high, 2) 
         
         
-        #e.diagnosis = ''
+        
                     
         if save_on_db: e.save()
         return e
