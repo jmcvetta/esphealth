@@ -312,10 +312,10 @@ class BaseLoader(object):
         '''
         Given an ICD9 code, as a string, return an Icd9 model instance
         '''
-        code = code.upper()
         if not code:
             log.debug("ICD9 code is empty")
             return None
+        code = code.upper()
         match = ICD9PAT_REGEX.match(code)
         if match:
             icd9code = match.group()

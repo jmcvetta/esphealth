@@ -1584,12 +1584,14 @@ class Problem(BasePatientRecord):
         date =  when if patient.date_of_birth is None else max(when, patient.date_of_birth)
         
         icd9 = Icd9.objects.order_by('?')[0]
+        raw_icd9_code = icd9.code
         #Icd9.objects.get(code = [str(random.choice(icd9.icd9_codes.split(';'))) for icd9 in FakeICD9s.objects.order_by('?')[:0]])
         
         status = ['active',  'deleted','']         
         problem = Problem(patient=patient, provenance=Provenance.fake(),
                          date=date, status=random.choice(status), icd9=icd9,
-                         provider=patient.pcp, natural_key=now)
+                         raw_icd9_code=raw_icd9_code, provider=patient.pcp,
+                         natural_key=now)
         if save_on_db: problem.save()
         return problem
             
