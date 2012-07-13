@@ -313,7 +313,7 @@ class BaseLoader(object):
         Given an ICD9 code, as a string, return an Icd9 model instance
         '''
         if not code:
-            log.debug("ICD9 code is empty")
+            log.info("ICD9 code is empty")
             return None
         code = code.upper()
         match = ICD9PAT_REGEX.match(code)
@@ -329,7 +329,7 @@ class BaseLoader(object):
                 
             return cache[icd9code]
         else:
-            log.debug('Could not extract ICD9 code: "%s"' % code)
+            log.info('Could not extract icd9 code: "%s"' % code)
             return None
     
     @transaction.commit_on_success
@@ -911,7 +911,7 @@ class PregnancyLoader(BaseLoader):
             'raw_birth_weight' : self.string_or_none(birth_weights),
             'ga_delivery' : ga_str_to_days(row['ga_delivery']),
             'delivery' : self.string_or_none(row['delivery']),
-            'pre_eclampsia' : row['pre_eclampsia'],            
+            'pre_eclampsia' : row['pre_eclampsia'],
             }
         
         p, created = self.insert_or_update(Pregnancy, values, ['natural_key'])
