@@ -322,12 +322,12 @@ class BaseLoader(object):
             if not icd9code in cache:
                 i, created = Icd9.objects.get_or_create(code__exact=icd9code, defaults={
                      'code': icd9code,'name':name + ' (Added by load_epic.py)'})
-                    
-                if created: log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % icd9code)
-                    
+    
+                if created:
+                    log.warning('Could not find ICD9 code "%s" - creating new ICD9 entry.' % icd9code)
                 cache[icd9code] = i
                 
-                return cache[icd9code]
+            return cache[icd9code]
         else:
             log.debug('Could not extract ICD9 code: "%s"' % code)
             return None
