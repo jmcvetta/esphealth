@@ -49,7 +49,7 @@ from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
 from ESP.emr.management.commands.load_epic import LoadException, UPDATED_BY
 
 #change patient generations here
-POPULATION_SIZE = 5
+POPULATION_SIZE = 2
 
 # if min and <item>per_patient are >0 and same it will generate that amount
 # if min < than <item>per_patient it will generate a random number of object in that range
@@ -579,7 +579,7 @@ class PregnancyWriter(EpicWriter):
         row['mrn']= pregnancy.patient.mrn
         row['outcome']= pregnancy.outcome
         row['edd']= str_from_date(pregnancy.edd)
-        row['actual_date']= str_from_date(pregnancy.actual_date)
+        row['date']= str_from_date(pregnancy.actual_date)
         row['gravida']= pregnancy.gravida
         row['parity']= pregnancy.parity
         row['term']= pregnancy.term
@@ -706,7 +706,7 @@ class Command(LoaderCommand):
         print 'up to %s Lab orders ' % LAB_ORDERS_PER_PATIENT
         print 'up to %s Prescriptions per Patient' % MEDS_PER_PATIENT
         print 'up to %s Immunizations per Patient' % ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT 
-        print 'up to %s Patients with up to 5 Pregnancies' % countprg
+        print 'up to %s Patients with up to %s Pregnancies' % (countprg ,MAX_PREGNANCIES)
         print 'up to %s Allergies ' % MAX_ALLERGIES
         print 'up to %s Problems ' % MAX_PROBLEMS
         print 'up to %s Social History ' % MAX_SOCIALHISTORY         
