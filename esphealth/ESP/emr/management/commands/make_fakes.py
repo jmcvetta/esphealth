@@ -579,7 +579,7 @@ class PregnancyWriter(EpicWriter):
         row['mrn']= pregnancy.patient.mrn
         row['outcome']= pregnancy.outcome
         row['edd']= str_from_date(pregnancy.edd)
-        row['date']= str_from_date(pregnancy.actual_date)
+        row['actual_date']= str_from_date(pregnancy.actual_date)
         row['gravida']= pregnancy.gravida
         row['parity']= pregnancy.parity
         row['term']= pregnancy.term
