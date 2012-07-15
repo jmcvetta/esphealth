@@ -1207,7 +1207,7 @@ class Encounter(BasePatientRecord):
         e.weight = str(Encounter.randomVitalValue(msVitals[7].normal_low, msVitals[7].normal_high,
                                            msVitals[7].very_low, msVitals[7].very_high, 0) ) + 'lb'
         e.height = str(Encounter.randomVitalValue(msVitals[3].normal_low, msVitals[3].normal_high,
-                                           msVitals[3].very_low, msVitals[3].very_high, 0))  + '"'
+                                           msVitals[3].very_low, msVitals[3].very_high, 0))  + "'"
         e.bp_systolic = Encounter.randomVitalValue(msVitals[2].normal_low, msVitals[2].normal_high,
                                            msVitals[2].very_low, msVitals[2].very_high, 0)  
         e.bp_diastolic = Encounter.randomVitalValue(msVitals[1].normal_low, msVitals[1].normal_high,
