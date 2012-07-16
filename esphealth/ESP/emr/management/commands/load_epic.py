@@ -527,8 +527,7 @@ class PatientLoader(BaseLoader):
         'center_id',
         ]
     
-    def load_row(self, row):
-        
+    def load_row(self, row):       
         natural_key = self.generateNaturalkey(row['natural_key'])
         p = self.get_patient(natural_key)
         
@@ -546,7 +545,6 @@ class PatientLoader(BaseLoader):
         'city' : row['city'],
         'state' : row['state'],
         'zip' : row['zip'],
-        'zip5' : p._calculate_zip5(),
         'country' : row['country'],
         'areacode' : row['areacode'],
         'tel' : row['tel'],
@@ -564,6 +562,9 @@ class PatientLoader(BaseLoader):
         'center_id' : row['center_id'],
         }
         p, created = self.insert_or_update(Patient, values, ['natural_key'])
+        
+        p.zip5 = p._calculate_zip5()
+        p.save()
         
         log.debug('Saved patient object: %s' % p)
 
@@ -621,11 +622,11 @@ class LabResultLoader(BaseLoader):
         else:
             native_code = None
         if not row['natural_key']:
-            natural_key = self.generateNaturalkey(row['natural_key']).__str__()
+            natural_key = self.generateNaturalkey(row['order_natural_key'])
             if native_code:
                 natural_key = natural_key + native_code
         else:
-            natural_key = row['natural_key']
+            natural_key = self.generateNaturalkey(row['natural_key'])
         
         values = {
         'provenance' : self.provenance,
@@ -841,12 +842,12 @@ class PrescriptionLoader(BaseLoader):
             name = self.string_or_none(row['drug_desc'])
             directions = self.string_or_none(row['directions'])
             
-        natural_key = self.generateNaturalkey(row['order_natural_key'])+ row['order_date']
+        natural_key = self.generateNaturalkey(row['order_natural_key'] + row['order_date'])
         
         values = {
         'provenance' : self.provenance,
         #'updated_by' : UPDATED_BY,
-        'order_natural_key' :row['order_natural_key'],
+        'order_natural_key' : row['order_natural_key'],
         'patient' : self.get_patient(row['patient_id']),
         'mrn' : row['mrn'],
         'provider' : self.get_provider(row['provider_id']),
@@ -890,6 +891,7 @@ class PregnancyLoader(BaseLoader):
         ]
     
     def load_row(self,row):
+        natural_key = self.generateNaturalkey(row['natural_key'])
         birth_weights = row['birth_weight']
         
         # set date based on the date in the ETL file name
@@ -898,7 +900,7 @@ class PregnancyLoader(BaseLoader):
             'provenance' : self.provenance,
             'patient' : self.get_patient(row['patient_id']),
             'provider' : self.get_provider(row['provider_id']),
-            'natural_key' : row['natural_key'],
+            'natural_key' : natural_key,
             'mrn' : row['mrn'],
             'outcome' : self.string_or_none(row['outcome']),
             'actual_date' : self.date_or_none(row['actual_date']),
@@ -916,11 +918,15 @@ class PregnancyLoader(BaseLoader):
         
         p, created = self.insert_or_update(Pregnancy, values, ['natural_key'])
         
-        p.births = 0
+        p.births = 0        
+        if not created: # If updating the record, purge old birth weights
+            p.birth_weight = None
+            p.birth_weight2 = None
+            p.birth_weight3 = None
             
         for birth in birth_weights.split(';'):
-            if birth.strip() !='':
-                p.births +=1
+            if birth.strip() != '':
+                p.births += 1
                 #get the weight     
                 if p.births == 1: 
                     p.birth_weight = weight_str_to_kg(birth)
@@ -992,14 +998,17 @@ class SocialHistoryLoader(BaseLoader):
         ]
     
     def load_row(self, row):
-        # version 2 did not load this object, 
-        
         if not row['date_noted'] :            
             log.info('Empty date not allowed, using date from the ETL file name')
             date = datestring_from_filepath(self.filename)
         else:
             date = row['date_noted']
-        natural_key = self.generateNaturalkey(row['natural_key'])
+            
+        if not row['natural_key']:
+            natural_key = self.generateNaturalkey(row['patient_id'] + date)
+        else:
+            natural_key = self.generateNaturalkey(row['natural_key'])
+        
         values = {
             'natural_key': natural_key,
             'provenance' : self.provenance,
@@ -1031,8 +1040,7 @@ class AllergyLoader(BaseLoader):
         'provider_id', #added in 3
         ]
     
-    def load_row(self, row):
-        
+    def load_row(self, row):        
         allergy_name = self.string_or_none(row['allergy_name'])
         
         if not row['allergen_id'] and not allergy_name:
@@ -1040,7 +1048,7 @@ class AllergyLoader(BaseLoader):
             allergy_name = 'UNSPECIFIED'
             
         #adding new rows to allergen table if they are  not there 
-        if  row['allergen_id'] != '':
+        if row['allergen_id'] != '':
             allergen, created = Allergen.objects.get_or_create(code=row['allergen_id'])
         else:
             allergen, created = Allergen.objects.get_or_create(code=allergy_name)
@@ -1101,8 +1109,7 @@ class ProblemLoader(BaseLoader):
             }
         
         p, created = self.insert_or_update(Problem, values, ['natural_key'])
-        
-        
+                
         log.debug('Saved Problem object: %s' % p)
 
 class Command(LoaderCommand):
