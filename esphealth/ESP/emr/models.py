@@ -134,8 +134,8 @@ class Provider(BaseMedicalRecord):
     last_name = models.CharField('Last Name', max_length=200, blank=True, null=True)
     first_name = models.CharField('First Name', max_length=200, blank=True, null=True)
     middle_name = models.CharField('Middle_Name', max_length=200, blank=True, null=True)
-    title = models.CharField('Title', max_length=20, blank=True, null=True)
-    dept_natural_key = models.CharField('Primary Department identifier in source EMR system', max_length=20, blank=True, null=True)
+    title = models.CharField('Title', max_length=50, blank=True, null=True)
+    dept_natural_key = models.CharField('Primary Department identifier in source EMR system', max_length=100, blank=True, null=True)
     dept = models.CharField('Primary Department', max_length=200, blank=True, null=True)
     dept_address_1 = models.CharField('Primary Department Address 1', max_length=100, blank=True, null=True)
     dept_address_2 = models.CharField('Primary Department Address 2', max_length=100, blank=True, null=True)
@@ -600,11 +600,9 @@ class LabResult(BasePatientRecord):
     comment = models.TextField('Comments', blank=True, null=True)
     procedure_name = models.CharField('Procedure Name', max_length=255, blank=True, null=True)
     
-    
     class Meta:
         verbose_name = 'Lab Test Result'
         ordering = ['date']
-
      
     @staticmethod
     def fakes():
@@ -613,21 +611,25 @@ class LabResult(BasePatientRecord):
     @staticmethod
     def delete_fakes():
         LabResult.fakes().delete()
-
+    
     
     @staticmethod
-    def randomWeight(first=.7, second=.9):
+    def randomWeight(normal, high, low,first=.7, second=.9):
+        
         r = random.random()
         if r <= first:
-            return 'H'
+            return random.choice(high)
         elif r <= second:
-            return 'L'
+            return random.choice(low)
         else: 
-            return 'N'
+            return random.choice(normal)
         
     @staticmethod
     def make_mock(patient, when=None, **kw):
-        
+        normal = ['IN','UN','NL']
+        high = ['AH','CH','CR']
+        low = ['AL','CL','AB']
+    
         save_on_db = kw.pop('save_on_db', False)
         msLabs = FakeLabs.objects.order_by('?')[0]
         now = int(time.time()*1000) #time in milliseconds
@@ -658,61 +660,28 @@ class LabResult(BasePatientRecord):
         # Result
         
         if msLabs.data_type <> 'Qualitative':
-            lx.abnormal_flag = LabResult.randomWeight()
+            lx.abnormal_flag = LabResult.randomWeight(normal,high,low)
         
             #random btw low and high (sometimes between very low or very high)
-            if lx.abnormal_flag == 'L':
+            if lx.abnormal_flag in low:
                 lx.result_float = round(random.uniform(msLabs.very_low, lx.ref_low_float), 2)
-            elif lx.abnormal_flag == 'H':
+            elif lx.abnormal_flag in high:
                 lx.result_float = round(random.uniform(lx.ref_high_float, msLabs.very_high) , 2)
             else:
                 lx.result_float = round(random.uniform(lx.ref_low_float, lx.ref_high_float), 2)
             lx.result_string = lx.result_float
         else:
             lx.result_string = random.choice(msLabs.qualitative_values.split(';'))
+            lx.abnormal_flag = random.choice(normal)
         
         # Wide fields
         #lx.specimen_num = ignore
-        #lx.specimen_source = ignore
+        specimen = ['culture','sample','biopsy','blood','urine']
+        lx.specimen_source = random.choice(specimen)
         #lx.impression = ignore
         lx.comment = 'final report'
         #lx.procedure_name = ignore
-        
-        ''' 
- 0.patient id  = esp patient mrn
- MS_Test_Name  Map ESP Native Name  last time and this time.
-   2. MS_Test_Sub_Cat -  add to fake labs table 
-3.    Specimen_Source   populate specimen source from esp
-4.       LOINC  use output code (but we have to run concordance) and map labs or generate from fake labs table adding a column 
-5.       LOINC_FLAG  add column to fake labs and generate it from spec but would have to add to etl 
-6.       Stat  we left empty last time
-7.       Pt_loc  left empty last time ? ask rich or take from labs if we change etl
-8.       Result_loc  left empty last time
-9.       LOCAL_CD  Native Code went to this last time
-10.   BATTERY_CD  -was left empty last time ? first 5 digit number ?
-11.   PX  from fake labs 
-12.   PX_Codetype  hard coded c4 for all from fake labs
-13.   Order_dt  date field mapped last time to this
-14.   Lab_dt  collection date mapped last time to this.
-15.   Lab_tm  leave blank
-16.   Result_dt  result_date mapping last time
-17.   Result_tm  leave blank
-18.   Orig_Result  esp result string or float?
-19.   MS_Result_C  qualitative results convert from fake labs 
-20.   MS_Result_N   computed original result and factor  
-21.   Modifier  was blank last time 
-22.   Orig_Result_Unit   from ref unit
-23.   Std_Result_Unit  fake labs table 
-24.   MS_Result_Unit  fake labs table 
-25.   Norm_Range_low  esp ref _ low float or string see make fakes
-26.   Modifier_low  - EQ in fake labs
-27.   Norm_Range_high esp ref _ high float or string see make fakes 
-28.   Modifier_high  EQ  in fake labs
-29.   Abn_ind  - esp abnormal flag , generate based on spec codes 
-30.   Order_prov  - esp  provider 
-31.   Order_dept  esp get dept from provider 
-32.   Facility_Code  esp center id take data from the fake providers loaded.. create some site ids. 
-        '''
+      
         if save_on_db: lx.save()
         return lx      
        
@@ -1081,7 +1050,7 @@ ENCOUNTER_TYPES = [('VISIT','VISIT'), ('ER','ER'), ('HOSPITALIZATION','HOSPITALI
 PRIORITY_TYPES  = [('3','3'),('2','2'),('1','1')]
 
 class EncounterTypeMap (models.Model):
-    raw_encounter_type = models.CharField(max_length=20,  blank=False, db_index=True)
+    raw_encounter_type = models.CharField(max_length=100,  blank=False, db_index=True)
     mapping = models.CharField(max_length=20, default = 'VISIT', choices=ENCOUNTER_TYPES, blank=False, db_index=True)
     priority = models.IntegerField(  blank=False,choices=PRIORITY_TYPES, default =3 ,db_index=True)
     
@@ -1098,10 +1067,10 @@ class Encounter(BasePatientRecord):
     # Fields taken directly from ETL file.  Some minimal processing, such as 
     # standardizing capitalization, may be advisable in loader code.  
     
-    raw_encounter_type =  models.CharField('Raw Type of encounter', max_length=20, blank=True, null=True, db_index=True)
-    encounter_type = models.CharField('Type of encounter', choices=ENCOUNTER_TYPES, max_length=20, blank=True, null=True, db_index=True)
+    raw_encounter_type =  models.CharField('Raw Type of encounter', max_length=100, blank=True, null=True, db_index=True)
+    encounter_type = models.CharField('Type of encounter', choices=ENCOUNTER_TYPES, max_length=100, blank=True, null=True, db_index=True)
     priority =  models.CharField(max_length=10,choices=PRIORITY_TYPES, blank=False, db_index=True)
-    status = models.CharField('Record status', max_length=20, blank=True, null=True, db_index=True)
+    status = models.CharField('Record status', max_length=100, blank=True, null=True, db_index=True)
     site_natural_key = models.CharField('Native EMR system site ID', max_length=30, blank=True, null=True, db_index=True)
     site_name = models.CharField('Encounter site name', max_length=100, blank=True, null=True, db_index=True)
     #
