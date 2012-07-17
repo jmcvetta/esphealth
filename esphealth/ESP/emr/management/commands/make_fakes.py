@@ -236,7 +236,7 @@ class LabResultWriter(EpicWriter):
     
     fields = [
         'patient_id',           # 1
-        'mrn',   # 2
+        'mrn',                  # 2
         'order_natural_key',    # 3
         'order_date',           # 4
         'result_date',          # 5
@@ -374,8 +374,8 @@ class EncounterWriter(EpicWriter):
                 'edd':str_from_date(encounter.edd) or '',
                 'temp':str(encounter.temperature or '') ,
                 'cpt': '',
-                'weight': encounter.weight,
-                'height': encounter.height,
+                'weight': encounter.raw_weight,
+                'height': encounter.raw_height,
                 'bp_systolic':str(encounter.bp_systolic or ''),
                 'bp_diastolic':str(encounter.bp_diastolic or ''),
                 'o2_stat':str(encounter.o2_stat or ''),
@@ -459,7 +459,7 @@ class ImmunizationWriter(EpicWriter):
                 'natural_key' :immunization.natural_key,
                 'mrn': immunization.patient.mrn,
                 'provider_id':immunization.provider.natural_key,
-                'visit_date' : immunization.visit_date
+                'visit_date' : str_from_date(immunization.visit_date) or ''
                 })
                 
 
