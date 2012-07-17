@@ -204,7 +204,7 @@ class HL7_clinbasket(object):
         all_text = '\r'.join([str(x) for x in all_segs])  + '\r' + '\n'
         #the cStringIO.StringIO object is built in memory, not saved to disk.
         hl7file = cStringIO.StringIO()
-        print>>hl7file,all_text
+        hl7file.write(all_text)
         hl7file.seek(0)
         if transmit_ftp(hl7file, 'clinbox_msg_ID' + str(self.ques.id)):
             Questionnaire.objects.filter(id=self.ques.id).update(inbox_message=hl7file.getvalue())
