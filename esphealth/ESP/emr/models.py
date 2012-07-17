@@ -138,7 +138,7 @@ class Provider(BaseMedicalRecord):
     dept_natural_key = models.CharField('Primary Department identifier in source EMR system', max_length=20, blank=True, null=True)
     dept = models.CharField('Primary Department', max_length=200, blank=True, null=True)
     dept_address_1 = models.CharField('Primary Department Address 1', max_length=100, blank=True, null=True)
-    dept_address_2 = models.CharField('Primary Department Address 2', max_length=20, blank=True, null=True)
+    dept_address_2 = models.CharField('Primary Department Address 2', max_length=100, blank=True, null=True)
     dept_city = models.CharField('Primary Department City', max_length=20, blank=True, null=True)
     dept_state = models.CharField('Primary Department State', max_length=20, blank=True, null=True)
     dept_zip = models.CharField('Primary Department Zip', max_length=20, blank=True, null=True)
@@ -614,22 +614,7 @@ class LabResult(BasePatientRecord):
     def delete_fakes():
         LabResult.fakes().delete()
 
-    @staticmethod
-    def oldmake_mock(patient, when=None, **kw):
-        save_on_db = kw.pop('save_on_db', False)
-        loinc = kw.get('with_loinc', None) or Loinc.objects.order_by('?')[0]
-
-        when = when or datetime.date.today()
-        result_date = when + datetime.timedelta(days=random.randrange(1, 30))
-        # Make sure the patient was alive for the order...
-        order_date = when if patient.date_of_birth is None else max(when, patient.date_of_birth)
-        lx = LabResult(patient=patient, provider=Provider.get_mock(),
-                       provenance=Provenance.fake(), date=order_date, result_date=result_date,
-                       native_code=loinc.loinc_num, native_name=loinc.name)
-
-        if save_on_db: lx.save()
-        return lx
-
+    
     @staticmethod
     def randomWeight(first=.7, second=.9):
         r = random.random()
@@ -693,7 +678,41 @@ class LabResult(BasePatientRecord):
         lx.comment = 'final report'
         #lx.procedure_name = ignore
         
-
+        ''' 
+ 0.patient id  = esp patient mrn
+ MS_Test_Name  Map ESP Native Name  last time and this time.
+   2. MS_Test_Sub_Cat -  add to fake labs table 
+3.    Specimen_Source   populate specimen source from esp
+4.       LOINC  use output code (but we have to run concordance) and map labs or generate from fake labs table adding a column 
+5.       LOINC_FLAG  add column to fake labs and generate it from spec but would have to add to etl 
+6.       Stat  we left empty last time
+7.       Pt_loc  left empty last time ? ask rich or take from labs if we change etl
+8.       Result_loc  left empty last time
+9.       LOCAL_CD  Native Code went to this last time
+10.   BATTERY_CD  -was left empty last time ? first 5 digit number ?
+11.   PX  from fake labs 
+12.   PX_Codetype  hard coded c4 for all from fake labs
+13.   Order_dt  date field mapped last time to this
+14.   Lab_dt  collection date mapped last time to this.
+15.   Lab_tm  leave blank
+16.   Result_dt  result_date mapping last time
+17.   Result_tm  leave blank
+18.   Orig_Result  esp result string or float?
+19.   MS_Result_C  qualitative results convert from fake labs 
+20.   MS_Result_N   computed original result and factor  
+21.   Modifier  was blank last time 
+22.   Orig_Result_Unit   from ref unit
+23.   Std_Result_Unit  fake labs table 
+24.   MS_Result_Unit  fake labs table 
+25.   Norm_Range_low  esp ref _ low float or string see make fakes
+26.   Modifier_low  - EQ in fake labs
+27.   Norm_Range_high esp ref _ high float or string see make fakes 
+28.   Modifier_high  EQ  in fake labs
+29.   Abn_ind  - esp abnormal flag , generate based on spec codes 
+30.   Order_prov  - esp  provider 
+31.   Order_dept  esp get dept from provider 
+32.   Facility_Code  esp center id take data from the fake providers loaded.. create some site ids. 
+        '''
         if save_on_db: lx.save()
         return lx      
        
@@ -1093,8 +1112,8 @@ class Encounter(BasePatientRecord):
     pregnant = models.BooleanField('Patient is pregnant?', blank=False, default=False, db_index=True)
     edd = models.DateField('Expected Date of Delivery (pregnant women only)', blank=True, null=True, db_index=True) 
     temperature = models.FloatField('Temperature (F)', blank=True, null=True, db_index=True)
-    weight = models.CharField('Weight (kg)', max_length=100,blank=True, null=True, db_index=True)
-    height = models.CharField('Height (cm)', max_length=100,blank=True, null=True, db_index=True)
+    weight = models.FloatField('Weight (kg)', blank=True, null=True, db_index=True)
+    height = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
     bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True, db_index=True)
     bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True, db_index=True)
     o2_stat = models.FloatField(blank=True, null=True, db_index=True)
@@ -1145,18 +1164,6 @@ class Encounter(BasePatientRecord):
                 if when < now: 
                     Encounter.make_mock(patient, save_on_db=True, when=when)
             
-    @staticmethod
-    def oldmake_mock(patient, **kw):
-        save_on_db = kw.pop('save_on_db', False)
-        when = kw.get('when', datetime.datetime.now())
-        provider = Provider.get_mock()
-
-        e = Encounter(patient=patient, provider=provider, provenance=Provenance.fake(),
-                      natural_key='FAKE-%s' % randomizer.string(length=15),
-                      mrn=patient.mrn, status='FAKE', date=when, closed_date=when)
-        
-        if save_on_db: e.save()
-        return e
 
     @staticmethod
     def randomVitalValue(low, high, vlow, vhigh, decimal):
@@ -1203,11 +1210,10 @@ class Encounter(BasePatientRecord):
                                            msVitals[0].very_low, msVitals[0].very_high, 2) 
         e.temperature = Encounter.randomVitalValue(msVitals[6].normal_low, msVitals[6].normal_high,
                                            msVitals[6].very_low, msVitals[6].very_high, 0) 
-        
-        e.weight = str(Encounter.randomVitalValue(msVitals[7].normal_low, msVitals[7].normal_high,
-                                           msVitals[7].very_low, msVitals[7].very_high, 0) ) + 'lb'
-        e.height = str(Encounter.randomVitalValue(msVitals[3].normal_low, msVitals[3].normal_high,
-                                           msVitals[3].very_low, msVitals[3].very_high, 0))  + "'"
+        e.raw_weight = str(Encounter.randomVitalValue(msVitals[7].normal_low, msVitals[7].normal_high,
+                                           msVitals[7].very_low, msVitals[7].very_high, 0) ) + ' lb'
+        e.raw_height = str(Encounter.randomVitalValue(msVitals[3].normal_low, msVitals[3].normal_high,
+                                           msVitals[3].very_low, msVitals[3].very_high, 0))  + " '"
         e.bp_systolic = Encounter.randomVitalValue(msVitals[2].normal_low, msVitals[2].normal_high,
                                            msVitals[2].very_low, msVitals[2].very_high, 0)  
         e.bp_diastolic = Encounter.randomVitalValue(msVitals[1].normal_low, msVitals[1].normal_high,
@@ -1486,7 +1492,7 @@ class SocialHistory(BasePatientRecord):
         date =  when if patient.date_of_birth is None else max(when, patient.date_of_birth)
         
         status = ['','yes','no']
-        sh = SocialHistory(patient=patient, provenance=Provenance.fake(), date=date, 
+        sh = SocialHistory(patient=patient, mrn= patient.mrn, provenance=Provenance.fake(), date=date, 
                          tobacco_use=random.choice(status), alcohol_use=random.choice(status),
                          provider=patient.pcp, natural_key=now)
         if save_on_db: sh.save()
@@ -1583,10 +1589,9 @@ class Problem(BasePatientRecord):
         
         icd9 = Icd9.objects.order_by('?')[0]
         raw_icd9_code = icd9.code
-        #Icd9.objects.get(code = [str(random.choice(icd9.icd9_codes.split(';'))) for icd9 in FakeICD9s.objects.order_by('?')[:0]])
         
         status = ['active',  'deleted','']         
-        problem = Problem(patient=patient, provenance=Provenance.fake(),
+        problem = Problem(patient=patient, mrn = patient.mrn, provenance=Provenance.fake(),
                          date=date, status=random.choice(status), icd9=icd9,
                          raw_icd9_code=raw_icd9_code, provider=patient.pcp,
                          natural_key=now)
