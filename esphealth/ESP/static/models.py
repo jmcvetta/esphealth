@@ -92,7 +92,17 @@ class FakeLabs (models.Model):
     qualitative_values = models.TextField(blank=True, null=True) 
     weight = models.FloatField(blank=True, null=True)
     native_code = models.TextField(blank=True, null=True)
-
+    # new extra columns for mini sentinel 
+    test_sub_cat = models.CharField('Test Sub category', max_length=100)
+    loinc = models.CharField('LOINC', max_length=100)
+    loinc_flag = models.CharField('LOINC flag', max_length=100)
+    px = models.CharField('PX', max_length=100)
+    px_code_type = models.CharField('PX code type', max_length=100)
+    std_units = models.CharField('Std Result Units', max_length=100)
+    ms_units = models.CharField('MS Result Units', max_length=100)
+    modifier_low = models.CharField('Modifier Low', max_length=100)
+    modifier_high = models.CharField('Modifier High', max_length=100)
+   
     class Meta:
         verbose_name = 'FAKELABS'
 
