@@ -648,7 +648,7 @@ class LabResult(BasePatientRecord):
         
         #not going to do cpt or order type =1 
         
-        lx.native_name = msLabs.short_name
+        lx.native_name = msLabs.native_name
         lx.collection_date = order_date
         lx.status = 'Final'
         #lx.result_num = this is result id not in epic ignore
@@ -659,25 +659,24 @@ class LabResult(BasePatientRecord):
         lx.ref_unit = msLabs.units
         # Result
         
-        if msLabs.data_type <> 'Qualitative':
+        if msLabs.datatype <> 'Qualitative':
             lx.abnormal_flag = LabResult.randomWeight(normal,high,low)
         
             #random btw low and high (sometimes between very low or very high)
             if lx.abnormal_flag in low:
-                lx.result_float = round(random.uniform(msLabs.very_low, lx.ref_low_float), 2)
+                lx.result_float = round(random.uniform(msLabs.critical_low, lx.ref_low_float), 2)
             elif lx.abnormal_flag in high:
-                lx.result_float = round(random.uniform(lx.ref_high_float, msLabs.very_high) , 2)
+                lx.result_float = round(random.uniform(lx.ref_high_float, msLabs.critical_high) , 2)
             else:
                 lx.result_float = round(random.uniform(lx.ref_low_float, lx.ref_high_float), 2)
             lx.result_string = lx.result_float
         else:
-            lx.result_string = random.choice(msLabs.qualitative_values.split(';'))
+            lx.result_string = random.choice(msLabs.qual_orig.split('|'))
             lx.abnormal_flag = random.choice(normal)
         
         # Wide fields
         #lx.specimen_num = ignore
-        specimen = ['culture','sample','biopsy','blood','urine']
-        lx.specimen_source = random.choice(specimen)
+        lx.specimen_source = msLabs.specimen_source
         #lx.impression = ignore
         lx.comment = 'final report'
         #lx.procedure_name = ignore
@@ -900,7 +899,7 @@ class LabOrder(BasePatientRecord):
         when = when or randomizer.date_range(as_string=False) #datetime.date.today()
         lx.date =  when if patient.date_of_birth is None else max(when, patient.date_of_birth)
         lx.procedure_code = str(msLabs.native_code)
-        lx.procedure_name = msLabs.short_name
+        lx.procedure_name = msLabs.native_name
         #1 for Lab, 2 for Imaging, or 9 for Procedures. 3 for EKG 
         lx.order_type = '1' #lab
        
