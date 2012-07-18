@@ -842,6 +842,9 @@ class PrescriptionLoader(BaseLoader):
             name = self.string_or_none(row['drug_desc'])
             directions = self.string_or_none(row['directions'])
             
+        if not name:
+            name = 'UNKNOWN (value supplied by ESP)'  
+              
         natural_key = self.generateNaturalkey(row['order_natural_key'] + row['order_date'])
         
         values = {
