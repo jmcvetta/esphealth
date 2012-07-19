@@ -11,7 +11,7 @@ from ESP.conf.models import ImmuExclusion
     
 class Command(BaseCommand):
     '''
-    This command is used to flag immunizaiton data for non-vaccines.
+    This command is used to flag immunization data for non-vaccines.
     If EMR_IMMUNIZATION includes non vaccine immunotherapies, these non-vaccines can be listed in conf_immuexclusion.
     This command must be re-run each time you update conf_immuexclusion.
     If the EMR_IMMUNIZATION table is large, this command will take some time to complete updates.
