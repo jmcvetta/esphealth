@@ -777,10 +777,13 @@ class EncounterLoader(BaseLoader):
         e, created = self.insert_or_update(Encounter, values, ['natural_key'])
         e.bmi = e._calculate_bmi() # No need to save until we finish ICD9s
         #fill out encounter_type and priority from mapping table if it has a value
-        if  row['event_type']:
+        if  row['event_type'] and not option_site:
             encountertypemap, created = EncounterTypeMap.objects.get_or_create(raw_encounter_type = up(row['event_type']))
             e.encounter_type = up(encountertypemap.mapping)
             e.priority = encountertypemap.priority
+        elif option_site:
+            site = SiteDefinition.get_by_short_name(option_site)
+            e.encounter_type, e.priority = site.set_enctype(e)
         #
         # ICD9 Codes
         #
@@ -1133,6 +1136,9 @@ class Command(LoaderCommand):
                 sys.stderr.write('Invalid file path specified: %s' % options['single_file'])
             input_filepaths = [options['single_file']]
         else:
+            if options['site_name']:
+                global option_site
+                option_site=options['site_name']
             dir_contents = os.listdir(options['input_folder'])
             dir_contents.sort()
             for item in dir_contents:
@@ -1216,9 +1222,6 @@ class Command(LoaderCommand):
                     l.provenance.save()
                     disposition = 'failure'
                 self.archive(options, filepath, disposition)
-        if options['site_name']:
-            site = SiteDefinition.get_by_short_name(options['site_name'])
-            site.set_enctype()
         
                 
         #
