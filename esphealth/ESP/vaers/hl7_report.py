@@ -5,13 +5,14 @@ from ESP.static.models import Vaccine, ImmunizationManufacturer, Icd9
 from ESP.vaers.models import Case, Questionnaire, Report_Sent
 from ESP.emr.models import Provider
 from ESP.utils import utils
-from ESP.settings import SITE_NAME, SYSTEM_STATUS, PHINMS_SERVER, PHINMS_USER, PHINMS_PASSWORD, PHINMS_PATH, VAERS_OVERRIDE_CLINICIAN_REVIEWER
+from ESP.settings import SITE_NAME, SYSTEM_STATUS, PHINMS_SERVER, PHINMS_USER, PHINMS_PASSWORD, PHINMS_PATH, VAERS_AUTOSENDER
 
 from ESP.utils.utils import log
 
 from ESP.utils.hl7_builder.core import SegmentTree
 from ESP.utils.hl7_builder.segments import MSH, PID, ORC, OBR, OBX, NK1
 from ESP.utils.hl7_builder.nodes import VaccineDetail, PriorVaccinationDetail
+from ESP.utils.utils import mt
 from ESP.conf.models import VaccineCodeMap
 
 import ftplib
@@ -34,7 +35,7 @@ class AdverseReactionReport(object):
         msh = MSH()
 
         # Most of these values should be parameters from the
-        # function. For now they are defined here simpy because we
+        # function. For now they are defined here simply because we
         # have no other recipient except for Atrius Health.
         msh.receiving_application = 'VAERS HL7 Processor'
         msh.receiving_facility = 'VAERS PROCESSOR'
@@ -49,19 +50,16 @@ class AdverseReactionReport(object):
         return msh
 
     def make_PID(self):
-        
+        #TODO: deal with not available potential.  See NK1s
         patient = self.case.patient
         pid = PID()
-        
-        pid.patient_external_id = [patient.natural_key]
-        pid.patient_name = [patient.last_name, patient.first_name]
+        pid.patient_id_list = [patient.mrn,'','','','MR']
+        pid.patient_name = [mt(patient.last_name), mt(patient.first_name),'','','','','L']
         pid.date_of_birth = utils.str_from_date(patient.date_of_birth)
-        pid.sex = patient.gender
-        pid.race = patient.race
-        pid.patient_address = [patient.address1, patient.address2, 
-                               patient.city, patient.state, patient.zip]
-        pid.home_phone = patient.phone_number
-        pid.primary_language = patient.home_language
+        pid.sex = mt(patient.gender)
+        pid.patient_address = [mt(patient.address1), mt(patient.address2), 
+                               mt(patient.city), mt(patient.state), mt(patient.zip),'','C']
+        pid.home_phone = [mt(patient.phone_number),'PRN']
 
         return pid
     
@@ -70,32 +68,55 @@ class AdverseReactionReport(object):
         vax_provider = Provider.objects.filter(id=self.immunizations.values_list('provider_id').distinct())
         comp_provider = self.ques.provider
         if self.ques.state=='AR':
-            comp_provider = Provider.objects.get(natural_key='VAERS AUTOSENDER')
-            #VAERS AUTOSENDER must be indentified for a site, and a Provider record entered for this individual
+            comp_provider = VAERS_AUTOSENDER
+            #VAERS AUTOSENDER must be identified for a site, and a Provider record entered for this individual
             #This is the sender of record in cases where case category is 2_serious and should be autosent.
         nk1_1 = NK1()
-        nk1_1.name=vax_provider.get().full_name
+        if mt(vax_provider.get().last_name)=='':
+            nk1_1.name='Not available'
+        else:
+            nk1_1.name=[mt(vax_provider.get().last_name),mt(vax_provider.get().first_name),'','',
+                    mt(vax_provider.get().title),'','L']
         nk1_1.relationship = ['VAB', 'Vaccine administered by (Name)', 'HL70063']
-        nk1_1.address = [vax_provider.get().dept, vax_provider.get().dept_address_1, vax_provider.get().dept_address_2, 
-                         vax_provider.get().dept_city, vax_provider.get().dept_state, vax_provider.get().dept_zip]
-        nk1_1.phone_number = vax_provider.get().telephone
         nk1_2 = NK1()
-        nk1_2.name=comp_provider.full_name
+        if mt(comp_provider.last_name)=='':
+            nk1_2.name='Not available'
+        else:
+            nk1_2.name=[mt(comp_provider.last_name),mt(comp_provider.first_name),'','',
+                    mt(comp_provider.title),'','L']
         if nk1_1.name==nk1_2.name:
             nk1_2.relationship = ['FVP', 'Form completed by (Name)-Vaccine provider','HL70063']
         else:
             nk1_2.relationship = ['FOT', 'Form completed by (Name)-Other','HL70063']
-            nk1_2.address = [comp_provider.dept, comp_provider.dept_address_1, comp_provider.dept_address_2, 
-                         comp_provider.dept_city, comp_provider.dept_state, comp_provider.dept_zip]
-            nk1_2.phone_number =comp_provider.telephone
-        return SegmentTree(nk1_1, nk1_2)
+        nk1_2.address = [mt(comp_provider.dept_address_1), mt(comp_provider.dept_address_2), 
+                         mt(comp_provider.dept_city), mt(comp_provider.dept_state), 
+                         mt(comp_provider.dept_zip),'','B']
+        if nk1_2.address==['', '', '', '', '', '', 'B']:
+            nk1_2.address='Not available'
+        if mt(comp_provider.telephone)=='':
+            nk1_2.phone_number='Not available'
+        else:
+            nk1_2.phone_number = [mt(comp_provider.telephone),'WPN']
+        nk1=[]
+        nk1.append(nk1_1)
+        nk1.append(nk1_2)
+        return SegmentTree(self.make_PID(), nk1)
     
     def make_ORC(self):
+        #TODO: deal with not available potential.  See NK1s
         vax_provider = Provider.objects.filter(id=self.immunizations.values_list('provider_id').distinct())
         orc = ORC()
         orc.control='RE'
-        orc.enterer_location = [vax_provider.get().dept, vax_provider.get().dept_address_1, vax_provider.get().dept_address_2, 
-                         vax_provider.get().dept_city, vax_provider.get().dept_state, vax_provider.get().dept_zip]
+        orc.ordering_provider=[vax_provider.get().natural_key, mt(vax_provider.get().last_name),mt(vax_provider.get().first_name),'','',
+                    mt(vax_provider.get().title),'','L']
+        orc.ordering_facility_name=mt(vax_provider.get().dept)
+        orc.ordering_facility_address = [mt(vax_provider.get().dept_address_1), mt(vax_provider.get().dept_address_2), 
+                         mt(vax_provider.get().dept_city), mt(vax_provider.get().dept_state), 
+                         mt(vax_provider.get().dept_zip),'','B']
+        orc.ordering_facility_phone = [mt(vax_provider.get().telephone),'WPN']
+        orc.ordering_provider_address = [mt(vax_provider.get().dept_address_1), mt(vax_provider.get().dept_address_2), 
+                         mt(vax_provider.get().dept_city), mt(vax_provider.get().dept_state), 
+                         mt(vax_provider.get().dept_zip),'','B']
         return orc
 
 
@@ -226,7 +247,7 @@ class AdverseReactionReport(object):
         obr_prior_vaccination_list.universal_service_id = ['30961-7', 'Any other vaccinations within 4 weeks prior to the date listed in #10', 'LN']
 
         vaccines = []
-        for idx, immunization in enumerate(self.case.prior_immunizations.all()):
+        for immunization in self.case.prior_immunizations.all():
             vaccine_detail = PriorVaccinationDetail(immunization)
             for seg in vaccine_detail.segments:
                 vaccines.append(seg)
@@ -312,11 +333,11 @@ class AdverseReactionReport(object):
         for idx, report in enumerate(observation_reports):
             report.parent.sequence_id = idx + 1
 
-        patient_header = [self.make_MSH(), self.make_PID(), self.make_NK1s(), self.make_ORC()]
+        patient_header = [self.make_MSH(), self.make_NK1s(), self.make_ORC()]
 
         all_segments = patient_header + observation_reports
         hl7file = cStringIO.StringIO()
-        hl7file.write('\n'.join([str(x) for x in all_segments]))
+        hl7file.write('\r'.join([str(x) for x in all_segments]))
         hl7file.seek(0)
         if transmit_ftp(hl7file, 'vaers_msg_ID' + str(self.ques.id)):
             if Questionnaire.objects.filter(id=self.ques.id, state='Q'):
