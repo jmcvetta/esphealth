@@ -124,6 +124,7 @@ VAERS_LINELIST_PATH = config['Reporting']['vaers_linelist_path']
 VAERS_SEND_REPORT = config['Reporting']['vaers_send_report']
 VAERS_UPDATE_EMR = config['Reporting']['vaers_update_emr']
 VAERS_OVERRIDE_CLINICIAN_REVIEWER = config['Reporting']['vaers_override_clinician_reviewer']
+VAERS_AUTOSENDER = config['Reporting']['vaers_autosender']
 HL7_DIR = os.path.join(DATA_DIR, 'hl7')
 SITE_ID = 1 # This probably does not need to be configurable
 TIME_ZONE = config['General']['time_zone']
