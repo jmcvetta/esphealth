@@ -16,7 +16,6 @@ class VaccineDetail(object):
                               CVXVax.short_name, 'CVX']
         vaccine_type.observation_result_status = 'F'
 
-        
         if immunization.vaccine_manufacturer:
             manufacturer = OBX()
             manufacturer.value_type = 'CE'
@@ -25,14 +24,24 @@ class VaccineDetail(object):
             manufacturer.observation_result_status = 'F'
         else:
             manufacturer = None
-        
+            
+        if immunization.lot:
+            lot_no = OBX()
+            lot_no.value_type = 'ST'
+            lot_no.identifier = ['30955-9&30959-1', 'Lot number', 'LN']
+            lot_no.value = immunization.lot
+            lot_no.observation_result_status = 'F'        
+        else:
+            lot_no = None
+           
         self.vaccine_type = vaccine_type
         self.manufacturer = manufacturer
+        self.lot_no = lot_no
 
         for idx, seg in enumerate(self.segments):
             seg.subsequence_id = idx + 1
 
-    segments = property(lambda x: [segment for segment in [x.vaccine_type, x.manufacturer] if segment is not None])
+    segments = property(lambda x: [segment for segment in [x.vaccine_type, x.manufacturer, x.lot_no] if segment is not None])
 
 class PriorVaccinationDetail(VaccineDetail):
     def __init__(self, immunization):
@@ -56,6 +65,15 @@ class PriorVaccinationDetail(VaccineDetail):
         else:
             self.manufacturer = None
         
+        if immunization.lot:
+            self.lot_no = OBX()
+            self.lot_no.value_type = 'ST'
+            self.lot_no.identifier = ['30955-9&30959-1', 'Lot number', 'LN']
+            self.lot_no.value = immunization.lot
+            self.lot_no.observation_result_status = 'F'        
+        else:
+            self.lot_no = None
+           
         self.date_given = OBX()
         self.date_given.value_type = 'TS'
         self.date_given.identifier = ['30961-7&31035-9', 'Date given^LN']
@@ -66,7 +84,7 @@ class PriorVaccinationDetail(VaccineDetail):
         for idx, seg in enumerate(self.segments):
             seg.subsequence_id = idx + 1
 
-    segments = property(lambda x: [segment for segment in [x.vaccine_type, x.manufacturer, x.date_given] if segment is not None])
+    segments = property(lambda x: [segment for segment in [x.vaccine_type, x.manufacturer, x.lot_no, x.date_given] if segment is not None])
 
 
 
