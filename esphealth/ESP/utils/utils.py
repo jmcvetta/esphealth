@@ -153,6 +153,17 @@ def getfilesByDay(files):
     returndays.sort(key=lambda x:x[0])
     return returndays
 
+################################
+'''
+  accepts a string, and if the string resolves to None, replaces this with empty ('')
+'''
+def mt(nonestr):
+    
+    if nonestr==None:
+        return ''
+    else:
+        return nonestr
+
 
 class Profiler(object):
     def __init__(self):
