@@ -1131,13 +1131,14 @@ class Command(LoaderCommand):
         # Sort files by type
         #
         input_filepaths = []
+        global option_site
+        option_site=None
         if options['single_file']:
             if not os.path.isfile(options['single_file']):
                 sys.stderr.write('Invalid file path specified: %s' % options['single_file'])
             input_filepaths = [options['single_file']]
         else:
             if options['site_name']:
-                global option_site
                 option_site=options['site_name']
             dir_contents = os.listdir(options['input_folder'])
             dir_contents.sort()
