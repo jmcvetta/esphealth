@@ -22,19 +22,45 @@
 SELECT 
   pat.id AS patient_id
 , pat.mrn
-, date_part('year', age(lastenc.last_enc_date)) AS years_since_last_enc
-, date_part('year', age(pat.date_of_birth)) AS age
-, pat.gender
+, case 
+	when date_part('year', age(lastenc.last_enc_date)) <=1 then 1
+	when date_part('year', age(lastenc.last_enc_date)) between 1 and 2 then 2
+	when date_part('year', age(lastenc.last_enc_date)) between 2 and 3 then 3
+	else null
+  end AS years_since_last_enc
+, case 
+	when date_part('year', age(pat.date_of_birth)) <= 2 then 1
+	when date_part('year', age(pat.date_of_birth)) between 3 and 12 then 2
+	when date_part('year', age(pat.date_of_birth)) between 13 and 19 then 3
+	when date_part('year', age(pat.date_of_birth)) between 20 and 39 then 4
+	when date_part('year', age(pat.date_of_birth)) between 40 and 59 then 5
+	when date_part('year', age(pat.date_of_birth)) between 60 and 79 then 6
+	when date_part('year', age(pat.date_of_birth)) >=80 then 7
+    else null
+  end AS age
+, pat.gender as sex
 , pat.race
 , pat.zip
-, bmi.bmi
+, case
+    when date_part('year', age(pat.date_of_birth)) > 12 and bmi.bmi < 25 then 1
+    when date_part('year', age(pat.date_of_birth)) > 12 and bmi.bmi between 25 and 30 then 2
+    when date_part('year', age(pat.date_of_birth)) > 12 and bmi.bmi > 30 then 3
+    else null
+  end as bmi
 , curpreg.currently_pregnant
-, gdm.current_gdm
 , recpreg.recent_pregnancy
-, bp.max_bp_systolic
-, bp.max_bp_diastolic
+, gdm.current_gdm
+, recgdm.recent_gdm
+, case 
+	when bp.max_bp_systolic <= 130 and bp.max_bp_diastolic <= 80 then 1
+	when bp.max_bp_systolic between 131 and 139 or bp.max_bp_diastolic between 81 and 89 then 2
+	when bp.max_bp_systolic >=140 or bp.max_bp_diastolic >= 90 then 3
+	else 4
+  end as blood_pressure
 , a1c.recent_a1c
 , ldl.recent_ldl
+, trig.recent_tgl
+. hglb.recent_hglb
 , predm.prediabetes
 , type1.type_1_diabetes
 , type2.type_2_diabetes
@@ -146,6 +172,68 @@ LEFT JOIN (
 	ON ldl.patient_id = pat.id
 
 --
+-- Recent Triglycerides lab result
+--
+LEFT JOIN (
+	SELECT 
+	  l0.patient_id
+	, MAX(l0.result_float) AS recent_tgl
+	FROM emr_labresult l0
+	INNER JOIN conf_labtestmap m0
+		ON m0.native_code = l0.native_code
+	INNER JOIN (
+		SELECT 
+		  l1.patient_id
+		, m1.test_name
+		, MAX(l1.date) AS date
+		FROM emr_labresult l1
+		INNER JOIN conf_labtestmap m1
+			ON m1.native_code = l1.native_code
+		GROUP BY 
+		  l1.patient_id
+		, m1.test_name
+	) u0
+		ON u0.patient_id = l0.patient_id
+		AND u0.test_name = m0.test_name
+	WHERE m0.test_name = 'triglycerides'
+	AND l0.date >= ( now() - interval '2 years' )
+	GROUP BY 
+	  l0.patient_id
+) AS trig
+	ON trig.patient_id = pat.id
+
+--
+-- Recent Triglycerides lab result
+--
+LEFT JOIN (
+	SELECT 
+	  l0.patient_id
+	, MAX(l0.result_float) AS recent_hglb
+	FROM emr_labresult l0
+	INNER JOIN conf_labtestmap m0
+		ON m0.native_code = l0.native_code
+	INNER JOIN (
+		SELECT 
+		  l1.patient_id
+		, m1.test_name
+		, MAX(l1.date) AS date
+		FROM emr_labresult l1
+		INNER JOIN conf_labtestmap m1
+			ON m1.native_code = l1.native_code
+		GROUP BY 
+		  l1.patient_id
+		, m1.test_name
+	) u0
+		ON u0.patient_id = l0.patient_id
+		AND u0.test_name = m0.test_name
+	WHERE m0.test_name = 'hemoglobin'
+	AND l0.date >= ( now() - interval '2 years' )
+	GROUP BY 
+	  l0.patient_id
+) AS hglb
+	ON hglb.patient_id = pat.id
+
+--
 -- Prediabetes
 --
 LEFT JOIN (
@@ -157,6 +245,10 @@ LEFT JOIN (
 		ON c1.patient_id = c0.patient_id
 		AND c1.condition NOT LIKE 'diabetes:type-%'
 	WHERE c0.condition = 'diabetes:prediabetes'
+	     and not exists (select null from nodis_case c1 
+	                     where c1.date <= to_date('2008-01-01','yyyy-mm-dd')
+	                         and c1.patient_id=c0.patient_id
+	                         and c1.condition = 'diabetes:prediabetes')
 ) AS predm
 	ON predm.patient_id = pat.id
 
@@ -185,7 +277,7 @@ LEFT JOIN (
 	ON type2.patient_id = pat.id
 
 --
--- Gestational diabetes
+-- Current Gestational diabetes
 --
 LEFT JOIN (
 	SELECT 
@@ -201,6 +293,24 @@ LEFT JOIN (
             AND ( ts0.end_date >= now() OR ts0.end_date IS NULL)
 ) AS gdm
 	ON gdm.patient_id = pat.id
+
+--
+-- Recent Gestational diabetes
+--
+LEFT JOIN (
+	SELECT 
+	c0.patient_id
+	, 1 AS current_gdm
+	FROM nodis_case AS c0
+        INNER JOIN nodis_case_timespans AS nct0
+            ON nct0.case_id = c0.id
+        INNER JOIN hef_timespan AS ts0
+            ON nct0.timespan_id = ts0.id
+	WHERE c0.condition = 'diabetes:gestational'
+            AND ts0.start_date <= now() - interval '2 years'
+            AND ( ts0.end_date >= now() OR ts0.end_date IS NULL)
+) AS recgdm
+	ON recgdm.patient_id = pat.id
 
 --
 -- Recent pregnancy
