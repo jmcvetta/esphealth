@@ -1098,6 +1098,8 @@ class ProblemLoader(BaseLoader):
 
     def load_row(self, row):
         code = row['icd9_code']
+        if not code or code =='':
+            code = '799.9'
         icd9_code = self.get_icd9(code, '', {})
         
         natural_key = self.generateNaturalkey(row['natural_key'])
