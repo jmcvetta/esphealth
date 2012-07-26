@@ -661,7 +661,8 @@ class LabResult(BasePatientRecord):
         
         if msLabs.datatype <> 'Qualitative':
             lx.abnormal_flag = LabResult.randomWeight(normal,high,low)
-        
+           #TODO if normal low or critical low are -1 do not generate abnormal low 
+           
             #random btw low and high (sometimes between very low or very high)
             if lx.abnormal_flag in low:
                 lx.result_float = round(random.uniform(msLabs.critical_low, lx.ref_low_float), 2)
@@ -942,7 +943,10 @@ class Prescription(BasePatientRecord):
         ordering = ['date']
     
     def __str__(self):
-        return self.name
+        if not self.name:
+            return "unknown prescription"
+        else:
+            return self.name
 
     def str_line(self):
         '''
