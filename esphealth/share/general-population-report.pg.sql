@@ -60,7 +60,6 @@
 , a1c.recent_a1c
 , ldl.recent_ldl
 , trig.recent_tgl
-, hglb.recent_hglb
 , predm.prediabetes
 , type1.type_1_diabetes
 , type2.type_2_diabetes
@@ -159,6 +158,7 @@ LEFT JOIN (
 	) u0
 		ON u0.patient_id = l0.patient_id
 		AND u0.test_name = m0.test_name
+		AND u0.date = l0.date
 	WHERE m0.test_name = 'cholesterol-ldl'
 	AND l0.date >= ( now() - interval '2 years' )
 	GROUP BY 
@@ -189,43 +189,13 @@ LEFT JOIN (
 	) u0
 		ON u0.patient_id = l0.patient_id
 		AND u0.test_name = m0.test_name
+		AND u0.date = l0.date
 	WHERE m0.test_name = 'triglycerides'
 	AND l0.date >= ( now() - interval '2 years' )
 	GROUP BY 
 	  l0.patient_id
 ) AS trig
 	ON trig.patient_id = pat.id
---
--- Recent hglb lab result
---
-LEFT JOIN (
-	SELECT 
-	  l0.patient_id
-	, MAX(l0.result_float) AS recent_hglb
-	FROM emr_labresult l0
-	INNER JOIN conf_labtestmap m0
-		ON m0.native_code = l0.native_code
-	INNER JOIN (
-		SELECT 
-		  l1.patient_id
-		, m1.test_name
-		, MAX(l1.date) AS date
-		FROM emr_labresult l1
-		INNER JOIN conf_labtestmap m1
-			ON m1.native_code = l1.native_code
-		GROUP BY 
-		  l1.patient_id
-		, m1.test_name
-	) u0
-		ON u0.patient_id = l0.patient_id
-		AND u0.test_name = m0.test_name
-	WHERE m0.test_name = 'hemoglobin'
-	AND l0.date >= ( now() - interval '2 years' )
-	GROUP BY 
-	  l0.patient_id
-) AS hglb
-	ON hglb.patient_id = pat.id
-
 --
 -- Prediabetes
 --
@@ -311,7 +281,7 @@ LEFT JOIN (
 	  patient_id
 	, MAX(start_date) AS recent_pregnancy
 	FROM hef_timespan
-	WHERE name = 'pregnancy'
+	WHERE name = 'pregnancy' and start_date > (now() - interval '2 years')
 	GROUP BY patient_id
 ) AS recpreg
 	ON recpreg.patient_id = pat.id
@@ -324,7 +294,7 @@ LEFT JOIN (
 	, 1 AS currently_pregnant
 	FROM hef_timespan ts
 	WHERE name = 'pregnancy'
-            AND start_date <= now()
+            AND start_date between now() and (now() - interval ' 9 months')
             AND ( end_date >= now() OR end_date IS NULL)
 ) AS curpreg
 	ON curpreg.patient_id = pat.id
