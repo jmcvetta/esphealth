@@ -614,21 +614,27 @@ class LabResult(BasePatientRecord):
     
     
     @staticmethod
-    def randomWeight(normal, high, low,first=.7, second=.9):
+    def randomWeight(normal, high, low, chigh, clow, first=.5, second=.4, third=.2, fourth=.3):
         
         r = random.random()
-        if r <= first:
-            return random.choice(high)
+        if r <= third:
+            return random.choice(chigh)
+        elif r <= fourth:
+            return random.choice(clow)
         elif r <= second:
-            return random.choice(low)
+            return random.choice(high )
+        elif r <= first:
+            return random.choice(low )
         else: 
             return random.choice(normal)
         
     @staticmethod
     def make_mock(patient, when=None, **kw):
         normal = ['IN','UN','NL']
-        high = ['AH','CH','CR']
-        low = ['AL','CL','AB']
+        high = ['AH']
+        low = ['AL','AB']
+        chigh = ['CH','CR']
+        clow = ['CL']
     
         save_on_db = kw.pop('save_on_db', False)
         msLabs = FakeLabs.objects.order_by('?')[0]
@@ -660,16 +666,40 @@ class LabResult(BasePatientRecord):
         # Result
         
         if msLabs.datatype <> 'Qualitative':
-            lx.abnormal_flag = LabResult.randomWeight(normal,high,low)
-           #TODO if normal low or critical low are -1 do not generate abnormal low 
-           
-            #random btw low and high (sometimes between very low or very high)
-            if lx.abnormal_flag in low:
-                lx.result_float = round(random.uniform(msLabs.critical_low, lx.ref_low_float), 2)
+            lx.abnormal_flag = LabResult.randomWeight(normal,high,low, chigh, clow)
+            
+            # never generate abnormal now or critical low 
+            if lx.abnormal_flag in clow:
+                if msLabs.critical_low == -1:
+                    lx.abnormal_flag = random.choice(low)
+                else:
+                    lx.result_float = round(random.uniform(0, msLabs.critical_low), 2)
+                    
+            if  lx.abnormal_flag in low:
+                if lx.ref_low_float == -1: # do not generate low value
+                    lx.abnormal_flag = random.choice(normal)
+                    lx.result_float = round(random.uniform(0, lx.ref_high_float), 2)
+                else:
+                    if msLabs.critical_low == -1:
+                        lx.result_float = round(random.uniform(0, lx.ref_low_float), 2)
+                    else:
+                        lx.result_float = round(random.uniform(msLabs.critical_low, lx.ref_low_float), 2)
+                    
             elif lx.abnormal_flag in high:
                 lx.result_float = round(random.uniform(lx.ref_high_float, msLabs.critical_high) , 2)
-            else:
-                lx.result_float = round(random.uniform(lx.ref_low_float, lx.ref_high_float), 2)
+                
+            elif lx.abnormal_flag in chigh:
+                upperLimit = msLabs.critical_high * 3
+                if msLabs.datatype == 'Percent':
+                    upperLimit = 100
+                lx.result_float = round(random.uniform(msLabs.critical_high, upperLimit), 2)
+                
+            else: # normal range 
+                if lx.ref_low_float == -1:
+                    lx.result_float = round(random.uniform(0, lx.ref_high_float), 2)
+                else:
+                    lx.result_float = round(random.uniform(lx.ref_low_float, lx.ref_high_float), 2)
+                
             lx.result_string = lx.result_float
         else:
             lx.result_string = random.choice(msLabs.qual_orig.split('|'))
