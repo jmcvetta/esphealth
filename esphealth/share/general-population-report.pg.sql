@@ -370,6 +370,10 @@ LEFT JOIN (
 ) AS flu
 	ON flu.patient_id = pat.id
 --
+-- WHERE criteria 
+--
+WHERE pat.date_of_death IS NULL
+--
 -- Ordering
 --
 ORDER BY pat.id
