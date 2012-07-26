@@ -5,10 +5,10 @@
 --
 --------------------------------------------------------------------------------
 --
--- @author: Jason McVetta <jason.mcvetta@gmail.com>
--- @organization: Channing Laboratory - http://www.channing.harvard.edu
+-- @author: Jason McVetta <jason.mcvetta@gmail.com> Bob Zambarano <bzambarano@commoninf.com>
+-- @organization: Commonwealth Informatics <http://www.commoninf.com>
 -- @contact: http://esphealth.org
--- @copyright: (c) 2011 Channing Laboratory
+-- @copyright: (c) 2012 Commonwealth Informatics
 -- @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 --
 --------------------------------------------------------------------------------
@@ -19,7 +19,7 @@
 --------------------------------------------------------------------------------
 
 
-SELECT 
+﻿SELECT 
   pat.id AS patient_id
 , pat.mrn
 , case 
@@ -56,11 +56,11 @@ SELECT
 	when bp.max_bp_systolic between 131 and 139 or bp.max_bp_diastolic between 81 and 89 then 2
 	when bp.max_bp_systolic >=140 or bp.max_bp_diastolic >= 90 then 3
 	else 4
-  end as blood_pressure
+  end as bld_prsr
 , a1c.recent_a1c
 , ldl.recent_ldl
 , trig.recent_tgl
-. hglb.recent_hglb
+, hglb.recent_hglb
 , predm.prediabetes
 , type1.type_1_diabetes
 , type2.type_2_diabetes
@@ -68,7 +68,6 @@ SELECT
 , metformin.metformin
 , flu.influenza_vaccine
 FROM emr_patient AS pat
-
 --
 -- Last encounter
 --
@@ -80,7 +79,6 @@ LEFT JOIN (
 	GROUP BY patient_id
 ) AS lastenc
 	ON lastenc.patient_id = pat.id
-
 --
 -- Max blood pressure in past 2 years
 --
@@ -94,7 +92,6 @@ LEFT JOIN (
 	GROUP BY patient_id
 ) AS bp
 	ON bp.patient_id = pat.id
-
 --
 -- BMI 
 --
@@ -108,7 +105,6 @@ LEFT JOIN (
 ) AS bmi
 	ON bmi.patient_id = pat.id
 	AND age(pat.date_of_birth) >= '12 years'
-
 --
 -- Recent A1C lab result
 --
@@ -139,7 +135,6 @@ LEFT JOIN (
 	  l0.patient_id
 ) AS a1c
 	ON a1c.patient_id = pat.id
-
 --
 -- Recent cholesterol LDL lab result
 --
@@ -170,14 +165,13 @@ LEFT JOIN (
 	  l0.patient_id
 ) AS ldl
 	ON ldl.patient_id = pat.id
-
 --
 -- Recent Triglycerides lab result
 --
 LEFT JOIN (
 	SELECT 
 	  l0.patient_id
-	, MAX(l0.result_float) AS recent_tgl
+	, MAX(l0.result_float) AS recent_tgl 
 	FROM emr_labresult l0
 	INNER JOIN conf_labtestmap m0
 		ON m0.native_code = l0.native_code
@@ -201,9 +195,8 @@ LEFT JOIN (
 	  l0.patient_id
 ) AS trig
 	ON trig.patient_id = pat.id
-
 --
--- Recent Triglycerides lab result
+-- Recent hglb lab result
 --
 LEFT JOIN (
 	SELECT 
@@ -293,14 +286,13 @@ LEFT JOIN (
             AND ( ts0.end_date >= now() OR ts0.end_date IS NULL)
 ) AS gdm
 	ON gdm.patient_id = pat.id
-
 --
 -- Recent Gestational diabetes
 --
 LEFT JOIN (
 	SELECT 
 	c0.patient_id
-	, 1 AS current_gdm
+	, 1 AS recent_gdm
 	FROM nodis_case AS c0
         INNER JOIN nodis_case_timespans AS nct0
             ON nct0.case_id = c0.id
@@ -311,7 +303,6 @@ LEFT JOIN (
             AND ( ts0.end_date >= now() OR ts0.end_date IS NULL)
 ) AS recgdm
 	ON recgdm.patient_id = pat.id
-
 --
 -- Recent pregnancy
 --
@@ -324,7 +315,6 @@ LEFT JOIN (
 	GROUP BY patient_id
 ) AS recpreg
 	ON recpreg.patient_id = pat.id
-
 --
 -- Current pregnancy
 --
@@ -338,7 +328,6 @@ LEFT JOIN (
             AND ( end_date >= now() OR end_date IS NULL)
 ) AS curpreg
 	ON curpreg.patient_id = pat.id
-
 --
 -- Insulin
 --    Prescription for insulin within the previous year
@@ -352,8 +341,6 @@ LEFT JOIN (
             AND date >= ( now() - interval '1 year' )
 ) AS insulin
 	ON insulin.patient_id = pat.id
-
-
 --
 -- Metformin
 --     Prescription for metformin within the previous year
@@ -367,8 +354,6 @@ LEFT JOIN (
             AND date >= ( now() - interval '1 year' )
 ) AS metformin
 	ON metformin.patient_id = pat.id
-
-
 --
 -- Influenza vaccine
 --     Prescription for influenza vaccine current flu season
@@ -384,7 +369,6 @@ LEFT JOIN (
 	AND date_part('month', date) <= 8
 ) AS flu
 	ON flu.patient_id = pat.id
-
 --
 -- Ordering
 --
