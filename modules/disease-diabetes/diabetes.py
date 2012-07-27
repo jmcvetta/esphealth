@@ -1039,7 +1039,7 @@ class GestationalDiabetesReport(Report):
                 'birth_weight' : None,
                 'birth_weight2' : None,
                 'birth_weight3' : None,
-                'birhts' :None,
+                'births' :None,
                 'birth_route' :None,
                 
                 }
