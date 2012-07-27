@@ -819,11 +819,11 @@ class GestationalDiabetesReport(Report):
         self.pos_q = Q(name__endswith=':positive')
         self.a1c_q = Q(name__startswith='lx:a1c')
         
+       
         self.ogttfasting_high_threshold_q = Q (name__in = [
             'lx:ogtt50-fasting:threshold:gte:126', 
             'lx:ogtt75-fasting:threshold:gte:126',
-            'lx:ogtt100-fasting:threshold:gte:126',
-            ])
+            'lx:ogtt100-fasting:threshold:gte:126', ]) | Q(labresult__ref_high_float__gte = 90 )| Q(labresult__ref_high_float__lte = 99 )
             
         self.ogtt50_q = Q(name__startswith='lx:ogtt50')
         
@@ -1206,8 +1206,9 @@ class GestationalDiabetesReport(Report):
             early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate( max=Max('result_float') )['max']
             late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max']
             
-            # TODO ?? check if they were for a single lab order or on the same order date
-            # ogtt100 might be based on ref_high instead. ?
+            # TODO  check if they were for a single lab order or on the same order date
+            # TODO values('date').\ or in the values list. have it within one calendar day
+                
             ogtt100_twice_qs = intrapartum.filter(self.ogtt100_threshold_q).\
                 values('patient').annotate(count=Count('pk')).\
                 filter(count__gte=2).values_list('patient', flat=True).distinct()
@@ -1295,8 +1296,9 @@ class GestationalDiabetesReport(Report):
                 'prior2y_ALT_max_value' : prior_2y_alt_max, #added
                 'prior2y_ALT_date_min_value' : prior_2y_alt_date_min , #added
                 'prior2y_ALT_min_value' : prior_2y_alt_min, #added
-                'obfastingglucose_positive': binary( intrapartum.filter(self.ogttfasting_high_threshold_q)), #added
+                'obfastingglucose_positive': binary( self.ogttfasting_high_threshold_q), #added
                 'intrapartum_ogtt50_1hr_max_val' : ip_ogtt50_1hr_value, #added
+                
                 'intrapartum_ogtt50_ref_high': binary( intrapartum.filter(self.ogtt50_ref_high_q) ),
                 'intrapartum_ogtt50_gdm_interp': binary( intrapartum.filter(self.ogtt50_gdm_threshold_q) ),
                 'intrapartum_ogtt75_fasting_max_val': ip_ogtt75_fasting_value ,#added
