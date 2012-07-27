@@ -686,6 +686,7 @@ class LabResult(BasePatientRecord):
                         lx.result_float = round(random.uniform(msLabs.critical_low, lx.ref_low_float), 2)
                     
             elif lx.abnormal_flag in high:
+                # critical high does not have a -1 flag to consider 
                 lx.result_float = round(random.uniform(lx.ref_high_float, msLabs.critical_high) , 2)
                 
             elif lx.abnormal_flag in chigh:
