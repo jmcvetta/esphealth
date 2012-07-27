@@ -676,6 +676,14 @@ class LabOrderLoader(BaseLoader):
         ]
     
     def load_row(self, row):
+        
+        # set date based on the date in the ETL file name
+        if not row['ordering_date'] :            
+            log.info('Empty date not allowed, using date from the ETL file name')
+            date = datestring_from_filepath(self.filename)
+        else:
+            date = row['ordering_date']
+       
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
             'provenance' : self.provenance,
@@ -686,7 +694,7 @@ class LabOrderLoader(BaseLoader):
             'procedure_code' : self.string_or_none(row['procedure_code']),
             'procedure_modifier' : self.string_or_none(row['procedure_modifier']),
             'specimen_id' : self.string_or_none(row['specimen_id']),
-            'date' : self.date_or_none(row['ordering_date']),
+            'date' : self.date_or_none(date),
             'order_type' : self.string_or_none(row['order_type']),
             'procedure_name' : self.string_or_none(row['procedure_name']),
             'specimen_source' : self.string_or_none(row['specimen_source'])
