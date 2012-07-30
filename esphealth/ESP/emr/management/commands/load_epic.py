@@ -813,7 +813,7 @@ class EncounterLoader(BaseLoader):
         
         # code_strings are separated by semi-colon
         # within a code string, the code and optional text are separated by white space 
-        for code_string in row['icd9s'].split(';'):
+        for code_string in row['icd9s'].strip().split(';'):
             firstspace = code_string.strip().find(' ')
             if firstspace >= 0:
                 code = code_string[:firstspace].strip()
@@ -823,6 +823,7 @@ class EncounterLoader(BaseLoader):
                 diagnosis_text = ''
                 
             if len(code) >= 1 and any(c in string.digits for c in code):
+                
                 e.icd9_codes.add(self.get_icd9(code, diagnosis_text, self.__icd9_cache))
     
         try:
