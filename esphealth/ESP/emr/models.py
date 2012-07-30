@@ -1473,8 +1473,8 @@ class Immunization(BasePatientRecord):
 class SocialHistory(BasePatientRecord):
     
     # date is date entered
-    tobacco_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
-    alcohol_use = models.CharField(max_length=20, null=True, blank=True, db_index=True)
+    tobacco_use = models.CharField(max_length=100, null=True, blank=True, db_index=True)
+    alcohol_use = models.CharField(max_length=100, null=True, blank=True, db_index=True)
 
     @staticmethod
     def delete_fakes():
