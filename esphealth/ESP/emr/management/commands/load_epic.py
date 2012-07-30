@@ -599,6 +599,14 @@ class LabResultLoader(BaseLoader):
 
     
     def load_row(self, row):
+        
+        # set date based on the date in the ETL file name
+        if not row['order_date'] :            
+            log.info('Empty date not allowed, using date from the ETL file name')
+            date = datestring_from_filepath(self.filename)
+        else:
+            date = row['order_date']
+            
         component = self.string_or_none(row['component'])  
         cpt = self.string_or_none(row['cpt'])  
         if component and cpt:
@@ -634,7 +642,7 @@ class LabResultLoader(BaseLoader):
         'provider' : self.get_provider(row['provider_id']),
         'mrn' : row['mrn'],
         'order_natural_key' : row['order_natural_key']  ,
-        'date' : self.date_or_none(row['order_date']),
+        'date' : self.date_or_none(date),
         'result_date' : self.date_or_none(row['result_date']),
         'native_code' : native_code,
         'native_name' : self.string_or_none(row['component_name']),
@@ -740,8 +748,11 @@ class EncounterLoader(BaseLoader):
         #TODO change to load the  encounter type to the raw from the file
         # and load encounter type with the mapping table which is loaded manually
         # 
-        
-        # Util methods
+       
+        #overriding the icd9 to unknown problem if it is empty 
+        if not row['icd9s'] or row['icd9s'] =='':
+            row['icd9s'] = '799.9'
+        # Util methods    
         cap = self.capitalize
         up = self.up
         son = self.string_or_none
