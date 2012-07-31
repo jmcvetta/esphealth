@@ -632,7 +632,7 @@ class LabResultLoader(BaseLoader):
         if not row['natural_key']:
             natural_key = self.generateNaturalkey(row['order_natural_key'])
             if native_code:
-                natural_key = natural_key + native_code
+                natural_key = natural_key.__str__() + native_code
         else:
             natural_key = self.generateNaturalkey(row['natural_key'])
         
