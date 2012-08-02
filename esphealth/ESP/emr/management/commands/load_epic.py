@@ -635,6 +635,10 @@ class LabResultLoader(BaseLoader):
                 natural_key = natural_key.__str__() + native_code
         else:
             natural_key = self.generateNaturalkey(row['natural_key'])
+            
+        # if no order natural key then assign the same as natural key
+        if not row['order_natural_key']:
+            row['order_natural_key'] = natural_key   
         
         values = {
         'provenance' : self.provenance,
