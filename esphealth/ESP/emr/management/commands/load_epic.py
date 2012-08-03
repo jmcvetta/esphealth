@@ -1088,6 +1088,12 @@ class AllergyLoader(BaseLoader):
             allergen.save()
             log.info('created new allergen from load epic')
             
+        description = row['allergy_description']
+            
+        if  len(description) > 600 :
+            log.warning('Allergy description longer than 600 characters, now truncating "%s"' % description )
+            description = description[0:600]   
+            
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
             'natural_key': natural_key,
@@ -1098,7 +1104,7 @@ class AllergyLoader(BaseLoader):
             'allergen' : allergen,
             'name' : allergy_name, 
             'status' : self.string_or_none(row['allergy_status']),
-            'description' : self.string_or_none(row['allergy_description']),
+            'description' : self.string_or_none(description),
             'mrn' : row['mrn'],
             'provider' : self.get_provider(row['provider_id']),
         }

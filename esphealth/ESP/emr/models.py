@@ -570,7 +570,7 @@ class LabResult(BasePatientRecord):
     '''
     # Date (from base class) is order date
     #
-    order_natural_key = models.CharField('Order identifier in source EMR system', max_length=128, db_index=True)
+    order_natural_key = models.CharField('Order identifier in source EMR system', max_length=128, db_index=True, blank=True, null=True)
     native_code = models.CharField('Native Test Code', max_length=255, blank=True, null=True, db_index=True)
     native_name = models.CharField('Native Test Name', max_length=255, blank=True, null=True, db_index=True)
     result_date = models.DateField(blank=True, null=True, db_index=True)
@@ -1389,7 +1389,7 @@ class Immunization(BasePatientRecord):
     #
     imm_type = models.CharField('Immunization Type', max_length=20, blank=True, null=True)
     name = models.CharField('Immunization Name', max_length=200, blank=True, null=True)
-    dose = models.CharField('Immunization Dose', max_length=100, blank=True, null=True)
+    dose = models.CharField('Immunization Dose', max_length=180, blank=True, null=True)
     manufacturer = models.CharField('Manufacturer', max_length=100, blank=True, null=True)
     lot = models.TextField('Lot Number', max_length=500, blank=True, null=True)
     visit_date = models.DateField('Date of Visit', blank=True, null=True)
@@ -1521,7 +1521,7 @@ class Allergy(BasePatientRecord):
     allergen = models.ForeignKey(Allergen)
     name = models.CharField(max_length=300, null=True, db_index=True)
     status = models.CharField(max_length=20, null=True, db_index=True)
-    description = models.CharField(max_length=200,null=True,blank=True)
+    description = models.CharField(max_length=600,null=True,blank=True)
     
     @staticmethod
     def fakes():
@@ -1651,14 +1651,15 @@ class Pregnancy(BasePatientRecord):
     def make_mock( patient, gravida, parity, term, preterm, when=None, save_on_db=False,):
         now = int(time.time()*1000) #time in milliseconds
         provider = Provider.get_mock()
+                
         # from now up to 3 years ago or dob + years btw 12 and 55
         when = when or randomizer.date_range(as_string=False) 
         fertile_age = when if patient.date_of_birth is None else patient.date_of_birth + datetime.timedelta(days=random.randrange(12, 55)*365) 
         when =  fertile_age
         
-        edd = when + datetime.timedelta(days=random.randrange(5, 275)) # 40 weeks - 5 days after
-        #actual date
-        actual_date = when + datetime.timedelta(days=random.randrange(1, 289)) # 42 weeks - 1 day after
+        edd = when + datetime.timedelta(days=random.randrange(210, 289)) # 30-40 weeks 
+         
+        actual_date = when + datetime.timedelta(days=random.randrange(7, 289)) # 42 weeks - 7 days could be a misscarriage.
         
         gad = str(40 - relativedelta(edd, actual_date).days/7 ) + 'w ' 
         if  (relativedelta(edd, actual_date).days % 7 ) > 0:
