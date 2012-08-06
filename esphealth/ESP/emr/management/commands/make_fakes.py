@@ -33,6 +33,7 @@ from psycopg2 import Error as Psycopg2Error
 
 from django.db import transaction
 from ESP.emr.management.commands.common import LoaderCommand
+from dateutil.relativedelta import relativedelta
 
 from ESP.utils.utils import str_from_date
 from ESP.settings import DATA_DIR
@@ -49,12 +50,12 @@ from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
 from ESP.emr.management.commands.load_epic import LoadException, UPDATED_BY
 
 #change patient generations here
-POPULATION_SIZE = 2
+POPULATION_SIZE = 10
 
 # if min and <item>per_patient are >0 and same it will generate that amount
 # if min < than <item>per_patient it will generate a random number of object in that range
 MIN_ENCOUNTERS_PER_PATIENT = 1
-ENCOUNTERS_PER_PATIENT = 2
+ENCOUNTERS_PER_PATIENT = 1
 #it will generate a % of encounters with random number of icd9s between 0 and maxicd9
 MAXICD9 = 2
 ICD9_CODE_PCT = 20
@@ -70,10 +71,10 @@ MEDS_PER_PATIENT = 2
 
 IMMUNIZATION_PCT = 1
 
-MAX_PREGNANCIES = 3
-MAX_ALLERGIES = 3
-MAX_PROBLEMS = 3
-MAX_SOCIALHISTORY = 3
+MAX_PREGNANCIES = 6
+MAX_ALLERGIES = 1
+MAX_PROBLEMS = 1
+MAX_SOCIALHISTORY = 1
 # below are not used
 CHLAMYDIA_LX_PCT = 20
 CHLAMYDIA_INFECTION_PCT = 15
@@ -680,8 +681,40 @@ class Command(LoaderCommand):
                 parity =  random.randint(0, gravida) # births that persisted beyond 20 weeks
                 term = random.randint(0, parity) 
                 preterm = random.randint(0,gravida - term) 
-                for i in xrange(gravida):
-                    pregnancy_writer.write_row(Pregnancy.make_mock(p,gravida, parity, term, preterm))
+                for i in xrange(gravida): 
+                    #
+                    pregnancy = Pregnancy.make_mock(p,gravida, parity, term, preterm)
+                    pregnancy_writer.write_row(pregnancy)
+                    # generate encounter with edd field 
+                    e= Encounter.make_mock(p,when = pregnancy.date)
+                    e.edd = pregnancy.edd
+                    encounter_writer.write_row(e,random.choice (['V22.1','V22.0','V22.2','V23.0']))
+                    # some % have gestational diabetes during pregnancy
+                    gdm = .6
+                    r = random.random()
+                    if r <= gdm:
+                        range = relativedelta( pregnancy.actual_date,pregnancy.date).months*30+relativedelta( pregnancy.actual_date,pregnancy.date).days
+                        dategdm = random.randrange(30, range )
+                        e= Encounter.make_mock(p,when = pregnancy.date + datetime.timedelta(days=random.randrange(30, dategdm)))
+                        e.edd = pregnancy.edd
+                        encounter_writer.write_row(e,'648.83')
+                    # sometimes date  can be + 30 days after pregnancy 
+                    outsidepregn = .4
+                    r = random.random()
+                    if r <= outsidepregn:
+                        when = pregnancy.actual_date + datetime.timedelta(days=30)
+                    else:
+                        range = relativedelta( pregnancy.actual_date,pregnancy.date).months*30+relativedelta( pregnancy.actual_date,pregnancy.date).days
+                        datecomplic = random.randrange(30, range)
+                        when = pregnancy.date + datetime.timedelta(days =random.randrange(30, datecomplic) )
+                    # 3rd encounter give pre eclampsia  or hypertension  sometime during or after pregnancy
+                    othercomplications = .4
+                    r = random.random()
+                    if r <= othercomplications:
+                        e= Encounter.make_mock(p,when=when)
+                        e.edd = pregnancy.edd
+                        encounter_writer.write_row(e,random.choice (['642.43','642.53','642.63','642.73','642.33','642.93']))
+        
                 countprg +=1
                 
             if MAX_ALLERGIES>0:
