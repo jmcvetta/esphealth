@@ -1672,7 +1672,7 @@ class Pregnancy(BasePatientRecord):
         p = Pregnancy(patient=patient, mrn = patient.mrn, provenance=Provenance.fake(),
                              edd=edd, actual_date=actual_date, gravida=gravida, parity=parity,
                              preterm=preterm, birth_weight=birth_weight,term=term,
-                             ga_delivery = gad ,outcome=outcome, date = datetime.date.today(),
+                             ga_delivery = gad ,outcome=outcome, date = when,
                              provider=provider, natural_key=now)
             
         if save_on_db: p.save()
