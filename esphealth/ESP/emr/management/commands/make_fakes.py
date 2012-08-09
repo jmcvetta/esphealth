@@ -50,15 +50,15 @@ from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
 from ESP.emr.management.commands.load_epic import LoadException, UPDATED_BY
 
 #change patient generations here
-POPULATION_SIZE = 10000
+POPULATION_SIZE = 100
 
 # if min and <item>per_patient are >0 and same it will generate that amount
 # if min < than <item>per_patient it will generate a random number of object in that range
 MIN_ENCOUNTERS_PER_PATIENT = 1
-ENCOUNTERS_PER_PATIENT = 3
+ENCOUNTERS_PER_PATIENT = 6
 #it will generate a % of encounters with random number of icd9s between 0 and maxicd9
-MAXICD9 = 2
-ICD9_CODE_PCT = 20
+MAXICD9 = 4
+ICD9_CODE_PCT = 80
 
 MIN_LAB_TESTS_PER_PATIENT = 1
 LAB_TESTS_PER_PATIENT = 5
@@ -71,10 +71,10 @@ MEDS_PER_PATIENT = 4
 
 IMMUNIZATION_PCT = 1
 
-MAX_PREGNANCIES = 3
-MAX_ALLERGIES = 5
-MAX_PROBLEMS = 5
-MAX_SOCIALHISTORY = 5
+MAX_PREGNANCIES = 6
+MAX_ALLERGIES = 2
+MAX_PROBLEMS = 2
+MAX_SOCIALHISTORY = 2
 # below are not used
 CHLAMYDIA_LX_PCT = 20
 CHLAMYDIA_INFECTION_PCT = 15
@@ -690,10 +690,11 @@ class Command(LoaderCommand):
                     e.edd = pregnancy.edd
                     encounter_writer.write_row(e,random.choice (['V22.1','V22.0','V22.2','V23.0']))
                     # some % have gestational diabetes during pregnancy
-                    gdm = .6
+                    gdm = .8
                     r = random.random()
                     range = relativedelta( pregnancy.actual_date,pregnancy.date).months*30+relativedelta( pregnancy.actual_date,pregnancy.date).days
                     if range<= 30: range = 40
+                    # 30 days is after pregnancy start
                     randomdays = random.randrange(30, range )
                         
                     if r <= gdm:
@@ -701,14 +702,14 @@ class Command(LoaderCommand):
                         e.edd = pregnancy.edd
                         encounter_writer.write_row(e,'648.83')
                     # sometimes date  can be + 30 days after pregnancy 
-                    outsidepregn = .4
+                    outsidepregn = .5
                     r = random.random()
                     if r <= outsidepregn:
                         when = pregnancy.actual_date + datetime.timedelta(days=30)
                     else:
                         when = pregnancy.date + datetime.timedelta(days =randomdays )
                     # 3rd encounter give pre eclampsia  or hypertension  sometime during or after pregnancy
-                    othercomplications = .4
+                    othercomplications = .5
                     r = random.random()
                     if r <= othercomplications:
                         e= Encounter.make_mock(p,when=when)
