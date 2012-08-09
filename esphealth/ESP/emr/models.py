@@ -614,7 +614,7 @@ class LabResult(BasePatientRecord):
     
     
     @staticmethod
-    def randomWeight(normal, high, low, chigh, clow, first=.5, second=.4, third=.2, fourth=.3):
+    def randomWeight(normal, high, low, chigh, clow, first=.3, second=.7, third=.2, fourth=.4):
         
         r = random.random()
         if r <= third:
