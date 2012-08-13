@@ -1,0 +1,112 @@
+{% extends "espbase.html" %}
+
+{% block content %}
+
+<h2><a href="javascript:history.go(-1)">Go Back</a></h2>
+
+<center>
+<h2><font color="#800000">preLoad Rule Information</font></h2>
+</center>
+<br>
+{% if msg %}
+     <br><br>
+     <center>
+     <h3><font color="blue"> {{msg}}</font></h3>
+      </center> 
+{% endif %}
+
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="{{SITEROOT}}/preload/rule/update/" method="post">
+<center>
+<input type="submit" name="submit" value="Save into a file" >
+</center>
+<br>
+<table cellspacing="10" cellpadding="3" border="1" width="95%">
+<tr class="{% cycle row1,row2 as rowcolors %}">
+  <th>ID</th>
+  <th>Name</th>
+  <th>In Production</th>
+  <th>Initial Status</th>
+  <th>Message</th>
+  <th>HL7</th>
+  <th>Comments</th>
+</tr>
+ {% for mapobj in maps %} 
+     <tr class="{% cycle rowcolors %}" >    
+      <td width="5%"> {{ mapobj.id }}<input type="hidden" name="ID_{{ mapobj.id }}" value={{ mapobj.id }}></td>
+
+      <td width="20%"><input type="text" name="NAME_{{ mapobj.id }}" size="20" value="{{ mapobj.ruleName}}"></td>
+      <td width="5%"> <input type="text" name="INPROD_{{ mapobj.id }}" size="15" value="{{ mapobj.ruleinProd}}"></td>
+      <td  valign="middle"> 
+            <SELECT NAME="INITSTATUS_{{ mapobj.id }}" size=1>
+              {% for thiswf in wfstate %}
+	        {% ifequal mapobj.ruleInitCaseStatus thiswf.0 %}<OPTION value="{{thiswf.0}}"  SELECTED>{{thiswf.1}}</OPTION>
+		{% endifequal %}
+                {% ifnotequal mapobj.ruleInitCaseStatus thiswf.0 %}<OPTION value="{{thiswf.0}}" >{{thiswf.1}}</OPTION>
+               {% endifnotequal %}           
+              {% endfor %} </SELECT>
+          </td>
+
+      <td width="20%">
+        <table cellspacing="0" cellpadding="0" border="0" width="95%">
+		  <tr><td>Format:</td><td><input type="text" name="MSGFMT_{{ mapobj.id }}" size="20" value="{{mapobj.ruleMsgFormat}}" ></td></tr>
+		  <tr><td>Destination:</td><td><input type="text" name="MSGDEST_{{ mapobj.id }}" size="20" value="{{mapobj.ruleMsgDest}}" ></td></tr>
+		</table>
+      </td>
+      <td width="25%">
+        <table cellspacing="0" cellpadding="0" border="0" width="95%">
+		  <tr><td>Name:</td><td><input type="text" name="HL7NAME_{{ mapobj.id }}" size="20" value="{{mapobj.ruleHL7Name}}" ></td></tr>
+		  <tr><td>Code:</td><td><input type="text" name="HL7CODE_{{ mapobj.id }}" size="20" value="{{mapobj.ruleHL7Code}}" ></td></tr>
+		  <tr><td>CodeType:</td><td><input type="text" name="HL7TYPE_{{ mapobj.id }}" size="20" value="{{mapobj.ruleHL7CodeType}}" ></td></tr>
+		</table>
+      </td>
+
+      <td width="25%"> <TEXTAREA name="NOTE_{{ mapobj.id }}" rows="4" cols="25">{{mapobj.ruleComments}}</textarea></td>
+      
+    </tr>
+
+    {% endfor %}
+
+
+ {% for i in newrec %}
+     <tr class="{% cycle rowcolors %}" >
+     <td width="5%"> Add New<input type="hidden" name="ID_NEW{{ i }}" value="NEW{{i}}"></td>
+      
+     <td width="20%"><input type="text" name="NAME_NEW{{ i }}" size="20" ></td>
+     <td width="5%"> <input type="text" name="INPROD_NEW{{ i }}" size="15" value="0"></td>
+     <td  valign="middle"> 
+       <SELECT NAME="INITSTATUS_NEW{{ i }}" size=1>
+              {% for thiswf in wfstate %}
+                <OPTION value="{{thiswf.0}}" >{{thiswf.1}}</OPTION>
+              {% endfor %} </SELECT>
+          </td>
+
+      <td width="20%">
+        <table cellspacing="0" cellpadding="0" border="0" width="95%">
+		  <tr><td>Format:</td><td><input type="text" name="MSGFMT_NEW{{ i}}" size="20" ></td></tr>
+		  <tr><td>Destination:</td><td><input type="text" name="MSGDEST_NEW{{i }}" size="20" ></td></tr>
+		</table>
+      </td>
+      <td width="25%">
+        <table cellspacing="0" cellpadding="0" border="0" width="95%">
+		  <tr><td>Name:</td><td><input type="text" name="HL7NAME_NEW{{i }}" size="20" ></td></tr>
+		  <tr><td>Code:</td><td><input type="text" name="HL7CODE_NEW{{ i }}" size="20" ></td></tr>
+		  <tr><td>CodeType:</td><td><input type="text" name="HL7TYPE_NEW{{ i }}" size="20" ></td></tr>
+		</table>
+      </td>
+      <td width="25%"> <TEXTAREA name="NOTE_NEW{{i}}" rows="4" cols="25"></textarea></td>
+    </tr>
+
+    {% endfor %}
+  
+</table>
+<br>
+<center>
+<input type="submit" name="submit" value="Save into a file" >
+</center>
+</form>
+
+
+{% endblock %}

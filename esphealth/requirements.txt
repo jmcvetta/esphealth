@@ -1,0 +1,23 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+#                    Electronic Support for Public Health
+#                              PIP Requirements
+#
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+#-------------------------------------------------------------------------------
+#
+# PyPI Packages
+#
+#-------------------------------------------------------------------------------
+
+psycopg2         # Database Adapter
+django           # Web application framework with ORM
+python-dateutil  # Date-math utilities
+simplejson       # JSON data formatting
+sqlparse         # SQL pretty-printer
+hl7              # Utilities for working with HL7 message
+django_tables    # Utilities for working with HTML tables in Django
+configobj        # Advanced configuration file support
+ipython          # Interactive Python shell
