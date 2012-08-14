@@ -975,9 +975,11 @@ class GestationalDiabetesReport(Report):
         # Generate a row for each pregnancy (or 1 row if no pregs found)
         #
         if not preg_ts_qs:
-            patient_values['pregnancy'] = False
+            patient_values['pregnancy'] = 0
             writer.writerow(patient_values)
             return # Nothing more to do for this patient
+        else:
+            patient_values['pregnancy'] = 1
         for preg_ts in preg_ts_qs:
             # Find the pregnancy object for this timespan if there is any
             # ts.enddate= actual date, otherwise use edd. 
@@ -1077,7 +1079,6 @@ class GestationalDiabetesReport(Report):
                 date__lte = end_date,
                 ).order_by('date')
                 
-             
             #
             # Events by time period
             #
