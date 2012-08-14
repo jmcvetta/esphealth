@@ -461,6 +461,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             # bound to a pregnancy timespan.
             #
             preg_qs = self.relevant_event_qs.filter(patient=patient) 
+            timesq = Timespan.objects.filter(name= 'pregnancy', events__in = preg_qs)
+             
             preg_qs = preg_qs.exclude(timespan__name='pregnancy')
             preg_qs = preg_qs.order_by('date')
             #
@@ -573,7 +575,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         if preg_ts.end_date:
             relevant_events = relevant_events.filter( date__lte=(preg_ts.end_date + relativedelta(months=6)) )
         else:
-            relevant_events = relevant_events.filter( date__lte=self.today )
+            #based on start date
+            relevant_events = relevant_events.filter( date__lte=(preg_ts.start_date + relativedelta(months=10)) )
         preg_ts.events = preg_ts.events.all() | relevant_events
         preg_ts.save()
         return preg_ts
