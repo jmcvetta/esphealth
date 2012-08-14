@@ -667,13 +667,13 @@ class Command(LoaderCommand):
                     for i in xrange(random.randrange(MIN_MEDS_PER_PATIENT,MEDS_PER_PATIENT)):  
                         prescription_writer.write_row(Prescription.make_mock(p))
                               
-            #if random.random() <= float(IMMUNIZATION_PCT/100.0):
-            if ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT>0:
-                history = ImmunizationHistory(p)
-                for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
-                    imm = history.add_immunization()
-                    #check_for_reactions(imm) 
-                    immunization_writer.write_row(imm)
+            if random.random() <= float(IMMUNIZATION_PCT/100.0):
+                if ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT>0:
+                    history = ImmunizationHistory(p)
+                    for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
+                        imm = history.add_immunization()
+                        #check_for_reactions(imm) 
+                        immunization_writer.write_row(imm)
                     
             #if patient is female and has birth bearing age 12-55, generate pregnancy                 
             if p.gender.startswith('F') and p.age.years > 12 and p.age.years < 55 :
