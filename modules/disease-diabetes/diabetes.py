@@ -1234,12 +1234,15 @@ class GestationalDiabetesReport(Report):
                 ga_1st_insulin = ga_1st_insulin.days
                 
                 for insulin in insulin_qs:
-                    if  insulin.filter(content_object__name__icontains = basal):
-                        insulin_basal= True
-                        return
-                    if insulin.filter(content_object__name__icontains = bolus):
-                        insulin_bolus = True
-                        return
+                    for string in basal:
+                        if  insulin.content_object.name.__contains__(string):
+                            insulin_basal= True
+                            break
+                    for string in bolus:
+                        if insulin.content_object.name.__contains__(string):
+                            insulin_bolus = True
+                            break
+                        
             else:
                 ga_1st_insulin =0
                  
