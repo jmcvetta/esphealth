@@ -39,6 +39,7 @@ from django.utils.encoding import DjangoUnicodeDecodeError
 from ESP.settings import DATA_DIR
 from ESP.settings import DATE_FORMAT
 from ESP.settings import DEBUG
+from ESP.settings import ETL_MEDNAMEREVERSE
 from ESP.utils import log
 from ESP.utils import str_from_date
 from ESP.utils import date_from_str
@@ -747,9 +748,9 @@ class PrescriptionLoader(BaseLoader):
         'provider_id_num',
         'order_date',
         'status',
-        'drug_name',
+        'directions',
         'ndc',
-        'drug_desc',
+        'drug_name',
         'quantity',
         'refills',
         'start_date',
@@ -758,6 +759,12 @@ class PrescriptionLoader(BaseLoader):
     ]
 
     def load_row(self, row):
+        # Adjust for reversal of directions and drug_name fields
+        if ETL_MEDNAMEREVERSE:
+            name = row['directions']
+        else:
+            name = row['drug_name']
+
         p = Prescription()
         p.provenance = self.provenance
         p.updated_by = UPDATED_BY
@@ -766,7 +773,7 @@ class PrescriptionLoader(BaseLoader):
         p.order_num = row['order_id_num']
         p.date = self.date_or_none(row['order_date'])
         p.status = row['status']
-        p.name = row['drug_name']
+        p.name = name
         p.code = row['ndc']
         p.quantity = row['quantity']
         p.quantity_float = self.decimal_or_none(row['quantity'])
