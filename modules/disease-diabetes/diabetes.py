@@ -972,14 +972,21 @@ class GestationalDiabetesReport(Report):
             patient_values['frank_diabetes_type'] = first_dm_case.condition
             
         #
-        # Generate a row for each pregnancy (or 1 row if no pregs found)
+        # Generate a row for each pregnancy (or 1 row if no pregs found but with gdm case)
         #
+        patient_values['pregnancy'] = binary(preg_ts_qs)
+            
         if not preg_ts_qs:
-            patient_values['pregnancy'] = 0
-            writer.writerow(patient_values)
+            if gdm_case_qs:
+                values = {
+                'gdm_case': binary( gdm_case_qs ),
+                'gdm_case_date': gdm_case_qs[0].date,
+                }
+                values.update(patient_values)
+                writer.writerow(values)
             return # Nothing more to do for this patient
-        else:
-            patient_values['pregnancy'] = 1
+        
+            
         for preg_ts in preg_ts_qs:
             # Find the pregnancy object for this timespan if there is any
             # ts.enddate= actual date, otherwise use edd. 
@@ -1268,7 +1275,6 @@ class GestationalDiabetesReport(Report):
             pp_ogtt75_2hr_value =  postpartum.filter(self.ogtt75_2hr_q).aggregate( max=Max('labresult__result_float') )['max']
               
             values = {
-                'pregnancy': binary(True),
                 'preg_start': preg_ts.start_date,
                 'preg_end': end_date,
                 'edd': edd,
