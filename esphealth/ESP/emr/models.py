@@ -1651,15 +1651,17 @@ class Pregnancy(BasePatientRecord):
     def make_mock( patient, gravida, parity, term, preterm, when=None, save_on_db=False,):
         now = int(time.time()*1000) #time in milliseconds
         provider = Provider.get_mock()
-                
-        # from now up to 3 years ago or dob + years btw 12 and 55
-        when = when or randomizer.date_range(as_string=False) 
-        fertile_age = when if patient.date_of_birth is None else patient.date_of_birth + datetime.timedelta(days=random.randrange(12, 55)*365) 
-        when =  fertile_age
+            
+        # from now up to 3 years ago 
+        preg_date = when or randomizer.date_range(as_string=False) 
+        # patient is already at fertile age when coming here 
+        # if dob is not null pick a date between 12 years and their current age
+        preg_date = preg_date if patient.date_of_birth is None else patient.date_of_birth + datetime.timedelta(days=random.randrange(12, patient.age.years)*365)
         
-        edd = when + datetime.timedelta(days=random.randrange(210, 289)) # 30-40 weeks 
-         
-        actual_date = when + datetime.timedelta(days=random.randrange(7, 289)) # 42 weeks - 7 days could be a misscarriage.
+        edd = preg_date + datetime.timedelta(days=random.randrange(210, 289)) # 30-40 weeks 
+        # is currenlty pregnant, when is passed in
+        if when: actual_date = None
+        else: actual_date = preg_date + datetime.timedelta(days=random.randrange(7, 289)) # 42 weeks. 7 days could be a miss carriage.
         
         gad = str(40 - relativedelta(edd, actual_date).days/7 ) + 'w ' 
         if  (relativedelta(edd, actual_date).days % 7 ) > 0:
@@ -1672,8 +1674,8 @@ class Pregnancy(BasePatientRecord):
         p = Pregnancy(patient=patient, mrn = patient.mrn, provenance=Provenance.fake(),
                              edd=edd, actual_date=actual_date, gravida=gravida, parity=parity,
                              preterm=preterm, birth_weight=birth_weight,term=term,
-                             ga_delivery = gad ,outcome=outcome, date = when,
-                             provider=provider, natural_key=now)
+                             ga_delivery = gad ,outcome=outcome, date = preg_date,
+                             provider=provider, births = gravida, natural_key=now)
             
         if save_on_db: p.save()
             
