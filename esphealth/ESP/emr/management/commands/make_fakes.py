@@ -72,6 +72,8 @@ MEDS_PER_PATIENT = 4
 IMMUNIZATION_PCT = 1
 
 MAX_PREGNANCIES = 6
+CURRENTLY_PREG_PCT = .5
+
 MAX_ALLERGIES = 2
 MAX_PROBLEMS = 2
 MAX_SOCIALHISTORY = 2
@@ -637,6 +639,7 @@ class Command(LoaderCommand):
             if ENCOUNTERS_PER_PATIENT>0 :
                 if (MIN_ENCOUNTERS_PER_PATIENT== ENCOUNTERS_PER_PATIENT):
                     for i in xrange(0,ENCOUNTERS_PER_PATIENT): 
+                        #TODO add patients that have gestational diabetes that are not pregnant 648.8 icd9
                         encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))
                 else:
                     for i in xrange(random.randrange(MIN_ENCOUNTERS_PER_PATIENT,ENCOUNTERS_PER_PATIENT)): 
@@ -678,12 +681,23 @@ class Command(LoaderCommand):
             #if patient is female and has birth bearing age 12-55, generate pregnancy                 
             if p.gender.startswith('F') and p.age.years > 12 and p.age.years < 55 :
                 gravida = random.randint(1, MAX_PREGNANCIES)
-                parity =  random.randint(0, gravida) # births that persisted beyond 20 weeks
-                term = random.randint(0, parity) 
-                preterm = random.randint(0,gravida - term) 
+                totparity =  random.randint(0, gravida) # births that persisted beyond 20 weeks
+                totterm = random.randint(0, totparity) 
+                totpreterm = random.randint(0,gravida - totterm) 
                 for i in xrange(gravida): 
                     #
-                    pregnancy = Pregnancy.make_mock(p,gravida, parity, term, preterm)
+                    
+                    curr_preg = random.random()
+                    if curr_preg <= CURRENTLY_PREG_PCT:
+                        pregnancy = Pregnancy.make_mock(p,i, totparity, totterm, totpreterm,when=datetime.date.today())
+                    else :
+                        pregnancy = Pregnancy.make_mock(p,i, totparity, totterm, totpreterm)
+                    # reduce one as long as they are not 0
+                    if totparity >0: totparity = totparity -i 
+                    if totterm >0 :totterm = totterm - i
+                    if totpreterm >0 :totpreterm = totpreterm - i
+                    
+                    
                     pregnancy_writer.write_row(pregnancy)
                     # generate encounter with edd field 
                     e= Encounter.make_mock(p,when = pregnancy.date)
@@ -704,7 +718,7 @@ class Command(LoaderCommand):
                     # sometimes date  can be + 30 days after pregnancy 
                     outsidepregn = .5
                     r = random.random()
-                    if r <= outsidepregn:
+                    if r <= outsidepregn and pregnancy.actual_date:
                         when = pregnancy.actual_date + datetime.timedelta(days=30)
                     else:
                         when = pregnancy.date + datetime.timedelta(days =randomdays )
