@@ -1659,23 +1659,30 @@ class Pregnancy(BasePatientRecord):
         preg_date = preg_date if patient.date_of_birth is None else patient.date_of_birth + datetime.timedelta(days=random.randrange(12, patient.age.years)*365)
         
         edd = preg_date + datetime.timedelta(days=random.randrange(210, 289)) # 30-40 weeks 
-        # is currenlty pregnant, when is passed in
-        if when: actual_date = None
-        else: actual_date = preg_date + datetime.timedelta(days=random.randrange(7, 289)) # 42 weeks. 7 days could be a miss carriage.
-        
-        gad = str(40 - relativedelta(edd, actual_date).days/7 ) + 'w ' 
-        if  (relativedelta(edd, actual_date).days % 7 ) > 0:
-            gad +=  str( relativedelta(edd, actual_date).days % 7 ) + 'd'
-        
-        birth_weight = round(random.uniform(0.9, 5),1)
-        
-        status = ['Term', 'Preterm', 'Still birth','']         
-        outcome = random.choice(status)        
+        # if currently pregnant, when is passed in
+        if when: 
+            actual_date = None
+            gad = None
+            birth_weight = None
+            status = None
+            outcome = None
+            
+        else: 
+            actual_date = preg_date + datetime.timedelta(days=random.randrange(7, 289)) # 42 weeks. 7 days could be a miss carriage.
+            gad = str(40 - relativedelta(edd, actual_date).days/7 ) + 'w ' 
+            if  (relativedelta(edd, actual_date).days % 7 ) > 0:
+                gad +=  str( relativedelta(edd, actual_date).days % 7 ) + 'd'
+            #dont need to add births because it is calculated on load based on gad
+            birth_weight = str(round(random.uniform(0.9, 5),1)) +' lbs'
+            status = ['Term', 'Preterm', 'Still birth','']         
+            outcome = random.choice(status)  
+            
+                  
         p = Pregnancy(patient=patient, mrn = patient.mrn, provenance=Provenance.fake(),
                              edd=edd, actual_date=actual_date, gravida=gravida, parity=parity,
-                             preterm=preterm, birth_weight=birth_weight,term=term,
+                             preterm=preterm, raw_birth_weight=birth_weight,term=term,
                              ga_delivery = gad ,outcome=outcome, date = preg_date,
-                             provider=provider, births = gravida, natural_key=now)
+                             provider=provider,  natural_key=now)
             
         if save_on_db: p.save()
             
