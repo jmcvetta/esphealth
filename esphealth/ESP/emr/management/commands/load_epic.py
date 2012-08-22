@@ -954,7 +954,7 @@ class PregnancyLoader(BaseLoader):
             p.birth_weight2 = None
             p.birth_weight3 = None
             
-        for birth in birth_weights.split(';'):
+        for birth in birth_weights.strip().split(';'):
             if birth.strip() != '':
                 p.births += 1
                 #get the weight     
