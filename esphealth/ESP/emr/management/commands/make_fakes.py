@@ -74,9 +74,9 @@ IMMUNIZATION_PCT = 1
 MAX_PREGNANCIES = 6
 CURRENTLY_PREG_PCT = .5
 
-MAX_ALLERGIES = 2
-MAX_PROBLEMS = 2
-MAX_SOCIALHISTORY = 2
+MAX_ALLERGIES = 1
+MAX_PROBLEMS = 1
+MAX_SOCIALHISTORY = 1
 # below are not used
 CHLAMYDIA_LX_PCT = 20
 CHLAMYDIA_INFECTION_PCT = 15
@@ -693,16 +693,17 @@ class Command(LoaderCommand):
                     else :
                         pregnancy = Pregnancy.make_mock(p,i, totparity, totterm, totpreterm)
                     # reduce one as long as they are not 0
-                    if totparity >0: totparity = totparity -i 
-                    if totterm >0 :totterm = totterm - i
-                    if totpreterm >0 :totpreterm = totpreterm - i
+                    if totparity >0: totparity = totparity -1 
+                    if totterm >0 :totterm = totterm - 1
+                    if totpreterm >0 :totpreterm = totpreterm - 1
                     
                     
                     pregnancy_writer.write_row(pregnancy)
                     # generate encounter with edd field 
                     e= Encounter.make_mock(p,when = pregnancy.date)
                     e.edd = pregnancy.edd
-                    encounter_writer.write_row(e,random.choice (['V22.1','V22.0','V22.2','V23.0']))
+                    
+                    encounter_writer.write_row(e,[str(random.choice (['V22.1','V22.0','V22.2','V23.0']))])
                     # some % have gestational diabetes during pregnancy
                     gdm = .8
                     r = random.random()
@@ -714,7 +715,7 @@ class Command(LoaderCommand):
                     if r <= gdm:
                         e= Encounter.make_mock(p,when = pregnancy.date + datetime.timedelta(days=randomdays))
                         e.edd = pregnancy.edd
-                        encounter_writer.write_row(e,'648.83')
+                        encounter_writer.write_row(e,['648.83'])
                     # sometimes date  can be + 30 days after pregnancy 
                     outsidepregn = .5
                     r = random.random()
@@ -728,7 +729,7 @@ class Command(LoaderCommand):
                     if r <= othercomplications:
                         e= Encounter.make_mock(p,when=when)
                         e.edd = pregnancy.edd
-                        encounter_writer.write_row(e,random.choice (['642.43','642.53','642.63','642.73','642.33','642.93']))
+                        encounter_writer.write_row(e,[str(random.choice (['642.43','642.53','642.63','642.73','642.33','642.93']))])
         
                 countprg +=1
                 
