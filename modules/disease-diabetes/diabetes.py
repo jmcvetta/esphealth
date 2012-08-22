@@ -1122,7 +1122,7 @@ class GestationalDiabetesReport(Report):
                 
             prior_gdm_prior_this_preg =   prepartum.filter(self.dxgdm_q).order_by('date')
             if prior_gdm_prior_this_preg:
-                prior_gdm_prior_this_preg_date = prior_gdm_prior_this_preg[0]
+                prior_gdm_prior_this_preg_date = prior_gdm_prior_this_preg[0].date
             else:
                 prior_gdm_prior_this_preg_date = None   
                 
