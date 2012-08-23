@@ -264,7 +264,7 @@ class BaseLoader(object):
          
     __string_sanitizer = re.compile(r'[\x80-\xFF]')
     
-    def sanatize_str(self,s):
+    def sanitize_str(self,s):
         '''
         Sanitizes strings be replacing non-ASCII characters with a "?"
         @param s: String to be sanitized
@@ -279,7 +279,7 @@ class BaseLoader(object):
         e.g. empty string, return None object.
         '''
         if s:
-            return self.sanatize_str(s)
+            return self.sanitize_str(s)
         else:
             return None
     
@@ -289,7 +289,7 @@ class BaseLoader(object):
         Returns None if s evaluates to None, including blank string.
         '''
         if s:
-            return string.capwords( self.sanatize_str(s) )
+            return string.capwords( self.sanitize_str(s) )
         else:
             return None
         
@@ -299,7 +299,7 @@ class BaseLoader(object):
         Returns None if s evaluates to None, including blank string.
         '''
         if s:
-            return string.upper( self.sanatize_str(s) )
+            return string.upper( self.sanitize_str(s) )
         else:
             return None
     
@@ -349,6 +349,10 @@ class BaseLoader(object):
         errors = 0 # Number of non-fatal errors encountered
         start_time = datetime.datetime.now()
         for row in self.reader:
+            cur_row += 1            
+            # skip the footer, if present, at the end of the file
+            if cur_row == self.line_count and row[self.fields[0]].upper() == 'CONTROL TOTALS':
+                break
             if self.fields.__len__() < row.__len__():
                 errors += 1
                 e = 'Skipping row. More items in row than fields'  
@@ -363,19 +367,15 @@ class BaseLoader(object):
                 break
             if not row:
                 continue # Skip None objects
-            cur_row += 1 # Increment the counter
-            # changed to > because last line is not a footer,dont skip
+            # changed to > because last line may not be a footer and shouldn't be skipped
             if cur_row > self.line_count:
                 break
-            # check this, too -- in case there are extra blank lines at end of file
-            if row[self.fields[0]].upper() == 'CONTROL TOTALS':
-                break
-            # Coerce to unicode
             
+            # Coerce to unicode            
             for key in row:
                 if row[key]:
                     try:
-                        row[key] = self.sanatize_str( row[key].strip() )
+                        row[key] = self.sanitize_str( row[key].strip() )
                     except DjangoUnicodeDecodeError, e:
                         #
                         # Log character set errors to db
@@ -931,7 +931,7 @@ class PregnancyLoader(BaseLoader):
             # if we don't have a pregnancy episode ID, use the combination
             # of patient ID and actual delivery date as the natural key
             actual_date = row['actual_date'] if row['actual_date'] else ''
-            natural_key = self.generateNaturalkey(row['patient_id'] + actual_date)
+            natural_key = self.generateNaturalkey(row['patient_id'] + actual_broudebroudebrbroudebroooooHi Geoff,GGGdate)
         else:
             natural_key = self.generateNaturalkey(row['natural_key'])
             
