@@ -180,8 +180,14 @@ class BaseLoader(object):
         return self.__patient_cache[natural_key]
     
     def get_provider(self, natural_key):
+        
         if not natural_key:
             return UNKNOWN_PROVIDER
+        #truncate the key some provider keys were too long
+        if len(natural_key) > 128:
+            log.warning('natural_key is greater than 128 characters, and will be truncated')
+            natural_key = natural_key[:128] 
+            
         if not natural_key in self.__provider_cache:
             try:
                 p = Provider.objects.get(natural_key=natural_key)
@@ -467,13 +473,13 @@ class ProviderLoader(BaseLoader):
         if concat_values.strip() == '':
             log.debug('Empty row encountered -- skipping')
             return 
-   
         
         natural_key = self.generateNaturalkey(row['natural_key'])
         # load provider in cache if not there, but natural key will never be null here
         p = self.get_provider(natural_key)
         values = {
-        'natural_key': natural_key,
+        # fetching natural key from p because it may have been truncated to 128 characters   
+        'natural_key': p.natural_key,
         'provenance' : self.provenance,
         #'updated_by' : UPDATED_BY,
         'last_name' : unicode(row['last_name']),
