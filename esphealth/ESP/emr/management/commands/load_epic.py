@@ -927,7 +927,14 @@ class PregnancyLoader(BaseLoader):
         ]
     
     def load_row(self,row):
-        natural_key = self.generateNaturalkey(row['natural_key'])
+        if not row['natural_key']:
+            # if we don't have a pregnancy episode ID, use the combination
+            # of patient ID and actual delivery date as the natural key
+            actual_date = row['actual_date'] if row['actual_date'] else ''
+            natural_key = self.generateNaturalkey(row['patient_id'] + actual_date)
+        else:
+            natural_key = self.generateNaturalkey(row['natural_key'])
+            
         birth_weights = row['birth_weight']
         
         # set date based on the date in the ETL file name
