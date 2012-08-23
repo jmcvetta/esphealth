@@ -25,7 +25,7 @@ from ESP.utils import log_query
 from ESP.utils.utils import wait_for_threads
 from ESP.utils.utils import TODAY
 from ESP.emr.models import Patient
-from ESP.emr.models import Encounter
+from ESP.emr.models import Encounter, Pregnancy
 from ESP.hef.base import Event
 from ESP.hef.base import BaseEventHeuristic
 from ESP.hef.base import BaseTimespanHeuristic
@@ -50,6 +50,7 @@ class EDDHeuristic(BaseEventHeuristic):
     
     def generate(self):
         counter = 0
+        
         enc_qs = Encounter.objects.filter(edd__isnull=False)
         enc_qs = enc_qs.exclude(events__name__in=self.event_names)
         log_query('EDD Encounters for %s' % self.uri, enc_qs)
@@ -407,13 +408,27 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         edd_event_qs = Event.objects.filter(name='enc:pregnancy:edd')
         edd_event_qs = edd_event_qs.filter(patient=patient)
         edd_event_qs = edd_event_qs.exclude(timespan__name='pregnancy')
+        
         edd_enc_qs = Encounter.objects.filter(events__in=edd_event_qs)
         edd_enc_qs = edd_enc_qs.filter(patient=patient)
         edd_enc_qs = edd_enc_qs.filter(edd__gte=start_date)
         edd_enc_qs = edd_enc_qs.filter( edd__lte = start_date + relativedelta(days=280) )
         aggregate_info_dict = edd_enc_qs.aggregate(Min('edd'))
         min_edd = aggregate_info_dict['edd__min']
-        return min_edd
+        
+        # get pregnancies actual date and get the min from there too
+        
+        # or use pregnancy edd
+        edd_pgr_qs = Pregnancy.objects.filter(patient=patient)
+        edd_pgr_qs = edd_pgr_qs.filter(edd__gte=start_date)
+        edd_pgr_qs = edd_pgr_qs.filter(edd__lte = start_date + relativedelta(days=280) )
+        aggregate_preginfo_dict = edd_pgr_qs.aggregate(Min('edd'))
+        min_preg_edd = aggregate_preginfo_dict['edd__min']
+        
+        if min_edd < min_preg_edd:
+            return min_edd
+        else:
+            return min_preg_edd
     
     def _get_latest_preg_event_date(self, patient, start_date):
         '''
