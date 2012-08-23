@@ -57,6 +57,9 @@ class Event(models.Model):
     def __unicode__(self):
         return u'Event # %s (%s %s)' % (self.pk, self.name, self.date)
     
+    def verbose_str(self):
+        return 'Event # %s (%s %s)' % (self.pk, self.name, self.date)
+        
     @classmethod
     def create(cls, 
 	    name,
