@@ -291,7 +291,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         # Actual Date Prengancies
         #
-        self.prg_qs = Event.objects.filter(name='prg:pregnancy:actual_date')
+        self.prg_ad_qs = Event.objects.filter(name='prg:pregnancy:actual_date')
         #
         # EDD Encounters
         #
@@ -312,15 +312,16 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             'dx:pregnancy:delivery-normal',
             'dx:pregnancy:delivery-outcome',
             'dx:pregnancy:complications',
+            'prg:pregnancy:actual_date',
             ])
         #
         # All Relevant Events
-        self.relevant_event_qs = self.prg_qs | self.edd_qs | self.onset_qs | self.all_eop_qs 
+        self.relevant_event_qs =  self.edd_qs | self.onset_qs | self.all_eop_qs 
         
     @transaction.commit_on_success
     def generate(self):
         self._update_currently_pregnant()
-        return self._generate_new_pregnanies()
+        return self._generate_new_pregnancies()
     
     def _update_currently_pregnant(self):
         '''
@@ -361,14 +362,15 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         log.info('Updated %s currently-pregnant timespans with end dates.' % counter)
         return counter
         
-    def _generate_new_pregnanies(self):
+    def _generate_new_pregnancies(self):
         log.info('Generating new pregnancy timespans')
         #
         # Get possible patients for new pregnancies
         #
-        # Potential pregnancies require either an onset event, or an EDD encounter (from 
-        # which an implied onset date can be calculated).
-        preg_indicator_qs = self.onset_qs | self.edd_qs | self.prg_qs
+        # Potential pregnancies require either an onset event, an EDD encounter or 
+        # an actual delivery date event from the pregnancy object 
+        # (from which an implied onset date can be calculated) 
+        preg_indicator_qs = self.onset_qs | self.edd_qs | self.prg_ad_qs
         preg_indicator_qs = preg_indicator_qs.exclude(timespan__name='pregnancy')
         patient_pks = preg_indicator_qs.order_by('patient').values_list('patient', flat=True).distinct()
         log_query('Pregnant patient PKs', patient_pks)
@@ -454,21 +456,6 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         aggregate_info_dict = edd_enc_qs.aggregate(Min('edd'))
         min_edd = aggregate_info_dict['edd__min']
         
-        # get info from pregnancy object 
-        '''
-        edd_pgr_qs = Pregnancy.objects.filter(patient=patient)
-        edd_pgr_qs = edd_pgr_qs.filter(edd__gte=start_date)
-        edd_pgr_qs = edd_pgr_qs.filter(edd__lte = start_date + relativedelta(days=280) )
-        aggregate_preginfo_dict = edd_pgr_qs.aggregate(Min('edd'))
-        min_preg_edd = aggregate_preginfo_dict['edd__min']
-        
-        if min_preg_edd and min_edd and min_edd < min_preg_edd:
-            return min_edd
-        elif not min_preg_edd:
-            return min_edd
-        else:
-            return min_preg_edd
-        '''
         return min_edd
     
     def _get_latest_preg_event_date(self, patient, start_date):
@@ -535,12 +522,20 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             #
             # Pregnancy onset is earliest plausible EDD minus 280 days.  If 
             # no EDD, then it is 30 days prior to first ICD9 for pregnancy.
+            # if the event is based on a actual date of delivery from a pregnancy object  
+            # we calculate the onset based on the gestational age of delivery if it exists.
             #
-            if min_edd:
+            if first_preg_event.name == 'prg:pregnancy:actual_date':
+                gad = first_preg_event.content_object.ga_delivery
+                pattern = 'onset:ad '
+                if gad:
+                    onset_date = first_preg_event.date - relativedelta(days=int(gad))
+                else:
+                    onset_date = first_preg_event.date - relativedelta(days=280)
+            elif min_edd:
                 onset_date = min_edd - relativedelta(days=280)
                 pattern = 'onset:edd '
             else:
-                
                 onset_date = first_preg_event.date - relativedelta(days=30)
                 pattern = 'onset:icd9 '
             #
