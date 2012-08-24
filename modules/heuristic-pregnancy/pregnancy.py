@@ -37,6 +37,35 @@ from ESP.hef.models import Timespan
 #PREG_START_MARGIN = datetime.timedelta(days=20)
 PREG_MARGIN = relativedelta(days=30)
 
+class ActualDatePregnancyHeuristic(BaseEventHeuristic):
+    
+    event_names = ['prg:pregnancy:actual_date'] 
+    
+    uri = 'urn:x-esphealth:heuristic:channing:pregnancy:actual_date:v1'
+    
+    core_uris = ['urn:x-esphealth:hef:core:v1']
+    
+    short_name = 'prg:pregnancy:actual_date'
+    
+    def generate(self):
+        counter = 0
+        
+        prg_qs = Pregnancy.objects.filter(actual_date__isnull=False)
+        prg_qs = prg_qs.exclude(events__name__in=self.event_names)
+        log_query('Actual Date Pregnancy for %s' % self.uri, prg_qs)
+        for this_prg in prg_qs:
+            Event.create(
+                name = 'prg:pregnancy:actual_date',
+                source = self.uri, 
+                date = this_prg.date, 
+                patient = this_prg.patient, 
+                provider = this_prg.provider,
+                emr_record = this_prg
+                )
+            counter += 1
+        log.info('Generated %s new %s events' % (counter, self.uri))
+        return counter
+    
 
 class EDDHeuristic(BaseEventHeuristic):
     
@@ -83,11 +112,16 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
     @property
     def event_heuristics(self):
         heuristics = []
+        
         #-------------------------------------------------------------------------------
         #
         # Onset
         #
         #-------------------------------------------------------------------------------
+        #
+        # AD Pregnancy
+        #
+        heuristics.append( ActualDatePregnancyHeuristic() )
         #
         # EDD
         #
@@ -255,6 +289,10 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
     
     def __init__(self):
         #
+        # Actual Date Prengancies
+        #
+        self.prg_qs = Event.objects.filter(name='prg:pregnancy:actual_date')
+        #
         # EDD Encounters
         #
         self.edd_qs = Event.objects.filter(name='enc:pregnancy:edd')
@@ -277,7 +315,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             ])
         #
         # All Relevant Events
-        self.relevant_event_qs = self.edd_qs | self.onset_qs | self.all_eop_qs
+        self.relevant_event_qs = self.prg_qs | self.edd_qs | self.onset_qs | self.all_eop_qs 
         
     @transaction.commit_on_success
     def generate(self):
@@ -330,7 +368,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         # Potential pregnancies require either an onset event, or an EDD encounter (from 
         # which an implied onset date can be calculated).
-        preg_indicator_qs = self.onset_qs | self.edd_qs
+        preg_indicator_qs = self.onset_qs | self.edd_qs | self.prg_qs
         preg_indicator_qs = preg_indicator_qs.exclude(timespan__name='pregnancy')
         patient_pks = preg_indicator_qs.order_by('patient').values_list('patient', flat=True).distinct()
         log_query('Pregnant patient PKs', patient_pks)
@@ -416,9 +454,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         aggregate_info_dict = edd_enc_qs.aggregate(Min('edd'))
         min_edd = aggregate_info_dict['edd__min']
         
-        # get pregnancies actual date and get the min from there too
-        
-        # or use pregnancy edd
+        # get info from pregnancy object 
+        '''
         edd_pgr_qs = Pregnancy.objects.filter(patient=patient)
         edd_pgr_qs = edd_pgr_qs.filter(edd__gte=start_date)
         edd_pgr_qs = edd_pgr_qs.filter(edd__lte = start_date + relativedelta(days=280) )
@@ -431,6 +468,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             return min_edd
         else:
             return min_preg_edd
+        '''
+        return min_edd
     
     def _get_latest_preg_event_date(self, patient, start_date):
         '''
