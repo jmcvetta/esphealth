@@ -931,7 +931,7 @@ class PregnancyLoader(BaseLoader):
             # if we don't have a pregnancy episode ID, use the combination
             # of patient ID and actual delivery date as the natural key
             actual_date = row['actual_date'] if row['actual_date'] else ''
-            natural_key = self.generateNaturalkey(row['patient_id'] + actual_broudebroudebrbroudebroooooHi Geoff,GGGdate)
+            natural_key = self.generateNaturalkey(row['patient_id'] + actual_date)
         else:
             natural_key = self.generateNaturalkey(row['natural_key'])
             
