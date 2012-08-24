@@ -447,7 +447,7 @@ def ga_str_to_days(raw_string):
         if match.group('days'):
             days = float(match.group('days'))
         days += weeks * 7 
-        return days
+        return int( round(days))
     else:
         log.debug('Could not extract numeric age from raw string: "%s"' % raw_string)
         return None    
