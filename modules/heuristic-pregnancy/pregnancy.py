@@ -425,7 +425,9 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         aggregate_preginfo_dict = edd_pgr_qs.aggregate(Min('edd'))
         min_preg_edd = aggregate_preginfo_dict['edd__min']
         
-        if min_edd < min_preg_edd:
+        if min_preg_edd and min_edd and min_edd < min_preg_edd:
+            return min_edd
+        elif not min_preg_edd:
             return min_edd
         else:
             return min_preg_edd
