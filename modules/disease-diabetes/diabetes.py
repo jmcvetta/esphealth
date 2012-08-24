@@ -1358,6 +1358,8 @@ class GestationalDiabetesReport(Report):
 
 class BaseDiabetesReport(Report):
     
+    __FIRST_YEAR = 2006
+    
     '''
     Base class for diabetes reports, containing various convenience methods.
     '''
@@ -1651,7 +1653,22 @@ class BaseDiabetesReport(Report):
 class FrankDiabetesReport(BaseDiabetesReport):
     
     short_name = 'diabetes:frank'
-
+    __ORAL_HYPOGLYCAEMICS = [
+        'rx:metformin',
+        'rx:glyburide',
+        'rx:gliclazide',
+        'rx:glipizide',
+        'rx:glimepiride',
+        'rx:pioglitazone',
+        'rx:rosiglitizone',
+        'rx:repaglinide',
+        'rx:nateglinide',
+        'rx:meglitinide',
+        'rx:sitagliptin',
+        'rx:exenatide',
+        'rx:pramlintide',
+        'rx:miglitol'
+        ]
     def run(self):
         #-------------------------------------------------------------------------------
         #
