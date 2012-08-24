@@ -57,7 +57,7 @@ class ActualDatePregnancyHeuristic(BaseEventHeuristic):
             Event.create(
                 name = 'prg:pregnancy:actual_date',
                 source = self.uri, 
-                date = this_prg.date, 
+                date = this_prg.actual_date, 
                 patient = this_prg.patient, 
                 provider = this_prg.provider,
                 emr_record = this_prg
@@ -540,6 +540,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 onset_date = min_edd - relativedelta(days=280)
                 pattern = 'onset:edd '
             else:
+                
                 onset_date = first_preg_event.date - relativedelta(days=30)
                 pattern = 'onset:icd9 '
             #
