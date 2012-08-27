@@ -1421,8 +1421,8 @@ class BaseDiabetesReport(Report):
             self.FIELDS.append(field_code)
             self.FIELDS.append(field_date)
             self.FIELDS.append(field_text)
-            heuristic = BaseHeuristic.get_heuristic_by_name(heuristic_name)
-            icd9_q = heuristic.icd9_q_obj
+            heuristic = DiagnosisHeuristic.get_heuristic_by_name(heuristic_name)
+            icd9_q = heuristic.icd9_queries
             qs = Encounter.objects.filter(events__name=heuristic_name)
             qs = qs.filter(patient__in=self.patient_qs)
             qs = qs.order_by('patient', '-date') # First record for each patient will be that patient's most recent result
