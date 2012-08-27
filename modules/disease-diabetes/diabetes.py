@@ -1358,8 +1358,6 @@ class GestationalDiabetesReport(Report):
 
 class BaseDiabetesReport(Report):
     
-    __FIRST_YEAR = 2006
-    
     '''
     Base class for diabetes reports, containing various convenience methods.
     '''
@@ -1367,7 +1365,7 @@ class BaseDiabetesReport(Report):
     @property
     def YEARS(self):
         #return range(Diabetes.__FIRST_YEAR, datetime.datetime.now().year + 1)
-        return range(Diabetes.__FIRST_YEAR, 2011) # Until data update
+        return range(Diabetes._Diabetes__FIRST_YEAR, 2011) # Until data update
     
     def _sanitize_string_values(self, dictionary):
         '''
@@ -1492,7 +1490,7 @@ class BaseDiabetesReport(Report):
         self.FIELDS.append('rx_ever--oral_hypoglycemic_any')
         self.FIELDS.append('rx_ever--oral_hypoglycemic_non_metformin')
         rx_ever_events = Event.objects.filter(patient__in=self.patient_qs)
-        oral_hyp = rx_ever_events.filter(name__in=Diabetes.__ORAL_HYPOGLYCAEMICS)
+        oral_hyp = rx_ever_events.filter(name__in=Diabetes._Diabetes__ORAL_HYPOGLYCAEMICS)
         non_met = oral_hyp.exclude(name='rx:metformin')
         oral_hyp_patients = oral_hyp.distinct('patient').values_list('patient', flat=True)
         non_met_patients = non_met.distinct('patient').values_list('patient', flat=True)
@@ -1653,22 +1651,7 @@ class BaseDiabetesReport(Report):
 class FrankDiabetesReport(BaseDiabetesReport):
     
     short_name = 'diabetes:frank'
-    __ORAL_HYPOGLYCAEMICS = [
-        'rx:metformin',
-        'rx:glyburide',
-        'rx:gliclazide',
-        'rx:glipizide',
-        'rx:glimepiride',
-        'rx:pioglitazone',
-        'rx:rosiglitizone',
-        'rx:repaglinide',
-        'rx:nateglinide',
-        'rx:meglitinide',
-        'rx:sitagliptin',
-        'rx:exenatide',
-        'rx:pramlintide',
-        'rx:miglitol'
-        ]
+    
     def run(self):
         #-------------------------------------------------------------------------------
         #
@@ -1690,7 +1673,7 @@ class FrankDiabetesReport(BaseDiabetesReport):
             'rx:insulin',
             'lx:a1c:threshold:gte:6.5',
             'lx:glucose-fasting:threshold:gte:126',
-            ] + Diabetes.__ORAL_HYPOGLYCAEMICS
+            ] + Diabetes._Diabetes__ORAL_HYPOGLYCAEMICS
         # FIXME: Only item in this list should be 'random glucose >= 200', which is not yet implemented
         linelist_patient_criteria_twice = [
             'lx:glucose-random:threshold:gte:200',
