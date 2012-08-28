@@ -778,6 +778,10 @@ positive number.
         <source_value>preterm</source_value>
         <target_value>2</target_value>
       </field>
+      <field>
+        <source_value/>
+        <target_value>3</target_value>
+      </field>
     </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
@@ -820,6 +824,10 @@ positive number.
       <field>
         <source_value>other</source_value>
         <target_value>5</target_value>
+      </field>
+      <field>
+        <source_value/>
+        <target_value>6</target_value>
       </field>
     </fields>
      <cluster_schema/>
