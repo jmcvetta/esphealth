@@ -836,9 +836,11 @@ class GestationalDiabetesReport(Report):
         self.obglucosefasting_all_q = self.obglucosefasting_q | Q(name__in = ['lx:ogtt100-fasting:threshold:gte:95', ] ) 
              
         # fasting glucose high threshold. 
-        self.glucosefasting_high_q = self.obglucosefasting_q | Q (name__in = [
-            'lx:ogtt75-fasting:threshold:gte:126',
-             ])
+        self.glucosefasting_high_q =   Q (name__in = [
+            'lx:ogtt50-fasting:threshold:gte:126', 
+            'lx:ogtt100-fasting:threshold:gte:126',
+            'lx:ogtt75-fasting:threshold:gte:126', ]) | Q(labresult__ref_high_float__gte = 
+             90 )| Q(labresult__ref_high_float__lte = 99 ) 
            
         self.ogtt50_q = Q(name__startswith='lx:ogtt50')
         
@@ -1306,7 +1308,7 @@ class GestationalDiabetesReport(Report):
             else:
                 pp_fastingglucose_high_date = None  
                 
-            pp_randomglucose_high = postpartum.filter(self.ogtt50_random_q | Q(labresult__result_float__gte =200) )
+            pp_randomglucose_high = postpartum.filter(self.ogtt50_random_q | Q(labresult__result_float__gt =200) )
             
             if pp_randomglucose_high:
                 pp_randoomglucose_high_date1 = pp_fastingglucose_high[0].date
