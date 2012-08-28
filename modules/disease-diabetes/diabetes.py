@@ -1243,16 +1243,18 @@ class GestationalDiabetesReport(Report):
                 
                 for insulin in insulin_qs:
                     for string in basal:
-                        if  insulin.content_object.name.__contains__(string):
+                        if  insulin.content_object.name.__icontains__(string):
                             insulin_basal= True
                             break
                     for string in bolus:
-                        if insulin.content_object.name.__contains__(string):
+                        if insulin.content_object.name.__icontains__(string):
                             insulin_bolus = True
                             break
                         
             else:
                 ga_1st_insulin =0
+            
+            obfastingglucose_positive = event_qs.filter(self.ogttfasting_high_threshold_q)
                  
             ip_ogtt50_1hr_value = intrapartum.filter(self.ogtt50_1hr_q).aggregate( max=Max('labresult__result_float') )['max']
             
@@ -1318,7 +1320,7 @@ class GestationalDiabetesReport(Report):
                 'prior2y_ALT_date_max_value' : prior_2y_alt_date_max , #added
                 'prior2y_ALT_min_value' : prior_2y_alt_min, #added
                 'prior2y_ALT_date_min_value' : prior_2y_alt_date_min , #added
-                'obfastingglucose_positive': binary( self.ogttfasting_high_threshold_q), #added
+                'obfastingglucose_positive': binary( obfastingglucose_positive), #added
                 'intrapartum_ogtt50_1hr_max_val' : ip_ogtt50_1hr_value, #added
                 'intrapartum_ogtt50_ref_high': binary( intrapartum.filter(self.ogtt50_ref_high_q) ),
                 'intrapartum_ogtt50_gdm_interp': binary( intrapartum.filter(self.ogtt50_gdm_threshold_q) ),
