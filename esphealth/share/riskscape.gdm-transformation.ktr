@@ -81,11 +81,36 @@
       <note>PDI &gt; 4.1 chokes
 on null values in
 number range step</note>
-      <xloc>512</xloc>
-      <yloc>426</yloc>
+      <xloc>500</xloc>
+      <yloc>425</yloc>
       <width>133</width>
       <heigth>61</heigth>
       <fontname>Ariel</fontname>
+      <fontsize>10</fontsize>
+      <fontbold>N</fontbold>
+      <fontitalic>N</fontitalic>
+      <fontcolorred>0</fontcolorred>
+      <fontcolorgreen>0</fontcolorgreen>
+      <fontcolorblue>0</fontcolorblue>
+      <backgroundcolorred>255</backgroundcolorred>
+      <backgroundcolorgreen>165</backgroundcolorgreen>
+      <backgroundcolorblue>0</backgroundcolorblue>
+      <bordercolorred>100</bordercolorred>
+      <bordercolorgreen>100</bordercolorgreen>
+      <bordercolorblue>100</bordercolorblue>
+      <drawshadow>Y</drawshadow>
+    </notepad>
+    <notepad>
+      <note>In &quot;Age in days&quot; needed
+to swap the order of the
+two dates to get a
+positive number.
+</note>
+      <xloc>500</xloc>
+      <yloc>225</yloc>
+      <width>150</width>
+      <heigth>90</heigth>
+      <fontname>Arial</fontname>
       <fontsize>10</fontsize>
       <fontbold>N</fontbold>
       <fontitalic>N</fontitalic>
@@ -124,7 +149,7 @@ number range step</note>
     </attributes>
   </connection>
   <order>
-  <hop> <from>pregnancy = True?</from><to>Discard</to><enabled>Y</enabled> </hop>  <hop> <from>Age range</from><to>BMI range</to><enabled>Y</enabled> </hop>  <hop> <from>all lowercase</from><to>Map race</to><enabled>Y</enabled> </hop>  <hop> <from>pregnancy year</from><to>all lowercase</to><enabled>Y</enabled> </hop>  <hop> <from>range bug workaround</from><to>Age range</to><enabled>Y</enabled> </hop>  <hop> <from>frank_dm_late</from><to>Early A1C</to><enabled>Y</enabled> </hop>  <hop> <from>Early A1C</from><to>Late A1C</to><enabled>Y</enabled> </hop>  <hop> <from>De-identify &amp; Obfuscate</from><to>Write Riskscape Report(s)</to><enabled>Y</enabled> </hop>  <hop> <from>Read GDM report(s)</from><to>pregnancy = True?</to><enabled>Y</enabled> </hop>  <hop> <from>pregnancy = True?</from><to>Age in days</to><enabled>Y</enabled> </hop>  <hop> <from>Age in days</from><to>constants</to><enabled>Y</enabled> </hop>  <hop> <from>constants</from><to>Age in years</to><enabled>Y</enabled> </hop>  <hop> <from>Age in years</from><to>pregnancy year</to><enabled>Y</enabled> </hop>  <hop> <from>Map race</from><to>gestational age at frank dx</to><enabled>Y</enabled> </hop>  <hop> <from>gestational age at frank dx</from><to>range bug workaround</to><enabled>Y</enabled> </hop>  <hop> <from>BMI range</from><to>frank_dm_early</to><enabled>Y</enabled> </hop>  <hop> <from>frank_dm_early</from><to>frank_dm_late</to><enabled>Y</enabled> </hop>  <hop> <from>ifg or igt?</from><to>De-identify &amp; Obfuscate</to><enabled>Y</enabled> </hop>  <hop> <from>Late A1C</from><to>Map outcome</to><enabled>Y</enabled> </hop>  <hop> <from>Map outcome</from><to>ifg or igt?</to><enabled>Y</enabled> </hop>  </order>
+  <hop> <from>pregnancy = True?</from><to>Discard</to><enabled>Y</enabled> </hop>  <hop> <from>Age range</from><to>BMI range</to><enabled>Y</enabled> </hop>  <hop> <from>all lowercase</from><to>Map race</to><enabled>Y</enabled> </hop>  <hop> <from>pregnancy year</from><to>all lowercase</to><enabled>Y</enabled> </hop>  <hop> <from>range bug workaround</from><to>Age range</to><enabled>Y</enabled> </hop>  <hop> <from>frank_dm_late</from><to>Early A1C</to><enabled>Y</enabled> </hop>  <hop> <from>Early A1C</from><to>Late A1C</to><enabled>Y</enabled> </hop>  <hop> <from>De-identify &amp; Obfuscate</from><to>Write Riskscape Report(s)</to><enabled>Y</enabled> </hop>  <hop> <from>Read GDM report(s)</from><to>pregnancy = True?</to><enabled>Y</enabled> </hop>  <hop> <from>pregnancy = True?</from><to>Age in days</to><enabled>Y</enabled> </hop>  <hop> <from>constants</from><to>Age in years</to><enabled>Y</enabled> </hop>  <hop> <from>Age in years</from><to>pregnancy year</to><enabled>Y</enabled> </hop>  <hop> <from>Map race</from><to>gestational age at frank dx</to><enabled>Y</enabled> </hop>  <hop> <from>gestational age at frank dx</from><to>range bug workaround</to><enabled>Y</enabled> </hop>  <hop> <from>BMI range</from><to>frank_dm_early</to><enabled>Y</enabled> </hop>  <hop> <from>frank_dm_early</from><to>frank_dm_late</to><enabled>Y</enabled> </hop>  <hop> <from>ifg or igt?</from><to>De-identify &amp; Obfuscate</to><enabled>Y</enabled> </hop>  <hop> <from>Late A1C</from><to>Map outcome</to><enabled>Y</enabled> </hop>  <hop> <from>Map outcome</from><to>ifg or igt?</to><enabled>Y</enabled> </hop>  <hop> <from>Age in days</from><to>constants</to><enabled>Y</enabled> </hop>  </order>
   <step>
     <name>Age in days</name>
     <type>Calculator</type>
@@ -137,8 +162,8 @@ number range step</note>
            </partitioning>
        <calculation><field_name>age_in_days</field_name>
 <calc_type>DATE_DIFF</calc_type>
-<field_a>preg_start</field_a>
-<field_b>date_of_birth</field_b>
+<field_a>date_of_birth</field_a>
+<field_b>preg_start</field_b>
 <field_c/>
 <value_type>Number</value_type>
 <value_length>-1</value_length>
@@ -151,8 +176,8 @@ number range step</note>
 </calculation>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>83</xloc>
-      <yloc>243</yloc>
+      <xloc>100</xloc>
+      <yloc>225</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -183,8 +208,8 @@ number range step</note>
 </calculation>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>442</xloc>
-      <yloc>243</yloc>
+      <xloc>425</xloc>
+      <yloc>225</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -236,8 +261,8 @@ number range step</note>
     </rules>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>444</xloc>
-      <yloc>443</yloc>
+      <xloc>425</xloc>
+      <yloc>425</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -274,8 +299,8 @@ number range step</note>
     </rules>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>84</xloc>
-      <yloc>555</yloc>
+      <xloc>100</xloc>
+      <yloc>525</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -641,8 +666,8 @@ number range step</note>
         <storage_type/>
       </meta>    </fields>     <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>262</xloc>
-      <yloc>757</yloc>
+      <xloc>275</xloc>
+      <yloc>725</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -659,8 +684,8 @@ number range step</note>
            </partitioning>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>444</xloc>
-      <yloc>143</yloc>
+      <xloc>425</xloc>
+      <yloc>125</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -692,8 +717,8 @@ number range step</note>
     </rules>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>84</xloc>
-      <yloc>663</yloc>
+      <xloc>100</xloc>
+      <yloc>625</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -725,8 +750,39 @@ number range step</note>
     </rules>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>263</xloc>
-      <yloc>663</yloc>
+      <xloc>275</xloc>
+      <yloc>625</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>Map outcome</name>
+    <type>ValueMapper</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <field_to_use>outcome</field_to_use>
+    <target_field>outcome_code</target_field>
+    <non_match_default>3</non_match_default>
+    <fields>
+      <field>
+        <source_value>term</source_value>
+        <target_value>1</target_value>
+      </field>
+      <field>
+        <source_value>preterm</source_value>
+        <target_value>2</target_value>
+      </field>
+    </fields>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>425</xloc>
+      <yloc>625</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -768,8 +824,8 @@ number range step</note>
     </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>444</xloc>
-      <yloc>343</yloc>
+      <xloc>425</xloc>
+      <yloc>325</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -812,11 +868,6 @@ number range step</note>
     <add_to_result_filenames>Y</add_to_result_filenames>
     <file>
       <name>${INPUT_FILE}</name>
-      <filemask/>
-      <exclude_filemask/>
-      <file_required>N</file_required>
-      <include_subfolders>N</include_subfolders>
-      <name/>
       <filemask/>
       <exclude_filemask/>
       <file_required>N</file_required>
@@ -2280,8 +2331,8 @@ number range step</note>
     <sizeFieldName/>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>264</xloc>
-      <yloc>43</yloc>
+      <xloc>275</xloc>
+      <yloc>25</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -2679,8 +2730,8 @@ number range step</note>
     </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>259</xloc>
-      <yloc>860</yloc>
+      <xloc>275</xloc>
+      <yloc>825</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -2725,8 +2776,8 @@ number range step</note>
     </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>264</xloc>
-      <yloc>343</yloc>
+      <xloc>275</xloc>
+      <yloc>325</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -2767,8 +2818,64 @@ number range step</note>
     </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>264</xloc>
-      <yloc>243</yloc>
+      <xloc>275</xloc>
+      <yloc>225</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>frank_dm_early</name>
+    <type>NumberRange</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <inputField>gestational_age_at_frank_dx</inputField>
+    <outputField>frank_dm_early</outputField>
+    <fallBackValue>0</fallBackValue>
+    <rules>
+      <rule>
+        <lower_bound>-99998.0</lower_bound>
+        <upper_bound>168.0</upper_bound>
+        <value>1</value>
+      </rule>
+    </rules>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>275</xloc>
+      <yloc>525</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>frank_dm_late</name>
+    <type>NumberRange</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <inputField>gestational_age_at_frank_dx</inputField>
+    <outputField>frank_dm_late</outputField>
+    <fallBackValue>0</fallBackValue>
+    <rules>
+      <rule>
+        <lower_bound>168.0</lower_bound>
+        <upper_bound>280.0</upper_bound>
+        <value>1</value>
+      </rule>
+    </rules>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>425</xloc>
+      <yloc>525</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -2784,6 +2891,7 @@ number range step</note>
            <schema_name/>
            </partitioning>
     <compatible>N</compatible>
+    <optimizationLevel>9</optimizationLevel>
     <jsScripts>      <jsScript>        <jsScript_type>0</jsScript_type>
         <jsScript_name>Script 1</jsScript_name>
         <jsScript_script>&#47;&#47;Script here
@@ -2824,64 +2932,8 @@ if ( !isNull(ga_delivery) &amp;&amp; !isNull(actual_date) &amp;&amp; !isNull(fra
         <replace>N</replace>
       </field>    </fields>     <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>83</xloc>
-      <yloc>443</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>frank_dm_early</name>
-    <type>NumberRange</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <inputField>gestational_age_at_frank_dx</inputField>
-    <outputField>frank_dm_early</outputField>
-    <fallBackValue>0</fallBackValue>
-    <rules>
-      <rule>
-        <lower_bound>0.0</lower_bound>
-        <upper_bound>168.0</upper_bound>
-        <value>1</value>
-      </rule>
-    </rules>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>264</xloc>
-      <yloc>555</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>frank_dm_late</name>
-    <type>NumberRange</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <inputField>gestational_age_at_frank_dx</inputField>
-    <outputField>frank_dm_late</outputField>
-    <fallBackValue>0</fallBackValue>
-    <rules>
-      <rule>
-        <lower_bound>168.0</lower_bound>
-        <upper_bound>280.0</upper_bound>
-        <value>1</value>
-      </rule>
-    </rules>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>443</xloc>
-      <yloc>555</yloc>
+      <xloc>100</xloc>
+      <yloc>425</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -2905,8 +2957,8 @@ if ( !isNull(ga_delivery) &amp;&amp; !isNull(actual_date) &amp;&amp; !isNull(fra
 </formula>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>80</xloc>
-      <yloc>757</yloc>
+      <xloc>100</xloc>
+      <yloc>725</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -2933,8 +2985,8 @@ if ( !isNull(ga_delivery) &amp;&amp; !isNull(actual_date) &amp;&amp; !isNull(fra
     </compare>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>264</xloc>
-      <yloc>143</yloc>
+      <xloc>275</xloc>
+      <yloc>125</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -2965,8 +3017,8 @@ if ( !isNull(ga_delivery) &amp;&amp; !isNull(actual_date) &amp;&amp; !isNull(fra
 </calculation>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>84</xloc>
-      <yloc>343</yloc>
+      <xloc>100</xloc>
+      <yloc>325</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -2990,27 +3042,27 @@ if ( !isNull(ga_delivery) &amp;&amp; !isNull(actual_date) &amp;&amp; !isNull(fra
     <fields>
       <field>
         <name>age_in_years</name>
-        <value>-999</value>
+        <value>-99999</value>
         <mask/>
         </field>
       <field>
         <name>bmi</name>
-        <value>-999</value>
+        <value>-99999</value>
         <mask/>
         </field>
       <field>
         <name>gestational_age_at_frank_dx</name>
-        <value>-999</value>
+        <value>-99999</value>
         <mask/>
         </field>
       <field>
         <name>early_postpartum_a1c_max_val</name>
-        <value>-999</value>
+        <value>-99999</value>
         <mask/>
         </field>
       <field>
         <name>late_postpartum_a1c_max_val</name>
-        <value>-999</value>
+        <value>-99999</value>
         <mask/>
         </field>
       <field>
@@ -3021,39 +3073,8 @@ if ( !isNull(ga_delivery) &amp;&amp; !isNull(actual_date) &amp;&amp; !isNull(fra
       </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>264</xloc>
-      <yloc>443</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>Map outcome</name>
-    <type>ValueMapper</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <field_to_use>outcome</field_to_use>
-    <target_field>outcome_code</target_field>
-    <non_match_default>3</non_match_default>
-    <fields>
-      <field>
-        <source_value>term</source_value>
-        <target_value>1</target_value>
-      </field>
-      <field>
-        <source_value>preterm</source_value>
-        <target_value>2</target_value>
-      </field>
-    </fields>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>439</xloc>
-      <yloc>663</yloc>
+      <xloc>275</xloc>
+      <yloc>425</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
