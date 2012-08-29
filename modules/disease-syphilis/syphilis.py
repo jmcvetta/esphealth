@@ -109,7 +109,7 @@ class Syphilis(DiseaseDefinition):
             test_name = 'tppa',
             ))
         heuristic_list.append( LabResultPositiveHeuristic(
-            test_name = 'ftp-abs',
+            test_name = 'fta-abs',
             ))
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'tp-igg',
