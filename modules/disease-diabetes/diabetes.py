@@ -800,7 +800,7 @@ class GestationalDiabetesReport(Report):
         'intrapartum_ogtt100_2hr_max_val',#added 
         'intrapartum_ogtt100_3hr_max_val',#added 
         'intrapartum_ogtt100_interp',
-        'intrapartum_ogtt50_random_max_val',#added 
+        'intrapartum_glucose_random_max_val',#added 
         'postpartum_ogtt75_order',
         'postpartum_ogtt75_any_result',
         'postpartum_ogtt75_fasting_max_val',#added 
@@ -904,7 +904,7 @@ class GestationalDiabetesReport(Report):
             'lx:ogtt100-4hr:threshold:gte:140',
             'lx:ogtt100-5hr:threshold:gte:140',
             ])
-        self.ogtt50_random_q =  Q(name__startswith='lx:ogtt50-random:threshold:gte:190')
+        self.glucose_random_q =  Q(name__startswith='lx:glucose_random')
         
         self.order_q = Q(name__endswith=':order')
         self.any_q = Q(name__endswith=':any-result')
@@ -1302,7 +1302,7 @@ class GestationalDiabetesReport(Report):
             
             ip_ogtt100_3hr_value =  intrapartum.filter(self.ogtt100_3hr_q).aggregate( max=Max('labresult__result_float') )['max']
             
-            ip_ogtt50_random_value =  intrapartum.filter(self.ogtt50_random_q).aggregate( max=Max('labresult__result_float') )['max']
+            ip_glucose_random_value =  intrapartum.filter(self.glucose_random_q).aggregate( max=Max('labresult__result_float') )['max']
             
             pp_ogtt75_fasting_value =  postpartum.filter(self.ogtt75_fasting_q).aggregate( max=Max('labresult__result_float') )['max']
             
@@ -1315,7 +1315,7 @@ class GestationalDiabetesReport(Report):
             else:
                 pp_fastingglucose_high_date = None  
                 
-            pp_randomglucose_high = postpartum.filter(self.ogtt50_random_q | Q(labresult__result_float__gt =200) )
+            pp_randomglucose_high = postpartum.filter(self.glucose_random_q | Q(labresult__result_float__gt =200) )
             
             if pp_randomglucose_high:
                 pp_randoomglucose_high_date1 = pp_fastingglucose_high[0].date
@@ -1338,7 +1338,6 @@ class GestationalDiabetesReport(Report):
                 'prior_gdm_case': binary( gdm_prior ),
                 'prior_gdm_case_date': gdm_prior_date,
                 'gdm_icd9_this_preg': binary( intrapartum.filter(self.dxgdm_q) ),
-                # TODO ask mike if it is any time or prepartum
                 'prior_gdm_icd9_this_preg': binary( prepartum.filter(self.dxgdm_q) ),
                 'prior_gdm_icd9_this_preg_date': prior_gdm_prior_this_preg_date, 
                 'prior_polycystic' : binary( prior_polycystic_twice), #added 
@@ -1381,7 +1380,7 @@ class GestationalDiabetesReport(Report):
                 'intrapartum_ogtt100_2hr_max_val' : ip_ogtt100_2hr_value,#added 
                 'intrapartum_ogtt100_3hr_max_val' : ip_ogtt100_3hr_value,#added 
                 'intrapartum_ogtt100_interp': binary( ogtt100_twice_qs ),
-                'intrapartum_ogtt50_random_max_val' : ip_ogtt50_random_value,#added 
+                'intrapartum_glucose_random_max_val' : ip_glucose_random_value,#added 
                 'postpartum_ogtt75_order': binary( postpartum.filter(self.ogtt75_q, self.order_q) ),
                 'postpartum_ogtt75_any_result': binary( postpartum.filter(self.ogtt75_q, self.any_q) ),
                 'postpartum_ogtt75_fasting_max_val': pp_ogtt75_fasting_value,#added
