@@ -39,6 +39,7 @@ class CodeMapForm(forms.Form):
     # fake instanciation to get the labs in the drop down
     vaerslabs = VaersLxHeuristic('wbc',None,None,None)
     TEST_CHOICES = [(name, name) for name in AbstractLabTest.get_all_names() + vaerslabs.get_all_names() ]
+    TEST_CHOICES.sort()
     test_name = forms.ChoiceField(choices=TEST_CHOICES, required=True)
     threshold = forms.FloatField(required=False)
     notes = forms.CharField(widget=forms.Textarea, required=False)
