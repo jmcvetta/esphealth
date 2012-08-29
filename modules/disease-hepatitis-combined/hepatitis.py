@@ -49,11 +49,11 @@ TEST_NAME_SEARCH_STRINGS = [
     'alt',
     'ast',
     'bili',
-    'TBIL',
-    'HBV',
-    'SGPT',
-    'SGOT',
-    'AMINOTRANS'
+    'tbil',
+    'hbv',
+    'sgpt',
+    'sgot',
+    'aminotrans'
     ]
 
 
