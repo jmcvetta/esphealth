@@ -132,7 +132,7 @@ class Hepatitis_B_Test(EspTestCase):
             provider = mccoy, 
             patient = kirk, 
             date = kirk_trigger_date + relativedelta(days=7),
-            alt = 'bilirubin:total',
+            alt = 'bilirubin_total',
             result_float = '1.8',
             )
         #
@@ -158,14 +158,14 @@ class Hepatitis_B_Test(EspTestCase):
             provider = mccoy, 
             patient = spock, 
             date = spock_trigger_date + relativedelta(days=9),
-            alt = 'bilirubin:direct',
+            alt = 'bilirubin_direct',
             result_float = '1.1',
             )
         self.create_lab_result(
             provider = mccoy, 
             patient = spock, 
             date = spock_trigger_date + relativedelta(days=9),
-            alt = 'bilirubin:indirect',
+            alt = 'bilirubin_indirect',
             result_float = '0.9',
             )
         #

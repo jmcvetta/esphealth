@@ -141,10 +141,10 @@ class HepatitisCombined(DiseaseDefinition):
         # the calculated bilirubin value.
         #
         heuristic_list.append( LabResultPositiveHeuristic(
-            test_name = 'bilirubin:direct',
+            test_name = 'bilirubin_direct',
             ))
         heuristic_list.append( LabResultPositiveHeuristic(
-            test_name = 'bilirubin:indirect',
+            test_name = 'bilirubin_indirect',
             ))
         heuristic_list.append( LabResultRatioHeuristic(
             test_name = 'alt',
@@ -168,7 +168,7 @@ class HepatitisCombined(DiseaseDefinition):
             match_type = 'gt',
             ))
         heuristic_list.append( LabResultFixedThresholdHeuristic(
-            test_name = 'bilirubin:total',
+            test_name = 'bilirubin_total',
             threshold = Decimal('1.5'),
             match_type = 'gt',
             ))
@@ -335,9 +335,9 @@ class Hepatitis_B(HepatitisCombined):
         # Bilirubin - total bilirubin events can be queries directly; but 
         # calculated bilirubin must be, ahem, calculated programmatically.
         #
-        total_bili_qs = BaseEventHeuristic.get_events_by_name(name='lx:bilirubin:total:threshold:gt:1.5')
-        direct_bili_labs_qs = AbstractLabTest('bilirubin:direct').lab_results
-        indirect_bili_labs_qs = AbstractLabTest('bilirubin:indirect').lab_results
+        total_bili_qs = BaseEventHeuristic.get_events_by_name(name='lx:bilirubin_total:threshold:gt:1.5')
+        direct_bili_labs_qs = AbstractLabTest('bilirubin_direct').lab_results
+        indirect_bili_labs_qs = AbstractLabTest('bilirubin_indirect').lab_results
         for trigger_event in trigger_qs:
             patient = trigger_event.patient
             date = trigger_event.date
