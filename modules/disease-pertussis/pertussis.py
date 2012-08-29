@@ -43,7 +43,7 @@ class Pertussis(DiseaseDefinition):
     
     short_name = 'pertussis'
     
-    test_name_search_strings = ['serol','PCR','pert',]
+    test_name_search_strings = ['serol','pcr','pert',]
     
     timespan_heuristics = []
     
