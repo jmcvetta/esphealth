@@ -245,7 +245,6 @@ def unmapped_labs_report(request):
     '''
     unmapped = _get_unmapped_labs()
     strings = DiseaseDefinition.get_all_test_name_search_strings()+ VaersLxHeuristic.test_name_search_strings
-      
     strings.sort()
     values = {
         'title': 'Unmapped Lab Tests Report',
