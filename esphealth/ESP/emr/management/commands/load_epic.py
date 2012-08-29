@@ -102,13 +102,20 @@ def datestring_from_filepath(filepath):
 
 
 class EpicDialect(csv.Dialect):
-    """Describe the usual properties of EpicCare extract files."""
+    '''
+    Describe the usual properties of EpicCare extract files.
+    
+    When reading, don't do any processing of embedded quotes.
+    Otherwise, an unmatched double quote at the start of a field
+    will cause the loader to read until it finds a matching double
+    quote, despite any intervening field delimiters and line feeds.
+    '''
     delimiter = '^'
     quotechar = '"'
     doublequote = True
     skipinitialspace = False
     lineterminator = '\r\n'
-    quoting = csv.QUOTE_MINIMAL
+    quoting = csv.QUOTE_NONE
 csv.register_dialect("epic", EpicDialect)
 # Some Epic comments are _long_, so we have to increase default csv module 
 # field limit size, lest it barf out for the whole file when it hits a single 
