@@ -279,7 +279,7 @@ class Diabetes(DiseaseDefinition):
         return []
     
     test_name_search_strings = [
-            'cholesterol',
+            'chol',
             'triglycerides',
             'peptide',
             'ogtt',
@@ -287,6 +287,8 @@ class Diabetes(DiseaseDefinition):
             'gad65',
             'ica512',
             'a1c',
+            'ldl',
+            'hdl',
         ]
     
     #-------------------------------------------------------------------------------
