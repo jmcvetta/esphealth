@@ -171,6 +171,12 @@ class Diabetes(DiseaseDefinition):
                 )
             heuristics.append(h)
         #
+        # abstract random glucose 
+        #
+        heuristics.append(LabResultAnyHeuristic(
+            test_name = 'glucose_random',
+            date_field = 'result',))
+        #
         # Encounters
         #
         heuristics.append (DiagnosisHeuristic(
@@ -247,7 +253,6 @@ class Diabetes(DiseaseDefinition):
             )
         heuristics.append(h)
         #
-        #  
         #
         # Cholesterol
         #
