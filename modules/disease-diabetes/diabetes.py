@@ -95,6 +95,9 @@ class Diabetes(DiseaseDefinition):
             'ogtt75-1hr',
             'ogtt75-90min',
             'ogtt75-2hr',
+            'glucose-random',
+            'ogtt50-random',
+            'ogtt100-fasting',
             ]:
             heuristics.append(LabResultAnyHeuristic(test_name=test_name))
         #
@@ -117,6 +120,8 @@ class Diabetes(DiseaseDefinition):
             # OGTT50
             ('ogtt50-1hr', 'gte', 190),
             ('ogtt50-random', 'gte', 190),
+            ('ogtt50-random', 'gte', 200),
+            ('glucose-random','gte', 200),
             # OGTT75
             ('ogtt75-fasting', 'gte', 92),
             ('ogtt75-fasting', 'gte', 126),
@@ -153,11 +158,15 @@ class Diabetes(DiseaseDefinition):
         #
         # Range Tests
         #
+        heuristics.append(LabResultRangeHeuristic(
+                test_name = 'glucose-random',
+                min = Decimal(str(140)),
+                max = Decimal(str(200)),
+                max_match = 'lt', ))
+        
         for test_name, low, high in [
             ('a1c', 5.7, 6.4),
             ('ogtt75-fasting', 100, 125),
-            # added the two below in threshold too
-            #('ogtt50-random', 140, 199),
             ('glucose-fasting', 100, 125),
             ('ogtt75-30min', 140, 199),
             ('ogtt75-1hr', 140, 199),
@@ -170,12 +179,6 @@ class Diabetes(DiseaseDefinition):
                 max = Decimal(str(high)),
                 )
             heuristics.append(h)
-        #
-        # abstract random glucose 
-        #
-        heuristics.append(LabResultAnyHeuristic(
-            test_name = 'glucose_random',
-            date_field = 'result',))
         #
         # Encounters
         #
@@ -339,6 +342,7 @@ class Diabetes(DiseaseDefinition):
     # If a patient has one of these events twice, he has frank diabetes
     __FRANK_DM_TWICE = [
         'lx:glucose-random:threshold:gte:200',
+        'lx:ogtt50-random:threshold:gte:200',
         'dx:diabetes:all-types',
         ]
     __FRANK_DM_ALL = __FRANK_DM_ONCE + __FRANK_DM_TWICE
@@ -847,7 +851,8 @@ class GestationalDiabetesReport(Report):
             'lx:ogtt50-fasting:threshold:gte:126', 
             'lx:ogtt100-fasting:threshold:gte:126',
             'lx:ogtt75-fasting:threshold:gte:126', ]) | Q(labresult__ref_high_float__gte = 
-             90 )| Q(labresult__ref_high_float__lte = 99 ) 
+             90 )| Q(labresult__ref_high_float__lte = 99 ) |  Q (name__in = [
+            'lx:ogtt75-fasting:any-result','lx:ogtt100-fasting:any-result', ])   
            
         self.ogtt50_q = Q(name__startswith='lx:ogtt50')
         
@@ -904,7 +909,7 @@ class GestationalDiabetesReport(Report):
             'lx:ogtt100-4hr:threshold:gte:140',
             'lx:ogtt100-5hr:threshold:gte:140',
             ])
-        self.glucose_random_q =  Q(name__startswith='lx:glucose_random')
+        self.glucose_random_q =  Q(name__in= ['lx:glucose-random:any-result','lx:ogtt50-random:any-result']) 
         
         self.order_q = Q(name__endswith=':order')
         self.any_q = Q(name__endswith=':any-result')
