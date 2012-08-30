@@ -60,17 +60,19 @@ def heuristic_mapping_report(request):
     unmapped = []
     
     #priorcodes = None
-    for heuristic in BaseLabResultHeuristic.get_all(): 
+    for heuristic in BaseLabResultHeuristic.get_all() : 
         maps = LabTestMap.objects.filter(test_name=heuristic.test_name)
         if not maps:
-            unmapped.append( (heuristic.test_name) )
+            # if unmapped doesnt already have test name then add it
+            if not unmapped.__contains__(heuristic.test_name):
+                unmapped.append( (heuristic.test_name) )
             continue
         codes = maps.values_list('native_code', flat=True)
         # if mapped doesnt already contain (heuristic.test_name, codes) then add it
         # it is sorted already
         # or mapped.__contains__((heuristic.test_name, codes)) not working 
-        #if not priorcodes or not codes == priorcodes:
-        if not mapped.__contains__(heuristic.test_name):
+        # if not priorcodes or not codes == priorcodes:
+        if not mapped.__contains__((heuristic.test_name,codes)):
             mapped.append( (heuristic.test_name, codes) )
             #priorcodes= codes
     mapped.sort(key=operator.itemgetter(0))
