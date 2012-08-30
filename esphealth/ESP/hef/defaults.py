@@ -1189,6 +1189,16 @@ LabResultRangeHeuristic.objects.get_or_create(
     maximum_match_type = 'lte',
     )
 
+glucose_random = AbstractLabTest.objects.get_or_create(
+    name = 'glucose-random',
+    defaults = {
+        'verbose_name':  'Random glucose (several variations)',
+        }
+    )[0]
+
+LabResultAnyHeuristic.objects.get_or_create(
+    test = glucose_random,
+    )
 
 gcrf_result = AbstractLabTest.objects.get_or_create(
     name = 'glucose_compound_random_fasting_result',
