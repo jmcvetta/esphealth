@@ -192,7 +192,7 @@ class BaseLoader(object):
             return UNKNOWN_PROVIDER
         #truncate the key some provider keys were too long
         if len(natural_key) > 128:
-            log.warning('natural_key is greater than 128 characters, and will be truncated')
+            log.warning('natural_key is greater than 128 characters, and has been truncated')
             natural_key = natural_key[:128] 
             
         if not natural_key in self.__provider_cache:
@@ -629,7 +629,7 @@ class LabResultLoader(BaseLoader):
             # component values, yet we need the native_code field to be a 
             # reasonable width for indexing.  
             if len(component) > 20:
-                log.warning('Component field is greater than 20 characters, and will be truncated:')
+                log.warning('Component field is greater than 20 characters, and has been truncated:')
                 log.warning('    "%s"' % component)
                 native_code = cpt +'--'+ component[0:20] 
         elif cpt:
@@ -637,7 +637,7 @@ class LabResultLoader(BaseLoader):
         elif component:
             native_code = component
             if len(component) > 20:
-                log.warning('Component field is greater than 20 characters, and will be truncated:')
+                log.warning('Component field is greater than 20 characters, and has been truncated:')
                 log.warning('    "%s"' % component)
                 native_code = component[0:20] 
         else:
@@ -887,6 +887,13 @@ class PrescriptionLoader(BaseLoader):
               
         natural_key = self.generateNaturalkey(row['order_natural_key'] + row['order_date'])
         
+        # some data sources have dirty (and lengthy) data in the 'refills' field.
+        # Truncate the field at 200 characters
+        refills = self.string_or_none(row['refills'])                                     
+        if len(natural_key) > 200:
+            refills = refills[:200]
+            log.warning('refills is greater than 200 characters, and has been truncated')
+
         values = {
         'provenance' : self.provenance,
         #'updated_by' : UPDATED_BY,
@@ -902,7 +909,7 @@ class PrescriptionLoader(BaseLoader):
         'code' : row['ndc'],
         'quantity' : row['quantity'],
         'quantity_float' : self.float_or_none(row['quantity']),
-        'refills' : self.string_or_none(row['refills']),
+        'refills' : refills,
         'start_date' : self.date_or_none(row['start_date']),
         'end_date' : self.date_or_none(row['end_date']),
         'route' : self.string_or_none(row['route']),
