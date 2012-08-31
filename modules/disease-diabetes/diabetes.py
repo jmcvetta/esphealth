@@ -1254,7 +1254,6 @@ class GestationalDiabetesReport(Report):
             bolus = ['Novolog','Aspart','Humalog','Lispro','Regular insulin','Humulin R']
             insulin_basal =False
             insulin_bolus = False
-            name ='Humulin'
             if insulin_qs:
                 # days between preg start and insulin rx date
                 ga_1st_insulin=  insulin_qs[0].date - preg_ts.start_date
@@ -1333,7 +1332,7 @@ class GestationalDiabetesReport(Report):
             
             if pp_randomglucose_high:
                 pp_randomglucose_high_date1 = pp_fastingglucose_high[0].date
-                if pp_fastingglucose_high[1]:
+                if pp_randomglucose_high.count()>1:
                     pp_randomglucose_high_date2 = pp_fastingglucose_high[1].date
             else:
                 pp_randomglucose_high_date1 = None 
