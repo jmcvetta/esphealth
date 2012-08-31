@@ -890,7 +890,7 @@ class PrescriptionLoader(BaseLoader):
         # some data sources have dirty (and lengthy) data in the 'refills' field.
         # Truncate the field at 200 characters
         refills = self.string_or_none(row['refills'])                                     
-        if len(natural_key) > 200:
+        if len(refills) > 200:
             refills = refills[:200]
             log.warning('refills is greater than 200 characters, and has been truncated')
 
