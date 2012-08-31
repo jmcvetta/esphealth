@@ -1254,6 +1254,7 @@ class GestationalDiabetesReport(Report):
             bolus = ['Novolog','Aspart','Humalog','Lispro','Regular insulin','Humulin R']
             insulin_basal =False
             insulin_bolus = False
+            name ='Humulin'
             if insulin_qs:
                 # days between preg start and insulin rx date
                 ga_1st_insulin=  insulin_qs[0].date - preg_ts.start_date
@@ -1261,11 +1262,12 @@ class GestationalDiabetesReport(Report):
                 
                 for insulin in insulin_qs:
                     for string in basal:
-                        if  insulin.content_object.name.__icontains__(string):
+                        
+                        if  insulin.content_object.name.upper().__contains__(string.upper()):
                             insulin_basal= True
                             break
                     for string in bolus:
-                        if insulin.content_object.name.__icontains__(string):
+                        if insulin.content_object.name.upper().__contains__(string.upper()):
                             insulin_bolus = True
                             break
                         
