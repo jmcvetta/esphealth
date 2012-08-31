@@ -45,12 +45,9 @@ class Lyme(DiseaseDefinition):
     short_name = 'lyme'
     
     test_name_search_strings = [
-	    'lyme_elisa',
-	    'lyme_igg_eia',
-        'lyme_igm_eia',
-	    'lyme_igg_wb',
-	    'lyme_igm_wb', 
-	    'lyme_pcr',
+	    'lyme',
+	    'burg',
+        'borr',
 	    ]
     
     timespan_heuristics = []
