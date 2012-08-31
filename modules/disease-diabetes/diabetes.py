@@ -1275,7 +1275,7 @@ class GestationalDiabetesReport(Report):
             intrapartum_labs = LabResult.objects.filter(
                 patient = patient,
                 date__gte = preg_ts.start_date ,
-                date__lte = preg_ts.end_date,
+                date__lte = end_date,
                 )
             
             ogtt50_ref_high = self.lab_minmaxdate(intrapartum_labs.filter( result_float__gte =
@@ -1309,8 +1309,8 @@ class GestationalDiabetesReport(Report):
             
             postpartum_labs = LabResult.objects.filter(
                 patient = patient,
-                date__gte = preg_ts.end_date ,
-                date__lte = preg_ts.end_date + relativedelta(days=120),
+                date__gte = end_date ,
+                date__lte = end_date + relativedelta(days=120),
                 )
             
             pp_ogtt75_fasting_value =   self.lab_minmaxdate(postpartum_labs,'ogtt75_fasting',False) 
@@ -1340,8 +1340,8 @@ class GestationalDiabetesReport(Report):
             ogtt75_lab_orders_qs = AbstractLabTest('ogtt75').lab_orders    
             pp_ogtt75_order = ogtt75_lab_orders_qs.filter(
                 patient = patient,
-                date__gte = preg_ts.end_date ,
-                date__lte = preg_ts.end_date + relativedelta(days=120),
+                date__gte = end_date ,
+                date__lte = end_date + relativedelta(days=120),
                 )     
               
             values = {
