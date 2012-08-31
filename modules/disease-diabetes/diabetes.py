@@ -70,25 +70,11 @@ class Diabetes(DiseaseDefinition):
     def event_heuristics(self):
         heuristics = []
         
-        #
-        # Lab Orders
-        # 
-        for test_name in [
-            'ogtt75-fasting',
-            'ogtt75-fasting-urine',
-            'ogtt75-30min',
-            'ogtt75-1hr',
-            'ogtt75-90min',
-            'ogtt75-2hr',
-            ]:
-            heuristics.append( LabOrderHeuristic(
-                test_name = test_name,
-                ))
+        
         #
         # Any Result Tests
         #
         for test_name in [
-            'c-peptide',
              # Complete OGTT75 series
             'ogtt75-fasting',
             'ogtt75-fasting-urine',
@@ -96,9 +82,7 @@ class Diabetes(DiseaseDefinition):
             'ogtt75-1hr',
             'ogtt75-90min',
             'ogtt75-2hr',
-            'glucose-random',
             'ogtt50-random',
-            'ogtt100-fasting',
             ]:
             heuristics.append(LabResultAnyHeuristic(test_name=test_name))
         #
@@ -107,6 +91,7 @@ class Diabetes(DiseaseDefinition):
         for test_name in [
             'ogtt100-fasting-urine',
             'ogtt75-fasting-urine',
+            
             ]:
             heuristics.append(LabResultPositiveHeuristic(test_name=test_name))
         #
@@ -116,7 +101,6 @@ class Diabetes(DiseaseDefinition):
                        
             # Fasting OGTT
             ('ogtt50-fasting', 'gte', 126), 
-            ('ogtt75-fasting', 'gte', 126),
             ('ogtt100-fasting', 'gte', 126),
             ('glucose-fasting', 'gte', 126),
             # OGTT50
@@ -143,10 +127,13 @@ class Diabetes(DiseaseDefinition):
             ('ogtt100-3hr', 'gte', 140),
             ('ogtt100-4hr', 'gte', 140),
             ('ogtt100-5hr', 'gte', 140),
-            # Auto-antibodies
+             # Auto-antibodies
             ('gad65', 'gt', 1),
             ('ica512', 'gt', 0.8),
-            # A1C
+            ('islet-cell-antibody','gte', 1.25),
+            # there is another auto-antibody with threshold of 0.4 see redmine
+            ('insulin-antibody', 'gt', 0.8),
+             # A1C
             ('a1c', 'gte', 6.5),
             # C-Peptide
             ('c-peptide', 'lt', 0.8),
@@ -257,24 +244,7 @@ class Diabetes(DiseaseDefinition):
             exclude = ['syringe'],
             )
         heuristics.append(h)
-        #
-        #
-        # Cholesterol
-        #
-        for test_name in [
-            'cholesterol-hdl',
-            'cholesterol-ldl',
-            'cholesterol-total',
-            'triglycerides',
-            ]:
-            heuristics.append( LabResultAnyHeuristic(
-                test_name = test_name,
-                date_field = 'result',
-                ) )
-            heuristics.append( LabResultPositiveHeuristic(
-                test_name = test_name,
-                date_field = 'result',
-                ) )
+        
         #
         # Misc
         #
@@ -299,6 +269,9 @@ class Diabetes(DiseaseDefinition):
             'a1c',
             'ldl',
             'hdl',
+            'lipoprotein',
+            'islet',
+            'insulin',
         ]
     
     #-------------------------------------------------------------------------------
@@ -349,10 +322,10 @@ class Diabetes(DiseaseDefinition):
         ]
     __FRANK_DM_ALL = __FRANK_DM_ONCE + __FRANK_DM_TWICE
     __AUTO_ANTIBODIES_LABS = [
-        'lx:ica512',
-        'lx:gad65',
-        'lx:islet-cell-antibody',
-        'lx:insulin-antibody'
+        'lx:ica512', #threshold
+        'lx:gad65', #threshold
+        'lx:islet-cell-antibody', # is a positive and threshold
+        'lx:insulin-antibody' 
         ]
     
     def generate_frank_diabetes(self):
@@ -450,13 +423,22 @@ class Diabetes(DiseaseDefinition):
             condition = 'diabetes:type-1'
             log.debug(criteria)
         
+        
         #===============================================================================
         #
         # 2. Diabetes auto-antibodies positive
         #
         #-------------------------------------------------------------------------------
         pos_aa_event_types = ['%s:positive' % i for i in self.__AUTO_ANTIBODIES_LABS]
-        aa_pos = patient_event_qs.filter(name__in=pos_aa_event_types).order_by('date')
+        #pos_aa_event_types = 'lx:islet-cell-antibody:positive'
+        #thres_ica512_event_types = 'lx:ica512:threshold:gt:0.8'
+        #TODO add these others. 
+        #'lx:gad65', #threshold
+        #'lx:islet-cell-antibody', # is a positive and threshold
+        #'lx:insulin-antibody' 
+        #aa_event_types = pos_aa_event_types + thres_aa_event_types
+        
+        aa_pos = patient_event_qs.filter(name__in=aa_event_types).order_by('date')
         if aa_pos:
             provider = aa_pos[0].provider
             case_date = aa_pos[0].date
@@ -605,7 +587,7 @@ class Diabetes(DiseaseDefinition):
         ]
     # Two or more occurrences of these events, during pregnancy, is sufficient for a case of GDM
     GDM_TWICE = [
-        'lx:ogtt75-fasting:threshold:gte:95',
+        'lx:ogtt75-fasting:threshold:gte:92',
         'lx:ogtt75-30min:threshold:gte:200',
         'lx:ogtt75-1hr:threshold:gte:180',
         'lx:ogtt75-90min:threshold:gte:180',
@@ -912,8 +894,6 @@ class GestationalDiabetesReport(Report):
             ])
         self.glucose_random_q =  Q(name__in= ['lx:glucose-random:any-result','lx:ogtt50-random:any-result']) 
         
-        self.order_q = Q(name__endswith=':order')
-        #self.any_q = Q(name__endswith=':any-result')
         self.dxgdm_q = Q(name='dx:gestational-diabetes')
         self.lancets_q = Q(name__in=['rx:test-strips', 'rx:lancets'])
 
@@ -1355,7 +1335,14 @@ class GestationalDiabetesReport(Report):
                     pp_randoomglucose_high_date2 = pp_fastingglucose_high[1].date
             else:
                 pp_randomglucose_high_date1 = None 
-                pp_randomglucose_high_date2 = None              
+                pp_randomglucose_high_date2 = None       
+                
+            ogtt75_lab_orders_qs = AbstractLabTest('ogtt75').lab_orders    
+            pp_ogtt75_order = ogtt75_lab_orders_qs.filter(
+                patient = patient,
+                date__gte = preg_ts.end_date ,
+                date__lte = preg_ts.end_date + relativedelta(days=120),
+                )     
               
             values = {
                 'preg_start': preg_ts.start_date,
@@ -1413,7 +1400,7 @@ class GestationalDiabetesReport(Report):
                 'intrapartum_ogtt100_3hr_max_val' : ip_ogtt100_3hr_value,#added 
                 'intrapartum_ogtt100_interp': binary( ogtt100_twice_qs ),
                 'intrapartum_glucose_random_max_val' : ip_glucose_random_value,#added 
-                'postpartum_ogtt75_order': binary( postpartum.filter(self.ogtt75_q, self.order_q) ),
+                'postpartum_ogtt75_order': binary( pp_ogtt75_order ),
                 'postpartum_ogtt75_any_result': binary( self.lab_minmaxdate(postpartum_labs,'ogtt75',False)  ),
                 'postpartum_ogtt75_fasting_max_val': pp_ogtt75_fasting_value,#added
                 'postpartum_ogtt75_2hr_max_val':  pp_ogtt75_2hr_value,#added
@@ -1852,10 +1839,17 @@ class PrediabetesReport(BaseDiabetesReport):
     
     def __two_highest_random_glucose(self):
         #
-        # TODO: issue 347 Implement me!
         #
-        lab_qs = LabResult.objects.filter(patient__in=self.patient_qs)
-        lab_qs = lab_qs.filter(events__name='lx:glucose-random:any-result')
+        #lab_qs = LabResult.objects.filter(patient__in=self.patient_qs)
+        #lab_qs = lab_qs.filter(events__name='lx:glucose-random:any-result')
+        field = 'two-highest-glucose-random'
+        self.FIELDS.append(field)
+        abs_test = AbstractLabTest(name='glucose-random')
+        vqs = abs_test.lab_results.filter(patient__in=self.patient_qs).values('patient').annotate(value=Max('result_float'))
+        log.info('Collecting aggregate data for %s' % field)
+        
+        self._vqs_to_pfv(vqs, field)
+        
     
     def __two_recent_gdm_cases(self):
         #
@@ -1913,8 +1907,8 @@ class PrediabetesReport(BaseDiabetesReport):
         self._max_bmi()
         self._yearly_max(test_list=[
             'a1c',
+            'glucose-fasting',
             ])
-        self._yearly_max_events('glucose-fasting', ['lx:glucose-fasting:any-result'])
         self._blood_pressure()
         #
         self._recent_pregnancies()
