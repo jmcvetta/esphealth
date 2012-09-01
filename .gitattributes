@@ -393,6 +393,7 @@ esphealth/install-system-dependencies.sh -text
 esphealth/requirements.frozen.txt -text
 esphealth/requirements.plugins.txt -text
 esphealth/requirements.pypi.txt -text
+esphealth/setup.bat -text
 esphealth/setup.sh -text
 esphealth/share/apache.conf.sample -text
 esphealth/share/cpt_codes.csv.bz2 -text svneol=unset#unset
