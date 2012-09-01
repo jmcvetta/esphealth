@@ -1334,6 +1334,9 @@ class GestationalDiabetesReport(Report):
                 pp_randomglucose_high_date1 = pp_fastingglucose_high[0].date
                 if pp_randomglucose_high.count()>1:
                     pp_randomglucose_high_date2 = pp_fastingglucose_high[1].date
+                else:
+                    pp_randomglucose_high_date2 = None
+                
             else:
                 pp_randomglucose_high_date1 = None 
                 pp_randomglucose_high_date2 = None       
