@@ -438,7 +438,7 @@ class Diabetes(DiseaseDefinition):
         #'lx:insulin-antibody' 
         #aa_event_types = pos_aa_event_types + thres_aa_event_types
         
-        aa_pos = patient_event_qs.filter(name__in=aa_event_types).order_by('date')
+        aa_pos = patient_event_qs.filter(name__in=pos_aa_event_types).order_by('date')
         if aa_pos:
             provider = aa_pos[0].provider
             case_date = aa_pos[0].date
