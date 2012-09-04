@@ -37,7 +37,7 @@ copy ( SELECT
 , bp1.max_bp_diastolic as max_bp_diastolic1
 , bp2.max_bp_systolic as max_bp_systolic2
 , bp2.max_bp_diastolic as max_bp_diastolic2
-, bp3.max_bp_systolic as max_bp_systolic2
+, bp3.max_bp_systolic as max_bp_systolic3
 , bp3.max_bp_diastolic as max_bp_diastolic3
 , recbp.bp_systolic
 , recbp.bp_diastolic
@@ -504,7 +504,7 @@ LEFT JOIN (
 LEFT JOIN (
 	SELECT
 	  patient_id
-	, MAX(start_date) AS recent_pregnancy -- if there is more than one pregnancy in the period, take the last one
+	, 1 AS recent_pregnancy -- if there is more than one pregnancy in the period, take the last one
 	FROM hef_timespan
 	WHERE name = 'pregnancy' and 
 	             ((start_date between (now() - interval '2 years') and (now() - interval '1 year') and end_date <= (now() - interval '1 year'))
@@ -518,7 +518,7 @@ LEFT JOIN (
 LEFT JOIN (
 	SELECT
 	  patient_id
-	, MAX(start_date) AS recent_pregnancy
+	, 1 AS recent_pregnancy
 	FROM hef_timespan
 	WHERE name = 'pregnancy' and 
 	             ((start_date between (now() - interval '1 years') and now() and end_date <= now())
