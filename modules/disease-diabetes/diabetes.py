@@ -1182,14 +1182,13 @@ class GestationalDiabetesReport(Report):
             else:
                 gdm_date = None
                 ga_gdm_met = 0
-            
                
             pre_eclampsia_icd9s = ['642.4','642.5','642.6','642.7']
             pre_eclampsia = Encounter.objects.filter(
                 patient = patient,
                 date__gte = preg_ts.start_date,
                 date__lte = end_date + relativedelta(days=30),
-                icd9_codes__code__startswith=pre_eclampsia_icd9s 
+                icd9_codes__code__in=pre_eclampsia_icd9s 
                 )
            
             hypertension_inpreg_icd9s = ['642.3','642.9']
@@ -1197,7 +1196,7 @@ class GestationalDiabetesReport(Report):
                 patient = patient,
                 date__gte = preg_ts.start_date,
                 date__lte = end_date + relativedelta(days=30),
-                icd9_codes__code__startswith=hypertension_inpreg_icd9s 
+                icd9_codes__code__in=hypertension_inpreg_icd9s 
                 )
             
             prior_encounter = Encounter.objects.filter(
@@ -1205,22 +1204,23 @@ class GestationalDiabetesReport(Report):
                 date__lte = preg_ts.start_date
                 )
                 
-            polycystic_icd9 = ['256.4']
+            polycystic_icd9 = '256.4'
             prior_polycystic_twice = prior_encounter.filter(
-                icd9_codes__code__startswith=polycystic_icd9 
+                icd9_codes__code = polycystic_icd9 
                 ).annotate(count=Count('pk')).filter(count__gte=2)
              
             prior_pre_eclampsia_twice = prior_encounter.filter(
-                icd9_codes__code__startswith=pre_eclampsia_icd9s 
+                icd9_codes__code__in=pre_eclampsia_icd9s 
                 ).annotate(count=Count('pk')).filter(count__gte=2)
              
+            history_hypertension = '401'#outside pregnancy
             prior_hypertension_twice = prior_encounter.filter(
-                icd9_codes__code__startswith= '401' #outside pregnancy
+                icd9_codes__code__startswith= history_hypertension 
                 ).annotate(count=Count('pk')).filter(count__gte=2)
                 
             liver_fatty_disease_icd9s = ['571.0', '571.8' ]
             prior_liver_fatty_disease =  prior_encounter.filter(
-                 icd9_codes__code__startswith=liver_fatty_disease_icd9s 
+                 icd9_codes__code__in=liver_fatty_disease_icd9s 
                 )
             # any lab result in the past two years. 
             prior_2y_lab = LabResult.objects.filter(
