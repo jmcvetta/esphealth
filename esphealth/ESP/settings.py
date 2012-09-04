@@ -106,11 +106,17 @@ DATABASE_OPTIONS = {
 }
 ETL_SOURCE = config['ETL']['source']
 ETL_USE_FTP = config['ETL']['retrieve_files'] # Use built-in FTP function to retrieve Epic files
+ETL_USE_SFTP = config['ETL']['use_sftp'] # Use built-in FTP function to retrieve Epic files
 ETL_ARCHIVE = config['ETL']['archive'] # Should ETL files be archived after they have been loaded?
 FTP_SERVER = config['ETL']['server']
 FTP_USER = config['ETL']['username']
 FTP_PASSWORD = secrets['General']['etl_server_password']
 FTP_PATH = config['ETL']['path']
+SFTP_PORT = config['ETL']['sftp_port']
+SFTP_SERVER = config['ETL']['sftp_server']
+SFTP_USER = config['ETL']['sftp_username']
+SFTP_PASSWORD = secrets['General']['etl_sftp_server_password']
+SFTP_PATH = config['ETL']['sftp_path']
 ETL_MEDNAMEREVERSE = config['ETL']['medname_field7']
 UPLOAD_SERVER = config['Reporting']['upload_server']
 UPLOAD_USER = config['Reporting']['upload_username']
