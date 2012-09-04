@@ -260,7 +260,7 @@ class Diabetes(DiseaseDefinition):
     
     test_name_search_strings = [
             'chol',
-            'triglycerides',
+            'trig',
             'peptide',
             'ogtt',
             'glucose',
