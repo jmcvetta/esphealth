@@ -1,4 +1,4 @@
---------------------------------------------------------------------------------
+/*﻿--------------------------------------------------------------------------------
 --
 --                                ESP Health
 --                         General Population Report
@@ -16,56 +16,54 @@
 -- This query contains some PostgreSQL-specific functions.  It will probably 
 -- not run on other RDBMS without porting.
 --
---------------------------------------------------------------------------------
-
-
-﻿SELECT 
+--------------------------------------------------------------------------------*/
+copy ( SELECT 
   pat.id AS patient_id
 , pat.mrn
-, case 
-	when date_part('year', age(lastenc.last_enc_date)) <=1 then 1
-	when date_part('year', age(lastenc.last_enc_date)) between 1 and 2 then 2
-	when date_part('year', age(lastenc.last_enc_date)) between 2 and 3 then 3
-	else null
-  end AS years_since_last_enc
-, case 
-	when date_part('year', age(pat.date_of_birth)) <= 2 then 1
-	when date_part('year', age(pat.date_of_birth)) between 3 and 12 then 2
-	when date_part('year', age(pat.date_of_birth)) between 13 and 19 then 3
-	when date_part('year', age(pat.date_of_birth)) between 20 and 39 then 4
-	when date_part('year', age(pat.date_of_birth)) between 40 and 59 then 5
-	when date_part('year', age(pat.date_of_birth)) between 60 and 79 then 6
-	when date_part('year', age(pat.date_of_birth)) >=80 then 7
-    else null
-  end AS age
-, pat.gender as sex
+, date_part('year', age(lastenc.last_enc_date)) as years_since_last_enc
+, date_part('year', age(pat.date_of_birth)) as age
+, pat.gender 
 , pat.race
 , pat.zip
-, case
-    when date_part('year', age(pat.date_of_birth)) > 12 and bmi.bmi < 25 then 1
-    when date_part('year', age(pat.date_of_birth)) > 12 and bmi.bmi between 25 and 30 then 2
-    when date_part('year', age(pat.date_of_birth)) > 12 and bmi.bmi > 30 then 3
-    else null
-  end as bmi
+, bmi.bmi
+, bmi.date as bmi_date
 , curpreg.currently_pregnant
-, recpreg.recent_pregnancy
+, recpreg1.recent_pregnancy as recent_pregnancy1
+, recpreg2.recent_pregnancy as recent_pregnancy2
 , gdm.current_gdm
-, recgdm.recent_gdm
-, case 
-	when bp.max_bp_systolic <= 130 and bp.max_bp_diastolic <= 80 then 1
-	when bp.max_bp_systolic between 131 and 139 or bp.max_bp_diastolic between 81 and 89 then 2
-	when bp.max_bp_systolic >=140 or bp.max_bp_diastolic >= 90 then 3
-	else 4
-  end as bld_prsr
-, a1c.recent_a1c
+, recgdm1.recent_gdm as recent_gdm1
+, recgdm2.recent_gdm as recent_gdm2
+, bp1.max_bp_systolic as max_bp_systolic1
+, bp1.max_bp_diastolic as max_bp_diastolic1
+, bp2.max_bp_systolic as max_bp_systolic2
+, bp2.max_bp_diastolic as max_bp_diastolic2
+, bp3.max_bp_systolic as max_bp_systolic2
+, bp3.max_bp_diastolic as max_bp_diastolic3
+, recbp.bp_systolic
+, recbp.bp_diastolic
+, recbp.date as rec_bp_date
 , ldl.recent_ldl
+, ldl.date as ldl_date
+, ldl1.max_ldl1
+, ldl2.max_ldl2
+, ldl3.max_ldl3
+, a1c.recent_a1c
+, a1c.date as a1c_date
+, a1c1.max_a1c1
+, a1c2.max_a1c2
+, a1c3.max_a1c3
 , trig.recent_tgl
+, trig.date as trig_date
+, trig1.max_trig1
+, trig2.max_trig2
+, trig3.max_trig3
 , predm.prediabetes
 , type1.type_1_diabetes
 , type2.type_2_diabetes
 , insulin.insulin
 , metformin.metformin
-, flu.influenza_vaccine
+, flu_cur.influenza_vaccine as cur_flu_vax
+, flu_prev.influenza_vaccine as prev_flu_vax
 FROM emr_patient AS pat
 --
 -- Last encounter
@@ -79,7 +77,7 @@ LEFT JOIN (
 ) AS lastenc
 	ON lastenc.patient_id = pat.id
 --
--- Max blood pressure in past 2 years
+-- Max blood pressure between two and three years
 --
 LEFT JOIN (
 	SELECT 
@@ -87,20 +85,73 @@ LEFT JOIN (
 	, MAX(bp_systolic) AS max_bp_systolic
 	, MAX(bp_diastolic) AS max_bp_diastolic
 	FROM emr_encounter
-	WHERE date >= ( now() - interval '2 years' )
+	WHERE date between ( now() - interval '3 years' ) and ( now() - interval '2 years' )
 	GROUP BY patient_id
-) AS bp
-	ON bp.patient_id = pat.id
+) AS bp3
+	ON bp3.patient_id = pat.id
 --
--- BMI 
+-- Max blood pressure between one and two years
 --
 LEFT JOIN (
 	SELECT 
 	  patient_id
-	, MAX(bmi) AS bmi
+	, MAX(bp_systolic) AS max_bp_systolic
+	, MAX(bp_diastolic) AS max_bp_diastolic
 	FROM emr_encounter
-	WHERE date >= ( now() - interval '1 years' )
+	WHERE date between ( now() - interval '2 years' ) and ( now() - interval '1 years' )
 	GROUP BY patient_id
+) AS bp2
+	ON bp2.patient_id = pat.id
+--
+-- Max blood pressure between now and one years
+--
+LEFT JOIN (
+	SELECT 
+	  patient_id
+	, MAX(bp_systolic) AS max_bp_systolic
+	, MAX(bp_diastolic) AS max_bp_diastolic
+	FROM emr_encounter
+	WHERE date between ( now() - interval '1 years' ) and now() 
+	GROUP BY patient_id
+) AS bp1
+	ON bp1.patient_id = pat.id
+--
+-- most recent blood pressure 
+--
+LEFT JOIN (
+	SELECT 
+	  t0.patient_id
+	, max(t0.bp_systolic) as bp_systolic
+	, max(t0.bp_diastolic) as bp_diastolic
+	, t0.date
+	FROM emr_encounter as t0,
+	     (select patient_id, max(date) as date from emr_encounter 
+	           where bp_systolic is not null and bp_diastolic is not null
+	           group by patient_id) as t1
+	WHERE t0.bp_systolic is not null and t0.bp_diastolic is not null and 
+	   t0.patient_id=t1.patient_id and
+	   t0.date = t1.date and t0.date between (now() - interval '2 years') and now()
+	GROUP BY t0.patient_id, t0.date
+) AS recbp
+	ON recbp.patient_id = pat.id
+--
+-- most recent BMI 
+--
+LEFT JOIN (
+	SELECT 
+	  t0.patient_id,
+	  t0.date
+	, MAX(t0.bmi) AS bmi
+	FROM emr_encounter t0,
+	     (select patient_id, max(date) as date
+	      from emr_encounter 
+	      where bmi is not null
+	      group by patient_id) t1
+	WHERE t0.date >= ( now() - interval '2 years' )
+	  and t0.bmi is not null
+	  and t0.date=t1.date
+	  and t0.patient_id=t1.patient_id
+	GROUP BY t0.patient_id, t0.date
 ) AS bmi
 	ON bmi.patient_id = pat.id
 	AND age(pat.date_of_birth) >= '12 years'
@@ -110,11 +161,11 @@ LEFT JOIN (
 LEFT JOIN (
 	SELECT 
 	  l0.patient_id
+	, l0.date  
 	, MAX(l0.result_float) AS recent_a1c
-	FROM emr_labresult l0
-	INNER JOIN conf_labtestmap m0
-		ON m0.native_code = l0.native_code
-	INNER JOIN (
+	FROM emr_labresult l0,
+	  conf_labtestmap m0,
+	(
 		SELECT 
 		  l1.patient_id
 		, m1.test_name
@@ -122,24 +173,77 @@ LEFT JOIN (
 		FROM emr_labresult l1
 		INNER JOIN conf_labtestmap m1
 			ON m1.native_code = l1.native_code
+		where m1.test_name = 'a1c'
+		    and l1.result_float is not null
 		GROUP BY 
 		  l1.patient_id
 		, m1.test_name
 	) u0
-		ON u0.patient_id = l0.patient_id
-		AND u0.test_name = m0.test_name
 	WHERE m0.test_name = 'a1c'
-	AND l0.date >= ( now() - interval '2 years' )
+	  and u0.patient_id = l0.patient_id
+		AND u0.test_name = m0.test_name
+		AND u0.date=l0.date
+	  and m0.native_code = l0.native_code
+	  AND l0.date >= ( now() - interval '2 years' )
 	GROUP BY 
-	  l0.patient_id
+	  l0.patient_id, l0.date
 ) AS a1c
 	ON a1c.patient_id = pat.id
+--
+-- Max A1C lab result last year
+--
+LEFT JOIN (
+	SELECT 
+	  l0.patient_id
+	, MAX(l0.result_float) AS max_a1c1
+	FROM emr_labresult l0
+	INNER JOIN conf_labtestmap m0
+		ON m0.native_code = l0.native_code
+	WHERE m0.test_name = 'a1c'
+	  AND l0.date between ( now() - interval '1 years' ) and now()
+	GROUP BY 
+	  l0.patient_id
+) AS a1c1
+	ON a1c1.patient_id = pat.id
+--
+-- Max A1C lab result between 1 and 2 years ago
+--
+LEFT JOIN (
+	SELECT 
+	  l0.patient_id
+	, MAX(l0.result_float) AS max_a1c2
+	FROM emr_labresult l0
+	INNER JOIN conf_labtestmap m0
+		ON m0.native_code = l0.native_code
+	WHERE m0.test_name = 'a1c'
+	  AND l0.date between ( now() - interval '2 years' ) and ( now() - interval '1 years' )
+	GROUP BY 
+	  l0.patient_id
+) AS a1c2
+	ON a1c2.patient_id = pat.id
+--
+-- Max A1C lab result between 2 and 3 years ago
+--
+LEFT JOIN (
+	SELECT 
+	  l0.patient_id
+	, MAX(l0.result_float) AS max_a1c3
+	FROM emr_labresult l0
+	INNER JOIN conf_labtestmap m0
+		ON m0.native_code = l0.native_code
+	WHERE m0.test_name = 'a1c'
+	  AND l0.date between ( now() - interval '3 years' ) and ( now() - interval '2 years' )
+	GROUP BY 
+	  l0.patient_id
+) AS a1c3
+	ON a1c3.patient_id = pat.id
 --
 -- Recent cholesterol LDL lab result
 --
 LEFT JOIN (
 	SELECT 
 	  l0.patient_id
+	, l0.date
 	, MAX(l0.result_float) AS recent_ldl
 	FROM emr_labresult l0
 	INNER JOIN conf_labtestmap m0
@@ -152,6 +256,8 @@ LEFT JOIN (
 		FROM emr_labresult l1
 		INNER JOIN conf_labtestmap m1
 			ON m1.native_code = l1.native_code
+        where m1.test_name = 'cholesterol-ldl'
+           and l1.result_float is not null
 		GROUP BY 
 		  l1.patient_id
 		, m1.test_name
@@ -162,15 +268,64 @@ LEFT JOIN (
 	WHERE m0.test_name = 'cholesterol-ldl'
 	AND l0.date >= ( now() - interval '2 years' )
 	GROUP BY 
-	  l0.patient_id
+	  l0.patient_id, l0.date
 ) AS ldl
 	ON ldl.patient_id = pat.id
+--
+-- Max ldl lab result last year
+--
+LEFT JOIN (
+	SELECT 
+	  l0.patient_id
+	, MAX(l0.result_float) AS max_ldl1
+	FROM emr_labresult l0
+	INNER JOIN conf_labtestmap m0
+		ON m0.native_code = l0.native_code
+	WHERE m0.test_name = 'cholesterol-ldl'
+	  AND l0.date between ( now() - interval '1 years' ) and now()
+	GROUP BY 
+	  l0.patient_id
+) AS ldl1
+	ON ldl1.patient_id = pat.id
+--
+-- Max ldl lab result between 1 and 2 years ago
+--
+LEFT JOIN (
+	SELECT 
+	  l0.patient_id
+	, MAX(l0.result_float) AS max_ldl2
+	FROM emr_labresult l0
+	INNER JOIN conf_labtestmap m0
+		ON m0.native_code = l0.native_code
+	WHERE m0.test_name = 'cholesterol-ldl'
+	  AND l0.date between ( now() - interval '2 years' ) and ( now() - interval '1 years' )
+	GROUP BY 
+	  l0.patient_id
+) AS ldl2
+	ON ldl2.patient_id = pat.id
+--
+-- Max ldl lab result between 2 and 3 years ago
+--
+LEFT JOIN (
+	SELECT 
+	  l0.patient_id
+	, MAX(l0.result_float) AS max_ldl3
+	FROM emr_labresult l0
+	INNER JOIN conf_labtestmap m0
+		ON m0.native_code = l0.native_code
+	WHERE m0.test_name = 'cholesterol-ldl'
+	  AND l0.date between ( now() - interval '3 years' ) and ( now() - interval '2 years' )
+	GROUP BY 
+	  l0.patient_id
+) AS ldl3
+	ON ldl3.patient_id = pat.id
 --
 -- Recent Triglycerides lab result
 --
 LEFT JOIN (
 	SELECT 
 	  l0.patient_id
+	, l0.date
 	, MAX(l0.result_float) AS recent_tgl 
 	FROM emr_labresult l0
 	INNER JOIN conf_labtestmap m0
@@ -183,6 +338,8 @@ LEFT JOIN (
 		FROM emr_labresult l1
 		INNER JOIN conf_labtestmap m1
 			ON m1.native_code = l1.native_code
+		where m1.test_name = 'triglycerides'
+		   and l1.result_float is not null
 		GROUP BY 
 		  l1.patient_id
 		, m1.test_name
@@ -193,9 +350,57 @@ LEFT JOIN (
 	WHERE m0.test_name = 'triglycerides'
 	AND l0.date >= ( now() - interval '2 years' )
 	GROUP BY 
-	  l0.patient_id
+	  l0.patient_id, l0.date
 ) AS trig
 	ON trig.patient_id = pat.id
+--
+-- Max trig lab result last year
+--
+LEFT JOIN (
+	SELECT 
+	  l0.patient_id
+	, MAX(l0.result_float) AS max_trig1
+	FROM emr_labresult l0
+	INNER JOIN conf_labtestmap m0
+		ON m0.native_code = l0.native_code
+	WHERE m0.test_name = 'triglycerides'
+	  AND l0.date between ( now() - interval '1 years' ) and now()
+	GROUP BY 
+	  l0.patient_id
+) AS trig1
+	ON trig1.patient_id = pat.id
+--
+-- Max trig lab result between 1 and 2 years ago
+--
+LEFT JOIN (
+	SELECT 
+	  l0.patient_id
+	, MAX(l0.result_float) AS max_trig2
+	FROM emr_labresult l0
+	INNER JOIN conf_labtestmap m0
+		ON m0.native_code = l0.native_code
+	WHERE m0.test_name = 'triglycerides'
+	  AND l0.date between ( now() - interval '2 years' ) and ( now() - interval '1 years' )
+	GROUP BY 
+	  l0.patient_id
+) AS trig2
+	ON trig2.patient_id = pat.id
+--
+-- Max trig lab result between 2 and 3 years ago
+--
+LEFT JOIN (
+	SELECT 
+	  l0.patient_id
+	, MAX(l0.result_float) AS max_trig3
+	FROM emr_labresult l0
+	INNER JOIN conf_labtestmap m0
+		ON m0.native_code = l0.native_code
+	WHERE m0.test_name = 'triglycerides'
+	  AND l0.date between ( now() - interval '3 years' ) and ( now() - interval '2 years' )
+	GROUP BY 
+	  l0.patient_id
+) AS trig3
+	ON trig3.patient_id = pat.id
 --
 -- Prediabetes
 --
@@ -208,10 +413,13 @@ LEFT JOIN (
 		ON c1.patient_id = c0.patient_id
 		AND c1.condition NOT LIKE 'diabetes:type-%'
 	WHERE c0.condition = 'diabetes:prediabetes'
-	     and not exists (select null from nodis_case c1 
-	                     where c1.date <= to_date('2008-01-01','yyyy-mm-dd')
-	                         and c1.patient_id=c0.patient_id
-	                         and c1.condition = 'diabetes:prediabetes')
+	     and not exists (select null from nodis_case c2 
+	                     where c2.date <= to_date('2008-01-01','yyyy-mm-dd')
+	                         and c2.patient_id=c0.patient_id
+	                         and c2.condition = 'diabetes:prediabetes')
+	     and not exists (select null from nodis_case c3
+	                     where c3.patient_id=c0.patient_id
+	                         and c3.condition in ('diabetes:type-1','diabetes:type-2'))
 ) AS predm
 	ON predm.patient_id = pat.id
 
@@ -257,7 +465,7 @@ LEFT JOIN (
 ) AS gdm
 	ON gdm.patient_id = pat.id
 --
--- Recent Gestational diabetes
+-- Recent Gestational diabetes 1 year
 --
 LEFT JOIN (
 	SELECT 
@@ -268,23 +476,56 @@ LEFT JOIN (
             ON nct0.case_id = c0.id
         INNER JOIN hef_timespan AS ts0
             ON nct0.timespan_id = ts0.id
-	WHERE c0.condition = 'diabetes:gestational'
-            AND ts0.start_date <= now() - interval '2 years'
-            AND ( ts0.end_date >= now() OR ts0.end_date IS NULL)
-) AS recgdm
-	ON recgdm.patient_id = pat.id
+	WHERE c0.condition = 'diabetes:gestational' and
+	             ((start_date between (now() - interval '1 years') and now() and end_date <= now())
+	           or end_date between (now() - interval '1 years') and now())
+) AS recgdm1
+	ON recgdm1.patient_id = pat.id
 --
--- Recent pregnancy
+-- Recent Gestational diabetes 2 year
+--
+LEFT JOIN (
+	SELECT 
+	c0.patient_id
+	, 1 AS recent_gdm
+	FROM nodis_case AS c0
+        INNER JOIN nodis_case_timespans AS nct0
+            ON nct0.case_id = c0.id
+        INNER JOIN hef_timespan AS ts0
+            ON nct0.timespan_id = ts0.id
+	WHERE c0.condition = 'diabetes:gestational' and
+	             ((start_date between (now() - interval '2 years') and (now() - interval '1 year') and end_date <= (now() - interval '1 year'))
+	           or end_date between (now() - interval '2 years') and (now() - interval '1 year'))
+) AS recgdm2
+	ON recgdm2.patient_id = pat.id
+--
+-- Recent pregnancy 2 year
+--
+LEFT JOIN (
+	SELECT
+	  patient_id
+	, MAX(start_date) AS recent_pregnancy -- if there is more than one pregnancy in the period, take the last one
+	FROM hef_timespan
+	WHERE name = 'pregnancy' and 
+	             ((start_date between (now() - interval '2 years') and (now() - interval '1 year') and end_date <= (now() - interval '1 year'))
+	           or end_date between (now() - interval '2 years') and (now() - interval '1 year'))
+	GROUP BY patient_id
+) AS recpreg2
+	ON recpreg2.patient_id = pat.id
+--
+-- Recent pregnancy 1 year
 --
 LEFT JOIN (
 	SELECT
 	  patient_id
 	, MAX(start_date) AS recent_pregnancy
 	FROM hef_timespan
-	WHERE name = 'pregnancy' and start_date > (now() - interval '2 years')
+	WHERE name = 'pregnancy' and 
+	             ((start_date between (now() - interval '1 years') and now() and end_date <= now())
+	           or end_date between (now() - interval '1 years') and now())
 	GROUP BY patient_id
-) AS recpreg
-	ON recpreg.patient_id = pat.id
+) AS recpreg1
+	ON recpreg1.patient_id = pat.id
 --
 -- Current pregnancy
 --
@@ -334,11 +575,36 @@ LEFT JOIN (
 	, 1 AS influenza_vaccine
 	FROM emr_immunization
 	WHERE name ILIKE '%influenza%'
-	AND date >= ( now() - interval '10 months' )
-	AND date_part('month', date) >= 7
-	AND date_part('month', date) <= 8
-) AS flu
-	ON flu.patient_id = pat.id
+	AND case
+		  when extract(quarter from now())=4 then extract(year from now())+1
+		  else extract(year from now())
+	    end =
+	    case
+		  when extract(quarter from date)=4 then extract(year from date)+1
+		  else extract(year from date)
+	    end
+) AS flu_cur
+	ON flu_cur.patient_id = pat.id
+--
+-- Influenza vaccine
+--     Prescription for influenza vaccine previous flu season
+--
+LEFT JOIN (
+	SELECT 
+	  DISTINCT patient_id
+	, 1 AS influenza_vaccine
+	FROM emr_immunization
+	WHERE name ILIKE '%influenza%'
+	AND case
+		  when extract(quarter from (now()-interval '1 years'))=4 then extract(year from (now()-interval '1 years'))+1
+		  else extract(year from (now()-interval '1 years'))
+	    end =
+	    case
+		  when extract(quarter from date)=4 then extract(year from date)+1
+		  else extract(year from date)
+	    end
+) AS flu_prev
+	ON flu_prev.patient_id = pat.id
 --
 -- WHERE criteria 
 --
@@ -347,3 +613,4 @@ WHERE pat.date_of_death IS NULL
 -- Ordering
 --
 ORDER BY pat.id
+) to stdout with csv header;
