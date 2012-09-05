@@ -6,7 +6,7 @@
 
 @author: Jason McVetta <jason.mcvetta@gmail.com>
 @organization: Channing Laboratory http://www.channing.harvard.edu
-@contact: http://www.esphealth.org
+@contact: http://www.esphealth.org 
 @copyright: (c) 2010-2011 Channing Laboratory
 @license: LGPL
 '''
@@ -69,7 +69,6 @@ class Diabetes(DiseaseDefinition):
     @property
     def event_heuristics(self):
         heuristics = []
-        
         
         #
         # Any Result Tests
@@ -616,6 +615,9 @@ class Diabetes(DiseaseDefinition):
         'lx:ogtt100-90min:threshold:gte:180',
         'lx:ogtt100-2hr:threshold:gte:155',
         'lx:ogtt100-3hr:threshold:gte:140',
+        'lx:ogtt100-4hr:threshold:gte:140',
+        'lx:ogtt100-5hr:threshold:gte:140',
+
         ]
     
     def generate_gestational_diabetes(self):
@@ -908,7 +910,7 @@ class GestationalDiabetesReport(Report):
             'lx:ogtt100-4hr:threshold:gte:140',
             'lx:ogtt100-5hr:threshold:gte:140',
             ])
-        self.glucose_random_q =  Q(name__in= ['lx:glucose-random:any-result','lx:ogtt50-random:any-result']) 
+        self.glucose_random_q =  Q(name__in= ['lx:glucose-random:range:gte:140:lt:200','lx:glucose-random:threshold:gte:200','lx:ogtt50-random:any-result']) 
         
         self.dxgdm_q = Q(name='dx:gestational-diabetes')
         self.lancets_q = Q(name__in=['rx:test-strips', 'rx:lancets'])
@@ -991,6 +993,7 @@ class GestationalDiabetesReport(Report):
             'zip_code': zip_code,
             'frank_diabetes_ever': binary(frank_dm_case_qs),
              }
+        
         if frank_dm_case_qs:
             first_dm_case = frank_dm_case_qs[0]
             patient_values['frank_diabetes_date'] = first_dm_case.date
@@ -1002,21 +1005,28 @@ class GestationalDiabetesReport(Report):
         # might not have timespan but gdm case which should be 0
         #
         patient_values['pregnancy'] = 0
+        gdm_case_date = None
         if preg_ts_qs:
             patient_values['pregnancy'] = 1
-             
-            
-        if not preg_ts_qs:
-            if gdm_case_qs:
-                values = {
-                'gdm_case': binary( gdm_case_qs ),
-                'gdm_case_date': gdm_case_qs[0].date,
-                }
-                values.update(patient_values)
-                writer.writerow(values)
-            return # Nothing more to do for this patient
+        elif gdm_case_qs:
+                gdm_case_date = gdm_case_qs[0].date            
+    
+        # FIXME: This date math works on PostgreSQL, but I think that's
+        # just fortunate coincidence, as I don't think this is the
+        # right way to express the date query in ORM syntax.
+        lancets_and_icd9 = event_qs.filter(
+                self.lancets_q,
+                patient__event__name='dx:gestational-diabetes',
+                patient__event__date__gte =  (F('date') - 14),
+                patient__event__date__lte =  (F('date') + 14),
+                )
         
-            
+        values = {
+                'gdm_case': binary( gdm_case_qs ),
+                'gdm_case_date': gdm_case_date,
+                'lancets_test_strips_14_days_gdm_icd9' : binary( lancets_and_icd9 ) ,
+            }      
+        
         for preg_ts in preg_ts_qs:
             # Find the pregnancy object for this timespan if there is any
             # ts.enddate= actual date, otherwise use edd. 
@@ -1159,15 +1169,7 @@ class GestationalDiabetesReport(Report):
             else:
                 prior_gdm_prior_this_preg_date = None   
                 
-            # FIXME: This date math works on PostgreSQL, but I think that's
-            # just fortunate coincidence, as I don't think this is the
-            # right way to express the date query in ORM syntax.
-            lancets_and_icd9 = intrapartum.filter(
-                self.lancets_q,
-                patient__event__name='dx:gestational-diabetes',
-                patient__event__date__gte =  (F('date') - 14),
-                patient__event__date__lte =  (F('date') + 14),
-                )
+            
             #TODO define nutrionist referral condition ?
             nutrition_referral = Encounter.objects.filter(
                 patient=patient,
@@ -1454,7 +1456,6 @@ class GestationalDiabetesReport(Report):
                 'late_postpartum_a1c_max_val': late_a1c_max,
                 'referral_to_nutrition': binary(nutrition_referral),
                 'lancets_test_strips_this_preg': binary( intrapartum.filter(self.lancets_q) ),
-                'lancets_test_strips_14_days_gdm_icd9': binary( lancets_and_icd9 ),
                 'insulin_rx': binary( insulin_qs ),
                 'ga_1st_insulin' : ga_1st_insulin, # added
                 'insulin_basal': binary(insulin_basal),
@@ -1463,10 +1464,11 @@ class GestationalDiabetesReport(Report):
                 'metformin_rx': binary( intrapartum.filter(name='rx:metformin') ),
                 'glyburide_rx': binary( intrapartum.filter(name='rx:glyburide') ),
                 }
-            values.update(patient_values)
             values.update(pregnancy_info_values)
-            writer.writerow(values)
-
+        
+        values.update(patient_values)
+        writer.writerow(values)
+        
 
 class BaseDiabetesReport(Report):
     
