@@ -1354,13 +1354,20 @@ class GestationalDiabetesReport(Report):
             ]
             ogtt75_lab_orders_qs = AbstractLabTest(ogtt75_labname[0]).lab_orders
             for test_name in ogtt75_labname:   
-                ogtt75_lab_orders_qs |= AbstractLabTest(test_name).lab_orders    
+                ogtt75_lab_orders_qs |= AbstractLabTest(test_name).lab_orders   
+                 
             pp_ogtt75_order = ogtt75_lab_orders_qs.filter(
                 patient = patient,
                 date__gte = end_date ,
                 date__lte = end_date + relativedelta(days=120),
                 )  
-                        
+            
+            pp_ogtt75_any_result = 0
+            for test_name in ogtt75_labname:
+                if self.lab_minmaxdate(postpartum_labs,test_name,False):
+                    pp_ogtt75_any_result = 1
+                    break                     
+            
             pp_fastingglucose_high = anypostpartum.filter(self.glucosefasting_q | Q(labresult__result_float__gte =126) ) | anypostpartum.filter(
                  self.ogttfasting_high_q | Q(labresult__result_float__gte =126)).order_by('date')
             
@@ -1439,7 +1446,7 @@ class GestationalDiabetesReport(Report):
                 'intrapartum_ogtt100_interp': binary( ogtt100_twice_qs ),
                 'intrapartum_glucose_random_max_val' : ip_glucose_random_value,#added 
                 'postpartum_ogtt75_order': binary( pp_ogtt75_order ),
-                'postpartum_ogtt75_any_result': binary( self.lab_minmaxdate(postpartum_labs,'ogtt75',False)  ),
+                'postpartum_ogtt75_any_result': binary( pp_ogtt75_any_result ),
                 'postpartum_ogtt75_fasting_max_val': pp_ogtt75_fasting_value,#added
                 'postpartum_ogtt75_2hr_max_val':  pp_ogtt75_2hr_value,#added
                 'postpartum_ogtt75_ifg_range_met': binary( postpartum.filter(self.ogtt75_ifg_q) ),
