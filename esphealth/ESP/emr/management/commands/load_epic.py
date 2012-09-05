@@ -623,23 +623,23 @@ class LabResultLoader(BaseLoader):
         component = self.string_or_none(row['component'])  
         cpt = self.string_or_none(row['cpt'])  
         if component and cpt:
-            native_code = cpt +'--'+ component
-            # We only use first 20 characters of component, since some lab 
+            native_code = cpt + '--' + component
+            # We use the first 70 characters of component, since some lab 
             # results (always types unimportant to ESP) have quite long 
             # component values, yet we need the native_code field to be a 
             # reasonable width for indexing.  
-            if len(component) > 20:
-                log.warning('Component field is greater than 20 characters, and has been truncated:')
+            if len(component) > 70:
+                log.warning('Component field is greater than 70 characters, and has been truncated:')
                 log.warning('    "%s"' % component)
-                native_code = cpt +'--'+ component[0:20] 
+                native_code = cpt +'--'+ component[0:70] 
         elif cpt:
-            native_code=cpt
+            native_code=cpt + '--'
         elif component:
-            native_code = component
-            if len(component) > 20:
-                log.warning('Component field is greater than 20 characters, and has been truncated:')
+            native_code = '--' + component
+            if len(component) > 70:
+                log.warning('Component field is greater than 70 characters, and has been truncated:')
                 log.warning('    "%s"' % component)
-                native_code = component[0:20] 
+                native_code = component[0:70] 
         else:
             native_code = None
         if not row['natural_key']:
