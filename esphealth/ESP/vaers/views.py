@@ -30,7 +30,7 @@ WIDGET_TEMPLATE_DIR = 'widgets/vaers/'
 @login_required
 def index(request):
     # Complete query and present results
-    cases = AdverseEvent.paginated()
+    cases = Case.paginate()
     return direct_to_template(request, PAGE_TEMPLATE_DIR + 'home.html',
                               {'cases':cases,
                                'page':1
@@ -46,8 +46,8 @@ def list_cases(request):
     
 
     # Complete query and present results
-    cases = AdverseEvent.paginated(page=int(page))
-    total = AdverseEvent.objects.all().count()
+    cases = Case.paginate(page=int(page))
+    total = Case.objects.all().count()
     return direct_to_template(request, WIDGET_TEMPLATE_DIR +'case_grid.json',
                               {'cases':cases,
                                'total':total,
@@ -143,17 +143,17 @@ def case_details(request, ptype, id):
         
         questionnaire.save()
         if ptype=='case':
-            mail_admins('ESP:VAERS - Authenticated user changed case status',
-                    'Case %s.\nUser %s\n.' % (case, request.user))
+            #mail_admins('ESP:VAERS - Authenticated user changed case status',
+            #        'Case %s.\nUser %s\n.' % (case, request.user))
             return HttpResponseRedirect(reverse('present_case', kwargs={'id':id, 'ptype':ptype}))
         else:
-            mail_admins('ESP:VAERS - Provider changed case status',
-                    'Case %s.\nProvider %s\n.' % (case, provider))
+            #mail_admins('ESP:VAERS - Provider changed case status',
+            #        'Case %s.\nProvider %s\n.' % (case, provider))
             return HttpResponse('Thank you for providing instruction and feedback for this case.  You may close the browser window')
             
     else:
-        mail_admins('ESP:VAERS - User viewed case report',
-                    'Case %s.\nProvider %s \n.' % (case, provider))
+        #mail_admins('ESP:VAERS - User viewed case report',
+        #            'Case %s.\nProvider %s \n.' % (case, provider))
         
         return direct_to_template(request, PAGE_TEMPLATE_DIR + 'present.html', {
                 'case':case,

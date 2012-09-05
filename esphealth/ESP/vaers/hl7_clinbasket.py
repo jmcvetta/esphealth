@@ -71,12 +71,12 @@ class HL7_clinbasket(object):
     def makePID(self):
         patient = self.case.patient
         pid = PID()
-        words =patient.natural_key.split()
-        #TODO: this should be a metrohealth plugin, as it is specific to metrohealth natural key values
-        if words[0].isdigit():
-            pid.patient_internal_id = words[0] + '^^^^ID 1'
+        words =patient.mrn.split('-')
+        #TODO: this should be a metrohealth plugin, as it is specific to metrohealth values
+        if words[1]:
+            pid.patient_internal_id = words[1] + '^^^^ID 1'
         else:
-            pid.patient_internal_id = patient.natural_key
+            pid.patient_internal_id = patient.mrn+ '^^^^ID 1'
         #We currently don't need the following but could provide at some point if desired.
         #pid.patient_name = patient._get_name
         #pid.date_of_birth = utils.str_from_date(patient.date_of_birth)
@@ -101,8 +101,8 @@ class HL7_clinbasket(object):
         ques = self.ques
         txa.report_type = 33
         txa.activity_date=enc.date.strftime("%Y%m%d%H%M%s")
-        txa.primary_activity_provider='055947'
-        txa.originator_codename='055947'
+        txa.primary_activity_provider='3480'
+        txa.originator_codename='3480'
         if VAERS_OVERRIDE_CLINICIAN_REVIEWER=='':
             txa.distributed_copies=ques.provider_id
         else:
@@ -159,9 +159,9 @@ class HL7_clinbasket(object):
                     caseDescription = caseDescription + AE.allergyevent.content_object.name + ' allergy on ' + str(AE.allergyevent.content_object.date) + ', '
                     evntlist.append(AE.allergyevent.content_object.name + ' allergy')
             caseDescription = caseDescription[0:-2] + '. ' + patient.name + ' was vaccinated with '
-            for imm in self.case.immunizations.all():
-                caseDescription = caseDescription + imm.name + ', '
-            caseDescription  = caseDescription[0:-2] + ' on ' + str(imm.date) + '. Do you think that it is possible that '
+            for imm in self.case.immunizations.values('name','date').distinct():
+                caseDescription = caseDescription + imm.get('name') + ', '
+            caseDescription  = caseDescription[0:-2] + ' on ' + str(imm.get('date')) + '. Do you think that it is possible that '
             for evnt in evntlist:
                 caseDescription = caseDescription + evnt + ' or '
             caseDescription = caseDescription[0:-4] + ' was due to an adverse effect (a possible side effect) of a vaccine? '
@@ -206,7 +206,7 @@ class HL7_clinbasket(object):
         hl7file = cStringIO.StringIO()
         hl7file.write(all_text)
         hl7file.seek(0)
-        if transmit_ftp(hl7file, 'clinbox_msg_ID' + str(self.ques.id)):
+        if transmit_ftp(hl7file, 'clinbox_msg_ID' + str(self.ques.id) + '.txt'):
             Questionnaire.objects.filter(id=self.ques.id).update(inbox_message=hl7file.getvalue())
         hl7file.close()
 

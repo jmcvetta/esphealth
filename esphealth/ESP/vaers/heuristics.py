@@ -4,6 +4,7 @@ import datetime
 
 from dateutil.relativedelta import relativedelta
 
+from django.db.models import F
 from django.contrib.contenttypes.models import ContentType
 from ESP.hef.base import BaseHeuristic
 from ESP.conf.common import EPOCH
@@ -246,7 +247,7 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                 
             #find the adverse event icd9 codes           
             thisname = self.name
-            for code in this_enc.icd9_codes.filter(code__in=self.icd9s).distinct(True):
+            for code in this_enc.icd9_codes.filter(code__in=self.icd9s).distinct():
                 thisname += ' '+code.code
 
             immunization_qs = Immunization.vaers_candidates(this_enc.patient, this_enc.date, self.risk_period)
@@ -484,14 +485,12 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         #
         # Pediatric: 3mo - 18yrs
         # Adult 18yrs +
-        #
-        now = datetime.datetime.now()
         
         if self.pediatric:
-            candidates = candidates.filter(patient__date_of_birth__gt = now - relativedelta(years=18))
-            candidates = candidates.filter(patient__date_of_birth__lte = now - relativedelta(months=3))
+            candidates = candidates.filter(patient__date_of_birth__gt = F('patient__immunization__date') - relativedelta(years=18).days)
+            candidates = candidates.filter(patient__date_of_birth__lte = F('patient__immunization__date') - relativedelta(months=3).days)
         else: # adult
-            candidates = candidates.filter(patient__date_of_birth__lte = now - relativedelta(years=18))
+            candidates = candidates.filter(patient__date_of_birth__lte = F('patient__immunization__date') - relativedelta(years=18).days)
         return [c for c in candidates if is_trigger_value(c, trigger) and not 
                 excluded_due_to_history(c, comparator, baseline)]
 

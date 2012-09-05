@@ -1110,7 +1110,7 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 42,
         },
     
-    '999.5': {#
+    '999.5; 999.52; 999.59': {#
         'name':'Post-immunization reaction',
         'ignore_period':None,
         'category':'3_possible',
