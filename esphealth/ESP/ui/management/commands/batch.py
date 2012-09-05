@@ -19,6 +19,7 @@ from optparse import make_option
 from optparse import Values
 
 from ESP.emr.management.commands.download_ftp  import Command as FtpCommand
+from ESP.emr.management.commands.download_sftp import Command as SFtpCommand
 from ESP.emr.management.commands.load_epic     import Command as LoadEpicCommand
 from ESP.emr.management.commands.load_hl7      import Command as LoadHl7Command
 from ESP.hef.management.commands.hef           import Command as HefCommand
@@ -30,6 +31,7 @@ from ESP.vaers.management.commands.vae_listing import Command as VaelistingComma
 
 from ESP.settings import ETL_SOURCE
 from ESP.settings import ETL_USE_FTP
+from ESP.settings import ETL_USE_SFTP
 from ESP.settings import ETL_SOURCE
 from ESP.settings import CASE_REPORT_OUTPUT_FOLDER
 from ESP.settings import CASE_REPORT_MDPH
@@ -74,6 +76,12 @@ class Command(BaseCommand):
                 if ETL_USE_FTP:
                     progress('Fetching new ETL files from FTP')
                     cmnd = FtpCommand()
+                    cmnd.run_from_argv([None, None])
+                    progress('Successfully fetched new ETL files from FTP')
+                    del cmnd
+                elif ETL_USE_SFTP:
+                    progress('Fetching new ETL files from sFTP')
+                    cmnd = SFtpCommand()
                     cmnd.run_from_argv([None, None])
                     progress('Successfully fetched new ETL files from FTP')
                     del cmnd
