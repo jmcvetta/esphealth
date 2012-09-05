@@ -35,8 +35,8 @@ class Command(BaseCommand):
     # Parse command line options
     #
     option_list = BaseCommand.option_list + (
-        make_option('-b', '--begin', dest='begin_date', default=str_from_date(TODAY)),
-        make_option('-e', '--end', dest='end_date', default=str_from_date(TODAY-datetime.timedelta(1))), # Yesterday
+        make_option('-b', '--begin', dest='begin_date', default=str_from_date(TODAY-datetime.timedelta(7))), #last week
+        make_option('-e', '--end', dest='end_date', default=str_from_date(TODAY)), 
         make_option('-l', '--lx', action='store_true', dest='lx', help='Run Lab Results Heuristics'),
         make_option('-d', '--diagnostics', action='store_true', dest='diagnostics', 
                           help='Run Diagnostics Heuristics'),
