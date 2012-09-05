@@ -144,6 +144,7 @@ class Diabetes(DiseaseDefinition):
                 threshold = Decimal(str(threshold)),
                 )
             heuristics.append(h)
+        
         #
         # Range Tests
         #
@@ -207,7 +208,23 @@ class Diabetes(DiseaseDefinition):
                 Icd9Query(starts_with = '250.', ends_with='2'),
                 ]
             ) )
-
+        #
+        # Cholesterol
+        #
+        for test_name in [
+            'cholesterol-hdl',
+            'cholesterol-ldl',
+            'cholesterol-total',
+            'triglycerides',
+            ]:
+            heuristics.append( LabResultAnyHeuristic(
+                test_name = test_name,
+                date_field = 'result',
+                ) )
+            heuristics.append( LabResultPositiveHeuristic(
+                test_name = test_name,
+                date_field = 'result',
+                ) )
 
         #
         # Prescriptions
@@ -819,7 +836,6 @@ class GestationalDiabetesReport(Report):
         ]
     
     def __init__(self):
-        self.pos_q = Q(name__endswith=':positive')
         self.a1c_q = Q(name__startswith='lx:a1c')
         
         #ob fasting glucose positive 
@@ -987,10 +1003,7 @@ class GestationalDiabetesReport(Report):
         #
         patient_values['pregnancy'] = 0
         if preg_ts_qs:
-            for preg_timespan in preg_ts_qs:
-                if not preg_timespan.end_date:
-                    patient_values['pregnancy'] = 1
-                    break
+            patient_values['pregnancy'] = 1
              
             
         if not preg_ts_qs:
@@ -1245,7 +1258,7 @@ class GestationalDiabetesReport(Report):
             late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max']
             
             pp_a1c = a1c_lab_qs.filter(Q(result_float__gte =6.5) | Q(
-                date__gt = end_date) )
+                date__gt = end_date) ).order_by('date')
             
             if pp_a1c:
                 pp_a1c_date = pp_a1c[0].date
@@ -1292,7 +1305,7 @@ class GestationalDiabetesReport(Report):
             ogtt50_ref_high = self.lab_minmaxdate(intrapartum_labs.filter( result_float__gte =
                 F('ref_high_float') ),'ogtt50',False)  
             
-            obfastingglucose_positive = event_qs.filter(self.obglucosefasting_q) | intrapartum.filter(self.glucosefasting_q)
+            obfastingglucose_positive = event_qs.filter(self.obglucosefasting_q) | intrapartum.filter(self.glucosefasting_q) | intrapartum.filter(self.ogttfasting_high_q)
               
             ip_ogtt50_1hr_value  = self.lab_minmaxdate(intrapartum_labs,'ogtt50-1hr',False)   
             #ip_ogtt50_1hr_value = intrapartum.filter(self.ogtt50_1hr_q).aggregate( max=Max('labresult__result_float') )['max']
@@ -1347,14 +1360,14 @@ class GestationalDiabetesReport(Report):
                 )  
                         
             pp_fastingglucose_high = anypostpartum.filter(self.glucosefasting_q | Q(labresult__result_float__gte =126) ) | anypostpartum.filter(
-                 self.obglucosefasting_q | Q(labresult__result_float__gte =126))
+                 self.ogttfasting_high_q | Q(labresult__result_float__gte =126)).order_by('date')
             
             if pp_fastingglucose_high:
                 pp_fastingglucose_high_date = pp_fastingglucose_high[0].date
             else:
                 pp_fastingglucose_high_date = None  
                 
-            pp_randomglucose_high = anypostpartum.filter(self.glucose_random_q | Q(labresult__result_float__gt =200) )
+            pp_randomglucose_high = anypostpartum.filter(self.glucose_random_q | Q(labresult__result_float__gt =200) ).order_by('date')
             
             if pp_randomglucose_high:
                 pp_randomglucose_high_date1 = pp_fastingglucose_high[0].date
@@ -1380,7 +1393,7 @@ class GestationalDiabetesReport(Report):
                 'prior_gdm_case': binary( gdm_prior ),
                 'prior_gdm_case_date': gdm_prior_date,
                 'gdm_icd9_this_preg': binary( intrapartum.filter(self.dxgdm_q) ),
-                'prior_gdm_icd9_this_preg': binary( prepartum.filter(self.dxgdm_q) ),
+                'prior_gdm_icd9_this_preg': binary( prior_gdm_prior_this_preg ),
                 'prior_gdm_icd9_this_preg_date': prior_gdm_prior_this_preg_date, 
                 'prior_polycystic' : binary( prior_polycystic_twice), #added 
                 'prior_pre_eclampsia' : binary(prior_pre_eclampsia_twice),#added 
