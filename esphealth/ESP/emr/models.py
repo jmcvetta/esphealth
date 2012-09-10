@@ -244,6 +244,7 @@ class Patient(BaseMedicalRecord):
     date_of_death = models.DateField('Date of death', blank=True, null=True)
     gender = models.CharField('Gender', max_length=20, blank=True, null=True, db_index=True)
     race = models.CharField('Race', max_length=100, blank=True, null=True, db_index=True)
+    ethnicity = models.CharField('Ethnicity', max_length=100, blank=True, null=True, db_index=True)
     home_language = models.CharField('Home Language', max_length=128, blank=True, null=True)
     ssn = models.CharField('SSN', max_length=20, blank=True, null=True)
     marital_stat = models.CharField('Marital Status', max_length=20, blank=True, null=True)
@@ -308,6 +309,7 @@ class Patient(BaseMedicalRecord):
             date_of_birth=randomizer.date_of_birth(as_string=False),
             gender=randomizer.gender(),
             race=randomizer.race(),
+            ethnicity = randomizer.ethnicity(),
             areacode=phone_number.split('-')[0],
             tel=phone_number[4:],
             tel_ext='',
