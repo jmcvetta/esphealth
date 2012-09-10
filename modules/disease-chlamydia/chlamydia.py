@@ -28,7 +28,7 @@ class Chlamydia(SinglePositiveTestDiseaseDefinition):
     
     short_name = 'chlamydia'
     
-    test_name_search_strings = ['chlam',]
+    test_name_search_strings = ['chlam','trac']
     
     test_names = ['chlamydia']
     
