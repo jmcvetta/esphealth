@@ -538,6 +538,7 @@ class PatientLoader(BaseLoader):
         'mother_mrn',
         'date_of_death',
         'center_id',
+        'ethnicity',
         ]
     
     def load_row(self, row):       
@@ -573,6 +574,7 @@ class PatientLoader(BaseLoader):
         'aliases' : self.string_or_none(row['aliases']),
         'mother_mrn' : row['mother_mrn'],
         'center_id' : row['center_id'],
+        'ethnicity' :self.string_or_none(row['ethnicity']),
         }
         p, created = self.insert_or_update(Patient, values, ['natural_key'])
         
