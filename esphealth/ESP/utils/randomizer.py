@@ -48,7 +48,9 @@ def marital_status():
 
 def race():
     return random.choice(common.RACES)
-    
+
+def ethnicity():
+    return random.choice(common.ETHNICITY)
 
 def phone_number():
     area_code = '555'

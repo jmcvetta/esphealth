@@ -14,8 +14,9 @@ LAST_NAMES = ['Xb', 'Xbal', 'Xbalidocious']
 
 SITES = ['Brookline Ave', 'West Roxbury', 'Matapan', 'Sydney', 'Kansas']
 MARITAL_STATUS = ['Single', 'Married', 'Widowed', 'Divorced']
-RACES = ['Caucasian', 'Black', 'Asian', 'Hispanic', 'Indian', 
-         'Native American', 'Alaskan', 'Other']
+RACES = ['White', 'Black', 'Asian', 'Hispanic', 'Indian', 
+         'Native American', 'Alaskan', 'Other','Native Hawaiians','Multiracial']
+ETHNICITY = ['Non-Hispanic','Hispanic' ]
 STATES = ['MA', 'RI', 'NY', 'CT', 'ME']
 
 CITIES = [ 
