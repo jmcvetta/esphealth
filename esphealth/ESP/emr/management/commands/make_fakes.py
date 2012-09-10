@@ -50,7 +50,7 @@ from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
 from ESP.emr.management.commands.load_epic import LoadException, UPDATED_BY
 
 #change patient generations here
-POPULATION_SIZE = 100
+POPULATION_SIZE = 1
 
 # if min and <item>per_patient are >0 and same it will generate that amount
 # if min < than <item>per_patient it will generate a random number of object in that range
@@ -193,6 +193,7 @@ class PatientWriter(EpicWriter):
         'mother_mrn',
         'date_of_death',
         'center_id',
+        'ethnicity',
         ]
     
     def write_row(self, patient):
@@ -229,6 +230,7 @@ class PatientWriter(EpicWriter):
         row['aliases'] = patient.aliases
         row['mother_mrn'] = patient.mother_mrn
         row['center_id'] = patient.center_id
+        row['ethnicity'] = patient.ethnicity 
 
         self.writer.writerow(row)   
 
