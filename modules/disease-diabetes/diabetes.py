@@ -840,28 +840,31 @@ class GestationalDiabetesReport(Report):
     def __init__(self):
         self.a1c_q = Q(name__startswith='lx:a1c')
         
+        self.ref_high_gte90_q = Q(labresult__ref_high_float__gte = 90 )
+        self.ref_high_lte99_q = Q(labresult__ref_high_float__lte = 99 ) 
+        
         #ob fasting glucose positive 
-        self.obglucosefasting_q = Q (name__in = [
+        self.obglucosefasting_q = Q(name__in = [
             'lx:ogtt50-fasting:threshold:gte:126', 
-            'lx:ogtt100-fasting:threshold:gte:126', ])| Q(labresult__ref_high_float__gte = 
-             90 )| Q(labresult__ref_high_float__lte = 99 ) 
+            'lx:ogtt100-fasting:threshold:gte:126', ])
         
         # fasting glucose high threshold. 
-        self.ogttfasting_high_q =   (Q (name__in = [
+        self.ogttfasting_high_q =   Q(name__in = [
             'lx:ogtt50-fasting:threshold:gte:126', 
             'lx:ogtt100-fasting:threshold:gte:126',
-            'lx:ogtt75-fasting:threshold:gte:126', ]) | Q(labresult__ref_high_float__gte = 
-             90 )| Q(labresult__ref_high_float__lte = 99 ) ) 
+            'lx:ogtt75-fasting:threshold:gte:126', ]) 
              
-        self.glucosefasting_q =  Q (name__in = ['lx:glucose-fasting:threshold:gte:126', ])   
+        self.glucosefasting_q =  Q(name__in = ['lx:glucose-fasting:threshold:gte:126', ])   
            
         self.ogtt50_q = Q(name__startswith='lx:ogtt50')
+        
         
         self.ogtt50_gdm_threshold_q = Q(name__in = [
             'lx:ogtt50-1hr:threshold:gte:190',
             'lx:ogtt50-random:threshold:gte:190',
             ])
-        self.ogtt50_ref_high_q = self.ogtt50_q | Q(labresult__result_float__gte =
+        
+        self.ogtt50_ref_high_q = self.ogtt50_q , Q(labresult__result_float__gte =
             F('labresult__ref_high_float') )
         
         #self.ogtt50_1hr_q = Q(name__startswith='lx:ogtt50-1hr')
@@ -943,14 +946,13 @@ class GestationalDiabetesReport(Report):
     
     def lab_minmaxdate (self, lab_qs, lab_name, all=True):
         
-        labs_qs = AbstractLabTest(lab_name).lab_results
-        #lab_codes = LabTestMap.objects.filter(test_name__icontains=lab_name).values('native_code')
-        #lab_qs = lab_qs.filter( native_code__in=lab_codes)
+        testmaps = LabTestMap.objects.filter(test_name = lab_name).filter( Q(record_type='result') | Q(record_type='both') )
+        lab_qs = lab_qs.filter(native_code__in=testmaps.values('native_code'))
         
         lab_max_value = None
         lab_min_value = None
-        lab_max_date  =None
-        lab_min_date =None
+        lab_max_date  = None
+        lab_min_date  = None
                 
         if lab_qs:
             lab_max = lab_qs.order_by('-result_float')[0]# .aggregate( max=Max('labresult__result_float') )['max']
@@ -1196,7 +1198,7 @@ class GestationalDiabetesReport(Report):
                 ga_gdm_met = ga_gdm_met.days
             else:
                 gdm_date = None
-                ga_gdm_met = 0
+                ga_gdm_met = None
                
             pre_eclampsia_icd9s = ['642.4','642.5','642.6','642.7']
             pre_eclampsia = Encounter.objects.filter(
@@ -1259,7 +1261,7 @@ class GestationalDiabetesReport(Report):
             early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate( max=Max('result_float') )['max']
             late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max']
             
-            pp_a1c = a1c_lab_qs.filter(Q(result_float__gte =6.5) | Q(
+            pp_a1c = a1c_lab_qs.filter(Q(result_float__gte =6.5) , Q(
                 date__gt = end_date) ).order_by('date')
             
             if pp_a1c:
@@ -1296,7 +1298,7 @@ class GestationalDiabetesReport(Report):
                             break
                         
             else:
-                ga_1st_insulin =0
+                ga_1st_insulin =None
             
             intrapartum_labs = LabResult.objects.filter(
                 patient = patient,
@@ -1307,8 +1309,8 @@ class GestationalDiabetesReport(Report):
             ogtt50_ref_high = self.lab_minmaxdate(intrapartum_labs.filter( result_float__gte =
                 F('ref_high_float') ),'ogtt50',False)  
             
-            obfastingglucose_positive = event_qs.filter(self.obglucosefasting_q) | intrapartum.filter(self.glucosefasting_q) | intrapartum.filter(self.ogttfasting_high_q)
-              
+            obfastingglucose_positive = event_qs.filter(self.obglucosefasting_q ,self.ref_high_gte90_q , self.ref_high_lte99_q) | intrapartum.filter(self.glucosefasting_q) |  intrapartum.filter(self.ogttfasting_high_q ,self.ref_high_gte90_q , self.ref_high_lte99_q)
+                
             ip_ogtt50_1hr_value  = self.lab_minmaxdate(intrapartum_labs,'ogtt50-1hr',False)   
             #ip_ogtt50_1hr_value = intrapartum.filter(self.ogtt50_1hr_q).aggregate( max=Max('labresult__result_float') )['max']
             
@@ -1352,6 +1354,7 @@ class GestationalDiabetesReport(Report):
             'ogtt75-90min',
             'ogtt75-2hr',
             ]
+            
             ogtt75_lab_orders_qs = AbstractLabTest(ogtt75_labname[0]).lab_orders
             for test_name in ogtt75_labname:   
                 ogtt75_lab_orders_qs |= AbstractLabTest(test_name).lab_orders   
@@ -1368,20 +1371,20 @@ class GestationalDiabetesReport(Report):
                     pp_ogtt75_any_result = 1
                     break                     
             
-            pp_fastingglucose_high = anypostpartum.filter(self.glucosefasting_q | Q(labresult__result_float__gte =126) ) | anypostpartum.filter(
-                 self.ogttfasting_high_q | Q(labresult__result_float__gte =126)).order_by('date')
+            pp_fastingglucose_high = anypostpartum.filter(self.glucosefasting_q , Q(labresult__result_float__gte =126) ) | anypostpartum.filter(
+                 self.ogttfasting_high_q , Q(labresult__result_float__gte =126) , self.ref_high_gte90_q , self.ref_high_lte99_q).order_by('date')
             
             if pp_fastingglucose_high:
                 pp_fastingglucose_high_date = pp_fastingglucose_high[0].date
             else:
                 pp_fastingglucose_high_date = None  
                 
-            pp_randomglucose_high = anypostpartum.filter(self.glucose_random_q | Q(labresult__result_float__gt =200) ).order_by('date')
+            pp_randomglucose_high = anypostpartum.filter(self.glucose_random_q , Q(labresult__result_float__gt =200) ).order_by('date')
             
             if pp_randomglucose_high:
-                pp_randomglucose_high_date1 = pp_fastingglucose_high[0].date
+                pp_randomglucose_high_date1 = pp_randomglucose_high[0].date
                 if pp_randomglucose_high.count()>1:
-                    pp_randomglucose_high_date2 = pp_fastingglucose_high[1].date
+                    pp_randomglucose_high_date2 = pp_randomglucose_high[1].date
                 else:
                     pp_randomglucose_high_date2 = None
                 
