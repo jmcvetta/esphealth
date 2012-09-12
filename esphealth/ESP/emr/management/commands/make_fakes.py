@@ -32,11 +32,14 @@ import random
 from psycopg2 import Error as Psycopg2Error
 
 from django.db import transaction
+
 from ESP.emr.management.commands.common import LoaderCommand
 from dateutil.relativedelta import relativedelta
 
 from ESP.utils.utils import str_from_date
-from ESP.settings import DATA_DIR
+from ESP.settings import DATA_DIR, POPULATION_SIZE, MIN_ENCOUNTERS_PER_PATIENT ,ENCOUNTERS_PER_PATIENT ,MAXICD9 ,ICD9_CODE_PCT 
+from ESP.settings import MIN_LAB_TESTS_PER_PATIENT ,LAB_TESTS_PER_PATIENT ,MIN_LAB_ORDERS_PER_PATIENT ,LAB_ORDERS_PER_PATIENT ,MIN_MEDS_PER_PATIENT ,MEDS_PER_PATIENT 
+from ESP.settings import IMMUNIZATION_PCT, IMMUNIZATIONS_PER_PATIENT , MAX_PREGNANCIES ,CURRENTLY_PREG_PCT ,MAX_ALLERGIES ,MAX_PROBLEMS ,MAX_SOCIALHISTORY 
 from ESP.settings import DATE_FORMAT
 from ESP.utils.utils import log
 from ESP.utils.utils import date_from_str, Profiler
@@ -49,34 +52,7 @@ from ESP.emr.models import SocialHistory, Problem, Allergy,Immunization
 from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
 from ESP.emr.management.commands.load_epic import LoadException, UPDATED_BY
 
-#change patient generations here
-POPULATION_SIZE = 1
 
-# if min and <item>per_patient are >0 and same it will generate that amount
-# if min < than <item>per_patient it will generate a random number of object in that range
-MIN_ENCOUNTERS_PER_PATIENT = 1
-ENCOUNTERS_PER_PATIENT = 6
-#it will generate a % of encounters with random number of icd9s between 0 and maxicd9
-MAXICD9 = 4
-ICD9_CODE_PCT = 80
-
-MIN_LAB_TESTS_PER_PATIENT = 1
-LAB_TESTS_PER_PATIENT = 5
-
-MIN_LAB_ORDERS_PER_PATIENT = 1
-LAB_ORDERS_PER_PATIENT = 3
-
-MIN_MEDS_PER_PATIENT = 1
-MEDS_PER_PATIENT = 4
-
-IMMUNIZATION_PCT = 1
-
-MAX_PREGNANCIES = 6
-CURRENTLY_PREG_PCT = .5
-
-MAX_ALLERGIES = 1
-MAX_PROBLEMS = 1
-MAX_SOCIALHISTORY = 1
 # below are not used
 CHLAMYDIA_LX_PCT = 20
 CHLAMYDIA_INFECTION_PCT = 15
@@ -673,9 +649,9 @@ class Command(LoaderCommand):
                         prescription_writer.write_row(Prescription.make_mock(p))
                               
             if random.random() <= float(IMMUNIZATION_PCT/100.0):
-                if ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT>0:
+                if IMMUNIZATIONS_PER_PATIENT>0:
                     history = ImmunizationHistory(p)
-                    for i in xrange(ImmunizationHistory.IMMUNIZATIONS_PER_PATIENT):
+                    for i in xrange(IMMUNIZATIONS_PER_PATIENT):
                         imm = history.add_immunization()
                         #check_for_reactions(imm) 
                         immunization_writer.write_row(imm)
