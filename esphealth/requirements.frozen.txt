@@ -5,19 +5,19 @@ coverage==3.5.1
 decorator==3.3.2
 django-nose==0.1.3
 django-tables==0.2
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-chlamydia@2973#egg=esphealth_disease_chlamydia-dev_r2973
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes@3221#egg=esphealth_disease_diabetes-dev_r3221
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-chlamydia@3794#egg=esphealth_disease_chlamydia-dev_r3794
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes@3795#egg=esphealth_disease_diabetes-dev_r3795
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-giardiasis@3313#egg=esphealth_disease_giardiasis-dev_r3313
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-gonorrhea@2898#egg=esphealth_disease_gonorrhea-dev_r2898
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-combined@3295#egg=esphealth_disease_hepatitis_combined-dev_r3295
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-lyme@3329#egg=esphealth_disease_lyme-dev_r3329
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-combined@3748#egg=esphealth_disease_hepatitis_combined-dev_r3748
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-lyme@3757#egg=esphealth_disease_lyme-dev_r3757
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pelvic-inflammatory-disease@3355#egg=esphealth_disease_pelvic_inflammatory_disease-dev_r3355
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pertussis@3325#egg=esphealth_disease_pertussis-dev_r3325
--e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-syphilis@3229#egg=esphealth_disease_syphilis-dev_r3229
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pertussis@3747#egg=esphealth_disease_pertussis-dev_r3747
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-syphilis@3743#egg=esphealth_disease_syphilis-dev_r3743
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-tuberculosis@3331#egg=esphealth_disease_tuberculosis-dev_r3331
--e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-glucose-crf@2915#egg=esphealth_heuristic_glucose_crf-dev_r2915
--e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-pregnancy@3226#egg=esphealth_heuristic_pregnancy-dev_r3226
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/esphealth-encountertypemap-metrohealth@3545#egg=esphealth_encountertypemap_metrohealth-dev_r3545
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-glucose-crf@2915#egg=esphealth_heuristic_glucose_crf-dev_r2915
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-pregnancy@3731#egg=esphealth_heuristic_pregnancy-dev_r3731
 futures==2.1.2
 hl7==0.2.3
 ipython==0.12
