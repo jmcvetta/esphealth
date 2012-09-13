@@ -1224,16 +1224,16 @@ class GestationalDiabetesReport(Report):
             polycystic_icd9 = '256.4'
             prior_polycystic_twice = prior_encounter.filter(
                 icd9_codes__code = polycystic_icd9 
-                ).annotate(count=Count('pk')).filter(count__gte=2)
+                ).values('patient').annotate(count=Count('pk')).filter(count__gte=2)
              
             prior_pre_eclampsia_twice = prior_encounter.filter(
                 icd9_codes__code__in=pre_eclampsia_icd9s 
-                ).annotate(count=Count('pk')).filter(count__gte=2)
+                ).values('patient').annotate(count=Count('pk')).filter(count__gte=2)
              
             history_hypertension = '401'#outside pregnancy
             prior_hypertension_twice = prior_encounter.filter(
                 icd9_codes__code__startswith= history_hypertension 
-                ).annotate(count=Count('pk')).filter(count__gte=2)
+                ).values('patient').annotate(count=Count('pk')).filter(count__gte=2)
                 
             liver_fatty_disease_icd9s = ['571.0', '571.8' ]
             prior_liver_fatty_disease =  prior_encounter.filter(
@@ -1306,6 +1306,7 @@ class GestationalDiabetesReport(Report):
                 date__lte = end_date,
                 )
             
+            #TODO create a ogtt50 names if not above, loop through them to add to qs
             ogtt50_ref_high = self.lab_minmaxdate(intrapartum_labs.filter( result_float__gte =
                 F('ref_high_float') ),'ogtt50',False)  
             
@@ -1332,7 +1333,7 @@ class GestationalDiabetesReport(Report):
             ip_ogtt100_3hr_value =  self.lab_minmaxdate(intrapartum_labs,'ogtt100-3hr',False) 
             #intrapartum.filter(self.ogtt100_3hr_q).aggregate( max=Max('labresult__result_float') )['max']
             
-            ip_glucose_random_value =  self.lab_minmaxdate(intrapartum_labs,'glucose_random',False) 
+            ip_glucose_random_value =  self.lab_minmaxdate(intrapartum_labs,'glucose-random',False) 
             #intrapartum.filter(self.glucose_random_q).aggregate( max=Max('labresult__result_float') )['max']
             
             postpartum_labs = LabResult.objects.filter(
@@ -1341,23 +1342,21 @@ class GestationalDiabetesReport(Report):
                 date__lte = end_date + relativedelta(days=120),
                 )
             
-            pp_ogtt75_fasting_value =   self.lab_minmaxdate(postpartum_labs,'ogtt75_fasting',False) 
+            pp_ogtt75_fasting_value =   self.lab_minmaxdate(postpartum_labs,'ogtt75-fasting',False) 
             
-            pp_ogtt75_2hr_value =   self.lab_minmaxdate(postpartum_labs,'ogtt75_2hr',False) 
+            pp_ogtt75_2hr_value =   self.lab_minmaxdate(postpartum_labs,'ogtt75-2hr',False) 
             
             ogtt75_labname = [
-             # Complete OGTT75 series
-            'ogtt75-fasting',
-            'ogtt75-fasting-urine',
-            'ogtt75-30min',
-            'ogtt75-1hr',
-            'ogtt75-90min',
-            'ogtt75-2hr',
+                 # Complete OGTT75 series
+                'ogtt75-fasting',
+                'ogtt75-fasting-urine',
+                'ogtt75-30min',
+                'ogtt75-1hr',
+                'ogtt75-90min',
+                'ogtt75-2hr',
             ]
             
-            ogtt75_lab_orders_qs = AbstractLabTest(ogtt75_labname[0]).lab_orders
-            for test_name in ogtt75_labname:   
-                ogtt75_lab_orders_qs |= AbstractLabTest(test_name).lab_orders   
+            ogtt75_lab_orders_qs = AbstractLabTest('ogtt75-order').lab_orders
                  
             pp_ogtt75_order = ogtt75_lab_orders_qs.filter(
                 patient = patient,
