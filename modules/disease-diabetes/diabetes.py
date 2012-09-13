@@ -1306,9 +1306,18 @@ class GestationalDiabetesReport(Report):
                 date__lte = end_date,
                 )
             
-            #TODO create a ogtt50 names if not above, loop through them to add to qs
-            ogtt50_ref_high = self.lab_minmaxdate(intrapartum_labs.filter( result_float__gte =
-                F('ref_high_float') ),'ogtt50',False)  
+            ogtt50_labname = [
+                 # Complete OGTT50 series
+                'ogtt50-random',
+                'ogtt50-fasting',
+                'ogtt50-1hr',
+            ]
+            ogtt50_ref_high =0
+            for test_name in ogtt50_labname:
+                if self.lab_minmaxdate(intrapartum_labs.filter( result_float__gte =
+                F('ref_high_float') ),test_name,False):
+                    ogtt50_ref_high = 1
+                    break  
             
             obfastingglucose_positive = event_qs.filter(self.obglucosefasting_q ,self.ref_high_gte90_q , self.ref_high_lte99_q) | intrapartum.filter(self.glucosefasting_q) |  intrapartum.filter(self.ogttfasting_high_q ,self.ref_high_gte90_q , self.ref_high_lte99_q)
                 
