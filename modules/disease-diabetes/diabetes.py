@@ -338,10 +338,11 @@ class Diabetes(DiseaseDefinition):
         ]
     __FRANK_DM_ALL = __FRANK_DM_ONCE + __FRANK_DM_TWICE
     __AUTO_ANTIBODIES_LABS = [
-        'lx:ica512', #threshold
-        'lx:gad65', #threshold
-        'lx:islet-cell-antibody', # is a positive and threshold
-        'lx:insulin-antibody' 
+        'lx:ica512:threshold:gt:0.8', #threshold
+        'lx:gad65:threshold:gt:1', #threshold
+        'lx:islet-cell-antibody:positive', # is a positive and threshold
+        'lx:islet-cell-antibody:threshold:gte:1.25',
+        'lx:insulin-antibody:threshold:gt:0.8' 
         ]
     
     def generate_frank_diabetes(self):
@@ -445,16 +446,8 @@ class Diabetes(DiseaseDefinition):
         # 2. Diabetes auto-antibodies positive
         #
         #-------------------------------------------------------------------------------
-        pos_aa_event_types = ['%s:positive' % i for i in self.__AUTO_ANTIBODIES_LABS]
-        #pos_aa_event_types = 'lx:islet-cell-antibody:positive'
-        #thres_ica512_event_types = 'lx:ica512:threshold:gt:0.8'
-        #TODO add these others. 
-        #'lx:gad65', #threshold
-        #'lx:islet-cell-antibody', # is a positive and threshold
-        #'lx:insulin-antibody' 
-        #aa_event_types = pos_aa_event_types + thres_aa_event_types
         
-        aa_pos = patient_event_qs.filter(name__in=pos_aa_event_types).order_by('date')
+        aa_pos = patient_event_qs.filter(name__in=self.__AUTO_ANTIBODIES_LABS).order_by('date')
         if aa_pos:
             provider = aa_pos[0].provider
             case_date = aa_pos[0].date
@@ -1200,12 +1193,15 @@ class GestationalDiabetesReport(Report):
                 gdm_date = None
                 ga_gdm_met = None
                
-            pre_eclampsia_icd9s = ['642.4','642.5','642.6','642.7']
+            pre_eclampsia_icd9s = ['642.4','642.40','642.41','642.42','642.43','642.44',
+                                   '642.5','642.50','642.51','642.52','642.53','642.54',
+                                   '642.6','642.60','642.61','642.62','642.63','642.64',
+                                   '642.7','642.70','642.71','642.72','642.73','642.74']
             pre_eclampsia = Encounter.objects.filter(
                 patient = patient,
                 date__gte = preg_ts.start_date,
                 date__lte = end_date + relativedelta(days=30),
-                icd9_codes__code__in=pre_eclampsia_icd9s 
+                icd9_codes__code__in = pre_eclampsia_icd9s 
                 )
            
             hypertension_inpreg_icd9s = ['642.3','642.9']
@@ -1273,7 +1269,7 @@ class GestationalDiabetesReport(Report):
             # TODO values('date').\ or in the values list. have it within one calendar day
                 
             ogtt100_twice_qs = intrapartum.filter(self.ogtt100_threshold_q).\
-                values('patient').annotate(count=Count('pk')).\
+                values('patient', 'date').annotate(count=Count('pk')).\
                 filter(count__gte=2).values_list('patient', flat=True).distinct()
                 
             insulin_qs = intrapartum.filter(name ='rx:insulin').order_by('date')
