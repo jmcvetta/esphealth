@@ -36,11 +36,11 @@ echo
 case $_os in
     "Ubuntu 11.10" | "Ubuntu 12.04 LTS" | "Ubuntu 12.04.1 LTS" )
         _pkg_manager='apt'
-        _pkg_list="python-virtualenv python-pip python-setuptools python-dev libpq-dev postgresql-client postgresql-9.1 postgresql-server-dev-9.1"
+        _pkg_list="python-virtualenv python-pip python-setuptools python-dev libpq-dev postgresql-client postgresql-9.1 postgresql-server-dev-9.1 subversion"
         ;;
     "Ubuntu 10.04.4 LTS" | "Ubuntu 11.04" )
         _pkg_manager='apt'
-        _pkg_list="python-virtualenv python-pip python-setuptools python-dev libpq-dev"
+        _pkg_list="python-virtualenv python-pip python-setuptools python-dev libpq-dev subversion"
         ;;
 esac
 
