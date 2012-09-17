@@ -463,35 +463,32 @@ TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 #
 HEF_THREAD_COUNT = config['HEF']['thread_count']
 
-#--- MAKEFAKES 
-POPULATION_SIZE = config['MAKEFAKES']['POPULATION_SIZE']
+#--- Make Fakes 
+POPULATION_SIZE = config['Make_Fakes']['population_size']
 
-# if min and <item>per_patient are >0 and same it will generate that amount
-# if min < than <item>per_patient it will generate a random number of object in that range
-MIN_ENCOUNTERS_PER_PATIENT = config['MAKEFAKES']['MIN_ENCOUNTERS_PER_PATIENT']
-ENCOUNTERS_PER_PATIENT = config['MAKEFAKES']['ENCOUNTERS_PER_PATIENT']
+MIN_ENCOUNTERS_PER_PATIENT = config['Make_Fakes']['min_encounters_per_patient']
+ENCOUNTERS_PER_PATIENT = config['Make_Fakes']['encounters_per_patient']
 
-#it will generate a % of encounters with random number of icd9s between 0 and maxicd9
-MAXICD9 = config['MAKEFAKES']['MAXICD9']
-ICD9_CODE_PCT = config['MAKEFAKES']['ICD9_CODE_PCT']
+MAXICD9 = config['Make_Fakes']['maxicd9']
+ICD9_CODE_PCT = config['Make_Fakes']['icd9_code_pct']
 
-MIN_LAB_TESTS_PER_PATIENT = config['MAKEFAKES']['MIN_LAB_TESTS_PER_PATIENT']
-LAB_TESTS_PER_PATIENT = config['MAKEFAKES']['LAB_TESTS_PER_PATIENT']
+MIN_LAB_TESTS_PER_PATIENT = config['Make_Fakes']['min_lab_tests_per_patient']
+LAB_TESTS_PER_PATIENT = config['Make_Fakes']['lab_tests_per_patient']
 
-MIN_LAB_ORDERS_PER_PATIENT = config['MAKEFAKES']['MIN_LAB_ORDERS_PER_PATIENT']
-LAB_ORDERS_PER_PATIENT = config['MAKEFAKES']['LAB_ORDERS_PER_PATIENT']
+MIN_LAB_ORDERS_PER_PATIENT = config['Make_Fakes']['min_lab_orders_per_patient']
+LAB_ORDERS_PER_PATIENT = config['Make_Fakes']['lab_orders_per_patient']
 
-MIN_MEDS_PER_PATIENT = config['MAKEFAKES']['MIN_MEDS_PER_PATIENT']
-MEDS_PER_PATIENT = config['MAKEFAKES']['MEDS_PER_PATIENT']
+MIN_MEDS_PER_PATIENT = config['Make_Fakes']['min_meds_per_patient']
+MEDS_PER_PATIENT = config['Make_Fakes']['meds_per_patient']
 
-IMMUNIZATION_PCT = config['MAKEFAKES']['IMMUNIZATION_PCT']
-IMMUNIZATIONS_PER_PATIENT = config['MAKEFAKES']['IMMUNIZATIONS_PER_PATIENT']
+IMMUNIZATION_PCT = config['Make_Fakes']['immunization_pct']
+IMMUNIZATIONS_PER_PATIENT = config['Make_Fakes']['immunizations_per_patient']
 
-MAX_PREGNANCIES = config['MAKEFAKES']['MAX_PREGNANCIES']
-CURRENTLY_PREG_PCT = config['MAKEFAKES']['CURRENTLY_PREG_PCT']
+MAX_PREGNANCIES = config['Make_Fakes']['max_pregnancies']
+CURRENTLY_PREG_PCT = config['Make_Fakes']['currently_preg_pct']
 
-MAX_ALLERGIES = config['MAKEFAKES']['MAX_ALLERGIES']
-MAX_PROBLEMS = config['MAKEFAKES']['MAX_PROBLEMS']
-MAX_SOCIALHISTORY = config['MAKEFAKES']['MAX_SOCIALHISTORY']
+MAX_ALLERGIES = config['Make_Fakes']['max_allergies']
+MAX_PROBLEMS = config['Make_Fakes']['max_problems']
+MAX_SOCIALHISTORY = config['Make_Fakes']['max_socialhistory']
 
 
