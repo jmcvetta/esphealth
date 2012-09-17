@@ -1212,11 +1212,13 @@ class GestationalDiabetesReport(Report):
                 icd9_codes__code__in=hypertension_inpreg_icd9s 
                 )
             
+            # there is a relationship between the order by and the distinct clause
+            # needed to force the order by because date is included in the meta of encounter
+            # for default ordering
             prior_encounter = Encounter.objects.filter(
                 patient = patient,
                 date__lte = preg_ts.start_date
             ).order_by('patient')
-
                 
             polycystic_icd9 = '256.4'
             prior_polycystic_twice = prior_encounter.filter(
@@ -1266,13 +1268,11 @@ class GestationalDiabetesReport(Report):
             else:
                 pp_a1c_date = None
             
-            # TODO  check if they were for a single lab order or on the same order date
-            # TODO values('date').\ or in the values list. have it within one calendar day
-                
+            #  groping by patient and date for two events within the same day                
             ogtt100_twice_qs = intrapartum.filter(self.ogtt100_threshold_q).\
                 values('patient', 'date').annotate(count=Count('pk')).\
                 filter(count__gte=2).values_list('patient', flat=True).distinct()
-                
+                    
             insulin_qs = intrapartum.filter(name ='rx:insulin').order_by('date')
             basal = ['NPH','Humulin N','Lantus','Glargine' ]
             bolus = ['Novolog','Aspart','Humalog','Lispro','Regular insulin','Humulin R']
