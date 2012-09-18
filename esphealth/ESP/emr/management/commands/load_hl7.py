@@ -54,7 +54,7 @@ from ESP.emr.models import Immunization
 from ESP.emr.models import Provenance
 from ESP.emr.choices import LOAD_STATUS
 from ESP.utils.utils import log
-from ESP.utils.utils import str_from_date, date_from_str
+from ESP.utils.utils import str_from_date, date_from_str,float_or_none
 
 #
 # Populate tables in old schema (Demog, Lx, Rx, etc)?
@@ -121,20 +121,6 @@ class Hl7MessageLoader(object):
         self.options = options
         self.filepath = filepath
         self.basename = os.path.basename(filepath)
-        
-    float_catcher = re.compile(r'(\d+\.?\d*)') 
-    
-    def float_or_none(self, string):
-        if not string:
-            return None
-        m = self.float_catcher.match(string)
-        if m and m.groups():
-            result = float(m.groups()[0])
-        else:
-            result = None
-        if result == float('infinity'): # Rare edge case, but it does happen
-            result = None
-        return result
     
     def date_or_none(self, string):
         try:
@@ -318,7 +304,7 @@ class Hl7MessageLoader(object):
             pre.name = name
             pre.directions = directions if directions else None
             pre.quantity = quantity if quantity else None
-            pre.quantity_float = self.float_or_none(quantity)
+            pre.quantity_float = float_or_none(quantity)
             pre.dose = dose if dose else None
             pre.frequency = frequency if frequency else None
             pre.route = route if route else None
@@ -413,11 +399,11 @@ class Hl7MessageLoader(object):
             result.native_code = native_code if native_code else None
             result.native_name = native_name if native_name else None
             result.result_string = result_string if result_string else None
-            result.result_float = self.float_or_none(result_string)
+            result.result_float = float_or_none(result_string)
             result.ref_low_string = ref_low_string if ref_low_string else None
             result.ref_high_string = ref_high_string if ref_high_string else None
-            result.ref_low_float = self.float_or_none(ref_low_string)
-            result.ref_high_float = self.float_or_none(ref_high_string)
+            result.ref_low_float = float_or_none(ref_low_string)
+            result.ref_high_float = float_or_none(ref_high_string)
             result.ref_unit = ref_unit if ref_unit else None
             #result.ref_range = ref_range if ref_range else None
             result.abnormal_flag = abnormal_flag if abnormal_flag else None

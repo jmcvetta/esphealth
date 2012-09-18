@@ -17,6 +17,7 @@ from optparse import make_option
 from ESP.emr.models import LabResult
 from ESP.emr.models import Prescription
 from ESP.utils.utils import log_query
+from ESP.utils import float_or_none
 
 
     
@@ -28,18 +29,6 @@ class Command(BaseCommand):
     def handle(self, *fixture_labels, **options):
         self.check_labs()
         self.check_prescriptions()
-
-    FLOAT_CATCHER = re.compile(r'(\d+\.?\d*)') 
-    
-    def float_or_none(self, string):
-        '''
-        Copied from load_epic.py
-        '''
-        m = self.FLOAT_CATCHER.match(str(string))
-        if m and m.groups():
-            return float(m.groups()[0])
-        else:
-            return None
     
     @transaction.commit_manually
     def check_labs(self):
@@ -54,9 +43,9 @@ class Command(BaseCommand):
         for lab in qs.iterator():
             i += 1
             sid = transaction.savepoint()
-            lab.ref_high_float = self.float_or_none(lab.ref_high_string)
-            lab.ref_low_float = self.float_or_none(lab.ref_low_string)
-            lab.result_float = self.float_or_none(lab.result_string)
+            lab.ref_high_float = float_or_none(lab.ref_high_string)
+            lab.ref_low_float = float_or_none(lab.ref_low_string)
+            lab.result_float = float_or_none(lab.result_string)
             try:
                 lab.save()
                 #transaction.savepoint_commit(sid)
@@ -75,7 +64,7 @@ class Command(BaseCommand):
         for rx in qs:
             i += 1
             sid = transaction.savepoint()
-            rx.quantity_float = self.float_or_none(rx.quantity)
+            rx.quantity_float = float_or_none(rx.quantity)
             try:
                 rx.save()
                 #transaction.savepoint_commit(sid)

@@ -42,6 +42,7 @@ from ESP.settings import DEBUG
 from ESP.settings import ETL_MEDNAMEREVERSE
 from ESP.utils import log
 from ESP.utils import str_from_date
+from ESP.utils.utils import float_or_none
 from ESP.utils import date_from_str
 from ESP.utils import height_str_to_cm
 from ESP.utils import weight_str_to_kg
@@ -131,7 +132,7 @@ class LoadException(BaseException):
 
 class BaseLoader(object):
     
-    float_catcher = re.compile(r'(\d+\.?\d*)') 
+    
     
     #
     # Caching Note
@@ -245,18 +246,6 @@ class BaseLoader(object):
                 transaction.savepoint_rollback(sid)
                 log.debug('Record could not be saved')
         return obj, created
-        
-    def float_or_none(self, str):
-        if not str:
-            return None
-        m = self.float_catcher.match(str)
-        if m and m.groups():
-            result = float(m.groups()[0])
-        else:
-            result = None
-        if result == float('infinity'): # Rare edge case, but it does happen
-            result = None
-        return result
     
     def date_or_none(self, str):
         if not str:
@@ -666,11 +655,11 @@ class LabResultLoader(BaseLoader):
         'native_code' : native_code,
         'native_name' : self.string_or_none(row['component_name']),
         'result_string' : row['result_string'],
-        'result_float' : self.float_or_none(row['result_string']),
+        'result_float' : float_or_none(row['result_string']),
         'ref_low_string' : row['ref_low'],
         'ref_high_string' : row['ref_high'],
-        'ref_low_float' : self.float_or_none(row['ref_low']),
-        'ref_high_float' : self.float_or_none(row['ref_high']),
+        'ref_low_float' : float_or_none(row['ref_low']),
+        'ref_high_float' : float_or_none(row['ref_high']),
         'ref_unit' : self.string_or_none(row['unit']),
         'abnormal_flag' : row['normal_flag'],
         'status' : self.string_or_none(row['status']),
@@ -776,7 +765,7 @@ class EncounterLoader(BaseLoader):
         up = self.up
         son = self.string_or_none
         dton = self.date_or_none
-        flon = self.float_or_none
+        flon = float_or_none
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
             'natural_key': natural_key,
@@ -910,7 +899,7 @@ class PrescriptionLoader(BaseLoader):
         'directions' : directions,
         'code' : row['ndc'],
         'quantity' : row['quantity'],
-        'quantity_float' : self.float_or_none(row['quantity']),
+        'quantity_float' : float_or_none(row['quantity']),
         'refills' : refills,
         'start_date' : self.date_or_none(row['start_date']),
         'end_date' : self.date_or_none(row['end_date']),

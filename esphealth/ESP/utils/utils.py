@@ -201,7 +201,22 @@ def days_in_interval(begin_date, end_date):
 
     return days
 
-
+def float_or_none(str):
+    '''
+        returns none if it doesn't parse as a float number
+    '''
+    float_catcher = re.compile(r'(\d+\.?\d*)') 
+    if not str:
+        return None
+    m = float_catcher.match(str)
+    if m and m.groups():
+        result = float(m.groups()[0])
+    else:
+        result = None
+    if result == float('infinity'): # Rare edge case, but it does happen
+        result = None
+    return result
+    
                                                                         
 def date_from_str(timestamp):
     '''
@@ -260,7 +275,6 @@ def str_from_date(date):
     except ValueError: # ValueError: year=1898 is before 1900; the datetime strftime() methods require year >= 1900
         return datetime.date(1900,1,1).strftime('%Y%m%d')
         
-
 
 def native_code_from_cpt(cpt, compt):
     '''
