@@ -27,24 +27,25 @@ import pprint
 import shutil
 import codecs
 import string
+
 from decimal import Decimal
 import random
 from psycopg2 import Error as Psycopg2Error
-
 from django.db import transaction
+from django.db import IntegrityError
 
 from ESP.emr.management.commands.common import LoaderCommand
 from dateutil.relativedelta import relativedelta
 
-from ESP.utils.utils import str_from_date
-from ESP.settings import DATA_DIR, POPULATION_SIZE, MIN_ENCOUNTERS_PER_PATIENT ,ENCOUNTERS_PER_PATIENT ,MAXICD9 ,ICD9_CODE_PCT 
+from ESP.utils.utils import str_from_date, float_or_none
+from ESP.settings import DATA_DIR, LOAD_DRIVER_LABS, POPULATION_SIZE, MIN_ENCOUNTERS_PER_PATIENT ,ENCOUNTERS_PER_PATIENT ,MAXICD9 ,ICD9_CODE_PCT 
 from ESP.settings import MIN_LAB_TESTS_PER_PATIENT ,LAB_TESTS_PER_PATIENT ,MIN_LAB_ORDERS_PER_PATIENT ,LAB_ORDERS_PER_PATIENT ,MIN_MEDS_PER_PATIENT ,MEDS_PER_PATIENT 
 from ESP.settings import IMMUNIZATION_PCT, IMMUNIZATIONS_PER_PATIENT , MAX_PREGNANCIES ,CURRENTLY_PREG_PCT ,MAX_ALLERGIES ,MAX_PROBLEMS ,MAX_SOCIALHISTORY 
 from ESP.settings import DATE_FORMAT
 from ESP.utils.utils import log
 from ESP.utils.utils import date_from_str, Profiler
 from ESP.static.models import Icd9, Allergen, Loinc, FakeICD9s
-from ESP.emr.models import Provenance
+from ESP.emr.models import Provenance, FakeLabs
 from ESP.emr.models import EtlError
 from ESP.emr.models import Provider,Patient,LabResult, LabOrder
 from ESP.emr.models import Encounter,Prescription, Pregnancy
@@ -572,13 +573,126 @@ class PregnancyWriter(EpicWriter):
 
         self.writer.writerow(row)
 
+class Make_FakesDialect(csv.Dialect):
+    '''
+    Describe the usual properties of make fake driver table files.
+    
+    
+    '''
+    delimiter = ','
+    quotechar = '"'
+    doublequote = True
+    skipinitialspace = False
+    lineterminator = '\r\n'
+    quoting = csv.QUOTE_NONE
+csv.register_dialect("make_fakes", Make_FakesDialect)
+# Some  comments may be _long_, so we have to increase default csv module 
+# field limit size, lest it barf out for the whole file when it hits a single 
+# too-long comment.
+csv.field_size_limit(1000000000) # <-- arbitrary big number
+
 
 class Command(LoaderCommand):
     #
     # Parse command line options
     #
     help = 'Creates fake data and serializes it in text format, to be used by our Epic Loader.'
-
+    
+    def loadFakeLabsTable(self):
+        
+        fields = [  'fakelabs_id',
+                    'native_code' ,
+                    'native_name',
+                    'long_name' ,
+                    'test_sub_category' ,
+                    'loinc' ,
+                    'loinc_flag' ,
+                    'specimen_source' ,
+                    'units_ms' , 
+                    'conversion_factor' ,
+                    'units_std' ,
+                    'units' ,
+                    'px' ,
+                    'px_type',
+                    'datatype' ,
+                    'normal_low' ,
+                    'normal_high' ,
+                    'critical_low' ,
+                    'critical_high' ,
+                    'qual_orig' ,
+                    'qual_map' ,
+                    'cpt_code' ,
+                    'weight' ,
+                ]
+        
+        print 'deleting lab driver tables'
+        
+        FakeLabs.objects.all().delete()
+        
+        filepath = os.path.join(DATA_DIR, 'fakelabs.csv')
+               
+        assert os.path.isfile(filepath)
+        
+        file_handle = open(filepath)
+        reader = csv.DictReader(file_handle, fieldnames=fields, dialect='make_fakes')
+            
+        for row in reader:
+            
+            values = {
+                 
+                'fakelabs_id' :  row['fakelabs_id'],
+                'native_code' : row['native_code'],
+                'native_name' : row['native_name'],
+                'long_name'   : row['long_name'],
+                'test_sub_category' : row['test_sub_category'],
+                'loinc'      : row['loinc'],
+                'loinc_flag' : row['loinc_flag'],
+                'specimen_source' : row['specimen_source'],
+                'units_ms'   : row['units_ms'], 
+                'conversion_factor' :float_or_none(row['conversion_factor']),
+                'units_std'  : row['units_std'],
+                'units'      : row['units'],
+                'px'         : row['px'],
+                'px_type'    : row['px_type'],
+                'datatype'   : row['datatype'],
+                'normal_low' : float_or_none(row['normal_low']),
+                'normal_high' : float_or_none(row['normal_high']),
+                'critical_low' : float_or_none(row['critical_low']),
+                'critical_high' : float_or_none(row['critical_high']),
+                'qual_orig'   : row['qual_orig'],
+                'qual_map'    : row['qual_map'],
+                'cpt_code'    : row['cpt_code'],
+                'weight'      : float_or_none(row['weight']),
+                }
+        
+                # model, field_values, key_fields):
+            sid = transaction.savepoint()
+            try:
+                obj = FakeLabs(**values)
+                obj.save()
+                transaction.savepoint_commit(sid) # not terribly useful, since we already saved it above.
+                created = True
+            except IntegrityError:
+                transaction.savepoint_rollback(sid)
+            keys = {}
+            for field_name in ['fakelabs_id']:
+                keys[field_name] = values[field_name]
+                del values[field_name]
+                log.debug('Could not insert new %s with keys %s' % (FakeLabs, keys))
+                # We use get_or_create() rather than get(), to increase the likelihood
+                # of successful load in unforeseen circumstances
+                obj, created = FakeLabs.objects.get_or_create(defaults=values, **keys)
+                for field_name in values:
+                    setattr(obj, field_name, values[field_name])
+                try:
+                    # Last try
+                    obj.save()
+                except IntegrityError:
+                    transaction.savepoint_rollback(sid)
+                    log.debug('Record could not be saved')
+                
+        print 'Generating fake driver Labs'
+         
 
     def handle(self, *fixture_labels, **options):
 
@@ -598,8 +712,9 @@ class Command(LoaderCommand):
         social_history_writer = SocialHistoryWriter()
         countprg = 0
 
-        print 'Generating fake Patients, Labs, Encounters and Prescriptions, immunizations, prescription'
-                
+        if LOAD_DRIVER_LABS:
+            self.loadFakeLabsTable()
+               
         Provider.make_mocks(provider_writer)
         #TODO issue 331 add the header rows her for each writer
         # do a join of fields object by ^
