@@ -513,8 +513,6 @@ class Patient(BaseMedicalRecord):
         return u'%20s %s' % (self.pk, self.name)
 
     
-
-
 #===============================================================================
 #
 #--- ~~~ Patient Records ~~~
@@ -658,7 +656,7 @@ class LabResult(BasePatientRecord):
         
         lx.native_name = msLabs.native_name
         lx.collection_date = order_date
-        lx.status = 'Final'
+        lx.status =  random.choice(['E', 'S','R','U'])
         #lx.result_num = this is result id not in epic ignore
         #lx.ref_high_string = ignore  not included in etl epic care
         #lx.ref_low_string = ignore
