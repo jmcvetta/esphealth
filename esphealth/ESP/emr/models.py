@@ -614,17 +614,17 @@ class LabResult(BasePatientRecord):
     
     
     @staticmethod
-    def randomWeight(normal, high, low, chigh, clow, first=.3, second=.7, third=.2, fourth=.4):
+    def randomWeight(normal, high, low, chigh, clow, lowestcutoff=.1, lowcutoff=.3, highcutoff=.7, highestcutoff=.9 ):
         
         r = random.random()
-        if r <= third:
-            return random.choice(chigh)
-        elif r <= fourth:
+        if r <= lowestcutoff:
             return random.choice(clow)
-        elif r <= second:
-            return random.choice(high )
-        elif r <= first:
+        elif r <= lowcutoff:
             return random.choice(low )
+        elif r <= highcutoff:
+            return random.choice(high )
+        elif r <= highestcutoff:
+            return random.choice(chigh)
         else: 
             return random.choice(normal)
         
@@ -668,7 +668,7 @@ class LabResult(BasePatientRecord):
         if msLabs.datatype <> 'Qualitative':
             lx.abnormal_flag = LabResult.randomWeight(normal,high,low, chigh, clow)
             
-            # never generate abnormal now or critical low 
+            # never generate abnormal low or critical low 
             if lx.abnormal_flag in clow:
                 if msLabs.critical_low == -1:
                     lx.abnormal_flag = random.choice(low)
