@@ -730,6 +730,7 @@ class GestationalDiabetesReport(Report):
         'ethnicity',
         'zip_code',
         'bmi',
+        'bmi_date',
         'frank_diabetes_ever',
         'frank_diabetes_date',
         'frank_diabetes_type',#added
@@ -819,6 +820,10 @@ class GestationalDiabetesReport(Report):
         'postpartum_a1c_date',
         'early_postpartum_a1c_max_val',
         'late_postpartum_a1c_max_val',
+        'any_a1c_6_5',
+        'any_a1c_6_5_date',
+        'any_a1c_5_7',
+        'any_a1c_5_7_date',
         'referral_to_nutrition',
         'lancets_test_strips_this_preg',
         'lancets_test_strips_14_days_gdm_icd9',
@@ -1106,10 +1111,13 @@ class GestationalDiabetesReport(Report):
                 ).order_by('-date')
             if preg_bmi_qs:
                 bmi = preg_bmi_qs[0].bmi
+                bmi_date = preg_bmi_qs[0].date
             elif pre_preg_bmi_qs:
                 bmi = pre_preg_bmi_qs[0].bmi
+                bmi_date = preg_bmi_qs[0].date
             else:
                 bmi = None
+                bmi_date = None
             #
             # Patient's frank and gestational DM history
             # 
@@ -1262,13 +1270,24 @@ class GestationalDiabetesReport(Report):
             early_a1c_max = a1c_lab_qs.filter(early_pp_q).aggregate( max=Max('result_float') )['max']
             late_a1c_max = a1c_lab_qs.filter(late_pp_q).aggregate(max=Max('result_float'))['max']
             
-            pp_a1c = a1c_lab_qs.filter(Q(result_float__gte =6.5) , Q(
-                date__gt = end_date) ).order_by('date')
+            any_a1c_6_5 = a1c_lab_qs.filter(Q(result_float__gte =6.5)).order_by('date')
+            any_a1c_5_7 = a1c_lab_qs.filter(Q(result_float__gte =5.7)).order_by('date')
+            pp_a1c = any_a1c_6_5.filter( Q(date__gt = end_date) ).order_by('date')
             
             if pp_a1c:
                 pp_a1c_date = pp_a1c[0].date
             else:
                 pp_a1c_date = None
+            
+            if any_a1c_6_5:
+                any_a1c_6_5_date = any_a1c_6_5[0].date
+            else:
+                any_a1c_6_5_date = None
+            
+            if any_a1c_5_7:
+                any_a1c_5_7_date = any_a1c_5_7[0].date
+            else:
+                any_a1c_5_7_date = None
             
             #  groping by patient and date for two events within the same day                
             ogtt100_twice_qs = intrapartum.filter(self.ogtt100_threshold_q).\
@@ -1404,6 +1423,7 @@ class GestationalDiabetesReport(Report):
                 'preg_end': end_date,
                 'edd': edd,
                 'bmi': bmi,
+                'bmi_date' : bmi_date,
                 'pre_eclampsia' : binary(pre_eclampsia),
                 'hypertension' : binary(hypertension),
                 'gdm_case': binary( gdm_this_preg ),
@@ -1471,6 +1491,10 @@ class GestationalDiabetesReport(Report):
                 'postpartum_a1c_date':pp_a1c_date,
                 'early_postpartum_a1c_max_val': early_a1c_max,
                 'late_postpartum_a1c_max_val': late_a1c_max,
+                'any_a1c_6_5' : binary(any_a1c_6_5),
+                'any_a1c_6_5_date' : any_a1c_6_5_date,
+                'any_a1c_5_7' : binary(any_a1c_5_7),
+                'any_a1c_5_7_date' : any_a1c_5_7_date,
                 'referral_to_nutrition': binary(nutrition_referral),
                 'lancets_test_strips_this_preg': binary( intrapartum.filter(self.lancets_q) ),
                 'insulin_rx': binary( insulin_qs ),
