@@ -43,6 +43,7 @@ from ESP.settings import ETL_MEDNAMEREVERSE
 from ESP.utils import log
 from ESP.utils import str_from_date
 from ESP.utils.utils import float_or_none
+from ESP.utils.utils import string_or_none
 from ESP.utils import date_from_str
 from ESP.utils import height_str_to_cm
 from ESP.utils import weight_str_to_kg
@@ -258,26 +259,6 @@ class BaseLoader(object):
     def decimal_or_none(self, str):
         return Decimal(str) if str else None
          
-    __string_sanitizer = re.compile(r'[\x80-\xFF]')
-    
-    def sanitize_str(self,s):
-        '''
-        Sanitizes strings be replacing non-ASCII characters with a "?"
-        @param s: String to be sanitized
-        @type  s: String
-        @rtype:   String
-        '''
-        return self.__string_sanitizer.sub("?", s)
-        
-    def string_or_none(self, s):
-        '''
-        Returns a Django-safe version of string s.  If s evaluates to false, 
-        e.g. empty string, return None object.
-        '''
-        if s:
-            return self.sanitize_str(s)
-        else:
-            return None
     
     def capitalize(self, s):
         '''
@@ -481,9 +462,9 @@ class ProviderLoader(BaseLoader):
         'last_name' : unicode(row['last_name']),
         'first_name' : unicode(row['first_name']),
         'middle_name' : unicode(row['middle_name']),
-        'title' : self.string_or_none(row['title']),
+        'title' : string_or_none(row['title']),
         'dept_natural_key' : row['dept_natural_key'],
-        'dept' : self.string_or_none(row['dept']),
+        'dept' : string_or_none(row['dept']),
         'dept_address_1' : row['dept_address_1'], 
         'dept_address_2' : row['dept_address_2'],
         'dept_city' : row['dept_city'],
@@ -539,12 +520,12 @@ class PatientLoader(BaseLoader):
         'provenance' : self.provenance,
         #'updated_by' : UPDATED_BY,
         'mrn' : row['mrn'],
-        'last_name' : self.string_or_none(row['last_name']),
-        'first_name' : self.string_or_none(row['first_name']),
-        'middle_name' : self.string_or_none(row['middle_name']),
+        'last_name' : string_or_none(row['last_name']),
+        'first_name' : string_or_none(row['first_name']),
+        'middle_name' : string_or_none(row['middle_name']),
         'pcp' : self.get_provider(row['pcp_id']),
-        'address1' : self.string_or_none(row['address1']),
-        'address2' : self.string_or_none(row['address2']),
+        'address1' : string_or_none(row['address1']),
+        'address2' : string_or_none(row['address2']),
         'city' : row['city'],
         'state' : row['state'],
         'zip' : row['zip'],
@@ -555,15 +536,15 @@ class PatientLoader(BaseLoader):
         'date_of_birth' : self.date_or_none(row['date_of_birth']),
         'date_of_death' : self.date_or_none(row['date_of_death']),
         'gender' : row['gender'],
-        'race' : self.string_or_none(row['race']),
-        'home_language' : self.string_or_none(row['home_language']),
-        'ssn' : self.string_or_none(row['ssn']),
-        'marital_stat' : self.string_or_none(row['marital_stat']),
-        'religion' : self.string_or_none(row['religion']),
-        'aliases' : self.string_or_none(row['aliases']),
+        'race' : string_or_none(row['race']),
+        'home_language' : string_or_none(row['home_language']),
+        'ssn' : string_or_none(row['ssn']),
+        'marital_stat' : string_or_none(row['marital_stat']),
+        'religion' : string_or_none(row['religion']),
+        'aliases' : string_or_none(row['aliases']),
         'mother_mrn' : row['mother_mrn'],
         'center_id' : row['center_id'],
-        'ethnicity' :self.string_or_none(row['ethnicity']),
+        'ethnicity' :string_or_none(row['ethnicity']),
         }
         p, created = self.insert_or_update(Patient, values, ['natural_key'])
         
@@ -611,8 +592,8 @@ class LabResultLoader(BaseLoader):
         else:
             date = row['order_date']
             
-        component = self.string_or_none(row['component'])  
-        cpt = self.string_or_none(row['cpt'])  
+        component = string_or_none(row['component'])  
+        cpt = string_or_none(row['cpt'])  
         if component and cpt:
             native_code = cpt + '--' + component
             # We use the first 70 characters of component, since some lab 
@@ -653,22 +634,22 @@ class LabResultLoader(BaseLoader):
         'date' : self.date_or_none(date),
         'result_date' : self.date_or_none(row['result_date']),
         'native_code' : native_code,
-        'native_name' : self.string_or_none(row['component_name']),
+        'native_name' : string_or_none(row['component_name']),
         'result_string' : row['result_string'],
         'result_float' : float_or_none(row['result_string']),
         'ref_low_string' : row['ref_low'],
         'ref_high_string' : row['ref_high'],
         'ref_low_float' : float_or_none(row['ref_low']),
         'ref_high_float' : float_or_none(row['ref_high']),
-        'ref_unit' : self.string_or_none(row['unit']),
+        'ref_unit' : string_or_none(row['unit']),
         'abnormal_flag' : row['normal_flag'],
-        'status' : self.string_or_none(row['status']),
-        'comment' : self.string_or_none(row['note']),
-        'specimen_num' : self.string_or_none(row['specimen_num']),
-        'impression' : self.string_or_none(row['impression']),
-        'specimen_source' : self.string_or_none(row['specimen_source']),
+        'status' : string_or_none(row['status']),
+        'comment' : string_or_none(row['note']),
+        'specimen_num' : string_or_none(row['specimen_num']),
+        'impression' : string_or_none(row['impression']),
+        'specimen_source' : string_or_none(row['specimen_source']),
         'collection_date' : self.date_or_none(row['collection_date']),
-        'procedure_name' : self.string_or_none(row['procedure_name']),
+        'procedure_name' : string_or_none(row['procedure_name']),
         'natural_key' : natural_key,
          }
         lx, created = self.insert_or_update(LabResult, values, ['natural_key'])
@@ -707,13 +688,13 @@ class LabOrderLoader(BaseLoader):
             'provider' : self.get_provider(row['provider_id']),
             'mrn' : row['mrn'],
             'natural_key' : natural_key,
-            'procedure_code' : self.string_or_none(row['procedure_code']),
-            'procedure_modifier' : self.string_or_none(row['procedure_modifier']),
-            'specimen_id' : self.string_or_none(row['specimen_id']),
+            'procedure_code' : string_or_none(row['procedure_code']),
+            'procedure_modifier' : string_or_none(row['procedure_modifier']),
+            'specimen_id' : string_or_none(row['specimen_id']),
             'date' : self.date_or_none(date),
-            'order_type' : self.string_or_none(row['order_type']),
-            'procedure_name' : self.string_or_none(row['procedure_name']),
-            'specimen_source' : self.string_or_none(row['specimen_source'])
+            'order_type' : string_or_none(row['order_type']),
+            'procedure_name' : string_or_none(row['procedure_name']),
+            'specimen_source' : string_or_none(row['specimen_source'])
             
             }
         lxo, created = self.insert_or_update(LabOrder, values, ['natural_key'])
@@ -763,7 +744,7 @@ class EncounterLoader(BaseLoader):
         # Util methods    
         cap = self.capitalize
         up = self.up
-        son = self.string_or_none
+        son = string_or_none
         dton = self.date_or_none
         flon = float_or_none
         natural_key = self.generateNaturalkey(row['natural_key'])
@@ -867,11 +848,11 @@ class PrescriptionLoader(BaseLoader):
         
         # setting to load 2.x data
         if ETL_MEDNAMEREVERSE:
-            name = self.string_or_none(row['directions'])
-            directions = self.string_or_none(row['drug_desc'])
+            name = string_or_none(row['directions'])
+            directions = string_or_none(row['drug_desc'])
         else:
-            name = self.string_or_none(row['drug_desc'])
-            directions = self.string_or_none(row['directions'])
+            name = string_or_none(row['drug_desc'])
+            directions = string_or_none(row['directions'])
             
         if not name:
             name = 'UNKNOWN (value supplied by ESP)'  
@@ -880,7 +861,7 @@ class PrescriptionLoader(BaseLoader):
         
         # some data sources have dirty (and lengthy) data in the 'refills' field.
         # Truncate the field at 200 characters
-        refills = self.string_or_none(row['refills'])                                     
+        refills = string_or_none(row['refills'])                                     
         if refills and len(refills) > 200:
             refills = refills[:200]
             log.warning('refills is greater than 200 characters, and has been truncated')
@@ -894,7 +875,7 @@ class PrescriptionLoader(BaseLoader):
         'provider' : self.get_provider(row['provider_id']),
         'natural_key' : natural_key,
         'date' : self.date_or_none(row['order_date']),
-        'status' : self.string_or_none(row['status']),
+        'status' : string_or_none(row['status']),
         'name' : name,
         'directions' : directions,
         'code' : row['ndc'],
@@ -903,8 +884,8 @@ class PrescriptionLoader(BaseLoader):
         'refills' : refills,
         'start_date' : self.date_or_none(row['start_date']),
         'end_date' : self.date_or_none(row['end_date']),
-        'route' : self.string_or_none(row['route']),
-        'dose' : self.string_or_none(row['dose']),
+        'route' : string_or_none(row['route']),
+        'dose' : string_or_none(row['dose']),
         }
         p, created = self.insert_or_update(Prescription, values, ['natural_key'])
         
@@ -950,7 +931,7 @@ class PregnancyLoader(BaseLoader):
             'provider' : self.get_provider(row['provider_id']),
             'natural_key' : natural_key,
             'mrn' : row['mrn'],
-            'outcome' : self.string_or_none(row['outcome']),
+            'outcome' : string_or_none(row['outcome']),
             'actual_date' : self.date_or_none(row['actual_date']),
             'edd' : self.date_or_none(row['edd']),
             'date' : self.date_or_none(date),
@@ -958,9 +939,9 @@ class PregnancyLoader(BaseLoader):
             'parity' : self.decimal_or_none(row['parity']),
             'term' : self.decimal_or_none(row['term']),
             'preterm' : self.decimal_or_none(row['preterm']),
-            'raw_birth_weight' : self.string_or_none(birth_weights),
+            'raw_birth_weight' : string_or_none(birth_weights),
             'ga_delivery' : ga_str_to_days(row['ga_delivery']),
-            'delivery' : self.string_or_none(row['delivery']),
+            'delivery' : string_or_none(row['delivery']),
             'pre_eclampsia' : row['pre_eclampsia'],
             }
         
@@ -1009,12 +990,12 @@ class ImmunizationLoader(BaseLoader):
         'provenance' : self.provenance,
         #'updated_by' : UPDATED_BY,
         'patient' : self.get_patient(row['patient_id']),
-        'imm_type' : self.string_or_none(row['type']),
-        'name' : self.string_or_none(row['name']),
+        'imm_type' : string_or_none(row['type']),
+        'name' : string_or_none(row['name']),
         'date' : self.date_or_none(row['date']),
-        'dose' : self.string_or_none(row['dose']),
-        'manufacturer' : self.string_or_none(row['manufacturer']),
-        'lot' : self.string_or_none(row['lot']),
+        'dose' : string_or_none(row['dose']),
+        'manufacturer' : string_or_none(row['manufacturer']),
+        'lot' : string_or_none(row['lot']),
         'natural_key' : natural_key,
         'mrn' : row['mrn'],
         'provider' : self.get_provider(row['provider_id']),
@@ -1026,11 +1007,11 @@ class ImmunizationLoader(BaseLoader):
         
         try:
             nativevax, new = VaccineCodeMap.objects.get_or_create(
-                    native_code=self.string_or_none(row['type']), native_name=self.string_or_none(row['name']))
+                    native_code=string_or_none(row['type']), native_name=string_or_none(row['name']))
             if new:
                 log.debug('Saved new VaccineCodeMap entry: %s' %nativevax)
         except:
-            log.debug('Could not save VaccineCodeMap entry: %s' %self.string_or_none(row['name']))
+            log.debug('Could not save VaccineCodeMap entry: %s' %string_or_none(row['name']))
 
 
 
@@ -1089,7 +1070,7 @@ class AllergyLoader(BaseLoader):
         ]
     
     def load_row(self, row):        
-        allergy_name = self.string_or_none(row['allergy_name'])
+        allergy_name = string_or_none(row['allergy_name'])
         
         if not row['allergen_id'] and not allergy_name:
             log.info('Empty allergy name and code encountered, setting allergy name to UNSPECIFIED')
@@ -1121,8 +1102,8 @@ class AllergyLoader(BaseLoader):
             'date_noted' : self.date_or_none(row['date_noted']),
             'allergen' : allergen,
             'name' : allergy_name, 
-            'status' : self.string_or_none(row['allergy_status']),
-            'description' : self.string_or_none(description),
+            'status' : string_or_none(row['allergy_status']),
+            'description' : string_or_none(description),
             'mrn' : row['mrn'],
             'provider' : self.get_provider(row['provider_id']),
         }
@@ -1159,8 +1140,8 @@ class ProblemLoader(BaseLoader):
             'date' : self.date_or_none(row['date_noted']),
             'icd9' : icd9_code,
             'raw_icd9_code' : code,
-            'status' : self.string_or_none(row['problem_status']),
-            'comment' : self.string_or_none(row['comment']),
+            'status' : string_or_none(row['problem_status']),
+            'comment' : string_or_none(row['comment']),
             'provider' : self.get_provider(row['provider_id'])
             }
         

@@ -37,7 +37,7 @@ from django.db import IntegrityError
 from ESP.emr.management.commands.common import LoaderCommand
 from dateutil.relativedelta import relativedelta
 
-from ESP.utils.utils import str_from_date, float_or_none
+from ESP.utils.utils import str_from_date, float_or_none, string_or_none
 from ESP.settings import DATA_DIR, LOAD_DRIVER_LABS, POPULATION_SIZE, MIN_ENCOUNTERS_PER_PATIENT ,ENCOUNTERS_PER_PATIENT ,MAXICD9 ,ICD9_CODE_PCT 
 from ESP.settings import MIN_LAB_TESTS_PER_PATIENT ,LAB_TESTS_PER_PATIENT ,MIN_LAB_ORDERS_PER_PATIENT ,LAB_ORDERS_PER_PATIENT ,MIN_MEDS_PER_PATIENT ,MEDS_PER_PATIENT 
 from ESP.settings import IMMUNIZATION_PCT, IMMUNIZATIONS_PER_PATIENT , MAX_PREGNANCIES ,CURRENTLY_PREG_PCT ,MAX_ALLERGIES ,MAX_PROBLEMS ,MAX_SOCIALHISTORY 
@@ -644,24 +644,24 @@ class Command(LoaderCommand):
                 'native_code' : row['native_code'],
                 'native_name' : row['native_name'],
                 'long_name'   : row['long_name'],
-                'test_sub_category' : row['test_sub_category'],
+                'test_sub_category' : string_or_none(row['test_sub_category']),
                 'loinc'      : row['loinc'],
                 'loinc_flag' : row['loinc_flag'],
                 'specimen_source' : row['specimen_source'],
-                'units_ms'   : row['units_ms'], 
+                'units_ms'   : string_or_none(row['units_ms']), 
                 'conversion_factor' :float_or_none(row['conversion_factor']),
-                'units_std'  : row['units_std'],
-                'units'      : row['units'],
-                'px'         : row['px'],
+                'units_std'  : string_or_none(row['units_std']),
+                'units'      : string_or_none(row['units']),
+                'px'         : string_or_none(row['px']),
                 'px_type'    : row['px_type'],
                 'datatype'   : row['datatype'],
                 'normal_low' : float_or_none(row['normal_low']),
                 'normal_high' : float_or_none(row['normal_high']),
                 'critical_low' : float_or_none(row['critical_low']),
                 'critical_high' : float_or_none(row['critical_high']),
-                'qual_orig'   : row['qual_orig'],
-                'qual_map'    : row['qual_map'],
-                'cpt_code'    : row['cpt_code'],
+                'qual_orig'   : string_or_none(row['qual_orig']),
+                'qual_map'    : string_or_none(row['qual_map']),
+                'cpt_code'    : string_or_none(row['cpt_code']),
                 'weight'      : float_or_none(row['weight']),
                 }
         

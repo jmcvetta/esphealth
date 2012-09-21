@@ -201,9 +201,31 @@ def days_in_interval(begin_date, end_date):
 
     return days
 
+__string_sanitizer = re.compile(r'[\x80-\xFF]')
+    
+def sanitize_str(s):
+    '''
+    Sanitizes strings be replacing non-ASCII characters with a "?"
+    @param s: String to be sanitized
+    @type  s: String
+    @rtype:   String
+    '''
+    return __string_sanitizer.sub("?", s)
+        
+def string_or_none( s):
+    '''
+    Returns a Django-safe version of string s.  If s evaluates to false, 
+    e.g. empty string, return None object.
+    '''
+    if s:
+        return sanitize_str(s)
+    else:
+        return None
+    
+
 def float_or_none(str):
     '''
-        returns none if it doesn't parse as a float number
+    returns none if it doesn't parse as a float number
     '''
     float_catcher = re.compile(r'(\d+\.?\d*)') 
     if not str:
