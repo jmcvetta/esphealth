@@ -43,7 +43,7 @@ from ESP.settings import ETL_MEDNAMEREVERSE
 from ESP.utils import log
 from ESP.utils import str_from_date
 from ESP.utils.utils import float_or_none
-from ESP.utils.utils import string_or_none
+from ESP.utils.utils import string_or_none, sanitize_str
 from ESP.utils import date_from_str
 from ESP.utils import height_str_to_cm
 from ESP.utils import weight_str_to_kg
@@ -266,7 +266,7 @@ class BaseLoader(object):
         Returns None if s evaluates to None, including blank string.
         '''
         if s:
-            return string.capwords( self.sanitize_str(s) )
+            return string.capwords( sanitize_str(s) )
         else:
             return None
         
@@ -276,7 +276,7 @@ class BaseLoader(object):
         Returns None if s evaluates to None, including blank string.
         '''
         if s:
-            return string.upper( self.sanitize_str(s) )
+            return string.upper( sanitize_str(s) )
         else:
             return None
     
@@ -352,7 +352,7 @@ class BaseLoader(object):
             for key in row:
                 if row[key]:
                     try:
-                        row[key] = self.sanitize_str( row[key].strip() )
+                        row[key] = sanitize_str( row[key].strip() )
                     except DjangoUnicodeDecodeError, e:
                         #
                         # Log character set errors to db
