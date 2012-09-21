@@ -36,7 +36,17 @@ class Tuberculosis(DiseaseDefinition):
     
     short_name = 'tuberculosis'
     
-    test_name_search_strings = ['tuber','afb','mycob',]
+    test_name_search_strings = ['tuber','afb','mycob',
+        'tb',
+        'tc',
+        'flu',
+        'strep',
+        'hav',
+        'hcv',
+        'oral',
+        'tol',
+        ]
+
     
     timespan_heuristics = []
     

@@ -279,7 +279,7 @@ class Diabetes(DiseaseDefinition):
             'trig',
             'peptide',
             'ogtt',
-            'glucose',
+            'gluc',
             'gad65',
             'ica512',
             'a1c',
@@ -288,6 +288,8 @@ class Diabetes(DiseaseDefinition):
             'lipoprotein',
             'islet',
             'insulin',
+            'diab',
+            'glyc',
         ]
     
     #-------------------------------------------------------------------------------
