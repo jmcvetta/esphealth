@@ -43,7 +43,9 @@ from ESP.settings import ETL_MEDNAMEREVERSE
 from ESP.utils import log
 from ESP.utils import str_from_date
 from ESP.utils.utils import float_or_none
-from ESP.utils.utils import string_or_none, sanitize_str
+from ESP.utils.utils import string_or_none
+from ESP.utils.utils import sanitize_str
+from ESP.utils.utils import truncate_str
 from ESP.utils import date_from_str
 from ESP.utils import height_str_to_cm
 from ESP.utils import weight_str_to_kg
@@ -193,9 +195,7 @@ class BaseLoader(object):
         if not natural_key:
             return UNKNOWN_PROVIDER
         #truncate the key some provider keys were too long
-        if len(natural_key) > 128:
-            log.warning('natural_key is greater than 128 characters, and has been truncated')
-            natural_key = natural_key[:128] 
+        natural_key = truncate_str(natural_key, 'natural_key', 128)
             
         if not natural_key in self.__provider_cache:
             try:
@@ -258,8 +258,7 @@ class BaseLoader(object):
         
     def decimal_or_none(self, str):
         return Decimal(str) if str else None
-         
-    
+        
     def capitalize(self, s):
         '''
         Returns a capitalized, Django-safe version of string s.  
@@ -592,26 +591,20 @@ class LabResultLoader(BaseLoader):
         else:
             date = row['order_date']
             
+        # We use the first 70 characters of component, since some lab 
+        # results (always types unimportant to ESP) have quite long 
+        # component values, yet we need the native_code field to be a 
+        # reasonable width for indexing.  
         component = string_or_none(row['component'])  
+        component = truncate_str(component, 'Component field', 70)
+            
         cpt = string_or_none(row['cpt'])  
         if component and cpt:
             native_code = cpt + '--' + component
-            # We use the first 70 characters of component, since some lab 
-            # results (always types unimportant to ESP) have quite long 
-            # component values, yet we need the native_code field to be a 
-            # reasonable width for indexing.  
-            if len(component) > 70:
-                log.warning('Component field is greater than 70 characters, and has been truncated:')
-                log.warning('    "%s"' % component)
-                native_code = cpt +'--'+ component[0:70] 
         elif cpt:
             native_code=cpt + '--'
         elif component:
             native_code = '--' + component
-            if len(component) > 70:
-                log.warning('Component field is greater than 70 characters, and has been truncated:')
-                log.warning('    "%s"' % component)
-                native_code = component[0:70] 
         else:
             native_code = None
         if not row['natural_key']:
@@ -861,10 +854,13 @@ class PrescriptionLoader(BaseLoader):
         
         # some data sources have dirty (and lengthy) data in the 'refills' field.
         # Truncate the field at 200 characters
-        refills = string_or_none(row['refills'])                                     
-        if refills and len(refills) > 200:
-            refills = refills[:200]
-            log.warning('refills is greater than 200 characters, and has been truncated')
+        refills = string_or_none(row['refills'])
+        refills = truncate_str(refills, 'refills', 200)                                     
+
+        # some data sources have dirty (and lengthy) data in the 'quantity' field.
+        # Truncate the field at 200 characters
+        quantity = string_or_none(row['quantity'])
+        quantity = truncate_str(quantity, 'quantity', 200)                                     
 
         values = {
         'provenance' : self.provenance,
@@ -879,8 +875,8 @@ class PrescriptionLoader(BaseLoader):
         'name' : name,
         'directions' : directions,
         'code' : row['ndc'],
-        'quantity' : row['quantity'],
-        'quantity_float' : float_or_none(row['quantity']),
+        'quantity' : quantity,
+        'quantity_float' : float_or_none(quantity),
         'refills' : refills,
         'start_date' : self.date_or_none(row['start_date']),
         'end_date' : self.date_or_none(row['end_date']),
