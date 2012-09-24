@@ -211,6 +211,19 @@ def sanitize_str(s):
     @rtype:   String
     '''
     return __string_sanitizer.sub("?", s)
+
+def truncate_str(s, name, max_length):
+    '''
+    Returns a version of string s that has been truncated to max_length.
+    A warning message is written to the log whenever truncation occurs.
+    '''
+    if s and len(s) > max_length:
+        log.warning('%s is greater than %d characters, and has been truncated' %
+                    (name, max_length))
+        log.warning('    "%s"' % s)
+        return s[:max_length]
+    else:
+        return s
         
 def string_or_none( s):
     '''
