@@ -1062,6 +1062,12 @@ class GestationalDiabetesReport(Report):
             # it should only be one expected.
             if pregnancy_info:
                 # ordering by descending expected of delivery in case we match with multiple pregnacy info
+                birth_weight =  pregnancy_info[0].birth_weight
+                if not birth_weight:
+                    num_births =  None
+                else: 
+                    num_births = pregnancy_info[0].births
+                
                 pregnancy_info = pregnancy_info.order_by('-edd')
                 pregnancy_info_values = {
                 'grava' : pregnancy_info[0].gravida,
@@ -1071,8 +1077,8 @@ class GestationalDiabetesReport(Report):
                 'outcome' : pregnancy_info[0].outcome,
                 'actual_date' : pregnancy_info[0].actual_date,
                 'ga_delivery' : pregnancy_info[0].ga_delivery,
-                'num_births' : pregnancy_info[0].births,
-                'birth_weight' : pregnancy_info[0].birth_weight,
+                'num_births' : num_births,
+                'birth_weight' : birth_weight,
                 'birth_weight2' : pregnancy_info[0].birth_weight2,
                 'birth_weight3' : pregnancy_info[0].birth_weight3,
                 'birth_route' : pregnancy_info[0].delivery,
