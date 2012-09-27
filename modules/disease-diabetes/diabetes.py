@@ -1011,7 +1011,7 @@ class GestationalDiabetesReport(Report):
         if preg_ts_qs:
             patient_values['pregnancy'] = 1
         elif gdm_case_qs:
-                gdm_case_date = gdm_case_qs[0].date            
+                gdm_case_date = gdm_case_qs[0].date
     
         # FIXME: This date math works on PostgreSQL, but I think that's
         # just fortunate coincidence, as I don't think this is the
@@ -1114,7 +1114,7 @@ class GestationalDiabetesReport(Report):
                 bmi_date = preg_bmi_qs[0].date
             elif pre_preg_bmi_qs:
                 bmi = pre_preg_bmi_qs[0].bmi
-                bmi_date = preg_bmi_qs[0].date
+                bmi_date = pre_preg_bmi_qs[0].date
             else:
                 bmi = None
                 bmi_date = None
