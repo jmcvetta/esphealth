@@ -1394,6 +1394,10 @@ class Immunization(BasePatientRecord):
     lot = models.TextField('Lot Number', max_length=500, blank=True, null=True)
     visit_date = models.DateField('Date of Visit', blank=True, null=True)
     isvaccine = models.NullBooleanField('Is this a vaccine', default=True)
+    imm_status = models.CharField('Immunization Order Status', max_length=20, null=True)
+    cpt_code = models.CharField('CPT code', max_length=20, null=True)
+    patient_class = models.CharField('Patient class', max_length=20, null=True)
+    patient_status = models.CharField('Patient status', max_length=20, null=True)
 
     class Meta:
         ordering = ['date']
@@ -1522,6 +1526,7 @@ class Allergy(BasePatientRecord):
     name = models.CharField(max_length=300, null=True, db_index=True)
     status = models.CharField(max_length=20, null=True, db_index=True)
     description = models.CharField(max_length=600,null=True,blank=True)
+    allergy_entered_date = models.DateField(null=True, db_index=True)
     
     @staticmethod
     def fakes():
