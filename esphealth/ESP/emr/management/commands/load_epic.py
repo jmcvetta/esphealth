@@ -237,15 +237,17 @@ class BaseLoader(object):
             log.debug('Could not insert new %s with keys %s' % (model, keys))
             # We use get_or_create() rather than get(), to increase the likelihood
             # of successful load in unforeseen circumstances
-            obj, created = model.objects.get_or_create(defaults=field_values, **keys)
-            for field_name in field_values:
-                setattr(obj, field_name, field_values[field_name])
             try:
                 # Last try
+                obj, created = model.objects.get_or_create(defaults=field_values, **keys)
+                for field_name in field_values:
+                    setattr(obj, field_name, field_values[field_name])
                 obj.save()
             except IntegrityError:
                 transaction.savepoint_rollback(sid)
                 log.debug('Record could not be saved')
+                obj=''
+                created=False
         return obj, created
     
     def date_or_none(self, str):
@@ -976,8 +978,12 @@ class ImmunizationLoader(BaseLoader):
         'lot',
         'natural_key',
         'mrn', #added in 3
-        'provider_id',# added in 3
-        'visit_date' #added in 3
+        'provider_id', # added in 3
+        'visit_date', # added in 3
+        'imm_status', # added in 3
+        'cpt_code', # added in 3
+        'patient_class', # added in 3
+        'patient_status' # added in 3
         ]
     
     def load_row(self, row):
@@ -996,6 +1002,10 @@ class ImmunizationLoader(BaseLoader):
         'mrn' : row['mrn'],
         'provider' : self.get_provider(row['provider_id']),
         'visit_date' : self.date_or_none(row['visit_date']),
+        'imm_status' : string_or_none(row['imm_status']),
+        'cpt_code' : string_or_none(row['cpt_code']),
+        'patient_class' : string_or_none(row['patient_class']),
+        'patient_status' : string_or_none(row['patient_status']),
         }
         i, created = self.insert_or_update(Immunization, values, ['natural_key'])
         
@@ -1073,8 +1083,8 @@ class AllergyLoader(BaseLoader):
             allergy_name = 'UNSPECIFIED'
             
         #adding new rows to allergen table if they are  not there 
-        if row['allergen_id'] != '':
-            allergen, created = Allergen.objects.get_or_create(code=row['allergen_id'])
+        if row['allergen_id'].strip != '':
+            allergen, created = Allergen.objects.get_or_create(code=row['allergen_id'][1:100])
         else:
             allergen, created = Allergen.objects.get_or_create(code=allergy_name)
         
