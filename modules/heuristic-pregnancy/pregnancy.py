@@ -605,7 +605,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 existing_preg = overlap_qs[0]
                 existing_preg.events.add(first_preg_event)
                 existing_preg.save()
-                log.debug('Added overlap event %s to existing pregnancy %s' % (first_preg_event, existing_preg))
+                log.debug('Added overlap event %s to existing pregnancy %s' % (first_preg_event.verbose_str, existing_preg.verbose_str))
             else:
                 new_preg = Timespan(
                     patient = patient,
