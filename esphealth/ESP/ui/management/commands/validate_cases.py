@@ -86,9 +86,7 @@ from ESP.nodis.models import ReferenceCase
 from ESP.nodis.models import ReferenceCaseList
 from ESP.nodis.models import ValidatorRun
 from ESP.nodis.models import ValidatorResult
-from ESP.nodis.base import Condition
-
-
+from ESP.nodis.base import DiseaseDefinition #Condition
 
 class Command(BaseCommand):
     
@@ -137,7 +135,10 @@ class Command(BaseCommand):
         log.info('Starting validator run # %s' % run.pk)
         related_delta = datetime.timedelta(days=RELATED_MARGIN)
         for ref in reference_cases.order_by('date', 'condition', 'pk'):
-            condition_object = Condition.get_condition(ref.condition)
+            
+            condition_object = DiseaseDefinition.get_by_short_name(ref.condition)
+            #old code 
+            #Condition.get_condition(ref.condition)
             if not condition_object:
                 log.warning('Invalid condition name: "%s".  Skipping.' % ref.condition)
                 continue
