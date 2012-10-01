@@ -38,7 +38,12 @@ class CaseStatusForm(forms.Form):
 class CodeMapForm(forms.Form):
     # fake instanciation to get the labs in the drop down
     vaerslabs = VaersLxHeuristic('wbc',None,None,None)
-    TEST_CHOICES = [(name, name) for name in AbstractLabTest.get_all_names() + vaerslabs.get_all_names() ]
+    TEST_CHOICES = [(name, name) for name in AbstractLabTest.get_all_names()]
+    # FIXING MULTIPLE BILIRUBINS IN LIST 
+    for name in vaerslabs.get_all_names():
+        if (name,name) not in TEST_CHOICES:
+            TEST_CHOICES.append((name, name))
+    
     TEST_CHOICES.sort()
     test_name = forms.ChoiceField(choices=TEST_CHOICES, required=True)
     threshold = forms.FloatField(required=False)
