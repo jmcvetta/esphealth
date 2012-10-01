@@ -27,7 +27,7 @@ class LabTestMapAdmin(admin.ModelAdmin):
         'record_type'
         ]
     search_fields = [
-        'test_name'
+        'test_name',
         'native_code',
         'output_code',
         'output_name'
