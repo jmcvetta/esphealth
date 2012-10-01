@@ -1009,15 +1009,15 @@ LabOrderHeuristic.objects.get_or_create(
     test = tb_afb,
     )
 
-tb_mycob = AbstractLabTest.objects.get_or_create(
-    name = 'tuberculosis_mycob',
+tb_culture = AbstractLabTest.objects.get_or_create(
+    name = 'tuberculosis_culture',
     defaults = {
-        'verbose_name': 'Tuberculosis mycob',
+        'verbose_name': 'Tuberculosis culture',
         }
     )[0]
     
 LabOrderHeuristic.objects.get_or_create(
-    test = tb_mycob,
+    test = tb_culture,
     )
 
 #-------------------------------------------------------------------------------
