@@ -635,62 +635,63 @@ class Command(LoaderCommand):
         
         file_handle = open(filepath)
         reader = csv.DictReader(file_handle, fieldnames=fields, dialect='make_fakes')
-            
+        count =0
         for row in reader:
+            #ignore first row
+            if count > 0:
+                values = {
+                    'fakelabs_id' :  row['fakelabs_id'],
+                    'native_code' : row['native_code'],
+                    'native_name' : row['native_name'],
+                    'long_name'   : row['long_name'],
+                    'test_sub_category' : string_or_none(row['test_sub_category']),
+                    'loinc'      : row['loinc'],
+                    'loinc_flag' : row['loinc_flag'],
+                    'specimen_source' : row['specimen_source'],
+                    'units_ms'   : string_or_none(row['units_ms']), 
+                    'conversion_factor' :float_or_none(row['conversion_factor']),
+                    'units_std'  : string_or_none(row['units_std']),
+                    'units'      : string_or_none(row['units']),
+                    'px'         : string_or_none(row['px']),
+                    'px_type'    : row['px_type'],
+                    'datatype'   : row['datatype'],
+                    'normal_low' : float_or_none(row['normal_low']),
+                    'normal_high' : float_or_none(row['normal_high']),
+                    'critical_low' : float_or_none(row['critical_low']),
+                    'critical_high' : float_or_none(row['critical_high']),
+                    'qual_orig'   : string_or_none(row['qual_orig']),
+                    'qual_map'    : string_or_none(row['qual_map']),
+                    'cpt_code'    : string_or_none(row['cpt_code']),
+                    'weight'      : float_or_none(row['weight']),
+                    }
             
-            values = {
-                 
-                'fakelabs_id' :  row['fakelabs_id'],
-                'native_code' : row['native_code'],
-                'native_name' : row['native_name'],
-                'long_name'   : row['long_name'],
-                'test_sub_category' : string_or_none(row['test_sub_category']),
-                'loinc'      : row['loinc'],
-                'loinc_flag' : row['loinc_flag'],
-                'specimen_source' : row['specimen_source'],
-                'units_ms'   : string_or_none(row['units_ms']), 
-                'conversion_factor' :float_or_none(row['conversion_factor']),
-                'units_std'  : string_or_none(row['units_std']),
-                'units'      : string_or_none(row['units']),
-                'px'         : string_or_none(row['px']),
-                'px_type'    : row['px_type'],
-                'datatype'   : row['datatype'],
-                'normal_low' : float_or_none(row['normal_low']),
-                'normal_high' : float_or_none(row['normal_high']),
-                'critical_low' : float_or_none(row['critical_low']),
-                'critical_high' : float_or_none(row['critical_high']),
-                'qual_orig'   : string_or_none(row['qual_orig']),
-                'qual_map'    : string_or_none(row['qual_map']),
-                'cpt_code'    : string_or_none(row['cpt_code']),
-                'weight'      : float_or_none(row['weight']),
-                }
-        
-                # model, field_values, key_fields):
-            sid = transaction.savepoint()
-            try:
-                obj = FakeLabs(**values)
-                obj.save()
-                transaction.savepoint_commit(sid) # not terribly useful, since we already saved it above.
-                created = True
-            except IntegrityError:
-                transaction.savepoint_rollback(sid)
-            keys = {}
-            for field_name in ['fakelabs_id']:
-                keys[field_name] = values[field_name]
-                del values[field_name]
-                log.debug('Could not insert new %s with keys %s' % (FakeLabs, keys))
-                # We use get_or_create() rather than get(), to increase the likelihood
-                # of successful load in unforeseen circumstances
-                obj, created = FakeLabs.objects.get_or_create(defaults=values, **keys)
-                for field_name in values:
-                    setattr(obj, field_name, values[field_name])
+                    # model, field_values, key_fields):
+                sid = transaction.savepoint()
                 try:
-                    # Last try
+                    obj = FakeLabs(**values)
                     obj.save()
+                    transaction.savepoint_commit(sid) # not terribly useful, since we already saved it above.
+                    created = True
                 except IntegrityError:
                     transaction.savepoint_rollback(sid)
-                    log.debug('Record could not be saved')
-                
+                keys = {}
+                for field_name in ['fakelabs_id']:
+                    keys[field_name] = values[field_name]
+                    del values[field_name]
+                    log.debug('Could not insert new %s with keys %s' % (FakeLabs, keys))
+                    # We use get_or_create() rather than get(), to increase the likelihood
+                    # of successful load in unforeseen circumstances
+                    obj, created = FakeLabs.objects.get_or_create(defaults=values, **keys)
+                    for field_name in values:
+                        setattr(obj, field_name, values[field_name])
+                    try:
+                        # Last try
+                        obj.save()
+                    except IntegrityError:
+                        transaction.savepoint_rollback(sid)
+                        log.debug('Record could not be saved')
+            count +=1
+                            
         print 'Generating fake driver Labs'
          
 
