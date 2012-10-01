@@ -240,7 +240,7 @@ def float_or_none(str):
     '''
     returns none if it doesn't parse as a float number
     '''
-    float_catcher = re.compile(r'(\d+\.?\d*)') 
+    float_catcher = re.compile(r'([-]*\d+\.?\d*)') 
     if not str:
         return None
     m = float_catcher.match(str)
