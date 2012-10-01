@@ -20,6 +20,7 @@ from ESP.conf.models import ReportableMedication
 from ESP.hef.models import Timespan
 from ESP.conf.models import ConditionConfig
 
+
 import datetime
 
 from django.db import models
@@ -31,6 +32,7 @@ from ESP.emr.models import Patient
 from ESP.emr.models import Prescription
 from ESP.emr.models import Provider
 from ESP.hef.models import Event
+from ESP.conf.models import LabTestMap
 
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
@@ -144,12 +146,14 @@ class Case(models.Model):
     prescriptions = property(__get_prescriptions)
 
     def __get_reportable_labs(self):
-        #
-        # TODO issue 386 Fixme use new laptest map
-        #
-        heuristics = Condition.get_condition(self.condition).heuristics
+        
+        from ESP.nodis.base import DiseaseDefinition
+        heuristics = DiseaseDefinition.event_heuristics()
+        #get_by_short_name(self.condition) 
+        #Condition.get_condition(self.condition).heuristics  #get lab heuristics from Events
         reportable_codes = set(ReportableLab.objects.filter(condition=self.condition).values_list('native_code', flat=True))
-        reportable_codes |= set(CodeMap.objects.filter(heuristic__in=heuristics, reportable=True).values_list('native_code', flat=True))
+        # get native codes from lab heuristics 
+        reportable_codes |= set(LabTestMap.objects.filter(test_name__in=heuristics, reportable=True).values_list('native_code', flat=True))
         q_obj = Q(patient=self.patient)
         q_obj &= Q(native_code__in=reportable_codes)
         conf = self.condition_config
@@ -160,10 +164,13 @@ class Case(models.Model):
         labs = LabResult.objects.filter(q_obj).distinct()
         #log_query('Reportable labs for %s' % self, labs)
         return labs
+    
     reportable_labs = property(__get_reportable_labs)
 
     def __get_reportable_icd9s(self):
-        icd9_objs = Condition.get_condition(self.condition).icd9s
+        
+        from ESP.nodis.base import DiseaseDefinition
+        icd9_objs = DiseaseDefinition.get_by_short_name(self.condition).icd9s
         icd9_objs |= Icd9.objects.filter(reportableicd9__condition=self.condition_config).distinct()
         return icd9_objs
     reportable_icd9s = property(__get_reportable_icd9s)
@@ -183,7 +190,9 @@ class Case(models.Model):
 
     def __get_reportable_prescriptions(self):
         conf = self.condition_config
-        med_names = Condition.get_condition(self.condition).medications
+        
+        from ESP.nodis.base import DiseaseDefinition
+        med_names = DiseaseDefinition.get_by_short_name(self.condition).medications
         med_names |= set(ReportableMedication.objects.filter(condition=self.condition_config).values_list('drug_name', flat=True))
         if not med_names:
             return Prescription.objects.none()
