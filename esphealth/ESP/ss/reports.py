@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os, pdb
-
+import datetime
 from django.db.models import Count
 from django.template import Context
 from django.template.loader import get_template
@@ -56,7 +56,7 @@ class Report(object):
 
     def gipse_report(self):
 
-        filename = GIPSE_SITE_FILENAME % self.timestamps
+        filename = Report.GIPSE_SITE_FILENAME % self.timestamps
         outfile = open(os.path.join(self.folder, filename), 'w')
         events = NonSpecialistVisitEvent.objects.filter(date__gte=self.begin_date, 
                                                         date__lte=self.end_date)
