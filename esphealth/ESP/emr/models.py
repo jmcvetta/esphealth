@@ -1659,6 +1659,7 @@ class Pregnancy(BasePatientRecord):
             
         # from now up to 3 years ago 
         preg_date = when or randomizer.date_range(as_string=False) 
+        
         # patient is already at fertile age when coming here 
         # if dob is not null pick a date between 12 years and their current age
         preg_date = preg_date if patient.date_of_birth is None else patient.date_of_birth + datetime.timedelta(days=random.randrange(12, patient.age.years)*365)
@@ -1673,7 +1674,7 @@ class Pregnancy(BasePatientRecord):
             outcome = None
             
         else: 
-            actual_date = preg_date + datetime.timedelta(days=random.randrange(7, 289)) # 42 weeks. 7 days could be a miss carriage.
+            actual_date = preg_date + datetime.timedelta(days=random.randrange(14, 289)) # 42 weeks. 7 days could be a miss carriage.
             gad = str(40 - relativedelta(edd, actual_date).days/7 ) + 'w ' 
             if  (relativedelta(edd, actual_date).days % 7 ) > 0:
                 gad +=  str( relativedelta(edd, actual_date).days % 7 ) + 'd'
