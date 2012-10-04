@@ -48,7 +48,26 @@ class FakeMeds (models.Model):
     def __str__(self):
         return '%s -- %s' % (self.fakemeds_id, self.name)
     
+ 
+class DrugSynonym (models.Model):
+    '''
+     this is for finding the right med name for the disease detection  
+    '''
+   
+    drugynonym_id = models.AutoField(primary_key=True)
+    generic_name = models.CharField('Generic name', max_length=100)
+    other_name = models.CharField('Other name', max_length=100)
+    comment = models.TextField(blank=True, null=True)
     
+    class Meta:
+        verbose_name = 'Drug Synonym'
+
+    def generics_plus_synonyms(self, drugnames):
+        return self.objects.filter(generic_name__in = drugnames )
+    
+    def __str__(self):
+        return '%s -- %s' % (self.drugynonym_id, self.generic_name)
+     
 class FakeICD9s(models.Model):
     fakeicd9_id = models.AutoField(primary_key=True)
     icd9_codes = models.CharField('icd9_codes', max_length=3350)
