@@ -61,9 +61,16 @@ class DrugSynonym (models.Model):
     
     class Meta:
         verbose_name = 'Drug Synonym'
-
-    def generics_plus_synonyms(self, drugnames):
-        return self.objects.filter(generic_name__in = drugnames )
+    
+    @staticmethod
+    def generics_plus_synonyms(drugnames):
+        alldrugnames = drugnames
+        for drug in drugnames:
+            alldrugsqs= DrugSynonym.objects.filter(generic_name__icontains = drug)
+            for otherdrug in alldrugsqs:
+                if not otherdrug.comment == 'Self':
+                    alldrugnames.append(otherdrug.other_name)
+        return alldrugnames
     
     def __str__(self):
         return '%s -- %s' % (self.drugynonym_id, self.generic_name)
