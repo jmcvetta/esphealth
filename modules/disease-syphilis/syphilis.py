@@ -29,7 +29,7 @@ from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import Icd9Query
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.base import Case
-
+from ESP.static.models import DrugSynonym
 
 
 class Syphilis(DiseaseDefinition):
@@ -79,16 +79,16 @@ class Syphilis(DiseaseDefinition):
         #
         heuristic_list.append( PrescriptionHeuristic(
             name = 'penicillin_g',
-            drugs = ['penicillin g', 'pen g'],
+            drugs = DrugSynonym.generics_plus_synonyms(['penicillin g', 'pen g']),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'doxycycline_7_day',
-            drugs = ['doxycycline',],
+            drugs = DrugSynonym.generics_plus_synonyms(['doxycycline',]),
             min_quantity = 14, # Need 14 pills for 7 days
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'ceftriaxone_1_or_2_gram',
-            drugs = ['ceftriaxone',],
+            drugs = DrugSynonym.generics_plus_synonyms(['ceftriaxone',]),
             doses = [ 
                 Dose(quantity = 1, units = 'g'),
                 Dose(quantity = 2, units = 'g'),
