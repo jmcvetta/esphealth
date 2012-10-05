@@ -30,6 +30,7 @@ from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import Icd9Query
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.base import Case
+from ESP.static.models import DrugSynonym
 
 
 
@@ -75,11 +76,11 @@ class Lyme(DiseaseDefinition):
         #
         heuristic_list.append( PrescriptionHeuristic(
             name = 'doxycycline',
-            drugs = ['doxycycline', ],
+            drugs = DrugSynonym.generics_plus_synonyms(['doxycycline', ]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'lyme_other_antibiotics',
-            drugs = ['Amoxicillin','Cefuroxime', 'Ceftriaxone', 'Cefotaxime',],
+            drugs =  DrugSynonym.generics_plus_synonyms(['Amoxicillin','Cefuroxime', 'Ceftriaxone', 'Cefotaxime',]),
             ))
         
         #

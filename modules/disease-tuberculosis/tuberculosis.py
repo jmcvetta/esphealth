@@ -23,7 +23,7 @@ from ESP.utils import log
 from ESP.hef.base import Event, BaseEventHeuristic,LabResultAnyHeuristic,  PrescriptionHeuristic
 from ESP.hef.base import Dose, LabResultPositiveHeuristic, LabOrderHeuristic, DiagnosisHeuristic, Icd9Query
 from ESP.nodis.base import DiseaseDefinition, Case
-
+from ESP.static.models import DrugSynonym
 
 class Tuberculosis(DiseaseDefinition):
     '''
@@ -97,13 +97,13 @@ class Tuberculosis(DiseaseDefinition):
         #
         heuristic_list.append( PrescriptionHeuristic(
             name = 'pyrazinamide',
-            drugs = [ 'pyrazinamide', 'PZA',],
+            drugs = DrugSynonym.generics_plus_synonyms([ 'pyrazinamide', 'PZA',]),
             exclude = ['CAPZA',], 
             ))
         
         heuristic_list.append( PrescriptionHeuristic(
             name = 'isoniazid',
-            drugs = [ 'Isoniazid','INH',],
+            drugs = DrugSynonym.generics_plus_synonyms([ 'Isoniazid','INH',]),
             exclude = ['INHAL', 'INHIB',], 
             ))
         
@@ -123,7 +123,7 @@ class Tuberculosis(DiseaseDefinition):
          
             heuristic_list.append( PrescriptionHeuristic(
                 name = drug,
-                drugs = [drug],
+                drugs = DrugSynonym.generics_plus_synonyms([drug]),
                 ))
         
         

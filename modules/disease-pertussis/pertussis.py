@@ -23,6 +23,7 @@ from django.db.models import F
 from ESP.utils import log
 from ESP.hef.base import Event
 from ESP.hef.base import PrescriptionHeuristic
+from ESP.static.models import DrugSynonym
 from ESP.hef.base import Dose
 from ESP.hef.base import LabResultPositiveHeuristic
 from ESP.hef.base import LabOrderHeuristic
@@ -71,8 +72,8 @@ class Pertussis(DiseaseDefinition):
         #
         heuristic_list.append( PrescriptionHeuristic(
             name = 'pertussis_med',
-            drugs = ['erythromycin','clarithromycin',
-                'azithromycin','trimethoprim-sulfamethoxazole', ],
+            drugs = DrugSynonym.generics_plus_synonyms(['erythromycin','clarithromycin',
+                'azithromycin','trimethoprim-sulfamethoxazole', ]),
             ))
         #
         # Lab Results

@@ -19,6 +19,8 @@ from ESP.hef.base import AbstractLabTest, BaseHeuristic, DiagnosisHeuristic, \
     LabResultRangeHeuristic, LabResultRatioHeuristic, LabResultWesternBlotHeuristic, \
     PrescriptionHeuristic
 from ESP.hef.models import Event, Timespan
+
+from ESP.static.models import DrugSynonym
 from ESP.nodis.base import DiseaseDefinition, Report
 from ESP.nodis.models import Case
 from ESP.utils.utils import log
@@ -250,13 +252,13 @@ class Diabetes(DiseaseDefinition):
             ]:
             h = PrescriptionHeuristic(
                 name = drug.replace(' ', '-'),
-                drugs = [drug],
+                drugs = DrugSynonym.generics_plus_synonyms([drug]),
                 )
             heuristics.append(h)
             
         h = PrescriptionHeuristic(
             name = 'insulin',
-            drugs = ['insulin'],
+            drugs = DrugSynonym.generics_plus_synonyms(['insulin']),
             exclude = ['syringe'],
             )
         heuristics.append(h)
