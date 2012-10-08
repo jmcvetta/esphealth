@@ -15,6 +15,7 @@ from ESP.static.models import Vaccine, ImmunizationManufacturer, Icd9
 from ESP.vaers.models import Case, Questionnaire
 
 from ESP.utils.hl7_builder.segments import MSH, EVN, PID, OBX, PV1, TXA
+from ESP.utils.hl7_builder.core import SegmentTree
 from ESP.utils.utils import log
 
 from ESP.settings import UPLOAD_SERVER
@@ -94,7 +95,7 @@ class HL7_clinbasket(object):
         #we don't currently do anything with this record.
         return pv1
 
-    def makeTXA(self):
+    def makeTXA(self,over_rider):
         #again, the DI and UN values seem to be MetroHealth specific.  These should be plugin specified
         txa = TXA()
         enc = self.case
@@ -103,10 +104,10 @@ class HL7_clinbasket(object):
         txa.activity_date=enc.date.strftime("%Y%m%d%H%M%s")
         txa.primary_activity_provider='3480'
         txa.originator_codename='3480'
-        if VAERS_OVERRIDE_CLINICIAN_REVIEWER=='':
-            txa.distributed_copies=ques.provider_id
+        if over_rider=='':
+            txa.distributed_copies=ques.natural_key
         else:
-            txa.distributed_copies=VAERS_OVERRIDE_CLINICIAN_REVIEWER
+            txa.distributed_copies=over_rider
         txa.unique_document_number='^^ESPMH_' + str(ques.id)
         txa.document_completion_status='AU'
         txa.document_availability_status='AV'
@@ -116,99 +117,119 @@ class HL7_clinbasket(object):
         #This does all the heavy lifting
         obx = OBX()
         patient = self.case.patient
-        AEs = self.case.adverse_events.distinct().order_by('date')
-        if rowcode=='RP':
-            obx.value_type=rowcode
-            obx.identifier='Review and comment on this issue at:'
-            obx.value='http://' + SITE_NAME + '/vaers/digest/' + self.ques.digest + '^EPIC^LINK^WEBURL^OTHER' 
-            return obx
-        elif rowcode=='001':
-            obx.set_id=rowcode
+        if rowcode!='RP':
+            AEs = self.case.adverse_events.distinct().order_by('date')
+            j=1
+            obx.set_id=str(j).zfill(3)
             obx.value_type='TX'
             obx.identifier='REP^Report Text'
             obx.value='Dear Dr. ' + str(self.ques.provider.first_name) + ' ' + str(self.ques.provider.last_name) + ', '
-            return obx
-        elif rowcode=='002':
-            obx.set_id=rowcode
+            obxstr=str(obx)+'\r'
+            j=j+1
+            obx.set_id=str(j).zfill(3)
             obx.value_type='TX'
             obx.identifier='REP^Report Text'
             if self.case.adverse_events.filter(category='2_rare').exists():
                 #Rare, severe AE
-                caseDescription = '~ ~Your patient, ' + patient.name + ', may have experienced a serious adverse event following a recent vaccination. ' + patient.name + ', was recently noted to have '
+                caseDescription = ('~ ~Your patient, ' + patient.name + ', may have experienced a serious adverse event following a recent vaccination. ' + 
+                        'PLEASE NOTE: DUE TO THE SEVERITY OF THE ADVERSE EVENT, A VAERS REPORT WILL AUTOMATICALLY BE GENERATED AND SUBMITTED TO CDC-VAERS IF YOU DO NOT RESPOND TO THIS MESSAGE. ' +
+                        patient.name + ', was recently noted to have: ')
             elif self.case.adverse_events.filter(category='3_possible').exists():
                 #Possible AE
-                caseDescription = '~ ~Your patient, ' + patient.name + ', was recently noted to have '
-            evntlist=[]
+                caseDescription = '~ ~Your patient, ' + patient.first_name + ' ' + patient.last_name +  ', was recently noted to have: '
+            obx.value=caseDescription
+            obxstr=obxstr+str(obx)+'\r'
+            i=1
             for AE in AEs:
                 if ContentType.objects.get_for_id(AE.content_type_id).model.startswith('encounter'):
                     icd9codes = AE.matching_rule_explain.split()
                     for icd9code in icd9codes:
                         if Icd9.objects.filter(code=icd9code).exists():
-                            evntlist.append(Icd9.objects.get(code=icd9code).name)
-                            caseDescription += Icd9.objects.get(code=icd9code).name + ', '
-                    caseDescription = caseDescription[0:-2] + ' on ' + str(AE.encounterevent.date) + ', '  
+                            obx.value = '(' + str(i) + ') a diagnosis of ' + Icd9.objects.get(code=icd9code).longname + ' on ' + str(AE.encounterevent.date) 
+                            j=j+1
+                            obx.set_id=str(j).zfill(3)
+                            i=i+1 
+                            obxstr=obxstr+str(obx)+'\r'
                 elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('prescription'):
-                    caseDescription = caseDescription + AE.prescriptionevent.content_object.name + ' on ' + str(AE.prescriptionevent.content_object.date) + ', '
-                    evntlist.append(AE.prescriptionevent.content_object.name)
+                    obx.value = '(' + str(i) + ') a prescription for ' + AE.prescriptionevent.content_object.name + ' on ' + str(AE.prescriptionevent.content_object.date) 
+                    j=j+1
+                    obx.set_id=str(j).zfill(3)
+                    i=i+1
+                    obxstr=obxstr+str(obx)+'\r'
                 elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('labresult'):
-                    caseDescription = caseDescription + AE.labresultevent.content_object.native_name + ' on ' + str(AE.labresultevent.content_object.result_date) + ', '
-                    evntlist.append(AE.labresultevent.content_object.native_name)
+                    obx.value = ('(' + str(i) + ') a lab test for ' + AE.labresultevent.content_object.native_name 
+                            + ' with a result of ' + AE.labresultevent.content_object.result_string + ' on ' + str(AE.labresultevent.content_object.result_date) )
+                    j=j+1
+                    obx.set_id=str(j).zfill(3)
+                    i=i+1
+                    obxstr=obxstr+str(obx)+'\r'
                 elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('allergy'):
-                    #adding the term 'allergy' to the name, as it is otherwise confusing with the test data.
-                    #this may not be the case with real allergen names and if so the code will need to be revised.
-                    caseDescription = caseDescription + AE.allergyevent.content_object.name + ' allergy on ' + str(AE.allergyevent.content_object.date) + ', '
-                    evntlist.append(AE.allergyevent.content_object.name + ' allergy')
-            caseDescription = caseDescription[0:-2] + '. ' + patient.name + ' was vaccinated with '
+                        #adding the term 'allergy' to the name, as it is otherwise confusing with the test data.
+                        #this may not be the case with real allergen names and if so the code will need to be revised.
+                    obx.value = '(' + str(i) + ') an allergic reaction to ' + AE.allergyevent.content_object.name + ' on ' + str(AE.allergyevent.content_object.date) 
+                    j=j+1
+                    obx.set_id=str(j).zfill(3)
+                    i=i+1
+                    obxstr=obxstr+str(obx)+'\r'
+            obx.value = '~ ~' + patient.first_name + ' ' + patient.last_name + ' was vaccinated with: '
+            j=j+1
+            obx.set_id=str(j).zfill(3)
+            obxstr=obxstr+str(obx)+'\r'
+            i=1
             for imm in self.case.immunizations.values('name','date').distinct():
-                caseDescription = caseDescription + imm.get('name') + ', '
-            caseDescription  = caseDescription[0:-2] + ' on ' + str(imm.get('date')) + '. Do you think that it is possible that '
-            for evnt in evntlist:
-                caseDescription = caseDescription + evnt + ' or '
-            caseDescription = caseDescription[0:-4] + ' was due to an adverse effect (a possible side effect) of a vaccine? '
-            obx.value=caseDescription 
-            return obx
-        elif rowcode=='003':   
-            obx.set_id=rowcode
-            obx.value_type='TX'
-            obx.identifier='REP^Report Text'
-            obx.value='~ ~If so, we can automatically submit an electronic report to the CDC/FDAs Vaccine Adverse Event Reporting System (VAERS) on your behalf.'
-            return obx
-        elif rowcode=='004':   
-            obx.set_id=rowcode
-            obx.value_type='TX'
-            obx.identifier='REP^Report Text'
+                obx.value = '(' + str(i) + ') ' + imm.get('name') + ' on ' + str(imm.get('date'))
+                j=j+1
+                obx.set_id=str(j).zfill(3)
+                i=i+1
+                obxstr=obxstr+str(obx)+'\r' 
+            obx.value =  '~ ~Is it possible your patient experienced an adverse event (a possible side effect) of a vaccination? '
+            j=j+1
+            obx.set_id=str(j).zfill(3)
+            obxstr=obxstr+str(obx)+'\r'
+            obx.value='~ ~If so, we can submit an electronic report to the CDC/FDAs Vaccine Adverse Event Reporting System (VAERS) on your behalf.'
+            j=j+1
+            obx.set_id=str(j).zfill(3)
+            obxstr=obxstr+str(obx)+'\r'
             obx.value='~ ~Please click the link below to review and comment on this issue.'
-            return obx
-        elif rowcode=='005':   
-            obx.set_id=rowcode
-            obx.value_type='TX'
-            obx.identifier='REP^Report Text'
+            j=j+1
+            obx.set_id=str(j).zfill(3)
+            obxstr=obxstr+str(obx)+'\r'
             obx.value=u'~ ~This note was automatically generated by the Electronic Support for Public health system (ESP), a joint venture of MetroHealth, the Centers for Disease Control and Prevention, and Harvard Pilgrim Health Care Institute. The project is funded by the Centers for Disease Control and Prevention. If you have clinical questions about an adverse event, please contact the CDC/FDA\'s Vaccine Adverse Event Reporting System helpline at 1-800-822-7967 email: info@vaers.org. If you have questions about this project please contact the MetroHealth Physician Liason, David Kaelber, MD, at dkaelber@metrohealth.org.'
+            j=j+1
+            obx.set_id=str(j).zfill(3)
+            obxstr=obxstr+str(obx)+'\r'
+            return obxstr
+        elif rowcode=='RP':
+        #last obx record is not supposed to have a set_id value for some reason 
+            obx.set_id=''
+            obx.value_type='RP'
+            obx.identifier='Review and comment on this issue at:'
+            obx.value='http://' + SITE_NAME + '/vaers/digest/' + self.ques.digest + '^EPIC^LINK^WEBURL^OTHER' 
             return obx
 
     def make_msgs(self):
         '''
         Assembles an hl7 message file of VAERs case for Clinician's In Basket
         '''
-        all_segs = [self.makeMSH(), 
-                    self.makeEVN(), 
-                    self.makePID(), 
-                    self.makePV1(), 
-                    self.makeTXA(), 
-                    self.makeOBX('001'),
-                    self.makeOBX('002'),
-                    self.makeOBX('003'),
-                    self.makeOBX('004'),
-                    self.makeOBX('005'),
-                    self.makeOBX('RP')]
-        all_text = '\r'.join([str(x) for x in all_segs])  + '\r' + '\n'
-        #the cStringIO.StringIO object is built in memory, not saved to disk.
-        hl7file = cStringIO.StringIO()
-        hl7file.write(all_text)
-        hl7file.seek(0)
-        if transmit_ftp(hl7file, 'clinbox_msg_ID' + str(self.ques.id) + '.txt'):
-            Questionnaire.objects.filter(id=self.ques.id).update(inbox_message=hl7file.getvalue())
-        hl7file.close()
+        if VAERS_OVERRIDE_CLINICIAN_REVIEWER=='':
+            over_riders=''
+        else:
+            over_riders = str(VAERS_OVERRIDE_CLINICIAN_REVIEWER).split('/')
+        for over_rider in over_riders:
+            all_text = (str(self.makeMSH()) + '\r' +
+                        str(self.makeEVN()) + '\r' + 
+                        str(self.makePID()) + '\r' + 
+                        str(self.makePV1()) + '\r' + 
+                        str(self.makeTXA(over_rider)) + '\r' + 
+                        self.makeOBX('main') +
+                        str(self.makeOBX('RP')) + '\r' + '\n')
+            #the cStringIO.StringIO object is built in memory, not saved to disk.
+            hl7file = cStringIO.StringIO()
+            hl7file.write(all_text)
+            hl7file.seek(0)
+            if transmit_ftp(hl7file, 'clinbox_msg_ID' + over_rider + '_' + str(self.ques.id) + '.txt'):
+                Questionnaire.objects.filter(id=self.ques.id).update(inbox_message=hl7file.getvalue())
+            hl7file.close()
 
 
 def transmit_ftp(fileObj, filename):

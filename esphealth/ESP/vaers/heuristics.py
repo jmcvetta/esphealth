@@ -55,7 +55,8 @@ class AdverseEventHeuristic(BaseHeuristic):
         
         this_case, case_created = Case.objects.get_or_create(
                  date = this_imm.date,
-                 patient = this_imm.patient
+                 patient = this_imm.patient,
+                 version = rules.VAERS_VERSION
                 )
         this_case.save()
         
@@ -230,7 +231,7 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                 prior_enc_qs = Encounter.objects.filter(
                     date__lt = this_enc.date, 
                     date__gte = earliest, 
-                    priority__lte = this_enc.priority,
+                    #priority__lte = this_enc.priority,
                     patient = this_enc.patient,                     
                     icd9_codes__in = self.icd9s.all(),
                 )
@@ -373,7 +374,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         
     def __init__(self, event_name, lab_type, criterion, pediatric):
         '''
-        @param pediatric: Apply this heuristic to prediatric patients rather than adults?
+        @param pediatric: Apply this heuristic to pediatric patients rather than adults?
         @type pediatric:  Bool (if false, apply to adults only)
         '''
         self.name = event_name
@@ -487,10 +488,10 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         # Adult 18yrs +
         
         if self.pediatric:
-            candidates = candidates.filter(patient__date_of_birth__gt = F('patient__immunization__date') - relativedelta(years=18).days)
-            candidates = candidates.filter(patient__date_of_birth__lte = F('patient__immunization__date') - relativedelta(months=3).days)
+            candidates = candidates.filter(patient__date_of_birth__gt = F('date') - datetime.timedelta(days=6575))
+            candidates = candidates.filter(patient__date_of_birth__lte = F('date') - datetime.timedelta(days=90))
         else: # adult
-            candidates = candidates.filter(patient__date_of_birth__lte = F('patient__immunization__date') - relativedelta(years=18).days)
+            candidates = candidates.filter(patient__date_of_birth__lte = F('date') - datetime.timedelta(days=6575))
         return [c for c in candidates if is_trigger_value(c, trigger) and not 
                 excluded_due_to_history(c, comparator, baseline)]
 
@@ -547,9 +548,10 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 
             except AssertionError:
                 log.error('No candidate immunization for LabResult %s' % lab_result)
-                log.warn('Deleting event %s' % ev)
-                ev.delete()
-                counter -= 1
+                #if we get an assertion error, ev can't have been initialized
+                #log.warn('Deleting event %s' % ev)
+                #ev.delete()
+                #counter -= 1
             
         log.info('Created %d events' % counter)
 

@@ -80,6 +80,7 @@ class AdverseEvent(models.Model):
     digest = models.CharField(max_length=200, null=True)
     created_on = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    version = models.CharField(max_length=20, null=True)
     
     # Generic foreign key - any kind of EMR record can be tagged
     #    http://docs.djangoproject.com/en/dev/ref/contrib/contenttypes/

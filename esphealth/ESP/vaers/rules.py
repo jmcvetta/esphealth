@@ -3,6 +3,8 @@
 from ESP.static.models import Icd9, Vaccine, ImmunizationManufacturer
 from ESP.utils.utils import log
 
+VAERS_VERSION = '0.1'
+
 # Constants defined in the VAERS documents.
 TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
 
@@ -267,7 +269,7 @@ VAERS_PRESCRIPTION = {
     }
 
 VAERS_LAB_RESULTS = {
-     'Hemoglobin':{
+     'hemoglobin':{
         'codes':[
             '83036--258', '83051--258', '83036--1638', '80055--1100', '82955--1100', '83020--1100',
             '83021--1100', '85014--1100', '85018--1100', '85018--9', '85021--1100', '85021--9',
@@ -294,7 +296,7 @@ VAERS_LAB_RESULTS = {
                 }]        
         },
     
-    'WBC Count':{
+    'wbc':{
         'codes':[
             '89051--4914', '89051--710', '85007--2548', '89320--1446', 'LA0326--1446', '89320--1446', 
             'LA0326--1446', '80055--2965', '83970--2842', '85007--2965', '85025--2842', '85025--2965', 
@@ -319,7 +321,7 @@ VAERS_LAB_RESULTS = {
         },
 
  
-    'Neutrophils':{
+    'neutrophils':{
         'codes':[
             '85025--2772', '85027--2772', '85048--2772', '85007--2781', '85007--2525', '85025--2525',
             '85027--2525', '89051--4916', '85008--6746', '86038--6067', '80055--2978', '80055--2980',
@@ -346,7 +348,7 @@ VAERS_LAB_RESULTS = {
             }]    
         },
 
-    'Eosinophils':{
+    'eosinophils':{
         'codes':[
             '85025--2770', '85027--2770', '85999--2770', '85007--2784', '85007--2528', '85025--2528',
             '85027--2528', '86235--6532', '89190--219', '85025--2767', '85027--2767', '80055--194',
@@ -372,7 +374,7 @@ VAERS_LAB_RESULTS = {
             }]
         },
 
-    'Lymphocytes':{
+    'lymphocytes':{
         'codes':[
             '83718--196', '85007--196', 'N1001--196', '85007--2782', '85007--2773', '85025--2773',
             '85027--2773', '80055--3184', '85007--3184', '85027--3184', '85007--2526', '85025--2526',
@@ -386,14 +388,14 @@ VAERS_LAB_RESULTS = {
             ],
         
         'criteria_adult':[{
-            'trigger':'X<1',
+            'trigger':'X<.8',
             'unit':'x109/L',
             'exclude_if':('>','LKV*0.7'),
             'category':'3_possible',
             'risk_period':30
             }],
         'criteria_pediatric':[{
-            'trigger':'X<1',
+            'trigger':'X<.8',
             'unit':'x109/L',
             'exclude_if':('>','LKV*0.7'),
             'category':'3_possible',
@@ -401,12 +403,12 @@ VAERS_LAB_RESULTS = {
             }]
         },
 
-    'Platelet count':{
+    'platelet':{
         'codes':[
             '85027--590', '86022--4869', '85025--1247', '85027--1247', '85049--1247', '85590--6154',
             '85027--591', '85595--591', '85007--2991', '85007--96', '85008--2991', '85008--96',
             '80055--4468', '85007--4468', '85027--4468', '86022--1189', '86022--662', '80055--2982',
-            '85025--2982', '85027--2982', '85049--2982', '86023--4458'
+            '85025--2982', '85027--2982', '85049--2982', '86023--4458', '85027--3359', '85025--89'
             ],
         
         'criteria_adult':[{
@@ -437,7 +439,7 @@ VAERS_LAB_RESULTS = {
                 }]
         },
     
-    'Creatinine':{
+    'creatinine':{
         'codes':[
             '80048--2926', '80053--2926', '80069--2926', '82040--2926', '84520--2926', '82382--3393',
             '82495--5222', '80004--1796', '80048--5642', '80048--59', '80053--5642', '80053--59',
@@ -478,7 +480,7 @@ VAERS_LAB_RESULTS = {
                 }]
         },
 
-    'ALT':{
+    'alt':{
         'codes':[
             '86003--4388', '86001--6602', '80053--1728', '84460--1728', '82785--1911', '86003--1911',
             '82785--3002', '86003--3002', '86003--1911', '86003--4752', '86003--4751', '86001--6603',
@@ -503,9 +505,7 @@ VAERS_LAB_RESULTS = {
                 }]
         },
     
-
-
-    'AST':{
+    'ast':{
         'codes':[
             '86003--4832', '86003--2739', '85007--1507', '86606--3807', '86003--4856', '86003--4855',
             '81001--2992', '81015--2992', '82465--1321', '81000--257', '81001--257', '81015--257',
@@ -543,7 +543,7 @@ VAERS_LAB_RESULTS = {
     
     
     
-    'Bilirubin':{
+    'bilirubin':{
         'codes':[
             '82542--5442', '80076--206', '81000--206', '81002--206', '82040--206', '82247--206', 
             '82248--206', '82251--206', 'LA0349--206', '82248--1715', '80076--478', '82040--478',
@@ -572,7 +572,7 @@ VAERS_LAB_RESULTS = {
                 }]
         },
 
-    'ALK':{
+    'alk':{
         'codes':[
             '80053--66', '80076--66', '82040--66', '82947--66', '84075--66', '84080--66',
             '84078--5405', '84075--3480', 'LA0269--3480', '81002--3137', '85540--3137', 
@@ -581,14 +581,14 @@ VAERS_LAB_RESULTS = {
             ],
         
         'criteria_adult':[{
-                'trigger':'X>200',
+                'trigger':'X>600',
                 'unit':'IU/L',
                 'exclude_if':('<','LKV*1.3'),
                 'category':'3_possible',
                 'risk_period':30
                 }],
         'criteria_pediatric':[{
-                'trigger':'X>500',
+                'trigger':'X>600',
                 'unit':'IU/L',
                 'exclude_if':('<','LKV*1.3'),
                 'category':'3_possible',
@@ -596,7 +596,7 @@ VAERS_LAB_RESULTS = {
                 }]
         },
     
-    'PTT':{
+    'ptt':{
         'codes':[
             '85610--4595', '85610--2858', '85730--2858', '85300--2249', '85613--2249', '85730--759',
             '85300--3159', '86148--3159', '85730--1221'
@@ -618,7 +618,7 @@ VAERS_LAB_RESULTS = {
         },
     
 
-    'Creatine kinase':{
+    'creatine_kinase':{
         'codes':['82552--5637','82552--6721'],
         'criteria_adult':[{
                 'trigger':'X>500',
@@ -637,7 +637,7 @@ VAERS_LAB_RESULTS = {
         },
     
     
-    'Potassium':{
+    'potassium':{
         'codes':[
             '80004--1804', '80004--70', '80048--70', '80051--70', '80053--70', '80069--70',
             '82040--70', '84132--70', '84133--4477', '84132--5208', '84133--3899', '84300--3899',
@@ -654,7 +654,7 @@ VAERS_LAB_RESULTS = {
         'criteria_pediatric': []
         },
     
-    'Sodium':{
+    'sodium':{
         'codes':[
             '80004--1798', '80004--60', '80048--60', '80051--60', '80053--60', '80069--60',
             '82040--60', '84295--60', '84300--494', '81002--3435', '84300--2349', '84300--2357',
@@ -678,7 +678,7 @@ VAERS_LAB_RESULTS = {
              ]
         },
 
-     'Calcium':{
+     'calcium':{
          'codes':[
              '80004--1810', '80048--74', '80053--74', '80069--74', '82040--74', '82307--74',
              '82310--74', '83970--74', '84443--74', 'LA0216--74', 'LA0344--74', '81002--5504',
@@ -724,14 +724,174 @@ VAERS_LAB_RESULTS = {
 # default risk start is = 1
 
 VAERS_DIAGNOSTICS = {
-    '357.0': {#
-        'name':'Guillain-Barre',
-        'ignore_period':12,
+    '009.3': {#
+        'name':'Diarrhea - Presumed Infectious',
+        'ignore_period':36,
         'category':'3_possible',
-        'source':'Menactra',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '035': {#
+        'name':'Erysipelas',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '041.00': {#
+        'name':'Streptococcus, Unspec.',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '041.19': {#
+        'name':'Staphylococcus Infecction, Other type',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '045*': {#
+        'name':'Poliomyelitis',
+        'ignore_period':None,
+        'category':'2_rare',
+        'risk_period_days': 42,
+        },    
+    
+    '047.8; 047.9; 049.9;321.2; 322*': {#
+        'name':'Meningitis',
+        'ignore_period':12,
+        'ignore_codes':['047.0-047.1', '048*', '049.0-049.8', '053-056*', '320*'],
+        'category':'3_possible',
+        'source':'RotaTeq',
         'risk_period_days': 30,
         },
     
+    '052.7; 334.4; 781.2; 781.3': {#
+        'name':'Ataxia',
+        'ignore_period':12,
+        'category':'3_possible',
+        'source':'MMR-V',
+        'risk_period_days': 30,
+        },
+    
+    '055*': {#
+        'name':'Measles',
+        'ignore_period':None,
+        'category':'2_rare',
+        'risk_period_days': 42,
+        },    
+    
+    '079.99': {#
+        'name':'Viral Infection, Unspecified',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '287.0': {#
+        'name':'Henoch-Schonlein purpura',
+        'ignore_period':12,
+        'category':'3_possible',
+        'source':'Polysaccharide MeningococcalV',
+        'risk_period_days': 30,
+        },
+        
+    '287.31; 287.5': {#
+        'name':'Idiopathic thrombocytopenic purpura or thrombocytopenia unspecified',
+        'ignore_period':12,
+        'category':'2_rare',
+        'source':'MMR',
+        'risk_period_start':7,
+        'risk_period_days': 30, 
+        },
+            
+    '293.0': {#
+        'name':'Delirium - Acute',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '323.51':{ #
+        'name':'Encephalitis / encephalomyelitis - post immunization',  
+        'ignore_period':None,
+        'category':'2_rare',
+        'risk_period_days': 15,          
+        },
+
+    '323.52': {#
+        'name':'Myelitis - post immunization',
+        'ignore_period':None,
+        'category':'2_rare',
+        'risk_period_days': 42,
+        },
+    
+    '323.9; 323.5; 323.6; 323.7; 323.8; 055.0; 052.0': {
+        'name':'Encephalitis',#
+        'ignore_period':12,
+        'category':'2_rare',
+        'source':'MMR-V',
+        'risk_period_days': 15,
+        },
+    
+    '338.19': {#
+        'name':'Pain, Acute, Other',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '342; 344; 781.4; 341.2; 341.20; 341.21; 341.22': {# 
+        'name':'Paralytic syndromes',
+        'ignore_period':12,
+        'category':'2_rare',
+        'source':'TdaP',
+        'risk_period_start':0,
+        'risk_period_days': 42,
+        },
+    
+    '345*; 780.3': {#
+        'name':'Seizures',
+        'ignore_period':36,
+        'category':'3_possible',
+        'source':'Menactra',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },
+    
+    '347*': {#
+        'name':'Narcolepsy',
+        'ignore_period':12,
+        'category':'3_possible',
+        'source':'Pandemrix',
+        'risk_period_days': 30,
+        },
+                    
+    '348.3; 348.5': {#
+        'name':'Encephalopathy',#
+        'ignore_period':12,
+        'category':'2_rare',
+        'source':'TdaP',
+        'risk_period_days': 15,
+        },
+        
+    '350; 351; 352': {#
+        'name':'Cranial nerve disorders',
+        'ignore_period':12,
+        'category':'3_possible',
+        'source':'TdaP',
+        'risk_period_days': 30,        
+        },    
+        
     '351.0': {#
         'name':'Bell''s palsy',
         'ignore_period':12,
@@ -740,23 +900,201 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 30,        
         },
         
-    '723.3; 723.4': {#
-        'name':'Brachial neuritis',
+    '357.0': {#
+        'name':'Guillain-Barre',
+        'ignore_period':12,
+        'category':'3_possible',
+        'source':'Menactra',
+        'risk_period_days': 30,
+        },
+    
+    '360.11; 363.20; 364.3': {#
+        'name':'Uveitis',
+        'ignore_period':12,
+        'category':'3_possible',
+        'source':'Heb B',
+        'risk_period_days': 30, 
+        },
+        
+    '377.3; 377.30; 377.31; 377.32; 377.34; 377.39': {#
+        'name':'Optic neuritis',
+        'ignore_period':12,
+        'category':'3_possible',
+        'source':'Influenza Hep B',
+        'risk_period_days': 30,
+        },
+    
+    '415.1; 415.11; 415.12; 415.19; 453*': {#   
+        'name':'Venous thromboembolism',
+        'ignore_period':12,
+        'category':'3_possible',
+        'source':'HPV',
+        'risk_period_days': 30,
+        },    
+        
+    '420*': {#
+        'name':'Pericarditis',
+        'ignore_period':12,
+        'category':'3_possible',
+        'source':'Influenza',
+        'risk_period_days': 30,
+        },
+           
+    '427.31': {#
+        'name':'Atrial Fibrillation',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '429.0; 422*': {#
+        'name':'Myocarditis',
+        'ignore_period':12,
+        'category':'3_possible',
+        'source':'RotaTeq',
+        'risk_period_days': 30,
+        },
+    
+    '433*; 434*; 435.0; 435.1; 435.8; 435.9; 436*; 437.1':{#
+        'name':'Stroke',
         'ignore_period':12,
         'category':'2_rare',
         'source':'HPV',
-        'risk_period_days': 28,        
-        },    
+        'risk_period_days': 30,
+        },
     
-    '493*; 786.07': {#
-        'name':'Bronchospasm',
-        'ignore_period':3,
+    '446.1': {#
+        'name':'Kawasaki disease',
+        'ignore_period':12,
         'category':'3_possible',
-        'source':'',
-        'risk_period_start':0,
-        'risk_period_days': 7,        
+        'source':'RotaTeq',
+        'risk_period_days': 30,
         },
         
+    '458.0; 458.9': {#
+        'name':'Hypotension',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '464.4': {#
+        'name':'Croup',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '478.20': {#
+        'name':'Pharyngeal Disease, Unspecified',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '478.8': {#
+        'name':'Upper respiratory tract hypersensitivity reaction',
+        'ignore_period':12,
+        'category':'3_possible',
+        'risk_period_start':0,
+        'risk_period_days': 14,
+        },
+    
+    '493*; 786.07': {#
+        'name':'Asthma or Wheezing',
+        'ignore_period':36,
+        'category':'3_possible',
+        'source':'',
+        'risk_period_start':1,
+        'risk_period_days': 4,        
+        },
+        
+    '495.8': {#
+        'name':'Alveolitis / Pneumonitis - Other Allergic',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '495.9': {#
+        'name':'Pneumonitis - hypersensitivity',
+        'ignore_period':12,
+        'category':'3_possible',
+        'risk_period_start':0,
+        'risk_period_days': 30,
+          
+        },
+    
+    '519.11': {#
+        'name':'Bronchospasm',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '540*': {#
+        'name':'Appendicitis',
+        'ignore_period':12,
+        'category':'3_possible',
+        'source':'MMR-V',
+        'risk_period_days': 30,
+        },
+        
+    '543.9; 560.0': {#
+        'name':'Intussusception',
+        'ignore_period':12,
+        'category':'3_possible',
+        'source':'RotaTeq',
+        'risk_period_days': 30,
+        },
+    
+    '569.3; 578.1; 578.9': {#
+        'name':'GI bleeding',
+        'ignore_period':12,
+        'ignore_codes':['004*', '008*', '204-208*', '286*', '287*', '558.3', '800-998*'],
+        'category':'3_possible',
+        'source':'RotaTeq',
+        'risk_period_days': 30,
+        },
+    
+    '614.3': {#
+        'name':'Parametritis / Cellulitis - Acute',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '643.90': {#
+        'name':'Vomiting of Preg, Unspec',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '656.33': {#
+        'name':'Fetal Distress in Preg - Antepart',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '659.20; 659.23': {#
+        'name':'Maternal Fever During Labor',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
     '682.3': {#
         'name':'Cellulitis - upper arm',
         'ignore_period':3,
@@ -781,31 +1119,70 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 30,        
         }, 
         
-    '350; 351; 352': {#
-        'name':'Cranial nerve disorders',
-        'ignore_period':12,
+    '686.9': {#
+        'name':'Local Skin / Subcutan Infection, Unspec',
+        'ignore_period':36,
         'category':'3_possible',
-        'source':'TdaP',
-        'risk_period_days': 30,        
+        'risk_period_start':1,
+        'risk_period_days': 4,
         },    
-        
-    '780.92': {#
-        'name':'Excessive crying',
-        'ignore_period':None,
+    
+    '708.0': {#
+        'name':'Allergic urticaria',
+        'ignore_period':36,
         'category':'3_possible',
-        'source':'',
-        'risk_period_start':0,
-        'risk_period_days': 7,        
-        },  
-                 
-    '345*; 780.3': {#
-        'name':'Seizures',
-        'ignore_period':None,
-        'category':'3_possible',
-        'source':'Menactra',
-        'risk_period_start':0,
-        'risk_period_days': 30,
+        'source':'MMR-V',
+        'risk_period_start':1,
+        'risk_period_days': 4,
         },
+    
+    '709.8': {#
+        'name':'Skin Disorder, Other',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '714.9; 716.9; 716.90; 056.71': {#
+        'name':'Arthritis',
+        'ignore_period':12,
+        'category':'2_rare',
+        'source':'MMR-V',
+        'risk_period_days': 42,
+        },
+        
+    '719.45': {#
+        'name':'Arthralgia - Pelvis / Thigh',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '723.3; 723.4': {#
+        'name':'Brachial neuritis',
+        'ignore_period':12,
+        'category':'2_rare',
+        'source':'HPV',
+        'risk_period_days': 28,        
+        },    
+    
+    '729.1': {#
+        'name':'Myalgia, Unspec',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '775.6': {#
+        'name':'Hypoglycemia - Neonatal',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
     
     '779.0; 333.2':{#
         'name':'Seizures (RotaTeq)',
@@ -816,13 +1193,177 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 30,
         },
     
-    '433*; 434*; 435.0; 435.1; 435.8; 435.9; 436*; 437.1':{#
-        'name':'Stroke',
-        'ignore_period':12,
-        'category':'2_rare',
+    '780.09': {#
+        'name':'COnsciousness Alteration - Other',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '780.2':{#
+        'name':'Syncope',
+        'ignore_period':36,
+        'category':'3_possible',
         'source':'HPV',
-        'risk_period_days': 30,
+        'risk_period_start':1,
+        'risk_period_days': 4,
         },
+                
+    '780.31; 780.32': {#
+        'name':'Febrile seizure',
+        'ignore_period':36,
+        'category':'3_possible',
+        'source':'MMR-V',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },
+    
+    '780.39': {#
+        'name':'Seizure',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '780.4': {#
+        'name':'Dizziness - Nonspecific',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '780.50': {#
+        'name':'Sleep Disorder / Disturbance, Unspec',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '780.6': {#
+        'name':'Fever',
+        'ignore_period':36,
+        'category':'3_possible',
+        'source':'MMR-V',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },
+    
+    '780.91': {#
+        'name':'Fussy Infant',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '780.92': {#
+        'name':'Excessive crying',
+        'ignore_period':36,
+        'category':'3_possible',
+        'source':'',
+        'risk_period_start':1,
+        'risk_period_days': 4,        
+        },  
+                 
+    '782.62': {#
+        'name':'Flushing',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '784.0': {#
+        'name':'Headache',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '784.1': {#
+        'name':'Throat Pain',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '785.1': {#
+        'name':'Palpitations',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '786.05': {#
+        'name':'Shortness of Breath',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '786.07': {#
+        'name':'Wheezing',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '786.8': {#
+        'name':'Hiccoughs',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '787.01': {#
+        'name':'Nausea and Vomiting',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '787.02': {#
+        'name':'Nausea',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '787.03': {#
+        'name':'Vomiting',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '787.3': {#
+        'name':'Flatulance / Eructation / Bloating',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '787.91': {#
+        'name':'Diarrhea',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
     
     '798.0':{#
         'name':'Sudden infant death syndrome',
@@ -832,255 +1373,6 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 30,
         },
     
-    '780.2':{#
-        'name':'Syncope',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'HPV',
-        'risk_period_days': 30,
-        },
-                
-    '780.31': {#
-        'name':'Febrile seizure',
-        'ignore_period':None,
-        'category':'3_possible',
-        'source':'MMR-V',
-        'risk_period_start':0,
-        'risk_period_days': 14,
-        },
-    
-    '052.7; 334.4; 781.2; 781.3': {#
-        'name':'Ataxia',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'MMR-V',
-        'risk_period_days': 30,
-        },
-    
-    '323.9; 323.5; 323.6; 323.7; 323.8; 055.0; 052.0': {
-        'name':'Encephalitis',#
-        'ignore_period':12,
-        'category':'2_rare',
-        'source':'MMR-V',
-        'risk_period_days': 15,
-        },
-    
-    '348.3; 348.5': {#
-        'name':'Encephalopathy',#
-        'ignore_period':12,
-        'category':'2_rare',
-        'source':'TdaP',
-        'risk_period_days': 15,
-        },
-        
-    '714.9; 716.9; 056.71': {#
-        'name':'Arthritis',
-        'ignore_period':12,
-        'category':'2_rare',
-        'source':'MMR-V',
-        'risk_period_days': 42,
-        },
-    
-    '708.0': {#
-        'name':'Allergic urticaria',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'MMR-V',
-        'risk_period_start':0,
-        'risk_period_days': 14,
-        },
-    
-    '995.1': {#
-        'name':'Angioneurotic edema',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'MMR-V',
-        'risk_period_start':0,
-        'risk_period_days': 7,
-        },
-    
-    '999.4': {#
-        'name':'Anaphylactic shock due to serum',
-        'ignore_period':12,
-        'category':'2_rare',
-        'source':'MMR-V',
-        'risk_period_start':0,
-        'risk_period_days': 14,
-        },
-        
-    '995.0': {#
-        'name':'Anaphylxis',
-        'ignore_period':12,
-        'category':'2_rare',
-        'source':'MMR-V',
-        'risk_period_start':0,
-        'risk_period_days': 7,
-        },    
-    
-    '540*': {#
-        'name':'Appendicitis',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'MMR-V',
-        'risk_period_days': 30,
-        },
-        
-    '543.9; 560.0': {#
-        'name':'Intussusception',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'RotaTeq',
-        'risk_period_days': 30,
-        },
-    
-    '446.1': {#
-        'name':'Kawasaki disease',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'RotaTeq',
-        'risk_period_days': 30,
-        },
-        
-    '055*': {#
-        'name':'Measles',
-        'ignore_period':None,
-        'category':'2_rare',
-        'risk_period_days': 42,
-        },    
-    
-    '569.3; 578.1; 578.9': {#
-        'name':'GI bleeding',
-        'ignore_period':12,
-        'ignore_codes':['004*', '008*', '204-208*', '286*', '287*', '558.3', '800-998*'],
-        'category':'3_possible',
-        'source':'RotaTeq',
-        'risk_period_days': 30,
-        },
-    
-    '047.8; 047.9; 049.9;321.2; 322*': {#
-        'name':'Meningitis',
-        'ignore_period':12,
-        'ignore_codes':['047.0-047.1', '048*', '049.0-049.8', '053-056*', '320*'],
-        'category':'3_possible',
-        'source':'RotaTeq',
-        'risk_period_days': 30,
-        },
-    
-    '429.0; 422*': {#
-        'name':'Myocarditis',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'RotaTeq',
-        'risk_period_days': 30,
-        },
-    
-    '342; 344; 781.4; 341.2; 341.20; 341.21; 341.22': {# 
-        'name':'Paralytic syndromes',
-        'ignore_period':12,
-        'category':'2_rare',
-        'source':'TdaP',
-        'risk_period_start':0,
-        'risk_period_days': 42,
-        },
-    
-    '420*': {#
-        'name':'Pericarditis',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'Influenza',
-        'risk_period_days': 30,
-        },
-           
-    '377.3; 377.30; 377.31; 377.32; 377.34; 377.39': {#
-        'name':'Optic neuritis',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'Influenza Hep B',
-        'risk_period_days': 30,
-        },
-    
-    '347*': {#
-        'name':'Narcolepsy',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'Pandemrix',
-        'risk_period_days': 30,
-        },
-                    
-    '995.20': {#
-        'name':'Hypersensitivity - drug, unspec',
-        'ignore_period':12,
-        'category':'3_possible',
-        'risk_period_start':0,
-        'risk_period_days': 7,
-        },
-    
-    '287.0': {#
-        'name':'Henoch-Schonlein purpura',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'Polysaccharide MeningococcalV',
-        'risk_period_days': 30,
-        },
-        
-    '287.31; 287.5': {#
-        'name':'Idiopathic thrombocytopenic purpura or thrombocytopenia unspecified',
-        'ignore_period':12,
-        'category':'2_rare',
-        'source':'MMR',
-        'risk_period_start':7,
-        'risk_period_days': 30, 
-        },
-            
-    '495.9': {#
-        'name':'Pneumonitis - hypersensitivity',
-        'ignore_period':12,
-        'category':'3_possible',
-        'risk_period_start':0,
-        'risk_period_days': 30,
-          
-        },
-    
-    '478.8': {#
-        'name':'Upper respiratory tract hypersensitivity reaction',
-        'ignore_period':12,
-        'category':'3_possible',
-        'risk_period_start':0,
-        'risk_period_days': 14,
-        },
-    
-    '360.11; 363.20; 364.3': {#
-        'name':'Uveitis',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'Heb B',
-        'risk_period_days': 30, 
-        },
-        
-    'E948*; E949*': {#
-        'name':'Vaccine causing adverse event',
-        'ignore_period':None,
-        'category':'3_possible',
-        'risk_period_start':0,
-        'risk_period_days': 30,
-        },
-        
-    '999.0': {#
-        'name':'Vaccinia (generalized)',
-        'ignore_period':None,
-        'category':'3_possible',
-        'risk_period_start':0,
-        'risk_period_days': 30, 
-        },
-        
-    '415.1; 415.11; 415.12; 415.19; 453*': {#   
-        'name':'Venous thromboembolism',
-        'ignore_period':12,
-        'category':'3_possible',
-        'source':'HPV',
-        'risk_period_days': 30,
-        },    
-        
     '978*': {#
         'name':'Poisoning - bacterial vaccine',
         'ignore_period':None,
@@ -1096,13 +1388,49 @@ VAERS_DIAGNOSTICS = {
         'risk_period_start':0,
         'risk_period_days': 30,
         },
-    '045*': {#
-        'name':'Poliomyelitis',
-        'ignore_period':None,
+
+    '995.0': {#
+        'name':'Anaphylxis',
+        'ignore_period':12,
         'category':'2_rare',
-        'risk_period_days': 42,
+        'source':'MMR-V',
+        'risk_period_start':0,
+        'risk_period_days': 7,
         },    
     
+    '995.1': {#
+        'name':'Angioneurotic edema',
+        'ignore_period':12,
+        'category':'3_possible',
+        'source':'MMR-V',
+        'risk_period_start':0,
+        'risk_period_days': 7,
+        },
+    
+    '995.20': {#
+        'name':'Hypersensitivity - drug, unspec',
+        'ignore_period':12,
+        'category':'3_possible',
+        'risk_period_start':0,
+        'risk_period_days': 7,
+        },
+    
+    '995.3': {#
+        'name':'Allergy, Unspec',
+        'ignore_period':36,
+        'category':'3_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },    
+    
+    '999.0': {#
+        'name':'Vaccinia (generalized)',
+        'ignore_period':None,
+        'category':'3_possible',
+        'risk_period_start':0,
+        'risk_period_days': 30, 
+        },
+        
     '999.39': {#
         'name':'Infection due to vaccine',
         'ignore_period':None,
@@ -1110,6 +1438,15 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 42,
         },
     
+    '999.4': {#
+        'name':'Anaphylactic shock due to serum',
+        'ignore_period':12,
+        'category':'2_rare',
+        'source':'MMR-V',
+        'risk_period_start':0,
+        'risk_period_days': 14,
+        },
+        
     '999.5; 999.52; 999.59': {#
         'name':'Post-immunization reaction',
         'ignore_period':None,
@@ -1118,19 +1455,13 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 30,
         },
     
-    '323.52': {#
-        'name':'Myelitis - post immunization',
+    'E948*; E949*': {#
+        'name':'Vaccine causing adverse event',
         'ignore_period':None,
-        'category':'2_rare',
-        'risk_period_days': 42,
-        },
-    
-    '323.51':{ #
-        'name':'Encephalitis / encephalomyelitis - post immunization',  
-        'ignore_period':None,
-        'category':'2_rare',
-        'risk_period_days': 15,          
-        }
+        'category':'3_possible',
+        'risk_period_start':0,
+        'risk_period_days': 30,
+        }        
     }
 
 
