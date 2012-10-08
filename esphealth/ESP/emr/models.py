@@ -586,6 +586,7 @@ class LabResult(BasePatientRecord):
     result_date = models.DateField(blank=True, null=True, db_index=True)
     collection_date = models.DateField(blank=True, null=True, db_index=True)
     status = models.CharField('Result Status', max_length=50, blank=True, null=True)
+    order_type = models.CharField('Order type', max_length=20, null=True)
     # 
     # In some EMR data sets, reference pos & high, and neg & low, may come from
     # the same field depending whether the value is a string or a number.
@@ -1132,6 +1133,8 @@ class Encounter(BasePatientRecord):
     o2_stat = models.FloatField(blank=True, null=True, db_index=True)
     peak_flow = models.FloatField(blank=True, null=True, db_index=True)
     bmi = models.FloatField('Body Mass Index', null=True, blank=True, db_index=True)
+    hosp_admit_dt = models.DateField('Hospital Admission Date', blank=True, null=True, db_index=True)
+    hosp_dschrg_dt = models.DateField('Hospital Discharg Date', blank=True, null=True, db_index=True)
     #
     # Raw string fields 
     #
@@ -1300,7 +1303,7 @@ class Encounter(BasePatientRecord):
             try:
                 return float(self.raw_bmi)
             except ValueError: # Can't convert raw_bmi to a float
-                log.warning('Could not convert raw_bmi "%s" to float - will try to calculate BMI' % self.raw_bmi)
+                log.info('Could not convert raw_bmi "%s" to float - will try to calculate BMI' % self.raw_bmi)
         # If this encounter has usable height & weight, calculate BMI based on that
         if (self.height and self.weight):
             height = self.height
@@ -1321,7 +1324,7 @@ class Encounter(BasePatientRecord):
             # as their 16th birthday if necessary
             
             if not self.patient.date_of_birth: 
-                log.warning('Cannot calculate sixteenth birthday because of NULL DOB for encounter %s ' % self.pk)
+                log.info('Cannot calculate sixteenth birthday because of NULL DOB for encounter %s ' % self.pk)
                 ht_encs = pat_encs.filter( height__isnull=False).exclude(height=0)
             else:    
                 sixteenth_bday = self.patient.date_of_birth + relativedelta(years=16)
@@ -1333,7 +1336,7 @@ class Encounter(BasePatientRecord):
                 height = ht_encs[0].height
                 weight = wt_encs[0].weight
             else: # We don't know a recent height and weight for this patient
-                log.warning('Cannot calculate BMI for encounter # %s due to null height or weight' % self.pk)
+                log.info('Cannot calculate BMI for encounter # %s due to null height or weight' % self.pk)
                 return None 
         height_m = height / 100  # Height is stored in centimeters
         weight_kg = weight # Already in kilograms
@@ -1626,6 +1629,39 @@ class Problem(BasePatientRecord):
 
     def  __unicode__(self):
         return u"Problem on %s had %s on %s" % (
+            self.patient.full_name, self.icd9, self.date)
+        
+class Hospital_Problem(BasePatientRecord):
+    '''
+    Hospital Problem list -- cumulative over time, no current 
+    '''
+    # date is date noted, id is natural key
+    icd9 = models.ForeignKey(Icd9)
+    status = models.CharField(max_length=20, null=True, db_index=True)
+    raw_icd9_code = models.CharField('Raw icd9 code',max_length=20, null=True, db_index=True)
+    principal_prob_code = models.IntegerField('Principal hospital problem code',null=True)
+    principal_prob = models.CharField('Principal hospital problem',max_length=20,null=True, db_index=True)
+    present_on_adm_code = models.IntegerField('Present on admission code', null=True)
+    present_on_adm = models.CharField('Present on admission',max_length=20,null=True, db_index=True)
+    priority_code = models.IntegerField('Priority code',null=True)
+    priority = models.CharField('Priority',max_length=20,null=True, db_index=True)
+    overview = models.CharField('Overview',max_length=800,null=True)
+    
+    def document_summary(self):
+        return {
+            'date':(self.date and self.date.isoformat()) or None,
+            'problem':{
+                'icd9':self.icd9.name,
+                'overview':self.overview,
+                'principal_prob':self.principal_prob,
+                'present_on_adm':self.present_on_adm,
+                'priority':self.priority
+                },
+            'status':self.status
+            }
+
+    def  __unicode__(self):
+        return u"Problem %s had %s on %s" % (
             self.patient.full_name, self.icd9, self.date)
         
 class Pregnancy(BasePatientRecord):
