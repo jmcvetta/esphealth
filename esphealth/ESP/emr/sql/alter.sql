@@ -11,4 +11,46 @@ UPDATE emr_provenance
  WHERE data_date is null
    AND char_length(substring(source, E'.*\\.(\\d{8})$')) = 8;
 COMMIT;
+-- ----------------------------------------------------------------
+-- 2012-10-08
+-- Bob Zambarano
+-- ----------------------------------------------------------------
+ALTER TABLE emr_labresult
+   ADD COLUMN order_type character varying(20);
+-- This would have to be populated via load_epic.  This is a field 
+-- that has been provided but never loaded.  So the --reload option
+-- could be used with archived data files.
+ALTER TABLE emr_encounter
+   ADD COLUMN hosp_admit_dt date,
+   ADD COLUMN hosp_dschrg_dt date;
+CREATE INDEX emr_encounter_hosp_admit_dt
+  ON emr_encounter
+  USING btree
+  (hosp_admit_dt);
+CREATE INDEX emr_encounter_hosp_dschrg_dt
+  ON emr_encounter
+  USING btree
+  (hosp_dschrg_dt);
+-- These are new v3 columns and would be populated via load_epic
+-- They are added to the end of the previous standard record, so
+-- there is no problem with loading epic data without these 
+-- fields. If your data source does not include these columns
+-- it may be most efficient to skip building the indexes. Django
+-- will not complain if the indexes don't exist.
+ALTER TABLE static_icd9
+   ADD COLUMN longname character varying(1000);
+-- This column is added to support a feature request regarding
+-- the clinician's inbasket message at MetroHealth.  It is not 
+-- a required field for any other feature.  It is used in 
+-- vaers/hl7_clinbasket.py.  If you are not running vaers detection
+-- at your site, you don't need to insert data to this new column.
+-- If you are running vaers, it would be best to drop the old
+-- version of the table, rebuild via syncdb, then load_data from
+-- the static/fixtures/icd9.json file.
+ALTER TABLE vaers_adverseevent
+   ADD COLUMN version character varying(20);
+-- This column is added to support a feature request from
+-- MetroHealth.  Data is inserted to this field along with new 
+-- VAERS AEs, and the value is set from vaers.py
+
 
