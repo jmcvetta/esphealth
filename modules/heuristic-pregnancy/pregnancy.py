@@ -23,9 +23,10 @@ from django.db.models import Max
 from ESP.utils import log
 from ESP.utils import log_query
 from ESP.utils.utils import wait_for_threads
-from ESP.utils.utils import TODAY
 from ESP.emr.models import Patient
-from ESP.emr.models import Encounter, Pregnancy
+from ESP.emr.models import Encounter
+from ESP.emr.models import Pregnancy
+from ESP.emr.models import Provenance
 from ESP.hef.base import Event
 from ESP.hef.base import BaseEventHeuristic
 from ESP.hef.base import BaseTimespanHeuristic
@@ -107,7 +108,10 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
     
     timespan_names = ['pregnancy', 'postpartum',]
     
-    today = datetime.date.today()
+    # Determine latest data date based on the data dates for visit
+    # and pregnancy info
+    latest_data_date = min(Provenance.get_latest_data_date('vis'),
+                           Provenance.get_latest_data_date('prg'))
     
     @property
     def event_heuristics(self):
@@ -349,7 +353,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             elif edd:
                 ts.end_date = edd
                 pattern = 'eop:edd'
-            elif ts.start_date < ( self.today - relativedelta(days=280) ):
+            elif ts.start_date < ( self.latest_data_date - relativedelta(days=280) ):
                 ts.end_date = self._get_latest_preg_event_date(ts.patient, ts.start_date)
                 pattern = 'eop:max_icd9'
             else:
@@ -549,7 +553,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 eop_date = eop_event.date
                 pattern += 'eop:eop_event'
             # Is this patient currently pregnant?  If so, null eop_date
-            elif onset_date > (TODAY - relativedelta(days=280)):
+            elif onset_date > (self.latest_data_date - relativedelta(days=280)):
                 eop_date = None
                 pattern += 'eop:currently_pregnant'
             # Use EDD if available
@@ -588,7 +592,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 overlap_qs = overlap_qs.filter( 
                     ( Q(start_date__lte=onset_date) & Q(end_date__gte=onset_date) ) 
                     |
-                    ( Q(start_date__lte=TODAY) & Q(end_date__gte=TODAY) )
+                    ( Q(start_date__lte=self.latest_data_date) & Q(end_date__gte=self.latest_data_date) )
                     )
             overlap_qs = overlap_qs.order_by('pk')
             if overlap_qs:
