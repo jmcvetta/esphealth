@@ -37,6 +37,16 @@ CREATE INDEX emr_encounter_hosp_dschrg_dt
 -- fields. If your data source does not include these columns
 -- it may be most efficient to skip building the indexes. Django
 -- will not complain if the indexes don't exist.
+ALTER TABLE emr_encounter
+   ADD COLUMN cpt character varying(20);
+CREATE INDEX emr_encounter_cpt
+   ON emr_encounter
+   USING btree
+   (cpt);
+-- This is a field that has been provided in v2 epic data, but 
+-- has never been loaded.  It is now included in the model.
+-- To populate, you would need to run load_epic with the --reload
+-- option.
 ALTER TABLE static_icd9
    ADD COLUMN longname character varying(1000);
 -- This column is added to support a feature request regarding
