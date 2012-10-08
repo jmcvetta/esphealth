@@ -12,13 +12,9 @@ from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 
 from ESP.settings import TODAY
-from ESP.utils.utils import date_from_str, str_from_date, log, days_in_interval, make_date_folders
-from ESP.conf.common import EPOCH
-from ESP.vaers.models import EncounterEvent, LabResultEvent, HL7_MESSAGES_DIR, PrescriptionEvent, AllergyEvent
+from ESP.utils.utils import date_from_str, str_from_date, log
 
 from ESP.vaers.heuristics import  diagnostic_heuristics, lab_heuristics,prescription_heuristics,allergy_heuristics
-
-
             
 usage_msg = """
 Usage: python %prog -b[egin_date] -e[nd_date] 
