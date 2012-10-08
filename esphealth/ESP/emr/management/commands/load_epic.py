@@ -779,6 +779,7 @@ class EncounterLoader(BaseLoader):
             'site_name': cap(row['site_name']),
             'raw_temperature': son(row['temp']),
             'temperature': flon(row['temp']),
+            'cpt': son(row['cpt']),
             'raw_bp_systolic': son(row['bp_systolic']),
             'bp_systolic': flon(row['bp_systolic']),
             'raw_bp_diastolic': son(row['bp_diastolic']),
