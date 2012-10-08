@@ -743,13 +743,30 @@ class EncounterLoader(BaseLoader):
         dton = self.date_or_none
         flon = float_or_none
         natural_key = self.generateNaturalkey(row['natural_key'])
+        
+        edd = dton(row['edd'])
+        encounter_date = dton(row['encounter_date'])
+        # Compensate for bad estimated date of delivery values in the
+        # Atrius ESP data feed by setting edd to None if either:
+        #   edd is earlier than the encounter_date
+        #   edd is more than 280 days in the future
+        if edd and encounter_date:
+            if edd < encounter_date:
+                fmt = 'Ignoring estimated date of delivery (edd): edd (%s) < encounter date (%s)'
+                log.info(fmt % (edd, encounter_date))
+                edd = None
+            elif edd > (encounter_date + datetime.timedelta(280)):
+                fmt = 'Ignoring estimated date of delivery (edd): edd (%s) > encounter date (%s) + 280 days'
+                log.info(fmt % (edd, encounter_date))
+                edd = None
+        
         values = {
             'natural_key': natural_key,
             'provenance': self.provenance,
             'patient': self.get_patient(row['patient_id']),
             'mrn' : row['mrn'],
             'provider': self.get_provider(row['provider_id']),
-            'date': dton(row['encounter_date']),
+            'date': encounter_date,
             'raw_date': son(row['encounter_date']),
             'site_natural_key': son( row['site_natural_key'] ),
             'raw_encounter_type': up(row['event_type']),
@@ -767,7 +784,7 @@ class EncounterLoader(BaseLoader):
             'raw_peak_flow': son(row['peak_flow']),
             'peak_flow': flon(row['peak_flow']),
             'raw_edd': son(row['edd']),
-            'edd': dton(row['edd']),
+            'edd': edd,
             'raw_weight': son(row['weight']),
             'weight': weight_str_to_kg(row['weight']),
             'raw_height': son(row['height']),
