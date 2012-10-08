@@ -63,10 +63,20 @@ class Provenance(models.Model):
     valid_rec_count = models.IntegerField('Count of valid records loaded', blank=False, default=0)
     error_count = models.IntegerField('Count of errors during load', blank=False, default=0)
     comment = models.TextField(blank=True, null=True)
+    data_date = models.DateField(blank=True, null=True)
     
     class Meta:
         unique_together = ['timestamp', 'source', 'hostname']
 
+    @staticmethod
+    def get_latest_data_date(source_search_str):
+        """
+        Return the latest data date for the Provenance objects whose
+        source contains the source_search_str
+        """
+        qs = Provenance.objects.filter(source__icontains=source_search_str).order_by('-data_date')
+        return qs[0].data_date
+    
     @staticmethod
     def fake():
         data_faker = 'Data Faker App'

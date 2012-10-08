@@ -161,6 +161,7 @@ class BaseLoader(object):
         prov, created = Provenance.objects.get_or_create(source=filename)
         prov.wtimestamp = TIMESTAMP
         prov.hostname = socket.gethostname()
+        prov.data_date = date_from_filepath(filepath)
         prov.status = 'attempted'
         prov.save()
         if created:

@@ -60,6 +60,7 @@ esphealth/ESP/emr/management/commands/make_fakes.py -text
 esphealth/ESP/emr/management/commands/rename_files.py -text
 esphealth/ESP/emr/models.py -text
 esphealth/ESP/emr/report.py -text
+esphealth/ESP/emr/sql/alter.sql -text
 esphealth/ESP/emr/sql/labresult.postgresql_psycopg2.sql -text
 esphealth/ESP/emr/sql/patient.postgresql_psycopg2.sql -text
 esphealth/ESP/env-setup.sh -text
