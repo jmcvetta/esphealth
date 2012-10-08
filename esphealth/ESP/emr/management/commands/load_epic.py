@@ -59,7 +59,7 @@ from ESP.emr.models import LabResult, LabOrder
 from ESP.emr.models import Encounter, EncounterTypeMap
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization, Pregnancy
-from ESP.emr.models import SocialHistory, Problem, Allergy
+from ESP.emr.models import SocialHistory, Problem, Allergy, Hospital_Problem
 from ESP.emr.management.commands.common import LoaderCommand
 from ESP.emr.base import SiteDefinition
 from ESP.conf.models import VaccineCodeMap
@@ -375,10 +375,10 @@ class BaseLoader(object):
                 self.load_row(row)
                 transaction.savepoint_commit(sid)
                 valid += 1
-            except KeyboardInterrupt, e:
+            #except KeyboardInterrupt, e:
                 # Allow keyboard interrupt to rise to next catch in main()
-                transaction.savepoint_rollback(sid)
-                raise e
+                #transaction.savepoint_rollback(sid)
+                #raise e
             except ex_to_catch, e:
                 transaction.savepoint_rollback(sid)
                 log.error('Caught Exception:')
@@ -625,6 +625,7 @@ class LabResultLoader(BaseLoader):
         'provenance' : self.provenance,
         'patient' : self.get_patient(row['patient_id']),
         'provider' : self.get_provider(row['provider_id']),
+        'order_type' : string_or_none(row['order_type']),
         'mrn' : row['mrn'],
         'order_natural_key' : row['order_natural_key']  ,
         'date' : self.date_or_none(date),
@@ -726,7 +727,9 @@ class EncounterLoader(BaseLoader):
         'o2_stat',
         'peak_flow',
         'icd9s',
-        'bmi' # added in 3
+        'bmi',  # added in 3
+        'hosp_admit_dt',  # added in 3
+        'hosp_dschrg_dt' # added in 3
         ]
     
     def load_row(self, row): 
@@ -791,6 +794,8 @@ class EncounterLoader(BaseLoader):
             'raw_height': son(row['height']),
             'height': height_str_to_cm(row['height']),
             'raw_bmi': son(row['bmi']),
+            'hosp_admit_dt': dton(row['hosp_admit_dt']),
+            'hosp_dschrg_dt': dton(row['hosp_dschrg_dt'])
             }
         if values['edd']:  
             values['pregnant'] = True
@@ -831,8 +836,13 @@ class EncounterLoader(BaseLoader):
         try:
             e.save()
             log.debug('Saved encounter object: %s' % e)
-        except:
+        except AttributeError as describe:
             log.debug('Could not save encounter object: %s' % e)
+            log.debug('Error is: %s ' % describe)
+            transaction.rollback()
+        else:
+            log.debug('Unknown error: %s ' % sys.exc_info()[0])
+            transaction.rollback()
     
     
 
@@ -1173,6 +1183,54 @@ class ProblemLoader(BaseLoader):
                 
         log.debug('Saved Problem object: %s' % p)
 
+class HospProblemLoader(BaseLoader):
+    fields = [
+        'patient_id',
+        'mrn',
+        'natural_key',# problemid 
+        'date_noted',
+        'icd9_code',
+        'problem_status',
+        'principal_prob_code',
+        'present_on_adm_code',
+        'priority_code',
+        'overview',
+        'provider_id', 
+        ]
+
+    def load_row(self, row):
+        code = row['icd9_code']
+        if not code or code =='':
+            code = '799.9'
+        icd9_code = self.get_icd9(code, '', {})
+        
+        natural_key = self.generateNaturalkey(row['natural_key'])
+        values = {
+            'natural_key': natural_key, 
+            'provenance' : self.provenance,
+            'patient' : self.get_patient(row['patient_id']),
+            'mrn' : row['mrn'],
+            'date' : self.date_or_none(row['date_noted']),
+            'icd9' : icd9_code,
+            'raw_icd9_code' : code,
+            'status' : string_or_none(row['problem_status']),
+            'principal_prob_code' : string_or_none(row['principal_prob_code']),
+            'present_on_adm_code' : string_or_none(row['present_on_adm_code']),
+            'priority_code' : string_or_none(row['priority_code']),
+            'overview' : string_or_none(row['overview']),
+            'provider' : self.get_provider(row['provider_id'])
+            }
+        
+        hp, created = self.insert_or_update(Hospital_Problem, values, ['natural_key'])
+                
+        if option_site:
+            site = SiteDefinition.get_by_short_name(option_site)
+            hp.principal_prob, hp.present_on_adm, hp.priority = site.set_hospprobs(hp)
+        hp.save()
+
+        
+        log.debug('Saved Problem object: %s' % hp)
+
 class Command(LoaderCommand):
     #
     # Parse command line options
@@ -1215,6 +1273,7 @@ class Command(LoaderCommand):
             ('epicimm', ImmunizationLoader),
             ('epicall', AllergyLoader),
             ('epicprb', ProblemLoader),
+            ('epichpr', HospProblemLoader),
             ('epicsoc', SocialHistoryLoader),
             ('epicprg', PregnancyLoader)    
                                
