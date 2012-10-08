@@ -246,6 +246,7 @@ class Loinc(models.Model):
 class Icd9(models.Model):
     code = models.CharField('ICD9 Code', max_length=10, primary_key=True)
     name = models.CharField('Name', max_length=150,)
+    longname = models.CharField('Long Name',max_length=1000,)
 
     def __unicode__(self):
         return u'%s %s' % (self.code, self.name)
