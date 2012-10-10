@@ -84,6 +84,7 @@ class Diabetes(DiseaseDefinition):
             'ogtt75-90min',
             'ogtt75-2hr',
             'ogtt50-random',
+            'fasting-glucose-status',
             ]:
             heuristics.append(LabResultAnyHeuristic(test_name=test_name))
         #
