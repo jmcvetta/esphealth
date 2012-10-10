@@ -213,7 +213,7 @@ class Diabetes(DiseaseDefinition):
         #
         # Cholesterol
         #
-        for test_name in [
+        ''' for test_name in [
             'cholesterol-hdl',
             'cholesterol-ldl',
             'cholesterol-total',
@@ -227,7 +227,7 @@ class Diabetes(DiseaseDefinition):
                 test_name = test_name,
                 date_field = 'result',
                 ) )
-
+        '''
         #
         # Prescriptions
         #
