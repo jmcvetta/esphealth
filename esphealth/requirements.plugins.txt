@@ -38,5 +38,7 @@
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-tuberculosis#egg=disease-tuberculosis
 # Metrohealth encountertypemap
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/esphealth-encountertypemap-metrohealth#egg=esphealth_encountertypemap_metrohealth
+# Influenza like illness 
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-ili#egg=disease-ili
 
 
