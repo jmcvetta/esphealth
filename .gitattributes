@@ -510,6 +510,7 @@ modules/disease-hepatitis-combined/hepatitis.py -text
 modules/disease-hepatitis-combined/setup.py -text
 modules/disease-hepatitis-combined/tests.py -text
 modules/disease-ili/__init__.py -text
+modules/disease-ili/ili.py -text
 modules/disease-ili/setup.py -text
 modules/disease-lyme/__init__.py -text
 modules/disease-lyme/lyme.py -text
