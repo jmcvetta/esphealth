@@ -62,5 +62,33 @@ ALTER TABLE vaers_adverseevent
 -- This column is added to support a feature request from
 -- MetroHealth.  Data is inserted to this field along with new 
 -- VAERS AEs, and the value is set from vaers.py
+-- ----------------------------------------------------------------
+-- 2012-10-10
+-- Bob Zambarano
+-- ----------------------------------------------------------------
+ALTER TABLE emr_problem
+   ADD COLUMN hospital_pl_yn character varying(1);
+-- This column is added to provide a means of 
+-- determining if the problem was recorded in a hospital setting.
+-- Values should be limited to  "Y" or null.
+ALTER TABLE emr_prescription 
+  ADD COLUMN patient_class character varying(5),
+  ADD COLUMN patient_status character varying(5);
+-- These two columns are added to determine if the prescription
+-- is from a hospital setting.
+ALTER TABLE emr_laborder 
+  ADD COLUMN test_status character varying(5),
+  ADD COLUMN patient_class character varying(5),
+  ADD COLUMN patient_status character varying(5);
+-- Test status indicates if the order has been processed or cancelled.
+-- Patient status and class are added to determin if the order
+-- is from a hospital setting.
+ALTER TABLE emr_labresult
+  ADD COLUMN patient_class character varying(5),
+  ADD COLUMN patient_status character varying(5);
+-- These two columns are added to determine if the lab
+-- is from a hospital setting.
+
+
 
 
