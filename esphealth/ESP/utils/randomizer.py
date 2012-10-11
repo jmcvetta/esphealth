@@ -1,6 +1,8 @@
 import datetime
+
 import random
 import string as pstring
+from ESP.settings import  START_DATE, END_DATE
 
 import common
 
@@ -35,8 +37,20 @@ def autoIncrement():
         return rec
  
 def date_range(as_string=False, format='%Y%m%d'):
-    days_range = random.randrange(0, 365*3) # Up to 3 years 
-    date = datetime.date.today() - datetime.timedelta(days=days_range)
+    from datetime import datetime 
+    #days_range = random.randrange(0, 365*3) # Up to 3 years 
+    #date = datetime.date.today() - datetime.timedelta(days=days_range)
+    
+    date_start =  datetime.strptime(START_DATE, '%Y/%m/%d').date()
+    if END_DATE == 'TODAY':
+        date_end= datetime.today().date()
+    else:
+        date_end = datetime.strptime(END_DATE, '%Y/%m/%d').date()
+    
+    days_range = random.randrange(0, 365* (date_end.year - date_start.year) + date_start.day + date_start.month*30) 
+    
+    from datetime import timedelta
+    date = date_end -  timedelta(days=days_range)
     
     return date.strftime(format) if as_string else date         
 
