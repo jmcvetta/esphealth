@@ -95,7 +95,7 @@ class Pertussis(DiseaseDefinition):
             test_name = 'pertussis_serology',
             ))
         heuristic_list.append( LabOrderHeuristic(
-            test_name = 'pertussis_prc',
+            test_name = 'pertussis_pcr',
             ))
         heuristic_list.append( LabOrderHeuristic(
             test_name = 'pertussis_culture',
