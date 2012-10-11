@@ -604,7 +604,44 @@ class BaseLabResultHeuristic(BaseEventHeuristic):
         return unbound_results
     
 
+class LabResultNoEventHeuristic(BaseLabResultHeuristic):
+    '''
+    A heuristic for generating abstract lab results from specified lab test
+    no events get generated but be available for abstract lab mapping 
+    '''
+    def __init__(self, test_name, date_field='order'):
+        assert test_name
+        assert date_field in ['order', 'result']
+        self.test_name = test_name
+        self.date_field = date_field
+    
+    @property
+    def short_name(self):
+        name = 'labresult:%s:no-event-any-result' % self.test_name
+        if not self.date_field == 'order':
+            name += ':%s-date' % self.date_field
+        return name
 
+    uri = 'urn:x-esphealth:heuristic:cii:labresult:no-event-any-result:v1'
+    
+    @property
+    def any_result_event_name(self):
+        # Order date is default
+        if self.date_field == 'order':
+            return u'lx:%s:no-event-any-result' % (self.test_name)
+        else:
+            return u'lx:%s:no-event-any-result:%s-date' % (self.test_name, self.date_field)
+    
+    @property
+    def event_names(self):
+        return [self.any_result_event_name]
+    
+    def generate(self):
+        counter = 0
+        
+        log.info('Generated %s new %s events' % (counter, self))
+        return counter
+    
 class LabResultAnyHeuristic(BaseLabResultHeuristic): 
     '''
     A heuristic for generating events on ANY result from specified lab test

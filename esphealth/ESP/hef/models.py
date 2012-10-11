@@ -132,3 +132,6 @@ class Timespan(models.Model):
         return u'Timespan #%s | %s | %s | %s - %s | %s' % (self.pk, 
             self.name, self.patient, self.start_date, self.end_date, self.pattern)
 
+    def verbose_str(self):
+        return 'Timespan #%s %s, for %s on %s' % (self.pk, self.name, self.patient, self.start_date)
+    
