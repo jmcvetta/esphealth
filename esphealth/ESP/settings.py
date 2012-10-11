@@ -465,6 +465,8 @@ HEF_THREAD_COUNT = config['HEF']['thread_count']
 
 #--- Make Fakes 
 LOAD_DRIVER_LABS = config['Make_Fakes']['load_driver_labs']
+START_DATE = config['Make_Fakes']['start_date']
+END_DATE = config['Make_Fakes']['end_date']
 POPULATION_SIZE = config['Make_Fakes']['population_size']
 
 MIN_ENCOUNTERS_PER_PATIENT = config['Make_Fakes']['min_encounters_per_patient']
