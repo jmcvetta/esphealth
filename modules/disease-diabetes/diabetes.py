@@ -17,7 +17,7 @@ from ESP.hef.base import AbstractLabTest, BaseHeuristic, DiagnosisHeuristic, \
     Dose, Icd9Query, LabOrderHeuristic, LabResultAnyHeuristic, \
     LabResultFixedThresholdHeuristic, LabResultPositiveHeuristic, \
     LabResultRangeHeuristic, LabResultRatioHeuristic, LabResultWesternBlotHeuristic, \
-    PrescriptionHeuristic
+    PrescriptionHeuristic, LabResultNoEventHeuristic
 from ESP.hef.models import Event, Timespan
 
 from ESP.static.models import DrugSynonym
@@ -71,6 +71,27 @@ class Diabetes(DiseaseDefinition):
     @property
     def event_heuristics(self):
         heuristics = []
+        
+        ''' sample of other kind of abstract lab creation 
+        heuristics.append(AbstractLabTest.objects.get_or_create(
+            name = 'cholesterol-hdl',
+            defaults = {
+                    'verbose_name': 'cholesterol-hdl',
+                        }
+            )[0])
+        '''
+        #
+        # No event Result Tests, only defined for lab mapping.
+        #
+        for test_name in [
+             # for use in p30 report but not for hef events.
+            'cholesterol-hdl',
+            'cholesterol-ldl',
+            'cholesterol-total',
+            'triglycerides',
+            'fasting-glucose-status',
+            ]:
+            heuristics.append(LabResultNoEventHeuristic(test_name=test_name))
         
         #
         # Any Result Tests
