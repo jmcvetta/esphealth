@@ -580,8 +580,11 @@ class LabResultLoader(BaseLoader):
         'impression',           # 19
         'specimen_source',      # 20
         'collection_date',      # 21
-        'procedure_name' ,      #22
-        'natural_key'           #23 added in 3
+        'procedure_name' ,      # 22
+        'natural_key',          # 23 added in 3
+        'patient_class',        # 24 added in 3
+        'patient_status'        # 25 added in 3
+
         ]
 
     
@@ -648,6 +651,8 @@ class LabResultLoader(BaseLoader):
         'collection_date' : self.date_or_none(row['collection_date']),
         'procedure_name' : string_or_none(row['procedure_name']),
         'natural_key' : natural_key,
+        'patient_class' : string_or_none(row['patient_class']),
+        'patient_status' : string_or_none(row['patient_status']),
          }
         lx, created = self.insert_or_update(LabResult, values, ['natural_key'])
         
@@ -666,7 +671,10 @@ class LabOrderLoader(BaseLoader):
         'order_type',
         'provider_id',
         'procedure_name',
-        'specimen_source'
+        'specimen_source',
+        'test_status',
+        'patient_class',
+        'patient_status'
         ]
     
     def load_row(self, row):
@@ -691,7 +699,10 @@ class LabOrderLoader(BaseLoader):
             'date' : self.date_or_none(date),
             'order_type' : string_or_none(row['order_type']),
             'procedure_name' : string_or_none(row['procedure_name']),
-            'specimen_source' : string_or_none(row['specimen_source'])
+            'specimen_source' : string_or_none(row['specimen_source']),
+            'test_status' : string_or_none(row['test_status']),
+            'patient_class' : string_or_none(row['patient_class']),
+            'patient_status' : string_or_none(row['patient_status'])
             
             }
         lxo, created = self.insert_or_update(LabOrder, values, ['natural_key'])
@@ -865,6 +876,8 @@ class PrescriptionLoader(BaseLoader):
         'end_date',
         'route',# added in 3
         'dose', # added in 3
+        'patient_class', #added in 3
+        'patient_status', # added in 3
         
     ]
 
@@ -913,6 +926,9 @@ class PrescriptionLoader(BaseLoader):
         'end_date' : self.date_or_none(row['end_date']),
         'route' : string_or_none(row['route']),
         'dose' : string_or_none(row['dose']),
+        'patient_class' : string_or_none(row['patient_class']),
+        'patient_status' : string_or_none(row['patient_status']),
+        
         }
         p, created = self.insert_or_update(Prescription, values, ['natural_key'])
         
@@ -1158,6 +1174,7 @@ class ProblemLoader(BaseLoader):
         'problem_status',
         'comment',
         'provider_id', #added in 3 added cch
+        'hospital_pl_yn', #added in 3
         ]
 
     def load_row(self, row):
@@ -1177,7 +1194,8 @@ class ProblemLoader(BaseLoader):
             'raw_icd9_code' : code,
             'status' : string_or_none(row['problem_status']),
             'comment' : string_or_none(row['comment']),
-            'provider' : self.get_provider(row['provider_id'])
+            'provider' : self.get_provider(row['provider_id']),
+            'hospital_pl_yn' : string_or_none(row['hospital_pl_yn'])
             }
         
         p, created = self.insert_or_update(Problem, values, ['natural_key'])
