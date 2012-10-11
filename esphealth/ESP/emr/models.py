@@ -1194,9 +1194,9 @@ class Encounter(BasePatientRecord):
     def randomVitalValue(low, high, vlow, vhigh, decimal):
         r = random.random()
         if r <= .7:
-            return round(random.uniform(vlow, high), decimal)
+            return round(random.uniform(vlow, low), decimal)
         elif r <= .9:
-            return round(random.uniform(low, vhigh), decimal) 
+            return round(random.uniform(high, vhigh), decimal) 
         else: 
             return  round(random.uniform(low, high), decimal)
         
