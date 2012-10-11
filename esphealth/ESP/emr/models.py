@@ -245,7 +245,7 @@ class Patient(BaseMedicalRecord):
     state = models.CharField('State', max_length=20, blank=True, null=True)
     zip = models.CharField('Zip', max_length=20, blank=True, null=True, db_index=True)
     zip5 = models.CharField('5-digit zip', max_length=5, null=True, db_index=True)
-    country = models.CharField('Country', max_length=20, blank=True, null=True)
+    country = models.CharField('Country', max_length=60, blank=True, null=True)
     # Large max_length value for area code because Atrius likes to put descriptive text into that field
     areacode = models.CharField('Home Phone Area Code', max_length=50, blank=True, null=True)
     tel = models.CharField('Home Phone Number', max_length=100, blank=True, null=True)
@@ -587,6 +587,9 @@ class LabResult(BasePatientRecord):
     collection_date = models.DateField(blank=True, null=True, db_index=True)
     status = models.CharField('Result Status', max_length=50, blank=True, null=True)
     order_type = models.CharField('Order type', max_length=20, null=True)
+    patient_class = models.CharField('Patient class',max_length=5, null=True)
+    patient_status = models.CharField('Patient status',max_length=5, null=True)
+
     # 
     # In some EMR data sets, reference pos & high, and neg & low, may come from
     # the same field depending whether the value is a string or a number.
@@ -919,6 +922,9 @@ class LabOrder(BasePatientRecord):
     specimen_id = models.CharField(max_length=30, blank=True, null=True, db_index=True)
     order_type = models.CharField(max_length=64, blank=True, db_index=True)
     specimen_source = models.CharField(max_length=300, blank=True, null=True)
+    test_status = models.CharField('Test status', max_length=5, null=True)
+    patient_class = models.CharField('Patient class',max_length=5, null=True)
+    patient_status = models.CharField('Patient status',max_length=5, null=True)
     
     
     @staticmethod
@@ -972,6 +978,8 @@ class Prescription(BasePatientRecord):
     status = models.CharField('Order Status', max_length=20, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
+    patient_class = models.CharField('Patient Class', max_length=5, null=True)
+    patient_status = models.CharField('Patient status', max_length=5, null=True)
     
     @staticmethod
     def fakes(**kw):
@@ -1591,6 +1599,7 @@ class Problem(BasePatientRecord):
     status = models.CharField(max_length=20, null=True, db_index=True)
     comment = models.TextField(null=True, blank=True)
     raw_icd9_code = models.CharField('Raw icd9 code',max_length=20, null=True, db_index=True)
+    hospital_pl_yn = models.CharField('Hospital-based problem, Y or null',max_length=1, null=True)
     
     @staticmethod
     def delete_fakes():
