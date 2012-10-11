@@ -88,7 +88,8 @@ ALTER TABLE emr_labresult
   ADD COLUMN patient_status character varying(5);
 -- These two columns are added to determine if the lab
 -- is from a hospital setting.
-
+ALTER TABLE emr_patient ALTER COLUMN country TYPE character varying(60);
+-- Country can be longer than 20 characters. 
 
 
 
