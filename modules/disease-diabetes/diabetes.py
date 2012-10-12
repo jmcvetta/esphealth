@@ -372,7 +372,7 @@ class Diabetes(DiseaseDefinition):
         ]
     
     def generate_frank_diabetes(self):
-        log.info('Looking for cases of frank diabetes type 1 and 2.')
+        log.info('Generating cases of frank diabetes type 1 and 2.')
         pat_date_events = {}  # {patient: {date: set([event, event, ...]), ...}
         #
         # Frank DM critiera
@@ -560,6 +560,7 @@ class Diabetes(DiseaseDefinition):
         return 1  # 1 new case generated
             
     def generate_prediabetes(self):
+        log.info('Generating cases of pre diabetes')
         ONCE_CRITERIA = [
             'lx:a1c:range:gte:5.7:lte:6.4',
             'lx:glucose-fasting:range:gte:100:lte:125',
@@ -736,7 +737,7 @@ class Diabetes(DiseaseDefinition):
                 case_obj.events = case_obj.events.all() | case_events
             case_obj.timespans.add(ts)
             case_obj.save()
-        log.info('Generated %s new cases of diabetes_gestational' % counter)
+        log.debug('Generated %s new cases of diabetes_gestational' % counter)
         return counter
         
 
