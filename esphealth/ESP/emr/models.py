@@ -1548,8 +1548,7 @@ class Allergy(BasePatientRecord):
     name = models.CharField(max_length=300, null=True, db_index=True)
     status = models.CharField(max_length=20, null=True, db_index=True)
     description = models.CharField(max_length=600,null=True,blank=True)
-    allergy_entered_date = models.DateField(null=True, db_index=True)
-    
+     
     @staticmethod
     def fakes():
         return Allergy.objects.filter(Allergy.q_fake)
