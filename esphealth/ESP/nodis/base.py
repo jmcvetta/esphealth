@@ -489,6 +489,7 @@ class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
         '''
         log.info('Generating cases of %s' % self.short_name)
         pos_event_names = set()
+        
         for heuristic in self.event_heuristics:
             pos_event_names.add(heuristic.positive_event_name)
         event_qs = Event.objects.filter(name__in=pos_event_names)
@@ -499,5 +500,7 @@ class SinglePositiveTestDiseaseDefinition(DiseaseDefinition):
             event_qs = event_qs, 
             relevant_event_names = pos_event_names,
             )
+        log.debug('Generated %s new cases of %s' % (new_case_count, self.short_name))
+        
         return new_case_count
     
