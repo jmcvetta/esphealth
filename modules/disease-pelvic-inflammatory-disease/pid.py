@@ -50,7 +50,8 @@ class PelvicInflammatoryDisease(DiseaseDefinition):
         return heuristic_list
     
     def generate(self):
-        
+        log.info('Generating cases of %s' % self.short_name)
+       
         #
         # Criteria Set #1
         #
@@ -96,6 +97,9 @@ class PelvicInflammatoryDisease(DiseaseDefinition):
             new_case.save()
             log.info('Created new pelvic inflammatory disease case: %s' % new_case)
             counter += 1
+        
+        log.debug('Generated %s new cases of pelvic inflamatory disease' % counter)
+        
         return counter # Count of new cases
     
 #-------------------------------------------------------------------------------
