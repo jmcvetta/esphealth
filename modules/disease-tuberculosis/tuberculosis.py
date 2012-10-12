@@ -130,6 +130,7 @@ class Tuberculosis(DiseaseDefinition):
         return heuristic_list
     
     def generate_def_c(self):
+        
         #
         # Criteria Set #3 dx and 2 distinct prescription orders
         #  
@@ -168,6 +169,8 @@ class Tuberculosis(DiseaseDefinition):
         
     @transaction.commit_on_success
     def generate(self):
+        log.info('Generating cases of %s' % self.short_name)
+       
         
         #
         # Criteria Set #1 (single rx) 
@@ -236,6 +239,7 @@ class Tuberculosis(DiseaseDefinition):
             log.info('Created new tuberculosis case: %s' % new_case)
             counter += 1
             counter += self.generate_def_c()
+        log.debug('Generated %s new cases of tuberculosis' % counter)
         
         return counter # Count of new cases
             
