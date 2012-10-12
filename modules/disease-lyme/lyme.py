@@ -114,7 +114,8 @@ class Lyme(DiseaseDefinition):
     
     @transaction.commit_on_success
     def generate(self):
-        
+        log.info('Generating cases of %s' % self.short_name)
+       
         # condition 2 in spec wb test positive or pcr 
         lx_ev_names = [ 
             'lx:lyme_pcr:positive',
@@ -220,6 +221,9 @@ class Lyme(DiseaseDefinition):
             new_case.save()
             log.info('Created new lyme case: %s' % new_case)
             counter += 1
+        
+        log.debug('Generated %s new cases of lyme' % counter)
+        
         return counter # Count of new cases
     
 
