@@ -100,8 +100,12 @@ class ili(DiseaseDefinition):
         
     @transaction.commit_on_success
     def generate(self):
+        log.info('Generating cases of %s' % self.short_name)
+       
         #
         # Criteria Set #1 
+        # (icd9 code + measured fever) or (icd9 code + icd9code for fever)
+        # Logically: (a&b)+(a&c) = a&(b+c)
         #
         ICD9_FEVER_CODES = ['780.6','780.31']
         FEVER_TEMPERATURE = 100.0 # Temperature in Fahrenheit
@@ -109,47 +113,27 @@ class ili(DiseaseDefinition):
         dx_ev_names = ['dx:ili',]
         dx_fever_ev_names = ['dx:fever',]
         
+        # ili diagnosis, with no fever measured but fever diagnosis
         dx_fever_event_qs = Event.objects.filter(
             name__in = dx_ev_names,
+             
+            patient__event__encounter__temperature__isnull=True,
             patient__event__name__in =  dx_fever_ev_names,
             
             )
-        
+        # ili diagnosis with fever measured 
         dx_event_qs = Event.objects.filter(
             name__in = dx_ev_names, 
             patient__event__encounter__temperature__gte = FEVER_TEMPERATURE,
             )
-        
-        # Make it really readable. 
-        # (icd9 code + measured fever) or (icd9 code + icd9code for fever)
-        # Logically: (a&b)+(a&c) = a&(b+c)
-        
-        #q_measured_fever = Q(temperature__gte=InfluenzaHeuristic.FEVER_TEMPERATURE)
-        #q_unmeasured_fever = Q(temperature__isnull=True, icd9_codes__in=ICD9_FEVER_CODES)
-        #influenza = (q_measured_fever | q_unmeasured_fever)
-        #qs = NonSpecialistVisitEvent.syndrome_care_visits() # TODO FIXME: Bad location for syndrome_care_visits()
-        #qs = qs & super(SyndromeHeuristic, self).encounters
-        #dx_inf_qs =  qs.filter(influenza)
-        
         #
         # Combined Criteria
         #
-        combined_criteria_qs =  dx_event_qs |  dx_fever_event_qs
-        
-        ''' TODO filter by non specialty visit site 
-        for event in combined_criteria_qs:
-            combined_criteria_qs = combined_criteria_qs.filter(
-                patient__event__encounter__site_natural_key = 
-                
-                )
-               
-            #site = Site.objects.get(code=encounter.site_natural_key)
-        '''    
+        combined_criteria_qs =  dx_event_qs |  dx_fever_event_qs  
                 
         combined_criteria_qs = combined_criteria_qs.exclude(case__condition='ili')
         combined_criteria_qs = combined_criteria_qs.order_by('date')
         all_event_names =  dx_ev_names + dx_fever_ev_names 
-        
         
         counter = 0
         for this_event in combined_criteria_qs:
@@ -179,8 +163,9 @@ class ili(DiseaseDefinition):
             for related_event in all_relevant_events:
                 new_case.events.add(related_event)
             new_case.save()
-            log.info('Created new ili case: %s' % new_case)
+            log.info('Created new case: %s' % new_case)
             counter += 1
+        log.debug('Generated %s new cases of ili' % counter)
         
         return counter # Count of new cases
             
