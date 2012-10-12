@@ -121,6 +121,8 @@ class Syphilis(DiseaseDefinition):
     
     @transaction.commit_on_success
     def generate(self):
+        log.info('Generating cases of %s' % self.short_name)
+       
         #
         # Criteria Set #1
         #
@@ -176,6 +178,9 @@ class Syphilis(DiseaseDefinition):
             event_qs = combined_criteria_qs, 
             relevant_event_names = all_event_names,
             )
+        
+        log.debug('Generated %s new cases of syphilis' % new_case_count)
+        
         return new_case_count
             
     
