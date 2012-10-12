@@ -75,7 +75,10 @@ class Provenance(models.Model):
         source contains the source_search_str
         """
         qs = Provenance.objects.filter(source__icontains=source_search_str).order_by('-data_date')
-        return qs[0].data_date
+        if qs:
+            return qs[0].data_date
+        else: 
+            return datetime.date.today()
     
     @staticmethod
     def fake():
