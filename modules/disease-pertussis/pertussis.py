@@ -105,6 +105,8 @@ class Pertussis(DiseaseDefinition):
     
     @transaction.commit_on_success
     def generate(self):
+        log.info('Generating cases of %s' % self.short_name)
+       
         #
         # Criteria Set #1 :dx or lab order ) + rx within 7 days
         #
@@ -171,6 +173,8 @@ class Pertussis(DiseaseDefinition):
             new_case.save()
             log.info('Created new pertussis case: %s' % new_case)
             counter += 1
+        log.debug('Generated %s new cases of pertussis' % counter)
+        
         return counter # Count of new cases
             
 #-------------------------------------------------------------------------------
