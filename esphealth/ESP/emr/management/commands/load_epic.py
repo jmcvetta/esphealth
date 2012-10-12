@@ -852,9 +852,6 @@ class EncounterLoader(BaseLoader):
             log.debug('Could not save encounter object: %s' % e)
             log.debug('Error is: %s ' % describe)
             transaction.rollback()
-        else:
-            log.debug('Unknown error: %s ' % sys.exc_info()[0])
-            transaction.rollback()
     
     
 
