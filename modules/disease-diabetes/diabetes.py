@@ -1033,10 +1033,11 @@ class GestationalDiabetesReport(Report):
         #
         patient_values['pregnancy'] = 0
         gdm_case_date = None
+        
         if preg_ts_qs:
             patient_values['pregnancy'] = 1
         elif gdm_case_qs:
-                gdm_case_date = gdm_case_qs[0].date
+            gdm_case_date = gdm_case_qs[0].date
     
         # FIXME: This date math works on PostgreSQL, but I think that's
         # just fortunate coincidence, as I don't think this is the
@@ -1054,6 +1055,11 @@ class GestationalDiabetesReport(Report):
                 'lancets_test_strips_14_days_gdm_icd9' : binary( lancets_and_icd9 ) ,
             }      
         
+        values.update(patient_values)
+        
+        if not preg_ts_qs:
+            writer.writerow(values)   
+            
         for preg_ts in preg_ts_qs:
             # Find the pregnancy object for this timespan if there is any
             # ts.enddate= actual date, otherwise use edd. 
@@ -1537,9 +1543,7 @@ class GestationalDiabetesReport(Report):
                 'glyburide_rx': binary( intrapartum.filter(name='rx:glyburide') ),
                 }
             values.update(pregnancy_info_values)
-        
-        values.update(patient_values)
-        writer.writerow(values)
+            writer.writerow(values)        
         
 
 class BaseDiabetesReport(Report):
