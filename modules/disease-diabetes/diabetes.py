@@ -1077,7 +1077,7 @@ class GestationalDiabetesReport(Report):
                         edd__lte = preg_ts.end_date + relativedelta(days=30)
                     )
             else: 
-                 # no end_date in timespan, it prossibly current pregnancy and check for next 10 months
+                 # no end_date in timespan, it possibly current pregnancy and check for next 10 months
                  pregnancy_info = Pregnancy.objects.filter(
                     patient = patient,
                     actual_date__gt = preg_ts.start_date,
@@ -1161,8 +1161,11 @@ class GestationalDiabetesReport(Report):
             # timespan may not have en end_date if it is current pregnancy
             if preg_ts.end_date:
                 end_date = preg_ts.end_date
-            else:
-                end_date = datetime.datetime.today()
+            else: 
+                # estimating the end date based on timespan start date if end date is null
+                end_date = preg_ts.start_date + relativedelta(days=280)
+                
+                
             gdm_this_preg = gdm_case_qs.filter(
                 date__gte = preg_ts.start_date,
                 date__lte = end_date,
@@ -1457,7 +1460,7 @@ class GestationalDiabetesReport(Report):
                 
             values = {
                 'preg_start': preg_ts.start_date,
-                'preg_end': end_date,
+                'preg_end': preg_ts.end_date,
                 'edd': edd,
                 'bmi': bmi,
                 'bmi_date' : bmi_date,
