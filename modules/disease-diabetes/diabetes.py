@@ -89,7 +89,7 @@ class Diabetes(DiseaseDefinition):
             'cholesterol-ldl',
             'cholesterol-total',
             'triglycerides',
-            'fasting-glucose-status',
+            'fasting-status',
             ]:
             heuristics.append(LabResultNoEventHeuristic(test_name=test_name))
         
@@ -1037,7 +1037,14 @@ class GestationalDiabetesReport(Report):
         if preg_ts_qs:
             patient_values['pregnancy'] = 1
         elif gdm_case_qs:
-            gdm_case_date = gdm_case_qs[0].date
+            #ignoring gdm if frank diabetes happened before 
+            if frank_dm_case_qs:
+                if frank_dm_case_qs[0].date < gdm_case_qs[0].date:
+                    gdm_case_qs=None
+                else:    
+                    gdm_case_date = gdm_case_qs[0].date
+            else:
+                gdm_case_date = gdm_case_qs[0].date
     
         # FIXME: This date math works on PostgreSQL, but I think that's
         # just fortunate coincidence, as I don't think this is the
@@ -1113,7 +1120,6 @@ class GestationalDiabetesReport(Report):
                 'birth_weight2' : pregnancy_info[0].birth_weight2,
                 'birth_weight3' : pregnancy_info[0].birth_weight3,
                 'birth_route' : pregnancy_info[0].delivery,
-                
                 }
                 
             else:
@@ -1165,12 +1171,15 @@ class GestationalDiabetesReport(Report):
                 # estimating the end date based on timespan start date if end date is null
                 end_date = preg_ts.start_date + relativedelta(days=280)
                 
-                
             gdm_this_preg = gdm_case_qs.filter(
                 date__gte = preg_ts.start_date,
                 date__lte = end_date,
                 ).order_by('date')
-                
+            #ignorming gdm this preg if frank case before 
+            if frank_dm_case_qs and gdm_this_preg:
+                if frank_dm_case_qs[0].date < gdm_this_preg[0].date: 
+                    gdm_this_preg = None
+            
             #
             # Events by time period
             #
@@ -1545,6 +1554,7 @@ class GestationalDiabetesReport(Report):
                 'metformin_rx': binary( intrapartum.filter(name='rx:metformin') ),
                 'glyburide_rx': binary( intrapartum.filter(name='rx:glyburide') ),
                 }
+            values.update(patient_values)
             values.update(pregnancy_info_values)
             writer.writerow(values)        
         
