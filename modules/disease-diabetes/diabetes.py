@@ -1046,16 +1046,12 @@ class GestationalDiabetesReport(Report):
             else:
                 gdm_case_date = gdm_case_qs[0].date
     
-        # FIXME: This date math works on PostgreSQL, but I think that's
-        # just fortunate coincidence, as I don't think this is the
-        # right way to express the date query in ORM syntax.
         lancets_and_icd9 = event_qs.filter(
-                self.lancets_q,
+                name__in=['rx:lancets', 'rx:test-strips'],
                 patient__event__name='dx:gestational-diabetes',
                 patient__event__date__gte =  (F('date') - 14),
                 patient__event__date__lte =  (F('date') + 14),
                 )
-        
         values = {
                 'gdm_case': binary( gdm_case_qs ),
                 'gdm_case_date': gdm_case_date,
@@ -1175,7 +1171,7 @@ class GestationalDiabetesReport(Report):
                 date__gte = preg_ts.start_date,
                 date__lte = end_date,
                 ).order_by('date')
-            #ignorming gdm this preg if frank case before 
+            #ignoring gdm this preg if frank case before 
             if frank_dm_case_qs and gdm_this_preg:
                 if frank_dm_case_qs[0].date < gdm_this_preg[0].date: 
                     gdm_this_preg = None
@@ -1891,7 +1887,7 @@ class FrankDiabetesReport(BaseDiabetesReport):
         #
         # Determine list of patients to be reported, and Populate self.patient_field_values 
         # with all patient PKs.
-        #
+        # 
         twice_qs = Event.objects.filter(name__in=linelist_patient_criteria_twice).values('patient')
         twice_qs = twice_qs.annotate(count=Count('pk'))
         patient_pks = twice_qs.filter(count__gte=2).values_list('patient', flat=True).distinct()
