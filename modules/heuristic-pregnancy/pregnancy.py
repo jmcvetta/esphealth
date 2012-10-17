@@ -405,35 +405,25 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         #
         eop_event_date = None
         eop_date_limit = onset_date + relativedelta(days=280) + relativedelta(days=30)
+        
+        actual_date_qs = self.all_eop_qs.filter(
+            patient = patient,
+            name__in = 'prg:pregnancy:actual_date',
+            date__gte = onset_date,
+            date__lte = eop_date_limit,
+            ).order_by('date')
+        if actual_date_qs:
+            return actual_date_qs[0]
+        
         eop_event_qs = self.all_eop_qs.filter(
             patient = patient,
             date__gte = onset_date,
             date__lte = eop_date_limit,
             ).order_by('date')
-        #
-        # Sometimes EoP events are unreliable; and some event types are 
-        # known to be less reliable than others.  We will roll thru each
-        # potential EoP event and see if there is a pregnancy ICD9 immediately
-        # following it, which would suggest it's bogus.
-        #
-        for this_event in eop_event_qs:
-            #
-            # It may be necessary to examine reliable and unreliable 
-            # events differently.  However we will first try examining
-            # them the same way, and change the code if need be.
-            #
-            subsequent_preg_event_qs = self.relevant_event_qs.filter(
-                patient = patient,
-                date__gte = this_event.date,
-                date__lte = this_event.date + relativedelta(days=30)
-                )
-            if subsequent_preg_event_qs:
-                # If so, this EoP event is bogus, so we continue to the 
-                # next one
-                continue 
-            else:
-                # This EoP event seems plausible.  Let's use its date.
-                return this_event
+        
+        if eop_event_qs:
+            return eop_event_qs[0]
+        
         return None
     
     def _get_edd(self, patient, start_date):
@@ -550,8 +540,12 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             #
             eop_event = self._get_eop_event(patient, onset_date)
             if eop_event:
+                    
                 eop_date = eop_event.date
-                pattern += 'eop:eop_event'
+                if  eop_event.name == 'prg:pregnancy:actual_date':
+                    pattern += 'eop:ad'
+                else:
+                    pattern += 'eop:eop_event'
             # Is this patient currently pregnant?  If so, null eop_date
             elif onset_date > (self.latest_data_date - relativedelta(days=280)):
                 eop_date = None
