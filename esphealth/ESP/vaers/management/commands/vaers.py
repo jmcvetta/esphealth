@@ -57,8 +57,8 @@ class Command(BaseCommand):
         if options['all']:
             options['diagnostics'] = True
             options['lx'] = True
-            options['rx'] = True
-            options['allergy'] = True
+            #options['rx'] = True 
+            #options['allergy'] = True -- there is currently no allergy data and this has not been extensively tested
             
     
         if not ( options['diagnostics'] or options['lx'] or options['rx'] or options['allergy']):

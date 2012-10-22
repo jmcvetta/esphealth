@@ -6,6 +6,7 @@ from django.core.management.base import BaseCommand
 from ESP.vaers.models import Questionnaire
 from ESP.vaers.hl7_clinbasket import HL7_clinbasket
 from ESP.vaers.hl7_report import AdverseReactionReport
+from ESP.vaers.hl7_emr_update import HL7_emr_update
 
 
 
@@ -25,12 +26,14 @@ class Command(BaseCommand):
             hl7msg.make_msgs()
 
         #this queryset could have been created with a series of filter passes using standard queryset API, but it's messy either way.    
-        vaers_qs=Questionnaire.objects.raw('select distinct a.* from vaers_questionnaire a, vaers_case_adverse_events b, vaers_adverseevent c ' +
-                                          'where a.case_id=b.case_id and b.adverseevent_id=c.id and (a.state=\'Q\' or ' +
-                                          '(a.state = \'AR\' and date(now())-date(a.created_on) > 7 and c.category=\'2_severe\'))')
+        vaers_qs=Questionnaire.objects.raw('select distinct a.*, d.natural_key from vaers_questionnaire a, vaers_case_adverse_events b, vaers_adverseevent c, ' +
+                                          'emr_provider d where a.provider_id=d.id and a.case_id=b.case_id and b.adverseevent_id=c.id and (a.state=\'Q\' or ' +
+                                          '(a.state = \'AR\' and date(now())-date(a.created_on) > 7 and c.category in(\'2_severe\',\'5_reportable\')))')
         for vques in vaers_qs:
             vaersmsg=AdverseReactionReport(vques)
             vaersmsg.render()
+            emrupdate=HL7_emr_update(vques)
+            emrupdate.render()
     
 
         
