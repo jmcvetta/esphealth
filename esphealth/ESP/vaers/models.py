@@ -669,6 +669,7 @@ class Questionnaire (models.Model):
  
 class Report_Sent (models.Model):
     date = models.DateTimeField(auto_now_add=True)
+    questionnaire = models.ForeignKey(Questionnaire)
     case = models.ForeignKey(Case)
     #raw hl7 vaers report as sent
     vaers_report = models.TextField()

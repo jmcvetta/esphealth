@@ -3,7 +3,7 @@
 from django.contrib.contenttypes.models import ContentType
 from ESP.static.models import Vaccine, ImmunizationManufacturer, Icd9
 from ESP.vaers.models import Case, Questionnaire, Report_Sent
-from ESP.emr.models import Provider
+from ESP.emr.models import Provider, Patient
 from ESP.utils import utils
 from ESP.settings import SITE_NAME, SYSTEM_STATUS, PHINMS_SERVER, PHINMS_USER, PHINMS_PASSWORD, PHINMS_PATH, VAERS_AUTOSENDER
 
@@ -30,6 +30,7 @@ class AdverseReactionReport(object):
         self.ques = questionnaire
         self.case = Case.objects.get(id=self.ques.case_id)
         self.immunizations = self.case.immunizations.all()
+        self.patient = Patient.objects.get(id=self.case.patient_id)
 
     def make_MSH(self):
         msh = MSH()
@@ -292,7 +293,7 @@ class AdverseReactionReport(object):
                         
         return SegmentTree(obr_prior_vaccination_list, vaccines)
     
-    def prior_ae(self, cases):
+    def prior_ae(self, case):
         
         obr = OBR()
         obr.universal_service_id = ['30968-2','Adverse event following prior vaccination in patient','LN']
@@ -300,34 +301,34 @@ class AdverseReactionReport(object):
         p_aes = []
         p_ae = OBX()
         p_ae.value_type = 'CE'
-        p_ae.observation_results_status = 'F'
-        for case in cases:
-            ae_list = []
-            p_ae.identifier = ['30968-2&30971-6','Adverse event','LN']
-            AEs = case.adverse_events.distinct().order_by('date')
-            for AE in AEs:
-                ae_list.append(AE.matching_rule_explain)
-            p_ae.value = ae_list 
-            p_aes.append(p_ae)
-            p_ae.identifier = ['30968-2&30971-6','Onset age','LN']
-            p_ae.value = (case.date - self.patient.dob)/365.25
-            p_ae.units = ['yr','year','ANSI']
-            if p_ae.value < 2:
-                p_ae.value = ((case.date.year) * 12 + case.date.month) - ((self.patient.dob.year) * 12 + self.patient.dob.month)
-                p_ae.units = ['mo','month','ANSI']
-            p_aes.append(p_ae)
-            p_aes.units = None
-            p_ae.indentifier = ['30968-2&30971-6','Vaccine Type','LN']  
-            for imm in case.immunizations.all():
-                CVXVax = Vaccine.objects.get(code=VaccineCodeMap.objects.get(native_code=imm.vaccine.code).canonical_code_id)
-                p_ae.value = [CVXVax.code, CVXVax.short_name, 'CVX']
-                p_aes.append(p_ae)           
+        p_ae.observation_result_status = 'F'
+        ae_list = []
+        p_ae.identifier = ['30968-2&30971-6','Adverse event','LN']
+        AEs = case.adverse_events.distinct().order_by('date')
+        for AE in AEs:
+            ae_list.append(AE.matching_rule_explain)
+        p_ae.value = ae_list 
+        p_aes.append(p_ae)
+        p_ae.identifier = ['30968-2&30971-6','Onset age','LN']
+        p_ae.value = self.patient.age.years
+        p_ae.units = ['yr','year','ANSI']
+        if p_ae.value < 2:
+            p_ae.value = self.patient.age.months
+            p_ae.units = ['mo','month','ANSI']
+        p_aes.append(p_ae)
+        p_ae.units = None
+        p_ae.identifier = ['30968-2&30971-6','Vaccine Type','LN']  
+        for imm in case.immunizations.all():
+            CVXVax = Vaccine.objects.get(id=imm.vaccine.code)
+            p_ae.value = [CVXVax.code, CVXVax.short_name, 'CVX']
+            p_aes.append(p_ae)           
         return SegmentTree(obr, p_aes)
 
     def render(self):
         observation_reports = [self.event_summary(), self.vaccine_list(), 
                                self.prior_vax()]
-        pcases = Case.objects.filter(patient=self.case.patient, date__gt=self.case.date)
+        pcases = Case.objects.filter(patient=self.case.patient, date__lt=self.case.date, report_sent__id__isnull=False)
+        pcases = pcases.filter(id__in=Report_Sent.objects.filter)
         for pcase in pcases:
             observation_reports.append(self.prior_ae(pcase))
         for idx, report in enumerate(observation_reports):
@@ -344,7 +345,8 @@ class AdverseReactionReport(object):
                 Questionnaire.objects.filter(id=self.ques.id).update(state='S')
             elif Questionnaire.objects.filter(id=self.ques.id, state='AR'):
                 Questionnaire.objects.filter(id=self.ques.id).update(state='AS')
-            Report_Sent.objects.create(case=self.case,
+            Report_Sent.objects.create(questionnaire_id=self.ques.id,
+                                       case_id=self.case.id,
                                        date=now,
                                        vaers_report=hl7file.getvalue())
         hl7file.close()

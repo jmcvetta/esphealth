@@ -5,6 +5,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 
 from django.db.models import F
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from ESP.hef.base import BaseHeuristic
 from ESP.conf.common import EPOCH
@@ -55,8 +56,7 @@ class AdverseEventHeuristic(BaseHeuristic):
         
         this_case, case_created = Case.objects.get_or_create(
                  date = this_imm.date,
-                 patient = this_imm.patient,
-                 version = rules.VAERS_VERSION
+                 patient = this_imm.patient
                 )
         this_case.save()
         
@@ -169,6 +169,8 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
                         'category' : self.category,
                         },
                     )
+                
+                new_ae.version = rules.VAERS_VERSION
                         
                 new_ae.save() # Must save before adding to ManyToManyField
                 
@@ -269,6 +271,8 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                         'category' : self.category, 
                         }
                     )
+                
+                new_ee.version = rules.VAERS_VERSION
                     
                 new_ee.save() # Must save before adding to ManyToManyField
                 
@@ -506,6 +510,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 result = lab_result.result_float or lab_result.result_string
                 rule_explain =  'Lab %s resulting in %s'% (self.name, result)
                 
+                
                 # Register which immunizations may be responsible for the event
                 immunizations = Immunization.vaers_candidates(lab_result.patient,lab_result.date, self.time_post_immunization)
                 assert len(immunizations) > 0
@@ -513,38 +518,46 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 # create a new event for each immunization date 
                 # update if repeating labs
                 for imm in immunizations:
-                    ev, created = LabResultEvent.objects.get_or_create(
-                                gap = (lab_result.date - imm.date).days,                                       
-                                object_id =lab_result.pk,
-                                content_type = content_type,
-                                name = self.vaers_heuristic_name(),
-                                patient=lab_result.patient,
-                                defaults = {
-                                    'matching_rule_explain': rule_explain,
-                                    'category' : self.criterion['category'],
-                                    'date' : lab_result.date,
-                                    },
-                                )
-                    
-                    if lab_result.date < ev.date:
-                        ev.date = lab_result.date
-                    #calculating the last known value with value prior to vaccine
-                    #self.lkv, self.lkd = has regular last known value  
-                    ev.last_known_value, ev.last_known_date = lab_result.last_known_value(True,imm.date) 
-                    #last_known_value will return a float or a string, depending  on the last known value.  
-                    #but events require a float result
                     try:
-                        float(ev.last_known_value)
-                    except:
-                        ev.last_known_value = None
-                        ev.last_known_date = None                   
+                        if Case.objects.get(date = imm.date,
+                            patient = imm.patient).adverse_events.filter(matching_rule_explain__startswith='Lab %s'% (self.name)).exists():
+                            #if there are, jump out of this iteration of the event generation loop -- one lab per type per case is sufficient
+                            continue
+                    except ObjectDoesNotExist:
+                        ev, created = LabResultEvent.objects.get_or_create(
+                                    gap = (lab_result.date - imm.date).days,                                       
+                                    object_id =lab_result.pk,
+                                    content_type = content_type,
+                                    name = self.vaers_heuristic_name(),
+                                    patient=lab_result.patient,
+                                    defaults = {
+                                        'matching_rule_explain': rule_explain,
+                                        'category' : self.criterion['category'],
+                                        'date' : lab_result.date,
+                                        },
+                                    )
                         
-                    ev.save()
-                       
-                    if created: 
-                        counter += 1
-                    
-                    self.update_or_create_case(lab_result, imm, ev)
+                        ev.version = rules.VAERS_VERSION
+    
+                        if lab_result.date < ev.date:
+                            ev.date = lab_result.date
+                        #calculating the last known value with value prior to vaccine
+                        #self.lkv, self.lkd = has regular last known value  
+                        ev.last_known_value, ev.last_known_date = lab_result.last_known_value(True,imm.date) 
+                        #last_known_value will return a float or a string, depending  on the last known value.  
+                        #but events require a float result
+                        try:
+                            float(ev.last_known_value)
+                        except:
+                            ev.last_known_value = None
+                            ev.last_known_date = None                   
+                            
+                        ev.save()
+                           
+                        if created: 
+                            counter += 1
+                        
+                        self.update_or_create_case(lab_result, imm, ev)
                 
             except AssertionError:
                 log.error('No candidate immunization for LabResult %s' % lab_result)
@@ -641,7 +654,9 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                                 'category' :self.criterion['category'],
                                },
                             )
-                                        
+                    
+                    ev.version = rules.VAERS_VERSION
+                    
                     ev.save()
                     
                     if created: 

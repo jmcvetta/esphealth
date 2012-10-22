@@ -131,12 +131,17 @@ class HL7_clinbasket(object):
             obx.identifier='REP^Report Text'
             if self.case.adverse_events.filter(category='2_rare').exists():
                 #Rare, severe AE
-                caseDescription = ('~ ~Your patient, ' + patient.name + ', may have experienced a serious adverse event following a recent vaccination. ' + 
+                caseDescription = ('~ ~Your patient, ' + patient.first_name + ' ' + patient.last_name +  ', may have experienced a serious adverse event following a recent vaccination. ' + 
                         'PLEASE NOTE: DUE TO THE SEVERITY OF THE ADVERSE EVENT, A VAERS REPORT WILL AUTOMATICALLY BE GENERATED AND SUBMITTED TO CDC-VAERS IF YOU DO NOT RESPOND TO THIS MESSAGE. ' +
-                        patient.name + ', was recently noted to have: ')
+                        patient.first_name + ' ' + patient.last_name + ', was recently noted to have: ')
             elif self.case.adverse_events.filter(category='3_possible').exists():
                 #Possible AE
                 caseDescription = '~ ~Your patient, ' + patient.first_name + ' ' + patient.last_name +  ', was recently noted to have: '
+            elif self.case.adverse_events.filter(category='5_reportable').exists():
+                #Possible AE
+                caseDescription = ('~ ~Your patient, ' + patient.first_name + ' ' + patient.last_name +  ', was recently diagnosed with a reportable vaccination adverse reaction.  ' +
+                        'PLEASE NOTE: DUE TO THE REPORTABLE NATURE OF THE DIAGNOSIS, A VAERS REPORT WILL AUTOMATICALLY BE GENERATED AND SUBMITTED TO CDC-VAERS IF YOU DO NOT RESPOND TO THIS MESSAGE. ' +
+                         patient.first_name + ' ' + patient.last_name + ', was recently noted to have: ')
             obx.value=caseDescription
             obxstr=obxstr+str(obx)+'\r'
             i=1
@@ -145,19 +150,19 @@ class HL7_clinbasket(object):
                     icd9codes = AE.matching_rule_explain.split()
                     for icd9code in icd9codes:
                         if Icd9.objects.filter(code=icd9code).exists():
-                            obx.value = '(' + str(i) + ') a diagnosis of ' + Icd9.objects.get(code=icd9code).longname + ' on ' + str(AE.encounterevent.date) 
+                            obx.value = '~(' + str(i) + ') a diagnosis of ' + Icd9.objects.get(code=icd9code).longname + ' on ' + str(AE.encounterevent.date) 
                             j=j+1
                             obx.set_id=str(j).zfill(3)
                             i=i+1 
                             obxstr=obxstr+str(obx)+'\r'
                 elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('prescription'):
-                    obx.value = '(' + str(i) + ') a prescription for ' + AE.prescriptionevent.content_object.name + ' on ' + str(AE.prescriptionevent.content_object.date) 
+                    obx.value = '~(' + str(i) + ') a prescription for ' + AE.prescriptionevent.content_object.name + ' on ' + str(AE.prescriptionevent.content_object.date) 
                     j=j+1
                     obx.set_id=str(j).zfill(3)
                     i=i+1
                     obxstr=obxstr+str(obx)+'\r'
                 elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('labresult'):
-                    obx.value = ('(' + str(i) + ') a lab test for ' + AE.labresultevent.content_object.native_name 
+                    obx.value = ('~(' + str(i) + ') a lab test for ' + AE.labresultevent.content_object.native_name 
                             + ' with a result of ' + AE.labresultevent.content_object.result_string + ' on ' + str(AE.labresultevent.content_object.result_date) )
                     j=j+1
                     obx.set_id=str(j).zfill(3)
@@ -166,7 +171,7 @@ class HL7_clinbasket(object):
                 elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('allergy'):
                         #adding the term 'allergy' to the name, as it is otherwise confusing with the test data.
                         #this may not be the case with real allergen names and if so the code will need to be revised.
-                    obx.value = '(' + str(i) + ') an allergic reaction to ' + AE.allergyevent.content_object.name + ' on ' + str(AE.allergyevent.content_object.date) 
+                    obx.value = '~(' + str(i) + ') an allergic reaction to ' + AE.allergyevent.content_object.name + ' on ' + str(AE.allergyevent.content_object.date) 
                     j=j+1
                     obx.set_id=str(j).zfill(3)
                     i=i+1
@@ -182,11 +187,14 @@ class HL7_clinbasket(object):
                 obx.set_id=str(j).zfill(3)
                 i=i+1
                 obxstr=obxstr+str(obx)+'\r' 
-            obx.value =  '~ ~Is it possible your patient experienced an adverse event (a possible side effect) of a vaccination? '
+            if self.case.adverse_events.filter(category='5_reportable').exists():
+                obx.value =  '~ ~Can you confirm your patient experienced an adverse event (a possible side effect) of a vaccination? '
+            else:
+                obx.value =  '~ ~Is it possible your patient experienced an adverse event (a possible side effect) of a vaccination? '
             j=j+1
             obx.set_id=str(j).zfill(3)
             obxstr=obxstr+str(obx)+'\r'
-            obx.value='~ ~If so, we can submit an electronic report to the CDC/FDAs Vaccine Adverse Event Reporting System (VAERS) on your behalf.'
+            obx.value='We can submit an electronic report to the CDC/FDA\'s Vaccine Adverse Event Reporting System (VAERS) on your behalf.'
             j=j+1
             obx.set_id=str(j).zfill(3)
             obxstr=obxstr+str(obx)+'\r'
