@@ -90,6 +90,16 @@ ALTER TABLE emr_labresult
 -- is from a hospital setting.
 ALTER TABLE emr_patient ALTER COLUMN country TYPE character varying(60);
 -- Country can be longer than 20 characters. 
+ALTER TABLE vaers_report_sent
+  ADD COLUMN questionnaire_id integer;
+ALTER TABLE vaers_report_sent 
+  ALTER COLUMN questionnaire_id SET NOT NULL;
+ALTER TABLE vaers_report_sent
+  ADD CONSTRAINT vaers_report_sent_questionnaire_id_fkey FOREIGN KEY (questionnaire_id)
+      REFERENCES vaers_questionnaire (id);
+-- Added a foreign key reference to questionnaire id, since each VAERS report
+-- represent transmission based first on creation of a specific questionnaire.
+
 
 
 
