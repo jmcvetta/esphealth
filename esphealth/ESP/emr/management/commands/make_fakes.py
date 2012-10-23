@@ -774,7 +774,7 @@ class Command(LoaderCommand):
                         immunization_writer.write_row(imm)
                     
             #if patient is female and has birth bearing age 12-55, generate pregnancy                 
-            if p.gender.startswith('F') and p.age.years > 12 and p.age.years < 55 :
+            if p.gender.startswith('F') and p.age.years > 12 and p.age.years < 55 and MAX_PREGNANCIES>0:
                 gravida = random.randint(1, MAX_PREGNANCIES)
                 totparity =  random.randint(0, gravida) # births that persisted beyond 20 weeks
                 totterm = random.randint(0, totparity) 
@@ -791,7 +791,6 @@ class Command(LoaderCommand):
                     if totparity >0: totparity = totparity -1 
                     if totterm >0 :totterm = totterm - 1
                     if totpreterm >0 :totpreterm = totpreterm - 1
-                    
                     
                     pregnancy_writer.write_row(pregnancy)
                     # generate encounter with edd field 
