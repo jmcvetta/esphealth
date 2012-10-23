@@ -673,9 +673,6 @@ class Diabetes(DiseaseDefinition):
         #
         dx_ets=['dx:diabetes:all-types','dx:gestational-diabetes']
         rx_ets=['rx:lancets', 'rx:test-strips']
-        # TODO FIXME issue 346 This date math works on PostgreSQL, but I think that's just 
-        # fortunate coincidence, as I don't think this is the right way to 
-        # express the date query in ORM syntax.
         _event_qs = Event.objects.filter(
             name__in=rx_ets,
             patient__event__name__in = dx_ets, 
