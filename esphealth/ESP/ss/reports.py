@@ -40,8 +40,9 @@ class Report(object):
         self.days = days_in_interval(self.begin_date, self.end_date)
         self.timestamps = str_from_date(self.begin_date), str_from_date(self.end_date)
         self.folder = report_folder(begin_date, end_date, subfolder='reports')
-        self.encounters = NonSpecialistVisitEvent.syndrome_care_visits(sites=Site.site_ids()).filter(
-            date__gte=self.begin_date, date__lte=self.end_date)
+        
+        self.encounters = NonSpecialistVisitEvent.syndrome_care_visits(self,sites=Site.site_ids()).filter(
+              date__gte=self.begin_date, date__lte=self.end_date)
 
     def _write_date_zip_summary(self, day, zip_code, age_group_map, outfile):
             # Output results for this date and zip to the file.
