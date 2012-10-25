@@ -41,6 +41,9 @@ class ili(DiseaseDefinition):
     
     timespan_heuristics = []
     
+    FEVER_TEMPERATURE = 100.0 # Temperature in Fahrenheit
+        
+    
     @property
     def event_heuristics(self):
         heuristic_list = []
@@ -104,32 +107,32 @@ class ili(DiseaseDefinition):
        
         #
         # Criteria Set #1 
-        # (icd9 code + measured fever) or (icd9 code + icd9code for fever)
-        # Logically: (a&b)+(a&c) = a&(b+c)
+        # diagosis of ili and measured fever > 100
         #
-        ICD9_FEVER_CODES = ['780.6','780.31']
-        FEVER_TEMPERATURE = 100.0 # Temperature in Fahrenheit
         
         dx_ev_names = ['dx:ili',]
-        dx_fever_ev_names = ['dx:fever',]
+        q_measured_fever = Q(patient__event__encounter__temperature__gte =  self.FEVER_TEMPERATURE)
         
-        # ili diagnosis, with no fever measured but fever diagnosis
-        dx_fever_event_qs = Event.objects.filter(
-            name__in = dx_ev_names,
-             
-            patient__event__encounter__temperature__isnull=True,
-            patient__event__name__in =  dx_fever_ev_names,
-            
-            )
-        # ili diagnosis with fever measured 
-        dx_event_qs = Event.objects.filter(
-            name__in = dx_ev_names, 
-            patient__event__encounter__temperature__gte = FEVER_TEMPERATURE,
-            )
+        #
+        # Criteria Set #2 
+        #  diagosis of ili and no fever measured but diagnosis of fever
+        #
+        
+        dx_fever_ev_names = ['dx:fever',]
+        q_unmeasured_fever = Q(patient__event__encounter__temperature__isnull=True, patient__event__name__in=dx_fever_ev_names)
+        
+        #
+        # combined criteria
+        #
+        # Make it really readable. 
+        # (icd9 code + measured fever) or (icd9 code + icd9code for fever)
+        # Logically: (a&b)+(a&c) = a&(b+c)
+        influenza = (q_measured_fever | q_unmeasured_fever)
+        
         #
         # Combined Criteria
         #
-        combined_criteria_qs =  dx_event_qs |  dx_fever_event_qs  
+        combined_criteria_qs =  Event.objects.filter(name__in = dx_ev_names).filter(influenza)
                 
         combined_criteria_qs = combined_criteria_qs.exclude(case__condition='ili')
         combined_criteria_qs = combined_criteria_qs.order_by('date')
