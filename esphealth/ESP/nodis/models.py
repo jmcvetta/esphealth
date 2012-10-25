@@ -38,6 +38,7 @@ from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 
 
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 DISPOSITIONS = [
     ('exact', 'Exact'),
@@ -114,7 +115,7 @@ class Case(models.Model):
         '''
         Return the ConditionConfig object for this case's condition
         '''
-        return ConditionConfig.objects.get(condition_uri=self.condition_uri)
+        return ConditionConfig.objects.get(name=self.condition)
     condition_config = property(__get_condition_config)
 
     def __get_first_provider(self):
@@ -248,7 +249,7 @@ class Case(models.Model):
             return None
     result_date = property(__get_result_date)
 
-
+    
 
 class CaseStatusHistory(models.Model):
     '''
