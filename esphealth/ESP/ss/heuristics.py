@@ -49,19 +49,22 @@ class SyndromeHeuristic(DiagnosisHeuristic):
     def encounters(self, **kw):
         '''
         Overrides DiagnosisHeuristic.encounter property to return only 
-        encounters matching both diagnosis codes and syndrome.  
+        encounters matching both diagnosis codes and syndrome that belong
+        to a non specialty site. 
         '''
-        qs = NonSpecialistVisitEvent.syndrome_care_visits() # TODO FIXME: Bad location for syndrome_care_visits()
+        # TODO FIXME: Bad location for syndrome_care_visits()
+        qs = NonSpecialistVisitEvent.syndrome_care_visits(self) 
+        #qs = Encounter.objects.all()
         qs = qs & super(SyndromeHeuristic, self).encounters
         return qs
 
     def generate(self, **kw):
         created = 0
         detected = 0
+        
         raw_encounter_type = ContentType.objects.get_for_model(Encounter)
         begin_date = kw.get('begin_date', EPOCH)
         end_date = kw.get('end_date', datetime.date.today())
-
 
         for encounter in self.matches().filter(date__gte=begin_date, date__lte=end_date):
             detected +=1 
@@ -83,6 +86,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
             if new: created+= 1
                 
         log.info('%s events detected' % detected)
+        # created only if encounter site zip is in non specialty clinic 
         log.info('%s events created' % created)
 
         return created
@@ -123,7 +127,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
         zip_codes = Patient.objects.values_list('zip5', flat=True).distinct().order_by('zip5')
         days = days_in_interval(date, end_date)
 
-        encounters = NonSpecialistVisitEvent.syndrome_care_visits(sites=Site.site_ids()).values(
+        encounters = NonSpecialistVisitEvent.syndrome_care_visits(self,sites=Site.site_ids()).values(
             'date', 'patient__zip5').exclude(patient__zip5__isnull=True)
 
         events = NonSpecialistVisitEvent.objects.filter(name=self.name).values(
@@ -192,7 +196,7 @@ class SyndromeHeuristic(DiagnosisHeuristic):
 
         days = days_in_interval(date, end_date)
 
-        encounters = NonSpecialistVisitEvent.syndrome_care_visits(sites=Site.site_ids()).values(
+        encounters = NonSpecialistVisitEvent.syndrome_care_visits(self,sites=Site.site_ids()).values(
             'date', 'site_natural_key')
 
         events = NonSpecialistVisitEvent.objects.filter(name=self.name).values(
@@ -302,7 +306,6 @@ class SyndromeHeuristic(DiagnosisHeuristic):
                         count_by_locality_and_age, count_by_site_and_age, '\n']])
             log.debug(line)
             outfile.write(line)
-               
 
         outfile.close()
 
