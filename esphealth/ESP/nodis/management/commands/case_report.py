@@ -489,7 +489,7 @@ class hl7Batch:
         first_event = case.events.order_by('date')[0]
         start_date = first_event.date
         end_date = start_date + datetime.timedelta(days=30)
-        preg_encounters = Encounter.objects.filter(patient=case.patient, pregnancy_status='Y', date__gte=start_date,
+        preg_encounters = Encounter.objects.filter(patient=case.patient, pregnant=True, date__gte=start_date,
             date__lte=end_date)
         if not preg_encounters:
             return ('261665006', None)
