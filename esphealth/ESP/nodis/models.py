@@ -19,7 +19,7 @@ from ESP.conf.models import ReportableMedication
 #from ESP.hef.base import TimespanHeuristic
 from ESP.hef.models import Timespan
 from ESP.conf.models import ConditionConfig
-
+from django.contrib.contenttypes.models import ContentType
 
 import datetime
 
@@ -170,11 +170,13 @@ class Case(models.Model):
         
         from ESP.nodis.base import DiseaseDefinition
         icd9_qs = None
+        
         for heuristic in  DiseaseDefinition.get_by_short_name(self.condition).event_heuristics:
-            for icd9_query in heuristic.icd9_queries:
-                if not icd9_qs:
-                    icd9_qs = Icd9.objects.filter(icd9_query.icd9_q_obj)
-                else: icd9_qs |= Icd9.objects.filter(icd9_query.icd9_q_obj)
+            if 'diagnosis' in heuristic.short_name:
+                for icd9_query in heuristic.icd9_queries:
+                    if not icd9_qs:
+                        icd9_qs = Icd9.objects.filter(icd9_query.icd9_q_obj)
+                    else: icd9_qs |= Icd9.objects.filter(icd9_query.icd9_q_obj)
         
         icd9_objs = icd9_qs.distinct()
         icd9_objs |= Icd9.objects.filter(reportableicd9__condition=self.condition_config).distinct()
