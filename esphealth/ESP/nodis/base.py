@@ -23,7 +23,7 @@ from ESP.settings import HEF_THREAD_COUNT
 from ESP.utils import log
 from ESP.utils import log_query
 
-from ESP.hef.base import BaseHeuristic
+from ESP.hef.base import BaseHeuristic, PrescriptionHeuristic
 from ESP.hef.base import LabResultPositiveHeuristic
 from ESP.hef.models import Event
 from ESP.nodis.models import Case
@@ -256,6 +256,18 @@ class DiseaseDefinition(object):
         if not uri in diseases:
             raise UnknownDiseaseException('Could not get disease definition for uri: "%s"' % uri)
         return diseases[uri]
+    
+    def __get_medications(self):
+        ''' 
+        Returns set of medication names used in this condition's definition.
+        '''
+        med_names = set()
+        for heuristics in self.event_heuristics:
+            heuristic_obj = BaseHeuristic.get_heuristic_by_name(heuristics.short_name)
+            if isinstance(heuristic_obj, PrescriptionHeuristic):
+                med_names |= set( heuristic_obj.drugs )
+        return med_names
+    medications = property(__get_medications)
     
     #-------------------------------------------------------------------------------
     #
