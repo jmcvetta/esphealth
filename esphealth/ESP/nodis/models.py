@@ -149,9 +149,7 @@ class Case(models.Model):
     def __get_reportable_labs(self):
         
         from ESP.nodis.base import DiseaseDefinition
-        heuristics = DiseaseDefinition.event_heuristics()
-        #get_by_short_name(self.condition) 
-        #Condition.get_condition(self.condition).heuristics  #get lab heuristics from Events
+        heuristics = DiseaseDefinition.get_by_short_name(self.condition).event_heuristics
         reportable_codes = set(ReportableLab.objects.filter(condition=self.condition).values_list('native_code', flat=True))
         # get native codes from lab heuristics 
         reportable_codes |= set(LabTestMap.objects.filter(test_name__in=heuristics, reportable=True).values_list('native_code', flat=True))
@@ -171,7 +169,14 @@ class Case(models.Model):
     def __get_reportable_icd9s(self):
         
         from ESP.nodis.base import DiseaseDefinition
-        icd9_objs = DiseaseDefinition.get_by_short_name(self.condition).icd9s
+        icd9_qs = None
+        for heuristic in  DiseaseDefinition.get_by_short_name(self.condition).event_heuristics:
+            for icd9_query in heuristic.icd9_queries:
+                if not icd9_qs:
+                    icd9_qs = Icd9.objects.filter(icd9_query.icd9_q_obj)
+                else: icd9_qs |= Icd9.objects.filter(icd9_query.icd9_q_obj)
+        
+        icd9_objs = icd9_qs.distinct()
         icd9_objs |= Icd9.objects.filter(reportableicd9__condition=self.condition_config).distinct()
         return icd9_objs
     reportable_icd9s = property(__get_reportable_icd9s)
