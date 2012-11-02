@@ -166,26 +166,28 @@ class Case(models.Model):
     
     reportable_labs = property(__get_reportable_labs)
 
+    @property
+    def reportable_icd9s(self):
+        return Icd9.objects.filter(encounter__in=self.reportable_encounters)
+   
     def __get_reportable_icd9s(self):
         
         from ESP.nodis.base import DiseaseDefinition
-        icd9_qs = None
-        
+        icd9_objs = None
         for heuristic in  DiseaseDefinition.get_by_short_name(self.condition).event_heuristics:
             if 'diagnosis' in heuristic.short_name:
                 for icd9_query in heuristic.icd9_queries:
-                    if not icd9_qs:
-                        icd9_qs = Icd9.objects.filter(icd9_query.icd9_q_obj)
-                    else: icd9_qs |= Icd9.objects.filter(icd9_query.icd9_q_obj)
+                    if not icd9_objs:
+                        icd9_objs = Icd9.objects.filter( icd9_query.icd9_q_obj)
+                    else: icd9_objs |= Icd9.objects.filter(icd9_query.icd9_q_obj)
         
-        icd9_objs = icd9_qs.distinct()
-        icd9_objs |= Icd9.objects.filter(reportableicd9__condition=self.condition_config).distinct()
+        icd9_objs = icd9_objs.distinct() | Icd9.objects.filter(reportableicd9__condition=self.condition_config).distinct()
         return icd9_objs
-    reportable_icd9s = property(__get_reportable_icd9s)
+    reportable_icd9s_list = property(__get_reportable_icd9s)
 
     def __get_reportable_encounters(self):
         q_obj = Q(patient=self.patient)
-        q_obj &= Q(icd9_codes__in=self.reportable_icd9s)
+        q_obj &= Q(icd9_codes__in=self.reportable_icd9s_list)
         conf = self.condition_config
         start = self.date - datetime.timedelta(days=conf.icd9_days_before)
         end = self.date + datetime.timedelta(days=conf.icd9_days_after)
