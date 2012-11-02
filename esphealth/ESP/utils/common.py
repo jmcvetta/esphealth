@@ -4,7 +4,7 @@
 FIRST_NAMES = ['Bill', 'Mary', 'Jim', 'Donna', 'Patricia', 
                'Susan', 'Robert', 'Barry', 'Bazza', 'Deena', 
                'Kylie', 'Shane', 'John', 'Michael', 'Anne',
-               'Spock', 'Kruskal', 'Platt', 'Klompas', 'Lazarus', 
+               'Spock', 'Kruskal', 'Platt', 'Jones', 'Lazarus', 
                'Who', 'Nick', 'Livingston', 'Doolittle', 'Casey', 'Finlay'
                ]
 
