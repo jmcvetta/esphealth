@@ -698,7 +698,6 @@ class Command(LoaderCommand):
 
     def handle(self, *fixture_labels, **options):
 
-
         prof = Profiler()
 
         provider_writer = ProviderWriter()
@@ -718,6 +717,7 @@ class Command(LoaderCommand):
             self.loadFakeLabsTable()
                
         Provider.make_mocks(provider_writer)
+       
         #TODO issue 331 add the header rows her for each writer
         # do a join of fields object by ^
         # use icd9code 
