@@ -368,7 +368,7 @@ class Hepatitis_C_Test(EspTestCase):
         6. Hepatitis C RNA
         
         TODO: This test, and the disease algo, currently expect JM's interpretation
-        of the Hep C definition.  Make sure Mike Klompas confirms this is correct.
+        of the Hep C definition.  Make sure dr. confirms this is correct.
         '''
         log.info('Testing Hep C Definition C (simple algo)')
         mccoy = self.create_provider(last='Nimoy', first='Leonard')
