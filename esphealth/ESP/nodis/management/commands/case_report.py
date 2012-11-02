@@ -97,7 +97,7 @@ class Foo(): pass
 INSTITUTION = Foo()
 INSTITUTION.name = 'HVMA'
 INSTITUTION.clia = '22D0666230'
-INSTITUTION.last_name = 'Klompas'
+INSTITUTION.last_name = 'Jones'
 INSTITUTION.first_name = 'Michael'
 INSTITUTION.address1 = '133 Brookline Avenue'
 INSTITUTION.address2 = None
@@ -105,7 +105,7 @@ INSTITUTION.city = 'Boston'
 INSTITUTION.state = 'MA'
 INSTITUTION.zip = '02215'
 INSTITUTION.country = 'USA'
-INSTITUTION.email = 'mklompas@partners.org'
+INSTITUTION.email = 'mjones@partners.org'
 INSTITUTION.area_code = '617'
 INSTITUTION.tel_numeric = '5099991'
 INSTITUTION.tel_ext = None
@@ -247,7 +247,6 @@ class hl7Batch:
             nkindx=nkindx+1
             orus2.appendChild(p)
         ##Clinical information
-        lxobjs = case.reportable_labs.order_by('order_natural_key')
         orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
         orus.appendChild(orcs)
         icd9_codes = case.reportable_icd9s
@@ -256,6 +255,7 @@ class hl7Batch:
             rx=rxobjs[0]
         else:
             rx = None
+        lxobjs = case.reportable_labs.order_by('order_natural_key')
         if len(lxobjs):
             lx =lxobjs[0]
         else:
