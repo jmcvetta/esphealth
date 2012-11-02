@@ -21,8 +21,15 @@ def last_name():
     return random.choice(common.LAST_NAMES)
 
 def date_of_birth(as_string=False, format='%Y%m%d'):
+    
+    if END_DATE == 'TODAY':
+        date_end= datetime.date.today() 
+    else:
+        date_end = datetime.datetime.strptime(END_DATE, '%Y/%m/%d').date()
+    
     days_old = random.randrange(0, 36500) # Up to a hundred years old
-    dob = datetime.date.today() - datetime.timedelta(days=days_old)
+    
+    dob = date_end - datetime.timedelta(days=days_old)
     
     return dob.strftime(format) if as_string else dob         
 
