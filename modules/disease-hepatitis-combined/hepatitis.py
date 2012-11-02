@@ -509,7 +509,7 @@ class Hepatitis_C(HepatitisCombined):
 
     def _acute_hep_c_complex_algo(self):
         '''
-        Detects cases based on definition (a) and (b) in Mike Klompas's spec
+        Detects cases based on definition (a) and (b) in spec
             for Hep C.
         @return: Count of new cases created
         @retype: Integer
@@ -693,7 +693,7 @@ class Hepatitis_C(HepatitisCombined):
 
     def _acute_hep_c_simple_algo(self):
         '''
-        Detects cases based on definitions (c) and (d) in Mike Klompas's spec
+        Detects cases based on definitions (c) and (d) in  spec
             for Hep C.
         @return: Count of new cases created
         @retype: Integer
