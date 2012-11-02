@@ -6,11 +6,11 @@ from ESP.conf.common import EPOCH
 TODAY = datetime.date.today()
 
 PROVIDERS = [
-    Provider(first_name='Michael', last_name='Klompas'),
-    Provider(first_name='Michael', last_name='Lee'),
-    Provider(first_name='Raphael', last_name='Lullis'),
-    Provider(first_name='Ross',    last_name='Lazarus'),
-    Provider(first_name='Jason',   last_name='McVetta')             
+     Provider(first_name='Michael', last_name='Jones'),
+     Provider(first_name='Michael', last_name='Taylor'),
+     Provider(first_name='Raphael', last_name='Garcia'),
+     Provider(first_name='Ross',    last_name='Smith'),
+     Provider(first_name='Jason',   last_name='Wilson')             
 ]
 
 def fiat_mondo(population_size=200, start_date=EPOCH, end_date=TODAY,
