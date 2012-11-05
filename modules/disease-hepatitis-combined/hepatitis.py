@@ -185,7 +185,7 @@ class Hepatitis_A(HepatitisCombined):
 
     uri = URI_ROOT + 'hepatitis_a' + URI_VERSION
 
-    short_name = 'hepatitis_a'
+    short_name = 'hepatitis_a:acute'
 
     test_name_search_strings = TEST_NAME_SEARCH_STRINGS
 
@@ -203,28 +203,30 @@ class Hepatitis_A(HepatitisCombined):
         primary_event_name = 'lx:hepatitis_a_igm_antibody:positive'
         secondary_event_names = [
             'dx:jaundice',
-            'lx:alt:ratio:2.0',
-            'lx:ast:ratio:2.0',
+            'lx:alt:ratio:2',
+            'lx:ast:ratio:2',
             ]
         #
         # FIXME: This date math works on PostgreSQL; but it's not clear that 
         # the ORM will generate reasonable queries for it on other databases.
         #
+        primary_event_qs = Event.objects.filter().values('patient')
         event_qs = Event.objects.filter(
             name = primary_event_name,
             patient__event__name__in = secondary_event_names,
-            patient__event__date__gte = (F('date') - 30 ),
-            patient__event__date__lte = (F('date') + 30 ),
+            patient__event__date__gte = (F('date') - 14 ),
+            patient__event__date__lte = (F('date') + 14 ),
             )
         relevant_event_names = [primary_event_name] + secondary_event_names
-        new_case_count = self._create_cases_from_event_qs(
+        counter = self._create_cases_from_event_qs(
             condition = 'hepatitis_a:acute', 
-            criteria = '(dx:jaundice or lx:alt:ratio:2 or lx:ast:ratio:2) AND lx:hep_a_igm:positive within 30 days', 
+            criteria = '(dx:jaundice or lx:alt:ratio:2 or lx:ast:ratio:2) AND lx:hep_a_igm:positive within 14 days', 
             recurrence_interval = None,
             event_qs = event_qs, 
             relevant_event_names = relevant_event_names,
             )
-        return new_case_count
+        log.debug('Created %s new Hep A ' % counter)
+        return counter
 
 
 class Hepatitis_B(HepatitisCombined):
@@ -237,7 +239,7 @@ class Hepatitis_B(HepatitisCombined):
 
     uri = URI_ROOT + 'hepatitis_b' + URI_VERSION
 
-    short_name = 'hepatitis_b'
+    short_name = 'hepatitis_b:acute'
 
     test_name_search_strings = TEST_NAME_SEARCH_STRINGS
 
@@ -250,11 +252,12 @@ class Hepatitis_B(HepatitisCombined):
         counter += self.generate_definition_a()
         counter += self.generate_definition_b_c()
         counter += self.generate_definition_d()
+        
         return counter
     
     def generate_definition_a(self):
         '''
-        a) (#1 or #2 or #3) AND #4 within 30 day period
+        a) (#1 or #2 or #3) AND #4 within 14 day period
         1. ICD9 = 782.4 (jaundice, not of newborn)
         2. Alanine aminotransferase (ALT) >5x upper limit of normal
         3. Aspartate aminotransferase (AST) >5x upper limit of normal
@@ -265,14 +268,14 @@ class Hepatitis_B(HepatitisCombined):
         trigger_qs = trigger_qs.exclude(case__condition=self.conditions[0])
         trigger_qs = trigger_qs.order_by('date')
         confirmation_qs = BaseEventHeuristic.get_events_by_name(name='dx:jaundice')
-        confirmation_qs |= BaseEventHeuristic.get_events_by_name(name='lx:alt:ratio:5.0')
-        confirmation_qs |= BaseEventHeuristic.get_events_by_name(name='lx:ast:ratio:5.0')
+        confirmation_qs |= BaseEventHeuristic.get_events_by_name(name='lx:alt:ratio:5')
+        confirmation_qs |= BaseEventHeuristic.get_events_by_name(name='lx:ast:ratio:5')
         confirmation_qs = confirmation_qs.order_by('date')
         counter = 0
         for trigger_event in trigger_qs:
             pat = trigger_event.patient
-            begin_relevancy = trigger_event.date - relativedelta(days=30)
-            end_relevancy = trigger_event.date + relativedelta(days=30)
+            begin_relevancy = trigger_event.date - relativedelta(days=14)
+            end_relevancy = trigger_event.date + relativedelta(days=14)
             pat_conf_qs = confirmation_qs.filter(
                 patient = pat,
                 date__gte = begin_relevancy,
@@ -290,14 +293,15 @@ class Hepatitis_B(HepatitisCombined):
                 )
             if created:
                 counter += 1
+        log.debug('Created %s new Hep B definition a cases' % counter)
         return counter
         
     def generate_definition_b_c(self):
         '''
-        b) (#1 or #2 or #3) AND (#12 or #15) AND #5 "reactive" within 30 day period 
+        b) (#1 or #2 or #3) AND (#12 or #15) AND #5 "reactive" within 21 day period 
             AND no prior positive result for #5 or #7 ever 
             AND no code for ICD9=070.32 at this encounter or in patient's past
-        c) (1 or 2 or 3) AND (#12 or #15) AND #7 positive within 30 day period 
+        c) (1 or 2 or 3) AND (#12 or #15) AND #7 positive within 21 day period 
             AND no prior positive result for #5 or #7 ever 
             AND no code for ICD9=070.32 at this encounter or in the patient's past
         1. ICD9 = 782.4 (jaundice, not of newborn)
@@ -329,8 +333,8 @@ class Hepatitis_B(HepatitisCombined):
         # Jaundice and associated high ALT/AST results
         #
         jaundice_qs = BaseEventHeuristic.get_events_by_name(name='dx:jaundice')
-        jaundice_qs |= BaseEventHeuristic.get_events_by_name(name='lx:alt:ratio:5.0')
-        jaundice_qs |= BaseEventHeuristic.get_events_by_name(name='lx:ast:ratio:5.0')
+        jaundice_qs |= BaseEventHeuristic.get_events_by_name(name='lx:alt:ratio:5')
+        jaundice_qs |= BaseEventHeuristic.get_events_by_name(name='lx:ast:ratio:5')
         #
         # Bilirubin - total bilirubin events can be queries directly; but 
         # calculated bilirubin must be, ahem, calculated programmatically.
@@ -341,8 +345,8 @@ class Hepatitis_B(HepatitisCombined):
         for trigger_event in trigger_qs:
             patient = trigger_event.patient
             date = trigger_event.date
-            relevancy_start = date - relativedelta(days=30)
-            relevancy_end = date + relativedelta(days=30)
+            relevancy_start = date - relativedelta(days=21)
+            relevancy_end = date + relativedelta(days=21)
             #
             # No chronic hep B diagnosis
             #
@@ -420,6 +424,7 @@ class Hepatitis_B(HepatitisCombined):
                 )
             if created:
                 counter += 1
+        log.debug('Created %s new Hep B cases def b/c' % counter)
         return counter
             
     def generate_definition_d(self):
@@ -479,6 +484,7 @@ class Hepatitis_B(HepatitisCombined):
                 )
             if created:
                 counter += 1
+        log.debug('Created %s new Hep B def d' % counter)
         return counter
             
             
@@ -494,7 +500,7 @@ class Hepatitis_C(HepatitisCombined):
 
     uri = URI_ROOT + 'hepatitis_c' + URI_VERSION
 
-    short_name = 'hepatitis_c'
+    short_name = 'hepatitis_c:acute'
 
     test_name_search_strings = TEST_NAME_SEARCH_STRINGS
 
@@ -505,6 +511,7 @@ class Hepatitis_C(HepatitisCombined):
         counter = 0
         counter += self._acute_hep_c_simple_algo()
         counter += self._acute_hep_c_complex_algo()
+        
         return counter
 
     def _acute_hep_c_complex_algo(self):
@@ -552,8 +559,8 @@ class Hepatitis_C(HepatitisCombined):
             #
             pat_events_qs = Event.objects.filter(patient=trigger_event.patient)
             # Establish boundaries of +/-30 day relevancy window.
-            relevancy_start = trigger_event.date - relativedelta(days=30)
-            relevancy_end = trigger_event.date + relativedelta(days=30)
+            relevancy_start = trigger_event.date - relativedelta(days=28)
+            relevancy_end = trigger_event.date + relativedelta(days=28)
             event_qs = pat_events_qs.filter(date__gte=relevancy_start, date__lte=relevancy_end)
             # All events prior to start of relevancy window
             prior_event_qs = pat_events_qs.filter(date__lt=relevancy_start)
