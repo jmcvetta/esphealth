@@ -143,9 +143,11 @@ acute hep a
 1 patients with encounter with icd9 for jaundice - deenaw 
  same patient with lab hep a igm positive within 14 days
 1 patient with lab alt_2x -spock 
-  same  patients patient with lab hep a igm positive within 14 days
+  same patient with lab hep a igm positive within 14 days
+  same patient with alt lab same as ref high
 1 patient with alt_2x -whop NEG
  same patient with lab igm positive within more than 14 days 
+ same patient with alt lab with < than ref high 
 
 diabetes
 17  patients 
