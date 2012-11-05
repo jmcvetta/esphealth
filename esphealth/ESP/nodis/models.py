@@ -115,7 +115,10 @@ class Case(models.Model):
         '''
         Return the ConditionConfig object for this case's condition
         '''
-        return ConditionConfig.objects.get(name=self.condition)
+        config = ConditionConfig.objects.filter(name=self.condition)
+        if not config:
+            raise RuntimeError('no condition configuration for %s', self.condition)
+        else: return config[0]
     condition_config = property(__get_condition_config)
 
     def __get_first_provider(self):
