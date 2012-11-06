@@ -315,7 +315,12 @@ class BaseLoader(object):
             for key in row:
                 if row[key]:
                     try:
-                        row[key] = smart_unicode(row[key].strip())
+                        if not key:
+                            errors += 1
+                            log.error('There is a value that does not correspond to a any field in line: %s for value: %s' % (cur_row,row[key]))
+                        else:
+                            row[key] = smart_unicode(row[key].strip())
+                    
                     except DjangoUnicodeDecodeError, e:
                         #
                         # Log character set errors to db
