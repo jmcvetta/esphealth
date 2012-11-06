@@ -17,6 +17,8 @@ from ESP.conf.models import STATUS_CHOICES
 from ESP.conf.models import ReportableLab
 from ESP.conf.models import ReportableMedication
 #from ESP.hef.base import TimespanHeuristic
+from ESP.hef.base import BaseLabResultHeuristic
+from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.models import Timespan
 from ESP.conf.models import ConditionConfig
 from django.contrib.contenttypes.models import ContentType
@@ -152,10 +154,11 @@ class Case(models.Model):
     def __get_reportable_labs(self):
         
         from ESP.nodis.base import DiseaseDefinition
-        heuristics = DiseaseDefinition.get_by_short_name(self.condition).event_heuristics
         reportable_codes = set(ReportableLab.objects.filter(condition=self.condition).values_list('native_code', flat=True))
         # get native codes from lab heuristics 
-        reportable_codes |= set(LabTestMap.objects.filter(test_name__in=heuristics, reportable=True).values_list('native_code', flat=True))
+        for heuristic in  DiseaseDefinition.get_by_short_name(self.condition).event_heuristics:
+            if isinstance(heuristic, BaseLabResultHeuristic):
+                reportable_codes |=set(LabTestMap.objects.filter(test_name =heuristic.test_name, reportable=True).values_list('native_code', flat=True))
         q_obj = Q(patient=self.patient)
         q_obj &= Q(native_code__in=reportable_codes)
         conf = self.condition_config
@@ -176,16 +179,15 @@ class Case(models.Model):
     def __get_reportable_icd9s(self):
         
         from ESP.nodis.base import DiseaseDefinition
-        icd9_objs = None
+        icd9_objs = Icd9.objects.filter(reportableicd9__condition=self.condition_config).distinct()
         for heuristic in  DiseaseDefinition.get_by_short_name(self.condition).event_heuristics:
-            if 'diagnosis' in heuristic.short_name:
+            if isinstance(heuristic, DiagnosisHeuristic):
                 for icd9_query in heuristic.icd9_queries:
                     if not icd9_objs:
                         icd9_objs = Icd9.objects.filter( icd9_query.icd9_q_obj)
                     else: icd9_objs |= Icd9.objects.filter(icd9_query.icd9_q_obj)
-        
-        icd9_objs = icd9_objs.distinct() | Icd9.objects.filter(reportableicd9__condition=self.condition_config).distinct()
-        return icd9_objs
+         
+        return icd9_objs.distinct()
     reportable_icd9s_list = property(__get_reportable_icd9s)
 
     def __get_reportable_encounters(self):
