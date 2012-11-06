@@ -1030,7 +1030,6 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
         else: # 'gte'
             lab_qs = lab_qs.filter(result_float__gte=self.threshold)
         #log_query(self, lab_qs)
-        counter = 0
         for lab in queryset_iterator(lab_qs):
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -1044,9 +1043,8 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
                 provider = lab.provider,
                 emr_record = lab,
                 )
-            counter += 1
-        log.info('Generated %s new events for %s' % (counter, self.uri))
-        return counter
+        log.info('Generated %s new events for %s' % (lab_qs.count(), self.uri))
+        return lab_qs.count()
 
 
 class LabResultRangeHeuristic(BaseLabResultHeuristic):
@@ -1497,7 +1495,6 @@ class DiagnosisHeuristic(BaseEventHeuristic):
         enc_qs = enc_qs.order_by('date').distinct()
         log.info('Generating events for "%s"' % self)
         #log_query('Encounters for %s' % self, enc_qs)
-        counter = 0
         for enc in queryset_iterator(enc_qs):
             Event.create(
                 name = self.dx_event_name,
@@ -1507,9 +1504,8 @@ class DiagnosisHeuristic(BaseEventHeuristic):
                 provider = enc.provider,
                 emr_record = enc,
                 )
-            counter += 1
-        log.info('Generated %s new events for %s' % (counter, self))
-        return counter
+        log.info('Generated %s new events for %s' % (enc_qs.count(), self))
+        return enc_qs.count()
 
 
 class CalculatedBilirubinHeuristic(object):
