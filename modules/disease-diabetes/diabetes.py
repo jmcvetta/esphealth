@@ -1042,6 +1042,12 @@ class GestationalDiabetesReport(Report):
                     gdm_case_date = gdm_case_qs[0].date
             else:
                 gdm_case_date = gdm_case_qs[0].date
+        prior_gdm_prior = None
+        prior_gdm_prior_date = None 
+        if not preg_ts_qs:
+            prior_gdm_prior =   event_qs.filter(self.dxgdm_q).order_by('date')
+            if prior_gdm_prior:
+                prior_gdm_prior_date = prior_gdm_prior[0].date                
     
         lancets_and_icd9 = event_qs.filter(
                 name__in=['rx:lancets', 'rx:test-strips'],
@@ -1053,6 +1059,10 @@ class GestationalDiabetesReport(Report):
                 'gdm_case': binary( gdm_case_qs ),
                 'gdm_case_date': gdm_case_date,
                 'lancets_test_strips_14_days_gdm_icd9' : binary( lancets_and_icd9 ) ,
+                # these two will be overriden if the patient has any prengancy timespan
+                'prior_gdm_icd9_this_preg': binary( prior_gdm_prior ),
+                'prior_gdm_icd9_this_preg_date': prior_gdm_prior_date, 
+                
             }      
         
         values.update(patient_values)
