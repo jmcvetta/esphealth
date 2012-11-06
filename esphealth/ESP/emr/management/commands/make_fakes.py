@@ -120,7 +120,14 @@ class ProviderWriter(EpicWriter):
     
     def write_row(self, provider):
         row = {}
-
+        # TODO check for empty row or empty provider 
+        # if not ''.join([i[1] for i in row.items()]): # Concatenate all fields
+        #     log.debug('Empty row encountered -- skipping')
+        #     return
+        # pin = row['natural_key']
+        # if not pin:
+        #    raise LoadException('Record has blank natural_key, which is required')
+    
         row['natural_key'] = provider.natural_key
         row['last_name'] = provider.last_name
         row['first_name'] = provider.first_name
