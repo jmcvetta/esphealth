@@ -52,15 +52,15 @@ from ESP.emr.models import SocialHistory, Problem, Allergy
 from ESP.vaers.fake import ImmunizationHistory, check_for_reactions
 
 #change patient generations here
-POPULATION_SIZE = 2#10**1
-ENCOUNTERS_PER_PATIENT = 10
+POPULATION_SIZE = 5#10**1
+ENCOUNTERS_PER_PATIENT = 2
 MIN_ENCOUNTERS_PER_PATIENT = 1
 MAXICD9 = 3
 
-MEDS_PER_PATIENT = 5
+MEDS_PER_PATIENT = 2
 MIN_MEDS_PER_PATIENT = 1
 
-LAB_TESTS_PER_PATIENT = 5
+LAB_TESTS_PER_PATIENT = 2
 MIN_LAB_TESTS_PER_PATIENT = 1
 
 CHLAMYDIA_LX_PCT = 20
@@ -130,7 +130,14 @@ class ProviderWriter(EpicWriter):
     
     def write_row(self, provider):
         row = {}
-
+        # TODO check for empty row or empty provider 
+        # if not ''.join([i[1] for i in row.items()]): # Concatenate all fields
+        #     log.debug('Empty row encountered -- skipping')
+        #     return
+        # pin = row['provider_id_num']
+        # if not pin:
+        #    raise LoadException('Record has blank provider_id_num, which is required')
+    
         row['provider_id_num'] = provider.provider_id_num
         row['last_name'] = provider.last_name
         row['first_name'] = provider.first_name
