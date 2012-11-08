@@ -39,7 +39,7 @@ fakelabs_id,native_code,native_name,long_name,test_sub_category,loinc,loinc_flag
 78,82947--57,ast,blood ast level,,,,,,,,IU/L,,,,10,40,1,200,,,82947,
 109,87517--7643,hepbvdna,hepatitis B viral dna,,,,,,,,,,,Qualitative,,,,,pos;neg,,87517,
 112,82948:560,fasting glucose,fasting glucose,,,,,,,,,,,Numeric,20,99,10,200,,,82948,
-113,82947:1795,random glucose,random glucose,,,,,,,,,,,Numeric,20,99,10,300,,,82947,
+113,82947--1795,random glucose,random glucose,,,,,,,,,,,Numeric,20,99,10,300,,,82947,
 117,82951:64,ogtt 100 fasting urine,component Positive OGTT 100,,,,,,,,,,,Qualitative,,,,,pos;neg,,82951,
 116,82951:159,ogtt 100 2h,ogtt glucose test 100,,,,,,,,u,,,Numeric,30,180,10,190,,,82951,
 114,82950:161,ogtt 50 random,oggtt glucose test 50 random,,,,,,,,u,,,Numeric,30,180,10,190,,,82950,
