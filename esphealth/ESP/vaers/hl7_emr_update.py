@@ -12,7 +12,7 @@
 
 from django.contrib.contenttypes.models import ContentType
 from ESP.static.models import Vaccine, ImmunizationManufacturer, Icd9
-from ESP.vaers.models import Case, Report_Sent
+from ESP.vaers.models import Case, Report_Sent, Questionnaire
 from ESP.emr.models import Provider
 
 from ESP.utils.hl7_builder.segments import MSH, EVN, PID, OBX, PV1, TXA
@@ -103,7 +103,7 @@ class HL7_emr_update(object):
         if ques.state=='AR':
             txa.distributed_copies=VAERS_AUTOSENDER
         else:
-            txa.distributed_copies=ques.natural_key
+            txa.distributed_copies=ques.provider.natural_key
         txa.unique_document_number='^^ESPMH_' + str(ques.id)
         txa.document_completion_status='AU'
         txa.document_availability_status='AV'
@@ -113,112 +113,123 @@ class HL7_emr_update(object):
         #This does all the heavy lifting
         obx = OBX()
         patient = self.case.patient
-        if self.ques.state=='AR':
-            autoprovider=Provider.objects.get(natural_key=VAERS_AUTOSENDER)
-            provider_name = str(autoprovider.first_name) + ' ' + str(autoprovider.last_name)
+        if self.ques.state=='FP':
+            obx.set_id='001'
+            obx.value_type='TX'
+            obx.identifier='REP^Report Text'
+            obx.value='A potential vaccine adverse event was detected but was determined to be false upon review. ' 
+            if self.ques.comment:
+                obx.value=obx.value + 'Reviewer comment was: ' + self.ques.comment
+            else:
+                obx.value=obx.value + 'No comment provided.'
+            obxstr=str(obx)+'\r'
         else:
-            provider_name = str(self.ques.provider.first_name) + ' ' + str(self.ques.provider.last_name)
-        AEs = self.case.adverse_events.distinct().order_by('date')
-        j=1
-        obx.set_id=str(j).zfill(3)
-        obx.value_type='TX'
-        obx.identifier='REP^Report Text'
-        obx.value=('A potential vaccine adverse event was reported to CDC-VAERS on ' + str(now) + ' by '  +
-                   provider_name + 
-                   ' via the Electronic medical record Support for Public Health systems (ESP).  Details in this report include: ')
-        obxstr=str(obx)+'\r'
-        obx.value='~ ~Patient ' + patient.first_name + ' ' + patient.last_name +  ', was recently noted to have: '
-        i=1
-        for AE in AEs:
-            if ContentType.objects.get_for_id(AE.content_type_id).model.startswith('encounter'):
-                icd9codes = AE.matching_rule_explain.split()
-                for icd9code in icd9codes:
-                    if Icd9.objects.filter(code=icd9code).exists():
-                        obx.value = '~(' + str(i) + ') a diagnosis of ' + Icd9.objects.get(code=icd9code).longname + ' on ' + str(AE.encounterevent.date) 
-                        j=j+1
-                        obx.set_id=str(j).zfill(3)
-                        i=i+1 
-                        obxstr=obxstr+str(obx)+'\r'
-            elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('prescription'):
-                obx.value = '~(' + str(i) + ') a prescription for ' + AE.prescriptionevent.content_object.name + ' on ' + str(AE.prescriptionevent.content_object.date) 
-                j=j+1
-                obx.set_id=str(j).zfill(3)
-                i=i+1
-                obxstr=obxstr+str(obx)+'\r'
-            elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('labresult'):
-                obx.value = ('~(' + str(i) + ') a lab test for ' + AE.labresultevent.content_object.native_name 
-                        + ' with a result of ' + AE.labresultevent.content_object.result_string + ' on ' + str(AE.labresultevent.content_object.result_date) )
-                j=j+1
-                obx.set_id=str(j).zfill(3)
-                i=i+1
-                obxstr=obxstr+str(obx)+'\r'
-            elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('allergy'):
-                    #adding the term 'allergy' to the name, as it is otherwise confusing with the test data.
-                    #this may not be the case with real allergen names and if so the code will need to be revised.
-                obx.value = '~(' + str(i) + ') an allergic reaction to ' + AE.allergyevent.content_object.name + ' on ' + str(AE.allergyevent.content_object.date) 
-                j=j+1
-                obx.set_id=str(j).zfill(3)
-                i=i+1
-                obxstr=obxstr+str(obx)+'\r'
-        obx.value = '~ ~' + patient.first_name + ' ' + patient.last_name + ' was vaccinated with: '
-        j=j+1
-        obx.set_id=str(j).zfill(3)
-        obxstr=obxstr+str(obx)+'\r'
-        i=1
-        for imm in self.case.immunizations.values('name','date').distinct():
-            obx.value = '(' + str(i) + ') ' + imm.get('name') + ' on ' + str(imm.get('date'))
-            j=j+1
+            if self.ques.state=='AR':
+                autoprovider=Provider.objects.get(natural_key=VAERS_AUTOSENDER)
+                provider_name = str(autoprovider.first_name) + ' ' + str(autoprovider.last_name)
+            else:
+                provider_name = str(self.ques.provider.first_name) + ' ' + str(self.ques.provider.last_name)
+            AEs = self.case.adverse_events.distinct().order_by('date')
+            j=1
             obx.set_id=str(j).zfill(3)
-            i=i+1
-            obxstr=obxstr+str(obx)+'\r'
-        if self.case.prior_immunizations.all().exists():
-            obx.value = '~ ~' + patient.first_name + ' ' + patient.last_name + ' was previously vaccinated with: '
+            obx.value_type='TX'
+            obx.identifier='REP^Report Text'
+            obx.value=('A potential vaccine adverse event was reported to CDC-VAERS on ' + str(now) + ' by '  +
+                       provider_name + 
+                       ' via the Electronic medical record Support for Public Health systems (ESP).  Details in this report include: ')
+            obxstr=str(obx)+'\r'
+            obx.value='~ ~Patient ' + patient.first_name + ' ' + patient.last_name +  ', was recently noted to have: '
+            i=1
+            for AE in AEs:
+                if ContentType.objects.get_for_id(AE.content_type_id).model.startswith('encounter'):
+                    icd9codes = AE.matching_rule_explain.split()
+                    for icd9code in icd9codes:
+                        if Icd9.objects.filter(code=icd9code).exists():
+                            obx.value = '~(' + str(i) + ') a diagnosis of ' + Icd9.objects.get(code=icd9code).longname + ' on ' + str(AE.encounterevent.date) 
+                            j=j+1
+                            obx.set_id=str(j).zfill(3)
+                            i=i+1 
+                            obxstr=obxstr+str(obx)+'\r'
+                elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('prescription'):
+                    obx.value = '~(' + str(i) + ') a prescription for ' + AE.prescriptionevent.content_object.name + ' on ' + str(AE.prescriptionevent.content_object.date) 
+                    j=j+1
+                    obx.set_id=str(j).zfill(3)
+                    i=i+1
+                    obxstr=obxstr+str(obx)+'\r'
+                elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('labresult'):
+                    obx.value = ('~(' + str(i) + ') a lab test for ' + AE.labresultevent.content_object.native_name 
+                            + ' with a result of ' + AE.labresultevent.content_object.result_string + ' on ' + str(AE.labresultevent.content_object.result_date) )
+                    j=j+1
+                    obx.set_id=str(j).zfill(3)
+                    i=i+1
+                    obxstr=obxstr+str(obx)+'\r'
+                elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('allergy'):
+                        #adding the term 'allergy' to the name, as it is otherwise confusing with the test data.
+                        #this may not be the case with real allergen names and if so the code will need to be revised.
+                    obx.value = '~(' + str(i) + ') an allergic reaction to ' + AE.allergyevent.content_object.name + ' on ' + str(AE.allergyevent.content_object.date) 
+                    j=j+1
+                    obx.set_id=str(j).zfill(3)
+                    i=i+1
+                    obxstr=obxstr+str(obx)+'\r'
+            obx.value = '~ ~' + patient.first_name + ' ' + patient.last_name + ' was vaccinated with: '
             j=j+1
             obx.set_id=str(j).zfill(3)
             obxstr=obxstr+str(obx)+'\r'
             i=1
-            for p_imm in self.case.prior_immunizations.all():
-                obx.value = '(' + str(i) + ') ' + p_imm.get('name') + ' on ' + str(p_imm.get('date'))
+            for imm in self.case.immunizations.values('name','date').distinct():
+                obx.value = '(' + str(i) + ') ' + imm.get('name') + ' on ' + str(imm.get('date'))
                 j=j+1
                 obx.set_id=str(j).zfill(3)
                 i=i+1
                 obxstr=obxstr+str(obx)+'\r'
-        if Case.objects.filter(patient=self.case.patient, date__lt=self.case.date).exists():        
-            pcases = Case.objects.filter(patient=self.case.patient, date__lt=self.case.date, report_sent__id__isnull=False)
-            for pcase in pcases:
-                obx.value = '~ ~' + patient.first_name + ' ' + patient.last_name + ' had a previously reported Vaccine AE case reported: '
+            if self.case.prior_immunizations.all().exists():
+                obx.value = '~ ~' + patient.first_name + ' ' + patient.last_name + ' was previously vaccinated with: '
                 j=j+1
                 obx.set_id=str(j).zfill(3)
                 obxstr=obxstr+str(obx)+'\r'
                 i=1
-                AEs = pcase.adverse_events.distinct().order_by('date')
-                for AE in AEs:
+                for p_imm in self.case.prior_immunizations.all():
                     obx.value = '(' + str(i) + ') ' + p_imm.get('name') + ' on ' + str(p_imm.get('date'))
                     j=j+1
                     obx.set_id=str(j).zfill(3)
                     i=i+1
                     obxstr=obxstr+str(obx)+'\r'
-        j=j+1
-        obx.set_id=str(j).zfill(3)
-        if self.ques.comment :
-            obx.value =  '~ ~ ' + str(self.ques.provider.first_name) + ' ' + str(self.ques.provider.last_name) + ' commented: ' +self.ques.comment
-        else:
-            obx.value =  '~ ~No comment was provided '
-        obxstr=obxstr+str(obx)+'\r'
-        if self.ques.state=='AR' and self.case.adverse_events.filter(category='2_rare').exists():
+            if Case.objects.filter(patient=self.case.patient, date__lt=self.case.date).exists():        
+                pcases = Case.objects.filter(patient=self.case.patient, date__lt=self.case.date, report_sent__id__isnull=False)
+                for pcase in pcases:
+                    obx.value = '~ ~' + patient.first_name + ' ' + patient.last_name + ' had a previously reported Vaccine AE case reported: '
+                    j=j+1
+                    obx.set_id=str(j).zfill(3)
+                    obxstr=obxstr+str(obx)+'\r'
+                    i=1
+                    AEs = pcase.adverse_events.distinct().order_by('date')
+                    for AE in AEs:
+                        obx.value = '(' + str(i) + ') ' + p_imm.get('name') + ' on ' + str(p_imm.get('date'))
+                        j=j+1
+                        obx.set_id=str(j).zfill(3)
+                        i=i+1
+                        obxstr=obxstr+str(obx)+'\r'
             j=j+1
             obx.set_id=str(j).zfill(3)
-            obx.value_type='TX'
-            obx.identifier='REP^Report Text'
-            obx.value='~ ~Due to the severity of the events, this message was automatically sent seven days after initial detection.  These details were not reviewed.'
+            if self.ques.comment :
+                obx.value =  '~ ~ ' + str(self.ques.provider.first_name) + ' ' + str(self.ques.provider.last_name) + ' commented: ' +self.ques.comment
+            else:
+                obx.value =  '~ ~No comment was provided '
             obxstr=obxstr+str(obx)+'\r'
-        elif self.ques.state=='AR' and self.case.adverse_events.filter(category='5_reportable').exists():
-            j=j+1
-            obx.set_id=str(j).zfill(3)
-            obx.value_type='TX'
-            obx.identifier='REP^Report Text'
-            obx.value='~ ~Due to the self-evident nature of the events, this message was automatically sent seven days after initial detection.  These details were not reviewed.'
-            obxstr=obxstr+str(obx)+'\r'
+            if self.ques.state=='AR' and self.case.adverse_events.filter(category='2_rare').exists():
+                j=j+1
+                obx.set_id=str(j).zfill(3)
+                obx.value_type='TX'
+                obx.identifier='REP^Report Text'
+                obx.value='~ ~Due to the severity of the events, this message was automatically sent seven days after initial detection.  These details were not reviewed.'
+                obxstr=obxstr+str(obx)+'\r'
+            elif self.ques.state=='AR' and self.case.adverse_events.filter(category='5_reportable').exists():
+                j=j+1
+                obx.set_id=str(j).zfill(3)
+                obx.value_type='TX'
+                obx.identifier='REP^Report Text'
+                obx.value='~ ~Due to a vaccine-specific diagnosis, this message was automatically sent seven days after initial detection.  These details were not reviewed.'
+                obxstr=obxstr+str(obx)+'\r'
         return obxstr
 
     def render(self):
@@ -230,14 +241,22 @@ class HL7_emr_update(object):
                     str(self.makePID()) + '\r' + 
                     str(self.makePV1()) + '\r' + 
                     str(self.makeTXA()) + '\r' + 
-                    self.makeOBX('main') + '\n')
+                    self.makeOBX('main') + '\n' )
             #the cStringIO.StringIO object is built in memory, not saved to disk.  Don't build anything too big.
         hl7file = cStringIO.StringIO()
         hl7file.write(all_text)
         hl7file.seek(0)
-        if transmit_ftp(hl7file, 'update_msg_ID' + str(self.ques.id) + '.txt'):
-            log.info('Successfully uploaded EMR Update HL7 message')            
+        if transmit_ftp(hl7file, 'clinbox_msg_ID2_' + str(self.ques.id) + '.txt'):
+            log.info('Successfully uploaded EMR Update HL7 message')
+            Report_Sent.objects.create(questionnaire_id=self.ques.id,
+                                       case_id=self.case.id,
+                                       date=now,
+                                       report=hl7file.getvalue(),
+                                       report_type='EMR update')            
         hl7file.close()
+        if Questionnaire.objects.filter(id=self.ques.id, state='FP'):
+            Questionnaire.objects.filter(id=self.ques.id).update(state='FU')
+            
 
 
 def transmit_ftp(fileObj, filename):

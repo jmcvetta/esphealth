@@ -14,7 +14,7 @@ from ESP.emr.models import Immunization, Encounter, LabResult,  Allergy
 from ESP.emr.models import Prescription, Problem
 from ESP.vaers.models import Case, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent
 from ESP.vaers.models import DiagnosticsEventRule
-from ESP.vaers.models import ExcludedICD9Code, Questionnaire, Sender
+from ESP.vaers.models import ExcludedICD9Code, Questionnaire
 from ESP.utils.utils import log
 from ESP.conf.models import LabTestMap 
 from ESP.hef.base import LabResultAnyHeuristic
@@ -42,7 +42,6 @@ class AdverseEventHeuristic(BaseHeuristic):
         assert verbose_name
         self.name = event_name
         self.long_name = verbose_name
-        self.sender_list = Sender.objects.values_list('provider_id', flat=True)
     
     
     def update_or_create_case(self, clin_event, this_imm, this_event):
@@ -69,9 +68,6 @@ class AdverseEventHeuristic(BaseHeuristic):
         
         #create questionnaires for every physician in the events
         for ae in this_case.adverse_events.all():
-            #skip anyone not in sender_list, unless sender list is empty
-            if not self.sender_list.filter(provider=ae.content_object.provider) and self.sender_list.all() :
-                continue
             #if the ae is from an encounter with a physician, wait a day in case labs show up, then generate the questionnaire record
             if ContentType.objects.get_for_id(ae.content_type_id).model.startswith('encounter') and ae.date+datetime.timedelta(days=1)>datetime.date.today():
                 continue

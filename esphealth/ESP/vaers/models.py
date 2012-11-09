@@ -672,7 +672,8 @@ class Report_Sent (models.Model):
     questionnaire = models.ForeignKey(Questionnaire)
     case = models.ForeignKey(Case)
     #raw hl7 vaers report as sent
-    vaers_report = models.TextField()
+    report = models.TextField()
+    report_type = models.CharField(max_length=20, blank=False, db_index=True)
 
 
 class ExcludedICD9Code(models.Model):

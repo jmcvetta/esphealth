@@ -11,8 +11,9 @@
 
 
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 from ESP.static.models import Vaccine, ImmunizationManufacturer, Icd9
-from ESP.vaers.models import Case, Questionnaire
+from ESP.vaers.models import Case, Questionnaire, Sender
 
 from ESP.utils.hl7_builder.segments import MSH, EVN, PID, OBX, PV1, TXA
 from ESP.utils.hl7_builder.core import SegmentTree
@@ -24,6 +25,7 @@ from ESP.settings import UPLOAD_PASSWORD
 from ESP.settings import UPLOAD_PATH
 from ESP.settings import SITE_NAME
 from ESP.settings import VAERS_OVERRIDE_CLINICIAN_REVIEWER
+from ESP.emr.models import Provider
 
 import ftplib
 import cStringIO
@@ -95,7 +97,7 @@ class HL7_clinbasket(object):
         #we don't currently do anything with this record.
         return pv1
 
-    def makeTXA(self,over_rider):
+    def makeTXA(self,messaged):
         #again, the DI and UN values seem to be MetroHealth specific.  These should be plugin specified
         txa = TXA()
         enc = self.case
@@ -104,16 +106,13 @@ class HL7_clinbasket(object):
         txa.activity_date=enc.date.strftime("%Y%m%d%H%M%s")
         txa.primary_activity_provider='3480'
         txa.originator_codename='3480'
-        if over_rider=='':
-            txa.distributed_copies=ques.natural_key
-        else:
-            txa.distributed_copies=over_rider
+        txa.distributed_copies=messaged
         txa.unique_document_number='^^ESPMH_' + str(ques.id)
         txa.document_completion_status='AU'
         txa.document_availability_status='AV'
         return txa
     
-    def makeOBX(self, rowcode):
+    def makeOBX(self, rowcode, override):
         #This does all the heavy lifting
         obx = OBX()
         patient = self.case.patient
@@ -123,7 +122,13 @@ class HL7_clinbasket(object):
             obx.set_id=str(j).zfill(3)
             obx.value_type='TX'
             obx.identifier='REP^Report Text'
-            obx.value='Dear Dr. ' + str(self.ques.provider.first_name) + ' ' + str(self.ques.provider.last_name) + ', '
+            if not override:
+                salutation='Dear ' + str(self.ques.provider.first_name) + ', '
+                if self.ques.provider.title in ['MD','DO']:
+                    salutation='Dear Dr. ' + str(self.ques.provider.last_name) + ', '
+                obx.value=salutation 
+            else:
+                obx.value='This message was generated as a pre-production test of the VAERS automatic detection system and is not intended for clinical use.'
             obxstr=str(obx)+'\r'
             j=j+1
             obx.set_id=str(j).zfill(3)
@@ -136,7 +141,9 @@ class HL7_clinbasket(object):
                         patient.first_name + ' ' + patient.last_name + ', was recently noted to have: ')
             elif self.case.adverse_events.filter(category='3_possible').exists():
                 #Possible AE
-                caseDescription = '~ ~Your patient, ' + patient.first_name + ' ' + patient.last_name +  ', was recently noted to have: '
+                caseDescription = ('~ ~Your patient, ' + patient.first_name + ' ' + patient.last_name +  ', may have experienced an adverse reaction to a recent vaccination. ' +
+                                   'Please note this is a preliminary assessment and must be reviewed, otherwise it will be presumed to be a false positive detection. ' +
+                                   patient.first_name + ' ' + patient.last_name + ', was recently noted to have: ')
             elif self.case.adverse_events.filter(category='5_reportable').exists():
                 #Possible AE
                 caseDescription = ('~ ~Your patient, ' + patient.first_name + ' ' + patient.last_name +  ', was recently diagnosed with a reportable vaccination adverse reaction.  ' +
@@ -182,7 +189,7 @@ class HL7_clinbasket(object):
             obxstr=obxstr+str(obx)+'\r'
             i=1
             for imm in self.case.immunizations.values('name','date').distinct():
-                obx.value = '(' + str(i) + ') ' + imm.get('name') + ' on ' + str(imm.get('date'))
+                obx.value = '~(' + str(i) + ') ' + imm.get('name') + ' on ' + str(imm.get('date'))
                 j=j+1
                 obx.set_id=str(j).zfill(3)
                 i=i+1
@@ -194,7 +201,7 @@ class HL7_clinbasket(object):
             j=j+1
             obx.set_id=str(j).zfill(3)
             obxstr=obxstr+str(obx)+'\r'
-            obx.value='We can submit an electronic report to the CDC/FDA\'s Vaccine Adverse Event Reporting System (VAERS) on your behalf.'
+            obx.value='If you wish, we can submit an electronic report to the CDC/FDA\'s Vaccine Adverse Event Reporting System (VAERS) on your behalf.'
             j=j+1
             obx.set_id=str(j).zfill(3)
             obxstr=obxstr+str(obx)+'\r'
@@ -219,23 +226,35 @@ class HL7_clinbasket(object):
         '''
         Assembles an hl7 message file of VAERs case for Clinician's In Basket
         '''
-        if VAERS_OVERRIDE_CLINICIAN_REVIEWER=='':
-            over_riders=''
-        else:
-            over_riders = str(VAERS_OVERRIDE_CLINICIAN_REVIEWER).split('/')
-        for over_rider in over_riders:
+        messageds=[]
+        senderset=Provider.objects.filter(id__in=Sender.objects.all().values_list('provider_id'))
+        if VAERS_OVERRIDE_CLINICIAN_REVIEWER=='' and senderset.count()==0:
+            messageds=[self.ques.provider.natural_key]
+            override=False
+        elif VAERS_OVERRIDE_CLINICIAN_REVIEWER!='' and senderset.count()==0:
+            messageds = str(VAERS_OVERRIDE_CLINICIAN_REVIEWER).split('/')
+            override=True
+        elif VAERS_OVERRIDE_CLINICIAN_REVIEWER!='' and senderset.count()>0:
+            try:
+                senderset.get(natural_key=self.ques.provider.natural_key)
+                messageds = [self.ques.provider.natural_key]
+                override=False
+            except ObjectDoesNotExist:
+                messageds = str(VAERS_OVERRIDE_CLINICIAN_REVIEWER).split('/')
+                override=True
+        for messaged in messageds:
             all_text = (str(self.makeMSH()) + '\r' +
                         str(self.makeEVN()) + '\r' + 
                         str(self.makePID()) + '\r' + 
                         str(self.makePV1()) + '\r' + 
-                        str(self.makeTXA(over_rider)) + '\r' + 
-                        self.makeOBX('main') +
-                        str(self.makeOBX('RP')) + '\r' + '\n')
+                        str(self.makeTXA(messaged)) + '\r' + 
+                        self.makeOBX('main',override) +
+                        str(self.makeOBX('RP',override)) + '\r' + '\n' )
             #the cStringIO.StringIO object is built in memory, not saved to disk.
             hl7file = cStringIO.StringIO()
             hl7file.write(all_text)
             hl7file.seek(0)
-            if transmit_ftp(hl7file, 'clinbox_msg_ID' + over_rider + '_' + str(self.ques.id) + '.txt'):
+            if transmit_ftp(hl7file, 'clinbox_msg_ID' + messaged + '_' + str(self.ques.id) + '.txt'):
                 Questionnaire.objects.filter(id=self.ques.id).update(inbox_message=hl7file.getvalue())
             hl7file.close()
 

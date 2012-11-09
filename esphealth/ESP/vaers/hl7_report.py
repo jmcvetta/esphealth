@@ -348,7 +348,8 @@ class AdverseReactionReport(object):
             Report_Sent.objects.create(questionnaire_id=self.ques.id,
                                        case_id=self.case.id,
                                        date=now,
-                                       vaers_report=hl7file.getvalue())
+                                       report=hl7file.getvalue(),
+                                       report_type='VAERS')
         hl7file.close()
     
 
