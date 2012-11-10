@@ -34,6 +34,11 @@ class Command(BaseCommand):
             vaersmsg.render()
             emrupdate=HL7_emr_update(vques)
             emrupdate.render()
-    
+
+        #this queryset is for false positives.    
+        fp_qs=Questionnaire.objects.filter(state='FP', inbox_message__startswith='MSH|')
+        for fpques in fp_qs:
+            fpupdate=HL7_emr_update(fpques)
+            fpupdate.render()
 
         
