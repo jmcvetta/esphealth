@@ -340,7 +340,7 @@ class EncounterWriter(EpicWriter):
         'height',
         'bp_systolic',
         'bp_diastolic',
-        'o2_stat',
+        'o2_sat',
         'peak_flow',
         'icd9s',
         'bmi'
@@ -368,7 +368,7 @@ class EncounterWriter(EpicWriter):
                 'height': encounter.raw_height,
                 'bp_systolic':str(encounter.bp_systolic or ''),
                 'bp_diastolic':str(encounter.bp_diastolic or ''),
-                'o2_stat':str(encounter.o2_stat or ''),
+                'o2_sat':str(encounter.o2_sat or ''),
                 'peak_flow':str(encounter.peak_flow or ''),
                 # no need to add the icd9 text
                 'icd9s': ';'.join(icd9_codes ),

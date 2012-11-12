@@ -1142,7 +1142,7 @@ class Encounter(BasePatientRecord):
     height = models.FloatField('Height (cm)', blank=True, null=True, db_index=True)
     bp_systolic = models.FloatField('Blood Pressure - Systolic (mm Hg)', blank=True, null=True, db_index=True)
     bp_diastolic = models.FloatField('Blood Pressure - Diastolic (mm Hg)', blank=True, null=True, db_index=True)
-    o2_stat = models.FloatField(blank=True, null=True, db_index=True)
+    o2_sat = models.FloatField(blank=True, null=True, db_index=True)
     peak_flow = models.FloatField(blank=True, null=True, db_index=True)
     bmi = models.FloatField('Body Mass Index', null=True, blank=True, db_index=True)
     hosp_admit_dt = models.DateField('Hospital Admission Date', blank=True, null=True, db_index=True)
@@ -1161,7 +1161,7 @@ class Encounter(BasePatientRecord):
     raw_height = models.TextField(null=True, blank=True)
     raw_bp_systolic = models.TextField(null=True, blank=True)
     raw_bp_diastolic = models.TextField(null=True, blank=True)
-    raw_o2_stat = models.TextField(null=True, blank=True)
+    raw_o2_sat = models.TextField(null=True, blank=True)
     raw_peak_flow = models.TextField(null=True, blank=True)
     raw_bmi = models.TextField(null=True, blank=True)
    
@@ -1246,7 +1246,7 @@ class Encounter(BasePatientRecord):
                                            msVitals[2].very_low, msVitals[2].very_high, 0)  
         e.bp_diastolic = Encounter.randomVitalValue(msVitals[1].normal_low, msVitals[1].normal_high,
                                            msVitals[1].very_low, msVitals[1].very_high, 0) 
-        e.o2_stat = Encounter.randomVitalValue(msVitals[4].normal_low, msVitals[4].normal_high,
+        e.o2_sat = Encounter.randomVitalValue(msVitals[4].normal_low, msVitals[4].normal_high,
                                            msVitals[4].very_low, msVitals[4].very_high, 2) 
         e.peak_flow = Encounter.randomVitalValue(msVitals[5].normal_low, msVitals[5].normal_high,
                                            msVitals[5].very_low, msVitals[5].very_high, 2) 
@@ -1372,7 +1372,7 @@ class Encounter(BasePatientRecord):
                 'height':self.height,
                 'bp_systolic':self.bp_systolic,
                 'bp_diastolic':self.bp_diastolic,
-                'o2_stat':self.o2_stat,
+                'o2_sat':self.o2_sat,
                 'peak_flow':self.peak_flow
                 }
             }

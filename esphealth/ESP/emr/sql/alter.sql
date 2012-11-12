@@ -99,6 +99,12 @@ ALTER TABLE vaers_report_sent
       REFERENCES vaers_questionnaire (id);
 -- Added a foreign key reference to questionnaire id, since each VAERS report
 -- represent transmission based first on creation of a specific questionnaire.
+-- ----------------------------------------------------------------
+-- 2012-11-12
+-- Carolina chacin
+-- ----------------------------------------------------------------
+ALTER TABLE emr_encounter RENAME COLUMN o2_stat TO o2_sat;
+ALTER TABLE emr_encounter RENAME COLUMN raw_o2_stat TO raw_o2_sat;
 
 
 
