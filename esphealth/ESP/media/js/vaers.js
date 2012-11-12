@@ -107,3 +107,24 @@ function promptEmail(message){
     }
 }
 
+function togglecomment()
+{
+    var com1 = document.getElementById("first");
+    var com2 = document.getElementById("second");
+    var com3 = document.getElementById("third");
+	var vals = document.getElementsByName("state");
+	for(var val in vals)
+	{
+		if(vals[val].checked)
+		{
+			if(vals[val].value=="confirm") {
+				com1.style.display="none";
+				com2.style.display="block";
+				com3.style.display="none"; }
+			else if(vals[val].value=="false_positive") {
+				com1.style.display="none";
+				com2.style.display="none";
+				com3.style.display="block"; }
+		}
+	}
+}
