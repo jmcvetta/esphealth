@@ -130,7 +130,7 @@
   <td> {{ event.gap }} </td>
   <td></td><td></td>
   <td></td>
-  <td> {{ event.content_object.name }}  </td>
+  <td> {{ event.content_object.matching_rule_explain }}  </td>
   <td></td>
   
   {% endifequal %}
@@ -168,12 +168,16 @@
   </header>
         {{ form.state }}   
     
-    <div class="comment1 togcomment" style="display:none;>
-    <label for="id_comment">Please comment on the likelihood and severity of this possible event:</label>
-    </div>
-    <div class="comment2 togcomment" >
+    <div id=first style="display:block">
+    <label for="id_comment">Comments:</label>
+    </div>    
+    <div id=second  style="display:none;">
+    <label for="id_comment">Please provide details on the likelihood and severity of this possible event:</label>
+    </div>    
+    <div id=third style="display:none;">
     <label for="id_comment">Please provide details so that we can refine our adverse event detection algorithms:</label>
-    </div>
+    </div>    
+    <div id=commentbox >
       {{ form.comment }}
      </div>
     <div class="css_ishelpful">
