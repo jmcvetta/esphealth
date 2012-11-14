@@ -84,6 +84,7 @@ class ili(DiseaseDefinition):
                  Icd9Query(starts_with='481'),
                  Icd9Query(starts_with='482.40'),
                  Icd9Query(starts_with='482.41'),
+                 Icd9Query(starts_with='482.42'),
                  Icd9Query(starts_with='482.49'),
                  Icd9Query(starts_with='484.8'),
                  Icd9Query(starts_with='485'),
