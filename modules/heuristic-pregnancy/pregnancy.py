@@ -308,14 +308,14 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         # End of Pregnancy
         #
         self.all_eop_qs = Event.objects.filter(name__in=[
-            'dx:pregnancy:postpartum',
+            'dx:pregnancy:postpartum-care',
             'dx:pregnancy:ectopic-molar',
             'dx:pregnancy:abortion-spontaneous',
             'dx:pregnancy:abortion',
             'dx:pregnancy:delivery-complications',
             'dx:pregnancy:delivery-normal',
             'dx:pregnancy:delivery-outcome',
-            'dx:pregnancy:complications',
+            'dx:pregnancy:labor-complications',
             'prg:pregnancy:actual_date',
             ])
         #
@@ -349,7 +349,10 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             if eop_event:
                 ts.end_date = eop_event.date
                 ts.events.add(eop_event)
-                pattern = 'eop:eop_event'
+                if  eop_event.name == 'prg:pregnancy:actual_date':
+                    pattern = 'eop:ad'
+                else:
+                    pattern = 'eop:eop_event'
             elif edd:
                 ts.end_date = edd
                 pattern = 'eop:edd'
@@ -623,7 +626,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         relevant_events = self.relevant_event_qs.filter(patient=preg_ts.patient)
         relevant_events = relevant_events.filter(date__gte=preg_ts.start_date)
         if preg_ts.end_date:
-            relevant_events = relevant_events.filter( date__lte=(preg_ts.end_date + relativedelta(months=6)) )
+            relevant_events = relevant_events.filter( date__lte=(preg_ts.end_date + relativedelta(months=1)) )
         else:
             #based on start date
             relevant_events = relevant_events.filter( date__lte=(preg_ts.start_date + relativedelta(months=10)) )
