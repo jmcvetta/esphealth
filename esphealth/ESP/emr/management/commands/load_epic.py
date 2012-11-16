@@ -837,7 +837,8 @@ class EncounterLoader(BaseLoader):
         # code_strings are separated by semi-colon
         # within a code string, the code and optional text are separated by white space 
         for code_string in row['icd9s'].strip().split(';'):
-            firstspace = code_string.strip().find(' ')
+            code_string = code_string.strip()
+            firstspace = code_string.find(' ')
             if firstspace >= 0:
                 code = code_string[:firstspace].strip()
                 diagnosis_text = code_string[firstspace:].strip()
