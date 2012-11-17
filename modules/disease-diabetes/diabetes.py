@@ -1176,7 +1176,7 @@ class GestationalDiabetesReport(Report):
                 if preg_weight_qs:
                     bmi = preg_weight_qs[0].weight / height**2
                     bmi_date = preg_weight_qs[0].date
-                elif pre_preg_bmi_qs:
+                elif pre_preg_weight_qs:
                     bmi = pre_preg_weight_qs[0].weight / height**2
                     bmi_date = pre_preg_weight_qs[0].date
             #
