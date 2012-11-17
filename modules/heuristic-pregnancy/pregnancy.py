@@ -345,14 +345,20 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             counter += 1
             log.debug('Checking currently pregnant patient %20s / %s' % (counter, total))
             eop_event = self._get_eop_event(ts.patient, ts.start_date)
+            
             edd = self._get_edd(ts.patient, ts.start_date)
             if eop_event:
                 ts.end_date = eop_event.date
                 ts.events.add(eop_event)
                 if  eop_event.name == 'prg:pregnancy:actual_date':
+                    #get info from pregnancy object to get the right start date
+                    if eop_event.content_object.ga_delivery:
+                        gad = eop_event.content_object.ga_delivery
+                        ts.start_date  = eop_event.content_object.actual_date - relativedelta(days=int(gad))
                     pattern = 'eop:ad'
                 else:
                     pattern = 'eop:eop_event'
+                
             elif edd:
                 ts.end_date = edd
                 pattern = 'eop:edd'
@@ -501,8 +507,6 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             # bound to a pregnancy timespan.
             #
             preg_qs = self.relevant_event_qs.filter(patient=patient) 
-            timesq = Timespan.objects.filter(name= 'pregnancy', events__in = preg_qs)
-             
             preg_qs = preg_qs.exclude(timespan__name='pregnancy')
             preg_qs = preg_qs.order_by('date')
             #
@@ -543,7 +547,6 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             #
             eop_event = self._get_eop_event(patient, onset_date)
             if eop_event:
-                    
                 eop_date = eop_event.date
                 if  eop_event.name == 'prg:pregnancy:actual_date':
                     pattern += 'eop:ad'
@@ -579,6 +582,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             #
             overlap_qs = Timespan.objects.filter(name='pregnancy')
             overlap_qs = overlap_qs.filter(patient=patient)
+            
             if eop_date:
                 overlap_qs = overlap_qs.filter( 
                     ( Q(start_date__lte=onset_date) & Q(end_date__gte=onset_date) ) 
@@ -592,7 +596,18 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                     ( Q(start_date__lte=self.latest_data_date) & Q(end_date__gte=self.latest_data_date) )
                     )
             overlap_qs = overlap_qs.order_by('pk')
+            
             if overlap_qs:
+                # as per spec if overlapping pregancies and event is based on actual date
+                # use gad in start date and end date as actual date 
+                if  first_preg_event.name == 'prg:pregnancy:actual_date':
+                    #get info from pregnancy object to get the right start date
+                    if first_preg_event.content_object.ga_delivery:
+                        gad = first_preg_event.content_object.ga_delivery
+                        onset_date  = first_preg_event.content_object.actual_date - relativedelta(days=int(gad))
+                    pattern += 'eop:ad'
+                    eop_date = event.actual_date
+                
                 msg = 'Overlapping pregnancies!\n'
                 msg += '    event: %s\n' % first_preg_event.verbose_str
                 msg += '    proposed onset: %s\n' % onset_date
@@ -604,6 +619,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                         msg += '        %s\n' % e.verbose_str
                 log.warning(msg)
                 existing_preg = overlap_qs[0]
+                # TODO item 44 do not use the first use the minimum end date or edd, and min start date 
                 existing_preg.events.add(first_preg_event)
                 existing_preg.save()
                 log.debug('Added overlap event %s to existing pregnancy %s' % (first_preg_event.verbose_str, existing_preg.verbose_str))
