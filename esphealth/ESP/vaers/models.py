@@ -571,6 +571,7 @@ class LabResultEvent(AdverseEvent):
 
 class Sender(models.Model):
     provider= models.ForeignKey(Provider, verbose_name='Physician', blank=True, null=True) 
+    date_added=models.DateField(blank=True, null=True, db_index=True)
 
     def _get_name(self):
         return u'%s, %s ' % (self.provider.last_name,  self.provider.first_name)

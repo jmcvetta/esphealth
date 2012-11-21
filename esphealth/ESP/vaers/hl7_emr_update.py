@@ -21,7 +21,7 @@ from ESP.utils.utils import log
 from ESP.settings import EMRUPDATE_SERVER
 from ESP.settings import EMRUPDATE_USER
 from ESP.settings import EMRUPDATE_PASSWORD
-from ESP.settings import EMRUPDATE_PATH
+from ESP.settings import EMRUPDATE_PATH, PHINMS_PATH
 from ESP.settings import VAERS_AUTOSENDER
 
 import ftplib
@@ -246,7 +246,7 @@ class HL7_emr_update(object):
         hl7file = cStringIO.StringIO()
         hl7file.write(all_text)
         hl7file.seek(0)
-        if transmit_ftp(hl7file, 'clinbox_msg_ID2_' + str(self.ques.id) + '.txt'):
+        if self.transmit_ftp(hl7file, 'clinbox_msg_ID2_' + str(self.ques.id) + '.txt'):
             log.info('Successfully uploaded EMR Update HL7 message')
             Report_Sent.objects.create(questionnaire_id=self.ques.id,
                                        case_id=self.case.id,
@@ -259,18 +259,22 @@ class HL7_emr_update(object):
             
 
 
-def transmit_ftp(fileObj, filename):
+    def transmit_ftp(self, fileObj, filename):
         '''
         Upload a file using cleartext FTP.  Adapted from ESP.nodis.management.commands.case_report.py
         '''
+        if self.ques.state in ['AS','AR']:
+            filepath=PHINMS_PATH
+        else:
+            filepath=EMRUPDATE_PATH
         log.info('Transmitting case report via FTP')
         log.debug('FTP server: %s' % EMRUPDATE_SERVER)
         log.debug('FTP user: %s' % EMRUPDATE_USER)
         log.debug('Attempting to connect...')
         conn = ftplib.FTP(EMRUPDATE_SERVER, EMRUPDATE_USER, EMRUPDATE_PASSWORD)
         log.debug('Connected to %s' % EMRUPDATE_SERVER)
-        log.debug('CWD to %s' % EMRUPDATE_PATH)
-        conn.cwd(EMRUPDATE_PATH)
+        log.debug('CWD to %s' % filepath)
+        conn.cwd(filepath)
         command = 'STOR ' + filename
         try:
             conn.storbinary(command, fileObj)

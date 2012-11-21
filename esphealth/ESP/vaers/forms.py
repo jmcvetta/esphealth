@@ -29,7 +29,7 @@ CASE_TYPE_CHOICES = (
 class CaseConfirmForm(forms.Form):   
     
     state = forms.ChoiceField(label = 'Possible Adverse Event?',choices=CASE_RESPONSE_CHOICES, 
-                               widget=forms.RadioSelect)
+                               widget=forms.RadioSelect(attrs={'onchange':'togglecomment()'}))
     
     comment = forms.CharField(widget=forms.Textarea(attrs={'cols': '55', 'rows': '5'}))
     

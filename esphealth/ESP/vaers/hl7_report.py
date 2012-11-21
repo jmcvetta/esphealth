@@ -69,7 +69,7 @@ class AdverseReactionReport(object):
         vax_provider = Provider.objects.filter(id=self.immunizations.values_list('provider_id').distinct())
         comp_provider = self.ques.provider
         if self.ques.state=='AR':
-            comp_provider = VAERS_AUTOSENDER
+            comp_provider = Provider.objects.get(natural_key=VAERS_AUTOSENDER)
             #VAERS AUTOSENDER must be identified for a site, and a Provider record entered for this individual
             #This is the sender of record in cases where case category is 2_serious and should be autosent.
         nk1_1 = NK1()

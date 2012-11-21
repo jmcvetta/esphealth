@@ -844,7 +844,7 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 42,
         },
     
-    '345*; 333.2; 779.0; 780.3': {#
+    '333.2; 779.0; 780.3*': {#
         'name':'Seizures',
         'ignore_period':None,
         'category':'3_possible',
@@ -1001,8 +1001,8 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 14,
         },
     
-    '493*; 786.07': {#
-        'name':'Asthma or Wheezing',
+    '493.91; 493.11; 493.01; 493.21; 519.11; 786.07': {#
+        'name':'Bronchospasm',
         'ignore_period':3,
         'category':'3_possible',
         'source':'',
