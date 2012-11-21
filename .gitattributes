@@ -332,6 +332,7 @@ esphealth/ESP/vaers/hl7_report.py -text
 esphealth/ESP/vaers/main.py -text
 esphealth/ESP/vaers/management/__init__.py -text
 esphealth/ESP/vaers/management/commands/__init__.py -text
+esphealth/ESP/vaers/management/commands/exclusion_checker.py -text
 esphealth/ESP/vaers/management/commands/set_rules.py -text
 esphealth/ESP/vaers/management/commands/vae_listing.py -text
 esphealth/ESP/vaers/management/commands/vaers.py -text
