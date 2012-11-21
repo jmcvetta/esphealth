@@ -10,7 +10,7 @@ class VaccineDetail(object):
     def __init__(self, immunization):
         vaccine_type = OBX()
         vaccine_type.value_type = 'CE'
-        CVXVax = Vaccine.objects.get(id=VaccineCodeMap.objects.get(canonical_code=immunization.vaccine.code).canonical_code_id)
+        CVXVax = Vaccine.objects.get(id=VaccineCodeMap.objects.get(native_code=immunization.imm_type).canonical_code_id)
         vaccine_type.identifier = ['30955-9&30956-7', 'Vaccine type', 'LN']
         vaccine_type.value = [CVXVax.code, 
                               CVXVax.short_name, 'CVX']
