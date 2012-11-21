@@ -434,6 +434,7 @@ JAVA_JARS = [
 JAVA_CLASSPATH = " %s " % ':'.join([str(jar) for jar in JAVA_JARS])
 BATCH_ETL = config['Batch']['etl']
 BATCH_MAIL_STATUS_REPORT = config['Batch']['mail_status_report']
+STATUS_REPORT_TYPE = config['Batch']['status_report_type']
 BATCH_GENERATE_CASE_REPORT = config['Batch']['generate_case_report']
 BATCH_TRANSMIT_CASE_REPORT = config['Batch']['transmit_case_report']
 # Logging levels, so we can use strings for configuration
