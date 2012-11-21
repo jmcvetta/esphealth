@@ -6,8 +6,7 @@
 
 Date:  {{ today_string }}
 Site:  {{ site_name }}
-
-
+{% if type == "NODIS" or type == "BOTH" %}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                      Nodis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -73,4 +72,53 @@ Native Name                    Native Code                    Lab Record Count
 --------------------------------------------------------------------------------
 {% for item in unmapped_labs %}{{ item.native_name|stringformat:"-30.30s" }} {{ item.native_code|stringformat:"-30s" }} {{ item.count }}
 {% endfor %}
+{% endif %}
 
+{% if type == "VAERS" or type == "BOTH" %}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                          VAERS AE and Case counts in the last week
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Category       Basis             AE Name                                   AE Count  Case Count
+-----------------------------------------------------------------------------------------------
+{% for item in aecase_weekcounts %} {{ item.category|stringformat:"-13s" }} {{ item.ae_basis|stringformat:"-18s" }} {{ item.ae_name|stringformat:"-42s" }} {{ item.ae_count|stringformat:"-10s" }} {{ item.case_count|stringformat:"-10s" }}
+{% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             VAERS Any Other Diagnosis AE and Case counts in the last week
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Code      Name                                           AE Count  Case Count
+------------------------------------------------------------------------------------------
+{% for item in oth_weekcounts %} {{ item.diag_code|stringformat:"-8s" }} {{ item.name|stringformat:"-50s" }} {{ item.ae_counts|stringformat:"-10s" }} {{ item.case_counts|stringformat:"-10s" }}
+{% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                     Vaccination counts for the last week
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Name                                               Vx Count
+------------------------------------------------------------------------------------------
+{% for item in vx_weekcounts %} {{ item.name|stringformat:"-50s" }} {{ item.vx_counts|stringformat:"-10s" }} 
+{% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             Source data records loaded and scanned in the last week
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Name                                                Count
+------------------------------------------------------------------------------------------
+{% for item in tot_weekcounts %} {{ item.source|stringformat:"-50s" }} {{ item.counts|stringformat:"-10s" }} 
+{% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                           Messaging over the the last week
+(all messages for an AE are counted if any message for that AE was transmitted this week)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                                            First msg  Confirmed  False pos   Auto sent
+Provider                                    Count      Count      Count       Count
+------------------------------------------------------------------------------------------
+{% for item in msg_weekcounts %} {{ item.provider|stringformat:"-42s" }} {{ item.initial|stringformat:"-10s" }} {{ item.sent|stringformat:"-10s" }} {{ item.false_positive|stringformat:"-11s" }} {{ item.autosent|stringformat:"-11s" }}
+{% endfor %}
+{% endif %}
