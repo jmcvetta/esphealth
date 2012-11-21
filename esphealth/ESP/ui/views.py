@@ -14,11 +14,13 @@ import datetime
 import csv
 import django_tables as tables
 
+
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
+from django.db import connection, transaction
 from django.db.models import Q
 from django.db.models import Count
 from django.db.models import Max
@@ -34,6 +36,7 @@ from django.http import HttpResponse
 from ESP.settings import ROWS_PER_PAGE
 from ESP.settings import DATE_FORMAT
 from ESP.settings import SITE_NAME
+from ESP.settings import STATUS_REPORT_TYPE
 
 from ESP.conf.models import LabTestMap 
 from ESP.conf.models import IgnoredCode
@@ -63,6 +66,7 @@ from ESP.ui.forms import ReferenceCaseForm
 from ESP.utils import log
 from ESP.utils import log_query
 from ESP.utils import TableSelectMultiple
+from ESP.vaers.models import AdverseEvent
 
 
 
@@ -88,20 +92,46 @@ def _populate_status_values():
     '''
     today_string = datetime.datetime.now().strftime(DATE_FORMAT)
     yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
-    new_cases = Case.objects.filter(created_timestamp__gte=yesterday)
-    reports = Report.objects.filter(timestamp__gte=yesterday, sent=True)
+    values1 = {}
+    values2 = {}
     values = {
-        'title': _('Status Report'),
-        'today_string': today_string,
-        'site_name': SITE_NAME,
-        'new_cases': new_cases,
-        'all_case_summary': Case.objects.values('condition').annotate(count=Count('pk')).order_by('condition'),
-        'new_case_summary': new_cases.values('condition').annotate(count=Count('pk')).order_by('condition'),
-        'data_status': Provenance.objects.filter(timestamp__gte=yesterday).values('status').annotate(count=Count('pk')),
-        'provenances': Provenance.objects.filter(timestamp__gte=yesterday).order_by('-timestamp'),
-        'unmapped_labs': _get_unmapped_labs().select_related(),
-        'reports': reports.order_by('timestamp'),
-        }
+            'type': STATUS_REPORT_TYPE,
+            'title': _('Status Report'),
+            'today_string': today_string,
+            'site_name': SITE_NAME,
+            }
+    if STATUS_REPORT_TYPE in ['NODIS','BOTH']:
+        new_cases = Case.objects.filter(created_timestamp__gte=yesterday)
+        reports = Report.objects.filter(timestamp__gte=yesterday, sent=True)
+        values1 = {
+            'new_cases': new_cases,
+            'all_case_summary': Case.objects.values('condition').annotate(count=Count('pk')).order_by('condition'),
+            'new_case_summary': new_cases.values('condition').annotate(count=Count('pk')).order_by('condition'),
+            'data_status': Provenance.objects.filter(timestamp__gte=yesterday).values('status').annotate(count=Count('pk')),
+            'provenances': Provenance.objects.filter(timestamp__gte=yesterday).order_by('-timestamp'),
+            'unmapped_labs': _get_unmapped_labs().select_related(),
+            'reports': reports.order_by('timestamp'),            
+            }
+    if STATUS_REPORT_TYPE=='VAERS' or STATUS_REPORT_TYPE=='BOTH':
+        values2 = {
+            'aecase_daycounts': _get_ae_case_counts('day'),
+            'aecase_weekcounts': _get_ae_case_counts('week'),
+            'aecase_monthcounts': _get_ae_case_counts('month'),
+            'vx_daycounts': _get_vx_counts('day'),
+            'vx_weekcounts': _get_vx_counts('week'),
+            'vx_monthcounts': _get_vx_counts('month'),
+            'oth_daycounts':  _get_oth_counts('day'), 
+            'oth_weekcounts':  _get_oth_counts('week'), 
+            'oth_monthcounts':  _get_oth_counts('month'), 
+            'tot_daycounts':  _get_tot_counts('day'), 
+            'tot_weekcounts':  _get_tot_counts('week'), 
+            'tot_monthcounts':  _get_tot_counts('month'), 
+            'msg_daycounts': _get_provider_sent_counts('day'),
+            'msg_weekcounts': _get_provider_sent_counts('week'),
+            'msg_monthcounts': _get_provider_sent_counts('month'),
+                  }
+    values.update(values1)
+    values.update(values2)     
     return values
 
 @login_required
@@ -565,8 +595,115 @@ def provider_detail(request, provider_id):
     values = {'provider': Provider.objects.get(pk=provider_id) }
     return render_to_response('nodis/provider_detail.html', values, context_instance=RequestContext(request))
 
+def _get_provider_sent_counts(interval):
+    '''
+    Utility function to generate list of providers sent reports
+    and counts of reports sent in the interval provided
+    '''
+    cursor1 = connection.cursor()
+    cursor1.execute("select provider, count(distinct ques_id) initial, " +
+       "count(distinct case when state='S' then ques_id end) sent, " +
+       "count(distinct case when state in ('FP','FU') then ques_id end) false_positive, " +
+       "count(distinct case when state='AS' then ques_id end) autosent " +
+       "from (select t0.*,  " +
+       "case when t1.sent_id is null or t0.created_on < t1.date_added " +
+       "    then 'VAERS team review' " +
+       "else (t1.first_name || ' ' || t1.last_name) end provider from " +
+       "(select a.id ques_id, a.provider_id, a.state, a.created_on, " +
+       "b.id sent_id, b.report_type " +
+       "from vaers_questionnaire a left join vaers_report_sent b on a.id=b.questionnaire_id " +
+       "where a.created_on > current_timestamp - interval '1" + interval + "' " +
+       "or b.date > current_date - interval '1" + interval + "' ) t0 " +
+       "inner join (select a.id, a.first_name, a.last_name, b.id sent_id, b.date_added from emr_provider a " +
+       "     left join vaers_sender b on a.id=b.provider_id) t1  " +
+       "on t0.provider_id=t1.id) vaers_reports " +
+       "group by provider;")
+    desc = cursor1.description
+    table = [dict(zip([col[0] for col in desc], row))
+            for row in cursor1.fetchall()]
+    return table
+    
 
+def _get_oth_counts(interval):
+    '''
+    Utility method to generate a dictionary of source counts
+    over the period of now minus interval
+    '''
+    cursor1 = connection.cursor()
+    cursor1.execute("select a.diag_code, b.name, " +
+                       "count(distinct a.id) as ae_counts,  " +
+                       "count(distinct a.case_id) as case_counts " +
+                    "from " +
+                    "(select regexp_split_to_table(a.matching_rule_explain, E'\\\s+') as diag_code, " +
+                     "      b.case_id, " +
+                     "      a.id " +
+                    "from vaers_adverseevent a, " +
+                    "     vaers_case_adverse_events b " +
+                    "where a.id=b.adverseevent_id " +
+                    "     and a.date > current_date - interval '1 " + interval + "' " +
+                    "     and a.name='VAERS: Any other Diagnosis') a, " +
+                    "     static_icd9 b " +
+                    "where a.diag_code=b.code " +
+                    "group by a.diag_code, b.name " +
+                    "order by count(distinct a.case_id) desc")
+    desc = cursor1.description
+    table = [dict(zip([col[0] for col in desc], row))
+            for row in cursor1.fetchall()]
+    return table
 
+def _get_tot_counts(interval):
+    '''
+    Utility method to generate a dictionary of source counts
+    over the period of now minus interval
+    '''
+    cursor1 = connection.cursor()
+    cursor1.execute("select 'Labs' as source, count(*) as counts from emr_labresult " +
+                    "where date > current_date - interval '1 " + interval + "' " +
+                    "union select 'Visits' as source, count(*) as counts from emr_encounter " +
+                    "where date > current_date - interval '1 " + interval + "' " +
+                    "union select 'Prescriptions' as source, count(*) as counts from emr_prescription " +
+                    "where date > current_date - interval '1 " + interval + "' ")
+    desc = cursor1.description
+    table = [dict(zip([col[0] for col in desc], row))
+            for row in cursor1.fetchall()]
+    return table
+
+def _get_vx_counts(interval):
+    '''
+    Utility method to generate a dictionary of vaccine counts
+    over the period of now minus interval
+    '''
+    cursor1 = connection.cursor()
+    cursor1.execute("select name, count(*) as vx_counts " +
+                    "from emr_immunization " +
+                    "where isvaccine and date > current_date - interval '1 " + interval + "' " +
+                    "group by name " +
+                    "order by count(*) desc")
+    desc = cursor1.description
+    table = [dict(zip([col[0] for col in desc], row))
+            for row in cursor1.fetchall()]
+    return table
+
+def _get_ae_case_counts(interval):
+    '''
+    Utility method to generate a dictionary of VAERS aes and cases
+    over the period of now minus interval
+    '''
+    cursor1 = connection.cursor()
+    cursor1.execute("select a.category, c.name as ae_basis, a.name as ae_name, " +
+                   "   count(distinct a.*) as ae_count, count(distinct b.case_id) as case_count " +
+                   "from vaers_adverseevent a, " +
+                   "     vaers_case_adverse_events b, " +
+                   "     django_content_type c " +
+                   "where a.id=b.adverseevent_id  " +
+                   "     and a.content_type_id=c.id " +
+                   "     and a.created_on > current_timestamp - interval '1 " + interval + "' " +
+                   "group by a.category, c.name, a.name " +
+                   "order by a.category, c.name, count(a.*) desc")
+    desc = cursor1.description
+    table = [dict(zip([col[0] for col in desc], row))
+            for row in cursor1.fetchall()]
+    return table
 
 def _get_unmapped_labs():
     '''
