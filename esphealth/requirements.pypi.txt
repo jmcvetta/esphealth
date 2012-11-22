@@ -25,3 +25,4 @@ futures            # Python implementation of "futures" threading paradigm
 ipython            # Interactive Python shell
 django-nose        # Nose test framework plugin for Django
 coverage           # Test coverage plugin for Nose
+paramiko           # SSH2 protocol library
