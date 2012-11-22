@@ -24,28 +24,61 @@ class Metrohealth(SiteDefinition):
     
     short_name = 'metrohealth'
     
-
-    # TODO: This method, and its analog in the base SiteDefinition class, do 
-    # not actually generate anything.  Therefore they should be renamed to 
-    # something more descriptive.  One possibility might be "transform()", but
-    # the right name really depends on the intended range of uses for 
-    # descendents of SiteDefinition.
-    def set_enctype(self):
+    def set_enctype(self, e):
         '''
-        This method will update the emr_encounter table with appropriate values for encounter_type so that VAERS heuristics will provide
+        This method will return appropriate values for encounter_type and priority so that VAERS heuristics will provide
         the correct priority to cases.  Determination of encounter type will depend on site specific data collection practices
         '''
+        if (e.raw_encounter_type) and (e.site_name): #make sure values are available
+            try:
+                if e.raw_encounter_type=='HOSP ENC' and e.site_name.find('Emergency')>-1:
+                    encounter_type='ER'
+                    priority=1
+                elif e.raw_encounter_type.find('HOSP')>-1:
+                    encounter_type='hospitalization'
+                    priority=2
+                elif any(x==e.raw_encounter_type for x in['APPT','HISTORY','VISIT','IMMUNIZATION']):
+                    encounter_type='visit'
+                    priority=3
+                else:
+                    encounter_type='other'
+                    priority=4
+                return encounter_type, priority
+            except AttributeError as detail:
+                log.debug("Attribute error: %s " % detail)
+                return None, None
+            else:
+                log.debug("Unexpected error: %s " % sys.exc_info()[0])
+                return None, None
+        else:
+            return None, None
+
+
+    def set_hospprobs(self, hp):
+        '''
+        Attempts to update hospital_problem model instance with site specific decoding algorithm 
+        '''
         try:
-            log.debug("Running Metrohealth SiteDefinition")
-            Encounter.objects.filter(encounter_type=None, raw_encounter_type='HOSP ENC', site_name__contains='Emergency').update(encounter_type='ER',priority=1)
-            Encounter.objects.filter(encounter_type=None, raw_encounter_type__contains='HOSP').update(encounter_type='hospitalization',priority=2)
-            Encounter.objects.filter(encounter_type=None, raw_encounter_type__in=['APPT','HISTORY','VISIT','IMMUNIZATION']).update(encounter_type='visit',priority=3)
-            Encounter.objects.filter(encounter_type=None).update(encounter_type='other',priority=4)
-            log.debug("Metrohealth SiteDefinition run complete")
-            return True
+            if hp.priority_code==1:
+                priority='High'
+            elif hp.priority_code==2:
+                priority='Medium'
+            elif hp.priority_code==3:
+                priority='Low'
+            elif (hp.priority_code):
+                priority='no decode'
+            else:
+                priority=None
+                
+            #need decodes for principal_prob, and present_on_adm
+            principal_prob=None
+            present_on_adm=None
+
+            return principal_prob, present_on_adm, priority
         except:
-            log.debug("Unexpected error: " + sys.exc_info()[0])
-            return False
+            log.debug("Unexpected error: ")
+            log.debug(sys.exc_info()[0])
+            return None, None
 
 
 def encountertypemap():
