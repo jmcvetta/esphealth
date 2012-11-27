@@ -606,7 +606,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                         gad = first_preg_event.content_object.ga_delivery
                         onset_date  = first_preg_event.content_object.actual_date - relativedelta(days=int(gad))
                     pattern += 'eop:ad'
-                    eop_date = event.actual_date
+                    eop_date = first_preg_event.content_object.actual_date
                 
                 msg = 'Overlapping pregnancies!\n'
                 msg += '    event: %s\n' % first_preg_event.verbose_str
