@@ -64,7 +64,7 @@ class ActualDatePregnancyHeuristic(BaseEventHeuristic):
                 emr_record = this_prg
                 )
             counter += 1
-        log.info('Generated %s new %s events' % (counter, self.uri))
+        log.info('Generated %s new %s events' % (counter, self))
         return counter
     
 
@@ -94,7 +94,7 @@ class EDDHeuristic(BaseEventHeuristic):
                 emr_record = this_enc
                 )
             counter += 1
-        log.info('Generated %s new %s events' % (counter, self.uri))
+        log.info('Generated %s new %s events' % (counter, self))
         return counter
     
 
