@@ -114,21 +114,26 @@ def _populate_status_values():
             }
     if STATUS_REPORT_TYPE=='VAERS' or STATUS_REPORT_TYPE=='BOTH':
         values2 = {
-            'aecase_daycounts': _get_ae_case_counts('day'),
-            'aecase_weekcounts': _get_ae_case_counts('week'),
-            'aecase_monthcounts': _get_ae_case_counts('month'),
-            'vx_daycounts': _get_vx_counts('day'),
-            'vx_weekcounts': _get_vx_counts('week'),
-            'vx_monthcounts': _get_vx_counts('month'),
-            'oth_daycounts':  _get_oth_counts('day'), 
-            'oth_weekcounts':  _get_oth_counts('week'), 
-            'oth_monthcounts':  _get_oth_counts('month'), 
-            'tot_daycounts':  _get_tot_counts('day'), 
-            'tot_weekcounts':  _get_tot_counts('week'), 
-            'tot_monthcounts':  _get_tot_counts('month'), 
-            'msg_daycounts': _get_provider_sent_counts('day'),
-            'msg_weekcounts': _get_provider_sent_counts('week'),
-            'msg_monthcounts': _get_provider_sent_counts('month'),
+            'aecase_weekcounts': _get_ae_case_counts('week',False),
+            'aecase_weektots': _get_ae_case_counts('week',True),
+            'vx_weekcounts': _get_vx_counts('week',False),
+            'vx_weektots': _get_vx_counts('week',True),
+            'oth_weekcounts':  _get_oth_counts('week',False), 
+            'oth_weektots':  _get_oth_counts('week',True), 
+            'tot_weekcounts':  _get_tot_counts('week',False), 
+            'tot_weektots':  _get_tot_counts('week',True), 
+            'msg_weekcounts': _get_provider_sent_counts('week',False),
+            'msg_weektots': _get_provider_sent_counts('week',True),
+            'aecase_yearcounts': _get_ae_case_counts('year',False),
+            'aecase_yeartots': _get_ae_case_counts('year',True),
+            'vx_yearcounts': _get_vx_counts('year',False),
+            'vx_yeartots': _get_vx_counts('year',True),
+            'oth_yearcounts':  _get_oth_counts('year',False), 
+            'oth_yeartots':  _get_oth_counts('year',True), 
+            'tot_yearcounts':  _get_tot_counts('year',False), 
+            'tot_yeartots':  _get_tot_counts('year',True), 
+            'msg_yearcounts': _get_provider_sent_counts('year',False),
+            'msg_yeartots': _get_provider_sent_counts('year',True),
                   }
     values.update(values1)
     values.update(values2)     
@@ -595,42 +600,74 @@ def provider_detail(request, provider_id):
     values = {'provider': Provider.objects.get(pk=provider_id) }
     return render_to_response('nodis/provider_detail.html', values, context_instance=RequestContext(request))
 
-def _get_provider_sent_counts(interval):
+def _get_provider_sent_counts(interval,total):
     '''
     Utility function to generate list of providers sent reports
     and counts of reports sent in the interval provided
     '''
     cursor1 = connection.cursor()
-    cursor1.execute("select provider, count(distinct ques_id) initial, " +
-       "count(distinct case when state='S' then ques_id end) sent, " +
-       "count(distinct case when state in ('FP','FU') then ques_id end) false_positive, " +
-       "count(distinct case when state='AS' then ques_id end) autosent " +
-       "from (select t0.*,  " +
-       "case when t1.sent_id is null or t0.created_on < t1.date_added " +
-       "    then 'VAERS team review' " +
-       "else (t1.first_name || ' ' || t1.last_name) end provider from " +
-       "(select a.id ques_id, a.provider_id, a.state, a.created_on, " +
-       "b.id sent_id, b.report_type " +
-       "from vaers_questionnaire a left join vaers_report_sent b on a.id=b.questionnaire_id " +
-       "where a.created_on > current_timestamp - interval '1" + interval + "' " +
-       "or b.date > current_date - interval '1" + interval + "' ) t0 " +
-       "inner join (select a.id, a.first_name, a.last_name, b.id sent_id, b.date_added from emr_provider a " +
-       "     left join vaers_sender b on a.id=b.provider_id) t1  " +
-       "on t0.provider_id=t1.id) vaers_reports " +
-       "group by provider;")
+    if total:
+        cursor1.execute("select 'Totals' provider, count(distinct ques_id) initial, " +
+           "count(distinct case when state='S' then ques_id end) sent, " +
+           "count(distinct case when state in ('FP','FU') then ques_id end) false_positive, " +
+           "count(distinct case when state='AS' then ques_id end) autosent " +
+           "from (select t0.*,  " +
+           "case when t1.sent_id is null or t0.created_on < t1.date_added " +
+           "    then 'VAERS team review' " +
+           "else (t1.first_name || ' ' || t1.last_name) end provider from " +
+           "(select a.id ques_id, a.provider_id, a.state, a.created_on, " +
+           "b.id sent_id, b.report_type " +
+           "from vaers_questionnaire a left join vaers_report_sent b on a.id=b.questionnaire_id " +
+           "where a.created_on > current_timestamp - interval '1" + interval + "' " +
+           "or b.date > current_date - interval '1" + interval + "' ) t0 " +
+           "inner join (select a.id, a.first_name, a.last_name, b.id sent_id, b.date_added from emr_provider a " +
+           "     left join vaers_sender b on a.id=b.provider_id) t1  " +
+           "on t0.provider_id=t1.id) vaers_reports ")
+    else:
+        cursor1.execute("select substring(provider,1,42) provider, count(distinct ques_id) initial, " +
+           "count(distinct case when state='S' then ques_id end) sent, " +
+           "count(distinct case when state in ('FP','FU') then ques_id end) false_positive, " +
+           "count(distinct case when state='AS' then ques_id end) autosent " +
+           "from (select t0.*,  " +
+           "case when t1.sent_id is null or t0.created_on < t1.date_added " +
+           "    then 'VAERS team review' " +
+           "else (t1.first_name || ' ' || t1.last_name) end provider from " +
+           "(select a.id ques_id, a.provider_id, a.state, a.created_on, " +
+           "b.id sent_id, b.report_type " +
+           "from vaers_questionnaire a left join vaers_report_sent b on a.id=b.questionnaire_id " +
+           "where a.created_on > current_timestamp - interval '1" + interval + "' " +
+           "or b.date > current_date - interval '1" + interval + "' ) t0 " +
+           "inner join (select a.id, a.first_name, a.last_name, b.id sent_id, b.date_added from emr_provider a " +
+           "     left join vaers_sender b on a.id=b.provider_id) t1  " +
+           "on t0.provider_id=t1.id) vaers_reports " +
+           "group by provider;")
     desc = cursor1.description
     table = [dict(zip([col[0] for col in desc], row))
             for row in cursor1.fetchall()]
     return table
     
 
-def _get_oth_counts(interval):
+def _get_oth_counts(interval,totals):
     '''
-    Utility method to generate a dictionary of source counts
-    over the period of now minus interval
+    Utility method to generate a dictionary of counts of other
+    diagnosis VAERS over the period of now minus interval
     '''
     cursor1 = connection.cursor()
-    cursor1.execute("select a.diag_code, b.name, " +
+    if totals:
+        cursor1.execute("select '' diag_code, 'Totals' as name, " +
+                       "count(distinct a.id) as ae_counts,  " +
+                       "count(distinct a.case_id) as case_counts " +
+                    "from " +
+                    "(select regexp_split_to_table(a.matching_rule_explain, E'\\\s+') as diag_code, " +
+                     "      b.case_id, " +
+                     "      a.id " +
+                    "from vaers_adverseevent a, " +
+                    "     vaers_case_adverse_events b " +
+                    "where a.id=b.adverseevent_id " +
+                    "     and a.date > current_date - interval '1 " + interval + "' " +
+                    "     and a.name='VAERS: Any other Diagnosis') a ")
+    else:
+        cursor1.execute("select a.diag_code, substring(b.name,1,50) as name, " +
                        "count(distinct a.id) as ae_counts,  " +
                        "count(distinct a.case_id) as case_counts " +
                     "from " +
@@ -651,13 +688,22 @@ def _get_oth_counts(interval):
             for row in cursor1.fetchall()]
     return table
 
-def _get_tot_counts(interval):
+def _get_tot_counts(interval,totals):
     '''
     Utility method to generate a dictionary of source counts
     over the period of now minus interval
     '''
     cursor1 = connection.cursor()
-    cursor1.execute("select 'Labs' as source, count(*) as counts from emr_labresult " +
+    if totals:
+        cursor1.execute("select 'Totals' source, sum(counts) as counts from " +
+                    "(select 'Labs' as source, count(*) as counts from emr_labresult " +
+                    "where date > current_date - interval '1 " + interval + "' " +
+                    "union select 'Visits' as source, count(*) as counts from emr_encounter " +
+                    "where date > current_date - interval '1 " + interval + "' " +
+                    "union select 'Prescriptions' as source, count(*) as counts from emr_prescription " +
+                    "where date > current_date - interval '1 " + interval + "' ) t0 ")
+    else:
+        cursor1.execute("select 'Labs' as source, count(*) as counts from emr_labresult " +
                     "where date > current_date - interval '1 " + interval + "' " +
                     "union select 'Visits' as source, count(*) as counts from emr_encounter " +
                     "where date > current_date - interval '1 " + interval + "' " +
@@ -668,13 +714,18 @@ def _get_tot_counts(interval):
             for row in cursor1.fetchall()]
     return table
 
-def _get_vx_counts(interval):
+def _get_vx_counts(interval,totals):
     '''
     Utility method to generate a dictionary of vaccine counts
     over the period of now minus interval
     '''
     cursor1 = connection.cursor()
-    cursor1.execute("select name, count(*) as vx_counts " +
+    if totals:
+        cursor1.execute("select 'Totals' as name, count(*) as vx_counts " +
+                    "from emr_immunization " +
+                    "where isvaccine and date > current_date - interval '1 " + interval + "' ")
+    else:
+        cursor1.execute("select substring(name,1,50) as name, count(*) as vx_counts " +
                     "from emr_immunization " +
                     "where isvaccine and date > current_date - interval '1 " + interval + "' " +
                     "group by name " +
@@ -684,13 +735,23 @@ def _get_vx_counts(interval):
             for row in cursor1.fetchall()]
     return table
 
-def _get_ae_case_counts(interval):
+def _get_ae_case_counts(interval,totals):
     '''
     Utility method to generate a dictionary of VAERS aes and cases
     over the period of now minus interval
     '''
     cursor1 = connection.cursor()
-    cursor1.execute("select a.category, c.name as ae_basis, a.name as ae_name, " +
+    if totals:
+        cursor1.execute("select '' category, '' ae_basis, 'Totals' ae_name, " +
+                   "   count(distinct a.*) as ae_count, count(distinct b.case_id) as case_count " +
+                   "from vaers_adverseevent a, " +
+                   "     vaers_case_adverse_events b, " +
+                   "     django_content_type c " +
+                   "where a.id=b.adverseevent_id  " +
+                   "     and a.content_type_id=c.id " +
+                   "     and a.created_on > current_timestamp - interval '1 " + interval + "' ")
+    else:
+        cursor1.execute("select a.category, c.name as ae_basis, substring(a.name,1,42) as ae_name, " +
                    "   count(distinct a.*) as ae_count, count(distinct b.case_id) as case_count " +
                    "from vaers_adverseevent a, " +
                    "     vaers_case_adverse_events b, " +
