@@ -555,7 +555,7 @@ class LabOrderHeuristic(BaseEventHeuristic):
                 provider = order.provider,
                 emr_record = order,
                 )
-        log.info('Generated %s new %s events' % (unbound_orders.count(), self.uri))
+        log.info('Generated %s new %s events' % (unbound_orders.count(), self))
         return unbound_orders.count()
     
     
@@ -1029,7 +1029,7 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
                 provider = lab.provider,
                 emr_record = lab,
                 )
-        log.info('Generated %s new events for %s' % (lab_qs.count(), self.uri))
+        log.info('Generated %s new events for %s' % (lab_qs.count(), self))
         return lab_qs.count()
 
 
