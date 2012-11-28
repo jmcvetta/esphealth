@@ -34,24 +34,21 @@ CLUSTERING_REPORTS_DIR = os.path.join(DATA_DIR, 'vaers', 'clustering_reports')
 HL7_MESSAGES_DIR = os.path.join(DATA_DIR, 'vaers', 'hl7_messages')
 
 #types of action types 
-# 1_common: (auto) Common, well described, non-serious, adverse event
-# 2_rare: (default) Rare, severe adverse event on VSD list
-# 3_possible: (confirm) Possible novel adverse event not previously associated with vaccine
-# 4_unlikely: (discard) Routine health visit highly unlikely to be adverse event
+# 1_rare: (send) Rare, severe adverse event on VSD list
+# 2_possible: (confirm) Possible novel adverse event not previously associated with vaccine
+# 3_reportable: (send) ICD9 describes vaccine reaction.
 
 #TODO use this later for header in report for suggested action
 ADVERSE_EVENT_CATEGORY_ACTION = [
-     ('1_common', 'Automatically confirmed, common AE well described, non-serious, adverse event'),
-     ('2_rare','Automatically confirmed, rare, severe adverse event associated with vaccine.'),
-     ('3_possible', 'Confirm, Possible novel adverse event not previously associated with vaccine'),
-     ('4_unlikely', 'Discard, Routine health visit highly unlikely to be adverse event')
+     ('1_rare','Automatically confirmed, rare, severe adverse event associated with vaccine.'),
+     ('2_possible', 'Confirm, Possible novel adverse event not previously associated with vaccine'),
+     ('3_reportable', 'Automatically confirmed, ICD9 code describes vaccine reaction')
     ]
 
 ADVERSE_EVENT_CATEGORIES = [
-    ('1_common', '1_common'),
-    ('2_rare', '2_rare'),
-    ('3_possible', '3_possible'),
-    ('4_unlikely', '4_unlikely')
+    ('1_rare', '1_rare'),
+    ('2_possible', '2_possible'),
+    ('3_reportable', '3_reportable')
 ]
 
 
@@ -60,11 +57,11 @@ class AdverseEventManager(models.Manager):
         now = datetime.datetime.now()
         week_ago = now - datetime.timedelta(days=7)
         # TODO use the state instead of this
-        auto = Q(category='1_common')
-        confirmed = Q(category='3_possible', state='Q')
-        to_report_by_default = Q(category='2_rare', state='AR', created_on__lte=week_ago)
+        confirmed = Q(state='Q')
+        rare = Q(category='1_rare', state='AR', created_on__lte=week_ago)
+        reportable = Q(category='3_reportable', state='AR', created_on__lte=week_ago)
 
-        return self.filter(auto | confirmed | to_report_by_default)
+        return self.filter(confirmed | rare | reportable)
 
   
 class AdverseEvent(models.Model):
@@ -198,11 +195,11 @@ class AdverseEvent(models.Model):
         three_days_ago = now - datetime.timedelta(days=3)
 
         # Category 3 (cases that need clinicians confirmation for report)
-        must_confirm = Q(category='3_possible') 
+        must_confirm = Q(category='2_possible') 
 
         # Category 2 (cases that are reported by default, i.e, no comment
         # from the clinician after 72 hours since the detection.
-        may_receive_comments = Q(category='2_rare', created_on__gte=three_days_ago)
+        may_receive_comments = Q(category='1_rare', created_on__gte=three_days_ago)
         # TODO work based on cases not events .. 
         cases_to_notify = AdverseEvent.objects.filter(must_confirm|may_receive_comments)
 
@@ -282,8 +279,8 @@ class AdverseEvent(models.Model):
             }
 
         templates = {
-            '2_rare':'email_messages/notify_category_two',
-            '3_possible':'email_messages/notify_category_three'
+            '1_rare':'email_messages/notify_category_two',
+            '2_possible':'email_messages/notify_category_three'
             }
         
         html_template = templates[self.category] + '.html'

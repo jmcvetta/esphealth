@@ -106,12 +106,12 @@ def case_details(request, ptype, id):
     if not case: raise Http404
     
     #finding the highest category in the event, 
-    if  case.adverse_events.filter(category__startswith ='2'):#2_rare
+    if  case.adverse_events.filter(category__startswith ='1'):#1_rare
         category  = ADVERSE_EVENT_CATEGORY_ACTION[1][0]
-    elif  case.adverse_events.filter(category__startswith ='3'):#3_possible
+    elif  case.adverse_events.filter(category__startswith ='2'):#2_possible
         category  =  ADVERSE_EVENT_CATEGORY_ACTION[2][0] 
-    elif  case.adverse_events.filter(category__startswith ='1'):#1_common
-        category  =  ADVERSE_EVENT_CATEGORY_ACTION[0][0]  
+    elif  case.adverse_events.filter(category__startswith ='3'):#3_reportable
+        category  =  ADVERSE_EVENT_CATEGORY_ACTION[3][0] 
     
     if category == ADVERSE_EVENT_CATEGORY_ACTION[0][0] : 
         return HttpResponseForbidden(ADVERSE_EVENT_CATEGORY_ACTION[0][1])

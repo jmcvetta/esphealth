@@ -312,7 +312,7 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
     def __init__(self):
         self.name = 'Any other Diagnosis' # This is the EVENT name
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
-        self.category = '3_possible'
+        self.category = '2_possible'
         self.ignore_period =  rules.MAX_TIME_WINDOW_POST_ANY_EVENT # months
         self.risk_period = rules.MAX_TIME_WINDOW_POST_EVENT
         self.risk_period_start = 1
@@ -724,7 +724,7 @@ def make_allergy_heuristics(allergy_type):
     #rule = AllergyEventRule.objects.get(name=allergy_type)
     rule = rules.VAERS_ALLERGIES[allergy_type]
    
-    category =  '3_possible'
+    category =  '2_possible'
     heuristic_list = []
     h = VaersAllergyHeuristic(heuristic_name(allergy_type),rule, category, risk_period)
     heuristic_list.append(h)

@@ -134,21 +134,21 @@ class HL7_clinbasket(object):
             obx.set_id=str(j).zfill(3)
             obx.value_type='TX'
             obx.identifier='REP^Report Text'
-            if self.case.adverse_events.filter(category='2_rare').exists():
+            if self.case.adverse_events.filter(category='1_rare').exists():
                 #Rare, severe AE
                 caseDescription = ('~ ~Your patient, ' + patient.first_name + ' ' + patient.last_name +  ', may have experienced a serious adverse event following a recent vaccination. ' + 
                         'PLEASE NOTE: DUE TO THE SEVERITY OF THE ADVERSE EVENT, A VAERS REPORT WILL AUTOMATICALLY BE GENERATED AND SUBMITTED TO CDC-VAERS IF YOU DO NOT RESPOND TO THIS MESSAGE. ' +
                         patient.first_name + ' ' + patient.last_name + ', was recently noted to have: ')
-            elif self.case.adverse_events.filter(category='3_possible').exists():
-                #Possible AE
-                caseDescription = ('~ ~Your patient, ' + patient.first_name + ' ' + patient.last_name +  ', may have experienced an adverse reaction to a recent vaccination. ' +
-                                   'Please note this is a preliminary assessment and must be reviewed, otherwise it will be presumed to be a false positive detection. ' +
-                                   patient.first_name + ' ' + patient.last_name + ', was recently noted to have: ')
-            elif self.case.adverse_events.filter(category='5_reportable').exists():
+            elif self.case.adverse_events.filter(category='3_reportable').exists():
                 #Possible AE
                 caseDescription = ('~ ~Your patient, ' + patient.first_name + ' ' + patient.last_name +  ', was recently diagnosed with a reportable vaccination adverse reaction.  ' +
                         'PLEASE NOTE: DUE TO THE REPORTABLE NATURE OF THE DIAGNOSIS, A VAERS REPORT WILL AUTOMATICALLY BE GENERATED AND SUBMITTED TO CDC-VAERS IF YOU DO NOT RESPOND TO THIS MESSAGE. ' +
                          patient.first_name + ' ' + patient.last_name + ', was recently noted to have: ')
+            elif self.case.adverse_events.filter(category='2_possible').exists():
+                #Possible AE
+                caseDescription = ('~ ~Your patient, ' + patient.first_name + ' ' + patient.last_name +  ', may have experienced an adverse reaction to a recent vaccination. ' +
+                                   'Please note this is a preliminary assessment and must be reviewed, otherwise it will be presumed to be a false positive detection. ' +
+                                   patient.first_name + ' ' + patient.last_name + ', was recently noted to have: ')
             obx.value=caseDescription
             obxstr=obxstr+str(obx)+'\r'
             i=1
@@ -194,7 +194,7 @@ class HL7_clinbasket(object):
                 obx.set_id=str(j).zfill(3)
                 i=i+1
                 obxstr=obxstr+str(obx)+'\r' 
-            if self.case.adverse_events.filter(category='5_reportable').exists():
+            if self.case.adverse_events.filter(category='3_reportable').exists():
                 obx.value =  '~ ~Can you confirm your patient experienced an adverse event (a possible side effect) of a vaccination? '
             else:
                 obx.value =  '~ ~Is it possible your patient experienced an adverse event (a possible side effect) of a vaccination? '

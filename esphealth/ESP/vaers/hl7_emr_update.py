@@ -216,14 +216,14 @@ class HL7_emr_update(object):
             else:
                 obx.value =  '~ ~No comment was provided '
             obxstr=obxstr+str(obx)+'\r'
-            if self.ques.state=='AR' and self.case.adverse_events.filter(category='2_rare').exists():
+            if self.ques.state=='AR' and self.case.adverse_events.filter(category='1_rare').exists():
                 j=j+1
                 obx.set_id=str(j).zfill(3)
                 obx.value_type='TX'
                 obx.identifier='REP^Report Text'
                 obx.value='~ ~Due to the severity of the events, this message was automatically sent seven days after initial detection.  These details were not reviewed.'
                 obxstr=obxstr+str(obx)+'\r'
-            elif self.ques.state=='AR' and self.case.adverse_events.filter(category='5_reportable').exists():
+            elif self.ques.state=='AR' and self.case.adverse_events.filter(category='3_reportable').exists():
                 j=j+1
                 obx.set_id=str(j).zfill(3)
                 obx.value_type='TX'
