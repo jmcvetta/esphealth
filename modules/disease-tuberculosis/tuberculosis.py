@@ -155,7 +155,7 @@ class Tuberculosis(DiseaseDefinition):
                 #
                 # Patient has Tuberculosis
                 #
-                self._create_case_from_event_obj(
+                t, new_case = self._create_case_from_event_obj(
                     condition = self.conditions[0],
                     criteria = 'Diagnosis with >=2 prescriptions',
                     recurrence_interval = None, # Does not recur
@@ -163,6 +163,7 @@ class Tuberculosis(DiseaseDefinition):
                     relevant_event_qs = rx_qs,
                     )
                 counter += 1
+                if t: log.info('Created new tuberculosis case def C: %s' % new_case)
         return counter
 
         
