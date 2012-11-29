@@ -1,4 +1,4 @@
-/*﻿--------------------------------------------------------------------------------
+﻿/*﻿--------------------------------------------------------------------------------
 --
 --                                ESP Health
 --                         General Population Report
@@ -17,7 +17,7 @@
 -- not run on other RDBMS without porting.
 --
 --------------------------------------------------------------------------------*/
-copy ( SELECT 
+SELECT 
   pat.id AS patient_id
 , pat.mrn
 , date_part('year', age(lastenc.last_enc_date)) as years_since_last_enc
@@ -25,8 +25,12 @@ copy ( SELECT
 , pat.gender 
 , pat.race
 , pat.zip
-, bmi.bmi
-, bmi.date as bmi_date
+, case 
+    when age(pat.date_of_birth) >= '12 years' then bmi.bmi
+  end bmi
+, case
+    when age(pat.date_of_birth) >= '12 years' then bmi.date 
+  end bmi_date
 , curpreg.currently_pregnant
 , recpreg1.recent_pregnancy as recent_pregnancy1
 , recpreg2.recent_pregnancy as recent_pregnancy2
@@ -64,7 +68,7 @@ copy ( SELECT
 , metformin.metformin
 , flu_cur.influenza_vaccine as cur_flu_vax
 , flu_prev.influenza_vaccine as prev_flu_vax
-FROM emr_patient AS pat
+FROM emr_patient AS pat 
 --
 -- Last encounter
 --
@@ -130,7 +134,7 @@ LEFT JOIN (
 	           group by patient_id) as t1
 	WHERE t0.bp_systolic is not null and t0.bp_diastolic is not null and 
 	   t0.patient_id=t1.patient_id and
-	   t0.date = t1.date and t0.date between (now() - interval '2 years') and now()
+	   t0.date = t1.date and t0.date >= now() - interval '2 years'
 	GROUP BY t0.patient_id, t0.date
 ) AS recbp
 	ON recbp.patient_id = pat.id
@@ -154,7 +158,6 @@ LEFT JOIN (
 	GROUP BY t0.patient_id, t0.date
 ) AS bmi
 	ON bmi.patient_id = pat.id
-	AND age(pat.date_of_birth) >= '12 years'
 --
 -- Recent A1C lab result
 --
@@ -451,7 +454,7 @@ LEFT JOIN (
 -- Current Gestational diabetes
 --
 LEFT JOIN (
-	SELECT 
+	SELECT distinct
 	c0.patient_id
 	, 1 AS current_gdm
 	FROM nodis_case AS c0
@@ -468,7 +471,7 @@ LEFT JOIN (
 -- Recent Gestational diabetes 1 year
 --
 LEFT JOIN (
-	SELECT 
+	SELECT distinct
 	c0.patient_id
 	, 1 AS recent_gdm
 	FROM nodis_case AS c0
@@ -485,7 +488,7 @@ LEFT JOIN (
 -- Recent Gestational diabetes 2 year
 --
 LEFT JOIN (
-	SELECT 
+	SELECT distinct
 	c0.patient_id
 	, 1 AS recent_gdm
 	FROM nodis_case AS c0
@@ -613,4 +616,6 @@ WHERE pat.date_of_death IS NULL
 -- Ordering
 --
 ORDER BY pat.id
-) to stdout with csv header;
+;
+
+
