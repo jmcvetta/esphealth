@@ -149,14 +149,14 @@ class Syphilis(DiseaseDefinition):
             'lx:rpr:positive',
             'lx:vrdl:positive',
             ]
-        ttpa_ev_names = [
+        tppa_ev_names = [
             'lx:tppa:positive',
             'lx:fta-abs:positive',
             'lx:tp-igg:positive',
             ]
         test_event_qs = Event.objects.filter(
             name__in = rpr_ev_names,
-            patient__event__name__in = ttpa_ev_names,
+            patient__event__name__in = tppa_ev_names,
             )
         #
         # Criteria Set #3
@@ -169,7 +169,7 @@ class Syphilis(DiseaseDefinition):
         combined_criteria_qs = dxrx_event_qs | test_event_qs | vrdl_csf_qs
         combined_criteria_qs = combined_criteria_qs.exclude(case__condition='syphilis')
         combined_criteria_qs = combined_criteria_qs.order_by('date')
-        all_event_names = dx_ev_names + rx_ev_names + rpr_ev_names + ttpa_ev_names + vrdl_csf_ev_names
+        all_event_names = dx_ev_names + rx_ev_names + rpr_ev_names + tppa_ev_names + vrdl_csf_ev_names
         counter = 0
         new_case_count = self._create_cases_from_event_qs(
             condition = 'syphilis',
