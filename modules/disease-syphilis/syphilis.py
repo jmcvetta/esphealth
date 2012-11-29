@@ -150,7 +150,7 @@ class Syphilis(DiseaseDefinition):
             'lx:vrdl:positive',
             ]
         ttpa_ev_names = [
-            'lx:ttpa:positive',
+            'lx:tppa:positive',
             'lx:fta-abs:positive',
             'lx:tp-igg:positive',
             ]
