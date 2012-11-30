@@ -624,7 +624,8 @@ def _get_provider_sent_counts(interval,total):
            "     left join vaers_sender b on a.id=b.provider_id) t1  " +
            "on t0.provider_id=t1.id) vaers_reports ")
     else:
-        cursor1.execute("select substring(provider,1,42) provider, count(distinct ques_id) initial, " +
+        cursor1.execute("select substring(provider,1,42) provider, " +
+           "count(distinct case when state='AR' then ques_id end) initial, " +
            "count(distinct case when state='S' then ques_id end) sent, " +
            "count(distinct case when state in ('FP','FU') then ques_id end) false_positive, " +
            "count(distinct case when state='AS' then ques_id end) autosent " +
