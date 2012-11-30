@@ -1056,6 +1056,10 @@ class ImmunizationLoader(BaseLoader):
         'patient_class' : string_or_none(row['patient_class']),
         'patient_status' : string_or_none(row['patient_status']),
         }
+        if not values['date'] :            
+            log.info('Empty date not allowed, using date from the ETL file name')
+            values['date'] = datetime.datetime.strptime(datestring_from_filepath(self.filename), "%Y%m%d").strftime("%Y-%m-%d") 
+
         i, created = self.insert_or_update(Immunization, values, ['natural_key'])
         
         log.debug('Saved immunization object: %s' % i)
