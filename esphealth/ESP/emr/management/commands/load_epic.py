@@ -249,6 +249,7 @@ class BaseLoader(object):
                 log.debug('Record could not be saved')
                 obj=''
                 created=False
+                raise
         return obj, created
     
     def date_or_none(self, str):
@@ -1131,7 +1132,7 @@ class AllergyLoader(BaseLoader):
             allergy_name = 'UNSPECIFIED'
             
         #adding new rows to allergen table if they are  not there 
-        if row['allergen_id'].strip != '':
+        if row['allergen_id'].strip() != '':
             allergen, created = Allergen.objects.get_or_create(code=row['allergen_id'][1:100])
         else:
             allergen, created = Allergen.objects.get_or_create(code=allergy_name)
@@ -1164,7 +1165,8 @@ class AllergyLoader(BaseLoader):
         
         a, created = self.insert_or_update(Allergy, values, ['natural_key'])
         
-        log.debug('Saved Allergy object: %s' % a)
+        if a!='':
+            log.debug('Saved Allergy object: %s' % a)
             
         
 class ProblemLoader(BaseLoader):
