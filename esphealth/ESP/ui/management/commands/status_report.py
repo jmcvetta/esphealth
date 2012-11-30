@@ -38,11 +38,11 @@ class Command(BaseCommand):
     
     def handle(self, *fixture_labels, **options):
         options = Values(options)
-        log.debug('Generating status report')
+        log.info('Generating status report')
         values = _populate_status_values()
         report = render_to_string('ui/status.txt', values)
         if options.send_mail:
-            log.debug('Emailing status report to site managers')
+            log.info('Emailing status report to site managers')
             #mail_managers(
                 #'ESP Status Report (%s)' % SITE_NAME,
                 #report,

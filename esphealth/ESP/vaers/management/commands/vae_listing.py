@@ -21,6 +21,7 @@ from ESP.vaers.models import Case
 from ESP.emr.models import Provider
 from ESP.static.models import Icd9
 from ESP.settings import VAERS_LINELIST_PATH
+from ESP.utils import log
 
 def vaers_csv(no_phi):
     '''
@@ -32,8 +33,10 @@ def vaers_csv(no_phi):
     case_qs=Case.objects.all()
     obsc='PHI'
     if no_phi:
+        log.info('creating VAERS listing with no PHI.' )
         vfile=open(fpath+"vaers_linelist_nophi.csv",'w')
     else:
+        log.info('creating VAERS listing with PHI.' )
         vfile=open(fpath+"vaers_linelist_phi.csv",'w')        
     #rebuild each time
     vfile.truncate()
@@ -821,6 +824,7 @@ def vaers_csv(no_phi):
             ]
         writer.writerow(row) 
     vfile.close()      
+    log.info('VAERS Listing written.' )
 
 class Command(BaseCommand):
  
