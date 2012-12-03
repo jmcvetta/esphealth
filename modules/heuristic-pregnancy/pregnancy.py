@@ -344,6 +344,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         for ts in cur_preg_qs:
             counter += 1
             log.debug('Checking currently pregnant patient %20s / %s' % (counter, total))
+            
+            onset_pat, eop_pat = self._unpack_pattern(ts.pattern)
             eop_event = self._get_eop_event(ts.patient, ts.start_date)
             
             edd = self._get_edd(ts.patient, ts.start_date)
@@ -355,19 +357,19 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                     if eop_event.content_object.ga_delivery:
                         gad = eop_event.content_object.ga_delivery
                         ts.start_date  = eop_event.content_object.actual_date - relativedelta(days=int(gad))
-                    pattern = 'eop:ad'
+                        onset_pat = 'onset:ad'
+                    eop_pat = 'eop:ad'
                 else:
-                    pattern = 'eop:eop_event'
-                
+                    eop_pat = 'eop:eop_event'               
             elif edd:
                 ts.end_date = edd
-                pattern = 'eop:edd'
+                eop_pat = 'eop:edd'
             elif ts.start_date < ( self.latest_data_date - relativedelta(days=280) ):
                 ts.end_date = self._get_latest_preg_event_date(ts.patient, ts.start_date)
-                pattern = 'eop:max_icd9'
+                eop_pat = 'eop:max_icd9'
             else:
                 continue # Nothing to do here, let's move on
-            ts.pattern = ts.pattern + ' ' + pattern
+            ts.pattern = '%s %s' % (onset_pat, eop_pat)
             ts.save()
             counter += 1
             log.debug('Updated %s with end_date %s' % (ts, ts.end_date))
@@ -528,11 +530,11 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             #
             if first_preg_event.name == 'prg:pregnancy:actual_date':
                 gad = first_preg_event.content_object.ga_delivery
-                pattern = 'onset:ad '
                 if gad:
                     onset_date = first_preg_event.date - relativedelta(days=int(gad))
                 else:
                     onset_date = first_preg_event.date - relativedelta(days=280)
+                pattern = 'onset:ad '
             elif min_edd:
                 onset_date = min_edd - relativedelta(days=280)
                 pattern = 'onset:edd '
@@ -559,7 +561,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             # Use EDD if available
             elif min_edd:
                 eop_date = min_edd
-                pattern += 'eop:min_edd '
+                pattern += 'eop:min_edd'
             #
             # Patient has no EoP event, is not currently pregnant, and has no EDD in
             # any encounter,  We know pregnancy has ended, but have no real way to 
@@ -573,13 +575,21 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 this_preg_qs = preg_qs.filter(date__gte=onset_date)
                 this_preg_qs = this_preg_qs.filter(date__lte=max_icd9_date)
                 eop_date = self._get_latest_preg_event_date(patient, onset_date)
-                pattern += 'eop:max_icd9 '
+                pattern += 'eop:max_icd9'
             #-------------------------------------------------------------------------------
             #
             # New Pregnancy
             #
             #-------------------------------------------------------------------------------
-            #
+            new_preg = Timespan(
+                patient = patient,
+                name = 'pregnancy',
+                start_date = onset_date,
+                end_date = eop_date,
+                pattern = pattern,
+                source = self.uri,
+                )
+                
             overlap_qs = Timespan.objects.filter(name='pregnancy')
             overlap_qs = overlap_qs.filter(patient=patient)
             
@@ -593,51 +603,79 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
                 overlap_qs = overlap_qs.filter( 
                     ( Q(start_date__lte=onset_date) & Q(end_date__gte=onset_date) ) 
                     |
-                    ( Q(start_date__lte=self.latest_data_date) & Q(end_date__gte=self.latest_data_date) )
+                    ( Q(start_date__lte=self.latest_data_date) & ( Q(end_date__isnull=True) | Q(end_date__gte=self.latest_data_date) ) )
                     )
             overlap_qs = overlap_qs.order_by('pk')
             
             if overlap_qs:
-                # as per spec if overlapping pregancies and event is based on actual date
-                # use gad in start date and end date as actual date 
-                if  first_preg_event.name == 'prg:pregnancy:actual_date':
-                    #get info from pregnancy object to get the right start date
-                    if first_preg_event.content_object.ga_delivery:
-                        gad = first_preg_event.content_object.ga_delivery
-                        onset_date  = first_preg_event.content_object.actual_date - relativedelta(days=int(gad))
-                    pattern += 'eop:ad'
-                    eop_date = first_preg_event.content_object.actual_date
-                
                 msg = 'Overlapping pregnancies!\n'
-                msg += '    event: %s\n' % first_preg_event.verbose_str
+                msg += '    event: %s\n' % first_preg_event.verbose_str()
                 msg += '    proposed onset: %s\n' % onset_date
                 msg += '    proposed eop: %s\n' % eop_date
                 msg += '    proposed pattern: %s\n' % pattern
                 for ts in overlap_qs:
                     msg += '    existing:  %s\n' % ts
                     for e in ts.events.all().order_by('date', 'pk'):
-                        msg += '        %s\n' % e.verbose_str
-                log.warning(msg)
+                        msg += '        %s\n' % e.verbose_str()
+                
                 existing_preg = overlap_qs[0]
-                # TODO item 44 do not use the first use the minimum end date or edd, and min start date 
+                self._update_existing(existing_preg, new_preg)
+                
+                msg += '    updated onset: %s\n' % existing_preg.start_date
+                msg += '    updated eop: %s\n' % existing_preg.end_date
+                msg += '    updated pattern: %s\n' % existing_preg.pattern
+                log.warning(msg)
+                
                 existing_preg.events.add(first_preg_event)
                 existing_preg.save()
                 log.debug('Added overlap event %s to existing pregnancy %s' % (first_preg_event.verbose_str, existing_preg.verbose_str))
             else:
-                new_preg = Timespan(
-                    patient = patient,
-                    name = 'pregnancy',
-                    start_date = onset_date,
-                    end_date = eop_date,
-                    pattern = pattern,
-                    source = self.uri,
-                    )
                 new_preg.save() # Must save before populating M2M
                 self._attach_relevant_events(new_preg)
                 log.info('Created new timespan: #%s' % new_preg.pk)
                 counter += 1
         return counter
     
+    def _update_existing(self, existing_preg, new_preg):
+        existing_onset_pat, existing_eop_pat = self._unpack_pattern(existing_preg.pattern)
+        new_onset_pat, new_eop_pat = self._unpack_pattern(new_preg.pattern)
+
+        if new_eop_pat:
+            if (existing_eop_pat is None or
+                    new_eop_pat == 'eop:ad' or
+                    new_preg.end_date < existing_preg.end_date):
+                existing_preg.end_date = new_preg.end_date
+                existing_eop_pat = new_eop_pat
+                
+        if new_onset_pat:
+            if (existing_onset_pat is None or
+                    new_onset_pat == 'onset:ad' or
+                    new_preg.start_date < existing_preg.start_date):
+                existing_preg.start_date = new_preg.start_date
+                existing_onset_pat = new_onset_pat
+                
+        if existing_eop_pat:
+            existing_preg.pattern = "%s %s" % (existing_onset_pat, existing_eop_pat)
+        else:
+            existing_preg.pattern = existing_onset_pat
+        
+    def _unpack_pattern(self, pattern):
+        '''
+        Unpack the timespan pattern into separate onset and eop patterns
+        '''
+        onset_pat = None
+        eop_pat = None
+        
+        pattern_list = pattern.split(' ')
+        num_patterns = len(pattern_list)
+        if num_patterns > 0:
+            onset_pat = pattern_list[0]
+        if num_patterns > 1:
+            eop_pat = pattern_list[1]
+        
+        return onset_pat, eop_pat
+        
+        
     def _attach_relevant_events(self, preg_ts):
         relevant_events = self.relevant_event_qs.filter(patient=preg_ts.patient)
         relevant_events = relevant_events.filter(date__gte=preg_ts.start_date)
