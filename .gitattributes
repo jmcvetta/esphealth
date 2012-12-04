@@ -411,6 +411,7 @@ esphealth/share/epic_etl/mhslespftp.sh -text
 esphealth/share/esp-postgres.logrotate -text
 esphealth/share/esp.logrotate -text
 esphealth/share/general-population-report.pg.sql -text
+esphealth/share/genpop.sh -text
 esphealth/share/ndc_codes.txt.bz2 -text svneol=unset#unset
 esphealth/share/riskscape.gdm-mapping.json -text
 esphealth/share/riskscape.gdm-transformation.ktr -text
