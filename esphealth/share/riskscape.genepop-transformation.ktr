@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <transformation>
   <info>
-    <name>General Population Riskscape Report</name>
+    <name>riskscapegenepop-transformation</name>
     <description/>
     <extended_description/>
     <trans_version/>
@@ -126,7 +126,7 @@ number range step</note>
   <order>
   <hop> <from>range bug workaround</from><to>Last Enc</to><enabled>Y</enabled> </hop>  <hop> <from>Prediabetes</from><to>Type 1</to><enabled>Y</enabled> </hop>  <hop> <from>Type 1</from><to>Type 2</to><enabled>Y</enabled> </hop>  <hop> <from>Type 2</from><to>Insulin</to><enabled>Y</enabled> </hop>  <hop> <from>Insulin</from><to>Metformin</to><enabled>Y</enabled> </hop>  <hop> <from>Metformin</from><to>Current Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Select values</from><to>Write Riskscape Report(s)</to><enabled>Y</enabled> </hop>  <hop> <from>Map race</from><to>BMI range</to><enabled>Y</enabled> </hop>  <hop> <from>BMI range</from><to>Pregnant?</to><enabled>Y</enabled> </hop>  <hop> <from>Last Enc</from><to>Age range</to><enabled>Y</enabled> </hop>  <hop> <from>Age range</from><to>Map gender</to><enabled>Y</enabled> </hop>  <hop> <from>Map gender</from><to>lowercase race</to><enabled>Y</enabled> </hop>  <hop> <from>lowercase race</from><to>Map race</to><enabled>Y</enabled> </hop>  <hop> <from>Truncate zip</from><to>Select values</to><enabled>Y</enabled> </hop>  <hop> <from>Read General Population Report(s)</from><to>range bug workaround</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant?</from><to>Pregnant last year?</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant last year?</from><to>Pregnant two years ago</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant two years ago</from><to>GDM</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 3</from><to>Most Recent Blood Pressure</to><enabled>Y</enabled> </hop>  <hop> <from>GDM</from><to>GDM 2</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 2</from><to>GDM 3</to><enabled>Y</enabled> </hop>  <hop> <from>Most Recent Blood Pressure</from><to>Max Blood Pressure last year</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure last year</from><to>Max Blood Pressure 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 2ago</from><to>Max Blood Pressure 3ago </to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 3ago </from><to>rec_LDL</to><enabled>Y</enabled> </hop>  <hop> <from>rec_LDL</from><to>LDL last year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL last year</from><to>LDL 2year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 2year</from><to>LDL 3year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 3year</from><to>Rec A1C</to><enabled>Y</enabled> </hop>  <hop> <from>Rec A1C</from><to>A1C last year</to><enabled>Y</enabled> </hop>  <hop> <from>A1C last year</from><to>A1C 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 2ago</from><to>A1C 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 3ago</from><to>Rec Trig</to><enabled>Y</enabled> </hop>  <hop> <from>Rec Trig</from><to>Trig last year</to><enabled>Y</enabled> </hop>  <hop> <from>Trig last year</from><to>Trig 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 2ago</from><to>Trig 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 3ago</from><to>Prediabetes</to><enabled>Y</enabled> </hop>  <hop> <from>Current Season Influenza</from><to>Last Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Last Season Influenza</from><to>Truncate zip</to><enabled>Y</enabled> </hop>  </order>
   <step>
-    <name>Rec A1C</name>
+    <name>A1C 2ago</name>
     <type>NumberRange</type>
     <description/>
     <distribute>Y</distribute>
@@ -135,8 +135,8 @@ number range step</note>
            <method>none</method>
            <schema_name/>
            </partitioning>
-    <inputField>recent_a1c</inputField>
-    <outputField>a1c_code</outputField>
+    <inputField>max_a1c2</inputField>
+    <outputField>max_a1c2_code</outputField>
     <fallBackValue>4</fallBackValue>
     <rules>
       <rule>
@@ -157,8 +157,84 @@ number range step</note>
     </rules>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>104</xloc>
-      <yloc>796</yloc>
+      <xloc>372</xloc>
+      <yloc>798</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>A1C 3ago</name>
+    <type>NumberRange</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <inputField>max_a1c3</inputField>
+    <outputField>max_a1c3_code</outputField>
+    <fallBackValue>4</fallBackValue>
+    <rules>
+      <rule>
+        <lower_bound>-1.7976931348623157E308</lower_bound>
+        <upper_bound>5.7</upper_bound>
+        <value>1</value>
+      </rule>
+      <rule>
+        <lower_bound>5.7</lower_bound>
+        <upper_bound>6.5</upper_bound>
+        <value>2</value>
+      </rule>
+      <rule>
+        <lower_bound>6.5</lower_bound>
+        <upper_bound>1.7976931348623157E308</upper_bound>
+        <value>3</value>
+      </rule>
+    </rules>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>492</xloc>
+      <yloc>801</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>A1C last year</name>
+    <type>NumberRange</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <inputField>max_a1c1</inputField>
+    <outputField>max_a1c1_code</outputField>
+    <fallBackValue>4</fallBackValue>
+    <rules>
+      <rule>
+        <lower_bound>-1.7976931348623157E308</lower_bound>
+        <upper_bound>5.7</upper_bound>
+        <value>1</value>
+      </rule>
+      <rule>
+        <lower_bound>5.7</lower_bound>
+        <upper_bound>6.5</upper_bound>
+        <value>2</value>
+      </rule>
+      <rule>
+        <lower_bound>6.5</lower_bound>
+        <upper_bound>1.7976931348623157E308</upper_bound>
+        <value>3</value>
+      </rule>
+    </rules>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>254</xloc>
+      <yloc>798</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -260,6 +336,33 @@ number range step</note>
     </step>
 
   <step>
+    <name>Current Season Influenza</name>
+    <type>ValueMapper</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <field_to_use>cur_flu_vax</field_to_use>
+    <target_field>influenza1_code</target_field>
+    <non_match_default>2</non_match_default>
+    <fields>
+      <field>
+        <source_value>1</source_value>
+        <target_value>1</target_value>
+      </field>
+    </fields>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>392</xloc>
+      <yloc>1091</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
     <name>GDM</name>
     <type>ValueMapper</type>
     <description/>
@@ -341,33 +444,6 @@ number range step</note>
     </step>
 
   <step>
-    <name>Current Season Influenza</name>
-    <type>ValueMapper</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <field_to_use>cur_flu_vax</field_to_use>
-    <target_field>influenza1_code</target_field>
-    <non_match_default>2</non_match_default>
-    <fields>
-      <field>
-        <source_value>1</source_value>
-        <target_value>1</target_value>
-      </field>
-    </fields>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>392</xloc>
-      <yloc>1091</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
     <name>Insulin</name>
     <type>ValueMapper</type>
     <description/>
@@ -395,7 +471,7 @@ number range step</note>
     </step>
 
   <step>
-    <name>rec_LDL</name>
+    <name>LDL 2year</name>
     <type>NumberRange</type>
     <description/>
     <distribute>Y</distribute>
@@ -404,8 +480,8 @@ number range step</note>
            <method>none</method>
            <schema_name/>
            </partitioning>
-    <inputField>recent_ldl</inputField>
-    <outputField>ldl_code</outputField>
+    <inputField>max_ldl2</inputField>
+    <outputField>max_ldl2_code</outputField>
     <fallBackValue>5</fallBackValue>
     <rules>
       <rule>
@@ -431,7 +507,93 @@ number range step</note>
     </rules>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>104</xloc>
+      <xloc>366</xloc>
+      <yloc>712</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>LDL 3year</name>
+    <type>NumberRange</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <inputField>max_ldl3</inputField>
+    <outputField>max_ldl3_code</outputField>
+    <fallBackValue>5</fallBackValue>
+    <rules>
+      <rule>
+        <lower_bound>-1.7976931348623157E308</lower_bound>
+        <upper_bound>100.0</upper_bound>
+        <value>1</value>
+      </rule>
+      <rule>
+        <lower_bound>100.0</lower_bound>
+        <upper_bound>130.0</upper_bound>
+        <value>2</value>
+      </rule>
+      <rule>
+        <lower_bound>130.0</lower_bound>
+        <upper_bound>160.0</upper_bound>
+        <value>3</value>
+      </rule>
+      <rule>
+        <lower_bound>160.0</lower_bound>
+        <upper_bound>1.7976931348623157E308</upper_bound>
+        <value>4</value>
+      </rule>
+    </rules>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>492</xloc>
+      <yloc>713</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>LDL last year</name>
+    <type>NumberRange</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <inputField>max_ldl1</inputField>
+    <outputField>max_ldl1_code</outputField>
+    <fallBackValue>5</fallBackValue>
+    <rules>
+      <rule>
+        <lower_bound>-1.7976931348623157E308</lower_bound>
+        <upper_bound>100.0</upper_bound>
+        <value>1</value>
+      </rule>
+      <rule>
+        <lower_bound>100.0</lower_bound>
+        <upper_bound>130.0</upper_bound>
+        <value>2</value>
+      </rule>
+      <rule>
+        <lower_bound>130.0</lower_bound>
+        <upper_bound>160.0</upper_bound>
+        <value>3</value>
+      </rule>
+      <rule>
+        <lower_bound>160.0</lower_bound>
+        <upper_bound>1.7976931348623157E308</upper_bound>
+        <value>4</value>
+      </rule>
+    </rules>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>248</xloc>
       <yloc>710</yloc>
       <draw>Y</draw>
       </GUI>
@@ -471,6 +633,33 @@ number range step</note>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>398</xloc>
       <yloc>241</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>Last Season Influenza</name>
+    <type>ValueMapper</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <field_to_use>prev_flu_vax</field_to_use>
+    <target_field>influenza2_code</target_field>
+    <non_match_default>2</non_match_default>
+    <fields>
+      <field>
+        <source_value>1</source_value>
+        <target_value>1</target_value>
+      </field>
+    </fields>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>565</xloc>
+      <yloc>1091</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -1629,6 +1818,82 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
     </step>
 
   <step>
+    <name>Rec A1C</name>
+    <type>NumberRange</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <inputField>recent_a1c</inputField>
+    <outputField>a1c_code</outputField>
+    <fallBackValue>4</fallBackValue>
+    <rules>
+      <rule>
+        <lower_bound>-1.7976931348623157E308</lower_bound>
+        <upper_bound>5.7</upper_bound>
+        <value>1</value>
+      </rule>
+      <rule>
+        <lower_bound>5.7</lower_bound>
+        <upper_bound>6.5</upper_bound>
+        <value>2</value>
+      </rule>
+      <rule>
+        <lower_bound>6.5</lower_bound>
+        <upper_bound>1.7976931348623157E308</upper_bound>
+        <value>3</value>
+      </rule>
+    </rules>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>104</xloc>
+      <yloc>796</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>Rec Trig</name>
+    <type>NumberRange</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <inputField>recent_tgl</inputField>
+    <outputField>trig_code</outputField>
+    <fallBackValue>4</fallBackValue>
+    <rules>
+      <rule>
+        <lower_bound>-1.7976931348623157E308</lower_bound>
+        <upper_bound>200.0</upper_bound>
+        <value>1</value>
+      </rule>
+      <rule>
+        <lower_bound>200.0</lower_bound>
+        <upper_bound>500.0</upper_bound>
+        <value>2</value>
+      </rule>
+      <rule>
+        <lower_bound>500.0</lower_bound>
+        <upper_bound>1.7976931348623157E308</upper_bound>
+        <value>3</value>
+      </rule>
+    </rules>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>106</xloc>
+      <yloc>904</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
     <name>Select values</name>
     <type>SelectValues</type>
     <description/>
@@ -1787,6 +2052,120 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>611</xloc>
       <yloc>1184</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>Trig 2ago</name>
+    <type>NumberRange</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <inputField>max_trig2</inputField>
+    <outputField>max_trig2_code</outputField>
+    <fallBackValue>4</fallBackValue>
+    <rules>
+      <rule>
+        <lower_bound>-1.7976931348623157E308</lower_bound>
+        <upper_bound>200.0</upper_bound>
+        <value>1</value>
+      </rule>
+      <rule>
+        <lower_bound>200.0</lower_bound>
+        <upper_bound>500.0</upper_bound>
+        <value>2</value>
+      </rule>
+      <rule>
+        <lower_bound>500.0</lower_bound>
+        <upper_bound>1.7976931348623157E308</upper_bound>
+        <value>3</value>
+      </rule>
+    </rules>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>368</xloc>
+      <yloc>905</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>Trig 3ago</name>
+    <type>NumberRange</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <inputField>max_trig3</inputField>
+    <outputField>max_trig3_code</outputField>
+    <fallBackValue>4</fallBackValue>
+    <rules>
+      <rule>
+        <lower_bound>-1.7976931348623157E308</lower_bound>
+        <upper_bound>200.0</upper_bound>
+        <value>1</value>
+      </rule>
+      <rule>
+        <lower_bound>200.0</lower_bound>
+        <upper_bound>500.0</upper_bound>
+        <value>2</value>
+      </rule>
+      <rule>
+        <lower_bound>500.0</lower_bound>
+        <upper_bound>1.7976931348623157E308</upper_bound>
+        <value>3</value>
+      </rule>
+    </rules>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>485</xloc>
+      <yloc>906</yloc>
+      <draw>Y</draw>
+      </GUI>
+    </step>
+
+  <step>
+    <name>Trig last year</name>
+    <type>NumberRange</type>
+    <description/>
+    <distribute>Y</distribute>
+    <copies>1</copies>
+         <partitioning>
+           <method>none</method>
+           <schema_name/>
+           </partitioning>
+    <inputField>max_trig1</inputField>
+    <outputField>max_trig1_code</outputField>
+    <fallBackValue>4</fallBackValue>
+    <rules>
+      <rule>
+        <lower_bound>-1.7976931348623157E308</lower_bound>
+        <upper_bound>200.0</upper_bound>
+        <value>1</value>
+      </rule>
+      <rule>
+        <lower_bound>200.0</lower_bound>
+        <upper_bound>500.0</upper_bound>
+        <value>2</value>
+      </rule>
+      <rule>
+        <lower_bound>500.0</lower_bound>
+        <upper_bound>1.7976931348623157E308</upper_bound>
+        <value>3</value>
+      </rule>
+    </rules>
+     <cluster_schema/>
+ <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
+      <xloc>249</xloc>
+      <yloc>907</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -2129,6 +2508,222 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <length>-1</length>
         <precision>-1</precision>
       </field>
+      <field>
+        <name>S</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>T</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>U</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>V</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>W</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>X</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>Y</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>Z</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>AA</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>AB</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>AC</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>AD</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>AE</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>AF</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>AG</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>AH</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>AI</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+      <field>
+        <name>AJ</name>
+        <type>Number</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
     </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
@@ -2198,7 +2793,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
     </step>
 
   <step>
-    <name>LDL last year</name>
+    <name>rec_LDL</name>
     <type>NumberRange</type>
     <description/>
     <distribute>Y</distribute>
@@ -2207,8 +2802,8 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
            <method>none</method>
            <schema_name/>
            </partitioning>
-    <inputField>max_ldl1</inputField>
-    <outputField>max_ldl1_code</outputField>
+    <inputField>recent_ldl</inputField>
+    <outputField>ldl_code</outputField>
     <fallBackValue>5</fallBackValue>
     <rules>
       <rule>
@@ -2234,387 +2829,8 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
     </rules>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>248</xloc>
+      <xloc>104</xloc>
       <yloc>710</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>LDL 2year</name>
-    <type>NumberRange</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <inputField>max_ldl2</inputField>
-    <outputField>max_ldl2_code</outputField>
-    <fallBackValue>5</fallBackValue>
-    <rules>
-      <rule>
-        <lower_bound>-1.7976931348623157E308</lower_bound>
-        <upper_bound>100.0</upper_bound>
-        <value>1</value>
-      </rule>
-      <rule>
-        <lower_bound>100.0</lower_bound>
-        <upper_bound>130.0</upper_bound>
-        <value>2</value>
-      </rule>
-      <rule>
-        <lower_bound>130.0</lower_bound>
-        <upper_bound>160.0</upper_bound>
-        <value>3</value>
-      </rule>
-      <rule>
-        <lower_bound>160.0</lower_bound>
-        <upper_bound>1.7976931348623157E308</upper_bound>
-        <value>4</value>
-      </rule>
-    </rules>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>366</xloc>
-      <yloc>712</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>LDL 3year</name>
-    <type>NumberRange</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <inputField>max_ldl3</inputField>
-    <outputField>max_ldl3_code</outputField>
-    <fallBackValue>5</fallBackValue>
-    <rules>
-      <rule>
-        <lower_bound>-1.7976931348623157E308</lower_bound>
-        <upper_bound>100.0</upper_bound>
-        <value>1</value>
-      </rule>
-      <rule>
-        <lower_bound>100.0</lower_bound>
-        <upper_bound>130.0</upper_bound>
-        <value>2</value>
-      </rule>
-      <rule>
-        <lower_bound>130.0</lower_bound>
-        <upper_bound>160.0</upper_bound>
-        <value>3</value>
-      </rule>
-      <rule>
-        <lower_bound>160.0</lower_bound>
-        <upper_bound>1.7976931348623157E308</upper_bound>
-        <value>4</value>
-      </rule>
-    </rules>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>492</xloc>
-      <yloc>713</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>A1C last year</name>
-    <type>NumberRange</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <inputField>max_a1c1</inputField>
-    <outputField>max_a1c1_code</outputField>
-    <fallBackValue>4</fallBackValue>
-    <rules>
-      <rule>
-        <lower_bound>-1.7976931348623157E308</lower_bound>
-        <upper_bound>5.7</upper_bound>
-        <value>1</value>
-      </rule>
-      <rule>
-        <lower_bound>5.7</lower_bound>
-        <upper_bound>6.5</upper_bound>
-        <value>2</value>
-      </rule>
-      <rule>
-        <lower_bound>6.5</lower_bound>
-        <upper_bound>1.7976931348623157E308</upper_bound>
-        <value>3</value>
-      </rule>
-    </rules>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>254</xloc>
-      <yloc>798</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>A1C 2ago</name>
-    <type>NumberRange</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <inputField>max_a1c2</inputField>
-    <outputField>max_a1c2_code</outputField>
-    <fallBackValue>4</fallBackValue>
-    <rules>
-      <rule>
-        <lower_bound>-1.7976931348623157E308</lower_bound>
-        <upper_bound>5.7</upper_bound>
-        <value>1</value>
-      </rule>
-      <rule>
-        <lower_bound>5.7</lower_bound>
-        <upper_bound>6.5</upper_bound>
-        <value>2</value>
-      </rule>
-      <rule>
-        <lower_bound>6.5</lower_bound>
-        <upper_bound>1.7976931348623157E308</upper_bound>
-        <value>3</value>
-      </rule>
-    </rules>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>372</xloc>
-      <yloc>798</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>A1C 3ago</name>
-    <type>NumberRange</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <inputField>max_a1c3</inputField>
-    <outputField>max_a1c3_code</outputField>
-    <fallBackValue>4</fallBackValue>
-    <rules>
-      <rule>
-        <lower_bound>-1.7976931348623157E308</lower_bound>
-        <upper_bound>5.7</upper_bound>
-        <value>1</value>
-      </rule>
-      <rule>
-        <lower_bound>5.7</lower_bound>
-        <upper_bound>6.5</upper_bound>
-        <value>2</value>
-      </rule>
-      <rule>
-        <lower_bound>6.5</lower_bound>
-        <upper_bound>1.7976931348623157E308</upper_bound>
-        <value>3</value>
-      </rule>
-    </rules>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>492</xloc>
-      <yloc>801</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>Rec Trig</name>
-    <type>NumberRange</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <inputField>recent_tgl</inputField>
-    <outputField>trig_code</outputField>
-    <fallBackValue>4</fallBackValue>
-    <rules>
-      <rule>
-        <lower_bound>-1.7976931348623157E308</lower_bound>
-        <upper_bound>200.0</upper_bound>
-        <value>1</value>
-      </rule>
-      <rule>
-        <lower_bound>200.0</lower_bound>
-        <upper_bound>500.0</upper_bound>
-        <value>2</value>
-      </rule>
-      <rule>
-        <lower_bound>500.0</lower_bound>
-        <upper_bound>1.7976931348623157E308</upper_bound>
-        <value>3</value>
-      </rule>
-    </rules>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>106</xloc>
-      <yloc>904</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>Trig last year</name>
-    <type>NumberRange</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <inputField>max_trig1</inputField>
-    <outputField>max_trig1_code</outputField>
-    <fallBackValue>4</fallBackValue>
-    <rules>
-      <rule>
-        <lower_bound>-1.7976931348623157E308</lower_bound>
-        <upper_bound>200.0</upper_bound>
-        <value>1</value>
-      </rule>
-      <rule>
-        <lower_bound>200.0</lower_bound>
-        <upper_bound>500.0</upper_bound>
-        <value>2</value>
-      </rule>
-      <rule>
-        <lower_bound>500.0</lower_bound>
-        <upper_bound>1.7976931348623157E308</upper_bound>
-        <value>3</value>
-      </rule>
-    </rules>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>249</xloc>
-      <yloc>907</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>Trig 2ago</name>
-    <type>NumberRange</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <inputField>max_trig2</inputField>
-    <outputField>max_trig2_code</outputField>
-    <fallBackValue>4</fallBackValue>
-    <rules>
-      <rule>
-        <lower_bound>-1.7976931348623157E308</lower_bound>
-        <upper_bound>200.0</upper_bound>
-        <value>1</value>
-      </rule>
-      <rule>
-        <lower_bound>200.0</lower_bound>
-        <upper_bound>500.0</upper_bound>
-        <value>2</value>
-      </rule>
-      <rule>
-        <lower_bound>500.0</lower_bound>
-        <upper_bound>1.7976931348623157E308</upper_bound>
-        <value>3</value>
-      </rule>
-    </rules>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>368</xloc>
-      <yloc>905</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>Trig 3ago</name>
-    <type>NumberRange</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <inputField>max_trig3</inputField>
-    <outputField>max_trig3_code</outputField>
-    <fallBackValue>4</fallBackValue>
-    <rules>
-      <rule>
-        <lower_bound>-1.7976931348623157E308</lower_bound>
-        <upper_bound>200.0</upper_bound>
-        <value>1</value>
-      </rule>
-      <rule>
-        <lower_bound>200.0</lower_bound>
-        <upper_bound>500.0</upper_bound>
-        <value>2</value>
-      </rule>
-      <rule>
-        <lower_bound>500.0</lower_bound>
-        <upper_bound>1.7976931348623157E308</upper_bound>
-        <value>3</value>
-      </rule>
-    </rules>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>485</xloc>
-      <yloc>906</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>Last Season Influenza</name>
-    <type>ValueMapper</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <field_to_use>prev_flu_vax</field_to_use>
-    <target_field>influenza2_code</target_field>
-    <non_match_default>2</non_match_default>
-    <fields>
-      <field>
-        <source_value>1</source_value>
-        <target_value>1</target_value>
-      </field>
-    </fields>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>565</xloc>
-      <yloc>1091</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
