@@ -43,6 +43,7 @@ def vaers_csv(no_phi):
     #this has to be parameterized.
     writer = csv.writer(vfile, quoting=csv.QUOTE_NONNUMERIC)
     writer.writerow(['Case_id',
+              'First_message_date',
               'MRN',
               'Name',    
               'DOB',     
@@ -476,7 +477,8 @@ def vaers_csv(no_phi):
         while len(alarray) < 0:
             alarray.append(None)
         qarray=[]
-        ques_qs=case.questionnaire_set.all()
+        ques_qs=case.questionnaire_set.all().order_by('created_on')
+        firstqdt=ques_qs[0].created_on
         for ques in ques_qs:
             if no_phi:
                 qarray.append(obsc)
@@ -493,6 +495,7 @@ def vaers_csv(no_phi):
         while len(qarray) < 80:
             qarray.append(None)
         row = [case.id,
+               firstqdt.date(),
                mrn,
                fullname,    
                dob,     
