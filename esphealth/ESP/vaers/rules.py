@@ -3,7 +3,7 @@
 from ESP.static.models import Icd9, Vaccine, ImmunizationManufacturer
 from ESP.utils.utils import log
 
-VAERS_VERSION = '0.1'
+VAERS_VERSION = '0.6'
 
 # Constants defined in the VAERS documents.
 TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
@@ -848,7 +848,7 @@ VAERS_DIAGNOSTICS = {
         'category':'2_possible',
         'source':'Menactra',
         'risk_period_start':0,
-        'risk_period_days': 30,
+        'risk_period_days': 3,
         },
     
     '347*': {#
@@ -1024,15 +1024,7 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 30,
           
         },
-    
-    '519.11': {#
-        'name':'Bronchospasm',
-        'ignore_period':36,
-        'category':'2_possible',
-        'risk_period_start':0,
-        'risk_period_days': 4,
-        },    
-    
+        
     '540*': {#
         'name':'Appendicitis',
         'ignore_period':12,
@@ -1204,23 +1196,6 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 7,
         },
                 
-    '780.31; 780.32': {#
-        'name':'Febrile seizure',
-        'ignore_period':None,
-        'category':'2_possible',
-        'source':'MMR-V',
-        'risk_period_start':0,
-        'risk_period_days': 14,
-        },
-    
-    '780.39': {#
-        'name':'Seizure',
-        'ignore_period':36,
-        'category':'2_possible',
-        'risk_period_start':0,
-        'risk_period_days': 4,
-        },    
-    
     '780.4': {#
         'name':'Dizziness - Nonspecific',
         'ignore_period':36,
