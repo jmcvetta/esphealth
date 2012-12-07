@@ -26,6 +26,7 @@ from ESP.settings import CASE_REPORT_TEMPLATE
 from ESP.settings import CASE_REPORT_FILENAME_FORMAT
 from ESP.settings import CASE_REPORT_BATCH_SIZE
 from ESP.settings import CASE_REPORT_TRANSMIT
+from ESP.settings import CASE_REPORT_TRANSPORT_SCRIPT
 from ESP.settings import CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP
 from ESP.settings import FAKE_PATIENT_MRN
 from ESP.settings import FAKE_PATIENT_SURNAME
@@ -1246,7 +1247,21 @@ class Command(BaseCommand):
             return self.transmit_ftp(options, report_file)
         else:
             raise NotImplementedError('Support for "%s" transmit is not implemented' % CASE_REPORT_TRANSMIT)
-        
+    
+    def transmit_via_script(self, options, report_file_path):
+        '''
+        Call a script that will upload the case report file.
+        '''
+        log.info('Calling script "%s" to upload case report file "%s".' 
+            % (CASE_REPORT_TRANSPORT_SCRIPT, report_file_path))
+        # It would be nice to use subprocess.check_output() instead here; 
+        # however that function requires Python >= 2.7, which we don't
+        # want to make a requirement just yet.  - JM 2011 Aug 17
+        args = shlex.split(CASE_REPORT_TRANSPORT_SCRIPT) + [report_file_path]
+        subprocess.check_call(args)
+        log.info('Case report upload script exited with success!')
+        return True # Indicats success to calling function
+          
     def transmit_ftp(self, options, report_file_path):
         '''
         Upload a file using cleartext FTP.  Why must people insist on doing this??
