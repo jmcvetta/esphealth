@@ -643,7 +643,7 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
         if new_eop_pat:
             if (existing_eop_pat is None or
                     new_eop_pat == 'eop:ad' or
-                    (new_preg.end_date and existing_preg_end_date and
+                    (new_preg.end_date and existing_preg.end_date and
                      new_preg.end_date < existing_preg.end_date)):
                 existing_preg.end_date = new_preg.end_date
                 existing_eop_pat = new_eop_pat
