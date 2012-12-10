@@ -655,6 +655,7 @@ class LabResult(BasePatientRecord):
     
         save_on_db = kw.pop('save_on_db', False)
         msLabs = FakeLabs.objects.order_by('?')[0]
+        log.info('generating fake lab result for this lab "%s"' % msLabs.native_name)
         now = int(time.time()*1000) #time in milliseconds
         provider = Provider.get_mock()
        
