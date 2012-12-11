@@ -1241,7 +1241,9 @@ class Command(BaseCommand):
         @param report_file_path: Full path to file that is to be uploaded
         @type report_file_path:  String
         '''
-        if CASE_REPORT_TRANSMIT.lower() == 'atrius':
+        if CASE_REPORT_TRANSMIT.lower() == 'script':
+            return self.transmit_via_script(options, report_file)
+        elif CASE_REPORT_TRANSMIT.lower() == 'atrius':
             return self.transmit_atrius(options, report_file)
         elif CASE_REPORT_TRANSMIT.lower() == 'ftp':
             return self.transmit_ftp(options, report_file)
