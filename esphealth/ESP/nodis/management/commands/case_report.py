@@ -1243,8 +1243,8 @@ class Command(BaseCommand):
         '''
         if CASE_REPORT_TRANSMIT.lower() == 'script':
             return self.transmit_via_script(options, report_file)
-        elif CASE_REPORT_TRANSMIT.lower() == 'atrius':
-            return self.transmit_atrius(options, report_file)
+        elif CASE_REPORT_TRANSMIT.lower() == 'java':
+            return self.transmit_java(options, report_file)
         elif CASE_REPORT_TRANSMIT.lower() == 'ftp':
             return self.transmit_ftp(options, report_file)
         else:
@@ -1302,9 +1302,9 @@ class Command(BaseCommand):
         return True
             
         
-    def transmit_atrius(self, options, report_file_path):
+    def transmit_java(self, options, report_file_path):
         '''
-        Transmits file to Atrius using custom Java component.
+        Transmits file using custom Java component.
         '''
         #
         # Compile Java sender application
