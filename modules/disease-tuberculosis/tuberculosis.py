@@ -81,17 +81,7 @@ class Tuberculosis(DiseaseDefinition):
                 test_name = test_name,
                 date_field = 'result',
                 ) )
-        #
-        # Lab Orders
-        #
-        for test_name in [
-            'tuberculosis_pcr',
-            'tuberculosis_afb',
-            'tuberculosis_culture',
-            ]:
-            heuristic_list.append( LabOrderHeuristic(
-                test_name = test_name,
-                ))
+        
         #
         # Prescriptions
         #
@@ -187,7 +177,7 @@ class Tuberculosis(DiseaseDefinition):
         # dx in the 60 days following the lab order 
         #
         dx_ev_names = ['dx:tuberculosis']
-        lx_ev_names = ['lx:tuberculosis_pcr:order','lx:tuberculosis_culture:order','lx:tuberculosis_afb:order'] 
+        lx_ev_names = ['lx:tuberculosis_pcr:any-result:result-date','lx:tuberculosis_culture:any-result:result-date','lx:tuberculosis_afb:any-result:result-date'] 
         # TODO check to make sure we validate the event names use BaseEventHeuristic.get_events_by_name        
         dxlx14_event_qs = Event.objects.filter(
             name__in = lx_ev_names,
