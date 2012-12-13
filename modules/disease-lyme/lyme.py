@@ -24,7 +24,8 @@ from ESP.utils import log
 from ESP.hef.base import Event
 from ESP.hef.base import PrescriptionHeuristic
 from ESP.hef.base import Dose
-from ESP.hef.base import LabResultPositiveHeuristic
+from ESP.hef.base import LabResultPositiveHeuristic,LabResultAnyHeuristic
+
 from ESP.hef.base import LabOrderHeuristic
 from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import Icd9Query
@@ -105,11 +106,19 @@ class Lyme(DiseaseDefinition):
             test_name = 'lyme_pcr',
             ))
         #
-        # Lab Orders
+        # Lab order/any result
         #
-        heuristic_list.append( LabOrderHeuristic(
-            test_name = 'lyme_elisa',
-            ))
+        for test_name in [
+            'lyme_elisa',
+            'lyme_igg_eia',
+            'lyme_igm_eia',
+            ]:
+            heuristic_list.append( LabResultAnyHeuristic(
+                test_name = test_name,
+                date_field = 'result',
+                ) )
+        
+        
         return heuristic_list
     
     @transaction.commit_on_success
@@ -171,7 +180,7 @@ class Lyme(DiseaseDefinition):
         
         rash_ev_names = ['dx:rash']
         rash_rx_ev_names = ['rx:doxycycline']
-        rash_lx_ev_names = ['lx:lyme_elisa:order','lx:lyme_igg_eia:order', 'lx:lyme_igm_eia:order',]
+        rash_lx_ev_names = ['lx:lyme_elisa:any-result:result-date','lx:lyme_igg_eia:any-result:result-date', 'lx:lyme_igm_eia:any-result:result-date',]
         
         rash_qs = Event.objects.filter(
             name__in = rash_ev_names,
