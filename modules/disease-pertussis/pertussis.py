@@ -25,7 +25,7 @@ from ESP.hef.base import Event
 from ESP.hef.base import PrescriptionHeuristic
 from ESP.static.models import DrugSynonym
 from ESP.hef.base import Dose
-from ESP.hef.base import LabResultPositiveHeuristic
+from ESP.hef.base import LabResultPositiveHeuristic,LabResultAnyHeuristic
 from ESP.hef.base import LabOrderHeuristic
 from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.base import Icd9Query
@@ -88,18 +88,18 @@ class Pertussis(DiseaseDefinition):
             test_name = 'pertussis_serology',
             ))
         #
-        # Lab Orders
+        # Lab Orders/any-result
         #
-        # 
-        heuristic_list.append( LabOrderHeuristic(
-            test_name = 'pertussis_serology',
-            ))
-        heuristic_list.append( LabOrderHeuristic(
-            test_name = 'pertussis_pcr',
-            ))
-        heuristic_list.append( LabOrderHeuristic(
-            test_name = 'pertussis_culture',
-            ))
+        for test_name in [
+            'pertussis_serology',
+            'pertussis_pcr',
+            'pertussis_culture',
+            ]:
+            heuristic_list.append( LabResultAnyHeuristic(
+                test_name = test_name,
+                date_field = 'result',
+                ) )
+        
         
         return heuristic_list
     
@@ -111,7 +111,7 @@ class Pertussis(DiseaseDefinition):
         # Criteria Set #1 :dx or lab order ) + rx within 7 days
         #
         dx_ev_names = ['dx:pertusis','dx:cough']
-        lxo_ev_name = ['lx:pertussis_culture:order','lx:pertussis_pcr:order','lx:pertussis_serology:order',] 
+        lxo_ev_name = ['lx:pertussis_culture:any-result:result-date','lx:pertussis_pcr:any-result:result-date','lx:pertussis_serology:any-result:result-date',] 
         rx_ev_names = ['rx:pertussis_med']
         
         #
