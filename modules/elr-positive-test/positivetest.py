@@ -33,14 +33,14 @@ ELR_CONFIG = [
     },
     {
         'condition': 'clostridium_difficile',
-        'short_name': 'c-diff',
+        'short_name': 'c_diff',
         'test_names' : ['clostridium_difficile_eia', 'clostridium_difficile_pcr'],
         'test_name_search_strings': ['diff', 'toxin'],
         'recurrence_interval': 0
     },             
     {         
         'condition': 'rapid_flu',
-        'short_name': 'rapid-flu',
+        'short_name': 'rapid_flu',
         'test_names' : ['rapid_flu'],
         'test_name_search_strings': ['quick','rapid', 'flue'],
         'recurrence_interval': 0
