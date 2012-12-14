@@ -173,8 +173,8 @@ class Tuberculosis(DiseaseDefinition):
             )
         #
         # Criteria Set #2 
-        # dx in the 14 days prior to the lab order or 
-        # dx in the 60 days following the lab order 
+        # dx in the 14 days prior to the lab order (any test result) or 
+        # dx in the 60 days following the lab order (any test result)
         #
         dx_ev_names = ['dx:tuberculosis']
         lx_ev_names = ['lx:tuberculosis_pcr:any-result:result-date','lx:tuberculosis_culture:any-result:result-date','lx:tuberculosis_afb:any-result:result-date'] 
