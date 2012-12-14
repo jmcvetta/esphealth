@@ -530,6 +530,9 @@ modules/disease-syphilis/syphilis.py -text
 modules/disease-tuberculosis/__init__.py -text
 modules/disease-tuberculosis/setup.py -text
 modules/disease-tuberculosis/tuberculosis.py -text
+modules/elr-positive-test/__init__.py -text
+modules/elr-positive-test/positivetest.py -text
+modules/elr-positive-test/setup.py -text
 modules/esphealth-encountertypemap-metrohealth/__init__.py -text
 modules/esphealth-encountertypemap-metrohealth/metrohealth.py -text
 modules/esphealth-encountertypemap-metrohealth/setup.py -text
