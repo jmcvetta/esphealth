@@ -125,20 +125,10 @@ class Lyme(DiseaseDefinition):
     def generate(self):
         log.info('Generating cases of %s' % self.short_name)
        
-        # condition 2 in spec wb test positive or pcr 
-        lx_ev_names = [ 
-            'lx:lyme_pcr:positive',
-            'lx:lyme_igg_wb:positive',
-            'lx:lyme_igm_wb:positive',  ]
-        
-        lx_event_qs = Event.objects.filter(
-            name__in =  lx_ev_names,
-            )
         #
-        # Criteria Set #1 (lyme def 2 from esp 2.1)
-        # diagnosis and meds 
-        # condition 3 in spec
-        #
+        # Criteria Set #1 condition 3 in spec
+        # diagnosis and meds within 14 days
+        # 
         dx_ev_names = ['dx:lyme']
         rx_ev_names = [
             'rx:doxycycline',
@@ -154,11 +144,21 @@ class Lyme(DiseaseDefinition):
             patient__event__date__gte = (F('date') - 14 ),
             patient__event__date__lte = (F('date') + 14 ),
             )
+        
+        # Criteria #2 condition 2 in spec 
+        # wb test positive or pcr
+        # 
+        lx_ev_names = [ 
+            'lx:lyme_pcr:positive',
+            'lx:lyme_igg_wb:positive',
+            'lx:lyme_igm_wb:positive',  ]
+        
+        lx_event_qs = Event.objects.filter(
+            name__in =  lx_ev_names,
+            )
         #
-        # Criteria Set #2 (lyme condition 1 from esp 2.1)
-        # (dx_ev_names or rx_ev_names) and a pos tests below
-        # condition 1 from spec
-        # (Lyme ELISA or IGM EIA or IGG EIA) and (Lyme ICD9 or Lyme Antibiotics) w/in 30 day period
+        # Criteria Set #3 condition 1 from spec
+        # (Lyme ELISA or IGM EIA or IGG EIA) and (Lyme ICD9 or Lyme Antibiotics) w/in 30 days
         #
         rpr_ev_names = dx_ev_names + rx_ev_names
             
@@ -174,10 +174,9 @@ class Lyme(DiseaseDefinition):
             patient__event__date__lte = (F('date') + 30 ),  
             )
         #
-        # Criteria Set #3 (lyme condition 3 from eps 2.1)
-        #   'dx:rash', 'lx:lyme_elisa' (order),'rx:doxycycline'
-        # condition 4 in spec Rash and doxycycline and (order for Lyme ELISA or IGM EIA or IGG EIA) 
-        
+        # Criteria Set #4 (lyme condition 4 from spec)
+        # Rash and doxycycline and (order for Lyme ELISA or IGM EIA or IGG EIA) within 30d
+        #
         rash_ev_names = ['dx:rash']
         rash_rx_ev_names = ['rx:doxycycline']
         rash_lx_ev_names = ['lx:lyme_elisa:any-result:result-date','lx:lyme_igg_eia:any-result:result-date', 'lx:lyme_igm_eia:any-result:result-date',]
