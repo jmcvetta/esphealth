@@ -670,6 +670,7 @@ class LabResultAnyHeuristic(BaseLabResultHeuristic):
     
     def generate(self):
         log.debug('Generating events for "%s"' % self)
+        count = self.unbound_labs.count()
         for lab in queryset_iterator(self.unbound_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -683,7 +684,7 @@ class LabResultAnyHeuristic(BaseLabResultHeuristic):
                 provider = lab.provider,
                 emr_record = lab,
                 )
-        log.info('Generated %s new %s events' % (self.unbound_labs.count(), self))
+        log.info('Generated %s new %s events' % (count, self))
         return self.unbound_labs.count()
 
 
