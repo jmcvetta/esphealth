@@ -108,7 +108,7 @@ class Pertussis(DiseaseDefinition):
         log.info('Generating cases of %s' % self.short_name)
        
         #
-        # Criteria Set #1 :dx or lab order ) + rx within 7 days
+        # Criteria Set #1 :dx or lab order(anyrestult test) + rx within 7 days
         #
         dx_ev_names = ['dx:pertusis','dx:cough']
         lxo_ev_name = ['lx:pertussis_culture:any-result:result-date','lx:pertussis_pcr:any-result:result-date','lx:pertussis_serology:any-result:result-date',] 
