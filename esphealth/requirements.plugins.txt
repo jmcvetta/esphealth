@@ -40,5 +40,7 @@
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/esphealth-encountertypemap-metrohealth#egg=esphealth_encountertypemap_metrohealth
 # Influenza like illness 
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-ili#egg=disease-ili
+# Electronic lab reporting 
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/elr-positive-test#egg=elr-positive-test
 
 
