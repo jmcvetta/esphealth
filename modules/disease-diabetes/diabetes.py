@@ -1174,10 +1174,10 @@ class GestationalDiabetesReport(Report):
                     date__lte = preg_ts.start_date,
                     ).order_by('-date')
                 if preg_weight_qs:
-                    bmi = preg_weight_qs[0].weight / height**2
+                    bmi = round(preg_weight_qs[0].weight / height**2, 2)
                     bmi_date = preg_weight_qs[0].date
                 elif pre_preg_weight_qs:
-                    bmi = pre_preg_weight_qs[0].weight / height**2
+                    bmi = round(pre_preg_weight_qs[0].weight / height**2, 2)
                     bmi_date = pre_preg_weight_qs[0].date
             #
             # Patient's frank and gestational DM history

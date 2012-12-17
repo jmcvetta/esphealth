@@ -33,7 +33,7 @@ ELR_CONFIG = [
     },
     {
         'condition': 'clostridium_difficile',
-        'short_name': 'c_diff',
+        'short_name': 'clostridium_difficile',
         'test_names' : ['clostridium_difficile_eia', 'clostridium_difficile_pcr'],
         'test_name_search_strings': ['diff', 'toxin'],
         'recurrence_interval': 0
