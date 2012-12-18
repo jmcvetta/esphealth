@@ -41,7 +41,7 @@ ELR_CONFIG = [
     {         
         'condition': 'rapid_flu',
         'short_name': 'rapid_flu',
-        'test_names' : ['rapid_flu'],
+        'test_names' : ['rapid_flu', 'influenza_culture'],
         'test_name_search_strings': ['quick','rapid', 'flue'],
         'recurrence_interval': 0
     },             
