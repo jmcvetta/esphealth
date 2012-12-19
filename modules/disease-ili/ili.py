@@ -142,7 +142,7 @@ class ili(DiseaseDefinition):
         counter = self._create_cases_from_event_qs( 
             condition = 'ili', 
             criteria = 'combined ili criteria a and b', 
-            recurrence_interval = 7,
+            recurrence_interval = 42,
             event_qs = combined_criteria_qs, 
             relevant_event_names = all_event_names )
         
