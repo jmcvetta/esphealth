@@ -1137,7 +1137,7 @@ class AllergyLoader(BaseLoader):
             
         #adding new rows to allergen table if they are  not there 
         if row['allergen_id'].strip() != '':
-            allergen, created = Allergen.objects.get_or_create(code=row['allergen_id'][1:100])
+            allergen, created = Allergen.objects.get_or_create(code=row['allergen_id'][:100])
         else:
             allergen, created = Allergen.objects.get_or_create(code=allergy_name)
         
