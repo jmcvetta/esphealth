@@ -977,6 +977,21 @@ positive number.
         <repeat>N</repeat>
       </field>
       <field>
+        <name>bmi_date</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
         <name>frank_diabetes_ever</name>
         <type>Boolean</type>
         <format/>
@@ -1382,7 +1397,7 @@ positive number.
         <repeat>N</repeat>
       </field>
       <field>
-        <name>prior_gdm_icd9_this_preg</name>
+        <name>prior_gdm_icd9</name>
         <type>String</type>
         <format/>
         <currency/>
@@ -1397,7 +1412,7 @@ positive number.
         <repeat>N</repeat>
       </field>
       <field>
-        <name>prior_gdm_icd9_this_preg_date</name>
+        <name>prior_gdm_icd9_date</name>
         <type>String</type>
         <format/>
         <currency/>
@@ -2012,7 +2027,37 @@ positive number.
         <repeat>N</repeat>
       </field>
       <field>
-        <name>intrapartum_ogtt50_random_max_val</name>
+        <name>intrapartum_glucose_random_max_val</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>postpartum120_ogtt75_order</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>postpartum120_ogtt75_any_result</name>
         <type>String</type>
         <format/>
         <currency/>
@@ -2043,6 +2088,21 @@ positive number.
       </field>
       <field>
         <name>postpartum_ogtt75_any_result</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>postpartum_ogtt75_any_result_date</name>
         <type>String</type>
         <format/>
         <currency/>
@@ -2132,7 +2192,82 @@ positive number.
         <repeat>N</repeat>
       </field>
       <field>
+        <name>postpartum_fasting_any_result</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>postpartum_fasting_gte100_lte125</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>postpartum_fasting_gte100_lte125_max_val</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>postpartum_fasting_gte100_lte125_date</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
         <name>postpartum_fasting_gte126</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>postpartum_fasting_gte126_max_val</name>
         <type>String</type>
         <format/>
         <currency/>
@@ -2162,7 +2297,7 @@ positive number.
         <repeat>N</repeat>
       </field>
       <field>
-        <name>postpartum_random</name>
+        <name>postpartum_random_gte200_twice</name>
         <type>String</type>
         <format/>
         <currency/>
@@ -2177,7 +2312,7 @@ positive number.
         <repeat>N</repeat>
       </field>
       <field>
-        <name>postpartum_random_date1</name>
+        <name>postpartum_random_gte200_date1</name>
         <type>String</type>
         <format/>
         <currency/>
@@ -2192,7 +2327,7 @@ positive number.
         <repeat>N</repeat>
       </field>
       <field>
-        <name>postpartum_random_date2</name>
+        <name>postpartum_random_gte200_date2</name>
         <type>String</type>
         <format/>
         <currency/>
@@ -2207,7 +2342,7 @@ positive number.
         <repeat>N</repeat>
       </field>
       <field>
-        <name>postpartum_a1c</name>
+        <name>postpartum_a1c_any_result</name>
         <type>String</type>
         <format/>
         <currency/>
@@ -2222,7 +2357,82 @@ positive number.
         <repeat>N</repeat>
       </field>
       <field>
-        <name>postpartum_a1c_date</name>
+        <name>postpartum_a1c_gte5_7_lte6_4</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>postpartum_a1c_gte5_7_lte6_4_max_val</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>postpartum_a1c_gte5_7_lte6_4_date</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>postpartum_a1c_6_5</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>postpartum_a1c_6_5_max_val</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>postpartum_a1c_6_5_date</name>
         <type>String</type>
         <format/>
         <currency/>
@@ -2253,6 +2463,111 @@ positive number.
       </field>
       <field>
         <name>late_postpartum_a1c_max_val</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>yearplus_postpartum_a1c_max_val</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>any_a1c_gte5_7_lte6_4</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>any_a1c_gte5_7_lte6_4_max_val</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>any_a1c_gte5_7_lte6_4_date</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>any_a1c_6_5</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>any_a1c_6_5_max_val</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <ifnull/>
+        <position>-1</position>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
+      <field>
+        <name>any_a1c_6_5_date</name>
         <type>String</type>
         <format/>
         <currency/>
