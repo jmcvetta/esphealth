@@ -837,7 +837,7 @@ class Command(LoaderCommand):
             if MAX_ALLERGIES>0:
                 for i in xrange(MAX_ALLERGIES):
                     allergy = Allergy.make_mock(p)
-                    allergy_writer.write_row(allergy)
+                    if allergy: allergy_writer.write_row(allergy)
             
             if MAX_PROBLEMS>0:
                 for i in xrange(MAX_PROBLEMS):

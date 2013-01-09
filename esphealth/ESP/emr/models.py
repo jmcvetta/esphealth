@@ -1569,12 +1569,14 @@ class Allergy(BasePatientRecord):
         # not adding status or description
         #get the first allergen randomly
         allergen = Allergen.objects.order_by('?')[0]
-        allergy = Allergy(patient=patient, provenance=Provenance.fake(),
-                         date=date, date_noted=date, 
-                         allergen=allergen, name=allergen.name,
-                         provider=patient.pcp, natural_key=now)
-        
-        if save_on_db: allergy.save()
+        allergy = None
+        if allergen and (allergen.name <> 'UNKNOWN' and allergen.name <> 'UNSPECIFIED'):
+            allergy = Allergy(patient=patient, provenance=Provenance.fake(),
+                             date=date, date_noted=date, 
+                             allergen=allergen, name=allergen.name,
+                             provider=patient.pcp, natural_key=now)
+            
+            if save_on_db: allergy.save()
         return allergy
             
 
