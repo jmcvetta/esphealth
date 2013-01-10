@@ -496,13 +496,13 @@ class AllergyWriter(EpicWriter):
         'provider_id'
         ]
     
-    def write_row(self, allergy, **kw):
+    def write_row(self, allergy, code, **kw):
         self.writer.writerow({
                 'patient_id':allergy.patient.natural_key,
                 'mrn':allergy.patient.mrn,
                 'natural_key':str(allergy.natural_key),
                 'date_noted': str_from_date(allergy.date_noted),
-                'allergy_id': allergy.allergen.code,
+                'allergy_id': code,
                 'allergy_name': allergy.name,
                 'allergy_status' : allergy.status,
                 'allergy_description' : allergy.description,
@@ -836,8 +836,8 @@ class Command(LoaderCommand):
                 
             if MAX_ALLERGIES>0:
                 for i in xrange(MAX_ALLERGIES):
-                    allergy = Allergy.make_mock(p)
-                    allergy_writer.write_row(allergy)
+                    allergy, code = Allergy.make_mock(p)
+                    allergy_writer.write_row(allergy, code)
             
             if MAX_PROBLEMS>0:
                 for i in xrange(MAX_PROBLEMS):
