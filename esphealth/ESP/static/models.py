@@ -88,7 +88,18 @@ class FakeICD9s(models.Model):
     class Meta:
         verbose_name = 'FAKEICD9'
 
-  
+
+class FakeAllergen(models.Model):
+    code = models.CharField(max_length=100, primary_key=True)
+    name = models.CharField(max_length=300, blank=True, null=True)
+    
+    def __str__(self):
+        return '%s -- %s' % (self.group_name, self.name)
+    
+    class Meta:
+        verbose_name = 'FAKEALLELRGEN'
+    
+    
 class FakeLabs (models.Model):
     '''
      this is for our new extra lab table 
