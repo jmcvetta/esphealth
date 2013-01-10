@@ -87,8 +87,9 @@ LYME
   3rd/3 patient only encounter. NEG -alvaroD
 1 patient with one test positive lab in 'lyme_igg_wb' 86618-4396 -kruskalu
 1 patient with an encounter with icd9 code for rash 782.1 (lyme 3) -danielS yes
- same patient with laborder lyme_elisa 86318--4048 within 30 days of diagnosis 
+ same patient with lab lyme_igg 86318--4048 within 30 days of diagnosis 
  same patient with med doxycycline within 30 days of diagnosis
+another patient with lime elisa pos (check data)
 
 pid
 2 patients (should generate 2 cases)
@@ -123,7 +124,7 @@ pertussis
   same patient with med antibiotic prescription within 7 days of diagnosis
 1 patient with an encounter with icd9 code for pertussis 033.0 -deenaH NEG
   same patient with med antibiotic prescription after 7 days of diagnosis
-1 patient with lab order of 'pertussis_pcr_order','pertussis_culture_order','pertussis_serology_order' -billx
+1 patient with lab test of 'pertussis_pcr_order','pertussis_culture_order','pertussis_serology_order' -billx
   same patient with med antibiotic prescription after 7 days of diagnosis
 1 patient with positive lab for pertussis_pcr -samuel
 1 patient with positive pertussis_culture -whor
