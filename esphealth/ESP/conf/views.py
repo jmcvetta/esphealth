@@ -59,7 +59,6 @@ def heuristic_mapping_report(request):
     mapped = []
     unmapped = []
     
-    #priorcodes = None
     for heuristic in BaseLabResultHeuristic.get_all() : 
         maps = LabTestMap.objects.filter(test_name=heuristic.test_name)
         if not maps:
@@ -69,12 +68,19 @@ def heuristic_mapping_report(request):
             continue
         codes = maps.values_list('native_code', flat=True)
         # if mapped doesnt already contain (heuristic.test_name, codes) then add it
-        # it is sorted already
-        # or mapped.__contains__((heuristic.test_name, codes)) not working 
-        # if not priorcodes or not codes == priorcodes:
-        if not mapped.__contains__((heuristic.test_name,codes)):
-            mapped.append( (heuristic.test_name, codes) )
-            #priorcodes= codes
+        # it is sorted already,for each in mapped get item compare with test name 
+        # add first one
+        if not mapped: mapped.append( (heuristic.test_name, codes) )
+        # loop through mapped make sure is not already there
+        else:
+            contains=False
+            for index in range(len(mapped)):  
+                if mapped.__getitem__(index).__contains__((heuristic.test_name)):
+                    contains=True
+                    continue
+            if not contains: 
+                mapped.append( (heuristic.test_name, codes) )              
+        
     mapped.sort(key=operator.itemgetter(0))
     unmapped.sort()
     values['mapped'] = mapped
