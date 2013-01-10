@@ -33,7 +33,7 @@ from ESP.emr.choices import LAB_ORDER_TYPES
 from ESP.conf.common import EPOCH
 from ESP.conf.models import LabTestMap
 from ESP.static.models import Loinc, FakeLabs, FakeVitals, FakeMeds, FakeICD9s
-from ESP.static.models import Ndc
+from ESP.static.models import Ndc, FakeAllergen
 from ESP.static.models import Icd9, Allergen
 from ESP.static.models import Vaccine
 from ESP.static.models import ImmunizationManufacturer
@@ -1567,17 +1567,15 @@ class Allergy(BasePatientRecord):
         when = when or randomizer.date_range(as_string=False) #datetime.date.today()
         date =  when if patient.date_of_birth is None else max(when, patient.date_of_birth)
         # not adding status or description
-        #get the first allergen randomly
-        allergen = Allergen.objects.order_by('?')[0]
-        allergy = None
-        if allergen and (allergen.name <> 'UNKNOWN' and allergen.name <> 'UNSPECIFIED'):
-            allergy = Allergy(patient=patient, provenance=Provenance.fake(),
+        #get the first fake allergen randomly
+        allergen = FakeAllergen.objects.order_by('?')[0]
+        allergy = Allergy(patient=patient, provenance=Provenance.fake(),
                              date=date, date_noted=date, 
-                             allergen=allergen, name=allergen.name,
+                              name=allergen.name,
                              provider=patient.pcp, natural_key=now)
             
-            if save_on_db: allergy.save()
-        return allergy
+        if save_on_db: allergy.save()
+        return allergy, allergen.code
             
 
     def document_summary(self):
