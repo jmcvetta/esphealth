@@ -94,7 +94,7 @@ class FakeAllergen(models.Model):
     name = models.CharField(max_length=300, blank=True, null=True)
     
     def __str__(self):
-        return '%s -- %s' % (self.group_name, self.name)
+        return '%s -- %s' % (self.code, self.name)
     
     class Meta:
         verbose_name = 'FAKEALLELRGEN'
