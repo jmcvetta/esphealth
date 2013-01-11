@@ -64,8 +64,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if options['list']:
+            test =[]
             for h in BaseHeuristic.get_all():
-                print h.short_name
+                if not test.__contains__(h.short_name):
+                    print h.short_name
+                    test.append( h.short_name ) 
             return
         elif args:
             BaseHeuristic.generate_by_name(name_list=args, thread_count=options['thread_count'])
