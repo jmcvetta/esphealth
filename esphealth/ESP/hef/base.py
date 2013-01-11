@@ -685,7 +685,7 @@ class LabResultAnyHeuristic(BaseLabResultHeuristic):
                 emr_record = lab,
                 )
         log.info('Generated %s new %s events' % (count, self))
-        return self.unbound_labs.count()
+        return count
 
 
 class LabResultPositiveHeuristic(BaseLabResultHeuristic): 
