@@ -578,7 +578,7 @@ class Diabetes(DiseaseDefinition):
         total = len(patient_pks)
         counter = 0
         for pat_pk in patient_pks:
-            counter += 1
+            
             event_qs = Event.objects.filter(
                 patient = pat_pk,
                 name__in = all_criteria,
@@ -593,6 +593,7 @@ class Diabetes(DiseaseDefinition):
             if prior_dm_case_qs.count():
                 log.info('Patient already has diabetes, skipping. (%8s / %s)' % (counter, total))
                 continue # This patient already has diabetes, and as such does not have prediabetes
+            
             new_case = Case(
                 patient = trigger_event.patient,
                 provider = trigger_event.provider,
