@@ -124,7 +124,7 @@ number range step</note>
     </attributes>
   </connection>
   <order>
-  <hop> <from>range bug workaround</from><to>Last Enc</to><enabled>Y</enabled> </hop>  <hop> <from>Prediabetes</from><to>Type 1</to><enabled>Y</enabled> </hop>  <hop> <from>Type 1</from><to>Type 2</to><enabled>Y</enabled> </hop>  <hop> <from>Type 2</from><to>Insulin</to><enabled>Y</enabled> </hop>  <hop> <from>Insulin</from><to>Metformin</to><enabled>Y</enabled> </hop>  <hop> <from>Metformin</from><to>Current Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Select values</from><to>Write Riskscape Report(s)</to><enabled>Y</enabled> </hop>  <hop> <from>Map race</from><to>BMI range</to><enabled>Y</enabled> </hop>  <hop> <from>BMI range</from><to>Pregnant?</to><enabled>Y</enabled> </hop>  <hop> <from>Last Enc</from><to>Age range</to><enabled>Y</enabled> </hop>  <hop> <from>Age range</from><to>Map gender</to><enabled>Y</enabled> </hop>  <hop> <from>Map gender</from><to>lowercase race</to><enabled>Y</enabled> </hop>  <hop> <from>lowercase race</from><to>Map race</to><enabled>Y</enabled> </hop>  <hop> <from>Truncate zip</from><to>Select values</to><enabled>Y</enabled> </hop>  <hop> <from>Read General Population Report(s)</from><to>range bug workaround</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant?</from><to>Pregnant last year?</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant last year?</from><to>Pregnant two years ago</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant two years ago</from><to>GDM</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 3</from><to>Most Recent Blood Pressure</to><enabled>Y</enabled> </hop>  <hop> <from>GDM</from><to>GDM 2</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 2</from><to>GDM 3</to><enabled>Y</enabled> </hop>  <hop> <from>Most Recent Blood Pressure</from><to>Max Blood Pressure last year</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure last year</from><to>Max Blood Pressure 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 2ago</from><to>Max Blood Pressure 3ago </to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 3ago </from><to>rec_LDL</to><enabled>Y</enabled> </hop>  <hop> <from>rec_LDL</from><to>LDL last year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL last year</from><to>LDL 2year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 2year</from><to>LDL 3year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 3year</from><to>Rec A1C</to><enabled>Y</enabled> </hop>  <hop> <from>Rec A1C</from><to>A1C last year</to><enabled>Y</enabled> </hop>  <hop> <from>A1C last year</from><to>A1C 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 2ago</from><to>A1C 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 3ago</from><to>Rec Trig</to><enabled>Y</enabled> </hop>  <hop> <from>Rec Trig</from><to>Trig last year</to><enabled>Y</enabled> </hop>  <hop> <from>Trig last year</from><to>Trig 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 2ago</from><to>Trig 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 3ago</from><to>Prediabetes</to><enabled>Y</enabled> </hop>  <hop> <from>Current Season Influenza</from><to>Last Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Last Season Influenza</from><to>Truncate zip</to><enabled>Y</enabled> </hop>  </order>
+  <hop> <from>range bug workaround</from><to>Last Enc</to><enabled>Y</enabled> </hop>  <hop> <from>Prediabetes</from><to>Type 1</to><enabled>Y</enabled> </hop>  <hop> <from>Type 1</from><to>Type 2</to><enabled>Y</enabled> </hop>  <hop> <from>Type 2</from><to>Insulin</to><enabled>Y</enabled> </hop>  <hop> <from>Insulin</from><to>Metformin</to><enabled>Y</enabled> </hop>  <hop> <from>Metformin</from><to>Current Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Select values</from><to>Write Riskscape Report(s)</to><enabled>Y</enabled> </hop>  <hop> <from>Map race</from><to>BMI range</to><enabled>Y</enabled> </hop>  <hop> <from>BMI range</from><to>Pregnant?</to><enabled>Y</enabled> </hop>  <hop> <from>Last Enc</from><to>Age range</to><enabled>Y</enabled> </hop>  <hop> <from>Age range</from><to>Map gender</to><enabled>Y</enabled> </hop>  <hop> <from>Map gender</from><to>lowercase race</to><enabled>Y</enabled> </hop>  <hop> <from>lowercase race</from><to>Map race</to><enabled>Y</enabled> </hop>  <hop> <from>Read General Population Report(s)</from><to>range bug workaround</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant?</from><to>Pregnant last year?</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant last year?</from><to>Pregnant two years ago</to><enabled>Y</enabled> </hop>  <hop> <from>Pregnant two years ago</from><to>GDM</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 3</from><to>Most Recent Blood Pressure</to><enabled>Y</enabled> </hop>  <hop> <from>GDM</from><to>GDM 2</to><enabled>Y</enabled> </hop>  <hop> <from>GDM 2</from><to>GDM 3</to><enabled>Y</enabled> </hop>  <hop> <from>Most Recent Blood Pressure</from><to>Max Blood Pressure last year</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure last year</from><to>Max Blood Pressure 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 2ago</from><to>Max Blood Pressure 3ago </to><enabled>Y</enabled> </hop>  <hop> <from>Max Blood Pressure 3ago </from><to>rec_LDL</to><enabled>Y</enabled> </hop>  <hop> <from>rec_LDL</from><to>LDL last year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL last year</from><to>LDL 2year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 2year</from><to>LDL 3year</to><enabled>Y</enabled> </hop>  <hop> <from>LDL 3year</from><to>Rec A1C</to><enabled>Y</enabled> </hop>  <hop> <from>Rec A1C</from><to>A1C last year</to><enabled>Y</enabled> </hop>  <hop> <from>A1C last year</from><to>A1C 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 2ago</from><to>A1C 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>A1C 3ago</from><to>Rec Trig</to><enabled>Y</enabled> </hop>  <hop> <from>Rec Trig</from><to>Trig last year</to><enabled>Y</enabled> </hop>  <hop> <from>Trig last year</from><to>Trig 2ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 2ago</from><to>Trig 3ago</to><enabled>Y</enabled> </hop>  <hop> <from>Trig 3ago</from><to>Prediabetes</to><enabled>Y</enabled> </hop>  <hop> <from>Current Season Influenza</from><to>Last Season Influenza</to><enabled>Y</enabled> </hop>  <hop> <from>Last Season Influenza</from><to>Select values</to><enabled>Y</enabled> </hop>  </order>
   <step>
     <name>A1C 2ago</name>
     <type>NumberRange</type>
@@ -1923,7 +1923,7 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <rename>E</rename>
         <length>-2</length>
         <precision>-2</precision>
-      </field>      <field>        <name>zip_5</name>
+      </field>      <field>        <name>zip</name>
         <rename>F</rename>
         <length>-2</length>
         <precision>-2</precision>
@@ -2050,8 +2050,8 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
       </field>        <select_unspecified>N</select_unspecified>
     </fields>     <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>611</xloc>
-      <yloc>1184</yloc>
+      <xloc>708</xloc>
+      <yloc>1095</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -2166,32 +2166,6 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
       <xloc>249</xloc>
       <yloc>907</yloc>
-      <draw>Y</draw>
-      </GUI>
-    </step>
-
-  <step>
-    <name>Truncate zip</name>
-    <type>StringCut</type>
-    <description/>
-    <distribute>Y</distribute>
-    <copies>1</copies>
-         <partitioning>
-           <method>none</method>
-           <schema_name/>
-           </partitioning>
-    <fields>
-      <field>
-        <in_stream_name>zip</in_stream_name>
-        <out_stream_name>zip_5</out_stream_name>
-        <cut_from>0</cut_from>
-        <cut_to>5</cut_to>
-      </field>
-    </fields>
-     <cluster_schema/>
- <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>495</xloc>
-      <yloc>1183</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
@@ -2727,8 +2701,8 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
     </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
-      <xloc>610</xloc>
-      <yloc>1307</yloc>
+      <xloc>707</xloc>
+      <yloc>1218</yloc>
       <draw>Y</draw>
       </GUI>
     </step>
