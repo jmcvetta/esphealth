@@ -157,6 +157,7 @@ class Syphilis(DiseaseDefinition):
         test_event_qs = Event.objects.filter(
             name__in = rpr_ev_names,
             patient__event__name__in = tppa_ev_names,
+            patient__event__date__gte = (F('date') - 30 ),
             )
         #
         # Criteria Set #3
