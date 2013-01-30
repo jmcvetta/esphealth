@@ -157,7 +157,7 @@ class Syphilis(DiseaseDefinition):
         test_event_qs = Event.objects.filter(
             name__in = rpr_ev_names,
             patient__event__name__in = tppa_ev_names,
-            patient__event__date__gte = (F('date') - 30 ),
+            patient__event__date__lte = (F('date') + 30 ),
             )
         #
         # Criteria Set #3
@@ -169,6 +169,7 @@ class Syphilis(DiseaseDefinition):
         #
         combined_criteria_qs = dxrx_event_qs | test_event_qs | vrdl_csf_qs
         combined_criteria_qs = combined_criteria_qs.exclude(case__condition='syphilis')
+        # ordering here doesnt matter because create cases from event sorts again
         combined_criteria_qs = combined_criteria_qs.order_by('date')
         all_event_names = dx_ev_names + rx_ev_names + rpr_ev_names + tppa_ev_names + vrdl_csf_ev_names
         counter = 0
