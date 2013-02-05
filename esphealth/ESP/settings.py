@@ -469,6 +469,27 @@ TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 #
 HEF_THREAD_COUNT = config['HEF']['thread_count']
 
+#
+#--- Site
+#
+CASE_REPORT_SITE_NAME = config['Site']['case_report_site_name']
+SITE_CLIA = config['Site']['site_clia']
+SITE_LAST_NAME = config['Site']['site_last_name']
+SITE_FIRST_NAME = config['Site']['site_first_name']
+SITE_ADDRESS1 = config['Site']['site_address1']
+SITE_ADDRESS2 = config['Site']['site_address2']
+SITE_CITY = config['Site']['site_city']
+SITE_STATE = config['Site']['site_state']
+SITE_ZIP = config['Site']['site_zip']
+SITE_COUNTRY = config['Site']['site_country']
+SITE_EMAIL = config['Site']['site_email']
+SITE_AREA_CODE = config['Site']['site_area_code']
+SITE_TEL_NUMERIC = config['Site']['site_tel_numeric']
+SITE_TEL_EXT = config['Site']['site_tel_ext']
+SITE_APP_NAME = config['Site']['site_app_name']
+SITE_SENDING_FACILITY = config['Site']['site_sending_facility']
+SITE_COMMENTS = config['Site']['site_comments']
+
 #--- Make Fakes 
 LOAD_DRIVER_LABS = config['Make_Fakes']['load_driver_labs']
 START_DATE = config['Make_Fakes']['start_date']

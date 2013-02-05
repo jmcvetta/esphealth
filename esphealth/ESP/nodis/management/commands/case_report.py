@@ -81,7 +81,9 @@ from ESP.nodis.models import STATUS_CHOICES
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
 
-
+from ESP.settings import CASE_REPORT_SITE_NAME , SITE_CLIA ,SITE_LAST_NAME ,SITE_FIRST_NAME ,SITE_ADDRESS1 ,SITE_ADDRESS2 
+from ESP.settings import  SITE_CITY ,SITE_STATE ,SITE_ZIP ,SITE_COUNTRY ,SITE_EMAIL ,SITE_AREA_CODE ,SITE_TEL_NUMERIC 
+from ESP.settings import SITE_TEL_EXT ,SITE_APP_NAME ,SITE_SENDING_FACILITY ,SITE_COMMENTS  
 
 #===============================================================================
 #
@@ -94,26 +96,27 @@ DATE_FORMAT = '%Y%m%d'
 
 # Information about reporting institution.  This info should be made configurable 
 # in settings.py.
+
 class Foo(): pass
 INSTITUTION = Foo()
-INSTITUTION.name = 'HVMA'
-INSTITUTION.clia = '22D0666230'
-INSTITUTION.last_name = 'Jones'
-INSTITUTION.first_name = 'Michael'
-INSTITUTION.address1 = '133 Brookline Avenue'
-INSTITUTION.address2 = None
-INSTITUTION.city = 'Boston'
-INSTITUTION.state = 'MA'
-INSTITUTION.zip = '02215'
-INSTITUTION.country = 'USA'
-INSTITUTION.email = 'mjones@partners.org'
-INSTITUTION.area_code = '617'
-INSTITUTION.tel_numeric = '5099991'
-INSTITUTION.tel_ext = None
+INSTITUTION.name = CASE_REPORT_SITE_NAME
+INSTITUTION.clia = SITE_CLIA
+INSTITUTION.last_name = SITE_LAST_NAME
+INSTITUTION.first_name = SITE_FIRST_NAME
+INSTITUTION.address1 = SITE_ADDRESS1
+INSTITUTION.address2 = SITE_ADDRESS2
+INSTITUTION.city = SITE_CITY
+INSTITUTION.state = SITE_STATE
+INSTITUTION.zip = SITE_ZIP
+INSTITUTION.country = SITE_COUNTRY
+INSTITUTION.email = SITE_EMAIL
+INSTITUTION.area_code = SITE_AREA_CODE
+INSTITUTION.tel_numeric = SITE_TEL_NUMERIC
+INSTITUTION.tel_ext = SITE_TEL_EXT
 
-APP_NAME = 'ESPv2'
-SENDING_FACILITY = 'Test'
-COMMENTS = '' # What goes in comments?
+APP_NAME = SITE_APP_NAME
+SENDING_FACILITY = SITE_SENDING_FACILITY
+COMMENTS = SITE_COMMENTS # What goes in comments?
 
 
 
@@ -150,7 +153,7 @@ class hl7Batch:
     the batch by the renderBatch method
     """
     
-    def __init__(self, doc=None, institutionName='HVMA', nmessages = None):
+    def __init__(self, doc=None, institutionName=CASE_REPORT_SITE_NAME, nmessages = None):
         """ doc must be a dom document
         set up the batch structures
         order of creation is not important
