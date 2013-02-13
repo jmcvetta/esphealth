@@ -268,13 +268,9 @@ class hl7Batch:
             encounters=case.reportable_encounters, condition=case.condition, casenote=case.notes,
             caseid=case.pk)
         totallxs = list(lxobjs)
-        ##need check if any Gonorrhea test for Chlamydia
-        if case.condition == 'chlamydia':
-            genorlxs =self.getOtherLxs('gonorrhea', patient, lx)
-            totallxs = totallxs + list(genorlxs)
-        elif case.condition == 'gonorrhea':
-            genorlxs =self.getOtherLxs('chlamydia', patient, lx)
-            totallxs = totallxs + list(genorlxs)
+        #generate for all conditions     
+        genorlxs =self.getOtherLxs(case.condition, patient, lx)
+        totallxs = totallxs + list(genorlxs)    
         cleanlxids = self.removeDuplicateLx(totallxs)
         totallxs = LabResult.objects.filter(pk__in=cleanlxids).order_by('order_natural_key')
         self.addLXOBX(lxRecList=totallxs, orus=orus,condition=case.condition)
@@ -493,6 +489,9 @@ class hl7Batch:
         first_event = case.events.order_by('date')[0]
         start_date = first_event.date
         end_date = start_date + datetime.timedelta(days=30)
+        if case.patient.gender and case.patient.gender.upper().startswith('M'):
+            return ('60001007' ,None)  
+        
         preg_encounters = Encounter.objects.filter(patient=case.patient, pregnant=True, date__gte=start_date,
             date__lte=end_date)
         if not preg_encounters:
@@ -574,15 +573,15 @@ class hl7Batch:
         obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'CE')],obx3=[('CE.4','NA-5')], obx5=[('CE.4',sym)])
         indx += 1
         orcs.appendChild(obx)
-        if condition.upper()  in ('CHLAMYDIA', 'GONORRHEA'):
-            for i in icd9:
-                obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'ST')],obx3=[('CE.4','10187-3')], obx5=[('',i)])
-                indx += 1
-                orcs.appendChild(obx)
-            if temperature>100.4:
-                obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'ST')],obx3=[('CE.4','10187-3')], obx5=[('','fever')])
-                indx += 1
-                orcs.appendChild(obx)
+        #removed for specific condition --if condition.upper()  in ('CHLAMYDIA', 'GONORRHEA'):
+        for i in icd9:
+            obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'ST')],obx3=[('CE.4','10187-3')], obx5=[('',i)])
+            indx += 1
+            orcs.appendChild(obx)
+        if temperature>100.4:
+            obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'ST')],obx3=[('CE.4','10187-3')], obx5=[('','fever')])
+            indx += 1
+            orcs.appendChild(obx)
 
     def addLXOBX(self,lxRecList=[],orus=None,condition=None):
         if not lxRecList: return
@@ -828,11 +827,11 @@ class hl7Batch:
         outerElement='ORC.14'
         email=''
         ext=''
-        contact = self.makeContact(email, pcp.area_code, pcp.tel_numeric, ext, outerElement)
+        contact = self.makeContact(email, pcp.area_code, pcp.telephone, ext, outerElement)
         if contact <> None:
             orc.appendChild(contact)
         orc21 = self.casesDoc.createElement('ORC.21')
-        self.addSimple(orc21, INSTITUTION.name, 'XON.1')
+        self.addSimple(orc21, pcp.dept, 'XON.1')
         orc.appendChild(orc21)
         outerElement='ORC.22'
         country='USA'
@@ -845,8 +844,8 @@ class hl7Batch:
         if contact <> None:
             orc.appendChild(contact)
         outerElement='ORC.24'
-        address = self.makeAddress(INSTITUTION.address1, INSTITUTION.address2, INSTITUTION.city, INSTITUTION.state,
-            INSTITUTION.zip, country ,outerElement, addressType)
+        address = self.makeAddress(pcp.dept_address_1, pcp.dept_address_2, pcp.dept_city, pcp.dept_state,
+            pcp.dept_zip, country ,outerElement, addressType)
         orc.appendChild(address)
         return orc
 
