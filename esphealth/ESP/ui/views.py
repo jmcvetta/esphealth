@@ -91,6 +91,7 @@ from ESP.utils import log
 from ESP.utils import log_query
 from ESP.utils.utils import Flexigrid
 from ESP.utils import TableSelectMultiple
+from ESP.hef.core import BaseHeuristic
 
 
 
