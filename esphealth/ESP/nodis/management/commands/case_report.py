@@ -274,6 +274,19 @@ class hl7Batch:
         self.addCaseOBX(demog=patient, orcs=orcs, icd9=icd9_codes, lx=lx, rx=rx,
             encounters=case.reportable_encounters, condition=case.condition, casenote=case.notes,
             caseid=case.pk)
+        
+        ##need check if any Gonorrhea test for Chlamydia
+        if case.condition == 'chlamydia':
+            gon_events = Event.objects.filter(name='gonorrhea:positive', patient=patient)
+            gon_labs = LabResult.objects.filter(events__in=gon_events).distinct()
+            reportable_labs |= gon_labs
+            reportable_labs = reportable_labs.distinct()
+        elif case.condition == 'gonorrhea':
+            chlam_events = Event.objects.filter(name='chlamydia:positive', patient=patient)
+            chlam_labs = LabResult.objects.filter(events__in=chlam_events).distinct()
+            reportable_labs |= chlam_labs
+            reportable_labs = reportable_labs.distinct()
+        
         #generate for all conditions  
         totallxs = list(reportable_labs)   
         genorlxs =self.getOtherLxs(case.condition, patient, lx)
