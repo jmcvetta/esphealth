@@ -843,7 +843,11 @@ class hl7Batch:
         if contact <> None:
             orc.appendChild(contact)
         orc21 = self.casesDoc.createElement('ORC.21')
-        self.addSimple(orc21, pcp.dept, 'XON.1')
+        if pcp.dept:
+            self.addSimple(orc21, pcp.dept, 'XON.1')
+        else: 
+            self.addSimple(orc21, INSTITUTION.name, 'XON.1')
+        
         orc.appendChild(orc21)
         outerElement='ORC.22'
         country='USA'
