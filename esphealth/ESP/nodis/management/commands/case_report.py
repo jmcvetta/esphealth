@@ -267,7 +267,15 @@ class hl7Batch:
         self.addCaseOBX(demog=patient, orcs=orcs, icd9=icd9_codes, lx=lx, rx=rx,
             encounters=case.reportable_encounters, condition=case.condition, casenote=case.notes,
             caseid=case.pk)
+                      
         totallxs = list(lxobjs)
+        ##need check if any Gonorrhea test for Chlamydia
+        if case.condition == 'chlamydia':
+            genorlxs =self.getOtherLxs('gonorrhea', patient, lx)
+            totallxs = totallxs + list(genorlxs)
+        elif case.condition == 'gonorrhea':
+            genorlxs =self.getOtherLxs('chlamydia', patient, lx)
+            totallxs = totallxs + list(genorlxs)
         #generate for all conditions     
         genorlxs =self.getOtherLxs(case.condition, patient, lx)
         totallxs = totallxs + list(genorlxs)    
@@ -827,7 +835,10 @@ class hl7Batch:
         outerElement='ORC.14'
         email=''
         ext=''
-        contact = self.makeContact(email, pcp.area_code, pcp.telephone, ext, outerElement)
+        if pcp.tel_numeric:
+            contact = self.makeContact(email, pcp.area_code, pcp.tel_numeric, ext, outerElement)
+        else: contact = self.makeContact(INSTITUTION.email, INSTITUTION.area_code, INSTITUTION.tel_numeric, INSTITUTION.tel_ext, outerElement)
+        
         if contact <> None:
             orc.appendChild(contact)
         orc21 = self.casesDoc.createElement('ORC.21')
@@ -836,16 +847,26 @@ class hl7Batch:
         outerElement='ORC.22'
         country='USA'
         addressType=None
-        address = self.makeAddress(INSTITUTION.address1, INSTITUTION.address2, INSTITUTION.city,
+        if pcp.dept_address_1:
+            address = self.makeAddress(pcp.dept_address_1, pcp.dept_address_2, pcp.dept_city, pcp.dept_state,
+            pcp.dept_zip, country ,outerElement, addressType)
+        else: address = self.makeAddress(INSTITUTION.address1, INSTITUTION.address2, INSTITUTION.city,
             INSTITUTION.state, INSTITUTION.zip, country ,outerElement, addressType)
         orc.appendChild(address)
         outerElement='ORC.23'
-        contact = self.makeContact(None, INSTITUTION.area_code, INSTITUTION.tel_numeric, INSTITUTION.tel_ext, outerElement)
+        if pcp.tel_numeric:
+            contact = self.makeContact(email, pcp.area_code, pcp.tel_numeric, ext, outerElement)
+        else:  contact = self.makeContact(INSTITUTION.email, INSTITUTION.area_code, INSTITUTION.tel_numeric, INSTITUTION.tel_ext, outerElement)
+        
         if contact <> None:
             orc.appendChild(contact)
         outerElement='ORC.24'
-        address = self.makeAddress(pcp.dept_address_1, pcp.dept_address_2, pcp.dept_city, pcp.dept_state,
-            pcp.dept_zip, country ,outerElement, addressType)
+        
+        if pcp.dept_address_1:
+            address = self.makeAddress(pcp.dept_address_1, pcp.dept_address_2, pcp.dept_city, pcp.dept_state,
+                pcp.dept_zip, country ,outerElement, addressType)
+        else: address = self.makeAddress(None, None, None, None, None, country ,outerElement, addressType)
+        
         orc.appendChild(address)
         return orc
 
