@@ -1378,16 +1378,18 @@ class Icd9Query(object):
     def icd9_q_obj(self):
         '''
         Returns a Q object suitable for selecting ICD9 objects that match this query
+        issue 455, removed the i case insensitive version because load epic always 
+        loads icd9s in upper case
         '''
         q_list = []
         if self.exact:
-            q_list.append( Q(code__iexact=self.exact) )
+            q_list.append( Q(code__exact=self.exact) )
         if self.starts_with:
-            q_list.append( Q(code__istartswith=self.starts_with) )
+            q_list.append( Q(code__startswith=self.starts_with) )
         if self.ends_with:
-            q_list.append( Q(code__iendswith=self.ends_with) )
+            q_list.append( Q(code__endswith=self.ends_with) )
         if self.contains:
-            q_list.append( Q(code__icontains=self.contains) )
+            q_list.append( Q(code__contains=self.contains) )
         assert q_list # This should not be empty
         q_obj = q_list[0]
         for another_q_obj in q_list[1:]:
@@ -1398,16 +1400,18 @@ class Icd9Query(object):
     def encounter_q_obj(self):
         '''
         Returns a Q object suitable for selecting ICD9 objects that match this query
+        issue 455, removed the i case insensitive version because load epic always 
+        loads icd9s in upper case
         '''
         q_list = []
         if self.exact:
-            q_list.append( Q(icd9_codes__code__iexact=self.exact) )
+            q_list.append( Q(icd9_codes__code__exact=self.exact) )
         if self.starts_with:
-            q_list.append( Q(icd9_codes__code__istartswith=self.starts_with) )
+            q_list.append( Q(icd9_codes__code__startswith=self.starts_with) )
         if self.ends_with:
-            q_list.append( Q(icd9_codes__code__iendswith=self.ends_with) )
+            q_list.append( Q(icd9_codes__code__endswith=self.ends_with) )
         if self.contains:
-            q_list.append( Q(icd9_codes__code__icontains=self.contains) )
+            q_list.append( Q(icd9_codes__code__contains=self.contains) )
         assert q_list # This should not be empty
         q_obj = q_list[0]
         for another_q_obj in q_list[1:]:
