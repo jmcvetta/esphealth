@@ -1,4 +1,4 @@
-﻿/*﻿--------------------------------------------------------------------------------
+/*--------------------------------------------------------------------------------
 --
 --                                ESP Health
 --                         General Population Report
@@ -17,6 +17,7 @@
 -- not run on other RDBMS without porting.
 --
 --------------------------------------------------------------------------------*/
+--select max(counts) from ( select count(*) as counts from (
 SELECT 
   pat.id AS patient_id
 , pat.mrn
@@ -24,13 +25,13 @@ SELECT
 , date_part('year', age(pat.date_of_birth)) as age
 , pat.gender 
 , pat.race
-, pat.zip
-, case 
-    when age(pat.date_of_birth) >= '12 years' then bmi.bmi
-  end bmi
 , case
-    when age(pat.date_of_birth) >= '12 years' then bmi.date 
-  end bmi_date
+    when substring(pat.zip,6,1)='-' then substring(pat.zip,1,5)
+    else pat.zip
+  end zip
+, bmi.bmi
+, bmi.bmipct
+, bmi.date 
 , curpreg.currently_pregnant
 , recpreg1.recent_pregnancy as recent_pregnancy1
 , recpreg2.recent_pregnancy as recent_pregnancy2
@@ -39,13 +40,25 @@ SELECT
 , recgdm2.recent_gdm as recent_gdm2
 , bp1.max_bp_systolic as max_bp_systolic1
 , bp1.max_bp_diastolic as max_bp_diastolic1
+, bp1.map as map1
+, bp1.syspct as syspct1
+, bp1.diapct as diapct1
 , bp2.max_bp_systolic as max_bp_systolic2
 , bp2.max_bp_diastolic as max_bp_diastolic2
+, bp2.map as map2
+, bp2.syspct as syspct2
+, bp2.diapct as diapct2
 , bp3.max_bp_systolic as max_bp_systolic3
 , bp3.max_bp_diastolic as max_bp_diastolic3
+, bp3.map as map3 
+, bp3.syspct as syspct3
+, bp3.diapct as diapct3
 , recbp.bp_systolic
 , recbp.bp_diastolic
 , recbp.date as rec_bp_date
+, recbp.map 
+, recbp.syspct
+, recbp.diapct
 , ldl.recent_ldl
 , ldl.date as ldl_date
 , ldl1.max_ldl1
@@ -82,41 +95,131 @@ LEFT JOIN (
 	ON lastenc.patient_id = pat.id
 --
 -- Max blood pressure between two and three years
+--  using most recent max mean aterial pressure for the period
 --
-LEFT JOIN (
+LEFT JOIN ( select * from (
 	SELECT 
-	  patient_id
-	, MAX(bp_systolic) AS max_bp_systolic
-	, MAX(bp_diastolic) AS max_bp_diastolic
-	FROM emr_encounter
-	WHERE date between ( now() - interval '3 years' ) and ( now() - interval '2 years' )
-	GROUP BY patient_id
+	  t0.patient_id
+	, t0.bp_systolic AS max_bp_systolic
+	, t0.bp_diastolic AS max_bp_diastolic
+        , t1.max_mean_arterial as map
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+                     pat.gender, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
+					 t0.height::numeric, 
+					 'HTZ'::varchar ), 
+					 t0.bp_systolic::numeric, 
+					 'SYS'::varchar, 
+					 'BPPCT'::varchar) as syspct
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+                     pat.gender, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
+					 t0.height::numeric, 
+					 'HTZ'::varchar ), 
+					 t0.bp_diastolic::numeric, 
+					 'DIA'::varchar, 
+					 'BPPCT'::varchar) as diapct
+        , row_number() over (partition by t0.patient_id order by t0.date desc) as rownum
+	FROM emr_encounter t0,
+             (select patient_id, max((2*bp_diastolic + bp_systolic)/3) as max_mean_arterial
+              from emr_encounter
+              WHERE date between ( now() - interval '3 years' ) and ( now() - interval '2 years' )
+              group by patient_id) as t1,
+             emr_patient as pat
+	WHERE t0.date between ( now() - interval '3 years' ) and ( now() - interval '2 years' )
+	and (2*bp_diastolic + bp_systolic)/3 = max_mean_arterial and t0.patient_id=t1.patient_id
+        and t0.patient_id=pat.id) as t
+        where rownum=1
 ) AS bp3
 	ON bp3.patient_id = pat.id
 --
 -- Max blood pressure between one and two years
+--  using most recent max mean aterial pressure for the period
 --
-LEFT JOIN (
+LEFT JOIN ( select * from (
 	SELECT 
-	  patient_id
-	, MAX(bp_systolic) AS max_bp_systolic
-	, MAX(bp_diastolic) AS max_bp_diastolic
-	FROM emr_encounter
-	WHERE date between ( now() - interval '2 years' ) and ( now() - interval '1 years' )
-	GROUP BY patient_id
+	  t0.patient_id
+	, t0.bp_systolic AS max_bp_systolic
+	, t0.bp_diastolic AS max_bp_diastolic
+        , t1.max_mean_arterial as map
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+                     pat.gender, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
+					 t0.height::numeric, 
+					 'HTZ'::varchar ), 
+					 t0.bp_systolic::numeric, 
+					 'SYS'::varchar, 
+					 'BPPCT'::varchar) as syspct
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+                     pat.gender, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
+					 t0.height::numeric, 
+					 'HTZ'::varchar ), 
+					 t0.bp_diastolic::numeric, 
+					 'DIA'::varchar, 
+					 'BPPCT'::varchar) as diapct
+        , row_number() over (partition by t0.patient_id order by t0.date desc) as rownum
+	FROM emr_encounter t0,
+             (select patient_id, max((2*bp_diastolic + bp_systolic)/3) as max_mean_arterial
+              from emr_encounter
+              WHERE date between ( now() - interval '2 years' ) and ( now() - interval '1 years' )
+              group by patient_id) as t1,
+             emr_patient as pat
+	WHERE t0.date between ( now() - interval '2 years' ) and ( now() - interval '1 years' )
+	and (2*bp_diastolic + bp_systolic)/3 = max_mean_arterial and t0.patient_id=t1.patient_id
+        and t0.patient_id=pat.id) as t
+        where rownum=1
 ) AS bp2
 	ON bp2.patient_id = pat.id
 --
 -- Max blood pressure between now and one years
+--  using most recent max mean aterial pressure for the period
 --
-LEFT JOIN (
+LEFT JOIN ( select * from (
 	SELECT 
-	  patient_id
-	, MAX(bp_systolic) AS max_bp_systolic
-	, MAX(bp_diastolic) AS max_bp_diastolic
-	FROM emr_encounter
-	WHERE date between ( now() - interval '1 years' ) and now() 
-	GROUP BY patient_id
+	  t0.patient_id
+	, t0.bp_systolic AS max_bp_systolic
+	, t0.bp_diastolic AS max_bp_diastolic
+        , t1.max_mean_arterial as map
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+                     pat.gender, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
+					 t0.height::numeric, 
+					 'HTZ'::varchar ), 
+					 t0.bp_systolic::numeric, 
+					 'SYS'::varchar, 
+					 'BPPCT'::varchar) as syspct
+        , gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+                     pat.gender, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
+					 t0.height::numeric, 
+					 'HTZ'::varchar ), 
+					 t0.bp_diastolic::numeric, 
+					 'DIA'::varchar, 
+					 'BPPCT'::varchar) as diapct
+        , row_number() over (partition by t0.patient_id order by t0.date desc) as rownum
+	FROM emr_encounter t0,
+             (select patient_id, max((2*bp_diastolic + bp_systolic)/3) as max_mean_arterial
+              from emr_encounter
+              WHERE date between ( now() - interval '1 years' ) and now()
+              group by patient_id) as t1,
+             emr_patient as pat
+	WHERE t0.date between ( now() - interval '1 years' ) and now() 
+	and (2*bp_diastolic + bp_systolic)/3 = max_mean_arterial and t0.patient_id=t1.patient_id
+        and t0.patient_id=pat.id) as t
+        where rownum=1
 ) AS bp1
 	ON bp1.patient_id = pat.id
 --
@@ -127,14 +230,37 @@ LEFT JOIN (
 	  t0.patient_id
 	, max(t0.bp_systolic) as bp_systolic
 	, max(t0.bp_diastolic) as bp_diastolic
+        , max(gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+                     pat.gender, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
+					 t0.height::numeric, 
+					 'HTZ'::varchar ), 
+					 t0.bp_systolic::numeric, 
+					 'SYS'::varchar, 
+					 'BPPCT'::varchar)) as syspct
+        , max(gen_pop_tools.NHBP(extract(year from age(t0.date, pat.date_of_birth))::numeric, 
+                     pat.gender, 
+                     gen_pop_tools.cdc_hgt((extract(year from age(t0.date, pat.date_of_birth))*12 + 
+                                            extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+			         (case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
+					 t0.height::numeric, 
+					 'HTZ'::varchar ), 
+					 t0.bp_diastolic::numeric, 
+					 'DIA'::varchar, 
+					 'BPPCT'::varchar)) as diapct
 	, t0.date
+        , max((2*t0.bp_diastolic + t0.bp_systolic)/3) as map
 	FROM emr_encounter as t0,
 	     (select patient_id, max(date) as date from emr_encounter 
 	           where bp_systolic is not null and bp_diastolic is not null
-	           group by patient_id) as t1
+	           group by patient_id) as t1,
+             emr_patient as pat
 	WHERE t0.bp_systolic is not null and t0.bp_diastolic is not null and 
 	   t0.patient_id=t1.patient_id and
 	   t0.date = t1.date and t0.date >= now() - interval '2 years'
+           and t0.patient_id=pat.id
 	GROUP BY t0.patient_id, t0.date
 ) AS recbp
 	ON recbp.patient_id = pat.id
@@ -142,21 +268,34 @@ LEFT JOIN (
 -- most recent BMI 
 --
 LEFT JOIN (
+        select t0.*
+        , gen_pop_tools.cdc_bmi((extract(year from age(t0.date, pat.date_of_birth))*12 
+                               + extract(month from age(t0.date, pat.date_of_birth)))::numeric, 
+		(case when pat.gender='M' then '1' when pat.gender='F' then 2 else null end)::varchar, 
+		null::numeric, 
+		null::numeric, 
+		t0.bmi::numeric, 
+		'BMIPCT'::varchar ) as bmipct
+      from (
 	SELECT 
 	  t0.patient_id,
 	  t0.date
-	, MAX(t0.bmi) AS bmi
+	, MAX( t0.weight / (t0.height/100)^2 ) AS bmi
 	FROM emr_encounter t0,
 	     (select patient_id, max(date) as date
 	      from emr_encounter 
 	      where bmi is not null
 	      group by patient_id) t1
 	WHERE t0.date >= ( now() - interval '2 years' )
-	  and t0.bmi is not null
+	  and t0.weight is not null and t0.height is not null
 	  and t0.date=t1.date
 	  and t0.patient_id=t1.patient_id
 	GROUP BY t0.patient_id, t0.date
-) AS bmi
+) t0,
+  emr_patient as pat
+  where t0.patient_id=pat.id
+)
+ AS bmi
 	ON bmi.patient_id = pat.id
 --
 -- Recent A1C lab result
@@ -538,7 +677,7 @@ LEFT JOIN (
 	, 1 AS currently_pregnant
 	FROM hef_timespan ts
 	WHERE name = 'pregnancy'
-            AND start_date between now() and (now() - interval ' 9 months')
+            AND start_date between (now() - interval ' 9 months') and now() 
             AND ( end_date >= now() OR end_date IS NULL)
 ) AS curpreg
 	ON curpreg.patient_id = pat.id
@@ -616,6 +755,7 @@ WHERE pat.date_of_death IS NULL
 -- Ordering
 --
 ORDER BY pat.id
+--) counts group by patient_id) maxcnts
 ;
 
 
