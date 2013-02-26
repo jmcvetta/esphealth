@@ -20,7 +20,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
-from django.db import connection, transaction
+from django.db import connection
 from django.db.models import Q
 from django.db.models import Count
 from django.db.models import Max
@@ -66,7 +66,6 @@ from ESP.ui.forms import ReferenceCaseForm
 from ESP.utils import log
 from ESP.utils import log_query
 from ESP.utils import TableSelectMultiple
-from ESP.vaers.models import AdverseEvent
 
 
 
@@ -113,27 +112,61 @@ def _populate_status_values():
             'reports': reports.order_by('timestamp'),            
             }
     if STATUS_REPORT_TYPE=='VAERS' or STATUS_REPORT_TYPE=='BOTH':
+        wkstrt = str(datetime.date.today().strftime("%Y %W") + ' 1')
+        days = str((datetime.date.today() - datetime.datetime.strptime(wkstrt, "%Y %W %w").date()).days + 1) + ' day'
+        dec4 = str((datetime.date.today() - datetime.datetime.strptime('20121204', "%Y%m%d").date()).days) + ' day'
+        jan1 = str((datetime.date.today() - datetime.datetime.strptime('20130101', "%Y%m%d").date()).days) + ' day'
         values2 = {
-            'aecase_weekcounts': _get_ae_case_counts('week',False),
-            'aecase_weektots': _get_ae_case_counts('week',True),
-            'vx_weekcounts': _get_vx_counts('week',False),
-            'vx_weektots': _get_vx_counts('week',True),
-            'oth_weekcounts':  _get_oth_counts('week',False), 
-            'oth_weektots':  _get_oth_counts('week',True), 
-            'tot_weekcounts':  _get_tot_counts('week',False), 
-            'tot_weektots':  _get_tot_counts('week',True), 
-            'msg_weekcounts': _get_provider_sent_counts('week',False),
-            'msg_weektots': _get_provider_sent_counts('week',True),
-            'aecase_yearcounts': _get_ae_case_counts('year',False),
-            'aecase_yeartots': _get_ae_case_counts('year',True),
-            'vx_yearcounts': _get_vx_counts('year',False),
-            'vx_yeartots': _get_vx_counts('year',True),
-            'oth_yearcounts':  _get_oth_counts('year',False), 
-            'oth_yeartots':  _get_oth_counts('year',True), 
-            'tot_yearcounts':  _get_tot_counts('year',False), 
-            'tot_yeartots':  _get_tot_counts('year',True), 
-            'msg_yearcounts': _get_provider_sent_counts('year',False),
-            'msg_yeartots': _get_provider_sent_counts('year',True),
+            'aecase_dayscounts': _get_ae_case_counts(days,False),
+            'aecase_daystots': _get_ae_case_counts(days,True),
+            'vx_dayscounts': _get_vx_counts(days,False),
+            'vx_daystots': _get_vx_counts(days,True),
+            'oth_dayscounts':  _get_oth_counts(days,False), 
+            'oth_daystots':  _get_oth_counts(days,True), 
+            'tot_dayscounts':  _get_tot_counts(days,False), 
+            'tot_daystots':  _get_tot_counts(days,True), 
+            'msg_dayscounts': _get_provider_sent_counts(days,False),
+            'msg_daystots': _get_provider_sent_counts(days,True),
+            'aecase_dec4counts': _get_ae_case_counts(dec4,False),
+            'aecase_dec4tots': _get_ae_case_counts(dec4,True),
+            'vx_dec4counts': _get_vx_counts(dec4,False),
+            'vx_dec4tots': _get_vx_counts(dec4,True),
+            'oth_dec4counts':  _get_oth_counts(dec4,False), 
+            'oth_dec4tots':  _get_oth_counts(dec4,True), 
+            'tot_dec4counts':  _get_tot_counts(dec4,False), 
+            'tot_dec4tots':  _get_tot_counts(dec4,True), 
+            'msg_dec4counts': _get_provider_sent_counts(dec4,False),
+            'msg_dec4tots': _get_provider_sent_counts(dec4,True),
+            'aecase_jan1counts': _get_ae_case_counts(jan1,False),
+            'aecase_jan1tots': _get_ae_case_counts(jan1,True),
+            'vx_jan1counts': _get_vx_counts(jan1,False),
+            'vx_jan1tots': _get_vx_counts(jan1,True),
+            'oth_jan1counts':  _get_oth_counts(jan1,False), 
+            'oth_jan1tots':  _get_oth_counts(jan1,True), 
+            'tot_jan1counts':  _get_tot_counts(jan1,False), 
+            'tot_jan1tots':  _get_tot_counts(jan1,True), 
+            'msg_jan1counts': _get_provider_sent_counts(jan1,False),
+            'msg_jan1tots': _get_provider_sent_counts(jan1,True),
+            'aecase_weekcounts': _get_ae_case_counts('1 week',False),
+            'aecase_weektots': _get_ae_case_counts('1 week',True),
+            'vx_weekcounts': _get_vx_counts('1 week',False),
+            'vx_weektots': _get_vx_counts('1 week',True),
+            'oth_weekcounts':  _get_oth_counts('1 week',False), 
+            'oth_weektots':  _get_oth_counts('1 week',True), 
+            'tot_weekcounts':  _get_tot_counts('1 week',False), 
+            'tot_weektots':  _get_tot_counts('1 week',True), 
+            'msg_weekcounts': _get_provider_sent_counts('1 week',False),
+            'msg_weektots': _get_provider_sent_counts('1 week',True),
+            'aecase_yearcounts': _get_ae_case_counts('1 year',False),
+            'aecase_yeartots': _get_ae_case_counts('1 year',True),
+            'vx_yearcounts': _get_vx_counts('1 year',False),
+            'vx_yeartots': _get_vx_counts('1 year',True),
+            'oth_yearcounts':  _get_oth_counts('1 year',False), 
+            'oth_yeartots':  _get_oth_counts('1 year',True), 
+            'tot_yearcounts':  _get_tot_counts('1 year',False), 
+            'tot_yeartots':  _get_tot_counts('1 year',True), 
+            'msg_yearcounts': _get_provider_sent_counts('1 year',False),
+            'msg_yeartots': _get_provider_sent_counts('1 year',True),
                   }
     values.update(values1)
     values.update(values2)     
@@ -183,7 +216,6 @@ def labtest_lookup(request):
             result_form = NativeCodeForm()
     else:
         lookup_form = TestSearchForm()
-        native_codes = None
         tests = None
         result_form = None
     values['lookup_form'] = lookup_form
@@ -349,7 +381,6 @@ def ignore_code_set(request):
         msg = 'Request not understood: no test codes specified to be ignored'
         request.user.message_set.create(message=msg)
         return redirect_to(request, reverse('unmapped_labs_report'))
-    details = []
     for nc in native_codes:
         ic_obj, created = IgnoredCode.objects.get_or_create(native_code=nc)
         if created:
@@ -486,8 +517,60 @@ def case_list(request, status):
     values['table'] = table
     values['page'] = page
     values['search_form'] = search_form
+    if request.GET.get('export_csv', None) == 'case_list':
+        return export_case_list(request, qs)
     return render_to_response('ui/case_list.html', values, context_instance=RequestContext(request))
 
+@login_required('nodis.view_phi')
+def export_case_list(request, qs):
+    '''
+    Exports case list from a queryset as a CSV file
+    '''
+    header = [
+        'case_id',
+        'condition',
+        'case_date',
+        'case_detected',
+        'provider_dept',
+        'mrn',
+        'last_name',
+        'first_name',
+        'date_of_birth',
+        'collection_date',
+        'result_date',
+        'status',
+        'sent_date',
+        ]
+    response = HttpResponse(mimetype='text/csv')
+    response['Content-Disposition'] = 'attachment;filename=case_list.csv'
+    writer = csv.writer(response)
+    writer.writerow(header)
+    for a_case in qs:
+        if a_case.created_timestamp:
+            created_date = a_case.created_timestamp.date()
+        else:
+            created_date = None
+        if a_case.sent_timestamp:
+            sent_date = a_case.sent_timestamp.date()
+        else:
+            sent_date = None
+        row = [
+            a_case.id,
+            a_case.condition,
+            a_case.date,
+            created_date,
+            a_case.provider.dept,
+            a_case.patient.mrn,
+            a_case.patient.last_name,
+            a_case.patient.first_name,
+            a_case.patient.date_of_birth,
+            a_case.collection_date,
+            a_case.result_date,
+            a_case.status,
+            sent_date,
+            ]
+        writer.writerow(row)
+    return response
 
 
 @login_required
@@ -607,7 +690,8 @@ def _get_provider_sent_counts(interval,total):
     '''
     cursor1 = connection.cursor()
     if total:
-        cursor1.execute("select 'Totals' provider, count(distinct ques_id) initial, " +
+        cursor1.execute("select 'Totals' provider, " +
+           "count(distinct case when state='AR' then ques_id end) initial, " +
            "count(distinct case when state='S' then ques_id end) sent, " +
            "count(distinct case when state in ('FP','FU') then ques_id end) false_positive, " +
            "count(distinct case when state='AS' then ques_id end) autosent " +
@@ -618,9 +702,9 @@ def _get_provider_sent_counts(interval,total):
            "(select a.id ques_id, a.provider_id, a.state, a.created_on, " +
            "b.id sent_id, b.report_type " +
            "from vaers_questionnaire a left join vaers_report_sent b on a.id=b.questionnaire_id " +
-           "where a.created_on > current_timestamp - interval '1" + interval + "' " +
-           "or b.date > current_date - interval '1" + interval + "' ) t0 " +
-           "inner join (select a.id, a.first_name, a.last_name, b.id sent_id, b.date_added from emr_provider a " +
+           "where a.created_on > current_date - interval '" + interval + "' " +
+           "or b.date > current_date - interval '" + interval + "' ) t0 " +
+           "left join (select a.id, a.first_name, a.last_name, b.id sent_id, b.date_added from emr_provider a " +
            "     left join vaers_sender b on a.id=b.provider_id) t1  " +
            "on t0.provider_id=t1.id) vaers_reports ")
     else:
@@ -636,9 +720,9 @@ def _get_provider_sent_counts(interval,total):
            "(select a.id ques_id, a.provider_id, a.state, a.created_on, " +
            "b.id sent_id, b.report_type " +
            "from vaers_questionnaire a left join vaers_report_sent b on a.id=b.questionnaire_id " +
-           "where a.created_on > current_timestamp - interval '1" + interval + "' " +
-           "or b.date > current_date - interval '1" + interval + "' ) t0 " +
-           "inner join (select a.id, a.first_name, a.last_name, b.id sent_id, b.date_added from emr_provider a " +
+           "where a.created_on > current_date - interval '" + interval + "' " +
+           "or b.date > current_date - interval '" + interval + "' ) t0 " +
+           "left join (select a.id, a.first_name, a.last_name, b.id sent_id, b.date_added from emr_provider a " +
            "     left join vaers_sender b on a.id=b.provider_id) t1  " +
            "on t0.provider_id=t1.id) vaers_reports " +
            "group by provider;")
@@ -657,28 +741,52 @@ def _get_oth_counts(interval,totals):
     if totals:
         cursor1.execute("select '' diag_code, 'Totals' as name, " +
                        "count(distinct a.id) as ae_counts,  " +
-                       "count(distinct a.case_id) as case_counts " +
+                       "count(distinct a.case_id) as case_counts, " +
+                       "count(distinct a.ar) as for_review, " +
+                       "count(distinct a.s) as confirmed, " +
+                       "count(distinct a.fp) as false_pos, " +
+                       "count(distinct a.ats) as autosent " +
                     "from " +
                     "(select regexp_split_to_table(a.matching_rule_explain, E'\\\s+') as diag_code, " +
                      "      b.case_id, " +
-                     "      a.id " +
+                     "      a.id, " +
+                     "      case when c.state='AR' then c.id end as ar, " +
+                     "      case when c.state='S' then c.id end as s, " +
+                     "      case when c.state in ('FP','FU') then c.id end as fp, " +
+                     "      case when c.state='AS' then c.id end as ats " +
                     "from vaers_adverseevent a, " +
-                    "     vaers_case_adverse_events b " +
+                    "     vaers_case_adverse_events b, " +
+                    "     vaers_questionnaire c " +
+                    " left join vaers_report_sent d on c.id=d.questionnaire_id " +
                     "where a.id=b.adverseevent_id " +
-                    "     and a.date > current_date - interval '1 " + interval + "' " +
+                    "     and (c.created_on > current_date - interval '" + interval + "' " +
+                    "          or d.date > current_date - interval '" + interval + "') " +
+                    "     and c.case_id=b.case_id " +
                     "     and a.name='VAERS: Any other Diagnosis') a ")
     else:
         cursor1.execute("select a.diag_code, substring(b.name,1,50) as name, " +
                        "count(distinct a.id) as ae_counts,  " +
-                       "count(distinct a.case_id) as case_counts " +
+                       "count(distinct a.case_id) as case_counts, " +
+                       "count(distinct a.ar) as for_review, " +
+                       "count(distinct a.s) as confirmed, " +
+                       "count(distinct a.fp) as false_pos, " +
+                       "count(distinct a.ats) as autosent " +
                     "from " +
                     "(select regexp_split_to_table(a.matching_rule_explain, E'\\\s+') as diag_code, " +
                      "      b.case_id, " +
-                     "      a.id " +
+                     "      a.id, " +
+                     "      case when c.state='AR' then c.id end as ar, " +
+                     "      case when c.state='S' then c.id end as s, " +
+                     "      case when c.state in ('FP','FU') then c.id end as fp, " +
+                     "      case when c.state='AS' then c.id end as ats " +
                     "from vaers_adverseevent a, " +
-                    "     vaers_case_adverse_events b " +
+                    "     vaers_case_adverse_events b, " +
+                    "     vaers_questionnaire c " +
+                    " left join vaers_report_sent d on c.id=d.questionnaire_id " +
                     "where a.id=b.adverseevent_id " +
-                    "     and a.date > current_date - interval '1 " + interval + "' " +
+                    "     and (c.created_on > current_date - interval '" + interval + "' " +
+                    "          or d.date > current_date - interval '" + interval + "') " +
+                    "     and c.case_id=b.case_id " +
                     "     and a.name='VAERS: Any other Diagnosis') a, " +
                     "     static_icd9 b " +
                     "where a.diag_code=b.code " +
@@ -698,18 +806,18 @@ def _get_tot_counts(interval,totals):
     if totals:
         cursor1.execute("select 'Totals' source, sum(counts) as counts from " +
                     "(select 'Labs' as source, count(*) as counts from emr_labresult " +
-                    "where date > current_date - interval '1 " + interval + "' " +
+                    "where date > current_date - interval '" + interval + "' " +
                     "union select 'Visits' as source, count(*) as counts from emr_encounter " +
-                    "where date > current_date - interval '1 " + interval + "' " +
+                    "where date > current_date - interval '" + interval + "' " +
                     "union select 'Prescriptions' as source, count(*) as counts from emr_prescription " +
-                    "where date > current_date - interval '1 " + interval + "' ) t0 ")
+                    "where date > current_date - interval '" + interval + "' ) t0 ")
     else:
         cursor1.execute("select 'Labs' as source, count(*) as counts from emr_labresult " +
-                    "where date > current_date - interval '1 " + interval + "' " +
+                    "where date > current_date - interval '" + interval + "' " +
                     "union select 'Visits' as source, count(*) as counts from emr_encounter " +
-                    "where date > current_date - interval '1 " + interval + "' " +
+                    "where date > current_date - interval '" + interval + "' " +
                     "union select 'Prescriptions' as source, count(*) as counts from emr_prescription " +
-                    "where date > current_date - interval '1 " + interval + "' ")
+                    "where date > current_date - interval '" + interval + "' ")
     desc = cursor1.description
     table = [dict(zip([col[0] for col in desc], row))
             for row in cursor1.fetchall()]
@@ -724,11 +832,11 @@ def _get_vx_counts(interval,totals):
     if totals:
         cursor1.execute("select 'Totals' as name, count(*) as vx_counts " +
                     "from emr_immunization " +
-                    "where isvaccine and date > current_date - interval '1 " + interval + "' ")
+                    "where isvaccine and date > current_date - interval '" + interval + "' ")
     else:
         cursor1.execute("select substring(name,1,50) as name, count(*) as vx_counts " +
                     "from emr_immunization " +
-                    "where isvaccine and date > current_date - interval '1 " + interval + "' " +
+                    "where isvaccine and date > current_date - interval '" + interval + "' " +
                     "group by name " +
                     "order by count(*) desc")
     desc = cursor1.description
@@ -744,22 +852,38 @@ def _get_ae_case_counts(interval,totals):
     cursor1 = connection.cursor()
     if totals:
         cursor1.execute("select '' category, '' ae_basis, 'Totals' ae_name, " +
-                   "   count(distinct a.*) as ae_count, count(distinct b.case_id) as case_count " +
+                   "   count(distinct a.*) as ae_count, count(distinct b.case_id) as case_count, " +
+                     "      count(distinct case when d.state='AR' then d.id end) as for_review, " +
+                     "      count(distinct case when d.state='S' then d.id end) as confirmed, " +
+                     "      count(distinct case when d.state in ('FP','FU') then d.id end) as false_pos, " +
+                     "      count(distinct case when d.state='AS' then d.id end) as autosent " +
                    "from vaers_adverseevent a, " +
                    "     vaers_case_adverse_events b, " +
-                   "     django_content_type c " +
+                   "     django_content_type c, " +
+                   "     vaers_questionnaire d  " +
+                   "left join vaers_report_sent e on d.id=e.questionnaire_id " +
                    "where a.id=b.adverseevent_id  " +
                    "     and a.content_type_id=c.id " +
-                   "     and a.created_on > current_timestamp - interval '1 " + interval + "' ")
+                   "     and b.case_id=d.case_id " +
+                   "     and (d.created_on > current_date - interval '" + interval + "' " +
+                   "           or e.date > current_date - interval '" + interval + "') ")
     else:
         cursor1.execute("select a.category, c.name as ae_basis, substring(a.name,1,42) as ae_name, " +
-                   "   count(distinct a.*) as ae_count, count(distinct b.case_id) as case_count " +
+                   "   count(distinct a.*) as ae_count, count(distinct b.case_id) as case_count, " +
+                     "      count(distinct case when d.state='AR' then d.id end) as for_review, " +
+                     "      count(distinct case when d.state='S' then d.id end) as confirmed, " +
+                     "      count(distinct case when d.state in ('FP','FU') then d.id end) as false_pos, " +
+                     "      count(distinct case when d.state='AS' then d.id end) as autosent " +
                    "from vaers_adverseevent a, " +
                    "     vaers_case_adverse_events b, " +
-                   "     django_content_type c " +
+                   "     django_content_type c, " +
+                   "     vaers_questionnaire d   " +
+                   "left join vaers_report_sent e on d.id=e.questionnaire_id " +
                    "where a.id=b.adverseevent_id  " +
                    "     and a.content_type_id=c.id " +
-                   "     and a.created_on > current_timestamp - interval '1 " + interval + "' " +
+                   "     and b.case_id=d.case_id " +
+                   "     and (d.created_on > current_date - interval '" + interval + "' " +
+                   "           or e.date > current_date - interval '" + interval + "') " +
                    "group by a.category, c.name, a.name " +
                    "order by a.category, c.name, count(a.*) desc")
     desc = cursor1.description
