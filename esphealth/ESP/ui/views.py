@@ -499,6 +499,8 @@ def case_list(request, status):
             if patient_last_name:
                 qs = qs.filter(patient__last_name__istartswith=patient_last_name)
     log_query('Nodis case list', qs)
+    if request.GET.get('export_csv', None) == 'case_list':
+        return export_case_list(request, qs)
     table = CaseTable(qs, order_by=request.GET.get('sort', '-id'))
     page = Paginator(table.rows, ROWS_PER_PAGE).page(request.GET.get('page', 1))
     # Remove '?sort=' bit from full URL path
@@ -517,11 +519,9 @@ def case_list(request, status):
     values['table'] = table
     values['page'] = page
     values['search_form'] = search_form
-    if request.GET.get('export_csv', None) == 'case_list':
-        return export_case_list(request, qs)
     return render_to_response('ui/case_list.html', values, context_instance=RequestContext(request))
 
-@login_required('nodis.view_phi')
+@login_required
 def export_case_list(request, qs):
     '''
     Exports case list from a queryset as a CSV file
