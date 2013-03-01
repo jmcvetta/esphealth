@@ -97,7 +97,7 @@ class Pertussis(DiseaseDefinition):
             ]:
             heuristic_list.append( LabResultAnyHeuristic(
                 test_name = test_name,
-                date_field = 'result',
+                date_field = 'order',
                 ) )
         
         

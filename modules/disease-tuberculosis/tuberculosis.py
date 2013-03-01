@@ -71,7 +71,7 @@ class Tuberculosis(DiseaseDefinition):
                 ]
             ))
         
-        # defining any lab heuristic to be able to map them
+        # defining any lab order heuristic to be able to map them
         for test_name in [
             'tuberculosis_pcr',
             'tuberculosis_afb',
@@ -79,7 +79,7 @@ class Tuberculosis(DiseaseDefinition):
             ]:
             heuristic_list.append( LabResultAnyHeuristic(
                 test_name = test_name,
-                date_field = 'result',
+                date_field = 'order',
                 ) )
         
         #
