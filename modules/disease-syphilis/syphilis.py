@@ -115,7 +115,7 @@ class Syphilis(DiseaseDefinition):
             test_name = 'tp-igg',
             ))
         heuristic_list.append( LabResultPositiveHeuristic(
-            test_name = 'vrdl-csf',
+            test_name = 'vdrl-csf',
             ))
         return heuristic_list
     
@@ -147,7 +147,7 @@ class Syphilis(DiseaseDefinition):
         #
         rpr_ev_names = [
             'lx:rpr:positive',
-            'lx:vrdl:positive',
+            'lx:vdrl:positive',
             ]
         tppa_ev_names = [
             'lx:tppa:positive',
@@ -162,16 +162,16 @@ class Syphilis(DiseaseDefinition):
         #
         # Criteria Set #3
         #
-        vrdl_csf_ev_names = ['lx:vrdl-csf:positive']
-        vrdl_csf_qs = Event.objects.filter(name__in=vrdl_csf_ev_names)
+        vdrl_csf_ev_names = ['lx:vdrl-csf:positive']
+        vdrl_csf_qs = Event.objects.filter(name__in=vdrl_csf_ev_names)
         #
         # Combined Criteria
         #
-        combined_criteria_qs = dxrx_event_qs | test_event_qs | vrdl_csf_qs
+        combined_criteria_qs = dxrx_event_qs | test_event_qs | vdrl_csf_qs
         combined_criteria_qs = combined_criteria_qs.exclude(case__condition='syphilis')
         # ordering here doesnt matter because create cases from event sorts again
         combined_criteria_qs = combined_criteria_qs.order_by('date')
-        all_event_names = dx_ev_names + rx_ev_names + rpr_ev_names + tppa_ev_names + vrdl_csf_ev_names
+        all_event_names = dx_ev_names + rx_ev_names + rpr_ev_names + tppa_ev_names + vdrl_csf_ev_names
         counter = 0
         new_case_count = self._create_cases_from_event_qs(
             condition = 'syphilis',
