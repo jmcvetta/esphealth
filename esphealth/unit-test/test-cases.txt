@@ -68,16 +68,26 @@ multiple encounter type test:
  same patient with encounter after 2nd with type hospitalized with same icd9 within 30 days immunization  
  same patient with encounter after 2nd  type (VISIT) with Code Z, NEG within 30 days immunization  
          
-SS
-3 patients (should generate 2 cases)
+ILI
+4 patients (should generate 4 cases out of 6 scenarios) specialty clinic or urgent care only 2.x
 1 patient with 1 encounter with icd9 respiratory code defined in influenza_like_illness from definitions.py
- with temperature >  100.0 set with sites on a non specialty clinic and URGENT CARE  kruskal
+ with temperature >  100.0 set with sites on a non specialty clinic and URGENT CARE  nick
 1 patient with 1 encounter with icd9 respiratory code and influenza_like_illness defined in ICD9_FEVER_CODES with 
-  temperature not recorded set with sites on a non specialty clinic and URGENT CARE alvaroD
+  temperature not recorded set with sites on a non specialty clinic and URGENT CARE lazarus
+same patient with 1 encounter with  influenza_like_illness defined in 
+   ICD9_FEVER_CODES after within 42 days of respiratory code with 
+  temperature not recorded set with sites on a non specialty clinic and URGENT CARE  lazarus
+same patient with 1 encounter with icd9 respiratory code and influenza_like_illness defined in 
+   ICD9_FEVER_CODES after after 42 days of respiratory code with 
+  temperature not recorded set with sites on a non specialty clinic and URGENT CARE NEG lazarus
+1 patient with 1 encounter with icd9 respiratory code and influenza_like_illness defined in ICD9_FEVER_CODES with 
+  temperature < 100 set with sites on a non specialty clinic and URGENT CARE NEG kyle
 1 patient with 1 encounter with icd9 respiratory code defined in influenza_like_illness from definitions.py
- with temperature < 100.0 set with sites on a non specialty clinic and URGENT CARE. NEG platt
-1 patient with 1 encounter with icd9 respiratory code and influenza_like_illness defined in ICD9_FEVER_CODES with 
-  temperature < 100 set with sites on a non specialty clinic and URGENT CARE  NEG  patricA
+ with temperature < 100.0 set with sites on a non specialty clinic and URGENT CARE. NEG shane
+same patient with 1 encounter with fever diagnosis but no ili diagnosis with no measured temp NEG shane
+same patient with 1 encounter with with icd9 respiratory code defined in influenza_like_illness from definitions.pyon 
+  with 3 months later date NEG
+
 
 LYME
 5 patients (should generate 4 cases)
