@@ -117,6 +117,14 @@ class Syphilis(DiseaseDefinition):
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'vdrl-csf',
             ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'tppa-csf',
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'fta-abs-csf',
+            ))
+        
+
         return heuristic_list
     
     @transaction.commit_on_success
@@ -162,7 +170,10 @@ class Syphilis(DiseaseDefinition):
         #
         # Criteria Set #3
         #
-        vdrl_csf_ev_names = ['lx:vdrl-csf:positive']
+        vdrl_csf_ev_names = ['lx:vdrl-csf:positive',
+                             'lx:fta-abs-csf:positive',
+                             'lx:tppa-csf:positive', 
+                                ]
         vdrl_csf_qs = Event.objects.filter(name__in=vdrl_csf_ev_names)
         #
         # Combined Criteria
