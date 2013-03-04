@@ -71,7 +71,8 @@ class Tuberculosis(DiseaseDefinition):
                 ]
             ))
         
-        # defining any lab order heuristic to be able to map them
+        # defining any lab result heuristic to be able to map them
+        # using the order date as the date of the heuristic
         for test_name in [
             'tuberculosis_pcr',
             'tuberculosis_afb',
