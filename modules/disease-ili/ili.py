@@ -25,37 +25,7 @@ from ESP.nodis.base import DiseaseDefinition, Case
 from ESP.static.models import DrugSynonym
 from ESP.emr.models import Encounter
 
-class EncMeasuredFeverHeuristic(BaseEventHeuristic):
-    
-    event_names = ['enc:measured-fever'] 
-    
-    uri = 'urn:x-esphealth:heuristic:channing:encounter:measured-fever:v1'
-    
-    core_uris = ['urn:x-esphealth:hef:core:v1']
-    
-    short_name = 'enc:measured-fever'
-    
-    FEVER_TEMPERATURE = 100.0 # Temperature in Fahrenheit
-    
-    def generate(self):
-        counter = 0
-        
-        enc_qs = Encounter.objects.filter(temperature__isnull=False, temperature__gte=self.FEVER_TEMPERATURE)
-        enc_qs = enc_qs.exclude(events__name__in=self.event_names)
-        
-        for this_enc in enc_qs:
-            Event.create(
-                name = 'enc:measured-fever',
-                source = self.uri, 
-                date = this_enc.date, 
-                patient = this_enc.patient, 
-                provider = this_enc.provider,
-                emr_record = this_enc
-                )
-            counter += 1
-        log.info('Generated %s new %s events' % (counter, self))
-        return counter
-    
+
 
 class ili(DiseaseDefinition):
     '''
@@ -79,10 +49,7 @@ class ili(DiseaseDefinition):
     @property
     def event_heuristics(self):
         heuristic_list = []
-        #
-        # Measured fever in encounters 
-        #
-        heuristic_list.append( EncMeasuredFeverHeuristic() )
+        
         #
         # Diagnosis Codes for fever
         #  
@@ -146,16 +113,15 @@ class ili(DiseaseDefinition):
         
         dx_ev_names = ['dx:ili',]
         dx_fever_ev_names = ['dx:fever',]
-        enc_ev_names = ['enc:measured-fever',]
  
         #
         # combined criteria
         #
-        # Criteria Set #a 
-        # diagosis of ili and measured temperature >= 100
+        # Criteria Set #A 
+        # diagnosis of ili and measured temperature >= 100
         #
-        # Criteria Set #b 
-        # diagosis of ili and no temperature measured but diagnosis of fever 
+        # Criteria Set #B 
+        # diagnosis of ili and no temperature measured but diagnosis of fever 
         #
         # Combined Criteria
         # Make it really readable. 
@@ -169,36 +135,37 @@ class ili(DiseaseDefinition):
             patient__event__encounter__exact  = (F('encounter')),
             encounter__temperature__isnull=True,
             ) 
-        
-        dx_ili_measured_fever_qs = Event.objects.filter(
-            name__in = dx_ev_names,
-            encounter__temperature__gte = self.FEVER_TEMPERATURE,
-            )
 
-
-        ili_criteria_qs1 = dx_ili_measured_fever_qs 
+        ili_criteria_qs1 =  dx_ili_fever_qs
         ili_criteria_qs1 = ili_criteria_qs1.exclude(case__condition='ili')
         ili_criteria_qs1 = ili_criteria_qs1.order_by('date')
         all_event_names =  dx_ev_names + dx_fever_ev_names 
         
         counter = self._create_cases_from_event_qs( 
             condition = 'ili', 
-            criteria = 'ili criteria a', 
+            criteria = 'dx:ili and no temp measured and dx:fever', 
             recurrence_interval = 42,
             event_qs = ili_criteria_qs1, 
             relevant_event_names = all_event_names )
-       
-        ili_criteria_qs2 =  dx_ili_fever_qs
+        
+        
+        dx_ili_measured_fever_qs = Event.objects.filter(
+            name__in = dx_ev_names,
+            encounter__temperature__gte = self.FEVER_TEMPERATURE,
+            )
+
+        ili_criteria_qs2 = dx_ili_measured_fever_qs 
         ili_criteria_qs2 = ili_criteria_qs2.exclude(case__condition='ili')
         ili_criteria_qs2 = ili_criteria_qs2.order_by('date')
         all_event_names =  dx_ev_names 
         
         counter += self._create_cases_from_event_qs( 
             condition = 'ili', 
-            criteria = 'ili criteria b', 
+            criteria = 'dx:ili and measured temp >= 100', 
             recurrence_interval = 42,
             event_qs = ili_criteria_qs2, 
             relevant_event_names = all_event_names )
+       
         
            
         log.debug('Generated %s new cases of ili' % counter)
