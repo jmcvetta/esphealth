@@ -114,19 +114,11 @@ class ili(DiseaseDefinition):
         dx_ev_names = ['dx:ili',]
         dx_fever_ev_names = ['dx:fever',]
  
+        # adding cases for each criterion separately because django generates 
+        # bad sql when you use '|' to combine query sets.
         #
-        # combined criteria
-        #
-        # Criteria Set #A 
-        # diagnosis of ili and measured temperature >= 100
-        #
-        # Criteria Set #B 
+        # Criteria Set #b 
         # diagnosis of ili and no temperature measured but diagnosis of fever 
-        #
-        # Combined Criteria
-        # Make it really readable. 
-        # (icd9 code + measured fever) or (icd9 code + icd9code for fever)
-        # Logically: (a&b)+(a&c) = a&(b+c)
         #
        
         dx_ili_fever_qs = Event.objects.filter(
@@ -148,6 +140,10 @@ class ili(DiseaseDefinition):
             event_qs = ili_criteria_qs1, 
             relevant_event_names = all_event_names )
         
+        #
+        # Criteria Set #a 
+        # diagnosis of ili and measured temperature >= 100
+        #
         
         dx_ili_measured_fever_qs = Event.objects.filter(
             name__in = dx_ev_names,
