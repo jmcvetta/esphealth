@@ -69,7 +69,7 @@ multiple encounter type test:
  same patient with encounter after 2nd  type (VISIT) with Code Z, NEG within 30 days immunization  
          
 ILI
-4 patients (should generate 4 cases out of 6 scenarios) specialty clinic or urgent care only 2.x
+4 patients (should generate 3 cases) specialty clinic or urgent care only 2.x
 1 patient with 1 encounter with icd9 respiratory code defined in influenza_like_illness from definitions.py
  with temperature >  100.0 set with sites on a non specialty clinic and URGENT CARE  nick
 1 patient with 1 encounter with icd9 respiratory code and influenza_like_illness defined in ICD9_FEVER_CODES with 
