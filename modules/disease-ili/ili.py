@@ -16,7 +16,6 @@
 # be converted into SQL, only timedelta is supported.
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
-
 from django.db import transaction
 from django.db.models import Avg, Count, F, Max, Min, Q, Sum
 from ESP.utils import log
@@ -24,6 +23,39 @@ from ESP.hef.base import Event, BaseEventHeuristic,LabResultAnyHeuristic,  Presc
 from ESP.hef.base import Dose, LabResultPositiveHeuristic, LabOrderHeuristic, DiagnosisHeuristic, Icd9Query
 from ESP.nodis.base import DiseaseDefinition, Case
 from ESP.static.models import DrugSynonym
+from ESP.emr.models import Encounter
+
+class EncMeasuredFeverHeuristic(BaseEventHeuristic):
+    
+    event_names = ['enc:measured-fever'] 
+    
+    uri = 'urn:x-esphealth:heuristic:channing:encounter:measured-fever:v1'
+    
+    core_uris = ['urn:x-esphealth:hef:core:v1']
+    
+    short_name = 'enc:measured-fever'
+    
+    FEVER_TEMPERATURE = 100.0 # Temperature in Fahrenheit
+    
+    def generate(self):
+        counter = 0
+        
+        enc_qs = Encounter.objects.filter(temperature__isnull=False, temperature__gte=self.FEVER_TEMPERATURE)
+        enc_qs = enc_qs.exclude(events__name__in=self.event_names)
+        
+        for this_enc in enc_qs:
+            Event.create(
+                name = 'enc:measured-fever',
+                source = self.uri, 
+                date = this_enc.date, 
+                patient = this_enc.patient, 
+                provider = this_enc.provider,
+                emr_record = this_enc
+                )
+            counter += 1
+        log.info('Generated %s new %s events' % (counter, self))
+        return counter
+    
 
 class ili(DiseaseDefinition):
     '''
@@ -48,8 +80,12 @@ class ili(DiseaseDefinition):
     def event_heuristics(self):
         heuristic_list = []
         #
-        # Diagnosis Codes
-        #  ili
+        # Measured fever in encounters 
+        #
+        heuristic_list.append( EncMeasuredFeverHeuristic() )
+        #
+        # Diagnosis Codes for fever
+        #  
         heuristic_list.append( DiagnosisHeuristic(
             name = 'fever',
             icd9_queries = [
@@ -57,7 +93,9 @@ class ili(DiseaseDefinition):
                  Icd9Query(starts_with='780.31'),
                 ]))
         
-                
+        #
+        # Diagnosis Codes for ili
+        #        
         heuristic_list.append( DiagnosisHeuristic(
             name = 'ili',
             icd9_queries = [
@@ -104,46 +142,62 @@ class ili(DiseaseDefinition):
         
     @transaction.commit_on_success
     def generate(self):
-        log.info('Generating cases of %s' % self.short_name)
-       
-        #
-        # Criteria Set #1 
-        # diagosis of ili and measured fever > 100
-        #
+        log.info('Generating cases of %s' % self.short_name)       
         
         dx_ev_names = ['dx:ili',]
-        q_measured_fever = Q(patient__event__encounter__temperature__gte =  self.FEVER_TEMPERATURE)
-        
-        #
-        # Criteria Set #2 
-        #  diagosis of ili and no fever measured but diagnosis of fever
-        #
-        
         dx_fever_ev_names = ['dx:fever',]
-        q_unmeasured_fever = Q(patient__event__encounter__temperature__isnull=True, patient__event__name__in=dx_fever_ev_names)
-        
+        enc_ev_names = ['enc:measured-fever',]
+ 
         #
         # combined criteria
         #
+        # Criteria Set #a 
+        # diagosis of ili and measured temperature >= 100
+        #
+        # Criteria Set #b 
+        # diagosis of ili and no temperature measured but diagnosis of fever 
+        #
+        # Combined Criteria
         # Make it really readable. 
         # (icd9 code + measured fever) or (icd9 code + icd9code for fever)
         # Logically: (a&b)+(a&c) = a&(b+c)
-        influenza = (q_measured_fever | q_unmeasured_fever)
+        #
+       
+        dx_ili_fever_qs = Event.objects.filter(
+            name__in = dx_ev_names,
+            patient__event__name__in = dx_fever_ev_names,
+            patient__event__encounter__exact  = (F('encounter')),
+            encounter__temperature__isnull=True,
+            ) 
         
-        #
-        # Combined Criteria
-        #
-        combined_criteria_qs =  Event.objects.filter(name__in = dx_ev_names).filter(influenza)
-                
-        combined_criteria_qs = combined_criteria_qs.exclude(case__condition='ili')
-        combined_criteria_qs = combined_criteria_qs.order_by('date')
+        dx_ili_measured_fever_qs = Event.objects.filter(
+            name__in = dx_ev_names,
+            encounter__temperature__gte = self.FEVER_TEMPERATURE,
+            )
+
+
+        ili_criteria_qs1 = dx_ili_measured_fever_qs 
+        ili_criteria_qs1 = ili_criteria_qs1.exclude(case__condition='ili')
+        ili_criteria_qs1 = ili_criteria_qs1.order_by('date')
         all_event_names =  dx_ev_names + dx_fever_ev_names 
         
         counter = self._create_cases_from_event_qs( 
             condition = 'ili', 
-            criteria = 'combined ili criteria a and b', 
+            criteria = 'ili criteria a', 
             recurrence_interval = 42,
-            event_qs = combined_criteria_qs, 
+            event_qs = ili_criteria_qs1, 
+            relevant_event_names = all_event_names )
+       
+        ili_criteria_qs2 =  dx_ili_fever_qs
+        ili_criteria_qs2 = ili_criteria_qs2.exclude(case__condition='ili')
+        ili_criteria_qs2 = ili_criteria_qs2.order_by('date')
+        all_event_names =  dx_ev_names 
+        
+        counter += self._create_cases_from_event_qs( 
+            condition = 'ili', 
+            criteria = 'ili criteria b', 
+            recurrence_interval = 42,
+            event_qs = ili_criteria_qs2, 
             relevant_event_names = all_event_names )
         
            
