@@ -105,6 +105,13 @@ class Lyme(DiseaseDefinition):
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'lyme_pcr',
             ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'lyme_pcr_csf',
+            ))
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'lyme_ab_csf',
+            ))
+        
         #
         # Lab order/any result
         #
@@ -150,6 +157,8 @@ class Lyme(DiseaseDefinition):
         # 
         lx_ev_names = [ 
             'lx:lyme_pcr:positive',
+            'lx:lyme_pcr_csf:positive',
+            'lx:lyme_ab_csf:positive',
             'lx:lyme_igg_wb:positive',
             'lx:lyme_igm_wb:positive',  ]
         
