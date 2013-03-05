@@ -105,7 +105,15 @@ ALTER TABLE vaers_report_sent
 -- ----------------------------------------------------------------
 ALTER TABLE emr_encounter RENAME COLUMN o2_stat TO o2_sat;
 ALTER TABLE emr_encounter RENAME COLUMN raw_o2_stat TO raw_o2_sat;
-
+-- ----------------------------------------------------------------
+-- 2013-03-04
+-- Bob Zambarano
+-- ----------------------------------------------------------------
+ALTER TABLE emr_provenance
+  ADD COLUMN raw_rec_count integer,
+  ADD COLUMN insert_count integer,
+  ADD COLUMN update_count integer,
+  ADD COLUMN post_load_count integer;
 
 
 

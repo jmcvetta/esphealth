@@ -4,19 +4,16 @@
                          EpicCare Extract File Loader
 
 
-@author: Jason McVetta <jason.mcvetta@gmail.com>
-@organization: Channing Laboratory - http://www.channing.harvard.edu
+@author: Bob Zambarano <bzambarano@commoninf.com>
+@organization: Commonwealth Informatics - http://www.commoninf.com
 @contact: http://esphealth.org
-@copyright: (c) 2009-2010 Channing Laboratory
+@copyright: (c) 2013 Commonwealth Informatics
 @license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
 '''
 
 
 EPIC_ENCODING = 'iso-8859-15'
 #EPIC_ENCODING = 'windows-1252'
-#ROW_LOG_COUNT = 10000  # Log progress every N rows.  'None' to disable. '-1' to log progress every row
-ROW_LOG_COUNT = -1  # Log progress every N rows.  'None' to disable. '-1' to log progress every row
-
 
 import csv
 import sys
@@ -26,22 +23,17 @@ import datetime
 import time
 import re
 import pprint
-import shutil
 import string
+import collections
 from optparse import make_option
 from decimal import Decimal
 
-from django.db import transaction
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.utils.encoding import DjangoUnicodeDecodeError
+from django.core.mail import EmailMultiAlternatives
 
-
-from ESP.settings import DATA_DIR
-from ESP.settings import DATE_FORMAT
-from ESP.settings import DEBUG
-from ESP.settings import ETL_MEDNAMEREVERSE
+from ESP.settings import DEBUG, ETL_MEDNAMEREVERSE, ROW_LOG_COUNT, TRANSACTION_ROW_LIMIT
 from ESP.utils import log
-from ESP.utils import str_from_date
 from ESP.utils.utils import float_or_none
 from ESP.utils.utils import string_or_none
 from ESP.utils.utils import sanitize_str
@@ -63,7 +55,7 @@ from ESP.emr.models import SocialHistory, Problem, Allergy, Hospital_Problem
 from ESP.emr.management.commands.common import LoaderCommand
 from ESP.emr.base import SiteDefinition
 from ESP.conf.models import VaccineCodeMap
-
+from ESP.settings import SITE_NAME, EMAIL_SUBJECT_PREFIX, SERVER_EMAIL, MANAGERS, LOAD_REPORT_DIR
 
     
 # 
@@ -134,9 +126,6 @@ class LoadException(BaseException):
 
 
 class BaseLoader(object):
-    
-    
-    
     #
     # Caching Note
     #
@@ -153,28 +142,38 @@ class BaseLoader(object):
     __patient_cache = {} # {patient_id: Patient instance}
     __provider_cache = {} # {provider_id: Provider instance}
     
-    def __init__(self, filepath):
+    def __init__(self, filepath, options):
         assert os.path.isfile(filepath)
         path, filename = os.path.split(filepath)
         self.filename = filename
         self.filepath = filepath
+        file_handle = open(filepath)
+        self.line_count = len(file_handle.readlines())
         prov, created = Provenance.objects.get_or_create(source=filename)
         prov.wtimestamp = TIMESTAMP
         prov.hostname = socket.gethostname()
         prov.data_date = date_from_filepath(filepath)
         prov.status = 'attempted'
-        prov.save()
+        prov.raw_rec_count = self.line_count
         if created:
             log.debug('Creating new provenance record #%s for %s' % (prov.pk, filename))
         else:
             log.debug('Updating existing provenance record #%s for %s' % (prov.pk, filename))
+            #set counters to zero
+            prov.valid_rec_count = 0 
+            prov.insert_count = 0 
+            prov.update_count = 0 
+            prov.post_load_count = 0
+            prov.error_count = 0 
+            
+        prov.save()
         self.provenance = prov
-        file_handle = open(filepath)
-        self.line_count = len(file_handle.readlines())
         file_handle.seek(0) # Reset file position after counting lines
         self.reader = csv.DictReader(file_handle, fieldnames=self.fields, dialect='epic')
-        
         self.created_on = datetime.datetime.now()
+        self.inserted = 0
+        self.updated = 0
+        self.options = options
     
     def get_patient(self, natural_key):
         if not natural_key:
@@ -208,6 +207,7 @@ class BaseLoader(object):
             self.__provider_cache[natural_key] = p
         return self.__provider_cache[natural_key]
     
+
     def insert_or_update(self, model, field_values, key_fields):
         '''
         Attempts to create a new instance of model using field_values.  If 
@@ -224,13 +224,13 @@ class BaseLoader(object):
         '''
         sid = transaction.savepoint()
         try:
+            #first try to create (insert) a new record
             obj = model(**field_values)
             obj.save()
-            transaction.savepoint_commit(sid) # not terribly useful, since we already saved it above.
             created = True
         except IntegrityError:
+            #this integrity error we hope is due to a previously loaded record being updated, so now we try to update
             transaction.savepoint_rollback(sid)
-            
             keys = {}
             for field_name in key_fields:
                 keys[field_name] = field_values[field_name]
@@ -244,12 +244,15 @@ class BaseLoader(object):
                 for field_name in field_values:
                     setattr(obj, field_name, field_values[field_name])
                 obj.save()
-            except IntegrityError:
+            except:
+                #most likely missing a non-null field
                 transaction.savepoint_rollback(sid)
-                log.debug('Record could not be saved')
-                obj=''
-                created=False
-                raise
+                log.warning('Record could not be saved')
+                raise Exception('Record could not be saved.  System error was: ', sys.exc_info()[0]) 
+        if created:
+            self.inserted += 1
+        else:
+            self.updated +=1
         return obj, created
     
     def date_or_none(self, str):
@@ -290,9 +293,7 @@ class BaseLoader(object):
             return int(time.time()*1000)
         else:
             return natural_key
-        
-    
-            
+               
     def get_icd9(self, code, name, cache):
     
         '''
@@ -318,7 +319,7 @@ class BaseLoader(object):
             log.info('Could not extract icd9 code: "%s"' % code)
             return None
     
-    @transaction.commit_on_success
+    @transaction.commit_manually
     def load(self):
         # 
         # We can put error control here as it becomes necessary
@@ -326,12 +327,15 @@ class BaseLoader(object):
         log.info('Loading file "%s" with %s' % (self.filepath, self.__class__))
         cur_row = 0 # Row counter
         valid = 0 # Number of valid records loaded
-        errors = 0 # Number of non-fatal errors encountered
+        errors = 0 # Number of errors encountered
         start_time = datetime.datetime.now()
         for row in self.reader:
+            sid = transaction.savepoint()
             cur_row += 1            
             # skip the footer, if present, at the end of the file
             if cur_row == self.line_count and row[self.fields[0]].upper() == 'CONTROL TOTALS':
+                break
+            if cur_row > self.line_count:
                 break
             if self.fields.__len__() < row.__len__():
                 errors += 1
@@ -341,23 +345,41 @@ class BaseLoader(object):
                 err.line = cur_row
                 err.err_msg = e
                 err.data = pprint.pformat(row)
-                err.save()
-                log.error('Skipping row %s. More than %s items in row with %s ' 
+                try:
+                    err.save()
+                    transaction.commit()
+                except:
+                    transaction.savepoint_rollback(sid)
+                    raise
+                log.error('Skipping row %s. More than %s items in row.  Item count: %s ' 
                     % (cur_row, self.fields.__len__() , row.__len__() ))
-                break
+                if not self.options['load_with_errors']:
+                    raise BaseException(e)
+                continue
             if not row:
                 continue # Skip None objects
-            # changed to > because last line may not be a footer and shouldn't be skipped
-            if cur_row > self.line_count:
-                break
-            
-            # Coerce to unicode            
             for key in row:
                 if row[key]:
                     try:
                         if not key:
+                            # Not sure how this error could ever trigger since we've already checked for self.fields.__len__() < row.__len__()
                             errors += 1
-                            log.error('There is a value that does not correspond to a any field in line: %s for value: %s' % (cur_row,row[key]))
+                            e = ('There is a value that does not correspond to any field in line: %s for value: %s' % (cur_row,row[key]))  
+                            err = EtlError()
+                            err.provenance = self.provenance
+                            err.line = cur_row
+                            err.err_msg = e
+                            err.data = pprint.pformat(row)
+                            try:
+                                err.save()
+                                transaction.commit()
+                            except:
+                                transaction.savepoint_rollback(sid)
+                                raise
+                            log.error(e)
+                            if not self.options['load_with_errors']:
+                                raise BaseException(e)
+                            continue
                         else:
                             row[key] = sanitize_str( row[key].strip() )
                     except DjangoUnicodeDecodeError, e:
@@ -369,29 +391,28 @@ class BaseLoader(object):
                         err.line = cur_row
                         err.err_msg = str(e)[:512]
                         err.data = pprint.pformat(row)
-                        err.save()
-            sid = transaction.savepoint()
+                        try:
+                            err.save()
+                            transaction.commit()
+                        except:
+                            transaction.savepoint_rollback(sid)
+                            raise
+                        if not self.options['load_with_errors']:
+                            raise e
+                        continue
             # Load the data, with error handling
-            if DEBUG:
-                ex_to_catch = []
-            else:
-                ex_to_catch = [BaseException]
             try:
                 self.load_row(row)
-                transaction.savepoint_commit(sid)
                 valid += 1
-            #except KeyboardInterrupt, e:
-                # Allow keyboard interrupt to rise to next catch in main()
-                #transaction.savepoint_rollback(sid)
-                #raise e
-            except ex_to_catch, e:
-                transaction.savepoint_rollback(sid)
+            except KeyboardInterrupt, e:
+                #Allow keyboard interrupt to rise to next catch in main()
+                raise e
+            except:
                 log.error('Caught Exception:')
                 log.error('  File: %s' % self.filename)
                 log.error('  Line: %s' % cur_row)
-                log.error('  Exception: \n%s' % e)
+                log.error('  Exception: \n%s' % sys.exc_info()[1])
                 log.error(pprint.pformat(row))
-                
                 errors += 1
                 #
                 # Log ETL errors to db
@@ -399,23 +420,110 @@ class BaseLoader(object):
                 err = EtlError()
                 err.provenance = self.provenance
                 err.line = cur_row
-                err.err_msg = str(e)
+                err.err_msg = sys.exc_info()[1]
                 err.data = pprint.pformat(row)
-                err.save()
-
+                err.timestamp = datetime.datetime.now()
+                try:
+                    err.save()
+                    transaction.commit()
+                except:
+                    transaction.savepoint_rollback(sid)
+                    raise
+                if not self.options['load_with_errors']:
+                    raise
+                continue
             if (ROW_LOG_COUNT == -1) or (ROW_LOG_COUNT and not (cur_row % ROW_LOG_COUNT) ):
                 now = datetime.datetime.now()
                 elapsed_time = now - start_time
                 elapsed_seconds = elapsed_time.seconds or 1 # Avoid divide by zero on first few records if startup is quick
                 rows_per_sec = float(cur_row) / elapsed_seconds
                 log.info('Loaded %s of %s rows:  %s %s (%.2f rows/sec)' % (cur_row, self.line_count, now, self.filename, rows_per_sec))
-        log.debug('Loaded %s records with %s errors.' % (valid, errors))
+            if (valid % TRANSACTION_ROW_LIMIT) == 0:
+                #commit when the row limit is reached
+                transaction.commit()
+        #commit at the end
+        transaction.commit()
+        log.info('Loaded %s records with %s errors.' % (valid, errors))
 
         self.provenance.status = 'loaded' if not errors else 'errors'
         self.provenance.valid_rec_count = valid
         self.provenance.error_count = errors
-        self.provenance.save()
+        self.provenance.post_load_count = self.prov_count()
+        try:
+            self.provenance.save()
+            transaction.commit()
+        except:
+            transaction.rollback()
+            raise
         return (valid, errors)
+    
+    def prov_count(self):
+        '''
+        For a given provenance ID
+        provides a count of records in the primary target table with that ID.
+        NB: This is expensive for large DB tables.
+        '''
+        prov_qs = self.model.objects.filter(provenance=self.provenance.provenance_id)
+        counts = prov_qs.count()
+        return counts
+    
+    def prov_delete(self):
+        '''
+        Delete all records associated with a given provenance_id 
+        EXCEPT the provenance record
+        '''
+        prov_qs = self.model.objects.filter(provenance=self.provenance.provenance_id)
+        try:
+            prov_qs.delete()
+            return True
+        except:
+            return False
+        
+    def load_summary(self):
+        '''
+        Writes and optionally Emails a set of summary info for each file
+        '''
+        db_count = self.provenance.post_load_count
+        report = '+' * 80 + '\r'
+        report = report + 'Load summary for source file: ' + self.filename + '\r'
+        report = report +  'Number of rows in source file: ' + str(self.provenance.raw_rec_count) + '\r'
+        report = report +  'Number of rows processed without error: ' + str(self.provenance.valid_rec_count) + '\r'
+        report = report +  'Number or rows processed with error: ' + str(self.provenance.error_count) + '\r'
+        if self.provenance.error_count > 0:
+            report = report +  '  Here is a list of data row errors:' + '\r'
+            etlerrs = EtlError.objects.filter(provenance=self.provenance.provenance_id)
+            for etlerror in etlerrs:
+                report = report + 'On row ' + str(etlerror.line) + ', error message was: ' + etlerror.err_msg + '\r'
+        report = report + '+' * 80 + '\r'
+        report = report +  'Number of database rows created (inserted): ' + str(self.inserted) + '\r'
+        report = report +  'Number of updates performed on existing rows: ' + str(self.updated) + '\r'
+        report = report +  'Number of rows in the EMR table having the current Provenance ID ' + str(self.provenance.provenance_id) + ': ' + str(db_count) + '\r'
+        # basic checks for conditions that shouldn't occur, with appropriate messages if they do
+        if ((self.provenance.error_count + self.provenance.valid_rec_count) != self.provenance.raw_rec_count):
+            report = report +  'The count of file rows does not equal the count of rows processed (error rows + valid rows). Review carefully -- this should not be possible.' + '\r'
+        if (((self.inserted + self.updated) != self.provenance.valid_rec_count)):
+            report = report +  'The number of rows processed without error does not equal the sum of rows created plus updates. Review carefully -- this should not be possible.' + '\r'
+        if (db_count != self.provenance.valid_rec_count):
+            report = report +  'The number of DB rows with the current provenance ID does not equal the number of rows processed without error.' + '\r'
+            report = report +  '  This is possible if there are duplicate natural keys, meaning the same DB row gets updated more than once.' + '\r'
+            report = report +  '  If your data was pulled with multiple updates per record in the same file, this can be acceptable.' + '\r'
+            report = report +  '  If the natural key is being duplicated incorrectly, this is not acceptable.  Review carefully.'     + '\r'
+        if self.options['email_admin_reports']:
+            msg = EmailMultiAlternatives(
+               EMAIL_SUBJECT_PREFIX + ' Load_Epic Report for ' + SITE_NAME + ', Source file: ' + self.filename,
+               report,
+               SERVER_EMAIL, 
+               [a[1] for a in MANAGERS],
+               )
+            html_content = '<pre>\n%s\n</pre>' % report
+            msg.attach_alternative(html_content, "text/html")
+            msg.send()
+        fpath=LOAD_REPORT_DIR
+        log.info('Writing load report.' )
+        efile=open(fpath+"load_epic_report_for_"+self.filename+'.txt','w')
+        efile.write(report)
+        efile.close()
+        
 
 class NotImplementedLoader(BaseLoader):
     
@@ -447,6 +555,8 @@ class ProviderLoader(BaseLoader):
         'center_id',
         ]
     
+    model = Provider
+    
     def load_row(self, row):
         
         non_empty_values=[]
@@ -459,11 +569,11 @@ class ProviderLoader(BaseLoader):
             return 
         
         natural_key = self.generateNaturalkey(row['natural_key'])
-        # load provider in cache if not there, but natural key will never be null here
-        p = self.get_provider(natural_key)
+        natural_key = truncate_str(natural_key, 'natural_key', 128)
+
         values = {
         # fetching natural key from p because it may have been truncated to 128 characters   
-        'natural_key': p.natural_key,
+        'natural_key': natural_key,
         'provenance' : self.provenance,
         #'updated_by' : UPDATED_BY,
         'last_name' : unicode(row['last_name']),
@@ -481,10 +591,13 @@ class ProviderLoader(BaseLoader):
         'telephone' : row['telephone'],
         'center_id' : row['center_id'],
         }
-        p, created = self.insert_or_update(Provider, values, ['natural_key'])
-        
-        log.debug('Saved provider object: %s' % p)
 
+        try:
+            p, created = self.insert_or_update(Provider, values, ['natural_key'])
+            log.debug('Saved provider object: %s' % p)
+            p = self.get_provider(natural_key)
+        except:
+            raise     
 
 class PatientLoader(BaseLoader):
     
@@ -518,9 +631,10 @@ class PatientLoader(BaseLoader):
         'ethnicity',
         ]
     
+    model = Patient
+    
     def load_row(self, row):       
         natural_key = self.generateNaturalkey(row['natural_key'])
-        p = self.get_patient(natural_key)
         
         values = {
         'natural_key': natural_key,
@@ -553,13 +667,16 @@ class PatientLoader(BaseLoader):
         'center_id' : row['center_id'],
         'ethnicity' :string_or_none(row['ethnicity']),
         }
-        p, created = self.insert_or_update(Patient, values, ['natural_key'])
-        
-        p.zip5 = p._calculate_zip5()
-        p.save()
-        
-        log.debug('Saved patient object: %s' % p)
 
+        try:
+            p, created = self.insert_or_update(Patient, values, ['natural_key'])
+            p.zip5 = p._calculate_zip5()
+            p.save()
+            log.debug('Saved patient object: %s' % p)
+            p = self.get_patient(natural_key)
+        except:
+            raise
+        
 
 class LabResultLoader(BaseLoader):
     
@@ -592,11 +709,12 @@ class LabResultLoader(BaseLoader):
 
         ]
 
+    model = LabResult
     
     def load_row(self, row):
         
         # set date based on the date in the ETL file name
-        if not row['order_date'] :            
+        if self.options['use_filename_date'] and not row['order_date'] :            
             log.info('Empty date not allowed, using date from the ETL file name')
             date = datestring_from_filepath(self.filename)
         else:
@@ -659,9 +777,11 @@ class LabResultLoader(BaseLoader):
         'patient_class' : string_or_none(row['patient_class']),
         'patient_status' : string_or_none(row['patient_status']),
          }
-        lx, created = self.insert_or_update(LabResult, values, ['natural_key'])
-        
-        log.debug('Saved Lab Result object: %s' % lx)
+        try:
+            lx, created = self.insert_or_update(LabResult, values, ['natural_key'])
+            log.debug('Saved Lab Result object: %s' % lx)
+        except:
+            raise 
         
 
 class LabOrderLoader(BaseLoader):    
@@ -682,10 +802,12 @@ class LabOrderLoader(BaseLoader):
         'patient_status'
         ]
     
+    model = LabOrder
+    
     def load_row(self, row):
         
         # set date based on the date in the ETL file name
-        if not row['ordering_date'] :            
+        if self.options['use_filename_date'] and not row['ordering_date'] :            
             log.info('Empty date not allowed, using date from the ETL file name')
             date = datestring_from_filepath(self.filename)
         else:
@@ -710,9 +832,11 @@ class LabOrderLoader(BaseLoader):
             'patient_status' : string_or_none(row['patient_status'])
             
             }
-        lxo, created = self.insert_or_update(LabOrder, values, ['natural_key'])
-        
-        log.debug('Saved LabOrder object: %s' % lxo)
+        try:
+            lxo, created = self.insert_or_update(LabOrder, values, ['natural_key'])
+            log.debug('Saved LabOrder object: %s' % lxo)
+        except:
+            raise
 
 
 class EncounterLoader(BaseLoader):
@@ -747,6 +871,14 @@ class EncounterLoader(BaseLoader):
         'hosp_admit_dt',  # added in 3
         'hosp_dschrg_dt' # added in 3
         ]
+    
+    model = Encounter
+    
+    #this gets used for default encounter type mapping
+    mapper_dict = collections.defaultdict(list)
+    mapper_qs = EncounterTypeMap.objects.all()
+    for encmap in mapper_qs:
+        mapper_dict[encmap.raw_encounter_type].append(encmap)
     
     def load_row(self, row): 
         #TODO change to load the  encounter type to the raw from the file
@@ -816,14 +948,16 @@ class EncounterLoader(BaseLoader):
             }
         if values['edd']:  
             values['pregnant'] = True
-            
-        e, created = self.insert_or_update(Encounter, values, ['natural_key'])
+        try:
+            e, created = self.insert_or_update(Encounter, values, ['natural_key'])
+        except:
+            #pass it on up
+            raise
         e.bmi = e._calculate_bmi() # No need to save until we finish ICD9s
         #fill out encounter_type and priority from mapping table if it has a value
         if  row['event_type'] and not option_site:
-            encountertypemap, created = EncounterTypeMap.objects.get_or_create(raw_encounter_type = up(row['event_type']))
-            e.encounter_type = up(encountertypemap.mapping)
-            e.priority = encountertypemap.priority
+            e.encounter_type = self.mapper_dict.get(up(row['event_type']))[0].mapping
+            e.priority = self.mapper_dict.get(up(row['event_type']))[0].priority
         elif option_site:
             site = SiteDefinition.get_by_short_name(option_site)
             e.encounter_type, e.priority = site.set_enctype(e)
@@ -846,20 +980,15 @@ class EncounterLoader(BaseLoader):
             else:
                 code = code_string
                 diagnosis_text = ''
-                
             if len(code) >= 1 and any(c in string.digits for c in code):
-                
-                e.icd9_codes.add(self.get_icd9(code, diagnosis_text, self.__icd9_cache))
-    
+                e.icd9_codes.add(self.get_icd9(code, diagnosis_text, self.__icd9_cache))  
         try:
             e.save()
             log.debug('Saved encounter object: %s' % e)
         except AttributeError as describe:
-            log.debug('Could not save encounter object: %s' % e)
-            log.debug('Error is: %s ' % describe)
-            transaction.rollback()
-    
-    
+            log.warning('Could not save encounter object: %s' % e)
+            log.warning('Error is: %s ' % describe)
+            raise
 
 class PrescriptionLoader(BaseLoader):
 
@@ -883,6 +1012,8 @@ class PrescriptionLoader(BaseLoader):
         'patient_status', # added in 3
         
     ]
+    
+    model = Prescription
 
     def load_row(self, row, ):
         
@@ -933,9 +1064,11 @@ class PrescriptionLoader(BaseLoader):
         'patient_status' : string_or_none(row['patient_status']),
         
         }
-        p, created = self.insert_or_update(Prescription, values, ['natural_key'])
-        
-        log.debug('Saved prescription object: %s' % p)
+        try:
+            p, created = self.insert_or_update(Prescription, values, ['natural_key'])
+            log.debug('Saved prescription object: %s' % p)
+        except:
+            raise
 
 # this object was added for version 3 of esp
 class PregnancyLoader(BaseLoader):
@@ -957,6 +1090,8 @@ class PregnancyLoader(BaseLoader):
         'delivery', 
         'pre_eclampsia'
         ]
+    
+    model = Pregnancy
     
     def load_row(self,row):
         if not row['natural_key']:
@@ -990,28 +1125,29 @@ class PregnancyLoader(BaseLoader):
             'delivery' : string_or_none(row['delivery']),
             'pre_eclampsia' : row['pre_eclampsia'],
             }
-        
-        p, created = self.insert_or_update(Pregnancy, values, ['natural_key'])
-        
-        p.births = 0        
-        if not created: # If updating the record, purge old birth weights
-            p.birth_weight = None
-            p.birth_weight2 = None
-            p.birth_weight3 = None
-            
-        for birth in birth_weights.strip().split(';'):
-            birth = birth.strip()
-            if birth != '':
-                p.births += 1
-                #get the weight     
-                if p.births == 1: 
-                    p.birth_weight = weight_str_to_kg(birth)
-                elif  p.births == 2:  
-                    p.birth_weight2 = weight_str_to_kg(birth)
-                elif  p.births ==3:  
-                    p.birth_weight3 = weight_str_to_kg(birth) 
-                    
-        p.save()                
+        try:
+            p, created = self.insert_or_update(Pregnancy, values, ['natural_key'])
+            p.births = 0        
+            if not created: # If updating the record, purge old birth weights
+                p.birth_weight = None
+                p.birth_weight2 = None
+                p.birth_weight3 = None
+                
+            for birth in birth_weights.strip().split(';'):
+                birth = birth.strip()
+                if birth != '':
+                    p.births += 1
+                    #get the weight     
+                    if p.births == 1: 
+                        p.birth_weight = weight_str_to_kg(birth)
+                    elif  p.births == 2:  
+                        p.birth_weight2 = weight_str_to_kg(birth)
+                    elif  p.births ==3:  
+                        p.birth_weight3 = weight_str_to_kg(birth)                   
+            p.save()                
+        except:
+            #pass it on up
+            raise
         
         log.debug('Saved pregnancy object: %s' % p)
 
@@ -1035,6 +1171,8 @@ class ImmunizationLoader(BaseLoader):
         'patient_status' # added in 3
         ]
     
+    model = Immunization
+    
     def load_row(self, row):
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
@@ -1056,13 +1194,15 @@ class ImmunizationLoader(BaseLoader):
         'patient_class' : string_or_none(row['patient_class']),
         'patient_status' : string_or_none(row['patient_status']),
         }
-        if not values['date'] :            
+        if self.options['use_filename_date'] and not values['date'] :            
             log.info('Empty date not allowed, using date from the ETL file name')
             values['date'] = datetime.datetime.strptime(datestring_from_filepath(self.filename), "%Y%m%d").strftime("%Y-%m-%d") 
 
-        i, created = self.insert_or_update(Immunization, values, ['natural_key'])
-        
-        log.debug('Saved immunization object: %s' % i)
+        try:
+            i, created = self.insert_or_update(Immunization, values, ['natural_key'])
+            log.debug('Saved immunization object: %s' % i)
+        except:
+            raise
         
         try:
             nativevax, new = VaccineCodeMap.objects.get_or_create(
@@ -1071,7 +1211,7 @@ class ImmunizationLoader(BaseLoader):
                 log.debug('Saved new VaccineCodeMap entry: %s' %nativevax)
         except:
             log.debug('Could not save VaccineCodeMap entry: %s' %string_or_none(row['name']))
-
+            raise
 
 
 class SocialHistoryLoader(BaseLoader):
@@ -1085,8 +1225,10 @@ class SocialHistoryLoader(BaseLoader):
         'provider_id', # added in 3 cch added
         ]
     
+    model = SocialHistory
+    
     def load_row(self, row):
-        if not row['date_noted'] :            
+        if self.options['use_filename_date'] and not row['date_noted'] :
             log.info('Empty date not allowed, using date from the ETL file name')
             date = datestring_from_filepath(self.filename)
         else:
@@ -1109,10 +1251,15 @@ class SocialHistoryLoader(BaseLoader):
             'provider' : self.get_provider(row['provider_id']),
             }
        
-        s, created = self.insert_or_update(SocialHistory, values, ['natural_key'])
-       
-        log.debug('Saved provider object: %s' % s)
-        
+        if DEBUG:
+            ex_to_catch = []
+        else:
+            ex_to_catch = [BaseException]
+        try:
+            s, created = self.insert_or_update(SocialHistory, values, ['natural_key'])
+            log.debug('Saved provider object: %s' % s)
+        except ex_to_catch, e:
+            raise e
 
 class AllergyLoader(BaseLoader):
     fields = [
@@ -1128,6 +1275,8 @@ class AllergyLoader(BaseLoader):
         'provider_id', #added in 3
         ]
     
+    model = Allergy
+        
     def load_row(self, row):        
         allergy_name = string_or_none(row['allergy_name'])
         
@@ -1166,11 +1315,12 @@ class AllergyLoader(BaseLoader):
             'mrn' : row['mrn'],
             'provider' : self.get_provider(row['provider_id']),
         }
-        
-        a, created = self.insert_or_update(Allergy, values, ['natural_key'])
-        
-        if a!='':
+        try:
+            a, created = self.insert_or_update(Allergy, values, ['natural_key'])
             log.debug('Saved Allergy object: %s' % a)
+        except:
+            #pass it on up
+            raise
             
         
 class ProblemLoader(BaseLoader):
@@ -1185,6 +1335,8 @@ class ProblemLoader(BaseLoader):
         'provider_id', #added in 3 added cch
         'hospital_pl_yn', #added in 3
         ]
+    
+    model = Problem
 
     def load_row(self, row):
         code = row['icd9_code']
@@ -1207,9 +1359,11 @@ class ProblemLoader(BaseLoader):
             'hospital_pl_yn' : string_or_none(row['hospital_pl_yn'])
             }
         
-        p, created = self.insert_or_update(Problem, values, ['natural_key'])
-                
-        log.debug('Saved Problem object: %s' % p)
+        try:
+            p, created = self.insert_or_update(Problem, values, ['natural_key'])    
+            log.debug('Saved Problem object: %s' % p)
+        except:
+            raise
 
 class HospProblemLoader(BaseLoader):
     fields = [
@@ -1225,6 +1379,8 @@ class HospProblemLoader(BaseLoader):
         'overview',
         'provider_id', 
         ]
+    
+    model = Hospital_Problem
 
     def load_row(self, row):
         code = row['icd9_code']
@@ -1249,20 +1405,29 @@ class HospProblemLoader(BaseLoader):
             'provider' : self.get_provider(row['provider_id'])
             }
         
-        hp, created = self.insert_or_update(Hospital_Problem, values, ['natural_key'])
+        try:
+            hp, created = self.insert_or_update(Hospital_Problem, values, ['natural_key'])
+            if option_site:
+                site = SiteDefinition.get_by_short_name(option_site)
+                hp.principal_prob, hp.present_on_adm, hp.priority = site.set_hospprobs(hp)
+            hp.save()
+            log.debug('Saved Problem object: %s' % hp)
+        except:
+            raise
                 
-        if option_site:
-            site = SiteDefinition.get_by_short_name(option_site)
-            hp.principal_prob, hp.present_on_adm, hp.priority = site.set_hospprobs(hp)
-        hp.save()
-
-        
-        log.debug('Saved Problem object: %s' % hp)
 
 class Command(LoaderCommand):
     #
     # Parse command line options
     #
+    option_list = LoaderCommand.option_list + (
+        make_option('-l', '--load_with_errors', dest='load_with_errors' , action='store_true', default=False, 
+            help='Load skips bad input records, but does not fail'),
+        make_option('-u', '--use_filename_date', dest='use_filename_date' , action='store_true', default=False, 
+            help='When a date value is a required field, will use the filename date if the row value is missing'),
+        make_option('-e', '--email_admin_reports', dest='email_admin_reports' , action='store_true', default=False, 
+            help='Sends file-level load reports to administrator email list'),
+        )
     help = 'Loads data from Epic ETL files'
     #log.debug('options: %s' % options)
     
@@ -1339,11 +1504,7 @@ class Command(LoaderCommand):
             filepath_list.sort(key=lambda filepath: date_from_filepath(filepath))
             for filepath in filepath_list:
                 loader_class = loader[ft]
-                l = loader_class(filepath) # BaseLoader child instance
-                if DEBUG:
-                    ex_to_catch = []
-                else:
-                    ex_to_catch = [BaseException]
+                l = loader_class(filepath, options) # BaseLoader child instance
                 try:
                     valid, error = l.load()
                     valid_count[ft] += valid
@@ -1356,17 +1517,23 @@ class Command(LoaderCommand):
                         disposition = 'success'
                 except KeyboardInterrupt:
                     log.critical('Keyboard interrupt: exiting.')
+                    if not l.prov_delete():
+                        log.error('Could not clear out data for stopped load of PROVENANCE ID %s: ' % l.provenance.provenance_id)
                     sys.exit(-255)
-                except ex_to_catch, e: # Unhandled exception!
-                    log.critical('Unhandled exception loading file "%s":' % filepath)
-                    log.critical('\t%s' % e)
+                except: # Unhandled exception!
+                    log.critical('Exception loading file "%s":' % filepath)
+                    log.critical('\t%s' % sys.exc_info()[1])
                     l.provenance.status = 'failure'
-                    l.provenance.comment = str(e)
+                    l.provenance.comment = sys.exc_info()[1]
                     l.provenance.save()
+                    if not l.prov_delete():
+                        log.error('Could not clear out data for failed load of PROVENANCE ID %s: ' % l.provenance.provenance_id)
                     disposition = 'failure'
+                    transaction.commit()
                 self.archive(options, filepath, disposition)
-        
-                
+                if disposition == 'failure':
+                    sys.exit()               
+                l.load_summary() 
         #
         # Print job summary
         #

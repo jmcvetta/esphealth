@@ -31,7 +31,7 @@ class Command(BaseCommand):
     
     option_list = BaseCommand.option_list + (
         make_option('--send-mail', action='store_true', dest='send_mail', default=False,
-            help='Email report to admins'),
+            help='Email report to managers'),
         )
 
     help = 'Generate a status report'

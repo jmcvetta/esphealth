@@ -104,6 +104,7 @@ DATABASE_OPTIONS = {
     # Make PostgreSQL recover gracefully from caught exceptions
     #"autocommit": True,   
 }
+TRANSACTION_ROW_LIMIT = config['Database']['transaction_row_limit']
 ETL_SOURCE = config['ETL']['source']
 ETL_USE_FTP = config['ETL']['retrieve_files'] # Use built-in FTP function to retrieve Epic files
 ETL_USE_SFTP = config['ETL']['use_sftp'] # Use built-in FTP function to retrieve Epic files
@@ -118,6 +119,7 @@ SFTP_USER = config['ETL']['sftp_username']
 SFTP_PASSWORD = secrets['General']['etl_sftp_server_password']
 SFTP_PATH = config['ETL']['sftp_path']
 ETL_MEDNAMEREVERSE = config['ETL']['medname_field7']
+LOAD_REPORT_DIR = config['ETL']['load_report_dir']
 UPLOAD_SERVER = config['Reporting']['upload_server']
 UPLOAD_USER = config['Reporting']['upload_username']
 UPLOAD_PASSWORD = secrets['General']['upload_password']
@@ -446,6 +448,7 @@ _levels = {
     'error': logging.ERROR,
     'critical': logging.CRITICAL,
     }
+ROW_LOG_COUNT = config['Logging']['row_log_count']
 LOG_FILE = config['Logging']['log_file'] # Used only if LOG_LEVEL_FILE != None
 LOG_FORMAT_CONSOLE = config['Logging']['log_format_console']
 LOG_FORMAT_FILE = config['Logging']['log_format_file']
