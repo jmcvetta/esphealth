@@ -956,8 +956,11 @@ class EncounterLoader(BaseLoader):
         e.bmi = e._calculate_bmi() # No need to save until we finish ICD9s
         #fill out encounter_type and priority from mapping table if it has a value
         if  row['event_type'] and not option_site:
-            e.encounter_type = self.mapper_dict.get(up(row['event_type']))[0].mapping
-            e.priority = self.mapper_dict.get(up(row['event_type']))[0].priority
+            try:
+                e.encounter_type = self.mapper_dict.get(up(row['event_type']))[0].mapping
+                e.priority = self.mapper_dict.get(up(row['event_type']))[0].priority
+            except:
+                log.debug('Unable to map encounter type for row %s' % self.line_count)
         elif option_site:
             site = SiteDefinition.get_by_short_name(option_site)
             e.encounter_type, e.priority = site.set_enctype(e)
