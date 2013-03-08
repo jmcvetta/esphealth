@@ -117,6 +117,16 @@ def _populate_status_values():
         dec4 = str((datetime.date.today() - datetime.datetime.strptime('20121204', "%Y%m%d").date()).days) + ' day'
         jan1 = str((datetime.date.today() - datetime.datetime.strptime('20130101', "%Y%m%d").date()).days) + ' day'
         values2 = {
+            'aecase_daycounts': _get_ae_case_counts('1 day',False),
+            'aecase_daytots': _get_ae_case_counts('1 day',True),
+            'vx_daycounts': _get_vx_counts('1 day',False),
+            'vx_daytots': _get_vx_counts('1 day',True),
+            'oth_daycounts':  _get_oth_counts('1 day',False), 
+            'oth_daytots':  _get_oth_counts('1 day',True), 
+            'tot_daycounts':  _get_tot_counts('1 day',False), 
+            'tot_daytots':  _get_tot_counts('1 day',True), 
+            'msg_daycounts': _get_provider_sent_counts('1 day',False),
+            'msg_daytots': _get_provider_sent_counts('1 day',True),
             'aecase_dayscounts': _get_ae_case_counts(days,False),
             'aecase_daystots': _get_ae_case_counts(days,True),
             'vx_dayscounts': _get_vx_counts(days,False),

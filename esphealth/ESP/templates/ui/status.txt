@@ -76,6 +76,58 @@ Native Name                    Native Code                    Lab Record Count
 
 {% if type == "VAERS" or type == "BOTH" %}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                          VAERS AE and Case counts Today
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Category       Basis             AE Name                                 AE Count  Case Cnt   For review   Confirmed   False pos   Autosent
+--------------------------------------------------------------------------------------------------------------------------------------------
+{% for item in aecase_daycounts %} {{ item.category|stringformat:"-13s" }} {{ item.ae_basis|stringformat:"-18s" }} {{ item.ae_name|stringformat:"-42s" }} {{ item.ae_count|stringformat:"-10s" }} {{ item.case_count|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }}
+{% endfor %}--------------------------------------------------------------------------------------------------------------------------------------------
+{% for item in aecase_daytots %} {{ item.category|stringformat:"-13s" }} {{ item.ae_basis|stringformat:"-18s" }} {{ item.ae_name|stringformat:"-42s" }} {{ item.ae_count|stringformat:"-10s" }} {{ item.case_count|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             VAERS Any Other Diagnosis AE and Case counts Today
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Code      Name                                           AE Count  Case Cnt   For review   Confirmed   False pos   Autosent
+----------------------------------------------------------------------------------------------------------------------------
+{% for item in oth_daycounts %} {{ item.diag_code|stringformat:"-8s" }} {{ item.name|stringformat:"-50s" }} {{ item.ae_counts|stringformat:"-10s" }} {{ item.case_counts|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }}
+{% endfor %}----------------------------------------------------------------------------------------------------------------------------
+{% for item in oth_daytots %} {{ item.diag_code|stringformat:"-8s" }} {{ item.name|stringformat:"-50s" }} {{ item.ae_counts|stringformat:"-10s" }} {{ item.case_counts|stringformat:"-10s" }} {{ item.for_review|stringformat:"-10s" }} {{ item.confirmed|stringformat:"-10s" }} {{ item.false_pos|stringformat:"-10s" }} {{ item.autosent|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                     Vaccination counts today
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Name                                               Vx Count
+------------------------------------------------------------------------------------------
+{% for item in vx_daycounts %} {{ item.name|stringformat:"-50s" }} {{ item.vx_counts|stringformat:"-10s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in vx_daytots %} {{ item.name|stringformat:"-50s" }} {{ item.vx_counts|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             Source data records loaded and scanned today
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Name                                                Count
+------------------------------------------------------------------------------------------
+{% for item in tot_daycounts %} {{ item.source|stringformat:"-50s" }} {{ item.counts|stringformat:"-10s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in tot_daytots %} {{ item.source|stringformat:"-50s" }} {{ item.counts|stringformat:"-10s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                           Messaging Today
+(all messages for an AE are counted if any message for that AE was transmitted today)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                                            First msg  Confirmed  False pos   Auto sent
+Provider                                    Count      Count      Count       Count
+------------------------------------------------------------------------------------------
+{% for item in msg_daycounts %} {{ item.provider|stringformat:"-42s" }} {{ item.initial|stringformat:"-10s" }} {{ item.sent|stringformat:"-10s" }} {{ item.false_positive|stringformat:"-11s" }} {{ item.autosent|stringformat:"-11s" }} 
+{% endfor %}------------------------------------------------------------------------------------------
+{% for item in msg_daytots %} {{ item.provider|stringformat:"-42s" }} {{ item.initial|stringformat:"-10s" }} {{ item.sent|stringformat:"-10s" }} {{ item.false_positive|stringformat:"-11s" }} {{ item.autosent|stringformat:"-11s" }} {% endfor %}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                           VAERS AE and Case counts since Monday
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
