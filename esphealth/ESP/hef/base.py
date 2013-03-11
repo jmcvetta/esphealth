@@ -546,6 +546,7 @@ class LabOrderHeuristic(BaseEventHeuristic):
             return 0
         unbound_orders = alt.lab_orders.exclude(events__name=self.order_event_name)
         #log_query('Unbound lab orders for %s' % self.uri, unbound_orders)
+        count = unbound_orders.count()
         for order in queryset_iterator(unbound_orders):
             Event.create(
                 name = self.order_event_name,
@@ -555,8 +556,8 @@ class LabOrderHeuristic(BaseEventHeuristic):
                 provider = order.provider,
                 emr_record = order,
                 )
-        log.info('Generated %s new %s events' % (unbound_orders.count(), self))
-        return unbound_orders.count()
+        log.info('Generated %s new %s events' % (count, self))
+        return count
     
     
 class BaseLabResultHeuristic(BaseEventHeuristic):
@@ -851,6 +852,7 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
         #log_query('Positive labs for %s' % self.uri, positive_labs)
         log.info('Generating positive events for %s' % self)
         #for lab in positive_labs.iterator():
+        positive_labs_count = positive_labs.count()
         for lab in queryset_iterator(positive_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -864,10 +866,11 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
                 provider = lab.provider,
                 emr_record = lab,
                 )
-        log.info('Generated %s new positive events for %s' % (positive_labs.count(), self))
+        log.info('Generated %s new positive events for %s' % (positive_labs_count, self))
         negative_labs = self.unbound_labs.filter(negative_q)
         #log_query('Negative labs for %s' % self, negative_labs)
         log.info('Generating negative events for %s' % self)
+        negative_labs_count  = negative_labs.count()
         for lab in queryset_iterator(negative_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -881,10 +884,11 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
                 provider = lab.provider,
                 emr_record = lab,
                 )
-        log.info('Generated %s new negative events for %s' % (negative_labs.count(), self))
+        log.info('Generated %s new negative events for %s' % (negative_labs_count, self))
         indeterminate_labs = self.unbound_labs.filter(indeterminate_q)
         #log_query('Indeterminate labs for %s' % self, indeterminate_labs)
         log.info('Generating indeterminate events for %s' % self)
+        indeterminate_labs_count  = indeterminate_labs.count()
         for lab in queryset_iterator(indeterminate_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -898,8 +902,8 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
                 provider = lab.provider,
                 emr_record = lab,
                 )
-        log.info('Generated %s new indeterminate events for %s' % (indeterminate_labs.count(), self))
-        return positive_labs.count() + negative_labs.count() + indeterminate_labs.count()
+        log.info('Generated %s new indeterminate events for %s' % (indeterminate_labs_count, self))
+        return positive_labs_count + negative_labs_count + indeterminate_labs_count
 
 
 class LabResultRatioHeuristic(BaseLabResultHeuristic):
@@ -952,6 +956,7 @@ class LabResultRatioHeuristic(BaseLabResultHeuristic):
                 positive_labs |= num_res_labs.filter(ref_high_float__isnull=True, result_float__gte = (self.ratio * map.threshold))
         #log_query(self, positive_labs)
         log.info('Generating new events for %s' % self)
+        count = positive_labs.count()
         for lab in queryset_iterator(positive_labs):
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -965,8 +970,8 @@ class LabResultRatioHeuristic(BaseLabResultHeuristic):
                 provider = lab.provider,
                 emr_record = lab,
                 )
-        log.info('Generated %s new events for %s' % (positive_labs.count(), self))
-        return positive_labs.count()
+        log.info('Generated %s new events for %s' % (count, self))
+        return count
 
 
 class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
@@ -1017,6 +1022,7 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
         else: # 'gte'
             lab_qs = lab_qs.filter(result_float__gte=self.threshold)
         #log_query(self, lab_qs)
+        count = lab_qs.count()
         for lab in queryset_iterator(lab_qs):
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -1030,8 +1036,8 @@ class LabResultFixedThresholdHeuristic(BaseLabResultHeuristic):
                 provider = lab.provider,
                 emr_record = lab,
                 )
-        log.info('Generated %s new events for %s' % (lab_qs.count(), self))
-        return lab_qs.count()
+        log.info('Generated %s new events for %s' % (count, self))
+        return count
 
 
 class LabResultRangeHeuristic(BaseLabResultHeuristic):
@@ -1098,6 +1104,7 @@ class LabResultRangeHeuristic(BaseLabResultHeuristic):
             qs = qs.filter(result_float__lt=self.max)
         #log_query(self.uri, qs)
         log.info('Generating events for "%s"' % self)
+        count = qs.count()
         for lab in queryset_iterator(qs):
             if self.date_field == 'order':
                 lab_date = lab.date
@@ -1111,8 +1118,8 @@ class LabResultRangeHeuristic(BaseLabResultHeuristic):
                 provider = lab.provider,
                 emr_record = lab,
                 )
-        log.info('Generated %s new events for %s' % (qs.count(), self))
-        return qs.count() 
+        log.info('Generated %s new events for %s' % (count, self))
+        return count 
 
 
 class LabResultWesternBlotHeuristic(BaseLabResultHeuristic):
@@ -1331,6 +1338,7 @@ class PrescriptionHeuristic(BaseEventHeuristic):
         prescriptions = prescriptions.order_by('date')
         #log_query('Prescriptions for %s' % self, prescriptions)
         log.info('Generating events for "%s"' % self)
+        count = prescriptions.count()
         for rx in queryset_iterator(prescriptions):
             Event.create(
                 name = self.rx_event_name,
@@ -1340,8 +1348,8 @@ class PrescriptionHeuristic(BaseEventHeuristic):
                 provider = rx.provider,
                 emr_record = rx,
                 )
-        log.info('Generated %s new events for %s' % (prescriptions.count(), self))
-        return prescriptions.count()
+        log.info('Generated %s new events for %s' % (count, self))
+        return count
 
 
 class Icd9Query(object):
@@ -1487,6 +1495,7 @@ class DiagnosisHeuristic(BaseEventHeuristic):
         enc_qs = enc_qs.exclude(events__name__in=self.event_names)
         enc_qs = enc_qs.order_by('date').distinct()
         log.info('Generating events for "%s"' % self)
+        count = enc_qs.count()
         #log_query('Encounters for %s' % self, enc_qs)
         for enc in queryset_iterator(enc_qs):
             Event.create(
@@ -1497,8 +1506,8 @@ class DiagnosisHeuristic(BaseEventHeuristic):
                 provider = enc.provider,
                 emr_record = enc,
                 )
-        log.info('Generated %s new events for %s' % (enc_qs.count(), self))
-        return enc_qs.count()
+        log.info('Generated %s new events for %s' % (count, self))
+        return count
 
 
 class CalculatedBilirubinHeuristic(object):
