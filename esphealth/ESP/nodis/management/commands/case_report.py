@@ -1145,18 +1145,22 @@ class Command(BaseCommand):
             q_obj &= ~Q(patient__last_name__iregex=FAKE_PATIENT_SURNAME)
         cases = Case.objects.filter(q_obj).order_by('pk')
         log_query('Filtered cases', cases)
+        
         if not cases:
-            msg = 'No cases found matching your specifications.  No output generated.'
+            msg = 'No cases found matching your specifications.  Empty output generated.'
             log.info(msg)
             print >> sys.stderr, ''
             print >> sys.stderr, msg
             print >> sys.stderr, ''
-            return
-        if options.sample: # Report only sample number of cases
-            cases = cases[0:options.sample]
-            case_count = options.sample
+            case_count = 1
+            
+            batch_cases = []
         else:
-            case_count =  cases.count()
+            if options.sample: # Report only sample number of cases
+                cases = cases[0:options.sample]
+                case_count = options.sample
+            else:
+                case_count =  cases.count()
         #
         # Split cases into batches
         #
@@ -1171,7 +1175,8 @@ class Command(BaseCommand):
                 'serial_number': batch_serial,
                 'timestamp': self.timestamp,
                 }
-            batch_cases = cases[index:index+options.batch_size]
+            if cases:
+                batch_cases = cases[index:index+options.batch_size]
             #
             # Generate report message
             #
