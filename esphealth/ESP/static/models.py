@@ -376,3 +376,22 @@ class Allergen(models.Model):
     
     def __unicode__(self):
         return u'%s %s' % (self.code, self.name)
+    
+class Sitegroup(models.Model):
+    group = models.CharField(max_length=100, primary_key=True)
+    cdc_site_id = models.CharField(max_length=50, null=True)
+    location = models.CharField(max_length=100, null=True)
+    zip5 = models.IntegerField(null=True)
+    
+    
+    def __unicode__(self):
+        return self.group
+
+class Site(models.Model):
+    name = models.CharField(max_length=100, unique=True, null=False)
+    group = models.ForeignKey(Sitegroup, null=True)
+    ili_site = models.BooleanField(default=False);
+
+    def  __unicode__(self):
+        return self.name
+    

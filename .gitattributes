@@ -190,6 +190,7 @@ esphealth/ESP/ss/utils.py -text
 esphealth/ESP/ss/views.py -text
 esphealth/ESP/static/__init__.py -text
 esphealth/ESP/static/admin.py -text
+esphealth/ESP/static/fixtures/Atrius/site_group.json -text
 esphealth/ESP/static/fixtures/drugsynonym.json -text
 esphealth/ESP/static/fixtures/espfakelabs.csv -text
 esphealth/ESP/static/fixtures/espfakelabs.json -text
