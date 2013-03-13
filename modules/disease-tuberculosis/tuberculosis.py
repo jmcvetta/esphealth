@@ -178,7 +178,7 @@ class Tuberculosis(DiseaseDefinition):
         # dx in the 60 days following the lab order (any test result)
         #
         dx_ev_names = ['dx:tuberculosis']
-        lx_ev_names = ['lx:tuberculosis_pcr:any-result:result-date','lx:tuberculosis_culture:any-result:result-date','lx:tuberculosis_afb:any-result:result-date'] 
+        lx_ev_names = ['lx:tuberculosis_pcr:any-result','lx:tuberculosis_culture:any-result','lx:tuberculosis_afb:any-result'] 
         # TODO check to make sure we validate the event names use BaseEventHeuristic.get_events_by_name        
         dxlx14_event_qs = Event.objects.filter(
             name__in = lx_ev_names,
