@@ -108,19 +108,20 @@ class Pertussis(DiseaseDefinition):
         log.info('Generating cases of %s' % self.short_name)
        
         #
-        # Criteria Set #1 :dx or lab order(anyrestult test) + rx within 7 days
+        # Criteria Set #1 :dx or lab order(any result test) + rx within 7 days
         #
         dx_ev_names = ['dx:pertusis','dx:cough']
-        lxo_ev_name = ['lx:pertussis_culture:any-result:result-date','lx:pertussis_pcr:any-result:result-date','lx:pertussis_serology:any-result:result-date',] 
+        lxo_ev_name = ['lx:pertussis_culture:any-result','lx:pertussis_pcr:any-result','lx:pertussis_serology:any-result',] 
         rx_ev_names = ['rx:pertussis_med']
         
-        #
+        # diagnosis and prescription
         dxrx_event_qs = Event.objects.filter(
             name__in = dx_ev_names,
             patient__event__name__in = rx_ev_names ,
             patient__event__date__gte = (F('date') - 7 ),
             patient__event__date__lte = (F('date') + 7 ),
             )
+        # lab and prescription
         lxrx_event_qs = Event.objects.filter(
             name__in = lxo_ev_name,
             patient__event__name__in = rx_ev_names ,
