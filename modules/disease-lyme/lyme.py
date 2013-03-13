@@ -128,7 +128,7 @@ class Lyme(DiseaseDefinition):
         
         return heuristic_list
     
-    @transaction.commit_on_success
+    @transaction.commit_manually
     def generate(self):
         log.info('Generating cases of %s' % self.short_name)
        
@@ -188,7 +188,7 @@ class Lyme(DiseaseDefinition):
         #
         rash_ev_names = ['dx:rash']
         rash_rx_ev_names = ['rx:doxycycline']
-        rash_lx_ev_names = ['lx:lyme_elisa:any-result:result-date','lx:lyme_igg_eia:any-result:result-date', 'lx:lyme_igm_eia:any-result:result-date',]
+        rash_lx_ev_names = ['lx:lyme_elisa:any-result','lx:lyme_igg_eia:any-result', 'lx:lyme_igm_eia:any-result',]
         
         rash_qs = Event.objects.filter(
             name__in = rash_ev_names,
@@ -205,10 +205,21 @@ class Lyme(DiseaseDefinition):
         #
         combined_criteria_qs = dxrx_event_qs | lx_event_qs | test_event_qs | rash_qs 
         combined_criteria_qs = combined_criteria_qs.exclude(case__condition='lyme')
-        combined_criteria_qs = combined_criteria_qs.order_by('date')
+        #ordering by patient to commit after processing every patient 
+        combined_criteria_qs = combined_criteria_qs.distinct().order_by('patient','date')
+        
+        
         all_event_names = dx_ev_names + lx_ev_names + rx_ev_names + rpr_ev_names + ig_ev_names + rash_ev_names + rash_rx_ev_names + rash_lx_ev_names
         counter = 0
+        
+        previous_patient_id = None
         for this_event in combined_criteria_qs:
+            current_patient = this_event.patient
+            # Setting up transaction control so that changes are committed only at patient boundaries.
+            if previous_patient_id and current_patient.id != previous_patient_id:
+                transaction.commit()
+            previous_patient_id = current_patient.id
+            
             existing_cases = Case.objects.filter(
                 condition='lyme', 
                 patient=this_event.patient,
@@ -238,6 +249,7 @@ class Lyme(DiseaseDefinition):
             new_case.save()
             log.info('Created new lyme case: %s' % new_case)
             counter += 1
+        transaction.commit()
         
         log.debug('Generated %s new cases of lyme' % counter)
         
