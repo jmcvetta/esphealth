@@ -118,7 +118,7 @@ chlamydia
 1 patient with chla test negative NEG  -deenaH
 
 syphillis from version 3
-5 patients (should generate 3 cases)
+5 patients (should generate 5 cases)
 1 patient with an encounter with icd9 code for syphilis -kruskal
   same patient with a prescription in syphilis.py within 14 days of encounter
 1 patient with encounter with icd9 code for syphilis -spockB
@@ -138,6 +138,10 @@ pertussis
   same patient with med antibiotic prescription after 7 days of diagnosis
 1 patient with positive lab for pertussis_pcr -samuel
 1 patient with positive pertussis_culture -whor
+
+1 patient with lab test of 'pertussis_pcr_order','pertussis_culture_order','pertussis_serology_order' -billx
+  same patient with med antibiotic prescription within 7 days of diagnosis
+
        
 tb
 5 patients (should generate 4 cases)
