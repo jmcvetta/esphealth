@@ -32,7 +32,7 @@ from django.db import IntegrityError, transaction
 from django.utils.encoding import DjangoUnicodeDecodeError
 from django.core.mail import EmailMultiAlternatives
 
-from ESP.settings import DEBUG, ETL_MEDNAMEREVERSE, ROW_LOG_COUNT, TRANSACTION_ROW_LIMIT
+from ESP.settings import DEBUG, ETL_MEDNAMEREVERSE, ROW_LOG_COUNT, TRANSACTION_ROW_LIMIT, USE_FILENAME_DATE
 from ESP.utils import log
 from ESP.utils.utils import float_or_none
 from ESP.utils.utils import string_or_none
@@ -714,7 +714,7 @@ class LabResultLoader(BaseLoader):
     def load_row(self, row):
         
         # set date based on the date in the ETL file name
-        if self.options['use_filename_date'] and not row['order_date'] :            
+        if USE_FILENAME_DATE and not row['order_date'] :            
             log.info('Empty date not allowed, using date from the ETL file name')
             date = datestring_from_filepath(self.filename)
         else:
@@ -807,7 +807,7 @@ class LabOrderLoader(BaseLoader):
     def load_row(self, row):
         
         # set date based on the date in the ETL file name
-        if self.options['use_filename_date'] and not row['ordering_date'] :            
+        if USE_FILENAME_DATE and not row['ordering_date'] :            
             log.info('Empty date not allowed, using date from the ETL file name')
             date = datestring_from_filepath(self.filename)
         else:
@@ -1197,7 +1197,7 @@ class ImmunizationLoader(BaseLoader):
         'patient_class' : string_or_none(row['patient_class']),
         'patient_status' : string_or_none(row['patient_status']),
         }
-        if self.options['use_filename_date'] and not values['date'] :            
+        if USE_FILENAME_DATE and not values['date'] :            
             log.info('Empty date not allowed, using date from the ETL file name')
             values['date'] = datetime.datetime.strptime(datestring_from_filepath(self.filename), "%Y%m%d").strftime("%Y-%m-%d") 
 
@@ -1231,7 +1231,7 @@ class SocialHistoryLoader(BaseLoader):
     model = SocialHistory
     
     def load_row(self, row):
-        if self.options['use_filename_date'] and not row['date_noted'] :
+        if USE_FILENAME_DATE and not row['date_noted'] :
             log.info('Empty date not allowed, using date from the ETL file name')
             date = datestring_from_filepath(self.filename)
         else:
@@ -1426,8 +1426,6 @@ class Command(LoaderCommand):
     option_list = LoaderCommand.option_list + (
         make_option('-l', '--load_with_errors', dest='load_with_errors' , action='store_true', default=False, 
             help='Load skips bad input records, but does not fail'),
-        make_option('-u', '--use_filename_date', dest='use_filename_date' , action='store_true', default=False, 
-            help='When a date value is a required field, will use the filename date if the row value is missing'),
         make_option('-e', '--email_admin_reports', dest='email_admin_reports' , action='store_true', default=False, 
             help='Sends file-level load reports to administrator email list'),
         )

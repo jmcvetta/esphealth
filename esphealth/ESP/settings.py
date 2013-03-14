@@ -105,6 +105,7 @@ DATABASE_OPTIONS = {
     #"autocommit": True,   
 }
 TRANSACTION_ROW_LIMIT = config['Database']['transaction_row_limit']
+USE_FILENAME_DATE = config['ETL']['use_filename_date']
 ETL_SOURCE = config['ETL']['source']
 ETL_USE_FTP = config['ETL']['retrieve_files'] # Use built-in FTP function to retrieve Epic files
 ETL_USE_SFTP = config['ETL']['use_sftp'] # Use built-in FTP function to retrieve Epic files
