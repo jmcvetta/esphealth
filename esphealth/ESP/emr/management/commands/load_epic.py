@@ -173,6 +173,7 @@ class BaseLoader(object):
         self.created_on = datetime.datetime.now()
         self.inserted = 0
         self.updated = 0
+        self.control = 0
         self.options = options
     
     def get_patient(self, natural_key):
@@ -328,12 +329,14 @@ class BaseLoader(object):
         cur_row = 0 # Row counter
         valid = 0 # Number of valid records loaded
         errors = 0 # Number of errors encountered
+        self.control = 0 # for control records
         start_time = datetime.datetime.now()
         for row in self.reader:
             sid = transaction.savepoint()
             cur_row += 1            
             # skip the footer, if present, at the end of the file
             if cur_row == self.line_count and row[self.fields[0]].upper() == 'CONTROL TOTALS':
+                self.control += 1
                 break
             if cur_row > self.line_count:
                 break
@@ -484,30 +487,30 @@ class BaseLoader(object):
         Writes and optionally Emails a set of summary info for each file
         '''
         db_count = self.provenance.post_load_count
-        report = '+' * 80 + '\r'
-        report = report + 'Load summary for source file: ' + self.filename + '\r'
-        report = report +  'Number of rows in source file: ' + str(self.provenance.raw_rec_count) + '\r'
-        report = report +  'Number of rows processed without error: ' + str(self.provenance.valid_rec_count) + '\r'
-        report = report +  'Number or rows processed with error: ' + str(self.provenance.error_count) + '\r'
+        report = '+' * 80 + '\n'
+        report = report + 'Load summary for source file: ' + self.filename + '\n'
+        report = report +  'Number of rows in source file: ' + str(self.provenance.raw_rec_count) + '\n'
+        report = report +  'Number of rows processed without error: ' + str(self.provenance.valid_rec_count+self.control) + '\n'
+        report = report +  'Number or rows processed with error: ' + str(self.provenance.error_count) + '\n'
         if self.provenance.error_count > 0:
-            report = report +  '  Here is a list of data row errors:' + '\r'
+            report = report +  '  Here is a list of data row errors:' + '\n'
             etlerrs = EtlError.objects.filter(provenance=self.provenance.provenance_id)
             for etlerror in etlerrs:
-                report = report + 'On row ' + str(etlerror.line) + ', error message was: ' + etlerror.err_msg + '\r'
-        report = report + '+' * 80 + '\r'
-        report = report +  'Number of database rows created (inserted): ' + str(self.inserted) + '\r'
-        report = report +  'Number of updates performed on existing rows: ' + str(self.updated) + '\r'
-        report = report +  'Number of rows in the EMR table having the current Provenance ID ' + str(self.provenance.provenance_id) + ': ' + str(db_count) + '\r'
+                report = report + 'On row ' + str(etlerror.line) + ', error message was: ' + etlerror.err_msg + '\n'
+        report = report + '+' * 80 + '\n'
+        report = report +  'Number of database rows created (inserted): ' + str(self.inserted) + '\n'
+        report = report +  'Number of updates performed on existing rows: ' + str(self.updated) + '\n'
+        report = report +  'Number of rows in the EMR table having the current Provenance ID ' + str(self.provenance.provenance_id) + ': ' + str(db_count) + '\n'
         # basic checks for conditions that shouldn't occur, with appropriate messages if they do
-        if ((self.provenance.error_count + self.provenance.valid_rec_count) != self.provenance.raw_rec_count):
-            report = report +  'The count of file rows does not equal the count of rows processed (error rows + valid rows). Review carefully -- this should not be possible.' + '\r'
+        if ((self.provenance.error_count + self.provenance.valid_rec_count+self.control) != self.provenance.raw_rec_count):
+            report = report +  'The count of file rows does not equal the count of rows processed (error rows + valid rows). Review carefully -- this should not be possible.' + '\n'
         if (((self.inserted + self.updated) != self.provenance.valid_rec_count)):
-            report = report +  'The number of rows processed without error does not equal the sum of rows created plus updates. Review carefully -- this should not be possible.' + '\r'
+            report = report +  'The number of rows processed without error does not equal the sum of rows created plus updates. Review carefully -- this should not be possible.' + '\n'
         if (db_count != self.provenance.valid_rec_count):
-            report = report +  'The number of DB rows with the current provenance ID does not equal the number of rows processed without error.' + '\r'
-            report = report +  '  This is possible if there are duplicate natural keys, meaning the same DB row gets updated more than once.' + '\r'
-            report = report +  '  If your data was pulled with multiple updates per record in the same file, this can be acceptable.' + '\r'
-            report = report +  '  If the natural key is being duplicated incorrectly, this is not acceptable.  Review carefully.'     + '\r'
+            report = report +  'The number of DB rows with the current provenance ID does not equal the number of rows processed without error.' + '\n'
+            report = report +  '  This is possible if there are duplicate natural keys, meaning the same DB row gets updated more than once.' + '\n'
+            report = report +  '  If your data was pulled with multiple updates per record in the same file, this can be acceptable.' + '\n'
+            report = report +  '  If the natural key is being duplicated incorrectly, this is not acceptable.  Review carefully.'     + '\n'
         if self.options['email_admin_reports']:
             msg = EmailMultiAlternatives(
                EMAIL_SUBJECT_PREFIX + ' Load_Epic Report for ' + SITE_NAME + ', Source file: ' + self.filename,
