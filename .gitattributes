@@ -420,6 +420,17 @@ esphealth/share/riskscape.gdm-mapping.json -text
 esphealth/share/riskscape.gdm-transformation.ktr -text
 esphealth/share/riskscape.genepop-transformation.ktr -text
 esphealth/share/riskscape.genpop-mapping.json -text
+esphealth/share/sql_reports/Atrius/cdc_ili_report.pg.sql -text
+esphealth/share/sql_reports/Atrius/gen_pop_functions.pg.sql -text
+esphealth/share/sql_reports/Atrius/general-population-report.pg.sql -text
+esphealth/share/sql_reports/Atrius/genpop.sh -text
+esphealth/share/sql_reports/Atrius/ili_report.sh -text
+esphealth/share/sql_reports/Atrius/insert_static_sites.pg.sql -text
+esphealth/share/sql_reports/Atrius/riskscape.genepop-transformation.ktr -text
+esphealth/share/sql_reports/Atrius/riskscape.genpop-mapping.json -text
+esphealth/share/sql_reports/Atrius/update_mdphnet_views_tables.pg.sql -text
+esphealth/share/sql_reports/Atrius/weekly_ili_report.pg.sql -text
+esphealth/share/sql_reports/Atrius/weekly_update_mdphnet_summary_tables.pg.sql -text
 esphealth/share/update_mdphnet_views_tables.psql -text
 esphealth/unit-test/acute_hep_a/epicmem.esp.02232012 -text
 esphealth/unit-test/acute_hep_a/epicpro.esp.02232012 -text
