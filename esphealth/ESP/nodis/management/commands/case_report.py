@@ -167,13 +167,16 @@ class hl7Batch:
         a text string to enclose in a cdata section...
         """
         self.racedir = {'CAUCASIAN':'W',
+           'WHITE':'W',
            'BLACK':'B',
            'OTHER':'O',
            'HISPANIC': 'W',
            'INDIAN':'I',
+           'AMERICAN INDIAN/ALASKAN NATIVE':'I',
            'ASIAN':'A',
            'NAT AMERICAN':'I',
            'NATIVE HAWAI':'P',
+           'PACIFIC ISLANDER/HAWAIIAN':'P',
            'ALASKAN':'I',
            }
         self.nmessages = nmessages
@@ -646,7 +649,7 @@ class hl7Batch:
             obr.appendChild(obr15)
             #
             #
-            if lxRec.status:
+            if lxRec.status in ('FINAL','F'):
                 status='F'
             else:
                 status='P'
