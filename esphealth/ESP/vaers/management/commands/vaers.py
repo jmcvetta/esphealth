@@ -14,7 +14,7 @@ from django.core.management.base import CommandError
 from ESP.settings import TODAY
 from ESP.utils.utils import date_from_str, str_from_date, log
 
-from ESP.vaers.heuristics import  diagnostic_heuristics, lab_heuristics,prescription_heuristics,allergy_heuristics
+from ESP.vaers.heuristics import  diagnostic_heuristics, lab_heuristics,prescription_heuristics,allergy_heuristics,problem_heuristics,hospprob_heuristics
             
 usage_msg = """
 Usage: python %prog -b[egin_date] -e[nd_date] 
@@ -38,6 +38,8 @@ class Command(BaseCommand):
                           help='Run Diagnostics Heuristics'),
         make_option('-p', '--rx', action='store_true', dest='rx',help='Run Prescription Heuristics'),
         make_option('-g', '--allergy', action='store_true', dest='allergy',help='Run Allergy Heuristics'),
+        make_option('-r', '--problem', action='store_true', dest='problem',help='Run Problem Heuristics'),
+        make_option('-o', '--hospprob', action='store_true', dest='hospprob',help='Run Hospital Problem Heuristics'),
         make_option('-a', '--all', action='store_true', dest='all'),
         make_option('-c', '--create', action='store_true', dest='create')
         
@@ -59,10 +61,12 @@ class Command(BaseCommand):
             options['lx'] = True
             #options['rx'] = True 
             #options['allergy'] = True -- there is currently no allergy data and this has not been extensively tested
+            #options['problem'] = True 
+            #options['hospprob'] = True 
             
     
-        if not ( options['diagnostics'] or options['lx'] or options['rx'] or options['allergy']):
-            raise CommandError('Must specify  --diagnosics, --lx, --rx or --all')
+        if not ( options['diagnostics'] or options['lx'] or options['rx'] or options['allergy'] or options['problem'] or options['hospprob']):
+            raise CommandError('Must specify  --diagnosics, --lx, --rx, --allergy, --problem, --hospprob or --all')
     
         if not (options['create']):
             raise CommandError('Must specify --create')
@@ -72,6 +76,8 @@ class Command(BaseCommand):
         if options['lx']: heuristics += lab_heuristics()
         if options['rx']: heuristics += prescription_heuristics()
         if options['allergy']: heuristics += allergy_heuristics()
+        if options['problem']: heuristics += problem_heuristics()
+        if options['hospprob']: heuristics += hospprob_heuristics()
     
     
         if options['create']: 

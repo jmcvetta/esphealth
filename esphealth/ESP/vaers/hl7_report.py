@@ -166,7 +166,7 @@ class AdverseReactionReport(object):
             elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('prescription'):
                 caseDescription = caseDescription + AE.prescriptionevent.content_object.name + ' on ' + str(AE.prescriptionevent.content_object.date) + ', '
             elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('labresult'):
-                caseDescription = caseDescription + AE.labresultevent.content_object.name + ' on ' + str(AE.labresultevent.content_object.result_date) + ', '
+                caseDescription = caseDescription + AE.labresultevent.content_object.output_name + ' on ' + str(AE.labresultevent.content_object.result_date) + ', '
             elif ContentType.objects.get_for_id(AE.content_type_id).model.startswith('allergy'):
                 caseDescription = caseDescription + AE.allergyevent.content_object.name + ' allergy on ' + str(AE.allergyevent.content_object.date) + ', '
         for quest in quests:
@@ -323,6 +323,17 @@ class AdverseReactionReport(object):
             p_ae.value = [CVXVax.code, CVXVax.short_name, 'CVX']
             p_aes.append(p_ae)           
         return SegmentTree(obr, p_aes)
+    
+    def repno(self):
+        obr = OBR()
+        obr.universal_service_id = ['','Only for reports submitted by manufacturer/immunization project']
+        obx = OBX()
+        obx.value_type = 'ST'
+        obx.observation_result_status = 'F'
+        obx.identifier = ['30975-7','Mfr./Imm. Proj. report no.','LN']
+        obx.value = ['METROHEALTHESP2012'+str(self.ques.id)]
+        return SegmentTree(obr, obx)
+        
 
     def render(self):
         observation_reports = [self.event_summary(), self.vaccine_list(), 
@@ -331,6 +342,7 @@ class AdverseReactionReport(object):
         pcases = pcases.filter(id__in=Report_Sent.objects.filter)
         for pcase in pcases:
             observation_reports.append(self.prior_ae(pcase))
+        observation_reports.append(self.repno())
         for idx, report in enumerate(observation_reports):
             report.parent.sequence_id = idx + 1
 

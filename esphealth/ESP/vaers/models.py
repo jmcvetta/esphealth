@@ -479,6 +479,88 @@ class PrescriptionEvent(AdverseEvent):
             self.id, self.content_object.patient.full_name, 
             self.matching_rule_explain, self.date)
 
+class ProblemEvent(AdverseEvent):
+    
+    @staticmethod
+    def write_clustering_report(**kw):
+        begin_date = kw.pop('begin_date', None) or EPOCH
+        end_date = kw.pop('end_date', None) or datetime.datetime.today()
+        
+        root_folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
+        folder = make_date_folders(begin_date, end_date, root=root_folder)
+        gap = kw.pop('max_interval', MAX_TIME_WINDOW_POST_RX)
+
+        prob_events = ProblemEvent.objects.filter(date__gte=begin_date, date__lte=end_date)
+        within_interval = [e for e in prob_events 
+                           if (e.date - max([i.date for i in Case.objects.get(adverse_events = e).immunizations.all()])).days <= gap]
+
+        log.info('Writing report for %d Problem events between %s and %s' % (
+                len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+
+        make_clustering_event_report_file(os.path.join(folder, 'prob_events.txt'), within_interval)
+
+    def _deidentified_prob(self, days_to_shift):
+        code = self.content_object.icd9
+        date = self.content_object.date - datetime.timedelta(days=days_to_shift)
+        return {
+            'date':str(date),
+            'icd9_code':code
+            }
+
+    def complete_deidentification(self, data, **kw):
+        days_to_shift = kw.pop('days_to_shift', None)
+        if not days_to_shift: 
+            raise ValueError, 'Must indicate days_to_shift'
+        
+        data['problem'] = self._deidentified_prob(days_to_shift)
+        return data
+    
+    def __unicode__(self):
+        return u'Problem Event %s: Patient %s, %s on %s' % (
+            self.id, self.content_object.patient.full_name, 
+            self.matching_rule_explain, self.date)
+
+class HospProblemEvent(AdverseEvent):
+    
+    @staticmethod
+    def write_clustering_report(**kw):
+        begin_date = kw.pop('begin_date', None) or EPOCH
+        end_date = kw.pop('end_date', None) or datetime.datetime.today()
+        
+        root_folder = kw.pop('folder', CLUSTERING_REPORTS_DIR)
+        folder = make_date_folders(begin_date, end_date, root=root_folder)
+        gap = kw.pop('max_interval', MAX_TIME_WINDOW_POST_RX)
+
+        hprob_events = HospProblemEvent.objects.filter(date__gte=begin_date, date__lte=end_date)
+        within_interval = [e for e in hprob_events 
+                           if (e.date - max([i.date for i in Case.objects.get(adverse_events = e).immunizations.all()])).days <= gap]
+
+        log.info('Writing report for %d Hospital Problem events between %s and %s' % (
+                len(within_interval), begin_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+
+        make_clustering_event_report_file(os.path.join(folder, 'hprob_events.txt'), within_interval)
+
+    def _deidentified_hprob(self, days_to_shift):
+        code = self.content_object.icd9
+        date = self.content_object.date - datetime.timedelta(days=days_to_shift)
+        return {
+            'date':str(date),
+            'icd9_code':code
+            }
+
+    def complete_deidentification(self, data, **kw):
+        days_to_shift = kw.pop('days_to_shift', None)
+        if not days_to_shift: 
+            raise ValueError, 'Must indicate days_to_shift'
+        
+        data['hproblem'] = self._deidentified_hprob(days_to_shift)
+        return data
+    
+    def __unicode__(self):
+        return u'Hospital Problem Event %s: Patient %s, %s on %s' % (
+            self.id, self.content_object.patient.full_name, 
+            self.matching_rule_explain, self.date)
+
 class AllergyEvent(AdverseEvent):
     
     @staticmethod

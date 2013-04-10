@@ -375,9 +375,24 @@ class Patient(BaseMedicalRecord):
         '''
         begin_date = begin_date or self.date_of_birth or EPOCH
         end_date = end_date or datetime.date.today()
-        return self.encounters().filter(
+        H1 = self.encounters().filter(
             date__gte=begin_date, date__lt=end_date
             ).filter(icd9_codes__in=list(icd9s)).count() != 0
+        H2 = self.problems().filter(
+            date__gte=begin_date, date__lt=end_date
+            ).filter(icd9__in=list(icd9s)).count() != 0
+        H3 = self.hospprobs().filter(
+            date__gte=begin_date, date__lt=end_date
+            ).filter(icd9__in=list(icd9s)).count() != 0
+        #the point here is only to determine if there is any prior history and use this to stop
+        # further heuristic processing.  So just return the first one that has any data, or the last one.
+        if H1: 
+            return H1
+        elif H2:
+            return H2
+        else:
+            return H3
+            
 
     phone_number = property(lambda x: '(%s) %s' % (x.areacode, x.tel))
     
@@ -456,6 +471,12 @@ class Patient(BaseMedicalRecord):
 
     def encounters(self):
         return Encounter.objects.filter(patient=self)
+
+    def problems(self):
+        return Problem.objects.filter(patient=self)
+
+    def hospprobs(self):
+        return Hospital_Problem.objects.filter(patient=self)
 
     def prescriptions(self):
         return Prescription.objects.filter(patient=self)

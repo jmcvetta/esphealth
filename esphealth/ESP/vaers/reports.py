@@ -4,7 +4,7 @@
 import optparse
 
 from ESP.conf.common import EPOCH
-from ESP.vaers.models import EncounterEvent, LabResultEvent, PrescriptionEvent, AllergyEvent
+from ESP.vaers.models import EncounterEvent, LabResultEvent, PrescriptionEvent, AllergyEvent, ProblemEvent, HospProblemEvent
 from ESP.utils.utils import date_from_str
 from ESP import settings
 
@@ -23,7 +23,9 @@ def main():
 
     parser.add_option('-l', '--lx', action='store_true', dest='lx', help='Lab Results Reports')
     parser.add_option('-d', '--diagnostics', action='store_true', dest='icd9', help='Icd9 Reports')
-    parser.add_option('-p', '--rx', action='store_true', dest='rx',help='Prescription Reports')
+    parser.add_option('-p', '--problems', action='store_true', dest='prob',help='Problem Reports')
+    parser.add_option('-h', '--hproblems', action='store_true', dest='hprob',help='Hospital Problem Reports')
+    parser.add_option('-r', '--rx', action='store_true', dest='rx',help='Prescription Reports')
     parser.add_option('-g', '--allergy', action='store_true', dest='allergy',help='Allergy Reports')
     
     parser.add_option('-a', '--all', action='store_true', dest='all', help='All reports')
@@ -45,8 +47,10 @@ def main():
         options.lx = True
         options.rx = True
         options.allergy = True
+        options.prob = True
+        options.hprob = True
         
-    if not ( options.icd9 or options.lx or options.rx or options.allergy):
+    if not ( options.icd9 or options.lx or options.rx or options.allergy or options.prob or options.hprob):
         parser.print_help()
         import sys
         sys.exit()
@@ -58,6 +62,10 @@ def main():
     if options.rx: 
         PrescriptionEvent.write_clustering_report(begin_date=begin_date, end_date=end_date)
     if options.allergy: 
+        ProblemEvent.write_clustering_report(begin_date=begin_date, end_date=end_date)
+    if options.prob: 
+        HospProblemEvent.write_clustering_report(begin_date=begin_date, end_date=end_date)
+    if options.hprob: 
         AllergyEvent.write_clustering_report(begin_date=begin_date, end_date=end_date)
 
 

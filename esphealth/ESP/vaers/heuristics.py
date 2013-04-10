@@ -11,8 +11,8 @@ from ESP.hef.base import BaseHeuristic
 from ESP.conf.common import EPOCH
 from ESP.static.models import Icd9
 from ESP.emr.models import Immunization, Encounter, LabResult,  Allergy
-from ESP.emr.models import Prescription, Problem
-from ESP.vaers.models import Case, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent
+from ESP.emr.models import Prescription, Problem, Hospital_Problem
+from ESP.vaers.models import Case, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent, ProblemEvent, HospProblemEvent
 from ESP.vaers.models import DiagnosticsEventRule
 from ESP.vaers.models import ExcludedICD9Code, Questionnaire
 from ESP.utils.utils import log
@@ -244,6 +244,14 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                 if prior_problem_qs:
                     continue # prior problem so ignore 
                 
+                prior_hproblem_qs = Hospital_Problem.objects.filter(
+                    date__lt = this_enc.date, 
+                    icd9__code__in = this_enc.icd9_codes.all(),
+                    patient = this_enc.patient, 
+                )
+                if prior_hproblem_qs:
+                    continue # prior problem so ignore 
+                
             #find the adverse event icd9 codes           
             thisname = self.name
             for code in this_enc.icd9_codes.filter(code__in=self.icd9s).distinct():
@@ -276,6 +284,224 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                     counter +=1
                     
                 self.update_or_create_case(this_enc, imm, new_ee)
+            
+        return counter
+
+class VaersProblemHeuristic(AdverseEventHeuristic):
+    def __init__(self, event_name, icd9s, rule):
+        '''
+        @type icd9s: [<Icd9>, <Icd9>, <Icd9>, ...]
+        @type discarding_icd9: [<Icd9>, <Icd9>, <Icd9>, ...]
+        @type verbose_name: String
+        @type rule: object diagnosis event rule
+        '''
+                 
+        self.name = event_name
+        self.verbose_name = '%s as an adverse reaction to immunization' % self.name
+        self.icd9s = icd9s
+        self.category = rule.category
+        self.ignore_period = rule.ignore_period  
+        self.risk_period = rule.risk_period
+        self.risk_period_start = rule.risk_period_start      
+        
+        super(VaersProblemHeuristic, self).__init__(event_name, verbose_name=self.verbose_name)
+            
+    uri = 'urn:x-esphealth:heuristic:channing:vaersdx:v1'
+    
+    def vaers_heuristic_name(self):
+        
+        return 'VAERS: (Problem) ' + self.name
+            
+    def matches(self, **kw):
+        # the reports of AE are per immunization 
+        
+        begin = kw.get('begin_date') or EPOCH
+        end = kw.get('end_date') or datetime.date.today()
+        
+        prb_qs = Problem.objects.following_vaccination(self.risk_period,self.risk_period_start)
+        
+        prb_qs = prb_qs.filter(icd9__in=self.icd9s.all())
+        prb_qs = prb_qs.filter(date__gte=begin, date__lte=end)
+        prb_qs = prb_qs.distinct()
+        return prb_qs
+
+    def generate(self, **kw):
+        log.info('Generating events for %s' % self.name)
+        counter = 0
+        content_type = ContentType.objects.get_for_model(Encounter)
+        
+        #TODO find the encounter that has a date <= this enc date and close date => this enc date
+        # or close date is null is same as start one day hospitalization
+        # dont add the event if the priority is >
+        
+        for this_prb in self.matches(**kw):
+            if self.ignore_period:
+                earliest = this_prb.date - relativedelta(months=self.ignore_period)
+                prior_enc_qs = Encounter.objects.filter(
+                    date__lt = this_prb.date, 
+                    date__gte = earliest, 
+                    #priority__lte = this_enc.priority,
+                    patient = this_prb.patient,                     
+                    icd9_codes__in = self.icd9s.all(),
+                )
+                if prior_enc_qs:
+                    continue # Prior diagnosis so ignore 
+                
+                prior_problem_qs = Problem.objects.filter(
+                    date__lt = this_prb.date, 
+                    icd9__in = this_prb.icd9,
+                    patient = this_prb.patient, 
+                )
+                if prior_problem_qs:
+                    continue # prior problem so ignore 
+                
+                prior_hproblem_qs = Hospital_Problem.objects.filter(
+                    date__lt = this_prb.date, 
+                    icd9__code__in = this_prb.icd9,
+                    patient = this_prb.patient, 
+                )
+                if prior_hproblem_qs:
+                    continue # prior problem so ignore 
+                
+            #find the adverse event icd9 codes           
+            thisname = self.name + ' ' + this_prb.icd9
+
+            immunization_qs = Immunization.vaers_candidates(this_prb.patient, this_prb.date, self.risk_period)
+            assert immunization_qs
+            
+            # create a new event for each immunization date 
+            for imm in immunization_qs:
+                        
+                new_ee, created = ProblemEvent.objects.get_or_create(
+                    gap = (this_prb.date - imm.date).days,
+                    object_id = this_prb.pk,
+                    content_type = content_type,
+                    date = this_prb.date, 
+                    patient = this_prb.patient,
+                    defaults={
+                        'name': self.vaers_heuristic_name(),
+                        'matching_rule_explain': thisname ,
+                        'category' : self.category, 
+                        }
+                    )
+                
+                new_ee.version = rules.VAERS_VERSION
+                    
+                new_ee.save() # Must save before adding to ManyToManyField
+                
+                if created: 
+                    counter +=1
+                    
+                self.update_or_create_case(this_prb, imm, new_ee)
+            
+        return counter
+
+class VaersHospProbHeuristic(AdverseEventHeuristic):
+    def __init__(self, event_name, icd9s, rule):
+        '''
+        @type icd9s: [<Icd9>, <Icd9>, <Icd9>, ...]
+        @type discarding_icd9: [<Icd9>, <Icd9>, <Icd9>, ...]
+        @type verbose_name: String
+        @type rule: object diagnosis event rule
+        '''
+                 
+        self.name = event_name
+        self.verbose_name = '%s as an adverse reaction to immunization' % self.name
+        self.icd9s = icd9s
+        self.category = rule.category
+        self.ignore_period = rule.ignore_period  
+        self.risk_period = rule.risk_period
+        self.risk_period_start = rule.risk_period_start      
+        
+        super(VaersHospProbHeuristic, self).__init__(event_name, verbose_name=self.verbose_name)
+            
+    uri = 'urn:x-esphealth:heuristic:channing:vaersdx:v1'
+    
+    def vaers_heuristic_name(self):
+        
+        return 'VAERS: (Problem) ' + self.name
+            
+    def matches(self, **kw):
+        # the reports of AE are per immunization 
+        
+        begin = kw.get('begin_date') or EPOCH
+        end = kw.get('end_date') or datetime.date.today()
+        
+        hprb_qs = Hospital_Problem.objects.following_vaccination(self.risk_period,self.risk_period_start)
+        
+        hprb_qs = hprb_qs.filter(icd9__in=self.icd9s.all())
+        hprb_qs = hprb_qs.filter(date__gte=begin, date__lte=end)
+        hprb_qs = hprb_qs.distinct()
+        return hprb_qs
+
+    def generate(self, **kw):
+        log.info('Generating events for %s' % self.name)
+        counter = 0
+        content_type = ContentType.objects.get_for_model(Encounter)
+        
+        #TODO find the encounter that has a date <= this enc date and close date => this enc date
+        # or close date is null is same as start one day hospitalization
+        # dont add the event if the priority is >
+        
+        for this_hprb in self.matches(**kw):
+            if self.ignore_period:
+                earliest = this_hprb.date - relativedelta(months=self.ignore_period)
+                prior_enc_qs = Encounter.objects.filter(
+                    date__lt = this_hprb.date, 
+                    date__gte = earliest, 
+                    #priority__lte = this_enc.priority,
+                    patient = this_hprb.patient,                     
+                    icd9_codes__in = self.icd9s.all(),
+                )
+                if prior_enc_qs:
+                    continue # Prior diagnosis so ignore 
+                
+                prior_problem_qs = Problem.objects.filter(
+                    date__lt = this_hprb.date, 
+                    icd9__in = this_hprb.icd9,
+                    patient = this_hprb.patient, 
+                )
+                if prior_problem_qs:
+                    continue # prior problem so ignore 
+                
+                prior_hproblem_qs = Hospital_Problem.objects.filter(
+                    date__lt = this_hprb.date, 
+                    icd9__code__in = this_hprb.icd9,
+                    patient = this_hprb.patient, 
+                )
+                if prior_hproblem_qs:
+                    continue # prior problem so ignore 
+                
+            #find the adverse event icd9 codes           
+            thisname = self.name + ' ' + this_hprb.icd9
+
+            immunization_qs = Immunization.vaers_candidates(this_hprb.patient, this_hprb.date, self.risk_period)
+            assert immunization_qs
+            
+            # create a new event for each immunization date 
+            for imm in immunization_qs:
+                        
+                new_ee, created = ProblemEvent.objects.get_or_create(
+                    gap = (this_hprb.date - imm.date).days,
+                    object_id = this_hprb.pk,
+                    content_type = content_type,
+                    date = this_hprb.date, 
+                    patient = this_hprb.patient,
+                    defaults={
+                        'name': self.vaers_heuristic_name(),
+                        'matching_rule_explain': thisname ,
+                        'category' : self.category, 
+                        }
+                    )
+                
+                new_ee.version = rules.VAERS_VERSION
+                    
+                new_ee.save() # Must save before adding to ManyToManyField
+                
+                if created: 
+                    counter +=1
+                    
+                self.update_or_create_case(this_hprb, imm, new_ee)
             
         return counter
 
@@ -317,6 +543,116 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
         self.risk_period = rules.MAX_TIME_WINDOW_POST_EVENT
         self.risk_period_start = 1
         super(VaersDiagnosisHeuristic, self).__init__(self.name, verbose_name=self.verbose_name)
+            
+    @property
+    def icd9s(self):
+        '''
+        All ICD9s that are not covered by another heuristic and are not 
+        included in the ExcludedICD9Code table.
+        @rtype: Icd9 QuerySet
+        '''
+        covered_icd9_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
+        excluded_icd9_codes = ExcludedICD9Code.objects.values('code')
+        
+        # TODO: Ask Mike K about whether correlated ICD9 codes should be included in this ignore list
+        icd9_qs = Icd9.objects.exclude(code__in=covered_icd9_codes)
+        icd9_qs = icd9_qs.exclude(code__in=excluded_icd9_codes)
+        return icd9_qs
+
+
+class Icd9PCorrelatedHeuristic(VaersProblemHeuristic):
+    def __init__(self, event_name, icd9s, rule, discarding_icd9s):
+        self.discarding_icd9s = discarding_icd9s
+        super(Icd9PCorrelatedHeuristic, self).__init__(event_name, icd9s, rule)
+        
+    def matches(self, **kw):
+        matches = super(Icd9PCorrelatedHeuristic, self).matches(**kw)
+        valid_matches = []
+        for this_match in matches:
+            relevancy_begin = this_match.date - relativedelta(months=12)
+            history = this_match.patient.has_history_of(
+                self.discarding_icd9s, 
+                begin_date=relevancy_begin, 
+                end_date=this_match.date)
+            if history:
+                continue # Patient has a history of this problem, so we will skip it.
+            valid_matches.append(this_match)
+        return valid_matches 
+
+class AnyOtherProblemHeuristic(VaersProblemHeuristic):
+    '''
+    Any diagnosis not covered by another heuristic, or included in 
+    the ExcludedICD9Code table. Exclude if:
+    1.Same code on patient's current problem list prior to this encounter 
+    2.Encounter with same code in past 36 months
+    3.Past medical history list with same code 
+    '''
+    
+    uri = 'urn:x-esphealth:heuristic:channing:vaersany_other_dx:v1'
+    
+    def __init__(self):
+        self.name = 'Any other Diagnosis' # This is the EVENT name
+        self.verbose_name = '%s as an adverse reaction to immunization' % self.name
+        self.category = '2_possible'
+        self.ignore_period =  rules.MAX_TIME_WINDOW_POST_ANY_EVENT # months
+        self.risk_period = rules.MAX_TIME_WINDOW_POST_EVENT
+        self.risk_period_start = 1
+        super(VaersProblemHeuristic, self).__init__(self.name, verbose_name=self.verbose_name)
+            
+    @property
+    def icd9s(self):
+        '''
+        All ICD9s that are not covered by another heuristic and are not 
+        included in the ExcludedICD9Code table.
+        @rtype: Icd9 QuerySet
+        '''
+        covered_icd9_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
+        excluded_icd9_codes = ExcludedICD9Code.objects.values('code')
+        
+        # TODO: Ask Mike K about whether correlated ICD9 codes should be included in this ignore list
+        icd9_qs = Icd9.objects.exclude(code__in=covered_icd9_codes)
+        icd9_qs = icd9_qs.exclude(code__in=excluded_icd9_codes)
+        return icd9_qs
+
+
+class Icd9HCorrelatedHeuristic(VaersHospProbHeuristic):
+    def __init__(self, event_name, icd9s, rule, discarding_icd9s):
+        self.discarding_icd9s = discarding_icd9s
+        super(Icd9HCorrelatedHeuristic, self).__init__(event_name, icd9s, rule)
+        
+    def matches(self, **kw):
+        matches = super(Icd9HCorrelatedHeuristic, self).matches(**kw)
+        valid_matches = []
+        for this_match in matches:
+            relevancy_begin = this_match.date - relativedelta(months=12)
+            history = this_match.patient.has_history_of(
+                self.discarding_icd9s, 
+                begin_date=relevancy_begin, 
+                end_date=this_match.date)
+            if history:
+                continue # Patient has a history of this problem, so we will skip it.
+            valid_matches.append(this_match)
+        return valid_matches 
+
+class AnyOtherHospProbHeuristic(VaersHospProbHeuristic):
+    '''
+    Any diagnosis not covered by another heuristic, or included in 
+    the ExcludedICD9Code table. Exclude if:
+    1.Same code on patient's current problem list prior to this encounter 
+    2.Encounter with same code in past 36 months
+    3.Past medical history list with same code 
+    '''
+    
+    uri = 'urn:x-esphealth:heuristic:channing:vaersany_other_dx:v1'
+    
+    def __init__(self):
+        self.name = 'Any other Diagnosis' # This is the EVENT name
+        self.verbose_name = '%s as an adverse reaction to immunization' % self.name
+        self.category = '2_possible'
+        self.ignore_period =  rules.MAX_TIME_WINDOW_POST_ANY_EVENT # months
+        self.risk_period = rules.MAX_TIME_WINDOW_POST_EVENT
+        self.risk_period_start = 1
+        super(VaersHospProbHeuristic, self).__init__(self.name, verbose_name=self.verbose_name)
             
     @property
     def icd9s(self):
@@ -686,6 +1022,36 @@ def make_diagnosis_heuristic(name):
     else:
         return VaersDiagnosisHeuristic(name, icd9s, rule)
     
+def make_problem_heuristic(name):
+    '''
+    @type name: string
+    '''
+    
+    rule = DiagnosticsEventRule.objects.get(name=name)
+    icd9s = rule.heuristic_defining_codes.all()
+
+    discarding_icd9s = rule.heuristic_discarding_codes.all()
+
+    if discarding_icd9s:
+        return Icd9PCorrelatedHeuristic(name, icd9s, rule, discarding_icd9s)
+    else:
+        return VaersProblemHeuristic(name, icd9s, rule)
+    
+def make_hospprob_heuristic(name):
+    '''
+    @type name: string
+    '''
+    
+    rule = DiagnosticsEventRule.objects.get(name=name)
+    icd9s = rule.heuristic_defining_codes.all()
+
+    discarding_icd9s = rule.heuristic_discarding_codes.all()
+
+    if discarding_icd9s:
+        return Icd9HCorrelatedHeuristic(name, icd9s, rule, discarding_icd9s)
+    else:
+        return VaersHospProbHeuristic(name, icd9s, rule)
+    
 def make_lab_heuristics(lab_type):
     rule = rules.VAERS_LAB_RESULTS[lab_type]
 
@@ -735,6 +1101,22 @@ def diagnostic_heuristics():
     for v in rules.VAERS_DIAGNOSTICS.values():
         heuristic_list.append( make_diagnosis_heuristic(v['name']) )
     any_other = AnyOtherDiagnosisHeuristic()
+    heuristic_list.append(any_other)
+    return heuristic_list
+
+def problem_heuristics():
+    heuristic_list = []
+    for v in rules.VAERS_DIAGNOSTICS.values():
+        heuristic_list.append( make_problem_heuristic(v['name']) )
+    any_other = AnyOtherProblemHeuristic()
+    heuristic_list.append(any_other)
+    return heuristic_list
+
+def hospprob_heuristics():
+    heuristic_list = []
+    for v in rules.VAERS_DIAGNOSTICS.values():
+        heuristic_list.append( make_hospprob_heuristic(v['name']) )
+    any_other = AnyOtherHospProbHeuristic()
     heuristic_list.append(any_other)
     return heuristic_list
 

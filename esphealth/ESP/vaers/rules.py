@@ -9,7 +9,7 @@ VAERS_VERSION = '0.6'
 TEMP_TO_REPORT = 100.4 # degrees are F in our records, 38C = 100.4F
 
 MAX_TIME_WINDOW_POST_ANY_EVENT = 36 # max months between immunization and any other dx 
-MAX_TIME_WINDOW_POST_EVENT = 42 # Period of time between immunization and dx and allergies
+MAX_TIME_WINDOW_POST_EVENT = 30 # Period of time between immunization and dx and allergies
 MAX_TIME_WINDOW_POST_LX = 30 # Period of time between immunization and labs
 MAX_TIME_WINDOW_POST_RX = 14 # Period of time between immunization and meds
 MAX_TIME_WINDOW_PRIOR_EVENT = 28 # Period of time between event and prior immunization
@@ -703,7 +703,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Diarrhea - Presumed Infectious',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -711,7 +711,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Erysipelas',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -719,7 +719,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Streptococcus, Unspec.',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -727,7 +727,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Staphylococcus Infecction, Other type',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -770,7 +770,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Viral Infection, Unspecified',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -796,7 +796,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Delirium - Acute',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -829,7 +829,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Pain, Acute, Other',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -844,11 +844,11 @@ VAERS_DIAGNOSTICS = {
     
     '333.2; 779.0; 780.3*': {#
         'name':'Seizures',
-        'ignore_period':None,
+        'ignore_period':12,
         'category':'2_possible',
         'source':'Menactra',
         'risk_period_start':0,
-        'risk_period_days': 3,
+        'risk_period_days': 14,
         },
     
     '347*': {#
@@ -936,7 +936,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Atrial Fibrillation',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -971,7 +971,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Hypotension',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -979,7 +979,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Croup',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -987,7 +987,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Pharyngeal Disease, Unspecified',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1012,7 +1012,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Alveolitis / Pneumonitis - Other Allergic',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1057,7 +1057,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Parametritis / Cellulitis - Acute',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1065,7 +1065,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Vomiting of Preg, Unspec',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1073,7 +1073,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Fetal Distress in Preg - Antepart',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1081,7 +1081,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Maternal Fever During Labor',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1116,7 +1116,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Local Skin / Subcutan Infection, Unspec',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1133,7 +1133,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Skin Disorder, Other',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1150,7 +1150,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Arthralgia - Pelvis / Thigh',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1167,7 +1167,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Myalgia, Unspec',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1175,7 +1175,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Hypoglycemia - Neonatal',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1183,7 +1183,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Consciousness Alteration - Other',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1200,7 +1200,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Dizziness - Nonspecific',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1208,7 +1208,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Sleep Disorder / Disturbance, Unspec',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1234,7 +1234,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Fussy Infant',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1251,7 +1251,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Flushing',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1259,7 +1259,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Headache',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1267,7 +1267,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Throat Pain',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1275,7 +1275,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Palpitations',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1283,7 +1283,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Shortness of Breath',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1291,7 +1291,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Wheezing',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1299,7 +1299,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Hiccoughs',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1307,7 +1307,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Nausea and Vomiting',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1315,7 +1315,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Nausea',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1323,7 +1323,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Vomiting',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1331,7 +1331,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Flatulance / Eructation / Bloating',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1339,7 +1339,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Diarrhea',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
@@ -1397,7 +1397,7 @@ VAERS_DIAGNOSTICS = {
         'name':'Allergy, Unspec',
         'ignore_period':36,
         'category':'2_possible',
-        'risk_period_start':0,
+        'risk_period_start':1,
         'risk_period_days': 4,
         },    
     
