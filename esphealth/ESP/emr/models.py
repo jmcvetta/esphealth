@@ -1493,7 +1493,10 @@ class Immunization(BasePatientRecord):
             
     def _get_vaccine(self):
         try:
-            return Vaccine.objects.get(code=VaccineCodeMap.objects.get(native_code=self.imm_type).canonical_code_id)
+            return Vaccine.objects.get(id=VaccineCodeMap.objects.filter(native_code=self.imm_type).distinct('canonical_code_id').canonical_code_id)
+            #sites have been known to update their vaccine names, while keeping the IDs the same, causing the need for multiple
+            # rows in VaccineCodeMap for each immunization type.  This will break if rows for the same immunization type are mapped to
+            # multiple canonical codes in static_vaccine
         except:
             return Vaccine.objects.get(short_name='unknown')
     vaccine = property(_get_vaccine)

@@ -290,7 +290,7 @@ class VaccineCodeMap(models.Model):
     '''
     Maps native vaccine code to canonical vaccine code for use in reporting 
     '''
-    native_code = models.CharField(max_length=128, unique=True)
+    native_code = models.CharField(max_length=128)
     native_name = models.CharField(max_length=200)
     canonical_code = models.ForeignKey(Vaccine, null=True)
 

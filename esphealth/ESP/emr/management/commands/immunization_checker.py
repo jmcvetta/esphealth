@@ -29,5 +29,6 @@ class Command(BaseCommand):
     def updt_immu(self):
         Immunization.objects.update(isvaccine=True)
         Immunization.objects.filter(name__in=self.ImmuEx_qs.values('non_immu_name')).update(isvaccine=False)
+        Immunization.objects.filter(imm_status__in=['2','3','4']).update(isvaccine=False)
         
     
