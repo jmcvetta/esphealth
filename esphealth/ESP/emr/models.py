@@ -564,7 +564,7 @@ class BasePatientRecordManager(models.Manager):
         if risk_period_start ==0 :
             q_earliest_date = Q(date__gte=F('patient__immunization__date'))
         else:
-            q_earliest_date = Q(date__gt=F('patient__immunization__date')+ risk_period_start)
+            q_earliest_date = Q(date__gte=F('patient__immunization__date')+ risk_period_start)
 
         return self.filter(patient__immunization=F('patient__immunization'), 
                            patient__immunization__isvaccine=True).filter(
