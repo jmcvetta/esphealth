@@ -114,6 +114,10 @@ class Syphilis(DiseaseDefinition):
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'tp-igg',
             ))
+        #new heuristic in v7 of spec 
+        heuristic_list.append( LabResultPositiveHeuristic(
+            test_name = 'tp-igm',
+            ))
         heuristic_list.append( LabResultPositiveHeuristic(
             test_name = 'vdrl-csf',
             ))
@@ -135,6 +139,7 @@ class Syphilis(DiseaseDefinition):
         # Criteria Set #1
         #
         dx_ev_names = ['dx:syphilis']
+        lx_ev_names = ['lx:tp-igm:positive',]
         rx_ev_names = [
             'rx:penicillin_g',
             'rx:doxycycline_7_day',
@@ -146,6 +151,13 @@ class Syphilis(DiseaseDefinition):
         #
         dxrx_event_qs = Event.objects.filter(
             name__in = dx_ev_names,
+            patient__event__name__in = rx_ev_names,
+            patient__event__date__gte = (F('date') - 14 ),
+            patient__event__date__lte = (F('date') + 14 ),
+            )
+        
+        lxrx_event_qs = Event.objects.filter(
+            name__in = lx_ev_names,
             patient__event__name__in = rx_ev_names,
             patient__event__date__gte = (F('date') - 14 ),
             patient__event__date__lte = (F('date') + 14 ),
@@ -178,11 +190,11 @@ class Syphilis(DiseaseDefinition):
         #
         # Combined Criteria
         #
-        combined_criteria_qs = dxrx_event_qs | test_event_qs | vdrl_csf_qs
+        combined_criteria_qs = dxrx_event_qs | lxrx_event_qs | test_event_qs | vdrl_csf_qs
         combined_criteria_qs = combined_criteria_qs.exclude(case__condition='syphilis')
         # ordering here doesnt matter because create cases from event sorts again
         combined_criteria_qs = combined_criteria_qs.order_by('date')
-        all_event_names = dx_ev_names + rx_ev_names + rpr_ev_names + tppa_ev_names + vdrl_csf_ev_names
+        all_event_names = dx_ev_names + lx_ev_names + rx_ev_names + rpr_ev_names + tppa_ev_names + vdrl_csf_ev_names
         counter = 0
         new_case_count = self._create_cases_from_event_qs(
             condition = 'syphilis',
