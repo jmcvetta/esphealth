@@ -386,10 +386,15 @@ class hl7Batch:
         section.appendChild(address)
         if demog.tel:
             pid13 = self.casesDoc.createElement('PID.13')
-            self.addSimple(pid13,demog.areacode,'XTN.6')
-            self.addSimple(pid13,demog.tel_numeric,'XTN.7')
-            if demog.tel_ext:
-                self.addSimple(pid13,demog.tel_ext,'XTN.8')
+            tac = demog.areacode
+            tel = demog.tel_numeric
+            ext = demog.tel_ext
+            if tac == None: tac = ''
+            if tel == None: tel = ''
+            if ext == None: ext = ''
+            self.addSimple(pid13,tac,'XTN.6')
+            self.addSimple(pid13,tel,'XTN.7')
+            self.addSimple(pid13,demog.tel_ext,'XTN.8')
             section.appendChild(pid13)
         for elem, sec in [(demog.home_language,'PID.15'),(demog.marital_stat,'PID.16')]:
             if elem:
