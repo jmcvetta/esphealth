@@ -825,6 +825,15 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 15,
         },
     
+    '333.2; 779.0; 780.3*': {#
+        'name':'Seizures',
+        'ignore_period':12,
+        'category':'2_possible',
+        'source':'Menactra',
+        'risk_period_start':0,
+        'risk_period_days': 14,
+        },
+    
     '338.19': {#
         'name':'Pain, Acute, Other',
         'ignore_period':36,
@@ -842,13 +851,12 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 42,
         },
     
-    '333.2; 779.0; 780.3*': {#
-        'name':'Seizures',
-        'ignore_period':12,
+    '345.90': {#
+        'name':'Seizure Disorder, Unspecified',
+        'ignore_period':36,
         'category':'2_possible',
-        'source':'Menactra',
-        'risk_period_start':0,
-        'risk_period_days': 14,
+        'risk_period_start':1,
+        'risk_period_days': 4,
         },
     
     '347*': {#
@@ -999,6 +1007,14 @@ VAERS_DIAGNOSTICS = {
         'risk_period_days': 14,
         },
     
+    '493.22; 493.92': {#
+        'name':'Asthma',
+        'ignore_period':36,
+        'category':'2_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
+        },
+
     '493.91; 493.11; 493.01; 493.21; 519.11; 786.07': {#
         'name':'Bronchospasm',
         'ignore_period':3,
@@ -1214,11 +1230,11 @@ VAERS_DIAGNOSTICS = {
     
     '780.6; 780.60': {#
         'name':'Fever',
-        'ignore_period':None,
+        'ignore_period':36,
         'category':'2_possible',
         'source':'MMR-V',
-        'risk_period_start':0,
-        'risk_period_days': 14,
+        'risk_period_start':1,
+        'risk_period_days': 4,
         },
     
     '780.63': {#
@@ -1349,6 +1365,14 @@ VAERS_DIAGNOSTICS = {
         'category':'2_possible',
         'risk_period_start':0,
         'risk_period_days': 30,
+        },
+    
+    '799.02':{#
+        'name':'Hypoxemia',
+        'ignore_period':36,
+        'category':'2_possible',
+        'risk_period_start':1,
+        'risk_period_days': 4,
         },
     
     '978*': {#
