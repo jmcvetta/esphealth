@@ -663,6 +663,14 @@
         <source_value>F</source_value>
         <target_value>2</target_value>
       </field>
+      <field>
+        <source_value>MALE</source_value>
+        <target_value>1</target_value>
+      </field>
+      <field>
+        <source_value>FEMALE</source_value>
+        <target_value>2</target_value>
+      </field>
     </fields>
      <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
