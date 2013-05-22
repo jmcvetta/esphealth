@@ -512,11 +512,11 @@ class hl7Batch:
             date__lte=end_date)
         if not preg_encounters:
             return ('261665006', None)
-        edc_encs = preg_encounters.filter(edc__isnull=False).order_by('date')
-        if not edc_encs:
-            raise IncompleteCaseData('Patient %s is pregnant during case window, but has no EDC.')
-        edc = edc_encs[0].edc
-        return ('77386006', edc)
+        edd_encs = preg_encounters.filter(edd__isnull=False).order_by('date')
+        if not edd_encs:
+            raise IncompleteCaseData('Patient %s is pregnant during case window, but has no EDD.')
+        edd = edd_encs[0].edd
+        return ('77386006', edd)
 
     def addCaseOBX(self, demog=None, orcs=None,icd9=None,lx=None, rx=None, encounters=[], condition=None, casenote='',caseid=''):
         """
@@ -532,17 +532,17 @@ class hl7Batch:
             orcs.appendChild(obx)
             indx += 1
         ##pregnancy status
-        (obx5, edc) = self.getPregnancyStatus(caseid)
+        (obx5, edd) = self.getPregnancyStatus(caseid)
         obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'CE')],obx3=[('CE.4','11449-6'),('CE.5','PREGNANCY STATUS')],obx5=[('CE.4',obx5)])
         orcs.appendChild(obx)
         indx += 1
-        ##EDC
-        if edc:
+        ##EDD
+        if edd:
             obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'TS')],obx3=[('CE.4','NA-8'),('CE.5','EXPECTED DATE OF CONFINEMENT')],
-                                obx5=[('TS.1',edc.strftime(DATE_FORMAT))])
+                                obx5=[('TS.1',edd.strftime(DATE_FORMAT))])
             indx += 1
             orcs.appendChild(obx)
-            pregdur = edc - datetime.date.today()
+            pregdur = edd - datetime.date.today()
             pregweeks = 40 - int(pregdur.days/7)
             obx = self.makeOBX(obx1=[('',indx)],obx2=[('', 'NM')],obx3=[('CE.4','NA-12')],
                                 obx5=[('',pregweeks)])
