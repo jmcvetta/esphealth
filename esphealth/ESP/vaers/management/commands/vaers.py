@@ -59,10 +59,10 @@ class Command(BaseCommand):
         if options['all']:
             options['diagnostics'] = True
             options['lx'] = True
-            #options['rx'] = True 
-            #options['allergy'] = True -- there is currently no allergy data and this has not been extensively tested
-            #options['problem'] = True 
-            #options['hospprob'] = True 
+            options['rx'] = True 
+            options['allergy'] = True 
+            options['problem'] = True 
+            options['hospprob'] = True 
             
     
         if not ( options['diagnostics'] or options['lx'] or options['rx'] or options['allergy'] or options['problem'] or options['hospprob']):

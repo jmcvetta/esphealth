@@ -349,7 +349,7 @@ class VaersProblemHeuristic(AdverseEventHeuristic):
                 
                 prior_problem_qs = Problem.objects.filter(
                     date__lt = this_prb.date, 
-                    icd9__in = this_prb.icd9,
+                    icd9 = this_prb.icd9,
                     patient = this_prb.patient, 
                 )
                 if prior_problem_qs:
@@ -357,14 +357,14 @@ class VaersProblemHeuristic(AdverseEventHeuristic):
                 
                 prior_hproblem_qs = Hospital_Problem.objects.filter(
                     date__lt = this_prb.date, 
-                    icd9__code__in = this_prb.icd9,
+                    icd9 = this_prb.icd9,
                     patient = this_prb.patient, 
                 )
                 if prior_hproblem_qs:
                     continue # prior problem so ignore 
                 
             #find the adverse event icd9 codes           
-            thisname = self.name + ' ' + this_prb.icd9
+            thisname = self.name + ' ' + str(this_prb.icd9)
 
             immunization_qs = Immunization.vaers_candidates(this_prb.patient, this_prb.date, self.risk_period)
             assert immunization_qs
@@ -458,7 +458,7 @@ class VaersHospProbHeuristic(AdverseEventHeuristic):
                 
                 prior_problem_qs = Problem.objects.filter(
                     date__lt = this_hprb.date, 
-                    icd9__in = this_hprb.icd9,
+                    icd9 = this_hprb.icd9,
                     patient = this_hprb.patient, 
                 )
                 if prior_problem_qs:
@@ -466,14 +466,14 @@ class VaersHospProbHeuristic(AdverseEventHeuristic):
                 
                 prior_hproblem_qs = Hospital_Problem.objects.filter(
                     date__lt = this_hprb.date, 
-                    icd9__code__in = this_hprb.icd9,
+                    icd9 = this_hprb.icd9,
                     patient = this_hprb.patient, 
                 )
                 if prior_hproblem_qs:
                     continue # prior problem so ignore 
                 
             #find the adverse event icd9 codes           
-            thisname = self.name + ' ' + this_hprb.icd9
+            thisname = self.name + ' ' + str(this_hprb.icd9)
 
             immunization_qs = Immunization.vaers_candidates(this_hprb.patient, this_hprb.date, self.risk_period)
             assert immunization_qs
