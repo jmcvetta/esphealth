@@ -395,3 +395,5 @@ class Site(models.Model):
     def  __unicode__(self):
         return self.name
     
+class ILI_encounter_type(models.Model):
+    raw_encounter_type = models.CharField(max_length=100, unique=True, null=False)
