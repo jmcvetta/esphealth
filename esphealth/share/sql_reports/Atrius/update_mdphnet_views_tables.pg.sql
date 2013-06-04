@@ -271,7 +271,7 @@ insert into mdphnet_schema_update_history
                     where strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) icd9 
                ON diag.dx_code_3dig = REPLACE(icd9.code, '.', '')
-        WHERE diag.dx_code_3dig is not null
+        WHERE diag.dx_code_3dig is not null and icd9.name not like '%load_epic%'
            and not exists (select null from uvt_dx_3dig t0 where t0.item_code=diag.dx_code_3dig);
 
 --    UVT_DX_4DIG
@@ -284,8 +284,8 @@ insert into mdphnet_schema_update_history
                LEFT OUTER JOIN  (select * from public.static_icd9
                     where strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) icd9
-               ON diag.dx_code_3dig = REPLACE(icd9.code, '.', '')
-        WHERE diag.dx_code_4dig is not null
+               ON diag.dx_code_4dig = REPLACE(icd9.code, '.', '')
+        WHERE diag.dx_code_4dig is not null and icd9.name not like '%load_epic%'
          and not exists (select null from uvt_dx_4dig t0 where t0.item_code=diag.dx_code_4dig);
 
 --    UVT_DX_5DIG
@@ -298,8 +298,8 @@ insert into mdphnet_schema_update_history
                LEFT OUTER JOIN  (select * from public.static_icd9
                     where strpos(trim(code),'.')<>3
                        and length(trim(code))>=3 ) icd9
-               ON diag.dx_code_3dig = REPLACE(icd9.code, '.', '')
-        WHERE diag.dx_code_5dig is not null
+               ON diag.dx_code_5dig = REPLACE(icd9.code, '.', '')
+        WHERE diag.dx_code_5dig is not null and icd9.name not like '%load_epic%'
           and not exists (select null from uvt_dx_5dig t0 where t0.item_code=diag.dx_code_5dig);
 
 --    UVT_DETECTED_CONDITION
