@@ -284,7 +284,7 @@ LEFT JOIN (
 	FROM emr_encounter t0,
 	     (select patient_id, max(date) as date
 	      from emr_encounter 
-	      where is weight is not null and height not null
+	      where weight is not null and height not null
 	      group by patient_id) t1
 	WHERE t0.date >= ( now() - interval '2 years' )
 	  and t0.weight is not null and t0.height is not null
