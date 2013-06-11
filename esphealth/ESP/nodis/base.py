@@ -25,6 +25,7 @@ from ESP.utils import log_query
 
 from ESP.hef.base import BaseHeuristic, PrescriptionHeuristic
 from ESP.hef.base import LabResultPositiveHeuristic
+from ESP.conf.models import ConditionConfig
 from ESP.hef.models import Event
 from ESP.nodis.models import Case
 from ESP.utils.utils import wait_for_threads
@@ -338,6 +339,7 @@ class DiseaseDefinition(object):
             condition =  condition,
             criteria = criteria,
             source = self.uri,
+            status=ConditionConfig.objects.get(name=condition).initial_status,
             )
         new_case.save()
         new_case.events.add(event_obj)
@@ -395,6 +397,7 @@ class DiseaseDefinition(object):
                 criteria = criteria, 
                 recurrence_interval = recurrence_interval, 
                 event_obj = this_event, 
+                status=ConditionConfig.objects.get(name=condition).initial_status,
                 relevant_event_names = relevant_event_names,
                 )
             if created:
