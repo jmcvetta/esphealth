@@ -436,6 +436,7 @@ esphealth/share/sql_reports/Atrius/riskscape.genpop-mapping.json -text
 esphealth/share/sql_reports/Atrius/update_mdphnet.sh -text
 esphealth/share/sql_reports/Atrius/update_mdphnet_views_tables.pg.sql -text
 esphealth/share/sql_reports/Atrius/weekly_ili_report.pg.sql -text
+esphealth/share/sql_reports/Atrius/weekly_ili_summary_table.pg.sql -text
 esphealth/share/sql_reports/Atrius/weekly_update_mdphnet_summary_tables.pg.sql -text
 esphealth/share/sql_reports/CHA/cdc_ili_report.pg.sql -text
 esphealth/share/sql_reports/CHA/gdm.sh -text
