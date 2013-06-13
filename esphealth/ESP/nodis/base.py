@@ -396,17 +396,12 @@ class DiseaseDefinition(object):
         event_qs = event_qs.exclude(case__condition=condition)
         event_qs = event_qs.order_by('patient', 'date')
         #log_query('Events for %s' % self.short_name, event_qs)
-        try:
-            status=ConditionConfig.objects.get(name=condition).initial_status
-        except ObjectDoesNotExist:
-            status='AR'
         for this_event in event_qs:
             created, this_case = self._create_case_from_event_obj(
                 condition = condition, 
                 criteria = criteria, 
                 recurrence_interval = recurrence_interval, 
                 event_obj = this_event, 
-                status=status,
                 relevant_event_names = relevant_event_names,
                 )
             if created:
