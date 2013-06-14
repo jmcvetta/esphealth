@@ -759,4 +759,7 @@ MAX_ALLERGIES = config['Make_Fakes']['max_allergies']
 MAX_PROBLEMS = config['Make_Fakes']['max_problems']
 MAX_SOCIALHISTORY = config['Make_Fakes']['max_socialhistory']
 
+MAX_DIABETES = config['Make_Fakes']['max_diabetes']
+MAX_ILI = config['Make_Fakes']['max_ili']
+MAX_DIABETES_ILI = config['Make_Fakes']['max_diabetes_ili']
 
