@@ -2143,28 +2143,12 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <rename>O</rename>
         <length>-2</length>
         <precision>-2</precision>
-      </field>      <field>        <name>max_bp2_code</name>
-        <rename>P</rename>
-        <length>-2</length>
-        <precision>-2</precision>
-      </field>      <field>        <name>max_bp3_code</name>
-        <rename>Q</rename>
-        <length>-2</length>
-        <precision>-2</precision>
       </field>      <field>        <name>ldl_code</name>
         <rename>R</rename>
         <length>-2</length>
         <precision>-2</precision>
-      </field>      <field>        <name>max_ldl1_code</name>
+      </field>      <field>        <name>max_ldl2</name>
         <rename>S</rename>
-        <length>-2</length>
-        <precision>-2</precision>
-      </field>      <field>        <name>max_ldl2_code</name>
-        <rename>T</rename>
-        <length>-2</length>
-        <precision>-2</precision>
-      </field>      <field>        <name>max_ldl3_code</name>
-        <rename>U</rename>
         <length>-2</length>
         <precision>-2</precision>
       </field>      <field>        <name>trig_code</name>
@@ -2175,28 +2159,12 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <rename>W</rename>
         <length>-2</length>
         <precision>-2</precision>
-      </field>      <field>        <name>max_trig2_code</name>
-        <rename>X</rename>
-        <length>-2</length>
-        <precision>-2</precision>
-      </field>      <field>        <name>max_trig3_code</name>
-        <rename>Y</rename>
-        <length>-2</length>
-        <precision>-2</precision>
       </field>      <field>        <name>a1c_code</name>
         <rename>Z</rename>
         <length>-2</length>
         <precision>-2</precision>
       </field>      <field>        <name>max_a1c1_code</name>
         <rename>AA</rename>
-        <length>-2</length>
-        <precision>-2</precision>
-      </field>      <field>        <name>max_a1c2_code</name>
-        <rename>AB</rename>
-        <length>-2</length>
-        <precision>-2</precision>
-      </field>      <field>        <name>max_a1c3_code</name>
-        <rename>AC</rename>
         <length>-2</length>
         <precision>-2</precision>
       </field>      <field>        <name>prediabetes_code</name>
@@ -2663,30 +2631,6 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <precision>-1</precision>
       </field>
       <field>
-        <name>P</name>
-        <type>Number</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif/>
-        <trim_type>none</trim_type>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
-        <name>Q</name>
-        <type>Number</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif/>
-        <trim_type>none</trim_type>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
         <name>R</name>
         <type>Number</type>
         <format/>
@@ -2700,30 +2644,6 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
       </field>
       <field>
         <name>S</name>
-        <type>Number</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif/>
-        <trim_type>none</trim_type>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
-        <name>T</name>
-        <type>Number</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif/>
-        <trim_type>none</trim_type>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
-        <name>U</name>
         <type>Number</type>
         <format/>
         <currency/>
@@ -2759,30 +2679,6 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <precision>-1</precision>
       </field>
       <field>
-        <name>X</name>
-        <type>Number</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif/>
-        <trim_type>none</trim_type>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
-        <name>Y</name>
-        <type>Number</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif/>
-        <trim_type>none</trim_type>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
         <name>Z</name>
         <type>Number</type>
         <format/>
@@ -2796,30 +2692,6 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
       </field>
       <field>
         <name>AA</name>
-        <type>Number</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif/>
-        <trim_type>none</trim_type>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
-        <name>AB</name>
-        <type>Number</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif/>
-        <trim_type>none</trim_type>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
-        <name>AC</name>
         <type>Number</type>
         <format/>
         <currency/>

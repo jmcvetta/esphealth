@@ -9,7 +9,7 @@ ESPDB=esp30
 #This is the name of the esp_mdphnet schema owner (authorized user)
 ESPUSR=esp_mdphnet
 #This is the path to the sql script
-scriptpath=/srv/opt/esp30/share/sql_reports/Atrius
+scriptpath=/srv/esp/prod/share/sql_reports/Atrius
 #The rest of the file doesn't need to be modified
-psql -d $ESPDB -U $ESPUSR  -f $scriptpath/update_mdphnet_views_tables.psql
+psql -d $ESPDB -U $ESPUSR  -f $scriptpath/update_mdphnet_views_tables.pg.sql
 

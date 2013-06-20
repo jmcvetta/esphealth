@@ -619,7 +619,7 @@ LEFT JOIN (
         INNER JOIN hef_timespan AS ts0
             ON nct0.timespan_id = ts0.id
 	WHERE c0.condition = 'diabetes:gestational' and
-	             ((start_date between (now() - interval '1 years') and now() and end_date <= now())
+	             ((start_date between (now() - interval '1 years')  and now() and (end_date >= start_date or end_date is null))
 	           or end_date between (now() - interval '1 years') and now())
 ) AS recgdm1
 	ON recgdm1.patient_id = pat.id
@@ -636,8 +636,8 @@ LEFT JOIN (
         INNER JOIN hef_timespan AS ts0
             ON nct0.timespan_id = ts0.id
 	WHERE c0.condition = 'diabetes:gestational' and
-	             ((start_date between (now() - interval '2 years') and (now() - interval '1 year') and end_date <= (now() - interval '1 year'))
-	           or end_date between (now() - interval '2 years') and (now() - interval '1 year'))
+	             ((start_date between (now() - interval '2 years') and now() and (end_date >= start_date or end_date is null))
+	           or end_date between (now() - interval '2 years') and now())
 ) AS recgdm2
 	ON recgdm2.patient_id = pat.id
 --
@@ -649,8 +649,8 @@ LEFT JOIN (
 	, 1 AS recent_pregnancy -- if there is more than one pregnancy in the period, take the last one
 	FROM hef_timespan
 	WHERE name = 'pregnancy' and 
-	             ((start_date between (now() - interval '2 years') and (now() - interval '1 year') and end_date <= (now() - interval '1 year'))
-	           or end_date between (now() - interval '2 years') and (now() - interval '1 year'))
+	             ((start_date between (now() - interval '2 years') and now() and (end_date >= start_date or end_date is null))
+	           or end_date between (now() - interval '2 years') and now())
 	GROUP BY patient_id
 ) AS recpreg2
 	ON recpreg2.patient_id = pat.id
@@ -663,7 +663,7 @@ LEFT JOIN (
 	, 1 AS recent_pregnancy
 	FROM hef_timespan
 	WHERE name = 'pregnancy' and 
-	             ((start_date between (now() - interval '1 years') and now() and end_date <= now())
+	             ((start_date between (now() - interval '1 years') and now() and (end_date >= start_date or end_date is null))
 	           or end_date between (now() - interval '1 years') and now())
 	GROUP BY patient_id
 ) AS recpreg1

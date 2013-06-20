@@ -53,12 +53,11 @@ select case
       when extract(YEAR FROM age(visit.date::timestamp, pat.date_of_birth::timestamp)) > 64 then '65+'
     end age_group
   , visit.id
-FROM (select date, site_name, patient_id, t00.id 
+FROM (select t00.date, t00.site_name, t00.patient_id, t00.id 
       from emr_encounter t00 
        inner join ili_visits t01 on t00.id=t01.id
        inner join public.static_ili_encounter_type t02 
-         on upper(t00.raw_encounter_type)=upper(t02.raw_encounter_type))
-       group by date, site_name, patient_id, t00.id) visit 
+         on upper(t00.raw_encounter_type)=upper(t02.raw_encounter_type)) visit 
        INNER JOIN emr_patient pat on (visit.patient_id = pat.id)
        INNER JOIN static_site sites on (visit.site_name=sites.name)
        INNER JOIN static_sitegroup groups on (sites.group_id=groups.group)
@@ -91,7 +90,7 @@ select case
       when extract(YEAR FROM age(visit.date::timestamp, pat.date_of_birth::timestamp)) > 64 then '65+'
     end age_group
   , visit.id
-FROM (select date, site_name, patient_id, t00.id 
+FROM (select t00.date, t00.site_name, t00.patient_id, t00.id 
       from emr_encounter t00 
        inner join ili_visits t01 on t00.id=t01.id
        inner join public.static_ili_encounter_type t02 
