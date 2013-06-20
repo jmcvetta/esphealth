@@ -32,7 +32,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.views.generic.simple import redirect_to
 from django.http import HttpResponse
 
-
+from dateutil.relativedelta import relativedelta
 from ESP.settings import ROWS_PER_PAGE
 from ESP.settings import DATE_FORMAT
 from ESP.settings import SITE_NAME
@@ -102,6 +102,8 @@ def _populate_status_values():
     if STATUS_REPORT_TYPE in ['NODIS','BOTH']:
         new_cases = Case.objects.filter(created_timestamp__gte=yesterday)
         reports = Report.objects.filter(timestamp__gte=yesterday, sent=True)
+        this_calendar_year = datetime.datetime.now().year
+        date_365_days_ago = datetime.datetime.now() - relativedelta(days=+365)
         values1 = {
             'new_cases': new_cases,
             'all_case_summary': Case.objects.values('condition').annotate(count=Count('pk')).order_by('condition'),
@@ -109,7 +111,10 @@ def _populate_status_values():
             'data_status': Provenance.objects.filter(timestamp__gte=yesterday).values('status').annotate(count=Count('pk')),
             'provenances': Provenance.objects.filter(timestamp__gte=yesterday).order_by('-timestamp'),
             'unmapped_labs': _get_unmapped_labs().select_related(),
-            'reports': reports.order_by('timestamp'),            
+            'reports': reports.order_by('timestamp'), 
+            'cases_calendar_year': Case.objects.filter(date__year=this_calendar_year).values('condition').annotate(count=Count('pk')).order_by('condition'),
+            'cases_365_days': Case.objects.filter(date__gte=date_365_days_ago).values('condition').annotate(count=Count('pk')).order_by('condition'),
+      
             }
     if STATUS_REPORT_TYPE=='VAERS' or STATUS_REPORT_TYPE=='BOTH':
         wkstrt = str(datetime.date.today().strftime("%Y %W") + ' 1')
