@@ -41,7 +41,8 @@ SELECT '1'::varchar(1) centerid,
          WHEN UPPER(race) = 'NATIVE HAWAI' then 4
          WHEN UPPER(race) = 'CAUCASIAN' THEN 5
          ELSE 0
-       END race
+       END race,
+       zip5
   FROM public.emr_patient pat
   inner join mdphnet_updated_patients updtpats on updtpats.patid=pat.natural_key;
 
@@ -185,6 +186,14 @@ insert into mdphnet_schema_update_history
              pat.centerid item_text
         FROM esp_demographic_u pat
         where not exists (select null from uvt_center t0 where t0.item_code=pat.centerid);
+
+--    UVT_ZIP5
+      insert into UVT_ZIP5
+      select distinct 
+             pat.zip5 item_code,
+             null::varchar(10) item_text
+      from esp_demographic_u pat
+      where not exists (select null from uvt_zip5 t0 where t0.item_code=pat.zip5);
 
 --    UVT_PROVIDER
       insert into UVT_PROVIDER 
@@ -356,7 +365,8 @@ update esp_demographic t0
       birth_date=t1.birth_date,
       sex=t1.sex,
       hispanic=t1.hispanic,
-      race=t1.race
+      race=t1.race,
+      zip5=t1.zip5
   from (select *
         from esp_demographic_u) t1
   where t1.patid=t0.patid;
