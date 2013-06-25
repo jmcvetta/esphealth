@@ -33,15 +33,16 @@ import random
 from psycopg2 import Error as Psycopg2Error
 from django.db import transaction
 from django.db import IntegrityError
-
-from ESP.emr.management.commands.common import LoaderCommand
 from dateutil.relativedelta import relativedelta
 
+from ESP.utils import randomizer
+from ESP.emr.management.commands.common import LoaderCommand
 from ESP.utils.utils import str_from_date, float_or_none, string_or_none
 from ESP.settings import DATA_DIR, LOAD_DRIVER_LABS, POPULATION_SIZE, MIN_ENCOUNTERS_PER_PATIENT ,ENCOUNTERS_PER_PATIENT ,MAXICD9 ,ICD9_CODE_PCT 
 from ESP.settings import MIN_LAB_TESTS_PER_PATIENT ,LAB_TESTS_PER_PATIENT ,MIN_LAB_ORDERS_PER_PATIENT ,LAB_ORDERS_PER_PATIENT 
 from ESP.settings import  START_DATE, END_DATE, MIN_MEDS_PER_PATIENT ,MEDS_PER_PATIENT 
-from ESP.settings import IMMUNIZATION_PCT, IMMUNIZATIONS_PER_PATIENT , MAX_PREGNANCIES ,CURRENTLY_PREG_PCT ,MAX_ALLERGIES ,MAX_PROBLEMS ,MAX_SOCIALHISTORY 
+from ESP.settings import IMMUNIZATION_PCT, IMMUNIZATIONS_PER_PATIENT , MAX_PREGNANCIES ,CURRENTLY_PREG_PCT ,MAX_ALLERGIES 
+from ESP.settings import MAX_PROBLEMS ,MAX_SOCIALHISTORY , MAX_DIABETES, MAX_ILI, MAX_DIABETES_ILI
 from ESP.settings import DATE_FORMAT
 from ESP.utils.utils import log
 from ESP.utils.utils import date_from_str, Profiler
@@ -847,8 +848,112 @@ class Command(LoaderCommand):
             if MAX_SOCIALHISTORY>0:
                 for i in xrange(MAX_SOCIALHISTORY):
                     sh = SocialHistory.make_mock(p)
-                    social_history_writer.write_row(sh)                
-                
+                    social_history_writer.write_row(sh)   
+                    
+            when  = randomizer.date_range(as_string=False)
+            noncases = .2                          
+            diabetescodes = ['250.0','250.1','250.2','250.3'] 
+            diabeteslabs = ['a1c', 'fasting glucose']
+            msLabs = FakeLabs.objects.filter(native_name__in =diabeteslabs).order_by('?')[0]
+                     
+            if MAX_DIABETES>0:
+                for i in xrange(MAX_DIABETES):
+                    r = random.random()
+                    if r > noncases:
+                        diabetescase = random.randrange(1,3)
+                        rx = Prescription.make_mock(p)
+                        rx.name = 'Insulin Aspart 100 [iU]/mL Injection, Solution Subcutaneous'
+                        rx.code = '001693303xx'
+                        prescription_writer.write_row(rx)
+                       
+                        if diabetescase == 1:
+                            e= Encounter.make_mock(p,when = when)
+                            encounter_writer.write_row(e,[str(random.choice (diabetescodes))])
+                            when  = randomizer.date_range(as_string=False)
+                            e= Encounter.make_mock(p,when = when)
+                            encounter_writer.write_row(e,[str(random.choice (diabetescodes))])
+                        elif diabetescase == 2:
+                                #'lx:a1c:threshold:gte:6.5', or 
+                                # 'lx:glucose-fasting:threshold:gte:126'
+                                lx = LabResult.make_mock(p)
+                                lx.native_name = msLabs.native_name
+                                lx.native_code =  msLabs.native_code
+                                lx.result_float = round(random.uniform(msLabs.normal_high, msLabs.critical_high) , 2)
+                                lx_writer.write_row(lx)
+                            
+                        else:
+                            rx = Prescription.make_mock(p)
+                            rx.name = 'pioglitazone'
+                            prescription_writer.write_row(rx)
+                        
+                    # no cases 
+                    else:
+                        encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))
+                        prescription_writer.write_row(Prescription.make_mock(p))
+                        lx_writer.write_row(LabResult.make_mock(p))
+                   
+                    
+            ilicodes = [ '079.3','079.89','079.99', '460', '462', '464.00','464.01', 
+                '464.10', '464.11','464.20','464.21','465.0','465.8','465.9','466.0','466.19',
+                 '478.9', '480.8','480.9','481','482.40','482.41','482.42','482.49',
+                 '484.8','485','486','487.0','487.1','487.8','784.1','786.2',]
+            
+            fevercodes = ['780.6','780.31']
+                    
+            if MAX_ILI>0:
+                for i in xrange(MAX_ILI):
+                    noncases = .2
+                    r = random.random()
+                    if r > noncases:
+                        # with fever temp 100 and code ili or with fever code and ili code
+                        e= Encounter.make_mock(p,when = when)
+                        tmpfever = .5
+                        if tmpfever <=.5:
+                            encounter_writer.write_row(e,[str(random.choice (fevercodes)),str(random.choice (ilicodes))])
+                        else:
+                            e.temperature = random.randrange(100,110)
+                            encounter_writer.write_row(e,[str(random.choice (ilicodes))])
+                   
+                    else:
+                        encounter_writer.write_row(Encounter.make_mock(p,when = when ),[str(random.choice (ilicodes))])
+                        when = randomizer.date_range(as_string=False)
+                        encounter_writer.write_row(Encounter.make_mock(p,when = when ),[str(random.choice (fevercodes))])
+                   
+                    
+            if MAX_DIABETES_ILI>0:
+                for i in xrange(MAX_DIABETES_ILI):
+                    noncases = .2
+                    r = random.random()
+                    if r > noncases:
+                        combinedcasetypes =  random.randrange(1,4)
+                        # both encounters with ili codes and diabetes codes 
+                        if combinedcasetypes ==1:
+                            codes = [str(random.choice (fevercodes)),str(random.choice (ilicodes)),str(random.choice (diabetescodes))]
+                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),codes)
+                        # separate encounters both cases
+                        elif combinedcasetypes ==2:
+                            e =  Encounter.make_mock(p,when = when )  
+                            e.temperature = random.randrange(100,110)
+                            encounter_writer.write_row(e,str(random.choice (ilicodes)))
+                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),str(random.choice (diabetescodes)))
+                        # with diabetes codes, no diabetes case but ili case 
+                        elif combinedcasetypes ==3:
+                            e =  Encounter.make_mock(p,when = when )  
+                            e.temperature = random.randrange(100,110)
+                            encounter_writer.write_row(e,str(random.choice (ilicodes)))
+                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),str(random.choice (diabetescodes)))
+                           
+                        # no ili case but codes and diabetes case 
+                        elif combinedcasetypes ==4:
+                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),str(random.choice (ilicodes)))
+                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),str(random.choice (diabetescodes)))
+                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),str(random.choice (diabetescodes)))
+                            
+                    else:
+                        encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))
+                        prescription_writer.write_row(Prescription.make_mock(p))
+                        lx_writer.write_row(LabResult.make_mock(p))
+                    
             
         print 'Generated %s fake Patients' % POPULATION_SIZE
         print 'up to max %s Encounters ' % ENCOUNTERS_PER_PATIENT 
@@ -859,4 +964,7 @@ class Command(LoaderCommand):
         print 'up to %s Patients with up to %s Pregnancies' % (countprg ,MAX_PREGNANCIES)
         print 'up to %s Allergies ' % MAX_ALLERGIES
         print 'up to %s Problems ' % MAX_PROBLEMS
-        print 'up to %s Social History ' % MAX_SOCIALHISTORY         
+        print 'up to %s Social History ' % MAX_SOCIALHISTORY 
+        print 'up to %s Diabetes cases' % MAX_DIABETES
+        print 'up to %s ILI cases' % MAX_ILI
+        print 'up to %s Diabetes-ILI combined cases' % MAX_DIABETES_ILI         
