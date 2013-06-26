@@ -2215,22 +2215,6 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
         <rename>AO</rename>
         <length>-2</length>
         <precision>-2</precision>
-      </field>      <field>        <name>syspct2_code</name>
-        <rename>AP</rename>
-        <length>-2</length>
-        <precision>-2</precision>
-      </field>      <field>        <name>diapct2_code</name>
-        <rename>AQ</rename>
-        <length>-2</length>
-        <precision>-2</precision>
-      </field>      <field>        <name>syspct3_code</name>
-        <rename>AR</rename>
-        <length>-2</length>
-        <precision>-2</precision>
-      </field>      <field>        <name>diapct3_code</name>
-        <rename>AS</rename>
-        <length>-2</length>
-        <precision>-2</precision>
       </field>        <select_unspecified>N</select_unspecified>
     </fields>     <cluster_schema/>
  <remotesteps>   <input>   </input>   <output>   </output> </remotesteps>    <GUI>
@@ -2836,54 +2820,6 @@ if ( (bp_systolic &gt; 140) || (bp_diastolic &gt; 90) ) {
       </field>
       <field>
         <name>AO</name>
-        <type>Number</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif/>
-        <trim_type>none</trim_type>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
-        <name>AP</name>
-        <type>Number</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif/>
-        <trim_type>none</trim_type>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
-        <name>AQ</name>
-        <type>Number</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif/>
-        <trim_type>none</trim_type>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
-        <name>AR</name>
-        <type>Number</type>
-        <format/>
-        <currency/>
-        <decimal/>
-        <group/>
-        <nullif/>
-        <trim_type>none</trim_type>
-        <length>-1</length>
-        <precision>-1</precision>
-      </field>
-      <field>
-        <name>AS</name>
         <type>Number</type>
         <format/>
         <currency/>
