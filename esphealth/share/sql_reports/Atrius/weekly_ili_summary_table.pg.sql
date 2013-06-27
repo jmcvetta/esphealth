@@ -3,8 +3,9 @@ create table ili_visits as
 SELECT distinct respcodes.id from
                    (select ilivis.id
                     from public.emr_encounter ilivis,
-                         public.emr_encounter_icd9_codes iliRcodes
-                    where iliRcodes.encounter_id=ilivis.id
+                         public.emr_encounter_icd9_codes iliRcodes,
+                         public.static_ili_encounter_type types
+                    where iliRcodes.encounter_id=ilivis.id and upper(types.raw_encounter_type)=upper(ilivis.raw_encounter_type)
                           and iliRcodes.icd9_id in ('079.3','079.89','079.99','460','462','464.00','464.01','464.10','464.11','464.20',
                                               '464.21','465.0','465.8','465.9','466.0','466.19','478.9','480.8','480.9','481','482.40',
                                               '482.41','482.42','482.49','484.8','485','486','487.0','487.1','487.8','784.1','786.2'))
@@ -92,7 +93,6 @@ select case
   , visit.id
 FROM (select t00.date, t00.site_name, t00.patient_id, t00.id 
       from emr_encounter t00 
-       inner join ili_visits t01 on t00.id=t01.id
        inner join public.static_ili_encounter_type t02 
          on upper(t00.raw_encounter_type)=upper(t02.raw_encounter_type)) visit 
        INNER JOIN emr_patient pat on (visit.patient_id = pat.id)
@@ -106,4 +106,3 @@ group by age_group, weekdate, week, zip5, center
          and t0.zip5=t1.zip5 and t0.center=t1.center) t1 on t1.center=t0.group;
 ALTER TABLE ili_summary ADD CONSTRAINT ili_summary_pk PRIMARY KEY (age_group, week, center);
 GRANT SELECT ON TABLE ili_summary TO esp30;
-
