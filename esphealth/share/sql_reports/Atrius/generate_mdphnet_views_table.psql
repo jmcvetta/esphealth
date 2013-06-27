@@ -20,7 +20,8 @@ SELECT '1'::varchar(1) centerid,
          WHEN UPPER(race) = 'NATIVE HAWAI' then 4
          WHEN UPPER(race) = 'CAUCASIAN' THEN 5
          ELSE 0
-       END race
+       END race,
+       pat.zip5
   FROM public.emr_patient pat,
        public.emr_provenance prvn
   WHERE pat.provenance_id=prvn.provenance_id and prvn.source ilike 'epicmem%';
@@ -113,6 +114,7 @@ create index esp_demographic_birth_date_idx on esp_demographic (birth_date);
 create index esp_demographic_sex_idx on esp_demographic (sex);
 create index esp_demographic_hispanic_idx on esp_demographic (hispanic);
 create index esp_demographic_race_idx on esp_demographic (race);
+create index esp_demographic_zip5_idx on esp_demographic (zip5);
 alter table esp_demographic add primary key (patid);
 
 drop table if exists esp_encounter cascade;
@@ -387,6 +389,15 @@ create index diag5dig_setting_idx on esp_diagnosis_icd9_5dig (setting);
              END item_text
         FROM esp_demographic pat;
         ALTER TABLE UVT_RACE ADD PRIMARY KEY (item_code);
+        
+--    UVT_ZIP5
+      DROP TABLE if exists uvt_zip5;
+      create table uvt_zip5 as 
+      select distinct 
+             zip5 as item_code, 
+	         null::varchar(10) item_text
+      from esp_demographic where zip5 is not null;
+      alter table uvt_zip5 add primary key (item_code);
 
 --    UVT_PROVIDER
       DROP TABLE if exists UVT_PROVIDER;
