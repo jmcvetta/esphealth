@@ -373,6 +373,7 @@ class ImmunizationManufacturer(models.Model):
 class Allergen(models.Model):
     code = models.CharField(max_length=100, primary_key=True)
     name = models.CharField(max_length=300, blank=True, null=True)
+    vaccines = models.ManyToManyField(Vaccine, null=True)
     
     def __unicode__(self):
         return u'%s %s' % (self.code, self.name)
@@ -381,7 +382,7 @@ class Sitegroup(models.Model):
     group = models.CharField(max_length=100, primary_key=True)
     cdc_site_id = models.CharField(max_length=50, null=True)
     location = models.CharField(max_length=100, null=True)
-    zip5 = models.IntegerField(null=True)
+    zip5 = models.CharField(max_length=5, null=True)
     
     
     def __unicode__(self):
