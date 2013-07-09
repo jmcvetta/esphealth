@@ -10,7 +10,8 @@ class VaccineDetail(object):
     def __init__(self, immunization):
         vaccine_type = OBX()
         vaccine_type.value_type = 'CE'
-        CVXVax = Vaccine.objects.get(id=VaccineCodeMap.objects.filter(native_code=self.imm_type).distinct('canonical_code_id').canonical_code_id)
+        vaxmap=VaccineCodeMap.objects.filter(native_code=immunization.imm_type).distinct('canonical_code')
+        CVXVax = Vaccine.objects.get(id=vaxmap.get().canonical_code_id)
             #sites have been known to update their vaccine names, while keeping the IDs the same, causing the need for multiple
             # rows in VaccineCodeMap for each immunization type.  This will break if rows for the same immunization type are mapped to
             # multiple canonical codes in static_vaccine
