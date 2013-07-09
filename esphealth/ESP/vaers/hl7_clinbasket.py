@@ -226,37 +226,41 @@ class HL7_clinbasket(object):
         '''
         Assembles an hl7 message file of VAERs case for Clinician's In Basket
         '''
-        senderset=Provider.objects.filter(id__in=Sender.objects.all().values_list('provider_id'))
-        if VAERS_OVERRIDE_CLINICIAN_REVIEWER=='' and senderset.count()==0:
-            messaged=self.ques.provider.natural_key
-            override=False
-        elif VAERS_OVERRIDE_CLINICIAN_REVIEWER!='' and senderset.count()==0:
-            messaged = VAERS_OVERRIDE_CLINICIAN_REVIEWER
-            override=True
-        elif VAERS_OVERRIDE_CLINICIAN_REVIEWER!='' and senderset.count()>0:
-            try:
-                senderset.get(natural_key=self.ques.provider.natural_key)
-                messaged = (VAERS_OVERRIDE_CLINICIAN_REVIEWER + '~' + 
-                            self.ques.provider.natural_key + '^' + self.ques.provider.first_name + ' ' + self.ques.provider.last_name)
+        patient = self.case.patient
+        if patient.mrn:    
+            senderset=Provider.objects.filter(id__in=Sender.objects.all().values_list('provider_id'))
+            if VAERS_OVERRIDE_CLINICIAN_REVIEWER=='' and senderset.count()==0:
+                messaged=self.ques.provider.natural_key
                 override=False
-            except ObjectDoesNotExist:
+            elif VAERS_OVERRIDE_CLINICIAN_REVIEWER!='' and senderset.count()==0:
                 messaged = VAERS_OVERRIDE_CLINICIAN_REVIEWER
                 override=True
-        all_text = (str(self.makeMSH()) + '\r' +
+            elif VAERS_OVERRIDE_CLINICIAN_REVIEWER!='' and senderset.count()>0:
+                try:
+                    senderset.get(natural_key=self.ques.provider.natural_key)
+                    messaged = (VAERS_OVERRIDE_CLINICIAN_REVIEWER + '~' + 
+                            self.ques.provider.natural_key + '^' + self.ques.provider.first_name + ' ' + self.ques.provider.last_name)
+                    override=False
+                except ObjectDoesNotExist:
+                    messaged = VAERS_OVERRIDE_CLINICIAN_REVIEWER
+                    override=True
+            all_text = (str(self.makeMSH()) + '\r' +
                     str(self.makeEVN()) + '\r' + 
                     str(self.makePID()) + '\r' + 
                     str(self.makePV1()) + '\r' + 
                     str(self.makeTXA(messaged)) + '\r' + 
                     self.makeOBX('main',override) +
                     str(self.makeOBX('RP',override)) + '\r' + '\n' )
-        #the cStringIO.StringIO object is built in memory, not saved to disk.
-        hl7file = cStringIO.StringIO()
-        hl7file.write(all_text)
-        hl7file.seek(0)
-        if transmit_ftp(hl7file, 'clinbox_msg_ID' + '_' + str(self.ques.id) + '.txt'):
-            Questionnaire.objects.filter(id=self.ques.id).update(inbox_message=hl7file.getvalue())
-        hl7file.close()
-
+            #the cStringIO.StringIO object is built in memory, not saved to disk.
+            hl7file = cStringIO.StringIO()
+            hl7file.write(all_text)
+            hl7file.seek(0)
+            if transmit_ftp(hl7file, 'clinbox_msg_ID' + '_' + str(self.ques.id) + '.txt'):
+                Questionnaire.objects.filter(id=self.ques.id).update(inbox_message=hl7file.getvalue())
+            hl7file.close()
+        else:
+            msg='Patient has no MRN.  ID: ' + str(patient.id)
+            log.warning(msg)
 
 def transmit_ftp(fileObj, filename):
         '''
