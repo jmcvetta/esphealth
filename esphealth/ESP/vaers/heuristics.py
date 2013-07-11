@@ -1,10 +1,10 @@
 # Adverse events are indicated though reports of  lab results, prescriptions, allergies
 # and icd9 codes that are present in patient encounters.
-import datetime
+import datetime, itertools
 
 from dateutil.relativedelta import relativedelta
 
-from django.db.models import F
+from django.db.models import F, Q
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from ESP.hef.base import BaseHeuristic
@@ -16,7 +16,7 @@ from ESP.vaers.models import Case, PrescriptionEvent, EncounterEvent, LabResultE
 from ESP.vaers.models import DiagnosticsEventRule
 from ESP.vaers.models import ExcludedICD9Code, Questionnaire
 from ESP.utils.utils import log
-from ESP.conf.models import LabTestMap 
+from ESP.conf.models import LabTestMap, VaccineCodeMap 
 from ESP.hef.base import LabResultAnyHeuristic
 import rules
 
@@ -51,7 +51,7 @@ class AdverseEventHeuristic(BaseHeuristic):
         # and update the date of last event added 
         # Register any prior immunizations
         prior_immunizations = Immunization.vaers_candidates(clin_event.patient,clin_event.date, 
-                 rules.MAX_TIME_WINDOW_PRIOR_EVENT).filter(date__lt = this_imm.date)
+                 rules.MAX_TIME_WINDOW_PRIOR_EVENT,['ALL']).filter(date__lt = this_imm.date)
         
         this_case, case_created = Case.objects.get_or_create(
                  date = this_imm.date,
@@ -79,7 +79,45 @@ class AdverseEventHeuristic(BaseHeuristic):
             
             this_q.save()
             this_q.create_digest()
-           
+    
+    def exclude_at_3dig(self, qSet, type, this_diag):
+        '''
+        takes a qSet of prior diagnosis records 
+        then depending on qSet type (encounter, problem or hospitalproblem)
+        keeps only those that match self.icd9s at the 3 digit level
+        For Any other Diagnosis heuristics, filters slef.icd9s to only those matching current diagnosis record
+        '''
+        #this is a quick method to provide Mike and Meghan with data
+        #on how prior-occurrence exclusion would look if we broaden exclusion
+        #to all diagnoses at the 3-digit level.  
+        icd9_3dig = self.icd9s.extra(select={'icd3dig': "case when position('.' in code) > 0 then substring(code from 1 for position('.' in code)-1 ) else code end"}).values_list('icd3dig')
+        icd9_3dig = sorted(icd9_3dig.distinct())
+        if self.name=="Any other Diagnosis":
+            subset=[]
+            for x in icd9_3dig:
+                for y in this_diag:
+                    if x[0] in y:
+                        subset.append(x)
+            icd9_3dig=subset
+        if not icd9_3dig:
+            return qSet.extra(where=[' 1=2 '])
+        elif type=='encounter':
+            for i, x in enumerate(icd9_3dig):
+                if i == 0:
+                    xquery="emr_encounter.id=emr_encounter_icd9_codes.encounter_id and ( position('"+str(x[0])+"' in emr_encounter_icd9_codes.icd9_id) > 0"
+                else:
+                    xquery=xquery+" or position('"+str(x[0])+"' in emr_encounter_icd9_codes.icd9_id) > 0"
+            xquery = xquery + ")"
+            return qSet.extra(tables=["emr_encounter_icd9_codes"], where=[xquery])
+        else:
+            for i, x in enumerate(icd9_3dig):
+                if i == 0:
+                    xquery=" (position('"+str(x[0])+"' in icd9_id) > 0"
+                else:
+                    xquery=xquery+" or position('"+str(x[0])+"' in icd9_id) > 0"
+            xquery = xquery + ")"
+            return qSet.extra(where=[xquery])            
+
             
     @property
     def core_uris(self):
@@ -119,12 +157,27 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
         
         begin = kw.get('begin_date') or EPOCH
         end = kw.get('end_date') or datetime.date.today()
+        #these convulsions are needed to account for prior vaccine matches to allergies.  See the various conf and static tables involved
+        rawQuery= ("SELECT  distinct t0.id, t0.provenance_id, t0.natural_key, t0.created_timestamp, t0.updated_timestamp, " + 
+             "t0.patient_id, t0.provider_id, t0.date, t0.mrn, t0.date_noted, t0.allergen_id, t0.name, t0.status, t0.description " + 
+             "FROM emr_allergy as t0 " + 
+             "INNER JOIN emr_patient as t1 ON (t0.patient_id = t1.id) " + 
+             "INNER JOIN emr_immunization as t2 ON (t1.id = t2.patient_id) " + 
+             "INNER JOIN static_allergen_vaccines as t3 ON (t0.allergen_id=t3.allergen_id) " +
+             "INNER JOIN conf_vaccinecodemap as t4 on (t3.vaccine_id = t4.canonical_code_id ) " +
+             "WHERE t2.isvaccine = True  AND t2.imm_status = '1'  AND t0.date >=  t2.date AND t0.status='Active' " +
+             "AND t0.date <=  t2.date + interval '30 days' and t2.imm_type = t4.native_code " +
+             "AND t0.date >= '" + str(begin) + "'::date AND t0.date <= '" + str(end) + "'::date " )
+        if self.keywords:
+            for idx, keyword in enumerate(self.keywords):
+                if idx==0:
+                    rawQuery = rawQuery + " AND (position(upper('" + keyword + "') in upper(t0.name))>0 "
+                else:
+                    rawQuery = rawQuery + " OR position(upper('" + keyword + "') in upper(t0.name))>0 "
+            rawQuery = rawQuery + ")"
         
-        allergy_qs = Allergy.objects.following_vaccination(self.time_post_immunization,self.risk_period_start)
-        allergy_qs = allergy_qs.filter(date__gte=begin, date__lte=end)
-        # patient's immunization is same as self.name (rule's name)
-        allergy_qs = allergy_qs.filter(patient__immunization__name = self.name)
-        allergy_qs = allergy_qs.distinct()
+        allergy_qs = Allergy.objects.raw(rawQuery)
+        
         return allergy_qs
 
     def generate(self, **kw):
@@ -139,7 +192,7 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
             prior_allergy_qs = Allergy.objects.filter(
                     date__lt = this_allergy.date, 
                     #date__gte = earliest, 
-                    name__in = self.keywords, 
+                    name__icontains = self.keywords, 
                     # or description field 
                     patient = this_allergy.patient, 
                     
@@ -147,7 +200,20 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
             if prior_allergy_qs:
                 continue # Prior allergy so ignore 
             
-            immunization_qs = Immunization.vaers_candidates(this_allergy.patient, this_allergy.date, self.time_post_immunization)
+            rawQuery = ("SELECT distinct t0.id, t0.native_code FROM conf_vaccinecodemap as t0 INNER JOIN static_allergen_vaccines as t1 " +
+                        "ON (t1.vaccine_id = t0.canonical_code_id ) INNER JOIN static_allergen t2 ON (t1.allergen_id=t2.code) ") 
+            for idx, keyword in enumerate(self.keywords):
+                if idx==0:
+                    rawQuery = rawQuery + " WHERE (position(upper('" + keyword + "') in upper(t2.name))>0 "
+                else:
+                    rawQuery = rawQuery + " OR position(upper('" + keyword + "') in upper(t2.name))>0 "
+            rawQuery = rawQuery + ")"
+            immtypes = VaccineCodeMap.objects.raw(rawQuery)
+            types=[]
+            for immtype in immtypes:
+                types.append(immtype.native_code)
+            
+            immunization_qs = Immunization.vaers_candidates(this_allergy.patient, this_allergy.date, self.time_post_immunization, types)
             assert immunization_qs
             
             # create a new event for each immunization date 
@@ -175,7 +241,7 @@ class VaersAllergyHeuristic(AdverseEventHeuristic):
                 self.update_or_create_case(this_allergy, imm, new_ae)
                 
         return counter
-
+        
 class VaersDiagnosisHeuristic(AdverseEventHeuristic):
     def __init__(self, event_name, icd9s, rule):
         '''
@@ -189,6 +255,7 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
         self.icd9s = icd9s
         self.category = rule.category
+        self.source = rule.source
         self.ignore_period = rule.ignore_period  
         self.risk_period = rule.risk_period
         self.risk_period_start = rule.risk_period_start      
@@ -223,6 +290,16 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
         # or close date is null is same as start one day hospitalization
         # dont add the event if the priority is >
         
+        if self.source==None:
+            types=['ALL']
+        else:
+            rawQuery = ("SELECT distinct t0.id, t0.native_code FROM conf_vaccinecodemap as t0 INNER JOIN static_vaccine as t1 " +
+                        "ON (t1.id = t0.canonical_code_id ) where position(%s in lower(t1.name))>0") 
+            immtypes = VaccineCodeMap.objects.raw(rawQuery,[self.source])
+            types=[]
+            for immtype in immtypes:
+                types.append(immtype.native_code)
+        
         for this_enc in self.matches(**kw):
             if self.ignore_period:
                 earliest = this_enc.date - relativedelta(months=self.ignore_period)
@@ -231,24 +308,28 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                     date__gte = earliest, 
                     #priority__lte = this_enc.priority,
                     patient = this_enc.patient,                     
-                    icd9_codes__in = self.icd9s.all(),
+                    #icd9_codes__in = self.icd9s.all(),
                 )
+                prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',this_enc.icd9_codes.values_list('code', flat=True))
+
                 if prior_enc_qs:
                     continue # Prior diagnosis so ignore 
                 
                 prior_problem_qs = Problem.objects.filter(
                     date__lt = this_enc.date, 
-                    icd9__code__in = this_enc.icd9_codes.all(),
+                    #icd9__code__in = self.icd9s.all(),
                     patient = this_enc.patient, 
                 )
+                prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',this_enc.icd9_codes.values_list('code'))
                 if prior_problem_qs:
                     continue # prior problem so ignore 
                 
                 prior_hproblem_qs = Hospital_Problem.objects.filter(
                     date__lt = this_enc.date, 
-                    icd9__code__in = this_enc.icd9_codes.all(),
+                    #icd9__code__in = self.icd9s.all(),
                     patient = this_enc.patient, 
                 )
+                prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',this_enc.icd9_codes.values_list('code'))
                 if prior_hproblem_qs:
                     continue # prior problem so ignore 
                 
@@ -257,8 +338,9 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
             for code in this_enc.icd9_codes.filter(code__in=self.icd9s).distinct():
                 thisname += ' '+code.code
 
-            immunization_qs = Immunization.vaers_candidates(this_enc.patient, this_enc.date, self.risk_period)
-            assert immunization_qs
+            immunization_qs = Immunization.vaers_candidates(this_enc.patient, this_enc.date, self.risk_period, types)
+            if not immunization_qs.exists():
+                continue # no immunizations of the type we're looking for
             
             # create a new event for each immunization date 
             for imm in immunization_qs:
@@ -300,6 +382,7 @@ class VaersProblemHeuristic(AdverseEventHeuristic):
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
         self.icd9s = icd9s
         self.category = rule.category
+        self.source=rule.source
         self.ignore_period = rule.ignore_period  
         self.risk_period = rule.risk_period
         self.risk_period_start = rule.risk_period_start      
@@ -322,13 +405,14 @@ class VaersProblemHeuristic(AdverseEventHeuristic):
         
         prb_qs = prb_qs.filter(icd9__in=self.icd9s.all())
         prb_qs = prb_qs.filter(date__gte=begin, date__lte=end)
+        prb_qs = prb_qs.exclude(status='Deleted')
         prb_qs = prb_qs.distinct()
         return prb_qs
 
     def generate(self, **kw):
         log.info('Generating events for %s' % self.name)
         counter = 0
-        content_type = ContentType.objects.get_for_model(Encounter)
+        content_type = ContentType.objects.get_for_model(Problem)
         
         #TODO find the encounter that has a date <= this enc date and close date => this enc date
         # or close date is null is same as start one day hospitalization
@@ -342,31 +426,34 @@ class VaersProblemHeuristic(AdverseEventHeuristic):
                     date__gte = earliest, 
                     #priority__lte = this_enc.priority,
                     patient = this_prb.patient,                     
-                    icd9_codes__in = self.icd9s.all(),
+                    #icd9_codes__in = self.icd9s.all(),
                 )
+                prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',[this_prb.icd9_id])
                 if prior_enc_qs:
                     continue # Prior diagnosis so ignore 
                 
                 prior_problem_qs = Problem.objects.filter(
                     date__lt = this_prb.date, 
-                    icd9 = this_prb.icd9,
+                    #icd9__in=self.icd9s.all(),
                     patient = this_prb.patient, 
                 )
+                prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',[this_prb.icd9_id])
                 if prior_problem_qs:
                     continue # prior problem so ignore 
                 
                 prior_hproblem_qs = Hospital_Problem.objects.filter(
                     date__lt = this_prb.date, 
-                    icd9 = this_prb.icd9,
+                    #icd9__in=self.icd9s.all(),
                     patient = this_prb.patient, 
                 )
+                prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',[this_prb.icd9_id])
                 if prior_hproblem_qs:
                     continue # prior problem so ignore 
                 
             #find the adverse event icd9 codes           
             thisname = self.name + ' ' + str(this_prb.icd9)
 
-            immunization_qs = Immunization.vaers_candidates(this_prb.patient, this_prb.date, self.risk_period)
+            immunization_qs = Immunization.vaers_candidates(this_prb.patient, this_prb.date, self.risk_period,['ALL'])
             assert immunization_qs
             
             # create a new event for each immunization date 
@@ -409,6 +496,7 @@ class VaersHospProbHeuristic(AdverseEventHeuristic):
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
         self.icd9s = icd9s
         self.category = rule.category
+        self.source = rule.source
         self.ignore_period = rule.ignore_period  
         self.risk_period = rule.risk_period
         self.risk_period_start = rule.risk_period_start      
@@ -431,17 +519,29 @@ class VaersHospProbHeuristic(AdverseEventHeuristic):
         
         hprb_qs = hprb_qs.filter(icd9__in=self.icd9s.all())
         hprb_qs = hprb_qs.filter(date__gte=begin, date__lte=end)
+        hprb_qs = hprb_qs.exclude(status='Deleted')
         hprb_qs = hprb_qs.distinct()
         return hprb_qs
 
     def generate(self, **kw):
         log.info('Generating events for %s' % self.name)
         counter = 0
-        content_type = ContentType.objects.get_for_model(Encounter)
+        content_type = ContentType.objects.get_for_model(Hospital_Problem)
         
         #TODO find the encounter that has a date <= this enc date and close date => this enc date
         # or close date is null is same as start one day hospitalization
         # dont add the event if the priority is >
+
+        if self.source==None:
+            types=['ALL']
+        else:
+            rawQuery = ("SELECT distinct t0.id, t0.native_code FROM conf_vaccinecodemap as t0 INNER JOIN static_vaccine as t1 " +
+                        "ON (t1.id = t0.canonical_code_id ) where position(%s in lower(t1.name))>0") 
+            immtypes = VaccineCodeMap.objects.raw(rawQuery,[self.source])
+            types=[]
+            for immtype in immtypes:
+                types.append(immtype.native_code)
+        
         
         for this_hprb in self.matches(**kw):
             if self.ignore_period:
@@ -451,37 +551,42 @@ class VaersHospProbHeuristic(AdverseEventHeuristic):
                     date__gte = earliest, 
                     #priority__lte = this_enc.priority,
                     patient = this_hprb.patient,                     
-                    icd9_codes__in = self.icd9s.all(),
+                    #icd9_codes__in = self.icd9s.all(),
                 )
+                prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',[this_hprb.icd9_id])
                 if prior_enc_qs:
                     continue # Prior diagnosis so ignore 
                 
                 prior_problem_qs = Problem.objects.filter(
                     date__lt = this_hprb.date, 
-                    icd9 = this_hprb.icd9,
+                    #icd9__in=self.icd9s.all(),
                     patient = this_hprb.patient, 
                 )
+                prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',[this_hprb.icd9_id])
                 if prior_problem_qs:
                     continue # prior problem so ignore 
                 
                 prior_hproblem_qs = Hospital_Problem.objects.filter(
                     date__lt = this_hprb.date, 
-                    icd9 = this_hprb.icd9,
+                    #icd9__in=self.icd9s.all(),
                     patient = this_hprb.patient, 
                 )
+                prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',[this_hprb.icd9_id])
                 if prior_hproblem_qs:
                     continue # prior problem so ignore 
                 
             #find the adverse event icd9 codes           
             thisname = self.name + ' ' + str(this_hprb.icd9)
 
-            immunization_qs = Immunization.vaers_candidates(this_hprb.patient, this_hprb.date, self.risk_period)
-            assert immunization_qs
+            immunization_qs = Immunization.vaers_candidates(this_hprb.patient, this_hprb.date, self.risk_period,types)
+            if not immunization_qs.exists():
+                continue # no immunizations of the type we're looking for
+
             
             # create a new event for each immunization date 
             for imm in immunization_qs:
                         
-                new_ee, created = ProblemEvent.objects.get_or_create(
+                new_ee, created = HospProblemEvent.objects.get_or_create(
                     gap = (this_hprb.date - imm.date).days,
                     object_id = this_hprb.pk,
                     content_type = content_type,
@@ -541,6 +646,7 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
         self.category = '2_possible'
         self.ignore_period =  rules.MAX_TIME_WINDOW_POST_ANY_EVENT # months
         self.risk_period = rules.MAX_TIME_WINDOW_POST_EVENT
+        self.source=None
         self.risk_period_start = 1
         super(VaersDiagnosisHeuristic, self).__init__(self.name, verbose_name=self.verbose_name)
             
@@ -554,11 +660,9 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
         covered_icd9_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
         excluded_icd9_codes = ExcludedICD9Code.objects.values('code')
         
-        # TODO: Ask Mike K about whether correlated ICD9 codes should be included in this ignore list
         icd9_qs = Icd9.objects.exclude(code__in=covered_icd9_codes)
         icd9_qs = icd9_qs.exclude(code__in=excluded_icd9_codes)
         return icd9_qs
-
 
 class Icd9PCorrelatedHeuristic(VaersProblemHeuristic):
     def __init__(self, event_name, icd9s, rule, discarding_icd9s):
@@ -594,6 +698,7 @@ class AnyOtherProblemHeuristic(VaersProblemHeuristic):
         self.name = 'Any other Diagnosis' # This is the EVENT name
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
         self.category = '2_possible'
+        self.source=None
         self.ignore_period =  rules.MAX_TIME_WINDOW_POST_ANY_EVENT # months
         self.risk_period = rules.MAX_TIME_WINDOW_POST_EVENT
         self.risk_period_start = 1
@@ -609,12 +714,10 @@ class AnyOtherProblemHeuristic(VaersProblemHeuristic):
         covered_icd9_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
         excluded_icd9_codes = ExcludedICD9Code.objects.values('code')
         
-        # TODO: Ask Mike K about whether correlated ICD9 codes should be included in this ignore list
         icd9_qs = Icd9.objects.exclude(code__in=covered_icd9_codes)
         icd9_qs = icd9_qs.exclude(code__in=excluded_icd9_codes)
         return icd9_qs
-
-
+    
 class Icd9HCorrelatedHeuristic(VaersHospProbHeuristic):
     def __init__(self, event_name, icd9s, rule, discarding_icd9s):
         self.discarding_icd9s = discarding_icd9s
@@ -649,6 +752,7 @@ class AnyOtherHospProbHeuristic(VaersHospProbHeuristic):
         self.name = 'Any other Diagnosis' # This is the EVENT name
         self.verbose_name = '%s as an adverse reaction to immunization' % self.name
         self.category = '2_possible'
+        self.source = None
         self.ignore_period =  rules.MAX_TIME_WINDOW_POST_ANY_EVENT # months
         self.risk_period = rules.MAX_TIME_WINDOW_POST_EVENT
         self.risk_period_start = 1
@@ -664,11 +768,9 @@ class AnyOtherHospProbHeuristic(VaersHospProbHeuristic):
         covered_icd9_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
         excluded_icd9_codes = ExcludedICD9Code.objects.values('code')
         
-        # TODO: Ask Mike K about whether correlated ICD9 codes should be included in this ignore list
         icd9_qs = Icd9.objects.exclude(code__in=covered_icd9_codes)
         icd9_qs = icd9_qs.exclude(code__in=excluded_icd9_codes)
         return icd9_qs
-
 
 class VaersLxHeuristic(AdverseEventHeuristic):
     
@@ -844,7 +946,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                 
                 
                 # Register which immunizations may be responsible for the event
-                immunizations = Immunization.vaers_candidates(lab_result.patient,lab_result.date, self.time_post_immunization)
+                immunizations = Immunization.vaers_candidates(lab_result.patient,lab_result.date, self.time_post_immunization,['ALL'])
                 assert len(immunizations) > 0
                 
                 # create a new event for each immunization date 
@@ -968,7 +1070,7 @@ class VaersRxHeuristic(AdverseEventHeuristic):
                 rule_explain = 'Prescription for %s'% (self.name)
                 
                 # Register which immunizations may be responsible for the event
-                immunizations = Immunization.vaers_candidates(rx.patient, rx.date, self.time_post_immunization)
+                immunizations = Immunization.vaers_candidates(rx.patient, rx.date, self.time_post_immunization,['ALL'])
                 assert len(immunizations) > 0
                 
                 # create a new event for each immunization date 
