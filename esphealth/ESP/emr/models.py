@@ -565,10 +565,11 @@ class BasePatientRecordManager(models.Manager):
             q_earliest_date = Q(date__gte=F('patient__immunization__date'))
         else:
             q_earliest_date = Q(date__gte=F('patient__immunization__date')+ risk_period_start)
-
-        return self.filter(patient__immunization=F('patient__immunization'), 
-                           patient__immunization__isvaccine=True).filter(
-            date__lte=F('patient__immunization__date') + days_after).filter(q_earliest_date)
+            
+        q_filter = q_earliest_date & Q(date__lte=F('patient__immunization__date') + days_after) & Q(patient__immunization__id=F('patient__immunization__id'))
+        
+        return self.filter(patient__immunization__isvaccine=True, 
+                           patient__immunization__imm_status='1').filter(q_filter)
 
 
 class BasePatientRecord(BaseMedicalRecord):
@@ -766,15 +767,18 @@ class LabResult(BasePatientRecord):
         except:
             return None
 
-    def last_known_value(self, with_same_unit=True, prior_vaccine_date=None):
+    def last_known_value(self, lab_values, with_same_unit=True, prior_vaccine_date=None):
         '''
         Returns the value of the Lx that is immediately prior to
         self.  if 'check_same_unit' is True, only returns the value if
         both labs results have a matching (Case insensitive) ref_unit value
         returns the value and the date 
         '''
-        previous_labs = LabResult.objects.filter(native_code=self.native_code, patient=self.patient,
+        try:
+            previous_labs = LabResult.objects.filter(native_code__in=lab_values, patient=self.patient,
                                                  date__lt=self.date).order_by('-date')
+        except:
+            msg='break'
         if with_same_unit:
             try:
                 previous_labs = previous_labs.filter(ref_unit__iexact=self.ref_unit)
@@ -1457,17 +1461,27 @@ class Immunization(BasePatientRecord):
     # TODO: issue 333 Move this code to VAERS module
     #
     @staticmethod
-    def vaers_candidates(patient, event_date, days_prior):
+    def vaers_candidates(patient, event_date, days_prior, immtypes):
         '''Given an adverse event date, returns a queryset that represents
         the possible immunizations that have caused it'''
         
         earliest_date = event_date - datetime.timedelta(days=days_prior)
-                
-        return Immunization.objects.filter(
-            date__gte=earliest_date, date__lte=event_date,
-            isvaccine=True,
-            patient=patient
-            )
+        
+        if immtypes[0]=='ALL':
+            return Immunization.objects.filter(
+                date__gte=earliest_date, date__lte=event_date,
+                isvaccine=True,
+                imm_status='1',
+                patient=patient
+                )
+        else:
+            return Immunization.objects.filter(
+                date__gte=earliest_date, date__lte=event_date,
+                isvaccine=True,
+                imm_status='1',
+                imm_type__in=immtypes,
+                patient=patient
+                )
     
     @staticmethod
     def fakes():
