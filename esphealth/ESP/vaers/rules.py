@@ -387,7 +387,7 @@ VAERS_LAB_RESULTS = {
             ],
         
         'criteria_adult':[{
-                'trigger':'X<100',
+                'trigger':'X<50',
                 'unit':'x109/L',
                 'exclude_if':('>','LKV*0.7'),
                 'category':'1_rare',
@@ -400,7 +400,7 @@ VAERS_LAB_RESULTS = {
                 'risk_period':30
                 }],
         'criteria_pediatric':[{
-                'trigger':'X<100',
+                'trigger':'X<50',
                 'unit':'x109/L',
                 'exclude_if':('>','LKV*0.7'),
                 'category':'1_rare',
