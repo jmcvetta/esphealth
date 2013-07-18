@@ -114,6 +114,15 @@ ALTER TABLE emr_provenance
   ADD COLUMN insert_count integer,
   ADD COLUMN update_count integer,
   ADD COLUMN post_load_count integer;
+-- ----------------------------------------------------------------
+-- 2013-07-17
+-- Bob Zambarano
+-- ----------------------------------------------------------------
+ALTER TABLE vaers_sender
+  ADD COLUMN date_added date;
+ALTER TABLE vaers_report_sent
+  RENAME COLUMN vaers_report TO report,
+  ADD COLUMN report_type character varying(20);
 
 
 
