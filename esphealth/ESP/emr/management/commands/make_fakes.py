@@ -858,6 +858,7 @@ class Command(LoaderCommand):
                      
             if MAX_DIABETES>0:
                 for i in xrange(MAX_DIABETES):
+                    when  = randomizer.date_range(as_string=False)
                     r = random.random()
                     if r > noncases:
                         diabetescase = random.randrange(1,3)
@@ -902,6 +903,7 @@ class Command(LoaderCommand):
                     
             if MAX_ILI>0:
                 for i in xrange(MAX_ILI):
+                    when  = randomizer.date_range(as_string=False)
                     noncases = .2
                     r = random.random()
                     if r > noncases:
@@ -922,6 +924,7 @@ class Command(LoaderCommand):
                     
             if MAX_DIABETES_ILI>0:
                 for i in xrange(MAX_DIABETES_ILI):
+                    when  = randomizer.date_range(as_string=False)
                     noncases = .2
                     r = random.random()
                     if r > noncases:
@@ -934,20 +937,20 @@ class Command(LoaderCommand):
                         elif combinedcasetypes ==2:
                             e =  Encounter.make_mock(p,when = when )  
                             e.temperature = random.randrange(100,110)
-                            encounter_writer.write_row(e,str(random.choice (ilicodes)))
-                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),str(random.choice (diabetescodes)))
+                            encounter_writer.write_row(e,[str(random.choice (ilicodes))])
+                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),[str(random.choice (diabetescodes))])
                         # with diabetes codes, no diabetes case but ili case 
                         elif combinedcasetypes ==3:
                             e =  Encounter.make_mock(p,when = when )  
                             e.temperature = random.randrange(100,110)
-                            encounter_writer.write_row(e,str(random.choice (ilicodes)))
-                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),str(random.choice (diabetescodes)))
+                            encounter_writer.write_row(e,[str(random.choice (ilicodes))])
+                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),[str(random.choice (diabetescodes))])
                            
                         # no ili case but codes and diabetes case 
                         elif combinedcasetypes ==4:
-                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),str(random.choice (ilicodes)))
-                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),str(random.choice (diabetescodes)))
-                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),str(random.choice (diabetescodes)))
+                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),[str(random.choice (ilicodes))])
+                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),[str(random.choice (diabetescodes))])
+                            encounter_writer.write_row(Encounter.make_mock(p,when = when ),[str(random.choice (diabetescodes))])
                             
                     else:
                         encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))
