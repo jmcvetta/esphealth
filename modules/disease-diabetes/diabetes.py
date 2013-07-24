@@ -837,6 +837,15 @@ class GestationalDiabetesReport(Report):
         'postpartum_ogtt75_igt_range_met',
         'postpartum_ogtt75_dm_range_met',        
         'postpartum_fasting_any_result',
+        # new columns for fasting plasma glucose
+        'postpartum_fasting_highest_result1',
+        'postpartum_fasting_highest_date1',
+        'postpartum_fasting_highest_result2',
+        'postpartum_fasting_highest_date2',
+        'postpartum_fasting_any_result_first_date',
+        'postpartum_fasting_any_result_last_date',
+        'postpartum_fasting_any_result_count',
+
         'postpartum_fasting_gte100_lte125',
         'postpartum_fasting_gte100_lte125_max_val',
         'postpartum_fasting_gte100_lte125_date',
@@ -847,6 +856,16 @@ class GestationalDiabetesReport(Report):
         'postpartum_random_gte200_date1',
         'postpartum_random_gte200_date2',
         'postpartum_a1c_any_result',
+        
+        #new a1c columns  
+        'postpartum_a1c_highest_result1',
+        'postpartum_a1c_highest_date1',
+        'postpartum_a1c_highest_result2',
+        'postpartum_a1c_highest_date2',
+        'postpartum_a1c_any_result_first_date',
+        'postpartum_a1c_any_result_last_date',
+        'postpartum_a1c_any_result_count',
+
         'postpartum_a1c_gte5_7_lte6_4',
         'postpartum_a1c_gte5_7_lte6_4_max_val',
         'postpartum_a1c_gte5_7_lte6_4_date',
@@ -1372,6 +1391,16 @@ class GestationalDiabetesReport(Report):
             any_a1c_gte5_7_lte6_4 = a1c_lab_qs.filter(result_float__gte=5.7, result_float__lte=6.4)
             any_a1c_6_5 = a1c_lab_qs.filter(result_float__gte=6.5)
             pp_a1c = a1c_lab_qs.filter(date__gt=end_date)
+            
+            # new a1c report columns   
+            pp_a1c_high1 = pp_a1c.aggregate(max=Max('result_float'))['max']
+            pp_a1c_high1_date = pp_a1c.order_by('-result_float')[0].date
+            pp_a1c_high2 =  pp_a1c.order_by('-result_float')[1].result_float
+            pp_a1c_high2_date = pp_a1c.order_by('-result_float')[1].date 
+            pp_a1c_any_firstdate = pp_a1c.order_by('date')[0].date
+            pp_a1c_any_lastdate = pp_a1c.order_by('-date')[0].date
+            pp_a1c_any_count = pp_a1c.count()
+            
             pp_a1c_gte5_7_lte6_4 = any_a1c_gte5_7_lte6_4.filter(date__gt=end_date)
             pp_a1c_6_5 = any_a1c_6_5.filter(date__gt=end_date)
             
@@ -1522,6 +1551,15 @@ class GestationalDiabetesReport(Report):
             fastingglucose_lab_qs = AbstractLabTest('glucose-fasting').lab_results.filter(patient=patient)
             pp_fastingglucose = fastingglucose_lab_qs.filter(anypostpartum_q)
             
+            # new fasting plasma pp  
+            pp_fasting_high1 = pp_fastingglucose.aggregate(max=Max('result_float'))['max']
+            pp_fasting_high1_date = pp_fastingglucose.order_by('-result_float')[0].date
+            pp_fasting_high2 =  pp_fastingglucose.order_by('-result_float')[1].result_float
+            pp_fasting_high2_date = pp_fastingglucose.order_by('-result_float')[1].date 
+            pp_fasting_any_firstdate = pp_fastingglucose.order_by('date')[0].date
+            pp_fasting_any_lastdate = pp_fastingglucose.order_by('-date')[0].date
+            pp_fasting_any_count = pp_fastingglucose.count()
+            
             pp_fastingglucose_gte100_lte125_max = None
             pp_fastingglucose_gte100_lte125_date = None
             pp_fastingglucose_gte100_lte125 = pp_fastingglucose.filter(result_float__gte=100, result_float__lte=125)
@@ -1614,6 +1652,13 @@ class GestationalDiabetesReport(Report):
                 'postpartum_ogtt75_igt_range_met': binary( postpartum256.filter(self.ogtt75_igt_q) ),
                 'postpartum_ogtt75_dm_range_met': binary( postpartum256.filter(self.ogtt75_dm_q) ),
                 'postpartum_fasting_any_result': binary( pp_fastingglucose ),
+                'postpartum_fasting_highest_result1':pp_fasting_high1,
+                'postpartum_fasting_highest_date1':pp_fasting_high1_date,
+                'postpartum_fasting_highest_result2':pp_fasting_high2,
+                'postpartum_fasting_highest_date2':pp_fasting_high2_date,
+                'postpartum_fasting_any_result_first_date':pp_fasting_any_firstdate,
+                'postpartum_fasting_any_result_last_date':pp_fasting_any_lastdate,
+                'postpartum_fasting_any_result_count':pp_fasting_any_count,
                 'postpartum_fasting_gte100_lte125': binary( pp_fastingglucose_gte100_lte125 ),
                 'postpartum_fasting_gte100_lte125_max_val': pp_fastingglucose_gte100_lte125_max,
                 'postpartum_fasting_gte100_lte125_date': pp_fastingglucose_gte100_lte125_date,
@@ -1624,6 +1669,13 @@ class GestationalDiabetesReport(Report):
                 'postpartum_random_gte200_date1': pp_randomglucose_high_date1,
                 'postpartum_random_gte200_date2': pp_randomglucose_high_date2,
                 'postpartum_a1c_any_result': binary( pp_a1c ),
+                'postpartum_a1c_highest_result1': pp_a1c_high1,
+                'postpartum_a1c_highest_date1': pp_a1c_high1_date,
+                'postpartum_a1c_highest_result2':pp_a1c_high2,
+                'postpartum_a1c_highest_date2': pp_a1c_high2_date,
+                'postpartum_a1c_any_result_first_date':pp_a1c_any_firstdate,
+                'postpartum_a1c_any_result_last_date':pp_a1c_any_lastdate,
+                'postpartum_a1c_any_result_count':pp_a1c_any_count,
                 'postpartum_a1c_gte5_7_lte6_4': binary( pp_a1c_gte5_7_lte6_4 ),
                 'postpartum_a1c_gte5_7_lte6_4_max_val': pp_a1c_gte5_7_lte6_4_max,
                 'postpartum_a1c_gte5_7_lte6_4_date': pp_a1c_gte5_7_lte6_4_date,
