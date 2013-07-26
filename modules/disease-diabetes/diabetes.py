@@ -1394,11 +1394,22 @@ class GestationalDiabetesReport(Report):
             
             # new a1c report columns   
             pp_a1c_high1 = pp_a1c.aggregate(max=Max('result_float'))['max']
-            pp_a1c_high1_date = pp_a1c.order_by('-result_float')[0].date
-            pp_a1c_high2 =  pp_a1c.order_by('-result_float')[1].result_float
-            pp_a1c_high2_date = pp_a1c.order_by('-result_float')[1].date 
-            pp_a1c_any_firstdate = pp_a1c.order_by('date')[0].date
-            pp_a1c_any_lastdate = pp_a1c.order_by('-date')[0].date
+            if pp_a1c:
+                pp_a1c_high1_date = pp_a1c.order_by('-result_float')[0].date
+                if pp_a1c.count()> 1:
+                    pp_a1c_high2 =  pp_a1c.order_by('-result_float')[1].result_float
+                    pp_a1c_high2_date = pp_a1c.order_by('-result_float')[1].date 
+                else:
+                    pp_a1c_high2 = None
+                    pp_a1c_high2_date = None
+                pp_a1c_any_firstdate = pp_a1c.order_by('date')[0].date
+                pp_a1c_any_lastdate = pp_a1c.order_by('-date')[0].date
+            else:
+                pp_a1c_high1_date = None
+                pp_a1c_high2 =  None
+                pp_a1c_high2_date = None 
+                pp_a1c_any_firstdate = None
+                pp_a1c_any_lastdate = None
             pp_a1c_any_count = pp_a1c.count()
             
             pp_a1c_gte5_7_lte6_4 = any_a1c_gte5_7_lte6_4.filter(date__gt=end_date)
@@ -1553,11 +1564,22 @@ class GestationalDiabetesReport(Report):
             
             # new fasting plasma pp  
             pp_fasting_high1 = pp_fastingglucose.aggregate(max=Max('result_float'))['max']
-            pp_fasting_high1_date = pp_fastingglucose.order_by('-result_float')[0].date
-            pp_fasting_high2 =  pp_fastingglucose.order_by('-result_float')[1].result_float
-            pp_fasting_high2_date = pp_fastingglucose.order_by('-result_float')[1].date 
-            pp_fasting_any_firstdate = pp_fastingglucose.order_by('date')[0].date
-            pp_fasting_any_lastdate = pp_fastingglucose.order_by('-date')[0].date
+            if pp_fastingglucose:
+                pp_fasting_high1_date = pp_fastingglucose.order_by('-result_float')[0].date
+                if pp_fastingglucose.count()>1:
+                    pp_fasting_high2 =  pp_fastingglucose.order_by('-result_float')[1].result_float
+                    pp_fasting_high2_date = pp_fastingglucose.order_by('-result_float')[1].date 
+                else:
+                    pp_fasting_high2 = None
+                    pp_fasting_high2_date = None
+                pp_fasting_any_firstdate = pp_fastingglucose.order_by('date')[0].date
+                pp_fasting_any_lastdate = pp_fastingglucose.order_by('-date')[0].date
+            else:
+                pp_fasting_high1_date = None
+                pp_fasting_high2 =  None
+                pp_fasting_high2_date = None 
+                pp_fasting_any_firstdate = None
+                pp_fasting_any_lastdate = None
             pp_fasting_any_count = pp_fastingglucose.count()
             
             pp_fastingglucose_gte100_lte125_max = None
