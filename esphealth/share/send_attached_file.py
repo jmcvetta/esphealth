@@ -41,7 +41,8 @@ msg.attach(attchmnt)
 try:
     #Change the smtp server address for your site/
     smtpServ = smtplib.SMTP('172.22.193.11','25')
-    smtpServ.sendmail(options.sender, options.receivers, msg.as_string())         
-    print "Seems to have been sent"
+    for addr in msg['To'].split(';'):
+        smtpServ.sendmail(msg['From'], addr, msg.as_string())         
+        print "Sent to: " + addr
 except Exception:
     print "Something is broken"
