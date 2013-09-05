@@ -123,6 +123,11 @@ ALTER TABLE vaers_sender
 ALTER TABLE vaers_report_sent
   RENAME COLUMN vaers_report TO report,
   ADD COLUMN report_type character varying(20);
-
-
+-- ----------------------------------------------------------------
+-- 2013-09-05
+-- Bob Zambarano
+-- mods to accompany redmine rev 4104
+-- ----------------------------------------------------------------
+ALTER TABLE conf_vaccinecodemap 
+  DROP CONSTRAINT conf_vaccinecodemap_native_code_key;
 
