@@ -1221,10 +1221,15 @@ class Command(BaseCommand):
                     if success:
                         if options.mark_sent:
                             for case in batch_cases:
-                                case.status = 'S'
+                                # redmine 467 checking other status if case events were  
+                                # modified after report sent
+                                if (case.status == 'RQ'):
+                                    case.status = 'RS'
+                                else:
+                                    case.status = 'S'
                                 case.sent_timestamp = datetime.datetime.now()
                                 case.save()
-                            log.debug("Set status to 'S' for this batch of cases")
+                            log.debug("Set status to 'S' or 'RS' for this batch of cases")
                         report_obj.sent = True
             report_obj.save()
             report_obj.cases = batch_cases # 'Report' instance needs to have a primary key value before a many-to-many relationship can be used.

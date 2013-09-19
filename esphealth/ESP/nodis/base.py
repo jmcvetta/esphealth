@@ -324,10 +324,16 @@ class DiseaseDefinition(object):
                 ).order_by('date')
         # If this patient has an existing case, we attach this event 
         # to that case and continue.
+        
         if existing_cases:
             first_case = existing_cases[0] 
             first_case.events.add(event_obj)
+            # redmine 467 transition existing 'S' status cases from 'S' to 'RQ' 
+            # whenever events are added to an existing case.
+            if (first_case.status == 'S'):
+                first_case.status = 'RQ'
             first_case.save()
+            
             log.debug('Added %s to %s' % (event_obj, first_case))
             return (False, first_case)
         #

@@ -332,6 +332,8 @@ STATUS_CHOICES = [
     ('Q',  'Q - Confirmed Case, Transmit to Health Department'), 
     ('S',  'S - Transmitted to Health Department'),
     ('NO', 'NO - Do NOT send cases'),
+    ('RQ', 'RQ - Re-queued for transmission. Updated after prior transmission'),
+    ('RS', 'RS - Re-sent after update subsequent to prior transmission'),
     ]
 
 
