@@ -203,6 +203,7 @@ esphealth/ESP/static/fixtures/initial_data.json -text
 esphealth/ESP/static/fixtures/loinc.json -text
 esphealth/ESP/static/fixtures/ndc.json -text
 esphealth/ESP/static/fixtures/toobig_initial_data.json.bz2 -text
+esphealth/ESP/static/fixtures/update_icd9.pg.sql -text
 esphealth/ESP/static/fixtures/vaccine_regex.json -text
 esphealth/ESP/static/models.py -text
 esphealth/ESP/static/sql/fakelabs.postgresql.sql -text
