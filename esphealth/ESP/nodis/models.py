@@ -179,7 +179,7 @@ class Case(models.Model):
     def __get_reportable_icd9s(self):
         
         from ESP.nodis.base import DiseaseDefinition
-        icd9_objs = Icd9.objects.filter(reportableicd9__condition=self.condition_config).distinct()
+        icd9_objs = Icd9.objects.filter(reportableicd9__condition=self.condition_config)
         for heuristic in  DiseaseDefinition.get_by_short_name(self.condition).event_heuristics:
             if isinstance(heuristic, DiagnosisHeuristic):
                 for icd9_query in heuristic.icd9_queries:
