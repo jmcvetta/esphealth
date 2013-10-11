@@ -29,7 +29,6 @@ def main():
 
     today = datetime.datetime.today()
     yesterday = today - datetime.timedelta(1)
-
     parser = OptionParser(usage=usage_msg)
     parser.add_option('-b', '--begin', dest='begin_date', default=EPOCH.strftime('%Y%m%d'))
     parser.add_option('-e', '--end', dest='end_date', default=today.strftime('%Y%m%d'))

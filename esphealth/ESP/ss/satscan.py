@@ -14,8 +14,8 @@ from ESP.ss.utils import report_folder, age_identifier
 from ESP.utils.utils import log, str_from_date, days_in_interval
 
 class Satscan(object):
-    EXECUTABLE_PATH = '/usr/local/bin/satscan'
-    VERSION = '8.3-beta5'
+    EXECUTABLE_PATH = '/opt/satscan/satscan'
+    VERSION = '9.1'
 
     PARAM_FILE_TEMPLATE = 'ss/files/satscan.conf'
 
@@ -121,7 +121,7 @@ class Satscan(object):
                                                          self.start_date, self.end_date))
         
         events = NonSpecialistVisitEvent.objects.filter(
-            event_ptr__name=self.heuristic.long_name, date__gte=self.start_date, 
+            event_ptr__name=self.heuristic.name, date__gte=self.start_date, 
             date__lte=self.end_date)
 
         groups = self.age_groups + [None]
@@ -158,7 +158,6 @@ class Satscan(object):
         contents = open(filename, 'r').read()
         regexp = re.compile('Recurrence interval...: \w+ day')
         intervals = [float(match.split()[2].strip()) for match in regexp.findall(contents)]
-        log.debug('file path: %s' % filepath)
         log.debug('recurrence intervals: %s' % intervals)
         return intervals
 
