@@ -20,7 +20,7 @@ select groups.site_id, groups.week as week_num,
           tot_counts
    from esp_mdphnet.ili_summary
    where period_end=(select max(period_end) from esp_mdphnet.ili_summary)
-         and cdc_site)id is not null) as ili
+         and cdc_site_id is not null) as ili
   right join (select * from 
                 (select distinct cdc_site_id as site_id
                    from esp_mdphnet.ili_summary

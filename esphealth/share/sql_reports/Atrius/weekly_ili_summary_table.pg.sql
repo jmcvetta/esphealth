@@ -63,7 +63,7 @@ FROM (select t00.date, t00.site_name, t00.patient_id, t00.id
        INNER JOIN static_site sites on (visit.site_name=sites.name)
        INNER JOIN static_sitegroup groups on (sites.group_id=groups.group)
 WHERE visit.date >= ('2010-01-03'::date) and pat.date_of_birth is not null AND sites.ili_site
-      and visit.date<=date_trunc('week',(select max(date) from emr_encounter)- interval '7 days') + interval '5 days'
+      and visit.date<=date_trunc('week',(select max(date) from emr_encounter)- interval '5 days') + interval '5 days'
 ) ili_by_yearsite 
 group by age_group, weekdate, week, zip5, center
 ) t0
@@ -99,7 +99,7 @@ FROM (select t00.date, t00.site_name, t00.patient_id, t00.id
        INNER JOIN static_site sites on (visit.site_name=sites.name)
        INNER JOIN static_sitegroup groups on (sites.group_id=groups.group)
 WHERE visit.date >= ('2010-01-03'::date) and pat.date_of_birth is not null AND sites.ili_site 
-   and visit.date<=date_trunc('week',(select max(date) from emr_encounter)- interval '7 days') + interval '5 days'
+   and visit.date<=date_trunc('week',(select max(date) from emr_encounter)- interval '5 days') + interval '5 days'
 ) ili_by_yearsite 
 group by age_group, weekdate, week, zip5, center
 ) t1 on t0.age_group=t1.age_group and t0.weekdate=t1.weekdate and t0.week=t1.week 
