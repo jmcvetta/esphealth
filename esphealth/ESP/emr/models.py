@@ -163,6 +163,25 @@ class Provider(BaseMedicalRecord):
     area_code = models.CharField('Primary Department Phone Areacode', max_length=50, blank=True, null=True)
     telephone = models.CharField('Primary Department Phone Number', max_length=50, blank=True, null=True)
     center_id =  models.CharField('Center ID', max_length=100, blank=True, null=True, db_index=True)
+    dept_country = models.CharField('Primary Dept country', max_length=100, blank=True, null=True)
+    dept_county_code = models.CharField('Primary Dept county code', max_length=10, blank=True, null=True)
+    tel_country_code = models.CharField('Primary Dept country tel code', max_length=10, blank=True, null=True)
+    tel_ext = models.CharField('Primary Dept phone extension', max_length=10, blank=True, null=True)
+    call_info = models.CharField('Primary Dept address comment', max_length=200, blank=True, null=True)
+    clin_address1 = models.CharField('Clinician Address Line 1', max_length=100, blank=True, null=True)
+    clin_address2 = models.CharField('Clinician Address Line 2', max_length=100, blank=True, null=True)
+    clin_city = models.CharField('Clinician City', max_length=50, blank=True, null=True)
+    clin_state = models.CharField('Clinician State', max_length=50, blank=True, null=True)
+    clin_zip = models.CharField('Clinician Zip Code', max_length=10, blank=True, null=True)
+    clin_country = models.CharField('Clinician Country', max_length=100, blank=True, null=True)
+    clin_county_code = models.CharField('Clinician county code', max_length=10, blank=True, null=True)
+    clin_tel_country_code = models.CharField('Clinician country tel code', max_length=10, blank=True, null=True)
+    clin_areacode = models.CharField('Clinician Phone area code', max_length=5, blank=True, null=True)
+    clin_tel = models.CharField('Clinician Phone number', max_length=10, blank=True, null=True)
+    clin_tel_ext = models.CharField('Clinician Extension', max_length=10, blank=True, null=True)
+    clin_call_info = models.CharField('Clinician address comment', max_length=200, blank=True, null=True)
+    suffix = models.CharField('Name suffix', max_length=20, blank=True, null=True)
+
     
     q_fake = Q(natural_key__startswith='FAKE')
 
@@ -257,8 +276,10 @@ class Patient(BaseMedicalRecord):
     areacode = models.CharField('Home Phone Area Code', max_length=50, blank=True, null=True)
     tel = models.CharField('Home Phone Number', max_length=100, blank=True, null=True)
     tel_ext = models.CharField('Home Phone Extension', max_length=50, blank=True, null=True)
-    date_of_birth = models.DateField('Date of Birth', blank=True, null=True, db_index=True)
-    date_of_death = models.DateField('Date of death', blank=True, null=True)
+    date_of_birth = models.DateTimeField('Date of Birth', blank=True, null=True, db_index=True)
+    cdate_of_birth = models.CharField('Date of Birth String', max_length=100, blank=True, null=True)
+    date_of_death = models.DateTimeField('Date of death', blank=True, null=True)
+    cdate_of_death = models.CharField('Date of Death String', max_length=100, blank=True, null=True)
     gender = models.CharField('Gender', max_length=20, blank=True, null=True, db_index=True)
     race = models.CharField('Race', max_length=100, blank=True, null=True, db_index=True)
     ethnicity = models.CharField('Ethnicity', max_length=100, blank=True, null=True, db_index=True)
@@ -271,6 +292,13 @@ class Patient(BaseMedicalRecord):
     #death_indicator = models.CharField('Death_Indicator', max_length=30, blank=True, null=True)
     occupation = models.CharField('Occupation', max_length=200, blank=True, null=True)
     center_id =  models.CharField('Center ID', max_length=100, blank=True, null=True, db_index=True)
+    mother_maiden_name = models.CharField('Mother Maiden Name', max_length=100, blank=True, null=True)
+    last_update = models.DateTimeField('Date when patient information was last updated',null=True)
+    clast_update = models.CharField('Date of last update string', max_length=100, blank=True, null=True)
+    last_update_site = models.CharField('Site where patient information was last updated', max_length=100, blank=True, null=True)
+    title = models.CharField('Title', max_length=50, blank=True, null=True)
+    remark  = models.TextField('Remark', blank=True, null=True)
+
     
     q_fake = Q(natural_key__startswith='FAKE')
 
@@ -556,6 +584,70 @@ class Patient(BaseMedicalRecord):
 #--- ~~~ Patient Records ~~~
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+class BasePatRecord(BaseMedicalRecord):
+    '''
+    A pat record contains normalized data from a specific patient record 
+    '''
+    patient = models.ForeignKey(Patient, blank=True, null=True) 
+    
+    q_fake = Q(patient_natural_key__startswith='FAKE')
+    
+    def is_fake(self):
+        return self.patient.natural_key.startswith('FAKE')
+   
+    
+    class Meta:
+        abstract = True
+
+class Patient_Addr(BasePatRecord):
+    '''
+    For meaningful use certification, patients may have multiple addresses (home, business, secondary home, etc.)
+    '''
+    address1 = models.CharField('Address1', max_length=200, blank=True, null=True)
+    address2 = models.CharField('Address2', max_length=100, blank=True, null=True)
+    city = models.CharField('City', max_length=50, blank=True, null=True)
+    state = models.CharField('State', max_length=20, blank=True, null=True)
+    zip = models.CharField('Zip', max_length=20, blank=True, null=True, db_index=True)
+    zip5 = models.CharField('5-digit zip', max_length=5, null=True, db_index=True)
+    country = models.CharField('Country', max_length=60, blank=True, null=True)
+    county_code = models.CharField('County Code', max_length=10, blank=True, null=True)
+    tel_country_code = models.CharField('Telephone Country Code', max_length=10, blank=True, null=True)
+    areacode = models.CharField('Phone Area Code', max_length=50, blank=True, null=True)
+    tel = models.CharField('Phone Number', max_length=100, blank=True, null=True)
+    tel_ext = models.CharField('Phone Extension', max_length=50, blank=True, null=True)
+    call_info = models.CharField('Additional information', max_length=100, blank=True, null=True)
+    email = models.CharField('email', max_length=200, blank=True, null=True)
+    type = models.CharField('Type', max_length=100, blank=True, null=True)
+    
+class Patient_Guardian(BasePatRecord):
+    '''
+    For meaningful use certification, patients may have parent or guardian information for
+    a person who is not a patient in the system.
+    '''
+    organization = models.CharField('Relationship', max_length=200, blank=True, null=True)
+    relationship = models.CharField('Relationship', max_length=200, blank=True, null=True)
+    honorific = models.CharField('honorific', max_length=10, blank=True, null=True)
+    last_name = models.CharField('Last Name', max_length=200, blank=True, null=True)
+    first_name = models.CharField('First Name', max_length=200, blank=True, null=True)
+    middle_name = models.CharField('Middle Name', max_length=200, blank=True, null=True)
+    suffix = models.CharField('Suffix', max_length=199, blank=True, null=True)
+    address1 = models.CharField('Address1', max_length=200, blank=True, null=True)
+    address2 = models.CharField('Address2', max_length=100, blank=True, null=True)
+    city = models.CharField('City', max_length=50, blank=True, null=True)
+    state = models.CharField('State', max_length=20, blank=True, null=True)
+    zip = models.CharField('Zip', max_length=20, blank=True, null=True, db_index=True)
+    zip5 = models.CharField('5-digit zip', max_length=5, null=True, db_index=True)
+    country = models.CharField('Country', max_length=60, blank=True, null=True)
+    county_code = models.CharField('County Code', max_length=10, blank=True, null=True)
+    tel_country_code = models.CharField('Telephone Country Code', max_length=10, blank=True, null=True)
+    areacode = models.CharField('Phone Area Code', max_length=50, blank=True, null=True)
+    tel = models.CharField('Phone Number', max_length=100, blank=True, null=True)
+    tel_ext = models.CharField('Phone Extension', max_length=50, blank=True, null=True)
+    call_info = models.CharField('Additional information', max_length=100, blank=True, null=True)
+    email = models.CharField('email', max_length=200, blank=True, null=True)
+    type = models.CharField('Type', max_length=100, blank=True, null=True)
+
+
 class BasePatientRecordManager(models.Manager):
     
     # TODO: issue 333 This code belongs in VAERS module, not here.
@@ -602,7 +694,27 @@ class BasePatientRecord(BaseMedicalRecord):
         abstract = True
 
 
-  
+class LabInfo(models.Model):
+    '''
+    Information about the lab performing test analysis
+    '''
+    CLIA_ID = models.CharField('CLIA ID', max_length=20,primary_key=True, blank=True)
+    provenance = models.ForeignKey(Provenance, blank=False)
+    laboratory_name =  models.CharField('Laboratory name', max_length=150, blank=True, null=True)
+    Lab_Director = models.CharField('Director Name', max_length=150, blank=True, null=True)
+    NPI_ID = models.CharField('NPI ID', max_length=60, blank=True, null=True)
+    address1 = models.CharField('Address1', max_length=200, blank=True, null=True)
+    address2 = models.CharField('Address2', max_length=100, blank=True, null=True)
+    city = models.CharField('City', max_length=50, blank=True, null=True)
+    state = models.CharField('State', max_length=20, blank=True, null=True)
+    zip = models.CharField('Zip', max_length=20, blank=True, null=True, db_index=True)
+    zip5 = models.CharField('5-digit zip', max_length=5, null=True, db_index=True)
+    country = models.CharField('Country', max_length=60, blank=True, null=True)
+    county_code = models.CharField('County Code', max_length=10, blank=True, null=True)
+    
+    def __str__(self):
+        return u'%20s' % (self.pk)
+
 class LabResult(BasePatientRecord):
     '''
     Result data for a lab test
@@ -612,9 +724,11 @@ class LabResult(BasePatientRecord):
     order_natural_key = models.CharField('Order identifier in source EMR system', max_length=128, db_index=True, blank=True, null=True)
     native_code = models.CharField('Native Test Code', max_length=255, blank=True, null=True, db_index=True)
     native_name = models.CharField('Native Test Name', max_length=255, blank=True, null=True, db_index=True)
-    result_date = models.DateField(blank=True, null=True, db_index=True)
-    collection_date = models.DateField(blank=True, null=True, db_index=True)
-    status = models.CharField('Result Status', max_length=50, blank=True, null=True)
+    result_date = models.DateTimeField('Result Date', blank=True, null=True, db_index=True)
+    cresult_date = models.CharField('Result Date String', max_length=100, blank=True, null=True)
+    collection_date = models.DateTimeField(blank=True, null=True, db_index=True)
+    ccollection_date = models.CharField('Collection date String', max_length=100, blank=True, null=True)
+    status = models.CharField('Result Status', max_length=200, blank=True, null=True)
     order_type = models.CharField('Order type', max_length=20, null=True)
     patient_class = models.CharField('Patient class',max_length=5, null=True)
     patient_status = models.CharField('Patient status',max_length=5, null=True)
@@ -625,6 +739,7 @@ class LabResult(BasePatientRecord):
     #
     ref_high_string = models.CharField('Reference High Value (string)', max_length=100, blank=True, null=True)
     ref_low_string = models.CharField('Reference Low Value (string)', max_length=100, blank=True, null=True)
+    ref_text = models.CharField('Reference text', max_length=100, blank=True, null=True)
     ref_high_float = models.FloatField('Reference High Value (decimal)', blank=True, null=True, db_index=True)
     ref_low_float = models.FloatField('Reference Low Value (decimal)', blank=True, null=True, db_index=True)
     ref_unit = models.CharField('Measurement Unit', max_length=100, blank=True, null=True)
@@ -642,7 +757,20 @@ class LabResult(BasePatientRecord):
     impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
     comment = models.TextField('Comments', blank=True, null=True)
     procedure_name = models.CharField('Procedure Name', max_length=255, blank=True, null=True)
-    
+    #
+    # Added for meaningful use
+    #
+    filler_ID = models.CharField('Filler Order Number', max_length=20, blank=True, null=True)
+    collection_date_end = models.DateTimeField('Lab Collection End date',null=True)
+    ccollection_date_end = models.CharField('Collection end date String', max_length=100, blank=True, null=True)
+    status_date = models.DateTimeField('Result interpretation/status change date', null=True)
+    cstatus_date = models.CharField('Status date String', max_length=100, blank=True, null=True)
+    interpreter = models.CharField('Lab result interpreter', max_length=100, blank=True, null=True)
+    interpreter_id = models.CharField('Interpreter ID', max_length=20, blank=True, null=True)
+    interp_id_auth = models.CharField('Interpreter ID Type', max_length=50, blank=True, null=True)
+    CLIA_ID = models.ForeignKey(LabInfo, blank=True)
+    lab_method = models.CharField('Observation method', max_length=100, blank=True, null=True)
+
     class Meta:
         verbose_name = 'Lab Test Result'
         ordering = ['date']
@@ -941,6 +1069,39 @@ class LabResult(BasePatientRecord):
     snomed_ind = property(__get_snomed_ind)
         
 
+class BaseLabRecord(BaseMedicalRecord):
+    '''
+    A lab record contains normalized data from a specific lab record 
+    '''
+    LabResult = models.ForeignKey(LabResult, blank=True, null=True) 
+       
+    class Meta:
+        abstract = True
+
+class Specimen(BaseLabRecord):
+    '''
+    Details about the lab specimen
+    '''
+    type_modifier =  models.CharField('Specimen Type Modifier', max_length=100, blank=True, null=True)
+    additives =  models.CharField('Specimen additives', max_length=100, blank=True, null=True)
+    collection_method =  models.CharField('Collection Method', max_length=100, blank=True, null=True)
+    Source_site =  models.CharField('Specimen Source site', max_length=100, blank=True, null=True)
+    Source_site_modifier =  models.CharField('Specimen Source site modifier', max_length=100, blank=True, null=True)
+    Specimen_role =  models.CharField('Specimen Role', max_length=100, blank=True, null=True)
+    Collection_amount =  models.CharField('Collection Amount', max_length=100, blank=True, null=True)
+    Received_date = models.DateTimeField('Received datetime',null=True)
+    creceived_date = models.CharField('Received date String', max_length=100, blank=True, null=True)
+    analysis_date = models.DateTimeField('Analysis datetime',null=True)
+    canalysis_date = models.CharField('Analysis Date String', max_length=100, blank=True, null=True)
+
+class SpecObs(BaseLabRecord):
+    '''
+    Observations and comments regarding the specimen
+    '''
+    type = models.CharField('Observation type', max_length=100, blank=True, null=True)
+    result = models.CharField('Observation value', max_length=200, blank=True, null=True)
+    unit = models.CharField('Observation unit', max_length=50, blank=True, null=True)
+
 class LabOrder(BasePatientRecord):
     '''
     An order for a laboratory test
@@ -958,6 +1119,12 @@ class LabOrder(BasePatientRecord):
     test_status = models.CharField('Test status', max_length=5, null=True)
     patient_class = models.CharField('Patient class',max_length=5, null=True)
     patient_status = models.CharField('Patient status',max_length=5, null=True)
+    group_id = models.CharField('Placer Order Group',max_length=15, null=True)
+    reason_code = models.CharField('Reason for Order',max_length=15, null=True)
+    reason_code_type = models.CharField('Reason code type',max_length=25, null=True)
+    order_info = models.CharField('Clinical information',max_length=100, null=True)
+    remark  = models.TextField('Remark', blank=True, null=True)
+
     
     
     @staticmethod
