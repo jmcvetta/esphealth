@@ -715,6 +715,25 @@ class LabInfo(models.Model):
     def __str__(self):
         return u'%20s' % (self.pk)
 
+class Specimen(models.Model):
+    '''
+    Details about the lab specimen
+    '''
+    specimen_num = models.CharField('Speciment ID Number', max_length=100,primary_key=True, blank=True)
+    provenance = models.ForeignKey(Provenance, blank=False)
+    specimen_source = models.CharField('Speciment Source', max_length=255, blank=True, null=True)
+    type_modifier =  models.CharField('Specimen Type Modifier', max_length=100, blank=True, null=True)
+    additives =  models.CharField('Specimen additives', max_length=100, blank=True, null=True)
+    collection_method =  models.CharField('Collection Method', max_length=100, blank=True, null=True)
+    Source_site =  models.CharField('Specimen Source site', max_length=100, blank=True, null=True)
+    Source_site_modifier =  models.CharField('Specimen Source site modifier', max_length=100, blank=True, null=True)
+    Specimen_role =  models.CharField('Specimen Role', max_length=100, blank=True, null=True)
+    Collection_amount =  models.CharField('Collection Amount', max_length=100, blank=True, null=True)
+    Received_date = models.DateTimeField('Received datetime',null=True)
+    creceived_date = models.CharField('Received date String', max_length=100, blank=True, null=True)
+    analysis_date = models.DateTimeField('Analysis datetime',null=True)
+    canalysis_date = models.CharField('Analysis Date String', max_length=100, blank=True, null=True)
+
 class LabResult(BasePatientRecord):
     '''
     Result data for a lab test
@@ -752,7 +771,7 @@ class LabResult(BasePatientRecord):
     #
     # Wide fields
     #
-    specimen_num = models.CharField('Speciment ID Number', max_length=100, blank=True, null=True)
+    specimen_num = models.ForeignKey(Specimen)
     specimen_source = models.CharField('Speciment Source', max_length=255, blank=True, null=True)
     impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
     comment = models.TextField('Comments', blank=True, null=True)
@@ -1069,35 +1088,12 @@ class LabResult(BasePatientRecord):
     snomed_ind = property(__get_snomed_ind)
         
 
-class BaseLabRecord(BaseMedicalRecord):
-    '''
-    A lab record contains normalized data from a specific lab record 
-    '''
-    LabResult = models.ForeignKey(LabResult, blank=True, null=True) 
-       
-    class Meta:
-        abstract = True
-
-class Specimen(BaseLabRecord):
-    '''
-    Details about the lab specimen
-    '''
-    type_modifier =  models.CharField('Specimen Type Modifier', max_length=100, blank=True, null=True)
-    additives =  models.CharField('Specimen additives', max_length=100, blank=True, null=True)
-    collection_method =  models.CharField('Collection Method', max_length=100, blank=True, null=True)
-    Source_site =  models.CharField('Specimen Source site', max_length=100, blank=True, null=True)
-    Source_site_modifier =  models.CharField('Specimen Source site modifier', max_length=100, blank=True, null=True)
-    Specimen_role =  models.CharField('Specimen Role', max_length=100, blank=True, null=True)
-    Collection_amount =  models.CharField('Collection Amount', max_length=100, blank=True, null=True)
-    Received_date = models.DateTimeField('Received datetime',null=True)
-    creceived_date = models.CharField('Received date String', max_length=100, blank=True, null=True)
-    analysis_date = models.DateTimeField('Analysis datetime',null=True)
-    canalysis_date = models.CharField('Analysis Date String', max_length=100, blank=True, null=True)
-
-class SpecObs(BaseLabRecord):
+class SpecObs(models.Model):
     '''
     Observations and comments regarding the specimen
     '''
+    specimen_num = models.ForeignKey(Specimen)
+    provenance = models.ForeignKey(Provenance, blank=False)
     type = models.CharField('Observation type', max_length=100, blank=True, null=True)
     result = models.CharField('Observation value', max_length=200, blank=True, null=True)
     unit = models.CharField('Observation unit', max_length=50, blank=True, null=True)
@@ -1110,6 +1106,7 @@ class LabOrder(BasePatientRecord):
     class Meta:
         verbose_name = 'Lab Order'
     # natural key is order number    
+    cdate = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     procedure_code = models.CharField(max_length=20, blank=True, null=True, db_index=True)
     procedure_modifier = models.CharField(max_length=20, blank=True, null=True)
     procedure_name = models.CharField(max_length=300, blank=True, null=True)
