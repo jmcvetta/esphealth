@@ -829,6 +829,7 @@ class GestationalDiabetesReport(Report):
         'postpartum120_ogtt75_order',
         'postpartum120_ogtt75_any_result',
         'postpartum_ogtt75_order',
+        'postpartum_ogtt75_order_first_date',
         'postpartum_ogtt75_any_result',
         'postpartum_ogtt75_any_result_date',
         'postpartum_ogtt75_any_result_dept',
@@ -1527,6 +1528,10 @@ class GestationalDiabetesReport(Report):
                 date__lte = end_date + relativedelta(days=256),
                 )  
             
+            pp256_ogtt75_order_first_date = None
+            if pp256_ogtt75_order:
+              pp256_ogtt75_order_first_date = pp256_ogtt75_order.order_by('date')[0].date
+              
             pp120_ogtt75_any_result = 0
             pp120_ogtt75_any_result_date = None
             
@@ -1671,6 +1676,7 @@ class GestationalDiabetesReport(Report):
                 'postpartum120_ogtt75_order': binary( pp120_ogtt75_order ),
                 'postpartum120_ogtt75_any_result': binary( pp120_ogtt75_any_result ),
                 'postpartum_ogtt75_order': binary( pp256_ogtt75_order ),
+                'postpartum_ogtt75_order_first_date':pp256_ogtt75_order_first_date,
                 'postpartum_ogtt75_any_result': binary( pp256_ogtt75_any_result ),
                 'postpartum_ogtt75_any_result_date': pp256_ogtt75_any_result_date,
                 'postpartum_ogtt75_any_result_dept': pp256_ogtt75_any_result_dept,
