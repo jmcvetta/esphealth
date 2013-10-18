@@ -47,11 +47,13 @@ from ESP.emr.models import Provenance
 from ESP.emr.models import EtlError
 from ESP.emr.models import Provider
 from ESP.emr.models import Patient
-from ESP.emr.models import LabResult, LabOrder
+from ESP.emr.models import LabResult, LabOrder, LabInfo
 from ESP.emr.models import Encounter, EncounterTypeMap
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization, Pregnancy
 from ESP.emr.models import SocialHistory, Problem, Allergy, Hospital_Problem
+from ESP.emr.models import Patient_Guardian, Patient_Addr
+from ESP.emr.models import Specimen, SpecObs
 from ESP.emr.management.commands.common import LoaderCommand
 from ESP.emr.base import SiteDefinition
 from ESP.conf.models import VaccineCodeMap
@@ -141,6 +143,7 @@ class BaseLoader(object):
     #
     __patient_cache = {} # {patient_id: Patient instance}
     __provider_cache = {} # {provider_id: Provider instance}
+    __labSpec_cache = {} 
     
     def __init__(self, filepath, options):
         assert os.path.isfile(filepath)
@@ -209,6 +212,19 @@ class BaseLoader(object):
         return self.__provider_cache[natural_key]
     
 
+    def get_specid(self, code):
+    
+        '''
+        Given a specId, as a string, create a stub record if needed
+        '''
+        if not code in self.__labSpec_cache:
+            i, created = Specimen.objects.get_or_create(specimen_num__exact=code, defaults={
+                     'code': code, 'provenance': self.provenance})
+            self.__labSpec_cache[code]=i    
+            if created:
+                log.info('Creating new Specimen stub for id %s.' % code)
+        return self.__labSpec_cache[code]
+    
     def insert_or_update(self, model, field_values, key_fields):
         '''
         Attempts to create a new instance of model using field_values.  If 
@@ -257,6 +273,7 @@ class BaseLoader(object):
         return obj, created
     
     def date_or_none(self, str):
+        #TODO: the date_from_str util needs to be beefed up to handle the various date strings in the NIST test data
         if not str:
             return None
         try:
@@ -556,6 +573,24 @@ class ProviderLoader(BaseLoader):
         'area_code',
         'telephone',
         'center_id',
+        'dept_country',
+        'dept_county_code',
+        'tel_country_code',
+        'tel_ext',
+        'call_info',
+        'clin_address1',
+        'clin_address2',
+        'clin_city',
+        'clin_state',
+        'clin_zip',
+        'clin_country',
+        'clin_county_code',
+        'clin_tel_country_code',
+        'clin_areacode',
+        'clin_tel',
+        'clin_tel_ext',
+        'clin_call_info',
+        'suffix',
         ]
     
     model = Provider
@@ -593,6 +628,24 @@ class ProviderLoader(BaseLoader):
         'area_code' : row['area_code'],
         'telephone' : row['telephone'],
         'center_id' : row['center_id'],
+        'dept_country' : row['dept_country'],
+        'dept_county_code' : row['dept_county_code'],
+        'tel_country_code' : row['tel_country_code'],
+        'tel_ext' : row['tel_ext'],
+        'call_info' : row['call_info'],
+        'clin_address1' : row['clin_address1'],
+        'clin_address2' : row['clin_address2'],
+        'clin_city' : row['clin_city'],
+        'clin_state' : row['clin_state'],
+        'clin_zip' : row['clin_zip'],
+        'clin_country' : row['clin_country'],
+        'clin_county_code' : row['clin_county_code'],
+        'clin_tel_country_code' : row['clin_tel_country_code'],
+        'clin_areacode' : row['clin_areacode'],
+        'clin_tel' : row['clin_tel'],
+        'clin_tel_ext' : row['clin_tel_ext'],
+        'clin_call_info' : row['clin_call_info'],
+        'suffix' : row['suffix'],  
         }
 
         try:
@@ -632,6 +685,10 @@ class PatientLoader(BaseLoader):
         'date_of_death',
         'center_id',
         'ethnicity',
+        'mother_maiden_name',
+        'last_update',
+        'last_update_site',
+        'suffix',
         ]
     
     model = Patient
@@ -642,7 +699,6 @@ class PatientLoader(BaseLoader):
         values = {
         'natural_key': natural_key,
         'provenance' : self.provenance,
-        #'updated_by' : UPDATED_BY,
         'mrn' : row['mrn'],
         'last_name' : string_or_none(row['last_name']),
         'first_name' : string_or_none(row['first_name']),
@@ -658,7 +714,9 @@ class PatientLoader(BaseLoader):
         'tel' : row['tel'],
         'tel_ext' : row['tel_ext'],
         'date_of_birth' : self.date_or_none(row['date_of_birth']),
+        'cdate_of_birth' : row['date_of_birth'],
         'date_of_death' : self.date_or_none(row['date_of_death']),
+        'cdate_of_death' : row['date_of_death'],
         'gender' : row['gender'],
         'race' : string_or_none(row['race']),
         'home_language' : string_or_none(row['home_language']),
@@ -669,6 +727,11 @@ class PatientLoader(BaseLoader):
         'mother_mrn' : row['mother_mrn'],
         'center_id' : row['center_id'],
         'ethnicity' :string_or_none(row['ethnicity']),
+        'mother_maiden_name' : string_or_none(row['mother_maiden_name']),
+        'last_update' : self.date_or_none(row['last_update']),
+        'clast_update' : row['last_update'],
+        'last_update_site' : string_or_none(row['last_update_site']),
+        'suffix' : string_or_none(row['suffix']),
         }
 
         try:
@@ -680,6 +743,173 @@ class PatientLoader(BaseLoader):
         except:
             raise
         
+
+class PatientGuardianLoader(BaseLoader):
+    fields = [
+        'patient_id',
+        'relationship',
+        'honorific',
+        'last_name',
+        'first_name',
+        'middle_name',
+        'suffix',
+        'address1',
+        'address2',
+        'city',
+        'state',
+        'zip',
+        'country',
+        'type',
+        'tel_country_code',
+        'areacode',
+        'tel',
+        'tel_ext',
+        'call_info',
+        'email',
+        ]
+    
+    model = Patient_Guardian
+    
+    def load_row(self, row):
+        
+        natural_key = self.generateNaturalkey(row['patient_id']+'_'+row['relationship'])
+                    
+        values = {
+            'patient' : self.get_patient(row['patient_id']),
+            'provenance' : self.provenance,
+            'natural_key' : natural_key,
+            'relationship' : string_or_none(row['relationship']),
+            'honorific' : string_or_none(row['honorific']),
+            'last_name' : string_or_none(row['last_name']),
+            'first_name' : string_or_none(row['first_name']),
+            'middle_name' : string_or_none(row['middle_name']),
+            'suffix' : string_or_none(row['suffix']),
+            'address1' : string_or_none(row['address1']),
+            'address2' : string_or_none(row['address2']),
+            'city' : string_or_none(row['city']),
+            'state' : string_or_none(row['state']),
+            'zip' : string_or_none(row['zip']),
+            'country' : string_or_none(row['country']),
+            'type' : string_or_none(row['type']),
+            'tel_country_code' : string_or_none(row['tel_country_code']),
+            'areacode' : string_or_none(row['areacode']),
+            'tel' : string_or_none(row['tel']),
+            'tel_ext' : string_or_none(row['tel_ext']),
+            'call_info' : string_or_none(row['call_info']),
+            'email' : string_or_none(row['email']),
+            }
+       
+        if DEBUG:
+            ex_to_catch = []
+        else:
+            ex_to_catch = [BaseException]
+        try:
+            s, created = self.insert_or_update(Patient_Guardian, values, ['natural_key'])
+            #TODO: zip5
+            log.debug('Saved pat guardian object: %s' % s)
+        except ex_to_catch, e:
+            raise e
+
+class PatientAddrLoader(BaseLoader):
+    fields = [
+        'patient_id',
+        'address1',
+        'address2',
+        'city',
+        'state',
+        'zip',
+        'country',
+        'county_code',
+        'tel_country_code',
+        'areacode',
+        'tel',
+        'tel_ext',
+        'call_info',
+        'email',
+        'type',
+        ]
+    
+    model = Patient_Addr
+    
+    def load_row(self, row):
+        
+        natural_key = self.generateNaturalkey(row['patient_id']+'_'+row['type'])
+                    
+        values = {
+            'patient' : self.get_patient(row['patient_id']),
+            'provenance' : self.provenance,
+            'natural_key' : natural_key,
+            'address1' : row['address1'],
+            'address2' : row['address2'],
+            'city' : row['city'],
+            'state' : row['state'],
+            'zip' : row['zip'],
+            'country' : row['country'],
+            'county_code' : row['county_code'],
+            'tel_country_code' : row['tel_country_code'],
+            'areacode' : row['areacode'],
+            'tel' : row['tel'],
+            'tel_ext' : row['tel_ext'],
+            'call_info' : row['call_info'],
+            'email' : row['email'],
+            'type' : row['type'],
+            }
+       
+        if DEBUG:
+            ex_to_catch = []
+        else:
+            ex_to_catch = [BaseException]
+        try:
+            s, created = self.insert_or_update(Patient_Addr, values, ['natural_key'])
+            #TODO: zip5
+            log.debug('Saved pat addr object: %s' % s)
+        except ex_to_catch, e:
+            raise e
+
+class LabInfoLoader(BaseLoader):
+    fields = [
+        'CLIA_ID',
+        'laboratory_name',
+        'Lab_Director',
+        'NPI_ID',
+        'address1',
+        'address2',
+        'city',
+        'state',
+        'zip',
+        'country',
+        'county_code',
+        ]
+    
+    model = LabInfo
+       
+    def load_row(self, row):
+        
+        values = {
+            'CLIA_ID' : row['CLIA_ID'],
+            'provenance' : self.provenance,
+            'laboratory_name' : row['laboratory_name'],
+            'Lab_Director' : row['Lab_Director'],
+            'NPI_ID' : row['NPI_ID'],
+            'address1' : row['address1'],
+            'address2' : row['address2'],
+            'city' : row['city'],
+            'state' : row['state'],
+            'zip' : row['zip'],
+            'country' : row['country'],
+            'county_code' : row['county_code'],
+            }
+       
+        if DEBUG:
+            ex_to_catch = []
+        else:
+            ex_to_catch = [BaseException]
+        try:
+            s, created = self.insert_or_update(LabInfo, values, row['CLIA_ID'])
+            #TODO: zip5
+            log.debug('Saved LabInfo object with CLIA ID: %s' % str(s))
+        except ex_to_catch, e:
+            raise e
 
 class LabResultLoader(BaseLoader):
     
@@ -708,12 +938,36 @@ class LabResultLoader(BaseLoader):
         'procedure_name' ,      # 22
         'natural_key',          # 23 added in 3
         'patient_class',        # 24 added in 3
-        'patient_status'        # 25 added in 3
-
+        'patient_status',       # 25 added in 3
+        'filler_ID', 
+        'collection_date_end', 
+        'status_date', 
+        'interpreter', 
+        'interpreter_id', 
+        'interp_id_auth', 
+        'CLIA_ID', 
+        'lab_method', 
+        'ref_text',
         ]
 
     model = LabResult
     
+    labCLIA_cache = {} #{CLIA_id: LabResult instance}
+    
+    def get_LabCLIA(self, CLIA_ID,cache):
+        if not CLIA_ID:
+            return ''
+        
+        if not CLIA_ID in cache:
+            i, created = LabInfo.objects.get_or_create(CLIA_ID__exact=CLIA_ID, defaults={
+                'code': CLIA_ID, 'Laboratory_name':' (Added by load_epic.py)'})
+    
+            if created:
+                log.warning('Could not find CLIA ID "%s" - creating new entry.' % CLIA_ID)
+            cache[CLIA_ID] = i
+                
+        return cache[CLIA_ID]
+
     def load_row(self, row):
         
         # set date based on the date in the ETL file name
@@ -759,10 +1013,12 @@ class LabResultLoader(BaseLoader):
         'order_natural_key' : row['order_natural_key']  ,
         'date' : self.date_or_none(date),
         'result_date' : self.date_or_none(row['result_date']),
+        'cresult_date': row['result_date'],
         'native_code' : native_code,
         'native_name' : string_or_none(row['component_name']),
         'result_string' : row['result_string'],
         'result_float' : float_or_none(row['result_string']),
+        'ref_text' : row['ref_text'],
         'ref_low_string' : row['ref_low'],
         'ref_high_string' : row['ref_high'],
         'ref_low_float' : float_or_none(row['ref_low']),
@@ -771,14 +1027,25 @@ class LabResultLoader(BaseLoader):
         'abnormal_flag' : row['normal_flag'],
         'status' : string_or_none(row['status']),
         'comment' : string_or_none(row['note']),
-        'specimen_num' : string_or_none(row['specimen_num']),
+        'specimen_num' : self.get_specid(row['specimen_num']),
         'impression' : string_or_none(row['impression']),
         'specimen_source' : string_or_none(row['specimen_source']),
         'collection_date' : self.date_or_none(row['collection_date']),
+        'ccollection_date' : row['collection_date'],
         'procedure_name' : string_or_none(row['procedure_name']),
         'natural_key' : natural_key,
         'patient_class' : string_or_none(row['patient_class']),
         'patient_status' : string_or_none(row['patient_status']),
+        'filler_ID' : string_or_none(row['filler_ID']),
+        'collection_date_end' : self.date_or_none(row['collection_date_end']),
+        'ccollection_date_end' : row['collection_date_end'],
+        'status_date' : self.date_or_none(row['status_date']),
+        'cstatus_date' : row['status_date'],
+        'interpreter' : string_or_none(row['interpreter']),
+        'interpreter_id' : string_or_none(row['interpreter_id']),
+        'interp_id_auth' : string_or_none(row['interp_id_auth']),
+        'CLIA_ID' : self.get_LabCLIA(row['CLIA_ID'],self.labCLIA_cache),
+        'lab_method' : string_or_none(row['lab_method']),
          }
         try:
             lx, created = self.insert_or_update(LabResult, values, ['natural_key'])
@@ -786,6 +1053,85 @@ class LabResultLoader(BaseLoader):
         except:
             raise 
         
+
+class SpecimenLoader(BaseLoader):
+    fields = [
+        'specimen_num',
+        'specimen_source',
+        'type_modifier',
+        'additives',
+        'collection_method',
+        'Source_site',
+        'Source_site_modifier',
+        'Specimen_role',
+        'Collection_amount',
+        'Received_date',
+        'analysis_date',
+        ]
+    
+    model = Specimen
+    
+    def load_row(self, row):
+        
+        natural_key = self.generateNaturalkey(row['specimen_num'])
+                    
+        values = {
+            'specimen_num' : row['specimen_num'],
+            'provenance' : self.provenance,
+            'specimen_source' : row['specimen_source'],
+            'type_modifier' : row['type_modifier'],
+            'additives' : row['additives'],
+            'collection_method' : row['collection_method'],
+            'Source_site' : row['Source_site'],
+            'Source_site_modifier' : row['Source_site_modifier'],
+            'Specimen_role' : row['Specimen_role'],
+            'Collection_amount' : row['Collection_amount'],
+            'Received_date' : self.date_or_none(row['Received_date']),
+            'creceived_date' : row['Received_date'],
+            'analysis_date' : self.date_or_none(row['analysis_date']),
+            'canalysis_date' : row['analysis_date'],
+            }
+       
+        if DEBUG:
+            ex_to_catch = []
+        else:
+            ex_to_catch = [BaseException]
+        try:
+            s, created = self.insert_or_update(Specimen, values, ['natural_key'])
+            #TODO: zip5
+            log.debug('Saved Specimen object: %s' % s)
+        except ex_to_catch, e:
+            raise e
+
+class SpecObsLoader(BaseLoader):
+    fields = [
+        'specimen_num',
+        'type',
+        'result',
+        'unit',
+        ]
+    
+    model = SpecObs
+    
+    def load_row(self, row):
+        
+        values = {
+            'specimen_num' : self.get_specid(row['specimen_num']),
+            'provenance' : self.provenance,
+            'type' : row['type'],
+            'result' : row['result'],
+            'unit' : row['unit'],
+            }
+       
+        if DEBUG:
+            ex_to_catch = []
+        else:
+            ex_to_catch = [BaseException]
+        try:
+            s, created = self.insert_or_update(SpecObs, values, row['specimen_num'])
+            #TODO: need a real unique ID here...)
+        except ex_to_catch, e:
+            raise e
 
 class LabOrderLoader(BaseLoader):    
     fields = [
@@ -802,11 +1148,26 @@ class LabOrderLoader(BaseLoader):
         'specimen_source',
         'test_status',
         'patient_class',
-        'patient_status'
+        'patient_status',
+        'group_id',
+        'reason_code',
+        'reason_code_type',
+        'order_info',
         ]
     
     model = LabOrder
     
+    def get_LabSpec(self, specimen_num):
+        if not specimen_num:
+            raise LoadException('Called get_LabSpec() with empty id')
+        if not specimen_num in self.__labSpec_cache:
+            l = LabResult.objects.filter(specimen_num=specimen_num)
+            if not l:
+                #TODO: put index on Specimen_num
+                raise LoadException('Specimen_num not found in Labs')
+            self.__labSpec_cache[specimen_num] = l
+        return self.__labSpec_cache[specimen_num]
+
     def load_row(self, row):
         
         # set date based on the date in the ETL file name
@@ -827,13 +1188,17 @@ class LabOrderLoader(BaseLoader):
             'procedure_modifier' : string_or_none(row['procedure_modifier']),
             'specimen_id' : string_or_none(row['specimen_id']),
             'date' : self.date_or_none(date),
+            'cdate' : row['ordering_date'],
             'order_type' : string_or_none(row['order_type']),
             'procedure_name' : string_or_none(row['procedure_name']),
             'specimen_source' : string_or_none(row['specimen_source']),
             'test_status' : string_or_none(row['test_status']),
             'patient_class' : string_or_none(row['patient_class']),
-            'patient_status' : string_or_none(row['patient_status'])
-            
+            'patient_status' : string_or_none(row['patient_status']),
+            'group_id' : string_or_none(row['group_id']),
+            'reason_code' : string_or_none(row['reason_code']),
+            'reason_code_type' : string_or_none(row['reason_code_type']),
+            'order_info' : string_or_none(row['order_info']),
             }
         try:
             lxo, created = self.insert_or_update(LabOrder, values, ['natural_key'])
@@ -1463,7 +1828,12 @@ class Command(LoaderCommand):
         conf = [
             ('epicpro', ProviderLoader),
             ('epicmem', PatientLoader),
+            ('epicmad', PatientAddrLoader),
+            ('epicgrd', PatientGuardianLoader),
             ('epicord', LabOrderLoader),
+            ('epicspc', SpecimenLoader),
+            ('epicsob', SpecObsLoader),
+            ('epiclab', LabInfoLoader),
             ('epicres', LabResultLoader),
             ('epicvis', EncounterLoader),
             ('epicmed', PrescriptionLoader),
