@@ -230,7 +230,8 @@ class Tuberculosis(DiseaseDefinition):
             new_case.save()
             log.info('Created new tuberculosis case: %s' % new_case)
             counter += 1
-            counter += self.generate_def_c()
+            
+        counter += self.generate_def_c()
         log.debug('Generated %s new cases of tuberculosis' % counter)
         
         return counter # Count of new cases
