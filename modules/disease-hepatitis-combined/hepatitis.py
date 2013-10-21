@@ -300,10 +300,10 @@ class Hepatitis_B(HepatitisCombined):
         '''
         b) (#1 or #2 or #3) AND (#12 or #15) AND #5 "reactive" within 21 day period 
             AND no prior positive result for #5 or #7 ever 
-            AND no code for ICD9=070.32 at this encounter or in patient's past
-        c) (1 or 2 or 3) AND (#12 or #15) AND #7 positive within 21 day period 
+            AND no code for chronic heb b ICD9=070.32 at this encounter or in patient's past
+        c) (#1 or #2 or #3) AND (#12 or #15) AND #7  positive within 21 day period 
             AND no prior positive result for #5 or #7 ever 
-            AND no code for ICD9=070.32 at this encounter or in the patient's past
+            AND no code for chronic heb b ICD9=070.32 at this encounter or in the patient's past
         1. ICD9 = 782.4 (jaundice, not of newborn)
         2. Alanine aminotransferase (ALT) >5x upper limit of normal
         3. Aspartate aminotransferase (AST) >5x upper limit of normal
@@ -316,21 +316,21 @@ class Hepatitis_B(HepatitisCombined):
         log.info('Generating cases for Hepatitis B definition B')
         counter = 0
         #
-        # Surfance antigen test and viral DNA test are the trigger events
+        # Surfance antigen test and viral DNA test are the trigger events (#5 or #7)
         #
         hep_b_pos_qs = BaseEventHeuristic.get_events_by_name(name='lx:hepatitis_b_surface_antigen:positive')
         hep_b_pos_qs |= BaseEventHeuristic.get_events_by_name(name='lx:hepatitis_b_viral_dna:positive')
         #
-        # Unbound positives are trigger events
+        # Unbound positives are trigger events to exclude
         #
         trigger_qs = hep_b_pos_qs.exclude(case__condition=self.conditions[0])
         trigger_qs = trigger_qs.order_by('date')
         #
-        # Chronic Hep B diagnosis
+        # Chronic Hep B diagnosis to exclude
         #
         chronic_hep_b_qs = BaseEventHeuristic.get_events_by_name(name='dx:hepatitis_b:chronic')
         #
-        # Jaundice and associated high ALT/AST results
+        # Jaundice and associated high ALT/AST results (#1 or #2 or #3)
         #
         jaundice_qs = BaseEventHeuristic.get_events_by_name(name='dx:jaundice')
         jaundice_qs |= BaseEventHeuristic.get_events_by_name(name='lx:alt:ratio:5')
@@ -342,6 +342,7 @@ class Hepatitis_B(HepatitisCombined):
         total_bili_qs = BaseEventHeuristic.get_events_by_name(name='lx:bilirubin_total:threshold:gt:1.5')
         direct_bili_labs_qs = AbstractLabTest('bilirubin_direct').lab_results
         indirect_bili_labs_qs = AbstractLabTest('bilirubin_indirect').lab_results
+        
         for trigger_event in trigger_qs:
             patient = trigger_event.patient
             date = trigger_event.date
@@ -350,7 +351,7 @@ class Hepatitis_B(HepatitisCombined):
             #
             # No chronic hep B diagnosis
             #
-            if chronic_hep_b_qs.filter(patient=patient):
+            if chronic_hep_b_qs.filter(patient=patient, date__lt=date):
                 continue # Patient has Chronic Hep B
             #
             # No prior Hep B test positive
@@ -388,11 +389,8 @@ class Hepatitis_B(HepatitisCombined):
                 date__lte = relevancy_end,
                 )
             either_bili_qs = direct_bili_labs_qs | indirect_bili_labs_qs
-            either_bili_qs = either_bili_qs.filter(
-                patient= patient, 
-                date__gte = relevancy_start, 
-                date__lte = relevancy_end,
-                ).order_by('date')
+            either_bili_qs = either_bili_qs.order_by('date')
+            
             if pat_total_bili_qs:
                 criteria = 'total bilirubin'
             else:
@@ -415,6 +413,7 @@ class Hepatitis_B(HepatitisCombined):
                         calculated_bilirubin = total_this_date
                 if not calculated_bilirubin > 1.5:
                     continue # Patient does not have Hep B
+                
             created, this_case = self._create_case_from_event_obj(
                 condition = self.conditions[0],
                 criteria = 'Hep B definition B/C with %s' % criteria,
