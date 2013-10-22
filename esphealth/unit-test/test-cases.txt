@@ -144,7 +144,7 @@ pertussis
 
        
 tb
-5 patients (should generate 4 cases)
+7 patients (should generate 5 cases)
 1 patient with med pyrazinamide -spokb
 4 patients with encounter with tb diagnosis 010.00 -018.96
 1/4 patient with lab order ('myco' 84460--3836, ) within 14 days after diagnosis -platt
@@ -152,6 +152,10 @@ tb
 3/4 patient with SECONDARY_MED_EVENTS capreomycin'  in TuberculosisDefC class in models.py within 60 days -kruskalu
   same patient with SECONDARY_MED_EVENTS rifabutin' in TuberculosisDefC class in models.py with no diagnosis within 60 days.
 4/4 patient with tb lab order afb 87206--3761 after 14 days of dx. NEG - donna
+1 patient with 3 visit with icd9 tuberculosis one date, one with 10 days less and other with 45 days before.
+ same patient with med isoniazid and another med rifapentine all on same day 
+ (this test has data to be loaded after the above date has been loaded and run through the concordance/hef/nodis process)
+1 patient with 3 rx including pyrazinamine in vecinity dates pos
 
 acute hep a
 3 patients ( should generate 2 cases)
@@ -237,7 +241,7 @@ acute hep c
   # TODO other negatives and positive with other labs to exclude
  
 acute hep b 
-4 patients (4 cases)
+5 patients (5 cases)
 (a) 1 patient with jaundice encounter - deenaw yes
  same patient with positive hep_b_igm_ab within 14 days 
 (b) 1 patient with lab alt_5x - spockG yes
@@ -255,6 +259,17 @@ acute hep b
    same patient with hep b surace negative within 12 months
  1 patient with lab with  hep b surface  positive NEG -Marian
    same patient with same hep b surface positive ever 
+ 1 patient with visit with icd9 732.0 chronic hep b over 21 days of lx 
+  same patient with visit with icd9 730 over 21 days of ;x
+  same patient with lx of tbil > 1.5 april 18
+  same patient with lx alt 5x 
+  same patient with lx ast 5x one day before
+  same patient with lx tbil>1.5 1 day b4
+  same patient with lx alt 5x 1 day b4
+  same patient with lx ast 5x 2 days b4
+  same patient with lx alt 5x 2 days b4
+  same patient with lx heb b surface antigen pos 2 days b4
+  same patient with lx tbil >1.5 2 days b4
 
 Giardiasis 
 1 patients (1 case)
