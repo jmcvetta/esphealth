@@ -1408,7 +1408,7 @@ class GestationalDiabetesReport(Report):
                 pp_a1c_any_lastdate = pp_a1c.order_by('-date')[0].date
                 pp_a1c_high1 = pp_a1c.order_by('-result_float')[0].result_float
                 pp_a1c_high1_date = pp_a1c.order_by('-result_float')[0].date
-                if pp_a1c.count() > 1:
+                if pp_a1c_any_count > 1:
                     pp_a1c_high2 =  pp_a1c.order_by('-result_float')[1].result_float
                     pp_a1c_high2_date = pp_a1c.order_by('-result_float')[1].date 
             
@@ -1587,7 +1587,7 @@ class GestationalDiabetesReport(Report):
                 pp_fasting_any_lastdate = pp_fastingglucose.order_by('-date')[0].date
                 pp_fasting_high1 = pp_fastingglucose.order_by('-result_float')[0].result_float
                 pp_fasting_high1_date = pp_fastingglucose.order_by('-result_float')[0].date
-                if pp_fastingglucose.count() > 1:
+                if pp_fasting_any_count > 1:
                     pp_fasting_high2 =  pp_fastingglucose.order_by('-result_float')[1].result_float
                     pp_fasting_high2_date = pp_fastingglucose.order_by('-result_float')[1].date 
                 pp_fasting_any_firstdate = pp_fastingglucose.order_by('date')[0].date
