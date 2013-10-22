@@ -369,7 +369,8 @@ def map_native_code(request, native_code):
     ref_high_values = labs.values('ref_high_string').distinct().annotate(count=Count('id')).order_by('-count')[:10]
     comments = labs.values('comment').distinct().annotate(count=Count('id')).order_by('-count')[:10]
     without_ref_high = labs.filter(result_float__isnull=False, ref_high_float__isnull=True).count()
-    without_ref_high_percent = float(without_ref_high) / float(labs.count()) * 100
+    labs_count = labs.count()
+    without_ref_high_percent = float(without_ref_high) / float(labs_count) * 100
     values = {
         'title': 'Map Native Code to Heuristic',
         "request":request,
@@ -381,7 +382,7 @@ def map_native_code(request, native_code):
         'without_ref_high_percent': without_ref_high_percent,
         'comments': comments,
         'form': form,
-        'count': labs.count()
+        'count': labs_count
         }
     return render_to_response('ui/map_native_code.html', values, context_instance=RequestContext(request))
     

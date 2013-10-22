@@ -229,13 +229,14 @@ class HL7_clinbasket(object):
         patient = self.case.patient
         if patient.mrn:    
             senderset=Provider.objects.filter(id__in=Sender.objects.all().values_list('provider_id'))
-            if VAERS_OVERRIDE_CLINICIAN_REVIEWER=='' and senderset.count()==0:
+            senderset_count = senderset.count()
+            if VAERS_OVERRIDE_CLINICIAN_REVIEWER=='' and senderset_count==0:
                 messaged=self.ques.provider.natural_key
                 override=False
-            elif VAERS_OVERRIDE_CLINICIAN_REVIEWER!='' and senderset.count()==0:
+            elif VAERS_OVERRIDE_CLINICIAN_REVIEWER!='' and senderset_count==0:
                 messaged = VAERS_OVERRIDE_CLINICIAN_REVIEWER
                 override=True
-            elif VAERS_OVERRIDE_CLINICIAN_REVIEWER!='' and senderset.count()>0:
+            elif VAERS_OVERRIDE_CLINICIAN_REVIEWER!='' and senderset_count>0:
                 try:
                     senderset.get(natural_key=self.ques.provider.natural_key)
                     messaged = (VAERS_OVERRIDE_CLINICIAN_REVIEWER + '~' + 
