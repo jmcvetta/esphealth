@@ -155,7 +155,8 @@ tb
 1 patient with 3 visit with icd9 tuberculosis one date, one with 10 days less and other with 45 days before.
  same patient with med isoniazid and another med rifapentine all on same day 
  (this test has data to be loaded after the above date has been loaded and run through the concordance/hef/nodis process)
-1 patient with 3 rx including pyrazinamine in vecinity dates pos
+1 patient with 3 rx (rifabutin, isoniazid, capreomicin) in addition to pyrazinamine on same aug 14th date, 
+ same patient with 3 encounters with tb dx on aug 20, 14 and 08 
 
 acute hep a
 3 patients ( should generate 2 cases)
