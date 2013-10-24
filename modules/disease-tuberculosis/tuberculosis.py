@@ -120,50 +120,8 @@ class Tuberculosis(DiseaseDefinition):
         
         return heuristic_list
     
-    def generate_def_c(self):
-        
-        #
-        # Criteria Set #3 dx and 2 distinct prescription orders
-        #  
-        
-        log.info('Generating cases for Tuberculosis Definition (C)')
-        counter = 0
-        allrx_event_names =  ['rx:isoniazid','rx:pyrazinamide','rx:moxifloxacin', 'rx:ethambutol',
-                            'rx:rifampin','rx:rifabutin','rx:rifapentine','rx:streptomycin',
-                            'rx:para_aminosalicyclic_acid','rx:kanamycin','rx:capreomycin',
-                            'rx:cycloserine','rx:ethionamide',]
-           
-        dx_qs = BaseEventHeuristic.get_events_by_name('dx:tuberculosis')
-        dx_qs = dx_qs.exclude(case__condition=self.conditions[0])
-        dx_qs = dx_qs.order_by('patient', 'date') 
-        for dx_event in dx_qs:
-            relevancy_begin = dx_event.date - relativedelta(days=60)
-            relevancy_end = dx_event.date + relativedelta(days=60)
-            rx_qs = BaseEventHeuristic.get_events_by_name(name=allrx_event_names)
-            rx_qs = rx_qs.filter(patient=dx_event.patient)
-            rx_qs = rx_qs.filter(date__gte=relevancy_begin, date__lte=relevancy_end)
-            if rx_qs.values('name').distinct().count() >= 2:
-                #
-                # Patient has Tuberculosis
-                #
-                t, new_case = self._create_case_from_event_obj(
-                    condition = self.conditions[0],
-                    criteria = 'Diagnosis with >=2 prescriptions',
-                    recurrence_interval = None, # Does not recur
-                    event_obj = dx_event,
-                    relevant_event_qs = rx_qs,
-                    )
-                counter += 1
-                if t: log.info('Created new tuberculosis case def C: %s' % new_case)
-        return counter
-
-        
-        
-    @transaction.commit_on_success
-    def generate(self):
-        log.info('Generating cases of %s' % self.short_name)
-       
-        
+    
+    def generate_def_a_b(self):   
         #
         # Criteria Set #1 (single rx) 
         #
@@ -230,7 +188,49 @@ class Tuberculosis(DiseaseDefinition):
             new_case.save()
             log.info('Created new tuberculosis case: %s' % new_case)
             counter += 1
-            
+        return counter
+        
+    def generate_def_c(self):
+        #
+        # Criteria Set #3 dx and 2 distinct prescription orders
+        #  
+        log.info('Generating cases for Tuberculosis Definition (C)')
+        counter = 0
+        allrx_event_names =  ['rx:isoniazid','rx:pyrazinamide','rx:moxifloxacin', 'rx:ethambutol',
+                            'rx:rifampin','rx:rifabutin','rx:rifapentine','rx:streptomycin',
+                            'rx:para_aminosalicyclic_acid','rx:kanamycin','rx:capreomycin',
+                            'rx:cycloserine','rx:ethionamide',]
+           
+        dx_qs = BaseEventHeuristic.get_events_by_name('dx:tuberculosis')
+        dx_qs = dx_qs.exclude(case__condition=self.conditions[0])
+        dx_qs = dx_qs.order_by('patient', 'date') 
+        for dx_event in dx_qs:            
+            relevancy_begin = dx_event.date - relativedelta(days=60)
+            relevancy_end = dx_event.date + relativedelta(days=60)
+            rx_qs = BaseEventHeuristic.get_events_by_name(name=allrx_event_names)
+            rx_qs = rx_qs.filter(patient=dx_event.patient)
+            rx_qs = rx_qs.filter(date__gte=relevancy_begin, date__lte=relevancy_end)
+            if rx_qs.values('name').distinct().count() >= 2:
+                #
+                # Patient has Tuberculosis
+                #
+                # TODO we are not getting the extra events for rx if we had an existing case see redmine #471
+                t, new_case = self._create_case_from_event_obj(
+                    condition = self.conditions[0],
+                    criteria = 'Diagnosis with >=2 prescriptions',
+                    recurrence_interval = None, # Does not recur
+                    event_obj = dx_event,
+                    relevant_event_qs = rx_qs,
+                    )
+                counter += 1
+                if t: log.info('Created new tuberculosis case def C: %s' % new_case)
+        return counter
+
+    @transaction.commit_on_success
+    def generate(self):
+        log.info('Generating cases of %s' % self.short_name)
+        counter = 0
+        counter += self.generate_def_a_b()
         counter += self.generate_def_c()
         log.debug('Generated %s new cases of tuberculosis' % counter)
         
