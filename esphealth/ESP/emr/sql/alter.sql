@@ -1,3 +1,6 @@
+ALTER TABLE emr_patient
+   ADD COLUMN ethnicity character varying(100) ;
+
 -- ----------------------------------------------------------------
 -- 2012-10-08
 -- ----------------------------------------------------------------
@@ -121,7 +124,8 @@ ALTER TABLE emr_provenance
 ALTER TABLE vaers_sender
   ADD COLUMN date_added date;
 ALTER TABLE vaers_report_sent
-  RENAME COLUMN vaers_report TO report,
+  RENAME COLUMN vaers_report TO report;
+ALTER TABLE vaers_report_sent
   ADD COLUMN report_type character varying(20);
 -- ----------------------------------------------------------------
 -- 2013-09-05
