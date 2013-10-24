@@ -39,9 +39,6 @@ from multiprocessing import Queue
 from ESP.utils.utils import wait_for_threads
 
 
-
-
-
 class Diabetes(DiseaseDefinition):
     '''
     Diabetes Mellitus:
@@ -178,8 +175,10 @@ class Diabetes(DiseaseDefinition):
         
         for test_name, low, high in [
             ('a1c', 5.7, 6.4),
-            ('ogtt75-fasting', 100, 125),
             ('glucose-fasting', 100, 125),
+            ('ogtt50-fasting', 100, 125), 
+            ('ogtt75-fasting', 100, 125),
+            ('ogtt100-fasting', 100, 125),
             ('ogtt75-30min', 140, 199),
             ('ogtt75-1hr', 140, 199),
             ('ogtt75-90min', 140, 199),
@@ -341,7 +340,12 @@ class Diabetes(DiseaseDefinition):
     # If a patient has one of these events, he has frank diabetes
     __FRANK_DM_ONCE = [
         'lx:a1c:threshold:gte:6.5',
+        # these below are all the fasting glucose
         'lx:glucose-fasting:threshold:gte:126',
+        'lx:ogtt50-fasting:threshold:gte:126',
+        'lx:ogtt75-fasting:threshold:gte:126',
+        'lx:ogtt100-fasting:threshold:gte:126',
+        
         'rx:glyburide',
         'rx:gliclazide',
         'rx:glipizide',
@@ -563,6 +567,9 @@ class Diabetes(DiseaseDefinition):
         ONCE_CRITERIA = [
             'lx:a1c:range:gte:5.7:lte:6.4',
             'lx:glucose-fasting:range:gte:100:lte:125',
+            'lx:ogtt50-fasting:range:gte:100:lte:125',
+            'lx:ogtt75-fasting:range:gte:100:lte:125',
+            'lx:ogtt100-fasting:range:gte:100:lte:125',
             ]
         TWICE_CRITERIA = [
             'lx:glucose-random:range:gte:140:lt:200',
@@ -611,11 +618,11 @@ class Diabetes(DiseaseDefinition):
     GDM_ONCE = [
         
         'lx:ogtt100-fasting:threshold:gte:126',
-        'lx:ogtt50-fasting:threshold:gte:126',
         'lx:ogtt75-fasting:threshold:gte:126',
+        'lx:ogtt75-fasting:threshold:gte:92',
+        'lx:ogtt50-fasting:threshold:gte:126',
         'lx:ogtt50-1hr:threshold:gte:190',
         'lx:ogtt50-random:threshold:gte:190',
-        'lx:ogtt75-fasting:threshold:gte:92',
         'lx:ogtt75-30min:threshold:gte:200',
         'lx:ogtt75-1hr:threshold:gte:180',
         'lx:ogtt75-90min:threshold:gte:180',
@@ -922,9 +929,8 @@ class GestationalDiabetesReport(Report):
         self.ogtt50_ref_high_q = self.ogtt50_q , Q(labresult__result_float__gte =
             F('labresult__ref_high_float') )
         
-        #self.ogtt50_1hr_q = Q(name__startswith='lx:ogtt50-1hr')
-        
         self.ogtt75_q = Q(name__startswith='lx:ogtt75')
+        
         # OGTT75 intrapartum thresholds
         self.ogtt75_intra_thresh_q = Q(name__in = [
             'lx:ogtt75-fasting:threshold:gte:92',
@@ -933,9 +939,6 @@ class GestationalDiabetesReport(Report):
             'lx:ogtt75-90min:threshold:gte:180',
             'lx:ogtt75-2hr:threshold:gte:153',
             ])
-        
-        #self.ogtt75_fasting_q =  Q(name__startswith='lx:ogtt75-fasting')
-        #self.ogtt75_2hr_q =  Q(name__startswith='lx:ogtt75-2hr')
         
         self.ogtt75_dm_q = Q(name__in = [
             'lx:ogtt75-fasting:threshold:gte:126',
@@ -952,10 +955,7 @@ class GestationalDiabetesReport(Report):
             ])
         self.ogtt75_ifg_q = Q(name='lx:ogtt75-fasting:range:gte:100:lte:125')
         self.ogtt100_q = Q(name__startswith='lx:ogtt100')
-        #self.ogtt100_fasting_q =  Q(name__startswith='lx:ogtt100-fasting')
-        #self.ogtt100_1hr_q =  Q(name__startswith='lx:ogtt100-1hr')
-        #self.ogtt100_2hr_q =  Q(name__startswith='lx:ogtt100-2hr')
-        #self.ogtt100_3hr_q =  Q(name__startswith='lx:ogtt100-3hr')
+        
         self.ogtt100_threshold_q = Q(name__in=[
             'lx:ogtt100-fasting:threshold:gte:95',
             'lx:ogtt100-30min:threshold:gte:200',
@@ -1676,7 +1676,7 @@ class GestationalDiabetesReport(Report):
                 'postpartum120_ogtt75_order': binary( pp120_ogtt75_order ),
                 'postpartum120_ogtt75_any_result': binary( pp120_ogtt75_any_result ),
                 'postpartum_ogtt75_order': binary( pp256_ogtt75_order ),
-                'postpartum_ogtt75_order_first_date':pp256_ogtt75_order_first_date,
+                'postpartum_ogtt75_order_first_date': pp256_ogtt75_order_first_date,
                 'postpartum_ogtt75_any_result': binary( pp256_ogtt75_any_result ),
                 'postpartum_ogtt75_any_result_date': pp256_ogtt75_any_result_date,
                 'postpartum_ogtt75_any_result_dept': pp256_ogtt75_any_result_dept,
@@ -1686,14 +1686,14 @@ class GestationalDiabetesReport(Report):
                 'postpartum_ogtt75_igt_range_met': binary( postpartum256.filter(self.ogtt75_igt_q) ),
                 'postpartum_ogtt75_dm_range_met': binary( postpartum256.filter(self.ogtt75_dm_q) ),
                 'postpartum_fasting_any_result': binary( pp_fastingglucose ),
-                'postpartum_fasting_any_result_count':pp_fasting_any_count,
-                'postpartum_fasting_any_result_first_date':pp_fasting_any_firstdate,
-                'postpartum_fasting_any_result_first_dept':pp_fasting_any_firstdate_dept,
-                'postpartum_fasting_any_result_last_date':pp_fasting_any_lastdate,
-                'postpartum_fasting_highest_result1':pp_fasting_high1,
-                'postpartum_fasting_highest_date1':pp_fasting_high1_date,
-                'postpartum_fasting_highest_result2':pp_fasting_high2,
-                'postpartum_fasting_highest_date2':pp_fasting_high2_date,
+                'postpartum_fasting_any_result_count': pp_fasting_any_count,
+                'postpartum_fasting_any_result_first_date': pp_fasting_any_firstdate,
+                'postpartum_fasting_any_result_first_dept': pp_fasting_any_firstdate_dept,
+                'postpartum_fasting_any_result_last_date': pp_fasting_any_lastdate,
+                'postpartum_fasting_highest_result1': pp_fasting_high1,
+                'postpartum_fasting_highest_date1': pp_fasting_high1_date,
+                'postpartum_fasting_highest_result2': pp_fasting_high2,
+                'postpartum_fasting_highest_date2': pp_fasting_high2_date,
                 'postpartum_fasting_gte100_lte125': binary( pp_fastingglucose_gte100_lte125 ),
                 'postpartum_fasting_gte100_lte125_max_val': pp_fastingglucose_gte100_lte125_max,
                 'postpartum_fasting_gte100_lte125_date': pp_fastingglucose_gte100_lte125_date,
@@ -1704,13 +1704,13 @@ class GestationalDiabetesReport(Report):
                 'postpartum_random_gte200_date1': pp_randomglucose_high_date1,
                 'postpartum_random_gte200_date2': pp_randomglucose_high_date2,
                 'postpartum_a1c_any_result': binary( pp_a1c ),
-                'postpartum_a1c_any_result_count':pp_a1c_any_count,
-                'postpartum_a1c_any_result_first_date':pp_a1c_any_firstdate,
-                'postpartum_a1c_any_result_first_dept':pp_a1c_any_firstdate_dept,
-                'postpartum_a1c_any_result_last_date':pp_a1c_any_lastdate,
+                'postpartum_a1c_any_result_count': pp_a1c_any_count,
+                'postpartum_a1c_any_result_first_date': pp_a1c_any_firstdate,
+                'postpartum_a1c_any_result_first_dept': pp_a1c_any_firstdate_dept,
+                'postpartum_a1c_any_result_last_date': pp_a1c_any_lastdate,
                 'postpartum_a1c_highest_result1': pp_a1c_high1,
                 'postpartum_a1c_highest_date1': pp_a1c_high1_date,
-                'postpartum_a1c_highest_result2':pp_a1c_high2,
+                'postpartum_a1c_highest_result2': pp_a1c_high2,
                 'postpartum_a1c_highest_date2': pp_a1c_high2_date,
                 'postpartum_a1c_gte5_7_lte6_4': binary( pp_a1c_gte5_7_lte6_4 ),
                 'postpartum_a1c_gte5_7_lte6_4_max_val': pp_a1c_gte5_7_lte6_4_max,
@@ -1751,8 +1751,8 @@ class BaseDiabetesReport(Report):
     
     @property
     def YEARS(self):
-        #return range(Diabetes.__FIRST_YEAR, datetime.datetime.now().year + 1)
-        return range(Diabetes._Diabetes__FIRST_YEAR, 2011) # Until data update
+        return range(Diabetes._Diabetes__FIRST_YEAR, datetime.datetime.now().year + 1)
+        #return range(Diabetes._Diabetes__FIRST_YEAR, 2011) # Until data update
     
     def _sanitize_string_values(self, dictionary):
         '''
@@ -2055,6 +2055,9 @@ class FrankDiabetesReport(BaseDiabetesReport):
             'rx:insulin',
             'lx:a1c:threshold:gte:6.5',
             'lx:glucose-fasting:threshold:gte:126',
+            'lx:ogtt50-fasting:threshold:gte:126',
+            'lx:ogtt75-fasting:threshold:gte:126',
+            'lx:ogtt100-fasting:threshold:gte:126',
             ] + Diabetes._Diabetes__ORAL_HYPOGLYCAEMICS
         # FIXME: Only item in this list should be 'random glucose >= 200', which is not yet implemented
         linelist_patient_criteria_twice = [
@@ -2091,6 +2094,9 @@ class FrankDiabetesReport(BaseDiabetesReport):
         self._yearly_max(test_list = [
             'a1c',
             'glucose-fasting',
+            'ogtt50-fasting',
+            'ogtt75-fasting',
+            'ogtt100-fasting',
             'cholesterol-total',
             'cholesterol-hdl',
             'cholesterol-ldl',
@@ -2214,6 +2220,9 @@ class PrediabetesReport(BaseDiabetesReport):
         self._yearly_max(test_list=[
             'a1c',
             'glucose-fasting',
+            'ogtt50-fasting',
+            'ogtt75-fasting',
+            'ogtt100-fasting',
             ])
         self._blood_pressure()
         #
