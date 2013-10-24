@@ -300,10 +300,10 @@ class Hepatitis_B(HepatitisCombined):
         '''
         b) (#1 or #2 or #3) AND (#12 or #15) AND #5 "reactive" within 21 day period 
             AND no prior positive result for #5 or #7 ever 
-            AND no code for chronic heb b ICD9=070.32 at this encounter or in patient's past
+            AND no code for chronic hep b ICD9=070.32 at this encounter or in patient's past
         c) (#1 or #2 or #3) AND (#12 or #15) AND #7  positive within 21 day period 
             AND no prior positive result for #5 or #7 ever 
-            AND no code for chronic heb b ICD9=070.32 at this encounter or in the patient's past
+            AND no code for chronic hep b ICD9=070.32 at this encounter or in the patient's past
         1. ICD9 = 782.4 (jaundice, not of newborn)
         2. Alanine aminotransferase (ALT) >5x upper limit of normal
         3. Aspartate aminotransferase (AST) >5x upper limit of normal
@@ -316,17 +316,17 @@ class Hepatitis_B(HepatitisCombined):
         log.info('Generating cases for Hepatitis B definition B')
         counter = 0
         #
-        # Surfance antigen test and viral DNA test are the trigger events (#5 or #7)
+        # Surface antigen test and viral DNA test are the trigger events (#5 or #7)
         #
         hep_b_pos_qs = BaseEventHeuristic.get_events_by_name(name='lx:hepatitis_b_surface_antigen:positive')
         hep_b_pos_qs |= BaseEventHeuristic.get_events_by_name(name='lx:hepatitis_b_viral_dna:positive')
         #
-        # Unbound positives are trigger events to exclude
+        # Unbound positives are trigger events
         #
         trigger_qs = hep_b_pos_qs.exclude(case__condition=self.conditions[0])
         trigger_qs = trigger_qs.order_by('date')
         #
-        # Chronic Hep B diagnosis to exclude
+        # Chronic Hep B diagnosis
         #
         chronic_hep_b_qs = BaseEventHeuristic.get_events_by_name(name='dx:hepatitis_b:chronic')
         #
@@ -351,7 +351,7 @@ class Hepatitis_B(HepatitisCombined):
             #
             # No chronic hep B diagnosis
             #
-            if chronic_hep_b_qs.filter(patient=patient, date__lt=date):
+            if chronic_hep_b_qs.filter(patient=patient, date__lte=date):
                 continue # Patient has Chronic Hep B
             #
             # No prior Hep B test positive
