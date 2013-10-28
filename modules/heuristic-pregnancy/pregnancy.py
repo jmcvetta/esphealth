@@ -530,9 +530,8 @@ class PregnancyHeuristic(BaseTimespanHeuristic):
             #
             if first_preg_event.name == 'prg:pregnancy:actual_date':
                 gad = first_preg_event.content_object.ga_delivery
-                gad_float = float(gad)
                 if gad:
-                    onset_date = first_preg_event.date - relativedelta(days=int(gad_float))
+                    onset_date = first_preg_event.date - relativedelta(days=int(gad))
                 else:
                     onset_date = first_preg_event.date - relativedelta(days=280)
                 pattern = 'onset:ad '
