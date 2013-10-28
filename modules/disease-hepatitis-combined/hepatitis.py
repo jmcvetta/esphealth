@@ -389,8 +389,11 @@ class Hepatitis_B(HepatitisCombined):
                 date__lte = relevancy_end,
                 )
             either_bili_qs = direct_bili_labs_qs | indirect_bili_labs_qs
-            either_bili_qs = either_bili_qs.order_by('date')
-            
+            either_bili_qs = either_bili_qs.filter(
+                patient= patient, 
+                date__gte = relevancy_start, 
+                date__lte = relevancy_end,
+                ).order_by('date')
             if pat_total_bili_qs:
                 criteria = 'total bilirubin'
             else:
