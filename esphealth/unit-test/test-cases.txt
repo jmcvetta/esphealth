@@ -220,9 +220,12 @@ Gonorrhea
 1 patient with 2 lab tests with gon or gc with less than 28 days apart (NEG, pos) -anneI
 
 acute hep c
-4 patients (4 cases) - using collected date for dates
+5 patients (5 cases) - using collected date for dates
 (c) 1 patient with positive lab for (6 hepatitis c rna) HEP C RNA PCR (QL) 87521--1627 detected - michaelZ
   same patient with labs negative of hep_c_elisa (heb c ab) 86803--217 lab within the prior 12 months
+   1 patient with positive lab for (6 hepatitis c rna) HEP C RNA PCR (QL) 87521--1627 detected - michaelZ
+  same patient with labs negative of hep_c_elisa (heb c ab) 86803--217 lab within the prior 12 months
+  
 (d) 1 patient with positive lab for (3 hepatitis c elisa) HEPAT C AB 86803--217  reactive -WhoP  
   same patient with labs negative of same lab within the prior 12 months)
 (b) 
