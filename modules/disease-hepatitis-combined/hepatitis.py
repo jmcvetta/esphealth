@@ -520,6 +520,16 @@ class Hepatitis_C(HepatitisCombined):
         '''
         Detects cases based on definition (a) and (b) in spec
             for Hep C.
+            a) (icd9 782.4 or alt >400) and c-elisa positive and c-signal cutoff positive (>3.8 if done) and c-riba positive (if done) 
+              and c-rna positive (if done) and (hep a igm negative or hep a total negative) 
+              and [hep b core igm negative or hep b core antigen non-reactive 
+              or (hep b core igm not done and hep b surface antigen non-reactive)] within a 28 day period; 
+             AND  no prior positive c-elisa or c-riba or 6 ever;  AND no ICD9 (070.54 or 070.70) ever prior to this encounter
+              
+            b) (icd9 782.4 or alt >400) and c-rna positive and 4 positive (if done) and c-riba positive (if done) 
+            and (hep a igm negative or hep a total negative) and [hep b core igm negative or hep b core antigen non-reactive or (hep b core igm not done and hep b surface antigen non-reactive)]
+             within a 28 day period; AND no prior positive c-elisa or  c-riba or c-rna ever;  AND no ICD9 (070.54 or 070.70) ever prior to this encounter
+
         @return: Count of new cases created
         @retype: Integer
         '''
@@ -704,6 +714,9 @@ class Hepatitis_C(HepatitisCombined):
         '''
         Detects cases based on definitions (c) and (d) in  spec
             for Hep C.
+            c)    heb c rna positive and record of (hep c elisa negative within the prior 12 months)
+            d)    hep c elisa positive and record of (hep c elisa negative within the prior 12 months)
+
         @return: Count of new cases created
         @retype: Integer
         '''
@@ -735,7 +748,8 @@ class Hepatitis_C(HepatitisCombined):
                 first_case.save()
                 log.debug('Added %s to existing case %s' % (trigger_event, first_case))
                 continue
-            neg_event_name = trigger_event.name.replace('positive', 'negative')
+            neg_event_name = 'lx:hepatitis_c_elisa:negative' #issue 477
+           
             relevancy_start_date = trigger_event.date - relativedelta(months=12)
             prior_neg_qs = Event.objects.filter(
                 patient = trigger_event.patient,
