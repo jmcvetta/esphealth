@@ -107,15 +107,12 @@ def case_details(request, ptype, id):
     
     #finding the highest category in the event, 
     if  case.adverse_events.filter(category__startswith ='1'):#1_rare
-        category  = ADVERSE_EVENT_CATEGORY_ACTION[1][0]
+        category  = ADVERSE_EVENT_CATEGORY_ACTION[0][0]
     elif  case.adverse_events.filter(category__startswith ='2'):#2_possible
-        category  =  ADVERSE_EVENT_CATEGORY_ACTION[2][0] 
+        category  =  ADVERSE_EVENT_CATEGORY_ACTION[1][0] 
     elif  case.adverse_events.filter(category__startswith ='3'):#3_reportable
-        category  =  ADVERSE_EVENT_CATEGORY_ACTION[3][0] 
-    
-    if category == ADVERSE_EVENT_CATEGORY_ACTION[0][0] : 
-        return HttpResponseForbidden(ADVERSE_EVENT_CATEGORY_ACTION[0][1])
-    
+        category  =  ADVERSE_EVENT_CATEGORY_ACTION[2][0] 
+        
     provider = questionnaire.provider
     if not provider: 
         #likewise, not likely to be a problem since provider has not-null foreign key attributes in db.
