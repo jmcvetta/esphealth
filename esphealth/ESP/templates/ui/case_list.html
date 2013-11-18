@@ -74,7 +74,7 @@
         <th>&nbsp;</th>
         {% for column in table.columns %}
             {% if column.sortable %}
-                <th><a href="{{ unsorted_path }}&sort={{ column.name_toggled }}">{{ column }}</a></th>
+                <th><a href="{{ full_path }}&sort={{ column.name_toggled }}">{{ column }}</a></th>
             {% else %}
                 <th>{{ column }}</th>
             {% endif %}
