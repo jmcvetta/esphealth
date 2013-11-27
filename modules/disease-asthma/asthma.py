@@ -69,96 +69,98 @@ class Asthma(DiseaseDefinition):
         #
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Levalbuterol',
-            drugs = DrugSynonym.generics_plus_synonyms(['Xopenex', ]),
+            drugs = DrugSynonym.generics_plus_synonyms(['Xopenex','Levalbuterol' ]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Pirbuterol',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Maxair',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Maxair','Pirbuterol']),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Albuterol',
-            drugs = DrugSynonym.generics_plus_synonyms(['AccuNeb', 'Ventolin', 'Proventil', 'ProAir', 'VoSpire', 'Airomir', 'Asmavent', 'salbutamol', ]),
+            drugs = DrugSynonym.generics_plus_synonyms(['Albuterol','AccuNeb', 'Ventolin', 'Proventil', 'ProAir', 'VoSpire', 'Airomir', 'Asmavent', 'salbutamol', ]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Arformoterol',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Brovana',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Arformoterol','Brovana',]),
             ))    
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Formeterol',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Foradil', 'Perforomist', 'Oxeze',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Formeterol','Foradil', 'Perforomist', 'Oxeze',]),
             ))   
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Indacaterol',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Arcapta',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Indacaterol','Arcapta',]),
             ))   
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Salmeterol',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Serevent',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Salmeterol','Serevent',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Beclomethasone',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Qvar',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Beclomethasone','Qvar',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Budesonide INH',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Pulmicort',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Budesonide INH','Pulmicort',]),
             ))
         
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Flunisolide INH',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Aerobid', 'Aerospan',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Flunisolide INH','Aerobid', 'Aerospan',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Fluticasone INH',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Flovent',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Fluticasone INH','Flovent',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Mometasone INH',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Asmanex',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Mometasone INH','Asmanex',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Montelukast',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Singulair',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Montelukast','Singulair',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Zafirlukast',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Accolate',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Zafirlukast','Accolate',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Zileuton',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Zyflo',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Zileuton','Zyflo',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Ipratropium',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Atrovent',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Ipratropium','Atrovent',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Tiotropium',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Serevent',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Tiotropium','Serevent',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Cromolyn INH',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Intal', 'Gastrocrom', 'Nalcrom',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Cromolyn INH','Intal', 'Gastrocrom', 'Nalcrom',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Omalizumab',
-            drugs =  DrugSynonym.generics_plus_synonyms(['Xolair',]),
+            drugs =  DrugSynonym.generics_plus_synonyms(['Omalizumab','Xolair',]),
             ))
     
         #combinations 
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Advair',#Fluticasone + Salmeterol 
+            name = 'Fluticasone + Salmeterol', 
+            drugs =  DrugSynonym.generics_plus_synonyms(['Advair',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Combivent', #Albuterol + Ipratropium 
+            name = 'Albuterol + Ipratropium', 
             drugs =  DrugSynonym.generics_plus_synonyms(['Duoneb',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Dulera', #Mometasone + Formoterol 
-            drugs =  DrugSynonym.generics_plus_synonyms(['Zenhale',]),
+            name = 'Mometasone + Formoterol', 
+            drugs =  DrugSynonym.generics_plus_synonyms(['Dulera','Zenhale',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Symbicort', #Budesonide + Formoterol 
+            name = 'Budesonide + Formoterol', 
+            drugs =  DrugSynonym.generics_plus_synonyms(['Symbicort',]),
             ))
          
                
@@ -193,17 +195,17 @@ class Asthma(DiseaseDefinition):
             ]
         
         rx_comb_ev_names = [
-             'rx:Advair',
-             'rx:Combivent', 
-             'rx:Dulera',
-             'rx:Symbicort',
+             'rx:Fluticasone + Salmeterol',
+             'rx:Albuterol + Ipratropium', 
+             'rx:Mometasone + Formoterol',
+             'rx:Budesonide + Formoterol',
             ]
         
         def generate_def_a (self):
         #
         # criteria 1
-        #  ≥4 encounters with ICD9 code 493.xx and asthma drug prescriptions 
-        # (can be ≥2 scripts for the same med or scripts for 2 or more different meds)
+        # >=4 encounters with ICD9 code 493.xx and asthma drug prescriptions 
+        # (can be >=2 scripts for the same med or scripts for 2 or more different meds)
         #
         
         # FIXME: This date math works on PostgreSQL; but it's not clear that 
@@ -244,7 +246,7 @@ class Asthma(DiseaseDefinition):
         def generate_def_b (self):
             
             # criteria 2
-            # ≥4 asthma drug dispensing events (any combination of multiple scripts
+            # >=4 asthma drug dispensing events (any combination of multiple scripts
             # for the same med or scripts for different meds
              
             log.info('Generating cases for Asthma Definition (b)')
