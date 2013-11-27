@@ -42,5 +42,7 @@
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-ili#egg=disease-ili
 # Electronic lab reporting 
 -e svn+http://esphealth.org/svn/ESP/trunk/modules/elr-positive-test#egg=elr-positive-test
+# Asthma
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-asthma#egg=disease-asthma
 
 
