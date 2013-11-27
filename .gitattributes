@@ -467,8 +467,10 @@ esphealth/unit-test/acute_hep_c/epicmem.esp.02032012 -text
 esphealth/unit-test/acute_hep_c/epicpro.esp.02032012 -text
 esphealth/unit-test/acute_hep_c/epicres.esp.02032012 -text
 esphealth/unit-test/acute_hep_c/epicvis.esp.02032012 -text
+esphealth/unit-test/asthma/epicmed.esp.02282012 -text
 esphealth/unit-test/asthma/epicmem.esp.02282012 -text
 esphealth/unit-test/asthma/epicpro.esp.02282012 -text
+esphealth/unit-test/asthma/epicvis.esp.02282012 -text
 esphealth/unit-test/chlamydia/epicmem.esp.02202012 -text
 esphealth/unit-test/chlamydia/epicpro.esp.02202012 -text
 esphealth/unit-test/chlamydia/epicres.esp.02202012 -text
