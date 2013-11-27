@@ -281,3 +281,12 @@ Giardiasis
 1 patient with encounter with icd9 of 787.91?
 1 patient with meds metronidazole which value?
 
+asthma
+4 patients 
+1 patient with 5 visits with 493.x 
+same patient with >=2  meds of same and different 
+1 patient with 3 visits with 493.x
+same patient with 4 asthma prescriptions
+1 patient with 2 asthma prescriptions
+1 patient with 3 asthma prescriptions 
+
