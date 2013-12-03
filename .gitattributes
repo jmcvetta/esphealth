@@ -422,7 +422,9 @@ esphealth/share/riskscape.gdm-transformation.ktr -text
 esphealth/share/riskscape.genepop-transformation.ktr -text
 esphealth/share/riskscape.genpop-mapping.json -text
 esphealth/share/send_attached_file.py -text svneol=unset#text/plain
+esphealth/share/sql_reports/Atrius/build_gen_pop_tables.pg.sql -text
 esphealth/share/sql_reports/Atrius/cdc_ili_report.pg.sql -text
+esphealth/share/sql_reports/Atrius/cleanup_genpop_tables.pg.sql -text
 esphealth/share/sql_reports/Atrius/gen_mdphnet.sh -text
 esphealth/share/sql_reports/Atrius/gen_pop_functions.pg.sql -text
 esphealth/share/sql_reports/Atrius/general-population-report.pg.sql -text
