@@ -226,7 +226,7 @@ class Asthma(DiseaseDefinition):
                         criteria = 'Diagnosis >=4 with >=2 prescriptions',
                         recurrence_interval = None, # Does not recur
                         event_obj = dx_event,
-                        relevant_event_qs = rx_qs + dx4_event,
+                        relevant_event_qs = rx_qs | dx4_event,
                         )
                     counter += 1
                     if t: log.info('Created new asthma case def a: %s' % new_case)
