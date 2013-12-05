@@ -285,8 +285,8 @@ asthma
 4 patients 
 1 patient with 5 visits with 493.x 
 same patient with >=2  meds of same and different 
-1 patient with 3 visits with 493.x
-same patient with 4 asthma prescriptions
-1 patient with 2 asthma prescriptions
-1 patient with 3 asthma prescriptions 
+1 patient with 3 visits with 493.x neg
+same patient with 4 asthma prescriptions pos
+1 patient with 2 asthma prescriptions neg
+1 patient with 3 asthma prescriptions neg
 
