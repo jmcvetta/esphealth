@@ -16,6 +16,7 @@ USAGE_MSG="usage: setup.sh option
 -d  Update PyPI dependency modules
 -p  Update ESP plugin modules
 -f  Freeze PIP requirements to requirements.frozen.txt
+-r  Update ESP plugin modules based on frozen.txt
 -?  Show this usage message"
 
 function usage () {
@@ -70,6 +71,19 @@ function update_plugins () {
     pip install -U -v -r requirements.plugins.txt
 }
 
+function release_plugins () {
+    #
+    # Update ESP plugin modules with the latest versions.
+    #
+    echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    echo +
+    echo + Updating ESP frozen plugin modules...
+    echo +
+    echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    activate_virtualenv
+    pip install -U -v -r requirements.frozen.txt
+}
+
 function freeze_requirements () {
     #
     # Freeze currently installed modules to requirements.frozen.txt.
@@ -104,6 +118,7 @@ while getopts "idpf" options; do
     d  ) update_dependencies;;
     p  ) update_plugins;;
     f  ) freeze_requirements;;
+    r  ) release_plugins;;
     \? ) usage;;
     *  ) usage
          exit 1;;
