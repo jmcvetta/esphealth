@@ -283,10 +283,10 @@ Giardiasis
 
 asthma
 4 patients 
-1 patient with 5 visits with 493.x 
-same patient with >=2  meds of same and different 
-1 patient with 3 visits with 493.x neg
-same patient with 4 asthma prescriptions pos
-1 patient with 2 asthma prescriptions neg
-1 patient with 3 asthma prescriptions neg
+1 patient with 5 visits with 493.x pos def a ralph
+same patient with >=2  meds (3) of same and different 
+1 patient with 3 visits with 493.x neg def a  manuel
+same patient with 4 asthma prescriptions pos def b
+1 patient with 2 asthma prescriptions neg angie
+1 patient with 3 asthma prescriptions neg mary
 
