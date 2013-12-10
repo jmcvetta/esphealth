@@ -51,6 +51,7 @@ class Asthma(DiseaseDefinition):
     
     timespan_heuristics = []
     
+    
     @property
     def event_heuristics(self):
         heuristic_list = []
@@ -165,7 +166,7 @@ class Asthma(DiseaseDefinition):
                
         return heuristic_list
         
-    def generate_def_a (self):
+    def generate_def_ab (self):
     #
     # criteria 1
     # >=4 encounters with ICD9 code 493.xx and asthma drug prescriptions 
@@ -203,15 +204,15 @@ class Asthma(DiseaseDefinition):
              'rx:Budesonide + Formoterol',
             ]
         log.info('Generating cases for Asthma Definition (a)')
-        counter = 0
+        counter_a = 0
         allrx_event_names =  rx_ev_names + rx_comb_ev_names
                
         dx_qs = BaseEventHeuristic.get_events_by_name(dx_ev_names)
         dx_qs = dx_qs.exclude(case__condition=self.conditions[0])
-        dx_qs = dx_qs.order_by('patient', 'date') 
+        dx_qs = dx_qs.order_by('patient', 'date')
         for dx_event in dx_qs:            
                 
-            dx4_event = Event.objects.filter(name__in=dx_ev_names, patient = dx_event.patient)
+            dx4_event = dx_qs.filter(patient = dx_event.patient)
                 
             if dx4_event.count() >= 4:              
                 rx_qs = BaseEventHeuristic.get_events_by_name(name=allrx_event_names)
@@ -228,55 +229,22 @@ class Asthma(DiseaseDefinition):
                         event_obj = dx_event,
                         relevant_event_qs = rx_qs | dx4_event,
                         )
-                    counter += 1
+                    counter_a += 1
                     if t: log.info('Created new asthma case def a: %s' % new_case)
-            
-        return counter
-        
-    def generate_def_b (self):
-            
+              
         # criteria 2
         # >=4 asthma drug dispensing events (any combination of multiple scripts
         # for the same med or scripts for different meds
-        rx_ev_names = [
-            'rx:Albuterol',
-            'rx:Levalbuterol',
-            'rx:Pirbuterol',
-            'rx:Arformoterol',
-            'rx:Formeterol',
-            'rx:Indacaterol',
-            'rx:Salmeterol',
-            'rx:Beclomethasone',
-            'rx:Budesonide INH',
-            'rx:Ciclesonide INH',
-            'rx:Flunisolide INH',
-            'rx:Fluticasone INH',
-            'rx:Mometasone INH',
-            'rx:Montelukast',
-            'rx:Zafirlukast',
-            'rx:Zileuton',
-            'rx:Ipratropium',
-            'rx:Tiotropium',
-            'rx:Cromolyn INH',
-            'rx:Omalizumab',
-        ]
         
-        rx_comb_ev_names = [
-             'rx:Fluticasone + Salmeterol',
-             'rx:Albuterol + Ipratropium', 
-             'rx:Mometasone + Formoterol',
-             'rx:Budesonide + Formoterol',
-            ]     
         log.info('Generating cases for Asthma Definition (b)')
-        counter = 0
+        counter_b = 0
         allrx_event_names =  rx_ev_names + rx_comb_ev_names
                
         mainrx_qs = BaseEventHeuristic.get_events_by_name(allrx_event_names)
-        mainrx_qs = mainrx_qs.exclude(case__condition=self.conditions[0])
-        mainrx_qs = mainrx_qs.order_by('patient', 'date') 
+        mainrx_qs = mainrx_qs.exclude(case__condition=self.conditions[0]).order_by('patient', 'date')
         for rx_event in mainrx_qs:            
                 
-            rx4_event = Event.objects.filter(name__in=allrx_event_names, patient = rx_event.patient)
+            rx4_event = mainrx_qs.filter( patient = rx_event.patient)
                 
             if rx4_event.count() >= 4:              
                 #
@@ -289,17 +257,16 @@ class Asthma(DiseaseDefinition):
                     event_obj = rx_event,
                     relevant_event_qs =  rx4_event,
                     )
-                counter += 1
+                counter_b += 1
                 if t: log.info('Created new asthma case def b: %s' % new_case)
             
-        return counter # Count of new cases
+        return counter_a + counter_b # Count of new cases
     
     @transaction.commit_on_success
     def generate(self):
         log.info('Generating cases of %s' % self.short_name)
         counter = 0
-        counter += self.generate_def_a()
-        counter += self.generate_def_b()
+        counter += self.generate_def_ab()
         log.debug('Generated %s new cases of asthma' % counter)
         
         return counter # Count of new cases
