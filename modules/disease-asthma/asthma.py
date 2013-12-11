@@ -68,6 +68,8 @@ class Asthma(DiseaseDefinition):
         #
         # Prescriptions
         #
+        #TODO change the inh to use new drug synonym method. use NEB, AER as synonyms of INH
+        # make sure static table has the synonym 
         heuristic_list.append( PrescriptionHeuristic(
             name = 'Levalbuterol',
             drugs = DrugSynonym.generics_plus_synonyms(['Xopenex','Levalbuterol' ]),
@@ -101,20 +103,20 @@ class Asthma(DiseaseDefinition):
             drugs =  DrugSynonym.generics_plus_synonyms(['Beclomethasone','Qvar',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Budesonide INH',
+            name = 'Budesonide-INH',
             drugs =  DrugSynonym.generics_plus_synonyms(['Budesonide INH','Pulmicort',]),
             ))
         
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Flunisolide INH',
+            name = 'Flunisolide-INH',
             drugs =  DrugSynonym.generics_plus_synonyms(['Flunisolide INH','Aerobid', 'Aerospan',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Fluticasone INH',
+            name = 'Fluticasone-INH',
             drugs =  DrugSynonym.generics_plus_synonyms(['Fluticasone INH','Flovent',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Mometasone INH',
+            name = 'Mometasone-INH',
             drugs =  DrugSynonym.generics_plus_synonyms(['Mometasone INH','Asmanex',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
@@ -138,7 +140,7 @@ class Asthma(DiseaseDefinition):
             drugs =  DrugSynonym.generics_plus_synonyms(['Tiotropium','Serevent',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Cromolyn INH',
+            name = 'Cromolyn-INH',
             drugs =  DrugSynonym.generics_plus_synonyms(['Cromolyn INH','Intal', 'Gastrocrom', 'Nalcrom',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
@@ -147,20 +149,22 @@ class Asthma(DiseaseDefinition):
             ))
     
         #combinations 
+        #TODO use this with new method using the qualifier 
+        # add test case to add one of these prescriptions and use it with the new generics. 
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Fluticasone + Salmeterol', 
+            name = 'Fluticasone-Salmeterol', 
             drugs =  DrugSynonym.generics_plus_synonyms(['Advair',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Albuterol + Ipratropium', 
+            name = 'Albuterol-Ipratropium', 
             drugs =  DrugSynonym.generics_plus_synonyms(['Duoneb',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Mometasone + Formoterol', 
+            name = 'Mometasone-Formoterol', 
             drugs =  DrugSynonym.generics_plus_synonyms(['Dulera','Zenhale',]),
             ))
         heuristic_list.append( PrescriptionHeuristic(
-            name = 'Budesonide + Formoterol', 
+            name = 'Budesonide-Formoterol', 
             drugs =  DrugSynonym.generics_plus_synonyms(['Symbicort',]),
             ))         
                
@@ -183,25 +187,25 @@ class Asthma(DiseaseDefinition):
             'rx:Indacaterol',
             'rx:Salmeterol',
             'rx:Beclomethasone',
-            'rx:Budesonide INH',
-            'rx:Ciclesonide INH',
-            'rx:Flunisolide INH',
-            'rx:Fluticasone INH',
-            'rx:Mometasone INH',
+            'rx:Budesonide-INH',
+            'rx:Ciclesonide-INH',
+            'rx:Flunisolide-INH',
+            'rx:Fluticasone-INH',
+            'rx:Mometasone-INH',
             'rx:Montelukast',
             'rx:Zafirlukast',
             'rx:Zileuton',
             'rx:Ipratropium',
             'rx:Tiotropium',
-            'rx:Cromolyn INH',
+            'rx:Cromolyn-INH',
             'rx:Omalizumab',
         ]
         
         rx_comb_ev_names = [
-             'rx:Fluticasone + Salmeterol',
-             'rx:Albuterol + Ipratropium', 
-             'rx:Mometasone + Formoterol',
-             'rx:Budesonide + Formoterol',
+             'rx:Fluticasone-Salmeterol',
+             'rx:Albuterol-Ipratropium', 
+             'rx:Mometasone-Formoterol',
+             'rx:Budesonide-Formoterol',
             ]
         log.info('Generating cases for Asthma Definition (a)')
         counter_a = 0
@@ -210,27 +214,40 @@ class Asthma(DiseaseDefinition):
         dx_qs = BaseEventHeuristic.get_events_by_name(dx_ev_names)
         dx_qs = dx_qs.exclude(case__condition=self.conditions[0])
         dx_qs = dx_qs.order_by('patient', 'date')
-        for dx_event in dx_qs:            
+        new_patient = None
+        prev_patient = None
+        count_dx4 = 0
+        dx_count = dx_qs.count()
+        for dx_event in dx_qs:    
+            new_patient = dx_event.patient
+            # first time, change of patient or last event in qs.
+            if not prev_patient or prev_patient != new_patient or  dx_event == dx_qs[dx_count-1]: 
+                if count_dx4 >= 4:              
+                    rx_qs = BaseEventHeuristic.get_events_by_name(name=allrx_event_names)
+                    rx_qs = rx_qs.exclude(case__condition=self.conditions[0]) 
+                    rx_qs = rx_qs.filter(patient=prev_patient)
+                        
+                    if rx_qs.values('name').count() >= 2:
+                        dx4_event_qs = dx_qs.filter(patient = prev_patient)
+                        #
+                        # Patient has Asthma
+                        #
+                        #TODO if there is a case for the prev_patient then add the event to existing case. 
+                        t, new_case = self._create_case_from_event_obj(
+                            condition = self.conditions[0],
+                            criteria = 'Diagnosis >=4 with >=2 prescriptions',
+                            recurrence_interval = None, # Does not recur
+                            event_obj = dx4_event,
+                            relevant_event_qs = rx_qs | dx4_event_qs,
+                            )
+                        counter_a += 1
+                        if t: log.info('Created new asthma case def a: %s' % new_case)
                 
-            dx4_event = dx_qs.filter(patient = dx_event.patient)
+                prev_patient = dx_event.patient  
+                count_dx4 = 0  
+                dx4_event = dx_event
                 
-            if dx4_event.count() >= 4:              
-                rx_qs = BaseEventHeuristic.get_events_by_name(name=allrx_event_names)
-                rx_qs = rx_qs.filter(patient=dx_event.patient)
-                    
-                if rx_qs.values('name').count() >= 2:
-                    #
-                    # Patient has Asthma
-                    #
-                    t, new_case = self._create_case_from_event_obj(
-                        condition = self.conditions[0],
-                        criteria = 'Diagnosis >=4 with >=2 prescriptions',
-                        recurrence_interval = None, # Does not recur
-                        event_obj = dx_event,
-                        relevant_event_qs = rx_qs | dx4_event,
-                        )
-                    counter_a += 1
-                    if t: log.info('Created new asthma case def a: %s' % new_case)
+            count_dx4 +=1   
               
         # criteria 2
         # >=4 asthma drug dispensing events (any combination of multiple scripts
@@ -242,23 +259,34 @@ class Asthma(DiseaseDefinition):
                
         mainrx_qs = BaseEventHeuristic.get_events_by_name(allrx_event_names)
         mainrx_qs = mainrx_qs.exclude(case__condition=self.conditions[0]).order_by('patient', 'date')
+        new_patient = None
+        prev_patient = None
+        count_rx4 = 0
+        rx_count = mainrx_qs.count()
         for rx_event in mainrx_qs:            
+            new_patient = rx_event.patient    
+            if not prev_patient or prev_patient != new_patient or rx_event == mainrx_qs[rx_count-1]: 
+                if count_rx4 >= 4:      
+                    rx4_event_qs =  mainrx_qs.filter(patient =prev_patient )       
+                    #
+                    # Patient has Asthma
+                    #
+                    #TODO handle if existing case for the prev_patient 
+                    t, new_case = self._create_case_from_event_obj(
+                        condition = self.conditions[0],
+                        criteria = '>=4 prescriptions',
+                        recurrence_interval = None, # Does not recur
+                        event_obj = rx4_event,
+                        relevant_event_qs =  rx4_event_qs,
+                        )
+                    counter_b += 1
+                    if t: log.info('Created new asthma case def b: %s' % new_case)
                 
-            rx4_event = mainrx_qs.filter( patient = rx_event.patient)
+                prev_patient = rx_event.patient  
+                count_rx4 = 0  
+                rx4_event = rx_event
                 
-            if rx4_event.count() >= 4:              
-                #
-                # Patient has Asthma
-                #
-                t, new_case = self._create_case_from_event_obj(
-                    condition = self.conditions[0],
-                    criteria = '>=4 prescriptions',
-                    recurrence_interval = None, # Does not recur
-                    event_obj = rx_event,
-                    relevant_event_qs =  rx4_event,
-                    )
-                counter_b += 1
-                if t: log.info('Created new asthma case def b: %s' % new_case)
+            count_rx4 +=1   
             
         return counter_a + counter_b # Count of new cases
     
