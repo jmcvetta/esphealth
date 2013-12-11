@@ -84,5 +84,7 @@
       "race": "UNKNOWN", 
       "gender": "UNKNOWN"
     }
-  }
+  },
+  {"pk": 3, "model": "emr.encountertypemap", "fields": {"priority": 1, "raw_encounter_type": "HOSP", "mapping": "HOSPITALIZATION"}}, {"pk": 1, "model": "emr.encountertypemap", "fields": {"priority": 3, "raw_encounter_type": "ENCOUNTER", "mapping": "VISIT"}}, {"pk": 2, "model": "emr.encountertypemap", "fields": {"priority": 2, "raw_encounter_type": "EMERGENCY", "mapping": "ER"}}
+  
 ]
