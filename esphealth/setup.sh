@@ -112,7 +112,7 @@ fi
 #
 # TODO: Add sanity checks for write permission on relevant folders
 #
-while getopts "idpf" options; do
+while getopts "idpfr" options; do
   case $options in
     i  ) install;;
     d  ) update_dependencies;;
