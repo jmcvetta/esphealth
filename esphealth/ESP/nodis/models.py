@@ -16,11 +16,13 @@ from ESP.static.models import Icd9
 from ESP.conf.models import STATUS_CHOICES
 from ESP.conf.models import ReportableLab
 from ESP.conf.models import ReportableMedication
+from ESP.emr.models import LabResult
 #from ESP.hef.base import TimespanHeuristic
 from ESP.hef.base import BaseLabResultHeuristic
 from ESP.hef.base import DiagnosisHeuristic
 from ESP.hef.models import Timespan
 from ESP.conf.models import ConditionConfig
+
 from django.contrib.contenttypes.models import ContentType
 
 import datetime
@@ -168,9 +170,20 @@ class Case(models.Model):
         q_obj &= Q(date__lte=end)
         labs = LabResult.objects.filter(q_obj).distinct()
         #log_query('Reportable labs for %s' % self, labs)
+                            
         return labs
     
     reportable_labs = property(__get_reportable_labs)
+    
+    @property
+    def reportable_labs_detail (self):
+        
+        if self.reportable_labs:
+            return self.reportable_labs.all()
+        else:
+            # new feature redmine 482
+            if not self.lab_results and self.condition.upper() == 'TUBERCULOSIS':
+                return [LabResult.createTBDummyLab(self.patient, [self])]
 
     @property
     def reportable_icd9s(self):
