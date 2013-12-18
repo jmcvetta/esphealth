@@ -66,7 +66,7 @@ from django.core.management.base import BaseCommand
 
 from ESP.static.models import Icd9
 from ESP.emr.models import Patient
-from ESP.emr.models import Provider
+from ESP.emr.models import Provider, Provenance
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
@@ -263,6 +263,7 @@ class hl7Batch:
         else:
             rx = None
         lxobjs = case.reportable_labs.order_by('order_natural_key')
+        
         if len(lxobjs):
             lx =lxobjs[0]
         else:
@@ -272,7 +273,7 @@ class hl7Batch:
             caseid=case.pk)
                       
         totallxs = list(lxobjs)
-        ##need check if any Gonorrhea test for Chlamydia
+        # need check if any Gonorrhea test for Chlamydia
         if case.condition == 'chlamydia':
             genorlxs =self.getOtherLxs('gonorrhea', patient, lx)
             totallxs = totallxs + list(genorlxs)
@@ -280,10 +281,13 @@ class hl7Batch:
             genorlxs =self.getOtherLxs('chlamydia', patient, lx)
             totallxs = totallxs + list(genorlxs)
         #generate for all conditions     
-        genorlxs =self.getOtherLxs(case.condition, patient, lx)
-        totallxs = totallxs + list(genorlxs)    
-        cleanlxids = self.removeDuplicateLx(totallxs)
-        totallxs = LabResult.objects.filter(pk__in=cleanlxids).order_by('order_natural_key')
+        genorlxs = self.getOtherLxs(case.condition, patient, lx)
+        totallxs = totallxs + list(genorlxs)   
+        # only removing duplicates if they are real labs except the tb dummy lab  
+        if totallxs and totallxs[0].pk != 0:
+            cleanlxids = self.removeDuplicateLx(totallxs)
+            totallxs = LabResult.objects.filter(pk__in=cleanlxids).order_by('order_natural_key')
+        
         self.addLXOBX(lxRecList=totallxs, orus=orus,condition=case.condition)
         self.addRXOBX(rxRecList=rxobjs, orus=orus) # do same for dr
         return [i.id for i in totallxs]
@@ -298,21 +302,45 @@ class hl7Batch:
             if not lxdict.has_key(lxkey):
                 lxdict[lxkey]=lxobj.id
         return lxdict.values() # list of unique lx ids
+          
+    def createTBDummyLab(self, patient, cases):    
+        lx =[]                                 
+        if cases:
+            provider = cases[0].provider
+            date = cases[0].date
+            provenance = Provenance.objects.get(source='SYSTEM')
+            now = int(time.time()*1000) #time in milliseconds
+            order_date = date
+            
+            lx = LabResult(patient=patient, mrn=patient.mrn, provider=provider, provenance=provenance, natural_key=now)
+            lx.pk = 0
+            lx.result_date = date
+            lx.date = order_date
+            lx.native_code = 'MDPH-250' #this is the loinc
+        
+            #SNOMED code: MDPH-R348
+            lx.order_natural_key = lx.natural_key # same order and key
+            lx.native_name = 'TB NO TEST'
+            lx.collection_date = order_date
+        
+        return lx 
                                                                                 
     def getOtherLxs(self, cond,demog,lxids):
         returnlxs=[]
+
         # NOTE: Do we really want lab results from all of this patient's cases
         # of this condition, rather than lab results from only this particular
         # case?
-        thiscases = Case.objects.filter(patient=demog,condition=cond)
         cases = Case.objects.filter(patient=demog, condition=cond)
         all_case_labs = LabResult.objects.filter(events__case__in=cases)
-        if not all_case_labs:
+        if not all_case_labs: #found no labs 
+            if cond.upper() == 'TUBERCULOSIS':
+                returnlxs.append(self.createTBDummyLab(demog, cases))
             return returnlxs
         # What kind of exception are we expecting here??
         try:
             baselxs = LabResult.objects.filter(id__in=lxids).order_by('result_date')
-            ####get lastest Lx record
+            # get lastest Lx record
             maxrec=baselxs[len(baselxs)-1].result_date
             baselxs = LabResult.objects.filter(id__in=lxids).order_by('date')
             minrec=baselxs[0].date
@@ -682,8 +710,9 @@ class hl7Batch:
                 res = ''
                 obx2_type = 'ST'
                 obx5_type = ''
+                ref_unit = ''
             if not snomed: ##like ALT/AST
-                #ALT/AST much be number
+                #ALT/AST must be number
                 obx1 = self.makeOBX(
                     obx1  = [('','1')],
                     obx2  = [('', obx2_type)],
@@ -712,6 +741,9 @@ class hl7Batch:
         #
         # NOTE: This method probably doesn't work right with ESP v2 models.  
         #
+        if condition.upper() == 'TUBERCULOSIS':
+            #MDPH-R348 code 
+            return ''
         snomedposi = lxRec.snomed_pos
         snomednega = lxRec.snomed_neg
         snomedinter = lxRec.snomed_ind
