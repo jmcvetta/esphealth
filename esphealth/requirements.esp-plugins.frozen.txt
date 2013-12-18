@@ -1,0 +1,15 @@
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-chlamydia@3794#egg=esphealth_disease_chlamydia-dev_r3794
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-diabetes@4181#egg=esphealth_disease_diabetes-dev_r4181
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-giardiasis@3313#egg=esphealth_disease_giardiasis-dev_r3313
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-gonorrhea@2898#egg=esphealth_disease_gonorrhea-dev_r2898
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-hepatitis-combined@4190#egg=esphealth_disease_hepatitis_combined-dev_r4190
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-ili@4084#egg=esphealth_disease_ili-dev_r4084
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-lyme@4094#egg=esphealth_disease_lyme-dev_r4094
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pelvic-inflammatory-disease@3892#egg=esphealth_disease_pelvic_inflammatory_disease-dev_r3892
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-pertussis@4095#egg=esphealth_disease_pertussis-dev_r4095
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-syphilis@4108#egg=esphealth_disease_syphilis-dev_r4108
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/disease-tuberculosis@4179#egg=esphealth_disease_tuberculosis-dev_r4179
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/elr-positive-test@4015#egg=esphealth_elr_positive_test-dev_r4015
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/esphealth-encountertypemap-metrohealth@3973#egg=esphealth_encountertypemap_metrohealth-dev_r3973
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-glucose-crf@2915#egg=esphealth_heuristic_glucose_crf-dev_r2915
+-e svn+http://esphealth.org/svn/ESP/trunk/modules/heuristic-pregnancy@4186#egg=esphealth_heuristic_pregnancy-dev_r4186
