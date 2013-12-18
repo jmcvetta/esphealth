@@ -671,6 +671,29 @@ class LabResult(BasePatientRecord):
         else: 
             return random.choice(normal)
         
+    @staticmethod    
+    def createTBDummyLab( patient, cases):    
+        lx =[]                                 
+        if cases:
+            provider = cases[0].provider
+            date = cases[0].date
+            provenance = Provenance.objects.get(source='SYSTEM')
+            now = int(time.time()*1000) #time in milliseconds
+            order_date = date
+            
+            lx = LabResult(patient=patient, mrn=patient.mrn, provider=provider, provenance=provenance, natural_key=now)
+            lx.pk = 0
+            lx.result_date = date
+            lx.date = order_date
+            lx.native_code = 'MDPH-250' #this is the loinc
+        
+            #SNOMED code: MDPH-R348
+            lx.order_natural_key = lx.natural_key # same order and key
+            lx.native_name = 'TB NO TEST'
+            lx.collection_date = order_date
+        
+        return lx 
+        
     @staticmethod
     def make_mock(patient, when=None, **kw):
         normal = ['IN','UN','NL']
