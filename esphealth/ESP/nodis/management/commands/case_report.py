@@ -303,27 +303,7 @@ class hl7Batch:
                 lxdict[lxkey]=lxobj.id
         return lxdict.values() # list of unique lx ids
           
-    def createTBDummyLab(self, patient, cases):    
-        lx =[]                                 
-        if cases:
-            provider = cases[0].provider
-            date = cases[0].date
-            provenance = Provenance.objects.get(source='SYSTEM')
-            now = int(time.time()*1000) #time in milliseconds
-            order_date = date
-            
-            lx = LabResult(patient=patient, mrn=patient.mrn, provider=provider, provenance=provenance, natural_key=now)
-            lx.pk = 0
-            lx.result_date = date
-            lx.date = order_date
-            lx.native_code = 'MDPH-250' #this is the loinc
-        
-            #SNOMED code: MDPH-R348
-            lx.order_natural_key = lx.natural_key # same order and key
-            lx.native_name = 'TB NO TEST'
-            lx.collection_date = order_date
-        
-        return lx 
+    
                                                                                 
     def getOtherLxs(self, cond,demog,lxids):
         returnlxs=[]
@@ -335,7 +315,7 @@ class hl7Batch:
         all_case_labs = LabResult.objects.filter(events__case__in=cases)
         if not all_case_labs: #found no labs 
             if cond.upper() == 'TUBERCULOSIS':
-                returnlxs.append(self.createTBDummyLab(demog, cases))
+                returnlxs.append(LabResult.createTBDummyLab(demog, cases))
             return returnlxs
         # What kind of exception are we expecting here??
         try:
