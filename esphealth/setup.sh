@@ -12,15 +12,15 @@
 
 
 USAGE_MSG="usage: setup.sh option
--i  Install ESP (first time installation)
--d  Update PyPI dependency modules
--p  Update ESP plugin modules
--f  Freeze PIP requirements to requirements.frozen.txt
--r  Update ESP plugin modules based on frozen.txt
+-i  Install ESP (first time installation) using frozen requirement file versions
+-d  Update PyPI dependency modules from versions in requirements.pypi.txt
+-p  Update ESP plugin modules to latest
+-f  Freeze PIP requirements to requirements.frozen.txt and requirements.esp-plugins.frozen.tx
+-r  Update ESP plugin modules with the frozen versions in requirements.esp-plugins.frozen.txt
 -?  Show this usage message"
 
 function usage () {
-    # Must be in quotes for mutliline formatting
+    # Must be in quotes for multiline formatting
     echo "$USAGE_MSG"
 }
 
@@ -32,7 +32,7 @@ function activate_virtualenv () {
 
 function install () {
     #
-    # Create the virutal environment, then install modules from the frozen
+    # Create the virtual environment, then install modules from the frozen
     # list.
     #
     echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -73,7 +73,7 @@ function update_plugins () {
 
 function release_plugins () {
     #
-    # Update ESP plugin modules with the latest versions.
+    # Update ESP plugin modules with the frozen versions.
     #
     echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     echo +
@@ -81,12 +81,13 @@ function release_plugins () {
     echo +
     echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     activate_virtualenv
-    pip install -U -v -r requirements.frozen.txt
+    pip install -U -v -r requirements.esp-plugins.frozen.txt
 }
 
 function freeze_requirements () {
     #
-    # Freeze currently installed modules to requirements.frozen.txt.
+    # Freeze currently installed modules to requirements.frozen.txt
+    # and to requirements.esp-plugins.frozen.txt 
     #
     echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     echo +
@@ -95,6 +96,7 @@ function freeze_requirements () {
     echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     activate_virtualenv
     pip freeze > requirements.frozen.txt
+    grep 'svn+http' requirements.frozen.txt > requirements.esp-plugins.frozen.txt 
 }
 
 #set -x

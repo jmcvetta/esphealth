@@ -37,6 +37,8 @@ for %%a in (%*) do (
         call :update_plugins
     ) else if "%%a"=="-f" (
         call :freeze_requirements
+    ) else if "%%a"=="-r" (
+        call :release_plugins
     ) else if "%%a"=="-h" (
         call :usage
     ) else (
@@ -49,10 +51,11 @@ exit /b
 
 :usage
 echo usage: setup option
-echo   -i  Install ESP (first time installation)
-echo   -d  Update PyPI dependency modules
-echo   -p  Update ESP plugin modules
-echo   -f  Freeze PIP requirements to requirements.frozen.txt
+echo   -i  Install ESP (first time installation) using frozen requirement file versions
+echo   -d  Update PyPI dependency modules from versions in requirements.pypi.txt
+echo   -p  Update ESP plugin modules to latest
+echo   -f  Freeze PIP requirements to requirements.frozen.txt and requirements.esp-plugins.frozen.txt
+echo   -r  Update ESP plugin modules with the frozen versions in requirements.esp-plugins.frozen.txt
 echo   -h  Show this usage message"
 pause
 exit /b
@@ -107,7 +110,7 @@ exit /b
 
 
 :freeze_requirements
-:: Freeze currently installed modules to requirements.frozen.txt.
+:: Freeze currently installed modules to requirements.frozen.txt and requirements.esp-plugins.frozen.txt
 ::
 echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 echo +
@@ -116,4 +119,18 @@ echo +
 echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 call :activate_virtualenv
 pip freeze > requirements.frozen.txt
+findstr "svn+http" requirements.frozen.txt > requirements.esp-plugins.frozen.txt 
+exit /b
+
+
+:release_plugins
+:: Update ESP plugin modules with the frozen versions.
+::
+echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+echo +
+echo + Updating ESP frozen plugin modules...
+echo +
+echo ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+call :activate_virtualenv
+pip install -U -v -r requirements.esp-plugins.frozen.txt
 exit /b
