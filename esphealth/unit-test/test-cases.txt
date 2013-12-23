@@ -285,11 +285,12 @@ asthma
 4 patients 
 1 patient with 5 visits with 493.x pos def a ralph
 same patient with >=2  meds (2) with one generic simple rx and one synonym
+same patient with 19 prescriptions for all the rest of asthma meds 
 1 patient with 3 visits with 493.x neg def a  manuel
 same patient with 4 asthma prescriptions pos def b
 2 same prescriptions and one synonym combination and one generic combo 
 1 patient with 3 asthma prescriptions neg angie
-all 3 from asthma list but one rx with _NEB and one without 
+all 3 from asthma list but one rx with ' NEB' and one without 
 1 patient with 3 asthma prescriptions neg mary
 all 3 rx from asthma list but one combination and one included in combination
 
