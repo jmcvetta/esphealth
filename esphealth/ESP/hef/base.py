@@ -1279,7 +1279,7 @@ class PrescriptionHeuristic(BaseEventHeuristic):
     A heuristic for detecting prescription events
     '''
     
-    def __init__(self, name, drugs, doses=[], min_quantity=None, require=[], exclude=[]):
+    def __init__(self, name, drugs, doses=[], min_quantity=None, require=[], exclude=[], qualifiers=[]):
         '''
         @param name: Name of event to be generated
         @type name:  String
@@ -1293,6 +1293,8 @@ class PrescriptionHeuristic(BaseEventHeuristic):
         @type require:  List of strings
         @param exclude: Prescription may not include any of these strings.
         @type exclude:  List of strings
+        @param qualifiers: List of qualifiers to the drug name
+        @type qualifiers: list of strings 
         '''
         assert name and drugs
         self.name = name
@@ -1303,6 +1305,7 @@ class PrescriptionHeuristic(BaseEventHeuristic):
         self.min_quantity = min_quantity
         self.require = require
         self.exclude = exclude
+        self.qualifiers = qualifiers
         
     @property
     def short_name(self):
@@ -1341,6 +1344,12 @@ class PrescriptionHeuristic(BaseEventHeuristic):
             prescriptions = prescriptions.filter(name__icontains=required_string)
         for excluded_string in self.exclude:
             prescriptions = prescriptions.exclude(name__icontains=excluded_string)
+        prescriptions_q = Prescription.objects.none() 
+        for qualifier_string in self.qualifiers: 
+            prescriptions_q |= prescriptions.filter(name__icontains=qualifier_string)   
+        if self.qualifiers:
+            prescriptions = prescriptions_q.distinct()
+            
         # Exclude prescriptions already bound to this heuristic
         prescriptions = prescriptions.exclude(events__name__in=self.event_names)
         prescriptions = prescriptions.order_by('date')
