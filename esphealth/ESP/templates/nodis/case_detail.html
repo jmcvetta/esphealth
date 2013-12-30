@@ -337,7 +337,7 @@
 {% endif %}
 
 
-{% if case.reportable_labs_detail %}
+{% if case.reportable_labs %}
 <h3>
     Related Labs
 </h3>
@@ -357,7 +357,7 @@
         <th>Clinician</th>
         <th>Comment</th>
     </tr>
-    {% for lab in case.reportable_labs_detail %}
+    {% for lab in case.reportable_labs.all %}
     {% if lab not in case.lab_results %}
     <tr>
         <td>{{ lab.pk }}</td>

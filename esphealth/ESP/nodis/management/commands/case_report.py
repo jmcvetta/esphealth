@@ -144,7 +144,7 @@ def isoTime(t=None):
     else:
         return time.strftime('%Y%m%d%H%M%S',t)
 
-
+#TODO check for performance issues running case report 
 class hl7Batch:
     """ class for building an hl7 message
     eeesh this is horrible. hl7 sucks.
@@ -313,10 +313,7 @@ class hl7Batch:
         # case?
         cases = Case.objects.filter(patient=demog, condition=cond)
         all_case_labs = LabResult.objects.filter(events__case__in=cases)
-        if not all_case_labs: #found no labs 
-            if cond.upper() == 'TUBERCULOSIS':
-                returnlxs.append(LabResult.createTBDummyLab(demog, cases))
-            return returnlxs
+        
         # What kind of exception are we expecting here??
         try:
             baselxs = LabResult.objects.filter(id__in=lxids).order_by('result_date')
@@ -716,14 +713,13 @@ class hl7Batch:
                     obx15 = [('CE.1','22D0076229'), ('CE.3','CLIA')]
                     )
             orcs.appendChild(obx1)
-          
+        
     def getSNOMED(self, lxRec,condition):
         #
         # NOTE: This method probably doesn't work right with ESP v2 models.  
         #
-        if condition.upper() == 'TUBERCULOSIS':
-            #MDPH-R348 code 
-            return ''
+        if condition.upper() == 'TUBERCULOSIS' and lxRec.output_or_native_code == 'MDPH-250' :
+            return 'MDPH-R348'
         snomedposi = lxRec.snomed_pos
         snomednega = lxRec.snomed_neg
         snomedinter = lxRec.snomed_ind

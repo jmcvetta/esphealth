@@ -170,20 +170,20 @@ class Case(models.Model):
         q_obj &= Q(date__lte=end)
         labs = LabResult.objects.filter(q_obj).distinct()
         #log_query('Reportable labs for %s' % self, labs)
-                            
+        # this will affect case reports and 
+        if not labs and not self.lab_results and self.condition.upper() == 'TUBERCULOSIS':
+            labs = LabResult.objects.none()
+            # new feature redmine 482
+            # This code is used for case report hl7 and case detail view 
+            # specific for MDPH specific which requires one lab for TB 
+            # if there are no reportable labs or labs associated with a case
+            # we create a dummy one.
+            dummy_lab = LabResult.createTBDummyLab(self.patient, [self])
+            labs._result_cache.append(dummy_lab)
+                           
         return labs
     
     reportable_labs = property(__get_reportable_labs)
-    
-    @property
-    def reportable_labs_detail (self):
-        
-        if self.reportable_labs:
-            return self.reportable_labs.all()
-        else:
-            # new feature redmine 482
-            if not self.lab_results and self.condition.upper() == 'TUBERCULOSIS':
-                return [LabResult.createTBDummyLab(self.patient, [self])]
 
     @property
     def reportable_icd9s(self):

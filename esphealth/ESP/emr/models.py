@@ -672,6 +672,10 @@ class LabResult(BasePatientRecord):
             return random.choice(normal)
         
     @staticmethod    
+    # This code is used for case report hl7 and case detail view 
+    # specific for MDPH specific which requires one lab for TB 
+    # if there are no reportable labs or labs associated with a case
+    # we create a dummy one.
     def createTBDummyLab( patient, cases):    
         lx =[]                                 
         if cases:
@@ -687,7 +691,6 @@ class LabResult(BasePatientRecord):
             lx.date = order_date
             lx.native_code = 'MDPH-250' #this is the loinc
         
-            #SNOMED code: MDPH-R348
             lx.order_natural_key = lx.natural_key # same order and key
             lx.native_name = 'TB NO TEST'
             lx.collection_date = order_date
