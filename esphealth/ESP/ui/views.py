@@ -142,26 +142,26 @@ def _populate_status_values():
             'tot_daystots':  _get_tot_counts(days,True), 
             'msg_dayscounts': _get_provider_sent_counts(days,False),
             'msg_daystots': _get_provider_sent_counts(days,True),
-            'aecase_dec4counts': _get_ae_case_counts(dec4,False),
-            'aecase_dec4tots': _get_ae_case_counts(dec4,True),
-            'vx_dec4counts': _get_vx_counts(dec4,False),
-            'vx_dec4tots': _get_vx_counts(dec4,True),
-            'oth_dec4counts':  _get_oth_counts(dec4,False), 
-            'oth_dec4tots':  _get_oth_counts(dec4,True), 
-            'tot_dec4counts':  _get_tot_counts(dec4,False), 
-            'tot_dec4tots':  _get_tot_counts(dec4,True), 
-            'msg_dec4counts': _get_provider_sent_counts(dec4,False),
-            'msg_dec4tots': _get_provider_sent_counts(dec4,True),
-            'aecase_jan1counts': _get_ae_case_counts(jan1,False),
-            'aecase_jan1tots': _get_ae_case_counts(jan1,True),
-            'vx_jan1counts': _get_vx_counts(jan1,False),
-            'vx_jan1tots': _get_vx_counts(jan1,True),
-            'oth_jan1counts':  _get_oth_counts(jan1,False), 
-            'oth_jan1tots':  _get_oth_counts(jan1,True), 
-            'tot_jan1counts':  _get_tot_counts(jan1,False), 
-            'tot_jan1tots':  _get_tot_counts(jan1,True), 
-            'msg_jan1counts': _get_provider_sent_counts(jan1,False),
-            'msg_jan1tots': _get_provider_sent_counts(jan1,True),
+          #  'aecase_dec4counts': _get_ae_case_counts(dec4,False),
+          #  'aecase_dec4tots': _get_ae_case_counts(dec4,True),
+          #  'vx_dec4counts': _get_vx_counts(dec4,False),
+          #  'vx_dec4tots': _get_vx_counts(dec4,True),
+          #  'oth_dec4counts':  _get_oth_counts(dec4,False), 
+          #  'oth_dec4tots':  _get_oth_counts(dec4,True), 
+          #  'tot_dec4counts':  _get_tot_counts(dec4,False), 
+          #  'tot_dec4tots':  _get_tot_counts(dec4,True), 
+          #  'msg_dec4counts': _get_provider_sent_counts(dec4,False),
+          #  'msg_dec4tots': _get_provider_sent_counts(dec4,True),
+          #  'aecase_jan1counts': _get_ae_case_counts(jan1,False),
+          #  'aecase_jan1tots': _get_ae_case_counts(jan1,True),
+          #  'vx_jan1counts': _get_vx_counts(jan1,False),
+          #  'vx_jan1tots': _get_vx_counts(jan1,True),
+          #  'oth_jan1counts':  _get_oth_counts(jan1,False), 
+          #  'oth_jan1tots':  _get_oth_counts(jan1,True), 
+          #  'tot_jan1counts':  _get_tot_counts(jan1,False), 
+          #  'tot_jan1tots':  _get_tot_counts(jan1,True), 
+          #  'msg_jan1counts': _get_provider_sent_counts(jan1,False),
+          #  'msg_jan1tots': _get_provider_sent_counts(jan1,True),
             'aecase_weekcounts': _get_ae_case_counts('1 week',False),
             'aecase_weektots': _get_ae_case_counts('1 week',True),
             'vx_weekcounts': _get_vx_counts('1 week',False),
@@ -822,18 +822,18 @@ def _get_tot_counts(interval,totals):
     if totals:
         cursor1.execute("select 'Totals' source, sum(counts) as counts from " +
                     "(select 'Labs' as source, count(*) as counts from emr_labresult " +
-                    "where date > current_date - interval '" + interval + "' " +
+                    "where created_timestamp > current_date - interval '" + interval + "' " +
                     "union select 'Visits' as source, count(*) as counts from emr_encounter " +
-                    "where date > current_date - interval '" + interval + "' " +
+                    "where created_timestamp > current_date - interval '" + interval + "' " +
                     "union select 'Prescriptions' as source, count(*) as counts from emr_prescription " +
-                    "where date > current_date - interval '" + interval + "' ) t0 ")
+                    "where created_timestamp > current_date - interval '" + interval + "' ) t0 ")
     else:
         cursor1.execute("select 'Labs' as source, count(*) as counts from emr_labresult " +
-                    "where date > current_date - interval '" + interval + "' " +
+                    "where created_timestamp > current_date - interval '" + interval + "' " +
                     "union select 'Visits' as source, count(*) as counts from emr_encounter " +
-                    "where date > current_date - interval '" + interval + "' " +
+                    "where created_timestamp > current_date - interval '" + interval + "' " +
                     "union select 'Prescriptions' as source, count(*) as counts from emr_prescription " +
-                    "where date > current_date - interval '" + interval + "' ")
+                    "where created_timestamp > current_date - interval '" + interval + "' ")
     desc = cursor1.description
     table = [dict(zip([col[0] for col in desc], row))
             for row in cursor1.fetchall()]
@@ -848,11 +848,11 @@ def _get_vx_counts(interval,totals):
     if totals:
         cursor1.execute("select 'Totals' as name, count(*) as vx_counts " +
                     "from emr_immunization " +
-                    "where isvaccine and date > current_date - interval '" + interval + "' ")
+                    "where isvaccine and created_timestamp > current_date - interval '" + interval + "' ")
     else:
         cursor1.execute("select substring(name,1,50) as name, count(*) as vx_counts " +
                     "from emr_immunization " +
-                    "where isvaccine and date > current_date - interval '" + interval + "' " +
+                    "where isvaccine and created_timestamp > current_date - interval '" + interval + "' " +
                     "group by name " +
                     "order by count(*) desc")
     desc = cursor1.description

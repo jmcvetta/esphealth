@@ -1000,8 +1000,8 @@ VAERS_DIAGNOSTICS = {
         'name':'Bronchospasm',
         'ignore_period':3,
         'category':'2_possible',
-        'risk_period_start':0,
-        'risk_period_days': 7,        
+        'risk_period_start':1,
+        'risk_period_days': 2,        
         },
         
     '495.8': {#
@@ -1188,8 +1188,8 @@ VAERS_DIAGNOSTICS = {
         'name':'Syncope',
         'ignore_period':12,
         'category':'2_possible',
-        'risk_period_start':0,
-        'risk_period_days': 7,
+        'risk_period_start':1,
+        'risk_period_days': 2,
         },
                 
     '780.4': {#

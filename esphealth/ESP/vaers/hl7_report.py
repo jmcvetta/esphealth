@@ -186,7 +186,10 @@ class AdverseReactionReport(object):
                     obx_ER.value=['E','required emergency room/doctor visit','NIP005']
                     obx_ER.observation_result_status='F'
                     observation_results.append(obx_ER)
-                if AE.encounterevent.content_object.encounter_type=='HOSPITALIZATION':
+                elif (AE.encounterevent.content_object.hosp_admit_dt and
+                        AE.encounterevent.content_object.hosp_dschrg_dt and
+                        AE.encounterevent.content_object.date >= AE.encounterevent.content_object.hosp_admit_dt and
+                        AE.encounterevent.content_object.date <= AE.encounterevent.content_object.hosp_dschrg_dt):
                     obx_hosp = OBX()
                     obx_hosp.value_type = 'CE'
                     obx_hosp.identifier = ['30949-4','Vaccination adverse event outcome','LN']
@@ -198,8 +201,7 @@ class AdverseReactionReport(object):
                     obx_hdur.value_type = 'NM'
                     obx_hdur.identifier = ['30950-0','Number of days hospitalized due to vaccination adverse event','LN']
                     obx_hdur.sub_id=1
-                    #hospital inpatient duration is currently not correct at metrohealth 14June2012. date_closed means something other then discharge
-                    obx_hdur.value=AE.encounterevent.date_closed - AE.encounterevent.date
+                    obx_hdur.value=AE.encounterevent.content_object.hosp_dschrg_dt - AE.encounterevent.content_object.date
                     obx_hdur.units = ['d','day','ANSI']
                     obx_hdur.observation_result_status = 'F'
                     observation_results.append(obx_hdur)
@@ -352,7 +354,7 @@ class AdverseReactionReport(object):
         hl7file = cStringIO.StringIO()
         hl7file.write('\r'.join([str(x) for x in all_segments]))
         hl7file.seek(0)
-        if transmit_ftp(hl7file, 'vaers_msg_ID' + str(self.ques.id)):
+        if transmit_ftp(hl7file, 'vaers_msg_ID' + str(self.ques.id) + '.hl7'):
             if Questionnaire.objects.filter(id=self.ques.id, state='Q'):
                 Questionnaire.objects.filter(id=self.ques.id).update(state='S')
             elif Questionnaire.objects.filter(id=self.ques.id, state='AR'):

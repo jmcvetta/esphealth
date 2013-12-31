@@ -128,7 +128,7 @@ class HL7_clinbasket(object):
                     salutation='Dear Dr. ' + str(self.ques.provider.last_name) + ', '
                 obx.value=salutation 
             else:
-                obx.value='This message was generated as a pre-production test of the VAERS automatic detection system and is not intended for clinical use.'
+                obx.value='This message was generated as part of an initial pilot of the VAERS automatic detection system.'
             obxstr=str(obx)+'\r'
             j=j+1
             obx.set_id=str(j).zfill(3)

@@ -793,18 +793,25 @@ class LabResult(BasePatientRecord):
         except:
             return None
 
-    def last_known_value(self, lab_values, with_same_unit=True, prior_vaccine_date=None):
+    def last_known_value(self, lab_values, comparator, with_same_unit=True, prior_vaccine_date=None):
         '''
         Returns the value of the Lx that is immediately prior to
         self.  if 'check_same_unit' is True, only returns the value if
         both labs results have a matching (Case insensitive) ref_unit value
-        returns the value and the date 
+        returns the value and the date.  If there are multiple values on a date
+        uses 'comparator' value to determine if highest or lowest is picked. 
         '''
+
         try:
-            previous_labs = LabResult.objects.filter(native_code__in=lab_values, patient=self.patient,
-                                                 date__lt=self.date).order_by('-date')
+            #if we are looking to exclude for values greater than, sort to pick largest, otherwise sort for smallest
+            if comparator == '>':
+                previous_labs = LabResult.objects.filter(native_code__in=lab_values, patient=self.patient,
+                                                 date__lt=self.date).order_by('-result_date','result_float')
+            else:
+                previous_labs = LabResult.objects.filter(native_code__in=lab_values, patient=self.patient,
+                                                 date__lt=self.date).order_by('-result_date','-result_float')
         except:
-            msg='break'
+            msg='broken at last_known_value'
         if with_same_unit:
             try:
                 previous_labs = previous_labs.filter(ref_unit__iexact=self.ref_unit)

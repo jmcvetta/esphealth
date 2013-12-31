@@ -74,9 +74,9 @@ class Command(BaseCommand):
         heuristics = []
         if options['diagnostics']: heuristics += diagnostic_heuristics()
         if options['lx']: heuristics += lab_heuristics()
-        if options['rx']: heuristics += prescription_heuristics()
+        #if options['rx']: heuristics += prescription_heuristics()
         if options['allergy']: heuristics += allergy_heuristics()
-        if options['problem']: heuristics += problem_heuristics()
+        #if options['problem']: heuristics += problem_heuristics() #not used for MH
         if options['hospprob']: heuristics += hospprob_heuristics()
     
     

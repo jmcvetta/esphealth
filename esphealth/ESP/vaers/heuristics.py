@@ -313,28 +313,28 @@ class VaersDiagnosisHeuristic(AdverseEventHeuristic):
                     date__gte = earliest, 
                     #priority__lte = this_enc.priority,
                     patient = this_enc.patient,                     
-                    icd9_codes__in = check_priors.all(),
+                    #icd9_codes__in = check_priors.all(),
                 )
-                #prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',this_enc.icd9_codes.values_list('code', flat=True))
+                prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',this_enc.icd9_codes.values_list('code', flat=True))
 
                 if prior_enc_qs:
                     continue # Prior diagnosis so ignore 
                 
                 prior_problem_qs = Problem.objects.filter(
                     date__lt = this_enc.date, 
-                    icd9__code__in = check_priors.all(),
+                    #icd9__code__in = check_priors.all(),
                     patient = this_enc.patient, 
                 )
-                #prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',this_enc.icd9_codes.values_list('code'))
+                prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',this_enc.icd9_codes.values_list('code'))
                 if prior_problem_qs:
                     continue # prior problem so ignore 
                 
                 prior_hproblem_qs = Hospital_Problem.objects.filter(
                     date__lt = this_enc.date, 
-                    icd9__code__in = check_priors.all(),
+                    #icd9__code__in = check_priors.all(),
                     patient = this_enc.patient, 
                 )
-                #prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',this_enc.icd9_codes.values_list('code'))
+                prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',this_enc.icd9_codes.values_list('code'))
                 if prior_hproblem_qs:
                     continue # prior problem so ignore 
                 
@@ -435,27 +435,27 @@ class VaersProblemHeuristic(AdverseEventHeuristic):
                     date__gte = earliest, 
                     #priority__lte = this_enc.priority,
                     patient = this_prb.patient,                     
-                    icd9_codes__in = check_priors.all(),
+                    #icd9_codes__in = check_priors.all(),
                 )
-                #prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',[this_prb.icd9_id])
+                prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',[this_prb.icd9_id])
                 if prior_enc_qs:
                     continue # Prior diagnosis so ignore 
                 
                 prior_problem_qs = Problem.objects.filter(
                     date__lt = this_prb.date, 
-                    icd9__in=check_priors.all(),
+                    #icd9__in=check_priors.all(),
                     patient = this_prb.patient, 
                 )
-                #prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',[this_prb.icd9_id])
+                prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',[this_prb.icd9_id])
                 if prior_problem_qs:
                     continue # prior problem so ignore 
                 
                 prior_hproblem_qs = Hospital_Problem.objects.filter(
                     date__lt = this_prb.date, 
-                    icd9__in=check_priors.all(),
+                    #icd9__in=check_priors.all(),
                     patient = this_prb.patient, 
                 )
-                #prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',[this_prb.icd9_id])
+                prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',[this_prb.icd9_id])
                 if prior_hproblem_qs:
                     continue # prior problem so ignore 
                 
@@ -564,27 +564,27 @@ class VaersHospProbHeuristic(AdverseEventHeuristic):
                     date__gte = earliest, 
                     #priority__lte = this_enc.priority,
                     patient = this_hprb.patient,                     
-                    icd9_codes__in = check_priors.all(),
+                    #icd9_codes__in = check_priors.all(),
                 )
-                #prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',[this_hprb.icd9_id])
+                prior_enc_qs = self.exclude_at_3dig(prior_enc_qs,'encounter',[this_hprb.icd9_id])
                 if prior_enc_qs:
                     continue # Prior diagnosis so ignore 
                 
                 prior_problem_qs = Problem.objects.filter(
                     date__lt = this_hprb.date, 
-                    icd9__in=check_priors.all(),
+                    #icd9__in=check_priors.all(),
                     patient = this_hprb.patient, 
                 )
-                #prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',[this_hprb.icd9_id])
+                prior_problem_qs = self.exclude_at_3dig(prior_problem_qs,'problem',[this_hprb.icd9_id])
                 if prior_problem_qs:
                     continue # prior problem so ignore 
                 
                 prior_hproblem_qs = Hospital_Problem.objects.filter(
                     date__lt = this_hprb.date, 
-                    icd9__in=check_priors.all(),
+                    #icd9__in=check_priors.all(),
                     patient = this_hprb.patient, 
                 )
-                #prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',[this_hprb.icd9_id])
+                prior_hproblem_qs = self.exclude_at_3dig(prior_hproblem_qs,'hospitalproblem',[this_hprb.icd9_id])
                 if prior_hproblem_qs:
                     continue # prior problem so ignore 
                 
@@ -904,7 +904,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
             try:
                 
                 
-                self.lkv, self.lkd = lx.last_known_value(self.lab_codes)
+                self.lkv, self.lkd = lx.last_known_value(self.lab_codes, comparator)
                 
                 if not self.lkv: return False
                 
@@ -951,6 +951,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
         log.info('Generating events for %s' % self.name)
         counter = 0
         content_type = ContentType.objects.get_for_model(LabResult)
+        comparator, baseline = self.criterion['exclude_if']
                         
         for lab_result in self.matches(**kw):
             try:
@@ -990,7 +991,7 @@ class VaersLxHeuristic(AdverseEventHeuristic):
                             ev.date = lab_result.date
                         #calculating the last known value with value prior to vaccine
                         #self.lkv, self.lkd = has regular last known value  
-                        ev.last_known_value, ev.last_known_date = lab_result.last_known_value(self.lab_codes,True,imm.date) 
+                        ev.last_known_value, ev.last_known_date = lab_result.last_known_value(self.lab_codes, comparator, True,imm.date) 
                         #last_known_value will return a float or a string, depending  on the last known value.  
                         #but events require a float result
                         try:
