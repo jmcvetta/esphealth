@@ -142,7 +142,11 @@ HL7_DIR = os.path.join(DATA_DIR, 'hl7')
 SITE_ID = 1 # This probably does not need to be configurable
 TIME_ZONE = config['General']['time_zone']
 LANGUAGE_CODE = config['General']['language_code']
-DATE_FORMAT = config['General']['date_format']
+#in python, date formats are preceded by percent signs
+#in django web templates, date formats are similar, but without the percent signs, 
+#  and "date_format" is defined as the default source for date formating.
+PY_DATE_FORMAT = config['General']['date_format']
+DATE_FORMAT = (config['General']['date_format']).replace('%','')
 ROWS_PER_PAGE = config['Web']['rows_per_page']
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"

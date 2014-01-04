@@ -34,7 +34,7 @@ from django.http import HttpResponse
 
 from dateutil.relativedelta import relativedelta
 from ESP.settings import ROWS_PER_PAGE
-from ESP.settings import DATE_FORMAT
+from ESP.settings import PY_DATE_FORMAT
 from ESP.settings import SITE_NAME
 from ESP.settings import STATUS_REPORT_TYPE
 
@@ -67,8 +67,6 @@ from ESP.utils import log
 from ESP.utils import log_query
 from ESP.utils import TableSelectMultiple
 
-
-
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # 
 # All views must pass "context_instance=RequestContext(request)" argument 
@@ -89,7 +87,7 @@ def _populate_status_values():
     Utility method to populate values dict for use with status_page() view and
     manage.py status_report command.
     '''
-    today_string = datetime.datetime.now().strftime(DATE_FORMAT)
+    today_string = datetime.datetime.now().strftime(PY_DATE_FORMAT)
     yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
     values1 = {}
     values2 = {}
@@ -309,8 +307,8 @@ def labtest_csv(request, native_code):
             lab.patient.gender,
             lab.patient.date_of_birth,
             lab.result_string,
-            lab.date, # 'date' is order date
-            lab.result_date,
+            lab.date.strftime(PY_DATE_FORMAT), # 'date' is order date
+            lab.result_date.strftime(PY_DATE_FORMAT),
             lab.ref_low_string,
             lab.ref_high_string,
             lab.comment,
@@ -601,15 +599,15 @@ def case_detail(request, case_id):
     # patient.age is derived directly from patient.date_of_birth.  When the 
     # latter is None, the former will also be None
     try:
-        dob = patient.date_of_birth.strftime(DATE_FORMAT)
+        dob = patient.date_of_birth.strftime(PY_DATE_FORMAT)
         age = patient.age.days / 365 # Note that 365 is Int not Float, thus so is result
     except AttributeError: 
         age = None
         dob = None
     if age >= 90:
         age = '90+'
-    created = case.created_timestamp.strftime(DATE_FORMAT)
-    updated = case.updated_timestamp.strftime(DATE_FORMAT)
+    created = case.created_timestamp.strftime(PY_DATE_FORMAT)
+    updated = case.updated_timestamp.strftime(PY_DATE_FORMAT)
     #
     # Reportable Info
     #

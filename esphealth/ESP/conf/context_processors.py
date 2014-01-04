@@ -2,7 +2,7 @@ import datetime
 from ESP.settings import MEDIA_URL
 from ESP.settings import VERSION
 from ESP.settings import SITE_NAME
-from ESP.settings import DATE_FORMAT
+from ESP.settings import PY_DATE_FORMAT
 
 def path_definitions(request):
     return {
@@ -13,5 +13,5 @@ def path_definitions(request):
         'site_image_folder': '%s/images/' % MEDIA_URL,
         'version': VERSION,
         'site_name': SITE_NAME,
-        'date': datetime.datetime.now().strftime(DATE_FORMAT),
+        'date': datetime.datetime.now().strftime(PY_DATE_FORMAT),
         }

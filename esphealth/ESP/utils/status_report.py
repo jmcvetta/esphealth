@@ -45,7 +45,7 @@ import smtplib
 from django.db.models import Max
 
 from ESP.settings import ADMINS
-from ESP.settings import DATE_FORMAT
+from ESP.settings import PY_DATE_FORMAT
 from ESP.settings import SITE_NAME
 from ESP.settings import EMAIL_HOST
 from ESP.settings import EMAIL_PORT
@@ -99,7 +99,7 @@ def populate_values():
     lengths.sort()
     output_template = '%%%ss: %%s' % str(lengths[-1] + 2)
     values = {}
-    values['date'] = datetime.datetime.now().strftime(DATE_FORMAT)
+    values['date'] = datetime.datetime.now().strftime(PY_DATE_FORMAT)
     values['localsite'] = SITE_NAME
     values['case_summary'] = case_summary(template=output_template)
     values['new_cases'] = new_cases(template=output_template)
@@ -123,7 +123,7 @@ def generate_message():
 
 def send_email(message):
     msg = MIMEText(message)
-    msg['Subject'] = '%s ESP Status Report %s' % (SITE_NAME, datetime.datetime.now().strftime(DATE_FORMAT))
+    msg['Subject'] = '%s ESP Status Report %s' % (SITE_NAME, datetime.datetime.now().strftime(PY_DATE_FORMAT))
     msg['From'] = EMAIL_SENDER
     to = ', '.join( [row[1] for row in ADMINS] )
     to = 'jason.mcvetta@channing.harvard.edu'
