@@ -63,21 +63,6 @@ LT_CHOICES = [
     ('lt', 'Less Than: <'),
     ]
 
-TITER_DILUTION_CHOICES = [
-    (1, '1:1'),  
-    (2, '1:2'),
-    (4, '1:4'),
-    (8, '1:8'),
-    (16, '1:16'),
-    (32, '1:32'),
-    (64, '1:64'),
-    (128, '1:128'),
-    (256, '1:256'),
-    (512, '1:512'),
-    (1024, '1:1024'),
-    (2048, '1:2048'),
-    ]
-
 MATCH_TYPE_CHOICES = [
     ('exact', 'Exact Match (case sensitive)'),
     ('iexact', 'Exact Match (NOT case sensitive)'),
@@ -180,6 +165,8 @@ class LabTestMap(models.Model):
         limit_choices_to={'indicates': 'ind', 'applies_to_all': False})
     excluded_indeterminate_strings = models.ManyToManyField(ResultString, blank=True, null=True, related_name='excluded_indeterminate_set',
         limit_choices_to={'indicates': 'ind', 'applies_to_all': True})
+    #the donotsend_results many to many relationship allows specification of a set of results that should not be sent for a specific test
+    donotsend_results = models.ManyToManyField(ResultString, blank=True, null=True, related_name='do_not_send')
     #
     # Reporting
     # 

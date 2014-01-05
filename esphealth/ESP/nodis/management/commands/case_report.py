@@ -53,6 +53,8 @@ import socket
 import subprocess
 import shlex
 import ftplib
+import math
+
 
 from optparse import Values
 from optparse import make_option
@@ -65,12 +67,15 @@ from django.template.loader import get_template
 from django.core.management.base import BaseCommand
 
 from ESP.static.models import Icd9
+from ESP.conf.models import LabTestMap
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider, Provenance
 from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
+
+from ESP.hef.base import BaseLabResultHeuristic, TITER_DILUTION_CHOICES
 
 from ESP.nodis.base import DiseaseDefinition
 from ESP.nodis.models import Case
@@ -650,7 +655,7 @@ class hl7Batch:
                     snomed_spec_source_code = CASE_REPORT_SPECIMEN_SOURCE_SNOMED_MAP[specso.lower()]
                     log.debug('Mapped specimen source "%s" to snomed code %s' % (specso, snomed_spec_source_code))
                 else:
-                    log.warning('Lab record has specimen source "%s", but no SNOMED code is known for that source.  Using SNOMED code for "unknownn".' % specso)
+                    log.warning('Lab record has specimen source "%s", but no SNOMED code is known for that source.  Using SNOMED code for "unknown".' % specso)
             else:
                 log.debug('No specimen source in lab record -- using SNOMED code for "unknown"')
             self.addSimple(sps, snomed_spec_source_code, 'CE.4')
@@ -669,8 +674,36 @@ class hl7Batch:
             lxTS = lxRec.date
             lxRange = 'Low: %s - High: %s' % (lxRec.ref_low_string, lxRec.ref_high_string)
             #snomed=ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc)[0].CondiSNMDPosi
-            snomed=self.getSNOMED(lxRec,condition)
-            if lxRec.result_float:
+            snomed=self.getSNOMED(lxRec,condition) 
+            #titers get two OBX segments.  We'll only do something with this if we have a titer
+            snomed2=None
+            titer_dilution=None
+            # we have to get the titer dilution level for positive results from
+            # the lab heuristic in order to determine if a titer lab is positive
+            for h in BaseLabResultHeuristic.get_all():
+                if hasattr(h,'titer_dilution') and h.titer_dilution:
+                    try:
+                        if LabTestMap.objects.get(test_name=h.test_name).native_code==lxRec.native_code:
+                            titer_dilution=h.titer_dilution
+                    except:
+                        msg = 'heuristic %s is mapped to test_name %s but no such test mapped in Labtestmap' % (str(h), h.test_name)
+                        log.debug(msg)
+                #this breaks if a lab test can be part of more than one test heuristic, AND titer dilution level is different over these heuristics.        
+            if titer_dilution:
+                if next(s for s in ['1:%s' % 2**i for i in range(int(math.log(4096,2)), int(math.log(titer_dilution, 2))-1, -1)] if s in lxRec.result_string):
+                    snomed=lxRec.snomed_pos
+                    snomed2=TITER_DILUTION_CHOICES[next(s for s in ['1:%s' % 2**i for i in range(int(math.log(4096,2)), int(math.log(titer_dilution, 2))-1, -1)] if s in lxRec.result_string)]
+                elif next(s for s in ['1:%s' % 2**i for i in range(int(math.log(titer_dilution, 2)),0,-1)] if s in lxRec.result_string):
+                    snomed=lxRec.snomed_neg
+                    snomed2=TITER_DILUTION_CHOICES[next(s for s in ['1:%s' % 2**i for i in range(int(math.log(titer_dilution, 2)),0,-1)] if s in lxRec.result_string)]
+                else: 
+                    snomed=lxRec.snomed_ind
+                res = lxRec.result_string
+                obx2_type = 'ST'
+                obx5_type = ''
+                ref_unit = '' # When ref_unit is blank string, makeOBX does not add an OBX.6 tag
+                lxRange = '<1:%s' % (titer_dilution)
+            elif lxRec.result_float:
                 res = lxRec.result_float
                 obx2_type = 'SN'
                 obx5_type = 'SN.2'
@@ -713,6 +746,18 @@ class hl7Batch:
                     obx15 = [('CE.1','22D0076229'), ('CE.3','CLIA')]
                     )
             orcs.appendChild(obx1)
+            if snomed2:
+                orcs.appendChild(self.makeOBX(
+                    obx1  = [('','2')],
+                    obx2  = [('', 'CE')],
+                    obx3  = [('CE.4',lxRec.output_or_native_code),('CE.6','L')],
+                    obx5  = [('CE.4',snomed2)],  
+                    obx7  = [('',lxRange)],
+                    obx11 = [('', lxRec.status)],
+                    obx14 = [('TS.1',lxTS.strftime(DATE_FORMAT))], 
+                    obx15 = [('CE.1','22D0076229'), ('CE.3','CLIA')]
+                    ))
+                
         
     def getSNOMED(self, lxRec,condition):
         #
@@ -1298,11 +1343,11 @@ class Command(BaseCommand):
         @param report_file_path: Full path to file that is to be uploaded
         @type report_file_path:  String
         '''
-        if CASE_REPORT_TRANSMIT.lower() == 'script':
+        if str(CASE_REPORT_TRANSMIT).lower() == 'script':
             return self.transmit_via_script(options, report_file)
-        elif CASE_REPORT_TRANSMIT.lower() == 'java':
+        elif str(CASE_REPORT_TRANSMIT).lower() == 'java':
             return self.transmit_java(options, report_file)
-        elif CASE_REPORT_TRANSMIT.lower() == 'ftp':
+        elif str(CASE_REPORT_TRANSMIT).lower() == 'ftp':
             return self.transmit_ftp(options, report_file)
         else:
             raise NotImplementedError('Support for "%s" transmit is not implemented' % CASE_REPORT_TRANSMIT)

@@ -72,20 +72,20 @@ DOSE_UNIT_VARIANTS = {
     'ug': ['microgram', 'mcg', 'ug'],
     }
 
-TITER_DILUTION_CHOICES = [
-    (1, '1:1'),  
-    (2, '1:2'),
-    (4, '1:4'),
-    (8, '1:8'),
-    (16, '1:16'),
-    (32, '1:32'),
-    (64, '1:64'),
-    (128, '1:128'),
-    (256, '1:256'),
-    (512, '1:512'),
-    (1024, '1:1024'),
-    (2048, '1:2048'),
-    ]
+TITER_DILUTION_CHOICES = {
+    '1:1':'MDPH-R260',  
+    '1:2':'MDPH-R261',
+    '1:4':'MDPH-R262',
+    '1:8':'MDPH-R263',
+    '1:16':'MDPH-R264',
+    '1:32':'MDPH-R265',
+    '1:64':'MDPH-R266',
+    '1:128':'MDPH-R268',
+    '1:256':'MDPH-R269',
+    '1:512':'MDPH-R270',
+    '1:1024':'MDPH-R271',
+    '1:2048':'MDPH-R272',
+    }
 
 MATCH_TYPE_CHOICES = [
     ('exact', 'Exact Match (case sensitive)'),
@@ -836,14 +836,22 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
         # Add titer string queries
         #
         if self.titer_dilution:
-            positive_titer_strings = ['1:%s' % 2**i for i in range(math.log(self.titer_dilution, 2), math.log(4096,2))]
-            negative_titer_strings = ['1:%s' % 2**i for i in range(math.log(self.titer_dilution, 2))]
+            positive_q=None
+            negative_q=None
+            positive_titer_strings = ['1:%s' % 2**i for i in range(int(math.log(self.titer_dilution, 2)), int(math.log(4096,2)))]
+            negative_titer_strings = ['1:%s' % 2**i for i in range(int(math.log(self.titer_dilution, 2)))]
             log.debug('positive_titer_strings: %s' % positive_titer_strings)
             log.debug('negative_titer_strings: %s' % negative_titer_strings)
             for s in positive_titer_strings:
-                positive_q |= Q(result_string__istartswith=s)
+                if positive_q:
+                    positive_q |= Q(result_string__icontains=s)
+                else: 
+                    positive_q = Q(result_string__icontains=s)
             for s in negative_titer_strings:
-                negative_q |= Q(result_string__istartswith=s)
+                if negative_q:
+                    negative_q |= Q(result_string__icontains=s)
+                else:
+                    negative_q = Q(result_string__icontains=s)
         positive_q = all_labs_q & positive_q
         negative_q = all_labs_q & negative_q
         indeterminate_q = all_labs_q & indeterminate_q

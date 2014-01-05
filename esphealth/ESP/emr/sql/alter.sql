@@ -134,4 +134,29 @@ ALTER TABLE vaers_report_sent
 -- ----------------------------------------------------------------
 ALTER TABLE conf_vaccinecodemap 
   DROP CONSTRAINT conf_vaccinecodemap_native_code_key;
+-- ----------------------------------------------------------------
+-- 2013-12-10
+-- Bob Zambarano
+-- mods to accompany conf model updates 
+-- bin/esp syncdb will not create new many-to-many relationship tables
+-- if the two target tables already exist.
+-- (see https://code.djangoproject.com/ticket/2229)
+-- New installation works fine, but for updates
+-- to existing models you must run this instead.
+-- ----------------------------------------------------------------
+CREATE TABLE conf_labtestmap_donotsend_results (
+    id serial NOT NULL,
+    labtestmap_id integer NOT NULL,
+    resultstring_id integer NOT NULL,
+    CONSTRAINT conf_labtestmap_donotsend_results_pkey PRIMARY KEY (id ),
+    CONSTRAINT conf_labtestmap_donotsend_results_resultsstring_id_fk FOREIGN KEY (resultstring_id)
+      REFERENCES conf_resultstring (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED,
+    CONSTRAINT conf_labtestmap_donotsend_results_labtestmap_id_fk FOREIGN KEY (labtestmap_id)
+      REFERENCES conf_labtestmap (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED,
+    CONSTRAINT conf_labtestmap_donotsend_resultstring_labtestmap_id_key UNIQUE (labtestmap_id , resultstring_id )
+)
+;
+
 

@@ -36,7 +36,7 @@ from ESP.emr.models import Patient
 from ESP.emr.models import Prescription
 from ESP.emr.models import Provider
 from ESP.hef.models import Event
-from ESP.conf.models import LabTestMap
+from ESP.conf.models import LabTestMap, ResultString
 
 from ESP.utils.utils import log
 from ESP.utils.utils import log_query
@@ -157,10 +157,20 @@ class Case(models.Model):
         
         from ESP.nodis.base import DiseaseDefinition
         reportable_codes = set(ReportableLab.objects.filter(condition=self.condition).values_list('native_code', flat=True))
-        # get native codes from lab heuristics 
+        # get native codes from lab heuristics
+        exclude_q = None 
         for heuristic in  DiseaseDefinition.get_by_short_name(self.condition).event_heuristics:
             if isinstance(heuristic, BaseLabResultHeuristic):
                 reportable_codes |=set(LabTestMap.objects.filter(test_name =heuristic.test_name, reportable=True).values_list('native_code', flat=True))
+                for native_codes in LabTestMap.objects.filter(test_name =heuristic.test_name, reportable=True):
+                    donotsend_q=None
+                    for donotsend in native_codes.donotsend_results.all():
+                        donotsend_q |= donotsend.q_obj
+                    if donotsend_q:
+                        if exclude_q:
+                            exclude_q |= (Q(native_code=native_codes.native_code) & (donotsend_q))
+                        else:
+                            exclude_q =  (Q(native_code=native_codes.native_code) & (donotsend_q))                   
         q_obj = Q(patient=self.patient)
         q_obj &= Q(native_code__in=reportable_codes)
         conf = self.condition_config
@@ -168,7 +178,10 @@ class Case(models.Model):
         end = self.date + datetime.timedelta(days=conf.lab_days_after)
         q_obj &= Q(date__gte=start)
         q_obj &= Q(date__lte=end)
-        labs = LabResult.objects.filter(q_obj).distinct()
+        if exclude_q:
+            labs = LabResult.objects.filter(q_obj).distinct().exclude(exclude_q)
+        else:
+            labs = LabResult.objects.filter(q_obj).distinct()
         #log_query('Reportable labs for %s' % self, labs)
         # this will affect case reports and 
         if not labs and not self.lab_results and self.condition.upper() == 'TUBERCULOSIS':
