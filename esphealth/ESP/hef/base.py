@@ -184,7 +184,8 @@ class BaseHeuristic(EquivalencyMixin):
         @type short_name:  String
         '''
         heuristics = {}
-        for h in cls.get_all():
+        all = cls.get_all()
+        for h in all:
             heuristics[h.short_name] = h
         if not short_name in heuristics:
             raise UnknownHeuristicException('Could not get heuristic for name: "%s"' % short_name)

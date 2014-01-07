@@ -241,7 +241,8 @@ class DiseaseDefinition(object):
         Returns the disease specified by short name
         '''
         diseases = {}
-        for d in cls.get_all():
+        all = cls.get_all()
+        for d in all:
             diseases[d.short_name] = d
         if not short_name in diseases:
             raise UnknownDiseaseException('Could not get disease definition for name: "%s"' % short_name)
@@ -265,9 +266,8 @@ class DiseaseDefinition(object):
         '''
         med_names = set()
         for heuristics in self.event_heuristics:
-            heuristic_obj = BaseHeuristic.get_heuristic_by_name(heuristics.short_name)
-            if isinstance(heuristic_obj, PrescriptionHeuristic):
-                med_names |= set( heuristic_obj.drugs )
+            if isinstance(heuristics, PrescriptionHeuristic):
+                med_names |= set( heuristics.drugs )
         return med_names
     medications = property(__get_medications)
     
