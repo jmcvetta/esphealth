@@ -159,7 +159,8 @@ class Case(models.Model):
         reportable_codes = set(ReportableLab.objects.filter(condition=self.condition).values_list('native_code', flat=True))
         # get native codes from lab heuristics
         exclude_q = None 
-        for heuristic in  DiseaseDefinition.get_by_short_name(self.condition).event_heuristics:
+        disease_def_event_heuristics = DiseaseDefinition.get_by_short_name(self.condition).event_heuristics
+        for heuristic in disease_def_event_heuristics :
             if isinstance(heuristic, BaseLabResultHeuristic):
                 reportable_codes |=set(LabTestMap.objects.filter(test_name =heuristic.test_name, reportable=True).values_list('native_code', flat=True))
                 for native_codes in LabTestMap.objects.filter(test_name =heuristic.test_name, reportable=True):
@@ -206,7 +207,8 @@ class Case(models.Model):
         
         from ESP.nodis.base import DiseaseDefinition
         icd9_objs = Icd9.objects.filter(reportableicd9__condition=self.condition_config)
-        for heuristic in  DiseaseDefinition.get_by_short_name(self.condition).event_heuristics:
+        disease_def_event_heuristics = DiseaseDefinition.get_by_short_name(self.condition).event_heuristics
+        for heuristic in  disease_def_event_heuristics:
             if isinstance(heuristic, DiagnosisHeuristic):
                 for icd9_query in heuristic.icd9_queries:
                     if not icd9_objs:
