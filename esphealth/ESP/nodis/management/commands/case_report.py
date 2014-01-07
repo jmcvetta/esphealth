@@ -74,6 +74,7 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
+from ESP.conf.models import LabTestMap
 
 from ESP.hef.base import BaseLabResultHeuristic, TITER_DILUTION_CHOICES
 
@@ -251,7 +252,7 @@ class hl7Batch:
         orus2.appendChild(p)
         ##Treating Clinician
         rxobjs = case.reportable_prescriptions.order_by('natural_key')
-        treatclis = set( case.reportable_prescriptions.values_list('provider', flat=True) )
+        treatclis = set( rxobjs.values_list('provider', flat=True) )
         for cli in treatclis:
             nkindx=3
             pcp = Provider.objects.get(pk=cli)
@@ -318,24 +319,26 @@ class hl7Batch:
         # case?
         cases = Case.objects.filter(patient=demog, condition=cond)
         all_case_labs = LabResult.objects.filter(events__case__in=cases)
-        
-        # What kind of exception are we expecting here??
+        # exclude labs anyway if they have reportable flag as false.
+        lab_native_codes  = all_case_labs.values_list('native_code', flat=True)
+        all_case_labs = all_case_labs.exclude (native_code__in = LabTestMap.objects.filter(native_code__in = lab_native_codes, reportable=False).values_list('native_code', flat=True))
+        # the exception will be when lxids is null 
         try:
-            baselxs = LabResult.objects.filter(id__in=lxids).order_by('result_date')
+            baselxs = LabResult.objects.filter(id =lxids.id).order_by('result_date')
             # get lastest Lx record
             maxrec=baselxs[len(baselxs)-1].result_date
-            baselxs = LabResult.objects.filter(id__in=lxids).order_by('date')
+            baselxs = LabResult.objects.filter(id =lxids.id).order_by('date')
             minrec=baselxs[0].date
         except:
             return all_case_labs
         if maxrec and minrec:
             try:
-                maxdate = datetime.date(int(maxrec[:4]),int(maxrec[4:6]),int(maxrec[6:8]))+datetime.timedelta(30)
-                mindate = datetime.date(int(minrec[:4]),int(minrec[4:6]),int(minrec[6:8]))-datetime.timedelta(30)
+                maxdate = datetime.date(maxrec.year,maxrec.month,maxrec.day)+datetime.timedelta(30)
+                mindate = datetime.date(minrec.year,minrec.month,minrec.day)-datetime.timedelta(30)
                 for onelx in all_case_labs:
                     thisd = onelx.result_date
                     if thisd:
-                        thisd = datetime.date(int(thisd[:4]),int(thisd[4:6]),int(thisd[6:8]))
+                        thisd = datetime.date(thisd.year,thisd.month,thisd.day)
                     if not thisd or (thisd>=mindate and thisd<=maxdate):
                         returnlxs.append(onelx)
                 return returnlxs
@@ -819,7 +822,7 @@ class hl7Batch:
             self.addSimple(obr3,rxRec.order_natural_key,'EI.1') 
             obr.appendChild(obr3)
             obr4 = self.casesDoc.createElement('OBR.4')
-            ########Added Jan,2009 to fix EMR Mappign question in order to
+            ########Added Jan,2009 to fix EMR Mapping question in order to
             ########integrate with MAVEN system from Barrus, Stephen (DPH)
             self.addSimple(obr4,'Additional Patient Demographics','CE.2')
             self.addSimple(obr4,'18776-5','CE.4') # treatment plan
