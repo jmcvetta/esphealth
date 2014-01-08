@@ -149,6 +149,7 @@ class BaseLoader(object):
         self.filepath = filepath
         file_handle = open(filepath)
         self.line_count = len(file_handle.readlines())
+        
         prov, created = Provenance.objects.get_or_create(source=filename)
         prov.wtimestamp = TIMESTAMP
         prov.hostname = socket.gethostname()
@@ -167,6 +168,23 @@ class BaseLoader(object):
             prov.error_count = 0 
             
         prov.save()
+        
+        # redmine #476  
+        if self.line_count == 0:
+            # send email to managers as high priority saying no data found
+            report = ' found no data to load for #%s for %s' % (prov.pk, filename)
+            log.info(report)
+            msg = EmailMultiAlternatives(
+               EMAIL_SUBJECT_PREFIX + ' Load_Epic Report for ' + SITE_NAME + ', Source file: ' + self.filename,
+               report,
+               SERVER_EMAIL, 
+               [a[1] for a in MANAGERS],
+               )
+            html_content = '<pre>\n%s\n</pre>' % report
+            msg.attach_alternative(html_content, "text/html")
+            msg.send()
+      
+      
         self.provenance = prov
         file_handle.seek(0) # Reset file position after counting lines
         self.reader = csv.DictReader(file_handle, fieldnames=self.fields, dialect='epic')
@@ -970,7 +988,7 @@ class EncounterLoader(BaseLoader):
         #
         # ICD9 Codes
         #
-        # TODO issue 329 this will change once we use the new diagnosis object
+        # TODO issue 329 this will change once we use the new diagnosis object for icd10
         if not created: # If updating the record, purge old ICD9 list
             e.icd9_codes = []
         icd9 = row['icd9s']
