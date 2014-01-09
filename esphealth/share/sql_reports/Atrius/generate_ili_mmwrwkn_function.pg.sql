@@ -12,6 +12,11 @@ DECLARE
    curweekday integer;
    wwyyv varchar(40);
 BEGIN
+--mmwr week runs SUN-SAT.  Postgres week runs Mon-SUN. 
+-- In mmr week definition, for turn of the year where Jan 1 is not 
+-- Sunday (first day of week), the week is numbered as last week of 
+-- prior year if 4 or more days are in the prior year, or first 
+-- week of new year if 4 or more days are in the new year.
    yr := to_char(date4week,'yyyy');
    mth := to_char(date4week,'mm');
    dy := to_char(date4week,'dd');
@@ -28,7 +33,7 @@ BEGIN
    doyr := extract(doy from date4week);
    jan1weekday := extract(dow from (yr||'-01-01')::date)+1;
    curweekday:= extract(dow from date4week)+1;
-   if doyr <= (8-jan1weekday) and jan1weekday >= 4 then
+   if doyr <= (8-jan1weekday) and jan1weekday > 4 then
       adjyr := yr - 1;
       if jan1weekday = 5 or (jan1weekday = 6 and priorleap) then
          wk = 53;
