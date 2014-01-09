@@ -686,17 +686,17 @@ class hl7Batch:
             for h in BaseLabResultHeuristic.get_all():
                 if hasattr(h,'titer_dilution') and h.titer_dilution:
                     try:
-                        if LabTestMap.objects.get(test_name=h.test_name).native_code==lxRec.native_code:
+                        if LabTestMap.objects.filter(test_name=h.test_name, native_code=lxRec.native_code):
                             titer_dilution=h.titer_dilution
                     except:
                         msg = 'heuristic %s is mapped to test_name %s but no such test mapped in Labtestmap' % (str(h), h.test_name)
                         log.debug(msg)
                 #this breaks if a lab test can be part of more than one test heuristic, AND titer dilution level is different over these heuristics.        
             if titer_dilution:
-                if next(s for s in ['1:%s' % 2**i for i in range(int(math.log(4096,2)), int(math.log(titer_dilution, 2))-1, -1)] if s in lxRec.result_string):
+                if next((s for s in ['1:%s' % 2**i for i in range(int(math.log(4096,2)), int(math.log(titer_dilution, 2))-1, -1)] if s in lxRec.result_string), None):
                     snomed=lxRec.snomed_pos
                     snomed2=TITER_DILUTION_CHOICES[next(s for s in ['1:%s' % 2**i for i in range(int(math.log(4096,2)), int(math.log(titer_dilution, 2))-1, -1)] if s in lxRec.result_string)]
-                elif next(s for s in ['1:%s' % 2**i for i in range(int(math.log(titer_dilution, 2)),0,-1)] if s in lxRec.result_string):
+                elif next((s for s in ['1:%s' % 2**i for i in range(int(math.log(titer_dilution, 2)),0,-1)] if s in lxRec.result_string), None):
                     snomed=lxRec.snomed_neg
                     snomed2=TITER_DILUTION_CHOICES[next(s for s in ['1:%s' % 2**i for i in range(int(math.log(titer_dilution, 2)),0,-1)] if s in lxRec.result_string)]
                 else: 
