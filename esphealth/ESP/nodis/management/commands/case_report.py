@@ -74,7 +74,7 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Encounter
 from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
-from ESP.conf.models import LabTestMap
+from ESP.conf.models import LabTestMap, ResultString
 
 from ESP.hef.base import BaseLabResultHeuristic, TITER_DILUTION_CHOICES
 
@@ -191,7 +191,8 @@ class hl7Batch:
         self.casesDoc = Document() # create a dom root for all the cases
         self.casesTopLevel = self.casesDoc.createElement("rossfoo") # this is a placeholder which is removed at rendering
         self.casesDoc.appendChild(self.casesTopLevel)
-        
+        self.currentCase = None
+    
     def renderBatch(self):
         """ To render the entire document, batchdoc needs to be rendered, with a cdata section containing
         a rendered version of the casesdoc. Please, don't ask me why.
@@ -232,6 +233,7 @@ class hl7Batch:
         we need to iterate over the pointers stored in each case to make the
         appropriate segments
         """
+        self.currentCase=case.id
         patient = case.patient
         oru = self.casesDoc.createElement('ORU_R01')
         self.casesTopLevel.appendChild(oru)
@@ -294,7 +296,7 @@ class hl7Batch:
             cleanlxids = self.removeDuplicateLx(totallxs)
             totallxs = LabResult.objects.filter(pk__in=cleanlxids).order_by('order_natural_key')
         
-        self.addLXOBX(lxRecList=totallxs, orus=orus,condition=case.condition)
+        self.addLXOBX(case=case,lxRecList=totallxs, orus=orus)
         self.addRXOBX(rxRecList=rxobjs, orus=orus) # do same for dr
         return [i.id for i in totallxs]
 
@@ -612,8 +614,9 @@ class hl7Batch:
             indx += 1
             orcs.appendChild(obx)
 
-    def addLXOBX(self,lxRecList=[],orus=None,condition=None):
+    def addLXOBX(self,case,lxRecList=[],orus=None):
         if not lxRecList: return
+        condition=case.condition
         n=1
         #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         #
@@ -629,6 +632,9 @@ class hl7Batch:
             #needsend =ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc,CondiRule=condition)[0].CondiSend
             #if needsend==0: ##no need send
                 #continue
+            snomed, snomed2, titer_dilution, finding=self.getSNOMED(lxRec,condition) 
+            if LabTestMap.objects.filter(native_code__exact=lxRec.codemap.native_code, donotsend_results__indicates__iexact=finding).exists():
+                continue
             orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
             orus.appendChild(orcs)
             orc = self.makeORC(lxRec.provider)
@@ -676,31 +682,7 @@ class hl7Batch:
             # now add the obx records needed to describe dose, frequency and duration
             lxTS = lxRec.date
             lxRange = 'Low: %s - High: %s' % (lxRec.ref_low_string, lxRec.ref_high_string)
-            #snomed=ConditionLOINC.objects.filter(CondiLOINC=lxRec.LxLoinc)[0].CondiSNMDPosi
-            snomed=self.getSNOMED(lxRec,condition) 
-            #titers get two OBX segments.  We'll only do something with this if we have a titer
-            snomed2=None
-            titer_dilution=None
-            # we have to get the titer dilution level for positive results from
-            # the lab heuristic in order to determine if a titer lab is positive
-            for h in BaseLabResultHeuristic.get_all():
-                if hasattr(h,'titer_dilution') and h.titer_dilution:
-                    try:
-                        if LabTestMap.objects.filter(test_name=h.test_name, native_code=lxRec.native_code):
-                            titer_dilution=h.titer_dilution
-                    except:
-                        msg = 'heuristic %s is mapped to test_name %s but no such test mapped in Labtestmap' % (str(h), h.test_name)
-                        log.debug(msg)
-                #this breaks if a lab test can be part of more than one test heuristic, AND titer dilution level is different over these heuristics.        
             if titer_dilution:
-                if next((s for s in ['1:%s' % 2**i for i in range(int(math.log(4096,2)), int(math.log(titer_dilution, 2))-1, -1)] if s in lxRec.result_string), None):
-                    snomed=lxRec.snomed_pos
-                    snomed2=TITER_DILUTION_CHOICES[next(s for s in ['1:%s' % 2**i for i in range(int(math.log(4096,2)), int(math.log(titer_dilution, 2))-1, -1)] if s in lxRec.result_string)]
-                elif next((s for s in ['1:%s' % 2**i for i in range(int(math.log(titer_dilution, 2)),0,-1)] if s in lxRec.result_string), None):
-                    snomed=lxRec.snomed_neg
-                    snomed2=TITER_DILUTION_CHOICES[next(s for s in ['1:%s' % 2**i for i in range(int(math.log(titer_dilution, 2)),0,-1)] if s in lxRec.result_string)]
-                else: 
-                    snomed=lxRec.snomed_ind
                 res = lxRec.result_string
                 obx2_type = 'ST'
                 obx5_type = ''
@@ -760,48 +742,104 @@ class hl7Batch:
                     obx14 = [('TS.1',lxTS.strftime(DATE_FORMAT))], 
                     obx15 = [('CE.1','22D0076229'), ('CE.3','CLIA')]
                     ))
-                
-        
+                        
     def getSNOMED(self, lxRec,condition):
-        #
-        # NOTE: This method probably doesn't work right with ESP v2 models.  
-        #
+        # returns four values related to lab finding used in LXOBX
+        # the return statements 
+        snomed=None
+        snomed2=None
+        titer_dilution=None
+        finding=None
         if condition.upper() == 'TUBERCULOSIS' and lxRec.output_or_native_code == 'MDPH-250' :
-            return 'MDPH-R348'
+            snomed='MDPH-R348'
+            return snomed, snomed2, titer_dilution, finding
         snomedposi = lxRec.snomed_pos
         snomednega = lxRec.snomed_neg
         snomedinter = lxRec.snomed_ind
         if snomedposi=='' and snomednega=='': ##like ALT/AST
-            return ''
-        #
-        # FIXME: It can't be good to have a hard-coded, LOINC-based table here.
-        #
-        loinc_posires_map = {'5009-6':160,
-                             '16934-2':100,
-                             '34704-7':50}
-        if lxRec.output_or_native_code in loinc_posires_map.keys():###('5009-6','16934-2'):
+            return snomed, snomed2, titer_dilution, finding
+        # we have to get the titer dilution level for positive results from
+        # the lab heuristic in order to determine if a titer lab is positive.
+        # This is clunky.  BaseLabResultsHeuristic.get_all returns a set of heuristic
+        # objects, some of which have the titer_dilution attribute, and some of 
+        # those have value titer_dilution values.
+        titerHset=set(h for h in BaseLabResultHeuristic.get_all() if hasattr(h,'titer_dilution') and h.titer_dilution)
+        for h in titerHset:
             try:
-                if lxRec.result_float < loinc_posires_map[lxRec.output_or_native_code]:
-                    return snomednega
-                else:
-                    return snomedposi
+                if LabTestMap.objects.filter(test_name=h.test_name, native_code=lxRec.native_code).exists():
+                    titer_dilution=h.titer_dilution
+                    continue
             except:
-                if lxRec.result_string.find('>') != -1:
-                    return snomedposi
+                msg = 'heuristic %s is mapped to test_name %s but no such test mapped in Labtestmap' % (str(h), h.test_name)
+                log.debug(msg)
+            #this breaks if a lab test can be part of more than one test heuristic, AND titer dilution level is different over these heuristics.                        
+        if titer_dilution:
+            if next((s for s in ['1:%s' % 2**i for i in range(int(math.log(4096,2)), int(math.log(titer_dilution, 2))-1, -1)] if s in lxRec.result_string), None):
+                snomed=snomedposi
+                finding='pos'
+                snomed2=TITER_DILUTION_CHOICES[next(s for s in ['1:%s' % 2**i for i in range(int(math.log(4096,2)), int(math.log(titer_dilution, 2))-1, -1)] if s in lxRec.result_string)]
+            elif next((s for s in ['1:%s' % 2**i for i in range(int(math.log(titer_dilution, 2)),0,-1)] if s in lxRec.result_string), None):
+                snomed=snomednega
+                snomed2=TITER_DILUTION_CHOICES[next(s for s in ['1:%s' % 2**i for i in range(int(math.log(titer_dilution, 2)),0,-1)] if s in lxRec.result_string)]
+                finding='neg'
+            else: 
+                snomed=snomedinter
+                finding='ind'
+            return snomed, snomed2, titer_dilution, finding
+        #now check the case lx events to see if this lab matches one of those -- if so, get the finding and set snomed
+        try:
+            case_lx = Case.objects.get(id=self.currentCase, events__name__startswith='lx', events__object_id=lxRec.id)
+            if "positive" in str(case_lx.events.get(object_id=lxRec.id).name):
+                snomed=snomedposi
+                finding='pos'
+            elif "negative" in str(case_lx.events.get(object_id=lxRec.id).name):
+                snomed=snomednega
+                finding='neg'
+            elif "indeterminate" in str(case_lx.events.get(object_id=lxRec.id).name):
+                snomed=snomedinter
+                finding='ind' 
+            return snomed, snomed2, titer_dilution, finding
+        except: 
+            #now we essentially replicate hef.base.labresultpositiveheuristic
+            try:
+                if lxRec.result_float < lxRec.threshold:
+                    snomed=snomednega
+                    finding='neg'
                 else:
-                    return snomednega
-        if snomednega=='' and snomedinter=='':
-            return snomedposi
-        if lxRec.result_string:
-            testsult = lxRec.result_string.upper()[:5]
-        else:
-            testsult = '' # Must be string for elif below
-        if testsult in ('BORDE'): ###BORDERLINE, use SNOMED for equivocal
-            return snomedinter
-        elif testsult not in ('REACT','POSIT','DETEC'): ##USE negative
-            return snomednega
-        else:
-            return snomedposi
+                    snomed=snomedposi
+                    finding='pos'
+                return snomed, snomed2, titer_dilution, finding
+            except:
+                #now it gets messy.  The resultstring stuff is designed to build django queryset definitions
+                # so we're stuck re-querying for the lab result.
+                map_obj = LabTestMap.objects.get(native_code=lxRec.native_code)
+                pos_q = ResultString.get_q_by_indication('pos')
+                neg_q = ResultString.get_q_by_indication('neg')
+                ind_q = ResultString.get_q_by_indication('ind')
+                if map_obj.extra_positive_strings.all() \
+                    or map_obj.excluded_positive_strings.all():
+                    pos_q &= map_obj.positive_string_q_obj
+                if LabResult.objects.filter(Q(id=lxRec.id),pos_q).exits():
+                    snomed=snomedposi
+                    finding='pos'
+                    return snomed, snomed2, titer_dilution, finding
+                if map_obj.extra_negative_strings.all() \
+                    or map_obj.excluded_negative_strings.all():
+                    neg_q &= map_obj.negative_string_q_obj
+                if LabResult.objects.filter(Q(id=lxRec.id),neg_q).exits():
+                    snomed=snomednega
+                    finding='neg'
+                    return snomed, snomed2, titer_dilution, finding
+                if map_obj.extra_indeterminate_strings.all() \
+                    or map_obj.excluded_indeterminate_strings.all():
+                    ind_q &= map_obj.indeterminate_string_q_obj
+                if LabResult.objects.filter(Q(id=lxRec.id),ind_q).exits():
+                    snomed=snomedinter
+                    finding='ind'
+                    return snomed, snomed2, titer_dilution, finding
+                #if nothing hits, return all None
+                return None, None, None, None
+            
         
     def addRXOBX(self,rxRecList=[],orus=None):
         """

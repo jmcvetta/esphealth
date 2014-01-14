@@ -231,34 +231,36 @@ class LabTestMap(models.Model):
     
     @property
     def positive_string_q_obj(self):
-        rs_qs = self.extra_positive_strings.all()
-        if self.excluded_positive_strings.all():
-            rs_qs = rs_qs.exclude(self.excluded_positive_strings.all())
+        extra_qs = self.extra_positive_strings.all()
+        exclu_qs = self.excluded_positive_strings.all()
         q_obj = ResultString.get_q_by_indication('pos')
-        for rs in rs_qs:
+        for rs in extra_qs:
             q_obj |= rs.q_obj
+        for rs in exclu_qs:
+            q_obj=(q_obj) & ~rs.q_obj
         return q_obj
     
     @property
     def negative_string_q_obj(self):
-        rs_qs = self.extra_negative_strings.all()
-        if self.excluded_negative_strings.all():
-            rs_qs = rs_qs.exclude(self.excluded_negative_strings.all())
+        extra_qs = self.extra_negative_strings.all()
+        exclu_qs = self.excluded_negative_strings.all()
         q_obj = ResultString.get_q_by_indication('neg')
-        for rs in rs_qs:
+        for rs in extra_qs:
             q_obj |= rs.q_obj
+        for rs in exclu_qs:
+            q_obj=(q_obj) & ~rs.q_obj
         return q_obj
     
     @property
     def indeterminate_string_q_obj(self):
-        rs_qs = self.extra_indeterminate_strings.all()
-        if self.excluded_indeterminate_strings.all():
-            rs_qs = rs_qs.exclude(self.excluded_indeterminate_strings.all())
+        extra_qs = self.extra_indeterminate_strings.all()
+        exclu_qs = self.excluded_indeterminate_strings.all()
         q_obj = ResultString.get_q_by_indication('ind')
-        for rs in rs_qs:
+        for rs in extra_qs:
             q_obj |= rs.q_obj
+        for rs in exclu_qs:
+            q_obj=(q_obj) & ~rs.q_obj
         return q_obj
-
 
 class IgnoredCode(models.Model):
     '''
