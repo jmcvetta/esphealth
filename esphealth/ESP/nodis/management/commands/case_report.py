@@ -633,8 +633,9 @@ class hl7Batch:
             #if needsend==0: ##no need send
                 #continue
             snomed, snomed2, titer_dilution, finding=self.getSNOMED(lxRec,condition) 
-            if LabTestMap.objects.filter(native_code__exact=lxRec.codemap.native_code, donotsend_results__indicates__iexact=finding).exists():
-                continue
+            if (finding):
+                if LabTestMap.objects.filter(native_code__exact=lxRec.codemap.native_code, donotsend_results__indicates__iexact=finding).exists():
+                    continue
             orcs = self.casesDoc.createElement('ORU_R01.ORCOBRNTEOBXNTECTI_SUPPGRP')
             orus.appendChild(orcs)
             orc = self.makeORC(lxRec.provider)
