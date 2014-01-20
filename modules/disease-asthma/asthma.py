@@ -365,14 +365,16 @@ class Asthma(DiseaseDefinition):
                 rx4_event = rx_event
                 
             count_rx4 +=1   
-            
+        if ((counter_a + counter_b) % 100)==0:
+            transaction.commit()            
         return counter_a + counter_b # Count of new cases
     
-    @transaction.commit_on_success
+    @transaction.commit_manually
     def generate(self):
         log.info('Generating cases of %s' % self.short_name)
         counter = 0
         counter += self.generate_def_ab()
+        transaction.commit()
         log.debug('Generated %s new cases of asthma' % counter)
         
         return counter # Count of new cases
