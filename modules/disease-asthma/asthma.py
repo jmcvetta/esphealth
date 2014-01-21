@@ -324,7 +324,9 @@ class Asthma(DiseaseDefinition):
                 dx4_event = dx_event
                 
             count_dx4 +=1   
-              
+            if (counter_a % 100)==0:
+                transaction.commit()           
+ 
         # criteria 2
         # >=4 asthma drug dispensing events (any combination of multiple scripts
         # for the same med or scripts for different meds
@@ -365,8 +367,8 @@ class Asthma(DiseaseDefinition):
                 rx4_event = rx_event
                 
             count_rx4 +=1   
-        if ((counter_a + counter_b) % 100)==0:
-            transaction.commit()            
+            if (counter_b % 100)==0:
+                transaction.commit()            
         return counter_a + counter_b # Count of new cases
     
     @transaction.commit_manually
