@@ -437,6 +437,15 @@ create index diag5dig_setting_idx on esp_diagnosis_icd9_5dig (setting);
       from esp_demographic where zip5 is not null;
       alter table uvt_zip5 add primary key (item_code);
 
+--    UVT_SMOKING
+      DROP TABLE if exists uvt_smoking;
+      create table uvt_smoking as 
+      select distinct 
+             smoking as item_code, 
+	         null::varchar(10) item_text
+      from esp_demographic where smoking is not null;
+      alter table uvt_smoking add primary key (item_code);
+
 --    UVT_PROVIDER
       DROP TABLE if exists UVT_PROVIDER;
       CREATE TABLE UVT_PROVIDER AS

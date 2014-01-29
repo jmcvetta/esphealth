@@ -389,7 +389,7 @@ create table esp_temp_smoking as
    from
      emr_patient t0
    left outer join 
-     (select t00.tobacco_use ls atest, t00.patient_id 
+     (select t00.tobacco_use as latest, t00.patient_id 
       from emr_socialhistory t00
       inner join
       (select max(date) as maxdate, patient_id 
@@ -414,6 +414,14 @@ create table esp_temp_smoking as
 alter table esp_temp_smoking add primary key (patid);
 update esp_demographic
 set smoking = (select smoking from esp_temp_smoking t0 where t0.patid=esp_demographic.patid);
+
+--    UVT_SMOKING
+      insert into UVT_SMOKING
+      select distinct 
+             pat.smoking item_code,
+             null::varchar(10) item_text
+      from esp_demographic pat
+      where not exists (select null from uvt_smoking t0 where t0.item_code=pat.smoking);
 
 --now vacuum analyze each table
 vacuum analyze esp_demographic;
