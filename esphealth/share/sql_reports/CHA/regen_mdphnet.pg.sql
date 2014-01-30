@@ -8,6 +8,41 @@ CREATE TABLE mdphnet_schema_update_history
 );
 insert into mdphnet_schema_update_history
 select current_timestamp, 0;
+drop table if exists esp_temp_smoking;
+create table esp_temp_smoking as
+   select case when t1.latest='Yes' then 'Current'
+               when t2.yesOrQuit='Quit' then 'Former'
+               when t3.passive='Passive' then 'Passive'
+               when t4.never='Never' then 'Never'
+               else 'Not available' 
+           end as smoking, 
+           t0.natural_key as patid
+   from
+     emr_patient t0
+   left outer join 
+     (select t00.tobacco_use as latest, t00.patient_id 
+      from emr_socialhistory t00
+      inner join
+      (select max(date) as maxdate, patient_id 
+       from emr_socialhistory 
+       where tobacco_use is not null and tobacco_use<>''
+       group by patient_id) t01 on t00.patient_id=t01.patient_id and t00.date=t01.maxdate) t1 on t0.id=t1.patient_id
+   left outer join
+     (select max(val) as yesOrQuit, patient_id
+      from (select 'Quit'::text as val, patient_id
+            from emr_socialhistory where tobacco_use in ('Yes','Quit')) t00
+            group by patient_id) t2 on t0.id=t2.patient_id
+   left outer join
+     (select max(val) as passive, patient_id
+      from (select 'Passive'::text as val, patient_id
+            from emr_socialhistory where tobacco_use ='Passive') t00
+            group by patient_id) t3 on t0.id=t3.patient_id
+   left outer join
+     (select max(val) as never, patient_id
+      from (select 'never'::text as val, patient_id
+            from emr_socialhistory where tobacco_use ='Never') t00
+            group by patient_id) t4 on t0.id=t4.patient_id;
+alter table esp_temp_smoking add primary key (patid);
 drop view if exists esp_demographic_v;
 CREATE OR REPLACE VIEW esp_demographic_v AS
 SELECT '1'::varchar(1) as centerid,
@@ -31,11 +66,14 @@ SELECT '1'::varchar(1) as centerid,
          WHEN UPPER(race) in ('CAUCASIAN','WHITE') THEN 5
          ELSE 0
        END as race,
-       pat.zip5
+       pat.zip5,
+       smk.smoking
   FROM public.emr_patient pat,
        public.emr_provenance prvn,
+       esp_temp_smoking smk,
        (select distinct patient_id from emr_encounter) encpat
-  WHERE pat.provenance_id=prvn.provenance_id and prvn.source ilike 'epicmem%' and pat.id=encpat.patient_id;
+  WHERE pat.provenance_id=prvn.provenance_id and prvn.source ilike 'epicmem%' and pat.id=encpat.patient_id
+        and pat.natural_key=smk.patid;
 
 drop view if exists esp_encounter_v;
 CREATE OR REPLACE VIEW esp_encounter_v AS
@@ -126,6 +164,7 @@ create index esp_demographic_sex_idx_r on esp_demographic_r (sex);
 create index esp_demographic_hispanic_idx_r on esp_demographic_r (hispanic);
 create index esp_demographic_race_idx_r on esp_demographic_r (race);
 create index esp_demographic_zip5_idx_r on esp_demographic_r (zip5);
+create index esp_demographic_smk_idx_r on esp_demographic_r (smoking);
 alter table esp_demographic_r add primary key (patid);
 
 drop table if exists esp_encounter_r cascade;
@@ -419,6 +458,7 @@ drop view if exists esp_demographic_v;
         alter index esp_demographic_hispanic_idx_r rename to esp_demographic_hispanic_idx;
         alter index esp_demographic_race_idx_r rename to esp_demographic_race_idx;
         alter index esp_demographic_zip5_idx_r rename to esp_demographic_zip5_idx;
+        alter index esp_demographic_smk_idx_r rename to esp_demographic_smk_idx;
 
         drop table if exists esp_encounter cascade;
         alter table esp_encounter_r rename to esp_encounter;
