@@ -55,7 +55,7 @@ from ESP.emr.models import SocialHistory, Problem, Allergy, Hospital_Problem
 from ESP.emr.management.commands.common import LoaderCommand
 from ESP.emr.base import SiteDefinition
 from ESP.conf.models import VaccineCodeMap
-from ESP.settings import SITE_NAME, EMAIL_SUBJECT_PREFIX, SERVER_EMAIL, MANAGERS, LOAD_REPORT_DIR
+from ESP.settings import SITE_NAME, EMAIL_SUBJECT_PREFIX, SERVER_EMAIL, ADMINS, LOAD_REPORT_DIR
 
     
 # 
@@ -178,7 +178,7 @@ class BaseLoader(object):
                EMAIL_SUBJECT_PREFIX + ' Load_Epic Report for ' + SITE_NAME + ', Source file: ' + self.filename,
                report,
                SERVER_EMAIL, 
-               [a[1] for a in MANAGERS],
+               [a[1] for a in ADMINS],
                )
             html_content = '<pre>\n%s\n</pre>' % report
             msg.attach_alternative(html_content, "text/html")
@@ -534,7 +534,7 @@ class BaseLoader(object):
                EMAIL_SUBJECT_PREFIX + ' Load_Epic Report for ' + SITE_NAME + ', Source file: ' + self.filename,
                report,
                SERVER_EMAIL, 
-               [a[1] for a in MANAGERS],
+               [a[1] for a in ADMINS],
                )
             html_content = '<pre>\n%s\n</pre>' % report
             msg.attach_alternative(html_content, "text/html")
