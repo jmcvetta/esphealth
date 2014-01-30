@@ -438,7 +438,6 @@ esphealth/share/sql_reports/Atrius/insert_smoking_mdphnet.pg.sql -text
 esphealth/share/sql_reports/Atrius/insert_static_sites.pg.sql -text
 esphealth/share/sql_reports/Atrius/readme.txt -text
 esphealth/share/sql_reports/Atrius/riskscape.genepop-transformation.ktr -text
-esphealth/share/sql_reports/Atrius/riskscape.genepop-transformation.ktr.old -text
 esphealth/share/sql_reports/Atrius/riskscape.genpop-mapping.json -text
 esphealth/share/sql_reports/Atrius/update_mdphnet.sh -text
 esphealth/share/sql_reports/Atrius/update_mdphnet_views_tables.pg.sql -text

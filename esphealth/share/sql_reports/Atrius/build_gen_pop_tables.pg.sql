@@ -692,4 +692,50 @@ create table gpr_chlamydia as
 	WHERE m0.test_name = 'chlamydia'
 	GROUP BY 
 	  l0.patient_id, l0.date;
+--
+-- Smoking
+--
+drop table if exists gpr_smoking;
+create table gpr_smoking as
+   select case when t1.latest='Yes' then '1'
+               when t2.yesOrQuit='Quit' then '2'
+               when t3.passive='Passive' then '4'
+               when t4.never='Never' then '3'
+               else '5' 
+           end as smoking,
+           t1.patient_id
+   from
+     (select t00.tobacco_use as latest, t00.patient_id 
+      from emr_socialhistory t00
+      inner join
+      (select max(date) as maxdate, patient_id 
+       from emr_socialhistory 
+       where tobacco_use is not null and tobacco_use<>''
+       group by patient_id) t01 on t00.patient_id=t01.patient_id and t00.date=t01.maxdate) t1
+   left outer join
+     (select max(val) as yesOrQuit, patient_id
+      from (select 'Quit'::text as val, patient_id
+            from emr_socialhistory where tobacco_use in ('Yes','Quit')) t00
+            group by patient_id) t2 on t1.patient_id=t2.patient_id
+   left outer join
+     (select max(val) as passive, patient_id
+      from (select 'Passive'::text as val, patient_id
+            from emr_socialhistory where tobacco_use ='Passive') t00
+            group by patient_id) t3 on t1.patient_id=t3.patient_id
+   left outer join
+     (select max(val) as never, patient_id
+      from (select 'never'::text as val, patient_id
+            from emr_socialhistory where tobacco_use ='Never') t00
+            group by patient_id) t4 on t1.patient_id=t4.patient_id;
+--
+-- Asthma
+--
+drop table if exists gpr_asthma;
+create table gpr_asthma as
+  select case when count(*) > 0 then 1 else 2 end as asthma,
+  patient_id
+from nodis_case
+where condition='asthma'
+group by patient_id;
+        
 

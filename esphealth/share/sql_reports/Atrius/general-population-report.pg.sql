@@ -77,6 +77,8 @@ SELECT
 , gpr_flu_cur.influenza_vaccine as cur_flu_vax
 , gpr_flu_prev.influenza_vaccine as prev_flu_vax
 , gpr_chlamydia.recent_chlamydia
+, gpr_asthma.asthma
+, gpr_smoking.smoking
 FROM gpr_pat 
 --
 -- Max blood pressure between two and three years
@@ -242,6 +244,16 @@ LEFT JOIN gpr_flu_prev
 --
 LEFT JOIN gpr_chlamydia
 	ON gpr_chlamydia.patient_id = gpr_pat.patient_id
+--
+-- Smoking
+--
+LEFT JOIN gpr_smoking 
+        ON gpr_smoking.patient_id = gpr_pat.patient_id
+--
+-- asthma
+--
+LEFT JOIN gpr_asthma
+        on gpr_asthma.patient_id = gpr_pat.patient_id
 --
 -- Ordering
 --
