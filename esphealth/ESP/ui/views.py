@@ -600,7 +600,7 @@ def case_detail(request, case_id):
     # latter is None, the former will also be None
     try:
         dob = patient.date_of_birth.strftime(PY_DATE_FORMAT)
-        age = patient.age.days / 365 # Note that 365 is Int not Float, thus so is result
+        age = patient.age.years
     except AttributeError: 
         age = None
         dob = None
