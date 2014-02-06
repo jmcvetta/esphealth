@@ -20,6 +20,7 @@ from pkg_resources import iter_entry_points
 from django.db.models.query import QuerySet
 
 from ESP.settings import HEF_THREAD_COUNT
+from ESP.settings import FILTER_CENTERS
 from ESP.utils import log
 from ESP.utils import log_query
 
@@ -340,7 +341,11 @@ class DiseaseDefinition(object):
         # Create new case
         #
         try:
-            status=ConditionConfig.objects.get(name=condition).initial_status
+            #redmine 491, by default FILTER_CENTERS has one element with an empty list.
+            if ( FILTER_CENTERS[0]=='' or (FILTER_CENTERS and event_obj.patient.center_id in FILTER_CENTERS )):
+                status=ConditionConfig.objects.get(name=condition).initial_status
+            else:
+                status='AR'
         except ObjectDoesNotExist:
             status='AR'
         new_case = Case(
