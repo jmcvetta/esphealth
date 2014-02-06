@@ -40,7 +40,6 @@ from ESP.settings import UPLOAD_USER
 from ESP.settings import UPLOAD_PASSWORD
 from ESP.settings import UPLOAD_PATH
 
-
 import optparse
 import sys
 import pprint
@@ -150,7 +149,6 @@ def isoTime(t=None):
     else:
         return time.strftime('%Y%m%d%H%M%S',t)
 
-#TODO check for performance issues running case report 
 class hl7Batch:
     """ class for building an hl7 message
     eeesh this is horrible. hl7 sucks.
@@ -237,7 +235,7 @@ class hl7Batch:
         patient = case.patient
         oru = self.casesDoc.createElement('ORU_R01')
         self.casesTopLevel.appendChild(oru)
-        mhs = self.makeMSH(segcontents=None,processingFlag='T') # testing!
+        mhs = self.makeMSH(case.patient.center_id,segcontents=None,processingFlag='T') # testing!
         oru.appendChild(mhs)
         orus = self.casesDoc.createElement('ORU_R01.PIDPD1NK1NTEPV1PV2ORCOBRNTEOBXNTECTI_SUPPGRP')
         oru.appendChild(orus)
@@ -981,7 +979,7 @@ class hl7Batch:
         orc.appendChild(address)
         return orc
 
-    def makeMSH(self, segcontents = None, processingFlag='P', versionFlag='2.3.1'):
+    def makeMSH(self, center_id, segcontents = None, processingFlag='P', versionFlag='2.3.1'):
         """MSH segment
         """
         # Create the elements
@@ -989,9 +987,16 @@ class hl7Batch:
         self.addSimple(section,'|','MSH.1')
         self.addSimple(section,u'^~\&','MSH.2')
         e = self.casesDoc.createElement('MSH.4')
-        for (element,ename) in [(INSTITUTION.name, 'HD.1'),(INSTITUTION.clia, 'HD.2'), ('CLIA','HD.3')]:
+        #TODO redmine 492 waiting to see where to put the center id.
+        #TODO mayb find out a clia for mass leage to add here.. 
+        #hd_name= INSTITUTION.name
+        #if hd_name.find('%')>-1:
+            #hd_name = center_id 
+        #for (element,ename) in [(INSTITUTION.name, 'HD.1'),(INSTITUTION.clia, 'HD.2'), ('CLIA','HD.3'), (center_id,'HD.4')]:
+        for (element,ename) in [(INSTITUTION.name, 'HD.1'),(INSTITUTION.clia, 'HD.2'), ('CLIA','HD.3')]:   
             if element <> '':
                 self.addSimple(e,element,ename)
+                
         section.appendChild(e)
         e = self.casesDoc.createElement('MSH.5')         
         self.addSimple(e,'MDPH-ELR','HD.1')
