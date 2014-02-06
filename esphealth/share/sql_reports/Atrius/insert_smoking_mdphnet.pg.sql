@@ -30,7 +30,7 @@ create table esp_temp_smoking as
             group by patient_id) t3 on t0.id=t3.patient_id
    left outer join
      (select max(val) as never, patient_id
-      from (select 'never'::text as val, patient_id
+      from (select 'Never'::text as val, patient_id
             from emr_socialhistory where tobacco_use ='Never') t00
             group by patient_id) t4 on t0.id=t4.patient_id;
 alter table esp_temp_smoking add primary key (patid);

@@ -377,7 +377,7 @@ insert into esp_diagnosis select * from esp_diagnosis_u;
 insert into esp_disease select * from esp_disease_u;
 
 --now get the smoking data
-drop table if exists esp_temp_smoking;
+drop table if exists esp_temp_smoking cascade;
 create table esp_temp_smoking as
    select case when t1.latest='Yes' then 'Current'
                when t2.yesOrQuit='Quit' then 'Former'
@@ -408,7 +408,7 @@ create table esp_temp_smoking as
             group by patient_id) t3 on t0.id=t3.patient_id
    left outer join
      (select max(val) as never, patient_id
-      from (select 'never'::text as val, patient_id
+      from (select 'Never'::text as val, patient_id
             from emr_socialhistory where tobacco_use ='Never') t00
             group by patient_id) t4 on t0.id=t4.patient_id;
 alter table esp_temp_smoking add primary key (patid);
