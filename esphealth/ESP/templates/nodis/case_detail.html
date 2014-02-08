@@ -108,12 +108,13 @@
         <th>DB ID #</th>
         {% if perms.nodis.view_phi %}
         <th>Patient Name</th>
-	<th>Medical Record Number</th>
+	    <th>Medical Record Number</th>
         <th>Date of Birth</th>
         <th>Age</th>
         {% else %}
         <th>Age</th>
         {% endif %}
+        <th>Center</th>
         <th>Gender</th>
         <th>Pregnancy</th>
         <th>Case Status</th>
@@ -130,10 +131,11 @@
         </td> 
         <td>{{ dob }}</td>
         <td>{{ age }}</td>
-        </td>
+       </td>
         {% else %}
         <td>{{ age }}</td>
         {% endif %}
+        <td>{{ case.patient.center_id }}</td>
         <td>{{ case.patient.gender }}</td>
         <td>{{ case.pregnant|default:"-" }}</td>
         <td>{{ case.get_status_display }}</td>
