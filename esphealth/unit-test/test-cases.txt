@@ -158,17 +158,6 @@ tb
 1 patient with 3 rx (rifabutin, isoniazid, capreomicin) in addition to pyrazinamine on same aug 14th date, 
  same patient with 3 encounters with tb dx on aug 20, 14 and 08 
 
-acute hep a
-3 patients ( should generate 2 cases)
-1 patients with encounter with icd9 for jaundice - deenaw 
- same patient with lab hep a igm positive within 14 days
-1 patient with lab alt_2x -spock 
-  same patient with lab hep a igm positive within 14 days
-  same patient with alt lab same as ref high
-1 patient with alt_2x -whop NEG
- same patient with lab igm positive within more than 14 days 
- same patient with alt lab with < than ref high 
-
 diabetes
 17  patients 
  conditions: 
@@ -234,7 +223,7 @@ acute hep c
    same patient with lab c heb c signal cut off 80074--251 ratio >=3.8 (4 test)  within 28 days
    same patient with lab hep_a_igm_ab non reactive 86705--4329 (7 test no hep a) within 28 days of encounter
    same patient wit lab hep_b_core igm_ab 86705--4870 non reactive ' (8 test no hep b) within 28 days of encounter
-  #TODO other negative and positive with other labs to exclude
+  
 (a) 1 patient with lab alt 84460--1728 >400 - SpockG  
    same patient with lab hep_c_elisa_ reactive (3 test) within 28 days of alt lab
    same patient with lab (4 test) heb c ab signal cut off  >=3.8
@@ -242,7 +231,6 @@ acute hep c
    same patient with (6 test) hep c rna HCV PCR QUANT 87522--2352 >1.7
    same patient with hav_tot_neg  80074--213 (11 test)
    same patient with hep_b_surface neg 80055--223 (test 10)
-  # TODO other negatives and positive with other labs to exclude
  
 acute hep b 
 5 patients (5 cases)
@@ -274,6 +262,18 @@ acute hep b
   same patient with lx alt 5x 2 days b4
   same patient with lx heb b surface antigen pos 2 days b4
   same patient with lx tbil >1.5 2 days b4
+
+acute hep a
+3 patients ( should generate 2 cases)
+1 patients with encounter with icd9 for jaundice - deenaw 
+ same patient with lab hep a igm positive within 14 days
+1 patient with lab alt_2x -spock 
+  same patient with lab hep a igm positive within 14 days
+  same patient with alt lab same as ref high
+1 patient with alt_2x -whop NEG
+ same patient with lab igm positive within more than 14 days 
+ same patient with alt lab with < than ref high 
+
 
 Giardiasis 
 1 patients (1 case)
