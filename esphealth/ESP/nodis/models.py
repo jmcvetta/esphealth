@@ -94,7 +94,7 @@ class Case(models.Model):
     patient = models.ForeignKey(Patient, blank=False)
     provider = models.ForeignKey(Provider, blank=False)
     criteria = models.CharField('Criteria on which case was diagnosed', 
-        max_length=255, blank=True, null=True, db_index=True)
+        max_length=500, blank=True, null=True, db_index=True)
     source = models.CharField('What algorithm created this case?', 
         max_length=255, blank=False)
     status = models.CharField('Case status', max_length=32, 
