@@ -158,5 +158,8 @@ CREATE TABLE conf_labtestmap_donotsend_results (
     CONSTRAINT conf_labtestmap_donotsend_resultstring_labtestmap_id_key UNIQUE (labtestmap_id , resultstring_id )
 )
 ;
-
+-- ------------------------------------------------------------------------------
+-- redmine 496 to expand nodis case criteria column 
+ALTER TABLE nodis_case 
+  ALTER COLUMN criteria TYPE character varying(500); 
 
