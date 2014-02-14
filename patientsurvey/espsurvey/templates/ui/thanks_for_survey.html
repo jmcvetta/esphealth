@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
+{% endblock %}
+
+
+{% block extrascript %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+        });
+    </script>
+{% endblock %}
+
+
+{% block content %}
+
+<p>Date:  {{ today_string }}
+ 
+ {% if error_message %}
+	<h3><p class="errornote">{{ error_message }}</p></h3>
+	   {{ form.errors }}
+		{{ form.non_field_errors }}
+	
+{% else %}
+	<hr>
+  	<h3>Thanks for filling out the Survey for Participant {{ mrn }}
+	</h3>
+	<hr>
+{% endif %}
+
+{% endblock %}

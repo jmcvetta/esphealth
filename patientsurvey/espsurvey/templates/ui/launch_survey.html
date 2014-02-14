@@ -1,0 +1,47 @@
+
+
+	{% extends 'base.html' %}
+
+
+
+{% block extrastyle %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ site_javascript_folder }}/flexigrid/css/flexigrid/flexigrid.css" />
+{% endblock %}
+
+
+{% block extrascript %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+        });
+    </script>
+{% endblock %}
+
+
+{% block content %}
+
+
+<p>Date:  {{ today_string }}
+ 
+                    
+		  
+<form method="POST" action="{% url enter_survey %}">
+
+  
+	<hr>
+	{% for item in surveys %}
+	
+	   <input type="hidden" name="surveyid" value= {{ item.id }} id="surveyid"> 
+	{% endfor %}
+	
+	   Please enter your medical record number: <input type="input" name="mrn"  id="mrn"> 
+	   
+	   <input type="submit" value="Launch Survey"> 
+	   
+	  <p> The following survey is designed to measure respondent’s knowledge and attitudes about their personal health. The survey has 10 questions and should take about 5 minutes to complete.  
+	   The answers you provide to the following questions will be merged together with the health information recorded by your doctors and nurses in your electronic medical record.  The information will be used to provide public health workers with a better picture of health in our state.  You will never be personally identified.  Your answers will be combined with the answers from many other patients to provide summary estimates of health for all people who respond to the survey.  Participating in this survey is completely voluntary.   If you ware willing to participate then please enter your medical record number and press the button to enter the survey. 
+    </p>
+    
+{% csrf_token %}
+</form>
+
+{% endblock %}
