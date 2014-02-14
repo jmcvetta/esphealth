@@ -1,4 +1,13 @@
 '''
+                               ESP Patient Self Survey
+
+@authors: Carolina Chacin <cchacin@commoninf.com>
+@organization: commonwealth informatics www.commoninf.com
+@copyright: (c) 2014 cii
+@license: LGPL
+'''
+
+'''
 URLs for entire ESP Health django project
 
 '''

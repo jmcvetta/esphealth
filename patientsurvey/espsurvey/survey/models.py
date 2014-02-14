@@ -1,15 +1,11 @@
 '''
-                              ESP Health Project
-                     Electronic Medical Records Warehouse
-                                  Data Models
+                               ESP Patient Self Survey
 
-@authors: Jason McVetta <jason.mcvetta@gmail.com>, Raphael Lullis <raphael.lullis@gmail.com>
-@organization: Channing Laboratory - http://www.channing.harvard.edu
-@contact: http://esphealth.org
-@copyright: (c) 2009-2011 Channing Laboratory
-@license: LGPL 3.0 - http://www.gnu.org/licenses/lgpl-3.0.txt
+@authors: Carolina Chacin <cchacin@commoninf.com>
+@organization: commonwealth informatics www.commoninf.com
+@copyright: (c) 2014 cii
+@license: LGPL
 '''
-
 
 
 from django.db import models

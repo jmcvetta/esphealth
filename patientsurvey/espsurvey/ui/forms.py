@@ -1,12 +1,9 @@
 '''
-                              ESP Health Project
-                         Notifiable Diseases Framework
-                              User Interface Forms
+                               ESP Patient Self Survey
 
-
-@authors: Jason McVetta <jason.mcvetta@gmail.com>
-@organization: Channing Laboratory http://www.channing.harvard.edu
-@copyright: (c) 2009 Channing Laboratory
+@authors: Carolina Chacin <cchacin@commoninf.com>
+@organization: commonwealth informatics www.commoninf.com
+@copyright: (c) 2014 cii
 @license: LGPL
 '''
 

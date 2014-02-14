@@ -1,12 +1,9 @@
 '''
-                              ESP Health Project
-                         Notifiable Diseases Framework
-                              User Interface Forms
-
+                               ESP Patient Self Survey
 
 @authors: Carolina Chacin <cchacin@commoninf.com>
-@organization: commonwealth informatics
-@copyright: (c) 2014
+@organization: commonwealth informatics www.commoninf.com
+@copyright: (c) 2014 cii
 @license: LGPL
 '''
 
