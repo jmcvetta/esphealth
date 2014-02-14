@@ -88,8 +88,6 @@ esphealth/ESP/media/images/arrow.gif -text
 esphealth/ESP/media/images/caduceus.gif -text svneol=unset#unset
 esphealth/ESP/media/images/default-bg-reverse.gif -text
 esphealth/ESP/media/images/default-bg.gif -text
-esphealth/ESP/media/images/django-logo-negative.png -text
-esphealth/ESP/media/images/django-logo-positive.png -text
 esphealth/ESP/media/images/espheader.gif -text
 esphealth/ESP/media/images/espheader.png -text
 esphealth/ESP/media/images/espheader150.gif -text
