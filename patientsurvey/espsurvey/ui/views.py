@@ -1,11 +1,9 @@
 '''
-                               ESP Health Project
-                             User Interface Module
-                                     Views
+                               ESP Patient Self Survey
 
-@authors: Jason McVetta <jason.mcvetta@gmail.com>
-@organization: Channing Laboratory http://www.channing.harvard.edu
-@copyright: (c) 2010 Channing Laboratory
+@authors: Carolina Chacin <cchacin@commoninf.com>
+@organization: commonwealth informatics www.commoninf.com
+@copyright: (c) 2014 cii
 @license: LGPL
 '''
 
@@ -50,7 +48,6 @@ from espsurvey.ui.forms import SurveyForm
 #
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
 ################################################################################
 #
 #--- Status Report
@@ -74,11 +71,9 @@ def _populate_status_values():
             'site_name': SITE_NAME,
             'version': VERSION,
             }
-    
     values.update(values1)
     values.update(values2)     
     return values
-
 
 def thanks_for_survey(request):
     '''
@@ -93,12 +88,10 @@ def survey_admin(request):
     admin = True
     return prepare_survey(request, admin)
 
-
 def launch_survey(request):
     
     return prepare_survey(request, False)
     
-
 def prepare_survey(request, admin):
     '''
     Launching main survey.
@@ -114,6 +107,7 @@ def prepare_survey(request, admin):
 
 SURVEY_FILLED_OUT = 'It appears that you have already completed this survey. Thank you.  If you believe that you have not completed the survey, please speak to the survey organizer.'
 CANNOT_FIND_MRN = 'I am sorry, I cannot find a record of your medical record number in the electronic medical record.  Please try re-entering your medical record number'
+NO_SURVEY_QUESTION  = 'I am sorry, I cannot find this question in the survey. Please speak to the survey organizer'
 
 def enter_survey(request):
     '''
@@ -127,26 +121,18 @@ def enter_survey(request):
     #loads all the questions from survey question and let user save. 
     values['surveys'] = Response.create_survey()
     form  = SurveyForm(auto_id=True)
-    
     values['form'] = form
-    
     values['mrn'] =  mrn
     values['surveyid'] = surveyid
     participant_id = Participant.objects.filter(login = mrn).values_list('id', flat=True)
-    survey = Survey.objects.filter(id = surveyid).values_list('id', flat=True)
     #checking if there are rows for survey and participant
-    if participant_id.__len__()>0 and survey.__len__()>0:
+    if participant_id :
         participant_id= participant_id[0]
-        survey = survey[0]
         if ParticipantActivity.objects.filter(participant__id =participant_id, survey__id = surveyid, completed=True):
-            error_message =SURVEY_FILLED_OUT
-        
-        values ['error_message'] = error_message    
+            error_message =SURVEY_FILLED_OUT        
     else:
-        if  participant_id.__len__() == 0:
+        if not participant_id:
             error_message = CANNOT_FIND_MRN
-        else:
-            error_message = 'Survey does not exist'
     
     values ['error_message'] = error_message 
     if error_message:
@@ -154,46 +140,33 @@ def enter_survey(request):
     
     return render_to_response('ui/enter_survey.html', values, context_instance=RequestContext(request))
 
-
-    
 def save_survey_response(request):
-    
     '''
     saves responses from survey pass in REQUEST
     '''
-   
     mrn = str(request.POST.getlist('mrn')[0])
     surveyid = str(request.POST.getlist('surveyid')[0])
     form = SurveyForm(auto_id=True)
     error_message= None
-    
-    participant_id = Participant.objects.filter(login = mrn).values_list('id', flat=True)
-    survey = Survey.objects.filter(id = surveyid).values_list('id', flat=True)
+    participant = Participant.objects.filter(login = mrn)
+    survey = Survey.objects.filter(id = surveyid)
     #checking if there are rows for survey and participant
-    if participant_id.__len__()>0 and survey.__len__()>0:
-        participant_id= participant_id[0]
-        survey = survey[0]
-    else:
-        if  participant_id.__len__() == 0:
-            error_message = CANNOT_FIND_MRN
-        else:
-            error_message = 'Survey does not exist'
-            
-    if request.method == 'POST' and not error_message:
+    if not participant or not survey:
+        error_message = CANNOT_FIND_MRN
         
+    if request.method == 'POST' and not error_message:
         form = SurveyForm(request.POST)
         if form.is_valid(): 
-            
-                    
-            if ParticipantActivity.objects.filter(participant__id =participant_id, survey__id = survey, completed=True):
+            if ParticipantActivity.objects.filter(participant =participant[0], survey = survey[0], completed=True):
                 error_message =SURVEY_FILLED_OUT
             else:
                 for name, field in form.fields.items():
-                    #question = Question.objects.filter(id = field.question) #or get by short name
-                    
-                    response, created = Response.objects.get_or_create(survey_id = survey,  question_id = field.question, participant_id = participant_id)
+                    question = Question.objects.filter(id = field.question) #or get by short name
+                    if not question:
+                        error_message = NO_SURVEY_QUESTION
+                        continue
+                    response, created = Response.objects.get_or_create(survey = survey[0],  question = question[0], participant = participant[0])
                     answer = form.cleaned_data[name]
-                        
                     if field.__class__.__name__ == 'ChoiceField' :
                         response.response_choice = answer
                     elif field.__class__.__name__ == 'CharField': 
@@ -204,19 +177,16 @@ def save_survey_response(request):
                         response.response_boolean = answer
                     elif field.__class__.__name__ == 'IntegerField':
                         response.response_int = answer
-                    
                     response.save()
-                    
                     if created:
                         msg = 'Saved survey question : %s' % response
                     else:
                         msg = 'Updated survey question: %s' % response
                     #request.user.message_set.create(message=msg)
-                print(msg)
-                pact, created = ParticipantActivity.objects.get_or_create(survey_id = survey,  participant_id= participant_id, completed = True )
+                    print(msg)
+                pact, created = ParticipantActivity.objects.get_or_create(survey = survey[0],  participant= participant[0], completed = True )
                 pact.save()
-            
-                return redirect_to(request,  reverse('thanks_for_survey'))
+                #return redirect_to(request,  reverse('thanks_for_survey'))
         else:
             error_message = 'Some of your survey responses do not seem right. Please see below for errors (highlighted in red).' 
             
@@ -225,7 +195,7 @@ def save_survey_response(request):
     values ['error_message'] = error_message
     values ['form'] = form
     values ['mrn'] = mrn
-    
+    values ['surveyid'] = surveyid
     if error_message:
             return render_to_response('ui/enter_survey.html', values, context_instance=RequestContext(request))
     else:
@@ -236,7 +206,6 @@ def save_survey_response(request):
         msg = 'Responses not understood: no answered questions from survey'
         request.user.message_set.create(message=msg)
         return redirect_to(request, reverse('launch_survey'))
-    
     
     for res in responses:
       
@@ -251,4 +220,3 @@ def save_survey_response(request):
         log.debug(msg)
     return launch_survey(request)
     '''
-
