@@ -404,6 +404,19 @@ esphealth/media/css/jquery-ui.css -text
 esphealth/media/css/old-global.css -text
 esphealth/media/css/ui.theme.css -text
 esphealth/media/css/vaers.css -text
+esphealth/media/images/all_seeing_eye.png -text
+esphealth/media/images/arrow.gif -text svneol=unset#unset
+esphealth/media/images/caduceus.gif -text
+esphealth/media/images/default-bg-reverse.gif -text svneol=unset#unset
+esphealth/media/images/default-bg.gif -text svneol=unset#unset
+esphealth/media/images/espheader.gif -text svneol=unset#unset
+esphealth/media/images/espheader.png -text svneol=unset#unset
+esphealth/media/images/espheader150.gif -text svneol=unset#unset
+esphealth/media/images/espheader2.png -text svneol=unset#unset
+esphealth/media/images/esplogo.gif -text svneol=unset#unset
+esphealth/media/images/nav-bg-grabber.gif -text svneol=unset#unset
+esphealth/media/images/nav-bg-reverse.gif -text svneol=unset#unset
+esphealth/media/images/nav-bg.gif -text svneol=unset#unset
 esphealth/requirements.esp-plugins.frozen.txt -text
 esphealth/requirements.frozen.txt -text
 esphealth/requirements.plugins.txt -text
