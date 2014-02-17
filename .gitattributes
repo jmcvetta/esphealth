@@ -669,6 +669,13 @@ modules/heuristic-pregnancy/setup.py -text
 modules/heuristic-pregnancy/tests.py -text
 patientsurvey/espsurvey/__init__.py -text
 patientsurvey/espsurvey/manage.py -text
+patientsurvey/espsurvey/media/css/base.css -text
+patientsurvey/espsurvey/media/css/changelists.css -text
+patientsurvey/espsurvey/media/css/global.css -text
+patientsurvey/espsurvey/media/css/jqModal.css -text
+patientsurvey/espsurvey/media/css/jquery-ui.css -text
+patientsurvey/espsurvey/media/css/old-global.css -text
+patientsurvey/espsurvey/media/css/ui.theme.css -text
 patientsurvey/espsurvey/settings.py -text
 patientsurvey/espsurvey/survey/__init__.py -text
 patientsurvey/espsurvey/survey/admin.py -text
