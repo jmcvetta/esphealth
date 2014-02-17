@@ -417,6 +417,14 @@ esphealth/media/images/esplogo.gif -text svneol=unset#unset
 esphealth/media/images/nav-bg-grabber.gif -text svneol=unset#unset
 esphealth/media/images/nav-bg-reverse.gif -text svneol=unset#unset
 esphealth/media/images/nav-bg.gif -text svneol=unset#unset
+esphealth/media/js/jqModal.js -text
+esphealth/media/js/jquery-1.3.1.js -text
+esphealth/media/js/jquery-1.3.2.min.js -text
+esphealth/media/js/jquery-1.4.2.js -text
+esphealth/media/js/jquery-ui-1.8.4.js -text
+esphealth/media/js/jquery.livequery.js -text
+esphealth/media/js/syndrome_map.js -text
+esphealth/media/js/vaers.js -text
 esphealth/requirements.esp-plugins.frozen.txt -text
 esphealth/requirements.frozen.txt -text
 esphealth/requirements.plugins.txt -text
