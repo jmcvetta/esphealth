@@ -396,6 +396,14 @@ esphealth/doc/unit-test/tb/epicres.esp.11112011 -text
 esphealth/doc/unit-test/tb/epicvis.esp.11112011 -text
 esphealth/etc/templates/case_report/odh_hl7.txt -text
 esphealth/install-system-dependencies.sh -text
+esphealth/media/css/base.css -text
+esphealth/media/css/changelists.css -text
+esphealth/media/css/global.css -text
+esphealth/media/css/jqModal.css -text
+esphealth/media/css/jquery-ui.css -text
+esphealth/media/css/old-global.css -text
+esphealth/media/css/ui.theme.css -text
+esphealth/media/css/vaers.css -text
 esphealth/requirements.esp-plugins.frozen.txt -text
 esphealth/requirements.frozen.txt -text
 esphealth/requirements.plugins.txt -text
