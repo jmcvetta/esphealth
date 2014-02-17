@@ -417,6 +417,10 @@ esphealth/media/images/esplogo.gif -text svneol=unset#unset
 esphealth/media/images/nav-bg-grabber.gif -text svneol=unset#unset
 esphealth/media/images/nav-bg-reverse.gif -text svneol=unset#unset
 esphealth/media/images/nav-bg.gif -text svneol=unset#unset
+esphealth/media/js/flexigrid/post.php -text
+esphealth/media/js/flexigrid/post2.php -text
+esphealth/media/js/flexigrid/sample1.html -text
+esphealth/media/js/flexigrid/style.css -text
 esphealth/media/js/jqModal.js -text
 esphealth/media/js/jquery-1.3.1.js -text
 esphealth/media/js/jquery-1.3.2.min.js -text
