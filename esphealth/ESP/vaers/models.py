@@ -19,7 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from ESP.emr.choices import WORKFLOW_STATES # FIXME: 'esp' module is deprecated
 from ESP.emr.models import Patient, Immunization,Prescription,Allergy
 from ESP.emr.models import Encounter, LabResult, Provider,PRIORITY_TYPES
-from ESP.static.models import Icd9
+from ESP.static.models import Dx_code
 from ESP.conf.common import DEIDENTIFICATION_TIMEDELTA, EPOCH
 from ESP.utils.utils import log, make_date_folders
 from ESP.settings import DATA_DIR
@@ -161,7 +161,8 @@ class AdverseEvent(models.Model):
                 event.encounter = event_encounter
 
                 for code in encounter['icd9_codes']:
-                    icd9_code = Icd9.objects.get(code=code['code'])
+                    #TODO: fix icd9 stuff here.  Patched over for now
+                    icd9_code = Dx_code.objects.get(code=code['code'])
                     event.encounter.icd9_codes.add(icd9_code)
                 
             if lab_result: 
@@ -797,8 +798,9 @@ class DiagnosticsEventRule(Rule):
 
     source = models.CharField(max_length=30, null=True)
     ignore_period = models.PositiveIntegerField(null=True)
-    heuristic_defining_codes = models.ManyToManyField(Icd9, related_name='defining_icd9_code_set')
-    heuristic_discarding_codes = models.ManyToManyField(Icd9, related_name='discarding_icd9_code_set')
+    #TODO: fix icd9 stuff here.  Patched over for now
+    heuristic_defining_codes = models.ManyToManyField(Dx_code, related_name='defining_icd9_code_set')
+    heuristic_discarding_codes = models.ManyToManyField(Dx_code, related_name='discarding_icd9_code_set')
     risk_period = models.IntegerField(blank=False, null=False, 
         help_text='MAX Risk period in days following vaccination')
     risk_period_start = models.IntegerField( default=1,

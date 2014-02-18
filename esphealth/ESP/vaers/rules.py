@@ -1,6 +1,6 @@
 #-*- coding:utf-8 -*-
 
-from ESP.static.models import Icd9, Vaccine, ImmunizationManufacturer
+from ESP.static.models import Dx_code, Vaccine, ImmunizationManufacturer
 from ESP.utils.utils import log
 
 VAERS_VERSION = '0.6'
@@ -1460,16 +1460,19 @@ def define_active_rules():
                 # it's an expression or a code. Faster than going to
                 # the DB.
                 c = float(code_expression)
-                code = Icd9.objects.get(code=code_expression)
+                #TODO: fix icd9 stuff here.  Patched over for now
+                code = Dx_code.objects.get(code=code_expression)
                 code_set.add(code)
             except:
                 # DoesNotExist. It means we're dealing with an expression.
                 # We'll expand it, get the codes and add
-                codes = Icd9.expansion(code_expression)
+                #TODO: fix icd9 stuff here.  Patched over for now
+                codes = Dx_code.expansion(code_expression)
                 if len(codes) == 0:
                     for c in code_expression_list:
                         try:
-                            Icd9.objects.get(code=c.strip())
+                            #TODO: fix icd9 stuff here.  Patched over for now
+                            Dx_code.objects.get(code=c.strip())
                         except:
                             print c
 

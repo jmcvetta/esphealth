@@ -34,7 +34,7 @@ from ESP.emr.models import LabResult
 from ESP.emr.models import Prescription
 from ESP.hef.models import Event
 from ESP.hef.models import Timespan
-from ESP.static.models import Icd9
+from ESP.static.models import Dx_code
 from ESP.utils import log, log_query
 from ESP.utils.utils import queryset_iterator
 from ESP.utils.utils import wait_for_threads

@@ -11,7 +11,7 @@
 '''
 
 from django.db.models import Max
-from ESP.static.models import Icd9
+from ESP.static.models import Dx_code
 #from ESP.conf.models import CodeMap
 from ESP.conf.models import STATUS_CHOICES
 from ESP.conf.models import ReportableLab
@@ -186,19 +186,22 @@ class Case(models.Model):
 
     @property
     def reportable_icd9s(self):
-        return Icd9.objects.filter(encounter__in=self.reportable_encounters)
+        #TODO: fix icd9 stuff here.  Patched over for now
+        return Dx_code.objects.filter(encounter__in=self.reportable_encounters)
    
     def __get_reportable_icd9s(self):
         
         from ESP.nodis.base import DiseaseDefinition
-        icd9_objs = Icd9.objects.filter(reportableicd9__condition=self.condition_config)
+        ##TODO: fix icd9 stuff here.  Patched over for now
+        icd9_objs = Dx_code.objects.filter(reportableicd9__condition=self.condition_config)
         disease_def_event_heuristics = DiseaseDefinition.get_by_short_name(self.condition).event_heuristics
         for heuristic in  disease_def_event_heuristics:
             if isinstance(heuristic, DiagnosisHeuristic):
+                #TODO: fix icd9 stuff here.  Patched over for now
                 for icd9_query in heuristic.icd9_queries:
                     if not icd9_objs:
-                        icd9_objs = Icd9.objects.filter( icd9_query.icd9_q_obj)
-                    else: icd9_objs |= Icd9.objects.filter(icd9_query.icd9_q_obj)
+                        icd9_objs = Dx_code.objects.filter( icd9_query.icd9_q_obj)
+                    else: icd9_objs |= Dx_code.objects.filter(icd9_query.icd9_q_obj)
          
         return icd9_objs.distinct()
     reportable_icd9s_list = property(__get_reportable_icd9s)

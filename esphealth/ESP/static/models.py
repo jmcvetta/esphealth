@@ -255,19 +255,22 @@ class Loinc(models.Model):
         return '%s -- %s' % (self.loinc_num, self.name)
 
 
-class Icd9(models.Model):
-    code = models.CharField('ICD9 Code', max_length=10, primary_key=True)
+class Dx_code(models.Model):
+    combotypecode = models.CharField('Code type:Code value', max_length=20, primary_key=True)
+    code = models.CharField('Code value', max_length=10)
+    type = models.CharField('Code type', max_length=10)
     name = models.CharField('Name', max_length=150,)
     longname = models.CharField('Long Name',max_length=1000,)
-
+    
     def __unicode__(self):
         return u'%s %s' % (self.code, self.name)
     
     #
     # TODO: issue 333 Move this code to VAERS
+    #        This is broken with introduction of ICD10
     #
     @staticmethod
-    def expansion(expression):
+    def expansion(expression,code_type):
         '''
         considering expressions to represent:
         - An interval of codes: 047.0-047.1
@@ -276,7 +279,7 @@ class Icd9(models.Model):
         
         Bear in mind that wildcards are supposed to represent only the
         fractional part. E.g: 809.9* is not a valid expression to expand and
-        may result in errors.
+        will result in errors.
         
         This method returns a list of all of the codes that satisfy the
         expression.
@@ -287,7 +290,7 @@ class Icd9(models.Model):
         # Sanity check. Not a true expression. Should only be a code.
         # If it's a string representing a code, return the appropriate code.
         if '*' not in expression and '-' not in expression:
-            return Icd9.objects.filter(code=expression)
+            return Dx_code.objects.filter(code=expression,type=code_type)
 
     
 
@@ -303,21 +306,23 @@ class Icd9(models.Model):
             #expression. E.g: 998* -> 998.99
             if high.isdigit():
                 if high.rstrip('.*') != high:
+            #TODO: appending .99 won't work with ICD10
                     high = high.rstrip('.*') + '.99'
             else: # strip if it is alpha 
                 high = high.rstrip('.*')
 
         if '*' in expression and '-' not in expression:
             low = expression.rstrip('.*')
+            #TODO: this won't work with ICD10
             high = expression.rstrip('.*') + '.99'
 
         if low.isdigit():
             assert(float(low))
             assert(float(high))
                 
-            return Icd9.objects.filter(code__gte=low, code__lte=high).order_by('code')
+            return Dx_code.objects.filter(type=code_type, code__gte=low, code__lte=high).order_by('code')
         else:
-            return Icd9.objects.filter(code__startswith = low).order_by('code') | Icd9.objects.filter(code__startswith = high).order_by('code') 
+            return Dx_code.objects.filter(type=code_type, code__startswith = low).order_by('code') | Dx_code.objects.filter(type=code_type, code__startswith = high).order_by('code') 
         
         
    

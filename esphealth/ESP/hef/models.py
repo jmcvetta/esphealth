@@ -28,7 +28,7 @@ from ESP.utils.utils import queryset_iterator
 from ESP.emr.models import Patient
 from ESP.emr.models import Provider
 from ESP.emr.models import Encounter
-from ESP.emr.models import Icd9
+from ESP.emr.models import Dx_code
 from ESP.emr.models import LabResult
 from ESP.emr.models import LabOrder
 from ESP.emr.models import Prescription

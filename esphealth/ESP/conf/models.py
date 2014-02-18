@@ -19,7 +19,7 @@ from ESP.conf.choices import DEST_TYPES
 from ESP.conf.choices import EMR_SOFTWARE
 from ESP.conf.choices import FORMAT_TYPES
 from ESP.conf.choices import WORKFLOW_STATES
-from ESP.static.models import Icd9
+from ESP.static.models import Dx_code
 from ESP.static.models import ImmunizationManufacturer
 from ESP.static.models import Loinc
 from ESP.static.models import Vaccine
@@ -382,7 +382,8 @@ class ReportableIcd9(models.Model):
     definition.
     '''
     condition = models.ForeignKey(ConditionConfig, blank=False)
-    icd9 = models.ForeignKey(Icd9, blank=False)
+    #TODO: fix icd9 stuff here.  Patched over for now
+    icd9 = models.ForeignKey(Dx_code, blank=False)
     #
     # Notes
     #

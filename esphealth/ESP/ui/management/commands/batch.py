@@ -105,17 +105,19 @@ class Command(BaseCommand):
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             #--- HEF
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            progress('Generating heuristic events')
-            cmnd = HefCommand()
-            cmnd.run_from_argv([None, None])
-            del cmnd
-            progress('Successfully generated heuristic events')
+            #progress('Generating heuristic events')
+            #cmnd = HefCommand()
+            #cmnd.run_from_argv([None, None])
+            #del cmnd
+            #progress('Successfully generated heuristic events')
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             #--- Nodis
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             progress('Generating Nodis cases')
             cmnd = NodisCommand()
-            cmnd.run_from_argv([None, None])
+            cmnd.run_from_argv([None, None, 'chlamydia','diabetes','elr:chlamydia','elr:clostridium_difficile','elr:gonorrhea','elr:rapid_flu','giardiasis','gonorrhea','hepatitis_a:acute','hepatitis_b:acute','hepatitis_c:acute','ili','lyme','pelvic_inflammatory_disease',
+'pertussis','syphilis','tuberculosis'])
+            cmnd.execute()
             del cmnd
             progress('Successfully generated Nodis cases')
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

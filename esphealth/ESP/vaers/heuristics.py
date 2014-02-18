@@ -9,7 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from ESP.hef.base import BaseHeuristic
 from ESP.conf.common import EPOCH
-from ESP.static.models import Icd9
+from ESP.static.models import Dx_code
 from ESP.emr.models import Immunization, Encounter, LabResult,  Allergy
 from ESP.emr.models import Prescription, Problem, Hospital_Problem
 from ESP.vaers.models import Case, PrescriptionEvent, EncounterEvent, LabResultEvent, AllergyEvent, ProblemEvent, HospProblemEvent
@@ -672,8 +672,8 @@ class AnyOtherDiagnosisHeuristic(VaersDiagnosisHeuristic):
         '''
         covered_icd9_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
         excluded_icd9_codes = ExcludedICD9Code.objects.values('code')
-        
-        icd9_qs = Icd9.objects.exclude(code__in=covered_icd9_codes)
+        #TODO: Fix ICD9 stuff here.  Patched over for now.
+        icd9_qs = Dx_code.objects.exclude(code__in=covered_icd9_codes)
         icd9_qs = icd9_qs.exclude(code__in=excluded_icd9_codes)
         return icd9_qs
 
@@ -726,8 +726,8 @@ class AnyOtherProblemHeuristic(VaersProblemHeuristic):
         '''
         covered_icd9_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
         excluded_icd9_codes = ExcludedICD9Code.objects.values('code')
-        
-        icd9_qs = Icd9.objects.exclude(code__in=covered_icd9_codes)
+        #TODO: Fix ICD9 stuff here.  Patched over for now.
+        icd9_qs = Dx_code.objects.exclude(code__in=covered_icd9_codes)
         icd9_qs = icd9_qs.exclude(code__in=excluded_icd9_codes)
         return icd9_qs
     
@@ -780,8 +780,8 @@ class AnyOtherHospProbHeuristic(VaersHospProbHeuristic):
         '''
         covered_icd9_codes = DiagnosticsEventRule.objects.filter(heuristic_defining_codes__isnull=False).values('heuristic_defining_codes')
         excluded_icd9_codes = ExcludedICD9Code.objects.values('code')
-        
-        icd9_qs = Icd9.objects.exclude(code__in=covered_icd9_codes)
+        #TODO: Fix ICD9 stuff here.  Patched over for now.
+        icd9_qs = Dx_code.objects.exclude(code__in=covered_icd9_codes)
         icd9_qs = icd9_qs.exclude(code__in=excluded_icd9_codes)
         return icd9_qs
 
