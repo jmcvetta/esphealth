@@ -85,7 +85,6 @@ class Response(models.Model):
     participant = models.ForeignKey(Participant, blank=False, null=False) 
     survey = models.ForeignKey(Survey, blank=False, null=False) 
     question = models.ForeignKey(Question, blank=False, null=False) 
-    response_int = models.IntegerField('response int', null=True, default=0)
     response_float = models.FloatField('response float', null=True, default=0)
     response_string = models.CharField('response string',max_length=30, null=True, blank=True, db_index=False)
     response_choice = models.CharField('response choice', max_length=3,null=True, blank=True,  db_index=False)
