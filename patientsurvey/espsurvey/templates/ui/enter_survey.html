@@ -49,12 +49,12 @@
 				       {% if field|field_type:'radioselect' %}	
 				          	for (var j = 0; j < i; j++) {
 						        document.getElementsByName('{{ field.html_name }}')[j].style.display = 'inline';
-						        document.getElementById('labelid_{{ field.id_for_label }}').style.display = 'inline';	
+						        document.getElementById('labelid_{{ field.html_name }}').style.display = 'inline';	
 						        document.getElementById('choicelabelid_{{ field.html_name }}_'+j.toString()).style.display = 'inline';	
 					       }			    		 	
 			    	  {% else %}
-				         document.getElementById('{{ field.id_for_label }}').style.display = 'inline';
-				         document.getElementById('labelid_{{ field.id_for_label }}').style.display = 'inline';
+				         document.getElementById('{{ field.html_name }}').style.display = 'inline';
+				         document.getElementById('labelid_{{ field.html_name }}').style.display = 'inline';
 			         {% endif %}
 				    }
 				    else
@@ -62,14 +62,14 @@
 					     {% if field|field_type:'radioselect' %} 
 				       		 	for (var j = 0; j < i; j++) {
 							        document.getElementsByName('{{ field.html_name }}')[j].style.display = 'none';
-							        document.getElementById('labelid_{{ field.id_for_label }}').style.display = 'none';	
+							        document.getElementById('labelid_{{ field.html_name }}').style.display = 'none';	
 							        document.getElementById('choicelabelid_{{ field.html_name }}_'+j.toString()).style.display = 'none';	
 							        document.getElementsByName('{{ field.html_name }}')[j].checked = false;
 								}			    		 					    		 
 				    	 {% else %}
-					         document.getElementById('{{ field.id_for_label }}').style.display = 'none';
-					         document.getElementById('labelid_{{ field.id_for_label }}').style.display = 'none';
-					         document.getElementById('{{ field.id_for_label }}').value ="";
+					         document.getElementById('{{ field.html_name }}').style.display = 'none';
+					         document.getElementById('labelid_{{ field.html_name }}').style.display = 'none';
+					         document.getElementById('{{ field.html_name }}').value ="";
 					     {% endif %}
 					    }
 	    		{% endif %}
@@ -101,16 +101,16 @@
        {% endif %}
       
        {% if field|field_type:'checkboxinput' %}
-   			    {{ field }} <label id= "labelid_{{ field.id_for_label }}"    for="{{ field.id_for_label }}"> {{ field.label }}</label>
+   			    {{ field }} <label id= "labelid_{{ field.html_name }}"    for="{{ field.html_name }}"> {{ field.label }}</label>
 	   {% else %}
 		    {% if field|field_inline %}
-             	<label id= "labelid_{{ field.id_for_label }}"   for="{{ field.id_for_label }}"> {{ field.label }}</label>
+             	<label id= "labelid_{{ field.html_name }}"   for="{{ field.html_name }}"> {{ field.label }}</label>
  		 	{% else %}
 		 			</div></li> 
 		            {% if not field|field_hidden  %}
 		                <li>
 		            {% endif %}
-		 	  		<label id= "labelid_{{ field.id_for_label }}"    for="{{ field.id_for_label }}"> {{ field.label }}</label>
+		 	  		<label id= "labelid_{{ field.html_name }}"    for="{{ field.html_name }}"> {{ field.label }}</label>
 		 	    	<blockquote>   
 		   {% endif %}
 		    {% if field|field_type:'radioselect' %}
