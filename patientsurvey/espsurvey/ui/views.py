@@ -175,8 +175,8 @@ def save_survey_response(request):
                         response.response_float = answer
                     elif field.__class__.__name__ == 'BooleanField':
                         response.response_boolean = answer
-                    elif field.__class__.__name__ == 'IntegerField':
-                        response.response_int = answer
+                    elif field.__class__.__name__ == 'IntegerField' :
+                        response.response_float = answer
                     response.save()
                     if created:
                         msg = 'Saved survey question : %s' % response
