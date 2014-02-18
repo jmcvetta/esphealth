@@ -1843,3 +1843,22 @@ class Pregnancy(BasePatientRecord):
     def  __unicode__(self):
         return u"Pregnancy for %s expected %s and delivered %s" % (
             self.patient.full_name, self.edd, self.actual_date)
+        
+class SurveyResponse(BasePatientRecord):
+    question = models.CharField('Question Name',max_length=80, null=True, blank=True, db_index=False)
+    response_float = models.FloatField('response float', null=True, default=0)
+    response_string = models.CharField('response string',max_length=30, null=True, blank=True, db_index=False)
+    response_choice = models.CharField('response choice', max_length=3,null=True, blank=True,  db_index=False)
+    response_boolean = models.BooleanField('response boolean', blank=True, default=False)
+
+    def __str__(self):
+        return '%s | %s ' % (self.id, self.survey.id )
+
+    class Meta:
+        verbose_name = 'Survey Response'
+        ordering = ['date']  
+
+    def  __unicode__(self):
+        return u"Survey Response for %s  on %s" % (
+            self.mrn,  self.date)
+
