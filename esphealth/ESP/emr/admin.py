@@ -22,6 +22,7 @@ from ESP.emr.models import Prescription
 from ESP.emr.models import Immunization
 from ESP.emr.models import Allergy
 from ESP.emr.models import Problem
+from ESP.emr.models import Hospital_Problem
 from ESP.emr.models import SocialHistory, Pregnancy
 
 STANDARD_SEARCH_FIELDS = ['natural_key', 'patient__mrn', 'patient__last_name', 'provider__last_name']
@@ -51,7 +52,7 @@ class LabOrderAdmin(admin.ModelAdmin):
 
 class EncounterAdmin(admin.ModelAdmin):
     list_display = ['pk', 'natural_key', 'patient', 'provider', 'date']
-    raw_id_fields = STANDARD_RAW_ID_FIELDS + ['icd9_codes','encounter_type']
+    raw_id_fields = STANDARD_RAW_ID_FIELDS + ['dx_codes','encounter_type']
     search_fields = STANDARD_SEARCH_FIELDS
 #    ordering = ['-date']
     ordering = ['pk']
@@ -84,7 +85,13 @@ class ProblemAdmin(admin.ModelAdmin):
     raw_id_fields = STANDARD_RAW_ID_FIELDS
     search_fields = STANDARD_SEARCH_FIELDS + ['comment']
     ordering = ['-date']
-    
+ 
+class HospitalProblemAdmin(admin.ModelAdmin):
+    list_display = ['natural_key', 'date', 'patient', 'status']
+    raw_id_fields = STANDARD_RAW_ID_FIELDS
+    search_fields = STANDARD_SEARCH_FIELDS + ['dx_code']
+    ordering = ['-date']
+   
 class SocialHistoryAdmin(admin.ModelAdmin):
     list_display = ['date', 'patient','tobacco_use','alcohol_use']
     raw_id_fields = STANDARD_RAW_ID_FIELDS
@@ -115,6 +122,7 @@ admin.site.register(Prescription, PrescriptionAdmin)
 admin.site.register(Immunization, ImmunizationAdmin)
 admin.site.register(Allergy, AllergyAdmin)
 admin.site.register(Problem, ProblemAdmin)
+admin.site.register(Hospital_Problem, HospitalProblemAdmin)
 admin.site.register(SocialHistory, SocialHistoryAdmin)
 admin.site.register(Pregnancy, PregnancyAdmin)
 admin.site.register(Provenance, ProvenanceAdmin)

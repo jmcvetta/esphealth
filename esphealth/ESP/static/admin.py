@@ -5,8 +5,8 @@ from ESP.static.models import Dx_code, Allergen, Vaccine
 from ESP.static.models import DrugSynonym, ImmunizationManufacturer
 
 
-class Icd9Admin(admin.ModelAdmin):
-    list_display = ['code', 'name']
+class DxAdmin(admin.ModelAdmin):
+    list_display = ['code', 'type', 'name']
     search_fields = ['code', 'name']
 
 class AllergenAdmin(admin.ModelAdmin):
@@ -25,9 +25,8 @@ class VaccineAdmin(admin.ModelAdmin):
     list_display = ['code', 'name']
     search_fields = ['code', 'name']
 
-#TODO: Ndc and Loinc are not added here 
-#TODO: Fix ICD9 stuff here.  Patched over for now.    
-admin.site.register(Dx_code, Icd9Admin)
+#TODO: Ndc and Loinc are not added here  
+admin.site.register(Dx_code, DxAdmin)
 admin.site.register(Allergen, AllergenAdmin)
 admin.site.register(DrugSynonym, DrugSynonymAdmin)
 admin.site.register(ImmunizationManufacturer, ImmunizationManufacturerAdmin)

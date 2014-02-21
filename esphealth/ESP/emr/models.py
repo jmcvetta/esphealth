@@ -32,7 +32,7 @@ from ESP.emr.choices import LOAD_STATUS
 from ESP.emr.choices import LAB_ORDER_TYPES
 from ESP.conf.common import EPOCH
 from ESP.conf.models import LabTestMap
-from ESP.static.models import Loinc, FakeLabs, FakeVitals, FakeMeds, FakeICD9s
+from ESP.static.models import Loinc, FakeLabs, FakeVitals, FakeMeds, FakeDxCodes
 from ESP.static.models import Ndc, FakeAllergen
 from ESP.static.models import Dx_code, Allergen
 from ESP.static.models import Vaccine
@@ -396,22 +396,22 @@ class Patient(BaseMedicalRecord):
             return '00000'
      
 
-    def has_history_of(self, icd9s, begin_date=None, end_date=None):
+    def has_history_of(self, dxcodes, begin_date=None, end_date=None):
         '''
-        returns a boolean if the patient has any of the icd9s code 
+        returns a boolean if the patient has any of the dx code 
         in their history of encounters.
         '''
         begin_date = begin_date or self.date_of_birth or EPOCH
         end_date = end_date or datetime.date.today()
         H1 = self.encounters().filter(
             date__gte=begin_date, date__lt=end_date
-            ).filter(icd9_codes__in=list(icd9s)).count() != 0
+            ).filter(dx_codes__in=list(dxcodes)).count() != 0
         H2 = self.problems().filter(
             date__gte=begin_date, date__lt=end_date
-            ).filter(icd9__in=list(icd9s)).count() != 0
+            ).filter(dx_code_id__in=list(dxcodes)).count() != 0
         H3 = self.hospprobs().filter(
             date__gte=begin_date, date__lt=end_date
-            ).filter(icd9__in=list(icd9s)).count() != 0
+            ).filter(dx_code_id__in=list(dxcodes)).count() != 0
         #the point here is only to determine if there is any prior history and use this to stop
         # further heuristic processing.  So just return the first one that has any data, or the last one.
         if H1: 
@@ -1431,21 +1431,21 @@ class Encounter(BasePatientRecord):
             return  round(random.uniform(low, high), decimal)
         
     @staticmethod
-    def makeicd9_mock (maxicd9, ICD9_CODE_PCT):
+    def makedxcode_mock (maxdxcode, DX_CODE_PCT):
         ''' another way
-            #msICD9codes = FakeICD9s.objects.order_by('?')
-            #icd9 = Icd9(code= msICD9codes[i].code,name=msICD9codes[i].name )
-            #icd9_codes.add(icd9)
-            icd9_codes = [str(icd9.code) for icd9 in FakeICD9s.objects.order_by('?')[:how_manycodes]]
+            #msdxcodes = FakeDxcodes.objects.order_by('?')
+            #dxcode = Dx_code(code= msdxcodes[i].code,name=msdxcodes[i].name )
+            #dx_codes.add(dxcode)
+            dx_codes = [str(dxcode.code) for dxcode in FakeDxcodes.objects.order_by('?')[:how_manycodes]]
         ''' 
         
-        if random.random() <= float(ICD9_CODE_PCT / 100.0):
-            how_many_codes = random.randint(1, maxicd9)              
-            icd9_codes = [str(random.choice(icd9.icd9_codes.split(';'))) for icd9 in FakeICD9s.objects.order_by('?')[:how_many_codes]]
+        if random.random() <= float(DX_CODE_PCT / 100.0):
+            how_many_codes = random.randint(1, maxdxcode)              
+            dx_codes = [str(random.choice(Dx_code.combotypecode.split(';'))) for dxcode in FakeDxCodes.objects.order_by('?')[:how_many_codes]]
         else:
-            icd9_codes = ''
+            dx_codes = ''
             
-        return icd9_codes
+        return dx_codes
                     
     @staticmethod
     def make_mock(patient, **kw):
@@ -1493,9 +1493,9 @@ class Encounter(BasePatientRecord):
     #
     # TODO: issue 333 Move this code to VAERS
     #
-    def is_reoccurrence(self, icd9s, month_period=12):
+    def is_reoccurrence(self, dxcodes, month_period=12):
         '''
-        returns a boolean indicating if this encounters shows any icd9
+        returns a boolean indicating if this encounters shows any dx 
         code that has been registered for this patient in last
         month_period time.
         '''
@@ -1503,7 +1503,7 @@ class Encounter(BasePatientRecord):
         earliest = self.date - datetime.timedelta(days=30 * month_period)
         
         return Encounter.objects.filter(
-            date__lt=self.date, date__gte=earliest, patient=self.patient, icd9_codes__in=icd9s
+            date__lt=self.date, date__gte=earliest, patient=self.patient, dx_codes__in=dxcodes
             ).count() > 0
                 
     def __str__(self):
@@ -1511,27 +1511,27 @@ class Encounter(BasePatientRecord):
     
     @property
     def verbose_str(self):
-        return 'Encounter # %s | %s | %s | %s | %s' % (self.pk, self.date, self.patient, self.edd, self.icd9_codes_str)
+        return 'Encounter # %s | %s | %s | %s | %s' % (self.pk, self.date, self.patient, self.edd, self.dx_codes_str)
     
     def str_line(self):
         '''
         Returns a single-line string representation of the Case instance
         '''
         values = self.__dict__ 
-        values['icd9s'] = ', '.join([i.code for i in self.icd9_codes.all().order_by('code')])
-        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(icd9s)-30s' % values
+        values['dxcodes'] = ', '.join([i.combotypecode for i in self.dx_codes.all().order_by('combotypecode')])
+        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(dxcodes)-30s' % values
     
     @classmethod
     def str_line_header(cls):
         '''
         Returns a header describing the fields returned by str_line()
         '''
-        values = {'date': 'DATE', 'id': 'ENC #', 'temperature': 'TEMP (F)', 'icd9s': 'ICD9 CODES'}
-        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(icd9s)-30s' % values
+        values = {'date': 'DATE', 'id': 'ENC #', 'temperature': 'TEMP (F)', 'dxcodes': 'DX CODES'}
+        return '%(date)-10s    %(id)-8s    %(temperature)-6s    %(dxcodes)-30s' % values
     
-    def _get_icd9_codes_str(self):
-        return ', '.join(self.icd9_codes.order_by('code').values_list('code', flat=True))
-    icd9_codes_str = property(_get_icd9_codes_str)
+    def _get_dx_codes_str(self):
+        return ', '.join(self.dx_codes.order_by('combotypecode').values_list('combotypecode', flat=True))
+    dx_codes_str = property(_get_dx_codes_str)
 
     def _calculate_bmi(self):
         '''
@@ -1623,12 +1623,13 @@ class Encounter(BasePatientRecord):
             
 class Diagnosis(BasePatientRecord):
     '''
+    this is not used and will be deprecated 
     A diagnosis, typically indicated by an ICD9/ICD10 code, and bound to a 
     particular physician encounter.
     '''
     code = models.CharField('Diagnosis Code', max_length=255, blank=False, db_index=True)
     codeset = models.CharField('Code Set', max_length=255, blank=False, db_index=True,
-        help_text='Code set of which the Diagnosis Code is a member (e.g. ICD9)')
+        help_text='Code set of which the Diagnosis Code is a member (e.g. icd9 or icd10)')
     encounter = models.ForeignKey(Encounter, verbose_name='Encounter at which this diagnosis was made',
         blank=False, db_index=True)
 
@@ -1837,7 +1838,7 @@ class Problem(BasePatientRecord):
     Problem list -- cumulative over time, no current 
     '''
     # date is date noted, id is natural key
-    typecodecombo = models.ForeignKey(Dx_code)
+    dx_code = models.ForeignKey(Dx_code)
     status = models.CharField(max_length=20, null=True, db_index=True)
     comment = models.TextField(null=True, blank=True)
     hospital_pl_yn = models.CharField('Hospital-based problem, Y or null',max_length=1, null=True)
@@ -1856,11 +1857,11 @@ class Problem(BasePatientRecord):
         when = when or randomizer.date_range(as_string=False) #datetime.date.today()
         date =  when if patient.date_of_birth is None else max(when, patient.date_of_birth)
         
-        typecodecombo = Dx_code.objects.order_by('?')[0]
+        dx_code = Dx_code.objects.order_by('?')[0]
         
         status = ['active',  'deleted','']         
         problem = Problem(patient=patient, mrn = patient.mrn, provenance=Provenance.fake(),
-                         date=date, status=random.choice(status), typecodecombo=typecodecombo,
+                         date=date, status=random.choice(status), dx_code=dx_code,
                          provider=patient.pcp,natural_key=now)
         if save_on_db: problem.save()
         return problem
@@ -1870,9 +1871,9 @@ class Problem(BasePatientRecord):
         return {
             'date':(self.date and self.date.isoformat()) or None,
             'problem':{
-                'dx_type':self.typecodecombo.type,
-                'dx_code':self.typecodecombo.code,
-                'dx_name':self.typecodecombo.name,
+                'dx_type':self.dx_code.type,
+                'dx_code':self.dx_code.code,
+                'dx_name':self.dx_code.name,
                 'comment':self.comment
                 },
             'status':self.status
@@ -1880,14 +1881,14 @@ class Problem(BasePatientRecord):
 
     def  __unicode__(self):
         return u"Problem on %s had %s on %s" % (
-            self.patient.full_name, self.typecodecombo, self.date)
+            self.patient.full_name, self.dx_code, self.date)
         
 class Hospital_Problem(BasePatientRecord):
     '''
     Hospital Problem list -- cumulative over time, no current 
     '''
     # date is date noted, id is natural key
-    typecodecombo = models.ForeignKey(Dx_code)
+    dx_code = models.ForeignKey(Dx_code)
     status = models.CharField(max_length=20, null=True, db_index=True)
     principal_prob_code = models.IntegerField('Principal hospital problem code',null=True)
     principal_prob = models.CharField('Principal hospital problem',max_length=20,null=True, db_index=True)
@@ -1901,9 +1902,9 @@ class Hospital_Problem(BasePatientRecord):
         return {
             'date':(self.date and self.date.isoformat()) or None,
             'problem':{
-                'dx_type':self.typecodecombo.type,
-                'dx_code':self.typecodecombo.code,
-                'dx_name':self.typecodecombo.name,
+                'dx_type':self.dx_code.type,
+                'dx_code':self.dx_code.code,
+                'dx_name':self.dx_code.name,
                 'overview':self.overview,
                 'principal_prob':self.principal_prob,
                 'present_on_adm':self.present_on_adm,
@@ -1914,7 +1915,7 @@ class Hospital_Problem(BasePatientRecord):
 
     def  __unicode__(self):
         return u"Problem %s had %s on %s" % (
-            self.patient.full_name, self.typecodecombo, self.date)
+            self.patient.full_name, self.dx_code, self.date)
         
 class Pregnancy(BasePatientRecord):
     '''
