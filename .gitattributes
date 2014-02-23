@@ -196,6 +196,7 @@ esphealth/ESP/static/fixtures/fakediabetesicd9s.json -text
 esphealth/ESP/static/fixtures/fakediabeteslabs.json -text
 esphealth/ESP/static/fixtures/fakediabetesmeds.json -text
 esphealth/ESP/static/fixtures/fakelabs.json -text
+esphealth/ESP/static/fixtures/hl7_vocab.json -text
 esphealth/ESP/static/fixtures/icd9.json -text
 esphealth/ESP/static/fixtures/initial_data.json -text
 esphealth/ESP/static/fixtures/loinc.json -text

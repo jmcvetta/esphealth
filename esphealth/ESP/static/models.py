@@ -254,6 +254,14 @@ class Loinc(models.Model):
     def __str__(self):
         return '%s -- %s' % (self.loinc_num, self.name)
 
+class hl7_vocab(models.Model):
+    value = models.CharField('HL7 value',max_length=26)
+    description = models.CharField('HL7 value description',max_length=250)
+    codesys = models.CharField('HL7 code system name',max_length=10)
+    
+    def __str__(self):
+        return '%s -- %s -- %s' % (self.value, self.description, self.codesys)
+    
 
 class Dx_code(models.Model):
     combotypecode = models.CharField('Code type:Code value', max_length=20, primary_key=True)
