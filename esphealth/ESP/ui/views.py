@@ -802,7 +802,7 @@ def _get_oth_counts(interval,totals):
                     "          or d.date > current_date - interval '" + interval + "') " +
                     "     and c.case_id=b.case_id " +
                     "     and a.name='VAERS: Any other Diagnosis') a, " +
-                    "     static_icd9 b " +
+                    "     static_dx_code b " +
                     "where a.diag_code=b.code " +
                     "group by a.diag_code, b.name " +
                     "order by count(distinct a.case_id) desc")
