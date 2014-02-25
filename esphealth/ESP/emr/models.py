@@ -771,7 +771,7 @@ class LabResult(BasePatientRecord):
     #
     # Wide fields
     #
-    specimen_num = models.ForeignKey(Specimen)
+    specimen_num = models.ForeignKey(Specimen, blank=True, null=True)
     specimen_source = models.CharField('Speciment Source', max_length=255, blank=True, null=True)
     impression = models.TextField('Impression (imaging)', max_length=2000, blank=True, null=True)
     comment = models.TextField('Comments', blank=True, null=True)
@@ -787,7 +787,7 @@ class LabResult(BasePatientRecord):
     interpreter = models.CharField('Lab result interpreter', max_length=100, blank=True, null=True)
     interpreter_id = models.CharField('Interpreter ID', max_length=20, blank=True, null=True)
     interp_id_auth = models.CharField('Interpreter ID Type', max_length=50, blank=True, null=True)
-    CLIA_ID = models.ForeignKey(LabInfo, blank=True, null= True)
+    CLIA_ID = models.ForeignKey(LabInfo, blank=True, null=True)
     lab_method = models.CharField('Observation method', max_length=100, blank=True, null=True)
 
     class Meta:
