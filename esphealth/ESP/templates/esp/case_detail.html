@@ -196,7 +196,7 @@
 <table id="rep_encs">
     <tr>
         <th>Date</th>
-        <th>ICD9 Codes</td>
+        <th>Dx Codes</td>
         <th>Site</td>
         <th>Pregnancy</th>
         <th>Temperature</th>
@@ -205,7 +205,7 @@
     {% for enc in rep_encs %}
     <tr>
         <td>{{ enc.EncEncounter_Date }} </td>
-        <td>{{ enc.icd9_list|join:" | " }}</td>
+        <td>{{ enc.dx_codes_list|join:" | " }}</td>
         <td>{{ enc.EncEncounter_SiteName }}</td>
         <td>
             {{ enc.EncPregnancy_Status|default:"No" }}
@@ -317,7 +317,7 @@
         <tr>
             <th>Pertinent to Condition</th>
             <th>Date</th>
-            <th>ICD9 Codes</td>
+            <th>Dx Codes</td>
             <th>Site</td>
             <th>Pregnancy</th>
             <th>Temperature</th>
@@ -326,7 +326,7 @@
         {% for enc in all_encs %}
         <tr>
             <td>{{ enc.EncEncounter_Date }} </td>
-            <td>{{ enc.icd9_list|join:" | " }}</td>
+            <td>{{ enc.dx_codes_list|join:" | " }}</td>
             <td>{{ enc.EncEncounter_SiteName }}</td>
             <td>
                 {{ enc.EncPregnancy_Status|default:"No" }}

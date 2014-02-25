@@ -222,7 +222,7 @@
         <th>DB ID #</th>
         <th>Heuristic Event(s)</th>
         <th>Date</th>
-        <th>ICD9 Codes</td>
+        <th>Dx Codes</td>
         <th>Site</td>
         <th>Pregnancy</th>
         <th>Temperature</th>
@@ -241,7 +241,7 @@
         </td>
         <td>{{ enc.date }} </td>
         <td>
-            {% for i in enc.icd9_codes.all %}
+            {% for i in enc.dx_codes.all %}
                 {{ i.code }} {{ i.name }}
                 {% if not forloop.last %}
                 <br>
@@ -404,7 +404,7 @@
         <th>DB ID #</th>
         <th>Heuristic Event(s)</th>
         <th>Date</th>
-        <th>ICD9 Codes</td>
+        <th>Dx Codes</td>
         <th>Site</td>
         <th>Pregnancy</th>
         <th>Temperature</th>
@@ -424,7 +424,7 @@
         </td>
         <td>{{ enc.date }} </td>
         <td>
-            {% for i in enc.icd9_codes.all %}
+            {% for i in enc.dx_codes.all %}
                 {{ i.code }} {{ i.name }}
                 {% if not forloop.last %}
                 <br>
