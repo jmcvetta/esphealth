@@ -208,8 +208,8 @@ esphealth/ESP/static/fixtures/toobig_initial_data.json.bz2 -text
 esphealth/ESP/static/fixtures/update_dx_code.pg.sql -text
 esphealth/ESP/static/fixtures/vaccine_regex.json -text
 esphealth/ESP/static/models.py -text
+esphealth/ESP/static/sql/dx_code.postgresql.sql -text
 esphealth/ESP/static/sql/fakelabs.postgresql.sql -text
-esphealth/ESP/static/sql/icd9.postgresql.sql -text
 esphealth/ESP/static/tests.py -text
 esphealth/ESP/static/views.py -text
 esphealth/ESP/templates/404.html -text

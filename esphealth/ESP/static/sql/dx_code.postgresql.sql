@@ -9,6 +9,6 @@
 
 
 -- Django does not automagically generate this, even with db_index=True,
--- because 'code' is primary key for table static_icd9.
-CREATE INDEX "static_icd9_code_like" ON "static_icd9" ("code" varchar_pattern_ops);
+-- because 'code' is primary key for table static_dx_code.
+CREATE INDEX "static_dx_code_code_like" ON "static_dx_code" ("code" varchar_pattern_ops);
 
