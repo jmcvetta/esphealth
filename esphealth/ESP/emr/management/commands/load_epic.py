@@ -144,7 +144,8 @@ class BaseLoader(object):
     #
     __patient_cache = {} # {patient_id: Patient instance}
     __provider_cache = {} # {provider_id: Provider instance}
-    __labSpec_cache = {} 
+    __labSpec_cache = {}  # {specimen_num: Specimen instance}
+    __labCLIA_cache = {}  # {CLIA_id: LabInfo instance}
     
     def __init__(self, filepath, options):
         assert os.path.isfile(filepath)
@@ -238,7 +239,7 @@ class BaseLoader(object):
         '''
         if not code in self.__labSpec_cache:
             i, created = Specimen.objects.get_or_create(specimen_num__exact=code, defaults={
-                     'code': code, 'provenance': self.provenance})
+                     'specimen_num': code, 'provenance': self.provenance})
             self.__labSpec_cache[code]=i    
             if created:
                 log.info('Creating new Specimen stub for id %s.' % code)
@@ -267,11 +268,12 @@ class BaseLoader(object):
         except IntegrityError:
             #this integrity error we hope is due to a previously loaded record being updated, so now we try to update
             transaction.savepoint_rollback(sid)
+            
             keys = {}
             for field_name in key_fields:
                 keys[field_name] = field_values[field_name]
                 del field_values[field_name]
-            log.debug('Could not insert new %s with keys %s' % (model, keys))
+            log.debug('Could not insert new %s with keys %s ' % (model, keys))
             # We use get_or_create() rather than get(), to increase the likelihood
             # of successful load in unforeseen circumstances
             try:
@@ -973,21 +975,18 @@ class LabResultLoader(BaseLoader):
 
     model = LabResult
     
-    labCLIA_cache = {} #{CLIA_id: LabResult instance}
-    
-    def get_LabCLIA(self, CLIA_ID,cache):
-        if not CLIA_ID:
-            return ''
+    def get_LabCLIA(self, CLIA_ID):
         
-        if not CLIA_ID in cache:
+        if not CLIA_ID in self._BaseLoader__labCLIA_cache:
+            if not CLIA_ID:
+                CLIA_ID=''
             i, created = LabInfo.objects.get_or_create(CLIA_ID__exact=CLIA_ID, defaults={
-                'code': CLIA_ID, 'Laboratory_name':' (Added by load_epic.py)'})
-    
+                'CLIA_ID': CLIA_ID, 'laboratory_name':' (Added by load_epic.py)','provenance': self.provenance })
+            self._BaseLoader__labCLIA_cache[CLIA_ID] = i
             if created:
                 log.warning('Could not find CLIA ID "%s" - creating new entry.' % CLIA_ID)
-            cache[CLIA_ID] = i
                 
-        return cache[CLIA_ID]
+        return self._BaseLoader__labCLIA_cache[CLIA_ID]
 
     def load_row(self, row):
         
@@ -1065,7 +1064,7 @@ class LabResultLoader(BaseLoader):
         'interpreter' : string_or_none(row['interpreter']),
         'interpreter_id' : string_or_none(row['interpreter_id']),
         'interp_id_auth' : string_or_none(row['interp_id_auth']),
-        'CLIA_ID' : self.get_LabCLIA(row['CLIA_ID'],self.labCLIA_cache),
+        'CLIA_ID' : self.get_LabCLIA(row['CLIA_ID']),
         'lab_method' : string_or_none(row['lab_method']),
          }
         try:
@@ -1342,7 +1341,7 @@ class EncounterLoader(BaseLoader):
         except:
             #pass it on up
             raise
-        e.bmi = e._calculate_bmi() # No need to save until we finish ICD9s
+        e.bmi = e._calculate_bmi() # No need to save until we finish dx codes
         #fill out encounter_type and priority from mapping table if it has a value
         if  row['event_type'] and not option_site:
             try:
@@ -1354,10 +1353,10 @@ class EncounterLoader(BaseLoader):
             site = SiteDefinition.get_by_short_name(option_site)
             e.encounter_type, e.priority = site.set_enctype(e)
         #
-        # ICD9 Codes
+        # dx Codes
         #
-        # TODO issue 329 this will change once we use the new diagnosis object for icd10
-        if not created: # If updating the record, purge old ICD9 list
+        
+        if not created: # If updating the record, purge old dx list
             e.dx_codes = []
         
         # code_strings are separated by semi-colon

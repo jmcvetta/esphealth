@@ -38,7 +38,7 @@ from dateutil.relativedelta import relativedelta
 from ESP.utils import randomizer
 from ESP.emr.management.commands.common import LoaderCommand
 from ESP.utils.utils import str_from_date, float_or_none, string_or_none
-from ESP.settings import DATA_DIR, LOAD_DRIVER_LABS, POPULATION_SIZE, MIN_ENCOUNTERS_PER_PATIENT ,ENCOUNTERS_PER_PATIENT ,MAXICD9 ,ICD9_CODE_PCT 
+from ESP.settings import DATA_DIR, LOAD_DRIVER_LABS, POPULATION_SIZE, MIN_ENCOUNTERS_PER_PATIENT ,ENCOUNTERS_PER_PATIENT ,MAXDXCODE ,DX_CODE_PCT 
 from ESP.settings import MIN_LAB_TESTS_PER_PATIENT ,LAB_TESTS_PER_PATIENT ,MIN_LAB_ORDERS_PER_PATIENT ,LAB_ORDERS_PER_PATIENT 
 from ESP.settings import  START_DATE, END_DATE, MIN_MEDS_PER_PATIENT ,MEDS_PER_PATIENT 
 from ESP.settings import IMMUNIZATION_PCT, IMMUNIZATIONS_PER_PATIENT , MAX_PREGNANCIES ,CURRENTLY_PREG_PCT ,MAX_ALLERGIES 
@@ -46,7 +46,7 @@ from ESP.settings import MAX_PROBLEMS ,MAX_SOCIALHISTORY , MAX_DIABETES, MAX_ILI
 from ESP.settings import DATE_FORMAT
 from ESP.utils.utils import log
 from ESP.utils.utils import date_from_str, Profiler
-from ESP.static.models import Icd9, Allergen, Loinc, FakeICD9s
+from ESP.static.models import Dx_code, Allergen, Loinc, FakeDxCodes
 from ESP.emr.models import Provenance, FakeLabs
 from ESP.emr.models import EtlError
 from ESP.emr.models import Provider,Patient,LabResult, LabOrder
@@ -321,7 +321,7 @@ class EncounterWriter(EpicWriter):
     feet_regex = re.compile('(?P<feet>\d)\' *(?P<inches>\d{1,2})')
     
     # Please see Caching Note on EpicWriter.
-    __icd9_cache = set() # {code: icd9_obj}
+    __dxcode_cache = set() # {code: dxcode_obj}
     
     fields = [
         'patient_id',
@@ -343,12 +343,12 @@ class EncounterWriter(EpicWriter):
         'bp_diastolic',
         'o2_sat',
         'peak_flow',
-        'icd9s',
+        'dxcodes',
         'bmi'
         ]
 
 
-    def write_row(self, encounter,icd9_codes, **kw):
+    def write_row(self, encounter,dx_codes, **kw):
 
 
         self.writer.writerow({
@@ -371,8 +371,8 @@ class EncounterWriter(EpicWriter):
                 'bp_diastolic':str(encounter.bp_diastolic or ''),
                 'o2_sat':str(encounter.o2_sat or ''),
                 'peak_flow':str(encounter.peak_flow or ''),
-                # no need to add the icd9 text
-                'icd9s': ';'.join(icd9_codes ),
+                # no need to add the dx code text
+                'dxcodes': ';'.join(dx_codes ),
                 'bmi':str(encounter.bmi or '')
                 })
   
@@ -521,7 +521,7 @@ class ProblemWriter(EpicWriter):
         'mrn',
         'natural_key',
         'date_noted',
-        'icd9_code',
+        'dx_code',
         'problem_status',
         'comment',
         'provider_id', #added in 3 added cch
@@ -533,7 +533,7 @@ class ProblemWriter(EpicWriter):
                 'mrn': problem.mrn,
                 'natural_key': problem.natural_key,
                 'date_noted': str_from_date(problem.date),
-                'icd9_code': problem.raw_icd9_code,
+                'dx_code': problem.dx_code,
                 'problem_status': problem.status,
                 'comment': problem.comment,
                 'provider_id': problem.provider.natural_key
@@ -728,7 +728,7 @@ class Command(LoaderCommand):
        
         #TODO issue 331 add the header rows her for each writer
         # do a join of fields object by ^
-        # use icd9code 
+        # use dxcode 
         
         #from 0 to POPULATION_SIZE 
         for count in xrange(POPULATION_SIZE):
@@ -742,11 +742,11 @@ class Command(LoaderCommand):
             if ENCOUNTERS_PER_PATIENT>0 :
                 if (MIN_ENCOUNTERS_PER_PATIENT== ENCOUNTERS_PER_PATIENT):
                     for i in xrange(0,ENCOUNTERS_PER_PATIENT): 
-                        #TODO add patients that have gestational diabetes that are not pregnant 648.8 icd9
-                        encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))
+                        #TODO add patients that have gestational diabetes that are not pregnant 648.8 -icd9
+                        encounter_writer.write_row(Encounter.make_mock(p),Encounter.makedxcode_mock(MAXDXCODE,DX_CODE_PCT))
                 else:
                     for i in xrange(random.randrange(MIN_ENCOUNTERS_PER_PATIENT,ENCOUNTERS_PER_PATIENT)): 
-                        encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))             
+                        encounter_writer.write_row(Encounter.make_mock(p),Encounter.makedxcode_mock(MAXDXCODE,DX_CODE_PCT))             
         
             if LAB_TESTS_PER_PATIENT>0:
                 if (MIN_LAB_TESTS_PER_PATIENT==LAB_TESTS_PER_PATIENT):
@@ -854,7 +854,9 @@ class Command(LoaderCommand):
             noncases = .2                          
             diabetescodes = ['250.0','250.1','250.2','250.3'] 
             diabeteslabs = ['a1c', 'fasting glucose']
-            msLabs = FakeLabs.objects.filter(native_name__in =diabeteslabs).order_by('?')[0]
+            msLabs = FakeLabs.objects.filter(native_name__in =diabeteslabs).order_by('?')
+            if msLabs:
+                msLabs= msLabs[0]
                      
             if MAX_DIABETES>0:
                 for i in xrange(MAX_DIABETES):
@@ -873,7 +875,7 @@ class Command(LoaderCommand):
                             when  = randomizer.date_range(as_string=False)
                             e= Encounter.make_mock(p,when = when)
                             encounter_writer.write_row(e,[str(random.choice (diabetescodes))])
-                        elif diabetescase == 2:
+                        elif diabetescase == 2 and msLabs:
                                 #'lx:a1c:threshold:gte:6.5', or 
                                 # 'lx:glucose-fasting:threshold:gte:126'
                                 lx = LabResult.make_mock(p)
@@ -889,7 +891,7 @@ class Command(LoaderCommand):
                         
                     # no cases 
                     else:
-                        encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))
+                        encounter_writer.write_row(Encounter.make_mock(p),Encounter.makedxcode_mock(MAXDXCODE,DX_CODE_PCT))
                         prescription_writer.write_row(Prescription.make_mock(p))
                         lx_writer.write_row(LabResult.make_mock(p))
                    
@@ -953,7 +955,7 @@ class Command(LoaderCommand):
                             encounter_writer.write_row(Encounter.make_mock(p,when = when ),[str(random.choice (diabetescodes))])
                             
                     else:
-                        encounter_writer.write_row(Encounter.make_mock(p),Encounter.makeicd9_mock(MAXICD9,ICD9_CODE_PCT))
+                        encounter_writer.write_row(Encounter.make_mock(p),Encounter.makedxcode_mock(MAXDXCODE,DX_CODE_PCT))
                         prescription_writer.write_row(Prescription.make_mock(p))
                         lx_writer.write_row(LabResult.make_mock(p))
                     

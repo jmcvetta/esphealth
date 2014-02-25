@@ -63,9 +63,9 @@ class Command(BaseCommand):
         
         count = 0    
         encounter_writer = EncounterWriter()
-        for imm in Encounter.objects.order_by('natural_key'):
-            count =count +1 
-            encounter_writer.write_row(imm, imm.icd9_codes_str.split(','))
+        for enc in Encounter.objects.order_by('natural_key'):
+            count =count +1 #TODO icd9
+            encounter_writer.write_row(enc, enc.dx_codes_str.split(','))
         log.info('Extracted %s Encounters from ESP to Epic ETL files' % count)  
         print 'Extracted %s Encounters from ESP to Epic ETL files' % count
         
