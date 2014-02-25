@@ -85,6 +85,8 @@
       "gender": "UNKNOWN"
     }
   },
-  {"pk": 3, "model": "emr.encountertypemap", "fields": {"priority": 1, "raw_encounter_type": "HOSP", "mapping": "HOSPITALIZATION"}}, {"pk": 1, "model": "emr.encountertypemap", "fields": {"priority": 3, "raw_encounter_type": "ENCOUNTER", "mapping": "VISIT"}}, {"pk": 2, "model": "emr.encountertypemap", "fields": {"priority": 2, "raw_encounter_type": "EMERGENCY", "mapping": "ER"}}
+  {"pk": 3, "model": "emr.encountertypemap", "fields": {"priority": 1, "raw_encounter_type": "HOSP", "mapping": "HOSPITALIZATION"}}, {"pk": 1, "model": "emr.encountertypemap", "fields": {"priority": 3, "raw_encounter_type": "ENCOUNTER", "mapping": "VISIT"}}, {"pk": 2, "model": "emr.encountertypemap", "fields": {"priority": 2, "raw_encounter_type": "EMERGENCY", "mapping": "ER"}},
+  {"pk": "", "model": "emr.specimen", "fields": {"Source_site": null, "collection_method": null, "Specimen_role": null, "canalysis_date": null, "provenance": 2, "analysis_date": null, "type_modifier": null, "Source_site_modifier": null, "creceived_date": null, "specimen_source": null, "Collection_amount": null, "additives": null, "Received_date": null}},
+  {"pk": "", "model": "emr.labinfo", "fields": {"city": null, "zip": null, "NPI_ID": null, "laboratory_name": null, "address2": null, "provenance": 2, "state": null, "address1": null, "county_code": null, "country": null, "Lab_Director": null, "zip5": null}}
   
 ]
