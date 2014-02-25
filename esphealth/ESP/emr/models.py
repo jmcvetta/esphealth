@@ -33,8 +33,10 @@ from ESP.emr.choices import LAB_ORDER_TYPES
 from ESP.conf.common import EPOCH
 from ESP.conf.models import LabTestMap
 from ESP.static.models import Loinc, FakeLabs, FakeVitals, FakeMeds, FakeDxCodes
-from ESP.static.models import Ndc, FakeAllergen
-from ESP.static.models import Dx_code, Allergen
+from ESP.static.models import Ndc
+from ESP.static.models import FakeAllergen
+from ESP.static.models import Dx_code
+from ESP.static.models import Allergen
 from ESP.static.models import Vaccine
 from ESP.static.models import ImmunizationManufacturer
 from ESP.conf.models import VaccineManufacturerMap, VaccineCodeMap
@@ -1441,7 +1443,7 @@ class Encounter(BasePatientRecord):
         
         if random.random() <= float(DX_CODE_PCT / 100.0):
             how_many_codes = random.randint(1, maxdxcode)              
-            dx_codes = [str(random.choice(Dx_code.combotypecode.split(';'))) for dxcode in FakeDxCodes.objects.order_by('?')[:how_many_codes]]
+            dx_codes =  [str(random.choice(dxcode.dx_codes.split(';'))) for dxcode in FakeDxCodes.objects.order_by('?')[:how_many_codes]]
         else:
             dx_codes = ''
             
