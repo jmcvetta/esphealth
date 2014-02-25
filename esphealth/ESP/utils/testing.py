@@ -69,9 +69,9 @@ class EspTestCase(TestCase):
     
     def create_diagnosis(self, provider, patient, date, codeset, diagnosis_code):
         '''
-        Create a encounter record with the provided ICD9 diagnosis'
-        @param icd_str: ICD9 string to use in the record
-        @type icd_str:  String
+        Create a encounter record with the provided dxcode diagnosis'
+        @param dxcode_str: dx code string to use in the record
+        @type dxcode_str:  String
         @return: An encounter with the indicated properties
         @rtype:  Encounter
         '''

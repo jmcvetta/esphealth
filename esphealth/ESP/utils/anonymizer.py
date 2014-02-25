@@ -71,13 +71,13 @@ def parseDemog(fname,fh):
 def parseEnc(fname,fh):
        for items in getlines(fname):
            #print items 
-           pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,icd9=items
+           pid,mrn,encid,encd,close,closed,phy,deptid,dept,enctp,edc,temp,cpt,dxcode=items
            newpid, newmrn, newphy = getfakeinfo(pid, phy)
            if newpid=='':
                print 'NO patient in Enc: %s' % pid
                continue
                
-           newl = "^".join((newpid,newmrn,encid,encd,close,closed,newphy,deptid,dept,enctp,edc,temp,cpt,icd9))
+           newl = "^".join((newpid,newmrn,encid,encd,close,closed,newphy,deptid,dept,enctp,edc,temp,cpt,dxcode))
            fh.write(newl+"\n")
 
 
