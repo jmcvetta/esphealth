@@ -783,6 +783,9 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
         positive_q = ( numeric_q & Q(result_float__gte = F('ref_high_float')) )
         negative_q = ( numeric_q & Q(result_float__lt = F('ref_high_float')) )
         indeterminate_q = None
+        xpositive_q = None
+        xnegative_q = None
+        xindeterminate_q = None
         all_labs_q = None
         #
         # Build queries with custom result strings or fallback thresholds
@@ -790,10 +793,6 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
         simple_strings_lab_q = None
         for map in map_qs:
             lab_q = map.lab_results_q_obj
-            if all_labs_q:
-                all_labs_q |= lab_q
-            else:
-                all_labs_q = lab_q
             #
             # Labs mapped with extra result strings need to be handled specially
             #
@@ -803,13 +802,23 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
                 or map.excluded_positive_strings.all() \
                 or map.excluded_negative_strings.all() \
                 or map.excluded_indeterminate_strings.all():
-                positive_q |= (map.positive_string_q_obj & lab_q)
-                negative_q |= (map.negative_string_q_obj & lab_q)
-                if indeterminate_q:
-                    indeterminate_q |= (map.indeterminate_string_q_obj & lab_q)
+                if xpositive_q:
+                    xpositive_q |= (map.positive_string_q_obj & lab_q)
                 else:
-                    indeterminate_q = (map.indeterminate_string_q_obj & lab_q)
+                    xpositive_q = (map.positive_string_q_obj & lab_q)
+                if xnegative_q:
+                    xnegative_q |= (map.negative_string_q_obj & lab_q)
+                else:
+                    xnegative_q = (map.negative_string_q_obj & lab_q)
+                if xindeterminate_q:
+                    xindeterminate_q |= (map.indeterminate_string_q_obj & lab_q)
+                else:
+                    xindeterminate_q = (map.indeterminate_string_q_obj & lab_q)
                 continue
+            if all_labs_q:
+                all_labs_q |= lab_q
+            else:
+                all_labs_q = lab_q
             # Threshold criteria is *in addition* to reference high
             if map.threshold:
                 num_lab_q = (lab_q & result_float_q)
@@ -856,6 +865,12 @@ class LabResultPositiveHeuristic(BaseLabResultHeuristic):
         positive_q = all_labs_q & positive_q
         negative_q = all_labs_q & negative_q
         indeterminate_q = all_labs_q & indeterminate_q
+        if xpositive_q:
+            positive_q = (positive_q) | (xpositive_q)
+        if xnegative_q:
+            negative_q = (negative_q) | (xnegative_q)
+        if xindeterminate_q:
+            indeterminate_q = (indeterminate_q) | (xindeterminate_q)
         #
         # Generate Events
         #
