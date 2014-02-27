@@ -136,7 +136,7 @@ class SurveyForm (forms.Form):
     height_unsure.question =17
     height_unsure.inline= True
     height_unsure.unsure = 'height'
-    weight = forms.FloatField( required=False, label='What is your current weight in inches?')
+    weight = forms.FloatField( required=False, label='What is your current weight in pounds?')
     weight.question =26
     weight_unsure = forms.BooleanField(required=False,  label = 'Unsure')
     weight_unsure.question =18
@@ -146,7 +146,7 @@ class SurveyForm (forms.Form):
     weight_type.question =19
     high_cholesterol = forms.ChoiceField(YES_NO_UNSURE, widget=forms.RadioSelect(renderer=HorizontalRadioRenderer), required=True, label='Do you have a history of hyperlipidemia or elevated cholesterol?')
     high_cholesterol.question =20
-    ldl = forms.CharField(max_length=9, required=False, label='What was your last LDL level?')
+    ldl = forms.FloatField( required=False, label='What was your last LDL level?')
     ldl.question =21
     ldl_unsure = forms.BooleanField(required=False, label = 'Unsure')
     ldl_unsure.question =22
