@@ -1750,7 +1750,6 @@ class ProblemLoader(BaseLoader):
         if not code_type or code_type =='':
             code_type = 'icd9'
         dx_code = self.get_dxcode(code, code_type, '', {})
-        combotypecode=dx_code.combotypecode
         natural_key = self.generateNaturalkey(row['natural_key'])
         values = {
             'natural_key': natural_key, 
@@ -1758,7 +1757,7 @@ class ProblemLoader(BaseLoader):
             'patient' : self.get_patient(row['patient_id']),
             'mrn' : row['mrn'],
             'date' : self.date_or_none(row['date_noted']),
-            'combotypecode' : combotypecode,
+            'dx_code' : dx_code,
             'status' : string_or_none(row['problem_status']),
             'comment' : string_or_none(row['comment']),
             'provider' : self.get_provider(row['provider_id']),
